@@ -1,0 +1,57 @@
+---
+title: "make_webhook_validation_dependency"
+slug: /reference/python/core/security/make-webhook-validation-dependency
+description: Build a FastAPI dependency that enforces SignalWire webhook signature validation.
+max-toc-depth: 3
+---
+
+[security-overview]: /docs/server-sdks/reference/python/core/security
+[validate-webhook-signature]: /docs/server-sdks/reference/python/core/security/validate-webhook-signature
+
+Build a FastAPI dependency that validates the `X-SignalWire-Signature` header (or the
+`X-Twilio-Signature` alias) on a route. Attach the returned callable with `Depends()` to
+enforce signature validation before your handler runs. The dependency reads and stashes
+the raw request body, reconstructs the public URL, and calls
+[`validate_webhook_signature`][validate-webhook-signature]. On an invalid signature it
+aborts the request with HTTP `403`; on success it returns `None` so the handler runs
+normally.
+
+<Note>
+When reconstructing the URL, the dependency honors the `SWML_PROXY_URL_BASE` environment
+variable first (highest priority), then the `X-Forwarded-Proto` / `X-Forwarded-Host`
+headers when `trust_proxy` is `True`, and finally the URL FastAPI sees.
+</Note>
+
+## **Parameters**
+
+<ParamField path="signing_key" type="str" required={true} toc={true}>
+  Your Signing Key from the Dashboard. Required and non-empty — an empty value raises
+  `ValueError` at construction time.
+</ParamField>
+
+<ParamField path="trust_proxy" type="bool" default="False" toc={true}>
+  If `True`, honor the `X-Forwarded-Proto` / `X-Forwarded-Host` headers when
+  reconstructing the URL. Defaults to `False` because proxy headers are spoofable.
+</ParamField>
+
+## **Returns**
+
+`Callable` — an async FastAPI dependency that validates the signature header and aborts
+with `403` on failure, returning `None` on success.
+
+## **Example**
+
+```python {7,9}
+from fastapi import FastAPI, Depends, Request
+from signalwire.core.security import make_webhook_validation_dependency
+
+app = FastAPI()
+
+validate = make_webhook_validation_dependency(signing_key="PSK_your_signing_key")
+
+@app.post("/webhook", dependencies=[Depends(validate)])
+async def webhook(request: Request):
+    # Reaches here only when the signature is valid.
+    raw_body = request.state.raw_body  # bytes; re-parse if you need JSON
+    return {"ok": True}
+```

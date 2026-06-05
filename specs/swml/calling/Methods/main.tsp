@@ -26,12 +26,15 @@ import "./stop_denoise";
 import "./stop_record_call";
 import "./stop_tap";
 import "./tap";
+import "./transcribe";
+import "./transcribe_stop";
 import "./transfer";
 import "./unset";
 import "./sleep";
 import "./live_transcribe";
 import "./live_translate";
 import "./ai";
+import "./ai_sidecar";
 import "./pay";
 import "./detect_machine";
 import "./user_event";
@@ -43,6 +46,7 @@ namespace SWML.Calling;
 union SWMLMethod {
   Answer,
   AI,
+  AISidecar,
   AmazonBedrock,
   Cond,
   Connect,
@@ -74,6 +78,8 @@ union SWMLMethod {
   StopTap,
   Switch,
   Tap,
+  Transcribe,
+  TranscribeStop,
   Transfer,
   Unset,
   Pay,

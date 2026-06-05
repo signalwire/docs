@@ -17,6 +17,35 @@ model SubscriberTokenRequest {
   @example("password123")
   password?: string;
 
+  @doc("""
+    Binds the token to a specific device or browser session, letting the
+    holder refresh it without going through your backend. The [Browser SDK](/docs/browser-sdk/v4)
+    generates this value automatically when starting a session — forward it
+    to your backend when requesting a token, so tie the token to that client.
+
+    Without `fingerprint`, your backend can still refresh the token using
+    the companion [`refresh_token`](/docs/apis/rest/subscribers/tokens/refresh-subscriber-token)
+    returned in this response.
+    """)
+  @minLength(43)
+  @maxLength(43)
+  @pattern("^[A-Za-z0-9_-]+$")
+  @example("Vg1h7IDV3AR6kTpCkZPHOVs32B81DX1naHiHbYoKXgY")
+  fingerprint?: string;
+
+  @doc("""
+    Grants the token's holder permission to refresh it directly from the
+    Browser SDK client. Pair with `fingerprint` to bind the token to a
+    device.
+
+    Without this scope, your backend can still refresh the token using the
+    companion [`refresh_token`](/docs/apis/rest/subscribers/tokens/refresh-subscriber-token).
+    If `sat:refresh` is set without `fingerprint`, the token's lifetime is
+    limited to 60 seconds.
+    """)
+  @example("sat:refresh")
+  scope?: "sat:refresh";
+
   @doc("Set or update the first name of the subscriber.")
   @example("John")
   first_name?: string;

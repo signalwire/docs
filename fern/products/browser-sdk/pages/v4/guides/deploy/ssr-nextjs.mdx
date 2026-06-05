@@ -1,0 +1,227 @@
+---
+title: "SSR & Next.js"
+slug: /guides/ssr
+sidebar-title: "SSR & Next.js"
+position: 3
+max-toc-depth: 3
+---
+
+`@signalwire/js` and `@signalwire/web-components` are **browser-only**.
+They depend on `WebSocket`, `RTCPeerConnection`, `navigator.mediaDevices`,
+and `customElements` — APIs that don't exist in Node.js. Importing
+either package at the top of a server-rendered module will crash the
+server during build or during SSR.
+
+Two boundaries to hold across any server-rendered framework: load the
+SDK only on the client, and mint tokens only on the server. The
+patterns below are Next.js–specific, but the same shape applies in
+Nuxt, SvelteKit, Remix, Astro, or Gatsby — wrap the SDK in that
+framework's client-only escape hatch, and put token minting behind a
+server route.
+
+## Next.js App Router
+
+### Client components
+
+Wrap any code that touches the SDK in a `"use client"` component. The
+import won't execute on the server.
+
+```tsx
+// app/_components/dialer.tsx
+"use client";
+
+import { useEffect, useState } from "react";
+import { SignalWire, StaticCredentialProvider } from "@signalwire/js";
+
+export function Dialer({ token }: { token: string }) {
+  const [client, setClient] = useState<SignalWire | null>(null);
+
+  useEffect(() => {
+    const c = new SignalWire(new StaticCredentialProvider({ token }));
+    setClient(c);
+    return () => c.disconnect();
+  }, [token]);
+
+  // ...
+}
+```
+
+A `"use client"` file's transitive imports are fine — they're bundled
+for the browser, not Node. You don't need `dynamic()` for ordinary
+SDK use.
+
+### When `dynamic()` is needed
+
+`next/dynamic` with `ssr: false` is only required when an import has
+side effects that run at *module evaluation time* (custom element
+registration, top-level `new SignalWire(...)`, etc.). The web
+components package registers `customElements.define` on import — so in
+the App Router, import the components from inside an effect or use
+`next/dynamic`:
+
+```tsx
+// app/_components/widget-mount.tsx
+"use client";
+
+import dynamic from "next/dynamic";
+import { useEffect } from "react";
+
+const RegisterWebComponents = dynamic(
+  () => import("@signalwire/web-components").then(() => () => null),
+  { ssr: false }
+);
+
+export function Widget({ token }: { token: string }) {
+  return (
+    <>
+      <RegisterWebComponents />
+      <sw-call-widget token={token} destination="/public/sales" />
+    </>
+  );
+}
+```
+
+For the **embed bundle** (`signalwire-web-components-embed.iife.js`)
+loaded via `<script>`, use `next/script` with `strategy="lazyOnload"`
+or `"afterInteractive"`:
+
+```tsx
+// app/layout.tsx
+import Script from "next/script";
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html>
+      <body>
+        {children}
+        <Script
+          src="https://unpkg.com/@signalwire/web-components/dist/embed/signalwire-web-components-embed.iife.js"
+          strategy="afterInteractive"
+        />
+      </body>
+    </html>
+  );
+}
+```
+
+### Token route handler
+
+Mint tokens in a [route handler](https://nextjs.org/docs/app/building-your-application/routing/route-handlers).
+This is the only place your SignalWire project credentials are
+allowed to live.
+
+```ts
+// app/api/sw-token/route.ts
+import { NextResponse } from "next/server";
+
+export const dynamic = "force-dynamic"; // never cache the token
+
+export async function POST(req: Request) {
+  // 1. Authenticate the caller. Read your session cookie / NextAuth
+  //    session here — whatever your app uses.
+  const user = await getUserFromRequest(req);
+  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
+  // 2. Mint a Subscriber Access Token (SAT) via the SignalWire REST API.
+  const auth = Buffer.from(
+    `${process.env.SIGNALWIRE_PROJECT_ID}:${process.env.SIGNALWIRE_TOKEN}`
+  ).toString("base64");
+
+  const res = await fetch(
+    `https://${process.env.SIGNALWIRE_SPACE}/api/fabric/subscribers/tokens`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${auth}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ reference: user.id }),
+    }
+  );
+
+  if (!res.ok) {
+    return NextResponse.json({ error: "token mint failed" }, { status: 502 });
+  }
+
+  const { token } = await res.json();
+  return NextResponse.json({ token });
+}
+```
+
+On the client, wrap the route in a [`CredentialProvider`](/docs/browser-sdk/v4/reference/interfaces/credential-provider)
+so the SDK can re-fetch a fresh SAT when the current one nears
+expiry. `expiry_at` is a `Date.now()`-style millisecond timestamp.
+
+```ts
+// app/_lib/sw-credentials.ts
+"use client";
+
+import type { CredentialProvider } from "@signalwire/js";
+
+export class FetchedCredentialProvider implements CredentialProvider {
+  async authenticate() {
+    const res = await fetch("/api/sw-token", { method: "POST" });
+    if (!res.ok) throw new Error("token fetch failed");
+    const { token } = await res.json();
+    // Default SAT lifetime is 2h. If you override `expire_at` when
+    // minting, compute from that value instead.
+    return { token, expiry_at: Date.now() + 2 * 60 * 60 * 1000 };
+  }
+  async refresh() {
+    return this.authenticate();
+  }
+}
+```
+
+See [Authentication › Refresh strategies](/docs/browser-sdk/v4/guides/authentication)
+for refresh-token-based flows that avoid re-authenticating the user on
+every rollover.
+
+### Pages Router
+
+For a `pages/`-based Next.js app, the only difference is that there's
+no `"use client"` directive. Use `next/dynamic({ ssr: false })` for any
+component that imports the SDK:
+
+```tsx
+// pages/index.tsx
+import dynamic from "next/dynamic";
+
+const Dialer = dynamic(() => import("@/components/dialer"), { ssr: false });
+
+export default function Home() {
+  return <Dialer />;
+}
+```
+
+Token endpoints live under `pages/api/sw-token.ts` and use the same
+REST flow as the App Router example.
+
+## Hydration caveats
+
+- **Don't render call state from the server.** Anything driven by an
+  observable belongs in a `useEffect` / `onMount` / `<ClientOnly>` —
+  not in the initial server render. Otherwise hydration will mismatch
+  (the server rendered `"idle"`, the client mounts with `"connected"`).
+- **Don't read `window` in module scope.** Even inside a `"use client"`
+  file, the module body runs once during client hydration. Wrap any
+  `window.` / `document.` access in an effect.
+- **`<video>` `srcObject` won't survive serialization.** Bind it from
+  an effect after the stream observable emits — never from a prop on
+  the first render.
+
+## Environment variables
+
+| Variable                  | Lives in        | Why                                                 |
+| ------------------------- | --------------- | --------------------------------------------------- |
+| `SIGNALWIRE_PROJECT_ID`   | Server only     | API credential. Never expose to the browser.        |
+| `SIGNALWIRE_TOKEN`        | Server only     | API credential. Never expose to the browser.        |
+| `SIGNALWIRE_SPACE`        | Server only     | Hostname for REST minting.                          |
+| `NEXT_PUBLIC_SW_HOST`     | Public (client) | Optional. The WebSocket host the SDK connects to.   |
+
+In Next.js, `NEXT_PUBLIC_*` is the only prefix that gets inlined into
+the client bundle. **Project ID and auth token must stay on the server
+side of that boundary**, always.
+
+See [Authentication](/docs/browser-sdk/v4/guides/authentication) for the full token
+flow.
