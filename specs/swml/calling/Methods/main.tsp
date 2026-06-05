@@ -36,6 +36,7 @@ import "./sleep";
 import "./live_transcribe";
 import "./live_translate";
 import "./ai";
+import "./ai_sidecar";
 import "./pay";
 import "./detect_machine";
 import "./user_event";
@@ -47,6 +48,7 @@ namespace SWML.Calling;
 union SWMLMethod {
   Answer,
   AI,
+  AISidecar,
   AmazonBedrock,
   Cond,
   Connect,

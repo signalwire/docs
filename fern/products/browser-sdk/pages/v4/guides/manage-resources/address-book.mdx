@@ -1,0 +1,247 @@
+---
+title: "Address Book & Directory"
+slug: /guides/address-book
+sidebar-title: "Address Book"
+position: 3
+max-toc-depth: 3
+---
+
+`client.directory` is the runtime view of every
+[Address](/docs/platform/addresses) the authenticated user can reach
+— other Users, video rooms, AI agents, SWML scripts, anything
+the platform has surfaced into this user's scope. Each entry is an
+[`Address`] instance that you can read identity from, dial, message,
+and inspect for call history.
+
+The directory is paginated, observable, and lazily loaded: subscribe
+to `addresses$` and pages stream in as you call `loadMore()`.
+
+## Getting the directory
+
+```js
+import { SignalWire, StaticCredentialProvider } from "@signalwire/js";
+
+const client = new SignalWire(
+  new StaticCredentialProvider({ token: "YOUR_SAT" })
+);
+
+client.directory$.subscribe((directory) => {
+  if (!directory) return; // not yet connected
+
+  directory.addresses$.subscribe((addresses) => {
+    renderList(addresses);
+  });
+
+  directory.loadMore(); // trigger the first page
+});
+```
+
+`client.directory$` emits once the client is connected; subscribe to
+it instead of reading `client.directory` synchronously to avoid the
+"not yet authenticated" race. The directory itself outlives any
+single `addresses$` subscription — it's the manager that owns the
+state.
+
+## Paging
+
+The directory does **not** load on its own — `addresses$` emits `[]`
+until you call `loadMore()`. Subscribe first, then trigger the first
+page; every subsequent page works the same way.
+
+```js
+const directory = await firstValueFrom(client.directory$.pipe(filterNull()));
+
+// Subscribe to the full, growing list
+directory.addresses$.subscribe((addresses) => {
+  console.log(`now have ${addresses.length} addresses`);
+});
+
+// Track whether more pages exist
+directory.hasMore$.subscribe((hasMore) => {
+  loadMoreButton.disabled = !hasMore;
+});
+
+// Track loading state to disable the button mid-fetch
+directory.loading$.subscribe((loading) => {
+  spinner.hidden = !loading;
+});
+
+loadMoreButton.onclick = () => directory.loadMore();
+
+// Kick off the first page.
+directory.loadMore();
+```
+
+Reading `directory.addresses` synchronously before `loadMore()` has
+resolved gives you an empty array — it's the snapshot of state the
+SDK currently holds, not a promise that fetches. Always drive your
+UI from `addresses$`.
+
+The collection is reactive — when a server-side update lands (e.g. a
+new contact added in the background), new entries appear in the
+existing `addresses$` stream without you re-fetching.
+
+## What an [`Address`] gives you
+
+Identity (name, displayName, type, resourceId), visuals (preview /
+cover URLs), communication channels (audio / video / messaging URIs),
+room state, and the conversation handle (`sendText`, `textMessages$`,
+`history$`). Like everything in the SDK, mutable state is exposed
+twice — as a synchronous getter and as a `$` observable. The full
+shape is on the [`Address`] reference page; this guide covers the
+fields you'll actually drive UI off of.
+
+### Resource type
+
+`Address.type` tells you what kind of Resource is on the other end:
+
+| `type`         | What it is                                                                |
+| -------------- | ------------------------------------------------------------------------- |
+| `'subscriber'` | Another user. Direct peer-to-peer.                                        |
+| `'room'`       | A video room. Multi-party.                                                |
+| `'app'`        | A SWML script or AI agent.                                                |
+| `'call'`       | A platform call resource (gateway, queue, etc.).                          |
+
+Use it to drive UI affordances — show a video icon for rooms, a phone
+icon for users, an avatar for AI agents:
+
+```js
+function iconFor(address) {
+  switch (address.type) {
+    case "room":       return "video";
+    case "subscriber": return "user";
+    case "app":        return "robot";
+    case "call":       return "phone";
+  }
+}
+```
+
+### Channels
+
+`address.channels` reports which communication modes the resource
+supports. A video room exposes `{ audio, video, messaging }`; a phone
+address might be `{ audio }` only. The `defaultChannel` getter picks
+the right one for a one-click dial (video for rooms, audio
+otherwise).
+
+```js
+const call = await client.dial(address.defaultChannel ?? address.name, {
+  audio: true,
+  video: address.type === "room",
+});
+```
+
+## Looking up an address by URI
+
+When you know the URI (`/public/support`, `/private/jane`) and need
+the [`Address`] instance — to inspect channels, send a message, or
+hand to `client.dial()` — use `findAddressIdByURI`:
+
+```js
+const id = await directory.findAddressIdByURI("/public/support");
+if (id) {
+  const address = directory.get(id);
+  // address is now usable
+}
+```
+
+`findAddressIdByURI` checks the local cache first, then queries the
+server. `directory.get(id)` is a pure local lookup — call it only
+after the id is known to exist.
+
+For the reactive equivalent, `directory.get$(id)` returns an
+`Observable<Address>` that emits whenever the entry's state changes.
+
+## Dialing
+
+`client.dial()` accepts either the URI directly or an [`Address`]
+instance:
+
+```js
+// by URI
+await client.dial("/public/support", { audio: true });
+
+// by Address — equivalent
+const address = directory.get(addressId);
+await client.dial(address, { audio: true });
+```
+
+Passing the [`Address`] lets the SDK pick the right channel
+automatically when one isn't pinned in the URI.
+
+## Messaging and call history
+
+Each address owns its own conversation: `address.sendText()`,
+`address.textMessages$`, and `address.history$`. See
+[Messaging & Chat](/docs/browser-sdk/v4/guides/messaging-chat) for
+the patterns — same pagination shape as the directory, lazy-loaded
+on first subscribe.
+
+## Room state
+
+For room-type addresses, `locked$` reports whether the room is
+currently accepting new joins. Lock state changes mid-call propagate
+through the same observable:
+
+```js
+address.locked$.subscribe((locked) => {
+  joinButton.disabled = locked;
+  joinButton.textContent = locked ? "Room locked" : "Join";
+});
+```
+
+`previewUrl$` and `coverUrl$` carry the room's thumbnail and banner
+images when the platform has them.
+
+## A complete directory UI
+
+```js
+import { SignalWire, StaticCredentialProvider } from "@signalwire/js";
+import { filter, firstValueFrom } from "rxjs";
+
+const client = new SignalWire(
+  new StaticCredentialProvider({ token: "YOUR_SAT" })
+);
+
+const directory = await firstValueFrom(
+  client.directory$.pipe(filter((d) => !!d))
+);
+
+directory.addresses$.subscribe(renderList);
+directory.hasMore$.subscribe((more) => (loadMoreBtn.hidden = !more));
+loadMoreBtn.onclick = () => directory.loadMore();
+
+directory.loadMore(); // trigger the first page
+
+function renderList(addresses) {
+  list.innerHTML = "";
+  for (const address of addresses) {
+    const li = document.createElement("li");
+    li.textContent = `${address.displayName}  (${address.name})`;
+    li.onclick = () =>
+      client.dial(address, {
+        audio: true,
+        video: address.type === "room",
+      });
+    list.appendChild(li);
+  }
+}
+```
+
+This is the same shape `<sw-directory>` builds on top of in the web
+components — see the
+[Web Components reference](/docs/browser-sdk/v4/reference/web-component/sw-directory) if
+you'd rather drop in a pre-styled list.
+
+## Reference
+
+- [`SignalWire.directory$`] / [`directory`] — the directory manager
+- [`Directory`] interface — `addresses$`, `loadMore()`, `hasMore$`, `loading$`, `get()`, `get$()`, `findAddressIdByURI()`
+- [`Address`] — the per-entry class (name, displayName, type, channels, sendText, textMessages$, history$, locked$, previewUrl$, coverUrl$)
+- [`SignalWire.dial()`] — accepts an [`Address`] or URI
+
+[`SignalWire.directory$`]: /docs/browser-sdk/v4/reference/signalwire/directory$
+[`directory`]: /docs/browser-sdk/v4/reference/signalwire/directory$
+[`Directory`]: /docs/browser-sdk/v4/reference/interfaces/directory
+[`Address`]: /docs/browser-sdk/v4/reference/address
+[`SignalWire.dial()`]: /docs/browser-sdk/v4/reference/signalwire/dial
