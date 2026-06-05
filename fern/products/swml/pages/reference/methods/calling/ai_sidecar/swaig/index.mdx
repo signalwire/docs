@@ -1,0 +1,186 @@
+---
+id: 8a1f6b3d-4e92-4c7a-b0d5-2f9c6e1a8b74
+hide_title: false
+slug: /reference/calling/ai-sidecar/swaig
+title: SWAIG
+description: Functions and MCP servers the ai_sidecar observer can call while watching a call.
+max-toc-depth: 3
+---
+
+[ai_sidecar]: /docs/swml/reference/calling/ai-sidecar
+
+SWAIG (SignalWire AI Gateway) is SignalWire's function-calling system for AI. It lets the sidecar's model call functions that **you** define and run on your own server, so it can do more than just talk.
+
+While the sidecar watches the call, the model can call a function whenever it needs to look something up or take an action — look up an account, flag a sales signal, update the agent's screen, and so on. When it does, the sidecar sends a request to that function's webhook (`web_hook_url`), your server runs the function and returns a result, and the model uses that result in its next response.
+
+You define these functions under `functions`. You can also connect external MCP (Model Context Protocol) servers under `mcp_servers`, and their tools become available to the model the same way.
+
+## **Properties**
+
+<ParamField path="ai_sidecar.SWAIG" type="object" toc={true}>
+  An object that defines the functions and MCP servers available to the sidecar.
+</ParamField>
+
+<Indent>
+
+<ParamField path="SWAIG.defaults" type="object" toc={true}>
+  Default settings applied to every function that does not override them.
+</ParamField>
+
+<Indent>
+
+<ParamField path="defaults.web_hook_url" type="string" toc={true}>
+  Default webhook URL for functions without their own `web_hook_url`. Basic auth can be embedded as `username:password@url`.
+</ParamField>
+
+<ParamField path="defaults.web_hook_auth_user" type="string" toc={true}>
+  Default basic-auth username for the function webhook.
+</ParamField>
+
+<ParamField path="defaults.web_hook_auth_password" type="string" toc={true}>
+  Default basic-auth password for the function webhook.
+</ParamField>
+
+</Indent>
+
+<ParamField path="SWAIG.functions" type="object[]" toc={true}>
+  An array of functions the model can call during the conversation.
+</ParamField>
+
+<Indent>
+
+<ParamField path="functions[].function" type="string" required={true} toc={true}>
+  The name of the function. This is the only required field — the model calls the function by this name.
+</ParamField>
+
+<ParamField path="functions[].description" type="string" toc={true}>
+  A description of what the function does, sent to the model so it knows when to call it.
+</ParamField>
+
+<ParamField path="functions[].purpose" type="string" toc={true}>
+  A fallback for `description`, used only when `description` is not set.
+</ParamField>
+
+<ParamField path="functions[].parameters" type="object" toc={true}>
+  The JSON-Schema object describing the function's arguments: `type: object` with a `properties` map and an optional `required` array. Each property allows only `type`, `description`, `enum`, and `default` — additional validation keywords such as `pattern`, `minimum`, and `maximum` are not accepted; express those constraints in the property `description` and validate them server-side. When omitted, the function takes no arguments.
+</ParamField>
+
+<ParamField path="functions[].web_hook_url" type="string" toc={true}>
+  Webhook URL for this function. Falls back to `defaults.web_hook_url`. Basic auth can be embedded as `username:password@url`.
+</ParamField>
+
+<ParamField path="functions[].web_hook_auth_user" type="string" toc={true}>
+  Basic-auth username for this function's webhook. Falls back to `defaults.web_hook_auth_user`.
+</ParamField>
+
+<ParamField path="functions[].web_hook_auth_password" type="string" toc={true}>
+  Basic-auth password for this function's webhook. Falls back to `defaults.web_hook_auth_password`.
+</ParamField>
+
+</Indent>
+
+<ParamField path="SWAIG.mcp_servers" type="object[]" toc={true}>
+  An array of MCP (Model Context Protocol) servers whose tools and resources are made available to the AI. Each server's tools are discovered at startup and registered as callable functions, so they can be invoked like any other SWAIG function.
+</ParamField>
+
+<Indent>
+
+<ParamField path="mcp_servers[].url" type="string" required={true} toc={true}>
+  The MCP server URL.
+</ParamField>
+
+<ParamField path="mcp_servers[].headers" type="object" toc={true}>
+  HTTP headers sent to the MCP server. Authorization tokens go here — there is no separate auth field. Header values support variable expansion (e.g. `Bearer ${global_data.token}`).
+</ParamField>
+
+<ParamField path="mcp_servers[].resources" type="boolean" default="false" toc={true}>
+  Whether to fetch the server's resources into `global_data`, when the server advertises resource support.
+</ParamField>
+
+<ParamField path="mcp_servers[].resource_vars" type="object" toc={true}>
+  Template variables passed to the MCP server when fetching resources. Used only when `resources` is enabled.
+</ParamField>
+
+</Indent>
+
+</Indent>
+
+<Warning>
+The function name `sidecar_skip` is reserved. It is auto-registered as a built-in tool — do not declare a function with that name. See [Built-in `sidecar_skip` tool](/docs/swml/reference/calling/ai-sidecar#built-in-sidecar_skip-tool).
+</Warning>
+
+## **Examples**
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+ai_sidecar:
+  prompt: "Coach the agent."
+  lang: "en-US"
+  SWAIG:
+    defaults:
+      web_hook_url: "https://your-app.example.com/sidecar/swaig"
+    functions:
+      - function: lookup_competitor
+        description: "Look up a competitor by name."
+        parameters:
+          type: object
+          properties:
+            competitor:
+              type: string
+              description: "Competitor name."
+          required:
+            - competitor
+    mcp_servers:
+      - url: "https://crm.example.com/mcp"
+        headers:
+          Authorization: "Bearer ${global_data.crm_token}"
+        resources: true
+        resource_vars:
+          customer_id: "${global_data.customer_id}"
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "ai_sidecar": {
+    "prompt": "Coach the agent.",
+    "lang": "en-US",
+    "SWAIG": {
+      "defaults": {
+        "web_hook_url": "https://your-app.example.com/sidecar/swaig"
+      },
+      "functions": [
+        {
+          "function": "lookup_competitor",
+          "description": "Look up a competitor by name.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "competitor": {
+                "type": "string",
+                "description": "Competitor name."
+              }
+            },
+            "required": ["competitor"]
+          }
+        }
+      ],
+      "mcp_servers": [
+        {
+          "url": "https://crm.example.com/mcp",
+          "headers": {
+            "Authorization": "Bearer ${global_data.crm_token}"
+          },
+          "resources": true,
+          "resource_vars": {
+            "customer_id": "${global_data.customer_id}"
+          }
+        }
+      ]
+    }
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
