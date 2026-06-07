@@ -4,7 +4,7 @@ namespace SWML.Calling;
 model Hangup {
   @doc("End the call with an optional reason.")
   @summary("hangup")
-  hangup: {
+  hangup: null | {
     @doc("The reason for hanging up the call.")
     @example("busy")
     reason?: "hangup" | "busy" | "decline";
