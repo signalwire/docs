@@ -1,0 +1,76 @@
+---
+title: "validate_webhook_signature"
+slug: /reference/python/core/security/validate-webhook-signature
+description: Validate a SignalWire webhook signature against the raw request body.
+max-toc-depth: 3
+---
+
+[security-overview]: /docs/server-sdks/reference/python/core/security
+[validate-request]: /docs/server-sdks/reference/python/core/security/validate-request
+
+Verify that an incoming webhook was signed by SignalWire with your Signing Key. This is
+the primary standalone validator for custom (non-`AgentBase`) servers. Pass it the raw,
+unparsed request body so the signature matches what the platform computed.
+
+<Note>
+The signature value comes from the `X-SignalWire-Signature` request header (or
+`X-Twilio-Signature` for Compatibility callbacks). See the
+[security overview][security-overview] for the recognized header names.
+</Note>
+
+## **Parameters**
+
+<ParamField path="signing_key" type="str" required={true} toc={true}>
+  Your Signing Key from the Dashboard, as a UTF-8 string. A `None` or empty value raises
+  `ValueError` — this is a programming error, not a validation failure.
+</ParamField>
+
+<ParamField path="signature" type="str" required={true} toc={true}>
+  The `X-SignalWire-Signature` header value (or `X-Twilio-Signature` for Compatibility
+  callbacks). A missing or empty value returns `False` without raising.
+</ParamField>
+
+<ParamField path="url" type="str" required={true} toc={true}>
+  The full URL SignalWire POSTed to — scheme, host, optional port, path, and query. It
+  must match what the platform saw.
+</ParamField>
+
+<ParamField path="raw_body" type="str" required={true} toc={true}>
+  The raw request body as a UTF-8 string, *before* any JSON or form parsing. Must be a
+  `str`; passing a parsed dict raises `TypeError`.
+</ParamField>
+
+## **Returns**
+
+`bool` — `True` if the signature matches, `False` otherwise.
+
+## **Example**
+
+```python {12-17}
+from fastapi import FastAPI, Request, Response, status
+from signalwire.core.security import validate_webhook_signature
+
+app = FastAPI()
+SIGNING_KEY = "PSK_your_signing_key"
+
+@app.post("/webhook")
+async def webhook(request: Request):
+    raw_body = (await request.body()).decode("utf-8")
+    signature = request.headers.get("x-signalwire-signature", "")
+
+    if not validate_webhook_signature(
+        signing_key=SIGNING_KEY,
+        signature=signature,
+        url=str(request.url),
+        raw_body=raw_body,
+    ):
+        return Response(status_code=status.HTTP_403_FORBIDDEN)
+
+    # Signature is valid — safe to process the request.
+    return {"ok": True}
+```
+
+<Tip>
+If you already have pre-parsed form parameters instead of a raw body, use
+[`validate_request`][validate-request], which accepts either form.
+</Tip>
