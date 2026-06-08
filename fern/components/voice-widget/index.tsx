@@ -1,7 +1,7 @@
 import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import type { Catalog, Manifest, VoiceRow } from "./types";
-import { Skeleton } from "./skeleton";
+import { Skeleton } from "../skeleton/index";
 
 // Ported from @signalwire/tts-voice-widget for embedding as a Fern MDX component.
 // Pure data consumer: fetches catalog.json + manifest.json produced by the TTS pipeline and plays
@@ -19,12 +19,16 @@ import { Skeleton } from "./skeleton";
 // can resolve. Ephemeral: quick-tunnel URLs change on every cloudflared restart — update this and
 // restart the docs dev server to re-bundle. For local-only dev set to "http://localhost:8080".
 // Swap to the production CDN base URL when one is available.
-const ASSET_BASE = "https://trainers-babies-ctrl-thrown.trycloudflare.com";
+const ASSET_BASE = "https://warming-watched-physics-assistance.trycloudflare.com";
 
 const ALL = "__all__";
-const DEFAULT_PAGE_SIZE = 60;
+const DEFAULT_PAGE_SIZE = 48;
 const MOBILE_PAGE_SIZE = 12;
 const MOBILE_QUERY = "(max-width: 640px)";
+// Multiples of the max column count (4) so every page fills complete rows; 4 = a single row.
+const PAGE_SIZE_OPTIONS = [4, 8, 12, 24, 48, 96];
+
+type FilterKey = "search" | "provider" | "language" | "gender" | "group" | "pageSize";
 
 // Tracks whether the viewport is in the mobile breakpoint (matches the CSS media query below).
 function useIsMobile() {
@@ -49,13 +53,13 @@ export interface VoiceWidgetProps {
   manifestUrl?: string;
   /** Override the base the clip `audio` paths resolve against. Default: assetBaseUrl. */
   audioBaseUrl?: string;
-  /** Initial grouping. Default: "provider". */
-  groupBy?: "provider" | "language";
-  /** Cards rendered per page (page-size limit). Default: 60. Keeps the DOM small and the catalog fast. */
+  /** Initial grouping. "none" renders a flat grid with no section headers or group toggle. Default: "provider". */
+  groupBy?: "provider" | "language" | "none";
+  /** Cards rendered per page (page-size limit). Default: 48. Keeps the DOM small and the catalog fast. */
   pageSize?: number;
   /**
-   * Fixed number of grid columns. When unset, the grid auto-fills responsively (≈240px min per
-   * card). When set, it renders exactly this many columns.
+   * Fixed number of grid columns. Default: 3. Collapses to 1 column on phones regardless. Pass 0
+   * for a responsive auto-fill grid (≈240px min per card) instead of a fixed count.
    */
   columns?: number;
   /**
@@ -64,6 +68,20 @@ export interface VoiceWidgetProps {
    * are shown and the provider filter is hidden — for embedding on a provider-specific page.
    */
   provider?: string;
+  /**
+   * Show only these specific voices (an allowlist). Each entry matches a voice's `voice_id`, its
+   * `<engine>/<voice_id>` key, its `<engine>/<voice_id>:<model>` key (to disambiguate a voice that
+   * exists under multiple models), or its display name — case-insensitive. When unset, all voices
+   * show. Use to curate a small demo set, e.g. one representative voice per provider.
+   */
+  voiceIds?: string[];
+  /**
+   * Toggle the filter/search controls. `true` or unset shows all; `false` hides all (just the
+   * title + grid). An object toggles individual controls — `search`, `provider`, `language`,
+   * `gender`, `group`, `pageSize` — each defaulting on unless set `false`. The provider control is
+   * always hidden when the `provider` lock prop is set.
+   */
+  filters?: boolean | Partial<Record<FilterKey, boolean>>;
 }
 
 export function VoiceWidget({
@@ -73,11 +91,22 @@ export function VoiceWidget({
   audioBaseUrl = assetBaseUrl,
   groupBy: initialGroup = "provider",
   pageSize = DEFAULT_PAGE_SIZE,
-  columns,
+  columns = 3,
   provider: lockedProvider,
+  voiceIds,
+  filters,
 }: VoiceWidgetProps) {
   // Normalized single-provider lock (null when the widget shows all providers).
   const lock = lockedProvider?.trim().toLowerCase() || null;
+  // Normalized voice-id allowlist (null when showing all voices). Sorted+joined into a stable key
+  // so the memoized Set below — and the filter that depends on it — don't churn each render.
+  const voiceIdsKey = voiceIds && voiceIds.length
+    ? voiceIds.map((s) => s.trim().toLowerCase()).filter(Boolean).sort().join("|")
+    : "";
+  const idAllowlist = useMemo(
+    () => (voiceIdsKey ? new Set(voiceIdsKey.split("|")) : null),
+    [voiceIdsKey]
+  );
   // Fixed column count overrides the responsive auto-fill grid when provided. Set as CSS custom
   // properties (consumed by .vw-grid in the stylesheet) rather than grid-template-columns directly,
   // so the mobile media query can still collapse the grid to one column regardless of this prop.
@@ -90,8 +119,9 @@ export function VoiceWidget({
   const [provider, setProvider] = useState(ALL);
   const [language, setLanguage] = useState(ALL);
   const [gender, setGender] = useState(ALL);
-  const [group, setGroup] = useState<"provider" | "language">(initialGroup);
+  const [group, setGroup] = useState<"provider" | "language" | "none">(initialGroup);
   const [page, setPage] = useState(0);
+  const [pageSizeChoice, setPageSizeChoice] = useState(pageSize);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playingKey, setPlayingKey] = useState<string | null>(null);
 
@@ -101,7 +131,17 @@ export function VoiceWidget({
   // On small screens the grid collapses to one column (CSS), so cap the page size too — a 60-card
   // single column is an excessive scroll on a phone.
   const isMobile = useIsMobile();
-  const effectivePageSize = isMobile ? Math.min(pageSize, MOBILE_PAGE_SIZE) : pageSize;
+  const effectivePageSize = isMobile ? Math.min(pageSizeChoice, MOBILE_PAGE_SIZE) : pageSizeChoice;
+  const pageSizeOpts = [...new Set([...PAGE_SIZE_OPTIONS, pageSize])].sort((a, b) => a - b);
+
+  // Resolve which filter/search controls are visible. `filters` is a boolean (all on/off) or a
+  // per-control object; each control defaults on unless explicitly false.
+  const showFilter = (key: FilterKey) =>
+    filters === false ? false
+    : filters && typeof filters === "object" ? filters[key] !== false
+    : true;
+  const showProvider = !lock && showFilter("provider");
+  const showGroup = group !== "none" && showFilter("group");
 
   useEffect(() => {
     let alive = true;
@@ -127,6 +167,11 @@ export function VoiceWidget({
     if (!rows) return [];
     const needle = deferredQ.trim().toLowerCase();
     return rows.filter((r) =>
+      (!idAllowlist ||
+        idAllowlist.has(r.voice_id.toLowerCase()) ||
+        idAllowlist.has(r.key.toLowerCase()) ||
+        idAllowlist.has(uidOf(r).toLowerCase()) ||
+        idAllowlist.has(r.display_name.toLowerCase())) &&
       (!lock || r.provider.toLowerCase() === lock || r.engine.toLowerCase() === lock) &&
       (provider === ALL || r.provider === provider) &&
       (language === ALL || r.languages.includes(language)) &&
@@ -136,10 +181,12 @@ export function VoiceWidget({
         r.provider.toLowerCase().includes(needle) ||
         r.description.toLowerCase().includes(needle) ||
         r.tags.join(" ").toLowerCase().includes(needle)));
-  }, [rows, lock, deferredQ, provider, language, gender]);
+  }, [rows, idAllowlist, lock, deferredQ, provider, language, gender]);
 
   // Flatten into grouped order once, and remember each group's full size for the section headers.
+  // group === "none" keeps the filtered order as-is, with no sections.
   const { ordered, groupTotals } = useMemo(() => {
+    if (group === "none") return { ordered: filtered, groupTotals: new Map<string, number>() };
     const m = new Map<string, VoiceRow[]>();
     for (const r of filtered) {
       const k = group === "provider" ? r.provider : r.primary_language;
@@ -158,7 +205,7 @@ export function VoiceWidget({
   // Reset to the first page whenever the result set changes — done during render (not in an
   // effect) so there's no one-frame flash of the old page number. Canonical "adjust state on
   // change" pattern: the setState below re-renders synchronously before commit.
-  const filterSig = `${lock}|${deferredQ}|${provider}|${language}|${gender}|${group}`;
+  const filterSig = `${voiceIdsKey}|${lock}|${deferredQ}|${provider}|${language}|${gender}|${group}|${pageSizeChoice}`;
   const [lastSig, setLastSig] = useState(filterSig);
   if (filterSig !== lastSig) {
     setLastSig(filterSig);
@@ -172,9 +219,12 @@ export function VoiceWidget({
   const end = Math.min(start + effectivePageSize, ordered.length);
 
   // Split the current page's slice into contiguous group sections (reuses the section/grid DOM).
+  // group === "none" → a single unlabeled section (flat grid).
   const pageSections = useMemo(() => {
+    const slice = ordered.slice(start, end);
+    if (group === "none") return slice.length ? [{ name: "", items: slice }] : [];
     const secs: { name: string; items: VoiceRow[] }[] = [];
-    for (const r of ordered.slice(start, end)) {
+    for (const r of slice) {
       const k = group === "provider" ? r.provider : r.primary_language;
       const last = secs[secs.length - 1];
       if (last && last.name === k) last.items.push(r);
@@ -189,11 +239,12 @@ export function VoiceWidget({
 
   const play = useCallback((r: VoiceRow) => {
     if (!r.clip || r.clip.status !== "ok") return;
+    const uid = uidOf(r);
     const url = audioBaseUrl ? `${audioBaseUrl.replace(/\/$/, "")}/${r.clip.audio}` : r.clip.audio;
     const a = audioRef.current!;
-    if (playingKeyRef.current === r.key && !a.paused) { a.pause(); setPlayingKey(null); return; }
+    if (playingKeyRef.current === uid && !a.paused) { a.pause(); setPlayingKey(null); return; }
     a.src = url;
-    a.play().then(() => setPlayingKey(r.key)).catch(() => setPlayingKey(null));
+    a.play().then(() => setPlayingKey(uid)).catch(() => setPlayingKey(null));
   }, [audioBaseUrl]);
 
   const copyConfig = useCallback(async (r: VoiceRow) => {
@@ -230,20 +281,36 @@ export function VoiceWidget({
       <audio ref={audioRef} onEnded={() => setPlayingKey(null)} preload="none" />
       <header className="vw-head">
         <div className="vw-title">TTS Voices <span className="vw-count">{filtered.length}</span></div>
-        <input className="vw-search" placeholder="Search voices…" value={q}
-               onChange={(e) => setQ(e.target.value)} />
+        {showFilter("search") && (
+          <input className="vw-search" placeholder="Search voices…" value={q}
+                 onChange={(e) => setQ(e.target.value)} />
+        )}
       </header>
 
-      <div className="vw-filters">
-        {!lock && <Select label="Provider" value={provider} onChange={setProvider} opts={providers} />}
-        <Select label="Language" value={language} onChange={setLanguage} opts={languages} />
-        <Select label="Gender" value={gender} onChange={setGender}
-                opts={["male", "female", "neutral", "unknown"]} />
-        <div className="vw-group">
-          <button className={group === "provider" ? "on" : ""} onClick={() => setGroup("provider")}>by provider</button>
-          <button className={group === "language" ? "on" : ""} onClick={() => setGroup("language")}>by language</button>
+      {(showProvider || showFilter("language") || showFilter("gender") || showFilter("pageSize") || showGroup) && (
+        <div className="vw-filters">
+          {showProvider && <Select label="Provider" value={provider} onChange={setProvider} opts={providers} />}
+          {showFilter("language") && <Select label="Language" value={language} onChange={setLanguage} opts={languages} />}
+          {showFilter("gender") && (
+            <Select label="Gender" value={gender} onChange={setGender}
+                    opts={["male", "female", "neutral", "unknown"]} />
+          )}
+          {showFilter("pageSize") && (
+            <label className="vw-select">
+              <span>Per page</span>
+              <select value={pageSizeChoice} onChange={(e) => setPageSizeChoice(Number(e.target.value))}>
+                {pageSizeOpts.map((n) => <option key={n} value={n}>{n}</option>)}
+              </select>
+            </label>
+          )}
+          {showGroup && (
+            <div className="vw-group">
+              <button className={group === "provider" ? "on" : ""} onClick={() => setGroup("provider")}>by provider</button>
+              <button className={group === "language" ? "on" : ""} onClick={() => setGroup("language")}>by language</button>
+            </div>
+          )}
         </div>
-      </div>
+      )}
 
       {pager}
 
@@ -252,10 +319,10 @@ export function VoiceWidget({
       ) : (
         pageSections.map((sec, i) => (
           <section key={`${sec.name}-${i}`} className="vw-section">
-            <h3 className="vw-section-title">{sec.name} <span>{groupTotals.get(sec.name)}</span></h3>
+            {sec.name && <h3 className="vw-section-title">{sec.name} <span>{groupTotals.get(sec.name)}</span></h3>}
             <div className="vw-grid" style={gridStyle}>
-              {sec.items.map((r) => (
-                <Card key={r.key} r={r} playing={playingKey === r.key} onPlay={play} onCopy={copyConfig} />
+              {sec.items.map((r, idx) => (
+                <Card key={`${uidOf(r)}#${idx}`} r={r} playing={playingKey === uidOf(r)} onPlay={play} onCopy={copyConfig} />
               ))}
             </div>
           </section>
@@ -288,11 +355,11 @@ const Card = memo(function Card({ r, playing, onPlay, onCopy }: {
 
   return (
     <article className={`vw-card${r.clip?.status === "error" || !r.clip ? " vw-disabled" : ""}`}>
+      <span className="vw-badge">{r.provider}</span>
       <div className="vw-card-top">
         <button className="vw-play" disabled={disabled} onClick={() => onPlay(r)}
                 aria-label={`Play ${r.display_name}`}>{playing ? "❚❚" : "▶"}</button>
-        <div className="vw-name">{r.display_name}</div>
-        <span className="vw-badge">{r.provider}</span>
+        <div className="vw-name" title={r.display_name}>{r.display_name}</div>
       </div>
       <div className="vw-meta">
         <span className="vw-lang">{r.primary_language}</span>
@@ -354,4 +421,11 @@ function Select({ label, value, onChange, opts }:
 
 function uniq(xs?: string[]): string[] {
   return [...new Set((xs ?? []).filter(Boolean))].sort();
+}
+
+// Stable per-voice identity. The catalog `key` (<engine>/<voice_id>) is NOT unique — a voice with
+// multiple models repeats it (e.g. rime/abbie under "mist" and "mistv2") — so append the model for
+// React keys, play-state, and allowlist disambiguation.
+function uidOf(r: VoiceRow): string {
+  return r.model ? `${r.key}:${r.model}` : r.key;
 }
