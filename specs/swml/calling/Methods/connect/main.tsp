@@ -18,6 +18,8 @@ union ValidConfirmMethods {
   StopRecordCall,
   Tap,
   StopTap,
+  Stream,
+  StopStream,
   SendDigits,
   SendSMS,
   Denoise,
