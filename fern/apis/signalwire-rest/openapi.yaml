@@ -328,6 +328,7 @@ paths:
         | `calling.end` | Terminate an active call immediately |
         | `calling.transfer` | Transfer a call to a new destination (SIP URI, phone number, or inline SWML) |
         | `calling.disconnect` | Disconnect bridged calls without hanging up either leg |
+        | `calling.join_conference` | Join the call to an ad-hoc audio conference, optionally attaching a WebSocket stream |
         | `calling.play` | Play audio, TTS, silence, or ringtone to a call |
         | `calling.play.pause` | Pause active playback |
         | `calling.play.resume` | Resume paused playback |
@@ -692,6 +693,21 @@ paths:
                   id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
                   params:
                     control_id: tap-control-1
+              calling.join_conference:
+                summary: calling.join_conference
+                description: Join a conference and attach a bidirectional WebSocket stream
+                value:
+                  command: calling.join_conference
+                  id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                  params:
+                    name: team_meeting
+                    beep: onEnter
+                    start_on_enter: true
+                    stream:
+                      url: wss://example.com/conference-audio
+                      codec: PCMU
+                      realtime: true
+                      status_url: https://example.com/stream-status
               calling.transcribe:
                 summary: calling.transcribe
                 description: Start background transcription on an active call
@@ -16175,6 +16191,185 @@ components:
       unevaluatedProperties:
         not: {}
       title: calling.ai_hold
+    Calling.CallJoinConferenceRequest:
+      type: object
+      required:
+        - id
+        - command
+        - params
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: The unique identifying ID of a existing call.
+          examples:
+            - 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        command:
+          type: string
+          enum:
+            - calling.join_conference
+          description: The `calling.join_conference` command joins the call to an ad-hoc audio conference.
+          examples:
+            - calling.join_conference
+        params:
+          type: object
+          properties:
+            name:
+              type: string
+              description: Name of the conference. All calls joining the same name are placed in the same conference.
+              examples:
+                - team_meeting
+            muted:
+              type: boolean
+              description: Whether to join the conference in a muted state.
+              examples:
+                - false
+            beep:
+              type: string
+              enum:
+                - 'true'
+                - 'false'
+                - onEnter
+                - onExit
+              description: Sets the behavior of the beep sound when joining or leaving the conference.
+              examples:
+                - onEnter
+            start_on_enter:
+              type: boolean
+              description: Start the conference when this participant joins, without waiting for other participants.
+              examples:
+                - true
+            end_on_exit:
+              type: boolean
+              description: End the conference when this participant leaves, without waiting for other participants.
+              examples:
+                - false
+            wait_url:
+              type: string
+              format: uri
+              description: HTTP or HTTPS URL to fetch audio to play while waiting for the conference to start. Default hold music is played if not set.
+              examples:
+                - https://example.com/hold-music.mp3
+            max_participants:
+              type: integer
+              description: The maximum number of participants allowed in the conference.
+              examples:
+                - 50
+            record:
+              type: string
+              enum:
+                - do-not-record
+                - record-from-start
+              description: Enables or disables recording of the conference.
+              examples:
+                - record-from-start
+            region:
+              type: string
+              enum:
+                - global
+                - us
+                - eu
+                - ch
+              description: The geographical region where the conference is hosted.
+              examples:
+                - us
+            trim:
+              type: string
+              enum:
+                - trim-silence
+                - do-not-trim
+              description: Whether to trim silence from the start of the conference recording.
+              examples:
+                - trim-silence
+            acl:
+              type: string
+              enum:
+                - private
+                - public-read
+              description: Access control level for the conference.
+              examples:
+                - private
+            coach:
+              type: string
+              description: Call SID of a call currently connected to an in-progress conference. The coach can hear but not be heard (coaching mode).
+              examples:
+                - b3877ee3-6f3c-4985-8066-6d24e3f65e12
+            status_callback_event:
+              type: string
+              description: |-
+                Space-separated list of one or more events to send to the status callback URL.
+                Possible values: `start`, `end`, `join`, `leave`, `mute`, `hold`, `modify`, `speaker`, `announcement`.
+              examples:
+                - join leave
+            status_callback_event_type:
+              type: string
+              enum:
+                - cxml
+                - laml
+                - relay
+              description: Content type for status callback requests.
+              examples:
+                - relay
+            status_callback:
+              type: string
+              format: uri
+              description: HTTP or HTTPS URL to which status events will be sent.
+              examples:
+                - https://example.com/conference-status
+            status_callback_method:
+              type: string
+              enum:
+                - GET
+                - POST
+              description: The HTTP method to use when sending status events to the status callback URL.
+              examples:
+                - POST
+            recording_status_callback_event:
+              type: string
+              description: |-
+                Space-separated list of one or more events to send to the recording status callback URL.
+                Possible values: `in-progress`, `completed`, `absent`.
+              examples:
+                - completed
+            recording_status_callback_event_type:
+              type: string
+              enum:
+                - cxml
+                - laml
+                - relay
+              description: Content type for recording status callback requests.
+              examples:
+                - relay
+            recording_status_callback:
+              type: string
+              format: uri
+              description: HTTP or HTTPS URL to which recording status events will be sent.
+              examples:
+                - https://example.com/recording-status
+            recording_status_callback_method:
+              type: string
+              enum:
+                - GET
+                - POST
+              description: The HTTP method to use when sending recording status events to the recording status callback URL.
+              examples:
+                - POST
+            stream:
+              allOf:
+                - $ref: '#/components/schemas/Calling.ConferenceStreamParams'
+              description: Attach a bidirectional WebSocket stream to the conference audio.
+          required:
+            - name
+          unevaluatedProperties:
+            not: {}
+          description: An object of parameters that will be utilized by the active command.
+      unevaluatedProperties:
+        not: {}
+      description: |-
+        Join an ad-hoc audio conference. The conference is created automatically if it
+        does not already exist; multiple calls join the same conference by `name`.
+        Optionally attach a bidirectional WebSocket `stream` to the conference audio.
+      title: calling.join_conference
     Calling.CallLeg:
       type: object
       required:
@@ -16927,6 +17122,7 @@ components:
         - $ref: '#/components/schemas/Calling.CallTranscribeStopRequest'
         - $ref: '#/components/schemas/Calling.CallStreamRequest'
         - $ref: '#/components/schemas/Calling.CallStreamStopRequest'
+        - $ref: '#/components/schemas/Calling.CallJoinConferenceRequest'
         - $ref: '#/components/schemas/Calling.CallDenoiseRequest'
         - $ref: '#/components/schemas/Calling.CallDenoiseStopRequest'
         - $ref: '#/components/schemas/Calling.CallLiveTranscribeRequest'
@@ -16967,6 +17163,7 @@ components:
           calling.transcribe.stop: '#/components/schemas/Calling.CallTranscribeStopRequest'
           calling.stream: '#/components/schemas/Calling.CallStreamRequest'
           calling.stream.stop: '#/components/schemas/Calling.CallStreamStopRequest'
+          calling.join_conference: '#/components/schemas/Calling.CallJoinConferenceRequest'
           calling.denoise: '#/components/schemas/Calling.CallDenoiseRequest'
           calling.denoise.stop: '#/components/schemas/Calling.CallDenoiseStopRequest'
           calling.live_transcribe: '#/components/schemas/Calling.CallLiveTranscribeRequest'
@@ -17703,6 +17900,59 @@ components:
       unevaluatedProperties:
         not: {}
       description: Parameters for collecting speech input.
+    Calling.ConferenceStreamParams:
+      type: object
+      required:
+        - url
+      properties:
+        url:
+          type: string
+          format: uri
+          description: Secure WebSocket URL to stream conference audio to. Must start with `wss://` (TLS is required; plain `ws://` is rejected).
+          examples:
+            - wss://example.com/conference-audio
+        name:
+          type: string
+          description: Optional human-readable name to identify the stream at the endpoint.
+          examples:
+            - conference-audio
+        codec:
+          type: string
+          description: Audio codec to request. Freeform; endpoint-specific. Common values include `PCMU`, `PCMA`, `G722`, `L16`.
+          examples:
+            - PCMU
+        realtime:
+          type: boolean
+          description: When `true`, enables bidirectional audio so your endpoint can stream audio back into the conference (not just receive it).
+          examples:
+            - true
+        authorization_bearer_token:
+          type: string
+          description: 'Bearer token included as `Authorization: Bearer <token>` when establishing the WebSocket connection.'
+          examples:
+            - my-secret-token
+        custom_parameters:
+          type: object
+          unevaluatedProperties: {}
+          description: Arbitrary JSON object passed through to the WebSocket endpoint as connection metadata.
+          examples:
+            - session_id: abc123
+        status_url:
+          type: string
+          format: uri
+          description: HTTP or HTTPS URL that receives stream lifecycle webhooks.
+          examples:
+            - https://example.com/stream_callback
+        status_url_method:
+          allOf:
+            - $ref: '#/components/schemas/Calling.StreamStatusUrlMethod'
+          description: HTTP method used for the `status_url` webhook.
+          examples:
+            - POST
+          default: POST
+      unevaluatedProperties:
+        not: {}
+      description: Stream configuration for attaching a WebSocket stream to a conference.
     Calling.DetectConfig:
       type: object
       required:
@@ -18660,6 +18910,111 @@ components:
       unevaluatedProperties:
         not: {}
       description: SIP REFER device parameters.
+    Calling.StreamStatusCallbackPayload:
+      type: object
+      required:
+        - event_type
+        - event_channel
+        - timestamp
+        - project_id
+        - space_id
+        - params
+      properties:
+        event_type:
+          type: string
+          enum:
+            - calling.call.stream
+          description: The type of event. Always `calling.call.stream` for stream status callbacks.
+          examples:
+            - calling.call.stream
+        event_channel:
+          type: string
+          description: The channel the event was delivered on.
+          examples:
+            - swml:451ed9ff-e568-4222-8af9-4f9ab7428d09
+        timestamp:
+          type: number
+          description: When the event was sent, as a Unix timestamp in seconds.
+          examples:
+            - 1777565701.5623918
+        project_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Your project ID.
+          examples:
+            - 4d0d6f16-5881-4fcc-92a4-02c51a91954d
+        space_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Your Space ID.
+          examples:
+            - 451ed9ff-e568-4222-8af9-4f9ab7428d09
+        params:
+          type: object
+          properties:
+            call_id:
+              allOf:
+                - $ref: '#/components/schemas/uuid'
+              description: ID of the call being streamed.
+              examples:
+                - 2e1e66e5-5d07-413d-9668-55542992eec0
+            node_id:
+              allOf:
+                - $ref: '#/components/schemas/uuid'
+              description: ID of the node the call is on.
+              examples:
+                - a0d4e6e5-5d07-413d-9668-55542992eec0
+            segment_id:
+              allOf:
+                - $ref: '#/components/schemas/uuid'
+              description: ID of the call segment being streamed.
+              examples:
+                - 2e1e66e5-5d07-413d-9668-55542992eec0
+            tag:
+              type: string
+              description: The tag associated with the call. Present only when a tag was set on the call.
+              examples:
+                - my-tag
+            control_id:
+              type: string
+              description: The control ID used to control the stream, as set in `calling.stream`.
+              examples:
+                - stream-control-1
+            state:
+              type: string
+              enum:
+                - streaming
+                - finished
+              description: The stream state. `streaming` when the stream starts, `finished` when it ends.
+              examples:
+                - streaming
+            url:
+              type: string
+              description: The WebSocket URL the audio is being streamed to.
+              examples:
+                - wss://example.com/stream
+            name:
+              type: string
+              description: The friendly name of the stream. Present when a `name` was set on the stream.
+              examples:
+                - customer-support-recording
+          required:
+            - call_id
+            - node_id
+            - segment_id
+            - control_id
+            - state
+            - url
+          unevaluatedProperties:
+            not: {}
+          description: Details about the stream.
+      unevaluatedProperties:
+        not: {}
+      description: |-
+        Sent to your `status_url` when a background audio stream started with
+        `calling.stream` changes state. `params.state` is `streaming` when the stream
+        starts and `finished` when it ends.
+      title: Stream status callback
     Calling.StreamStatusUrlMethod:
       type: string
       enum:
@@ -35460,9 +35815,14 @@ components:
           default: do-not-record
         region:
           type: string
+          enum:
+            - global
+            - us
+            - eu
+            - ch
           description: Specifies the geographical region where the conference will be hosted. Default not set
           examples:
-            - us-east
+            - us
         trim:
           type: string
           enum:
@@ -35481,19 +35841,20 @@ components:
             - b3877ee3-6f3c-4985-8066-6d24e3f65e12
         status_callback_event:
           type: string
-          enum:
-            - start
-            - end
-            - join
-            - leave
-            - mute
-            - hold
-            - modify
-            - speaker
-            - announcement
-          description: The events to listen for and send to the status callback URL. Default not set
+          description: |-
+            Space-separated list of one or more events to send to the status callback URL.
+            Possible values: `start`, `end`, `join`, `leave`, `mute`, `hold`, `modify`, `speaker`, `announcement`. Default not set
           examples:
-            - join
+            - join leave
+        status_callback_event_type:
+          type: string
+          enum:
+            - cxml
+            - laml
+            - relay
+          description: The content type used when sending status events to the status callback URL. Default not set
+          examples:
+            - relay
         status_callback:
           type: string
           format: uri
@@ -35526,13 +35887,20 @@ components:
           default: POST
         recording_status_callback_event:
           type: string
-          enum:
-            - in-progress
-            - completed
-            - absent
-          description: The events to listen for and send to the recording status callback URL. Default not set
+          description: |-
+            Space-separated list of one or more events to send to the recording status callback URL.
+            Possible values: `in-progress`, `completed`, `absent`. Default not set
           examples:
             - completed
+        recording_status_callback_event_type:
+          type: string
+          enum:
+            - cxml
+            - laml
+            - relay
+          description: The content type used when sending recording status events to the recording status callback URL. Default not set
+          examples:
+            - relay
         result:
           anyOf:
             - type: object
@@ -35572,9 +35940,75 @@ components:
             The `switch` object allows for conditional execution based on the result of the conference, while
             the `cond` array allows for multiple conditions to be checked in sequence.
             If neither is provided, the default action will be to end the conference.
+        stream:
+          allOf:
+            - $ref: '#/components/schemas/SWML.Calling.JoinConferenceStream'
+          description: |-
+            Attach a bidirectional WebSocket stream to the conference. Conference audio is streamed to
+            the `url`, enabling real-time audio processing, transcription, or AI agents that listen to
+            the conference. Uses the same stream schema as the `stream` device type in `connect`.
       unevaluatedProperties:
         not: {}
       title: JoinConferenceObject object
+    SWML.Calling.JoinConferenceStream:
+      type: object
+      required:
+        - url
+      properties:
+        url:
+          type: string
+          format: uri
+          description: Secure WebSocket URL (must start with `wss://`) that the conference audio is streamed to. Plain `ws://` is not supported.
+          examples:
+            - wss://example.com/conference-audio
+        name:
+          type: string
+          description: A friendly name to identify the stream at the WebSocket endpoint. Default not set
+          examples:
+            - conference-audio
+        codec:
+          type: string
+          description: |-
+            Audio codec for the streamed audio. Supported values: `PCMU`, `PCMA`, `G722`, `L16`.
+            Codec can include rate and ptime modifiers (e.g., `PCMU@40i`, `L16@24000h@40i`). Default not set
+          examples:
+            - PCMU
+        status_url:
+          type: string
+          format: uri
+          description: HTTP or HTTPS URL to which stream status events will be sent. Default not set
+          examples:
+            - https://example.com/stream-status
+        status_url_method:
+          type: string
+          enum:
+            - GET
+            - POST
+          description: The HTTP method to use when sending stream status events to the status URL. Default `"POST"`.
+          examples:
+            - POST
+          default: POST
+        realtime:
+          anyOf:
+            - type: boolean
+            - $ref: '#/components/schemas/SWMLVar'
+          description: When `true`, enables bidirectional audio so your endpoint can stream audio back into the conference (not just receive it). Default `false`.
+          examples:
+            - true
+          default: false
+        authorization_bearer_token:
+          type: string
+          description: Bearer token sent in the `Authorization` header when the WebSocket connection is opened, so your endpoint can authenticate the request. Default not set
+          examples:
+            - my-secret-token
+        custom_parameters:
+          type: object
+          unevaluatedProperties:
+            type: string
+          description: Custom key-value pairs delivered to your WebSocket endpoint when the stream connects. Use them to pass context such as a session or customer ID. Default not set
+      unevaluatedProperties:
+        not: {}
+      title: JoinConferenceStream object
     SWML.Calling.JoinRoom:
       type: object
       required:
@@ -37508,7 +37942,9 @@ components:
         - $ref: '#/components/schemas/SWML.Calling.SIPRefer'
         - $ref: '#/components/schemas/SWML.Calling.StopDenoise'
         - $ref: '#/components/schemas/SWML.Calling.StopRecordCall'
+        - $ref: '#/components/schemas/SWML.Calling.StopStream'
         - $ref: '#/components/schemas/SWML.Calling.StopTap'
+        - $ref: '#/components/schemas/SWML.Calling.Stream'
         - $ref: '#/components/schemas/SWML.Calling.Switch'
         - $ref: '#/components/schemas/SWML.Calling.Tap'
         - $ref: '#/components/schemas/SWML.Calling.Transcribe'
@@ -38043,6 +38479,28 @@ components:
       unevaluatedProperties:
         not: {}
       title: stop_record_call Method
+    SWML.Calling.StopStream:
+      type: object
+      required:
+        - stop_stream
+      properties:
+        stop_stream:
+          type: object
+          properties:
+            control_id:
+              type: string
+              description: |-
+                ID of the stream to stop.
+                If not set, it will stop the most recent stream started.
+              examples:
+                - stream_001
+          unevaluatedProperties:
+            not: {}
+          description: Stop an active audio stream.
+          title: stop_stream
+      unevaluatedProperties:
+        not: {}
+      title: stop_stream Method
     SWML.Calling.StopTap:
       type: object
       required:
@@ -38065,6 +38523,87 @@ components:
       unevaluatedProperties:
         not: {}
       title: stop_tap Method
+    SWML.Calling.Stream:
+      type: object
+      required:
+        - stream
+      properties:
+        stream:
+          type: object
+          properties:
+            url:
+              type: string
+              description: Secure WebSocket URI (wss://) to stream the call audio to.
+              examples:
+                - wss://example.com/audio-stream
+            control_id:
+              type: string
+              description: Identifier for this stream to use with `stop_stream`. If not set, one is generated and stored in the `stream_control_id` variable.
+              examples:
+                - stream_001
+            name:
+              type: string
+              description: Friendly name for the stream.
+              examples:
+                - my-stream
+            track:
+              type: string
+              enum:
+                - inbound_track
+                - outbound_track
+                - both_tracks
+              description: |-
+                Audio track to stream:
+                    `inbound_track` for what the caller says,
+                    `outbound_track` for what the caller hears,
+                    `both_tracks` for both.
+                    Default is `"inbound_track"`.
+              examples:
+                - both_tracks
+              default: inbound_track
+            codec:
+              type: string
+              description: |-
+                Codec to use for the streamed audio. Freeform and endpoint-specific.
+                Common values include `PCMU`, `PCMA`, and `OPUS`.
+              examples:
+                - PCMU
+            status_url:
+              type: string
+              format: uri
+              description: HTTP or HTTPS URL to deliver stream status events.
+              examples:
+                - https://example.com/stream-status
+            status_url_method:
+              type: string
+              enum:
+                - GET
+                - POST
+              description: |-
+                HTTP method used to deliver stream status events to `status_url`.
+                Possible Values: [`GET`, `POST`]. Default is `"POST"`.
+              examples:
+                - POST
+              default: POST
+            authorization_bearer_token:
+              type: string
+              description: Bearer token sent as an `Authorization` header during the WebSocket handshake.
+              examples:
+                - my-secret-token
+            custom_parameters:
+              type: object
+              unevaluatedProperties:
+                type: string
+              description: Custom key-value pairs sent to the WebSocket endpoint in the start message.
+          required:
+            - url
+          unevaluatedProperties:
+            not: {}
+          description: Start a background audio stream from the call to a WebSocket endpoint. Runs alongside the call as an independent operation.
+          title: stream
+      unevaluatedProperties:
+        not: {}
+      title: stream Method
     SWML.Calling.StringFormat:
       type: string
       enum:
@@ -38910,6 +39449,8 @@ components:
         - $ref: '#/components/schemas/SWML.Calling.StopRecordCall'
         - $ref: '#/components/schemas/SWML.Calling.Tap'
         - $ref: '#/components/schemas/SWML.Calling.StopTap'
+        - $ref: '#/components/schemas/SWML.Calling.Stream'
+        - $ref: '#/components/schemas/SWML.Calling.StopStream'
         - $ref: '#/components/schemas/SWML.Calling.SendDigits'
         - $ref: '#/components/schemas/SWML.Calling.SendSMS'
         - $ref: '#/components/schemas/SWML.Calling.Denoise'
@@ -46839,6 +47380,114 @@ servers:
         default: '{Your_Space_Name}'
         description: Your SignalWire Space name
 webhooks:
+  streamStatusCallback:
+    post:
+      operationId: stream_status_callback
+      summary: Stream status callback
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                event_type:
+                  type: string
+                  enum:
+                    - calling.call.stream
+                  description: The type of event. Always `calling.call.stream` for stream status callbacks.
+                  example: calling.call.stream
+                event_channel:
+                  type: string
+                  description: The channel the event was delivered on.
+                  example: swml:451ed9ff-e568-4222-8af9-4f9ab7428d09
+                timestamp:
+                  type: number
+                  description: When the event was sent, as a Unix timestamp in seconds.
+                  example: 1777565701.5623918
+                project_id:
+                  type: string
+                  format: uuid
+                  description: Your project ID.
+                  example: 4d0d6f16-5881-4fcc-92a4-02c51a91954d
+                space_id:
+                  type: string
+                  format: uuid
+                  description: Your Space ID.
+                  example: 451ed9ff-e568-4222-8af9-4f9ab7428d09
+                params:
+                  type: object
+                  properties:
+                    call_id:
+                      type: string
+                      format: uuid
+                      description: ID of the call being streamed.
+                      example: 2e1e66e5-5d07-413d-9668-55542992eec0
+                    node_id:
+                      type: string
+                      format: uuid
+                      description: ID of the node the call is on.
+                      example: a0d4e6e5-5d07-413d-9668-55542992eec0
+                    segment_id:
+                      type: string
+                      format: uuid
+                      description: ID of the call segment being streamed.
+                      example: 2e1e66e5-5d07-413d-9668-55542992eec0
+                    tag:
+                      type: string
+                      description: The tag associated with the call. Present only when a tag was set on the call.
+                      example: my-tag
+                    control_id:
+                      type: string
+                      description: The control ID used to control the stream, as set in `calling.stream`.
+                      example: stream-control-1
+                    state:
+                      type: string
+                      enum:
+                        - streaming
+                        - finished
+                      description: The stream state. `streaming` when the stream starts, `finished` when it ends.
+                      example: streaming
+                    url:
+                      type: string
+                      description: The WebSocket URL the audio is being streamed to.
+                      example: wss://example.com/stream
+                    name:
+                      type: string
+                      description: The friendly name of the stream. Present when a `name` was set on the stream.
+                      example: customer-support-recording
+                  required:
+                    - call_id
+                    - node_id
+                    - segment_id
+                    - control_id
+                    - state
+                    - url
+                  unevaluatedProperties:
+                    not: {}
+                  description: Details about the stream.
+              required:
+                - event_type
+                - event_channel
+                - timestamp
+                - project_id
+                - space_id
+                - params
+              unevaluatedProperties:
+                not: {}
+              description: |-
+                Sent to your `status_url` when a background audio stream started with
+                `calling.stream` changes state. `params.state` is `streaming` when the stream
+                starts and `finished` when it ends.
+      responses:
+        '200':
+          description: Webhook received
+      description: |-
+        Sent to your `status_url` when a background audio stream started with
+        `calling.stream` changes state. `params.state` is `streaming` when the stream
+        starts and `finished` when it ends.
+      tags:
+        - Calls
   transcribeStatusCallback:
     post:
       operationId: transcribe_status_callback
