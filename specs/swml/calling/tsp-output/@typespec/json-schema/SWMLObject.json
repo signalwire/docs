@@ -4242,9 +4242,26 @@
                     "description": "Enables or disables recording of the conference. Default `\"do-not-record\"`."
                 },
                 "region": {
-                    "type": "string",
+                    "anyOf": [
+                        {
+                            "type": "string",
+                            "const": "global"
+                        },
+                        {
+                            "type": "string",
+                            "const": "us"
+                        },
+                        {
+                            "type": "string",
+                            "const": "eu"
+                        },
+                        {
+                            "type": "string",
+                            "const": "ch"
+                        }
+                    ],
                     "examples": [
-                        "us-east"
+                        "us"
                     ],
                     "description": "Specifies the geographical region where the conference will be hosted. Default not set"
                 },
@@ -4273,48 +4290,31 @@
                     "description": "Coach accepts a call SID of a call that is currently connected to an in-progress conference.\nSpecifying a call SID that does not exist or is no longer connected will result in a failure."
                 },
                 "status_callback_event": {
+                    "type": "string",
+                    "examples": [
+                        "join leave"
+                    ],
+                    "description": "Space-separated list of one or more events to send to the status callback URL.\nPossible values: `start`, `end`, `join`, `leave`, `mute`, `hold`, `modify`, `speaker`, `announcement`. Default not set"
+                },
+                "status_callback_event_type": {
                     "anyOf": [
                         {
                             "type": "string",
-                            "const": "start"
+                            "const": "cxml"
                         },
                         {
                             "type": "string",
-                            "const": "end"
+                            "const": "laml"
                         },
                         {
                             "type": "string",
-                            "const": "join"
-                        },
-                        {
-                            "type": "string",
-                            "const": "leave"
-                        },
-                        {
-                            "type": "string",
-                            "const": "mute"
-                        },
-                        {
-                            "type": "string",
-                            "const": "hold"
-                        },
-                        {
-                            "type": "string",
-                            "const": "modify"
-                        },
-                        {
-                            "type": "string",
-                            "const": "speaker"
-                        },
-                        {
-                            "type": "string",
-                            "const": "announcement"
+                            "const": "relay"
                         }
                     ],
                     "examples": [
-                        "join"
+                        "relay"
                     ],
-                    "description": "The events to listen for and send to the status callback URL. Default not set"
+                    "description": "The content type used when sending status events to the status callback URL. Default not set"
                 },
                 "status_callback": {
                     "type": "string",
@@ -4367,24 +4367,31 @@
                     "description": "The HTTP method to use when sending recording status events to the recording status callback URL. Default `\"POST\"`."
                 },
                 "recording_status_callback_event": {
-                    "anyOf": [
-                        {
-                            "type": "string",
-                            "const": "in-progress"
-                        },
-                        {
-                            "type": "string",
-                            "const": "completed"
-                        },
-                        {
-                            "type": "string",
-                            "const": "absent"
-                        }
-                    ],
+                    "type": "string",
                     "examples": [
                         "completed"
                     ],
-                    "description": "The events to listen for and send to the recording status callback URL. Default not set"
+                    "description": "Space-separated list of one or more events to send to the recording status callback URL.\nPossible values: `in-progress`, `completed`, `absent`. Default not set"
+                },
+                "recording_status_callback_event_type": {
+                    "anyOf": [
+                        {
+                            "type": "string",
+                            "const": "cxml"
+                        },
+                        {
+                            "type": "string",
+                            "const": "laml"
+                        },
+                        {
+                            "type": "string",
+                            "const": "relay"
+                        }
+                    ],
+                    "examples": [
+                        "relay"
+                    ],
+                    "description": "The content type used when sending recording status events to the recording status callback URL. Default not set"
                 },
                 "result": {
                     "anyOf": [
@@ -4437,6 +4444,10 @@
                         }
                     ],
                     "description": "Allows the user to specify a custom action to be executed when the conference result is returned (typically when it has ended).\nThe actions can a `switch` object or a `cond` array.\nThe `switch` object allows for conditional execution based on the result of the conference, while\nthe `cond` array allows for multiple conditions to be checked in sequence.\nIf neither is provided, the default action will be to end the conference."
+                },
+                "stream": {
+                    "$ref": "#/$defs/JoinConferenceStream",
+                    "description": "Attach a bidirectional WebSocket stream to the conference. Conference audio is streamed to\nthe `url`, enabling real-time audio processing, transcription, or AI agents that listen to\nthe conference. Uses the same stream schema as the `stream` device type in `connect`."
                 }
             },
             "required": [
@@ -7453,6 +7464,91 @@
                 "not": {}
             },
             "title": "InjectAction object"
+        },
+        "JoinConferenceStream": {
+            "type": "object",
+            "properties": {
+                "url": {
+                    "type": "string",
+                    "format": "uri",
+                    "examples": [
+                        "wss://example.com/conference-audio"
+                    ],
+                    "description": "Secure WebSocket URL (must start with `wss://`) that the conference audio is streamed to. Plain `ws://` is not supported."
+                },
+                "name": {
+                    "type": "string",
+                    "examples": [
+                        "conference-audio"
+                    ],
+                    "description": "A friendly name to identify the stream at the WebSocket endpoint. Default not set"
+                },
+                "codec": {
+                    "type": "string",
+                    "examples": [
+                        "PCMU"
+                    ],
+                    "description": "Audio codec for the streamed audio. Supported values: `PCMU`, `PCMA`, `G722`, `L16`.\nCodec can include rate and ptime modifiers (e.g., `PCMU@40i`, `L16@24000h@40i`). Default not set"
+                },
+                "status_url": {
+                    "type": "string",
+                    "format": "uri",
+                    "examples": [
+                        "https://example.com/stream-status"
+                    ],
+                    "description": "HTTP or HTTPS URL to which stream status events will be sent. Default not set"
+                },
+                "status_url_method": {
+                    "anyOf": [
+                        {
+                            "type": "string",
+                            "const": "GET"
+                        },
+                        {
+                            "type": "string",
+                            "const": "POST"
+                        }
+                    ],
+                    "default": "POST",
+                    "examples": [
+                        "POST"
+                    ],
+                    "description": "The HTTP method to use when sending stream status events to the status URL. Default `\"POST\"`."
+                },
+                "realtime": {
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "default": false,
+                    "examples": [
+                        true
+                    ],
+                    "description": "When `true`, enables bidirectional audio so your endpoint can stream audio back into the conference (not just receive it). Default `false`."
+                },
+                "authorization_bearer_token": {
+                    "type": "string",
+                    "examples": [
+                        "my-secret-token"
+                    ],
+                    "description": "Bearer token sent in the `Authorization` header when the WebSocket connection is opened, so your endpoint can authenticate the request. Default not set"
+                },
+                "custom_parameters": {
+                    "$ref": "#/$defs/RecordString",
+                    "description": "Custom key-value pairs delivered to your WebSocket endpoint when the stream connects. Use them to pass context such as a session or customer ID. Default not set"
+                }
+            },
+            "required": [
+                "url"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "title": "JoinConferenceStream object"
         },
         "PayPromptAction": {
             "anyOf": [
