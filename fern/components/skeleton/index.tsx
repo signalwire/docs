@@ -1,11 +1,11 @@
 import type { CSSProperties } from "react";
 
 // Reusable loading-skeleton primitive for custom MDX components that fetch data at runtime.
-// Compose a few of these to mimic the shape of the content that's loading. Pairs with
-// skeleton.css (loaded via docs.yml `css:` — Fern's component bundler doesn't process CSS imports).
+// Compose a few of these to mimic the shape of the content that's loading. Pairs with this folder's
+// styles.css (loaded via docs.yml `css:` — Fern's component bundler doesn't process CSS imports).
 // Theme-aware (light/dark) through Fern's grayscale vars.
 //
-//   import { Skeleton, SkeletonText } from "@/components/skeleton";
+//   import { Skeleton, SkeletonText } from "@/components/index";
 //   if (!data) return <Skeleton width="60%" height={20} />;
 
 export interface SkeletonProps {

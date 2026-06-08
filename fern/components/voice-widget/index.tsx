@@ -5,8 +5,8 @@ import { Skeleton } from "../skeleton/index";
 
 // Ported from @signalwire/tts-voice-widget for embedding as a Fern MDX component.
 // Pure data consumer: fetches catalog.json + manifest.json produced by the TTS pipeline and plays
-// the pre-synthesized sample clips. Styles live in voice-widget.css + voice-widget-overrides.css,
-// loaded via docs.yml `css:` (Fern's component bundler does not process CSS imports).
+// the pre-synthesized sample clips. Styles live in this folder's styles.css, loaded via docs.yml
+// `css:` (Fern's component bundler does not process CSS imports).
 
 // Single source of truth for where the asset bundle (catalog.json + manifest.json + audio/) is
 // hosted. The bundle cannot live in fern/assets — Fern only serves assets it statically discovers
@@ -369,8 +369,11 @@ const Card = memo(function Card({ r, playing, onPlay, onCopy }: {
       {r.clip?.sample_text && <p className="vw-sample">“{r.clip.sample_text}”</p>}
       {(!r.clip || r.clip.status === "error") &&
         <p className="vw-note">{r.clip?.error ?? "no sample (provider key missing)"}</p>}
+      {/* Both labels are always in the DOM and grid-stacked (see CSS) so the button keeps the width
+          of the wider one — no layout shift when it swaps to the copied state. */}
       <button className={`vw-copy${copied ? " vw-copied" : ""}`} onClick={handleCopy} aria-live="polite">
-        {copied ? "copied ✓" : "copy config"}
+        <span className="vw-copy-default">copy config</span>
+        <span className="vw-copy-done">✓ copied</span>
       </button>
     </article>
   );
