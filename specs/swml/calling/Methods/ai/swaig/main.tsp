@@ -4,6 +4,7 @@ import "./native_functions.tsp";
 import "./includes.tsp";
 import "./functions";
 import "./internal_filler.tsp";
+import "./mcp_servers.tsp";
 
 using TypeSpec.JsonSchema;
 
@@ -13,6 +14,9 @@ namespace SWML.Calling;
 model SWAIG {
   @doc("Default settings for all SWAIG functions. If `defaults` is not set, settings may be set in each function object. Default is not set.")
   defaults?: SWAIGDefaults;
+
+  @doc("An array of MCP (Model Context Protocol) servers whose tools and resources are made available to the AI agent. Each server's tools are discovered when the agent starts and registered as callable functions.")
+  mcp_servers?: MCPServer[];
 
   @doc("Prebuilt functions the AI agent is able to call from this list of available native functions")
   native_functions?: SWAIGNativeFunction[];

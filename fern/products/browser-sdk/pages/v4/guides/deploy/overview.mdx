@@ -1,0 +1,66 @@
+---
+title: "Overview"
+slug: /guides/deploy
+sidebar-title: "Overview"
+position: 1
+max-toc-depth: 3
+---
+
+The Browser SDK runs entirely in the browser — there's no server-side
+runtime to deploy. What you *do* deploy is the host application that
+loads it, plus the small backend surface that mints tokens for your
+users. This section covers the four things that consistently come up
+between "it works on my laptop" and "it works in production":
+
+<CardGroup cols={2}>
+  <Card title="Framework integration" href="/docs/browser-sdk/v4/guides/framework-integration">
+    Idiomatic patterns for wrapping the SDK in React, Vue, Svelte, and
+    Angular — managing client lifetimes, subscribing observables into
+    component state, and avoiding double-mount pitfalls in dev mode.
+  </Card>
+  <Card title="SSR & Next.js" href="/docs/browser-sdk/v4/guides/ssr">
+    The SDK is browser-only. Cover dynamic imports, `"use client"`
+    boundaries, and route handlers that mint tokens without leaking
+    your project credentials.
+  </Card>
+  <Card title="Troubleshooting" href="/docs/browser-sdk/v4/guides/troubleshooting">
+    Symptom → cause → fix for the issues that show up most often:
+    expired tokens, black video, autoplay-blocked audio, ICE
+    failures, and browser quirks.
+  </Card>
+</CardGroup>
+
+## What ships where
+
+A Browser SDK app is split between two runtimes:
+
+| Lives in the browser                               | Lives on your backend                            |
+| -------------------------------------------------- | ------------------------------------------------ |
+| `@signalwire/js` (or `@signalwire/web-components`) | Endpoint that mints SATs / embed tokens          |
+| Your UI                                            | Your auth / user system                          |
+| WebRTC peer connection                             | (Optionally) webhook handlers for incoming calls |
+
+**The SDK never sees your SignalWire API credentials.** Project ID and
+auth token live exclusively on the backend; the browser only ever
+holds a short-lived JWT it received from your token endpoint. This is
+the most important invariant to preserve across every framework,
+deployment target, and CDN setup discussed in this section.
+
+## A minimal production topology
+
+```
+┌─────────────────────────┐   1. fetch("/api/sw-token")    ┌──────────────────────────┐
+│  Browser                │ ─────────────────────────────► │  Your backend            │
+│   • @signalwire/js      │                                │   • POST /api/sw-token   │
+│   • Your UI             │ ◄───────────────────────────── │   • mints SAT via REST   │
+│                         │   2. { token, expiry_at }      │   • uses PROJECT creds   │
+│                         │                                │     (env var, secret)    │
+│                         │                                └──────────────────────────┘
+│                         │   3. WebSocket → SignalWire ──►┌──────────────────────────┐
+│                         │                                │  SignalWire              │
+└─────────────────────────┘                                └──────────────────────────┘
+```
+
+Everything else (CDN choice, framework, SSR strategy) is a variation
+on this shape. The remaining pages in this section walk through the
+practical details of each layer.

@@ -1,0 +1,263 @@
+---
+title: "Call Controls"
+slug: /guides/call-controls
+sidebar-title: "Call Controls"
+position: 8
+max-toc-depth: 3
+---
+
+Every control on a call follows the same shape: **call a mutator,
+subscribe to the matching `$` observable for state.** The server is
+the source of truth — a moderator can mute you, the room can lock
+itself, the platform can disconnect. Local state (`let isMuted = …`)
+will drift; the observable won't.
+
+This page covers the pattern. Per-method details live in the
+[reference].
+
+<Info>
+**You'll need an active call.** Call controls operate on a `Call`
+instance — get one of these going first.
+</Info>
+
+<CardGroup cols={3}>
+  <Card title="Set up the client" icon="fa-regular fa-rocket" href="/docs/browser-sdk/v4/guides/overview">
+    Install the SDK and create a `SignalWire` client with a credential provider.
+  </Card>
+  <Card title="Place an outbound call" icon="fa-regular fa-phone-arrow-up-right" href="/docs/browser-sdk/v4/guides/outbound-calls">
+    Dial a destination with `client.dial()` to get a `Call` instance.
+  </Card>
+  <Card title="Answer an inbound call" icon="fa-regular fa-phone-arrow-down-left" href="/docs/browser-sdk/v4/guides/inbound-calls">
+    Subscribe to `client.session.incomingCalls$` and `call.answer()`.
+  </Card>
+</CardGroup>
+
+## The pattern
+
+```js
+call.self$.subscribe((self) => {
+  if (!self) return;
+
+  // Trigger
+  muteBtn.onclick = () => self.toggleMute();
+
+  // Reflect — fires once with the current state, then on every change
+  self.audioMuted$.subscribe((muted) => {
+    muteBtn.classList.toggle("muted", muted);
+    muteBtn.textContent = muted ? "Unmute" : "Mute";
+  });
+});
+```
+
+Every other control is the same shape with different names —
+[`toggleMuteVideo`] / [`videoMuted$`], [`toggleDeaf`] / [`deaf$`],
+[`toggleHandraise`] / [`handraised$`], etc.
+
+Three properties make this work:
+
+- **Toggles are idempotent.** Calling [`toggleMute`] mid-flight is
+  safe — the SDK serializes.
+- **`$` observables emit on subscribe.** The current value arrives
+  immediately; no wait-for-event step.
+- **The mutator only triggers the change; the observable closes the
+  loop.** A moderator-initiated mute that never went through the
+  button still updates the UI, because `audioMuted$` emits.
+
+## Where each control lives
+
+Three objects own the controls:
+
+- **`Call`** — session-level: [hangup][`Call.hangup()`],
+  [send DTMF][`Call.sendDigits()`], [lock][`Call.toggleLock()`],
+  [hold][`Call.toggleHold()`], [transfer][`Call.transfer()`],
+  layout (see [Layouts](/docs/browser-sdk/v4/guides/layouts)).
+- **`SelfParticipant`** (`call.self`) — your own state: mute, deaf,
+  hand raise, [screen share](/docs/browser-sdk/v4/guides/screen-sharing),
+  audio processing, your volume.
+- **`Participant`** (entries in `call.participants$`) — moderation
+  actions on *other* members. Gated by capabilities — see below.
+
+The split mirrors server-side authorization: ending a call needs the
+`end` capability, kicking someone needs `member.remove`, muting
+yourself is unconditional.
+
+## Mute vs. deaf vs. hold
+
+### Mute vs. deaf
+
+[Mute][`audioMuted$`] silences what *you* send. [Deaf][`deaf$`]
+silences what *you* hear. They're independent — you can be deaf
+without being muted (you keep talking, but you can't hear responses).
+Useful when the user steps away briefly without leaving the room.
+
+### Mute vs. hold vs. push-to-talk
+
+Three ways to stop transmitting audio, and they're not interchangeable:
+
+| Action                       | What it does                                       | Latency                          | Use for                       |
+| ---------------------------- | -------------------------------------------------- | -------------------------------- | ----------------------------- |
+| [`toggleMute`][`audioMuted$`] | Disables the audio track server-side               | Round-trip                       | Standard mute button          |
+| [`toggleHold`][`Call.toggleHold()`] | Pauses media transmission for the whole call       | Round-trip                       | "Be right back" / call park   |
+| Push-to-talk (local pipeline) | Sets local mic gain to 0 — track stays alive       | Instant (no round-trip)          | Walkie-talkie UIs             |
+
+For instant talk/silence transitions (e.g. holding spacebar), use
+push-to-talk — mute would feel laggy because the round-trip is visible
+to the user:
+
+```js
+call.enablePushToTalk();
+document.addEventListener("keydown", (e) => {
+  if (e.code === "Space") call.setPushToTalkActive(true);
+});
+document.addEventListener("keyup", (e) => {
+  if (e.code === "Space") call.setPushToTalkActive(false);
+});
+```
+
+The local audio pipeline also gives you [`localAudioLevel$`] for a
+real-time meter and [`localSpeaking$`] for VAD-based speaking
+detection — both are observables of the local mic, computed
+client-side, fast enough for ~30fps UI updates.
+
+## DTMF, timing matters
+
+[`sendDigits`][`Call.sendDigits()`] only succeeds once `status$` is
+`'connected'`. Sending before media is negotiated will fail or be
+dropped:
+
+```js
+import { filter, take } from "rxjs";
+
+call.status$
+  .pipe(filter((s) => s === "connected"), take(1))
+  .subscribe(async () => {
+    await call.sendDigits("1234#");
+  });
+```
+
+For interactive dialpads (digits sent as the user presses), wire
+the button click directly — by that point the call is connected.
+
+## Moderation — check the capability first
+
+Methods on other participants exist (`participant.mute()`,
+`participant.remove()`, `participant.setPosition()`), but calling them
+without the corresponding capability throws server-side. Drive the UI
+off [`SelfCapabilities.member$`]:
+
+```js
+call.self?.capabilities.member$.subscribe((member) => {
+  kickButton.hidden = !member.remove;
+  muteOthersButton.disabled = !member.muteAudio.on;
+});
+```
+
+If the flag is false, hide the button. See
+[Capabilities](/docs/browser-sdk/v4/guides/capabilities) for the
+full model.
+
+## Handling unsuccessful attempts
+
+Most toggles resolve cleanly, but three categories can throw — handle
+them, don't let an unhandled rejection bubble up:
+
+| Source            | When it throws                                                                                  | What to do                                                            |
+| ----------------- | ----------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| Browser permission | `unmuteVideo()` or `selectVideoInputDevice()` after the user denied camera access at the OS level | Catch `NotAllowedError` and prompt the user to re-enable in settings  |
+| Server capability | Moderation methods (`participant.mute()`, `participant.remove()`) without the right capability     | Gate the button on [`SelfCapabilities`] — don't catch, just hide it   |
+| Connection state  | `sendDigits()` before `status$` is `'connected'`, anything after the call has ended                | Subscribe to `status$` and gate calls on `'connected'`                |
+
+Only browser-permission errors need a try/catch on each click.
+Capability errors shouldn't be reachable — gate the button instead.
+Connection-state errors are prevented by waiting on `status$` (see
+[DTMF, timing matters](#dtmf-timing-matters)).
+
+```js
+muteVideoBtn.onclick = async () => {
+  try {
+    await call.self.toggleMuteVideo();
+  } catch (err) {
+    if (err?.name === "NotAllowedError") {
+      showToast("Camera access is blocked. Allow camera in your browser settings.");
+      return;
+    }
+    console.error("Failed to toggle video:", err);
+  }
+};
+```
+
+The pure-mute toggles ([`toggleMute`], [`toggleDeaf`]) don't require
+any browser permission — they only flip server-side state — so they
+won't throw on permission. They can still throw on capability or
+connection state.
+
+## Example: control bar
+
+Every button uses the same mutator + observable shape:
+
+```js
+call.self$.subscribe((self) => {
+  if (!self) return;
+
+  // Triggers
+  muteBtn.onclick   = () => self.toggleMute();
+  videoBtn.onclick  = () => self.toggleMuteVideo();
+  deafBtn.onclick   = () => self.toggleDeaf();
+  handBtn.onclick   = () => self.toggleHandraise();
+  hangupBtn.onclick = () => call.hangup();
+
+  // Reflections
+  self.audioMuted$.subscribe((m)   => muteBtn.classList.toggle("muted", m));
+  self.videoMuted$.subscribe((m)   => videoBtn.classList.toggle("muted", m));
+  self.deaf$.subscribe((d)         => deafBtn.classList.toggle("active", d));
+  self.handraised$.subscribe((h)   => handBtn.classList.toggle("active", h));
+});
+```
+
+Volume sliders, audio-processing toggles, the screen-share button,
+and moderation actions all follow the same shape.
+
+## Reference
+
+For the full surface — every method and every observable — see the
+per-class reference:
+
+- [`Participant`] — mute, deaf, hand raise, audio processing, server-mixed volumes; also the surface for moderation actions on other members ([`remove`], [`end`], [`setPosition`]).
+- [`SelfParticipant`] — adds [`enableStudioAudio`] / [`disableStudioAudio`] on top of `Participant`.
+- [`WebRTCCall`] — session-level controls: [`hangup`], [`sendDigits`], [`toggleLock`], [`toggleHold`], [`transfer`], local-mic pipeline ([`setLocalMicrophoneGain`], [`localAudioLevel$`], [`localSpeaking$`], [`enablePushToTalk`], [`setPushToTalkActive`]).
+- [`SelfCapabilities`] — server-authoritative flags for gating moderation UI; see [Capabilities](/docs/browser-sdk/v4/guides/capabilities).
+
+[reference]: /docs/browser-sdk/v4/reference
+[`Participant`]: /docs/browser-sdk/v4/reference/participant
+[`SelfParticipant`]: /docs/browser-sdk/v4/reference/self-participant
+[`WebRTCCall`]: /docs/browser-sdk/v4/reference/webrtc-call
+[`SelfCapabilities`]: /docs/browser-sdk/v4/reference/self-capabilities
+[`SelfCapabilities.member$`]: /docs/browser-sdk/v4/reference/self-capabilities/member$
+[`toggleMute`]: /docs/browser-sdk/v4/reference/participant/toggle-mute
+[`toggleMuteVideo`]: /docs/browser-sdk/v4/reference/participant/toggle-mute-video
+[`toggleDeaf`]: /docs/browser-sdk/v4/reference/participant/toggle-deaf
+[`toggleHandraise`]: /docs/browser-sdk/v4/reference/participant/toggle-handraise
+[`audioMuted$`]: /docs/browser-sdk/v4/reference/participant/audio-muted$
+[`videoMuted$`]: /docs/browser-sdk/v4/reference/participant/video-muted$
+[`deaf$`]: /docs/browser-sdk/v4/reference/participant/deaf$
+[`handraised$`]: /docs/browser-sdk/v4/reference/participant/handraised$
+[`Call.hangup()`]: /docs/browser-sdk/v4/reference/webrtc-call/hangup
+[`Call.sendDigits()`]: /docs/browser-sdk/v4/reference/webrtc-call/send-digits
+[`Call.toggleLock()`]: /docs/browser-sdk/v4/reference/webrtc-call/toggle-lock
+[`Call.toggleHold()`]: /docs/browser-sdk/v4/reference/webrtc-call/toggle-hold
+[`Call.transfer()`]: /docs/browser-sdk/v4/reference/webrtc-call/transfer
+[`localAudioLevel$`]: /docs/browser-sdk/v4/reference/webrtc-call/local-audio-level$
+[`localSpeaking$`]: /docs/browser-sdk/v4/reference/webrtc-call/local-speaking$
+[`hangup`]: /docs/browser-sdk/v4/reference/webrtc-call/hangup
+[`sendDigits`]: /docs/browser-sdk/v4/reference/webrtc-call/send-digits
+[`toggleLock`]: /docs/browser-sdk/v4/reference/webrtc-call/toggle-lock
+[`toggleHold`]: /docs/browser-sdk/v4/reference/webrtc-call/toggle-hold
+[`transfer`]: /docs/browser-sdk/v4/reference/webrtc-call/transfer
+[`setLocalMicrophoneGain`]: /docs/browser-sdk/v4/reference/webrtc-call/set-local-microphone-gain
+[`enablePushToTalk`]: /docs/browser-sdk/v4/reference/webrtc-call/enable-push-to-talk
+[`setPushToTalkActive`]: /docs/browser-sdk/v4/reference/webrtc-call/set-push-to-talk-active
+[`remove`]: /docs/browser-sdk/v4/reference/participant/remove
+[`end`]: /docs/browser-sdk/v4/reference/participant/end
+[`setPosition`]: /docs/browser-sdk/v4/reference/participant/set-position
+[`enableStudioAudio`]: /docs/browser-sdk/v4/reference/self-participant/enable-studio-audio
+[`disableStudioAudio`]: /docs/browser-sdk/v4/reference/self-participant/disable-studio-audio

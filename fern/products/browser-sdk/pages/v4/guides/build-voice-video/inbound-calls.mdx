@@ -1,0 +1,423 @@
+---
+title: "Inbound Calls"
+slug: /guides/inbound-calls
+sidebar-title: "Inbound Calls"
+position: 3
+max-toc-depth: 3
+---
+
+To receive calls in a web app, bring a signed-in user online, show a ringing UI when someone calls them, and let them accept or decline. The result is a receiver you can call from any phone, SIP endpoint, or another browser tab.
+
+```ts Browser
+import { SignalWire, StaticCredentialProvider } from "@signalwire/js";
+import { filter, take } from "rxjs";
+
+// Constructing the client authenticates and registers the user
+// automatically. `await register()` here gives a sync point before we
+// subscribe — see the Authentication guide for the credential lifecycle.
+const client = new SignalWire(new StaticCredentialProvider({ token: SAT }));
+await client.register();
+
+// `showIncomingCall` / `hideIncomingCall` are your own UI helpers; `localVideo`
+// and `remoteVideo` are references to your `<video>` elements. The SDK doesn't
+// ship a UI — render the ringing state however fits your app.
+client.session.incomingCalls$.subscribe((calls) => {
+  const ringing = calls.find((c) => c.status === "ringing");
+  if (!ringing) return;
+
+  // Use fromName when it's a real display name; otherwise fall back to
+  // from. SignalWire sends "_undef_" as a placeholder when the
+  // originating leg didn't supply a name.
+  const callerName =
+    ringing.fromName && ringing.fromName !== "_undef_"
+      ? ringing.fromName
+      : ringing.from;
+
+  showIncomingCall({
+    from: callerName,
+    onAccept: () => ringing.answer({ audio: true, video: true }),
+    onDecline: () => ringing.reject(),
+  });
+
+  // Tear the UI down when the call leaves the "ringing" state.
+  ringing.status$
+    .pipe(filter((s) => s !== "ringing"), take(1))
+    .subscribe(() => hideIncomingCall());
+
+  // Attach media once the call connects (these only emit after accept).
+  ringing.localStream$.subscribe((stream) => (localVideo.srcObject = stream));
+  ringing.remoteStream$.subscribe((stream) => (remoteVideo.srcObject = stream));
+});
+```
+
+<Info>
+**Before you start.** Inbound calls require a [Subscriber Access Token (SAT)](/docs/browser-sdk/v4/guides/authentication) issued for a specific [user](/docs/platform/subscribers). Embed tokens and guest tokens are outbound-only and can't receive calls.
+</Info>
+
+## Listen for incoming calls
+
+Subscribe to [`client.session.incomingCalls$`](/docs/browser-sdk/v4/reference/interfaces/session-state). The stream emits the **current list** of inbound calls every time it changes, not one event per call — filter by `status === "ringing"` to find calls that still need a decision.
+
+```ts Browser
+client.session.incomingCalls$.subscribe((calls) => {
+  const ringing = calls.find((c) => c.status === "ringing");
+  if (ringing) showIncomingCall(ringing); // your UI helper for the ringing state
+});
+```
+
+Each entry is a [`Call`](/docs/browser-sdk/v4/reference/interfaces/call) with `direction: "inbound"`. Display the caller from these properties:
+
+| Property    | What it is                                                          |
+| ----------- | ------------------------------------------------------------------- |
+| `from`      | The caller's address (e.g. `/private/alice`)                        |
+| `fromName`  | Display name, if the caller supplied one                            |
+| `to`        | The address that was dialed (useful when one user has aliases)|
+| `direction` | Always `"inbound"` here                                             |
+
+The SDK hands you the raw list — it doesn't queue, dedupe, or pick a call for you. Two simultaneous callers land in the same emission, and calls stay in the array through every status transition (only dropping out when destroyed), so the `status === "ringing"` filter is what tells you which entries still need a decision.
+
+## Accept or decline
+
+A ringing call ends one of three ways: the user accepts, the user declines, or the caller gives up. Use [`answer()`](/docs/browser-sdk/v4/reference/interfaces/call) to accept and [`reject()`](/docs/browser-sdk/v4/reference/interfaces/call) to decline; subscribe to [`status$`](/docs/browser-sdk/v4/reference/interfaces/call) to detect any of the three so the ringing UI tears down from a single place.
+
+**Accept the call.** `answer()` takes a [`MediaOptions`](/docs/browser-sdk/v4/reference/interfaces/media-options) object that controls which tracks the user sends back — `audio` defaults to `true`, `video` defaults to `false`:
+
+<Tabs>
+  <Tab title="Audio + video">
+  ```ts Browser {9}
+  import { SignalWire, StaticCredentialProvider } from "@signalwire/js";
+
+  const client = new SignalWire(new StaticCredentialProvider({ token: SAT }));
+  await client.register();
+
+  client.session.incomingCalls$.subscribe((calls) => {
+    const ringing = calls.find((c) => c.status === "ringing");
+    if (!ringing) return;
+    ringing.answer({ audio: true, video: true });
+  });
+  ```
+  Standard video call. Both tracks acquired from the selected mic and camera.
+  </Tab>
+  <Tab title="Audio only">
+  ```ts Browser {9}
+  import { SignalWire, StaticCredentialProvider } from "@signalwire/js";
+
+  const client = new SignalWire(new StaticCredentialProvider({ token: SAT }));
+  await client.register();
+
+  client.session.incomingCalls$.subscribe((calls) => {
+    const ringing = calls.find((c) => c.status === "ringing");
+    if (!ringing) return;
+    ringing.answer(); // defaults: audio: true, video: false
+  });
+  ```
+  Phone-style call. No camera permission prompt.
+  </Tab>
+  <Tab title="Video, mic muted">
+  ```ts Browser {9}
+  import { SignalWire, StaticCredentialProvider } from "@signalwire/js";
+
+  const client = new SignalWire(new StaticCredentialProvider({ token: SAT }));
+  await client.register();
+
+  client.session.incomingCalls$.subscribe((calls) => {
+    const ringing = calls.find((c) => c.status === "ringing");
+    if (!ringing) return;
+    ringing.answer({ audio: false, video: true });
+  });
+  ```
+  Useful for receive-only kiosks, or when the user wants to join on camera with their mic off.
+  </Tab>
+</Tabs>
+
+**Decline the call.** `reject()` declines before any media negotiates — the caller sees a normal decline; the session never picks up:
+
+```ts Browser {9}
+import { SignalWire, StaticCredentialProvider } from "@signalwire/js";
+
+const client = new SignalWire(new StaticCredentialProvider({ token: SAT }));
+await client.register();
+
+client.session.incomingCalls$.subscribe((calls) => {
+  const ringing = calls.find((c) => c.status === "ringing");
+  if (!ringing) return;
+  ringing.reject();
+});
+```
+
+**Dismiss the ringing UI.** Subscribe to the call's `status$` and dismiss on the first emission that isn't `"ringing"`. That single handler covers all three outcomes — accepted, declined, or caller-gave-up:
+
+```ts Browser {11-13}
+import { SignalWire, StaticCredentialProvider } from "@signalwire/js";
+import { filter, take } from "rxjs";
+
+const client = new SignalWire(new StaticCredentialProvider({ token: SAT }));
+await client.register();
+
+client.session.incomingCalls$.subscribe((calls) => {
+  const ringing = calls.find((c) => c.status === "ringing");
+  if (!ringing) return;
+
+  ringing.status$
+    .pipe(filter((s) => s !== "ringing"), take(1))
+    .subscribe(() => hideIncomingCall()); // your UI helper to dismiss the ringing UI
+});
+```
+
+After ringing, the call walks `connecting` → `connected` → `disconnected`. React to `connected` for the in-call UI, and `disconnected` / `destroyed` for the final cleanup.
+
+## Attach the streams
+
+Once the call is connected, attach the local and remote media to `<video>` elements. The shape is identical to an outbound call — bind the [`localStream$`](/docs/browser-sdk/v4/reference/webrtc-call/local-stream$) and [`remoteStream$`](/docs/browser-sdk/v4/reference/webrtc-call/remote-stream$) observables to each element's `srcObject`:
+
+```ts Browser
+ringing.localStream$.subscribe((stream) => (localVideo.srcObject = stream));
+ringing.remoteStream$.subscribe((stream) => (remoteVideo.srcObject = stream));
+```
+
+```html
+<video id="localVideo" autoplay muted playsinline></video>
+<video id="remoteVideo" autoplay playsinline></video>
+```
+
+The local element needs `muted` so the user doesn't echo their own voice; the remote element must not be `muted` or no one is heard. Both need `playsinline` for mobile Safari.
+
+## End the call
+
+Call [`hangup()`](/docs/browser-sdk/v4/reference/webrtc-call/hangup) when the user clicks the hang-up button or navigates away. The call transitions through `disconnecting` → `disconnected` → `destroyed`; any subscriptions on the call complete naturally.
+
+```ts Browser
+hangupButton.onclick = () => ringing.hangup();
+```
+
+If the user closes the tab without calling `hangup()`, the SDK still tears the call down when the page unloads. Calling `hangup()` explicitly gives you a clean point to dismiss the in-call UI before the connection drops.
+
+To leave the page but keep the call alive on the platform — a transfer-and-disappear flow — use [`transfer()`](/docs/browser-sdk/v4/reference/webrtc-call/transfer) instead.
+
+## Try it: receive a call
+
+The fastest way to verify inbound calls end-to-end is to issue a SAT, load the demo as your user, then place the call yourself with a server-side dial that runs inline SWML. The demo surfaces a ringing UI you can accept with **Answer**, then the SWML script plays a public test MP4 into the call — you see real audio and video on the receiving side without needing a second browser or a phone.
+
+<Steps>
+
+### Issue a Subscriber Access Token
+
+Pick a `reference` for the user the call will arrive on — usually an email, but any stable ID works. If a user (Subscriber) with that `reference` doesn't exist yet, this endpoint creates one (set `first_name`, `last_name`, or `password` in the same body if you want); otherwise it returns a fresh token for the existing user.
+
+The response `token` is the SAT you'll plug into the demo. For the production version of this flow — where your backend issues SATs to clients — see the [Authentication guide](/docs/browser-sdk/v4/guides/authentication).
+
+<EndpointRequestSnippet endpoint="POST /api/fabric/subscribers/tokens" />
+
+### Open the demo and come online
+
+Save the page below as `inbound-demo.html` and open it over HTTPS (or `localhost`). Paste the SAT and click **Come online**.
+
+Once registered, the log prints the user's dialable `/private/<name>` address(es) — copy one for the next step. (You can also grab it from the [Dashboard Resources page](https://my.signalwire.com/?page=resources) if you prefer the UI.)
+
+Leave the page open — when the call arrives, the **Caller** line populates and the **Answer** / **Decline** buttons enable. After you accept, **Hang up** enables so you can end the call.
+
+<Accordion title="inbound-demo.html — full source">
+```html
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>SignalWire SDK inbound demo</title>
+    <style>
+      /* Shared demo shell — identical across the inbound, outbound, and
+         device-management guides. Per-demo extras go below this block. */
+      body { font: 14px/1.5 system-ui, sans-serif; max-width: 720px; margin: 2rem auto; padding: 0 1rem; }
+      label { display: block; margin: 0.75rem 0 0.25rem; font-weight: 600; }
+      input, select { width: 100%; padding: 0.5rem; font: 13px ui-monospace, monospace; box-sizing: border-box; }
+      button { margin: 0.5rem 0.5rem 0 0; padding: 0.5rem 1rem; font: 14px system-ui; cursor: pointer; }
+      button[disabled] { opacity: 0.5; cursor: not-allowed; }
+      .videos { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 1rem; }
+      video { width: 100%; background: #000; border-radius: 4px; aspect-ratio: 4/3; }
+      #log { margin-top: 1rem; padding: 1rem; background: #111; color: #0f0; font: 13px ui-monospace, monospace; min-height: 6rem; white-space: pre-wrap; border-radius: 4px; }
+      /* Inbound-specific */
+      .caller { margin: 1rem 0 0.25rem; font-weight: 600; }
+    </style>
+  </head>
+  <body>
+    <h1>SignalWire SDK inbound demo</h1>
+
+    <label for="token">Subscriber Access Token</label>
+    <input id="token" type="password" placeholder="Paste your SAT here" />
+    <button id="online">Come online</button>
+
+    <p class="caller">Caller: <span id="caller">—</span></p>
+    <button id="answer" disabled>Answer</button>
+    <button id="decline" disabled>Decline</button>
+    <button id="hangup" disabled>Hang up</button>
+
+    <div class="videos">
+      <video id="local" autoplay muted playsinline></video>
+      <video id="remote" autoplay playsinline></video>
+    </div>
+
+    <pre id="log"></pre>
+
+    <script type="module">
+      import { SignalWire, StaticCredentialProvider } from "https://esm.sh/@signalwire/js@dev";
+
+      const $ = (id) => document.getElementById(id);
+      const log = (msg) => ($("log").textContent += msg + "\n");
+
+      let currentCall = null;
+
+      $("online").addEventListener("click", async () => {
+        const token = $("token").value.trim();
+        if (!token) return log("Paste a token first.");
+
+        $("online").disabled = true;
+        log("Coming online...");
+
+        const client = new SignalWire(new StaticCredentialProvider({ token }));
+
+        try {
+          await client.register();
+          log("Online — ready for inbound calls.");
+        } catch (err) {
+          log("Failed: " + (err.name || "Error") + " — " + err.message);
+          $("online").disabled = false;
+          return;
+        }
+
+        // The SDK exposes the authenticated user on `client.user$`.
+        // The User object carries `.addresses`.
+        //
+        // Each `address.channels` value is the full dialable URI for that
+        // channel (e.g. "/private/john-doe?channel=video" for a user,
+        // "/user/<name>?channel=audio" for an app). Don't hand-roll the
+        // prefix from `address.name` — the prefix varies by `address.type`.
+        client.user$.subscribe((sub) => {
+          if (!sub || !sub.addresses?.length) return;
+          log("Dialable address(es) for this user:");
+          for (const a of sub.addresses) {
+            const uris = Object.entries(a.channels || {});
+            if (!uris.length) continue;
+            log("  " + a.name + " (" + a.type + ")");
+            for (const [channel, uri] of uris) log("    " + channel + ": " + uri);
+          }
+        });
+
+        client.session.incomingCalls$.subscribe((calls) => {
+          const ringing = calls.find((c) => c.status === "ringing");
+          if (!ringing || ringing === currentCall) return;
+          currentCall = ringing;
+
+          // Use fromName when it's a real display name; otherwise fall back
+          // to from. SignalWire sends "_undef_" as a placeholder when the
+          // originating leg didn't supply a name.
+          const name =
+            ringing.fromName && ringing.fromName !== "_undef_"
+              ? ringing.fromName
+              : ringing.from || "Unknown";
+          $("caller").textContent = name;
+          $("answer").disabled = false;
+          $("decline").disabled = false;
+          log("Ringing from " + name);
+
+          ringing.status$.subscribe((s) => {
+            log("Status: " + s);
+            if (s !== "ringing") {
+              $("answer").disabled = true;
+              $("decline").disabled = true;
+            }
+            if (s === "connected") {
+              $("hangup").disabled = false;
+            }
+            if (s === "disconnected" || s === "destroyed") {
+              $("hangup").disabled = true;
+              $("caller").textContent = "—";
+              if (currentCall === ringing) currentCall = null;
+            }
+          });
+
+          ringing.localStream$.subscribe(
+            (s) => ($("local").srcObject = s)
+          );
+
+          // `remoteStream$` re-emits a *new* MediaStream each time the SDK
+          // adds a track (see `new MediaStream([...t, e.track])` in the SDK
+          // bundle). Bind `srcObject` on every emission so the <video>
+          // element always renders the latest stream, but dedupe per-track
+          // log lines by tracking which MediaStreamTrack.id's we've seen.
+          const seenTrackIds = new Set();
+          ringing.remoteStream$.subscribe((stream) => {
+            $("remote").srcObject = stream;
+            for (const t of stream.getTracks()) {
+              if (seenTrackIds.has(t.id)) continue;
+              seenTrackIds.add(t.id);
+              log("Remote " + t.kind + " track arrived");
+            }
+          });
+        });
+      });
+
+      $("answer").addEventListener("click", () => {
+        if (!currentCall) return;
+        log("Answering...");
+        currentCall.answer({ audio: true, video: true });
+      });
+
+      $("decline").addEventListener("click", () => {
+        if (!currentCall) return;
+        log("Declining...");
+        currentCall.reject();
+      });
+
+      $("hangup").addEventListener("click", () => {
+        if (!currentCall) return;
+        log("Hanging up...");
+        currentCall.hangup();
+      });
+    </script>
+  </body>
+</html>
+```
+</Accordion>
+
+### Place a test call
+
+There are several ways to dial the user — another browser tab signed in as a different user, a SIP softphone configured against the user's SIP endpoint, a PSTN call from a phone, or a server-side dial via the [Calling REST API](/docs/apis/rest). This guide uses the **Calling API** so you can verify the flow from a single terminal. The body below carries inline SWML that plays a public test MP4 — click **Answer** in the demo when the call rings and the platform plays that file into the call so the remote `<video>` tile shows real audio and video.
+
+<EndpointRequestSnippet endpoint="POST /api/calling/calls" />
+
+Set `from` to any phone number or SIP credential on your project — server-side dials originate from those. Set `to` to the address the demo log printed in step 2 (e.g. `/private/john-doe`). Paste the body below into the request above:
+
+```json Request body example {4,5}
+{
+  "command": "dial",
+  "params": {
+    "from": "<your-phone-or-sip-credential>",
+    "to": "/private/<address-from-demo-log>",
+    "swml": {
+      "version": "1.0.0",
+      "sections": {
+        "main": [
+          { "play": { "url": "https://www.w3schools.com/html/mov_bbb.mp4" } }
+        ]
+      }
+    }
+  }
+}
+```
+
+The demo logs the ringing call and enables the **Answer** / **Decline** buttons. Click **Answer** to accept (the demo answers with `audio: true, video: true`) — the streams attach, the local tile shows your webcam preview, and the remote tile shows whatever the SWML leg sends back. The SWML script hangs up automatically when playback finishes, or click **Hang up** to end the call from your side.
+
+</Steps>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Outbound Calls" href="/docs/browser-sdk/v4/guides/outbound-calls" icon="fa-regular fa-phone-arrow-up-right">
+    Dial users, rooms, or PSTN destinations with `client.dial()`.
+  </Card>
+  <Card title="Device Management" href="/docs/browser-sdk/v4/guides/device-management" icon="fa-regular fa-microphone">
+    Choose the mic, camera, and speaker.
+  </Card>
+  <Card title="Call interface reference" href="/docs/browser-sdk/v4/reference/interfaces/call" icon="fa-regular fa-book">
+    Every property and method on a `Call`.
+  </Card>
+</CardGroup>

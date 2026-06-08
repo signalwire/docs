@@ -13,7 +13,7 @@ model Transcribe {
     To stop it, use the `transcribe_stop` method.
     """)
   transcribe: {
-    @doc("An http or https URL that receives the status callback when the transcription finishes")
+    @doc("An HTTP or HTTPS URL that receives the status callback when the transcription finishes")
     @example("https://example.com/transcribe-status")
     status_url?: url;
   };
