@@ -221,3 +221,42 @@ Not done (separate scope): the regular `ai` SWAIG tool webhook remains prose-onl
 
 Verified: `tsp compile` (REST) ✓; `aiSidecarToolWebhook` present in generated OpenAPI with the
 C-verified field set; `fern check` 0 errors.
+
+---
+
+# Phase 5 — Both tool-webhook entries + WebhookPayloadSnippet wiring (2026-06-09)
+
+Made the **two** SWAIG tool-webhook entries (sidecar already existed; added the regular `ai` one) and
+surfaced the callbacks on the SWML pages via the `<WebhookPayloadSnippet>` component, then re-verified
+against the C source.
+
+**New entry — `aiSwaigToolWebhook`** (`AiSwaigToolWebhookPayload`, webhooks.tsp + `@webhook` +
+nav `subpackage_calls.ai_swaig_tool_webhook`). Modeled exactly from `execute_user_function`
+(actions.c:2005-2133): 27 fields, required = the always-added ones (`function`, `argument`,
+`argument_desc`, `description`, `call_id`, `ai_session_id`, `app_name`, `channel_active/offhook/ready`,
+`content_type:"text/swaig"`, `version` (`SWAIG_VERSION`="2.0"), `content_disposition:"SWAIG Function"`),
+optional = the conditional ones (`global_data`, `caller_id_name`/`caller_id_num`, `project_id`/`space_id`,
+`meta_data_token`/`meta_data`, `conversation_id`, `fatal_error`/`error_reason`, `SWMLVars`/`SWMLCall`,
+`call_log`/`raw_call_log`).
+
+**Source re-verification (the reason for this pass):** scanning the *full* `post_data` assembly
+(actions.c:2005-2216) caught fields beyond the initial slice — `params` (line 2025, `#if 0` disabled),
+and `args`/`input` (2199/2204). Confirmed `args`/`input` are added **only** inside the
+`if (sh->data_map)` branch, which is processed locally (`process_data_map`) and does **not** POST a
+webhook; the webhook POST is the `else` branch without them. So they are correctly excluded. `SWAIG_VERSION`
+confirmed `"2.0"` (mod_openai.h:34).
+
+**Snippet wiring (`<WebhookPayloadSnippet>`):**
+- Sidecar page: `aiSidecarCallback` under "Callback body shape", `aiSidecarToolWebhook` under "Tool
+  webhook contract" (replacing the hand-maintained field list, eliminating drift), each with a link to
+  its generated webhook page.
+- `ai` method page (`ai/swaig/functions`): new "Tool webhook" section embedding `aiSwaigToolWebhook`.
+
+**Callback envelope precision fix:** verified `get_call_info` (ai_utils.c:198-221) — `call_info`'s
+`content_type:"text/json"`, `content_disposition`, `conversation_type:"voice"`, and `call_id` are always
+present (only `project_id`/`space_id` are conditional). Tightened those three from optional to required in
+`AISidecarCallbackPayload`. (Note: the sidecar *event* webhook uses `text/json` via `get_call_info`,
+whereas the `ai` *tool* webhook uses `text/swaig` inline — correctly different in the two models.)
+
+Verified: `tsp compile` ✓; 3 webhooks (`aiSidecarCallback`, `aiSidecarToolWebhook`, `aiSwaigToolWebhook`)
+in generated OpenAPI; `AiSwaigToolWebhookPayload` 27 fields match actions.c; `fern check` 0 errors.

@@ -15230,21 +15230,24 @@ components:
                 - 2e1e66e5-5d07-413d-9668-55542992eec0
             content_type:
               type: string
-              description: The content type of the POST body.
+              description: The content type of the POST body. Always `text/json`.
               examples:
                 - text/json
             content_disposition:
               type: string
-              description: How the body is delivered.
+              description: How the body is delivered. Always `post_data`.
               examples:
                 - post_data
             conversation_type:
               type: string
-              description: The conversation type.
+              description: The conversation type. Always `voice`.
               examples:
                 - voice
           required:
             - call_id
+            - content_type
+            - content_disposition
+            - conversation_type
           unevaluatedProperties:
             not: {}
           description: Envelope describing the call. `project_id` and `space_id` are included when available.
@@ -15407,6 +15410,181 @@ components:
         `content_type`, `meta_data`, `argument_desc`, `project_id`/`space_id`, `SWMLVars`, or `call_log`),
         and a `say` action is report-only because the sidecar has no voice on the call.
       title: AI sidecar tool webhook
+    Calling.AiSwaigToolWebhookPayload:
+      type: object
+      required:
+        - function
+        - argument
+        - argument_desc
+        - description
+        - call_id
+        - ai_session_id
+        - app_name
+        - channel_active
+        - channel_offhook
+        - channel_ready
+        - content_type
+        - version
+        - content_disposition
+      properties:
+        function:
+          type: string
+          description: The name of the function the model is calling.
+          examples:
+            - get_weather
+        argument:
+          type: object
+          properties:
+            parsed:
+              type: array
+              items:
+                type: object
+                unevaluatedProperties: {}
+              description: The parsed argument objects (one per parsed JSON block the model emitted).
+              examples:
+                - - city: San Francisco
+            raw:
+              type: string
+              description: The raw argument string exactly as the model produced it.
+              examples:
+                - '{"city":"San Francisco"}'
+            substituted:
+              type: string
+              description: The raw string after variable substitution.
+              examples:
+                - '{"city":"San Francisco"}'
+          required:
+            - parsed
+            - raw
+            - substituted
+          unevaluatedProperties:
+            not: {}
+          description: The arguments the model passed.
+        argument_desc:
+          type: object
+          unevaluatedProperties: {}
+          description: The parameter JSON schema declared for this function (`functions[].parameters`).
+        description:
+          type: string
+          description: The function's purpose/description.
+          examples:
+            - Look up the current weather for a city.
+        call_id:
+          type: string
+          description: ID of the call.
+          examples:
+            - 2e1e66e5-5d07-413d-9668-55542992eec0
+        ai_session_id:
+          type: string
+          description: ID of the AI session on the call.
+          examples:
+            - a0d4e6e5-5d07-413d-9668-55542992eec0
+        conversation_id:
+          type: string
+          description: The conversation ID. Present when the AI session has one.
+        app_name:
+          type: string
+          description: The application name.
+          examples:
+            - ai
+        global_data:
+          type: object
+          unevaluatedProperties: {}
+          description: The AI session's current `global_data`. Present when the session has any.
+        meta_data_token:
+          type: string
+          description: Scoping token for `meta_data`. Present when the function declares one.
+          examples:
+            - my-token
+        meta_data:
+          type: object
+          unevaluatedProperties: {}
+          description: Metadata scoped to `meta_data_token`. Present when the function declares a token.
+        caller_id_name:
+          type: string
+          description: Caller ID name. Present when available.
+          examples:
+            - Jane Doe
+        caller_id_num:
+          type: string
+          description: Caller ID number. Present when available. Note the truncated key name `caller_id_num`.
+          examples:
+            - '+15555550100'
+        channel_active:
+          type: boolean
+          description: Whether the channel is up.
+          examples:
+            - true
+        channel_offhook:
+          type: boolean
+          description: Whether the channel is off-hook.
+          examples:
+            - true
+        channel_ready:
+          type: boolean
+          description: Whether the AI session is ready.
+          examples:
+            - true
+        content_type:
+          type: string
+          description: The content type of the POST body. Always `text/swaig`.
+          examples:
+            - text/swaig
+        version:
+          type: string
+          description: The SWAIG protocol version.
+          examples:
+            - '2.0'
+        content_disposition:
+          type: string
+          description: How the body is delivered. Always `SWAIG Function`.
+          examples:
+            - SWAIG Function
+        project_id:
+          type: string
+          description: Your project ID. Present when the `signalwire_project_id` channel variable is set.
+        space_id:
+          type: string
+          description: Your Space ID. Present when the `signalwire_space_id` channel variable is set.
+        fatal_error:
+          type: boolean
+          description: '`true` when the AI session hit a fatal error. Present only on fatal error.'
+        error_reason:
+          type: string
+          description: The fatal-error reason. Present only when `fatal_error` is set.
+        SWMLVars:
+          type: object
+          unevaluatedProperties: {}
+          description: SWML variables. Present only when the `swaig_post_swml_vars` permission is enabled.
+        SWMLCall:
+          type: object
+          unevaluatedProperties: {}
+          description: SWML call state. Present only when the `swaig_post_swml_vars` permission is enabled.
+        call_log:
+          type: array
+          items:
+            type: object
+            unevaluatedProperties: {}
+          description: The redacted conversation log. Present only when the `swaig_post_conversation` permission is enabled.
+        raw_call_log:
+          type: array
+          items:
+            type: object
+            unevaluatedProperties: {}
+          description: The raw (unredacted) conversation log. Present only when the `swaig_post_conversation` permission is enabled.
+      unevaluatedProperties:
+        not: {}
+      description: |-
+        Sent to a SWAIG function's `web_hook_url` (or the SWAIG `defaults.web_hook_url`) when the
+        [`ai`](/docs/swml/reference/calling/ai) method's agent calls that tool. Your endpoint runs the
+        function and returns a JSON object with a `response` string (what the model reads next) and an
+        optional `action` (object or array) for the agent to perform.
+
+        This is the regular `ai` method's tool-webhook shape. It is richer than the
+        [AI sidecar tool webhook](/docs/apis/rest/calls/webhooks/ai-sidecar-tool-webhook): caller details
+        are flat (`caller_id_name` / `caller_id_num`, note the truncated name) rather than nested under
+        `channel_data`, and it carries SWAIG metadata the sidecar omits.
+      title: AI SWAIG tool webhook
     Calling.CallAIMessageRequest:
       type: object
       required:
@@ -47930,6 +48108,195 @@ servers:
         default: '{Your_Space_Name}'
         description: Your SignalWire Space name
 webhooks:
+  aiSwaigToolWebhook:
+    post:
+      operationId: ai_swaig_tool_webhook
+      summary: AI SWAIG tool webhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                function:
+                  type: string
+                  description: The name of the function the model is calling.
+                  example: get_weather
+                argument:
+                  type: object
+                  properties:
+                    parsed:
+                      type: array
+                      items:
+                        type: object
+                        properties: {}
+                        unevaluatedProperties: {}
+                      description: The parsed argument objects (one per parsed JSON block the model emitted).
+                      example:
+                        - city: San Francisco
+                    raw:
+                      type: string
+                      description: The raw argument string exactly as the model produced it.
+                      example: '{"city":"San Francisco"}'
+                    substituted:
+                      type: string
+                      description: The raw string after variable substitution.
+                      example: '{"city":"San Francisco"}'
+                  required:
+                    - parsed
+                    - raw
+                    - substituted
+                  unevaluatedProperties:
+                    not: {}
+                  description: The arguments the model passed.
+                argument_desc:
+                  type: object
+                  properties: {}
+                  unevaluatedProperties: {}
+                  description: The parameter JSON schema declared for this function (`functions[].parameters`).
+                description:
+                  type: string
+                  description: The function's purpose/description.
+                  example: Look up the current weather for a city.
+                call_id:
+                  type: string
+                  description: ID of the call.
+                  example: 2e1e66e5-5d07-413d-9668-55542992eec0
+                ai_session_id:
+                  type: string
+                  description: ID of the AI session on the call.
+                  example: a0d4e6e5-5d07-413d-9668-55542992eec0
+                conversation_id:
+                  type: string
+                  description: The conversation ID. Present when the AI session has one.
+                app_name:
+                  type: string
+                  description: The application name.
+                  example: ai
+                global_data:
+                  type: object
+                  properties: {}
+                  unevaluatedProperties: {}
+                  description: The AI session's current `global_data`. Present when the session has any.
+                meta_data_token:
+                  type: string
+                  description: Scoping token for `meta_data`. Present when the function declares one.
+                  example: my-token
+                meta_data:
+                  type: object
+                  properties: {}
+                  unevaluatedProperties: {}
+                  description: Metadata scoped to `meta_data_token`. Present when the function declares a token.
+                caller_id_name:
+                  type: string
+                  description: Caller ID name. Present when available.
+                  example: Jane Doe
+                caller_id_num:
+                  type: string
+                  description: Caller ID number. Present when available. Note the truncated key name `caller_id_num`.
+                  example: '+15555550100'
+                channel_active:
+                  type: boolean
+                  description: Whether the channel is up.
+                  example: true
+                channel_offhook:
+                  type: boolean
+                  description: Whether the channel is off-hook.
+                  example: true
+                channel_ready:
+                  type: boolean
+                  description: Whether the AI session is ready.
+                  example: true
+                content_type:
+                  type: string
+                  description: The content type of the POST body. Always `text/swaig`.
+                  example: text/swaig
+                version:
+                  type: string
+                  description: The SWAIG protocol version.
+                  example: '2.0'
+                content_disposition:
+                  type: string
+                  description: How the body is delivered. Always `SWAIG Function`.
+                  example: SWAIG Function
+                project_id:
+                  type: string
+                  description: Your project ID. Present when the `signalwire_project_id` channel variable is set.
+                space_id:
+                  type: string
+                  description: Your Space ID. Present when the `signalwire_space_id` channel variable is set.
+                fatal_error:
+                  type: boolean
+                  description: '`true` when the AI session hit a fatal error. Present only on fatal error.'
+                error_reason:
+                  type: string
+                  description: The fatal-error reason. Present only when `fatal_error` is set.
+                SWMLVars:
+                  type: object
+                  properties: {}
+                  unevaluatedProperties: {}
+                  description: SWML variables. Present only when the `swaig_post_swml_vars` permission is enabled.
+                SWMLCall:
+                  type: object
+                  properties: {}
+                  unevaluatedProperties: {}
+                  description: SWML call state. Present only when the `swaig_post_swml_vars` permission is enabled.
+                call_log:
+                  type: array
+                  items:
+                    type: object
+                    properties: {}
+                    unevaluatedProperties: {}
+                  description: The redacted conversation log. Present only when the `swaig_post_conversation` permission is enabled.
+                raw_call_log:
+                  type: array
+                  items:
+                    type: object
+                    properties: {}
+                    unevaluatedProperties: {}
+                  description: The raw (unredacted) conversation log. Present only when the `swaig_post_conversation` permission is enabled.
+              required:
+                - function
+                - argument
+                - argument_desc
+                - description
+                - call_id
+                - ai_session_id
+                - app_name
+                - channel_active
+                - channel_offhook
+                - channel_ready
+                - content_type
+                - version
+                - content_disposition
+              unevaluatedProperties:
+                not: {}
+              description: |-
+                Sent to a SWAIG function's `web_hook_url` (or the SWAIG `defaults.web_hook_url`) when the
+                [`ai`](/docs/swml/reference/calling/ai) method's agent calls that tool. Your endpoint runs the
+                function and returns a JSON object with a `response` string (what the model reads next) and an
+                optional `action` (object or array) for the agent to perform.
+
+                This is the regular `ai` method's tool-webhook shape. It is richer than the
+                [AI sidecar tool webhook](/docs/apis/rest/calls/webhooks/ai-sidecar-tool-webhook): caller details
+                are flat (`caller_id_name` / `caller_id_num`, note the truncated name) rather than nested under
+                `channel_data`, and it carries SWAIG metadata the sidecar omits.
+      responses:
+        '200':
+          description: Webhook received
+      description: |-
+        Sent to a SWAIG function's `web_hook_url` (or the SWAIG `defaults.web_hook_url`) when the
+        [`ai`](/docs/swml/reference/calling/ai) method's agent calls that tool. Your endpoint runs the
+        function and returns a JSON object with a `response` string (what the model reads next) and an
+        optional `action` (object or array) for the agent to perform.
+
+        This is the regular `ai` method's tool-webhook shape. It is richer than the
+        [AI sidecar tool webhook](/docs/apis/rest/calls/webhooks/ai-sidecar-tool-webhook): caller details
+        are flat (`caller_id_name` / `caller_id_num`, note the truncated name) rather than nested under
+        `channel_data`, and it carries SWAIG metadata the sidecar omits.
+      tags:
+        - Calls
   aiSidecarToolWebhook:
     post:
       operationId: ai_sidecar_tool_webhook
@@ -48070,18 +48437,21 @@ webhooks:
                       example: 2e1e66e5-5d07-413d-9668-55542992eec0
                     content_type:
                       type: string
-                      description: The content type of the POST body.
+                      description: The content type of the POST body. Always `text/json`.
                       example: text/json
                     content_disposition:
                       type: string
-                      description: How the body is delivered.
+                      description: How the body is delivered. Always `post_data`.
                       example: post_data
                     conversation_type:
                       type: string
-                      description: The conversation type.
+                      description: The conversation type. Always `voice`.
                       example: voice
                   required:
                     - call_id
+                    - content_type
+                    - content_disposition
+                    - conversation_type
                   unevaluatedProperties:
                     not: {}
                   description: Envelope describing the call. `project_id` and `space_id` are included when available.

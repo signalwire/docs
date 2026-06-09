@@ -189,17 +189,17 @@ model AISidecarCallbackPayload {
     @example("2e1e66e5-5d07-413d-9668-55542992eec0")
     call_id: uuid;
 
-    @doc("The content type of the POST body.")
+    @doc("The content type of the POST body. Always `text/json`.")
     @example("text/json")
-    content_type?: string;
+    content_type: string;
 
-    @doc("How the body is delivered.")
+    @doc("How the body is delivered. Always `post_data`.")
     @example("post_data")
-    content_disposition?: string;
+    content_disposition: string;
 
-    @doc("The conversation type.")
+    @doc("The conversation type. Always `voice`.")
     @example("voice")
-    conversation_type?: string;
+    conversation_type: string;
   };
 
   @doc("The sidecar callback. Carries the common fields below plus type-specific fields.")
@@ -279,4 +279,125 @@ model AISidecarToolWebhookPayload {
     @example("+15555550199")
     destination_number?: string;
   };
+}
+
+@summary("AI SWAIG tool webhook")
+@doc("""
+  Sent to a SWAIG function's `web_hook_url` (or the SWAIG `defaults.web_hook_url`) when the
+  [`ai`](/docs/swml/reference/calling/ai) method's agent calls that tool. Your endpoint runs the
+  function and returns a JSON object with a `response` string (what the model reads next) and an
+  optional `action` (object or array) for the agent to perform.
+  
+  This is the regular `ai` method's tool-webhook shape. It is richer than the
+  [AI sidecar tool webhook](/docs/apis/rest/calls/webhooks/ai-sidecar-tool-webhook): caller details
+  are flat (`caller_id_name` / `caller_id_num`, note the truncated name) rather than nested under
+  `channel_data`, and it carries SWAIG metadata the sidecar omits.
+  """)
+model AiSwaigToolWebhookPayload {
+  @doc("The name of the function the model is calling.")
+  @example("get_weather")
+  function: string;
+
+  @doc("The arguments the model passed.")
+  argument: {
+    @doc("The parsed argument objects (one per parsed JSON block the model emitted).")
+    @example(#[#{ city: "San Francisco" }])
+    parsed: Record<unknown>[];
+
+    @doc("The raw argument string exactly as the model produced it.")
+    @example("{\"city\":\"San Francisco\"}")
+    raw: string;
+
+    @doc("The raw string after variable substitution.")
+    @example("{\"city\":\"San Francisco\"}")
+    substituted: string;
+  };
+
+  @doc("The parameter JSON schema declared for this function (`functions[].parameters`).")
+  argument_desc: Record<unknown>;
+
+  @doc("The function's purpose/description.")
+  @example("Look up the current weather for a city.")
+  description: string;
+
+  @doc("ID of the call.")
+  @example("2e1e66e5-5d07-413d-9668-55542992eec0")
+  call_id: string;
+
+  @doc("ID of the AI session on the call.")
+  @example("a0d4e6e5-5d07-413d-9668-55542992eec0")
+  ai_session_id: string;
+
+  @doc("The conversation ID. Present when the AI session has one.")
+  conversation_id?: string;
+
+  @doc("The application name.")
+  @example("ai")
+  app_name: string;
+
+  @doc("The AI session's current `global_data`. Present when the session has any.")
+  global_data?: Record<unknown>;
+
+  @doc("Scoping token for `meta_data`. Present when the function declares one.")
+  @example("my-token")
+  meta_data_token?: string;
+
+  @doc("Metadata scoped to `meta_data_token`. Present when the function declares a token.")
+  meta_data?: Record<unknown>;
+
+  @doc("Caller ID name. Present when available.")
+  @example("Jane Doe")
+  caller_id_name?: string;
+
+  @doc("Caller ID number. Present when available. Note the truncated key name `caller_id_num`.")
+  @example("+15555550100")
+  caller_id_num?: string;
+
+  @doc("Whether the channel is up.")
+  @example(true)
+  channel_active: boolean;
+
+  @doc("Whether the channel is off-hook.")
+  @example(true)
+  channel_offhook: boolean;
+
+  @doc("Whether the AI session is ready.")
+  @example(true)
+  channel_ready: boolean;
+
+  @doc("The content type of the POST body. Always `text/swaig`.")
+  @example("text/swaig")
+  content_type: string;
+
+  @doc("The SWAIG protocol version.")
+  @example("2.0")
+  version: string;
+
+  @doc("How the body is delivered. Always `SWAIG Function`.")
+  @example("SWAIG Function")
+  content_disposition: string;
+
+  @doc("Your project ID. Present when the `signalwire_project_id` channel variable is set.")
+  project_id?: string;
+
+  @doc("Your Space ID. Present when the `signalwire_space_id` channel variable is set.")
+  space_id?: string;
+
+  @doc("`true` when the AI session hit a fatal error. Present only on fatal error.")
+  fatal_error?: boolean;
+
+  @doc("The fatal-error reason. Present only when `fatal_error` is set.")
+  error_reason?: string;
+
+  @doc("SWML variables. Present only when the `swaig_post_swml_vars` permission is enabled.")
+  SWMLVars?: Record<unknown>;
+
+  @doc("SWML call state. Present only when the `swaig_post_swml_vars` permission is enabled.")
+  SWMLCall?: Record<unknown>;
+
+  @doc("The redacted conversation log. Present only when the `swaig_post_conversation` permission is enabled.")
+  call_log?: Record<unknown>[];
+
+  @doc("The raw (unredacted) conversation log. Present only when the `swaig_post_conversation` permission is enabled.")
+  raw_call_log?: Record<unknown>[];
 }
