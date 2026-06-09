@@ -355,6 +355,11 @@ paths:
         | `calling.ai_unhold` | Resume an AI call from hold |
         | `calling.ai_message` | Inject a message into an active AI conversation |
         | `calling.ai.stop` | Stop an active AI session |
+        | `calling.ai_sidecar` | Attach a real-time AI observer (sidecar) to a call, or summarize the conversation |
+        | `calling.ai_sidecar.poke` | Inject a message into the sidecar and force an immediate tick |
+        | `calling.ai_sidecar.ask` | Ask the sidecar an out-of-band question (answered via `ask_answer` callback) |
+        | `calling.ai_sidecar.stop` | Stop and detach the AI sidecar |
+        | `calling.ai_sidecar.status` | Snapshot the sidecar's runtime counters |
         | `calling.live_transcribe` | Start, stop, or summarize real-time transcription |
         | `calling.live_translate` | Start, stop, summarize, or inject real-time translation |
         | `calling.send_fax.stop` | Stop active fax send |
@@ -757,6 +762,56 @@ paths:
                   command: calling.denoise.stop
                   id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
                   params: {}
+              calling.ai_sidecar.status:
+                summary: calling.ai_sidecar.status
+                description: Snapshot the sidecar's runtime counters
+                value:
+                  command: calling.ai_sidecar.status
+                  id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                  params: {}
+              calling.ai_sidecar.stop:
+                summary: calling.ai_sidecar.stop
+                description: Stop and detach the AI sidecar
+                value:
+                  command: calling.ai_sidecar.stop
+                  id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                  params: {}
+              calling.ai_sidecar.ask:
+                summary: calling.ai_sidecar.ask
+                description: Ask the sidecar an out-of-band question
+                value:
+                  command: calling.ai_sidecar.ask
+                  id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                  params:
+                    text: What objections has the customer raised so far?
+              calling.ai_sidecar.poke:
+                summary: calling.ai_sidecar.poke
+                description: Inject a message into the sidecar and force a tick
+                value:
+                  command: calling.ai_sidecar.poke
+                  id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                  params:
+                    text: The customer just mentioned a competitor — suggest a comparison.
+              calling.ai_sidecar:
+                summary: calling.ai_sidecar
+                description: Attach a real-time AI sidecar to an active call
+                value:
+                  command: calling.ai_sidecar
+                  id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                  params:
+                    lang: en-US
+                    prompt: You are a real-time sales copilot. After each customer turn, give the agent one concise tip, or call sidecar_skip if no advice is needed.
+                    model: gpt-4o-mini
+                    customer_role: remote-caller
+                    url: https://example.com/sidecar/events
+                    hints:
+                      - ACME
+                      - Globex
+                      - FedRAMP
+                      - SOC 2
+                    params:
+                      idle_timeout_ms: 250
+                      final_summary: true
               calling.ai.stop:
                 summary: calling.ai.stop
                 description: Stop an active AI session on the call
@@ -15146,6 +15201,120 @@ components:
         - voice
         - fax
       description: Call receive mode.
+    Calling.AISidecarCallbackPayload:
+      type: object
+      required:
+        - call_info
+        - sidecar_event
+      properties:
+        call_info:
+          type: object
+          properties:
+            project_id:
+              allOf:
+                - $ref: '#/components/schemas/uuid'
+              description: Your project ID.
+              examples:
+                - 4d0d6f16-5881-4fcc-92a4-02c51a91954d
+            space_id:
+              allOf:
+                - $ref: '#/components/schemas/uuid'
+              description: Your Space ID.
+              examples:
+                - 451ed9ff-e568-4222-8af9-4f9ab7428d09
+            call_id:
+              allOf:
+                - $ref: '#/components/schemas/uuid'
+              description: ID of the call the sidecar is attached to.
+              examples:
+                - 2e1e66e5-5d07-413d-9668-55542992eec0
+            content_type:
+              type: string
+              description: The content type of the POST body.
+              examples:
+                - text/json
+            content_disposition:
+              type: string
+              description: How the body is delivered.
+              examples:
+                - post_data
+            conversation_type:
+              type: string
+              description: The conversation type.
+              examples:
+                - voice
+          required:
+            - call_id
+          unevaluatedProperties:
+            not: {}
+          description: Envelope describing the call. `project_id` and `space_id` are included when available.
+        sidecar_event:
+          type: object
+          properties:
+            type:
+              allOf:
+                - $ref: '#/components/schemas/Calling.AISidecarCallbackType'
+              description: The callback type.
+              examples:
+                - insight
+            ts:
+              type: integer
+              format: int64
+              description: When the event was produced, as a Unix timestamp in microseconds.
+              examples:
+                - 1745870400123456
+            tick_id:
+              type: integer
+              format: int64
+              description: The processing-tick identifier the callback belongs to.
+              examples:
+                - 7
+            channel_data:
+              type: object
+              unevaluatedProperties: {}
+              description: 'Call/channel context: `call_id`, plus `caller_id_name` / `caller_id_number` / `destination_number` when available.'
+          required:
+            - type
+            - ts
+            - tick_id
+            - channel_data
+          unevaluatedProperties:
+            not: {}
+          description: The sidecar callback. Carries the common fields below plus type-specific fields.
+      unevaluatedProperties:
+        not: {}
+      description: |-
+        Delivered to the sidecar's `url` (when set) as the sidecar observes the call. The same payload
+        is always published on the `calling.ai.sidecar` relay topic; the webhook POST is opt-in.
+        The actual event is under `sidecar_event` — unwrap it before reading `type` and the event's fields.
+
+        This payload documents the common envelope shared by every callback. For the per-`type` fields
+        (for example `insight.raw`, `turn.transcript_delta`, `final.summary`), see the
+        [SWML ai_sidecar reference](/docs/swml/reference/calling/ai-sidecar#callback-types).
+      title: AI sidecar callback
+    Calling.AISidecarCallbackType:
+      type: string
+      enum:
+        - start
+        - turn
+        - request
+        - thought
+        - insight
+        - skip
+        - tool_call
+        - tool_result
+        - action
+        - global_data_change
+        - history_pruned
+        - error
+        - ask_request
+        - ask_answer
+        - stop
+        - final
+      description: |-
+        The kind of AI sidecar callback. See the
+        [SWML ai_sidecar reference](/docs/swml/reference/calling/ai-sidecar#callback-types)
+        for the type-specific fields each one carries.
     Calling.CallAIMessageRequest:
       type: object
       required:
@@ -15228,6 +15397,164 @@ components:
       unevaluatedProperties:
         not: {}
       description: Parameters for resetting the AI conversation state.
+    Calling.CallAISidecarAskRequest:
+      type: object
+      required:
+        - id
+        - command
+        - params
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: The unique identifying ID of a existing call.
+          examples:
+            - 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        command:
+          type: string
+          enum:
+            - calling.ai_sidecar.ask
+          description: 'The `calling.ai_sidecar.ask` command submits an out-of-band question to the sidecar. It is fire-and-forget: the response returns an `ask_id`, and the answer arrives later as an `ask_answer` webhook callback carrying the same `ask_id`. The ongoing conversation history is not modified.'
+          examples:
+            - calling.ai_sidecar.ask
+        params:
+          type: object
+          properties:
+            text:
+              type: string
+              description: The out-of-band question for the sidecar to answer.
+              examples:
+                - What objections has the customer raised so far?
+          required:
+            - text
+          unevaluatedProperties:
+            not: {}
+          description: An object of parameters that will be utilized by the active command.
+      unevaluatedProperties:
+        not: {}
+      title: calling.ai_sidecar.ask
+    Calling.CallAISidecarPokeRequest:
+      type: object
+      required:
+        - id
+        - command
+        - params
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: The unique identifying ID of a existing call.
+          examples:
+            - 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        command:
+          type: string
+          enum:
+            - calling.ai_sidecar.poke
+          description: The `calling.ai_sidecar.poke` command injects a free-form user message into the sidecar's history and forces an immediate processing tick, so the sidecar reacts right away.
+          examples:
+            - calling.ai_sidecar.poke
+        params:
+          type: object
+          properties:
+            text:
+              type: string
+              description: The message text to inject into the sidecar's conversation history.
+              examples:
+                - The customer just mentioned a competitor — suggest a comparison.
+          required:
+            - text
+          unevaluatedProperties:
+            not: {}
+          description: An object of parameters that will be utilized by the active command.
+      unevaluatedProperties:
+        not: {}
+      title: calling.ai_sidecar.poke
+    Calling.CallAISidecarRequest:
+      type: object
+      required:
+        - id
+        - command
+        - params
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: The unique identifying ID of a existing call.
+          examples:
+            - 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        command:
+          type: string
+          enum:
+            - calling.ai_sidecar
+          description: The `calling.ai_sidecar` command attaches a real-time AI observer (sidecar) to an active, answered call. The sidecar listens to both legs and streams agent-facing advice as webhook callbacks; it does not speak on the call.
+          examples:
+            - calling.ai_sidecar
+        params:
+          allOf:
+            - $ref: '#/components/schemas/SWML.Calling.AISidecarObject'
+          description: |-
+            The sidecar configuration. Identical to the SWML `ai_sidecar` instruction body — see the
+            [SWML ai_sidecar reference](/docs/swml/reference/calling/ai-sidecar) for the full field catalog.
+            When `action.summarize` is present, the request summarizes the conversation instead of starting a sidecar.
+      unevaluatedProperties:
+        not: {}
+      title: calling.ai_sidecar
+    Calling.CallAISidecarStatusRequest:
+      type: object
+      required:
+        - id
+        - command
+        - params
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: The unique identifying ID of a existing call.
+          examples:
+            - 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        command:
+          type: string
+          enum:
+            - calling.ai_sidecar.status
+          description: The `calling.ai_sidecar.status` command returns a snapshot of the sidecar's runtime counters (ticks, insights, skips, tool calls, errors, token usage, history size) and also writes a status event to the relay topic.
+          examples:
+            - calling.ai_sidecar.status
+        params:
+          type: object
+          unevaluatedProperties:
+            not: {}
+          description: The `calling.ai_sidecar.status` command takes no parameters — the sidecar is addressed by `id` (the call ID) alone.
+      unevaluatedProperties:
+        not: {}
+      title: calling.ai_sidecar.status
+    Calling.CallAISidecarStopRequest:
+      type: object
+      required:
+        - id
+        - command
+        - params
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: The unique identifying ID of a existing call.
+          examples:
+            - 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        command:
+          type: string
+          enum:
+            - calling.ai_sidecar.stop
+          description: The `calling.ai_sidecar.stop` command stops and detaches the AI sidecar from the call.
+          examples:
+            - calling.ai_sidecar.stop
+        params:
+          type: object
+          unevaluatedProperties:
+            not: {}
+          description: The `calling.ai_sidecar.stop` command takes no parameters — the sidecar is addressed by `id` (the call ID) alone.
+      unevaluatedProperties:
+        not: {}
+      title: calling.ai_sidecar.stop
     Calling.CallAIStopRequest:
       type: object
       required:
@@ -17102,6 +17429,11 @@ components:
         - $ref: '#/components/schemas/Calling.CallUnholdRequest'
         - $ref: '#/components/schemas/Calling.CallAIMessageRequest'
         - $ref: '#/components/schemas/Calling.CallAIStopRequest'
+        - $ref: '#/components/schemas/Calling.CallAISidecarRequest'
+        - $ref: '#/components/schemas/Calling.CallAISidecarPokeRequest'
+        - $ref: '#/components/schemas/Calling.CallAISidecarAskRequest'
+        - $ref: '#/components/schemas/Calling.CallAISidecarStopRequest'
+        - $ref: '#/components/schemas/Calling.CallAISidecarStatusRequest'
         - $ref: '#/components/schemas/Calling.CallPlayRequest'
         - $ref: '#/components/schemas/Calling.CallPlayPauseRequest'
         - $ref: '#/components/schemas/Calling.CallPlayResumeRequest'
@@ -17143,6 +17475,11 @@ components:
           calling.ai_unhold: '#/components/schemas/Calling.CallUnholdRequest'
           calling.ai_message: '#/components/schemas/Calling.CallAIMessageRequest'
           calling.ai.stop: '#/components/schemas/Calling.CallAIStopRequest'
+          calling.ai_sidecar: '#/components/schemas/Calling.CallAISidecarRequest'
+          calling.ai_sidecar.poke: '#/components/schemas/Calling.CallAISidecarPokeRequest'
+          calling.ai_sidecar.ask: '#/components/schemas/Calling.CallAISidecarAskRequest'
+          calling.ai_sidecar.stop: '#/components/schemas/Calling.CallAISidecarStopRequest'
+          calling.ai_sidecar.status: '#/components/schemas/Calling.CallAISidecarStatusRequest'
           calling.play: '#/components/schemas/Calling.CallPlayRequest'
           calling.play.pause: '#/components/schemas/Calling.CallPlayPauseRequest'
           calling.play.resume: '#/components/schemas/Calling.CallPlayResumeRequest'
@@ -29584,6 +29921,29 @@ components:
           examples:
             - true
           default: false
+        enable_text_normalization:
+          anyOf:
+            - type: string
+              enum:
+                - heard
+                - spoken
+                - both
+                - 'true'
+                - 'on'
+                - 'false'
+                - 'off'
+                - none
+            - $ref: '#/components/schemas/SWMLVar'
+          description: |-
+            Converts numbers, currency, dates, and similar values between their written and spoken forms so the AI understands callers more accurately and speaks its responses more naturally.
+            `heard` converts what the caller says into written form before the AI reads it (e.g. "twenty three dollars" becomes "$23").
+            `spoken` converts the AI's written response into spoken form before it is read aloud (e.g. "$23" becomes "twenty three dollars").
+            `both` applies both directions. Set to `false`, `off`, or `none` to turn it off; `true` and `on` are aliases for `both`.
+            Text normalization adapts automatically to the language being spoken; if it isn't available for that language, the affected direction is skipped and the conversation continues.
+            **Default:** `both`.
+          examples:
+            - both
+          default: both
         enable_vision:
           anyOf:
             - type: boolean
@@ -30931,6 +31291,7 @@ components:
           anyOf:
             - type: string
             - $ref: '#/components/schemas/SWMLVar'
+          minLength: 1
           description: The conversation language as a single BCP-47 tag. Sets the speech recognition language and is shared with the model as a hint.
           examples:
             - en-US
@@ -30950,10 +31311,13 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SWML.Calling.TranscribeDirection'
-          description: The call legs to observe. Both legs are required. Defaults to both legs.
+          description: The call legs to observe. Both legs are required — a single-leg value is rejected. When omitted, both legs are observed. **Default:** both legs (`remote-caller` and `local-caller`).
           examples:
             - - remote-caller
               - local-caller
+          default:
+            - remote-caller
+            - local-caller
         customer_role:
           allOf:
             - $ref: '#/components/schemas/SWML.Calling.TranscribeDirection'
@@ -30990,6 +31354,7 @@ components:
           type: array
           items:
             type: string
+          minItems: 1
           description: Hints that improve speech recognition of specific terms, such as product names, competitor names, jargon, or customer names. Strongly recommended.
           examples:
             - - ACME
@@ -31000,6 +31365,12 @@ components:
           allOf:
             - $ref: '#/components/schemas/SWML.Calling.AISidecarParams'
           description: Tuning options for the sidecar.
+        action:
+          allOf:
+            - $ref: '#/components/schemas/SWML.Calling.AISidecarSummarizeAction'
+          description: |-
+            On-demand action dispatch. When `action.summarize` is present, the request summarizes the conversation and returns,
+            instead of starting a new sidecar.
       unevaluatedProperties:
         not: {}
       title: AISidecarObject object
@@ -31049,6 +31420,8 @@ components:
           anyOf:
             - type: integer
             - $ref: '#/components/schemas/SWMLVar'
+          minimum: 50
+          maximum: 5000
           description: 'How long the customer can be silent, in milliseconds, after they finish speaking before the sidecar evaluates the conversation. Lower values make the sidecar react faster. Range: 50-5000. **Default:** `200`.'
           examples:
             - 200
@@ -31057,6 +31430,8 @@ components:
           anyOf:
             - type: integer
             - $ref: '#/components/schemas/SWMLVar'
+          minimum: 0
+          maximum: 60000
           description: 'The minimum time, in milliseconds, between evaluations — a throttle that limits how often the sidecar runs on a busy call. Range: 0-60000. **Default:** `0`.'
           examples:
             - 1000
@@ -31065,6 +31440,8 @@ components:
           anyOf:
             - type: integer
             - $ref: '#/components/schemas/SWMLVar'
+          minimum: 1
+          maximum: 20
           description: 'The maximum number of tool calls the sidecar will chain within a single evaluation before it must produce its advice. Range: 1-20. **Default:** `5`.'
           examples:
             - 5
@@ -31073,6 +31450,8 @@ components:
           anyOf:
             - type: integer
             - $ref: '#/components/schemas/SWMLVar'
+          minimum: 1000
+          maximum: 200000
           description: "The token budget for the sidecar's running conversation history. When the history grows past this, the oldest messages are dropped. Range: 1000-200000. **Default:** `8000`."
           examples:
             - 8000
@@ -31166,6 +31545,8 @@ components:
           anyOf:
             - type: integer
             - $ref: '#/components/schemas/SWMLVar'
+          minimum: 0
+          maximum: 100
           description: 'Speech-engine debug verbosity. Range: 0-100. **Default:** `0`.'
           examples:
             - 0
@@ -31379,6 +31760,32 @@ components:
       unevaluatedProperties:
         not: {}
       title: AISidecarStringParam object
+    SWML.Calling.AISidecarSummarizeAction:
+      type: object
+      required:
+        - summarize
+      properties:
+        summarize:
+          type: object
+          properties:
+            webhook:
+              type: string
+              description: The webhook URL the summary is POSTed to. Defaults to the sidecar's configured `url`.
+              examples:
+                - https://example.com/summary-webhook
+            prompt:
+              type: string
+              description: The prompt used to generate the summary. Defaults to the configured `ai_summary_prompt`.
+              examples:
+                - Provide a brief summary of the conversation including the main topics discussed.
+          unevaluatedProperties:
+            not: {}
+          description: |-
+            Routes the request to the sidecar's summarize path instead of starting a new sidecar.
+            Generates a one-off summary of the conversation and delivers it to the webhook.
+      unevaluatedProperties:
+        not: {}
+      title: AISidecarSummarizeAction object
     SWML.Calling.Action:
       anyOf:
         - $ref: '#/components/schemas/SWML.Calling.SWMLAction'
@@ -32383,6 +32790,16 @@ components:
           description: The caller ID to use when dialing the number.
           examples:
             - '+15551234567'
+        from_name:
+          type: string
+          description: |-
+            The caller ID name shown to the person you're calling, displayed alongside the `from` number
+            (sometimes called CNAM).
+            Applies to SIP calls only — it has no effect on calls to phone numbers.
+            When set at the top level, every destination in a `serial`, `parallel`, or `serial_parallel`
+            group uses this name, unless that destination sets its own `from_name`.
+          examples:
+            - Support Team
         headers:
           type: array
           items:
@@ -32566,6 +32983,16 @@ components:
           description: The caller ID to use when dialing the number.
           examples:
             - '+15551234567'
+        from_name:
+          type: string
+          description: |-
+            The caller ID name shown to the person you're calling, displayed alongside the `from` number
+            (sometimes called CNAM).
+            Applies to SIP calls only — it has no effect on calls to phone numbers.
+            When set at the top level, every destination in a `serial`, `parallel`, or `serial_parallel`
+            group uses this name, unless that destination sets its own `from_name`.
+          examples:
+            - Support Team
         headers:
           type: array
           items:
@@ -32748,6 +33175,16 @@ components:
           description: The caller ID to use when dialing the number.
           examples:
             - '+15551234567'
+        from_name:
+          type: string
+          description: |-
+            The caller ID name shown to the person you're calling, displayed alongside the `from` number
+            (sometimes called CNAM).
+            Applies to SIP calls only — it has no effect on calls to phone numbers.
+            When set at the top level, every destination in a `serial`, `parallel`, or `serial_parallel`
+            group uses this name, unless that destination sets its own `from_name`.
+          examples:
+            - Support Team
         headers:
           type: array
           items:
@@ -32936,6 +33373,16 @@ components:
           description: The caller ID to use when dialing the number.
           examples:
             - '+15551234567'
+        from_name:
+          type: string
+          description: |-
+            The caller ID name shown to the person you're calling, displayed alongside the `from` number
+            (sometimes called CNAM).
+            Applies to SIP calls only — it has no effect on calls to phone numbers.
+            When set at the top level, every destination in a `serial`, `parallel`, or `serial_parallel`
+            group uses this name, unless that destination sets its own `from_name`.
+          examples:
+            - Support Team
         headers:
           type: array
           items:
@@ -36297,6 +36744,7 @@ components:
           description: Whether to fetch the server's resources into `global_data`, when the server advertises resource support. **Default:** `false`.
           examples:
             - true
+          default: false
         resource_vars:
           type: object
           unevaluatedProperties:
@@ -47380,6 +47828,125 @@ servers:
         default: '{Your_Space_Name}'
         description: Your SignalWire Space name
 webhooks:
+  aiSidecarCallback:
+    post:
+      operationId: ai_sidecar_callback
+      summary: AI sidecar callback
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                call_info:
+                  type: object
+                  properties:
+                    project_id:
+                      type: string
+                      format: uuid
+                      description: Your project ID.
+                      example: 4d0d6f16-5881-4fcc-92a4-02c51a91954d
+                    space_id:
+                      type: string
+                      format: uuid
+                      description: Your Space ID.
+                      example: 451ed9ff-e568-4222-8af9-4f9ab7428d09
+                    call_id:
+                      type: string
+                      format: uuid
+                      description: ID of the call the sidecar is attached to.
+                      example: 2e1e66e5-5d07-413d-9668-55542992eec0
+                    content_type:
+                      type: string
+                      description: The content type of the POST body.
+                      example: text/json
+                    content_disposition:
+                      type: string
+                      description: How the body is delivered.
+                      example: post_data
+                    conversation_type:
+                      type: string
+                      description: The conversation type.
+                      example: voice
+                  required:
+                    - call_id
+                  unevaluatedProperties:
+                    not: {}
+                  description: Envelope describing the call. `project_id` and `space_id` are included when available.
+                sidecar_event:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                      enum:
+                        - start
+                        - turn
+                        - request
+                        - thought
+                        - insight
+                        - skip
+                        - tool_call
+                        - tool_result
+                        - action
+                        - global_data_change
+                        - history_pruned
+                        - error
+                        - ask_request
+                        - ask_answer
+                        - stop
+                        - final
+                      description: The callback type.
+                      example: insight
+                    ts:
+                      type: integer
+                      format: int64
+                      description: When the event was produced, as a Unix timestamp in microseconds.
+                      example: 1745870400123456
+                    tick_id:
+                      type: integer
+                      format: int64
+                      description: The processing-tick identifier the callback belongs to.
+                      example: 7
+                    channel_data:
+                      type: object
+                      properties: {}
+                      unevaluatedProperties: {}
+                      description: 'Call/channel context: `call_id`, plus `caller_id_name` / `caller_id_number` / `destination_number` when available.'
+                  required:
+                    - type
+                    - ts
+                    - tick_id
+                    - channel_data
+                  unevaluatedProperties:
+                    not: {}
+                  description: The sidecar callback. Carries the common fields below plus type-specific fields.
+              required:
+                - call_info
+                - sidecar_event
+              unevaluatedProperties:
+                not: {}
+              description: |-
+                Delivered to the sidecar's `url` (when set) as the sidecar observes the call. The same payload
+                is always published on the `calling.ai.sidecar` relay topic; the webhook POST is opt-in.
+                The actual event is under `sidecar_event` — unwrap it before reading `type` and the event's fields.
+
+                This payload documents the common envelope shared by every callback. For the per-`type` fields
+                (for example `insight.raw`, `turn.transcript_delta`, `final.summary`), see the
+                [SWML ai_sidecar reference](/docs/swml/reference/calling/ai-sidecar#callback-types).
+      responses:
+        '200':
+          description: Webhook received
+      description: |-
+        Delivered to the sidecar's `url` (when set) as the sidecar observes the call. The same payload
+        is always published on the `calling.ai.sidecar` relay topic; the webhook POST is opt-in.
+        The actual event is under `sidecar_event` — unwrap it before reading `type` and the event's fields.
+
+        This payload documents the common envelope shared by every callback. For the per-`type` fields
+        (for example `insight.raw`, `turn.transcript_delta`, `final.summary`), see the
+        [SWML ai_sidecar reference](/docs/swml/reference/calling/ai-sidecar#callback-types).
+      tags:
+        - Calls
   streamStatusCallback:
     post:
       operationId: stream_status_callback

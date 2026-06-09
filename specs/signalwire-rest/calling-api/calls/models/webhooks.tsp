@@ -108,3 +108,115 @@ model StreamStatusCallbackPayload {
     name?: string;
   };
 }
+
+@doc("""
+  The kind of AI sidecar callback. See the
+  [SWML ai_sidecar reference](/docs/swml/reference/calling/ai-sidecar#callback-types)
+  for the type-specific fields each one carries.
+  """)
+enum AISidecarCallbackType {
+  @doc("The sidecar attached to the call.")
+  start,
+
+  @doc("The customer finished a turn and an evaluation is about to run.")
+  turn,
+
+  @doc("The sidecar called the model.")
+  request,
+
+  @doc("The model produced intermediate reasoning text.")
+  thought,
+
+  @doc("The sidecar's advice for the agent.")
+  insight,
+
+  @doc("The model called the built-in `sidecar_skip` tool to stay silent for this turn.")
+  skip,
+
+  @doc("The model called one of your tools.")
+  tool_call,
+
+  @doc("One of your tools returned a result.")
+  tool_result,
+
+  @doc("A SWAIG action was returned (and, if enabled, executed).")
+  action,
+
+  @doc("A `set_global_data` / `unset_global_data` action changed `global_data`.")
+  global_data_change,
+
+  @doc("The conversation history was trimmed to fit the token budget.")
+  history_pruned,
+
+  @doc("Something failed, or an anti-loop guard tripped.")
+  error,
+
+  @doc("An `ai_sidecar.ask` was queued. Carries the `ask_id`.")
+  ask_request,
+
+  @doc("The answer to an `ai_sidecar.ask`. Carries the matching `ask_id`.")
+  ask_answer,
+
+  @doc("The sidecar is shutting down.")
+  stop,
+
+  @doc("The last callback before the sidecar stops — a full snapshot of the session.")
+  final,
+}
+
+@summary("AI sidecar callback")
+@doc("""
+  Delivered to the sidecar's `url` (when set) as the sidecar observes the call. The same payload
+  is always published on the `calling.ai.sidecar` relay topic; the webhook POST is opt-in.
+  The actual event is under `sidecar_event` — unwrap it before reading `type` and the event's fields.
+  
+  This payload documents the common envelope shared by every callback. For the per-`type` fields
+  (for example `insight.raw`, `turn.transcript_delta`, `final.summary`), see the
+  [SWML ai_sidecar reference](/docs/swml/reference/calling/ai-sidecar#callback-types).
+  """)
+model AISidecarCallbackPayload {
+  @doc("Envelope describing the call. `project_id` and `space_id` are included when available.")
+  call_info: {
+    @doc("Your project ID.")
+    @example("4d0d6f16-5881-4fcc-92a4-02c51a91954d")
+    project_id?: uuid;
+
+    @doc("Your Space ID.")
+    @example("451ed9ff-e568-4222-8af9-4f9ab7428d09")
+    space_id?: uuid;
+
+    @doc("ID of the call the sidecar is attached to.")
+    @example("2e1e66e5-5d07-413d-9668-55542992eec0")
+    call_id: uuid;
+
+    @doc("The content type of the POST body.")
+    @example("text/json")
+    content_type?: string;
+
+    @doc("How the body is delivered.")
+    @example("post_data")
+    content_disposition?: string;
+
+    @doc("The conversation type.")
+    @example("voice")
+    conversation_type?: string;
+  };
+
+  @doc("The sidecar callback. Carries the common fields below plus type-specific fields.")
+  sidecar_event: {
+    @doc("The callback type.")
+    @example(AISidecarCallbackType.insight)
+    type: AISidecarCallbackType;
+
+    @doc("When the event was produced, as a Unix timestamp in microseconds.")
+    @example(1745870400123456)
+    ts: int64;
+
+    @doc("The processing-tick identifier the callback belongs to.")
+    @example(7)
+    tick_id: int64;
+
+    @doc("Call/channel context: `call_id`, plus `caller_id_name` / `caller_id_number` / `destination_number` when available.")
+    channel_data: Record<unknown>;
+  };
+}

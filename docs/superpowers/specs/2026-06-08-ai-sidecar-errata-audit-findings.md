@@ -91,3 +91,57 @@ Confirmed real in C but intentionally left undocumented:
 The errata describes a public site that predates the merged sidecar work; the source is already
 correct. The one real source defect — the strict schema rejecting the valid `action` field — is
 fixed here, plus a one-row callback-completeness improvement.
+
+---
+
+# Phase 2 — Sidecar calling commands + webhook callbacks (2026-06-09)
+
+Follow-up: document the sidecar's runtime/calling surface and the previously-missing callbacks.
+
+## Surface decision
+
+"Calling commands" in this repo = TypeSpec request models in
+`specs/signalwire-rest/calling-api/` that generate the `POST /api/calling/calls`
+(`call-commands`) reference. Added there, mirroring `live_transcribe`/`live_translate`.
+
+Deliberately **not** touched:
+- `fern/apis/calling-rpc/openrpc.yaml` (JSON-RPC) — **commented out in `apis.yml`**, unpublished.
+- Server-SDK RELAY bindings — the sidecar has **no typed SDK wrapper by design** (errata: use raw
+  `execute()`); fabricating bindings would document something that doesn't exist.
+
+Ground truth: `api_commands.c:785` (subcommand syntax), `relay.c:18794-18798` (RELAY verbs),
+`relay_apis.c:1875-1913` (envelope schemas).
+
+## Commands added (5)
+
+| Command | params | C source |
+|---|---|---|
+| `calling.ai_sidecar` | full sidecar config (reuses `AISidecarObject`) + `action.summarize` | `api_commands.c:843` |
+| `calling.ai_sidecar.poke` | `{ text }` | `api_commands.c:888`, `relay.c:9400` |
+| `calling.ai_sidecar.ask` | `{ text }` → `ask_id`, later `ask_answer` callback | `api_commands.c:896`, `relay.c:9446` |
+| `calling.ai_sidecar.stop` | `{}` (no params; addressed by call `id` only) | `api_commands.c:945`, `relay.c:9502` |
+| `calling.ai_sidecar.status` | `{}` → counters | `api_commands.c:877`, `relay.c:9542` |
+
+Start body **reuses the SWML `AISidecarObject`** (the REST spec already
+`import`s + `using SWML.Calling`) — single source of truth, zero drift with the SWML page, fully
+expanded in the generated OpenAPI. Files: `requests.tsp` (5 models + `CallRequest` union entries),
+`calls/main.tsp` (command table + `@opExample`s), `examples.tsp` (5 example consts).
+
+## Webhook callbacks
+
+Per the "document callbacks via the webhook payload" decision: added
+`AISidecarCallbackPayload` to `webhooks.tsp` (the `call_info` + `sidecar_event` envelope with the
+common fields `type`/`ts`/`tick_id`/`channel_data`) and an `AISidecarCallbackType` enum of **all 16
+callback types — including the previously-missing `ask_request` / `ask_answer`**. Registered via
+`@webhook("aiSidecarCallback", …)` in `calls/main.tsp`; nav entry
+`subpackage_calls.ai_sidecar_callback` under APIs → Calling → Webhooks (`apis.yml`). Per-`type`
+fields are cross-linked to the SWML `ai_sidecar` reference (single conceptual home), per the
+cross-ref decision. The SWML page's own callback table also gained the `ask_request`/`ask_answer`
+rows.
+
+## Verification
+
+- `tsp compile` (signalwire-rest) succeeds; OpenAPI regenerated with all 5 commands in the
+  `command` enum and the `Calling.AISidecarCallbackPayload` webhook (16-member type enum confirmed).
+- `tsp format` applied to all 4 changed REST specs.
+- `fern check` — 0 errors (1 pre-existing color-contrast warning, unrelated).

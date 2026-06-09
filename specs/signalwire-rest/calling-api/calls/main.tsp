@@ -16,6 +16,7 @@ using Types.StatusCodes;
 @route("/calls")
 @webhook("transcribeStatusCallback", TranscribeStatusCallbackPayload, CALLS_TAG)
 @webhook("streamStatusCallback", StreamStatusCallbackPayload, CALLS_TAG)
+@webhook("aiSidecarCallback", AISidecarCallbackPayload, CALLS_TAG)
 namespace SignalWireAPI.Calling.Calls {
   @tag(CALLS_TAG)
   @friendlyName("Calls")
@@ -25,12 +26,12 @@ namespace SignalWireAPI.Calling.Calls {
       Unified JSON-RPC style endpoint for executing call methods through command-based dispatch.
       Send a request with the appropriate `command` field to invoke the desired call operation.
       All async-safe RELAY methods can be sent through this endpoint without a WebSocket connection.
-
+      
       ## Supported Commands
-
+      
       Use one of the following commands in the `command` field of the request body to perform the corresponding action on an active call. 
       For more details on each command, refer to the individual API reference documentation linked below.
-
+      
       | Command | Description |
       |---------|-------------|
       | `dial` | Create and initiate a new outbound call |
@@ -65,13 +66,18 @@ namespace SignalWireAPI.Calling.Calls {
       | `calling.ai_unhold` | Resume an AI call from hold |
       | `calling.ai_message` | Inject a message into an active AI conversation |
       | `calling.ai.stop` | Stop an active AI session |
+      | `calling.ai_sidecar` | Attach a real-time AI observer (sidecar) to a call, or summarize the conversation |
+      | `calling.ai_sidecar.poke` | Inject a message into the sidecar and force an immediate tick |
+      | `calling.ai_sidecar.ask` | Ask the sidecar an out-of-band question (answered via `ask_answer` callback) |
+      | `calling.ai_sidecar.stop` | Stop and detach the AI sidecar |
+      | `calling.ai_sidecar.status` | Snapshot the sidecar's runtime counters |
       | `calling.live_transcribe` | Start, stop, or summarize real-time transcription |
       | `calling.live_translate` | Start, stop, summarize, or inject real-time translation |
       | `calling.send_fax.stop` | Stop active fax send |
       | `calling.receive_fax.stop` | Stop active fax receive |
       | `calling.refer` | Transfer a SIP call via SIP REFER |
       | `calling.user_event` | Fire a custom user event on the call |
-
+      
       ${tokenPermissions<"_Voice_">}
       """)
     @opExample(
@@ -107,6 +113,41 @@ namespace SignalWireAPI.Calling.Calls {
       #{
         title: "calling.ai.stop",
         description: "Stop an active AI session on the call",
+      }
+    )
+    @opExample(
+      #{ parameters: aiSidecarCallExample },
+      #{
+        title: "calling.ai_sidecar",
+        description: "Attach a real-time AI sidecar to an active call",
+      }
+    )
+    @opExample(
+      #{ parameters: aiSidecarPokeCallExample },
+      #{
+        title: "calling.ai_sidecar.poke",
+        description: "Inject a message into the sidecar and force a tick",
+      }
+    )
+    @opExample(
+      #{ parameters: aiSidecarAskCallExample },
+      #{
+        title: "calling.ai_sidecar.ask",
+        description: "Ask the sidecar an out-of-band question",
+      }
+    )
+    @opExample(
+      #{ parameters: aiSidecarStopCallExample },
+      #{
+        title: "calling.ai_sidecar.stop",
+        description: "Stop and detach the AI sidecar",
+      }
+    )
+    @opExample(
+      #{ parameters: aiSidecarStatusCallExample },
+      #{
+        title: "calling.ai_sidecar.status",
+        description: "Snapshot the sidecar's runtime counters",
       }
     )
     @opExample(
@@ -209,10 +250,7 @@ namespace SignalWireAPI.Calling.Calls {
     )
     @opExample(
       #{ parameters: recordStopCallExample },
-      #{
-        title: "calling.record.stop",
-        description: "Stop an active recording",
-      }
+      #{ title: "calling.record.stop", description: "Stop an active recording" }
     )
     @opExample(
       #{ parameters: recordResumeCallExample },
@@ -265,17 +303,11 @@ namespace SignalWireAPI.Calling.Calls {
     )
     @opExample(
       #{ parameters: playCallExample },
-      #{
-        title: "calling.play",
-        description: "Play media on an active call",
-      }
+      #{ title: "calling.play", description: "Play media on an active call" }
     )
     @opExample(
       #{ parameters: disconnectCallExample },
-      #{
-        title: "calling.disconnect",
-        description: "Disconnect a call leg",
-      }
+      #{ title: "calling.disconnect", description: "Disconnect a call leg" }
     )
     @opExample(
       #{ parameters: transferCallExample },
