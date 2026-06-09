@@ -1,0 +1,1015 @@
+---
+title: "HIPAA"
+slug: /compliance/hipaa
+description: Guidelines for building HIPAA-compliant communications and voice AI applications on SignalWire with SWML.
+max-toc-depth: 3
+---
+
+The Health Insurance Portability and Accountability Act (HIPAA) establishes requirements for protecting Protected Health Information (PHI). As a telecommunication technology company, SignalWire is designed to be HIPAA compliant from the ground up: SignalWire APIs and WebRTC communications services are all encrypted by default via HTTPS, TLS, and/or SRTP/DTLS. When building applications — especially voice AI agents defined with [SWML](/docs/swml) — that handle healthcare data, you must implement appropriate safeguards to protect PHI throughout the call lifecycle.
+
+<Warning>
+This guide provides technical guidance for implementing security controls relevant to HIPAA compliance. It is not legal advice. Healthcare organizations must consult with qualified healthcare compliance experts and legal counsel to ensure their specific implementation meets all applicable HIPAA requirements. Compliance is a shared responsibility between SignalWire, your organization, and your implementation choices.
+</Warning>
+
+## Overview
+
+[HIPAA](https://www.hhs.gov/hipaa/for-professionals/index.html) applies to covered entities and business associates. Individuals, organizations, and agencies that meet the definition of a [covered entity](https://www.hhs.gov/hipaa/for-professionals/covered-entities/index.html) must comply with the Rules' requirements to protect the privacy and security of health information. If a covered entity engages a [business associate](https://www.hhs.gov/hipaa/for-professionals/privacy/guidance/business-associates/index.html) to help carry out its health care activities, the covered entity must have a written business associate contract that establishes what the business associate has been engaged to do and requires it to comply with the Rules' requirements to protect PHI.
+
+SignalWire is HIPAA compliant by design. No PII (Personally Identifiable Information), private resource logs, or other records are publicly accessible — you must have specific access granted by a Space Admin to see logs in the portal, and you must have API credentials to use the API. PII and PHI that may be contained in resources can also be deleted from the logs (message bodies, fax media, message media, and so on). Recordings must be manually enabled, and they can be deleted from the Space altogether or paused during the collection of sensitive data.
+
+### What is PHI in voice AI?
+
+In the context of voice AI agents, PHI may include:
+
+- Patient names, addresses, phone numbers
+- Medical record numbers and account numbers
+- Appointment details and scheduling information
+- Prescription information
+- Lab results and diagnoses
+- Insurance information
+- Any health-related information combined with patient identifiers
+
+### Shared responsibility model
+
+| Layer | Responsibility |
+|-------|---------------|
+| SignalWire Platform | Infrastructure security, encryption in transit, secure data centers |
+| Your Application | Access controls, audit logging, PHI handling, prompt design, SWAIG webhook security |
+| Your Organization | Policies, training, BAA management, incident response |
+
+## Business Associate Agreement (BAA)
+
+SignalWire is a Business Associate and offers Business Associate Agreements for healthcare customers. You **must** have a signed BAA with SignalWire before processing any PHI through the platform.
+
+<Info>
+If you need a BAA signed for HIPAA compliance, reach out to `sales@signalwire.com` to get started.
+</Info>
+
+## Prerequisites
+
+Before deploying a HIPAA-compliant agent, ensure the following are in place.
+
+### Infrastructure requirements
+
+| Requirement | Details |
+|-------------|---------|
+| HTTPS | All endpoints — including your SWAIG and SWML webhooks — must use TLS 1.2 or higher |
+| Authentication | HTTP Basic Auth on every webhook the agent calls |
+| Hosting | HIPAA-compliant hosting environment for any service that receives PHI |
+| Network | Firewall rules limiting access to necessary IPs |
+
+### HIPAA-compliant providers
+
+When building HIPAA-compliant agents, you must use voice and LLM providers that support BAA coverage. In SWML, voice is selected per language with the `voice` property of [`ai.languages`](/docs/swml/reference/calling/ai/languages), and the model is selected with `ai_model` in [`ai.params`](/docs/swml/reference/calling/ai/params).
+
+**HIPAA-compliant voice providers:**
+
+| Provider | SWML configuration |
+|----------|--------------------|
+| Rime | `voice: rime.spore` |
+| Google | `voice: gcloud.en-US-Neural2-F` |
+| Amazon | `voice: polly.Joanna` |
+| Azure | `voice: azure.en-US-JennyNeural` |
+
+**HIPAA-compliant LLM:**
+
+| Model | SWML configuration |
+|-------|--------------------|
+| gpt-oss-120b | `params.ai_model: gpt-oss-120b` |
+
+The same provider and model selection expressed in SWML and from a server SDK:
+
+<Tabs>
+
+<Tab title="SWML">
+
+<CodeBlocks>
+
+```yaml title="YAML"
+version: 1.0.0
+sections:
+  main:
+    - ai:
+        prompt:
+          text: You are a healthcare appointment assistant for Example Medical Center.
+        params:
+          ai_model: gpt-oss-120b
+        languages:
+          - name: English
+            code: en-US
+            voice: rime.spore
+```
+
+```json title="JSON"
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "ai": {
+          "prompt": {
+            "text": "You are a healthcare appointment assistant for Example Medical Center."
+          },
+          "params": { "ai_model": "gpt-oss-120b" },
+          "languages": [
+            { "name": "English", "code": "en-US", "voice": "rime.spore" }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+
+</CodeBlocks>
+
+</Tab>
+
+<Tab title="Server SDK">
+
+```typescript
+import { RelayClient } from '@signalwire/sdk';
+
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_API_TOKEN!,
+  contexts: ['default'],
+});
+
+client.onCall(async (call) => {
+  await call.answer();
+
+  // call.ai() executes the SWML `ai` verb on the call
+  const action = await call.ai({
+    prompt: { text: 'You are a healthcare appointment assistant for Example Medical Center.' },
+    aiParams: { ai_model: 'gpt-oss-120b' },
+    languages: [{ name: 'English', code: 'en-US', voice: 'rime.spore' }],
+  });
+
+  await action.wait();
+});
+
+await client.run();
+```
+
+</Tab>
+
+</Tabs>
+
+### Personnel requirements
+
+- Designated HIPAA Privacy Officer
+- Designated HIPAA Security Officer
+- Workforce training on PHI handling
+- Documented policies and procedures
+
+## Access control
+
+When you invite a new user to your SignalWire Space, the admin can specify the projects that they should be allowed to view, limiting accessibility to resource logs to only those who have been granted permission. The API also requires each request to be authenticated with a Space URL, Project ID, and most importantly, an API Token.
+
+We highly recommend that each application that programmatically accesses SignalWire uses its own API tokens, so that you can easily see when these tokens have been used and remove them when necessary. Additionally, take care to make sure only those who **need** access to a project have it.
+
+<Note>
+**The principle of least privilege.** [The principle of least privilege (POLP)](https://www.techtarget.com/searchsecurity/definition/principle-of-least-privilege-POLP) limits users' access rights to only what is strictly required to do their jobs. Implementing this is a huge help in HIPAA compliance, as well as a solid business practice.
+</Note>
+
+### Securing SWAIG webhooks
+
+Any [SWAIG function](/docs/swml/reference/calling/ai/swaig/functions) that accesses PHI calls out to a `web_hook_url` that you host. Protect those endpoints with HTTP Basic Auth — supplied inline in the URL as `username:password@url` — and serve them over HTTPS. Set credentials once with `SWAIG.defaults.web_hook_url` so every function inherits them:
+
+<CodeBlocks>
+
+```yaml title="YAML"
+version: 1.0.0
+sections:
+  main:
+    - ai:
+        prompt:
+          text: You are a healthcare appointment assistant.
+        SWAIG:
+          defaults:
+            web_hook_url: https://agent:${env.SWAIG_SECRET}@healthcare.example.com/swaig
+          functions:
+            - function: get_patient_info
+              description: Retrieve patient information by ID once identity is verified.
+              parameters:
+                type: object
+                properties:
+                  patient_id:
+                    type: string
+                    description: Patient identifier
+                required:
+                  - patient_id
+```
+
+```json title="JSON"
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "ai": {
+          "prompt": { "text": "You are a healthcare appointment assistant." },
+          "SWAIG": {
+            "defaults": {
+              "web_hook_url": "https://agent:${env.SWAIG_SECRET}@healthcare.example.com/swaig"
+            },
+            "functions": [
+              {
+                "function": "get_patient_info",
+                "description": "Retrieve patient information by ID once identity is verified.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "patient_id": { "type": "string", "description": "Patient identifier" }
+                  },
+                  "required": ["patient_id"]
+                }
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }
+}
+```
+
+</CodeBlocks>
+
+The `parameters` schema is the first line of input validation: the LLM may only call the function with the properties you declare. Perform full validation again on the webhook before touching any PHI.
+
+## Audit logging
+
+HIPAA requires audit trails for PHI access. Because SWAIG functions invoke your `web_hook_url`, the audit trail is created in **your** webhook handler — log every access there, and sanitize entries so that PHI never lands in plaintext logs:
+
+<Tabs>
+
+<Tab title="Node (webhook handler)">
+
+```javascript
+import express from 'express';
+
+const app = express();
+app.use(express.json());
+
+const SENSITIVE = ['ssn', 'social_security', 'dob', 'date_of_birth',
+  'address', 'phone', 'medical_record', 'mrn', 'diagnosis', 'prescription'];
+
+function sanitize(data = {}) {
+  const out = { ...data };
+  for (const field of SENSITIVE) if (field in out) out[field] = '[REDACTED]';
+  return out;
+}
+
+app.post('/swaig/:fn', (req, res) => {
+  const { function: fn, argument } = req.body;
+  console.info(JSON.stringify({
+    event: 'PHI_ACCESS',
+    timestamp: new Date().toISOString(),
+    function: fn,
+    args: sanitize(argument?.parsed?.[0]),
+    success: true,
+  }));
+  res.json({ response: 'Retrieved patient information.' });
+});
+
+app.listen(8080);
+```
+
+</Tab>
+
+<Tab title="Python (webhook handler)">
+
+```python
+import logging
+from datetime import datetime
+from flask import Flask, request, jsonify
+
+app = Flask(__name__)
+audit = logging.getLogger("hipaa_audit")
+
+SENSITIVE = ['ssn', 'social_security', 'dob', 'date_of_birth',
+             'address', 'phone', 'medical_record', 'mrn', 'diagnosis', 'prescription']
+
+def sanitize(data):
+    data = dict(data or {})
+    for field in SENSITIVE:
+        if field in data:
+            data[field] = "[REDACTED]"
+    return data
+
+@app.post("/swaig/<fn>")
+def swaig(fn):
+    body = request.get_json()
+    audit.info({
+        "event": "PHI_ACCESS",
+        "timestamp": datetime.utcnow().isoformat(),
+        "function": fn,
+        "args": sanitize((body.get("argument") or {}).get("parsed", [{}])[0]),
+        "success": True,
+    })
+    return jsonify({"response": "Retrieved patient information."})
+```
+
+</Tab>
+
+</Tabs>
+
+Required audit log events:
+
+| Event | Required fields |
+|-------|-----------------|
+| Call Start | Timestamp, call_id, caller_id (hashed), agent_name |
+| PHI Access | Timestamp, action, resource_type, user_id, success/failure |
+| Function Call | Timestamp, function_name, sanitized_args, result_status |
+| Authentication | Timestamp, auth_type, success/failure, source_ip |
+| Call End | Timestamp, call_id, duration, disposition |
+
+A `summarize_conversation` SWAIG function combined with [`ai.post_prompt`](/docs/swml/reference/calling/ai#post_prompt) delivers an end-of-call summary to your webhook, which is a convenient place to record the Call End audit event.
+
+## Call recording compliance
+
+Recordings must be manually enabled, and they can be deleted from the Space altogether or paused during the collection of sensitive data. Start a background recording with [`record_call`](/docs/swml/reference/calling/record-call) and stop or pause it with [`stop_record_call`](/docs/swml/reference/calling/stop-record-call).
+
+### Consent and disclosure
+
+HIPAA and state laws require consent for call recording. Put the disclosure instruction directly in the AI prompt so it is spoken before any PHI discussion:
+
+<CodeBlocks>
+
+```yaml title="YAML"
+version: 1.0.0
+sections:
+  main:
+    - answer: {}
+    - record_call:
+        control_id: main_recording
+        stereo: true
+    - ai:
+        prompt:
+          text: |
+            At the start of every call, you MUST inform the caller:
+            "This call may be recorded for quality assurance and compliance purposes.
+            Your continued participation indicates your consent to recording. If you do
+            not wish to be recorded, please let me know now."
+            Wait for acknowledgment before proceeding with any PHI discussion.
+```
+
+```json title="JSON"
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      { "answer": {} },
+      { "record_call": { "control_id": "main_recording", "stereo": true } },
+      {
+        "ai": {
+          "prompt": {
+            "text": "At the start of every call, you MUST inform the caller: \"This call may be recorded for quality assurance and compliance purposes. Your continued participation indicates your consent to recording. If you do not wish to be recorded, please let me know now.\" Wait for acknowledgment before proceeding with any PHI discussion."
+          }
+        }
+      }
+    ]
+  }
+}
+```
+
+</CodeBlocks>
+
+### Pausing recording for sensitive data
+
+Pause recording when collecting highly sensitive information. A SWAIG function can pause and resume the recording by returning a [`SWML` action](/docs/swml/reference/calling/ai/swaig/functions/data-map#list-of-valid-actions) that runs `stop_record_call` (and later `record_call`). This is what your webhook returns in response to the function call:
+
+```json
+{
+  "response": "I'll need to collect some sensitive information. Recording will be paused during this process.",
+  "action": [
+    {
+      "SWML": {
+        "version": "1.0.0",
+        "sections": {
+          "main": [
+            { "stop_record_call": { "control_id": "main_recording" } }
+          ]
+        }
+      }
+    }
+  ]
+}
+```
+
+Resume it the same way once the sensitive exchange is complete, by returning a `record_call` verb inside the `SWML` action.
+
+### Recording retention
+
+Call recordings containing PHI are considered part of the medical record. HIPAA does not specify a retention period for PHI itself — retention requirements come from state medical records laws, other federal regulations (for example, Medicare conditions of participation), and organizational policies.
+
+<Note>
+The HIPAA six-year retention requirement (45 CFR 164.530(j)) applies to administrative documentation — policies, procedures, training records, risk assessments, and audit logs — not to PHI or call recordings.
+</Note>
+
+| Consideration | Recommendation |
+|---------------|----------------|
+| Retention Period | Follow state medical records laws and organizational policy (commonly 7-10 years for adults; longer for minors) |
+| Storage | Encrypted at rest, access-controlled |
+| Destruction | Secure deletion with audit trail when retention period expires |
+| Access Logging | Log all recording access |
+
+## PHI handling best practices
+
+### Keeping PHI out of the LLM with global_data and meta_data
+
+The model only ever sees what is in the prompt, the live conversation, and the arguments and responses of the functions it calls. SWML gives you two stores for data that your logic needs but the model should never see:
+
+- [`ai.global_data`](/docs/swml/reference/calling/ai#properties) — a key-value object that persists for the whole AI session. It is available to your prompts, AI params, and the SWML returned by SWAIG functions, and is updated at runtime with the [`set_global_data` action](/docs/swml/reference/calling/ai/swaig/functions/data-map#list-of-valid-actions). As long as you never template a value into the prompt or a spoken response, it stays out of the model's context.
+- [`meta_data`](/docs/swml/reference/calling/ai/swaig/functions) — an environmental variable scoped **locally** to a function (and its `web_hook_url`), updated with the [`set_meta_data` action](/docs/swml/reference/calling/ai/swaig/functions/data-map#list-of-valid-actions). Use it for per-function context that no other function — and never the model's conversation — should see.
+
+| Data location | LLM sees it | Your SWAIG webhook can use it |
+|---------------|-------------|-------------------------------|
+| Prompt / conversation / `say` | Yes | Yes |
+| Function arguments and responses | Yes | Yes |
+| `global_data` (not templated into the prompt) | **No** | Yes |
+| `meta_data` | **No** | Yes (locally to the function) |
+
+A verification function stores the resolved patient record in `global_data` and returns only a generic confirmation, so the identifiers your other functions rely on are never exposed to the model. Your webhook returns:
+
+```json
+{
+  "response": "Thank you, I've verified your identity. How can I help you today?",
+  "action": [
+    {
+      "set_global_data": {
+        "verified": true,
+        "patient_id": "P12345678",
+        "mrn": "MRN-0099"
+      }
+    }
+  ]
+}
+```
+
+A later function — for example, scheduling an appointment — reads `${global_data.patient_id}` and `${global_data.mrn}` on the server side and confirms the booking without ever speaking the identifiers back.
+
+### Collecting PHI via IVR (bypassing the LLM)
+
+For maximum PHI protection, collect sensitive values with the [`prompt`](/docs/swml/reference/calling/prompt) verb (DTMF or speech) instead of through conversation. Input gathered this way is placed in the `prompt_value` variable for your SWML and webhooks — it never enters the model's context or the transcript, and with recording paused it never reaches the recording either:
+
+<CodeBlocks>
+
+```yaml title="YAML"
+version: 1.0.0
+sections:
+  main:
+    # Pause recording before collecting sensitive digits
+    - stop_record_call:
+        control_id: main_recording
+    - prompt:
+        play: "say:Please enter your 8-digit date of birth. For example, 0 3 1 5 1 9 8 5 for March 15, 1985."
+        max_digits: 8
+        digit_timeout: 15
+    # The collected digits are in ${prompt_value}: available to your SWML and
+    # webhooks, but never sent to the LLM or written to the transcript.
+    - record_call:
+        control_id: main_recording
+        stereo: true
+    - ai:
+        prompt:
+          text: |
+            Thank the caller for providing their information and continue verifying
+            their identity. Never repeat sensitive values back to the caller.
+```
+
+```json title="JSON"
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      { "stop_record_call": { "control_id": "main_recording" } },
+      {
+        "prompt": {
+          "play": "say:Please enter your 8-digit date of birth. For example, 0 3 1 5 1 9 8 5 for March 15, 1985.",
+          "max_digits": 8,
+          "digit_timeout": 15
+        }
+      },
+      { "record_call": { "control_id": "main_recording", "stereo": true } },
+      {
+        "ai": {
+          "prompt": {
+            "text": "Thank the caller for providing their information and continue verifying their identity. Never repeat sensitive values back to the caller."
+          }
+        }
+      }
+    ]
+  }
+}
+```
+
+</CodeBlocks>
+
+This approach provides several layers of protection:
+
+| Collection method | LLM sees data | Transcript contains | Recording contains |
+|-------------------|---------------|---------------------|-------------------|
+| Normal conversation | Yes | Yes | Yes |
+| DTMF via `prompt` | **No** | **No** | Tones only |
+| Speech via `prompt` | **No** | **No** | Yes (pause recording to exclude) |
+| `global_data` / `meta_data` | **No** | **No** | **No** |
+
+### Prompt design for PHI protection
+
+Design prompts to minimize PHI exposure. Whether you write a single `text` prompt or a structured [POM](/docs/swml/reference/calling/ai/prompt), encode the protection and verification rules explicitly:
+
+<CodeBlocks>
+
+```yaml title="YAML"
+version: 1.0.0
+sections:
+  main:
+    - ai:
+        prompt:
+          text: |
+            # PHI Protection Rules
+            CRITICAL: Follow these rules for Protected Health Information.
+            1. NEVER repeat back sensitive information such as Social Security Numbers,
+               full date of birth, medical record numbers, or detailed diagnosis information.
+            2. When confirming identity, use partial information only
+               (e.g. "your date of birth ends in [last 2 digits of year]").
+            3. NEVER include PHI in error messages or clarifications.
+            4. If asked to repeat sensitive info, say:
+               "For security purposes, I cannot repeat that information."
+
+            # Identity Verification
+            Before accessing ANY patient information, collect a patient identifier and
+            verify TWO of: date of birth, last 4 of SSN, address on file, phone on file.
+            Only proceed after successful verification.
+```
+
+```json title="JSON"
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "ai": {
+          "prompt": {
+            "text": "# PHI Protection Rules\nCRITICAL: Follow these rules for Protected Health Information.\n1. NEVER repeat back sensitive information such as Social Security Numbers, full date of birth, medical record numbers, or detailed diagnosis information.\n2. When confirming identity, use partial information only (e.g. \"your date of birth ends in [last 2 digits of year]\").\n3. NEVER include PHI in error messages or clarifications.\n4. If asked to repeat sensitive info, say: \"For security purposes, I cannot repeat that information.\"\n\n# Identity Verification\nBefore accessing ANY patient information, collect a patient identifier and verify TWO of: date of birth, last 4 of SSN, address on file, phone on file. Only proceed after successful verification."
+          }
+        }
+      }
+    ]
+  }
+}
+```
+
+</CodeBlocks>
+
+### Secure function design
+
+Design SWAIG functions to return the minimum necessary PHI. Your `web_hook_url` should verify the caller is authorized, log the access, and respond with only what the caller needs to hear — never provider names or detailed locations:
+
+```json
+{
+  "response": "Your next appointment is on June 15 at 2:30 PM. Please arrive 15 minutes early."
+}
+```
+
+If authorization fails, return a non-revealing message and log the failure:
+
+```json
+{
+  "response": "I was unable to verify your identity. Please contact us directly for assistance."
+}
+```
+
+### Input validation
+
+Validate all inputs to prevent injection and ensure data integrity. Declare expected inputs and constraints in the function [`parameters`](/docs/swml/reference/calling/ai/swaig/functions/parameters) so the model can only supply well-formed values, then re-validate on the webhook:
+
+<CodeBlocks>
+
+```yaml title="YAML"
+functions:
+  - function: verify_patient
+    description: Verify the caller's identity before accessing records.
+    web_hook_url: https://agent:${env.SWAIG_SECRET}@healthcare.example.com/swaig/verify
+    parameters:
+      type: object
+      properties:
+        patient_id:
+          type: string
+          pattern: "^[A-Z0-9]{8,12}$"
+          description: Patient identifier
+        date_of_birth:
+          type: string
+          pattern: "^\\d{2}/\\d{2}/\\d{4}$"
+          description: Date of birth in MM/DD/YYYY format
+      required:
+        - patient_id
+        - date_of_birth
+```
+
+```json title="JSON"
+{
+  "functions": [
+    {
+      "function": "verify_patient",
+      "description": "Verify the caller's identity before accessing records.",
+      "web_hook_url": "https://agent:${env.SWAIG_SECRET}@healthcare.example.com/swaig/verify",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "patient_id": {
+            "type": "string",
+            "pattern": "^[A-Z0-9]{8,12}$",
+            "description": "Patient identifier"
+          },
+          "date_of_birth": {
+            "type": "string",
+            "pattern": "^\\d{2}/\\d{2}/\\d{4}$",
+            "description": "Date of birth in MM/DD/YYYY format"
+          }
+        },
+        "required": ["patient_id", "date_of_birth"]
+      }
+    }
+  ]
+}
+```
+
+</CodeBlocks>
+
+### Redacting stored message media
+
+To further restrict access to sensitive data, you can delete and redact resources from SignalWire via the API. Using `.update(body='')` keeps a record that the message was sent while redacting its contents; using `.delete()` hides the message entirely from your message logs.
+
+<Accordion title="Full code example: delete and redact message media">
+
+```python
+# import the SignalWire API
+from signalwire.rest import Client as signalwire_client
+
+client = signalwire_client("project id", "api token" , signalwire_space_url = "space url")
+
+# sets lists for our message sid's and media sid's
+msgsids = []
+mdasids = []
+msgsidsuniq = []
+
+
+
+# gets a list of all messages, here you could add arguments such as to, from, datesent, or status
+messages = client.messages.list()
+
+# for each message retrieved from 'messages' we will append the sid to the msgsids list
+for record in messages:
+    msgsids.append(record.sid)
+
+# for each sid retrieved we will get a list of media sids associated with that message
+for msg in msgsids:
+    media = client.messages(msg).media.list()
+
+    # for each media sid we will retrieve the parent sid and delete the related media (this allows us to handle messages with multiple media instances
+    for med in media:
+
+        # checks the parent(message) sid of each media sid and adds it to a list
+        if med.parent_sid not in msgsidsuniq:
+            msgsidsuniq.append(med.parent_sid)
+
+        # deletes the media from the message
+        client.messages((med.parent_sid)) \
+            .media(med.sid)\
+            .delete()
+
+        # prints the media sid deleted
+        print(med.sid + " deleted")
+
+# takes unique message sid's from media deletion and updates the body to be blank or 'redacted'
+for msgsid in msgsidsuniq:
+
+    # using .update() allows you to track that the message was sent and redacted later
+    # using .delete() would hide the message entirely from your message logs
+    message = client.messages(msgsid).update(body='')
+
+    # prints message sid over-write
+    print(msgsid + " over-write")
+```
+
+</Accordion>
+
+## Deployment
+
+The PHI-handling parts of a SWML agent live in the services you host: the endpoint that serves the SWML and the `web_hook_url` endpoints that back your SWAIG functions. Secure those services regardless of how you deploy them.
+
+### Serverless deployment
+
+For AWS Lambda, Google Cloud Functions, or Azure Functions hosting your SWML/SWAIG webhooks:
+
+| Consideration | Implementation |
+|---------------|----------------|
+| Secrets Management | Use AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault for SWAIG credentials |
+| VPC Configuration | Deploy in a VPC with no public internet access where possible |
+| IAM Policies | Least-privilege access to resources |
+| Logging | CloudWatch/Cloud Logging with encryption |
+| Cold Starts | May affect audit log timing; account for this |
+
+### Self-hosted deployment
+
+For self-hosted webhook services with maximum control:
+
+- Deploy in a HIPAA-compliant data center or cloud region
+- Enable full-disk encryption on all servers
+- Configure a host-based firewall and serve webhooks over HTTPS only
+- Implement intrusion detection
+- Enable comprehensive system logging
+- Maintain a regular security patching schedule
+- Segment the network from other workloads
+
+## Administrative safeguards
+
+### Access management
+
+Track the caller's role in `global_data` after verification, and gate PHI functions accordingly. A SWAIG function can enable or disable other functions at runtime with the [`toggle_functions` action](/docs/swml/reference/calling/ai/swaig/functions/data-map#list-of-valid-actions), and your webhook should independently re-check authorization before returning any PHI:
+
+```json
+{
+  "response": "You're verified as a provider. I can now access clinical records.",
+  "action": [
+    { "set_global_data": { "role": "provider" } },
+    {
+      "toggle_functions": [
+        { "function": "view_medical_record", "active": true },
+        { "function": "add_clinical_note", "active": true }
+      ]
+    }
+  ]
+}
+```
+
+### Incident response
+
+For a security incident, disable sensitive operations quickly. Because functions can be toggled at runtime — and because the SWML you serve is fully under your control — you can deactivate PHI functions (or serve a degraded SWML document) without redeploying the agent. Your webhook can also refuse PHI access and respond with a safe fallback:
+
+```json
+{
+  "response": "This service is temporarily unavailable. Please call our main line for assistance.",
+  "action": [
+    { "toggle_functions": [{ "function": "access_phi", "active": false }] }
+  ]
+}
+```
+
+Incident response requirements:
+
+| Requirement | Details |
+|-------------|---------|
+| Breach Notification | Notify HHS within 60 days of discovery |
+| Patient Notification | Notify affected individuals without unreasonable delay |
+| Documentation | Document all incidents and response actions |
+| Root Cause Analysis | Investigate and remediate vulnerabilities |
+
+## Compliance checklist
+
+### Pre-deployment
+
+- Signed BAA with SignalWire
+- HIPAA-compliant hosting environment for SWML/SWAIG webhooks
+- HTTP Basic Auth and HTTPS configured on every webhook
+- Audit logging implemented and tested in the webhook handlers
+- PHI handling procedures documented
+- Workforce training completed
+- Incident response plan documented
+- Recording consent disclosure included in the AI prompt
+- Data retention policies defined
+
+### Ongoing compliance
+
+- Regular access reviews (quarterly recommended)
+- Audit log reviews (monthly recommended)
+- Security patch management
+- Annual risk assessment
+- Annual HIPAA training refresh
+- BAA review and updates as needed
+- Penetration testing (annual recommended)
+- Business continuity testing
+
+### Documentation requirements
+
+Maintain documentation for:
+
+| Document | Retention |
+|----------|-----------|
+| Policies and Procedures | 6 years from creation or last effective date |
+| Risk Assessments | 6 years |
+| Training Records | 6 years from training date |
+| BAAs | 6 years from termination |
+| Audit Logs | 6 years |
+| Incident Reports | 6 years |
+
+## Complete example
+
+A HIPAA-compliant healthcare appointment agent: the SWML document that defines it, the server SDK that serves it on a call, and the browser SDK that connects a caller to it.
+
+<Tabs>
+
+<Tab title="SWML">
+
+<CodeBlocks>
+
+```yaml title="YAML"
+version: 1.0.0
+sections:
+  main:
+    - answer: {}
+    - record_call:
+        control_id: main_recording
+        stereo: true
+    - ai:
+        params:
+          ai_model: gpt-oss-120b
+        languages:
+          - name: English
+            code: en-US
+            voice: rime.spore
+        global_data:
+          verified: false
+        prompt:
+          text: |
+            You are a healthcare appointment assistant for Example Medical Center.
+
+            At the START of every call, say: "Thank you for calling Example Medical
+            Center. This call may be recorded for quality and compliance purposes.
+            How may I help you today?"
+
+            PHI PROTECTION:
+            - Verify caller identity before accessing ANY patient information.
+            - Never repeat back full SSN, DOB, or medical record numbers.
+            - Use partial confirmation only ("ending in...", "on file as...").
+            - Never include PHI in error messages.
+
+            VERIFICATION: Ask for date of birth and the last 4 digits of SSN OR the
+            phone number on file, then call verify_patient. Only proceed if it succeeds.
+        post_prompt:
+          text: Summarize the call, noting whether identity was verified and any actions taken.
+        SWAIG:
+          defaults:
+            web_hook_url: https://agent:${env.SWAIG_SECRET}@healthcare.example.com/swaig
+          functions:
+            - function: verify_patient
+              description: Verify patient identity before accessing records.
+              parameters:
+                type: object
+                properties:
+                  date_of_birth:
+                    type: string
+                    description: Patient date of birth (MM/DD/YYYY)
+                  verification_value:
+                    type: string
+                    description: Last 4 of SSN or phone number on file
+                required:
+                  - date_of_birth
+                  - verification_value
+            - function: check_appointments
+              description: Check patient appointments (requires prior verification).
+              parameters:
+                type: object
+                properties: {}
+```
+
+```json title="JSON"
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      { "answer": {} },
+      { "record_call": { "control_id": "main_recording", "stereo": true } },
+      {
+        "ai": {
+          "params": { "ai_model": "gpt-oss-120b" },
+          "languages": [{ "name": "English", "code": "en-US", "voice": "rime.spore" }],
+          "global_data": { "verified": false },
+          "prompt": {
+            "text": "You are a healthcare appointment assistant for Example Medical Center.\n\nAt the START of every call, say: \"Thank you for calling Example Medical Center. This call may be recorded for quality and compliance purposes. How may I help you today?\"\n\nPHI PROTECTION:\n- Verify caller identity before accessing ANY patient information.\n- Never repeat back full SSN, DOB, or medical record numbers.\n- Use partial confirmation only (\"ending in...\", \"on file as...\").\n- Never include PHI in error messages.\n\nVERIFICATION: Ask for date of birth and the last 4 digits of SSN OR the phone number on file, then call verify_patient. Only proceed if it succeeds."
+          },
+          "post_prompt": {
+            "text": "Summarize the call, noting whether identity was verified and any actions taken."
+          },
+          "SWAIG": {
+            "defaults": {
+              "web_hook_url": "https://agent:${env.SWAIG_SECRET}@healthcare.example.com/swaig"
+            },
+            "functions": [
+              {
+                "function": "verify_patient",
+                "description": "Verify patient identity before accessing records.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "date_of_birth": { "type": "string", "description": "Patient date of birth (MM/DD/YYYY)" },
+                    "verification_value": { "type": "string", "description": "Last 4 of SSN or phone number on file" }
+                  },
+                  "required": ["date_of_birth", "verification_value"]
+                }
+              },
+              {
+                "function": "check_appointments",
+                "description": "Check patient appointments (requires prior verification).",
+                "parameters": { "type": "object", "properties": {} }
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }
+}
+```
+
+</CodeBlocks>
+
+</Tab>
+
+<Tab title="Server SDK">
+
+```typescript
+import { RelayClient } from '@signalwire/sdk';
+
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_API_TOKEN!,
+  contexts: ['default'],
+});
+
+client.onCall(async (call) => {
+  await call.answer();
+
+  // Record the call (consent is disclosed in the prompt below)
+  await call.record({ stereo: true });
+
+  // Start the AI agent. call.ai() runs the SWML `ai` verb; SWAIG functions
+  // call back to your authenticated, HTTPS webhook to handle PHI.
+  const action = await call.ai({
+    params: { ai_model: 'gpt-oss-120b' },
+    languages: [{ name: 'English', code: 'en-US', voice: 'rime.spore' }],
+    prompt: {
+      text:
+        'You are a healthcare appointment assistant for Example Medical Center. ' +
+        'Disclose recording at the start of the call. Verify caller identity before ' +
+        'accessing ANY patient information, and never repeat back full SSN, DOB, or MRN.',
+    },
+    postPrompt: { text: 'Summarize the call and whether identity was verified.' },
+  });
+
+  await action.wait();
+});
+
+await client.run();
+```
+
+</Tab>
+
+<Tab title="Client SDK">
+
+```javascript
+import { SignalWire, StaticCredentialProvider } from '@signalwire/js';
+
+// Authenticate the browser caller with a short-lived SignalWire Access Token (SAT)
+const client = new SignalWire(
+  new StaticCredentialProvider({ token: 'YOUR_SAT' })
+);
+
+// Dial the healthcare agent's address. Media is encrypted end to end (SRTP/DTLS).
+const call = await client.dial('/private/healthcare-agent', { audio: true });
+await call.start();
+```
+
+</Tab>
+
+</Tabs>
+
+## Resources
+
+**SignalWire resources:**
+
+- Contact SignalWire for a BAA: `sales@signalwire.com`
+- [SWML AI reference](/docs/swml/reference/calling/ai)
+- [SWAIG functions reference](/docs/swml/reference/calling/ai/swaig/functions)
+
+**HIPAA resources:**
+
+- [HHS HIPAA for professionals](https://www.hhs.gov/hipaa/for-professionals/index.html)
+- HHS HIPAA Security Rule guidance
+- NIST HIPAA Security Rule toolkit
+- HHS Breach Notification Rule
+
+## Summary
+
+Building HIPAA-compliant communications and voice AI applications requires attention to:
+
+1. **Technical controls** — authenticated, HTTPS SWAIG webhooks; encryption; audit logging in your handlers.
+2. **Administrative controls** — policies, training, access management via roles and `toggle_functions`.
+3. **PHI handling** — minimization, identity verification, and keeping PHI out of the model with `global_data`, `meta_data`, and DTMF collection.
+4. **Documentation** — policies, audit trails, incident records.
+
+SignalWire is HIPAA compliant by design and SWML provides the building blocks — AI prompts and post-prompts, AI-inaccessible data stores, recording control, and secure SWAIG functions — needed for compliance. Your responsibility is to configure these features appropriately, secure the webhooks that handle PHI, and maintain the administrative safeguards required by HIPAA. Always consult with qualified healthcare compliance experts and legal counsel to ensure your specific implementation meets all applicable requirements.

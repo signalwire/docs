@@ -1,0 +1,1430 @@
+---
+title: (agents-new-hipaa)
+---
+
+## HIPAA Compliance Guide
+
+> **Summary**: Guidelines for building HIPAA-compliant voice AI applications with the SignalWire Agents SDK.
+
+> **Disclaimer**: This guide provides technical guidance for implementing security controls relevant to HIPAA compliance. It is not legal advice. Healthcare organizations must consult with qualified healthcare compliance experts and legal counsel to ensure their specific implementation meets all applicable HIPAA requirements. Compliance is a shared responsibility between SignalWire, your organization, and your implementation choices.
+
+### Overview
+
+The Health Insurance Portability and Accountability Act (HIPAA) establishes requirements for protecting Protected Health Information (PHI). When building voice AI agents that handle healthcare data, you must implement appropriate safeguards to protect PHI throughout the call lifecycle.
+
+#### What is PHI in Voice AI?
+
+In the context of voice AI agents, PHI may include:
+
+- Patient names, addresses, phone numbers
+- Medical record numbers and account numbers
+- Appointment details and scheduling information
+- Prescription information
+- Lab results and diagnoses
+- Insurance information
+- Any health-related information combined with patient identifiers
+
+#### Shared Responsibility Model
+
+| Layer | Responsibility |
+|-------|---------------|
+| SignalWire Platform | Infrastructure security, encryption in transit, secure data centers |
+| Your Application | Access controls, audit logging, PHI handling, prompt design |
+| Your Organization | Policies, training, BAA management, incident response |
+
+### Prerequisites
+
+Before deploying a HIPAA-compliant voice AI agent:
+
+#### 1. Business Associate Agreement (BAA)
+
+SignalWire offers Business Associate Agreements for healthcare customers. You **must** have a signed BAA with SignalWire before processing any PHI through the platform.
+
+Contact SignalWire sales to establish a BAA before deployment.
+
+#### 2. Infrastructure Requirements
+
+| Requirement | Details |
+|-------------|---------|
+| HTTPS | All endpoints must use TLS 1.2 or higher |
+| Authentication | HTTP Basic Auth required on all webhooks |
+| Hosting | HIPAA-compliant hosting environment |
+| Network | Firewall rules limiting access to necessary IPs |
+
+#### 3. HIPAA-Compliant Providers
+
+When building HIPAA-compliant agents, you must use voice and LLM providers that support BAA coverage.
+
+**HIPAA-Compliant Voice Providers:**
+
+| Provider | Configuration |
+|----------|---------------|
+| Rime | `self.add_language("English", "en-US", "rime.spore")` |
+| Google | `self.add_language("English", "en-US", "gcloud.en-US-Neural2-F")` |
+| Amazon | `self.add_language("English", "en-US", "polly.Joanna")` |
+| Azure | `self.add_language("English", "en-US", "azure.en-US-JennyNeural")` |
+
+**HIPAA-Compliant LLM:**
+
+| Model | Configuration |
+|-------|---------------|
+| gpt-oss-120b | Set `ai_model` parameter to `gpt-oss-120b` |
+
+Example configuration:
+
+```python
+class HIPAACompliantAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="hipaa-agent")
+
+        # Use HIPAA-compliant voice provider
+        self.add_language("English", "en-US", "rime.spore")
+
+        # Use HIPAA-compliant LLM
+        self.set_params(ai_model="gpt-oss-120b")
+```
+
+#### 4. Personnel Requirements
+
+- Designated HIPAA Privacy Officer
+- Designated HIPAA Security Officer
+- Workforce training on PHI handling
+- Documented policies and procedures
+
+### Technical Safeguards
+
+#### Authentication Configuration
+
+Configure strong authentication on all agent endpoints:
+
+```bash
+# .env file - use strong, unique credentials
+SWML_BASIC_AUTH_USER=healthcareagent
+SWML_BASIC_AUTH_PASSWORD=your-secure-password-minimum-32-characters
+
+# Never use default or weak passwords in production
+```
+
+For sensitive functions, enable token security:
+
+```python
+from signalwire_agents import AgentBase
+from signalwire_agents.core.function_result import SwaigFunctionResult
+
+class HealthcareAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="healthcare-agent")
+
+        # Mark PHI-accessing functions as secure
+        # This adds cryptographic token validation
+        self.define_tool(
+            name="get_patient_info",
+            description="Retrieve patient information by ID",
+            parameters={
+                "type": "object",
+                "properties": {
+                    "patient_id": {
+                        "type": "string",
+                        "description": "Patient identifier"
+                    }
+                },
+                "required": ["patient_id"]
+            },
+            handler=self.get_patient_info,
+            secure=True  # Enables token validation
+        )
+
+    def get_patient_info(self, args, raw_data):
+        # Validate and sanitize input
+        patient_id = args.get("patient_id", "").strip()
+        if not self.validate_patient_id(patient_id):
+            return SwaigFunctionResult("Invalid patient identifier.")
+
+        # Fetch from secure backend
+        # ... implementation
+        return SwaigFunctionResult("Retrieved patient information.")
+```
+
+#### TLS/HTTPS Configuration
+
+Always use HTTPS in production. Configure via environment variables:
+
+```bash
+# Direct TLS (if not using reverse proxy)
+SWML_SSL_ENABLED=true
+SWML_SSL_CERT_PATH=/etc/ssl/certs/healthcare-agent.crt
+SWML_SSL_KEY_PATH=/etc/ssl/private/healthcare-agent.key
+SWML_SSL_VERIFY_MODE=CERT_REQUIRED
+
+# Enable HSTS
+SWML_USE_HSTS=true
+SWML_HSTS_MAX_AGE=31536000
+```
+
+For production deployments, use a reverse proxy:
+
+```bash
+# When behind nginx/Caddy with SSL termination
+SWML_PROXY_URL_BASE=https://healthcare.example.com
+```
+
+#### Audit Logging
+
+HIPAA requires audit trails for PHI access. Implement comprehensive logging:
+
+```python
+import logging
+from datetime import datetime
+from signalwire_agents import AgentBase
+from signalwire_agents.core.function_result import SwaigFunctionResult
+
+# Configure structured logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+audit_logger = logging.getLogger('hipaa_audit')
+
+class HIPAACompliantAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="hipaa-agent")
+        self.add_language("English", "en-US", "rime.spore")
+
+    def log_phi_access(self, action, user_id, resource_type, success, details=None):
+        """Log PHI access for HIPAA audit trail."""
+        audit_logger.info(
+            "PHI_ACCESS",
+            extra={
+                "timestamp": datetime.utcnow().isoformat(),
+                "action": action,
+                "user_id": user_id,
+                "resource_type": resource_type,
+                "success": success,
+                "details": self.sanitize_for_log(details)
+            }
+        )
+
+    def sanitize_for_log(self, data):
+        """Remove PHI from log entries."""
+        if data is None:
+            return None
+
+        # Fields to redact
+        sensitive_fields = [
+            'ssn', 'social_security',
+            'dob', 'date_of_birth',
+            'address', 'phone',
+            'medical_record', 'mrn',
+            'diagnosis', 'prescription'
+        ]
+
+        sanitized = dict(data) if isinstance(data, dict) else {"value": "[REDACTED]"}
+        for field in sensitive_fields:
+            if field in sanitized:
+                sanitized[field] = "[REDACTED]"
+
+        return sanitized
+```
+
+Required audit log events:
+
+| Event | Required Fields |
+|-------|-----------------|
+| Call Start | Timestamp, call_id, caller_id (hashed), agent_name |
+| PHI Access | Timestamp, action, resource_type, user_id, success/failure |
+| Function Call | Timestamp, function_name, sanitized_args, result_status |
+| Authentication | Timestamp, auth_type, success/failure, source_ip |
+| Call End | Timestamp, call_id, duration, disposition |
+
+### Call Recording Compliance
+
+#### Consent and Disclosure
+
+HIPAA and state laws require consent for call recording:
+
+```python
+class HealthcareAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="healthcare-agent")
+        self.add_language("English", "en-US", "rime.spore")
+
+        # Add recording disclosure to prompt
+        self.prompt_add_section(
+            "Recording Disclosure",
+            body="""At the start of every call, you MUST inform the caller:
+
+            "This call may be recorded for quality assurance and compliance purposes.
+            Your continued participation indicates your consent to recording.
+            If you do not wish to be recorded, please let me know now."
+
+            Wait for acknowledgment before proceeding with any PHI discussion."""
+        )
+```
+
+#### Pausing Recording for Sensitive Data
+
+Pause recording when collecting highly sensitive information:
+
+```python
+def collect_sensitive_info(self, args, raw_data):
+    """Collect sensitive info with recording paused."""
+    return (
+        SwaigFunctionResult(
+            "I'll need to collect some sensitive information. "
+            "Recording will be paused during this process."
+        )
+        .stop_record_call(control_id="main_recording")
+        # Recording is now paused
+        # Collect sensitive data via subsequent function calls
+    )
+
+def resume_after_sensitive(self, args, raw_data):
+    """Resume recording after sensitive collection."""
+    return (
+        SwaigFunctionResult("Thank you. Resuming our conversation.")
+        .record_call(control_id="main_recording", stereo=True)
+    )
+```
+
+#### Recording Retention
+
+Call recordings containing PHI are considered part of the medical record. HIPAA does not specify a retention period for PHI itself—retention requirements come from state medical records laws, other federal regulations (e.g., Medicare conditions of participation), and organizational policies.
+
+> **Note**: The HIPAA six-year retention requirement (45 CFR 164.530(j)) applies to administrative documentation—policies, procedures, training records, risk assessments, and audit logs—not to PHI or call recordings.
+
+| Consideration | Recommendation |
+|---------------|----------------|
+| Retention Period | Follow state medical records laws and organizational policy (commonly 7-10 years for adults; longer for minors) |
+| Storage | Encrypted at rest, access-controlled |
+| Destruction | Secure deletion with audit trail when retention period expires |
+| Access Logging | Log all recording access |
+
+### PHI Handling Best Practices
+
+#### Data Compartmentalization with global_data
+
+One of the most effective ways to protect PHI is to keep it away from the LLM entirely. Use `global_data` to store sensitive information that your SWAIG functions need but the AI does not:
+
+```python
+class CompartmentalizedHealthcareAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="compartmentalized-healthcare")
+        self.add_language("English", "en-US", "rime.spore")
+
+    def verify_patient(self, args, raw_data):
+        """Verify patient and store PHI in global_data, not in AI context."""
+        dob = args.get("date_of_birth")
+        ssn_last4 = args.get("ssn_last4")
+
+        # Fetch full patient record from database
+        patient = self.lookup_patient(dob, ssn_last4)
+
+        if patient:
+            # Store sensitive data in global_data - LLM cannot see this
+            # Only your SWAIG functions can access it
+            return (
+                SwaigFunctionResult("I've verified your identity. How can I help?")
+                .set_global_data({
+                    "patient_id": patient["id"],
+                    "mrn": patient["medical_record_number"],
+                    "full_name": patient["full_name"],
+                    "ssn": patient["ssn"],
+                    "insurance_id": patient["insurance_id"],
+                    "verified": True
+                })
+            )
+
+        return SwaigFunctionResult("I couldn't verify your identity.")
+
+    def schedule_appointment(self, args, raw_data):
+        """Use stored PHI without exposing it to the LLM."""
+        # Retrieve PHI from global_data - never sent to LLM
+        global_data = raw_data.get("global_data", {})
+
+        if not global_data.get("verified"):
+            return SwaigFunctionResult("Please verify your identity first.")
+
+        # Use the stored patient_id and MRN for scheduling
+        patient_id = global_data.get("patient_id")
+        mrn = global_data.get("mrn")
+
+        # Schedule using real identifiers, but LLM only knows
+        # "the verified patient" - not the actual PHI
+        appointment = self.create_appointment(patient_id, args.get("date"))
+
+        # Return confirmation without exposing PHI to AI
+        return SwaigFunctionResult(
+            f"Your appointment is confirmed for {args.get('date')}. "
+            "You'll receive a confirmation at the contact information on file."
+        )
+```
+
+The `global_data` pattern ensures:
+
+| Data Location | LLM Access | SWAIG Function Access |
+|---------------|------------|----------------------|
+| Conversation context | Yes | Yes |
+| Function arguments | Yes | Yes |
+| Function response text | Yes | Yes |
+| `global_data` | **No** | Yes |
+
+#### Collecting PHI via IVR (Bypassing the LLM)
+
+For maximum PHI protection, collect sensitive data using traditional IVR methods (DTMF or voice input) that bypass the LLM entirely. Use `prompt()` and `input()` SWML actions with `ai_response` to return control to the AI afterward:
+
+```python
+def collect_ssn(self, args, raw_data):
+    """Collect SSN via DTMF - data never touches the LLM."""
+    return (
+        SwaigFunctionResult()
+        # Use prompt() to speak and collect DTMF input
+        .prompt(
+            play="Please enter your 9-digit Social Security Number using your keypad.",
+            input_type="digits",
+            num_digits=9,
+            timeout=10,
+            # Store result in global_data under "ssn_input"
+            result_name="ssn_input"
+        )
+        # After collection, return to AI with this response
+        # The AI never sees the actual SSN digits
+        .ai_response("Thank you for entering your information. Let me verify that.")
+    )
+
+def collect_dob_voice(self, args, raw_data):
+    """Collect date of birth via voice - processed directly, not by LLM."""
+    return (
+        SwaigFunctionResult()
+        .prompt(
+            play="Please say your date of birth, including the month, day, and year.",
+            input_type="speech",
+            timeout=10,
+            result_name="dob_input"
+        )
+        .ai_response("Thank you. I'm verifying your information now.")
+    )
+
+def collect_credit_card(self, args, raw_data):
+    """Collect payment info via DTMF for PCI/HIPAA compliance."""
+    return (
+        SwaigFunctionResult()
+        # Stop recording during payment collection
+        .stop_record_call(control_id="main_recording")
+        .prompt(
+            play="Please enter your 16-digit card number using your keypad.",
+            input_type="digits",
+            num_digits=16,
+            timeout=30,
+            result_name="card_number"
+        )
+        .prompt(
+            play="Please enter the 4-digit expiration date. For example, 0 3 2 6 for March 2026.",
+            input_type="digits",
+            num_digits=4,
+            timeout=15,
+            result_name="card_expiry"
+        )
+        .prompt(
+            play="Please enter the 3 or 4 digit security code from the back of your card.",
+            input_type="digits",
+            num_digits=4,
+            min_digits=3,
+            timeout=15,
+            result_name="card_cvv"
+        )
+        # Resume recording after payment collection
+        .record_call(control_id="main_recording", stereo=True)
+        # Return to AI - it only knows payment was collected, not the details
+        .ai_response("Thank you. I'm processing your payment now.")
+    )
+
+def process_collected_data(self, args, raw_data):
+    """Process the collected IVR data from global_data."""
+    global_data = raw_data.get("global_data", {})
+
+    # SSN was collected via DTMF, stored in global_data
+    ssn = global_data.get("ssn_input")
+    dob = global_data.get("dob_input")
+
+    # Process the data - LLM never had access to it
+    verified = self.verify_in_database(ssn, dob)
+
+    if verified:
+        return (
+            SwaigFunctionResult("Your identity has been verified.")
+            .set_global_data({"verified": True, "ssn": ssn})
+        )
+
+    return SwaigFunctionResult("Verification failed. Please try again.")
+```
+
+This approach provides several layers of protection:
+
+| Collection Method | LLM Sees Data | Transcript Contains | Recording Contains |
+|-------------------|---------------|---------------------|-------------------|
+| Normal conversation | Yes | Yes | Yes |
+| DTMF via `prompt()` | **No** | **No** | Tones only |
+| Voice via `prompt()` | **No** | **No** | Yes (pause recording to exclude) |
+| `global_data` storage | **No** | **No** | **No** |
+
+#### Combined Pattern: Maximum PHI Protection
+
+```python
+def hipaa_compliant_verification(self, args, raw_data):
+    """Complete verification flow with maximum PHI protection."""
+    return (
+        SwaigFunctionResult()
+        # Pause recording for sensitive collection
+        .stop_record_call(control_id="main_recording")
+        # Collect DOB via DTMF - bypasses LLM
+        .prompt(
+            play="Please enter your 8-digit date of birth. "
+                 "For example, 0 3 1 5 1 9 8 5 for March 15, 1985.",
+            input_type="digits",
+            num_digits=8,
+            timeout=15,
+            result_name="dob_digits"
+        )
+        # Collect last 4 SSN via DTMF - bypasses LLM
+        .prompt(
+            play="Please enter the last 4 digits of your Social Security Number.",
+            input_type="digits",
+            num_digits=4,
+            timeout=10,
+            result_name="ssn_last4"
+        )
+        # Resume recording
+        .record_call(control_id="main_recording", stereo=True)
+        # Return to AI with generic confirmation
+        .ai_response(
+            "Thank you for providing your information. "
+            "I'm now verifying your identity."
+        )
+    )
+```
+
+#### Prompt Design for PHI Protection
+
+Design prompts to minimize PHI exposure:
+
+```python
+class SecureHealthcareAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="secure-healthcare")
+        self.add_language("English", "en-US", "rime.spore")
+
+        self.prompt_add_section(
+            "PHI Protection Rules",
+            body="""CRITICAL: Follow these rules for Protected Health Information:
+
+            1. NEVER repeat back sensitive information like:
+               - Social Security Numbers
+               - Full date of birth
+               - Medical record numbers
+               - Detailed diagnosis information
+
+            2. When confirming patient identity, use partial information:
+               - "I see your date of birth ends in [last 2 digits of year]"
+               - "Your record shows an address on [street name only]"
+
+            3. NEVER include PHI in error messages or clarifications
+
+            4. If asked to repeat sensitive info, say:
+               "For security purposes, I cannot repeat that information."
+
+            5. Verify caller identity before ANY PHI access using
+               established verification procedures."""
+        )
+
+        self.prompt_add_section(
+            "Identity Verification",
+            body="""Before accessing ANY patient information:
+
+            1. Collect patient identifier (MRN or account number)
+            2. Verify with TWO of the following:
+               - Date of birth
+               - Last 4 of SSN
+               - Address on file
+               - Phone number on file
+
+            Only proceed after successful verification."""
+        )
+```
+
+#### Secure Function Design
+
+Design SWAIG functions to minimize PHI in responses:
+
+```python
+def check_appointment(self, args, raw_data):
+    """Check appointment - returns minimal PHI."""
+    patient_id = args.get("patient_id")
+
+    # Verify caller is authorized
+    if not self.verify_caller_authorization(raw_data, patient_id):
+        self.log_phi_access("appointment_check", patient_id, "appointment", False)
+        return SwaigFunctionResult(
+            "I was unable to verify your identity. "
+            "Please contact us directly for assistance."
+        )
+
+    # Log the access
+    self.log_phi_access("appointment_check", patient_id, "appointment", True)
+
+    # Return minimal information
+    appointment = self.get_next_appointment(patient_id)
+    if appointment:
+        # Don't include provider names or detailed location
+        return SwaigFunctionResult(
+            f"Your next appointment is on {appointment['date']} "
+            f"at {appointment['time']}. "
+            f"Please arrive 15 minutes early."
+        )
+
+    return SwaigFunctionResult("You have no upcoming appointments scheduled.")
+```
+
+#### Input Validation
+
+Validate all inputs to prevent injection and ensure data integrity:
+
+```python
+import re
+
+def validate_patient_id(self, patient_id):
+    """Validate patient ID format."""
+    # Only allow alphanumeric, specific length
+    if not patient_id:
+        return False
+    if not re.match(r'^[A-Z0-9]{8,12}$', patient_id):
+        return False
+    return True
+
+def validate_date_of_birth(self, dob):
+    """Validate DOB format."""
+    try:
+        # Expected format: MM/DD/YYYY
+        if not re.match(r'^\d{2}/\d{2}/\d{4}$', dob):
+            return False
+        # Additional validation...
+        return True
+    except Exception:
+        return False
+```
+
+### Serverless Deployment Considerations
+
+For AWS Lambda, Google Cloud Functions, or Azure Functions:
+
+```python
+# handler.py - Serverless with HIPAA considerations
+import os
+from signalwire_agents import AgentBase
+
+class HIPAAServerlessAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="hipaa-serverless")
+        self.add_language("English", "en-US", "rime.spore")
+
+        # Ensure auth is configured
+        if not os.environ.get("SWML_BASIC_AUTH_PASSWORD"):
+            raise ValueError("SWML_BASIC_AUTH_PASSWORD must be set")
+
+agent = HIPAAServerlessAgent()
+
+def lambda_handler(event, context):
+    """AWS Lambda entry point."""
+    return agent.run(event, context)
+```
+
+Serverless security considerations:
+
+| Consideration | Implementation |
+|---------------|----------------|
+| Secrets Management | Use AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault |
+| VPC Configuration | Deploy in VPC with no public internet access where possible |
+| IAM Policies | Least-privilege access to resources |
+| Logging | CloudWatch/Cloud Logging with encryption |
+| Cold Starts | May affect audit log timing; account for this |
+
+### Self-Hosted Deployment
+
+For self-hosted deployments with maximum control:
+
+```yaml
+# docker-compose.yml for HIPAA-compliant deployment
+version: '3.8'
+
+services:
+  healthcare-agent:
+    build: .
+    environment:
+      - SWML_BASIC_AUTH_USER=${SWML_BASIC_AUTH_USER}
+      - SWML_BASIC_AUTH_PASSWORD=${SWML_BASIC_AUTH_PASSWORD}
+      - SWML_PROXY_URL_BASE=${SWML_PROXY_URL_BASE}
+      - SIGNALWIRE_LOG_LEVEL=info
+    networks:
+      - internal
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certs:/etc/ssl/certs:ro
+    depends_on:
+      - healthcare-agent
+    networks:
+      - internal
+      - external
+
+networks:
+  internal:
+    internal: true  # No external access
+  external:
+```
+
+Self-hosted security checklist:
+
+- [ ] Deploy in HIPAA-compliant data center or cloud region
+- [ ] Enable full-disk encryption on all servers
+- [ ] Configure host-based firewall
+- [ ] Implement intrusion detection
+- [ ] Enable comprehensive system logging
+- [ ] Regular security patching schedule
+- [ ] Network segmentation from other workloads
+
+### Administrative Safeguards
+
+#### Access Management
+
+```python
+# Example: Role-based function access
+class RoleBasedHealthcareAgent(AgentBase):
+
+    # Define role permissions
+    ROLE_PERMISSIONS = {
+        "patient": ["check_appointment", "request_prescription_refill"],
+        "staff": ["check_appointment", "schedule_appointment", "view_patient_summary"],
+        "provider": ["check_appointment", "schedule_appointment", "view_patient_summary",
+                     "view_medical_record", "add_clinical_note"]
+    }
+
+    def __init__(self):
+        super().__init__(name="role-based-healthcare")
+        self.caller_role = None
+
+    def verify_permission(self, function_name):
+        """Check if current caller role has permission."""
+        if not self.caller_role:
+            return False
+        allowed = self.ROLE_PERMISSIONS.get(self.caller_role, [])
+        return function_name in allowed
+```
+
+#### Incident Response
+
+Configure emergency mode for security incidents:
+
+```bash
+# Enable emergency mode to disable sensitive operations
+export AGENT_EMERGENCY_MODE=true
+```
+
+```python
+import os
+
+class HealthcareAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="healthcare-agent")
+        self.emergency_mode = os.environ.get("AGENT_EMERGENCY_MODE", "").lower() == "true"
+
+    def access_phi(self, args, raw_data):
+        """PHI access with emergency mode check."""
+        if self.emergency_mode:
+            audit_logger.warning("PHI_ACCESS_BLOCKED_EMERGENCY_MODE")
+            return SwaigFunctionResult(
+                "This service is temporarily unavailable. "
+                "Please call our main line for assistance."
+            )
+
+        # Normal PHI access logic...
+```
+
+Incident response requirements:
+
+| Requirement | Details |
+|-------------|---------|
+| Breach Notification | Notify HHS within 60 days of discovery |
+| Patient Notification | Notify affected individuals without unreasonable delay |
+| Documentation | Document all incidents and response actions |
+| Root Cause Analysis | Investigate and remediate vulnerabilities |
+
+### Compliance Checklist
+
+#### Pre-Deployment
+
+- [ ] Signed BAA with SignalWire
+- [ ] HIPAA-compliant hosting environment selected
+- [ ] Strong authentication credentials configured
+- [ ] TLS/HTTPS properly configured
+- [ ] Audit logging implemented and tested
+- [ ] PHI handling procedures documented
+- [ ] Workforce training completed
+- [ ] Incident response plan documented
+- [ ] Recording consent disclosures implemented
+- [ ] Data retention policies defined
+
+#### Ongoing Compliance
+
+- [ ] Regular access reviews (quarterly recommended)
+- [ ] Audit log reviews (monthly recommended)
+- [ ] Security patch management
+- [ ] Annual risk assessment
+- [ ] Annual HIPAA training refresh
+- [ ] BAA review and updates as needed
+- [ ] Penetration testing (annual recommended)
+- [ ] Business continuity testing
+
+#### Documentation Requirements
+
+Maintain documentation for:
+
+| Document | Retention |
+|----------|-----------|
+| Policies and Procedures | 6 years from creation or last effective date |
+| Risk Assessments | 6 years |
+| Training Records | 6 years from training date |
+| BAAs | 6 years from termination |
+| Audit Logs | 6 years |
+| Incident Reports | 6 years |
+
+### Example: Complete HIPAA-Compliant Agent
+
+#### Python
+
+```python
+#!/usr/bin/env python3
+"""HIPAA-compliant healthcare appointment agent."""
+
+import os
+import logging
+from datetime import datetime
+from signalwire_agents import AgentBase
+from signalwire_agents.core.function_result import SwaigFunctionResult
+
+# Audit logging setup
+audit_logger = logging.getLogger('hipaa_audit')
+audit_logger.setLevel(logging.INFO)
+
+class HIPAAHealthcareAgent(AgentBase):
+    """Healthcare agent with HIPAA compliance controls."""
+
+    def __init__(self):
+        super().__init__(name="hipaa-healthcare-agent")
+
+        # Use HIPAA-compliant voice and LLM providers
+        self.add_language("English", "en-US", "rime.spore")
+        self.set_params(ai_model="gpt-oss-120b")
+
+        # Check required security configuration
+        if not os.environ.get("SWML_BASIC_AUTH_PASSWORD"):
+            raise ValueError("SWML_BASIC_AUTH_PASSWORD required for HIPAA compliance")
+
+        self.emergency_mode = os.environ.get("AGENT_EMERGENCY_MODE", "").lower() == "true"
+        self.verified_caller = False
+
+        self._configure_prompts()
+        self._setup_tools()
+
+    def _configure_prompts(self):
+        """Configure HIPAA-compliant prompts."""
+        self.prompt_add_section(
+            "Role",
+            body="You are a healthcare appointment assistant for Example Medical Center."
+        )
+
+        self.prompt_add_section(
+            "Recording Disclosure",
+            body="""At the START of every call, say:
+
+            "Thank you for calling Example Medical Center. This call may be recorded
+            for quality and compliance purposes. How may I help you today?"
+            """
+        )
+
+        self.prompt_add_section(
+            "PHI Protection",
+            body="""CRITICAL RULES:
+            1. Verify caller identity before accessing ANY patient information
+            2. Never repeat back full SSN, DOB, or medical record numbers
+            3. Use partial confirmation only ("ending in...", "on file as...")
+            4. Never include PHI in error messages
+            5. If unsure about authorization, do not provide information
+            """
+        )
+
+        self.prompt_add_section(
+            "Verification Process",
+            body="""Before accessing patient information:
+            1. Ask for patient's date of birth
+            2. Ask for last 4 digits of SSN OR phone number on file
+            3. Use verify_patient function to confirm
+            4. Only proceed if verification succeeds
+            """
+        )
+
+    def _setup_tools(self):
+        """Configure secure tools."""
+        self.define_tool(
+            name="verify_patient",
+            description="Verify patient identity before accessing records",
+            parameters={
+                "type": "object",
+                "properties": {
+                    "date_of_birth": {
+                        "type": "string",
+                        "description": "Patient date of birth (MM/DD/YYYY)"
+                    },
+                    "verification_value": {
+                        "type": "string",
+                        "description": "Last 4 of SSN or phone number"
+                    }
+                },
+                "required": ["date_of_birth", "verification_value"]
+            },
+            handler=self.verify_patient,
+            secure=True
+        )
+
+        self.define_tool(
+            name="check_appointments",
+            description="Check patient appointments (requires prior verification)",
+            parameters={
+                "type": "object",
+                "properties": {}
+            },
+            handler=self.check_appointments,
+            secure=True
+        )
+
+    def _log_audit(self, action, success, details=None):
+        """Log HIPAA audit event."""
+        audit_logger.info(
+            f"HIPAA_AUDIT|{datetime.utcnow().isoformat()}|{action}|"
+            f"{'SUCCESS' if success else 'FAILURE'}|{details or ''}"
+        )
+
+    def verify_patient(self, args, raw_data):
+        """Verify patient identity."""
+        if self.emergency_mode:
+            self._log_audit("verify_patient", False, "emergency_mode")
+            return SwaigFunctionResult(
+                "Our system is temporarily unavailable. Please call back later."
+            )
+
+        dob = args.get("date_of_birth", "")
+        verification = args.get("verification_value", "")
+
+        # In production, verify against your patient database
+        # This is a placeholder for the actual verification logic
+        verified = self._verify_against_database(dob, verification)
+
+        if verified:
+            self.verified_caller = True
+            self._log_audit("verify_patient", True, "identity_confirmed")
+            return SwaigFunctionResult(
+                "Thank you, I've verified your identity. How can I help you today?"
+            )
+        else:
+            self._log_audit("verify_patient", False, "verification_failed")
+            return SwaigFunctionResult(
+                "I wasn't able to verify your identity with the information provided. "
+                "Please contact our office directly for assistance."
+            )
+
+    def check_appointments(self, args, raw_data):
+        """Check appointments - requires prior verification."""
+        if not self.verified_caller:
+            self._log_audit("check_appointments", False, "not_verified")
+            return SwaigFunctionResult(
+                "I need to verify your identity first. "
+                "Can you provide your date of birth?"
+            )
+
+        if self.emergency_mode:
+            self._log_audit("check_appointments", False, "emergency_mode")
+            return SwaigFunctionResult(
+                "Our scheduling system is temporarily unavailable."
+            )
+
+        # Fetch appointments from your system
+        # Return minimal necessary information
+        self._log_audit("check_appointments", True, "appointments_retrieved")
+        return SwaigFunctionResult(
+            "Your next appointment is scheduled for Monday at 2:30 PM "
+            "with the medical team. Please arrive 15 minutes early."
+        )
+
+    def _verify_against_database(self, dob, verification):
+        """Verify patient against database. Implement your logic here."""
+        # Placeholder - implement actual database verification
+        return True
+
+if __name__ == "__main__":
+    agent = HIPAAHealthcareAgent()
+    agent.run()
+```
+
+<details>
+<summary>TypeScript</summary>
+
+```typescript
+import { AgentBase, SwaigFunctionResult } from 'signalwire-agents';
+
+// Ensure auth is configured
+if (!process.env.SWML_BASIC_AUTH_PASSWORD) {
+  throw new Error("SWML_BASIC_AUTH_PASSWORD required for HIPAA compliance");
+}
+
+const emergencyMode = process.env.AGENT_EMERGENCY_MODE?.toLowerCase() === "true";
+let verifiedCaller = false;
+
+const agent = new AgentBase({ name: "hipaa-healthcare-agent" });
+agent.addLanguage("English", "en-US", "rime.spore");
+agent.setParams({ aiModel: "gpt-oss-120b" });
+
+agent.promptAddSection("Role", "You are a healthcare appointment assistant for Example Medical Center.");
+agent.promptAddSection("Recording Disclosure",
+  'At the START of every call, say: "Thank you for calling Example Medical Center. ' +
+  'This call may be recorded for quality and compliance purposes. How may I help you today?"');
+agent.promptAddSection("PHI Protection",
+  "CRITICAL: Verify caller identity before accessing ANY patient information. " +
+  "Never repeat back full SSN, DOB, or medical record numbers.");
+
+agent.defineTool({
+  name: "verify_patient",
+  description: "Verify patient identity before accessing records",
+  secure: true,
+  parameters: { type: "object",
+    properties: {
+      date_of_birth: { type: "string", description: "Patient date of birth (MM/DD/YYYY)" },
+      verification_value: { type: "string", description: "Last 4 of SSN or phone number" }
+    }, required: ["date_of_birth", "verification_value"] },
+  handler: (args) => {
+    if (emergencyMode) return new SwaigFunctionResult("Our system is temporarily unavailable.");
+    // In production, verify against patient database
+    verifiedCaller = true;
+    return new SwaigFunctionResult("Thank you, I've verified your identity. How can I help you today?");
+  }
+});
+
+agent.defineTool({
+  name: "check_appointments",
+  description: "Check patient appointments (requires prior verification)",
+  secure: true,
+  parameters: { type: "object", properties: {} },
+  handler: () => {
+    if (!verifiedCaller) return new SwaigFunctionResult("I need to verify your identity first.");
+    if (emergencyMode) return new SwaigFunctionResult("Our scheduling system is temporarily unavailable.");
+    return new SwaigFunctionResult(
+      "Your next appointment is scheduled for Monday at 2:30 PM. Please arrive 15 minutes early.");
+  }
+});
+
+agent.run();
+```
+
+</details>
+
+<details>
+<summary>Go</summary>
+
+```go
+package main
+
+import (
+    "log"
+    "os"
+    "strings"
+    "github.com/signalwire/signalwire-agents-go/pkg/agent"
+    "github.com/signalwire/signalwire-agents-go/pkg/swaig"
+)
+
+var verifiedCaller = false
+
+func main() {
+    if os.Getenv("SWML_BASIC_AUTH_PASSWORD") == "" {
+        log.Fatal("SWML_BASIC_AUTH_PASSWORD required for HIPAA compliance")
+    }
+    emergencyMode := strings.ToLower(os.Getenv("AGENT_EMERGENCY_MODE")) == "true"
+
+    a := agent.NewAgentBase(agent.WithName("hipaa-healthcare-agent"))
+    a.AddLanguage("English", "en-US", "rime.spore")
+    a.SetParams(map[string]interface{}{"ai_model": "gpt-oss-120b"})
+    a.PromptAddSection("Role", "You are a healthcare appointment assistant.")
+    a.PromptAddSection("PHI Protection",
+        "CRITICAL: Verify caller identity before accessing ANY patient information.")
+
+    a.DefineTool(swaig.ToolDefinition{
+        Name: "verify_patient", Description: "Verify patient identity",
+        Secure: true,
+        Parameters: swaig.Schema{Type: "object",
+            Properties: map[string]swaig.Property{
+                "date_of_birth":      {Type: "string"},
+                "verification_value": {Type: "string"}},
+            Required: []string{"date_of_birth", "verification_value"}},
+        Handler: func(args map[string]interface{}, _ map[string]interface{}) *swaig.FunctionResult {
+            if emergencyMode {
+                return swaig.NewFunctionResult("Our system is temporarily unavailable.")
+            }
+            verifiedCaller = true
+            return swaig.NewFunctionResult("Thank you, I've verified your identity.")
+        },
+    })
+
+    a.DefineTool(swaig.ToolDefinition{
+        Name: "check_appointments", Description: "Check patient appointments",
+        Secure: true, Parameters: swaig.Schema{Type: "object"},
+        Handler: func(_ map[string]interface{}, _ map[string]interface{}) *swaig.FunctionResult {
+            if !verifiedCaller {
+                return swaig.NewFunctionResult("I need to verify your identity first.")
+            }
+            if emergencyMode {
+                return swaig.NewFunctionResult("Our scheduling system is temporarily unavailable.")
+            }
+            return swaig.NewFunctionResult("Your next appointment is Monday at 2:30 PM.")
+        },
+    })
+
+    a.Run()
+}
+```
+
+</details>
+
+<details>
+<summary>Ruby</summary>
+
+```ruby
+require 'signalwire_agents'
+
+raise "SWML_BASIC_AUTH_PASSWORD required for HIPAA compliance" unless ENV["SWML_BASIC_AUTH_PASSWORD"]
+
+emergency_mode = ENV.fetch("AGENT_EMERGENCY_MODE", "").downcase == "true"
+verified_caller = false
+
+agent = AgentBase.new(name: "hipaa-healthcare-agent")
+agent.add_language("English", "en-US", "rime.spore")
+agent.set_params(ai_model: "gpt-oss-120b")
+agent.prompt_add_section("Role", "You are a healthcare appointment assistant.")
+agent.prompt_add_section("PHI Protection",
+  "CRITICAL: Verify caller identity before accessing ANY patient information.")
+
+agent.define_tool(name: "verify_patient",
+  description: "Verify patient identity", secure: true,
+  parameters: { type: "object",
+    properties: { date_of_birth: { type: "string" }, verification_value: { type: "string" } },
+    required: %w[date_of_birth verification_value] }
+) do |args|
+  if emergency_mode
+    next FunctionResult.new("Our system is temporarily unavailable.")
+  end
+  verified_caller = true
+  FunctionResult.new("Thank you, I've verified your identity.")
+end
+
+agent.define_tool(name: "check_appointments",
+  description: "Check patient appointments", secure: true,
+  parameters: { type: "object", properties: {} }
+) do
+  next FunctionResult.new("I need to verify your identity first.") unless verified_caller
+  next FunctionResult.new("Scheduling system unavailable.") if emergency_mode
+  FunctionResult.new("Your next appointment is Monday at 2:30 PM. Please arrive 15 minutes early.")
+end
+
+agent.run
+```
+
+</details>
+
+<details>
+<summary>Java</summary>
+
+```java
+import com.signalwire.agents.agent.AgentBase;
+import com.signalwire.agents.swaig.FunctionResult;
+import java.util.Map;
+import java.util.List;
+
+public class HIPAAHealthcareAgent {
+    static boolean verifiedCaller = false;
+
+    public static void main(String[] args) {
+        if (System.getenv("SWML_BASIC_AUTH_PASSWORD") == null) {
+            throw new RuntimeException("SWML_BASIC_AUTH_PASSWORD required for HIPAA compliance");
+        }
+        boolean emergencyMode = "true".equalsIgnoreCase(System.getenv("AGENT_EMERGENCY_MODE"));
+
+        AgentBase agent = AgentBase.builder().name("hipaa-healthcare-agent").build();
+        agent.addLanguage("English", "en-US", "rime.spore");
+        agent.setParams(Map.of("ai_model", "gpt-oss-120b"));
+        agent.promptAddSection("Role", "You are a healthcare appointment assistant.");
+        agent.promptAddSection("PHI Protection",
+            "CRITICAL: Verify caller identity before accessing ANY patient information.");
+
+        agent.defineTool("verify_patient", "Verify patient identity",
+            Map.of("type","object","properties", Map.of(
+                "date_of_birth", Map.of("type","string"),
+                "verification_value", Map.of("type","string")),
+                "required", List.of("date_of_birth","verification_value")),
+            (a, r) -> {
+                if (emergencyMode) return new FunctionResult("Our system is temporarily unavailable.");
+                verifiedCaller = true;
+                return new FunctionResult("Thank you, I've verified your identity.");
+            });
+
+        agent.defineTool("check_appointments", "Check patient appointments",
+            Map.of("type","object","properties",Map.of()),
+            (a, r) -> {
+                if (!verifiedCaller) return new FunctionResult("I need to verify your identity first.");
+                if (emergencyMode) return new FunctionResult("Scheduling system unavailable.");
+                return new FunctionResult("Your next appointment is Monday at 2:30 PM.");
+            });
+
+        agent.run();
+    }
+}
+```
+
+</details>
+
+<details>
+<summary>Perl</summary>
+
+```perl
+use SignalWire::Agents::Agent::AgentBase;
+use SignalWire::Agents::SWAIG::FunctionResult;
+
+die "SWML_BASIC_AUTH_PASSWORD required for HIPAA compliance"
+    unless $ENV{SWML_BASIC_AUTH_PASSWORD};
+
+my $emergency_mode = lc($ENV{AGENT_EMERGENCY_MODE} // "") eq "true";
+my $verified_caller = 0;
+
+my $agent = AgentBase->new(name => "hipaa-healthcare-agent");
+$agent->add_language("English", "en-US", "rime.spore");
+$agent->set_params({ ai_model => "gpt-oss-120b" });
+$agent->prompt_add_section("Role", "You are a healthcare appointment assistant.");
+$agent->prompt_add_section("PHI Protection",
+    "CRITICAL: Verify caller identity before accessing ANY patient information.");
+
+$agent->define_tool(name => "verify_patient", description => "Verify patient identity",
+    secure => 1,
+    parameters => { type => "object",
+        properties => { date_of_birth => {type=>"string"}, verification_value => {type=>"string"} },
+        required => ["date_of_birth","verification_value"] },
+    handler => sub {
+        return FunctionResult->new("Our system is temporarily unavailable.") if $emergency_mode;
+        $verified_caller = 1;
+        return FunctionResult->new("Thank you, I've verified your identity.");
+    });
+
+$agent->define_tool(name => "check_appointments", description => "Check patient appointments",
+    secure => 1, parameters => { type => "object", properties => {} },
+    handler => sub {
+        return FunctionResult->new("I need to verify your identity first.") unless $verified_caller;
+        return FunctionResult->new("Scheduling system unavailable.") if $emergency_mode;
+        return FunctionResult->new("Your next appointment is Monday at 2:30 PM.");
+    });
+
+$agent->run;
+```
+
+</details>
+
+<details>
+<summary>C++</summary>
+
+```cpp
+#include <signalwire/agent/agent_base.hpp>
+#include <signalwire/swaig/function_result.hpp>
+#include <cstdlib>
+#include <stdexcept>
+#include <string>
+#include <algorithm>
+
+static bool verified_caller = false;
+
+int main() {
+    if (!std::getenv("SWML_BASIC_AUTH_PASSWORD")) {
+        throw std::runtime_error("SWML_BASIC_AUTH_PASSWORD required for HIPAA compliance");
+    }
+    std::string em_env = std::getenv("AGENT_EMERGENCY_MODE") ? std::getenv("AGENT_EMERGENCY_MODE") : "";
+    std::transform(em_env.begin(), em_env.end(), em_env.begin(), ::tolower);
+    bool emergency_mode = (em_env == "true");
+
+    agent::AgentBase agent("hipaa-healthcare-agent");
+    agent.add_language("English", "en-US", "rime.spore");
+    agent.set_params({{"ai_model", "gpt-oss-120b"}});
+    agent.prompt_add_section("Role", "You are a healthcare appointment assistant.");
+    agent.prompt_add_section("PHI Protection",
+        "CRITICAL: Verify caller identity before accessing ANY patient information.");
+
+    agent.define_tool("verify_patient", "Verify patient identity",
+        {{"date_of_birth",{{"type","string"}}}, {"verification_value",{{"type","string"}}}},
+        [emergency_mode](auto, auto) {
+            if (emergency_mode)
+                return swaig::FunctionResult("Our system is temporarily unavailable.");
+            verified_caller = true;
+            return swaig::FunctionResult("Thank you, I've verified your identity.");
+        });
+
+    agent.define_tool("check_appointments", "Check patient appointments", {},
+        [emergency_mode](auto, auto) {
+            if (!verified_caller)
+                return swaig::FunctionResult("I need to verify your identity first.");
+            if (emergency_mode)
+                return swaig::FunctionResult("Scheduling system unavailable.");
+            return swaig::FunctionResult("Your next appointment is Monday at 2:30 PM.");
+        });
+
+    agent.run();
+    return 0;
+}
+```
+
+</details>
+
+<details>
+<summary>PHP</summary>
+
+```php
+use SignalWire\Agent\AgentBase;
+use SignalWire\Agent\FunctionResult;
+
+if (!getenv('SWML_BASIC_AUTH_PASSWORD')) {
+    throw new \RuntimeException('SWML_BASIC_AUTH_PASSWORD required for HIPAA compliance');
+}
+$emergencyMode = strtolower(getenv('AGENT_EMERGENCY_MODE') ?: '') === 'true';
+$verifiedCaller = false;
+
+$agent = new AgentBase(name: 'hipaa-healthcare-agent');
+$agent->addLanguage('English', 'en-US', 'rime.spore');
+$agent->setParams(['ai_model' => 'gpt-oss-120b']);
+$agent->promptAddSection('Role', 'You are a healthcare appointment assistant.');
+$agent->promptAddSection('PHI Protection',
+    'CRITICAL: Verify caller identity before accessing ANY patient information.');
+
+$agent->defineTool('verify_patient', 'Verify patient identity',
+    ['type' => 'object', 'properties' => [
+        'date_of_birth' => ['type' => 'string'],
+        'verification_value' => ['type' => 'string']],
+     'required' => ['date_of_birth', 'verification_value']],
+    function ($args, $raw) use ($emergencyMode, &$verifiedCaller) {
+        if ($emergencyMode) return new FunctionResult('Our system is temporarily unavailable.');
+        $verifiedCaller = true;
+        return new FunctionResult("Thank you, I've verified your identity.");
+    });
+
+$agent->defineTool('check_appointments', 'Check patient appointments',
+    ['type' => 'object', 'properties' => []],
+    function ($args, $raw) use ($emergencyMode, &$verifiedCaller) {
+        if (!$verifiedCaller) return new FunctionResult('I need to verify your identity first.');
+        if ($emergencyMode) return new FunctionResult('Scheduling system unavailable.');
+        return new FunctionResult('Your next appointment is Monday at 2:30 PM.');
+    });
+
+$agent->run();
+```
+
+</details>
+
+<details>
+<summary>C#</summary>
+
+```csharp
+using SignalWire.Agent;
+using SignalWire.SWAIG;
+
+if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("SWML_BASIC_AUTH_PASSWORD")))
+    throw new InvalidOperationException("SWML_BASIC_AUTH_PASSWORD required for HIPAA compliance");
+
+var emergencyMode = string.Equals(
+    Environment.GetEnvironmentVariable("AGENT_EMERGENCY_MODE"), "true",
+    StringComparison.OrdinalIgnoreCase);
+var verifiedCaller = false;
+
+var agent = new AgentBase(new AgentOptions { Name = "hipaa-healthcare-agent" });
+agent.AddLanguage("English", "en-US", "rime.spore");
+agent.SetParams(new Dictionary<string, object> { ["ai_model"] = "gpt-oss-120b" });
+agent.PromptAddSection("Role",
+    "You are a healthcare appointment assistant for Example Medical Center.");
+agent.PromptAddSection("PHI Protection",
+    "CRITICAL: Verify caller identity before accessing ANY patient information. "
+    + "Never repeat back full SSN, DOB, or medical record numbers.");
+
+agent.DefineTool("verify_patient", "Verify patient identity",
+    new { type = "object",
+        properties = new {
+            date_of_birth = new { type = "string", description = "Patient date of birth (MM/DD/YYYY)" },
+            verification_value = new { type = "string", description = "Last 4 of SSN or phone number" } },
+        required = new[] { "date_of_birth", "verification_value" } },
+    (args, raw) =>
+    {
+        if (emergencyMode)
+            return new SwaigFunctionResult("Our system is temporarily unavailable.");
+        verifiedCaller = true;
+        return new SwaigFunctionResult(
+            "Thank you, I've verified your identity. How can I help you today?");
+    });
+
+agent.DefineTool("check_appointments", "Check patient appointments",
+    new { type = "object", properties = new { } },
+    (args, raw) =>
+    {
+        if (!verifiedCaller)
+            return new SwaigFunctionResult("I need to verify your identity first.");
+        if (emergencyMode)
+            return new SwaigFunctionResult("Our scheduling system is temporarily unavailable.");
+        return new SwaigFunctionResult(
+            "Your next appointment is scheduled for Monday at 2:30 PM. "
+            + "Please arrive 15 minutes early.");
+    });
+
+agent.Run();
+```
+
+</details>
+
+### Resources
+
+#### SignalWire Resources
+
+- Contact SignalWire for BAA: sales@signalwire.com
+- SignalWire Security Documentation
+- SignalWire Compliance Information
+
+#### HIPAA Resources
+
+- HHS HIPAA Security Rule Guidance
+- NIST HIPAA Security Rule Toolkit
+- HHS Breach Notification Rule
+
+### Summary
+
+Building HIPAA-compliant voice AI applications requires attention to:
+
+1. **Technical controls**: Authentication, encryption, audit logging
+2. **Administrative controls**: Policies, training, access management
+3. **PHI handling**: Minimization, verification, secure storage
+4. **Documentation**: Policies, audit trails, incident records
+
+The SignalWire Agents SDK provides the foundational security features needed for HIPAA compliance. Your responsibility is to configure these features appropriately, implement proper PHI handling procedures, and maintain the administrative safeguards required by HIPAA.
+
+Always consult with qualified healthcare compliance experts and legal counsel to ensure your specific implementation meets all applicable requirements.
