@@ -30,9 +30,11 @@ const PAGE_SIZE_OPTIONS = [4, 8, 12, 24, 48, 96];
 
 type FilterKey = "search" | "provider" | "language" | "gender" | "group" | "pageSize";
 
-// Client-side row: a catalog voice joined with its clip, plus a precomputed lowercased search blob
-// so the per-keystroke filter runs one substring test per row instead of re-lowercasing 4–5 fields.
-type Row = VoiceRow & { _search: string };
+// Client-side row: a catalog voice joined with its clip, plus two precomputed fields — `_search`,
+// a lowercased blob so the per-keystroke filter runs one substring test per row instead of
+// re-lowercasing 4–5 fields, and `_uid`, a collision-free identity for React keys and play state
+// (assigned in loadBundle; the catalog's key+model is not unique on its own).
+type Row = VoiceRow & { _search: string; _uid: string };
 
 // The asset bundle (catalog.json + manifest.json) is one large artifact (~5 MB, ~4.9k voices)
 // shared by every TTS page that embeds the widget. Cache the parsed+joined rows per URL pair so
@@ -45,16 +47,33 @@ function loadBundle(catalogUrl: string, manifestUrl: string): Promise<Row[]> {
   let cached = bundleCache.get(cacheKey);
   if (!cached) {
     cached = Promise.all([
-      fetch(catalogUrl).then((r) => r.json() as Promise<Catalog>),
+      // Check r.ok before parsing: a 404/500 from the CDN is an HTML page, and r.json() on it
+      // surfaces as `SyntaxError: Unexpected token '<'` in the error UI instead of the real cause.
+      fetch(catalogUrl).then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status} fetching catalog.json`);
+        return r.json() as Promise<Catalog>;
+      }),
       fetch(manifestUrl).then((r) => r.json() as Promise<Manifest>).catch(() => ({ clips: {} } as Manifest)),
-    ]).then(([cat, man]) =>
-      cat.voices.map((v) => ({
-        ...v,
-        clip: man.clips?.[v.key],
-        // Mirrors the fields the search filter below tests against (name, provider, description, tags).
-        _search: `${v.display_name} ${v.provider} ${v.description} ${v.tags.join(" ")}`.toLowerCase(),
-      }))
-    );
+    ]).then(([cat, man]) => {
+      // Row identity: key+model is *almost* unique, but the production catalog repeats it for a
+      // handful of rows (rime voices listed once per language, plus two literal duplicate rows),
+      // so suffix a counter on collision. Assigned once here so it's stable for the session:
+      // using `_uid` as the React key lets a card survive filter/page changes (the memoized Card
+      // skips re-rendering), and play state highlights exactly one card even for collisions.
+      const seen = new Map<string, number>();
+      return cat.voices.map((v) => {
+        const base = modelKeyOf(v);
+        const n = seen.get(base) ?? 0;
+        seen.set(base, n + 1);
+        return {
+          ...v,
+          clip: man.clips?.[v.key],
+          _uid: n ? `${base}#${n}` : base,
+          // Mirrors the fields the search filter below tests against (name, provider, description, tags).
+          _search: `${v.display_name} ${v.provider} ${v.description} ${v.tags.join(" ")}`.toLowerCase(),
+        };
+      });
+    });
     // Never cache a rejected fetch — evict so a later mount can retry instead of replaying the error.
     cached.catch(() => bundleCache.delete(cacheKey));
     bundleCache.set(cacheKey, cached);
@@ -194,7 +213,7 @@ export function VoiceWidget({
       (!idAllowlist ||
         idAllowlist.has(r.voice_id.toLowerCase()) ||
         idAllowlist.has(r.key.toLowerCase()) ||
-        idAllowlist.has(uidOf(r).toLowerCase()) ||
+        idAllowlist.has(modelKeyOf(r).toLowerCase()) ||
         idAllowlist.has(r.display_name.toLowerCase())) &&
       (!lock || r.provider.toLowerCase() === lock || r.engine.toLowerCase() === lock));
   }, [allRows, idAllowlist, lock]);
@@ -218,13 +237,13 @@ export function VoiceWidget({
   // group === "none" keeps the filtered order as-is, with no sections.
   const { ordered, groupTotals } = useMemo(() => {
     if (group === "none") return { ordered: filtered, groupTotals: new Map<string, number>() };
-    const m = new Map<string, VoiceRow[]>();
+    const m = new Map<string, Row[]>();
     for (const r of filtered) {
       const k = group === "provider" ? r.provider : r.primary_language;
       (m.get(k) ?? m.set(k, []).get(k)!).push(r);
     }
     const entries = [...m.entries()].sort((a, b) => a[0].localeCompare(b[0]));
-    const ordered: VoiceRow[] = [];
+    const ordered: Row[] = [];
     const groupTotals = new Map<string, number>();
     for (const [name, items] of entries) {
       groupTotals.set(name, items.length);
@@ -254,7 +273,7 @@ export function VoiceWidget({
   const pageSections = useMemo(() => {
     const slice = ordered.slice(start, end);
     if (group === "none") return slice.length ? [{ name: "", items: slice }] : [];
-    const secs: { name: string; items: VoiceRow[] }[] = [];
+    const secs: { name: string; items: Row[] }[] = [];
     for (const r of slice) {
       const k = group === "provider" ? r.provider : r.primary_language;
       const last = secs[secs.length - 1];
@@ -268,14 +287,29 @@ export function VoiceWidget({
   const playingKeyRef = useRef<string | null>(null);
   useEffect(() => { playingKeyRef.current = playingKey; }, [playingKey]);
 
-  const play = useCallback((r: VoiceRow) => {
+  const play = useCallback((r: Row) => {
     if (!r.clip || r.clip.status !== "ok") return;
-    const uid = uidOf(r);
-    const url = audioBaseUrl ? `${audioBaseUrl.replace(/\/$/, "")}/${r.clip.audio}` : r.clip.audio;
     const a = audioRef.current!;
-    if (playingKeyRef.current === uid && !a.paused) { a.pause(); setPlayingKey(null); return; }
-    a.src = url;
-    a.play().then(() => setPlayingKey(uid)).catch(() => setPlayingKey(null));
+    if (playingKeyRef.current === r._uid && !a.paused) {
+      a.pause();
+      playingKeyRef.current = null;
+      setPlayingKey(null);
+      return;
+    }
+    a.src = audioBaseUrl ? `${audioBaseUrl.replace(/\/$/, "")}/${r.clip.audio}` : r.clip.audio;
+    // Mark playing immediately (and synchronously in the ref), not when play() resolves: with
+    // preload="none" the clip has to download first, and during that window a second click must
+    // read this card as already playing so it pauses — otherwise it falls through to `a.src = url`,
+    // which re-runs the load algorithm and restarts the download instead of stopping it. The eager
+    // icon flip also gives the click immediate feedback while the clip loads.
+    playingKeyRef.current = r._uid;
+    setPlayingKey(r._uid);
+    a.play().catch(() => {
+      // Rejected (autoplay policy) or aborted by a newer click — only unwind if still current.
+      if (playingKeyRef.current !== r._uid) return;
+      playingKeyRef.current = null;
+      setPlayingKey(null);
+    });
   }, [audioBaseUrl]);
 
   const copyConfig = useCallback(async (r: VoiceRow) => {
@@ -292,16 +326,19 @@ export function VoiceWidget({
   if (error) return <div className="vw vw-error">Failed to load voices: {error}</div>;
   if (!baseRows) return <VoiceWidgetSkeleton gridStyle={gridStyle} />;
 
+  // Step from safePage, not the raw page state: `page` can be stale-high after effectivePageSize
+  // grows (a mobile→desktop resize isn't in filterSig), and stepping from it makes Prev appear
+  // dead until the raw value catches back up with the clamped one.
   const pager = pageCount > 1 ? (
     <nav className="vw-pager" aria-label="Voice pages">
-      <button className="vw-pager-btn" onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={safePage <= 0}>
+      <button className="vw-pager-btn" onClick={() => setPage(Math.max(0, safePage - 1))} disabled={safePage <= 0}>
         ‹ Prev
       </button>
       <span className="vw-pager-info">
         {ordered.length ? `${start + 1}–${end} of ${ordered.length}` : "0 of 0"}
         <span className="vw-pager-page"> · page {safePage + 1}/{pageCount}</span>
       </span>
-      <button className="vw-pager-btn" onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))} disabled={safePage >= pageCount - 1}>
+      <button className="vw-pager-btn" onClick={() => setPage(Math.min(pageCount - 1, safePage + 1))} disabled={safePage >= pageCount - 1}>
         Next ›
       </button>
     </nav>
@@ -352,8 +389,8 @@ export function VoiceWidget({
           <section key={`${sec.name}-${i}`} className="vw-section">
             {sec.name && <h3 className="vw-section-title">{sec.name} <span>{groupTotals.get(sec.name)}</span></h3>}
             <div className="vw-grid" style={gridStyle}>
-              {sec.items.map((r, idx) => (
-                <Card key={`${uidOf(r)}#${idx}`} r={r} playing={playingKey === uidOf(r)} onPlay={play} onCopy={copyConfig} />
+              {sec.items.map((r) => (
+                <Card key={r._uid} r={r} playing={playingKey === r._uid} onPlay={play} onCopy={copyConfig} />
               ))}
             </div>
           </section>
@@ -368,7 +405,7 @@ export function VoiceWidget({
 // Memoized so that playing/pausing a voice (which re-renders the widget) only re-renders the two
 // cards whose `playing` flag actually changed — not all ~60 cards on the page.
 const Card = memo(function Card({ r, playing, onPlay, onCopy }: {
-  r: VoiceRow; playing: boolean; onPlay: (r: VoiceRow) => void; onCopy: (r: VoiceRow) => Promise<boolean> | void;
+  r: Row; playing: boolean; onPlay: (r: Row) => void; onCopy: (r: VoiceRow) => Promise<boolean> | void;
 }) {
   const disabled = !r.clip || r.clip.status !== "ok";
   const [copied, setCopied] = useState(false);
@@ -457,9 +494,10 @@ function uniq(xs?: string[]): string[] {
   return [...new Set((xs ?? []).filter(Boolean))].sort();
 }
 
-// Stable per-voice identity. The catalog `key` (<engine>/<voice_id>) is NOT unique — a voice with
-// multiple models repeats it (e.g. rime/abbie under "mist" and "mistv2") — so append the model for
-// React keys, play-state, and allowlist disambiguation.
-function uidOf(r: VoiceRow): string {
-  return r.model ? `${r.key}:${r.model}` : r.key;
+// Model-qualified catalog key (<engine>/<voice_id>[:<model>]) — the documented matching form for
+// the voiceIds allowlist. NOT unique in the wild: a few rime voices repeat key+model (once per
+// language, plus literal duplicate rows), so row identity uses Row._uid — this plus a collision
+// counter, assigned in loadBundle.
+function modelKeyOf(v: { key: string; model: string | null }): string {
+  return v.model ? `${v.key}:${v.model}` : v.key;
 }
