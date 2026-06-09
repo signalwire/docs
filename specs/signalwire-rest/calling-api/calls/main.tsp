@@ -17,7 +17,11 @@ using Types.StatusCodes;
 @webhook("transcribeStatusCallback", TranscribeStatusCallbackPayload, CALLS_TAG)
 @webhook("streamStatusCallback", StreamStatusCallbackPayload, CALLS_TAG)
 @webhook("aiSidecarCallback", AISidecarCallbackPayload, CALLS_TAG)
-@webhook("aiSidecarToolWebhook", AISidecarToolWebhookPayload, CALLS_TAG)
+@webhook(
+  "aiSidecarSwaigToolWebhook",
+  AISidecarSwaigToolWebhookPayload,
+  CALLS_TAG
+)
 @webhook("aiSwaigToolWebhook", AiSwaigToolWebhookPayload, CALLS_TAG)
 namespace SignalWireAPI.Calling.Calls {
   @tag(CALLS_TAG)

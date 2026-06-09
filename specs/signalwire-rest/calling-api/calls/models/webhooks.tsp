@@ -221,7 +221,7 @@ model AISidecarCallbackPayload {
   };
 }
 
-@summary("AI sidecar tool webhook")
+@summary("AI sidecar SWAIG tool webhook")
 @doc("""
   Sent to a sidecar SWAIG function's `web_hook_url` (or the SWAIG `defaults.web_hook_url`) when the
   sidecar's model calls that tool. Your endpoint runs the function and returns a JSON object with a
@@ -229,12 +229,12 @@ model AISidecarCallbackPayload {
   [Supported SWAIG actions](/docs/swml/reference/calling/ai-sidecar#supported-swaig-actions) on the
   SWML ai_sidecar reference for the response contract.
   
-  This is the **sidecar** tool-webhook shape, which is intentionally narrower than the regular `ai`
-  method's SWAIG webhook: the sidecar sends only the fields below (no `app_name`, `version`,
+  This is the **sidecar** SWAIG tool-webhook shape, which is intentionally narrower than the regular
+  `ai` method's SWAIG tool webhook: the sidecar sends only the fields below (no `app_name`, `version`,
   `content_type`, `meta_data`, `argument_desc`, `project_id`/`space_id`, `SWMLVars`, or `call_log`),
   and a `say` action is report-only because the sidecar has no voice on the call.
   """)
-model AISidecarToolWebhookPayload {
+model AISidecarSwaigToolWebhookPayload {
   @doc("The name of the sidecar function the model is calling.")
   @example("lookup_competitor")
   function: string;
@@ -288,9 +288,9 @@ model AISidecarToolWebhookPayload {
   function and returns a JSON object with a `response` string (what the model reads next) and an
   optional `action` (object or array) for the agent to perform.
   
-  This is the regular `ai` method's tool-webhook shape. It is richer than the
-  [AI sidecar tool webhook](/docs/apis/rest/calls/webhooks/ai-sidecar-tool-webhook): caller details
-  are flat (`caller_id_name` / `caller_id_num`, note the truncated name) rather than nested under
+  This is the regular `ai` method's SWAIG tool-webhook shape. It is richer than the
+  [AI sidecar SWAIG tool webhook](/docs/apis/rest/calls/webhooks/ai-sidecar-swaig-tool-webhook): caller
+  details are flat (`caller_id_name` / `caller_id_num`, note the truncated name) rather than nested under
   `channel_data`, and it carries SWAIG metadata the sidecar omits.
   """)
 model AiSwaigToolWebhookPayload {

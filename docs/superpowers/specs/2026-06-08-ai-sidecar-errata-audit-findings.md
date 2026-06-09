@@ -207,8 +207,8 @@ method's, or do they need two? Full C comparison: `temp/ai_sidecar_swaig_webhook
 - Only `function`, `argument` (`{parsed,raw,substituted}`), `call_id`, `global_data` overlap identically.
 
 **Changes:**
-- Added `AISidecarToolWebhookPayload` (`webhooks.tsp`) + `@webhook("aiSidecarToolWebhook", …)` +
-  nav entry `subpackage_calls.ai_sidecar_tool_webhook`. Documents the inbound request payload; the
+- Added `AISidecarSwaigToolWebhookPayload` (`webhooks.tsp`) + `@webhook("aiSidecarSwaigToolWebhook", …)` +
+  nav entry `subpackage_calls.ai_sidecar_swaig_tool_webhook`. Documents the inbound request payload; the
   response/action contract is cross-linked to the SWML page (the `@webhook` decorator captures only
   the request payload).
 - **Fixed pre-existing inaccuracies** in the SWML "Tool webhook contract" Request section (these were
@@ -219,7 +219,7 @@ method's, or do they need two? Full C comparison: `temp/ai_sidecar_swaig_webhook
 Not done (separate scope): the regular `ai` SWAIG tool webhook remains prose-only — adding its own
 `@webhook` entry is an `ai`-method task, not sidecar work.
 
-Verified: `tsp compile` (REST) ✓; `aiSidecarToolWebhook` present in generated OpenAPI with the
+Verified: `tsp compile` (REST) ✓; `aiSidecarSwaigToolWebhook` present in generated OpenAPI with the
 C-verified field set; `fern check` 0 errors.
 
 ---
@@ -247,7 +247,7 @@ webhook; the webhook POST is the `else` branch without them. So they are correct
 confirmed `"2.0"` (mod_openai.h:34).
 
 **Snippet wiring (`<WebhookPayloadSnippet>`):**
-- Sidecar page: `aiSidecarCallback` under "Callback body shape", `aiSidecarToolWebhook` under "Tool
+- Sidecar page: `aiSidecarCallback` under "Callback body shape", `aiSidecarSwaigToolWebhook` under "Tool
   webhook contract" (replacing the hand-maintained field list, eliminating drift), each with a link to
   its generated webhook page.
 - `ai` method page (`ai/swaig/functions`): new "Tool webhook" section embedding `aiSwaigToolWebhook`.
@@ -258,5 +258,5 @@ present (only `project_id`/`space_id` are conditional). Tightened those three fr
 `AISidecarCallbackPayload`. (Note: the sidecar *event* webhook uses `text/json` via `get_call_info`,
 whereas the `ai` *tool* webhook uses `text/swaig` inline — correctly different in the two models.)
 
-Verified: `tsp compile` ✓; 3 webhooks (`aiSidecarCallback`, `aiSidecarToolWebhook`, `aiSwaigToolWebhook`)
+Verified: `tsp compile` ✓; 3 webhooks (`aiSidecarCallback`, `aiSidecarSwaigToolWebhook`, `aiSwaigToolWebhook`)
 in generated OpenAPI; `AiSwaigToolWebhookPayload` 27 fields match actions.c; `fern check` 0 errors.
