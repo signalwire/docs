@@ -187,3 +187,37 @@ sub-object correctly omits unparsed keys (`includes`, `native_functions`, `alias
 / `deepgram_key_override`, `web_hook_auth_pass` alias, `swml`/`async` relay-envelope fields.
 
 Verified: `tsp compile` (SWML + REST) ✓; `fern check` 0 errors.
+
+---
+
+# Phase 4 — SWAIG tool webhook: sidecar vs AI (2026-06-09)
+
+Question: can the sidecar's SWAIG tool webhook share one callback entry with the regular `ai`
+method's, or do they need two? Full C comparison: `temp/ai_sidecar_swaig_webhook_compare.md`.
+
+**Verdict: NOT 1:1 → two separate entries.** Decisive differences (file:line in the compare doc):
+- Sidecar POST is only `{function, argument, call_id, global_data, channel_data}`
+  (`sidecar_dispatch_webhook`, sidecar.c:685); the regular AI POST (`execute_user_function`,
+  actions.c:1845) carries ~24 fields (`app_name`, `version`, `content_type`, `argument_desc`,
+  `meta_data*`, `ai_session_id`, `project_id`/`space_id`, `SWMLVars`, `call_log`, …).
+- Caller info: sidecar nests it in `channel_data` (`caller_id_number`, `destination_number`); AI
+  sends flat `caller_id_name`/`caller_id_num` (different name), no `channel_data`.
+- `say` is report-only in the sidecar (no TTS); AI speaks. Action-key sets differ (15 vs ~28).
+- Sidecar gates all actions behind `act_on_channel`; AI has no read-only mode.
+- Only `function`, `argument` (`{parsed,raw,substituted}`), `call_id`, `global_data` overlap identically.
+
+**Changes:**
+- Added `AISidecarToolWebhookPayload` (`webhooks.tsp`) + `@webhook("aiSidecarToolWebhook", …)` +
+  nav entry `subpackage_calls.ai_sidecar_tool_webhook`. Documents the inbound request payload; the
+  response/action contract is cross-linked to the SWML page (the `@webhook` decorator captures only
+  the request payload).
+- **Fixed pre-existing inaccuracies** in the SWML "Tool webhook contract" Request section (these were
+  wrong before this work): `argument` is `{parsed, raw, substituted}` (not "a JSON string or
+  `arguments` object"); removed the top-level `project_id`/`space_id` the sidecar does **not** send;
+  added top-level `call_id`; added a Note contrasting the narrower sidecar shape vs the `ai` SWAIG webhook.
+
+Not done (separate scope): the regular `ai` SWAIG tool webhook remains prose-only — adding its own
+`@webhook` entry is an `ai`-method task, not sidecar work.
+
+Verified: `tsp compile` (REST) ✓; `aiSidecarToolWebhook` present in generated OpenAPI with the
+C-verified field set; `fern check` 0 errors.

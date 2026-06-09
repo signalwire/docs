@@ -220,3 +220,63 @@ model AISidecarCallbackPayload {
     channel_data: Record<unknown>;
   };
 }
+
+@summary("AI sidecar tool webhook")
+@doc("""
+  Sent to a sidecar SWAIG function's `web_hook_url` (or the SWAIG `defaults.web_hook_url`) when the
+  sidecar's model calls that tool. Your endpoint runs the function and returns a JSON object with a
+  `response` string (what the model reads next) and an optional `action` (object or array) — see
+  [Supported SWAIG actions](/docs/swml/reference/calling/ai-sidecar#supported-swaig-actions) on the
+  SWML ai_sidecar reference for the response contract.
+  
+  This is the **sidecar** tool-webhook shape, which is intentionally narrower than the regular `ai`
+  method's SWAIG webhook: the sidecar sends only the fields below (no `app_name`, `version`,
+  `content_type`, `meta_data`, `argument_desc`, `project_id`/`space_id`, `SWMLVars`, or `call_log`),
+  and a `say` action is report-only because the sidecar has no voice on the call.
+  """)
+model AISidecarToolWebhookPayload {
+  @doc("The name of the sidecar function the model is calling.")
+  @example("lookup_competitor")
+  function: string;
+
+  @doc("The arguments the model passed.")
+  argument: {
+    @doc("The parsed argument objects (one per parsed JSON block the model emitted).")
+    @example(#[#{ competitor: "ACME" }])
+    parsed: Record<unknown>[];
+
+    @doc("The raw argument string exactly as the model produced it.")
+    @example("{\"competitor\":\"ACME\"}")
+    raw: string;
+
+    @doc("The raw string after variable substitution.")
+    @example("{\"competitor\":\"ACME\"}")
+    substituted: string;
+  };
+
+  @doc("ID of the call the sidecar is attached to.")
+  @example("2e1e66e5-5d07-413d-9668-55542992eec0")
+  call_id: string;
+
+  @doc("The sidecar's current `global_data`. Present when the sidecar has any.")
+  global_data?: Record<unknown>;
+
+  @doc("Call/channel context.")
+  channel_data: {
+    @doc("ID of the call.")
+    @example("2e1e66e5-5d07-413d-9668-55542992eec0")
+    call_id: string;
+
+    @doc("Caller ID name. Present when available.")
+    @example("Jane Doe")
+    caller_id_name?: string;
+
+    @doc("Caller ID number. Present when available.")
+    @example("+15555550100")
+    caller_id_number?: string;
+
+    @doc("Destination number. Present when available.")
+    @example("+15555550199")
+    destination_number?: string;
+  };
+}

@@ -15315,6 +15315,98 @@ components:
         The kind of AI sidecar callback. See the
         [SWML ai_sidecar reference](/docs/swml/reference/calling/ai-sidecar#callback-types)
         for the type-specific fields each one carries.
+    Calling.AISidecarToolWebhookPayload:
+      type: object
+      required:
+        - function
+        - argument
+        - call_id
+        - channel_data
+      properties:
+        function:
+          type: string
+          description: The name of the sidecar function the model is calling.
+          examples:
+            - lookup_competitor
+        argument:
+          type: object
+          properties:
+            parsed:
+              type: array
+              items:
+                type: object
+                unevaluatedProperties: {}
+              description: The parsed argument objects (one per parsed JSON block the model emitted).
+              examples:
+                - - competitor: ACME
+            raw:
+              type: string
+              description: The raw argument string exactly as the model produced it.
+              examples:
+                - '{"competitor":"ACME"}'
+            substituted:
+              type: string
+              description: The raw string after variable substitution.
+              examples:
+                - '{"competitor":"ACME"}'
+          required:
+            - parsed
+            - raw
+            - substituted
+          unevaluatedProperties:
+            not: {}
+          description: The arguments the model passed.
+        call_id:
+          type: string
+          description: ID of the call the sidecar is attached to.
+          examples:
+            - 2e1e66e5-5d07-413d-9668-55542992eec0
+        global_data:
+          type: object
+          unevaluatedProperties: {}
+          description: The sidecar's current `global_data`. Present when the sidecar has any.
+        channel_data:
+          type: object
+          properties:
+            call_id:
+              type: string
+              description: ID of the call.
+              examples:
+                - 2e1e66e5-5d07-413d-9668-55542992eec0
+            caller_id_name:
+              type: string
+              description: Caller ID name. Present when available.
+              examples:
+                - Jane Doe
+            caller_id_number:
+              type: string
+              description: Caller ID number. Present when available.
+              examples:
+                - '+15555550100'
+            destination_number:
+              type: string
+              description: Destination number. Present when available.
+              examples:
+                - '+15555550199'
+          required:
+            - call_id
+          unevaluatedProperties:
+            not: {}
+          description: Call/channel context.
+      unevaluatedProperties:
+        not: {}
+      description: |-
+        Sent to a sidecar SWAIG function's `web_hook_url` (or the SWAIG `defaults.web_hook_url`) when the
+        sidecar's model calls that tool. Your endpoint runs the function and returns a JSON object with a
+        `response` string (what the model reads next) and an optional `action` (object or array) — see
+        [Supported SWAIG actions](/docs/swml/reference/calling/ai-sidecar#supported-swaig-actions) on the
+        SWML ai_sidecar reference for the response contract.
+
+        This is the **sidecar** tool-webhook shape, which is intentionally narrower than the regular `ai`
+        method's SWAIG webhook: the sidecar sends only the fields below (no `app_name`, `version`,
+        `content_type`, `meta_data`, `argument_desc`, `project_id`/`space_id`, `SWMLVars`, or `call_log`),
+        and a `say` action is report-only because the sidecar has no voice on the call.
+      title: AI sidecar tool webhook
     Calling.CallAIMessageRequest:
       type: object
       required:
@@ -47838,6 +47930,115 @@ servers:
         default: '{Your_Space_Name}'
         description: Your SignalWire Space name
 webhooks:
+  aiSidecarToolWebhook:
+    post:
+      operationId: ai_sidecar_tool_webhook
+      summary: AI sidecar tool webhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                function:
+                  type: string
+                  description: The name of the sidecar function the model is calling.
+                  example: lookup_competitor
+                argument:
+                  type: object
+                  properties:
+                    parsed:
+                      type: array
+                      items:
+                        type: object
+                        properties: {}
+                        unevaluatedProperties: {}
+                      description: The parsed argument objects (one per parsed JSON block the model emitted).
+                      example:
+                        - competitor: ACME
+                    raw:
+                      type: string
+                      description: The raw argument string exactly as the model produced it.
+                      example: '{"competitor":"ACME"}'
+                    substituted:
+                      type: string
+                      description: The raw string after variable substitution.
+                      example: '{"competitor":"ACME"}'
+                  required:
+                    - parsed
+                    - raw
+                    - substituted
+                  unevaluatedProperties:
+                    not: {}
+                  description: The arguments the model passed.
+                call_id:
+                  type: string
+                  description: ID of the call the sidecar is attached to.
+                  example: 2e1e66e5-5d07-413d-9668-55542992eec0
+                global_data:
+                  type: object
+                  properties: {}
+                  unevaluatedProperties: {}
+                  description: The sidecar's current `global_data`. Present when the sidecar has any.
+                channel_data:
+                  type: object
+                  properties:
+                    call_id:
+                      type: string
+                      description: ID of the call.
+                      example: 2e1e66e5-5d07-413d-9668-55542992eec0
+                    caller_id_name:
+                      type: string
+                      description: Caller ID name. Present when available.
+                      example: Jane Doe
+                    caller_id_number:
+                      type: string
+                      description: Caller ID number. Present when available.
+                      example: '+15555550100'
+                    destination_number:
+                      type: string
+                      description: Destination number. Present when available.
+                      example: '+15555550199'
+                  required:
+                    - call_id
+                  unevaluatedProperties:
+                    not: {}
+                  description: Call/channel context.
+              required:
+                - function
+                - argument
+                - call_id
+                - channel_data
+              unevaluatedProperties:
+                not: {}
+              description: |-
+                Sent to a sidecar SWAIG function's `web_hook_url` (or the SWAIG `defaults.web_hook_url`) when the
+                sidecar's model calls that tool. Your endpoint runs the function and returns a JSON object with a
+                `response` string (what the model reads next) and an optional `action` (object or array) — see
+                [Supported SWAIG actions](/docs/swml/reference/calling/ai-sidecar#supported-swaig-actions) on the
+                SWML ai_sidecar reference for the response contract.
+
+                This is the **sidecar** tool-webhook shape, which is intentionally narrower than the regular `ai`
+                method's SWAIG webhook: the sidecar sends only the fields below (no `app_name`, `version`,
+                `content_type`, `meta_data`, `argument_desc`, `project_id`/`space_id`, `SWMLVars`, or `call_log`),
+                and a `say` action is report-only because the sidecar has no voice on the call.
+      responses:
+        '200':
+          description: Webhook received
+      description: |-
+        Sent to a sidecar SWAIG function's `web_hook_url` (or the SWAIG `defaults.web_hook_url`) when the
+        sidecar's model calls that tool. Your endpoint runs the function and returns a JSON object with a
+        `response` string (what the model reads next) and an optional `action` (object or array) — see
+        [Supported SWAIG actions](/docs/swml/reference/calling/ai-sidecar#supported-swaig-actions) on the
+        SWML ai_sidecar reference for the response contract.
+
+        This is the **sidecar** tool-webhook shape, which is intentionally narrower than the regular `ai`
+        method's SWAIG webhook: the sidecar sends only the fields below (no `app_name`, `version`,
+        `content_type`, `meta_data`, `argument_desc`, `project_id`/`space_id`, `SWMLVars`, or `call_log`),
+        and a `say` action is report-only because the sidecar has no voice on the call.
+      tags:
+        - Calls
   aiSidecarCallback:
     post:
       operationId: ai_sidecar_callback
