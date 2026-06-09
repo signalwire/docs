@@ -145,3 +145,45 @@ rows.
   `command` enum and the `Calling.AISidecarCallbackPayload` webhook (16-member type enum confirmed).
 - `tsp format` applied to all 4 changed REST specs.
 - `fern check` — 0 errors (1 pre-existing color-contrast warning, unrelated).
+
+---
+
+# Phase 3 — Completeness audit + fixes (2026-06-09)
+
+Full re-trace of the C source vs everything documented (REST + SWML). Detailed delta:
+`temp/ai_sidecar_completeness_delta.md`. The param models (SWML + REST request models) were
+confirmed complete and accurate; gaps were in the callback per-type field lists and a couple of
+REST response specifics. Fixes applied:
+
+**SWML callback table** (`ai_sidecar/index.mdx`) — added C-confirmed per-type fields:
+- `request`: `iter`, `messages_count`, `messages_token_count`, `tool_choice`
+- `thought` / `tool_call` / `tool_result`: `iter`
+- `insight` / `ask_answer`: `iter`, `total_iters`
+- `history_pruned`: `kept_count`
+- `error.webhook_http_failure`: `curl_code`
+- Added a note: `iter`/`total_iters` semantics, and that any event during an `ask` carries
+  `ask_id` + `triggered_by: "ask"`.
+
+(The REST `AISidecarCallbackPayload` cross-links to this table for per-type fields, so the same
+fix covers both surfaces.)
+
+**REST** (`requests.tsp`) — clarified the `calling.ai_sidecar.status` response is an opaque
+`+OK key=value` text line (`running`, `ticks`, `insights`, `skips`, `tools`, `errors`,
+`in_tokens`, `out_tokens`, `history_size`, `event_log_bytes`), not structured JSON. `ask`'s
+`ask_id` response was already documented in prose. The endpoint uses one shared `CallResponse`,
+so per-command response models aren't modeled (consistent with every other command).
+
+**SWML params** (`params.tsp`) — added C-enforced ranges to `speech_timeout` (0–600000),
+`vad_silence_ms` (0–60000), `vad_thresh` (0–10000), matching the in-spec convention. Note: like the
+other `integer | SWMLVar` params (`idle_timeout_ms` etc.), the numeric bounds live in the `@doc`
+(`Range: …`) — the json-schema emitter does not propagate min/max into a union member, so this is
+consistent with existing behavior.
+
+**Confirmed correct, no change:** 16-type callback enum complete; all 15 SWAIG action keys; all 5
+stop_reasons / 5 error_reasons; all enums (`customer_role`, `direction`, `speech_engine`); SWAIG
+sub-object correctly omits unparsed keys (`includes`, `native_functions`, `aliases`, `data_map`).
+
+**Intentional omissions (internal):** `event_url` (not in SWML whitelist), `deepgram_url_override`
+/ `deepgram_key_override`, `web_hook_auth_pass` alias, `swml`/`async` relay-envelope fields.
+
+Verified: `tsp compile` (SWML + REST) ✓; `fern check` 0 errors.

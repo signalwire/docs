@@ -1937,7 +1937,12 @@ model CallAISidecarStatusRequest {
   @example(CallIdExample)
   id: uuid;
 
-  @doc("The `calling.ai_sidecar.status` command returns a snapshot of the sidecar's runtime counters (ticks, insights, skips, tool calls, errors, token usage, history size) and also writes a status event to the relay topic.")
+  @doc("""
+    The `calling.ai_sidecar.status` command snapshots the sidecar's runtime counters and also writes a status event to the
+    relay topic. The result is a single `+OK` text line of `key=value` counters
+    (`running`, `ticks`, `insights`, `skips`, `tools`, `errors`, `in_tokens`, `out_tokens`, `history_size`,
+    `event_log_bytes`), not a structured JSON object.
+    """)
   @example("calling.ai_sidecar.status")
   command: "calling.ai_sidecar.status";
 
