@@ -15,6 +15,7 @@ using Types.StatusCodes;
 
 @route("/calls")
 @webhook("transcribeStatusCallback", TranscribeStatusCallbackPayload, CALLS_TAG)
+@webhook("streamStatusCallback", StreamStatusCallbackPayload, CALLS_TAG)
 namespace SignalWireAPI.Calling.Calls {
   @tag(CALLS_TAG)
   @friendlyName("Calls")
@@ -37,6 +38,7 @@ namespace SignalWireAPI.Calling.Calls {
       | `calling.end` | Terminate an active call immediately |
       | `calling.transfer` | Transfer a call to a new destination (SIP URI, phone number, or inline SWML) |
       | `calling.disconnect` | Disconnect bridged calls without hanging up either leg |
+      | `calling.join_conference` | Join the call to an ad-hoc audio conference, optionally attaching a WebSocket stream |
       | `calling.play` | Play audio, TTS, silence, or ringtone to a call |
       | `calling.play.pause` | Pause active playback |
       | `calling.play.resume` | Resume paused playback |
@@ -147,6 +149,13 @@ namespace SignalWireAPI.Calling.Calls {
       #{
         title: "calling.transcribe",
         description: "Start background transcription on an active call",
+      }
+    )
+    @opExample(
+      #{ parameters: joinConferenceCallExample },
+      #{
+        title: "calling.join_conference",
+        description: "Join a conference and attach a bidirectional WebSocket stream",
       }
     )
     @opExample(
