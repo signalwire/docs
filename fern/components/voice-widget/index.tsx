@@ -8,18 +8,18 @@ import { Skeleton } from "../skeleton/index";
 // the pre-synthesized sample clips. Styles live in this folder's styles.css, loaded via docs.yml
 // `css:` (Fern's component bundler does not process CSS imports).
 
-// Single source of truth for where the asset bundle (catalog.json + manifest.json + audio/) is
-// hosted. The bundle cannot live in fern/assets — Fern only serves assets it statically discovers
-// in MDX/CSS and rewrites to content-hashed URLs, so a runtime fetch() has no resolvable path.
-// It must be served from an external origin with CORS enabled on the JSON. Flip this one string
-// to move between hosts; the three URLs (catalog/manifest/audio) all derive from it.
+// Where the hosted asset bundle lives. The bundle cannot live in fern/assets — Fern only serves
+// assets it statically discovers in MDX/CSS and rewrites to content-hashed URLs, so a runtime
+// fetch() has no resolvable path. It must be served from an external origin with CORS enabled.
 //
-// Cloudflare quick tunnel to the local CDN (`http-server temp/voice_widget/dist -p 8080 --cors -g`),
-// so a tunnelled docs preview can be shared and fetch assets over HTTPS from a host every viewer
-// can resolve. Ephemeral: quick-tunnel URLs change on every cloudflared restart — update this and
-// restart the docs dev server to re-bundle. For local-only dev set to "http://localhost:8080".
-// Swap to the production CDN base URL when one is available.
-const ASSET_BASE = "https://warming-watched-physics-assistance.trycloudflare.com";
+// On the production CDN the JSON and the audio/ tree sit under different prefixes: catalog.json +
+// manifest.json are served from /voice_widget/dist/, while the audio is served from the domain root
+// (/audio/<engine>/<voice_id>.mp3). The manifest stores each clip's `audio` as a path relative to
+// AUDIO_BASE (e.g. "audio/rime/zion.mp3"), so the two bases are independent — keep each in sync with
+// the CDN layout. For local dev against `http-server temp/voice_widget/dist -p 8080 --cors`, set
+// both to "http://localhost:8080".
+const ASSET_BASE = "https://mcdn.signalwire.com/voice_widget/dist"; // catalog.json + manifest.json
+const AUDIO_BASE = "https://mcdn.signalwire.com";                   // /audio/<engine>/<voice_id>.mp3
 
 const ALL = "__all__";
 const DEFAULT_PAGE_SIZE = 48;
@@ -29,6 +29,38 @@ const MOBILE_QUERY = "(max-width: 640px)";
 const PAGE_SIZE_OPTIONS = [4, 8, 12, 24, 48, 96];
 
 type FilterKey = "search" | "provider" | "language" | "gender" | "group" | "pageSize";
+
+// Client-side row: a catalog voice joined with its clip, plus a precomputed lowercased search blob
+// so the per-keystroke filter runs one substring test per row instead of re-lowercasing 4–5 fields.
+type Row = VoiceRow & { _search: string };
+
+// The asset bundle (catalog.json + manifest.json) is one large artifact (~5 MB, ~4.9k voices)
+// shared by every TTS page that embeds the widget. Cache the parsed+joined rows per URL pair so
+// navigating across the index and the provider pages fetches and parses it once per session, not
+// once per mount. Each embed then narrows this shared set down to the voices it shows (see baseRows).
+const bundleCache = new Map<string, Promise<Row[]>>();
+
+function loadBundle(catalogUrl: string, manifestUrl: string): Promise<Row[]> {
+  const cacheKey = `${catalogUrl}\n${manifestUrl}`;
+  let cached = bundleCache.get(cacheKey);
+  if (!cached) {
+    cached = Promise.all([
+      fetch(catalogUrl).then((r) => r.json() as Promise<Catalog>),
+      fetch(manifestUrl).then((r) => r.json() as Promise<Manifest>).catch(() => ({ clips: {} } as Manifest)),
+    ]).then(([cat, man]) =>
+      cat.voices.map((v) => ({
+        ...v,
+        clip: man.clips?.[v.key],
+        // Mirrors the fields the search filter below tests against (name, provider, description, tags).
+        _search: `${v.display_name} ${v.provider} ${v.description} ${v.tags.join(" ")}`.toLowerCase(),
+      }))
+    );
+    // Never cache a rejected fetch — evict so a later mount can retry instead of replaying the error.
+    cached.catch(() => bundleCache.delete(cacheKey));
+    bundleCache.set(cacheKey, cached);
+  }
+  return cached;
+}
 
 // Tracks whether the viewport is in the mobile breakpoint (matches the CSS media query below).
 function useIsMobile() {
@@ -51,7 +83,7 @@ export interface VoiceWidgetProps {
   catalogUrl?: string;
   /** Override the manifest.json URL. Default: `${assetBaseUrl}/manifest.json`. */
   manifestUrl?: string;
-  /** Override the base the clip `audio` paths resolve against. Default: assetBaseUrl. */
+  /** Override the base the clip `audio` paths resolve against. Default: AUDIO_BASE. */
   audioBaseUrl?: string;
   /** Initial grouping. "none" renders a flat grid with no section headers or group toggle. Default: "provider". */
   groupBy?: "provider" | "language" | "none";
@@ -88,7 +120,7 @@ export function VoiceWidget({
   assetBaseUrl = ASSET_BASE,
   catalogUrl = `${assetBaseUrl}/catalog.json`,
   manifestUrl = `${assetBaseUrl}/manifest.json`,
-  audioBaseUrl = assetBaseUrl,
+  audioBaseUrl = AUDIO_BASE,
   groupBy: initialGroup = "provider",
   pageSize = DEFAULT_PAGE_SIZE,
   columns = 3,
@@ -113,7 +145,7 @@ export function VoiceWidget({
   const gridStyle = (columns && columns > 0
     ? { "--vw-cols": Math.floor(columns), "--vw-col-min": "0px" }
     : undefined) as CSSProperties | undefined;
-  const [rows, setRows] = useState<VoiceRow[] | null>(null);
+  const [allRows, setAllRows] = useState<Row[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [provider, setProvider] = useState(ALL);
@@ -145,43 +177,42 @@ export function VoiceWidget({
 
   useEffect(() => {
     let alive = true;
-    (async () => {
-      try {
-        const [cat, man] = await Promise.all([
-          fetch(catalogUrl).then((r) => r.json() as Promise<Catalog>),
-          fetch(manifestUrl).then((r) => r.json() as Promise<Manifest>).catch(() => ({ clips: {} } as Manifest)),
-        ]);
-        if (!alive) return;
-        setRows(cat.voices.map((v) => ({ ...v, clip: man.clips?.[v.key] })));
-      } catch (e) {
-        if (alive) setError(String(e));
-      }
-    })();
+    loadBundle(catalogUrl, manifestUrl)
+      .then((loaded) => { if (alive) setAllRows(loaded); })
+      .catch((e) => { if (alive) setError(String(e)); });
     return () => { alive = false; };
   }, [catalogUrl, manifestUrl]);
 
-  const providers = useMemo(() => uniq(rows?.map((r) => r.provider)), [rows]);
-  const languages = useMemo(() => uniq(rows?.flatMap((r) => r.languages)), [rows]);
-
-  const filtered = useMemo(() => {
-    if (!rows) return [];
-    const needle = deferredQ.trim().toLowerCase();
-    return rows.filter((r) =>
+  // Static narrowing: the allowlist (voiceIds) and provider lock can't change at runtime, so apply
+  // them once here instead of re-checking the full catalog inside the per-keystroke filter below.
+  // Everything downstream — dropdown options, search, grouping, pagination — then works over only
+  // the voices this embed can ever show (12 on the index, one provider's voices on a provider page).
+  const baseRows = useMemo(() => {
+    if (!allRows) return null;
+    if (!idAllowlist && !lock) return allRows;
+    return allRows.filter((r) =>
       (!idAllowlist ||
         idAllowlist.has(r.voice_id.toLowerCase()) ||
         idAllowlist.has(r.key.toLowerCase()) ||
         idAllowlist.has(uidOf(r).toLowerCase()) ||
         idAllowlist.has(r.display_name.toLowerCase())) &&
-      (!lock || r.provider.toLowerCase() === lock || r.engine.toLowerCase() === lock) &&
+      (!lock || r.provider.toLowerCase() === lock || r.engine.toLowerCase() === lock));
+  }, [allRows, idAllowlist, lock]);
+
+  // Dropdown options derive from the narrowed set, so a provider-locked page lists only that
+  // provider's languages, not all ~180 in the catalog.
+  const providers = useMemo(() => uniq(baseRows?.map((r) => r.provider)), [baseRows]);
+  const languages = useMemo(() => uniq(baseRows?.flatMap((r) => r.languages)), [baseRows]);
+
+  const filtered = useMemo(() => {
+    if (!baseRows) return [];
+    const needle = deferredQ.trim().toLowerCase();
+    return baseRows.filter((r) =>
       (provider === ALL || r.provider === provider) &&
       (language === ALL || r.languages.includes(language)) &&
       (gender === ALL || r.gender === gender) &&
-      (!needle ||
-        r.display_name.toLowerCase().includes(needle) ||
-        r.provider.toLowerCase().includes(needle) ||
-        r.description.toLowerCase().includes(needle) ||
-        r.tags.join(" ").toLowerCase().includes(needle)));
-  }, [rows, idAllowlist, lock, deferredQ, provider, language, gender]);
+      (!needle || r._search.includes(needle)));
+  }, [baseRows, deferredQ, provider, language, gender]);
 
   // Flatten into grouped order once, and remember each group's full size for the section headers.
   // group === "none" keeps the filtered order as-is, with no sections.
@@ -259,7 +290,7 @@ export function VoiceWidget({
   }, []);
 
   if (error) return <div className="vw vw-error">Failed to load voices: {error}</div>;
-  if (!rows) return <VoiceWidgetSkeleton gridStyle={gridStyle} />;
+  if (!baseRows) return <VoiceWidgetSkeleton gridStyle={gridStyle} />;
 
   const pager = pageCount > 1 ? (
     <nav className="vw-pager" aria-label="Voice pages">
