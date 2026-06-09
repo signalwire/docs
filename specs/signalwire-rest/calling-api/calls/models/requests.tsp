@@ -1869,7 +1869,7 @@ model CallAISidecarRequest {
   @example(CallIdExample)
   id: uuid;
 
-  @doc("The `calling.ai_sidecar` command attaches a real-time AI observer (sidecar) to an active, answered call. The sidecar listens to both legs and streams agent-facing advice as webhook callbacks; it does not speak on the call.")
+  @doc("The `calling.ai_sidecar` command attaches a real-time AI observer (a sidecar) to an answered call. The sidecar listens to the conversation and streams advice for the agent to your application as webhook callbacks; it never speaks on the call.")
   @example("calling.ai_sidecar")
   command: "calling.ai_sidecar";
 
@@ -1887,13 +1887,13 @@ model CallAISidecarPokeRequest {
   @example(CallIdExample)
   id: uuid;
 
-  @doc("The `calling.ai_sidecar.poke` command injects a free-form user message into the sidecar's history and forces an immediate processing tick, so the sidecar reacts right away.")
+  @doc("The `calling.ai_sidecar.poke` command sends a message to the sidecar and prompts it to respond right away, without waiting for the next customer turn.")
   @example("calling.ai_sidecar.poke")
   command: "calling.ai_sidecar.poke";
 
   @doc(paramsDescription)
   params: {
-    @doc("The message text to inject into the sidecar's conversation history.")
+    @doc("The message to send to the sidecar.")
     @example("The customer just mentioned a competitor — suggest a comparison.")
     text: string;
   };
@@ -1905,13 +1905,13 @@ model CallAISidecarAskRequest {
   @example(CallIdExample)
   id: uuid;
 
-  @doc("The `calling.ai_sidecar.ask` command submits an out-of-band question to the sidecar. It is fire-and-forget: the response returns an `ask_id`, and the answer arrives later as an `ask_answer` webhook callback carrying the same `ask_id`. The ongoing conversation history is not modified.")
+  @doc("The `calling.ai_sidecar.ask` command asks the sidecar a one-off question without affecting the live conversation. The response returns an `ask_id` right away, and the answer arrives later as an `ask_answer` webhook callback carrying the same `ask_id`.")
   @example("calling.ai_sidecar.ask")
   command: "calling.ai_sidecar.ask";
 
   @doc(paramsDescription)
   params: {
-    @doc("The out-of-band question for the sidecar to answer.")
+    @doc("The question for the sidecar to answer.")
     @example("What objections has the customer raised so far?")
     text: string;
   };
@@ -1938,10 +1938,10 @@ model CallAISidecarStatusRequest {
   id: uuid;
 
   @doc("""
-    The `calling.ai_sidecar.status` command snapshots the sidecar's runtime counters and also writes a status event to the
-    relay topic. The result is a single `+OK` text line of `key=value` counters
-    (`running`, `ticks`, `insights`, `skips`, `tools`, `errors`, `in_tokens`, `out_tokens`, `history_size`,
-    `event_log_bytes`), not a structured JSON object.
+    The `calling.ai_sidecar.status` command returns a snapshot of the sidecar's activity counters. The
+    result is a single `+OK` line of `key=value` counters (`running`, `ticks`, `insights`, `skips`,
+    `tools`, `errors`, `in_tokens`, `out_tokens`, `history_size`, `event_log_bytes`) rather than a JSON
+    object.
     """)
   @example("calling.ai_sidecar.status")
   command: "calling.ai_sidecar.status";

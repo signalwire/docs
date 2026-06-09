@@ -72,8 +72,8 @@ model AISidecarObject {
   params?: AISidecarParams;
 
   @doc("""
-    On-demand action dispatch. When `action.summarize` is present, the request summarizes the conversation and returns,
-    instead of starting a new sidecar.
+    Summarize the conversation instead of starting a sidecar. When you include `action.summarize`,
+    the request generates a one-off summary and returns rather than attaching a sidecar.
     """)
   action?: AISidecarSummarizeAction;
 }
@@ -81,16 +81,15 @@ model AISidecarObject {
 @summary("AISidecarSummarizeAction object")
 model AISidecarSummarizeAction {
   @doc("""
-    Routes the request to the sidecar's summarize path instead of starting a new sidecar.
-    Generates a one-off summary of the conversation and delivers it to the webhook.
+    Generate a one-off summary of the conversation, instead of starting a sidecar, and send it to a webhook.
     """)
   summarize: {
-    @doc("The webhook URL the summary is POSTed to. Defaults to the sidecar's configured `url`.")
+    @doc("The webhook URL the summary is sent to. Defaults to the sidecar's configured `url`.")
     @example("https://example.com/summary-webhook")
     webhook?: string;
 
-    @doc("The prompt used to generate the summary. Defaults to the configured `ai_summary_prompt`.")
-    @example("Provide a brief summary of the conversation including the main topics discussed.")
+    @doc("The prompt used to write the summary. Defaults to the configured `ai_summary_prompt`.")
+    @example("Provide a brief summary of the conversation, including the main topics discussed.")
     prompt?: string;
   };
 }

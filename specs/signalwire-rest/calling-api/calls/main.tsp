@@ -73,10 +73,10 @@ namespace SignalWireAPI.Calling.Calls {
       | `calling.ai_message` | Inject a message into an active AI conversation |
       | `calling.ai.stop` | Stop an active AI session |
       | `calling.ai_sidecar` | Attach a real-time AI observer (sidecar) to a call, or summarize the conversation |
-      | `calling.ai_sidecar.poke` | Inject a message into the sidecar and force an immediate tick |
-      | `calling.ai_sidecar.ask` | Ask the sidecar an out-of-band question (answered via `ask_answer` callback) |
+      | `calling.ai_sidecar.poke` | Send a message to the sidecar and prompt an immediate response |
+      | `calling.ai_sidecar.ask` | Ask the sidecar a one-off question (answered via an `ask_answer` callback) |
       | `calling.ai_sidecar.stop` | Stop and detach the AI sidecar |
-      | `calling.ai_sidecar.status` | Snapshot the sidecar's runtime counters |
+      | `calling.ai_sidecar.status` | Get a snapshot of the sidecar's activity counters |
       | `calling.live_transcribe` | Start, stop, or summarize real-time transcription |
       | `calling.live_translate` | Start, stop, summarize, or inject real-time translation |
       | `calling.send_fax.stop` | Stop active fax send |
@@ -132,14 +132,14 @@ namespace SignalWireAPI.Calling.Calls {
       #{ parameters: aiSidecarPokeCallExample },
       #{
         title: "calling.ai_sidecar.poke",
-        description: "Inject a message into the sidecar and force a tick",
+        description: "Send a message to the sidecar and prompt an immediate response",
       }
     )
     @opExample(
       #{ parameters: aiSidecarAskCallExample },
       #{
         title: "calling.ai_sidecar.ask",
-        description: "Ask the sidecar an out-of-band question",
+        description: "Ask the sidecar a one-off question",
       }
     )
     @opExample(
@@ -153,7 +153,7 @@ namespace SignalWireAPI.Calling.Calls {
       #{ parameters: aiSidecarStatusCallExample },
       #{
         title: "calling.ai_sidecar.status",
-        description: "Snapshot the sidecar's runtime counters",
+        description: "Get a snapshot of the sidecar's activity counters",
       }
     )
     @opExample(

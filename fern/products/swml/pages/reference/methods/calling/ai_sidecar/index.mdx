@@ -140,25 +140,24 @@ every callback the sidecar produces carries a `tick_id`. On each tick:
 </ParamField>
 
 <ParamField path="ai_sidecar.action" type="object" toc={true}>
-  On-demand action dispatch. When `action.summarize` is present, the request summarizes the conversation and returns
-  instead of starting a new sidecar.
+  Summarize the conversation instead of starting a sidecar. When you include `action.summarize`, the request
+  generates a one-off summary and returns rather than attaching a sidecar.
 </ParamField>
 
 <Indent>
 
 <ParamField path="action.summarize" type="object" toc={true}>
-  Routes the request to the sidecar's summarize path. Generates a one-off summary of the conversation and delivers it to
-  the webhook.
+  Generate a one-off summary of the conversation and send it to a webhook.
 </ParamField>
 
 <Indent>
 
 <ParamField path="summarize.webhook" type="string" toc={true}>
-  The webhook URL the summary is POSTed to. Defaults to the sidecar's configured `url`.
+  The webhook URL the summary is sent to. Defaults to the sidecar's configured `url`.
 </ParamField>
 
 <ParamField path="summarize.prompt" type="string" toc={true}>
-  The prompt used to generate the summary. Defaults to the configured `ai_summary_prompt`.
+  The prompt used to write the summary. Defaults to the configured `ai_summary_prompt`.
 </ParamField>
 
 </Indent>
@@ -233,10 +232,10 @@ Each callback carries a `type` field identifying what occurred, along with type-
 | `stop` | The sidecar is shutting down | `stop_reason` |
 | `final` | The last callback before the sidecar stops — a full snapshot of the session | `stop_reason`, `summary?`, `history`, `transcript?`, `event_log`, `stats` (counts such as tool calls and insights), `metrics`, `global_data`, `model`, `started_at`, `ended_at`, `duration_ms` |
 
-The `iter` field on the model-loop callbacks (`request`, `thought`, `tool_call`, `tool_result`, `insight`) is the
-zero-based iteration within the tick, and `total_iters` on `insight` is how many iterations the tick took. Any callback
-produced while answering an [`ai_sidecar.ask`](/docs/apis/rest/calls/call-commands) also carries the matching `ask_id`
-and `triggered_by: "ask"`, so you can correlate it with the originating ask.
+On the callbacks that come from a single evaluation (`request`, `thought`, `tool_call`, `tool_result`, `insight`),
+`iter` counts the steps within that evaluation, starting at `0`, and `total_iters` on the `insight` is how many steps it
+took in total. Any callback produced while answering an [`ai_sidecar.ask`](/docs/apis/rest/calls/call-commands) also
+carries that ask's `ask_id` and `triggered_by: "ask"`, so you can match it to the question you sent.
 
 ### Stop reasons
 
@@ -268,11 +267,10 @@ When the model calls one of your SWAIG functions, the platform sends an HTTP `PO
 
 ### Request
 
-The platform sends the following `POST` body. This is the **sidecar** tool-webhook shape — intentionally
-narrower than the regular [`ai`](/docs/swml/reference/calling/ai) method's
-[SWAIG webhook](/docs/swml/reference/calling/ai/swaig/functions#tool-webhook): the sidecar does not
-send `app_name`, `version`, `content_type`, `meta_data`, `argument_desc`, `project_id`/`space_id`,
-`SWMLVars`, or `call_log`, and it nests caller details under `channel_data` rather than at the top level.
+The platform sends the `POST` body shown below. The sidecar sends a smaller set of fields than the
+regular [`ai`](/docs/swml/reference/calling/ai) method's
+[SWAIG webhook](/docs/swml/reference/calling/ai/swaig/functions#tool-webhook), and it groups the
+caller details under `channel_data`.
 
 <WebhookPayloadSnippet webhook="aiSidecarSwaigToolWebhook" />
 

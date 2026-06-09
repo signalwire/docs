@@ -166,12 +166,13 @@ enum AISidecarCallbackType {
 
 @summary("AI sidecar callback")
 @doc("""
-  Delivered to the sidecar's `url` (when set) as the sidecar observes the call. The same payload
-  is always published on the `calling.ai.sidecar` relay topic; the webhook POST is opt-in.
-  The actual event is under `sidecar_event` — unwrap it before reading `type` and the event's fields.
+  Sent to the sidecar's `url` as an HTTP `POST` whenever you set one. The same event is always
+  published in real time on the SignalWire RELAY event channel (`calling.ai.sidecar`), so the
+  webhook is optional. Each event is wrapped under `sidecar_event` — read that before checking its
+  `type` and fields.
   
-  This payload documents the common envelope shared by every callback. For the per-`type` fields
-  (for example `insight.raw`, `turn.transcript_delta`, `final.summary`), see the
+  This payload covers the envelope shared by every callback. For the fields specific to each `type`
+  (such as `insight.raw`, `turn.transcript_delta`, or `final.summary`), see the
   [SWML ai_sidecar reference](/docs/swml/reference/calling/ai-sidecar#callback-types).
   """)
 model AISidecarCallbackPayload {
@@ -212,7 +213,7 @@ model AISidecarCallbackPayload {
     @example(1745870400123456)
     ts: int64;
 
-    @doc("The processing-tick identifier the callback belongs to.")
+    @doc("Identifies the evaluation this callback came from. Callbacks produced in the same evaluation share a `tick_id`.")
     @example(7)
     tick_id: int64;
 
@@ -223,38 +224,37 @@ model AISidecarCallbackPayload {
 
 @summary("AI sidecar SWAIG tool webhook")
 @doc("""
-  Sent to a sidecar SWAIG function's `web_hook_url` (or the SWAIG `defaults.web_hook_url`) when the
-  sidecar's model calls that tool. Your endpoint runs the function and returns a JSON object with a
-  `response` string (what the model reads next) and an optional `action` (object or array) — see
-  [Supported SWAIG actions](/docs/swml/reference/calling/ai-sidecar#supported-swaig-actions) on the
-  SWML ai_sidecar reference for the response contract.
+  Sent to a sidecar tool's `web_hook_url` (or the SWAIG `defaults.web_hook_url`) when the sidecar
+  calls one of your functions. Your endpoint runs the function and returns a JSON object with a
+  `response` string (the result the model reads next) and, optionally, an `action` — a single object
+  or an array — telling the sidecar what to do. See
+  [Supported SWAIG actions](/docs/swml/reference/calling/ai-sidecar#supported-swaig-actions) for what
+  you can return.
   
-  This is the **sidecar** SWAIG tool-webhook shape, which is intentionally narrower than the regular
-  `ai` method's SWAIG tool webhook: the sidecar sends only the fields below (no `app_name`, `version`,
-  `content_type`, `meta_data`, `argument_desc`, `project_id`/`space_id`, `SWMLVars`, or `call_log`),
-  and a `say` action is report-only because the sidecar has no voice on the call.
+  The sidecar only listens to the call and never speaks on it, so a `say` action is reported back to
+  you as a callback rather than being spoken aloud.
   """)
 model AISidecarSwaigToolWebhookPayload {
-  @doc("The name of the sidecar function the model is calling.")
+  @doc("The name of the function the model is calling.")
   @example("lookup_competitor")
   function: string;
 
-  @doc("The arguments the model passed.")
+  @doc("The arguments the model passed to your function.")
   argument: {
-    @doc("The parsed argument objects (one per parsed JSON block the model emitted).")
+    @doc("The arguments parsed into objects. Usually a single-element array.")
     @example(#[#{ competitor: "ACME" }])
     parsed: Record<unknown>[];
 
-    @doc("The raw argument string exactly as the model produced it.")
+    @doc("The raw argument string, exactly as the model produced it.")
     @example("{\"competitor\":\"ACME\"}")
     raw: string;
 
-    @doc("The raw string after variable substitution.")
+    @doc("The raw argument string after any variable substitution.")
     @example("{\"competitor\":\"ACME\"}")
     substituted: string;
   };
 
-  @doc("ID of the call the sidecar is attached to.")
+  @doc("The ID of the call the sidecar is attached to.")
   @example("2e1e66e5-5d07-413d-9668-55542992eec0")
   call_id: string;
 
@@ -283,89 +283,84 @@ model AISidecarSwaigToolWebhookPayload {
 
 @summary("AI SWAIG tool webhook")
 @doc("""
-  Sent to a SWAIG function's `web_hook_url` (or the SWAIG `defaults.web_hook_url`) when the
-  [`ai`](/docs/swml/reference/calling/ai) method's agent calls that tool. Your endpoint runs the
-  function and returns a JSON object with a `response` string (what the model reads next) and an
-  optional `action` (object or array) for the agent to perform.
-  
-  This is the regular `ai` method's SWAIG tool-webhook shape. It is richer than the
-  [AI sidecar SWAIG tool webhook](/docs/apis/rest/calls/webhooks/ai-sidecar-swaig-tool-webhook): caller
-  details are flat (`caller_id_name` / `caller_id_num`, note the truncated name) rather than nested under
-  `channel_data`, and it carries SWAIG metadata the sidecar omits.
+  Sent to a tool's `web_hook_url` (or the SWAIG `defaults.web_hook_url`) when an
+  [`ai`](/docs/swml/reference/calling/ai) agent calls one of your functions. Your endpoint runs the
+  function and returns a JSON object with a `response` string (the result the AI reads next) and,
+  optionally, an `action` — a single object or an array — telling the agent what to do.
   """)
 model AiSwaigToolWebhookPayload {
-  @doc("The name of the function the model is calling.")
+  @doc("The name of the function the AI is calling.")
   @example("get_weather")
   function: string;
 
-  @doc("The arguments the model passed.")
+  @doc("The arguments the AI passed to your function.")
   argument: {
-    @doc("The parsed argument objects (one per parsed JSON block the model emitted).")
+    @doc("The arguments parsed into objects. Usually a single-element array.")
     @example(#[#{ city: "San Francisco" }])
     parsed: Record<unknown>[];
 
-    @doc("The raw argument string exactly as the model produced it.")
+    @doc("The raw argument string, exactly as the AI produced it.")
     @example("{\"city\":\"San Francisco\"}")
     raw: string;
 
-    @doc("The raw string after variable substitution.")
+    @doc("The raw argument string after any variable substitution.")
     @example("{\"city\":\"San Francisco\"}")
     substituted: string;
   };
 
-  @doc("The parameter JSON schema declared for this function (`functions[].parameters`).")
+  @doc("The function's parameter definition, as you declared it in `parameters`.")
   argument_desc: Record<unknown>;
 
-  @doc("The function's purpose/description.")
+  @doc("The description you gave the function.")
   @example("Look up the current weather for a city.")
   description: string;
 
-  @doc("ID of the call.")
+  @doc("The ID of the call.")
   @example("2e1e66e5-5d07-413d-9668-55542992eec0")
   call_id: string;
 
-  @doc("ID of the AI session on the call.")
+  @doc("The ID of the AI session on the call.")
   @example("a0d4e6e5-5d07-413d-9668-55542992eec0")
   ai_session_id: string;
 
-  @doc("The conversation ID. Present when the AI session has one.")
+  @doc("The conversation ID, when the AI session has one.")
   conversation_id?: string;
 
-  @doc("The application name.")
+  @doc("The name of your AI application.")
   @example("ai")
   app_name: string;
 
-  @doc("The AI session's current `global_data`. Present when the session has any.")
+  @doc("The AI session's current `global_data`, when it has any.")
   global_data?: Record<unknown>;
 
-  @doc("Scoping token for `meta_data`. Present when the function declares one.")
+  @doc("The token that scopes `meta_data`, when the function defines one.")
   @example("my-token")
   meta_data_token?: string;
 
-  @doc("Metadata scoped to `meta_data_token`. Present when the function declares a token.")
+  @doc("Metadata scoped to `meta_data_token`, when the function defines a token.")
   meta_data?: Record<unknown>;
 
-  @doc("Caller ID name. Present when available.")
+  @doc("The caller's name, when available.")
   @example("Jane Doe")
   caller_id_name?: string;
 
-  @doc("Caller ID number. Present when available. Note the truncated key name `caller_id_num`.")
+  @doc("The caller's number, when available.")
   @example("+15555550100")
   caller_id_num?: string;
 
-  @doc("Whether the channel is up.")
+  @doc("Whether the call is still up.")
   @example(true)
   channel_active: boolean;
 
-  @doc("Whether the channel is off-hook.")
+  @doc("Whether the call is answered.")
   @example(true)
   channel_offhook: boolean;
 
-  @doc("Whether the AI session is ready.")
+  @doc("Whether the AI session is ready to take actions.")
   @example(true)
   channel_ready: boolean;
 
-  @doc("The content type of the POST body. Always `text/swaig`.")
+  @doc("The content type of the request body. Always `text/swaig`.")
   @example("text/swaig")
   content_type: string;
 
@@ -377,27 +372,27 @@ model AiSwaigToolWebhookPayload {
   @example("SWAIG Function")
   content_disposition: string;
 
-  @doc("Your project ID. Present when the `signalwire_project_id` channel variable is set.")
+  @doc("Your project ID, when available.")
   project_id?: string;
 
-  @doc("Your Space ID. Present when the `signalwire_space_id` channel variable is set.")
+  @doc("Your Space ID, when available.")
   space_id?: string;
 
-  @doc("`true` when the AI session hit a fatal error. Present only on fatal error.")
+  @doc("`true` when the AI session has hit an unrecoverable error. Included only in that case.")
   fatal_error?: boolean;
 
-  @doc("The fatal-error reason. Present only when `fatal_error` is set.")
+  @doc("A description of the error. Included only when `fatal_error` is set.")
   error_reason?: string;
 
-  @doc("SWML variables. Present only when the `swaig_post_swml_vars` permission is enabled.")
+  @doc("SWML variables for the call. Included when you enable `swaig_post_swml_vars`.")
   SWMLVars?: Record<unknown>;
 
-  @doc("SWML call state. Present only when the `swaig_post_swml_vars` permission is enabled.")
+  @doc("SWML call state. Included when you enable `swaig_post_swml_vars`.")
   SWMLCall?: Record<unknown>;
 
-  @doc("The redacted conversation log. Present only when the `swaig_post_conversation` permission is enabled.")
+  @doc("The conversation so far, with sensitive values redacted. Included when you enable `swaig_post_conversation`.")
   call_log?: Record<unknown>[];
 
-  @doc("The raw (unredacted) conversation log. Present only when the `swaig_post_conversation` permission is enabled.")
+  @doc("The full, unredacted conversation so far. Included when you enable `swaig_post_conversation`.")
   raw_call_log?: Record<unknown>[];
 }
