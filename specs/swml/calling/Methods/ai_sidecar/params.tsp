@@ -63,16 +63,22 @@ model AISidecarParams {
   @example(SpeechEngine.google)
   speech_engine?: SpeechEngine = SpeechEngine.deepgram;
 
-  @doc("How long, in milliseconds, the recognizer waits before finalizing speech. Defaults to the speech engine's own default.")
+  @doc("How long, in milliseconds, the recognizer waits before finalizing speech. Range: 0-600000. `0` uses the speech engine's own default.")
   @example(30000)
+  @minValue(0)
+  @maxValue(600000)
   speech_timeout?: integer | SWMLVar;
 
-  @doc("The amount of silence, in milliseconds, used to detect the end of speech. Defaults to the speech engine's own default.")
+  @doc("The amount of silence, in milliseconds, used to detect the end of speech. Range: 0-60000. `0` uses the speech engine's own default.")
   @example(500)
+  @minValue(0)
+  @maxValue(60000)
   vad_silence_ms?: integer | SWMLVar;
 
-  @doc("How sensitively the recognizer detects speech. Defaults to the speech engine's own default.")
+  @doc("How sensitively the recognizer detects speech. Range: 0-10000. `0` uses the speech engine's own default.")
   @example(400)
+  @minValue(0)
+  @maxValue(10000)
   vad_thresh?: integer | SWMLVar;
 
   @doc("Speech-engine debug verbosity. Range: 0-100. **Default:** `0`.")
