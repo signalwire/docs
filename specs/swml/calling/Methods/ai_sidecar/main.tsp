@@ -29,7 +29,10 @@ model AISidecarObject {
   `model`?: SupportedAIModels = "gpt-4o-mini";
 
   @doc("The call legs to observe. Both legs are required — a single-leg value is rejected. When omitted, both legs are observed. **Default:** both legs (`remote-caller` and `local-caller`).")
-  @example(#[TranscribeDirection.`remote-caller`, TranscribeDirection.`local-caller`])
+  @example(#[
+    TranscribeDirection.`remote-caller`,
+    TranscribeDirection.`local-caller`
+  ])
   direction?: TranscribeDirection[] = #[
     TranscribeDirection.`remote-caller`,
     TranscribeDirection.`local-caller`
@@ -67,6 +70,29 @@ model AISidecarObject {
 
   @doc("Tuning options for the sidecar.")
   params?: AISidecarParams;
+
+  @doc("""
+    On-demand action dispatch. When `action.summarize` is present, the request summarizes the conversation and returns,
+    instead of starting a new sidecar.
+    """)
+  action?: AISidecarSummarizeAction;
+}
+
+@summary("AISidecarSummarizeAction object")
+model AISidecarSummarizeAction {
+  @doc("""
+    Routes the request to the sidecar's summarize path instead of starting a new sidecar.
+    Generates a one-off summary of the conversation and delivers it to the webhook.
+    """)
+  summarize: {
+    @doc("The webhook URL the summary is POSTed to. Defaults to the sidecar's configured `url`.")
+    @example("https://example.com/summary-webhook")
+    webhook?: string;
+
+    @doc("The prompt used to generate the summary. Defaults to the configured `ai_summary_prompt`.")
+    @example("Provide a brief summary of the conversation including the main topics discussed.")
+    prompt?: string;
+  };
 }
 
 @summary("ai_sidecar Method")
