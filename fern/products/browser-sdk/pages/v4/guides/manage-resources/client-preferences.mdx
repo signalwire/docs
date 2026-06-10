@@ -131,6 +131,33 @@ client.preferences.iceRestartTimeout = 10;   // 10 seconds
 Other fields use the unit of the underlying API (kbps, integer
 levels, etc.).
 
+## Keyframe recovery
+
+A video stream is an occasional **keyframe** — a complete, self-contained
+frame — followed by **delta frames** that encode only the change from the
+previous frame. A lost or corrupted delta frame corrupts every frame after it
+until the next keyframe arrives. The receiver can request one early via an RTCP
+feedback message:
+
+- [**PLI** — Picture Loss Indication](https://www.rfc-editor.org/rfc/rfc4585#section-6.3.1):
+  standard picture-loss recovery.
+- [**FIR** — Full Intra Request](https://www.rfc-editor.org/rfc/rfc5104#section-4.3.1):
+  forces a full intra frame from scratch, e.g. when a new participant or
+  recorder joins mid-stream with no reference frame.
+
+Keyframes are large, so the SDK rate-limits these requests as a burst with
+cooldown:
+
+| Preference | Default | Role |
+|---|---|---|
+| [`keyframeMaxBurst`](/docs/browser-sdk/v4/reference/client-preferences/keyframe-max-burst) | `3` | max requests per window |
+| [`keyframeBurstWindow`](/docs/browser-sdk/v4/reference/client-preferences/keyframe-burst-window) | `3000` ms | length of the counting window |
+| [`keyframeCooldown`](/docs/browser-sdk/v4/reference/client-preferences/keyframe-cooldown) | `10000` ms | pause once the burst is spent |
+
+Up to `keyframeMaxBurst` requests are allowed per `keyframeBurstWindow`; once
+that limit is hit, requests pause for `keyframeCooldown`. Defaults: three
+requests per three-second window, then a ten-second cooldown.
+
 ## Reference
 
 - [`ClientPreferences`] — the property surface
