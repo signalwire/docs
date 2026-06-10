@@ -1,0 +1,150 @@
+---
+id: 2c7e4f9a-6d2b-4d8e-9f1a-7b5c3e0a4d61
+hide_title: false
+slug: /reference/calling/ai-sidecar/prompt
+title: prompt
+description: The operator prompt that instructs the ai_sidecar observer how to coach the agent.
+max-toc-depth: 3
+---
+
+[ai_sidecar]: /docs/swml/reference/calling/ai-sidecar
+
+The operator prompt instructs the sidecar how to coach the agent — what to watch for, when to speak up, and when to stay silent. SignalWire automatically adds built-in instructions for the sidecar's role, so your prompt only needs to describe the coaching behavior. It is recommended to write prompts using markdown formatting, as models better understand structured content.
+
+`prompt` is optional. When omitted, the sidecar falls back to a minimal default prompt, so setting one is strongly recommended.
+
+<Note>
+The sidecar prompt supports the text, POM, and file forms below. The model's settings are configured separately — see the [`model`](/docs/swml/reference/calling/ai-sidecar) field and [`params`](/docs/swml/reference/calling/ai-sidecar/params).
+</Note>
+
+### Prompt forms
+
+There are three ways to define the prompt content:
+
+- **Text** — A single string with the full prompt. Provide it as a bare string (`prompt: "..."`) or as an object with a `text` field. Best for simple coaching instructions.
+- **POM (Prompt Object Model)** — A structured array of sections with titles, body text, and bullets. SignalWire renders the POM into a markdown document before sending it to the model. Best for prompts that benefit from clear organization.
+- **File** — A path to a server-side file whose contents become the prompt.
+
+## **Properties**
+
+<ParamField path="ai_sidecar.prompt" type="string | object" toc={true}>
+  The operator prompt. Provide a plain string, or one of the objects below.
+</ParamField>
+
+<Tabs>
+<Tab title="Text">
+
+<ParamField path="prompt.text" type="string" required={true} toc={true}>
+  The full operator prompt as a single block of text. Equivalent to passing `prompt` as a bare string.
+</ParamField>
+
+</Tab>
+<Tab title="POM">
+
+<ParamField path="prompt.pom" type="object[]" required={true} toc={true}>
+  An array of POM sections that SignalWire renders into a markdown document before sending it to the model.
+</ParamField>
+
+<Indent>
+
+<ParamField path="pom[].title" type="string" toc={true}>
+  Title for the section.
+</ParamField>
+
+<ParamField path="pom[].body" type="string" toc={true}>
+  Body text for the section.
+</ParamField>
+
+<ParamField path="pom[].bullets" type="string[]" toc={true}>
+  An array of bullet points for the section.
+</ParamField>
+
+<ParamField path="pom[].subsections" type="object[]" toc={true}>
+  An array of nested POM sections, each with the same fields as a top-level section.
+</ParamField>
+
+<ParamField path="pom[].numbered" type="boolean" default="false" toc={true}>
+  Whether to number the section.
+</ParamField>
+
+<ParamField path="pom[].numberedBullets" type="boolean" default="false" toc={true}>
+  Whether to number the bullets within the section.
+</ParamField>
+
+</Indent>
+
+</Tab>
+<Tab title="File">
+
+<ParamField path="prompt.file" type="string" required={true} toc={true}>
+  Path to a server-side file whose contents are used as the prompt. If both `file` and `pom`/`text` are present, `file` takes precedence.
+</ParamField>
+
+</Tab>
+</Tabs>
+
+## **Variable expansion**
+
+The prompt supports variable expansion in any form. Reference values from `global_data`, from the persistent `ai_agents_global_data`, and from the following call variables:
+
+<ParamField path="${global_data.*}" type="string" toc={true}>
+  Any value from the sidecar's [`global_data`](/docs/swml/reference/calling/ai-sidecar), e.g. `${global_data.customer_id}`.
+</ParamField>
+
+<ParamField path="${ai_agents_global_data.*}" type="string" toc={true}>
+  Any value from `ai_agents_global_data`, which persists across sessions on the same call leg, e.g. `${ai_agents_global_data.deal.mrr}`.
+</ParamField>
+
+<ParamField path="${caller_id_number}" type="string" toc={true}>
+  The caller's phone number.
+</ParamField>
+
+<ParamField path="${destination_number}" type="string" toc={true}>
+  The destination phone number.
+</ParamField>
+
+<ParamField path="${customer_role}" type="string" toc={true}>
+  Which leg is the customer — `remote-caller` or `local-caller`.
+</ParamField>
+
+<ParamField path="${local_date}" type="string" toc={true}>
+  The current local date.
+</ParamField>
+
+<ParamField path="${local_time}" type="string" toc={true}>
+  The current local time.
+</ParamField>
+
+<ParamField path="${local_tz}" type="string" toc={true}>
+  The local timezone.
+</ParamField>
+
+<ParamField path="${session_uuid}" type="string" toc={true}>
+  The unique identifier for the call session.
+</ParamField>
+
+## **Examples**
+
+<CodeBlocks>
+<CodeBlock title="Text (YAML)">
+```yaml
+ai_sidecar:
+  prompt: "You are a real-time sales copilot. After each customer turn, give the agent one concise piece of advice, or call sidecar_skip if no advice is needed."
+  lang: "en-US"
+```
+</CodeBlock>
+<CodeBlock title="POM (YAML)">
+```yaml
+ai_sidecar:
+  prompt:
+    pom:
+      - title: Personality
+        body: "You are a real-time sales copilot."
+      - title: Instructions
+        bullets:
+          - "Watch for buying signals."
+          - "Call lookup_competitor when a competitor is mentioned."
+  lang: "en-US"
+```
+</CodeBlock>
+</CodeBlocks>

@@ -1,15 +1,16 @@
 import "@typespec/http";
 import "@typespec/openapi3";
+import "@typespec/json-schema";
 import "../../../../swml/calling";
 import "./core.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
+using TypeSpec.JsonSchema;
 
 namespace SignalWireAPI.Calling;
 
 using SWML.Calling;
-
 
 const CallSWMLExample = "{'version': '1.0.0', 'sections': { 'main': [{ 'answer': { 'max_duration': 60 }},{ 'play': { 'urls': ['silence:2', 'say:Hello from SignalWire!']}}]}}";
 
@@ -441,7 +442,12 @@ model CallCreateParamsBase {
   url_method?: "GET" | "POST" = "POST";
 
   @doc("Codecs to offer on the outbound call. May be provided as an array of enum values or a comma-separated string of the same values. If the `to` value is a SIP URI containing `codecs=...`, those take precedence.")
-  @example(#[OutboundCallCodec.OPUS, OutboundCallCodec.G729, OutboundCallCodec.VP8, OutboundCallCodec.PCMA])
+  @example(#[
+    OutboundCallCodec.OPUS,
+    OutboundCallCodec.G729,
+    OutboundCallCodec.VP8,
+    OutboundCallCodec.PCMA
+  ])
   codecs?: OutboundCallCodec[] | string;
 
   @doc("Ring timeout in seconds. Must be between 1 and 600.")
@@ -462,6 +468,17 @@ model CallCreateParamsBase {
   @doc("Preferred FreeSWITCH region(s) for call routing. Must be drawn from the project's available regions. Accepts a single region or a priority-ordered array.")
   @example(#["us-east-1", "us-west-2"])
   region?: string | string[];
+
+  @maxProperties(20)
+  @doc("""
+    Your own key/value string pairs to attach to the call. They become environment variables on the call's SWML document, where you can reference them as `\${envs.<key>}` — for example, to carry an order or case number through to your call logic. When SignalWire fetches your SWML document from a URL, the same pairs are also included in the `envs` object of that request.
+    
+    If a key here matches a variable you've already set at the account or project level, the value you pass on the request takes precedence — but only when the keys match exactly, including case. Keys are case-sensitive, so two keys that differ only in case are kept as separate variables.
+    
+    Each value must be a non-empty string of at most 1024 bytes. You can send at most 20 pairs. Each key must start with a letter or underscore and contain only letters, numbers, and underscores, and cannot begin with the reserved prefixes `signalwire_`, `sw_`, `rtc_`, or `internal_` (case-insensitive).
+    """)
+  @example(#{ id: "12345", case_number: "54321" })
+  custom_variables?: TypeSpec.Record<string>;
 }
 
 @summary("dial (URL)")
@@ -559,7 +576,6 @@ model CallDisconnectRequest {
 // Play Commands
 // ============================================
 
-
 @doc("The type of media to play.")
 enum PlayMediaType {
   @doc("Play an audio file from a URL.")
@@ -610,7 +626,7 @@ enum PlayRingtoneName {
   fr,
   hu,
   il,
-  `in`,
+  in,
   jp,
   ko,
   pk,
@@ -713,7 +729,11 @@ model PlayTtsItem extends PlayMediaItem {
   type: PlayMediaType.tts;
 
   @doc("TTS parameters.")
-  @example(#{ text: "Hello from SignalWire.", language: "en-US", gender: TtsGender.female })
+  @example(#{
+    text: "Hello from SignalWire.",
+    language: "en-US",
+    gender: TtsGender.female,
+  })
   params: PlayTtsParams;
 }
 
@@ -760,7 +780,12 @@ model CallPlayRequest {
     control_id: string;
 
     @doc("Ordered list of media items to play. Items play sequentially.")
-    @example(#[#{ type: PlayMediaType.audio, params: #{ url: "https://example.com/audio.mp3" } }])
+    @example(#[
+      #{
+        type: PlayMediaType.audio,
+        params: #{ url: "https://example.com/audio.mp3" },
+      }
+    ])
     play: (PlayAudioItem | PlayTtsItem | PlaySilenceItem | PlayRingtoneItem)[];
 
     @doc("Volume adjustment in dB. Must be between -40 and 40.")
@@ -951,7 +976,9 @@ model CallRecordRequest {
     control_id: string;
 
     @doc("Recording configuration. Wraps the media-type-specific parameters (currently only `audio`).")
-    @example(#{ audio: #{ format: "mp3", direction: PlayDirection.speak, stereo: false } })
+    @example(#{
+      audio: #{ format: "mp3", direction: PlayDirection.speak, stereo: false },
+    })
     record: RecordParams;
 
     @doc("Webhook URL invoked with recording events — including a `finished` event that contains the final recording URL. Must begin with `http://` or `https://`.")
@@ -1432,7 +1459,10 @@ model CallTapRequest {
     tap: TapConfig;
 
     @doc("Device configuration specifying where to stream captured audio.")
-    @example(#{ type: TapDeviceType.rtp, params: #{ addr: "198.51.100.42", port: 5060 } })
+    @example(#{
+      type: TapDeviceType.rtp,
+      params: #{ addr: "198.51.100.42", port: 5060 },
+    })
     device: TapDeviceRtp | TapDeviceWs;
 
     @doc("HTTP or HTTPS URL that receives tap lifecycle webhooks.")
@@ -1455,6 +1485,58 @@ model CallTapStopRequest {
   params: {
     @doc("The control ID of the tap operation to stop.")
     @example("tap-control-1")
+    control_id: string;
+  };
+}
+
+// ============================================
+// Transcribe Commands
+// ============================================
+
+/**
+ * Transcribe the entire call in the background.
+ *
+ * The transcription covers the whole call and completes when the call ends. For real-time
+ * transcription, use `calling.live_transcribe`. Only one transcription can be active on a call
+ * at a time; starting another while one is running returns a `409` conflict. Stop it with
+ * `calling.transcribe.stop` using the same `control_id`.
+ */
+@summary("calling.transcribe")
+model CallTranscribeRequest {
+  @doc(uuidDescription)
+  @example(CallIdExample)
+  id: uuid;
+
+  @doc("The `calling.transcribe` command starts transcribing an active call in the background.")
+  @example("calling.transcribe")
+  command: "calling.transcribe";
+
+  @doc(paramsDescription)
+  params: {
+    @doc("Unique identifier for this transcription operation, used to control it later.")
+    @example("transcribe-control-1")
+    control_id: string;
+
+    @doc("An HTTP or HTTPS URL that receives the status callback when the transcription finishes.")
+    @example("https://example.com/transcribe-status")
+    status_url?: url;
+  };
+}
+
+@summary("calling.transcribe.stop")
+model CallTranscribeStopRequest {
+  @doc(uuidDescription)
+  @example(CallIdExample)
+  id: uuid;
+
+  @doc("The `calling.transcribe.stop` command stops an active transcription operation.")
+  @example("calling.transcribe.stop")
+  command: "calling.transcribe.stop";
+
+  @doc(paramsDescription)
+  params: {
+    @doc("The control ID of the transcription operation to stop.")
+    @example("transcribe-control-1")
     control_id: string;
   };
 }
@@ -1559,6 +1641,160 @@ model CallStreamStopRequest {
 }
 
 // ============================================
+// Conference Command
+// ============================================
+
+/**
+ * Bidirectional WebSocket stream to attach to a conference. Conference audio is
+ * streamed to a `wss://` URL, enabling real-time audio processing, transcription,
+ * or AI agents that listen to the conference. Reuses the same stream schema as the
+ * `stream` device type in `connect`.
+ */
+@doc("Stream configuration for attaching a WebSocket stream to a conference.")
+model ConferenceStreamParams {
+  @doc("Secure WebSocket URL to stream conference audio to. Must start with `wss://` (TLS is required; plain `ws://` is rejected).")
+  @example("wss://example.com/conference-audio")
+  @format("uri")
+  url: string;
+
+  @doc("Optional human-readable name to identify the stream at the endpoint.")
+  @example("conference-audio")
+  name?: string;
+
+  @doc("Audio codec to request. Freeform; endpoint-specific. Common values include `PCMU`, `PCMA`, `G722`, `L16`.")
+  @example("PCMU")
+  codec?: string;
+
+  @doc("When `true`, enables bidirectional audio so your endpoint can stream audio back into the conference (not just receive it).")
+  @example(true)
+  realtime?: boolean;
+
+  @doc("Bearer token included as `Authorization: Bearer <token>` when establishing the WebSocket connection.")
+  @example("my-secret-token")
+  authorization_bearer_token?: string;
+
+  @doc("Arbitrary JSON object passed through to the WebSocket endpoint as connection metadata.")
+  @example(#{ session_id: "abc123" })
+  custom_parameters?: TypeSpec.Record<unknown>;
+
+  @doc("HTTP or HTTPS URL that receives stream lifecycle webhooks.")
+  @example("https://example.com/stream_callback")
+  status_url?: url;
+
+  @doc("HTTP method used for the `status_url` webhook.")
+  @example(StreamStatusUrlMethod.POST)
+  status_url_method?: StreamStatusUrlMethod = StreamStatusUrlMethod.POST;
+}
+
+/**
+ * Join an ad-hoc audio conference. The conference is created automatically if it
+ * does not already exist; multiple calls join the same conference by `name`.
+ * Optionally attach a bidirectional WebSocket `stream` to the conference audio.
+ */
+@summary("calling.join_conference")
+model CallJoinConferenceRequest {
+  @doc(uuidDescription)
+  @example(CallIdExample)
+  id: uuid;
+
+  @doc("The `calling.join_conference` command joins the call to an ad-hoc audio conference.")
+  @example("calling.join_conference")
+  command: "calling.join_conference";
+
+  @doc(paramsDescription)
+  params: {
+    @doc("Name of the conference. All calls joining the same name are placed in the same conference.")
+    @example("team_meeting")
+    name: string;
+
+    @doc("Whether to join the conference in a muted state.")
+    @example(false)
+    muted?: boolean;
+
+    @doc("Sets the behavior of the beep sound when joining or leaving the conference.")
+    @example("onEnter")
+    beep?: "true" | "false" | "onEnter" | "onExit";
+
+    @doc("Start the conference when this participant joins, without waiting for other participants.")
+    @example(true)
+    start_on_enter?: boolean;
+
+    @doc("End the conference when this participant leaves, without waiting for other participants.")
+    @example(false)
+    end_on_exit?: boolean;
+
+    @doc("HTTP or HTTPS URL to fetch audio to play while waiting for the conference to start. Default hold music is played if not set.")
+    @example("https://example.com/hold-music.mp3")
+    wait_url?: url;
+
+    @doc("The maximum number of participants allowed in the conference.")
+    @example(50)
+    max_participants?: integer;
+
+    @doc("Enables or disables recording of the conference.")
+    @example("record-from-start")
+    record?: "do-not-record" | "record-from-start";
+
+    @doc("The geographical region where the conference is hosted.")
+    @example("us")
+    region?: "global" | "us" | "eu" | "ch";
+
+    @doc("Whether to trim silence from the start of the conference recording.")
+    @example("trim-silence")
+    trim?: "trim-silence" | "do-not-trim";
+
+    @doc("Access control level for the conference.")
+    @example("private")
+    acl?: "private" | "public-read";
+
+    @doc("Call SID of a call currently connected to an in-progress conference. The coach can hear but not be heard (coaching mode).")
+    @example("b3877ee3-6f3c-4985-8066-6d24e3f65e12")
+    coach?: string;
+
+    @doc("""
+      Space-separated list of one or more events to send to the status callback URL.
+      Possible values: `start`, `end`, `join`, `leave`, `mute`, `hold`, `modify`, `speaker`, `announcement`.
+      """)
+    @example("join leave")
+    status_callback_event?: string;
+
+    @doc("Content type for status callback requests.")
+    @example("relay")
+    status_callback_event_type?: "cxml" | "laml" | "relay";
+
+    @doc("HTTP or HTTPS URL to which status events will be sent.")
+    @example("https://example.com/conference-status")
+    status_callback?: url;
+
+    @doc("The HTTP method to use when sending status events to the status callback URL.")
+    @example("POST")
+    status_callback_method?: "GET" | "POST";
+
+    @doc("""
+      Space-separated list of one or more events to send to the recording status callback URL.
+      Possible values: `in-progress`, `completed`, `absent`.
+      """)
+    @example("completed")
+    recording_status_callback_event?: string;
+
+    @doc("Content type for recording status callback requests.")
+    @example("relay")
+    recording_status_callback_event_type?: "cxml" | "laml" | "relay";
+
+    @doc("HTTP or HTTPS URL to which recording status events will be sent.")
+    @example("https://example.com/recording-status")
+    recording_status_callback?: url;
+
+    @doc("The HTTP method to use when sending recording status events to the recording status callback URL.")
+    @example("POST")
+    recording_status_callback_method?: "GET" | "POST";
+
+    @doc("Attach a bidirectional WebSocket stream to the conference audio.")
+    stream?: ConferenceStreamParams;
+  };
+}
+
+// ============================================
 // Denoise Commands
 // ============================================
 
@@ -1615,6 +1851,103 @@ model CallAIStopRequest {
     @example("ai-control-1")
     control_id?: string;
   };
+}
+
+// ============================================
+// AI Sidecar Commands
+// ============================================
+
+// The AI Sidecar attaches a real-time AI observer to a live call. Sidecar methods are
+// addressed by `id` (the call ID) alone — there is no `control_id`, since a call has at
+// most one sidecar attached at a time. The full configuration field catalog and the
+// webhook callback details live on the SWML ai_sidecar reference:
+// /docs/swml/reference/calling/ai-sidecar
+
+@summary("calling.ai_sidecar")
+model CallAISidecarRequest {
+  @doc(uuidDescription)
+  @example(CallIdExample)
+  id: uuid;
+
+  @doc("The `calling.ai_sidecar` command attaches a real-time AI observer (a sidecar) to an answered call. The sidecar listens to the conversation and streams advice for the agent to your application as webhook callbacks; it never speaks on the call.")
+  @example("calling.ai_sidecar")
+  command: "calling.ai_sidecar";
+
+  @doc("""
+    The sidecar configuration. Identical to the SWML `ai_sidecar` instruction body — see the
+    [SWML ai_sidecar reference](/docs/swml/reference/calling/ai-sidecar) for the full field catalog.
+    When `action.summarize` is present, the request summarizes the conversation instead of starting a sidecar.
+    """)
+  params: AISidecarObject;
+}
+
+@summary("calling.ai_sidecar.poke")
+model CallAISidecarPokeRequest {
+  @doc(uuidDescription)
+  @example(CallIdExample)
+  id: uuid;
+
+  @doc("The `calling.ai_sidecar.poke` command sends a message to the sidecar and prompts it to respond right away, without waiting for the next customer turn.")
+  @example("calling.ai_sidecar.poke")
+  command: "calling.ai_sidecar.poke";
+
+  @doc(paramsDescription)
+  params: {
+    @doc("The message to send to the sidecar.")
+    @example("The customer just mentioned a competitor — suggest a comparison.")
+    text: string;
+  };
+}
+
+@summary("calling.ai_sidecar.ask")
+model CallAISidecarAskRequest {
+  @doc(uuidDescription)
+  @example(CallIdExample)
+  id: uuid;
+
+  @doc("The `calling.ai_sidecar.ask` command asks the sidecar a one-off question without affecting the live conversation. The response returns an `ask_id` right away, and the answer arrives later as an `ask_answer` webhook callback carrying the same `ask_id`.")
+  @example("calling.ai_sidecar.ask")
+  command: "calling.ai_sidecar.ask";
+
+  @doc(paramsDescription)
+  params: {
+    @doc("The question for the sidecar to answer.")
+    @example("What objections has the customer raised so far?")
+    text: string;
+  };
+}
+
+@summary("calling.ai_sidecar.stop")
+model CallAISidecarStopRequest {
+  @doc(uuidDescription)
+  @example(CallIdExample)
+  id: uuid;
+
+  @doc("The `calling.ai_sidecar.stop` command stops and detaches the AI sidecar from the call.")
+  @example("calling.ai_sidecar.stop")
+  command: "calling.ai_sidecar.stop";
+
+  @doc("The `calling.ai_sidecar.stop` command takes no parameters — the sidecar is addressed by `id` (the call ID) alone.")
+  params: {};
+}
+
+@summary("calling.ai_sidecar.status")
+model CallAISidecarStatusRequest {
+  @doc(uuidDescription)
+  @example(CallIdExample)
+  id: uuid;
+
+  @doc("""
+    The `calling.ai_sidecar.status` command returns a snapshot of the sidecar's activity counters. The
+    result is a single `+OK` line of `key=value` counters (`running`, `ticks`, `insights`, `skips`,
+    `tools`, `errors`, `in_tokens`, `out_tokens`, `history_size`, `event_log_bytes`) rather than a JSON
+    object.
+    """)
+  @example("calling.ai_sidecar.status")
+  command: "calling.ai_sidecar.status";
+
+  @doc("The `calling.ai_sidecar.status` command takes no parameters — the sidecar is addressed by `id` (the call ID) alone.")
+  params: {};
 }
 
 // ============================================
@@ -1767,6 +2100,11 @@ union CallRequest {
   `calling.ai_unhold`: CallUnholdRequest,
   `calling.ai_message`: CallAIMessageRequest,
   `calling.ai.stop`: CallAIStopRequest,
+  `calling.ai_sidecar`: CallAISidecarRequest,
+  `calling.ai_sidecar.poke`: CallAISidecarPokeRequest,
+  `calling.ai_sidecar.ask`: CallAISidecarAskRequest,
+  `calling.ai_sidecar.stop`: CallAISidecarStopRequest,
+  `calling.ai_sidecar.status`: CallAISidecarStatusRequest,
   `calling.play`: CallPlayRequest,
   `calling.play.pause`: CallPlayPauseRequest,
   `calling.play.resume`: CallPlayResumeRequest,
@@ -1783,8 +2121,11 @@ union CallRequest {
   `calling.detect.stop`: CallDetectStopRequest,
   `calling.tap`: CallTapRequest,
   `calling.tap.stop`: CallTapStopRequest,
+  `calling.transcribe`: CallTranscribeRequest,
+  `calling.transcribe.stop`: CallTranscribeStopRequest,
   `calling.stream`: CallStreamRequest,
   `calling.stream.stop`: CallStreamStopRequest,
+  `calling.join_conference`: CallJoinConferenceRequest,
   `calling.denoise`: CallDenoiseRequest,
   `calling.denoise.stop`: CallDenoiseStopRequest,
   `calling.live_transcribe`: CallLiveTranscribeRequest,

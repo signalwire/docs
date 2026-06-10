@@ -1,0 +1,499 @@
+---
+id: 9ec34f04-2181-42a4-aa59-78d9448bac4e
+hide_title: false
+slug: /reference/calling/ai-sidecar
+title: ai_sidecar
+description: Attach a real-time AI observer that streams agent-facing advice events during a live call.
+max-toc-depth: 3
+---
+
+[params]: /docs/swml/reference/calling/ai-sidecar/params
+[prompt]: /docs/swml/reference/calling/ai-sidecar/prompt
+[SWAIG]: /docs/swml/reference/calling/ai-sidecar/swaig
+[act_on_channel]: /docs/swml/reference/calling/ai-sidecar/params#paramsact_on_channel
+
+Attaches a real-time AI observer to a live call. The sidecar listens as a third party and never speaks on the call — after
+each customer turn, it sends agent-facing advice to your application as webhook callbacks that an agent's UI (or any
+consumer) can render. Think of it as a coach watching over the agent's shoulder: it runs alongside the call rather than
+driving it.
+
+Use it for live sales coaching, real-time compliance flagging, intent-based UI navigation, voice-of-customer signal
+extraction, and supervisor-on-shoulder workflows. A common pattern is to attach `ai_sidecar` to coach a human agent on a
+[`connect`](/docs/swml/reference/calling/connect)-bridged call: the customer talks to the human, and the sidecar coaches
+the human's screen.
+
+## **How it works**
+
+The sidecar listens to the call but never speaks on it. A call can run either the sidecar or plain live transcription, but
+not both at once.
+
+Each time the customer finishes speaking, the sidecar evaluates the conversation. This evaluation is called a **tick**, and
+every callback the sidecar produces carries a `tick_id`. On each tick:
+
+1. The sidecar detects the **end of the customer's turn** — a final transcription result followed by a brief silence
+   (`idle_timeout_ms`), or the agent starting to speak.
+2. It sends the running transcript to the model, along with your operator [prompt] and your [SWAIG] tools.
+3. The model returns a single line of agent-facing advice (an `insight`), or calls the built-in `sidecar_skip` tool to stay
+   silent when no advice is needed.
+4. Any tools the model calls (lookups, alerts, intent triggers) run through your SWAIG functions and MCP servers.
+5. Every step is reported as a structured callback your application can consume. See [Webhook callbacks](#webhook-callbacks)
+   below for the full catalog.
+
+## **Properties**
+
+<ParamField path="ai_sidecar" type="object" required={true} toc={true}>
+  An object that attaches a real-time AI observer to the call. Accepts the following properties to configure the
+  sidecar's prompt, language, model, tools, permissions, and other settings.
+</ParamField>
+
+<Indent>
+
+<ParamField path="ai_sidecar.prompt" type="string | object" toc={true}>
+  The operator prompt that instructs the sidecar how to coach the agent.
+  May be a plain string, a Prompt Object Model (POM), or a server-side file reference. SignalWire automatically adds built-in instructions for the sidecar's role, so your prompt only needs to describe the coaching behavior.
+
+  Optional — when omitted, the sidecar falls back to a minimal default prompt, so setting one is strongly recommended.
+  See [prompt] for the supported forms.
+</ParamField>
+
+<ParamField path="ai_sidecar.lang" type="string" required={true} toc={true}>
+  The conversation language as a single BCP-47 tag (e.g. `en-US`).
+  Sets the speech-recognition language, and is shared with the model as a hint.
+</ParamField>
+
+<ParamField path="ai_sidecar.model" type="string" default="gpt-4o-mini" toc={true}>
+  The model used for the sidecar's advice and its end-of-call summaries.
+  Suggested values: `gpt-4o-mini`, `gpt-4.1-mini`, `gpt-4.1-nano`.
+</ParamField>
+
+<ParamField path="ai_sidecar.direction" type="string[]" toc={true}>
+  The call legs to observe. Possible values: `remote-caller`, `local-caller`.
+  Both legs are required; defaults to both legs.
+</ParamField>
+
+<ParamField path="ai_sidecar.customer_role" type="string" default="remote-caller" toc={true}>
+  Which leg is the customer, used as the turn-end trigger source.
+  Possible values: `remote-caller`, `local-caller`.
+</ParamField>
+
+<ParamField path="ai_sidecar.url" type="string" toc={true}>
+  The webhook URL the sidecar POSTs its callbacks to — both transcription events and sidecar callbacks.
+  When unset, callbacks are published only on the relay topic (`calling.ai.sidecar`) and no webhook POST is made — the relay event always fires, the webhook is opt-in.
+  Basic auth can be embedded in the URL in the format `username:password@url`.
+
+  See [Webhook callbacks](#webhook-callbacks) below for the callback payload shape.
+</ParamField>
+
+<ParamField path="ai_sidecar.SWAIG" type="object" toc={true}>
+  SWAIG functions and MCP servers available to the sidecar.
+
+  See [SWAIG] for more details.
+
+  <Note>
+  The function name `sidecar_skip` is reserved and auto-registered as a built-in — do not declare it.
+  </Note>
+</ParamField>
+
+<ParamField path="ai_sidecar.permissions" type="object" toc={true}>
+  SWAIG permission overrides. Defaults to all permissions enabled.
+
+  <Note>
+  Setting [`act_on_channel`][act_on_channel] to `false`
+  overrides all of these — actions are reported as callbacks but never applied to the call.
+  </Note>
+</ParamField>
+
+<Indent>
+
+<ParamField path="permissions.swaig_allow_swml" type="boolean" default="true" toc={true}>
+  Whether SWAIG tools may run SWML on the call.
+</ParamField>
+
+<ParamField path="permissions.swaig_allow_settings" type="boolean" default="true" toc={true}>
+  Whether SWAIG tools may change the sidecar's settings, such as the model.
+</ParamField>
+
+<ParamField path="permissions.swaig_set_global_data" type="boolean" default="true" toc={true}>
+  Whether SWAIG tools may set the sidecar's global data.
+</ParamField>
+
+</Indent>
+
+<ParamField path="ai_sidecar.global_data" type="object" toc={true}>
+  A key-value object for the initial `global_data`. You can reference it in the prompt with variable expansion
+  (e.g. `${global_data.property_name}`), and it is included in the requests sent to your tools.
+
+  It also persists across sessions on the same call leg through the `ai_agents_global_data` SWML variable, so later verbs
+  on the same leg can read it as `${ai_agents_global_data.property_name}`.
+</ParamField>
+
+<ParamField path="ai_sidecar.hints" type="string[]" toc={true}>
+  Speech-recognition hints passed to ASR to bias recognition toward specific terms — product names, competitor names,
+  jargon, customer names, or anything in your SWAIG enum lists. Strongly recommended.
+  Example: `["ACME", "Globex", "FedRAMP", "SOC 2"]`.
+</ParamField>
+
+<ParamField path="ai_sidecar.params" type="object" toc={true}>
+  An object containing tuning options for the sidecar.
+
+  See [params] for more details.
+</ParamField>
+
+<ParamField path="ai_sidecar.action" type="object" toc={true}>
+  Summarize the conversation instead of starting a sidecar. When you include `action.summarize`, the request
+  generates a one-off summary and returns rather than attaching a sidecar.
+</ParamField>
+
+<Indent>
+
+<ParamField path="action.summarize" type="object" toc={true}>
+  Generate a one-off summary of the conversation and send it to a webhook.
+</ParamField>
+
+<Indent>
+
+<ParamField path="summarize.webhook" type="string" toc={true}>
+  The webhook URL the summary is sent to. Defaults to the sidecar's configured `url`.
+</ParamField>
+
+<ParamField path="summarize.prompt" type="string" toc={true}>
+  The prompt used to write the summary. Defaults to the configured `ai_summary_prompt`.
+</ParamField>
+
+</Indent>
+
+</Indent>
+
+</Indent>
+
+## Webhook callbacks
+
+As it observes the call, the sidecar reports each step of its activity as a structured callback on two paths:
+
+- **Relay topic** `calling.ai.sidecar` — always fires. Subscribe with the SignalWire RELAY or browser SDK to consume callbacks in real time.
+- **Webhook** — fires only when `url` is set, as an HTTP `POST` to that URL with the callback body wrapped under `sidecar_event`.
+
+Both paths carry the same payload, and each callback fires exactly once on the relay topic regardless of whether a webhook is configured — the relay always fires, the webhook is opt-in.
+
+### Callback body shape
+
+Each callback is POSTed to your `url` with the event wrapped under `sidecar_event`, alongside a `call_info` envelope describing the call. `project_id` and `space_id` are included when available:
+
+<CodeBlock title="JSON">
+```json
+{
+  "call_info": {
+    "project_id": "...",
+    "space_id": "...",
+    "call_id": "...",
+    "content_type": "text/json",
+    "content_disposition": "post_data",
+    "conversation_type": "voice"
+  },
+  "sidecar_event": {
+    "type": "insight",
+    "ts": 1745870400123456,
+    "tick_id": 7,
+    "channel_data": { },
+    "raw": "Confirm the customer's address.",
+    "iter": 0,
+    "total_iters": 1
+  }
+}
+```
+</CodeBlock>
+
+The actual event is under `sidecar_event` — unwrap that in your code before reading `type` and the event's fields. Every callback also carries `type`, `ts` (microsecond timestamp), `tick_id`, and a `channel_data` object (`call_id`, plus `caller_id_name` / `caller_id_number` / `destination_number` when available).
+
+<WebhookPayloadSnippet webhook="aiSidecarCallback" />
+
+See the [AI sidecar callback](/docs/apis/rest/calls/webhooks/ai-sidecar-callback) webhook page for the full payload reference. The per-`type` fields are listed below.
+
+### Callback types
+
+Each callback carries a `type` field identifying what occurred, along with type-specific fields.
+
+| `type` | When | Key fields |
+|---|---|---|
+| `start` | The sidecar attached to the call | `model`, `tools` (the tool names available), `global_data` |
+| `turn` | The customer finished a turn (an evaluation is about to run) | `transcript_delta`, `customer_text`, `agent_text` |
+| `request` | The sidecar called the model | `model`, `iter`, `messages_count`, `messages_token_count`, `tool_choice` |
+| `thought` | The model produced text while still working, for example alongside a tool call | `text`, `iter` |
+| `insight` | The sidecar's advice for the agent | `raw` (the advice text), `iter`, `total_iters` |
+| `skip` | The model called `sidecar_skip` to stay silent for this turn | `reason?` |
+| `tool_call` | The model called one of your tools | `name`, `arguments?`, `iter` |
+| `tool_result` | One of your tools returned a result | `name`, `response`, `iter` |
+| `action` | A SWAIG action was returned (and, if enabled, executed) | `action`, `source_function?`, `executed` |
+| `global_data_change` | A `set_global_data` / `unset_global_data` action changed `global_data` | `key`, `old_value?`, `new_value?` |
+| `history_pruned` | The conversation history was trimmed to fit the token budget | `dropped_count`, `kept_count`, `tokens_before`, `tokens_after` |
+| `error` | Something failed, or an anti-loop guard tripped | `error_reason`, `detail?` |
+| `ask_request` | An [`ai_sidecar.ask`](/docs/apis/rest/calls/call-commands) was queued | `question`, `ask_id` |
+| `ask_answer` | The answer to an `ai_sidecar.ask` | `raw`, `iter`, `total_iters`, `ask_id`, `triggered_by` |
+| `stop` | The sidecar is shutting down | `stop_reason` |
+| `final` | The last callback before the sidecar stops — a full snapshot of the session | `stop_reason`, `summary?`, `history`, `transcript?`, `event_log`, `stats` (counts such as tool calls and insights), `metrics`, `global_data`, `model`, `started_at`, `ended_at`, `duration_ms` |
+
+On the callbacks that come from a single evaluation (`request`, `thought`, `tool_call`, `tool_result`, `insight`),
+`iter` counts the steps within that evaluation, starting at `0`, and `total_iters` on the `insight` is how many steps it
+took in total. Any callback produced while answering an [`ai_sidecar.ask`](/docs/apis/rest/calls/call-commands) also
+carries that ask's `ask_id` and `triggered_by: "ask"`, so you can match it to the question you sent.
+
+### Stop reasons
+
+The `final` callback carries a `stop_reason` indicating why the sidecar stopped.
+
+| `stop_reason` | Trigger |
+|---|---|
+| `transcribe_close` | The call ended normally |
+| `transferred` | A SWAIG `transfer` action terminated the call |
+| `hung_up` | A SWAIG `hangup` action terminated the call |
+| `stop_action` | A SWAIG `stop` action stopped the sidecar (transcription continues) |
+| `api_stop` | The sidecar was stopped programmatically |
+
+### Error reasons
+
+The `error` callback carries an `error_reason` describing the failure.
+
+| `error_reason` | Trigger |
+|---|---|
+| `tool_loop` | An anti-loop guard tripped (more than four tool calls in a tick, or the same tool was called with the same arguments repeatedly) |
+| `swml_not_allowed` | An `SWML` action was requested but [`swaig_allow_swml`](#permissionsswaig_allow_swml) is `false` |
+| `llm_error` | The model call returned an error. `detail` carries the provider's error message |
+| `webhook_http_failure` | A tool's webhook request failed. Carries the `function` name, the `http_code` returned, and the `curl_code` |
+| `event_log_truncated` | The sidecar's event log reached its size limit and older entries were dropped |
+
+## Tool webhook contract
+
+When the model calls one of your SWAIG functions, the platform sends an HTTP `POST` to that function's `web_hook_url`. Your webhook runs the function and returns the result. Both the request and the response are plain JSON.
+
+### Request
+
+The platform sends the `POST` body shown below. The sidecar sends a smaller set of fields than the
+regular [`ai`](/docs/swml/reference/calling/ai) method's
+[SWAIG webhook](/docs/swml/reference/calling/ai/swaig/functions#tool-webhook), and it groups the
+caller details under `channel_data`.
+
+<WebhookPayloadSnippet webhook="aiSidecarSwaigToolWebhook" />
+
+See the [AI sidecar SWAIG tool webhook](/docs/apis/rest/calls/webhooks/ai-sidecar-swaig-tool-webhook) webhook page for the full field reference.
+
+### Response
+
+Your webhook must return a JSON object with the result and any actions to take:
+
+<ParamField path="response" type="string" toc={true}>
+  The result the model sees. It becomes the tool result the model reads on its next step.
+</ParamField>
+
+<ParamField path="action" type="object | object[]" toc={true}>
+  Optional. One action object, or an array of them, for the sidecar to perform. Each is keyed by an action name — see [Supported SWAIG actions](#supported-swaig-actions). When [`act_on_channel`][act_on_channel] is `true`, the actions take effect on the call; otherwise they are reported as callbacks only.
+</ParamField>
+
+<CodeBlock title="Response (JSON)">
+```json
+{
+  "response": "ACME charges $99/seat. We're $79.",
+  "action": [
+    { "user_event": { "topic": "sidecar.alert", "level": "info" } },
+    { "set_global_data": { "last_lookup": "ACME" } }
+  ]
+}
+```
+</CodeBlock>
+
+### Supported SWAIG actions
+
+Each entry in the `action` array is an object keyed by the action name. The sidecar supports the following:
+
+<ParamField path="action[].user_event" type="object" toc={true}>
+  Emits a `user_event` carrying your `topic` and any payload fields — the primary way to surface UI alerts and intent navigation to your application.
+</ParamField>
+
+<ParamField path="action[].set_global_data" type="object" toc={true}>
+  A key-value object merged into `global_data`. Emits a `global_data_change` callback and persists across sessions on the same call leg.
+</ParamField>
+
+<ParamField path="action[].unset_global_data" type="string | object" toc={true}>
+  The key to remove from `global_data`, or a new object to replace it.
+</ParamField>
+
+<ParamField path="action[].set_meta_data" type="object" toc={true}>
+  A key-value object of session metadata.
+</ParamField>
+
+<ParamField path="action[].unset_meta_data" type="string | object" toc={true}>
+  The metadata key to remove, or a new object to replace it.
+</ParamField>
+
+<ParamField path="action[].transfer" type="object" toc={true}>
+  Transfers the call to a destination. Ends the sidecar and transcription.
+</ParamField>
+
+<Indent>
+<ParamField path="transfer.dest" type="string" toc={true}>
+  The destination — a phone number, SIP URI, or SWML URL.
+</ParamField>
+
+<ParamField path="transfer.summarize" type="boolean" default="false" toc={true}>
+  Whether to include a conversation summary when transferring.
+</ParamField>
+</Indent>
+
+<ParamField path="action[].hangup" type="boolean" toc={true}>
+  When `true`, hangs up the call. Ends the sidecar and transcription.
+</ParamField>
+
+<ParamField path="action[].stop" type="boolean" toc={true}>
+  When `true`, stops the sidecar only; transcription continues.
+</ParamField>
+
+<ParamField path="action[].say" type="string" toc={true}>
+  Report-only in sidecar mode. The sidecar has no voice, so instead of speaking it fires an `action` callback with `spoken: false` and `reason: "no_tts_in_sidecar"`.
+</ParamField>
+
+<ParamField path="action[].toggle_functions" type="object[]" toc={true}>
+  Enables or disables functions mid-conversation. Each entry sets a function's active state.
+</ParamField>
+
+<Indent>
+<ParamField path="toggle_functions[].function" type="string" required={true} toc={true}>
+  The name of the function to toggle.
+</ParamField>
+
+<ParamField path="toggle_functions[].active" type="boolean" default="true" toc={true}>
+  Whether to enable or disable the function.
+</ParamField>
+</Indent>
+
+<ParamField path="action[].settings" type="object" toc={true}>
+  Changes the sidecar's model settings, such as the model or temperature. Gated by [`swaig_allow_settings`](#permissionsswaig_allow_settings).
+</ParamField>
+
+<ParamField path="action[].SWML" type="object" toc={true}>
+  A SWML document to run on the call. Gated by [`swaig_allow_swml`](#permissionsswaig_allow_swml). The `transfer: true` variant ends the sidecar.
+</ParamField>
+
+<ParamField path="action[].user_input" type="string" toc={true}>
+  Injects a message into the conversation and triggers a new evaluation — use it to send the sidecar a question or instruction mid-call.
+</ParamField>
+
+<ParamField path="action[].back_to_back_functions" type="boolean | string" toc={true}>
+  Controls whether the model may chain tool calls — `true`, or `"forever"` for unlimited chaining.
+</ParamField>
+
+<ParamField path="action[].extensive_data" type="boolean" toc={true}>
+  Controls how much data is included in the webhook payload.
+</ParamField>
+
+<Note>
+Setting [`act_on_channel`][act_on_channel] to `false` makes all of these report-only — they still fire as callbacks but are not applied to the call.
+</Note>
+
+## Built-in `sidecar_skip` tool
+
+The sidecar provides one built-in tool, `sidecar_skip`, that you do not declare. The model calls it when the latest customer turn needs no advice.
+The tick then ends silently — no `insight` callback fires — and a `skip` callback is emitted with the model's reason.
+
+Instruct the model in your prompt to call `sidecar_skip` when there is nothing useful to say — otherwise it will tend to fill silence with low-quality advice.
+The name `sidecar_skip` is reserved; do not define a function with that name.
+
+## Limitations
+
+- **One transcriber per call.** `ai_sidecar` and plain [`live_transcribe`](/docs/swml/reference/calling/live-transcribe) cannot run on the same call at the same time — starting one while the other is active is rejected.
+- **Both legs required.** A single-leg `direction` (for example, only `remote-caller`) is rejected.
+- **Turn detection is tuned for Deepgram.** `deepgram` is the default speech engine, and turn-end detection is calibrated for it.
+- **`say` doesn't speak.** The sidecar has no voice on the call, so a `say` action is reported as a callback instead of being spoken aloud.
+- **The sidecar stops with the call.** When the call hangs up or transcription stops, the sidecar's `final` callback fires and it stops.
+- **`sidecar_skip` is reserved.** Do not define a function with that name.
+- **Tool loops are capped.** If the model calls tools in a runaway loop — too many calls in one tick, the same call repeated, or a tool that isn't registered — the sidecar stops calling tools for that tick and returns an `error` callback with `error_reason: tool_loop`. Make sure your tools return clear, useful results and your prompt tells the model what to do after a tool returns.
+
+## **Example**
+
+
+Answer the call, attach the sidecar with a prompt, language, webhook URL, hints, and a single SWAIG function,
+then bridge the call with [`connect`](/docs/swml/reference/calling/connect) and hang up.
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - answer: {}
+    - ai_sidecar:
+        prompt: "You are a real-time sales copilot. After each customer turn, give the agent one concise piece of advice or call sidecar_skip if no advice is needed."
+        lang: "en-US"
+        url: "https://your-app.example.com/sidecar/events"
+        hints: ["ACME", "Globex", "FedRAMP", "SOC 2"]
+        SWAIG:
+          defaults:
+            web_hook_url: "https://your-app.example.com/sidecar/swaig"
+          functions:
+            - function: lookup_account
+              description: "Look up an account record."
+              parameters:
+                type: object
+                properties:
+                  customer_id:
+                    type: string
+                required:
+                  - customer_id
+    - connect:
+        from: "+15555550100"
+        to: "+15555550199"
+        answer_on_bridge: true
+    - hangup: {}
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "answer": {}
+      },
+      {
+        "ai_sidecar": {
+          "prompt": "You are a real-time sales copilot. After each customer turn, give the agent one concise piece of advice or call sidecar_skip if no advice is needed.",
+          "lang": "en-US",
+          "url": "https://your-app.example.com/sidecar/events",
+          "hints": ["ACME", "Globex", "FedRAMP", "SOC 2"],
+          "SWAIG": {
+            "defaults": {
+              "web_hook_url": "https://your-app.example.com/sidecar/swaig"
+            },
+            "functions": [
+              {
+                "function": "lookup_account",
+                "description": "Look up an account record.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "customer_id": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["customer_id"]
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "connect": {
+          "from": "+15555550100",
+          "to": "+15555550199",
+          "answer_on_bridge": true
+        }
+      },
+      {
+        "hangup": {}
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>

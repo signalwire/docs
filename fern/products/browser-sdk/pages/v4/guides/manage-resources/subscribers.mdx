@@ -1,0 +1,137 @@
+---
+title: "Users"
+slug: /guides/users
+sidebar-title: "Users"
+position: 2
+max-toc-depth: 3
+---
+
+**Users** are the Browser SDK's name for what the platform calls
+[**Subscribers**](/docs/platform/subscribers) — the SignalWire
+Resource type that represents a person in your application. Each
+User has credentials, a profile, a private
+[Address](/docs/platform/addresses) for direct dialing, and may own
+public phone numbers. When the Browser SDK authenticates with a
+[Subscriber Access Token (SAT)](/docs/browser-sdk/v4/guides/authentication),
+the platform identifies the caller as one specific User, and
+the SDK surfaces that identity through [`client.user`].
+
+Not every SAT corresponds to a registered User (subscriber) — guest and invite
+tokens produce temporary sessions that don't map to a platform-side Subscriber
+Resource. The SDK exposes all of them through the same [`User`] object
+on `client.user`, which carries whatever identity and scopes the
+token was minted with.
+
+This guide covers the runtime side: reading the authenticated
+profile, gating on scopes, and ending the session. For *creating*
+Users (Subscriber Resources) on the server, see the
+[platform docs](/docs/platform/subscribers) and the
+[REST API](/docs/apis/rest/subscribers/create-subscriber).
+
+## Accessing the authenticated user
+
+[`client.user`] is populated automatically when the client connects.
+Subscribe to [`client.user$`] to wait for it without risking a `null`
+read:
+
+```js
+import { SignalWire, StaticCredentialProvider } from "@signalwire/js";
+
+const client = new SignalWire(
+  new StaticCredentialProvider({ token: "YOUR_SAT" })
+);
+
+client.user$.subscribe((user) => {
+  if (!user) return;
+  console.log("Signed in as", user.displayName ?? user.email);
+});
+```
+
+`client.user$` is a BehaviorSubject — late subscribers receive the
+cached value synchronously once the profile loads.
+
+## Profile
+
+The [`User`] instance carries the platform-side profile: identity
+(`id`, `email`, `firstName` / `lastName` / `displayName`), organization
+context (`jobTitle`, `companyName`, `timeZone`, `country`, `region`),
+the assigned `addresses` and `pushNotificationKey`, plus
+`appSettings.scopes` from the SAT. See [`User`] for the full field
+list.
+
+```js
+client.user$.subscribe((user) => {
+  if (!user) return;
+  document.querySelector("#name").textContent =
+    user.displayName ?? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim();
+  document.querySelector("#email").textContent = user.email;
+  document.querySelector("#company").textContent = user.companyName ?? "";
+});
+```
+
+### Assigned addresses
+
+`user.addresses` is the list of [Resource Addresses](/docs/platform/addresses)
+the authenticated identity owns directly — typically one private
+address (e.g. `/private/jane-doe`) plus any phone numbers or aliases
+the platform has provisioned. These are the addresses others dial to
+reach this user.
+
+This is distinct from [`client.directory`], which is the broader list
+of addresses this user can *reach* (other Users, rooms, AI
+agents, scripts the platform exposes). See
+[Address Book & Directory](/docs/browser-sdk/v4/guides/address-book).
+
+### Scopes
+
+`user.appSettings?.scopes` reflects the permission scopes the SAT was
+minted with. Use it to gate UI for features the backend has opted the
+user into:
+
+```js
+client.user$.subscribe((user) => {
+  if (!user) return;
+  const canRecord = user.appSettings?.scopes.includes("recording");
+  recordButton.hidden = !canRecord;
+});
+```
+
+Scopes are advisory in the UI — enforcement is server-side. Reading
+them locally avoids showing buttons that would fail.
+
+## Creating and managing Users
+
+User lifecycle happens on your backend — the Browser SDK can
+only sign in *as* an existing identity. Use the
+[Subscribers REST API](/docs/apis/rest/subscribers/create-subscriber)
+from your server (with your SignalWire API credentials, never from
+the browser). The typical flow: on login, your backend looks up or
+creates a User (Subscriber) for the authenticated user, mints a SAT, and
+returns it to the browser. See
+[Authentication](/docs/browser-sdk/v4/guides/authentication) for the
+token flow.
+
+## Sign-out
+
+The User's platform record persists as a Subscriber Resource; "sign out" means
+ending the session. Disconnect the client and discard the SAT:
+
+```js
+await client.disconnect();
+```
+
+A disconnected client can be garbage-collected. For the next login,
+construct a new `SignalWire` with a fresh credential provider.
+
+## Reference
+
+- [`client.user`] / [`client.user$`] — authenticated user accessor and observable
+- [`User`] — profile fields (id, email, firstName, lastName, displayName, addresses, pushNotificationKey, appSettings, satClaims)
+- [`client.directory`] — addresses this user can reach
+- [`client.disconnect()`] — end the session
+
+[`client.user`]: /docs/browser-sdk/v4/reference/signalwire/user$
+[`client.user$`]: /docs/browser-sdk/v4/reference/signalwire/user$
+[`User`]: /docs/browser-sdk/v4/reference/user
+[`client.directory`]: /docs/browser-sdk/v4/reference/signalwire/directory$
+[`client.disconnect()`]: /docs/browser-sdk/v4/reference/signalwire/disconnect

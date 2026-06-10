@@ -9,7 +9,7 @@ slug: /subscribers
 [resources]: /docs/platform/resources
 [create-subscribers]: /docs/platform/resources#create
 [resource-addresses]: /docs/platform/addresses
-[browser-sdk]: /docs/browser-sdk/v3/js
+[browser-sdk]: /docs/browser-sdk/v4/guides/overview
 [rest-api]: /docs/apis
 
 
@@ -174,61 +174,66 @@ Here's how Subscribers work in practice with the [Browser SDK][browser-sdk]:
 <Tabs>
   <Tab title="Authentication">
     ```javascript
-    import { SignalWire } from "@signalwire/js";
+    import { SignalWire, StaticCredentialProvider } from "@signalwire/js";
 
-    // Initialize the client with your token
-    const client = await SignalWire({
-      token: "<TOKEN>"  // Replace with your actual token
+    // Hand the Subscriber Access Token to the SDK via a credential provider.
+    const client = new SignalWire(
+      new StaticCredentialProvider({ token: "<TOKEN>" })
+    );
+
+    // Watch the readiness observables to know when the client is connected.
+    client.ready$.subscribe((ready) => {
+      console.log("SignalWire client ready:", ready);
     });
-
-    // Client is now ready to make and receive calls
-    console.log("SignalWire client initialized");
     ```
   </Tab>
 
   <Tab title="Making calls">
     ```javascript
-    import { SignalWire } from "@signalwire/js";
+    import { SignalWire, StaticCredentialProvider } from "@signalwire/js";
 
-    // Initialize the client
-    const client = await SignalWire({
-      token: "<TOKEN>"
+    const client = new SignalWire(
+      new StaticCredentialProvider({ token: "<TOKEN>" })
+    );
+
+    // Dial another subscriber by address.
+    const call = await client.dial("/private/jane-doe", {
+      audio: true,
+      video: true,
     });
 
-    // Make a call to another subscriber
-    const call = await client.dial({
-      to: "/private/jane-doe",
-      rootElement: document.getElementById("videoContainer")
+    // React to call status changes (ringing, connecting, connected, disconnected).
+    call.status$.subscribe((status) => {
+      console.log("Call status:", status);
     });
 
-    // Handle call events
-    call.on("call.state", (state) => {
-      console.log("Call state:", state);
+    // Attach the remote media to a <video> element in your page.
+    call.remoteStream$.subscribe((stream) => {
+      document.getElementById("remoteVideo").srcObject = stream;
     });
     ```
   </Tab>
 
   <Tab title="Receiving calls">
     ```javascript
-    import { SignalWire } from "@signalwire/js";
+    import { SignalWire, StaticCredentialProvider } from "@signalwire/js";
 
-    // Define the incoming call handler
-    const handleIncomingCall = async (notification) => {
-      const { invite } = notification;
-      console.log("Incoming call from:", invite.from);
-      
-      // Accept the call
-      const call = await invite.accept({
-        rootElement: document.getElementById("videoContainer")
-      });
-    };
+    const client = new SignalWire(
+      new StaticCredentialProvider({ token: "<TOKEN>" })
+    );
 
-    // Initialize the client with the handler
-    const client = await SignalWire({
-      token: "<TOKEN>",
-      incomingCallHandlers: {
-        all: handleIncomingCall
-      }
+    // Bring the subscriber online so calls to their address route here.
+    await client.register();
+
+    // Subscribe to the list of inbound calls. Each emission is the current list.
+    client.session.incomingCalls$.subscribe((calls) => {
+      const ringing = calls.find((c) => c.status === "ringing");
+      if (!ringing) return;
+
+      console.log("Incoming call from:", ringing.fromName || ringing.from);
+
+      // Accept the call with audio and video.
+      ringing.answer({ audio: true, video: true });
     });
     ```
   </Tab>
