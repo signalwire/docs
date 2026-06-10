@@ -19,7 +19,7 @@ full property list, see [`ClientPreferences`].
 
 ## Defaults vs. per-call overrides
 
-```
+```text
 client.preferences  ←  defaults
         ↓
 client.dial(dest, options)  ←  per-call overrides win
@@ -30,14 +30,38 @@ Anything set on `preferences` applies to every subsequent
 Per-call options always win:
 
 ```js
-client.preferences.receiveVideo = false;     // audio-first default
+client.preferences.receiveVideo = true;      // receive remote video by default
 
-// This one call gets video regardless:
-await client.dial("/private/team", { video: true });
+// This one call stays audio-only:
+await client.dial("/private/team", { receiveVideo: false });
 ```
 
 Use `preferences` for app-wide defaults (codec ordering, a tier-wide
 `userVariables` payload). Use per-call options for situational values.
+
+For example, codec ordering is an app-wide default — the array is a priority
+list of [codec names](/docs/browser-sdk/v4/reference/client-preferences/preferred-audio-codecs), and it's overridable per call:
+
+```js
+// Prefer Opus, fall back to G.711
+client.preferences.preferredAudioCodecs = ["opus", "PCMU"];
+
+// One call insists on G.711:
+await client.dial("/private/team", { preferredAudioCodecs: ["PCMU"] });
+```
+
+## Common preferences
+
+The full surface is documented in [`ClientPreferences`] reference. These are the ones most
+apps touch, with their code defaults:
+
+| Preference | Default | Controls |
+|---|---|---|
+| `receiveVideo` | `false` | accept inbound video on a call |
+| `preferredAudioCodecs` | `[]` | audio codec priority order |
+| `connectionTimeout` | `10` (s) | WebSocket connect timeout |
+| `degradationBitrateThreshold` | `150` (kbps) | bitrate below which video auto-disables |
+| `degradationRecoveryThreshold` | `300` (kbps) | bitrate above which video re-enables |
 
 ## Persistence
 
@@ -49,12 +73,21 @@ write back on every setter:
 const client = new SignalWire(provider, { savePreferences: true });
 ```
 
-Persisted: timeouts, ICE settings, codec preferences, device-management
-flags, and `userVariables` — anything cleanly JSON-serializable.
+Persisted: timeouts, ICE / recovery tuning, codec preferences, stats and
+device-management flags, and `userVariables`. Persistence is an explicit
+allowlist — not everything that happens to be serializable.
 
-Not persisted: `MediaDeviceInfo` references. Device IDs aren't stable
-across sessions in every browser, so device picks happen at runtime
-via the device controller.
+Not in this blob: the `MediaDeviceInfo` objects behind `preferredAudioInput`
+/ etc., and media constraints (`defaultVideoConstraints`,
+`inputAudioConstraints`, and the other `*Constraints` fields) — even though
+constraints are JSON-serializable.
+
+**Device selections persist separately, and on by default.** Independent of
+`savePreferences`, the device controller writes your mic / camera / speaker
+pick to `localStorage` (keyed by `deviceId`, keeping `label` / `groupId` to
+re-match when IDs rotate across sessions) and restores it next time. This is
+governed by the `persistDeviceSelection` preference (default `true`); set it
+to `false` to opt out.
 
 For a different storage backend (IndexedDB, server-side per user),
 leave `savePreferences` off and mirror manually:
