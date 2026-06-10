@@ -1,11 +1,11 @@
 ---
 title: "HIPAA"
 slug: /compliance/hipaa
-description: Guidelines for building HIPAA-compliant communications and voice AI applications on SignalWire with SWML.
+description: Guidelines for building HIPAA-compliant communications and voice AI applications on SignalWire with SWML and the Server SDK.
 max-toc-depth: 3
 ---
 
-The Health Insurance Portability and Accountability Act (HIPAA) establishes requirements for protecting Protected Health Information (PHI). As a telecommunication technology company, SignalWire is designed to be HIPAA compliant from the ground up: SignalWire APIs and WebRTC communications services are all encrypted by default via HTTPS, TLS, and/or SRTP/DTLS. When building applications — especially voice AI agents defined with [SWML](/docs/swml) — that handle healthcare data, you must implement appropriate safeguards to protect PHI throughout the call lifecycle.
+The Health Insurance Portability and Accountability Act (HIPAA) establishes requirements for protecting Protected Health Information (PHI). As a telecommunication technology company, SignalWire is designed to be HIPAA compliant from the ground up: SignalWire APIs and WebRTC communications services are all encrypted by default via HTTPS, TLS, and/or SRTP/DTLS. When building applications — especially voice AI agents defined with [SWML](/docs/swml) or the [Server SDK](/docs/server-sdks) — that handle healthcare data, you must implement appropriate safeguards to protect PHI throughout the call lifecycle.
 
 <Warning>
 This guide provides technical guidance for implementing security controls relevant to HIPAA compliance. It is not legal advice. Healthcare organizations must consult with qualified healthcare compliance experts and legal counsel to ensure their specific implementation meets all applicable HIPAA requirements. Compliance is a shared responsibility between SignalWire, your organization, and your implementation choices.
@@ -54,30 +54,28 @@ Before deploying a HIPAA-compliant agent, ensure the following are in place.
 | Requirement | Details |
 |-------------|---------|
 | HTTPS | All endpoints — including your SWAIG and SWML webhooks — must use TLS 1.2 or higher |
-| Authentication | HTTP Basic Auth on every webhook the agent calls |
+| Authentication | HTTP Basic Auth required on all webhooks |
 | Hosting | HIPAA-compliant hosting environment for any service that receives PHI |
 | Network | Firewall rules limiting access to necessary IPs |
 
 ### HIPAA-compliant providers
 
-When building HIPAA-compliant agents, you must use voice and LLM providers that support BAA coverage. In SWML, voice is selected per language with the `voice` property of [`ai.languages`](/docs/swml/reference/calling/ai/languages), and the model is selected with `ai_model` in [`ai.params`](/docs/swml/reference/calling/ai/params).
+When building HIPAA-compliant agents, you must use voice and LLM providers that support BAA coverage. In SWML, voice is selected per language with the `voice` property of [`ai.languages`](/docs/swml/reference/calling/ai/languages), and the model is selected with `ai_model` in [`ai.params`](/docs/swml/reference/calling/ai/params). The Server SDK exposes the same settings through [`addLanguage`](/docs/server-sdks/guides/voice-language) and [`setParams`](/docs/server-sdks/guides/ai-parameters).
 
 **HIPAA-compliant voice providers:**
 
-| Provider | SWML configuration |
-|----------|--------------------|
-| Rime | `voice: rime.spore` |
-| Google | `voice: gcloud.en-US-Neural2-F` |
-| Amazon | `voice: polly.Joanna` |
-| Azure | `voice: azure.en-US-JennyNeural` |
+| Provider | Voice value |
+|----------|-------------|
+| Rime | `rime.spore` |
+| Google | `gcloud.en-US-Neural2-F` |
+| Amazon | `polly.Joanna` |
+| Azure | `azure.en-US-JennyNeural` |
 
 **HIPAA-compliant LLM:**
 
-| Model | SWML configuration |
-|-------|--------------------|
-| gpt-oss-120b | `params.ai_model: gpt-oss-120b` |
-
-The same provider and model selection expressed in SWML and from a server SDK:
+| Model | Configuration |
+|-------|---------------|
+| gpt-oss-120b | `ai_model: gpt-oss-120b` |
 
 <Tabs>
 
@@ -125,31 +123,36 @@ sections:
 
 </Tab>
 
-<Tab title="Server SDK">
+<Tab title="Server SDK (Python)">
+
+```python
+from signalwire import AgentBase
+
+agent = AgentBase(name="healthcare-agent", route="/agent")
+agent.set_prompt_text("You are a healthcare appointment assistant for Example Medical Center.")
+
+# HIPAA-compliant LLM and voice provider
+agent.set_params({"ai_model": "gpt-oss-120b"})
+agent.add_language("English", "en-US", "rime.spore")
+
+agent.run()
+```
+
+</Tab>
+
+<Tab title="Server SDK (TypeScript)">
 
 ```typescript
-import { RelayClient } from '@signalwire/sdk';
+import { AgentBase } from '@signalwire/sdk';
 
-const client = new RelayClient({
-  project: process.env.SIGNALWIRE_PROJECT_ID!,
-  token: process.env.SIGNALWIRE_API_TOKEN!,
-  contexts: ['default'],
-});
+const agent = new AgentBase({ name: 'healthcare-agent', route: '/agent' });
+agent.setPromptText('You are a healthcare appointment assistant for Example Medical Center.');
 
-client.onCall(async (call) => {
-  await call.answer();
+// HIPAA-compliant LLM and voice provider
+agent.setParams({ ai_model: 'gpt-oss-120b' });
+agent.addLanguage({ name: 'English', code: 'en-US', voice: 'rime.spore' });
 
-  // call.ai() executes the SWML `ai` verb on the call
-  const action = await call.ai({
-    prompt: { text: 'You are a healthcare appointment assistant for Example Medical Center.' },
-    aiParams: { ai_model: 'gpt-oss-120b' },
-    languages: [{ name: 'English', code: 'en-US', voice: 'rime.spore' }],
-  });
-
-  await action.wait();
-});
-
-await client.run();
+await agent.run();
 ```
 
 </Tab>
@@ -175,7 +178,11 @@ We highly recommend that each application that programmatically accesses SignalW
 
 ### Securing SWAIG webhooks
 
-Any [SWAIG function](/docs/swml/reference/calling/ai/swaig/functions) that accesses PHI calls out to a `web_hook_url` that you host. Protect those endpoints with HTTP Basic Auth — supplied inline in the URL as `username:password@url` — and serve them over HTTPS. Set credentials once with `SWAIG.defaults.web_hook_url` so every function inherits them:
+Any SWAIG function ([SWML reference](/docs/swml/reference/calling/ai/swaig/functions), [Server SDK guide](/docs/server-sdks/guides/defining-functions)) that accesses PHI calls out to a `web_hook_url` that you host. Protect those endpoints with HTTP Basic Auth — supplied inline in the URL as `username:password@url` — and serve them over HTTPS. In SWML, set credentials once with `SWAIG.defaults.web_hook_url`. In the Server SDK, mark any PHI-accessing tool `secure` to add cryptographic token validation on its callback:
+
+<Tabs>
+
+<Tab title="SWML">
 
 <CodeBlocks>
 
@@ -237,49 +244,118 @@ sections:
 
 </CodeBlocks>
 
-The `parameters` schema is the first line of input validation: the LLM may only call the function with the properties you declare. Perform full validation again on the webhook before touching any PHI.
+</Tab>
 
-## Audit logging
+<Tab title="Server SDK (Python)">
 
-HIPAA requires audit trails for PHI access. Because SWAIG functions invoke your `web_hook_url`, the audit trail is created in **your** webhook handler — log every access there, and sanitize entries so that PHI never lands in plaintext logs:
+```python
+from signalwire import AgentBase, FunctionResult
 
-<Tabs>
+agent = AgentBase(name="healthcare-agent", route="/agent")
+agent.set_prompt_text("You are a healthcare appointment assistant.")
 
-<Tab title="Node (webhook handler)">
+def get_patient_info(args, raw_data=None):
+    patient_id = (args.get("patient_id") or "").strip()
+    # ... fetch from your secure backend after re-validating input
+    return FunctionResult("Retrieved patient information.")
 
-```javascript
-import express from 'express';
+agent.define_tool(
+    name="get_patient_info",
+    description="Retrieve patient information by ID once identity is verified.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "patient_id": {"type": "string", "description": "Patient identifier"},
+        },
+    },
+    required=["patient_id"],
+    handler=get_patient_info,
+    secure=True,  # adds cryptographic token validation on the function callback
+)
 
-const app = express();
-app.use(express.json());
-
-const SENSITIVE = ['ssn', 'social_security', 'dob', 'date_of_birth',
-  'address', 'phone', 'medical_record', 'mrn', 'diagnosis', 'prescription'];
-
-function sanitize(data = {}) {
-  const out = { ...data };
-  for (const field of SENSITIVE) if (field in out) out[field] = '[REDACTED]';
-  return out;
-}
-
-app.post('/swaig/:fn', (req, res) => {
-  const { function: fn, argument } = req.body;
-  console.info(JSON.stringify({
-    event: 'PHI_ACCESS',
-    timestamp: new Date().toISOString(),
-    function: fn,
-    args: sanitize(argument?.parsed?.[0]),
-    success: true,
-  }));
-  res.json({ response: 'Retrieved patient information.' });
-});
-
-app.listen(8080);
+agent.run()
 ```
 
 </Tab>
 
-<Tab title="Python (webhook handler)">
+<Tab title="Server SDK (TypeScript)">
+
+```typescript
+import { AgentBase, FunctionResult } from '@signalwire/sdk';
+
+const agent = new AgentBase({ name: 'healthcare-agent', route: '/agent' });
+agent.setPromptText('You are a healthcare appointment assistant.');
+
+agent.defineTool({
+  name: 'get_patient_info',
+  description: 'Retrieve patient information by ID once identity is verified.',
+  parameters: {
+    type: 'object',
+    properties: {
+      patient_id: { type: 'string', description: 'Patient identifier' },
+    },
+  },
+  required: ['patient_id'],
+  secure: true, // adds cryptographic token validation on the function callback
+  handler: async (args) => {
+    const patientId = String(args.patient_id ?? '').trim();
+    // ... fetch from your secure backend after re-validating input
+    return new FunctionResult('Retrieved patient information.');
+  },
+});
+
+await agent.run();
+```
+
+</Tab>
+
+</Tabs>
+
+The `parameters` schema is the first line of input validation: the LLM may only call the function with the properties you declare. Perform full validation again in the handler before touching any PHI.
+
+### Authentication configuration
+
+Configure strong authentication on the agent's own endpoints. The Server SDK reads HTTP Basic Auth credentials from environment variables:
+
+```bash
+# .env file - use strong, unique credentials
+SWML_BASIC_AUTH_USER=healthcareagent
+SWML_BASIC_AUTH_PASSWORD=your-secure-password-minimum-32-characters
+
+# Never use default or weak passwords in production
+```
+
+If `SWML_BASIC_AUTH_PASSWORD` is not set, the SDK auto-generates a password; in production, always set it explicitly. Mark every PHI-accessing tool `secure` (shown above) so its function callback also requires a validated token.
+
+### TLS/HTTPS configuration
+
+Always use HTTPS in production. Configure TLS via environment variables:
+
+```bash
+# Direct TLS (if not using a reverse proxy)
+SWML_SSL_ENABLED=true
+SWML_SSL_CERT_PATH=/etc/ssl/certs/healthcare-agent.crt
+SWML_SSL_KEY_PATH=/etc/ssl/private/healthcare-agent.key
+SWML_SSL_VERIFY_MODE=CERT_REQUIRED
+
+# Enable HSTS
+SWML_USE_HSTS=true
+SWML_HSTS_MAX_AGE=31536000
+```
+
+For production deployments behind a reverse proxy (nginx, Caddy) that terminates SSL, set the public base URL instead:
+
+```bash
+SWML_PROXY_URL_BASE=https://healthcare.example.com
+```
+
+## Audit logging
+
+HIPAA requires audit trails for PHI access. Write the audit entry in whichever handler backs your function — the tool handler (Server SDK) or your SWAIG `web_hook_url` handler (SWML) — and redact sensitive fields so that PHI never appears in plaintext logs:
+
+<Tabs>
+
+<Tab title="SWML (webhook handler)">
 
 ```python
 import logging
@@ -314,6 +390,81 @@ def swaig(fn):
 
 </Tab>
 
+<Tab title="Server SDK (Python)">
+
+```python
+import logging
+from datetime import datetime
+from signalwire import AgentBase, FunctionResult
+
+audit = logging.getLogger("hipaa_audit")
+SENSITIVE = ['ssn', 'social_security', 'dob', 'date_of_birth',
+             'address', 'phone', 'medical_record', 'mrn', 'diagnosis', 'prescription']
+
+def sanitize(data):
+    data = dict(data or {})
+    for field in SENSITIVE:
+        if field in data:
+            data[field] = "[REDACTED]"
+    return data
+
+agent = AgentBase(name="healthcare-agent", route="/agent")
+agent.set_prompt_text("You are a healthcare appointment assistant.")
+
+@agent.tool(name="get_patient_info", description="Retrieve patient information by ID", secure=True)
+def get_patient_info(args, raw_data=None):
+    audit.info({
+        "event": "PHI_ACCESS",
+        "timestamp": datetime.utcnow().isoformat(),
+        "function": "get_patient_info",
+        "args": sanitize(args),
+        "success": True,
+    })
+    return FunctionResult("Retrieved patient information.")
+
+agent.run()
+```
+
+</Tab>
+
+<Tab title="Server SDK (TypeScript)">
+
+```typescript
+import { AgentBase, FunctionResult } from '@signalwire/sdk';
+
+const SENSITIVE = ['ssn', 'social_security', 'dob', 'date_of_birth',
+  'address', 'phone', 'medical_record', 'mrn', 'diagnosis', 'prescription'];
+
+function sanitize(data: Record<string, unknown> = {}) {
+  const out = { ...data };
+  for (const field of SENSITIVE) if (field in out) out[field] = '[REDACTED]';
+  return out;
+}
+
+const agent = new AgentBase({ name: 'healthcare-agent', route: '/agent' });
+agent.setPromptText('You are a healthcare appointment assistant.');
+
+agent.defineTool({
+  name: 'get_patient_info',
+  description: 'Retrieve patient information by ID',
+  secure: true,
+  handler: async (args) => {
+    console.info(JSON.stringify({
+      event: 'PHI_ACCESS',
+      timestamp: new Date().toISOString(),
+      function: 'get_patient_info',
+      args: sanitize(args),
+      success: true,
+    }));
+    return new FunctionResult('Retrieved patient information.');
+  },
+});
+
+await agent.run();
+```
+
+</Tab>
+
 </Tabs>
 
 Required audit log events:
@@ -326,7 +477,7 @@ Required audit log events:
 | Authentication | Timestamp, auth_type, success/failure, source_ip |
 | Call End | Timestamp, call_id, duration, disposition |
 
-A `summarize_conversation` SWAIG function combined with [`ai.post_prompt`](/docs/swml/reference/calling/ai#post_prompt) delivers an end-of-call summary to your webhook, which is a convenient place to record the Call End audit event.
+A `summarize_conversation` SWAIG function combined with [`ai.post_prompt`](/docs/swml/reference/calling/ai#post_prompt) delivers an end-of-call summary, which is a convenient place to record the Call End audit event.
 
 ## Call recording compliance
 
@@ -335,6 +486,10 @@ Recordings must be manually enabled, and they can be deleted from the Space alto
 ### Consent and disclosure
 
 HIPAA and state laws require consent for call recording. Put the disclosure instruction directly in the AI prompt so it is spoken before any PHI discussion:
+
+<Tabs>
+
+<Tab title="SWML">
 
 <CodeBlocks>
 
@@ -377,9 +532,63 @@ sections:
 
 </CodeBlocks>
 
+</Tab>
+
+<Tab title="Server SDK (Python)">
+
+```python
+from signalwire import AgentBase
+
+agent = AgentBase(name="healthcare-agent", route="/agent")
+
+# Spoken before any PHI discussion
+agent.prompt_add_section(
+    "Recording Disclosure",
+    body=(
+        'At the start of every call, you MUST inform the caller: '
+        '"This call may be recorded for quality assurance and compliance purposes. '
+        'Your continued participation indicates your consent to recording. If you do '
+        'not wish to be recorded, please let me know now." '
+        "Wait for acknowledgment before proceeding with any PHI discussion."
+    ),
+)
+
+agent.run()
+```
+
+</Tab>
+
+<Tab title="Server SDK (TypeScript)">
+
+```typescript
+import { AgentBase } from '@signalwire/sdk';
+
+const agent = new AgentBase({ name: 'healthcare-agent', route: '/agent' });
+
+// Spoken before any PHI discussion
+agent.promptAddSection('Recording Disclosure', {
+  body:
+    'At the start of every call, you MUST inform the caller: ' +
+    '"This call may be recorded for quality assurance and compliance purposes. ' +
+    'Your continued participation indicates your consent to recording. If you do ' +
+    'not wish to be recorded, please let me know now." ' +
+    'Wait for acknowledgment before proceeding with any PHI discussion.',
+});
+
+await agent.run();
+```
+
+</Tab>
+
+</Tabs>
+
 ### Pausing recording for sensitive data
 
-Pause recording when collecting highly sensitive information. A SWAIG function can pause and resume the recording by returning a [`SWML` action](/docs/swml/reference/calling/ai/swaig/functions/data-map#list-of-valid-actions) that runs `stop_record_call` (and later `record_call`). This is what your webhook returns in response to the function call:
+Pause recording when collecting highly sensitive information. A SWAIG function pauses and resumes the recording — in SWML by returning a [`SWML` action](/docs/swml/reference/calling/ai/swaig/functions/data-map#list-of-valid-actions) that runs `stop_record_call` (and later `record_call`), or in the Server SDK by chaining `.stop_record_call()` / `.record_call()` on the `FunctionResult`:
+
+<Tabs>
+
+<Tab title="SWML">
 
 ```json
 {
@@ -399,7 +608,69 @@ Pause recording when collecting highly sensitive information. A SWAIG function c
 }
 ```
 
-Resume it the same way once the sensitive exchange is complete, by returning a `record_call` verb inside the `SWML` action.
+</Tab>
+
+<Tab title="Server SDK (Python)">
+
+```python
+from signalwire import AgentBase, FunctionResult
+
+agent = AgentBase(name="healthcare-agent", route="/agent")
+agent.set_prompt_text("You are a healthcare appointment assistant.")
+
+@agent.tool(name="collect_sensitive_info", description="Pause recording to collect sensitive information")
+def collect_sensitive_info(args, raw_data=None):
+    return (
+        FunctionResult(
+            "I'll need to collect some sensitive information. "
+            "Recording will be paused during this process."
+        )
+        .stop_record_call(control_id="main_recording")
+    )
+
+@agent.tool(name="resume_after_sensitive", description="Resume recording after sensitive collection")
+def resume_after_sensitive(args, raw_data=None):
+    return (
+        FunctionResult("Thank you. Resuming our conversation.")
+        .record_call(control_id="main_recording", stereo=True)
+    )
+
+agent.run()
+```
+
+</Tab>
+
+<Tab title="Server SDK (TypeScript)">
+
+```typescript
+import { AgentBase, FunctionResult } from '@signalwire/sdk';
+
+const agent = new AgentBase({ name: 'healthcare-agent', route: '/agent' });
+agent.setPromptText('You are a healthcare appointment assistant.');
+
+agent.defineTool({
+  name: 'collect_sensitive_info',
+  description: 'Pause recording to collect sensitive information',
+  handler: async () =>
+    new FunctionResult(
+      "I'll need to collect some sensitive information. Recording will be paused during this process."
+    ).stopRecordCall('main_recording'),
+});
+
+agent.defineTool({
+  name: 'resume_after_sensitive',
+  description: 'Resume recording after sensitive collection',
+  handler: async () =>
+    new FunctionResult('Thank you. Resuming our conversation.')
+      .recordCall({ controlId: 'main_recording' }),
+});
+
+await agent.run();
+```
+
+</Tab>
+
+</Tabs>
 
 ### Recording retention
 
@@ -420,19 +691,23 @@ The HIPAA six-year retention requirement (45 CFR 164.530(j)) applies to administ
 
 ### Keeping PHI out of the LLM with global_data and meta_data
 
-The model only ever sees what is in the prompt, the live conversation, and the arguments and responses of the functions it calls. SWML gives you two stores for data that your logic needs but the model should never see:
+The model only ever sees what is in the prompt, the live conversation, and the arguments and responses of the functions it calls. SWML (and the Server SDK on top of it) gives you two stores for data that your logic needs but the model should never see:
 
-- [`ai.global_data`](/docs/swml/reference/calling/ai#properties) — a key-value object that persists for the whole AI session. It is available to your prompts, AI params, and the SWML returned by SWAIG functions, and is updated at runtime with the [`set_global_data` action](/docs/swml/reference/calling/ai/swaig/functions/data-map#list-of-valid-actions). As long as you never template a value into the prompt or a spoken response, it stays out of the model's context.
+- [`ai.global_data`](/docs/swml/reference/calling/ai#properties) — a key-value object that persists for the whole AI session. It is available to your prompts, AI params, and the SWML returned by SWAIG functions, and is updated at runtime with the [`set_global_data` action](/docs/swml/reference/calling/ai/swaig/functions/data-map#list-of-valid-actions) (or `update_global_data` on a `FunctionResult`). As long as you never template a value into the prompt or a spoken response, it stays out of the model's context.
 - [`meta_data`](/docs/swml/reference/calling/ai/swaig/functions) — an environmental variable scoped **locally** to a function (and its `web_hook_url`), updated with the [`set_meta_data` action](/docs/swml/reference/calling/ai/swaig/functions/data-map#list-of-valid-actions). Use it for per-function context that no other function — and never the model's conversation — should see.
 
-| Data location | LLM sees it | Your SWAIG webhook can use it |
-|---------------|-------------|-------------------------------|
+| Data location | LLM sees it | Your function handler can use it |
+|---------------|-------------|----------------------------------|
 | Prompt / conversation / `say` | Yes | Yes |
 | Function arguments and responses | Yes | Yes |
 | `global_data` (not templated into the prompt) | **No** | Yes |
 | `meta_data` | **No** | Yes (locally to the function) |
 
-A verification function stores the resolved patient record in `global_data` and returns only a generic confirmation, so the identifiers your other functions rely on are never exposed to the model. Your webhook returns:
+A verification function stores the resolved patient record in `global_data` and returns only a generic confirmation, so the identifiers your other functions rely on are never exposed to the model:
+
+<Tabs>
+
+<Tab title="SWML">
 
 ```json
 {
@@ -448,6 +723,60 @@ A verification function stores the resolved patient record in `global_data` and 
   ]
 }
 ```
+
+</Tab>
+
+<Tab title="Server SDK (Python)">
+
+```python
+from signalwire import AgentBase, FunctionResult
+
+agent = AgentBase(name="healthcare-agent", route="/agent")
+agent.set_prompt_text("You are a healthcare appointment assistant.")
+
+@agent.tool(name="verify_patient", description="Verify the caller's identity", secure=True)
+def verify_patient(args, raw_data=None):
+    # Look up the patient, then keep the identifiers out of the model by
+    # storing them in global_data instead of returning them as text.
+    return (
+        FunctionResult("Thank you, I've verified your identity. How can I help you today?")
+        .update_global_data({
+            "verified": True,
+            "patient_id": "P12345678",
+            "mrn": "MRN-0099",
+        })
+    )
+
+agent.run()
+```
+
+</Tab>
+
+<Tab title="Server SDK (TypeScript)">
+
+```typescript
+import { AgentBase, FunctionResult } from '@signalwire/sdk';
+
+const agent = new AgentBase({ name: 'healthcare-agent', route: '/agent' });
+agent.setPromptText('You are a healthcare appointment assistant.');
+
+agent.defineTool({
+  name: 'verify_patient',
+  description: "Verify the caller's identity",
+  secure: true,
+  handler: async () =>
+    // Keep the identifiers out of the model by storing them in global_data
+    // instead of returning them as text.
+    new FunctionResult("Thank you, I've verified your identity. How can I help you today?")
+      .updateGlobalData({ verified: true, patient_id: 'P12345678', mrn: 'MRN-0099' }),
+});
+
+await agent.run();
+```
+
+</Tab>
+
+</Tabs>
 
 A later function — for example, scheduling an appointment — reads `${global_data.patient_id}` and `${global_data.mrn}` on the server side and confirms the booking without ever speaking the identifiers back.
 
@@ -508,6 +837,10 @@ sections:
 
 </CodeBlocks>
 
+<Note>
+DTMF/speech collection that bypasses the LLM is a raw SWML flow built on the [`prompt`](/docs/swml/reference/calling/prompt) verb. From the Server SDK, return this SWML from a tool handler (for example with `execute_swml`) rather than collecting sensitive input through the conversation.
+</Note>
+
 This approach provides several layers of protection:
 
 | Collection method | LLM sees data | Transcript contains | Recording contains |
@@ -517,9 +850,88 @@ This approach provides several layers of protection:
 | Speech via `prompt` | **No** | **No** | Yes (pause recording to exclude) |
 | `global_data` / `meta_data` | **No** | **No** | **No** |
 
+### Maximum PHI protection
+
+For the strongest protection, combine paused recording with DTMF collection of every sensitive field in a single flow, then resume recording and hand control back to the AI with only a generic confirmation:
+
+<CodeBlocks>
+
+```yaml title="YAML"
+version: 1.0.0
+sections:
+  main:
+    # Pause recording for the entire sensitive collection
+    - stop_record_call:
+        control_id: main_recording
+    # Collect date of birth via DTMF - bypasses the LLM
+    - prompt:
+        play: "say:Please enter your 8-digit date of birth. For example, 0 3 1 5 1 9 8 5 for March 15, 1985."
+        max_digits: 8
+        digit_timeout: 15
+    - set:
+        dob: "${prompt_value}"
+    # Collect last 4 of SSN via DTMF - bypasses the LLM
+    - prompt:
+        play: "say:Please enter the last 4 digits of your Social Security Number."
+        max_digits: 4
+        digit_timeout: 10
+    - set:
+        ssn_last4: "${prompt_value}"
+    # Resume recording, then return to the AI with a generic confirmation
+    - record_call:
+        control_id: main_recording
+        stereo: true
+    - ai:
+        prompt:
+          text: |
+            Thank the caller for providing their information and confirm you are now
+            verifying their identity. Never repeat the collected values back.
+```
+
+```json title="JSON"
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      { "stop_record_call": { "control_id": "main_recording" } },
+      {
+        "prompt": {
+          "play": "say:Please enter your 8-digit date of birth. For example, 0 3 1 5 1 9 8 5 for March 15, 1985.",
+          "max_digits": 8,
+          "digit_timeout": 15
+        }
+      },
+      { "set": { "dob": "${prompt_value}" } },
+      {
+        "prompt": {
+          "play": "say:Please enter the last 4 digits of your Social Security Number.",
+          "max_digits": 4,
+          "digit_timeout": 10
+        }
+      },
+      { "set": { "ssn_last4": "${prompt_value}" } },
+      { "record_call": { "control_id": "main_recording", "stereo": true } },
+      {
+        "ai": {
+          "prompt": {
+            "text": "Thank the caller for providing their information and confirm you are now verifying their identity. Never repeat the collected values back."
+          }
+        }
+      }
+    ]
+  }
+}
+```
+
+</CodeBlocks>
+
 ### Prompt design for PHI protection
 
-Design prompts to minimize PHI exposure. Whether you write a single `text` prompt or a structured [POM](/docs/swml/reference/calling/ai/prompt), encode the protection and verification rules explicitly:
+Design prompts to minimize PHI exposure. Whether you write a single `text` prompt or a structured [POM](/docs/swml/reference/calling/ai/prompt), encode the protection and verification rules explicitly. In the Server SDK, `promptAddSection` builds the POM for you:
+
+<Tabs>
+
+<Tab title="SWML">
 
 <CodeBlocks>
 
@@ -565,9 +977,82 @@ sections:
 
 </CodeBlocks>
 
+</Tab>
+
+<Tab title="Server SDK (Python)">
+
+```python
+from signalwire import AgentBase
+
+agent = AgentBase(name="healthcare-agent", route="/agent")
+
+agent.prompt_add_section(
+    "PHI Protection Rules",
+    bullets=[
+        "NEVER repeat back sensitive information such as SSNs, full date of birth, "
+        "medical record numbers, or detailed diagnosis information.",
+        'When confirming identity, use partial information only '
+        '(e.g. "your date of birth ends in [last 2 digits of year]").',
+        "NEVER include PHI in error messages or clarifications.",
+        'If asked to repeat sensitive info, say: '
+        '"For security purposes, I cannot repeat that information."',
+    ],
+)
+
+agent.prompt_add_section(
+    "Identity Verification",
+    body=(
+        "Before accessing ANY patient information, collect a patient identifier and "
+        "verify TWO of: date of birth, last 4 of SSN, address on file, phone on file. "
+        "Only proceed after successful verification."
+    ),
+)
+
+agent.run()
+```
+
+</Tab>
+
+<Tab title="Server SDK (TypeScript)">
+
+```typescript
+import { AgentBase } from '@signalwire/sdk';
+
+const agent = new AgentBase({ name: 'healthcare-agent', route: '/agent' });
+
+agent.promptAddSection('PHI Protection Rules', {
+  bullets: [
+    'NEVER repeat back sensitive information such as SSNs, full date of birth, ' +
+      'medical record numbers, or detailed diagnosis information.',
+    'When confirming identity, use partial information only ' +
+      '(e.g. "your date of birth ends in [last 2 digits of year]").',
+    'NEVER include PHI in error messages or clarifications.',
+    'If asked to repeat sensitive info, say: ' +
+      '"For security purposes, I cannot repeat that information."',
+  ],
+});
+
+agent.promptAddSection('Identity Verification', {
+  body:
+    'Before accessing ANY patient information, collect a patient identifier and ' +
+    'verify TWO of: date of birth, last 4 of SSN, address on file, phone on file. ' +
+    'Only proceed after successful verification.',
+});
+
+await agent.run();
+```
+
+</Tab>
+
+</Tabs>
+
 ### Secure function design
 
-Design SWAIG functions to return the minimum necessary PHI. Your `web_hook_url` should verify the caller is authorized, log the access, and respond with only what the caller needs to hear — never provider names or detailed locations:
+Design SWAIG functions to return the minimum necessary PHI. The handler should verify the caller is authorized, log the access, and respond with only what the caller needs to hear — never provider names or detailed locations. On an authorization failure, return a non-revealing message:
+
+<Tabs>
+
+<Tab title="SWML">
 
 ```json
 {
@@ -575,7 +1060,7 @@ Design SWAIG functions to return the minimum necessary PHI. Your `web_hook_url` 
 }
 ```
 
-If authorization fails, return a non-revealing message and log the failure:
+On failure:
 
 ```json
 {
@@ -583,9 +1068,74 @@ If authorization fails, return a non-revealing message and log the failure:
 }
 ```
 
+</Tab>
+
+<Tab title="Server SDK (Python)">
+
+```python
+from signalwire import AgentBase, FunctionResult
+
+agent = AgentBase(name="healthcare-agent", route="/agent")
+agent.set_prompt_text("You are a healthcare appointment assistant.")
+
+@agent.tool(name="check_appointment", description="Check the caller's next appointment", secure=True)
+def check_appointment(args, raw_data=None):
+    global_data = (raw_data or {}).get("global_data", {})
+    if not global_data.get("verified"):
+        # Reveal nothing on an authorization failure
+        return FunctionResult(
+            "I was unable to verify your identity. Please contact us directly for assistance."
+        )
+    # Return only what the caller needs to hear — no provider names or detailed location
+    return FunctionResult(
+        "Your next appointment is on June 15 at 2:30 PM. Please arrive 15 minutes early."
+    )
+
+agent.run()
+```
+
+</Tab>
+
+<Tab title="Server SDK (TypeScript)">
+
+```typescript
+import { AgentBase, FunctionResult } from '@signalwire/sdk';
+
+const agent = new AgentBase({ name: 'healthcare-agent', route: '/agent' });
+agent.setPromptText('You are a healthcare appointment assistant.');
+
+agent.defineTool({
+  name: 'check_appointment',
+  description: "Check the caller's next appointment",
+  secure: true,
+  handler: async (args, rawData) => {
+    if (!rawData?.global_data?.verified) {
+      // Reveal nothing on an authorization failure
+      return new FunctionResult(
+        'I was unable to verify your identity. Please contact us directly for assistance.'
+      );
+    }
+    // Return only what the caller needs to hear — no provider names or detailed location
+    return new FunctionResult(
+      'Your next appointment is on June 15 at 2:30 PM. Please arrive 15 minutes early.'
+    );
+  },
+});
+
+await agent.run();
+```
+
+</Tab>
+
+</Tabs>
+
 ### Input validation
 
-Validate all inputs to prevent injection and ensure data integrity. Declare expected inputs and constraints in the function [`parameters`](/docs/swml/reference/calling/ai/swaig/functions/parameters) so the model can only supply well-formed values, then re-validate on the webhook:
+Validate all inputs to prevent injection and ensure data integrity. Declare expected inputs and constraints in the function `parameters` ([SWML reference](/docs/swml/reference/calling/ai/swaig/functions/parameters), [Server SDK guide](/docs/server-sdks/guides/defining-functions)) so the model can only supply well-formed values, then re-validate in the handler:
+
+<Tabs>
+
+<Tab title="SWML">
 
 <CodeBlocks>
 
@@ -639,6 +1189,104 @@ functions:
 ```
 
 </CodeBlocks>
+
+</Tab>
+
+<Tab title="Server SDK (Python)">
+
+```python
+import re
+from signalwire import AgentBase, FunctionResult
+
+agent = AgentBase(name="healthcare-agent", route="/agent")
+agent.set_prompt_text("You are a healthcare appointment assistant.")
+
+def verify_patient(args, raw_data=None):
+    patient_id = args.get("patient_id", "")
+    dob = args.get("date_of_birth", "")
+    # Re-validate even though the schema already constrained the input
+    if not re.match(r"^[A-Z0-9]{8,12}$", patient_id):
+        return FunctionResult("That patient ID doesn't look right. Please try again.")
+    if not re.match(r"^\d{2}/\d{2}/\d{4}$", dob):
+        return FunctionResult("Please provide your date of birth as MM/DD/YYYY.")
+    return FunctionResult("Thank you, verifying your identity now.")
+
+agent.define_tool(
+    name="verify_patient",
+    description="Verify the caller's identity before accessing records.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "patient_id": {
+                "type": "string",
+                "pattern": "^[A-Z0-9]{8,12}$",
+                "description": "Patient identifier",
+            },
+            "date_of_birth": {
+                "type": "string",
+                "pattern": "^\\d{2}/\\d{2}/\\d{4}$",
+                "description": "Date of birth in MM/DD/YYYY format",
+            },
+        },
+    },
+    required=["patient_id", "date_of_birth"],
+    handler=verify_patient,
+    secure=True,
+)
+
+agent.run()
+```
+
+</Tab>
+
+<Tab title="Server SDK (TypeScript)">
+
+```typescript
+import { AgentBase, FunctionResult } from '@signalwire/sdk';
+
+const agent = new AgentBase({ name: 'healthcare-agent', route: '/agent' });
+agent.setPromptText('You are a healthcare appointment assistant.');
+
+agent.defineTool({
+  name: 'verify_patient',
+  description: "Verify the caller's identity before accessing records.",
+  parameters: {
+    type: 'object',
+    properties: {
+      patient_id: {
+        type: 'string',
+        pattern: '^[A-Z0-9]{8,12}$',
+        description: 'Patient identifier',
+      },
+      date_of_birth: {
+        type: 'string',
+        pattern: '^\\d{2}/\\d{2}/\\d{4}$',
+        description: 'Date of birth in MM/DD/YYYY format',
+      },
+    },
+  },
+  required: ['patient_id', 'date_of_birth'],
+  secure: true,
+  handler: async (args) => {
+    const patientId = String(args.patient_id ?? '');
+    const dob = String(args.date_of_birth ?? '');
+    // Re-validate even though the schema already constrained the input
+    if (!/^[A-Z0-9]{8,12}$/.test(patientId)) {
+      return new FunctionResult("That patient ID doesn't look right. Please try again.");
+    }
+    if (!/^\d{2}\/\d{2}\/\d{4}$/.test(dob)) {
+      return new FunctionResult('Please provide your date of birth as MM/DD/YYYY.');
+    }
+    return new FunctionResult('Thank you, verifying your identity now.');
+  },
+});
+
+await agent.run();
+```
+
+</Tab>
+
+</Tabs>
 
 ### Redacting stored message media
 
@@ -700,11 +1348,11 @@ for msgsid in msgsidsuniq:
 
 ## Deployment
 
-The PHI-handling parts of a SWML agent live in the services you host: the endpoint that serves the SWML and the `web_hook_url` endpoints that back your SWAIG functions. Secure those services regardless of how you deploy them.
+The PHI-handling parts of an agent live in the services you host: the endpoint that serves the SWML (or the Server SDK app) and the `web_hook_url` endpoints that back your SWAIG functions. Secure those services regardless of how you deploy them.
 
 ### Serverless deployment
 
-For AWS Lambda, Google Cloud Functions, or Azure Functions hosting your SWML/SWAIG webhooks:
+For AWS Lambda, Google Cloud Functions, or Azure Functions hosting your agent or SWAIG webhooks:
 
 | Consideration | Implementation |
 |---------------|----------------|
@@ -714,9 +1362,28 @@ For AWS Lambda, Google Cloud Functions, or Azure Functions hosting your SWML/SWA
 | Logging | CloudWatch/Cloud Logging with encryption |
 | Cold Starts | May affect audit log timing; account for this |
 
+The Server SDK serves serverless platforms through `handle_serverless_request`, with a `mode` for each provider:
+
+```python
+# handler.py - AWS Lambda entry point for a HIPAA agent
+import os
+from signalwire import AgentBase
+
+agent = AgentBase(name="hipaa-serverless")
+agent.set_prompt_text("You are a healthcare appointment assistant.")
+agent.add_language("English", "en-US", "rime.spore")
+
+# Fail fast if auth is not configured
+if not os.environ.get("SWML_BASIC_AUTH_PASSWORD"):
+    raise ValueError("SWML_BASIC_AUTH_PASSWORD must be set")
+
+def handler(event, context):
+    return agent.handle_serverless_request(event, context, mode="lambda")
+```
+
 ### Self-hosted deployment
 
-For self-hosted webhook services with maximum control:
+For self-hosted services with maximum control:
 
 - Deploy in a HIPAA-compliant data center or cloud region
 - Enable full-disk encryption on all servers
@@ -726,11 +1393,63 @@ For self-hosted webhook services with maximum control:
 - Maintain a regular security patching schedule
 - Segment the network from other workloads
 
+A container deployment that keeps the agent off the public internet and terminates TLS at a reverse proxy:
+
+```yaml
+# docker-compose.yml for a HIPAA-compliant deployment
+version: '3.8'
+
+services:
+  healthcare-agent:
+    build: .
+    environment:
+      - SWML_BASIC_AUTH_USER=${SWML_BASIC_AUTH_USER}
+      - SWML_BASIC_AUTH_PASSWORD=${SWML_BASIC_AUTH_PASSWORD}
+      - SWML_PROXY_URL_BASE=${SWML_PROXY_URL_BASE}
+      - SIGNALWIRE_LOG_LEVEL=info
+    networks:
+      - internal
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certs:/etc/ssl/certs:ro
+    depends_on:
+      - healthcare-agent
+    networks:
+      - internal
+      - external
+
+networks:
+  internal:
+    internal: true  # No external access
+  external:
+```
+
 ## Administrative safeguards
 
 ### Access management
 
-Track the caller's role in `global_data` after verification, and gate PHI functions accordingly. A SWAIG function can enable or disable other functions at runtime with the [`toggle_functions` action](/docs/swml/reference/calling/ai/swaig/functions/data-map#list-of-valid-actions), and your webhook should independently re-check authorization before returning any PHI:
+Define which functions each role may call, granting only the minimum each role needs:
+
+| Role | Allowed functions |
+|------|-------------------|
+| `patient` | `check_appointment`, `request_prescription_refill` |
+| `staff` | `check_appointment`, `schedule_appointment`, `view_patient_summary` |
+| `provider` | `check_appointment`, `schedule_appointment`, `view_patient_summary`, `view_medical_record`, `add_clinical_note` |
+
+Track the caller's role in `global_data` after verification, and gate PHI functions accordingly. A SWAIG function can enable or disable other functions at runtime with `toggle_functions`, and you should independently re-check authorization before returning any PHI:
+
+<Tabs>
+
+<Tab title="SWML">
 
 ```json
 {
@@ -747,9 +1466,69 @@ Track the caller's role in `global_data` after verification, and gate PHI functi
 }
 ```
 
+</Tab>
+
+<Tab title="Server SDK (Python)">
+
+```python
+from signalwire import AgentBase, FunctionResult
+
+agent = AgentBase(name="healthcare-agent", route="/agent")
+agent.set_prompt_text("You are a healthcare appointment assistant.")
+
+@agent.tool(name="grant_provider_access", description="Enable clinical tools for a verified provider", secure=True)
+def grant_provider_access(args, raw_data=None):
+    # Re-check authorization before enabling any PHI functions
+    return (
+        FunctionResult("You're verified as a provider. I can now access clinical records.")
+        .update_global_data({"role": "provider"})
+        .toggle_functions([
+            {"function": "view_medical_record", "active": True},
+            {"function": "add_clinical_note", "active": True},
+        ])
+    )
+
+agent.run()
+```
+
+</Tab>
+
+<Tab title="Server SDK (TypeScript)">
+
+```typescript
+import { AgentBase, FunctionResult } from '@signalwire/sdk';
+
+const agent = new AgentBase({ name: 'healthcare-agent', route: '/agent' });
+agent.setPromptText('You are a healthcare appointment assistant.');
+
+agent.defineTool({
+  name: 'grant_provider_access',
+  description: 'Enable clinical tools for a verified provider',
+  secure: true,
+  // Re-check authorization before enabling any PHI functions
+  handler: async () =>
+    new FunctionResult("You're verified as a provider. I can now access clinical records.")
+      .updateGlobalData({ role: 'provider' })
+      .toggleFunctions([
+        { function: 'view_medical_record', active: true },
+        { function: 'add_clinical_note', active: true },
+      ]),
+});
+
+await agent.run();
+```
+
+</Tab>
+
+</Tabs>
+
 ### Incident response
 
-For a security incident, disable sensitive operations quickly. Because functions can be toggled at runtime — and because the SWML you serve is fully under your control — you can deactivate PHI functions (or serve a degraded SWML document) without redeploying the agent. Your webhook can also refuse PHI access and respond with a safe fallback:
+For a security incident, disable sensitive operations quickly. Because functions can be toggled at runtime — and because the SWML you serve is fully under your control — you can deactivate PHI functions (or serve a degraded document) without redeploying the agent. The handler can also refuse PHI access and respond with a safe fallback:
+
+<Tabs>
+
+<Tab title="SWML">
 
 ```json
 {
@@ -759,6 +1538,65 @@ For a security incident, disable sensitive operations quickly. Because functions
   ]
 }
 ```
+
+</Tab>
+
+<Tab title="Server SDK (Python)">
+
+```python
+from signalwire import AgentBase, FunctionResult
+
+agent = AgentBase(name="healthcare-agent", route="/agent")
+agent.set_prompt_text("You are a healthcare appointment assistant.")
+
+@agent.tool(name="access_phi", description="Access protected health information", secure=True)
+def access_phi(args, raw_data=None):
+    if (raw_data or {}).get("global_data", {}).get("emergency_mode"):
+        # Refuse PHI access and disable the function during an incident
+        return (
+            FunctionResult(
+                "This service is temporarily unavailable. Please call our main line for assistance."
+            )
+            .toggle_functions([{"function": "access_phi", "active": False}])
+        )
+    # ... normal PHI access
+    return FunctionResult("Here is the information you requested.")
+
+agent.run()
+```
+
+</Tab>
+
+<Tab title="Server SDK (TypeScript)">
+
+```typescript
+import { AgentBase, FunctionResult } from '@signalwire/sdk';
+
+const agent = new AgentBase({ name: 'healthcare-agent', route: '/agent' });
+agent.setPromptText('You are a healthcare appointment assistant.');
+
+agent.defineTool({
+  name: 'access_phi',
+  description: 'Access protected health information',
+  secure: true,
+  handler: async (args, rawData) => {
+    if (rawData?.global_data?.emergency_mode) {
+      // Refuse PHI access and disable the function during an incident
+      return new FunctionResult(
+        'This service is temporarily unavailable. Please call our main line for assistance.'
+      ).toggleFunctions([{ function: 'access_phi', active: false }]);
+    }
+    // ... normal PHI access
+    return new FunctionResult('Here is the information you requested.');
+  },
+});
+
+await agent.run();
+```
+
+</Tab>
+
+</Tabs>
 
 Incident response requirements:
 
@@ -774,9 +1612,9 @@ Incident response requirements:
 ### Pre-deployment
 
 - Signed BAA with SignalWire
-- HIPAA-compliant hosting environment for SWML/SWAIG webhooks
+- HIPAA-compliant hosting environment for the agent and SWAIG webhooks
 - HTTP Basic Auth and HTTPS configured on every webhook
-- Audit logging implemented and tested in the webhook handlers
+- Audit logging implemented and tested in the handlers
 - PHI handling procedures documented
 - Workforce training completed
 - Incident response plan documented
@@ -809,7 +1647,7 @@ Maintain documentation for:
 
 ## Complete example
 
-A HIPAA-compliant healthcare appointment agent: the SWML document that defines it, the server SDK that serves it on a call, and the browser SDK that connects a caller to it.
+A HIPAA-compliant healthcare appointment agent: the SWML document that defines it, the Server SDK (Python and TypeScript) that builds and serves it, and the Browser SDK that connects a caller to it.
 
 <Tabs>
 
@@ -930,46 +1768,162 @@ sections:
 
 </Tab>
 
-<Tab title="Server SDK">
+<Tab title="Server SDK (Python)">
 
-```typescript
-import { RelayClient } from '@signalwire/sdk';
+```python
+from signalwire import AgentBase, FunctionResult
 
-const client = new RelayClient({
-  project: process.env.SIGNALWIRE_PROJECT_ID!,
-  token: process.env.SIGNALWIRE_API_TOKEN!,
-  contexts: ['default'],
-});
+agent = AgentBase(name="hipaa-healthcare-agent", route="/agent")
 
-client.onCall(async (call) => {
-  await call.answer();
+# HIPAA-compliant voice and LLM providers
+agent.add_language("English", "en-US", "rime.spore")
+agent.set_params({"ai_model": "gpt-oss-120b"})
 
-  // Record the call (consent is disclosed in the prompt below)
-  await call.record({ stereo: true });
+# Keep verification state out of the model until a function sets it
+agent.set_global_data({"verified": False})
 
-  // Start the AI agent. call.ai() runs the SWML `ai` verb; SWAIG functions
-  // call back to your authenticated, HTTPS webhook to handle PHI.
-  const action = await call.ai({
-    params: { ai_model: 'gpt-oss-120b' },
-    languages: [{ name: 'English', code: 'en-US', voice: 'rime.spore' }],
-    prompt: {
-      text:
-        'You are a healthcare appointment assistant for Example Medical Center. ' +
-        'Disclose recording at the start of the call. Verify caller identity before ' +
-        'accessing ANY patient information, and never repeat back full SSN, DOB, or MRN.',
+agent.prompt_add_section(
+    "Role",
+    body="You are a healthcare appointment assistant for Example Medical Center.",
+)
+agent.prompt_add_section(
+    "Recording Disclosure",
+    body=(
+        'At the START of every call, say: "Thank you for calling Example Medical '
+        'Center. This call may be recorded for quality and compliance purposes. '
+        'How may I help you today?"'
+    ),
+)
+agent.prompt_add_section(
+    "PHI Protection",
+    bullets=[
+        "Verify caller identity before accessing ANY patient information.",
+        "Never repeat back full SSN, DOB, or medical record numbers.",
+        'Use partial confirmation only ("ending in...", "on file as...").',
+        "Never include PHI in error messages.",
+    ],
+)
+agent.set_post_prompt(
+    "Summarize the call, noting whether identity was verified and any actions taken."
+)
+
+@agent.tool(
+    name="verify_patient",
+    description="Verify patient identity before accessing records.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "date_of_birth": {"type": "string", "description": "Patient date of birth (MM/DD/YYYY)"},
+            "verification_value": {"type": "string", "description": "Last 4 of SSN or phone number on file"},
+        },
     },
-    postPrompt: { text: 'Summarize the call and whether identity was verified.' },
-  });
+    required=["date_of_birth", "verification_value"],
+    secure=True,
+)
+def verify_patient(args, raw_data=None):
+    # Look up the patient in your system, then store identifiers in global_data
+    # so they are never exposed to the model.
+    return (
+        FunctionResult("Thank you, I've verified your identity. How can I help you today?")
+        .update_global_data({"verified": True, "patient_id": "P12345678", "mrn": "MRN-0099"})
+    )
 
-  await action.wait();
-});
+@agent.tool(
+    name="check_appointments",
+    description="Check patient appointments (requires prior verification).",
+    secure=True,
+)
+def check_appointments(args, raw_data=None):
+    if not (raw_data or {}).get("global_data", {}).get("verified"):
+        return FunctionResult(
+            "I need to verify your identity first. Can you provide your date of birth?"
+        )
+    return FunctionResult(
+        "Your next appointment is on June 15 at 2:30 PM. Please arrive 15 minutes early."
+    )
 
-await client.run();
+if __name__ == "__main__":
+    agent.run()
 ```
 
 </Tab>
 
-<Tab title="Client SDK">
+<Tab title="Server SDK (TypeScript)">
+
+```typescript
+import { AgentBase, FunctionResult } from '@signalwire/sdk';
+
+const agent = new AgentBase({ name: 'hipaa-healthcare-agent', route: '/agent' });
+
+// HIPAA-compliant voice and LLM providers
+agent.addLanguage({ name: 'English', code: 'en-US', voice: 'rime.spore' });
+agent.setParams({ ai_model: 'gpt-oss-120b' });
+
+// Keep verification state out of the model until a function sets it
+agent.setGlobalData({ verified: false });
+
+agent.promptAddSection('Role', {
+  body: 'You are a healthcare appointment assistant for Example Medical Center.',
+});
+agent.promptAddSection('Recording Disclosure', {
+  body:
+    'At the START of every call, say: "Thank you for calling Example Medical ' +
+    'Center. This call may be recorded for quality and compliance purposes. ' +
+    'How may I help you today?"',
+});
+agent.promptAddSection('PHI Protection', {
+  bullets: [
+    'Verify caller identity before accessing ANY patient information.',
+    'Never repeat back full SSN, DOB, or medical record numbers.',
+    'Use partial confirmation only ("ending in...", "on file as...").',
+    'Never include PHI in error messages.',
+  ],
+});
+agent.setPostPrompt(
+  'Summarize the call, noting whether identity was verified and any actions taken.'
+);
+
+agent.defineTool({
+  name: 'verify_patient',
+  description: 'Verify patient identity before accessing records.',
+  parameters: {
+    type: 'object',
+    properties: {
+      date_of_birth: { type: 'string', description: 'Patient date of birth (MM/DD/YYYY)' },
+      verification_value: { type: 'string', description: 'Last 4 of SSN or phone number on file' },
+    },
+  },
+  required: ['date_of_birth', 'verification_value'],
+  secure: true,
+  // Look up the patient, then store identifiers in global_data so they are
+  // never exposed to the model.
+  handler: async () =>
+    new FunctionResult("Thank you, I've verified your identity. How can I help you today?")
+      .updateGlobalData({ verified: true, patient_id: 'P12345678', mrn: 'MRN-0099' }),
+});
+
+agent.defineTool({
+  name: 'check_appointments',
+  description: 'Check patient appointments (requires prior verification).',
+  secure: true,
+  handler: async (args, rawData) => {
+    if (!rawData?.global_data?.verified) {
+      return new FunctionResult(
+        'I need to verify your identity first. Can you provide your date of birth?'
+      );
+    }
+    return new FunctionResult(
+      'Your next appointment is on June 15 at 2:30 PM. Please arrive 15 minutes early.'
+    );
+  },
+});
+
+await agent.run();
+```
+
+</Tab>
+
+<Tab title="Browser SDK (client)">
 
 ```javascript
 import { SignalWire, StaticCredentialProvider } from '@signalwire/js';
@@ -995,6 +1949,10 @@ await call.start();
 - Contact SignalWire for a BAA: `sales@signalwire.com`
 - [SWML AI reference](/docs/swml/reference/calling/ai)
 - [SWAIG functions reference](/docs/swml/reference/calling/ai/swaig/functions)
+- [Server SDK — building AI agents guide](/docs/server-sdks/guides/build-ai-agents)
+- [Server SDK — defining functions guide](/docs/server-sdks/guides/defining-functions)
+- [Server SDK — AgentBase reference (Python)](/docs/server-sdks/reference/python/agents/agent-base)
+- [Server SDK — AgentBase reference (TypeScript)](/docs/server-sdks/reference/typescript/agents/agent-base)
 
 **HIPAA resources:**
 
@@ -1012,4 +1970,4 @@ Building HIPAA-compliant communications and voice AI applications requires atten
 3. **PHI handling** — minimization, identity verification, and keeping PHI out of the model with `global_data`, `meta_data`, and DTMF collection.
 4. **Documentation** — policies, audit trails, incident records.
 
-SignalWire is HIPAA compliant by design and SWML provides the building blocks — AI prompts and post-prompts, AI-inaccessible data stores, recording control, and secure SWAIG functions — needed for compliance. Your responsibility is to configure these features appropriately, secure the webhooks that handle PHI, and maintain the administrative safeguards required by HIPAA. Always consult with qualified healthcare compliance experts and legal counsel to ensure your specific implementation meets all applicable requirements.
+SignalWire is HIPAA compliant by design, and both SWML and the Server SDK provide the building blocks — AI prompts and post-prompts, AI-inaccessible data stores, recording control, and secure SWAIG functions — needed for compliance. Your responsibility is to configure these features appropriately, secure the webhooks that handle PHI, and maintain the administrative safeguards required by HIPAA. Always consult with qualified healthcare compliance experts and legal counsel to ensure your specific implementation meets all applicable requirements.
