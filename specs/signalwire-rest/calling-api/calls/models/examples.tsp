@@ -55,11 +55,7 @@ const holdCallExample = #{
 };
 
 const unholdCallExample = #{
-  request: #{
-    command: "calling.ai_unhold",
-    id: callId,
-    params: #{},
-  },
+  request: #{ command: "calling.ai_unhold", id: callId, params: #{} },
 };
 
 const aiMessageExample = #{
@@ -187,11 +183,7 @@ const liveTranslateInjectExample = #{
 
 // Disconnect example
 const disconnectCallExample = #{
-  request: #{
-    command: "calling.disconnect",
-    id: callId,
-    params: #{},
-  },
+  request: #{ command: "calling.disconnect", id: callId, params: #{} },
 };
 
 // Play examples
@@ -254,7 +246,11 @@ const recordCallExample = #{
     params: #{
       control_id: "record-control-1",
       record: #{
-        audio: #{ format: "mp3", direction: PlayDirection.speak, stereo: false },
+        audio: #{
+          format: "mp3",
+          direction: PlayDirection.speak,
+          stereo: false,
+        },
       },
     },
   },
@@ -428,19 +424,11 @@ const joinConferenceCallExample = #{
 
 // Denoise examples
 const denoiseCallExample = #{
-  request: #{
-    command: "calling.denoise",
-    id: callId,
-    params: #{},
-  },
+  request: #{ command: "calling.denoise", id: callId, params: #{} },
 };
 
 const denoiseStopCallExample = #{
-  request: #{
-    command: "calling.denoise.stop",
-    id: callId,
-    params: #{},
-  },
+  request: #{ command: "calling.denoise.stop", id: callId, params: #{} },
 };
 
 // AI Stop example
@@ -450,6 +438,49 @@ const aiStopCallExample = #{
     id: callId,
     params: #{ control_id: "ai-control-1" },
   },
+};
+
+// AI Sidecar examples
+const aiSidecarCallExample = #{
+  request: #{
+    command: "calling.ai_sidecar",
+    id: callId,
+    params: #{
+      lang: "en-US",
+      prompt: "You are a real-time sales copilot. After each customer turn, give the agent one concise tip, or call sidecar_skip if no advice is needed.",
+      `model`: "gpt-4o-mini",
+      customer_role: TranscribeDirection.`remote-caller`,
+      url: "https://example.com/sidecar/events",
+      hints: #["ACME", "Globex", "FedRAMP", "SOC 2"],
+      params: #{ idle_timeout_ms: 250, final_summary: true },
+    },
+  },
+};
+
+const aiSidecarPokeCallExample = #{
+  request: #{
+    command: "calling.ai_sidecar.poke",
+    id: callId,
+    params: #{
+      text: "The customer just mentioned a competitor — suggest a comparison.",
+    },
+  },
+};
+
+const aiSidecarAskCallExample = #{
+  request: #{
+    command: "calling.ai_sidecar.ask",
+    id: callId,
+    params: #{ text: "What objections has the customer raised so far?" },
+  },
+};
+
+const aiSidecarStopCallExample = #{
+  request: #{ command: "calling.ai_sidecar.stop", id: callId, params: #{} },
+};
+
+const aiSidecarStatusCallExample = #{
+  request: #{ command: "calling.ai_sidecar.status", id: callId, params: #{} },
 };
 
 // Fax Stop examples
@@ -494,8 +525,6 @@ const userEventCallExample = #{
   request: #{
     command: "calling.user_event",
     id: callId,
-    params: #{
-      event: #{ action: "custom_action", data: "example" },
-    },
+    params: #{ event: #{ action: "custom_action", data: "example" } },
   },
 };
