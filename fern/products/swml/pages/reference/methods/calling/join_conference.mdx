@@ -65,6 +65,8 @@ This method allows you to connect the current call to a named conference where m
   Specifies the geographical region where the conference will be hosted.
 </ParamField>
 
+**Possible Values**: `global`, `us`, `eu`, `ch`
+
 
 <ParamField path="join_conference.trim" type="string" default="trim-silence" toc={true}>
   If set to `trim-silence`, it will remove silence from the start of the recording. If set to `do-not-trim`, it will keep the silence.
@@ -78,10 +80,16 @@ This method allows you to connect the current call to a named conference where m
 
 
 <ParamField path="join_conference.status_callback_event" type="string" toc={true}>
-  The events to listen for and send to the status callback URL.
+  A space-separated list of one or more events to listen for and send to the status callback URL.
 </ParamField>
 
 **Possible Values**: `start`, `end`, `join`, `leave`, `mute`, `hold`, `modify`, `speaker`, `announcement`
+
+<ParamField path="join_conference.status_callback_event_type" type="string" toc={true}>
+  The content type used when sending status events to the status callback URL.
+</ParamField>
+
+**Possible Values**: `cxml`, `laml`, `relay`
 
 <ParamField path="join_conference.status_callback" type="string" toc={true}>
   The URL to which status events will be sent. This URL must be publicly accessible and able to handle HTTP requests. Learn more about [status callbacks][statuscallbacks].
@@ -106,14 +114,69 @@ This method allows you to connect the current call to a named conference where m
 **Possible Values**: `GET`, `POST`
 
 <ParamField path="join_conference.recording_status_callback_event" type="string" toc={true}>
-  The events to listen for and send to the recording status callback URL.
+  A space-separated list of one or more events to listen for and send to the recording status callback URL.
 </ParamField>
 
 **Possible Values**: `in-progress`, `completed`, `absent`
 
+<ParamField path="join_conference.recording_status_callback_event_type" type="string" toc={true}>
+  The content type used when sending recording status events to the recording status callback URL.
+</ParamField>
+
+**Possible Values**: `cxml`, `laml`, `relay`
+
 <ParamField path="join_conference.result" type="object" toc={true}>
   Allows the user to specify a custom action to be executed when the conference result is returned (typically when it has ended). The actions can a `switch` object or a `cond` array. The `switch` object allows for conditional execution based on the result of the conference, while the `cond` array allows for multiple conditions to be checked in sequence. If neither is provided, the default action will be to end the conference.
 </ParamField>
+
+
+<ParamField path="join_conference.stream" type="object" toc={true}>
+  Attach a bidirectional WebSocket stream to the conference. Conference audio is streamed to the `url`, enabling real-time audio processing, transcription, or AI agents that listen to the conference. Uses the same stream schema as the `stream` device type in [`connect`](/docs/swml/reference/calling/connect).
+</ParamField>
+
+<Indent>
+
+<ParamField path="join_conference.stream.url" type="string" required={true} toc={true}>
+  Secure WebSocket URL (must start with `wss://`) that the conference audio is streamed to. Plain `ws://` is not supported.
+</ParamField>
+
+
+<ParamField path="join_conference.stream.name" type="string" toc={true}>
+  A friendly name to identify the stream at the WebSocket endpoint.
+</ParamField>
+
+
+<ParamField path="join_conference.stream.codec" type="string" toc={true}>
+  Audio codec for the streamed audio. Supported values: `PCMU`, `PCMA`, `G722`, `L16`. Codec can include rate and ptime modifiers (e.g., `PCMU@40i`, `L16@24000h@40i`).
+</ParamField>
+
+
+<ParamField path="join_conference.stream.status_url" type="string" toc={true}>
+  HTTP or HTTPS URL to which stream status events will be sent.
+</ParamField>
+
+
+<ParamField path="join_conference.stream.status_url_method" type="string" default="POST" toc={true}>
+  The HTTP method to use when sending stream status events to the status URL.
+</ParamField>
+
+**Possible Values**: `GET`, `POST`
+
+<ParamField path="join_conference.stream.realtime" type="boolean" default="false" toc={true}>
+  When `true`, enables bidirectional audio so your endpoint can stream audio back into the conference (not just receive it).
+</ParamField>
+
+
+<ParamField path="join_conference.stream.authorization_bearer_token" type="string" toc={true}>
+  Bearer token sent in the `Authorization` header when the WebSocket connection is opened, so your endpoint can authenticate the request.
+</ParamField>
+
+
+<ParamField path="join_conference.stream.custom_parameters" type="object" toc={true}>
+  Custom key-value pairs delivered to your WebSocket endpoint when the stream connects. Use them to pass context such as a session or customer ID.
+</ParamField>
+
+</Indent>
 
 </Indent>
 
@@ -413,6 +476,47 @@ sections:
           "status_callback_method": "POST",
           "recording_status_callback": "https://example.com/recording-status",
           "recording_status_callback_event": "completed"
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### Conference with a stream attached
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - join_conference:
+        name: "team_meeting"
+        stream:
+          url: "wss://example.com/conference-audio"
+          codec: "PCMU"
+          realtime: true
+          status_url: "https://example.com/stream-status"
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "join_conference": {
+          "name": "team_meeting",
+          "stream": {
+            "url": "wss://example.com/conference-audio",
+            "codec": "PCMU",
+            "realtime": true,
+            "status_url": "https://example.com/stream-status"
+          }
         }
       }
     ]

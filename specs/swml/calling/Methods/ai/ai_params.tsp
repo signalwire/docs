@@ -239,6 +239,26 @@ model AIParams {
   enable_thinking?: boolean | SWMLVar = false;
 
   @doc("""
+    Converts numbers, currency, dates, and similar values between their written and spoken forms so the AI understands callers more accurately and speaks its responses more naturally.
+    `heard` converts what the caller says into written form before the AI reads it (e.g. "twenty three dollars" becomes "$23").
+    `spoken` converts the AI's written response into spoken form before it is read aloud (e.g. "$23" becomes "twenty three dollars").
+    `both` applies both directions. Set to `false`, `off`, or `none` to turn it off; `true` and `on` are aliases for `both`.
+    Text normalization adapts automatically to the language being spoken; if it isn't available for that language, the affected direction is skipped and the conversation continues.
+    **Default:** `both`.
+    """)
+  @example("both")
+  enable_text_normalization?:
+    | "heard"
+    | "spoken"
+    | "both"
+    | "true"
+    | "on"
+    | "false"
+    | "off"
+    | "none"
+    | SWMLVar = "both";
+
+  @doc("""
     Enables visual input processing for the AI Agent.
     When set to `true`, the AI Agent will be able to utilize visual processing capabilities, while leveraging the `get_visual_input` function.
     """)
