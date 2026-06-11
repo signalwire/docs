@@ -19,7 +19,7 @@ full property list, see [`ClientPreferences`].
 
 ## Defaults vs. per-call overrides
 
-```
+```text
 client.preferences  ←  defaults
         ↓
 client.dial(dest, options)  ←  per-call overrides win
@@ -30,14 +30,38 @@ Anything set on `preferences` applies to every subsequent
 Per-call options always win:
 
 ```js
-client.preferences.receiveVideo = false;     // audio-first default
+client.preferences.receiveVideo = true;      // receive remote video by default
 
-// This one call gets video regardless:
-await client.dial("/private/team", { video: true });
+// This one call stays audio-only:
+await client.dial("/private/team", { receiveVideo: false });
 ```
 
 Use `preferences` for app-wide defaults (codec ordering, a tier-wide
 `userVariables` payload). Use per-call options for situational values.
+
+For example, codec ordering is an app-wide default — the array is a priority
+list of [codec names](/docs/browser-sdk/v4/reference/client-preferences/preferred-audio-codecs), and it's overridable per call:
+
+```js
+// Prefer Opus, fall back to G.711
+client.preferences.preferredAudioCodecs = ["opus", "PCMU"];
+
+// One call insists on G.711:
+await client.dial("/private/team", { preferredAudioCodecs: ["PCMU"] });
+```
+
+## Common preferences
+
+The full surface is documented in the [`ClientPreferences`] reference. These are the ones most
+apps touch, with their code defaults:
+
+| Preference | Default | Controls |
+|---|---|---|
+| `receiveVideo` | `false` | whether to accept inbound video on a call |
+| `preferredAudioCodecs` | `[]` | audio codec priority order |
+| `connectionTimeout` | `10` (s) | WebSocket connect timeout |
+| `degradationBitrateThreshold` | `150` (kbps) | bitrate below which video auto-disables |
+| `degradationRecoveryThreshold` | `300` (kbps) | bitrate above which video re-enables |
 
 ## Persistence
 
@@ -49,12 +73,15 @@ write back on every setter:
 const client = new SignalWire(provider, { savePreferences: true });
 ```
 
-Persisted: timeouts, ICE settings, codec preferences, device-management
-flags, and `userVariables` — anything cleanly JSON-serializable.
+The following details are persisted: timeouts, ICE / recovery tuning, codec preferences, stats and
+device-management flags, and `userVariables`.
 
-Not persisted: `MediaDeviceInfo` references. Device IDs aren't stable
-across sessions in every browser, so device picks happen at runtime
-via the device controller.
+**Device selections persist separately, and are on by default.** Independent of
+`savePreferences`, the device controller writes your mic / camera / speaker
+selections to `localStorage` (keyed by `deviceId`, keeping `label` / `groupId` to
+re-match when IDs rotate across sessions) and restores them next time. This is
+governed by the [`persistDeviceSelection`](/docs/browser-sdk/v4/reference/client-preferences/persist-device-selection)
+preference (default `true`); set it to `false` to opt out.
 
 For a different storage backend (IndexedDB, server-side per user),
 leave `savePreferences` off and mirror manually:
@@ -71,9 +98,8 @@ observable. Preferences are read at dial time.
 
 ## `userVariables`
 
-`userVariables` is a free-form payload attached to every outbound
-Verto invite. The receiving side (an AI agent, a SWML script, a
-backend) reads it via `signalwire-address:event` events.
+`userVariables` is a free-form payload attached to every outbound call.
+The receiving side (an AI agent, a SWML script, a backend) reads it.
 
 ```js
 client.preferences.userVariables = {
@@ -97,6 +123,33 @@ client.preferences.iceRestartTimeout = 10;   // 10 seconds
 
 Other fields use the unit of the underlying API (kbps, integer
 levels, etc.).
+
+## Keyframe recovery
+
+A video stream consists of occasional **keyframes** — complete, self-contained
+frames — each followed by **delta frames** that encode only the change from the
+previous frame. A lost or corrupted delta frame corrupts every frame after it
+until the next keyframe arrives. The receiver can request one early via an RTCP
+feedback message:
+
+- [**PLI** — Picture Loss Indication](https://www.rfc-editor.org/rfc/rfc4585#section-6.3.1):
+  standard picture-loss recovery.
+- [**FIR** — Full Intra Request](https://www.rfc-editor.org/rfc/rfc5104#section-4.3.1):
+  forces a full intra frame from scratch, e.g. when a new participant or
+  recorder joins mid-stream with no reference frame.
+
+Keyframes are large, so the SDK rate-limits these requests as a burst with
+cooldown:
+
+| Preference | Default | Role |
+|---|---|---|
+| [`keyframeMaxBurst`](/docs/browser-sdk/v4/reference/client-preferences/keyframe-max-burst) | `3` | max requests per window |
+| [`keyframeBurstWindow`](/docs/browser-sdk/v4/reference/client-preferences/keyframe-burst-window) | `3000` ms | length of the counting window |
+| [`keyframeCooldown`](/docs/browser-sdk/v4/reference/client-preferences/keyframe-cooldown) | `10000` ms | pause once the burst is spent |
+
+Up to `keyframeMaxBurst` requests are allowed per `keyframeBurstWindow`; once
+that limit is hit, requests pause for `keyframeCooldown`. Defaults: three
+requests per three-second window, then a ten-second cooldown.
 
 ## Reference
 
