@@ -1,0 +1,283 @@
+---
+slug: "/reference/cpp/signalwire/security"
+title: "security"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "module"
+  language: "cpp"
+  qualified_name: "signalwire::security"
+  parent: "signalwire"
+  module: "signalwire"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/security/session_manager.hpp"
+---
+# `security`
+
+## Signature
+
+```cpp
+namespace signalwire::security
+```
+
+## Classes
+
+<CardGroup cols={2}>
+  <Card title="SessionManager" href="/docs/sdk-reference/reference/cpp/signalwire/security/session-manager">
+    Manages HMAC-SHA256 based session tokens for secure SWAIG tool calls. Token format: base64(functionName:callID:expiryTimestamp) + "." + hex(hmac\_signature)
+  </Card>
+
+  <Card title="WebhookValidatorOptions" href="/docs/sdk-reference/reference/cpp/signalwire/security/webhook-validator-options">
+    Optional knobs for WrapWithSignatureValidation. trust\_proxy controls whether X-Forwarded-Proto / X-Forwarded-Host headers are honored when reconstructing the public URL — opt-in because proxy headers are spoofable. proxy\_url\_base is consulted before the proxy headers and is meant for SWML\_PROXY\_URL\_BASE callers.
+  </Card>
+</CardGroup>
+
+## Functions
+
+### ValidateRequest
+
+Legacy @signalwire/compatibility-api drop-in entry point.
+If params\_or\_raw\_body holds a std::string, delegates to ValidateWebhookSignature (Scheme A then Scheme B with parsed form).
+If it holds a FormParams, treats it as pre-parsed form params and runs Scheme B directly (with URL port normalization).
+
+std::invalid\_argument
+
+when signing\_key is empty.
+
+#### Signature
+
+```cpp
+bool ValidateRequest(
+    std::string_view signing_key,
+    std::string_view signature,
+    std::string_view url,
+    const ParamsOrBody & params_or_raw_body
+)
+```
+
+#### Parameters
+
+<ParamField path="signing_key" type="std::string_view" required />
+
+<ParamField path="signature" type="std::string_view" required />
+
+<ParamField path="url" type="std::string_view" required />
+
+<ParamField path="params_or_raw_body" type="const ParamsOrBody &" required />
+
+#### Returns
+
+`bool`
+
+#### Throws
+
+- `std::invalid_argument` — when signing\_key is empty.
+
+#### Source
+
+[`src/security/webhook_validator.cpp`](https://github.com/signalwire/signalwire-cpp/blob/main/src/security/webhook_validator.cpp)
+
+Line 457.
+
+***
+
+### ValidateWebhookSignature
+
+Validate a SignalWire webhook signature against both schemes.
+Tries Scheme A (hex JSON) first; on miss falls back to Scheme B (base64 form) with URL port normalization, repeated-key handling, and optional ?bodySHA256= body-hash check for JSON bodies on the compat surface.
+
+signing\_key
+
+The customer's Signing Key. UTF-8 string. MUST NOT be empty — empty throws std::invalid\_argument, that's a programming error not a validation failure.
+
+signature
+
+The X-SignalWire-Signature header value (or the legacy X-Twilio-Signature alias). Empty returns false without throwing.
+
+url
+
+Full URL SignalWire POSTed to (scheme, host, optional port, path, query) — must match what the platform saw, see the URL-reconstruction section of porting-sdk/webhooks.md.
+
+raw\_body
+
+Raw request body bytes as a UTF-8 string, BEFORE any JSON / form parsing. Re-serialized JSON breaks Scheme A.
+
+true if either scheme matches; false otherwise.
+
+std::invalid\_argument
+
+when signing\_key is empty.
+
+#### Signature
+
+```cpp
+bool ValidateWebhookSignature(
+    std::string_view signing_key,
+    std::string_view signature,
+    std::string_view url,
+    std::string_view raw_body
+)
+```
+
+#### Parameters
+
+<ParamField path="signing_key" type="std::string_view" required>
+  The customer's Signing Key. UTF-8 string. MUST NOT be empty — empty throws std::invalid\_argument, that's a programming error not a validation failure.
+</ParamField>
+
+<ParamField path="signature" type="std::string_view" required>
+  The X-SignalWire-Signature header value (or the legacy X-Twilio-Signature alias). Empty returns false without throwing.
+</ParamField>
+
+<ParamField path="url" type="std::string_view" required>
+  Full URL SignalWire POSTed to (scheme, host, optional port, path, query) — must match what the platform saw, see the URL-reconstruction section of porting-sdk/webhooks.md.
+</ParamField>
+
+<ParamField path="raw_body" type="std::string_view" required>
+  Raw request body bytes as a UTF-8 string, BEFORE any JSON / form parsing. Re-serialized JSON breaks Scheme A.
+</ParamField>
+
+#### Returns
+
+`bool` — true if either scheme matches; false otherwise.
+
+#### Throws
+
+- `std::invalid_argument` — when signing\_key is empty.
+
+#### Source
+
+[`src/security/webhook_validator.cpp`](https://github.com/signalwire/signalwire-cpp/blob/main/src/security/webhook_validator.cpp)
+
+Line 406.
+
+***
+
+### WrapWithSignatureValidation
+
+Wrap a downstream cpp-httplib POST handler with SignalWire webhook signature validation.
+Behavior:
+
+Read req.body (cpp-httplib has already buffered it).
+Pull X-SignalWire-Signature (or the X-Twilio-Signature legacy alias) from headers.
+Reconstruct the public URL the platform POSTed to (proxy-aware).
+Call ValidateWebhookSignature.
+On invalid / missing signature: respond 403 Forbidden with no body detail. The downstream handler is NOT called. Per the porting-sdk spec, the validator MUST NOT log which branch failed or the expected signature.
+On valid: call downstream(req, res). The handler can read req.body directly — cpp-httplib buffers it for repeat reads.
+
+signing\_key
+
+Customer's Signing Key (SignalWire Dashboard → API Credentials). MUST NOT be empty — empty throws std::invalid\_argument at wrap time, that's a programming error not a runtime failure.
+
+downstream
+
+Handler to invoke on a valid signature.
+
+opts
+
+Optional URL reconstruction knobs.
+
+A handler suitable for server.Post(path, handler).
+
+std::invalid\_argument
+
+if signing\_key is empty.
+
+#### Signature
+
+```cpp
+HttpHandler WrapWithSignatureValidation(
+    std::string_view signing_key,
+    HttpHandler downstream,
+    WebhookValidatorOptions opts = {}
+)
+```
+
+#### Parameters
+
+<ParamField path="signing_key" type="std::string_view" required>
+  Customer's Signing Key (SignalWire Dashboard → API Credentials). MUST NOT be empty — empty throws std::invalid\_argument at wrap time, that's a programming error not a runtime failure.
+</ParamField>
+
+<ParamField path="downstream" type="HttpHandler" required>
+  Handler to invoke on a valid signature.
+</ParamField>
+
+<ParamField path="opts" type="WebhookValidatorOptions" default="{}">
+  Optional URL reconstruction knobs.
+</ParamField>
+
+#### Returns
+
+`HttpHandler` — A handler suitable for server.Post(path, handler).
+
+#### Throws
+
+- `std::invalid_argument` — if signing\_key is empty.
+
+#### Source
+
+[`src/security/webhook_middleware.cpp`](https://github.com/signalwire/signalwire-cpp/blob/main/src/security/webhook_middleware.cpp)
+
+Line 107.
+
+## Type Aliases
+
+### FormParams
+
+Pre-parsed form parameters for ValidateRequest: ordered list of (key, list-of-values) tuples. Repeated keys are represented as one entry whose values vector holds each occurrence in submission order.
+Used as one alternative in ParamsOrBody; the other alternative is the raw body string.
+
+#### Signature
+
+```cpp
+typedef std::vector< std::pair< std::string, std::vector< std::string > > > FormParams
+```
+
+#### Source
+
+[`include/signalwire/security/webhook_validator.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/security/webhook_validator.hpp)
+
+Line 32.
+
+***
+
+### HttpHandler
+
+A cpp-httplib handler signature, lifted into a typedef so the adapter stays framework-agnostic at the call site (the only deps needed by this header are a forward declaration of httplib::Request/Response).
+
+#### Signature
+
+```cpp
+typedef std::function< void(const httplib::Request &, httplib::Response &)> HttpHandler
+```
+
+#### Source
+
+[`include/signalwire/security/webhook_middleware.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/security/webhook_middleware.hpp)
+
+Line 19.
+
+***
+
+### ParamsOrBody
+
+Drop-in shape for ValidateRequest mirroring @signalwire/compatibility-api's RestClient.validateRequest: either a raw body string (delegates to the combined validator) or a pre-parsed form-params list (runs Scheme B directly).
+
+#### Signature
+
+```cpp
+typedef std::variant< std::string, FormParams > ParamsOrBody
+```
+
+#### Source
+
+[`include/signalwire/security/webhook_validator.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/security/webhook_validator.hpp)
+
+Line 38.
+
+## Source
+
+[`include/signalwire/security/session_manager.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/security/session_manager.hpp)
+
+Line 10.

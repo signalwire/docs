@@ -1,0 +1,932 @@
+---
+slug: "/reference/rust/signalwire/relay/client"
+title: "client"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "class"
+  language: "rust"
+  qualified_name: "signalwire::relay::client"
+  parent: "signalwire::relay"
+  module: "relay"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/relay/client.rs"
+  visibility: "public"
+---
+# `client`
+
+RELAY Client -- manages the WebSocket connection to SignalWire, sends
+JSON-RPC requests, and dispatches inbound events to the correct Call
+or Message objects.
+
+The transport is a real WebSocket connection over TCP (plus TLS for
+`wss://`). One reader thread (spawned on `connect()`) owns the read
+half and dispatches every inbound JSON-RPC frame through
+`handle_message`. Writes go through `send()` which serializes the
+frame and pushes it onto an mpsc channel that the reader thread
+drains alongside its read loop, so all socket I/O is single-
+threaded but both directions make forward progress.
+
+Tests still use `sent_messages` to inspect what the client _would_
+have written; `send()` mirrors every frame into that Vec whether or
+not a live socket is attached. That keeps the unit tests covering
+dispatch logic working without a real RELAY server.
+
+## Signature
+
+```rust
+struct Client { /* fields */ }
+```
+
+## Properties
+
+<ParamField path="agent" type="?" required />
+
+<ParamField path="authorization_state" type="?<?<?>>" required />
+
+<ParamField path="calls" type="?<?<?, ?<?>>>" required />
+
+<ParamField path="connected" type="?<bool>" required />
+
+<ParamField path="contexts" type="?<?<?>>" required />
+
+<ParamField path="host" type="?" required />
+
+<ParamField path="messages" type="?<?<?, ?<?>>>" required />
+
+<ParamField path="project" type="?" required />
+
+<ParamField path="protocol" type="?<?<?>>" required />
+
+<ParamField path="sent_messages" type="?<?<?>>" required>
+  Messages sent through the transport (for testing).
+</ParamField>
+
+<ParamField path="session_id" type="?<?<?>>" required />
+
+<ParamField path="token" type="?" required />
+
+## Methods
+
+### authenticate
+
+Backwards-compat: enqueue the `signalwire.connect` frame without
+waiting. Used by older tests that drive `handle_message` directly.
+Production code should call \[`connect`] which runs the full
+handshake.
+
+#### Signature
+
+```rust
+fn authenticate(&self)
+```
+
+#### Source
+
+[`src/relay/client.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/client.rs)
+
+Line 480.
+
+***
+
+### authenticate\_blocking
+
+Send the `signalwire.connect` RPC and block until the response
+arrives or the handshake times out. The response carries the
+server-assigned protocol string and authorization state.
+
+#### Signature
+
+```rust
+fn authenticate_blocking(&self) -> ?<(), ?>
+```
+
+#### Returns
+
+`?<(), ?>`
+
+#### Source
+
+[`src/relay/client.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/client.rs)
+
+Line 365.
+
+***
+
+### bump\_reconnect\_delay
+
+Compute the next reconnect delay (1s → 2s → 4s → … → 30s) and
+return the value to wait _this_ time. Mirrors Python's
+`RECONNECT_MIN_DELAY` / `RECONNECT_MAX_DELAY` / backoff factor.
+Exposed (and tested) separately from \[`reconnect`] so the math
+is verifiable without opening a real socket.
+
+#### Signature
+
+```rust
+fn bump_reconnect_delay(&self) -> u64
+```
+
+#### Returns
+
+`u64`
+
+#### Source
+
+[`src/relay/client.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/client.rs)
+
+Line 541.
+
+***
+
+### connect
+
+Open the WebSocket connection, run the `signalwire.connect`
+handshake, subscribe to the configured contexts, and spawn the
+reader thread that dispatches every inbound frame through
+`handle_message`.
+
+Reads the WebSocket scheme from `SIGNALWIRE_RELAY_SCHEME` (defaults
+to `wss`; the audit fixture sets `ws`) and the host override from
+`SIGNALWIRE_RELAY_HOST` (used by the audit fixture to point at a
+`127.0.0.1:N` ephemeral port). In production neither env var is
+usually set and the URL resolves to `wss://{self.host}/api/relay/ws`,
+matching Python's `RelayClient.connect()`.
+
+Returns `Err` if the TCP/WS upgrade fails, the server rejects the
+connect handshake, or the response doesn't arrive within
+`HANDSHAKE_TIMEOUT`.
+
+#### Signature
+
+```rust
+fn connect(&self) -> ?<(), ?>
+```
+
+#### Returns
+
+`?<(), ?>`
+
+#### Source
+
+[`src/relay/client.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/client.rs)
+
+Line 294.
+
+***
+
+### connect\_fresh
+
+Initial connect -- resets reconnect delay and connects.
+
+#### Signature
+
+```rust
+fn connect_fresh(&self) -> ?<(), ?>
+```
+
+#### Returns
+
+`?<(), ?>`
+
+#### Source
+
+[`src/relay/client.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/client.rs)
+
+Line 357.
+
+***
+
+### dial\_blocking
+
+Initiate an outbound call using `calling.dial`.
+
+Mirrors Python's `RelayClient.dial`. The dial response carries no
+`call_id` — the actual call info arrives via subsequent
+`calling.call.dial` events keyed by `tag`. This method waits for
+that event up to `dial_timeout` and returns the resolved Call.
+
+`devices` is the standard serial/parallel device matrix
+(`[[device]]` for one parallel leg / serial = one inner list with
+multiple devices).
+
+#### Signature
+
+```rust
+fn dial_blocking(
+    &self,
+    devices: ?,
+    tag: ?<&str>,
+    max_duration: ?<u32>,
+    dial_timeout: ?
+) -> ?<?<?>, ?>
+```
+
+#### Parameters
+
+<ParamField path="devices" type="?" required />
+
+<ParamField path="tag" type="?<&str>" required />
+
+<ParamField path="max_duration" type="?<u32>" required />
+
+<ParamField path="dial_timeout" type="?" required />
+
+#### Returns
+
+`?<?<?>, ?>`
+
+#### Source
+
+[`src/relay/client.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/client.rs)
+
+Line 1014.
+
+***
+
+### disconnect
+
+Gracefully close the connection. Signals the reader thread to
+exit, sends a WS close frame, and joins the thread.
+
+#### Signature
+
+```rust
+fn disconnect(&self)
+```
+
+#### Source
+
+[`src/relay/client.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/client.rs)
+
+Line 504.
+
+***
+
+### execute\_blocking
+
+Send a JSON-RPC request for a calling/messaging method.
+
+Mirrors Python's `RelayClient._send_request`: emits a flat-Blade
+frame `{"method": <method>, "params": <params>}` directly — no
+`signalwire.execute` wrapper. Both forms are accepted by the
+production RELAY server and the mock; the flat form is what
+every existing SDK port emits because it keeps the journal
+filterable by inner method name without unwrapping.
+
+Returns the response's `result` value on success, or an `Err`
+with the server's error message on failure or timeout.
+
+#### Signature
+
+```rust
+fn execute_blocking(&self, method: &str, inner_params: ?) -> ?<?, ?>
+```
+
+#### Parameters
+
+<ParamField path="method" type="&str" required />
+
+<ParamField path="inner_params" type="?" required />
+
+#### Returns
+
+`?<?, ?>`
+
+#### Source
+
+[`src/relay/client.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/client.rs)
+
+Line 872.
+
+***
+
+### from\_env
+
+Create from env vars SIGNALWIRE\_PROJECT\_ID, SIGNALWIRE\_API\_TOKEN, SIGNALWIRE\_SPACE.
+
+#### Signature
+
+```rust
+fn from_env() -> ?<Self, ?>
+```
+
+#### Returns
+
+`?<Self, ?>`
+
+#### Source
+
+[`src/relay/client.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/client.rs)
+
+Line 265.
+
+***
+
+### get\_call
+
+Get a call by ID.
+
+#### Signature
+
+```rust
+fn get_call(&self, call_id: &str) -> ?<?<?>>
+```
+
+#### Parameters
+
+<ParamField path="call_id" type="&str" required />
+
+#### Returns
+
+`?<?<?>>`
+
+#### Source
+
+[`src/relay/client.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/client.rs)
+
+Line 820.
+
+***
+
+### get\_message
+
+Get a message by ID.
+
+#### Signature
+
+```rust
+fn get_message(&self, message_id: &str) -> ?<?<?>>
+```
+
+#### Parameters
+
+<ParamField path="message_id" type="&str" required />
+
+#### Returns
+
+`?<?<?>>`
+
+#### Source
+
+[`src/relay/client.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/client.rs)
+
+Line 825.
+
+***
+
+### handle\_event
+
+Route a signalwire.event payload to the appropriate handler.
+
+#### Signature
+
+```rust
+fn handle_event(&self, outer_params: &?)
+```
+
+#### Parameters
+
+<ParamField path="outer_params" type="&?" required />
+
+#### Source
+
+[`src/relay/client.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/client.rs)
+
+Line 676.
+
+***
+
+### handle\_message
+
+Parse a raw JSON string from the server and route it.
+
+#### Signature
+
+```rust
+fn handle_message(&self, raw: &str)
+```
+
+#### Parameters
+
+<ParamField path="raw" type="&str" required />
+
+#### Source
+
+[`src/relay/client.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/client.rs)
+
+Line 621.
+
+***
+
+### is\_connected
+
+#### Signature
+
+```rust
+fn is_connected(&self) -> bool
+```
+
+#### Returns
+
+`bool`
+
+#### Source
+
+[`src/relay/client.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/client.rs)
+
+Line 548.
+
+***
+
+### is\_running
+
+#### Signature
+
+```rust
+fn is_running(&self) -> bool
+```
+
+#### Returns
+
+`bool`
+
+#### Source
+
+[`src/relay/client.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/client.rs)
+
+Line 552.
+
+***
+
+### new
+
+#### Signature
+
+```rust
+fn new(project: &str, token: &str, host: &str) -> Self
+```
+
+#### Parameters
+
+<ParamField path="project" type="&str" required />
+
+<ParamField path="token" type="&str" required />
+
+<ParamField path="host" type="&str" required />
+
+#### Returns
+
+`Self`
+
+#### Source
+
+[`src/relay/client.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/client.rs)
+
+Line 236.
+
+***
+
+### on\_call
+
+Register a handler for inbound calls.
+
+#### Signature
+
+```rust
+fn on_call<F: ?(?<?>, &?) + ? + ? + 'static>(&self, cb: F)
+```
+
+#### Type Parameters
+
+<ParamField path="F" type="?(?<?>, &?) + ? + ? + 'static" required />
+
+#### Parameters
+
+<ParamField path="cb" type="F" required />
+
+#### Source
+
+[`src/relay/client.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/client.rs)
+
+Line 805.
+
+***
+
+### on\_event
+
+Register a generic event handler.
+
+#### Signature
+
+```rust
+fn on_event<F: ?(&?, &?) + ? + ? + 'static>(&self, cb: F)
+```
+
+#### Type Parameters
+
+<ParamField path="F" type="?(&?, &?) + ? + ? + 'static" required />
+
+#### Parameters
+
+<ParamField path="cb" type="F" required />
+
+#### Source
+
+[`src/relay/client.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/client.rs)
+
+Line 815.
+
+***
+
+### on\_message
+
+Register a handler for inbound messages.
+
+#### Signature
+
+```rust
+fn on_message<F: ?(&?, &?) + ? + ? + 'static>(&self, cb: F)
+```
+
+#### Type Parameters
+
+<ParamField path="F" type="?(&?, &?) + ? + ? + 'static" required />
+
+#### Parameters
+
+<ParamField path="cb" type="F" required />
+
+#### Source
+
+[`src/relay/client.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/client.rs)
+
+Line 810.
+
+***
+
+### receive
+
+Subscribe to one or more inbound contexts.
+
+#### Signature
+
+```rust
+fn receive(&self, contexts: &[?])
+```
+
+#### Parameters
+
+<ParamField path="contexts" type="&[?]" required />
+
+#### Source
+
+[`src/relay/client.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/client.rs)
+
+Line 781.
+
+***
+
+### reconnect
+
+Reconnect with exponential back-off (1s → 30s cap). Sleeps for
+the current delay, doubles the delay (capped at 30s), and runs
+the full connect handshake again. Authorization state survives
+across reconnects because \[`authenticate_blocking`] re-sends the
+stored token on the new socket.
+
+#### Signature
+
+```rust
+fn reconnect(&self) -> ?<(), ?>
+```
+
+#### Returns
+
+`?<(), ?>`
+
+#### Source
+
+[`src/relay/client.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/client.rs)
+
+Line 525.
+
+***
+
+### register\_dial
+
+Register a pending dial.
+
+#### Signature
+
+```rust
+fn register_dial<F: ?(?<?>) + ? + 'static>(&self, tag: &str, resolve: F)
+```
+
+#### Type Parameters
+
+<ParamField path="F" type="?(?<?>) + ? + 'static" required />
+
+#### Parameters
+
+<ParamField path="tag" type="&str" required />
+
+<ParamField path="resolve" type="F" required />
+
+#### Source
+
+[`src/relay/client.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/client.rs)
+
+Line 838.
+
+***
+
+### register\_pending
+
+Register a pending-response slot for a request ID.
+
+#### Signature
+
+```rust
+fn register_pending<R, E>(
+    &self,
+    id: &str,
+    resolve: R,
+    reject: E
+) where R: ?(?) + ? + 'static, E: ?(?) + ? + 'static
+```
+
+#### Type Parameters
+
+<ParamField path="R" required />
+
+<ParamField path="E" required />
+
+#### Parameters
+
+<ParamField path="id" type="&str" required />
+
+<ParamField path="resolve" type="R" required />
+
+<ParamField path="reject" type="E" required />
+
+#### Source
+
+[`src/relay/client.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/client.rs)
+
+Line 574.
+
+***
+
+### remove\_pending\_dial
+
+Remove a pending dial.
+
+#### Signature
+
+```rust
+fn remove_pending_dial(&self, tag: &str)
+```
+
+#### Parameters
+
+<ParamField path="tag" type="&str" required />
+
+#### Source
+
+[`src/relay/client.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/client.rs)
+
+Line 853.
+
+***
+
+### send
+
+Send a raw JSON message through the transport.
+
+Records the frame in `sent_messages` (used by tests and for debug
+inspection) and, when a live socket is attached, enqueues the
+frame on the writer channel so the reader thread flushes it to
+the WebSocket. With no live socket attached the call is purely
+in-memory — that's the path the dispatch unit tests below take.
+
+#### Signature
+
+```rust
+fn send(&self, msg: &?)
+```
+
+#### Parameters
+
+<ParamField path="msg" type="&?" required />
+
+#### Source
+
+[`src/relay/client.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/client.rs)
+
+Line 595.
+
+***
+
+### send\_ack
+
+Send an acknowledgement for a server-initiated request.
+
+#### Signature
+
+```rust
+fn send_ack(&self, id: &str)
+```
+
+#### Parameters
+
+<ParamField path="id" type="&str" required />
+
+#### Source
+
+[`src/relay/client.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/client.rs)
+
+Line 608.
+
+***
+
+### send\_message\_blocking
+
+Send an outbound SMS/MMS message.
+
+Mirrors Python's `RelayClient.send_message`. At least one of
+`body` or `media` must be supplied. Returns a tracked `Message`
+whose state will progress as `messaging.state` events arrive
+from the server.
+
+#### Signature
+
+```rust
+fn send_message_blocking(
+    &self,
+    to_number: &str,
+    from_number: &str,
+    body: ?<&str>,
+    media: ?<&[?]>,
+    tags: ?<&[?]>,
+    context: ?<&str>
+) -> ?<?<?>, ?>
+```
+
+#### Parameters
+
+<ParamField path="to_number" type="&str" required />
+
+<ParamField path="from_number" type="&str" required />
+
+<ParamField path="body" type="?<&str>" required />
+
+<ParamField path="media" type="?<&[?]>" required />
+
+<ParamField path="tags" type="?<&[?]>" required />
+
+<ParamField path="context" type="?<&str>" required />
+
+#### Returns
+
+`?<?<?>, ?>`
+
+#### Source
+
+[`src/relay/client.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/client.rs)
+
+Line 927.
+
+***
+
+### send\_request
+
+Build and send a JSON-RPC request. Returns the message ID.
+
+#### Signature
+
+```rust
+fn send_request(&self, method: &str, params: ?) -> ?
+```
+
+#### Parameters
+
+<ParamField path="method" type="&str" required />
+
+<ParamField path="params" type="?" required />
+
+#### Returns
+
+`?`
+
+#### Source
+
+[`src/relay/client.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/client.rs)
+
+Line 561.
+
+***
+
+### track\_message
+
+Track a new message.
+
+#### Signature
+
+```rust
+fn track_message(&self, message_id: &str, msg: ?<?>)
+```
+
+#### Parameters
+
+<ParamField path="message_id" type="&str" required />
+
+<ParamField path="msg" type="?<?>" required />
+
+#### Source
+
+[`src/relay/client.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/client.rs)
+
+Line 830.
+
+***
+
+### unreceive
+
+Unsubscribe from one or more contexts.
+
+#### Signature
+
+```rust
+fn unreceive(&self, contexts: &[?])
+```
+
+#### Parameters
+
+<ParamField path="contexts" type="&[?]" required />
+
+#### Source
+
+[`src/relay/client.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/client.rs)
+
+Line 795.
+
+## Type Aliases
+
+### OnCallHandler
+
+Callback type for inbound call handler.
+
+#### Signature
+
+```rust
+type OnCallHandler = ?<dyn ? + ? + ?>
+```
+
+#### Source
+
+[`src/relay/client.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/client.rs)
+
+Line 147.
+
+***
+
+### OnEventHandler
+
+Callback type for generic events.
+
+#### Signature
+
+```rust
+type OnEventHandler = ?<dyn ? + ? + ?>
+```
+
+#### Source
+
+[`src/relay/client.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/client.rs)
+
+Line 153.
+
+***
+
+### OnMessageHandler
+
+Callback type for inbound message handler.
+
+#### Signature
+
+```rust
+type OnMessageHandler = ?<dyn ? + ? + ?>
+```
+
+#### Source
+
+[`src/relay/client.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/client.rs)
+
+Line 150.
+
+## Source
+
+[`src/relay/client.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/client.rs)
+
+Line 190.

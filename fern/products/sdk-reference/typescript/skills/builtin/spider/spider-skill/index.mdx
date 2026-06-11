@@ -1,0 +1,718 @@
+---
+slug: "/reference/typescript/skills/builtin/spider/spider-skill"
+title: "SpiderSkill"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "class"
+  language: "typescript"
+  qualified_name: "skills.builtin.spider.SpiderSkill"
+  parent: "skills.builtin.spider"
+  module: "skills.builtin.spider"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/builtin/spider.ts"
+---
+# `SpiderSkill`
+
+Fast web scraping skill optimized for speed and token efficiency.
+
+Multi-instance capable. Port of the Python `SpiderSkill` with three tools:
+`scrape_url`, `crawl_site`, and `extract_structured_data`. Configuration
+mirrors the Python schema (delay, concurrent\_requests, timeout, max\_pages,
+max\_depth, extract\_type, max\_text\_length, clean\_text, selectors,
+follow\_patterns, user\_agent, headers, follow\_robots\_txt, cache\_enabled).
+
+## Signature
+
+```typescript
+class SpiderSkill extends SkillBase
+```
+
+## Inheritance
+
+**Extends:** [SkillBase](/docs/sdk-reference/reference/typescript/skills/skill-base)
+
+## Examples
+
+```typescript
+agent.addSkill('spider', { max_pages: 5, max_depth: 2 });
+```
+
+## Properties
+
+<ParamField path="agent" type="AgentBase">
+  Reference to the agent that owns this skill. Set via `setAgent()` when the skill is added to an agent. Python equivalent: `self.agent` (set in `__init__`). In the Python SDK `agent` is always non-null because it is injected in the constructor.  In the TypeScript SDK the SkillManager always calls `setAgent()` before `setup()`, so subclasses can rely on `getAgent()` being safe to call inside `setup()` and any method invoked after it.
+</ParamField>
+
+<ParamField path="config" type="SkillConfig" required>
+  Configuration options provided at construction time.
+</ParamField>
+
+<ParamField path="instanceId" type="string" required>
+  Unique identifier for this skill instance (includes timestamp and random bytes).
+</ParamField>
+
+<ParamField path="logger" type="Logger" required>
+  Logger scoped to this skill. Python equivalent: `self.logger = get_logger(...)` set in `SkillBase.__init__` so every subclass can call `self.logger.info(...)`.
+</ParamField>
+
+<ParamField path="REQUIRED_ENV_VARS" type="readonly string[]" required>
+  Environment variables required for the skill to function, checked at load time by `validateEnvVars()`. Python parity: `REQUIRED_ENV_VARS: List[str] = []` at `core/skill_base.py:27`.
+</ParamField>
+
+<ParamField path="REQUIRED_PACKAGES" type="readonly string[]" required>
+  Packages required by the skill, checked at load time by `validatePackages()`. Python parity: `REQUIRED_PACKAGES: List[str] = []` at `core/skill_base.py:26`. In TS these are npm package names importable via dynamic `import()`.
+</ParamField>
+
+<ParamField path="SKILL_DESCRIPTION" type="string" required>
+  Human-readable description of the skill. Subclasses MUST override. Python parity: `SKILL_DESCRIPTION: str = None` at `core/skill_base.py:24`.
+</ParamField>
+
+<ParamField path="SKILL_NAME" type="string" required>
+  Unique skill name. Subclasses MUST override with a non-empty string. Python parity: `SKILL_NAME: str = None` at `core/skill_base.py:23`. Python raises `ValueError` in `__init__` when this is left as `None`; TS throws at construction when this is left as the empty default.
+</ParamField>
+
+<ParamField path="SKILL_VERSION" type="string" required>
+  Semantic version string. Subclasses may override; defaults to `"1.0.0"`. Python parity: `SKILL_VERSION: str = "1.0.0"` at `core/skill_base.py:25`.
+</ParamField>
+
+<ParamField path="skillName" type="string" required>
+  The registered name of this skill type.
+</ParamField>
+
+<ParamField path="SUPPORTS_MULTIPLE_INSTANCES" type="boolean" required>
+  Whether this skill type supports multiple simultaneous instances (e.g., with different tool\_name). Python parity: `SUPPORTS_MULTIPLE_INSTANCES: bool = False` at `core/skill_base.py:30`.
+</ParamField>
+
+<ParamField path="swaigFields" type="Record<string, unknown>" required>
+  Additional SWAIG fields extracted from config, merged into tool definitions.
+</ParamField>
+
+## Methods
+
+### cleanup
+
+Cleanup resources. Called when the skill is removed from an agent.
+
+#### Signature
+
+```typescript
+cleanup(): Promise<void>
+```
+
+#### Returns
+
+`Promise<void>`
+
+#### Source
+
+[`src/skills/builtin/spider.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/builtin/spider.ts)
+
+Line 321.
+
+***
+
+### constructor
+
+Create a new skill instance.
+
+Python parity: `core/skill_base.py:32-43`.
+Python `__init__` raises `ValueError` if `SKILL_NAME` or `SKILL_DESCRIPTION`
+is left as `None` on the subclass. TS throws the equivalent when the static
+defaults haven't been overridden.
+
+#### Signature
+
+```typescript
+constructor(config?: SkillConfig): SpiderSkill
+```
+
+#### Parameters
+
+<ParamField path="config" type="SkillConfig">
+  Optional configuration key-value pairs (Python: `params`).
+</ParamField>
+
+#### Returns
+
+`SpiderSkill`
+
+#### Source
+
+[`src/skills/SkillBase.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/SkillBase.ts)
+
+Line 282.
+
+***
+
+### defineTool
+
+Imperatively register a tool with this skill.
+
+Python parity: `core/skill_base.py:58` `def define_tool(self, **kwargs)`.
+Merges `this.swaigFields` into the tool definition (explicit fields on
+`toolDef` take precedence), then pushes the result into `_dynamicTools`
+so the default `getTools()` returns it at SWML render time.
+
+Intended for skills whose tool shape depends on config evaluated at
+`setup()` time. Skills with a static tool list should override
+`getTools()` instead.
+
+#### Signature
+
+```typescript
+defineTool(toolDef: SkillToolDefinition): void
+```
+
+#### Parameters
+
+<ParamField path="toolDef" type="SkillToolDefinition" required>
+  The tool definition to register. Must include at minimum `name`, `description`, `parameters`, and `handler`.
+</ParamField>
+
+#### Returns
+
+`void`
+
+#### Source
+
+[`src/skills/SkillBase.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/SkillBase.ts)
+
+Line 351.
+
+***
+
+### getAgent
+
+Return the agent that owns this skill, asserting it is non-null.
+Equivalent to accessing `self.agent` in Python, where the agent reference
+is always set before `setup()` is called.
+
+The SkillManager lifecycle guarantees that `setAgent()` is called before
+`setup()`, so this method is safe to use inside `setup()` and in any
+tool handler invoked during an active agent session.
+
+#### Signature
+
+```typescript
+getAgent(): AgentBase
+```
+
+#### Returns
+
+`AgentBase` — The owning `AgentBase` instance.
+
+#### Throws
+
+- If called before `setAgent()` (i.e., before the skill is attached to an agent by the SkillManager).
+
+#### Source
+
+[`src/skills/SkillBase.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/SkillBase.ts)
+
+Line 261.
+
+***
+
+### getConfig
+
+Get a configuration value by key, falling back to a default if not set.
+
+#### Signature
+
+```typescript
+getConfig<T>(key: string, defaultValue?: T): T
+```
+
+#### Type Parameters
+
+<ParamField path="T" required default="unknown" />
+
+#### Parameters
+
+<ParamField path="key" type="string" required>
+  The configuration key to look up.
+</ParamField>
+
+<ParamField path="defaultValue" type="T">
+  Value to return if the key is not present.
+</ParamField>
+
+#### Returns
+
+`T` — The configuration value cast to type T, or the default value.
+
+#### Source
+
+[`src/skills/SkillBase.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/SkillBase.ts)
+
+Line 524.
+
+***
+
+### getDataMapTools
+
+Optional DataMap-style tool definitions. Skills that build their own
+SWAIG function dicts (e.g. via `DataMap.toSwaigFunction()`) return them
+here and `AgentBase.addSkill()` registers each via `registerSwaigFunction`.
+
+Python equivalent: the direct `self.agent.register_swaig_function(fn)`
+call inside `register_tools()` (e.g. `skills/datasphere_serverless/skill.py:210`).
+Default returns `[]` — skills using only the declarative `getTools()` path
+do not need to override this.
+
+#### Signature
+
+```typescript
+getDataMapTools(): Record<string, unknown>[]
+```
+
+#### Returns
+
+`Record<string, unknown>[]` — Array of fully-built SWAIG function dicts.
+
+#### Source
+
+[`src/skills/SkillBase.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/SkillBase.ts)
+
+Line 372.
+
+***
+
+### getGlobalData
+
+Get global data to merge into the agent's global data store.
+
+#### Signature
+
+```typescript
+getGlobalData(): Record<string, unknown>
+```
+
+#### Returns
+
+`Record<string, unknown>` — Key-value pairs to be merged into the agent's global data.
+
+#### Source
+
+[`src/skills/SkillBase.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/SkillBase.ts)
+
+Line 410.
+
+***
+
+### getHints
+
+Get speech recognition hints relevant to this skill.
+
+#### Signature
+
+```typescript
+getHints(): string[]
+```
+
+#### Returns
+
+`string[]` — Array of hint strings to improve speech recognition accuracy.
+
+#### Source
+
+[`src/skills/builtin/spider.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/builtin/spider.ts)
+
+Line 308.
+
+***
+
+### getInstanceKey
+
+Get the instance key used for deduplication in the SkillManager.
+
+For single-instance skills (`SUPPORTS_MULTIPLE_INSTANCES = false`), returns
+the skill name. For multi-instance skills, returns `${skillName}_${toolName}`
+using the `tool_name` config (falls back to the skill name).
+
+Matches Python's `SkillBase.get_instance_key()` default (`skill_base.py:141-146`).
+Multi-instance subclasses only need to override when their key derivation
+depends on config beyond `tool_name`.
+
+#### Signature
+
+```typescript
+getInstanceKey(): string
+```
+
+#### Returns
+
+`string` — A unique key identifying this skill instance.
+
+#### Source
+
+[`src/skills/builtin/spider.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/builtin/spider.ts)
+
+Line 211.
+
+***
+
+### getParameterSchema
+
+Get the parameter schema for this skill class, describing all accepted configuration options.
+Subclasses should override and call `super.getParameterSchema()` to include base parameters.
+
+Mirrors Python's `SkillBase.get_parameter_schema()` (skill\_base.py:197-266):
+returns `swaig_fields` + `skip_prompt` for all skills, and additionally adds a
+`tool_name` entry with `default: cls.SKILL_NAME` for classes with
+`SUPPORTS_MULTIPLE_INSTANCES = true`.
+
+**Modifiers:** `static`
+
+#### Signature
+
+```typescript
+getParameterSchema(): Record<string, ParameterSchemaEntry>
+```
+
+#### Returns
+
+`Record<string, ParameterSchemaEntry>` — Record mapping parameter names to their schema entries.
+
+#### Source
+
+[`src/skills/builtin/spider.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/builtin/spider.ts)
+
+Line 81.
+
+***
+
+### getPromptSections
+
+Get prompt sections to inject into the agent's system prompt.
+Respects the `skip_prompt` config option — returns `[]` if set to `true`.
+Subclasses should override `_getPromptSections()` instead of this method.
+
+#### Signature
+
+```typescript
+getPromptSections(): SkillPromptSection[]
+```
+
+#### Returns
+
+`SkillPromptSection[]` — Array of prompt sections with titles, bodies, and bullets.
+
+#### Source
+
+[`src/skills/SkillBase.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/SkillBase.ts)
+
+Line 382.
+
+***
+
+### getSkillData
+
+Read this skill's data from a raw call data object's global\_data.
+
+#### Signature
+
+```typescript
+getSkillData(rawData: Record<string, unknown>): Record<string, unknown>
+```
+
+#### Parameters
+
+<ParamField path="rawData" type="Record<string, unknown>" required>
+  The raw request data containing global\_data.
+</ParamField>
+
+#### Returns
+
+`Record<string, unknown>` — The skill's stored data, or an empty object if not found.
+
+#### Source
+
+[`src/skills/SkillBase.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/SkillBase.ts)
+
+Line 450.
+
+***
+
+### getSkillNamespace
+
+Get the namespaced key for storing per-skill data in global\_data.
+
+#### Signature
+
+```typescript
+getSkillNamespace(): string
+```
+
+#### Returns
+
+`string` — A string like "skill:datetime" or "skill:my\_prefix".
+
+#### Source
+
+[`src/skills/SkillBase.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/SkillBase.ts)
+
+Line 440.
+
+***
+
+### getTools
+
+#### Signature
+
+```typescript
+getTools(): SkillToolDefinition[]
+```
+
+#### Returns
+
+`SkillToolDefinition[]` — Three tools: `scrape_url`, `crawl_site`, and `extract_structured_data`.
+
+#### Source
+
+[`src/skills/builtin/spider.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/builtin/spider.ts)
+
+Line 329.
+
+***
+
+### hasAllEnvVars
+
+Check if all required environment variables are present.
+Convenience wrapper around `validateEnvVars()` that returns a boolean,
+matching the Python `validate_env_vars() -> bool` return type.
+
+#### Signature
+
+```typescript
+hasAllEnvVars(): boolean
+```
+
+#### Returns
+
+`boolean` — `true` if all required env vars are set, `false` otherwise.
+
+#### Source
+
+[`src/skills/SkillBase.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/SkillBase.ts)
+
+Line 544.
+
+***
+
+### hasAllPackages
+
+Check if all required packages declared in the manifest are available.
+Convenience wrapper around `validatePackages()` that returns a boolean,
+matching the Python `validate_packages() -> bool` return type.
+
+#### Signature
+
+```typescript
+hasAllPackages(): Promise<boolean>
+```
+
+#### Returns
+
+`Promise<boolean>` — `true` if all required packages are importable, `false` otherwise.
+
+#### Source
+
+[`src/skills/SkillBase.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/SkillBase.ts)
+
+Line 579.
+
+***
+
+### isInitialized
+
+Check if the skill has been initialized by the SkillManager.
+
+#### Signature
+
+```typescript
+isInitialized(): boolean
+```
+
+#### Returns
+
+`boolean` — True if setup() has completed and the skill is marked initialized.
+
+#### Source
+
+[`src/skills/SkillBase.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/SkillBase.ts)
+
+Line 507.
+
+***
+
+### markInitialized
+
+Mark the skill as initialized (called by SkillManager).
+
+#### Signature
+
+```typescript
+markInitialized(): void
+```
+
+#### Returns
+
+`void`
+
+#### Source
+
+[`src/skills/SkillBase.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/SkillBase.ts)
+
+Line 514.
+
+***
+
+### setAgent
+
+Set the agent reference for this skill.
+Called by the SkillManager/AgentBase when the skill is attached to an agent.
+Python equivalent: `self.agent = agent` in `__init__`.
+
+#### Signature
+
+```typescript
+setAgent(agent: AgentBase): void
+```
+
+#### Parameters
+
+<ParamField path="agent" type="AgentBase" required>
+  The agent that owns this skill.
+</ParamField>
+
+#### Returns
+
+`void`
+
+#### Source
+
+[`src/skills/SkillBase.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/SkillBase.ts)
+
+Line 534.
+
+***
+
+### setup
+
+Setup the skill. Called when the skill is added to an agent.
+Override to perform initialization (API connections, config validation, etc.)
+
+#### Signature
+
+```typescript
+setup(): Promise<boolean>
+```
+
+#### Returns
+
+`Promise<boolean>` — `true` if setup succeeded, `false` otherwise. Python equivalent: abstract `setup() -> bool`.
+
+#### Source
+
+[`src/skills/builtin/spider.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/builtin/spider.ts)
+
+Line 216.
+
+***
+
+### updateSkillData
+
+Update this skill's namespaced data on a FunctionResult via updateGlobalData.
+
+#### Signature
+
+```typescript
+updateSkillData(
+  result: FunctionResult,
+  data: Record<string, unknown>
+): FunctionResult
+```
+
+#### Parameters
+
+<ParamField path="result" type="FunctionResult" required>
+  The FunctionResult to update.
+</ParamField>
+
+<ParamField path="data" type="Record<string, unknown>" required>
+  The data to store under this skill's namespace.
+</ParamField>
+
+#### Returns
+
+`FunctionResult` — The FunctionResult for chaining.
+
+#### Source
+
+[`src/skills/SkillBase.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/SkillBase.ts)
+
+Line 462.
+
+***
+
+### validateEnvVars
+
+Validate that all required environment variables declared on the skill class
+are set in the current process environment.
+
+Python parity: `core/skill_base.py:103-110` reads `self.REQUIRED_ENV_VARS`
+directly. TS reads the same static from the class.
+
+Returns the list of missing variable names so callers can produce actionable
+error messages. This differs from Python's `validate_env_vars() -> bool`
+return shape; [hasAllEnvVars](/docs/sdk-reference/reference/typescript/skills/builtin/spider/spider-skill#has-all-env-vars) is the boolean equivalent.
+
+#### Signature
+
+```typescript
+validateEnvVars(): string[]
+```
+
+#### Returns
+
+`string[]` — Array of missing environment variable names (empty if all are present).
+
+#### Source
+
+[`src/skills/SkillBase.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/SkillBase.ts)
+
+Line 486.
+
+***
+
+### validatePackages
+
+Validate that all required packages declared on the skill class can be imported.
+
+Python parity: `core/skill_base.py:112-124` reads `self.REQUIRED_PACKAGES`
+directly and tries `importlib.import_module(pkg)` for each; TS does the
+equivalent with a dynamic `import()`.
+
+#### Signature
+
+```typescript
+validatePackages(): Promise<string[]>
+```
+
+#### Returns
+
+`Promise<string[]>` — Array of package names that could not be imported (empty if all present).
+
+#### Source
+
+[`src/skills/SkillBase.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/SkillBase.ts)
+
+Line 557.
+
+## Source
+
+[`src/skills/builtin/spider.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/builtin/spider.ts)
+
+Line 71.

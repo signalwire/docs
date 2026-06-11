@@ -1,0 +1,637 @@
+---
+slug: "/reference/typescript/context-builder/step"
+title: "Step"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "class"
+  language: "typescript"
+  qualified_name: "ContextBuilder.Step"
+  parent: "ContextBuilder"
+  module: "ContextBuilder"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/ContextBuilder.ts"
+---
+# `Step`
+
+A single step within a context, with prompt content, criteria, function restrictions, and navigation rules.
+
+## Signature
+
+```typescript
+class Step
+```
+
+## Properties
+
+<ParamField path="name" type="string" required>
+  The unique name identifying this step within its context.
+</ParamField>
+
+## Methods
+
+### addBullets
+
+Adds a POM section with bullet points, mutually exclusive with raw text.
+
+#### Signature
+
+```typescript
+addBullets(title: string, bullets: string[]): this
+```
+
+#### Parameters
+
+<ParamField path="title" type="string" required>
+  The section heading.
+</ParamField>
+
+<ParamField path="bullets" type="string[]" required>
+  The list of bullet point strings.
+</ParamField>
+
+#### Returns
+
+`this` — This step for chaining.
+
+#### Source
+
+[`src/ContextBuilder.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/ContextBuilder.ts)
+
+Line 215.
+
+***
+
+### addGatherQuestion
+
+Add a question to this step's gather\_info configuration.
+setGatherInfo() must be called before this method.
+
+IMPORTANT — gather mode locks function access:
+While the model is asking gather questions, the runtime forcibly
+deactivates ALL of the step's other functions. The only callable
+tools during a gather question are:
+
+- `gather_submit` (the native answer-submission tool)
+- Whatever names you list in this question's `functions` option
+
+`next_step` and `change_context` are also filtered out — the model
+cannot navigate away until the gather completes. This is by design:
+it forces a tight ask → submit → next-question loop.
+
+If a question needs to call out to a tool (e.g. validate an email,
+geocode a ZIP), list that tool name in this question's `functions`.
+Functions listed here are active ONLY for this question.
+
+#### Signature
+
+```typescript
+addGatherQuestion(opts: { ...6 fields }): this
+```
+
+#### Parameters
+
+<ParamField path="opts" type="object" required>
+  Question configuration including key, question text, and optional type/confirm/prompt/functions.
+
+  <ParamField path="opts.confirm" type="boolean" />
+
+  <ParamField path="opts.functions" type="string[]" />
+
+  <ParamField path="opts.key" type="string" required />
+
+  <ParamField path="opts.prompt" type="string" />
+
+  <ParamField path="opts.question" type="string" required />
+
+  <ParamField path="opts.type" type="string" />
+</ParamField>
+
+#### Returns
+
+`this` — This step for chaining.
+
+#### Source
+
+[`src/ContextBuilder.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/ContextBuilder.ts)
+
+Line 366.
+
+***
+
+### addSection
+
+Adds a POM section with a body, mutually exclusive with raw text.
+
+#### Signature
+
+```typescript
+addSection(title: string, body: string): this
+```
+
+#### Parameters
+
+<ParamField path="title" type="string" required>
+  The section heading.
+</ParamField>
+
+<ParamField path="body" type="string" required>
+  The section body text.
+</ParamField>
+
+#### Returns
+
+`this` — This step for chaining.
+
+#### Source
+
+[`src/ContextBuilder.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/ContextBuilder.ts)
+
+Line 203.
+
+***
+
+### clearSections
+
+Removes all POM sections and raw text from this step.
+
+#### Signature
+
+```typescript
+clearSections(): this
+```
+
+#### Returns
+
+`this` — This step for chaining.
+
+#### Source
+
+[`src/ContextBuilder.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/ContextBuilder.ts)
+
+Line 407.
+
+***
+
+### constructor
+
+Creates a new Step.
+
+#### Signature
+
+```typescript
+constructor(name: string): Step
+```
+
+#### Parameters
+
+<ParamField path="name" type="string" required>
+  The unique step name.
+</ParamField>
+
+#### Returns
+
+`Step`
+
+#### Source
+
+[`src/ContextBuilder.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/ContextBuilder.ts)
+
+Line 182.
+
+***
+
+### setEnd
+
+Mark this step as terminal for the step flow.
+
+IMPORTANT: `end=true` does NOT end the conversation or hang up the
+call. It exits step mode entirely after this step executes — clearing
+the steps list, current step index, validSteps, and validContexts.
+The agent keeps running, but operates only under the base system
+prompt and the context-level prompt; no more step instructions are
+injected and no more `next_step` tool is offered.
+
+To actually end the call, call a hangup tool or define a hangup hook.
+
+#### Signature
+
+```typescript
+setEnd(end: boolean): this
+```
+
+#### Parameters
+
+<ParamField path="end" type="boolean" required>
+  True to exit step mode after this step.
+</ParamField>
+
+#### Returns
+
+`this` — This step for chaining.
+
+#### Source
+
+[`src/ContextBuilder.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/ContextBuilder.ts)
+
+Line 308.
+
+***
+
+### setFunctions
+
+Set which non-internal functions are callable while this step is active.
+
+IMPORTANT — inheritance behavior:
+If you do NOT call this method, the step inherits whichever function
+set was active on the previous step (or the previous context's last
+step). The server-side runtime only resets the active set when a
+step explicitly declares its `functions` field. This is by design,
+but it is the most common source of bugs in multi-step agents:
+forgetting setFunctions() on a later step lets the previous step's
+tools leak through.
+
+Best practice: call setFunctions() explicitly on every step that
+should have a different toolset than the previous one.
+
+Keep the per-step active set small: LLM tool selection accuracy
+degrades noticeably past ~7-8 simultaneously-active tools per call.
+Use per-step whitelisting to partition large tool collections.
+
+Internal functions (e.g. `startup_hook`, `hangup_hook`, `gather_submit`)
+are ALWAYS protected and cannot be deactivated by this whitelist. The
+native navigation tools `next_step` and `change_context` are injected
+automatically when validSteps/validContexts is set; they are not
+affected by this list and do not need to appear in it.
+
+#### Signature
+
+```typescript
+setFunctions(functions: string | string[]): this
+```
+
+#### Parameters
+
+<ParamField path="functions" type="string | string[]" required>
+  One of:
+</ParamField>
+
+#### Returns
+
+`this` — This step for chaining.
+
+#### Examples
+
+```typescript
+step.setFunctions(['lookup_account', 'check_balance']); // whitelist
+step.setFunctions([]);                                  // disable all
+step.setFunctions('none');                              // disable all (alt)
+```
+
+#### Source
+
+[`src/ContextBuilder.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/ContextBuilder.ts)
+
+Line 268.
+
+***
+
+### setGatherInfo
+
+Initializes a gather info operation on this step for collecting structured data.
+
+#### Signature
+
+```typescript
+setGatherInfo(opts?: { ...3 fields }): this
+```
+
+#### Parameters
+
+<ParamField path="opts" type="object">
+  Optional output key, completion action, and prompt configuration.
+
+  <ParamField path="opts.completionAction" type="string" />
+
+  <ParamField path="opts.outputKey" type="string" />
+
+  <ParamField path="opts.prompt" type="string" />
+</ParamField>
+
+#### Returns
+
+`this` — This step for chaining.
+
+#### Source
+
+[`src/ContextBuilder.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/ContextBuilder.ts)
+
+Line 338.
+
+***
+
+### setResetConsolidate
+
+Sets whether to consolidate conversation history when resetting at this step.
+
+#### Signature
+
+```typescript
+setResetConsolidate(consolidate: boolean): this
+```
+
+#### Parameters
+
+<ParamField path="consolidate" type="boolean" required>
+  Whether to consolidate.
+</ParamField>
+
+#### Returns
+
+`this` — This step for chaining.
+
+#### Source
+
+[`src/ContextBuilder.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/ContextBuilder.ts)
+
+Line 438.
+
+***
+
+### setResetFullReset
+
+Sets whether to perform a full conversation reset at this step.
+
+#### Signature
+
+```typescript
+setResetFullReset(fullReset: boolean): this
+```
+
+#### Parameters
+
+<ParamField path="fullReset" type="boolean" required>
+  Whether to fully reset.
+</ParamField>
+
+#### Returns
+
+`this` — This step for chaining.
+
+#### Source
+
+[`src/ContextBuilder.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/ContextBuilder.ts)
+
+Line 448.
+
+***
+
+### setResetSystemPrompt
+
+Sets the system prompt to use when resetting context at this step.
+
+#### Signature
+
+```typescript
+setResetSystemPrompt(systemPrompt: string): this
+```
+
+#### Parameters
+
+<ParamField path="systemPrompt" type="string" required>
+  The replacement system prompt text.
+</ParamField>
+
+#### Returns
+
+`this` — This step for chaining.
+
+#### Source
+
+[`src/ContextBuilder.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/ContextBuilder.ts)
+
+Line 418.
+
+***
+
+### setResetUserPrompt
+
+Sets the user prompt to use when resetting context at this step.
+
+#### Signature
+
+```typescript
+setResetUserPrompt(userPrompt: string): this
+```
+
+#### Parameters
+
+<ParamField path="userPrompt" type="string" required>
+  The replacement user prompt text.
+</ParamField>
+
+#### Returns
+
+`this` — This step for chaining.
+
+#### Source
+
+[`src/ContextBuilder.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/ContextBuilder.ts)
+
+Line 428.
+
+***
+
+### setSkipToNextStep
+
+Sets whether to automatically advance to the next step after this one completes.
+
+#### Signature
+
+```typescript
+setSkipToNextStep(skip: boolean): this
+```
+
+#### Parameters
+
+<ParamField path="skip" type="boolean" required>
+  Whether to skip to the next step.
+</ParamField>
+
+#### Returns
+
+`this` — This step for chaining.
+
+#### Source
+
+[`src/ContextBuilder.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/ContextBuilder.ts)
+
+Line 328.
+
+***
+
+### setSkipUserTurn
+
+Sets whether to skip waiting for user input when entering this step.
+
+#### Signature
+
+```typescript
+setSkipUserTurn(skip: boolean): this
+```
+
+#### Parameters
+
+<ParamField path="skip" type="boolean" required>
+  Whether to skip the user turn.
+</ParamField>
+
+#### Returns
+
+`this` — This step for chaining.
+
+#### Source
+
+[`src/ContextBuilder.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/ContextBuilder.ts)
+
+Line 318.
+
+***
+
+### setStepCriteria
+
+Sets the criteria that must be met before this step is considered complete.
+
+#### Signature
+
+```typescript
+setStepCriteria(criteria: string): this
+```
+
+#### Parameters
+
+<ParamField path="criteria" type="string" required>
+  A description of the completion criteria.
+</ParamField>
+
+#### Returns
+
+`this` — This step for chaining.
+
+#### Source
+
+[`src/ContextBuilder.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/ContextBuilder.ts)
+
+Line 226.
+
+***
+
+### setText
+
+Sets raw text content for this step, mutually exclusive with POM sections.
+
+#### Signature
+
+```typescript
+setText(text: string): this
+```
+
+#### Parameters
+
+<ParamField path="text" type="string" required>
+  The raw prompt text.
+</ParamField>
+
+#### Returns
+
+`this` — This step for chaining.
+
+#### Source
+
+[`src/ContextBuilder.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/ContextBuilder.ts)
+
+Line 191.
+
+***
+
+### setValidContexts
+
+Sets which contexts the AI may navigate to from this step.
+
+#### Signature
+
+```typescript
+setValidContexts(contexts: string[]): this
+```
+
+#### Parameters
+
+<ParamField path="contexts" type="string[]" required>
+  List of allowed context names.
+</ParamField>
+
+#### Returns
+
+`this` — This step for chaining.
+
+#### Source
+
+[`src/ContextBuilder.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/ContextBuilder.ts)
+
+Line 288.
+
+***
+
+### setValidSteps
+
+Sets which steps the AI may navigate to from this step.
+
+#### Signature
+
+```typescript
+setValidSteps(steps: string[]): this
+```
+
+#### Parameters
+
+<ParamField path="steps" type="string[]" required>
+  List of allowed step names.
+</ParamField>
+
+#### Returns
+
+`this` — This step for chaining.
+
+#### Source
+
+[`src/ContextBuilder.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/ContextBuilder.ts)
+
+Line 278.
+
+***
+
+### toDict
+
+Serializes this step to a plain object for SWML output.
+
+#### Signature
+
+```typescript
+toDict(): Record<string, unknown>
+```
+
+#### Returns
+
+`Record<string, unknown>` — A dictionary representation of this step.
+
+#### Source
+
+[`src/ContextBuilder.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/ContextBuilder.ts)
+
+Line 473.
+
+## Source
+
+[`src/ContextBuilder.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/ContextBuilder.ts)
+
+Line 160.

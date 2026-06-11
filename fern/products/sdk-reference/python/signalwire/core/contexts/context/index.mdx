@@ -1,0 +1,816 @@
+---
+slug: "/reference/python/signalwire/core/contexts/context"
+title: "Context"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "class"
+  language: "python"
+  qualified_name: "signalwire.core.contexts.Context"
+  parent: "signalwire.core.contexts"
+  module: "signalwire.core.contexts"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main/signalwire/signalwire/core/contexts.py"
+---
+# `Context`
+
+A single context containing an ordered list of steps.
+
+## Conversation history across context switches
+
+By default (`isolated=False`), switching from one context to another
+via `change_context` PRESERVES the entire conversation history. The
+user's prior turns and the model's prior responses remain visible
+on the next LLM call. The only thing that changes is which step
+instructions get injected.
+
+A common confusion: "the AI re-asked for information the user already
+gave." If you see this, history loss is almost never the cause —
+history is preserved unless you set `isolated=True`. The real cause
+is usually one of:
+
+- The destination step's `text` literally tells the model to ask
+  ("Ask the user for their account number"). The model follows
+  instructions; rephrase to "Confirm the user's account number"
+  or have the step instructions check global\_data first.
+- The relevant info was never extracted into global\_data, so
+  $\{var\} expansion has nothing to inject and the step prompt
+  looks generic. Add a webhook that captures the field.
+- You explicitly called `set_isolated(True)` on the destination
+  context. Isolated contexts wipe the conversation array on entry.
+  Pair with `set_consolidate(True)` if you want a summary instead.
+
+See Context.set\_isolated() for the wipe semantics, and the SDK's
+FunctionResult.swml\_change\_step / swml\_change\_context docstrings
+for how to communicate transition intent through tool response text
+and global\_data.
+
+## Signature
+
+```python
+class Context
+```
+
+## Properties
+
+<ParamField path="name" type="name" required />
+
+## Methods
+
+### \_\_init\_\_
+
+#### Signature
+
+```python
+__init__(name: str)
+```
+
+#### Parameters
+
+<ParamField path="name" type="str" required />
+
+#### Source
+
+[`signalwire/signalwire/core/contexts.py`](https://github.com/signalwire/signalwire-python/blob/main/signalwire/signalwire/core/contexts.py)
+
+Line 571.
+
+***
+
+### add\_bullets
+
+Add a POM section with bullet points to the context prompt
+
+#### Signature
+
+```python
+add_bullets(title: str, bullets: List[str]) -> Context
+```
+
+#### Parameters
+
+<ParamField path="title" type="str" required>
+  Section title
+</ParamField>
+
+<ParamField path="bullets" type="List[str]" required>
+  List of bullet points
+</ParamField>
+
+#### Returns
+
+`Context` — Self for method chaining
+
+#### Source
+
+[`signalwire/signalwire/core/contexts.py`](https://github.com/signalwire/signalwire-python/blob/main/signalwire/signalwire/core/contexts.py)
+
+Line 916.
+
+***
+
+### add\_enter\_filler
+
+Add enter fillers for a specific language
+
+#### Signature
+
+```python
+add_enter_filler(language_code: str, fillers: List[str]) -> Context
+```
+
+#### Parameters
+
+<ParamField path="language_code" type="str" required>
+  Language code (e.g., "en-US", "es") or "default" for catch-all
+</ParamField>
+
+<ParamField path="fillers" type="List[str]" required>
+  List of filler phrases for entering this context
+</ParamField>
+
+#### Returns
+
+`Context` — Self for method chaining
+
+#### Source
+
+[`signalwire/signalwire/core/contexts.py`](https://github.com/signalwire/signalwire-python/blob/main/signalwire/signalwire/core/contexts.py)
+
+Line 962.
+
+***
+
+### add\_exit\_filler
+
+Add exit fillers for a specific language
+
+#### Signature
+
+```python
+add_exit_filler(language_code: str, fillers: List[str]) -> Context
+```
+
+#### Parameters
+
+<ParamField path="language_code" type="str" required>
+  Language code (e.g., "en-US", "es") or "default" for catch-all
+</ParamField>
+
+<ParamField path="fillers" type="List[str]" required>
+  List of filler phrases for exiting this context
+</ParamField>
+
+#### Returns
+
+`Context` — Self for method chaining
+
+#### Source
+
+[`signalwire/signalwire/core/contexts.py`](https://github.com/signalwire/signalwire-python/blob/main/signalwire/signalwire/core/contexts.py)
+
+Line 979.
+
+***
+
+### add\_section
+
+Add a POM section to the context prompt
+
+#### Signature
+
+```python
+add_section(title: str, body: str) -> Context
+```
+
+#### Parameters
+
+<ParamField path="title" type="str" required>
+  Section title
+</ParamField>
+
+<ParamField path="body" type="str" required>
+  Section body text
+</ParamField>
+
+#### Returns
+
+`Context` — Self for method chaining
+
+#### Source
+
+[`signalwire/signalwire/core/contexts.py`](https://github.com/signalwire/signalwire-python/blob/main/signalwire/signalwire/core/contexts.py)
+
+Line 900.
+
+***
+
+### add\_step
+
+Add a new step to this context.
+
+When called with only `name` the returned Step can be configured
+with the usual method-chaining API.  When the optional keyword
+arguments are supplied the step is fully configured in one call:
+
+#### Signature
+
+```python
+add_step(
+    name: str,
+    *,
+    task: Optional[str] = None,
+    bullets: Optional[List[str]] = None,
+    criteria: Optional[str] = None,
+    functions: Optional[Union[str, List[str]]] = None,
+    valid_steps: Optional[List[str]] = None
+) -> Step
+```
+
+#### Parameters
+
+<ParamField path="name" type="str" required>
+  Step name (must be unique within the context).
+</ParamField>
+
+<ParamField path="task" type="Optional[str]" default="None">
+  Text for the "Task" section (equivalent to `step.add_section("Task", task)`).
+</ParamField>
+
+<ParamField path="bullets" type="Optional[List[str]]" default="None">
+  List of bullet strings for the "Process" section (equivalent to `step.add_bullets("Process", bullets)`). Requires _task_ to also be set.
+</ParamField>
+
+<ParamField path="criteria" type="Optional[str]" default="None">
+  Step-completion criteria (equivalent to `step.set_step_criteria(criteria)`).
+</ParamField>
+
+<ParamField path="functions" type="Optional[Union[str, List[str]]]" default="None">
+  Tool names the step may call, or `"none"` (equivalent to `step.set_functions(functions)`).
+</ParamField>
+
+<ParamField path="valid_steps" type="Optional[List[str]]" default="None">
+  Names of steps the agent may transition to (equivalent to `step.set_valid_steps(valid_steps)`).
+</ParamField>
+
+#### Returns
+
+`Step` — The configured Step object for optional further chaining.
+
+#### Source
+
+[`signalwire/signalwire/core/contexts.py`](https://github.com/signalwire/signalwire-python/blob/main/signalwire/signalwire/core/contexts.py)
+
+Line 596.
+
+***
+
+### add\_system\_bullets
+
+Add a POM section with bullet points to the system prompt
+
+#### Signature
+
+```python
+add_system_bullets(title: str, bullets: List[str]) -> Context
+```
+
+#### Parameters
+
+<ParamField path="title" type="str" required>
+  Section title
+</ParamField>
+
+<ParamField path="bullets" type="List[str]" required>
+  List of bullet points
+</ParamField>
+
+#### Returns
+
+`Context` — Self for method chaining
+
+#### Source
+
+[`signalwire/signalwire/core/contexts.py`](https://github.com/signalwire/signalwire-python/blob/main/signalwire/signalwire/core/contexts.py)
+
+Line 869.
+
+***
+
+### add\_system\_section
+
+Add a POM section to the system prompt
+
+#### Signature
+
+```python
+add_system_section(title: str, body: str) -> Context
+```
+
+#### Parameters
+
+<ParamField path="title" type="str" required>
+  Section title
+</ParamField>
+
+<ParamField path="body" type="str" required>
+  Section body text
+</ParamField>
+
+#### Returns
+
+`Context` — Self for method chaining
+
+#### Source
+
+[`signalwire/signalwire/core/contexts.py`](https://github.com/signalwire/signalwire-python/blob/main/signalwire/signalwire/core/contexts.py)
+
+Line 853.
+
+***
+
+### get\_step
+
+Get an existing step by name for inspection or modification.
+
+#### Signature
+
+```python
+get_step(name: str) -> Optional[Step]
+```
+
+#### Parameters
+
+<ParamField path="name" type="str" required>
+  Step name
+</ParamField>
+
+#### Returns
+
+`Optional[Step]` — Step object if found, None otherwise
+
+#### Source
+
+[`signalwire/signalwire/core/contexts.py`](https://github.com/signalwire/signalwire-python/blob/main/signalwire/signalwire/core/contexts.py)
+
+Line 653.
+
+***
+
+### move\_step
+
+Move an existing step to a specific position in the step order.
+
+#### Signature
+
+```python
+move_step(name: str, position: int) -> Context
+```
+
+#### Parameters
+
+<ParamField path="name" type="str" required>
+  Step name to move
+</ParamField>
+
+<ParamField path="position" type="int" required>
+  Target index in the step order (0 = first)
+</ParamField>
+
+#### Returns
+
+`Context` — Self for method chaining
+
+#### Source
+
+[`signalwire/signalwire/core/contexts.py`](https://github.com/signalwire/signalwire-python/blob/main/signalwire/signalwire/core/contexts.py)
+
+Line 680.
+
+***
+
+### remove\_step
+
+Remove a step from this context entirely.
+
+#### Signature
+
+```python
+remove_step(name: str) -> Context
+```
+
+#### Parameters
+
+<ParamField path="name" type="str" required>
+  Step name to remove
+</ParamField>
+
+#### Returns
+
+`Context` — Self for method chaining
+
+#### Source
+
+[`signalwire/signalwire/core/contexts.py`](https://github.com/signalwire/signalwire-python/blob/main/signalwire/signalwire/core/contexts.py)
+
+Line 665.
+
+***
+
+### set\_consolidate
+
+Set whether to consolidate conversation history when entering this context
+
+#### Signature
+
+```python
+set_consolidate(consolidate: bool) -> Context
+```
+
+#### Parameters
+
+<ParamField path="consolidate" type="bool" required>
+  Whether to consolidate previous conversation
+</ParamField>
+
+#### Returns
+
+`Context` — Self for method chaining
+
+#### Source
+
+[`signalwire/signalwire/core/contexts.py`](https://github.com/signalwire/signalwire-python/blob/main/signalwire/signalwire/core/contexts.py)
+
+Line 781.
+
+***
+
+### set\_enter\_fillers
+
+Set fillers that the AI says when entering this context
+
+#### Signature
+
+```python
+set_enter_fillers(enter_fillers: Dict[str, List[str]]) -> Context
+```
+
+#### Parameters
+
+<ParamField path="enter_fillers" type="Dict[str, List[str]]" required>
+  Dictionary mapping language codes (or "default") to lists of filler phrases Example: \{"en-US": \["Welcome...", "Hello..."], "default": \["Entering..."]\}
+</ParamField>
+
+#### Returns
+
+`Context` — Self for method chaining
+
+#### Source
+
+[`signalwire/signalwire/core/contexts.py`](https://github.com/signalwire/signalwire-python/blob/main/signalwire/signalwire/core/contexts.py)
+
+Line 932.
+
+***
+
+### set\_exit\_fillers
+
+Set fillers that the AI says when exiting this context
+
+#### Signature
+
+```python
+set_exit_fillers(exit_fillers: Dict[str, List[str]]) -> Context
+```
+
+#### Parameters
+
+<ParamField path="exit_fillers" type="Dict[str, List[str]]" required>
+  Dictionary mapping language codes (or "default") to lists of filler phrases Example: \{"en-US": \["Goodbye...", "Thank you..."], "default": \["Exiting..."]\}
+</ParamField>
+
+#### Returns
+
+`Context` — Self for method chaining
+
+#### Source
+
+[`signalwire/signalwire/core/contexts.py`](https://github.com/signalwire/signalwire-python/blob/main/signalwire/signalwire/core/contexts.py)
+
+Line 947.
+
+***
+
+### set\_full\_reset
+
+Set whether to do full reset when entering this context
+
+#### Signature
+
+```python
+set_full_reset(full_reset: bool) -> Context
+```
+
+#### Parameters
+
+<ParamField path="full_reset" type="bool" required>
+  Whether to completely rewrite system prompt vs inject
+</ParamField>
+
+#### Returns
+
+`Context` — Self for method chaining
+
+#### Source
+
+[`signalwire/signalwire/core/contexts.py`](https://github.com/signalwire/signalwire-python/blob/main/signalwire/signalwire/core/contexts.py)
+
+Line 794.
+
+***
+
+### set\_initial\_step
+
+Set which step the context starts on when entered.
+
+By default, a context starts on its first step (index 0). If the
+context has a preamble step that should only run on first entry
+(e.g. a greeting), later entries via `change_context` can skip
+it by setting `initial_step` to the name of the step to start
+from instead.
+
+`initial_step` is honoured both at conversation creation (when
+the context is first activated) and when switching to this context
+via `change_context` during the conversation.
+
+> \[!NOTE]
+> ctx = contexts.add\_context("support")
+> ctx.add\_step("greeting").set\_text("Welcome!")
+> ctx.add\_step("triage").set\_text("What do you need help with?")
+> ctx.set\_initial\_step("triage")  # skip greeting on re-entry
+
+#### Signature
+
+```python
+set_initial_step(step_name: str) -> Context
+```
+
+#### Parameters
+
+<ParamField path="step_name" type="str" required>
+  Name of the step to start on. Must exist in this context's step list; validated by ContextBuilder.validate().
+</ParamField>
+
+#### Returns
+
+`Context` — Self for method chaining.
+
+#### Source
+
+[`signalwire/signalwire/core/contexts.py`](https://github.com/signalwire/signalwire-python/blob/main/signalwire/signalwire/core/contexts.py)
+
+Line 723.
+
+***
+
+### set\_isolated
+
+Mark this context as isolated — entering it wipes conversation history.
+
+When `isolated=True` and the context is entered via change\_context,
+the runtime calls ai\_conversation\_restart() and the entire conversation
+array is wiped. The model starts fresh with only the new context's
+system\_prompt + step instructions, with no memory of prior turns.
+
+EXCEPTION — `reset` overrides the wipe:
+If the context also has a `reset` configuration (set via the
+Step.set\_reset\_\*() methods on a step that switches into this
+context, or via set\_consolidate() / set\_full\_reset() on the
+context itself), the wipe is skipped in favor of the reset
+behavior. Use `reset` with `consolidate=True` to summarize prior
+history into a single message instead of dropping it entirely.
+
+> \[!NOTE]
+>
+> - Switching to a sensitive billing flow that should not see
+>   prior small-talk
+> - Handing off to a different agent persona
+> - Resetting after a long off-topic detour
+
+#### Signature
+
+```python
+set_isolated(isolated: bool) -> Context
+```
+
+#### Parameters
+
+<ParamField path="isolated" type="bool" required>
+  True to wipe conversation history on context entry (subject to the reset exception above).
+</ParamField>
+
+#### Returns
+
+`Context` — Self for method chaining.
+
+#### Source
+
+[`signalwire/signalwire/core/contexts.py`](https://github.com/signalwire/signalwire-python/blob/main/signalwire/signalwire/core/contexts.py)
+
+Line 820.
+
+***
+
+### set\_post\_prompt
+
+Set post prompt override for this context
+
+#### Signature
+
+```python
+set_post_prompt(post_prompt: str) -> Context
+```
+
+#### Parameters
+
+<ParamField path="post_prompt" type="str" required>
+  Post prompt text to use when this context is active
+</ParamField>
+
+#### Returns
+
+`Context` — Self for method chaining
+
+#### Source
+
+[`signalwire/signalwire/core/contexts.py`](https://github.com/signalwire/signalwire-python/blob/main/signalwire/signalwire/core/contexts.py)
+
+Line 753.
+
+***
+
+### set\_prompt
+
+Set the context's prompt text directly
+
+#### Signature
+
+```python
+set_prompt(prompt: str) -> Context
+```
+
+#### Parameters
+
+<ParamField path="prompt" type="str" required>
+  The prompt text for this context
+</ParamField>
+
+#### Returns
+
+`Context` — Self for method chaining
+
+#### Source
+
+[`signalwire/signalwire/core/contexts.py`](https://github.com/signalwire/signalwire-python/blob/main/signalwire/signalwire/core/contexts.py)
+
+Line 885.
+
+***
+
+### set\_system\_prompt
+
+Set system prompt for context switching (triggers context reset)
+
+#### Signature
+
+```python
+set_system_prompt(system_prompt: str) -> Context
+```
+
+#### Parameters
+
+<ParamField path="system_prompt" type="str" required>
+  New system prompt for when this context is entered
+</ParamField>
+
+#### Returns
+
+`Context` — Self for method chaining
+
+#### Source
+
+[`signalwire/signalwire/core/contexts.py`](https://github.com/signalwire/signalwire-python/blob/main/signalwire/signalwire/core/contexts.py)
+
+Line 766.
+
+***
+
+### set\_user\_prompt
+
+Set user prompt to inject when entering this context
+
+#### Signature
+
+```python
+set_user_prompt(user_prompt: str) -> Context
+```
+
+#### Parameters
+
+<ParamField path="user_prompt" type="str" required>
+  User message to inject for context
+</ParamField>
+
+#### Returns
+
+`Context` — Self for method chaining
+
+#### Source
+
+[`signalwire/signalwire/core/contexts.py`](https://github.com/signalwire/signalwire-python/blob/main/signalwire/signalwire/core/contexts.py)
+
+Line 807.
+
+***
+
+### set\_valid\_contexts
+
+Set which contexts can be navigated to from this context
+
+#### Signature
+
+```python
+set_valid_contexts(contexts: List[str]) -> Context
+```
+
+#### Parameters
+
+<ParamField path="contexts" type="List[str]" required>
+  List of valid context names
+</ParamField>
+
+#### Returns
+
+`Context` — Self for method chaining
+
+#### Source
+
+[`signalwire/signalwire/core/contexts.py`](https://github.com/signalwire/signalwire-python/blob/main/signalwire/signalwire/core/contexts.py)
+
+Line 697.
+
+***
+
+### set\_valid\_steps
+
+Set which steps can be navigated to from any step in this context
+
+#### Signature
+
+```python
+set_valid_steps(steps: List[str]) -> Context
+```
+
+#### Parameters
+
+<ParamField path="steps" type="List[str]" required>
+  List of valid step names (include "next" for sequential flow)
+</ParamField>
+
+#### Returns
+
+`Context` — Self for method chaining
+
+#### Source
+
+[`signalwire/signalwire/core/contexts.py`](https://github.com/signalwire/signalwire-python/blob/main/signalwire/signalwire/core/contexts.py)
+
+Line 710.
+
+***
+
+### to\_dict
+
+Convert context to dictionary for SWML generation
+
+#### Signature
+
+```python
+to_dict() -> Dict[str, Any]
+```
+
+#### Returns
+
+`Dict[str, Any]`
+
+#### Source
+
+[`signalwire/signalwire/core/contexts.py`](https://github.com/signalwire/signalwire-python/blob/main/signalwire/signalwire/core/contexts.py)
+
+Line 1040.
+
+## Source
+
+[`signalwire/signalwire/core/contexts.py`](https://github.com/signalwire/signalwire-python/blob/main/signalwire/signalwire/core/contexts.py)
+
+Line 538.

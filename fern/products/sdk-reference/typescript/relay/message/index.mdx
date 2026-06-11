@@ -1,0 +1,236 @@
+---
+slug: "/reference/typescript/relay/message"
+title: "Message"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "class"
+  language: "typescript"
+  qualified_name: "relay.Message"
+  module: "relay"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/relay/Message.ts"
+---
+# `Message`
+
+SMS/MMS message in the RELAY messaging namespace.
+
+Outbound messages progress through `queued` → `initiated` → `sent` → `delivered`
+(or `undelivered` / `failed`). Inbound messages arrive with state `received`.
+Call [Message.wait](/docs/sdk-reference/reference/typescript/relay/message#wait) to await a terminal state.
+
+## Signature
+
+```typescript
+class Message
+```
+
+## Examples
+
+```typescript
+const msg = await client.sendMessage({
+  to: '+15551234567',
+  from: '+15557654321',
+  body: 'Your code is 4242',
+});
+
+const final = await msg.wait(30); // seconds
+console.log('Final state:', final.params.message_state);
+```
+
+## Properties
+
+<ParamField path="body" type="string" required>
+  Plain-text message body.
+</ParamField>
+
+<ParamField path="context" type="string" required>
+  RELAY context the message belongs to.
+</ParamField>
+
+<ParamField path="direction" type="string" required>
+  `"inbound"` or `"outbound"`.
+</ParamField>
+
+<ParamField path="fromNumber" type="string" required>
+  Sender phone number in E.164 format.
+</ParamField>
+
+<ParamField path="isDone" type="get isDone(): boolean" required>
+  True once the message has reached a terminal state.
+</ParamField>
+
+<ParamField path="isTerminal" type="get isTerminal(): boolean" required>
+  Whether this message's current [Message.state](/docs/sdk-reference/reference/typescript/relay/message#state) is a terminal delivery outcome (`delivered` | `undelivered` | `failed`). Distinct from [Message.isDone](/docs/sdk-reference/reference/typescript/relay/message#is-done): `isDone` reflects whether the internal completion promise has settled (driven by event dispatch), whereas `isTerminal` is a pure test of the state _value_ (`../relay/closedSets.MessageState`) and is meaningful even on a freshly-constructed inbound message.
+</ParamField>
+
+<ParamField path="media" type="string[]" required>
+  Media URLs attached to the message (MMS).
+</ParamField>
+
+<ParamField path="messageId" type="string" required>
+  Unique message identifier assigned by the platform.
+</ParamField>
+
+<ParamField path="reason" type="string" required>
+  Failure / undelivery reason when `state` is non-successful.
+</ParamField>
+
+<ParamField path="result" type="get result(): RelayEvent | null" required>
+  Final event that terminated the message, or `null` if still in-flight.
+</ParamField>
+
+<ParamField path="segments" type="number" required>
+  Number of segments the carrier split the message into.
+</ParamField>
+
+<ParamField path="state" type="MessageState" required>
+  Current message state. One of the [MessageState](/docs/sdk-reference/reference/typescript/relay/closed-sets#message-state) values (`"queued"` | `"initiated"` | `"sent"` | `"delivered"` | `"undelivered"` | `"failed"` | `"received"`; closed literal union, autocompleted + typo-checked). A raw wire value is cast to the closed type at the hydration boundary. Use [Message.isTerminal](/docs/sdk-reference/reference/typescript/relay/message#is-terminal) to test for a final delivery outcome rather than comparing strings by hand.
+</ParamField>
+
+<ParamField path="tags" type="string[]" required>
+  Opaque tags attached to the message.
+</ParamField>
+
+<ParamField path="toNumber" type="string" required>
+  Destination phone number in E.164 format.
+</ParamField>
+
+## Methods
+
+### constructor
+
+#### Signature
+
+```typescript
+constructor(options: { ...11 fields } = {}): Message
+```
+
+#### Parameters
+
+<ParamField path="options" type="object" required default="{}">
+  <ParamField path="options.body" type="string" />
+
+  <ParamField path="options.context" type="string" />
+
+  <ParamField path="options.direction" type="string" />
+
+  <ParamField path="options.fromNumber" type="string" />
+
+  <ParamField path="options.media" type="string[]" />
+
+  <ParamField path="options.messageId" type="string" />
+
+  <ParamField path="options.reason" type="string" />
+
+  <ParamField path="options.segments" type="number" />
+
+  <ParamField path="options.state" type="MessageState" />
+
+  <ParamField path="options.tags" type="string[]" />
+
+  <ParamField path="options.toNumber" type="string" />
+</ParamField>
+
+#### Returns
+
+`Message`
+
+#### Source
+
+[`src/relay/Message.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/relay/Message.ts)
+
+Line 73.
+
+***
+
+### on
+
+Register an event listener for state changes on this message.
+
+The handler fires every time the server emits a `messaging.state` event
+for this message (multiple listeners are supported). Listener errors are
+logged but do not disrupt dispatch.
+
+#### Signature
+
+```typescript
+on(handler: EventHandler): void
+```
+
+#### Parameters
+
+<ParamField path="handler" type="EventHandler" required>
+  Callback invoked for each state-change event.
+</ParamField>
+
+#### Returns
+
+`void`
+
+#### Source
+
+[`src/relay/Message.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/relay/Message.ts)
+
+Line 137.
+
+***
+
+### toString
+
+Return a human-readable diagnostic string.
+
+#### Signature
+
+```typescript
+toString(): string
+```
+
+#### Returns
+
+`string` — `Message(id=..., direction=..., state=..., from=..., to=...)` — handy for log output.
+
+#### Source
+
+[`src/relay/Message.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/relay/Message.ts)
+
+Line 220.
+
+***
+
+### wait
+
+Wait for the message to reach a terminal state (`delivered`, `failed`,
+`undelivered`, etc.).
+
+#### Signature
+
+```typescript
+wait(timeout?: number): Promise<RelayEvent>
+```
+
+#### Parameters
+
+<ParamField path="timeout" type="number">
+  Maximum time to wait in **seconds** (matches the Python SDK convention — not milliseconds).
+</ParamField>
+
+#### Returns
+
+`Promise<RelayEvent>` — The final `messaging.state` [RelayEvent](/docs/sdk-reference/reference/typescript/relay/relay-event).
+
+#### Throws
+
+- When the optional timeout elapses before a terminal state.
+
+#### Source
+
+[`src/relay/Message.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/relay/Message.ts)
+
+Line 150.
+
+## Source
+
+[`src/relay/Message.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/relay/Message.ts)
+
+Line 38.

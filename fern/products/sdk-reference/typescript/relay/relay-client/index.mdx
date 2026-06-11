@@ -1,0 +1,638 @@
+---
+slug: "/reference/typescript/relay/relay-client"
+title: "RelayClient"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "class"
+  language: "typescript"
+  qualified_name: "relay.RelayClient"
+  module: "relay"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/relay/RelayClient.ts"
+---
+# `RelayClient`
+
+Real-time WebSocket client for SignalWire RELAY.
+
+One instance = one persistent JSON-RPC 2.0 WebSocket connection. Lets you
+place / receive calls and SMS, play/record media, run TTS, conference calls
+together, and subscribe to platform events — all without HTTP polling.
+
+Authentication supports either a project/token pair or a JWT.
+
+## Signature
+
+```typescript
+class RelayClient
+```
+
+## Examples
+
+<CodeBlocks>
+  <CodeBlock title="Example 1">
+    ```typescript
+    import { RelayClient } from '@signalwire/sdk';
+
+    const client = new RelayClient({
+      project: process.env.SIGNALWIRE_PROJECT_ID!,
+      token: process.env.SIGNALWIRE_API_TOKEN!,
+      host: 'example.signalwire.com',
+      contexts: ['office'],
+    });
+
+    client.onCall(async (call) => {
+      await call.answer();
+      await call.playTTS({ text: 'Thanks for calling!' });
+      await call.hangup();
+    });
+
+    await client.connect();
+    ```
+  </CodeBlock>
+
+  <CodeBlock title="Example 2">
+    ```typescript
+    await client.connect();
+    const call = await client.dial({
+      devices: [[{ type: 'phone', to: '+15551234567', from: '+15557654321' }]],
+    });
+    await client.sendMessage({ to: '+15551234567', from: '+15557654321', body: 'Hi!' });
+    ```
+  </CodeBlock>
+</CodeBlocks>
+
+## See Also
+
+- \- \[Call]\(/docs/sdk-reference/reference/typescript/relay/call)
+  \- \[Message]\(/docs/sdk-reference/reference/typescript/relay/message)
+
+## Properties
+
+<ParamField path="contexts" type="string[]" required>
+  Contexts this client subscribes to for inbound events.
+</ParamField>
+
+<ParamField path="host" type="string" required>
+  Hostname of the RELAY endpoint (e.g. `example.signalwire.com`).
+</ParamField>
+
+<ParamField path="jwtToken" type="string" required>
+  JWT used instead of project/token if provided.
+</ParamField>
+
+<ParamField path="project" type="string" required>
+  Project ID used for Basic Auth.
+</ParamField>
+
+<ParamField path="relayProtocol" type="get relayProtocol(): string" required>
+  The protocol name the server assigned to this client after `connect()`.
+</ParamField>
+
+<ParamField path="scheme" type="&#x22;ws&#x22; | &#x22;wss&#x22;" required>
+  WebSocket scheme — `'wss'` (production) or `'ws'` (loopback audits). See [RelayClientOptions.scheme](/docs/sdk-reference/reference/typescript/relay/types#relay-client-options#scheme) for the full rationale.
+</ParamField>
+
+<ParamField path="token" type="string" required>
+  API token used for Basic Auth.
+</ParamField>
+
+## Methods
+
+### \[asyncDispose]
+
+Async disposable support — equivalent to Python's `__aexit__`.
+
+Enables usage with `await using`:
+
+```ts
+await using client = new RelayClient({ ... });
+await client.connect();
+// ... automatically disconnects when scope exits
+```
+
+For environments without `await using`, use try/finally:
+
+```ts
+const client = new RelayClient({ ... });
+try { await client.connect(); ... }
+finally { await client.disconnect(); }
+```
+
+#### Signature
+
+```typescript
+[asyncDispose](): Promise<void>
+```
+
+#### Returns
+
+`Promise<void>`
+
+#### Source
+
+[`src/relay/RelayClient.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/relay/RelayClient.ts)
+
+Line 266.
+
+***
+
+### connect
+
+Connect to RELAY and authenticate.
+
+Opens the WebSocket, runs the JSON-RPC `signalwire.connect` handshake,
+and starts the client-side ping loop. Safe to call again after a
+`disconnect()` to reconnect; the process-wide concurrent-connection limit
+is enforced here.
+
+#### Signature
+
+```typescript
+connect(): Promise<void>
+```
+
+#### Returns
+
+`Promise<void>` — Resolves once the client is connected and authenticated.
+
+#### Throws
+
+- When the process-wide connection limit is reached, authentication fails, or the WebSocket cannot be opened.
+
+#### Source
+
+[`src/relay/RelayClient.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/relay/RelayClient.ts)
+
+Line 340.
+
+***
+
+### constructor
+
+Create a new RELAY client.
+Credentials fall back to the `SIGNALWIRE_PROJECT_ID`, `SIGNALWIRE_API_TOKEN`,
+`SIGNALWIRE_JWT_TOKEN`, and `SIGNALWIRE_SPACE` env vars when omitted.
+
+#### Signature
+
+```typescript
+constructor(options: RelayClientOptions = {}): RelayClient
+```
+
+#### Parameters
+
+<ParamField path="options" type="RelayClientOptions" required default="{}">
+  Optional client configuration.
+</ParamField>
+
+#### Returns
+
+`RelayClient`
+
+#### Source
+
+[`src/relay/RelayClient.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/relay/RelayClient.ts)
+
+Line 196.
+
+***
+
+### dial
+
+Initiate an outbound call.
+
+Accepts a "dial plan" — an outer array of serial groups, each containing
+an inner array of devices dialled in parallel. Resolves when any device
+answers; rejects if no device answers within `dialTimeout`.
+
+#### Signature
+
+```typescript
+dial(
+  devices: Record<string, unknown>[][],
+  options: { ...3 fields } = {}
+): Promise<Call>
+```
+
+#### Parameters
+
+<ParamField path="devices" type="Record<string, unknown>[][]" required>
+  Serial/parallel dial plan. `[[A], [B, C]]` dials A first, then B and C in parallel.
+</ParamField>
+
+<ParamField path="options" type="object" required default="{}">
+  Optional dial behaviour overrides.
+
+  <ParamField path="options.dialTimeout" type="number">
+    Dial timeout in seconds (default 120).
+  </ParamField>
+
+  <ParamField path="options.maxDuration" type="number">
+    Maximum call duration in minutes.
+  </ParamField>
+
+  <ParamField path="options.tag" type="string">
+    Client-provided tag for event correlation. Auto-generated (UUID) when omitted.
+  </ParamField>
+</ParamField>
+
+#### Returns
+
+`Promise<Call>` — A [Call](/docs/sdk-reference/reference/typescript/relay/call) representing the answered leg.
+
+#### Throws
+
+- When the dial times out.
+- When the server rejects the dial request.
+
+#### Source
+
+[`src/relay/RelayClient.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/relay/RelayClient.ts)
+
+Line 586.
+
+***
+
+### disconnect
+
+Cleanly close the connection.
+
+Stops the ping loop, drops the WebSocket, rejects every pending request
+and dial with a `Connection closed` [RelayError](/docs/sdk-reference/reference/typescript/relay/relay-error), and removes the
+client from the process-wide active set. Safe to call repeatedly.
+
+#### Signature
+
+```typescript
+disconnect(): Promise<void>
+```
+
+#### Returns
+
+`Promise<void>` — Resolves once all resources have been released.
+
+#### Source
+
+[`src/relay/RelayClient.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/relay/RelayClient.ts)
+
+Line 488.
+
+***
+
+### execute
+
+Send a JSON-RPC request and await the response.
+
+This is the low-level escape hatch for calling RELAY methods that don't
+yet have a higher-level helper on this class. Queued if the client is
+currently disconnected; sent immediately otherwise.
+
+#### Signature
+
+```typescript
+execute(
+  method: string,
+  params: Record<string, unknown>
+): Promise<Record<string, unknown>>
+```
+
+#### Parameters
+
+<ParamField path="method" type="string" required>
+  Fully-qualified JSON-RPC method name (e.g. `"calling.play"`).
+</ParamField>
+
+<ParamField path="params" type="Record<string, unknown>" required>
+  Method-specific params object.
+</ParamField>
+
+#### Returns
+
+`Promise<Record<string, unknown>>` — The `result` field of the JSON-RPC response.
+
+#### Throws
+
+- When the server returns a non-2xx code.
+
+#### Source
+
+[`src/relay/RelayClient.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/relay/RelayClient.ts)
+
+Line 542.
+
+***
+
+### notify
+
+Fire-and-forget JSON-RPC notification (no response awaited).
+
+Sends a JSON-RPC frame on the open socket without registering a
+pending-response future. Used by the audit harness to emit a
+`signalwire.event`-method frame the fixture watches for; production
+users should always use [execute](/docs/sdk-reference/reference/typescript/relay/relay-client#execute) instead so the response code
+is checked.
+
+No-ops when the socket is closed.
+
+#### Signature
+
+```typescript
+notify(method: string, params: Record<string, unknown>): void
+```
+
+#### Parameters
+
+<ParamField path="method" type="string" required>
+  JSON-RPC method name.
+</ParamField>
+
+<ParamField path="params" type="Record<string, unknown>" required>
+  Method params object.
+</ParamField>
+
+#### Returns
+
+`void`
+
+#### Source
+
+[`src/relay/RelayClient.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/relay/RelayClient.ts)
+
+Line 560.
+
+***
+
+### onCall
+
+Register the inbound call handler.
+
+The handler is invoked once per inbound call, with a fully-formed
+[Call](/docs/sdk-reference/reference/typescript/relay/call) already in state `"created"`. Answer, reject, or forward
+the call from inside the handler.
+
+#### Signature
+
+```typescript
+onCall(handler: CallHandler): CallHandler
+```
+
+#### Parameters
+
+<ParamField path="handler" type="CallHandler" required>
+  Callback invoked for each inbound call. May return a promise; errors are logged but do not tear down the client.
+</ParamField>
+
+#### Returns
+
+`CallHandler` — The same handler, to support decorator-style usage.
+
+#### Source
+
+[`src/relay/RelayClient.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/relay/RelayClient.ts)
+
+Line 283.
+
+***
+
+### onEvent
+
+Register a low-level observer that fires for every inbound
+`signalwire.event`, regardless of event type or whether a typed
+Call / Message could be matched.
+
+Most users want [onCall](/docs/sdk-reference/reference/typescript/relay/relay-client#on-call) / [onMessage](/docs/sdk-reference/reference/typescript/relay/relay-client#on-message) — those deliver
+typed objects and handle correlation. `onEvent` is the generic
+escape hatch used by the porting-sdk audit harness to react to
+every event the platform pushes.
+
+Fires BEFORE typed routing, so the same event will be observed here
+AND on any matching [Call](/docs/sdk-reference/reference/typescript/relay/call) / [Message](/docs/sdk-reference/reference/typescript/relay/message).
+
+#### Signature
+
+```typescript
+onEvent(
+  handler: (eventType: string, params: Record<string, any>) => void | Promise<void>
+): (eventType: string, params: Record<string, any>) => void | Promise<void>
+```
+
+#### Parameters
+
+<ParamField path="handler" type="(eventType: string, params: Record<string, any>) => void | Promise<void>" required>
+  Callback receiving `(eventType, params)`. May be async.
+</ParamField>
+
+#### Returns
+
+`(eventType: string, params: Record<string, any>) => void | Promise<void>` — The same handler, for decorator-style usage.
+
+#### Source
+
+[`src/relay/RelayClient.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/relay/RelayClient.ts)
+
+Line 319.
+
+***
+
+### onMessage
+
+Register the inbound message handler.
+
+The handler is invoked once per inbound SMS/MMS delivered to a subscribed
+context, with a [Message](/docs/sdk-reference/reference/typescript/relay/message) already in state `"received"`.
+
+#### Signature
+
+```typescript
+onMessage(handler: MessageHandler): MessageHandler
+```
+
+#### Parameters
+
+<ParamField path="handler" type="MessageHandler" required>
+  Callback invoked for each inbound message. May return a promise; errors are logged but do not tear down the client.
+</ParamField>
+
+#### Returns
+
+`MessageHandler` — The same handler, to support decorator-style usage.
+
+#### Source
+
+[`src/relay/RelayClient.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/relay/RelayClient.ts)
+
+Line 298.
+
+***
+
+### receive
+
+Subscribe to additional RELAY contexts on an already-connected client.
+
+Inbound calls and messages on any of the listed contexts will be delivered
+to the `onCall` / `onMessage` handlers. A no-op when `contexts` is empty.
+
+#### Signature
+
+```typescript
+receive(contexts: string[]): Promise<void>
+```
+
+#### Parameters
+
+<ParamField path="contexts" type="string[]" required>
+  Context names to subscribe to.
+</ParamField>
+
+#### Returns
+
+`Promise<void>` — Resolves once the server has confirmed the subscription.
+
+#### Throws
+
+- When the server rejects the subscribe request.
+
+#### Source
+
+[`src/relay/RelayClient.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/relay/RelayClient.ts)
+
+Line 714.
+
+***
+
+### run
+
+Blocking entry point — connects and maintains the connection with
+auto-reconnect, returning only after a clean shutdown (Ctrl+C, SIGTERM,
+or [disconnect](/docs/sdk-reference/reference/typescript/relay/relay-client#disconnect) from another scope).
+
+Installs `SIGINT` / `SIGTERM` handlers, so typically only one `RelayClient`
+per process should call `run()`.
+
+#### Signature
+
+```typescript
+run(): Promise<void>
+```
+
+#### Returns
+
+`Promise<void>` — Resolves once a shutdown has been requested and cleanup completes.
+
+#### Throws
+
+- Only on unrecoverable startup failures — normal disconnects are handled internally by the reconnect loop.
+
+#### Source
+
+[`src/relay/RelayClient.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/relay/RelayClient.ts)
+
+Line 748.
+
+***
+
+### sendMessage
+
+Send an outbound SMS / MMS message.
+
+The method returns as soon as the server has accepted the send; track the
+message's terminal state with [Message.wait](/docs/sdk-reference/reference/typescript/relay/message#wait) or the `onCompleted`
+callback.
+
+#### Signature
+
+```typescript
+sendMessage(options: { ...8 fields }): Promise<Message>
+```
+
+#### Parameters
+
+<ParamField path="options" type="object" required>
+  Send parameters.
+
+  <ParamField path="options.body" type="string">
+    Text body of the message.
+  </ParamField>
+
+  <ParamField path="options.context" type="string">
+    Context for receiving state events. Defaults to the negotiated relay protocol.
+  </ParamField>
+
+  <ParamField path="options.fromNumber" type="string" required>
+    Sender phone number in E.164 format.
+  </ParamField>
+
+  <ParamField path="options.media" type="string[]">
+    List of media URLs for MMS.
+  </ParamField>
+
+  <ParamField path="options.onCompleted" type="(event: any) => void | Promise<void>">
+    Optional callback fired when the message reaches a terminal state (delivered / failed / undelivered).
+  </ParamField>
+
+  <ParamField path="options.region" type="string">
+    Origination region override.
+  </ParamField>
+
+  <ParamField path="options.tags" type="string[]">
+    Tags attached to the message for correlation.
+  </ParamField>
+
+  <ParamField path="options.toNumber" type="string" required>
+    Destination phone number in E.164 format.
+  </ParamField>
+</ParamField>
+
+#### Returns
+
+`Promise<Message>` — A [Message](/docs/sdk-reference/reference/typescript/relay/message) tracking the outbound send.
+
+#### Throws
+
+- When the server rejects the send request.
+
+#### Source
+
+[`src/relay/RelayClient.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/relay/RelayClient.ts)
+
+Line 655.
+
+***
+
+### unreceive
+
+Unsubscribe from contexts previously passed to [receive](/docs/sdk-reference/reference/typescript/relay/relay-client#receive) (or the
+constructor). A no-op when `contexts` is empty.
+
+#### Signature
+
+```typescript
+unreceive(contexts: string[]): Promise<void>
+```
+
+#### Parameters
+
+<ParamField path="contexts" type="string[]" required>
+  Context names to unsubscribe from.
+</ParamField>
+
+#### Returns
+
+`Promise<void>` — Resolves once the server has confirmed the unsubscribe.
+
+#### Throws
+
+- When the server rejects the unsubscribe request.
+
+#### Source
+
+[`src/relay/RelayClient.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/relay/RelayClient.ts)
+
+Line 728.
+
+## Source
+
+[`src/relay/RelayClient.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/relay/RelayClient.ts)
+
+Line 129.

@@ -1,0 +1,398 @@
+---
+slug: "/reference/rust/signalwire/swaig/params-builder"
+title: "params_builder"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "module"
+  language: "rust"
+  qualified_name: "signalwire::swaig::params_builder"
+  parent: "signalwire::swaig"
+  module: "swaig"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/swaig/params_builder.rs"
+  visibility: "public"
+---
+# `params_builder`
+
+Typed builder for SWAIG tool-parameter JSON schemas.
+
+[`AgentBase::define_tool`] / [`Service::define_tool`] take the function's
+parameter schema as an untyped `serde_json::Value` — a `properties` object
+hand-written as nested `json!({ ... })`:
+
+```ignore
+agent.define_tool(
+    "search_faqs",
+    "Search the FAQ knowledge base",
+    json!({
+        "query": {"type": "string", "description": "The question or keywords"},
+    }),
+    handler,
+    false,
+);
+```
+
+That is easy to typo (`"strign"`, `"desciption"`, a forgotten `"type"`) and
+the compiler can't help. \[`ParamsBuilder`] is an _additive_, fully-typed
+convenience over the **exact same wire output**: it produces the identical
+`properties` object — so it drops straight into the existing, unchanged
+`define_tool` path. It is not a new format.
+
+```no_run
+use signalwire::swaig::ParamsBuilder;
+use serde_json::json;
+
+let params = ParamsBuilder::new()
+    .string("query", "The question or keywords to search")
+    .build();
+
+// Byte-identical to the hand-written form above:
+assert_eq!(
+    params,
+    json!({"query": {"type": "string", "description": "The question or keywords to search"}})
+);
+```
+
+## Two outputs, both byte-identical to the hand-written forms
+
+- `build` returns the **`properties` object** — what
+  Rust's `define_tool(parameters)` accepts (it wraps it as
+  `{"type":"object","properties": <this>}`).
+- `build_schema` returns the **full** JSON
+  schema `{"type":"object","properties":{…},"required":[…]}` — exactly the
+  shape the Python reference's `_ensure_parameter_structure` emits and the
+  shape hand-written for `register_swaig_function` / DataMap full
+  definitions. This is the form that carries a top-level
+  `required` list.
+
+## Closed-set (enum) properties
+
+`enum_of` renders a schema `"enum": [...]` from any
+iterator of `impl AsRef<str>`, so the Tier-1 media enums plug straight in via
+their `all()` slices:
+
+```no_run
+use signalwire::swaig::{ParamsBuilder, RecordFormat};
+use serde_json::json;
+
+let params = ParamsBuilder::new()
+    .enum_of("fmt", RecordFormat::all(), "Recording container format")
+    .build();
+
+assert_eq!(
+    params,
+    json!({"fmt": {"type": "string", "enum": ["wav", "mp3", "mp4"], "description": "Recording container format"}})
+);
+```
+
+[`AgentBase::define_tool`]: crate::agent::AgentBase::define_tool
+
+[`Service::define_tool`]: crate::swml::service::Service::define_tool
+
+## Examples
+
+<CodeBlocks>
+  <CodeBlock title="Example 1">
+    ```rust
+    agent.define_tool(
+        "search_faqs",
+        "Search the FAQ knowledge base",
+        json!({
+            "query": {"type": "string", "description": "The question or keywords"},
+        }),
+        handler,
+        false,
+    );
+    ```
+  </CodeBlock>
+
+  <CodeBlock title="Example 2">
+    ```rust
+    use signalwire::swaig::ParamsBuilder;
+    use serde_json::json;
+
+    let params = ParamsBuilder::new()
+        .string("query", "The question or keywords to search")
+        .build();
+
+    // Byte-identical to the hand-written form above:
+    assert_eq!(
+        params,
+        json!({"query": {"type": "string", "description": "The question or keywords to search"}})
+    );
+    ```
+  </CodeBlock>
+
+  <CodeBlock title="Example 3">
+    ```rust
+    use signalwire::swaig::{ParamsBuilder, RecordFormat};
+    use serde_json::json;
+
+    let params = ParamsBuilder::new()
+        .enum_of("fmt", RecordFormat::all(), "Recording container format")
+        .build();
+
+    assert_eq!(
+        params,
+        json!({"fmt": {"type": "string", "enum": ["wav", "mp3", "mp4"], "description": "Recording container format"}})
+    );
+    ```
+  </CodeBlock>
+</CodeBlocks>
+
+## Classes
+
+<CardGroup cols={2}>
+  <Card title="ParamsBuilder" href="/docs/sdk-reference/reference/rust/signalwire/swaig/params-builder/params-builder">
+    Fluent, typed builder for a SWAIG tool's parameter schema.
+  </Card>
+
+  <Card title="PropertyBuilder" href="/docs/sdk-reference/reference/rust/signalwire/swaig/params-builder/property-builder">
+    A single parameter property under construction.
+  </Card>
+</CardGroup>
+
+## Enums
+
+### ParamKind
+
+The JSON-Schema primitive types a SWAIG parameter property can declare.
+
+Used by \[`ParamsBuilder::array`] (the element kind) and, indirectly, by the
+per-kind builder methods. The `as_str` value is the literal that lands in
+the schema's `"type"` field.
+
+#### Signature
+
+```rust
+enum ParamKind
+```
+
+#### Inheritance
+
+**Implements:** `Debug`, `Clone`, `Copy`, `PartialEq`, `Eq`, `Hash`, `PartialOrd`, `Ord`, `Display`
+
+#### Variants
+
+<ParamField path="Array" type="Array" required>
+  `"array"`
+</ParamField>
+
+<ParamField path="Boolean" type="Boolean" required>
+  `"boolean"`
+</ParamField>
+
+<ParamField path="Integer" type="Integer" required>
+  `"integer"`
+</ParamField>
+
+<ParamField path="Number" type="Number" required>
+  `"number"` (floating point)
+</ParamField>
+
+<ParamField path="Object" type="Object" required>
+  `"object"`
+</ParamField>
+
+<ParamField path="String" type="String" required>
+  `"string"`
+</ParamField>
+
+#### Methods
+
+##### as\_str
+
+The canonical JSON-Schema `"type"` string for this kind.
+
+###### Signature
+
+```rust
+fn as_str(&self) -> &'static str
+```
+
+###### Returns
+
+`&'static str`
+
+###### Source
+
+[`src/swaig/params_builder.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/swaig/params_builder.rs)
+
+Line 101.
+
+***
+
+##### clone
+
+###### Signature
+
+```rust
+fn clone(&self) -> ?
+```
+
+###### Returns
+
+`?`
+
+###### Source
+
+[`src/swaig/params_builder.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/swaig/params_builder.rs)
+
+Line 82.
+
+***
+
+##### cmp
+
+###### Signature
+
+```rust
+fn cmp(&self, other: &?) -> ?
+```
+
+###### Parameters
+
+<ParamField path="other" type="&?" required />
+
+###### Returns
+
+`?`
+
+###### Source
+
+[`src/swaig/params_builder.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/swaig/params_builder.rs)
+
+Line 82.
+
+***
+
+##### eq
+
+###### Signature
+
+```rust
+fn eq(&self, other: &?) -> bool
+```
+
+###### Parameters
+
+<ParamField path="other" type="&?" required />
+
+###### Returns
+
+`bool`
+
+###### Source
+
+[`src/swaig/params_builder.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/swaig/params_builder.rs)
+
+Line 82.
+
+***
+
+##### fmt
+
+###### Signature
+
+```rust
+fn fmt(&self, f: &mut ?<'_>) -> ?
+```
+
+###### Parameters
+
+<ParamField path="f" type="&mut ?<'_>" required />
+
+###### Returns
+
+`?`
+
+###### Source
+
+[`src/swaig/params_builder.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/swaig/params_builder.rs)
+
+Line 82.
+
+***
+
+##### fmt
+
+###### Signature
+
+```rust
+fn fmt(&self, f: &mut ?<'_>) -> ?
+```
+
+###### Parameters
+
+<ParamField path="f" type="&mut ?<'_>" required />
+
+###### Returns
+
+`?`
+
+###### Source
+
+[`src/swaig/params_builder.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/swaig/params_builder.rs)
+
+Line 114.
+
+***
+
+##### hash
+
+###### Signature
+
+```rust
+fn hash<__H: ?>(&self, state: &mut __H)
+```
+
+###### Type Parameters
+
+<ParamField path="__H" type="?" required />
+
+###### Parameters
+
+<ParamField path="state" type="&mut __H" required />
+
+###### Source
+
+[`src/swaig/params_builder.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/swaig/params_builder.rs)
+
+Line 82.
+
+***
+
+##### partial\_cmp
+
+###### Signature
+
+```rust
+fn partial_cmp(&self, other: &?) -> ?<?>
+```
+
+###### Parameters
+
+<ParamField path="other" type="&?" required />
+
+###### Returns
+
+`?<?>`
+
+###### Source
+
+[`src/swaig/params_builder.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/swaig/params_builder.rs)
+
+Line 82.
+
+#### Source
+
+[`src/swaig/params_builder.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/swaig/params_builder.rs)
+
+Line 84.
+
+## Source
+
+[`src/swaig/params_builder.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/swaig/params_builder.rs)
+
+Line 1.

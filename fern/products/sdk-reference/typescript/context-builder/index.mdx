@@ -1,0 +1,302 @@
+---
+slug: "/reference/typescript/context-builder"
+title: "ContextBuilder"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "class"
+  language: "typescript"
+  qualified_name: "ContextBuilder"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/ContextBuilder.ts"
+---
+# `ContextBuilder`
+
+Builder for multi-step, multi-context AI agent workflows.
+
+A ContextBuilder owns one or more Contexts; each Context owns an ordered
+list of Steps. Only one context and one step is active at a time. Per
+chat turn, the runtime injects the current step's instructions as a
+system message, then asks the LLM for a response.
+
+## Native tools auto-injected by the runtime
+
+When a step (or its enclosing context) declares `validSteps` or
+`validContexts`, the runtime auto-injects two native tools so the model
+can navigate the flow:
+
+- `next_step(step: enum)`         — present when validSteps is set
+- `change_context(context: enum)` — present when validContexts is set
+
+Their `enum` schemas are rewritten on every turn to match whatever
+validSteps / validContexts apply to the current step. You do NOT need
+to define these tools yourself; they appear automatically.
+
+A third native tool — `gather_submit` — is injected during gather\_info
+questioning (see Step.setGatherInfo / addGatherQuestion).
+
+These three names — `next_step`, `change_context`, `gather_submit` —
+are reserved. ContextBuilder.validate() will reject any agent that
+defines a SWAIG tool with one of these names.
+
+## Function whitelisting (Step.setFunctions)
+
+Each step may declare a `functions` whitelist. The whitelist is applied
+in-memory at the start of each LLM turn. CRITICALLY: if a step does NOT
+declare a `functions` field, it INHERITS the previous step's active set.
+See Step.setFunctions() for details and examples.
+
+## Validation
+
+Call validate() (or toDict(), which calls it) to check that:
+
+- At least one context is defined
+- A single context must be named "default"
+- Every context has at least one step
+- validSteps references resolve to real step names (or "next")
+- validContexts references resolve to real context names
+- gather\_info questions are non-empty and have unique keys
+- gather\_info completion\_action targets a reachable step
+- No user-defined SWAIG tool collides with a reserved native name
+
+## Signature
+
+```typescript
+class ContextBuilder
+```
+
+## Examples
+
+```typescript
+import { AgentBase, ContextBuilder } from '@signalwire/sdk';
+
+const agent = new AgentBase({ name: 'support', route: '/' });
+
+const contexts = new ContextBuilder();
+const flow = contexts.addContext('default');
+
+flow.addStep('greeting')
+  .setText("Greet the caller and ask if they're an existing customer.")
+  .setValidSteps(['existing', 'new']);
+
+flow.addStep('existing')
+  .setText('Ask for the account number and read it back to confirm.');
+
+flow.addStep('new')
+  .setText('Collect name, email, and reason for calling.');
+
+agent.defineContexts(contexts);
+```
+
+## See Also
+
+- \- \[Context]\(/docs/sdk-reference/reference/typescript/context-builder/context)
+  \- \[Step]\(/docs/sdk-reference/reference/typescript/context-builder/step)
+  \- \[GatherInfo]\(/docs/sdk-reference/reference/typescript/context-builder/gather-info)
+  \- \[AgentBase.defineContexts]\(/docs/sdk-reference/reference/typescript/agent-base#define-contexts)
+
+## Constants
+
+<ParamField path="RESERVED_NATIVE_TOOL_NAMES" type="ReadonlySet<string>" required>
+  Reserved tool names auto-injected by the runtime when contexts/steps are present. User-defined SWAIG tools must not collide with these names. ContextBuilder.validate() rejects any agent that registers a user tool sharing one of these names — the runtime would never call the user tool because the native one wins.
+</ParamField>
+
+## Classes
+
+<CardGroup cols={2}>
+  <Card title="Context" href="/docs/sdk-reference/reference/typescript/context-builder/context">
+    A named context containing ordered steps, prompt configuration, and navigation rules.
+  </Card>
+
+  <Card title="GatherInfo" href="/docs/sdk-reference/reference/typescript/context-builder/gather-info">
+    Collects structured information from the user through a series of questions.
+  </Card>
+
+  <Card title="GatherQuestion" href="/docs/sdk-reference/reference/typescript/context-builder/gather-question">
+    Represents a single question within a gather operation.
+  </Card>
+
+  <Card title="Step" href="/docs/sdk-reference/reference/typescript/context-builder/step">
+    A single step within a context, with prompt content, criteria, function restrictions, and navigation rules.
+  </Card>
+</CardGroup>
+
+## Methods
+
+### addContext
+
+Adds a new named context to the builder.
+
+#### Signature
+
+```typescript
+addContext(name: string): Context
+```
+
+#### Parameters
+
+<ParamField path="name" type="string" required>
+  The unique context name. A single-context flow must name its only context `"default"`.
+</ParamField>
+
+#### Returns
+
+`Context` — The newly created [Context](/docs/sdk-reference/reference/typescript/context-builder/context) for further configuration.
+
+#### Throws
+
+- When the max-context limit is exceeded or a context with the same name already exists.
+
+#### Source
+
+[`src/ContextBuilder.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/ContextBuilder.ts)
+
+Line 994.
+
+***
+
+### constructor
+
+#### Signature
+
+```typescript
+constructor(): ContextBuilder
+```
+
+#### Returns
+
+`ContextBuilder`
+
+***
+
+### getContext
+
+Returns a context by name.
+
+#### Signature
+
+```typescript
+getContext(name: string): Context | undefined
+```
+
+#### Parameters
+
+<ParamField path="name" type="string" required>
+  The context name to retrieve.
+</ParamField>
+
+#### Returns
+
+`Context | undefined` — The matching Context, or undefined if not found.
+
+#### Source
+
+[`src/ContextBuilder.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/ContextBuilder.ts)
+
+Line 1010.
+
+***
+
+### reset
+
+Removes all contexts, returning the builder to its initial state.
+Use this in a dynamic config callback when you need to rebuild
+contexts from scratch for a specific request.
+
+#### Signature
+
+```typescript
+reset(): this
+```
+
+#### Returns
+
+`this` — This builder for chaining.
+
+#### Source
+
+[`src/ContextBuilder.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/ContextBuilder.ts)
+
+Line 979.
+
+***
+
+### toDict
+
+Validates and serializes all contexts to a plain object for SWML output.
+
+#### Signature
+
+```typescript
+toDict(): Record<string, unknown>
+```
+
+#### Returns
+
+`Record<string, unknown>` — A dictionary mapping context names to their serialized representations.
+
+#### Source
+
+[`src/ContextBuilder.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/ContextBuilder.ts)
+
+Line 1162.
+
+***
+
+### validate
+
+Validates that all contexts have steps, naming constraints are met, and cross-context references are valid.
+
+#### Signature
+
+```typescript
+validate(): void
+```
+
+#### Returns
+
+`void`
+
+#### Throws
+
+- Error if validation fails.
+
+#### Source
+
+[`src/ContextBuilder.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/ContextBuilder.ts)
+
+Line 1018.
+
+## Functions
+
+### createSimpleContext
+
+Creates a standalone Context instance without a ContextBuilder.
+
+#### Signature
+
+```typescript
+createSimpleContext(name: string = 'default'): Context
+```
+
+#### Parameters
+
+<ParamField path="name" type="string" required default="'default'">
+  The context name (defaults to "default").
+</ParamField>
+
+#### Returns
+
+`Context` — A new Context instance.
+
+#### Source
+
+[`src/ContextBuilder.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/ContextBuilder.ts)
+
+Line 1179.
+
+## Source
+
+[`src/ContextBuilder.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/ContextBuilder.ts)
+
+Line 957.
