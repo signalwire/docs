@@ -24,7 +24,7 @@ namespace SignalWireAPI.RelayRest.RegistryBeta {
     @doc("""
       Returns a list of your registered brands for 10DLC.
 
-      ${tokenPermissions<"_Numbers_">}
+      ${tokenPermissions<"_Messaging_ and _Numbers_">}
       """)
     list(
       @query
@@ -41,7 +41,7 @@ namespace SignalWireAPI.RelayRest.RegistryBeta {
     @doc("""
       Creates a new brand for 10DLC registration.
 
-      ${tokenPermissions<"_Numbers_">}
+      ${tokenPermissions<"_Messaging_ and _Numbers_">}
       """)
     @post
     create(@body body: CreateBrandRequest):
@@ -58,7 +58,7 @@ namespace SignalWireAPI.RelayRest.RegistryBeta {
     @doc("""
       Retrieves the details of a brand.
 
-      ${tokenPermissions<"_Numbers_">}
+      ${tokenPermissions<"_Messaging_ and _Numbers_">}
       """)
     read(...BrandPathID):
       | BrandResponse
@@ -76,7 +76,7 @@ namespace SignalWireAPI.RelayRest.RegistryBeta {
     @doc("""
       Returns a list of campaigns for a brand.
 
-      ${tokenPermissions<"_Numbers_">}
+      ${tokenPermissions<"_Messaging_ and _Numbers_">}
       """)
     @get
     listCampaigns(
@@ -96,7 +96,7 @@ namespace SignalWireAPI.RelayRest.RegistryBeta {
     @doc("""
       Creates a new campaign for 10DLC registration.
 
-      ${tokenPermissions<"_Numbers_">}
+      ${tokenPermissions<"_Messaging_ and _Numbers_">}
       """)
     @post
     createCampaign(...BrandPathID, @body body: CreateCampaignRequest):
@@ -119,7 +119,7 @@ namespace SignalWireAPI.RelayRest.RegistryBeta {
     @doc("""
       Retrieves the details of a campaign.
 
-      ${tokenPermissions<"_Numbers_">}
+      ${tokenPermissions<"_Messaging_ and _Numbers_">}
       """)
     read(...CampaignPathID):
       | CampaignResponse
@@ -132,7 +132,7 @@ namespace SignalWireAPI.RelayRest.RegistryBeta {
     @doc("""
       Updates a campaign.
 
-      ${tokenPermissions<"_Numbers_">}
+      ${tokenPermissions<"_Messaging_ and _Numbers_">}
       """)
     @put
     update(...CampaignPathID, @body body: UpdateCampaignRequest):
@@ -155,7 +155,7 @@ namespace SignalWireAPI.RelayRest.RegistryBeta {
     @doc("""
       Returns a list of phone numbers assigned to a campaign.
 
-      ${tokenPermissions<"_Numbers_">}
+      ${tokenPermissions<"_Messaging_ and _Numbers_">}
       """)
     @get
     listNumbers(
@@ -180,7 +180,7 @@ namespace SignalWireAPI.RelayRest.RegistryBeta {
     @doc("""
       Returns a list of orders for a campaign.
 
-      ${tokenPermissions<"_Numbers_">}
+      ${tokenPermissions<"_Messaging_ and _Numbers_">}
       """)
     @get
     listOrders(
@@ -196,7 +196,7 @@ namespace SignalWireAPI.RelayRest.RegistryBeta {
     @doc("""
       Creates a new order for a campaign.
 
-      ${tokenPermissions<"_Numbers_">}
+      ${tokenPermissions<"_Messaging_ and _Numbers_">}
       """)
     @post
     createOrder(...CampaignPathID, @body body: CreateOrderRequest):
@@ -219,7 +219,7 @@ namespace SignalWireAPI.RelayRest.RegistryBeta {
     @doc("""
       Removes a phone number from a campaign.
 
-      ${tokenPermissions<"_Numbers_">}
+      ${tokenPermissions<"_Messaging_ and _Numbers_">}
       """)
     @delete
     delete(...AssignedNumberPathID):
@@ -240,7 +240,7 @@ namespace SignalWireAPI.RelayRest.RegistryBeta {
     @doc("""
       Retrieves the details of an order.
 
-      ${tokenPermissions<"_Numbers_">}
+      ${tokenPermissions<"_Messaging_ and _Numbers_">}
       """)
     read(...OrderPathID):
       | OrderResponse
