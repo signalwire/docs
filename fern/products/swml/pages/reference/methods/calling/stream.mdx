@@ -1,0 +1,161 @@
+---
+title: stream
+slug: /reference/calling/stream
+description: Start a background audio stream from the call to a WebSocket endpoint.
+max-toc-depth: 3
+---
+
+[statuscallbacks]: #statuscallbacks
+
+Stream the call's audio to a WebSocket endpoint you control. The stream runs in the background: execution continues to the next instruction while audio is delivered to your endpoint in real time, which is useful for live transcription, voice analytics, or other custom media processing.
+
+The stream keeps running until you stop it with [`stop_stream`](/docs/swml/reference/calling/stop-stream) or the call ends. You can run more than one stream at once by giving each its own `control_id`.
+
+## **Properties**
+
+<ParamField path="stream" type="object" required={true} toc={true}>
+  An object that accepts the following properties.
+</ParamField>
+
+<Indent>
+
+<ParamField path="stream.url" type="string" required={true} toc={true}>
+  The secure WebSocket URI (`wss://`) to stream the call's audio to.
+</ParamField>
+
+
+<ParamField path="stream.control_id" type="string" default="Auto-generated, stored in the stream_control_id variable" toc={true}>
+  Identifier for this stream, used to stop it later with `stop_stream`. Must be unique among the active streams on the call.
+</ParamField>
+
+
+<ParamField path="stream.name" type="string" toc={true}>
+  A friendly name to identify this stream. Included in the stream's status events.
+</ParamField>
+
+
+<ParamField path="stream.track" type="string" default="inbound_track" toc={true}>
+  Which side of the call's audio to stream: `inbound_track` for what the caller says, `outbound_track` for what the caller hears, or `both_tracks` for both.
+</ParamField>
+
+
+<ParamField path="stream.codec" type="string" toc={true}>
+  Codec to use for the streamed audio. Freeform and endpoint-specific; common values include `PCMU`, `PCMA`, and `OPUS`.
+</ParamField>
+
+
+<ParamField path="stream.status_url" type="string" toc={true}>
+  HTTP or HTTPS URL to deliver stream status events. Learn more about [status callbacks][statuscallbacks].
+</ParamField>
+
+
+<ParamField path="stream.status_url_method" type="string" default="POST" toc={true}>
+  HTTP method used to deliver stream status events to `status_url`. **Possible values:** `GET`, `POST`.
+</ParamField>
+
+
+<ParamField path="stream.authorization_bearer_token" type="string" toc={true}>
+  Bearer token sent in the `Authorization` header when connecting to the WebSocket endpoint.
+</ParamField>
+
+
+<ParamField path="stream.custom_parameters" type="object" toc={true}>
+  Custom key-value pairs included in the first message sent to your WebSocket endpoint when the stream connects.
+</ParamField>
+
+</Indent>
+
+
+## **Variables**
+
+<ParamField path="stream_result" type="success | failed" toc={true}>
+  Whether the stream started successfully.
+</ParamField>
+
+
+<ParamField path="stream_control_id" type="string" toc={true}>
+  Identifier assigned to this stream. `stop_stream` uses it to stop the right one.
+</ParamField>
+
+## **StatusCallbacks**
+
+When you set `status_url`, SignalWire POSTs a `calling.call.stream` event to it whenever the stream changes state: `params.state` is `streaming` when the stream starts and `finished` when it ends.
+
+<WebhookPayloadSnippet webhook="streamStatusCallback" />
+
+See the [Stream status callback](/docs/apis/rest/calls/webhooks/stream-status-callback) webhook page for the full field reference.
+
+---
+
+## **Examples**
+
+### Stream to a WebSocket endpoint
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - stream:
+        url: wss://example.com/audio-stream
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "stream": {
+          "url": "wss://example.com/audio-stream"
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### Stream both tracks with status callbacks
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - stream:
+        url: wss://example.com/audio-stream
+        name: live-transcription
+        track: both_tracks
+        status_url: https://example.com/stream-status
+        custom_parameters:
+          customer_tier: gold
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "stream": {
+          "url": "wss://example.com/audio-stream",
+          "name": "live-transcription",
+          "track": "both_tracks",
+          "status_url": "https://example.com/stream-status",
+          "custom_parameters": {
+            "customer_tier": "gold"
+          }
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
