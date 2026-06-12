@@ -500,7 +500,7 @@ function Select({ label, value, onChange, opts, noAll }:
       <span>{label}</span>
       <select value={value} onChange={(e) => onChange(e.target.value)}>
         {noAll
-          ? <option value={ALL} disabled hidden>Choose a provider…</option>
+          ? <option value={ALL} disabled>Choose a provider…</option>
           : <option value={ALL}>all</option>}
         {opts.map((o) => <option key={o} value={o}>{o}</option>)}
       </select>
