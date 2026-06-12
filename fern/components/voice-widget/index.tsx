@@ -191,7 +191,8 @@ export function VoiceWidget({
   // single column is an excessive scroll on a phone.
   const isMobile = useIsMobile();
   const effectivePageSize = isMobile ? Math.min(pageSizeChoice, MOBILE_PAGE_SIZE) : pageSizeChoice;
-  const pageSizeOpts = [...new Set([...PAGE_SIZE_OPTIONS, pageSize])].sort((a, b) => a - b);
+  const pageSizeOpts = [...new Set([...PAGE_SIZE_OPTIONS, pageSize])].sort((a, b) => a - b)
+    .filter((n) => !columns || columns <= 0 || n % columns === 0);
 
   // Resolve which filter/search controls are visible. `filters` is a boolean (all on/off) or a
   // per-control object; each control defaults on unless explicitly false. The `search` control
