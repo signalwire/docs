@@ -369,7 +369,7 @@ export function VoiceWidget({
 
       {(showProvider || (!awaitingProvider && (showFilter("language") || showFilter("gender") || showFilter("pageSize"))) || showGroup) && (
         <div className="vw-filters">
-          {showProvider && <Select label="Provider" value={provider} onChange={setProvider} opts={providers} />}
+          {showProvider && <Select label="Provider" value={provider} onChange={setProvider} opts={providers} noAll={requireProvider} />}
           {!awaitingProvider && showFilter("language") && <Select label="Language" value={language} onChange={setLanguage} opts={languages} />}
           {!awaitingProvider && showFilter("gender") && (
             <Select label="Gender" value={gender} onChange={setGender}
@@ -493,13 +493,15 @@ function VoiceWidgetSkeleton({ gridStyle }: { gridStyle?: CSSProperties }) {
   );
 }
 
-function Select({ label, value, onChange, opts }:
-  { label: string; value: string; onChange: (v: string) => void; opts: string[] }) {
+function Select({ label, value, onChange, opts, noAll }:
+  { label: string; value: string; onChange: (v: string) => void; opts: string[]; noAll?: boolean }) {
   return (
     <label className="vw-select">
       <span>{label}</span>
       <select value={value} onChange={(e) => onChange(e.target.value)}>
-        <option value={ALL}>all</option>
+        {noAll
+          ? <option value={ALL} disabled hidden>Choose a provider…</option>
+          : <option value={ALL}>all</option>}
         {opts.map((o) => <option key={o} value={o}>{o}</option>)}
       </select>
     </label>
