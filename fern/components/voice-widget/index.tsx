@@ -352,14 +352,16 @@ export function VoiceWidget({
     <div className="vw">
       <audio ref={audioRef} onEnded={() => setPlayingKey(null)} preload="none" />
       <header className="vw-head">
-        <div className="vw-title">TTS Voices <span className="vw-count">{filtered.length}</span></div>
-        {showFilter("search") && (
-          <input className="vw-search" placeholder="Search voices…" value={q}
-                 onChange={(e) => setQ(e.target.value)} />
-        )}
+        <div className="vw-title">
+          {lock && baseRows[0] ? `${baseRows[0].provider} voices` : "TTS Voices"}
+          <span className="vw-count">
+            {baseRows.length.toLocaleString()} {baseRows.length === 1 ? "voice" : "voices"}
+            {filtered.length !== baseRows.length && <> · {filtered.length.toLocaleString()} match</>}
+          </span>
+        </div>
       </header>
 
-      {(showProvider || showFilter("language") || showFilter("gender") || showFilter("pageSize") || showGroup) && (
+      {(showFilter("search") || showProvider || showFilter("language") || showFilter("gender") || showGroup) && (
         <div className="vw-filters">
           {showProvider && <Select label="Provider" value={provider} onChange={setProvider} opts={providers} />}
           {showFilter("language") && <Select label="Language" value={language} onChange={setLanguage} opts={languages} />}
@@ -367,18 +369,14 @@ export function VoiceWidget({
             <Select label="Gender" value={gender} onChange={setGender}
                     opts={["male", "female", "neutral", "unknown"]} />
           )}
-          {showFilter("pageSize") && (
-            <label className="vw-select">
-              <span>Per page</span>
-              <select value={pageSizeChoice} onChange={(e) => setPageSizeChoice(Number(e.target.value))}>
-                {pageSizeOpts.map((n) => <option key={n} value={n}>{n}</option>)}
-              </select>
-            </label>
+          {showFilter("search") && (
+            <input className="vw-search" placeholder="Search voices…" value={q}
+                   onChange={(e) => setQ(e.target.value)} />
           )}
           {showGroup && (
-            <div className="vw-group">
-              <button className={group === "provider" ? "on" : ""} onClick={() => setGroup("provider")}>by provider</button>
-              <button className={group === "language" ? "on" : ""} onClick={() => setGroup("language")}>by language</button>
+            <div className="vw-group" role="group" aria-label="Group voices">
+              <button className={group === "provider" ? "on" : ""} onClick={() => setGroup("provider")}>By provider</button>
+              <button className={group === "language" ? "on" : ""} onClick={() => setGroup("language")}>By language</button>
             </div>
           )}
         </div>
