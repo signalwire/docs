@@ -17,28 +17,34 @@ lustri:
 
 Web search skill backed by Google Custom Search.
 
-Mirrors signalwire-python's &lt;code>signalwire.skills.web\_search.skill&lt;/code>
-(the &lt;code>WebSearchSkill.search\_and\_scrape\_best&lt;/code> path). The CSE call is
+Mirrors signalwire-python's `signalwire.skills.web_search.skill`
+(the `WebSearchSkill.search_and_scrape_best` path). The CSE call is
 issued faithfully, then each result URL is scraped and a header line +
 per-result title/url/snippet (plus scraped content) is formatted.
 
 Latency control (Python skill.py commits 51101da + 295745b) bounds the
 whole tool call so a single slow site can never blow past the SignalWire
-kernel's ~55s webhook timeout: &lt;code>per\_page\_timeout&lt;/code> (2.0s)  caps each page scrape (a per-request
-linked &lt;xref href="System.Threading.CancellationTokenSource" data-throw-if-not-resolved="false">&lt;/xref> with &lt;code>CancelAfter&lt;/code>). &lt;code>overall\_deadline&lt;/code> (10.0s) is the wall-clock budget for the whole
+kernel's ~55s webhook timeout:
+`per_page_timeout` (2.0s)  caps each page scrape (a per-request
+linked &lt;xref href="System.Threading.CancellationTokenSource" data-throw-if-not-resolved="false">&lt;/xref> with
+`CancelAfter`).
+`overall_deadline` (10.0s) is the wall-clock budget for the whole
 call; once it fires, in-flight scrapes are abandoned and we return
 what we have (a &lt;xref href="System.Threading.CancellationTokenSource" data-throw-if-not-resolved="false">&lt;/xref>
-with &lt;code>CancelAfter(overall\_deadline)&lt;/code>). THIS IS THE CONTRACT. &lt;code>parallel\_scrape&lt;/code> (true) dispatches each scrape as a Task and awaits &lt;xref href="System.Threading.Tasks.Task.WhenAll(System.Threading.Tasks.Task%5b%5d)" data-throw-if-not-resolved="false">&lt;/xref>,
-harvesting whatever completed when the deadline cancels (best-effort). &lt;code>snippets\_only&lt;/code> (false) skips scraping entirely and formats the CSE
+with `CancelAfter(overall_deadline)`). THIS IS THE CONTRACT.
+`parallel_scrape` (true) dispatches each scrape as a Task and awaits &lt;xref href="System.Threading.Tasks.Task.WhenAll(System.Threading.Tasks.Task%5b%5d)" data-throw-if-not-resolved="false">&lt;/xref>,
+harvesting whatever completed when the deadline cancels (best-effort).
+`snippets_only` (false) skips scraping entirely and formats the CSE
 snippets directly. Sub-second response.
 When the deadline fires OR no scraped page meets the quality threshold, the
 handler falls back to formatting the CSE snippets into a NON-empty response
 rather than the empty no-results message, so the kernel never sees a
 webhook timeout.
 
-Upstream URL override: &lt;code>WEB\_SEARCH\_BASE\_URL&lt;/code> (used by
+Upstream URL override: `WEB_SEARCH_BASE_URL` (used by
 audit\_skills\_dispatch.py to point at a local fixture). When set, the
-URL is rewritten to the override host while the path &lt;code>/customsearch/v1&lt;/code> is preserved.
+URL is rewritten to the override host while the path
+`/customsearch/v1` is preserved.
 
 **Modifiers:** `sealed`
 
