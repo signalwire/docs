@@ -1,0 +1,607 @@
+---
+slug: "/reference/php/relay/client"
+title: "Client"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "class"
+  language: "php"
+  qualified_name: "SignalWire\\Relay\\Client"
+  parent: "relay"
+  module: "relay"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main/SignalWire/Relay/Client.php"
+---
+# `Client`
+
+RELAY Client – manages the WebSocket connection to SignalWire, sends
+
+JSON-RPC requests, and dispatches inbound events to the correct Call
+or Message objects.
+
+The transport layer (WebSocket send/receive) is abstracted behind
+thin methods so that unit tests can subclass or mock without needing
+a real WebSocket extension.
+
+## Signature
+
+```php
+class Client
+```
+
+## Properties
+
+<ParamField path="agent" type="string $agent" required />
+
+<ParamField path="authorizationState" type="?string $authorizationState" required />
+
+<ParamField path="caFile" type="?string $caFile" required>
+  Optional path to a CA bundle (PEM) used to verify the server certificate on `wss://` connections. Sourced from the `ca_file` option or the `SIGNALWIRE_CA_FILE` / `SSL_CERT_FILE` env vars. Peer verification stays enabled regardless; this only selects which CA to trust (system store when null).
+</ParamField>
+
+<ParamField path="calls" type="array $calls" required>
+  callId => Call
+</ParamField>
+
+<ParamField path="connected" type="bool $connected" required />
+
+<ParamField path="contexts" type="array $contexts" required />
+
+<ParamField path="host" type="string $host" required />
+
+<ParamField path="jwtToken" type="?string $jwtToken" required />
+
+<ParamField path="messages" type="array $messages" required>
+  messageId => Message
+</ParamField>
+
+<ParamField path="onCallHandler" type="(callable | null) $onCallHandler" required />
+
+<ParamField path="onEventHandler" type="(callable | null) $onEventHandler" required />
+
+<ParamField path="onMessageHandler" type="(callable | null) $onMessageHandler" required />
+
+<ParamField path="pending" type="array $pending" required>
+  id => callbacks
+</ParamField>
+
+<ParamField path="pendingDials" type="array $pendingDials" required>
+  tag => dial promise
+</ParamField>
+
+<ParamField path="project" type="string $project" required />
+
+<ParamField path="protocol" type="?string $protocol" required />
+
+<ParamField path="relayPath" type="string $relayPath" required />
+
+<ParamField path="scheme" type="string $scheme" required />
+
+<ParamField path="sessionId" type="?string $sessionId" required />
+
+<ParamField path="token" type="string $token" required />
+
+## Methods
+
+### \_\_construct
+
+#### Signature
+
+```php
+public function __construct(array $options)
+```
+
+#### Parameters
+
+<ParamField path="options" type="array" required />
+
+#### Source
+
+[`SignalWire/Relay/Client.php`](https://github.com/signalwire/signalwire-php/blob/main/SignalWire/Relay/Client.php)
+
+Line 94.
+
+***
+
+### authenticate
+
+Send the signalwire.connect RPC to authenticate and bind a session.
+
+Sends project/token both at the top level AND nested under
+`authentication`. Python sends the nested form; the audit fixture
+accepts either; sending both is forward-compatible (per
+SUBAGENT\_PLAYBOOK lessons-learned).
+
+#### Signature
+
+```php
+public function authenticate(): void
+```
+
+#### Source
+
+[`SignalWire/Relay/Client.php`](https://github.com/signalwire/signalwire-php/blob/main/SignalWire/Relay/Client.php)
+
+Line 208.
+
+***
+
+### connect
+
+Open the WebSocket connection and run the JSON-RPC `signalwire.connect`
+
+handshake. Throws on transport or auth failure.
+
+The transport URI is `<scheme>://<host><relayPath>` (defaults to
+`wss://<host>/api/relay/ws`). Tests point SIGNALWIRE\_RELAY\_SCHEME
+at `ws` and SIGNALWIRE\_RELAY\_HOST at the fixture's host:port.
+
+#### Signature
+
+```php
+public function connect(): void
+```
+
+#### Source
+
+[`SignalWire/Relay/Client.php`](https://github.com/signalwire/signalwire-php/blob/main/SignalWire/Relay/Client.php)
+
+Line 169.
+
+***
+
+### dial
+
+Originate an outbound call, blocking until `calling.call.dial`
+
+resolves with a winner or fails.
+
+#### Signature
+
+```php
+public function dial(array $devices, array $opts = array (
+)): SignalWire\Relay\Call
+```
+
+#### Parameters
+
+<ParamField path="devices" type="array" required>
+  Two-dimensional array of devices: each outer entry is one parallel "leg" of the dial, each inner entry is a serial step within that leg. Mirrors the Python `[[device, device], [device]]` shape.
+</ParamField>
+
+<ParamField
+  path="opts"
+  type="array"
+  default="array (
+)"
+>
+  \- \`\`tag\`\`: explicit dial tag (UUID4 generated when omitted)
+  &#x20; \- \`\`dial\_timeout\`\`: seconds to wait for the dial event (default 30.0)
+  &#x20; \- \`\`max\_duration\`\`: max call lifetime in seconds, passed through
+  &#x20;   to \`\`calling.dial\`\`.
+  &#x20; \- any other key is forwarded as a top-level param on the wire.
+</ParamField>
+
+#### Returns
+
+`SignalWire\Relay\Call`
+
+#### Throws
+
+- `RelayError` — on dial failure or timeout.
+
+#### Source
+
+[`SignalWire/Relay/Client.php`](https://github.com/signalwire/signalwire-php/blob/main/SignalWire/Relay/Client.php)
+
+Line 623.
+
+***
+
+### disconnect
+
+Gracefully close the connection.
+
+#### Signature
+
+```php
+public function disconnect(): void
+```
+
+#### Source
+
+[`SignalWire/Relay/Client.php`](https://github.com/signalwire/signalwire-php/blob/main/SignalWire/Relay/Client.php)
+
+Line 263.
+
+***
+
+### execute
+
+Send a JSON-RPC request and synchronously wait for the matching
+
+response.  Returns the "result" portion of the response.
+
+#### Signature
+
+```php
+public function execute(string $method, array $params = array (
+)): array
+```
+
+#### Parameters
+
+<ParamField path="method" type="string" required />
+
+<ParamField
+  path="params"
+  type="array"
+  default="array (
+)"
+/>
+
+#### Returns
+
+`array`
+
+#### Throws
+
+- `\RuntimeException` — on error responses or transport timeout.
+
+#### Source
+
+[`SignalWire/Relay/Client.php`](https://github.com/signalwire/signalwire-php/blob/main/SignalWire/Relay/Client.php)
+
+Line 344.
+
+***
+
+### getCall
+
+#### Signature
+
+```php
+public function getCall(string $callId): ?SignalWire\Relay\Call
+```
+
+#### Parameters
+
+<ParamField path="callId" type="string" required />
+
+#### Returns
+
+`?SignalWire\Relay\Call`
+
+#### Source
+
+[`SignalWire/Relay/Client.php`](https://github.com/signalwire/signalwire-php/blob/main/SignalWire/Relay/Client.php)
+
+Line 781.
+
+***
+
+### getCalls
+
+#### Signature
+
+```php
+public function getCalls(): array
+```
+
+#### Returns
+
+`array`
+
+#### Source
+
+[`SignalWire/Relay/Client.php`](https://github.com/signalwire/signalwire-php/blob/main/SignalWire/Relay/Client.php)
+
+Line 789.
+
+***
+
+### getMessages
+
+#### Signature
+
+```php
+public function getMessages(): array
+```
+
+#### Returns
+
+`array`
+
+#### Source
+
+[`SignalWire/Relay/Client.php`](https://github.com/signalwire/signalwire-php/blob/main/SignalWire/Relay/Client.php)
+
+Line 797.
+
+***
+
+### handleEvent
+
+Route a signalwire.event payload to the appropriate handler.
+
+#### Signature
+
+```php
+public function handleEvent(array $outerParams): void
+```
+
+#### Parameters
+
+<ParamField path="outerParams" type="array" required />
+
+#### Source
+
+[`SignalWire/Relay/Client.php`](https://github.com/signalwire/signalwire-php/blob/main/SignalWire/Relay/Client.php)
+
+Line 511.
+
+***
+
+### handleMessage
+
+Parse a raw JSON string from the server and route it.
+
+#### Signature
+
+```php
+public function handleMessage(string $raw): void
+```
+
+#### Parameters
+
+<ParamField path="raw" type="string" required />
+
+#### Source
+
+[`SignalWire/Relay/Client.php`](https://github.com/signalwire/signalwire-php/blob/main/SignalWire/Relay/Client.php)
+
+Line 464.
+
+***
+
+### onCall
+
+Register a handler for inbound calls.
+
+#### Signature
+
+```php
+public function onCall(callable $cb): SignalWire\Relay\Client
+```
+
+#### Parameters
+
+<ParamField path="cb" type="callable" required />
+
+#### Returns
+
+`SignalWire\Relay\Client`
+
+#### Source
+
+[`SignalWire/Relay/Client.php`](https://github.com/signalwire/signalwire-php/blob/main/SignalWire/Relay/Client.php)
+
+Line 764.
+
+***
+
+### onMessage
+
+Register a handler for inbound messages.
+
+#### Signature
+
+```php
+public function onMessage(callable $cb): SignalWire\Relay\Client
+```
+
+#### Parameters
+
+<ParamField path="cb" type="callable" required />
+
+#### Returns
+
+`SignalWire\Relay\Client`
+
+#### Source
+
+[`SignalWire/Relay/Client.php`](https://github.com/signalwire/signalwire-php/blob/main/SignalWire/Relay/Client.php)
+
+Line 773.
+
+***
+
+### readOnce
+
+Read a single inbound frame from the WebSocket and dispatch it.
+
+Returns silently on a read timeout (no frame within $this->readTimeout
+seconds — the run loop will call again). Throws on socket errors so
+the run loop can trigger reconnect.
+
+#### Signature
+
+```php
+public function readOnce(): void
+```
+
+#### Source
+
+[`SignalWire/Relay/Client.php`](https://github.com/signalwire/signalwire-php/blob/main/SignalWire/Relay/Client.php)
+
+Line 420.
+
+***
+
+### receive
+
+Subscribe to one or more inbound contexts so that events for those
+
+contexts are delivered to this client.
+
+#### Signature
+
+```php
+public function receive(array $contexts): void
+```
+
+#### Parameters
+
+<ParamField path="contexts" type="array" required />
+
+#### Source
+
+[`SignalWire/Relay/Client.php`](https://github.com/signalwire/signalwire-php/blob/main/SignalWire/Relay/Client.php)
+
+Line 729.
+
+***
+
+### reconnect
+
+Reconnect with exponential back-off (1 s -> 30 s cap).
+
+#### Signature
+
+```php
+public function reconnect(): void
+```
+
+#### Source
+
+[`SignalWire/Relay/Client.php`](https://github.com/signalwire/signalwire-php/blob/main/SignalWire/Relay/Client.php)
+
+Line 283.
+
+***
+
+### run
+
+Main event loop – reads messages until disconnect.
+
+Auto-reconnects with exponential backoff on transport errors,
+preserving authorization\_state across reconnects so the server
+can fast-path the session resumption.
+
+#### Signature
+
+```php
+public function run(): void
+```
+
+#### Source
+
+[`SignalWire/Relay/Client.php`](https://github.com/signalwire/signalwire-php/blob/main/SignalWire/Relay/Client.php)
+
+Line 309.
+
+***
+
+### send
+
+Encode and send a JSON message over the WebSocket. Throws if the
+
+socket is closed; the run loop catches and triggers reconnect.
+
+#### Signature
+
+```php
+public function send(array $msg): void
+```
+
+#### Parameters
+
+<ParamField path="msg" type="array" required />
+
+#### Source
+
+[`SignalWire/Relay/Client.php`](https://github.com/signalwire/signalwire-php/blob/main/SignalWire/Relay/Client.php)
+
+Line 402.
+
+***
+
+### sendAck
+
+Send an acknowledgement (empty result) for a server-initiated request.
+
+Best-effort: an ACK that fails because the socket dropped during
+the request handling is not propagated as an exception (the run
+loop will already trigger reconnect on the next read).
+
+#### Signature
+
+```php
+public function sendAck(string $id): void
+```
+
+#### Parameters
+
+<ParamField path="id" type="string" required />
+
+#### Source
+
+[`SignalWire/Relay/Client.php`](https://github.com/signalwire/signalwire-php/blob/main/SignalWire/Relay/Client.php)
+
+Line 444.
+
+***
+
+### sendMessage
+
+Send an outbound message.
+
+#### Signature
+
+```php
+public function sendMessage(array $params): SignalWire\Relay\Message
+```
+
+#### Parameters
+
+<ParamField path="params" type="array" required>
+  Outbound messaging.send params (`to_number`, `from_number`, `body`, `media`, `tags`, `context`).
+</ParamField>
+
+#### Returns
+
+`SignalWire\Relay\Message` — Tracking object for the message lifecycle. The Message starts in `queued` state; subsequent `messaging.state` events from the server progress it through `sent` / `delivered` / `undelivered` / `failed`.
+
+#### Source
+
+[`SignalWire/Relay/Client.php`](https://github.com/signalwire/signalwire-php/blob/main/SignalWire/Relay/Client.php)
+
+Line 697.
+
+***
+
+### unreceive
+
+Unsubscribe from one or more contexts.
+
+#### Signature
+
+```php
+public function unreceive(array $contexts): void
+```
+
+#### Parameters
+
+<ParamField path="contexts" type="array" required />
+
+#### Source
+
+[`SignalWire/Relay/Client.php`](https://github.com/signalwire/signalwire-php/blob/main/SignalWire/Relay/Client.php)
+
+Line 747.
+
+## Source
+
+[`SignalWire/Relay/Client.php`](https://github.com/signalwire/signalwire-php/blob/main/SignalWire/Relay/Client.php)
+
+Line 18.

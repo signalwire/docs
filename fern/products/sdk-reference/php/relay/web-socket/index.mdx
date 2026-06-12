@@ -1,0 +1,240 @@
+---
+slug: "/reference/php/relay/web-socket"
+title: "WebSocket"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "class"
+  language: "php"
+  qualified_name: "SignalWire\\Relay\\WebSocket"
+  parent: "relay"
+  module: "relay"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main/SignalWire/Relay/WebSocket.php"
+---
+# `WebSocket`
+
+RELAY WebSocket transport.
+
+This is a thin adapter over the maintained \{@link \WebSocket\Client\}
+(phrity/websocket) library. It deliberately keeps the same small public
+surface the rest of the SDK depends on — connect / sendText / receive /
+close / isConnected, plus the \{@see self::CLOSE\_FRAME\} sentinel — so that
+\{@see Client\} (and its test subclasses overriding createSocket()) need no
+changes. The previous implementation hand-rolled RFC 6455 framing on raw
+PHP streams; that responsibility now belongs to phrity/websocket.
+
+Why phrity/websocket:
+
+- It performs a _real_, verified TLS handshake for `wss://` URIs. A
+  private CA (e.g. the porting-sdk test CA) is trusted by passing its
+  `cafile` through the stream \{@see \Phrity\Net\Context\} — peer
+  verification stays ON (no allow\_self\_signed, no verify\_peer=false).
+- It owns frame masking/decoding, the upgrade handshake, the
+  Sec-WebSocket-Accept check, ping/pong, and close framing.
+
+Transport contract preserved for \{@see Client\}:
+
+- `receive()` returns the decoded text payload of the next data frame,
+  \{@see self::CLOSE\_FRAME\} when the peer closed, or `null` on read
+  timeout (socket still healthy). Ping/pong are consumed internally.
+- Outbound application messages are always text frames (JSON-RPC).
+
+## Signature
+
+```php
+class WebSocket
+```
+
+## Constants
+
+<ParamField path="CLOSE_FRAME" type="const CLOSE_FRAME = '' . &#x22;\0&#x22; . '__CLOSE__' . &#x22;\0&#x22; . ''" required>
+  Special marker the read loop uses to surface a remote close.
+</ParamField>
+
+## Methods
+
+### \_\_construct
+
+#### Signature
+
+```php
+public function __construct(?string $caFile = NULL)
+```
+
+#### Parameters
+
+<ParamField path="caFile" type="?string" default="NULL" />
+
+#### Source
+
+[`SignalWire/Relay/WebSocket.php`](https://github.com/signalwire/signalwire-php/blob/main/SignalWire/Relay/WebSocket.php)
+
+Line 58.
+
+***
+
+### close
+
+Send a close frame and tear down the socket. Best-effort.
+
+#### Signature
+
+```php
+public function close(int $code = 1000, string $reason = ''): void
+```
+
+#### Parameters
+
+<ParamField path="code" type="int" default="1000" />
+
+<ParamField path="reason" type="string" default="''" />
+
+#### Source
+
+[`SignalWire/Relay/WebSocket.php`](https://github.com/signalwire/signalwire-php/blob/main/SignalWire/Relay/WebSocket.php)
+
+Line 153.
+
+***
+
+### connect
+
+Open a WebSocket connection to the given URI.
+
+#### Signature
+
+```php
+public function connect(
+    string $uri,
+    array $headers = array (
+),
+    float $timeout = 10.0,
+    ?string $caFile = NULL
+): void
+```
+
+#### Parameters
+
+<ParamField path="uri" type="string" required>
+  ws:// or wss:// URI.
+</ParamField>
+
+<ParamField
+  path="headers"
+  type="array"
+  default="array (
+)"
+>
+  Additional handshake headers.
+</ParamField>
+
+<ParamField path="timeout" type="float" default="10.0">
+  TCP-connect / read timeout (seconds).
+</ParamField>
+
+<ParamField path="caFile" type="?string" default="NULL">
+  Optional CA bundle (PEM) for wss:// peer verification; overrides the value passed to the constructor.
+</ParamField>
+
+#### Throws
+
+- `\InvalidArgumentException` — on an invalid/unsupported URI.
+- `\RuntimeException` — on connection or handshake failure.
+
+#### Source
+
+[`SignalWire/Relay/WebSocket.php`](https://github.com/signalwire/signalwire-php/blob/main/SignalWire/Relay/WebSocket.php)
+
+Line 75.
+
+***
+
+### isConnected
+
+#### Signature
+
+```php
+public function isConnected(): bool
+```
+
+#### Returns
+
+`bool`
+
+#### Source
+
+[`SignalWire/Relay/WebSocket.php`](https://github.com/signalwire/signalwire-php/blob/main/SignalWire/Relay/WebSocket.php)
+
+Line 233.
+
+***
+
+### receive
+
+Read one complete inbound data frame, blocking up to $timeout seconds.
+
+Returns:
+
+- the decoded payload string for a text/binary frame
+- \{@see self::CLOSE\_FRAME\} for a close (or peer EOF)
+- null on read timeout (socket still healthy)
+
+Ping frames are answered with a pong and skipped; pong frames are
+consumed; the next non-control frame (within the deadline) is returned.
+
+#### Signature
+
+```php
+public function receive(float $timeout = 5.0): ?string
+```
+
+#### Parameters
+
+<ParamField path="timeout" type="float" default="5.0" />
+
+#### Returns
+
+`?string`
+
+#### Throws
+
+- `\RuntimeException` — on a fatal socket error.
+
+#### Source
+
+[`SignalWire/Relay/WebSocket.php`](https://github.com/signalwire/signalwire-php/blob/main/SignalWire/Relay/WebSocket.php)
+
+Line 185.
+
+***
+
+### sendText
+
+Send a UTF-8 text frame (the only application frame type RELAY uses).
+
+#### Signature
+
+```php
+public function sendText(string $payload): void
+```
+
+#### Parameters
+
+<ParamField path="payload" type="string" required />
+
+#### Throws
+
+- `\RuntimeException` — if the socket is closed or the write fails.
+
+#### Source
+
+[`SignalWire/Relay/WebSocket.php`](https://github.com/signalwire/signalwire-php/blob/main/SignalWire/Relay/WebSocket.php)
+
+Line 137.
+
+## Source
+
+[`SignalWire/Relay/WebSocket.php`](https://github.com/signalwire/signalwire-php/blob/main/SignalWire/Relay/WebSocket.php)
+
+Line 43.
