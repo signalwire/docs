@@ -134,12 +134,6 @@ export interface VoiceWidgetProps {
    * always hidden when the `provider` lock prop is set.
    */
   filters?: boolean | Partial<Record<FilterKey, boolean>>;
-  /**
-   * When `true`, the widget shows a placeholder prompting the user to select a provider before
-   * rendering any voice cards. The provider dropdown is always shown when this is set. Once the
-   * user selects a provider, cards appear. Default: `false`.
-   */
-  requireProvider?: boolean;
 }
 
 export function VoiceWidget({
@@ -153,7 +147,6 @@ export function VoiceWidget({
   provider: lockedProvider,
   voiceIds,
   filters,
-  requireProvider = false,
 }: VoiceWidgetProps) {
   // Normalized single-provider lock (null when the widget shows all providers).
   const lock = lockedProvider?.trim().toLowerCase() || null;
@@ -202,9 +195,8 @@ export function VoiceWidget({
     : filters && typeof filters === "object"
       ? key === "search" ? filters[key] === true : filters[key] !== false
     : key === "search" ? false : true;
-  const showProvider = (!lock || requireProvider) && showFilter("provider");
-  // Hide group-by toggle when a provider is locked or requireProvider is active.
-  const showGroup = group !== "none" && showFilter("group") && !lock && !requireProvider;
+  const showProvider = !lock && showFilter("provider");
+  const showGroup = group !== "none" && showFilter("group") && !lock;
 
   useEffect(() => {
     let alive = true;
@@ -341,8 +333,7 @@ export function VoiceWidget({
   // Step from safePage, not the raw page state: `page` can be stale-high after effectivePageSize
   // grows (a mobile→desktop resize isn't in filterSig), and stepping from it makes Prev appear
   // dead until the raw value catches back up with the clamped one.
-  const awaitingProvider = requireProvider && provider === ALL;
-  const pager = pageCount > 1 && !awaitingProvider ? (
+  const pager = pageCount > 1 ? (
     <nav className="vw-pager" aria-label="Voice pages">
       <button className="vw-pager-btn" onClick={() => setPage(Math.max(0, safePage - 1))} disabled={safePage <= 0}>
         ‹ Prev
@@ -361,22 +352,22 @@ export function VoiceWidget({
     <div className="vw">
       <audio ref={audioRef} onEnded={() => setPlayingKey(null)} preload="none" />
       <header className="vw-head">
-        <div className="vw-title">TTS Voices {!awaitingProvider && <span className="vw-count">{filtered.length}</span>}</div>
+        <div className="vw-title">TTS Voices <span className="vw-count">{filtered.length}</span></div>
         {showFilter("search") && (
           <input className="vw-search" placeholder="Search voices…" value={q}
                  onChange={(e) => setQ(e.target.value)} />
         )}
       </header>
 
-      {(showProvider || (!awaitingProvider && (showFilter("language") || showFilter("gender") || showFilter("pageSize"))) || showGroup) && (
+      {(showProvider || showFilter("language") || showFilter("gender") || showFilter("pageSize") || showGroup) && (
         <div className="vw-filters">
-          {showProvider && <Select label="Provider" value={provider} onChange={setProvider} opts={providers} noAll={requireProvider} />}
-          {!awaitingProvider && showFilter("language") && <Select label="Language" value={language} onChange={setLanguage} opts={languages} />}
-          {!awaitingProvider && showFilter("gender") && (
+          {showProvider && <Select label="Provider" value={provider} onChange={setProvider} opts={providers} />}
+          {showFilter("language") && <Select label="Language" value={language} onChange={setLanguage} opts={languages} />}
+          {showFilter("gender") && (
             <Select label="Gender" value={gender} onChange={setGender}
                     opts={["male", "female", "neutral", "unknown"]} />
           )}
-          {!awaitingProvider && showFilter("pageSize") && (
+          {showFilter("pageSize") && (
             <label className="vw-select">
               <span>Per page</span>
               <select value={pageSizeChoice} onChange={(e) => setPageSizeChoice(Number(e.target.value))}>
@@ -395,11 +386,7 @@ export function VoiceWidget({
 
       {pager}
 
-      {awaitingProvider ? (
-        <div className="vw-require-provider">
-          <p>Select a provider above to browse available voices.</p>
-        </div>
-      ) : pageSections.length === 0 ? (
+      {pageSections.length === 0 ? (
         <p className="vw-empty">No voices match your filters.</p>
       ) : (
         pageSections.map((sec, i) => (
@@ -451,7 +438,12 @@ const Card = memo(function Card({ r, playing, onPlay, onCopy }: {
         <span className={`vw-gender vw-${r.gender}`}>{r.gender}</span>
         {r.model && <span className="vw-model">{r.model}</span>}
       </div>
-      {r.clip?.sample_text && <p className="vw-sample">“{r.clip.sample_text}”</p>}
+      {r.clip?.sample_text && (
+        <span className="vw-tooltip-wrap">
+          <span className="vw-tooltip-icon" aria-label="Sample text">💬</span>
+          <span className="vw-tooltip" role="tooltip">“{r.clip.sample_text}”</span>
+        </span>
+      )}
       {(!r.clip || r.clip.status === "error") &&
         <p className="vw-note">{r.clip?.error ?? "no sample (provider key missing)"}</p>}
       {/* Both labels are always in the DOM and grid-stacked (see CSS) so the button keeps the width
@@ -494,15 +486,13 @@ function VoiceWidgetSkeleton({ gridStyle }: { gridStyle?: CSSProperties }) {
   );
 }
 
-function Select({ label, value, onChange, opts, noAll }:
-  { label: string; value: string; onChange: (v: string) => void; opts: string[]; noAll?: boolean }) {
+function Select({ label, value, onChange, opts }:
+  { label: string; value: string; onChange: (v: string) => void; opts: string[] }) {
   return (
     <label className="vw-select">
       <span>{label}</span>
       <select value={value} onChange={(e) => onChange(e.target.value)}>
-        {noAll
-          ? <option value={ALL} disabled>Choose a provider…</option>
-          : <option value={ALL}>all</option>}
+        <option value={ALL}>all</option>
         {opts.map((o) => <option key={o} value={o}>{o}</option>)}
       </select>
     </label>
