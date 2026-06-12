@@ -335,16 +335,29 @@ export function VoiceWidget({
   // dead until the raw value catches back up with the clamped one.
   const pager = pageCount > 1 ? (
     <nav className="vw-pager" aria-label="Voice pages">
-      <button className="vw-pager-btn" onClick={() => setPage(Math.max(0, safePage - 1))} disabled={safePage <= 0}>
+      <button className="vw-page vw-page-nav" onClick={() => setPage(Math.max(0, safePage - 1))} disabled={safePage <= 0}>
         ‹ Prev
       </button>
-      <span className="vw-pager-info">
-        {ordered.length ? `${start + 1}–${end} of ${ordered.length}` : "0 of 0"}
-        <span className="vw-pager-page"> · page {safePage + 1}/{pageCount}</span>
-      </span>
-      <button className="vw-pager-btn" onClick={() => setPage(Math.min(pageCount - 1, safePage + 1))} disabled={safePage >= pageCount - 1}>
+      {pageNumbers(safePage, pageCount).map((p, i) =>
+        p === null ? (
+          <span key={`gap-${i}`} className="vw-page-gap" aria-hidden="true">…</span>
+        ) : (
+          <button key={p} className={`vw-page${p === safePage ? " vw-page-on" : ""}`}
+                  aria-current={p === safePage ? "page" : undefined}
+                  onClick={() => setPage(p)}>
+            {p + 1}
+          </button>
+        ))}
+      <button className="vw-page vw-page-nav" onClick={() => setPage(Math.min(pageCount - 1, safePage + 1))} disabled={safePage >= pageCount - 1}>
         Next ›
       </button>
+      {showFilter("pageSize") && (
+        <label className="vw-perpage" aria-label="Voices per page">
+          <select value={pageSizeChoice} onChange={(e) => setPageSizeChoice(Number(e.target.value))}>
+            {pageSizeOpts.map((n) => <option key={n} value={n}>{n} / page</option>)}
+          </select>
+        </label>
+      )}
     </nav>
   ) : null;
 
@@ -383,8 +396,6 @@ export function VoiceWidget({
           )}
         </div>
       )}
-
-      {pager}
 
       {pageSections.length === 0 ? (
         <p className="vw-empty">No voices match your filters.</p>
@@ -519,6 +530,20 @@ function Select({ label, value, onChange, opts }:
 
 function uniq(xs?: string[]): string[] {
   return [...new Set((xs ?? []).filter(Boolean))].sort();
+}
+
+// Windowed page list for the numbered pager: first page, last page, and current ±1, with `null`
+// marking each collapsed gap (rendered as an ellipsis). Pages are 0-based here, 1-based in the UI.
+function pageNumbers(current: number, count: number): (number | null)[] {
+  const wanted = [...new Set([0, count - 1, current - 1, current, current + 1])]
+    .filter((p) => p >= 0 && p < count)
+    .sort((a, b) => a - b);
+  const out: (number | null)[] = [];
+  for (let i = 0; i < wanted.length; i++) {
+    if (i && wanted[i] - wanted[i - 1] > 1) out.push(null);
+    out.push(wanted[i]);
+  }
+  return out;
 }
 
 // Model-qualified catalog key (<engine>/<voice_id>[:<model>]) — the documented matching form for
