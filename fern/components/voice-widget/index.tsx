@@ -443,7 +443,7 @@ const Card = memo(function Card({ r, playing, onPlay, onCopy }: {
       <span className="vw-badge">{r.provider}</span>
       <div className="vw-card-top">
         <button className="vw-play" disabled={disabled} onClick={() => onPlay(r)}
-                aria-label={`Play ${r.display_name}`}>{playing ? "❚❚" : "▶"}</button>
+                aria-label={`Play ${r.display_name}`}>{playing ? "■" : "▶"}</button>
         <div className="vw-name" title={r.display_name}>{r.display_name}</div>
       </div>
       <div className="vw-meta">
