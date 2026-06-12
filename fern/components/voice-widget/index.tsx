@@ -442,7 +442,7 @@ const Card = memo(function Card({ r, playing, onPlay, onCopy }: {
         <div className="vw-name" title={r.display_name}>{r.display_name}</div>
         {r.clip?.sample_text && (
           <span className="vw-tooltip-wrap">
-            <span className="vw-tooltip-icon" aria-label="Sample text">
+            <span className="vw-tooltip-icon" role="img" aria-label="Sample text" tabIndex={0}>
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" />
                 <path d="M8 7v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
