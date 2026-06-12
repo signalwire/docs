@@ -129,10 +129,17 @@ export interface VoiceWidgetProps {
   /**
    * Toggle the filter/search controls. `true` or unset shows all; `false` hides all (just the
    * title + grid). An object toggles individual controls — `search`, `provider`, `language`,
-   * `gender`, `group`, `pageSize` — each defaulting on unless set `false`. The provider control is
+   * `gender`, `group`, `pageSize` — each defaulting on unless set `false`. The search control
+   * defaults to `false` (hidden) unless explicitly set to `true`. The provider control is
    * always hidden when the `provider` lock prop is set.
    */
   filters?: boolean | Partial<Record<FilterKey, boolean>>;
+  /**
+   * When `true`, the widget shows a placeholder prompting the user to select a provider before
+   * rendering any voice cards. The provider dropdown is always shown when this is set. Once the
+   * user selects a provider, cards appear. Default: `false`.
+   */
+  requireProvider?: boolean;
 }
 
 export function VoiceWidget({
@@ -146,6 +153,7 @@ export function VoiceWidget({
   provider: lockedProvider,
   voiceIds,
   filters,
+  requireProvider = false,
 }: VoiceWidgetProps) {
   // Normalized single-provider lock (null when the widget shows all providers).
   const lock = lockedProvider?.trim().toLowerCase() || null;
@@ -186,13 +194,16 @@ export function VoiceWidget({
   const pageSizeOpts = [...new Set([...PAGE_SIZE_OPTIONS, pageSize])].sort((a, b) => a - b);
 
   // Resolve which filter/search controls are visible. `filters` is a boolean (all on/off) or a
-  // per-control object; each control defaults on unless explicitly false.
+  // per-control object; each control defaults on unless explicitly false. The `search` control
+  // defaults to off (must be opted in) — all others default on.
   const showFilter = (key: FilterKey) =>
     filters === false ? false
-    : filters && typeof filters === "object" ? filters[key] !== false
-    : true;
-  const showProvider = !lock && showFilter("provider");
-  const showGroup = group !== "none" && showFilter("group");
+    : filters && typeof filters === "object"
+      ? key === "search" ? filters[key] === true : filters[key] !== false
+    : key === "search" ? false : true;
+  const showProvider = (!lock || requireProvider) && showFilter("provider");
+  // Hide group-by toggle when a provider is locked or requireProvider is active.
+  const showGroup = group !== "none" && showFilter("group") && !lock && !requireProvider;
 
   useEffect(() => {
     let alive = true;
@@ -329,7 +340,8 @@ export function VoiceWidget({
   // Step from safePage, not the raw page state: `page` can be stale-high after effectivePageSize
   // grows (a mobile→desktop resize isn't in filterSig), and stepping from it makes Prev appear
   // dead until the raw value catches back up with the clamped one.
-  const pager = pageCount > 1 ? (
+  const awaitingProvider = requireProvider && provider === ALL;
+  const pager = pageCount > 1 && !awaitingProvider ? (
     <nav className="vw-pager" aria-label="Voice pages">
       <button className="vw-pager-btn" onClick={() => setPage(Math.max(0, safePage - 1))} disabled={safePage <= 0}>
         ‹ Prev
@@ -348,22 +360,22 @@ export function VoiceWidget({
     <div className="vw">
       <audio ref={audioRef} onEnded={() => setPlayingKey(null)} preload="none" />
       <header className="vw-head">
-        <div className="vw-title">TTS Voices <span className="vw-count">{filtered.length}</span></div>
+        <div className="vw-title">TTS Voices {!awaitingProvider && <span className="vw-count">{filtered.length}</span>}</div>
         {showFilter("search") && (
           <input className="vw-search" placeholder="Search voices…" value={q}
                  onChange={(e) => setQ(e.target.value)} />
         )}
       </header>
 
-      {(showProvider || showFilter("language") || showFilter("gender") || showFilter("pageSize") || showGroup) && (
+      {(showProvider || (!awaitingProvider && (showFilter("language") || showFilter("gender") || showFilter("pageSize"))) || showGroup) && (
         <div className="vw-filters">
           {showProvider && <Select label="Provider" value={provider} onChange={setProvider} opts={providers} />}
-          {showFilter("language") && <Select label="Language" value={language} onChange={setLanguage} opts={languages} />}
-          {showFilter("gender") && (
+          {!awaitingProvider && showFilter("language") && <Select label="Language" value={language} onChange={setLanguage} opts={languages} />}
+          {!awaitingProvider && showFilter("gender") && (
             <Select label="Gender" value={gender} onChange={setGender}
                     opts={["male", "female", "neutral", "unknown"]} />
           )}
-          {showFilter("pageSize") && (
+          {!awaitingProvider && showFilter("pageSize") && (
             <label className="vw-select">
               <span>Per page</span>
               <select value={pageSizeChoice} onChange={(e) => setPageSizeChoice(Number(e.target.value))}>
@@ -382,7 +394,11 @@ export function VoiceWidget({
 
       {pager}
 
-      {pageSections.length === 0 ? (
+      {awaitingProvider ? (
+        <div className="vw-require-provider">
+          <p>Select a provider above to browse available voices.</p>
+        </div>
+      ) : pageSections.length === 0 ? (
         <p className="vw-empty">No voices match your filters.</p>
       ) : (
         pageSections.map((sec, i) => (
