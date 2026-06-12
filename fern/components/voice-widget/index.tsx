@@ -427,10 +427,18 @@ const Card = memo(function Card({ r, playing, onPlay, onCopy }: {
 
   return (
     <article className={`vw-card${r.clip?.status === "error" || !r.clip ? " vw-disabled" : ""}`}>
-      <span className="vw-badge">{r.provider}</span>
       <div className="vw-card-top">
-        <button className="vw-play" disabled={disabled} onClick={() => onPlay(r)}
-                aria-label={`Play ${r.display_name}`}>{playing ? "■" : "▶"}</button>
+        <button className={`vw-play${playing ? " vw-playing" : ""}`} disabled={disabled} onClick={() => onPlay(r)}
+                aria-label={playing ? `Stop ${r.display_name}` : `Play ${r.display_name}`}>
+          {playing ? (
+            <>
+              {/* Two glyphs for the playing state: animated bars normally, a static stop square when
+                  the user prefers reduced motion (CSS swaps their display). */}
+              <span className="vw-eq" aria-hidden="true"><i /><i /><i /></span>
+              <span className="vw-stop" aria-hidden="true">■</span>
+            </>
+          ) : "▶"}
+        </button>
         <div className="vw-name" title={r.display_name}>{r.display_name}</div>
         {r.clip?.sample_text && (
           <span className="vw-tooltip-wrap">
@@ -446,18 +454,22 @@ const Card = memo(function Card({ r, playing, onPlay, onCopy }: {
         )}
       </div>
       <div className="vw-meta">
-        <span className="vw-lang">{r.primary_language}</span>
-        <span className={`vw-gender vw-${r.gender}`}>{r.gender}</span>
-        {r.model && <span className="vw-model">{r.model}</span>}
+        <span>{r.primary_language}</span>
+        <span className="vw-meta-dot" aria-hidden="true">·</span>
+        <span className="vw-gender">{r.gender}</span>
+        {r.model && <><span className="vw-meta-dot" aria-hidden="true">·</span><span>{r.model}</span></>}
       </div>
       {(!r.clip || r.clip.status === "error") &&
         <p className="vw-note">{r.clip?.error ?? "no sample (provider key missing)"}</p>}
-      {/* Both labels are always in the DOM and grid-stacked (see CSS) so the button keeps the width
-          of the wider one — no layout shift when it swaps to the copied state. */}
-      <button className={`vw-copy${copied ? " vw-copied" : ""}`} onClick={handleCopy} aria-live="polite">
-        <span className="vw-copy-default">copy config</span>
-        <span className="vw-copy-done">✓ copied</span>
-      </button>
+      <div className="vw-foot">
+        <span className="vw-prov" title={r.provider}>{r.provider}</span>
+        {/* Both labels stay in the DOM and grid-stacked (see CSS) so the button keeps the width
+            of the wider one — no layout shift when it swaps to the copied state. */}
+        <button className={`vw-copy${copied ? " vw-copied" : ""}`} onClick={handleCopy} aria-live="polite">
+          <span className="vw-copy-default">Copy config</span>
+          <span className="vw-copy-done">✓ Copied</span>
+        </button>
+      </div>
     </article>
   );
 });
