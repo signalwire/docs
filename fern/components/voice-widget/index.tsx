@@ -432,24 +432,24 @@ const Card = memo(function Card({ r, playing, onPlay, onCopy }: {
         <button className="vw-play" disabled={disabled} onClick={() => onPlay(r)}
                 aria-label={`Play ${r.display_name}`}>{playing ? "■" : "▶"}</button>
         <div className="vw-name" title={r.display_name}>{r.display_name}</div>
+        {r.clip?.sample_text && (
+          <span className="vw-tooltip-wrap">
+            <span className="vw-tooltip-icon" aria-label="Sample text">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" />
+                <path d="M8 7v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                <circle cx="8" cy="5" r="0.75" fill="currentColor" />
+              </svg>
+            </span>
+            <span className="vw-tooltip" role="tooltip">“{r.clip.sample_text}”</span>
+          </span>
+        )}
       </div>
       <div className="vw-meta">
         <span className="vw-lang">{r.primary_language}</span>
         <span className={`vw-gender vw-${r.gender}`}>{r.gender}</span>
         {r.model && <span className="vw-model">{r.model}</span>}
       </div>
-      {r.clip?.sample_text && (
-        <span className="vw-tooltip-wrap">
-          <span className="vw-tooltip-icon" aria-label="Sample text">
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" />
-              <path d="M8 7v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              <circle cx="8" cy="5" r="0.75" fill="currentColor" />
-            </svg>
-          </span>
-          <span className="vw-tooltip" role="tooltip">“{r.clip.sample_text}”</span>
-        </span>
-      )}
       {(!r.clip || r.clip.status === "error") &&
         <p className="vw-note">{r.clip?.error ?? "no sample (provider key missing)"}</p>}
       {/* Both labels are always in the DOM and grid-stacked (see CSS) so the button keeps the width
