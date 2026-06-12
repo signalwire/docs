@@ -485,29 +485,31 @@ const Card = memo(function Card({ r, playing, onPlay, onCopy }: {
   );
 });
 
-// Loading state: skeleton placeholders that mirror the real header + card grid, so the layout
-// doesn't jump when the data arrives. Built from the shared <Skeleton> primitive.
+// Loading state: skeleton placeholders that mirror the real header + toolbar + card grid, so the
+// layout doesn't jump when the data arrives. Built from the shared <Skeleton> primitive.
 function VoiceWidgetSkeleton({ gridStyle }: { gridStyle?: CSSProperties }) {
   return (
     <div className="vw" aria-busy="true" aria-label="Loading voices">
       <header className="vw-head">
-        <Skeleton width={150} height={22} />
-        <Skeleton width={220} height={36} radius={10} style={{ marginLeft: "auto" }} />
+        <Skeleton width={170} height={20} />
       </header>
+      <div className="vw-filters">
+        <Skeleton width={112} height={33} radius={9} />
+        <Skeleton width={122} height={33} radius={9} />
+        <Skeleton width={104} height={33} radius={9} />
+      </div>
       <div className="vw-grid" style={gridStyle}>
         {Array.from({ length: 8 }).map((_, i) => (
           <article key={i} className="vw-card">
             <div className="vw-card-top">
-              <Skeleton width={32} height={32} radius="50%" />
+              <Skeleton width={34} height={34} radius="50%" />
               <Skeleton width="55%" height={14} />
             </div>
-            <div className="vw-meta">
-              <Skeleton width={48} height={16} radius={6} />
-              <Skeleton width={42} height={16} radius={6} />
-            </div>
-            <Skeleton width="90%" height={11} />
             <Skeleton width="70%" height={11} />
-            <Skeleton width={84} height={26} radius={6} />
+            <div className="vw-foot">
+              <Skeleton width={70} height={10} />
+              <Skeleton width={80} height={12} />
+            </div>
           </article>
         ))}
       </div>
