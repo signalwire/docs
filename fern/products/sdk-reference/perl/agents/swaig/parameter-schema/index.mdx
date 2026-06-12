@@ -5,18 +5,285 @@ sdk_label: "Perl SDK"
 icon: "perl"
 lustri:
   auto_generated: true
-  kind: "module"
+  kind: "class"
   language: "perl"
-  qualified_name: "agents.SWAIG.ParameterSchema"
+  qualified_name: "SignalWire::SWAIG::ParameterSchema"
   parent: "agents.SWAIG"
   module: "agents.SWAIG"
+  source_url: "https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/SWAIG/ParameterSchema.pm"
 ---
 # `ParameterSchema`
 
-## Classes
+A SWAIG tool's argument schema is the JSON-Schema `parameters` object that SignalWire::Agent::AgentBase's `define_tool` renders into the SWAIG function block. It is normally written by hand as nested hashrefs. This class builds the **exact same hashref** through a fluent, named, typed API: `->to_hash` returns the identical `{ type => 'object', properties => {...}, required => [...] }` structure a hand-written literal produces, byte for byte (`required` is omitted when no property was marked required, just as hand-written schemas omit it).
 
-<CardGroup cols={2}>
-  <Card title="ParameterSchema" href="/docs/sdk-reference/reference/perl/agents/swaig/parameter-schema/parameter-schema">
-    A SWAIG tool's argument schema is the JSON-Schema `parameters` object that SignalWire::Agent::AgentBase's `define_tool` renders into the SWAIG function block. It is normally written by hand as nested hashrefs. This class builds the **exact same hashref** through a fluent, named, typed API: `->to_hash` returns the identical `{ type => 'object', properties => {...}, required => [...] }` structure a hand-written literal produces, byte for byte (`required` is omitted when no property was marked required, just as hand-written schemas omit it).
-  </Card>
-</CardGroup>
+It is a **convenience over the same wire output, not a new format**. The untyped-hashref path into `define_tool` is unchanged and still accepted, so Python parity and every existing caller keep working; the builder is purely additive (see PORT\_ADDITIONS.md). This is the Perl realisation of the cross-port Tier-2 flagship idiom: a typed SWAIG tool-parameter builder.
+
+**LICENSE**
+
+Copyright (c) 2025 SignalWire. Licensed under the MIT License.
+
+**MARKING REQUIRED FIELDS**
+
+- `->required(@names)` — mark already-declared properties required. Accumulates across calls and de-duplicates on emit, preserving first-seen order. Equivalent to passing `required => 1` on each kind call.
+
+**NEW**
+
+my $schema = SignalWire::SWAIG::ParameterSchema->new;
+
+Construct an empty builder.
+
+**PROPERTY KINDS**
+
+Each kind method has the form `->KIND($name, $description, %opts)` and returns `$self` so calls chain. The `$description` second positional is the LLM-facing prompt text (it may also be given as `description => ...` in `%opts`). `%opts` carries the optional facets: `required => 1` (shorthand for also calling `->required($name)`), `default => ...`, `enum => [...]`, `format => ...`, and any other JSON-Schema keyword, emitted verbatim in caller-given order.
+
+- `->string($name, $desc, %opts)` — `{ type => 'string' }`.
+
+- `->number($name, $desc, %opts)` — `{ type => 'number' }`.
+
+- `->integer($name, $desc, %opts)` — `{ type => 'integer' }`.
+
+- `->boolean($name, $desc, %opts)` — `{ type => 'boolean' }`.
+
+- `->enum($name, $values, $desc, %opts)` — a closed-set string, `{ type => 'string', enum => [ @$values ] }`. `$values` is an arrayref of accepted values; pass a Tier-1 constant set directly (`SignalWire::SWAIG::RecordCall->formats`, `SignalWire::SWAIG::Tap->codecs`, ...) so the schema's `enum` is single-sourced from the same closed set the verb validates against. Pass `type => 'integer'` in `%opts` for a numeric enum.
+
+- `->array($name, $desc, %opts)` — `{ type => 'array' }`, with an optional `of => ...` element spec rendered as `items`. `of` may be a kind-name string (`'string'`, `'object'`, ...), a nested `ParameterSchema`, or a raw hashref items schema. Omit `of` for an untyped array.
+
+- `->object($name, $desc, %opts)` — `{ type => 'object' }`, with an optional `properties => ...` nested spec. `properties` may be a nested `ParameterSchema`, a coderef called with a fresh child schema, or a raw hashref. The nested `properties`/`required` are spliced in. Omit `properties` for an open object.
+
+**REQUIRED**
+
+$schema->required('a', 'b');
+
+Mark properties required. See \["Marking required fields"]\(Marking required fields). Returns `$self`.
+
+**STRING / NUMBER / INTEGER / BOOLEAN / ENUM / ARRAY / OBJECT**
+
+Add a property of the named kind. See \["Property kinds"]\(Property kinds). Each returns `$self`. Dies on a duplicate property name.
+
+**TO DICT**
+
+Alias for "to\_hash", matching the SDK's serialiser naming. Identical output.
+
+**TO HASH**
+
+my $params = $schema->to\_hash;
+
+Render the JSON-Schema `parameters` hashref. `required` is omitted when empty. The result is is\_deeply- and JSON-identical to the equivalent hand-written literal and shares no references with the builder's internal state.
+
+**Synopsis**
+
+```perl
+use SignalWire::SWAIG::ParameterSchema;
+use SignalWire::SWAIG::RecordCall;
+```
+
+```perl
+my $params = SignalWire::SWAIG::ParameterSchema->new
+    ->string('service', 'The service to book')
+    ->string('date',    'Appointment date, YYYY-MM-DD')
+    ->enum('format', SignalWire::SWAIG::RecordCall->formats,
+           'Recording container format')
+    ->integer('seats', 'How many seats', default => 1)
+    ->required('service', 'date')
+    ->to_hash;
+```
+
+```perl
+# $params is the SAME hashref you would have hand-written:
+#   {
+#     type       => 'object',
+#     properties => {
+#         service => { type => 'string',  description => 'The service to book' },
+#         date    => { type => 'string',  description => 'Appointment date, YYYY-MM-DD' },
+#         format  => { type => 'string',  description => 'Recording container format',
+#                      enum => ['wav','mp3','mp4'] },
+#         seats   => { type => 'integer', description => 'How many seats', default => 1 },
+#     },
+#     required => ['service','date'],
+#   }
+```
+
+```perl
+$agent->define_tool(
+    name        => 'book_appointment',
+    description => 'Book an appointment for a service on a date.',
+    parameters  => $params,          # typed-built, same wire shape
+    handler     => sub { ... },
+);
+```
+
+## Signature
+
+```perl
+package SignalWire::SWAIG::ParameterSchema
+```
+
+## See Also
+
+- SignalWire::Agent::AgentBase (`define_tool`), SignalWire::SWML::Service (`define_tool`), SignalWire::SWAIG::RecordCall, SignalWire::SWAIG::Tap (Tier-1 closed-set constant sets that drop into `->enum`), SignalWire::POM::Section (sibling Tier-2 typed-builder idiom).
+
+## Methods
+
+### array
+
+#### Signature
+
+```perl
+sub array()
+```
+
+#### Source
+
+[`lib/SignalWire/SWAIG/ParameterSchema.pm`](https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/SWAIG/ParameterSchema.pm)
+
+Line 149.
+
+***
+
+### boolean
+
+#### Signature
+
+```perl
+sub boolean()
+```
+
+#### Source
+
+[`lib/SignalWire/SWAIG/ParameterSchema.pm`](https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/SWAIG/ParameterSchema.pm)
+
+Line 118.
+
+***
+
+### enum
+
+#### Signature
+
+```perl
+sub enum()
+```
+
+#### Source
+
+[`lib/SignalWire/SWAIG/ParameterSchema.pm`](https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/SWAIG/ParameterSchema.pm)
+
+Line 129.
+
+***
+
+### integer
+
+#### Signature
+
+```perl
+sub integer()
+```
+
+#### Source
+
+[`lib/SignalWire/SWAIG/ParameterSchema.pm`](https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/SWAIG/ParameterSchema.pm)
+
+Line 113.
+
+***
+
+### number
+
+#### Signature
+
+```perl
+sub number()
+```
+
+#### Source
+
+[`lib/SignalWire/SWAIG/ParameterSchema.pm`](https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/SWAIG/ParameterSchema.pm)
+
+Line 108.
+
+***
+
+### object
+
+#### Signature
+
+```perl
+sub object()
+```
+
+#### Source
+
+[`lib/SignalWire/SWAIG/ParameterSchema.pm`](https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/SWAIG/ParameterSchema.pm)
+
+Line 176.
+
+***
+
+### required
+
+#### Signature
+
+```perl
+sub required()
+```
+
+#### Source
+
+[`lib/SignalWire/SWAIG/ParameterSchema.pm`](https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/SWAIG/ParameterSchema.pm)
+
+Line 189.
+
+***
+
+### string
+
+#### Signature
+
+```perl
+sub string()
+```
+
+#### Source
+
+[`lib/SignalWire/SWAIG/ParameterSchema.pm`](https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/SWAIG/ParameterSchema.pm)
+
+Line 103.
+
+***
+
+### to\_dict
+
+#### Signature
+
+```perl
+sub to_dict()
+```
+
+#### Source
+
+[`lib/SignalWire/SWAIG/ParameterSchema.pm`](https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/SWAIG/ParameterSchema.pm)
+
+Line 230.
+
+***
+
+### to\_hash
+
+#### Signature
+
+```perl
+sub to_hash()
+```
+
+#### Source
+
+[`lib/SignalWire/SWAIG/ParameterSchema.pm`](https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/SWAIG/ParameterSchema.pm)
+
+Line 210.
+
+## Source
+
+[`lib/SignalWire/SWAIG/ParameterSchema.pm`](https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/SWAIG/ParameterSchema.pm)
+
+Line 1.

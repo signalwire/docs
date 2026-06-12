@@ -5,18 +5,121 @@ sdk_label: "Perl SDK"
 icon: "perl"
 lustri:
   auto_generated: true
-  kind: "module"
+  kind: "class"
   language: "perl"
-  qualified_name: "core.Security.WebhookValidator"
+  qualified_name: "SignalWire::Security::WebhookValidator"
   parent: "core.Security"
   module: "core.Security"
+  source_url: "https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/Security/WebhookValidator.pm"
 ---
 # `WebhookValidator`
 
-## Classes
+Implements both signature schemes from porting-sdk/webhooks.md:
 
-<CardGroup cols={2}>
-  <Card title="WebhookValidator" href="/docs/sdk-reference/reference/perl/core/security/webhook-validator/webhook-validator">
-    Implements both signature schemes from porting-sdk/webhooks.md:
-  </Card>
-</CardGroup>
+- Scheme A (RELAY / SWML / JSON)
+
+  `lower_hex(HMAC-SHA1(key, url + raw_body))`
+
+- Scheme B (Compat / cXML form)
+
+  `base64(HMAC-SHA1(key, url + sorted_concat_form_params))`, with URL port normalization (try both with / without `:443` / `:80`) and an optional `bodySHA256` query-param fallback for JSON-on-compat.
+
+The combined entry point tries Scheme A first, then Scheme B in all URL / param-shape variants. All signature comparisons use a constant-time compare so the secret is not leaked across repeated requests.
+
+**ERROR MODES**
+
+- Valid signature -> returns `1`
+
+- Invalid signature -> returns `0`
+
+- Missing `$signature` -> returns `0` (never throws)
+
+- Missing `$signing_key` -> croaks (programming error)
+
+- Reference passed as `$raw_body` -> croaks
+
+**Synopsis**
+
+```perl
+use SignalWire::Security::WebhookValidator qw(
+    validate_webhook_signature validate_request
+);
+```
+
+```perl
+# JSON / RELAY / SWML callbacks
+if (validate_webhook_signature($signing_key, $sig_header, $url, $raw_body)) {
+    # request is genuine
+}
+```
+
+```perl
+# Legacy compat-api drop-in
+if (validate_request($signing_key, $sig_header, $url, \%params)) {
+    # cXML / form-encoded request is genuine
+}
+```
+
+## Signature
+
+```perl
+package SignalWire::Security::WebhookValidator
+```
+
+## Methods
+
+### validate\_request
+
+#### Signature
+
+```perl
+sub validate_request($signing_key, $signature, $url, $params_or_raw_body)
+```
+
+#### Parameters
+
+<ParamField path="signing_key" required />
+
+<ParamField path="signature" required />
+
+<ParamField path="url" required />
+
+<ParamField path="params_or_raw_body" required />
+
+#### Source
+
+[`lib/SignalWire/Security/WebhookValidator.pm`](https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/Security/WebhookValidator.pm)
+
+Line 309.
+
+***
+
+### validate\_webhook\_signature
+
+#### Signature
+
+```perl
+sub validate_webhook_signature($signing_key, $signature, $url, $raw_body)
+```
+
+#### Parameters
+
+<ParamField path="signing_key" required />
+
+<ParamField path="signature" required />
+
+<ParamField path="url" required />
+
+<ParamField path="raw_body" required />
+
+#### Source
+
+[`lib/SignalWire/Security/WebhookValidator.pm`](https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/Security/WebhookValidator.pm)
+
+Line 260.
+
+## Source
+
+[`lib/SignalWire/Security/WebhookValidator.pm`](https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/Security/WebhookValidator.pm)
+
+Line 1.
