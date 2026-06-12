@@ -74,7 +74,7 @@ model AIParams {
 
   @doc("""
     Takes a string, including a regular expression, defining barge behavior.
-    For example, this param can direct the AI to stop when the word 'hippopotomus' is input.
+    For example, this param can direct the AI to stop when the word 'hippopotamus' is input.
     """)
   @example("Cancel order")
   barge_match_string?: string;
