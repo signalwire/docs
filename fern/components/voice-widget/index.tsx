@@ -328,7 +328,7 @@ export function VoiceWidget({
   }, []);
 
   if (error) return <div className="vw vw-error">Failed to load voices: {error}</div>;
-  if (!baseRows) return <VoiceWidgetSkeleton gridStyle={gridStyle} />;
+  if (!baseRows) return <VoiceWidgetSkeleton gridStyle={gridStyle} pills={[showProvider, showFilter("language"), showFilter("gender")].filter(Boolean).length} />;
 
   // Step from safePage, not the raw page state: `page` can be stale-high after effectivePageSize
   // grows (a mobile→desktop resize isn't in filterSig), and stepping from it makes Prev appear
@@ -486,18 +486,22 @@ const Card = memo(function Card({ r, playing, onPlay, onCopy }: {
 });
 
 // Loading state: skeleton placeholders that mirror the real header + toolbar + card grid, so the
-// layout doesn't jump when the data arrives. Built from the shared <Skeleton> primitive.
-function VoiceWidgetSkeleton({ gridStyle }: { gridStyle?: CSSProperties }) {
+// layout doesn't jump when the data arrives. Built from the shared <Skeleton> primitive. `pills`
+// is the number of toolbar pill placeholders — pass the count of controls that will actually
+// render so filters-off embeds get no phantom toolbar.
+function VoiceWidgetSkeleton({ gridStyle, pills = 3 }: { gridStyle?: CSSProperties; pills?: number }) {
   return (
     <div className="vw" aria-busy="true" aria-label="Loading voices">
       <header className="vw-head">
-        <Skeleton width={170} height={20} />
+        <Skeleton width={170} height={24} />
       </header>
-      <div className="vw-filters">
-        <Skeleton width={112} height={33} radius={9} />
-        <Skeleton width={122} height={33} radius={9} />
-        <Skeleton width={104} height={33} radius={9} />
-      </div>
+      {pills > 0 && (
+        <div className="vw-filters">
+          {Array.from({ length: pills }).map((_, i) => (
+            <Skeleton key={i} width={112} height={33} radius={9} />
+          ))}
+        </div>
+      )}
       <div className="vw-grid" style={gridStyle}>
         {Array.from({ length: 8 }).map((_, i) => (
           <article key={i} className="vw-card">
@@ -505,10 +509,10 @@ function VoiceWidgetSkeleton({ gridStyle }: { gridStyle?: CSSProperties }) {
               <Skeleton width={34} height={34} radius="50%" />
               <Skeleton width="55%" height={14} />
             </div>
-            <Skeleton width="70%" height={11} />
+            <Skeleton width="70%" height={16} />
             <div className="vw-foot">
-              <Skeleton width={70} height={10} />
-              <Skeleton width={80} height={12} />
+              <Skeleton width={70} height={14} />
+              <Skeleton width={80} height={16} />
             </div>
           </article>
         ))}
