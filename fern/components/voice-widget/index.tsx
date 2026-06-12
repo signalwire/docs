@@ -352,8 +352,8 @@ export function VoiceWidget({
         Next ›
       </button>
       {showFilter("pageSize") && (
-        <label className="vw-perpage" aria-label="Voices per page">
-          <select value={pageSizeChoice} onChange={(e) => setPageSizeChoice(Number(e.target.value))}>
+        <label className="vw-perpage">
+          <select aria-label="Voices per page" value={pageSizeChoice} onChange={(e) => setPageSizeChoice(Number(e.target.value))}>
             {pageSizeOpts.map((n) => <option key={n} value={n}>{n} / page</option>)}
           </select>
         </label>
@@ -533,14 +533,19 @@ function uniq(xs?: string[]): string[] {
 }
 
 // Windowed page list for the numbered pager: first page, last page, and current ±1, with `null`
-// marking each collapsed gap (rendered as an ellipsis). Pages are 0-based here, 1-based in the UI.
+// marking each collapsed gap (rendered as an ellipsis). A gap of exactly one page emits that page
+// number instead — an ellipsis standing in for a single page reads worse than just showing it.
+// Pages are 0-based here, 1-based in the UI.
 function pageNumbers(current: number, count: number): (number | null)[] {
   const wanted = [...new Set([0, count - 1, current - 1, current, current + 1])]
     .filter((p) => p >= 0 && p < count)
     .sort((a, b) => a - b);
   const out: (number | null)[] = [];
   for (let i = 0; i < wanted.length; i++) {
-    if (i && wanted[i] - wanted[i - 1] > 1) out.push(null);
+    if (i && wanted[i] - wanted[i - 1] > 1) {
+      if (wanted[i] - wanted[i - 1] === 2) out.push(wanted[i] - 1);
+      else out.push(null);
+    }
     out.push(wanted[i]);
   }
   return out;
