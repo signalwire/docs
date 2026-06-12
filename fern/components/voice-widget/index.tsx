@@ -375,8 +375,10 @@ export function VoiceWidget({
           )}
           {showGroup && (
             <div className="vw-group" role="group" aria-label="Group voices">
-              <button className={group === "provider" ? "on" : ""} onClick={() => setGroup("provider")}>By provider</button>
-              <button className={group === "language" ? "on" : ""} onClick={() => setGroup("language")}>By language</button>
+              <button className={group === "provider" ? "on" : ""} aria-pressed={group === "provider"}
+                      onClick={() => setGroup("provider")}>By provider</button>
+              <button className={group === "language" ? "on" : ""} aria-pressed={group === "language"}
+                      onClick={() => setGroup("language")}>By language</button>
             </div>
           )}
         </div>
