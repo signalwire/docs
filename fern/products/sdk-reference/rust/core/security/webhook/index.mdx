@@ -1,0 +1,356 @@
+---
+slug: "/reference/rust/core/security/webhook"
+title: "webhook"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "module"
+  language: "rust"
+  qualified_name: "signalwire::security::webhook"
+  parent: "signalwire::security"
+  module: "core.security"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/security/webhook.rs"
+  visibility: "public"
+---
+# `webhook`
+
+Webhook signature validation for SignalWire-signed HTTP requests.
+
+Implements both schemes from `porting-sdk/webhooks.md`:
+
+- **Scheme A** — RELAY/SWML/JSON: `lowercase_hex(HMAC-SHA1(key, url + raw_body))`
+- **Scheme B** — Compat/cXML form: `base64(HMAC-SHA1(key, url + sortedFormParams))`
+  with optional `bodySHA256` query-param fallback for JSON-on-compat-surface.
+
+Public API mirrors Python's `signalwire.core.security.webhook_validator`:
+
+- \[`validate_webhook_signature`] — combined validator (tries A, then B).
+- \[`validate_request`] — legacy `@signalwire/compatibility-api` drop-in
+  that accepts either a raw body string or pre-parsed form params.
+
+All comparisons go through \[`subtle::ConstantTimeEq`] so the secret
+is not leaked through repeated requests. Inputs are taken as
+`&str` / borrowed strings — no allocation hidden behind the API.
+
+```
+use signalwire::security::webhook::validate_webhook_signature;
+
+let key = "PSKtest1234567890abcdef";
+let url = "https://example.ngrok.io/webhook";
+let raw_body = r#"{"event":"call.state","params":{"call_id":"abc-123","state":"answered"}}"#;
+let sig = "c3c08c1fefaf9ee198a100d5906765a6f394bf0f";
+assert!(validate_webhook_signature(key, sig, url, raw_body).unwrap());
+```
+
+Copyright (c) 2025 SignalWire. Licensed under the MIT License.
+
+## Examples
+
+```rust
+use signalwire::security::webhook::validate_webhook_signature;
+
+let key = "PSKtest1234567890abcdef";
+let url = "https://example.ngrok.io/webhook";
+let raw_body = r#"{"event":"call.state","params":{"call_id":"abc-123","state":"answered"}}"#;
+let sig = "c3c08c1fefaf9ee198a100d5906765a6f394bf0f";
+assert!(validate_webhook_signature(key, sig, url, raw_body).unwrap());
+```
+
+## Functions
+
+### validate\_request
+
+Legacy `@signalwire/compatibility-api` drop-in entry point.
+
+If `params_or_raw_body` is \[`ParamsOrBody::Body`], delegates to
+\[`validate_webhook_signature`] (Scheme A then Scheme B with parsed form).
+
+If it's \[`ParamsOrBody::Params`], runs Scheme B directly with those
+pre-parsed form params (plus URL port normalization).
+
+`bodySHA256` verification is skipped in the `Params` variant — there
+is no raw body to hash.
+
+#### Signature
+
+```rust
+fn validate_request(
+    signing_key: &str,
+    signature: &str,
+    url: &str,
+    params_or_raw_body: &?
+) -> ?<bool, ?>
+```
+
+#### Parameters
+
+<ParamField path="signing_key" type="&str" required />
+
+<ParamField path="signature" type="&str" required />
+
+<ParamField path="url" type="&str" required />
+
+<ParamField path="params_or_raw_body" type="&?" required />
+
+#### Returns
+
+`?<bool, ?>`
+
+#### Source
+
+[`src/security/webhook.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/security/webhook.rs)
+
+Line 389.
+
+***
+
+### validate\_webhook\_signature
+
+Validate a SignalWire webhook signature against both schemes.
+
+#### Signature
+
+```rust
+fn validate_webhook_signature(
+    signing_key: &str,
+    signature: &str,
+    url: &str,
+    raw_body: &str
+) -> ?<bool, ?>
+```
+
+#### Parameters
+
+<ParamField path="signing_key" type="&str" required />
+
+<ParamField path="signature" type="&str" required />
+
+<ParamField path="url" type="&str" required />
+
+<ParamField path="raw_body" type="&str" required />
+
+#### Returns
+
+`?<bool, ?>` — All comparisons are constant-time via \[`subtle::ConstantTimeEq`].
+
+#### Source
+
+[`src/security/webhook.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/security/webhook.rs)
+
+Line 325.
+
+## Enums
+
+### ParamsOrBody
+
+Argument shape for \[`validate_request`]. Either a raw body string
+(which will run Scheme A first, then Scheme B with the form-parsed
+body) or a pre-parsed form-param list (which goes straight to
+Scheme B).
+
+Repeated keys in the `Params` variant are supported by emitting a
+`Vec<String>` per key in submission order.
+
+#### Signature
+
+```rust
+enum ParamsOrBody
+```
+
+#### Inheritance
+
+**Implements:** `Debug`, `Clone`
+
+#### Variants
+
+<ParamField path="Body" type="Body(_)" required>
+  Raw HTTP request body (UTF-8). The validator will sort form params if it parses cleanly; for JSON bodies this branch degrades to the empty-params Scheme B fallback.
+</ParamField>
+
+<ParamField path="Params" type="Params(_)" required>
+  Pre-parsed form params, list-of-(key, list-of-values) so repeated keys keep their submission order.
+</ParamField>
+
+#### Methods
+
+##### clone
+
+###### Signature
+
+```rust
+fn clone(&self) -> ?
+```
+
+###### Returns
+
+`?`
+
+###### Source
+
+[`src/security/webhook.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/security/webhook.rs)
+
+Line 74.
+
+***
+
+##### fmt
+
+###### Signature
+
+```rust
+fn fmt(&self, f: &mut ?<'_>) -> ?
+```
+
+###### Parameters
+
+<ParamField path="f" type="&mut ?<'_>" required />
+
+###### Returns
+
+`?`
+
+###### Source
+
+[`src/security/webhook.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/security/webhook.rs)
+
+Line 74.
+
+#### Source
+
+[`src/security/webhook.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/security/webhook.rs)
+
+Line 75.
+
+***
+
+### WebhookError
+
+Errors returned by the webhook validator.
+
+`validate_webhook_signature` and `validate_request` return
+`Result<bool, WebhookError>` so callers can distinguish a legitimate
+"signature did not match" (`Ok(false)`) from a programming-error
+"you forgot the signing key" (`Err(WebhookError::MissingSigningKey)`).
+Per the spec, missing/empty _signature header_ and malformed
+signatures return `Ok(false)` — those are not errors.
+
+#### Signature
+
+```rust
+enum WebhookError
+```
+
+#### Inheritance
+
+**Implements:** `Debug`, `Clone`, `PartialEq`, `Eq`, `Display`, [Error](/docs/sdk-reference/reference/rust/core/security/webhook-layer/webhook-validate#error)
+
+#### Variants
+
+<ParamField path="MissingSigningKey" type="MissingSigningKey" required>
+  Caller passed an empty `signing_key`. This is a programming error (the key is mandatory configuration), not a validation failure — Python raises `ValueError` here, Node throws.
+</ParamField>
+
+#### Methods
+
+##### clone
+
+###### Signature
+
+```rust
+fn clone(&self) -> ?
+```
+
+###### Returns
+
+`?`
+
+###### Source
+
+[`src/security/webhook.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/security/webhook.rs)
+
+Line 49.
+
+***
+
+##### eq
+
+###### Signature
+
+```rust
+fn eq(&self, other: &?) -> bool
+```
+
+###### Parameters
+
+<ParamField path="other" type="&?" required />
+
+###### Returns
+
+`bool`
+
+###### Source
+
+[`src/security/webhook.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/security/webhook.rs)
+
+Line 49.
+
+***
+
+##### fmt
+
+###### Signature
+
+```rust
+fn fmt(&self, f: &mut ?<'_>) -> ?
+```
+
+###### Parameters
+
+<ParamField path="f" type="&mut ?<'_>" required />
+
+###### Returns
+
+`?`
+
+###### Source
+
+[`src/security/webhook.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/security/webhook.rs)
+
+Line 49.
+
+***
+
+##### fmt
+
+###### Signature
+
+```rust
+fn fmt(&self, f: &mut ?<'_>) -> ?
+```
+
+###### Parameters
+
+<ParamField path="f" type="&mut ?<'_>" required />
+
+###### Returns
+
+`?`
+
+###### Source
+
+[`src/security/webhook.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/security/webhook.rs)
+
+Line 58.
+
+#### Source
+
+[`src/security/webhook.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/security/webhook.rs)
+
+Line 50.
+
+## Source
+
+[`src/security/webhook.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/security/webhook.rs)
+
+Line 1.

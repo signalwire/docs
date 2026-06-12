@@ -1,0 +1,342 @@
+---
+slug: "/reference/go/agents/server/server/agent-server"
+title: "AgentServer"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "class"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/server.AgentServer"
+  parent: "agents.server.server"
+  module: "agents.server.server"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/server/server.go"
+---
+# `AgentServer`
+
+AgentServer hosts multiple agents on a single HTTP server with route-based dispatch. Each registered agent is mounted at its own route prefix and exposed via the agent's AsRouter() handler.
+
+## Signature
+
+```go
+type AgentServer struct
+```
+
+## Methods
+
+### GetAgent
+
+GetAgent returns the agent registered at the given route, or nil if none.
+
+#### Signature
+
+```go
+func (*AgentServer) GetAgent(route string) *agent.AgentBase
+```
+
+#### Parameters
+
+<ParamField path="route" type="string" required />
+
+#### Returns
+
+`*agent.AgentBase`
+
+#### Source
+
+[`pkg/server/server.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/server/server.go)
+
+Line 207.
+
+***
+
+### GetAgents
+
+GetAgents returns all registered agents in insertion order.
+
+#### Signature
+
+```go
+func (*AgentServer) GetAgents() []AgentEntry
+```
+
+#### Returns
+
+`[]AgentEntry`
+
+#### Source
+
+[`pkg/server/server.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/server/server.go)
+
+Line 193.
+
+***
+
+### Register
+
+Register adds an agent to the server at the given route. If route is empty the agent's configured route (via WithRoute) is used instead. The route is normalised to always start with "/".
+
+#### Signature
+
+```go
+func (*AgentServer) Register(a *agent.AgentBase, route string)
+```
+
+#### Parameters
+
+<ParamField path="a" type="*agent.AgentBase" required />
+
+<ParamField path="route" type="string" required />
+
+#### Source
+
+[`pkg/server/server.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/server/server.go)
+
+Line 139.
+
+***
+
+### RegisterGlobalRoutingCallback
+
+RegisterGlobalRoutingCallback registers a routing callback across all currently-registered agents at the given path. The callback fires on every incoming request to that path and can return an SWML document override (or nil to fall through to the agent's default response).
+
+This is the Go equivalent of Python's AgentServer.register\_global\_routing\_callback(callback\_fn, path).
+
+#### Signature
+
+```go
+func (*AgentServer) RegisterGlobalRoutingCallback(path string, cb swml.RoutingCallback)
+```
+
+#### Parameters
+
+<ParamField path="path" type="string" required />
+
+<ParamField path="cb" type="swml.RoutingCallback" required />
+
+#### Source
+
+[`pkg/server/server.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/server/server.go)
+
+Line 276.
+
+***
+
+### RegisterGlobalSipRoutingCallback
+
+RegisterGlobalSipRoutingCallback registers a SIP redirect-routing callback across all currently-registered agents at the given path. The callback returns a route string; on a non-empty return the framework responds with HTTP 307 Temporary Redirect (matching Python register\_routing\_callback semantics — see AgentBase.RegisterSipRoutingCallback for details).
+
+Use this form when porting Python AgentServer code that registers a redirect-style global routing callback. For a global response-document override (the richer Go-only mechanism), use RegisterGlobalRoutingCallback.
+
+#### Signature
+
+```go
+func (*AgentServer) RegisterGlobalSipRoutingCallback(
+	path string,
+	cb func(r *http.Request, body map[string]any) string
+)
+```
+
+#### Parameters
+
+<ParamField path="path" type="string" required />
+
+<ParamField path="cb" type="func(r *http.Request, body map[string]any) string" required />
+
+#### Source
+
+[`pkg/server/server.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/server/server.go)
+
+Line 305.
+
+***
+
+### RegisterSipUsername
+
+RegisterSipUsername maps a SIP username to an agent route so that inbound SIP calls for that username are routed to the correct agent.
+
+#### Signature
+
+```go
+func (*AgentServer) RegisterSipUsername(username string, route string)
+```
+
+#### Parameters
+
+<ParamField path="username" type="string" required />
+
+<ParamField path="route" type="string" required />
+
+#### Source
+
+[`pkg/server/server.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/server/server.go)
+
+Line 246.
+
+***
+
+### Run
+
+Run starts the HTTP server. This is a blocking call. Optional RunOption values can override host and port at start time.
+
+Serverless dispatch: unlike Python's AgentServer.run() which auto-detects CGI and Lambda environments, Run() is HTTP-server-only. For AWS Lambda deployments use the pkg/lambda package instead. CGI mode has no Go equivalent; deploy as a standard HTTP service behind a reverse proxy.
+
+Run delegates to RunContext with context.Background(); use RunContext to drive shutdown from a context, or call Shutdown from another goroutine.
+
+#### Signature
+
+```go
+func (*AgentServer) Run(opts ...RunOption) error
+```
+
+#### Parameters
+
+<ParamField path="...opts" type="RunOption" />
+
+#### Returns
+
+`error`
+
+#### Source
+
+[`pkg/server/server.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/server/server.go)
+
+Line 338.
+
+***
+
+### RunContext
+
+RunContext is the context-aware form of Run. It blocks serving HTTP exactly like Run, but when ctx is cancelled (or its deadline passes) it performs a graceful Shutdown — stopping new connections and draining in-flight requests — then returns nil. A concurrent Shutdown call has the same effect. Any other listen error is returned as-is.
+
+This is a Go-port addition (the Python reference's AgentServer.run() has no caller-supplied cancellation token); documented in PORT\_ADDITIONS.md.
+
+#### Signature
+
+```go
+func (*AgentServer) RunContext(ctx context.Context, opts ...RunOption) error
+```
+
+#### Parameters
+
+<ParamField path="ctx" type="context.Context" required />
+
+<ParamField path="...opts" type="RunOption" />
+
+#### Returns
+
+`error`
+
+#### Source
+
+[`pkg/server/server.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/server/server.go)
+
+Line 350.
+
+***
+
+### ServeStaticFiles
+
+ServeStaticFiles registers a directory to be served at the given route.
+
+#### Signature
+
+```go
+func (*AgentServer) ServeStaticFiles(directory string, route string)
+```
+
+#### Parameters
+
+<ParamField path="directory" type="string" required />
+
+<ParamField path="route" type="string" required />
+
+#### Source
+
+[`pkg/server/server.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/server/server.go)
+
+Line 258.
+
+***
+
+### SetupSipRouting
+
+SetupSipRouting enables a central SIP routing endpoint. When autoMap is true, all currently registered agents are automatically mapped using their route as the SIP username.
+
+#### Signature
+
+```go
+func (*AgentServer) SetupSipRouting(route string, autoMap bool)
+```
+
+#### Parameters
+
+<ParamField path="route" type="string" required />
+
+<ParamField path="autoMap" type="bool" required />
+
+#### Source
+
+[`pkg/server/server.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/server/server.go)
+
+Line 220.
+
+***
+
+### Shutdown
+
+Shutdown gracefully stops the running HTTP server: it stops accepting new connections and waits for in-flight requests to complete, bounded by ctx's deadline (a passed deadline returns ctx.Err() and closes idle connections, per net/http.Server.Shutdown). It returns ErrServerNotRunning (wrapped) when no server is currently serving.
+
+After Shutdown returns, the in-flight Run/RunContext call unblocks and returns nil. This is a Go-port addition (no Python-reference equivalent); documented in PORT\_ADDITIONS.md.
+
+#### Signature
+
+```go
+func (*AgentServer) Shutdown(ctx context.Context) error
+```
+
+#### Parameters
+
+<ParamField path="ctx" type="context.Context" required />
+
+#### Returns
+
+`error`
+
+#### Source
+
+[`pkg/server/server.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/server/server.go)
+
+Line 426.
+
+***
+
+### Unregister
+
+Unregister removes the agent at the given route. Returns true if an agent was found and removed.
+
+#### Signature
+
+```go
+func (*AgentServer) Unregister(route string) bool
+```
+
+#### Parameters
+
+<ParamField path="route" type="string" required />
+
+#### Returns
+
+`bool`
+
+#### Source
+
+[`pkg/server/server.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/server/server.go)
+
+Line 164.
+
+## Source
+
+[`pkg/server/server.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/server/server.go)
+
+Line 33.

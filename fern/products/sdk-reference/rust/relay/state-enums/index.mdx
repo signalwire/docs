@@ -1,0 +1,928 @@
+---
+slug: "/reference/rust/relay/state-enums"
+title: "state_enums"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "module"
+  language: "rust"
+  qualified_name: "signalwire::relay::state_enums"
+  parent: "signalwire::relay"
+  module: "relay"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/relay/state_enums.rs"
+  visibility: "public"
+---
+# `state_enums`
+
+Typed RELAY lifecycle-state enums.
+
+The RELAY protocol carries three _distinct_ server-emitted state
+vocabularies — call lifecycle, dial outcome, and message delivery — as
+bare strings on the wire. `constants` keeps the raw
+string consts and the `is_*_terminal(&str)` predicates (the byte-level
+contract); this module layers a typed, idiomatic view on top for the
+highest-traffic of those vocabularies.
+
+Three deliberately separate types — \[`CallState`], \[`DialState`],
+\[`MessageState`] — because the three vocabularies are _not_
+interchangeable even where strings coincide (`"answered"` is both a
+\[`CallState`] and a \[`DialState`], `"failed"` is both a \[`DialState`]
+and a \[`MessageState`], but conflating them would let a message state
+leak into a call predicate). The compiler now keeps them apart.
+
+## Server-growth semantics (why `#[non_exhaustive]` + `Other`)
+
+Unlike the client-validated closed sets in
+`media_enums` (which mirror Python
+`ValueError` checks and reject unknown input), these mirror values the
+_server_ emits and may add to over time. So each enum:
+
+- is `#[non_exhaustive]` — downstream `match` must carry a wildcard arm,
+  so a future server value can't break a consumer at compile time;
+- carries an `Other(String)` catch-all so parsing a
+  never-before-seen state **never panics or loses data** — it round-trips
+  verbatim through `as_str`;
+- parses infallibly via `from_str` /
+  `FromStr` (an unknown string becomes `Other`, not an error).
+
+Grounded in the Python reference `relay/constants.py`
+(`CALL_STATE_*` / `MESSAGE_STATE_*` / `MESSAGE_TERMINAL_STATES`) and the
+port's own `constants` (`DIAL_STATE_*`). The typed
+accessors (`Call::call_state` / `Message::message_state`) are exposed
+_alongside_ the existing string accessors (`Call::current_state` /
+`Message::state`) for parity.
+
+## Enums
+
+### CallState
+
+Call lifecycle state, as carried by `calling.call.state` events.
+
+Mirrors Python `relay/constants.py` `CALL_STATE_*`
+(`created` → `ringing` → `answered` → `ending` → `ended`). The terminal
+state is `ended` (see `is_terminal`), matching
+\[`constants::is_call_terminal`].
+
+`#[non_exhaustive]` — server-emitted; an unrecognised value parses to
+`Other` rather than panicking.
+
+#### Signature
+
+```rust
+enum CallState
+```
+
+#### Inheritance
+
+**Implements:** `Debug`, `Clone`, `PartialEq`, `Eq`, `Hash`, `Display`, `FromStr`
+
+#### Variants
+
+<ParamField path="Answered" type="Answered" required>
+  `answered` — the call has been answered and is in progress.
+</ParamField>
+
+<ParamField path="Created" type="Created" required>
+  `created` — the call object exists but has not started ringing.
+</ParamField>
+
+<ParamField path="Ended" type="Ended" required>
+  `ended` — the call has fully ended (terminal).
+</ParamField>
+
+<ParamField path="Ending" type="Ending" required>
+  `ending` — the call is in the process of tearing down.
+</ParamField>
+
+<ParamField path="Other" type="Other(_)" required>
+  Any state the server emits that this enum does not (yet) model. Carries the raw wire string so it round-trips losslessly.
+</ParamField>
+
+<ParamField path="Ringing" type="Ringing" required>
+  `ringing` — the call is ringing the destination.
+</ParamField>
+
+#### Methods
+
+##### as\_str
+
+The canonical wire string for this state (e.g. `"ringing"`).
+
+For `Other` this is the captured raw string, so
+`CallState::from_str(s).as_str() == s` for every `s`.
+
+**Decorators:** `@must_use`
+
+###### Signature
+
+```rust
+fn as_str(&self) -> &str
+```
+
+###### Returns
+
+`&str`
+
+###### Source
+
+[`src/relay/state_enums.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/state_enums.rs)
+
+Line 78.
+
+***
+
+##### clone
+
+###### Signature
+
+```rust
+fn clone(&self) -> ?
+```
+
+###### Returns
+
+`?`
+
+###### Source
+
+[`src/relay/state_enums.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/state_enums.rs)
+
+Line 53.
+
+***
+
+##### eq
+
+###### Signature
+
+```rust
+fn eq(&self, other: &?) -> bool
+```
+
+###### Parameters
+
+<ParamField path="other" type="&?" required />
+
+###### Returns
+
+`bool`
+
+###### Source
+
+[`src/relay/state_enums.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/state_enums.rs)
+
+Line 53.
+
+***
+
+##### fmt
+
+###### Signature
+
+```rust
+fn fmt(&self, f: &mut ?<'_>) -> ?
+```
+
+###### Parameters
+
+<ParamField path="f" type="&mut ?<'_>" required />
+
+###### Returns
+
+`?`
+
+###### Source
+
+[`src/relay/state_enums.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/state_enums.rs)
+
+Line 53.
+
+***
+
+##### fmt
+
+###### Signature
+
+```rust
+fn fmt(&self, f: &mut ?<'_>) -> ?
+```
+
+###### Parameters
+
+<ParamField path="f" type="&mut ?<'_>" required />
+
+###### Returns
+
+`?`
+
+###### Source
+
+[`src/relay/state_enums.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/state_enums.rs)
+
+Line 117.
+
+***
+
+##### from\_str
+
+Parse a wire string into a \[`CallState`].
+
+Infallible: an unrecognised value becomes `Other`
+(server states can grow). Provided as an inherent method for
+ergonomics alongside the \[`FromStr`] impl.
+
+**Decorators:** `@must_use`
+
+###### Signature
+
+```rust
+fn from_str(s: &str) -> ?
+```
+
+###### Parameters
+
+<ParamField path="s" type="&str" required />
+
+###### Returns
+
+`?`
+
+###### Source
+
+[`src/relay/state_enums.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/state_enums.rs)
+
+Line 95.
+
+***
+
+##### from\_str
+
+###### Signature
+
+```rust
+fn from_str(s: &str) -> ?<Self, <Self as ?>::Err>
+```
+
+###### Parameters
+
+<ParamField path="s" type="&str" required />
+
+###### Returns
+
+`?<Self, <Self as ?>::Err>`
+
+###### Source
+
+[`src/relay/state_enums.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/state_enums.rs)
+
+Line 125.
+
+***
+
+##### hash
+
+###### Signature
+
+```rust
+fn hash<__H: ?>(&self, state: &mut __H)
+```
+
+###### Type Parameters
+
+<ParamField path="__H" type="?" required />
+
+###### Parameters
+
+<ParamField path="state" type="&mut __H" required />
+
+###### Source
+
+[`src/relay/state_enums.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/state_enums.rs)
+
+Line 53.
+
+***
+
+##### is\_terminal
+
+`true` when this is a terminal call state (`ended`).
+
+Delegates to \[`constants::is_call_terminal`] so the typed and
+string predicates can never disagree.
+
+**Decorators:** `@must_use`
+
+###### Signature
+
+```rust
+fn is_terminal(&self) -> bool
+```
+
+###### Returns
+
+`bool`
+
+###### Source
+
+[`src/relay/state_enums.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/state_enums.rs)
+
+Line 111.
+
+#### Type Aliases
+
+##### Err
+
+###### Source
+
+[`src/relay/state_enums.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/state_enums.rs)
+
+Line 123.
+
+#### Source
+
+[`src/relay/state_enums.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/state_enums.rs)
+
+Line 56.
+
+***
+
+### DialState
+
+Dial outcome state, as carried by `calling.call.dial` events.
+
+Distinct from \[`CallState`]: a dial reports the _result_ of an outbound
+attempt (`dialing` while in flight, then the terminal `answered` /
+`failed`), not the lifecycle of an established call. Grounded in the
+port's `constants` `DIAL_STATE_*`.
+
+`#[non_exhaustive]` — server-emitted; unrecognised values parse to
+`Other`.
+
+#### Signature
+
+```rust
+enum DialState
+```
+
+#### Inheritance
+
+**Implements:** `Debug`, `Clone`, `PartialEq`, `Eq`, `Hash`, `Display`, `FromStr`
+
+#### Variants
+
+<ParamField path="Answered" type="Answered" required>
+  `answered` — a leg answered; the dial succeeded (terminal).
+</ParamField>
+
+<ParamField path="Dialing" type="Dialing" required>
+  `dialing` — the outbound attempt is in progress (non-terminal).
+</ParamField>
+
+<ParamField path="Failed" type="Failed" required>
+  `failed` — no leg answered; the dial failed (terminal).
+</ParamField>
+
+<ParamField path="Other" type="Other(_)" required>
+  Any state the server emits that this enum does not (yet) model.
+</ParamField>
+
+#### Methods
+
+##### as\_str
+
+The canonical wire string for this state (e.g. `"dialing"`).
+
+**Decorators:** `@must_use`
+
+###### Signature
+
+```rust
+fn as_str(&self) -> &str
+```
+
+###### Returns
+
+`&str`
+
+###### Source
+
+[`src/relay/state_enums.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/state_enums.rs)
+
+Line 156.
+
+***
+
+##### clone
+
+###### Signature
+
+```rust
+fn clone(&self) -> ?
+```
+
+###### Returns
+
+`?`
+
+###### Source
+
+[`src/relay/state_enums.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/state_enums.rs)
+
+Line 139.
+
+***
+
+##### eq
+
+###### Signature
+
+```rust
+fn eq(&self, other: &?) -> bool
+```
+
+###### Parameters
+
+<ParamField path="other" type="&?" required />
+
+###### Returns
+
+`bool`
+
+###### Source
+
+[`src/relay/state_enums.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/state_enums.rs)
+
+Line 139.
+
+***
+
+##### fmt
+
+###### Signature
+
+```rust
+fn fmt(&self, f: &mut ?<'_>) -> ?
+```
+
+###### Parameters
+
+<ParamField path="f" type="&mut ?<'_>" required />
+
+###### Returns
+
+`?`
+
+###### Source
+
+[`src/relay/state_enums.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/state_enums.rs)
+
+Line 139.
+
+***
+
+##### fmt
+
+###### Signature
+
+```rust
+fn fmt(&self, f: &mut ?<'_>) -> ?
+```
+
+###### Parameters
+
+<ParamField path="f" type="&mut ?<'_>" required />
+
+###### Returns
+
+`?`
+
+###### Source
+
+[`src/relay/state_enums.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/state_enums.rs)
+
+Line 189.
+
+***
+
+##### from\_str
+
+Parse a wire string into a \[`DialState`] (infallible; unknown →
+`Other`).
+
+**Decorators:** `@must_use`
+
+###### Signature
+
+```rust
+fn from_str(s: &str) -> ?
+```
+
+###### Parameters
+
+<ParamField path="s" type="&str" required />
+
+###### Returns
+
+`?`
+
+###### Source
+
+[`src/relay/state_enums.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/state_enums.rs)
+
+Line 168.
+
+***
+
+##### from\_str
+
+###### Signature
+
+```rust
+fn from_str(s: &str) -> ?<Self, <Self as ?>::Err>
+```
+
+###### Parameters
+
+<ParamField path="s" type="&str" required />
+
+###### Returns
+
+`?<Self, <Self as ?>::Err>`
+
+###### Source
+
+[`src/relay/state_enums.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/state_enums.rs)
+
+Line 197.
+
+***
+
+##### hash
+
+###### Signature
+
+```rust
+fn hash<__H: ?>(&self, state: &mut __H)
+```
+
+###### Type Parameters
+
+<ParamField path="__H" type="?" required />
+
+###### Parameters
+
+<ParamField path="state" type="&mut __H" required />
+
+###### Source
+
+[`src/relay/state_enums.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/state_enums.rs)
+
+Line 139.
+
+***
+
+##### is\_terminal
+
+`true` when this is a terminal dial outcome (`answered` or `failed`).
+
+A dial resolves once it either connects a leg or exhausts every
+device, so both `answered` and `failed` are terminal; `dialing` is
+not.
+
+**Decorators:** `@must_use`
+
+###### Signature
+
+```rust
+fn is_terminal(&self) -> bool
+```
+
+###### Returns
+
+`bool`
+
+###### Source
+
+[`src/relay/state_enums.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/state_enums.rs)
+
+Line 183.
+
+#### Type Aliases
+
+##### Err
+
+###### Source
+
+[`src/relay/state_enums.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/state_enums.rs)
+
+Line 195.
+
+#### Source
+
+[`src/relay/state_enums.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/state_enums.rs)
+
+Line 142.
+
+***
+
+### MessageState
+
+Message delivery state, as carried by `messaging.state` events.
+
+Mirrors Python `relay/constants.py` `MESSAGE_STATE_*`. The terminal set
+is `delivered` / `undelivered` / `failed`
+(`MESSAGE_TERMINAL_STATES`; see `is_terminal`),
+matching \[`constants::is_message_terminal`]. Distinct from both
+\[`CallState`] and \[`DialState`] — `failed` here means _message_ failure,
+not a dial failure.
+
+`#[non_exhaustive]` — server-emitted; unrecognised values parse to
+`Other`.
+
+#### Signature
+
+```rust
+enum MessageState
+```
+
+#### Inheritance
+
+**Implements:** `Debug`, `Clone`, `PartialEq`, `Eq`, `Hash`, `Display`, `FromStr`
+
+#### Variants
+
+<ParamField path="Delivered" type="Delivered" required>
+  `delivered` — confirmed delivered (terminal).
+</ParamField>
+
+<ParamField path="Failed" type="Failed" required>
+  `failed` — sending failed (terminal).
+</ParamField>
+
+<ParamField path="Initiated" type="Initiated" required>
+  `initiated` — sending has begun.
+</ParamField>
+
+<ParamField path="Other" type="Other(_)" required>
+  Any state the server emits that this enum does not (yet) model.
+</ParamField>
+
+<ParamField path="Queued" type="Queued" required>
+  `queued` — accepted and queued for sending.
+</ParamField>
+
+<ParamField path="Received" type="Received" required>
+  `received` — an inbound message was received.
+</ParamField>
+
+<ParamField path="Sent" type="Sent" required>
+  `sent` — handed off to the carrier.
+</ParamField>
+
+<ParamField path="Undelivered" type="Undelivered" required>
+  `undelivered` — the carrier reported non-delivery (terminal).
+</ParamField>
+
+#### Methods
+
+##### as\_str
+
+The canonical wire string for this state (e.g. `"delivered"`).
+
+**Decorators:** `@must_use`
+
+###### Signature
+
+```rust
+fn as_str(&self) -> &str
+```
+
+###### Returns
+
+`&str`
+
+###### Source
+
+[`src/relay/state_enums.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/state_enums.rs)
+
+Line 238.
+
+***
+
+##### clone
+
+###### Signature
+
+```rust
+fn clone(&self) -> ?
+```
+
+###### Returns
+
+`?`
+
+###### Source
+
+[`src/relay/state_enums.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/state_enums.rs)
+
+Line 213.
+
+***
+
+##### eq
+
+###### Signature
+
+```rust
+fn eq(&self, other: &?) -> bool
+```
+
+###### Parameters
+
+<ParamField path="other" type="&?" required />
+
+###### Returns
+
+`bool`
+
+###### Source
+
+[`src/relay/state_enums.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/state_enums.rs)
+
+Line 213.
+
+***
+
+##### fmt
+
+###### Signature
+
+```rust
+fn fmt(&self, f: &mut ?<'_>) -> ?
+```
+
+###### Parameters
+
+<ParamField path="f" type="&mut ?<'_>" required />
+
+###### Returns
+
+`?`
+
+###### Source
+
+[`src/relay/state_enums.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/state_enums.rs)
+
+Line 213.
+
+***
+
+##### fmt
+
+###### Signature
+
+```rust
+fn fmt(&self, f: &mut ?<'_>) -> ?
+```
+
+###### Parameters
+
+<ParamField path="f" type="&mut ?<'_>" required />
+
+###### Returns
+
+`?`
+
+###### Source
+
+[`src/relay/state_enums.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/state_enums.rs)
+
+Line 279.
+
+***
+
+##### from\_str
+
+Parse a wire string into a \[`MessageState`] (infallible; unknown →
+`Other`).
+
+**Decorators:** `@must_use`
+
+###### Signature
+
+```rust
+fn from_str(s: &str) -> ?
+```
+
+###### Parameters
+
+<ParamField path="s" type="&str" required />
+
+###### Returns
+
+`?`
+
+###### Source
+
+[`src/relay/state_enums.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/state_enums.rs)
+
+Line 254.
+
+***
+
+##### from\_str
+
+###### Signature
+
+```rust
+fn from_str(s: &str) -> ?<Self, <Self as ?>::Err>
+```
+
+###### Parameters
+
+<ParamField path="s" type="&str" required />
+
+###### Returns
+
+`?<Self, <Self as ?>::Err>`
+
+###### Source
+
+[`src/relay/state_enums.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/state_enums.rs)
+
+Line 287.
+
+***
+
+##### hash
+
+###### Signature
+
+```rust
+fn hash<__H: ?>(&self, state: &mut __H)
+```
+
+###### Type Parameters
+
+<ParamField path="__H" type="?" required />
+
+###### Parameters
+
+<ParamField path="state" type="&mut __H" required />
+
+###### Source
+
+[`src/relay/state_enums.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/state_enums.rs)
+
+Line 213.
+
+***
+
+##### is\_terminal
+
+`true` when this is a terminal delivery state (`delivered`,
+`undelivered`, or `failed`).
+
+Delegates to \[`constants::is_message_terminal`] so the typed and
+string predicates can never disagree.
+
+**Decorators:** `@must_use`
+
+###### Signature
+
+```rust
+fn is_terminal(&self) -> bool
+```
+
+###### Returns
+
+`bool`
+
+###### Source
+
+[`src/relay/state_enums.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/state_enums.rs)
+
+Line 273.
+
+#### Type Aliases
+
+##### Err
+
+###### Source
+
+[`src/relay/state_enums.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/state_enums.rs)
+
+Line 285.
+
+#### Source
+
+[`src/relay/state_enums.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/state_enums.rs)
+
+Line 216.
+
+## Source
+
+[`src/relay/state_enums.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/state_enums.rs)
+
+Line 1.

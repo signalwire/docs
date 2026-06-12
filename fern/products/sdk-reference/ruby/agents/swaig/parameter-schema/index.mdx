@@ -1,0 +1,614 @@
+---
+slug: "/reference/ruby/agents/swaig/parameter-schema"
+title: "ParameterSchema"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "class"
+  language: "ruby"
+  qualified_name: "SignalWire::Swaig::ParameterSchema"
+  parent: "SignalWire::Swaig"
+  module: "agents.Swaig"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/swaig/parameter_schema.rb"
+  visibility: "public"
+---
+# `ParameterSchema`
+
+***
+
+ParameterSchema — a typed, block-DSL builder for SWAIG tool
+parameters (the Tier-2 idiom flagship for the Ruby port; see
+porting-sdk/IDIOM\_PASS\_JOURNAL.md §4).
+
+Defining a SWAIG tool's +parameters+ in the Python reference (and in
+the existing Ruby path) means hand-writing a JSON-Schema blob as
+nested Hashes:
+
+```
+define_tool(name: "lookup", description: "...", parameters: {
+  "service" => { "type" => "string", "description" => "The service" },
+  "date"    => { "type" => "string", "description" => "YYYY-MM-DD" }
+}, required: %w[service date])
+```
+
++ParameterSchema+ is a _typed convenience over the SAME wire output_:
+the Hash it produces is BYTE-IDENTICAL to the normalised hand-written
+form (a +\{ 'type' => 'object', 'properties' => \{...\}, 'required' =>
+\[...] \}+ object — +required+ omitted when empty). It is NOT a new
+format; the untyped Hash path stays fully supported. This is purely
+additive (a PORT\_ADDITION).
+
+The idiom is a Ruby block DSL — the most natural way to render nested
+structure readably:
+
+```
+params = SignalWire::Swaig::ParameterSchema.build do
+  string  :service, 'The service to look up'
+  string  :date,    'Appointment date, YYYY-MM-DD'
+  enum    :fmt, RecordFormat::ALL, 'Audio container format'
+  integer :count,   'How many results', default: 10
+  array   :tags,    'Search tags', of: :string
+  object  :filter,  'Structured filter' do
+    string :status, 'open|closed'
+  end
+  required :service, :date
+end
+
+# params is the same Hash a hand-written schema would produce:
+# { 'type' => 'object', 'properties' => { ... }, 'required' => [...] }
+```
+
+The +enum+ kind integrates the Tier-1 frozen closed-set constants
+(\{RecordFormat\}, \{RecordDirection\}, \{TapDirection\}, \{Codec\}) — pass
+any of their +ALL+ arrays (or any literal array) as the closed set and
+it lands in the schema as +"enum" => \[...]+.
+
+Supported property kinds: +string+, +number+, +integer+, +boolean+,
++enum+ (closed set), +array+ (of a kind), +object+ (nested). Every
+kind accepts +description+ plus optional +required:+ / +default:+ /
++enum:+ / +format:+.
+
+The result Hash is plain JSON-Schema — feed it straight to
++define\_tool(parameters:)+. Because the kind methods return +self+ a
+fluent style works too:
+
+```
+ParameterSchema.new.string(:q, 'query').require(:q).to_h
+```
+
+***
+
+## Signature
+
+```ruby
+class ParameterSchema < Object
+```
+
+## Inheritance
+
+**Extends:** `Object`
+
+## Constants
+
+<ParamField path="ARRAY" type="ARRAY = 'array'" required />
+
+<ParamField path="BOOLEAN" type="BOOLEAN = 'boolean'" required />
+
+<ParamField path="INTEGER" type="INTEGER = 'integer'" required />
+
+<ParamField path="NUMBER" type="NUMBER = 'number'" required />
+
+<ParamField path="OBJECT" type="OBJECT = 'object'" required />
+
+<ParamField path="STRING" type="STRING = 'string'" required>
+  JSON-Schema "type" keyword each builder method emits.
+</ParamField>
+
+## Methods
+
+### array
+
+Add an +array+ property. The element kind is given by +of:+ (a JSON
+type string like +'string'+ / +:integer+), producing an +items+
+subschema. When +of:+ names +object+ (or +:object+) a block may
+define the element object's properties.
+
+array :tags, 'Search tags', of: :string
+\#=> properties.tags == \{ 'type' => 'array',
+\#     'description' => '...', 'items' => \{ 'type' => 'string' \} \}
+
+```
+array :people, 'Attendees', of: :object do
+  string :name, 'Full name'
+end
+```
+
+#### Signature
+
+```ruby
+def array(name, description = nil, of: nil, required: false, default: nil, enum: nil, &block)
+```
+
+#### Parameters
+
+<ParamField path="name" type="String | Symbol" required>
+  property name
+</ParamField>
+
+<ParamField path="description" type="String | nil" default="nil">
+  LLM-facing description
+</ParamField>
+
+<ParamField path="of:" default="nil" />
+
+<ParamField path="required:" default="false" />
+
+<ParamField path="default:" default="nil" />
+
+<ParamField path="enum:" default="nil" />
+
+<ParamField path="...block" />
+
+#### Returns
+
+`self`
+
+#### Yields
+
+- nested element-object property DSL (only when +of: :object+)
+
+#### Source
+
+[`lib/signalwire/swaig/parameter_schema.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/swaig/parameter_schema.rb)
+
+Line 173.
+
+***
+
+### boolean
+
+Add a +boolean+ property. Same options as \{#string\}.
+
+#### Signature
+
+```ruby
+def boolean(name, description = nil, required: false, default: nil)
+```
+
+#### Parameters
+
+<ParamField path="name" required />
+
+<ParamField path="description" default="nil" />
+
+<ParamField path="required:" default="false" />
+
+<ParamField path="default:" default="nil" />
+
+#### Returns
+
+`self`
+
+#### Source
+
+[`lib/signalwire/swaig/parameter_schema.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/swaig/parameter_schema.rb)
+
+Line 125.
+
+***
+
+### build
+
+Build a schema with the block DSL. The block runs in the builder's
+instance context, so the bare +string :x, '...'+ verbs resolve to
+this object's methods.
+
+schema = ParameterSchema.build do
+string :name, 'Caller name'
+required :name
+end #=> Hash
+
+#### Signature
+
+```ruby
+def build(&block)
+```
+
+#### Parameters
+
+<ParamField path="...block" />
+
+#### Returns
+
+`Hash` — the JSON-Schema parameters object (byte-identical to the equivalent hand-written + normalised +parameters+ Hash)
+
+#### Yields
+
+- DSL body evaluated against a fresh \{ParameterSchema\}
+
+#### Source
+
+[`lib/signalwire/swaig/parameter_schema.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/swaig/parameter_schema.rb)
+
+Line 88.
+
+***
+
+### enum
+
+Add a closed-set property (a +string+-typed schema carrying an
++enum+ list). Integrates the Tier-1 frozen vocabularies — pass
++RecordFormat::ALL+, +TapDirection::ALL+, +Codec::ALL+, etc. (or any
+literal array) as the +values+ closed set.
+
+enum :fmt, RecordFormat::ALL, 'Audio container format'
+\#=> properties.fmt == \{ 'type' => 'string',
+\#     'description' => '...', 'enum' => \['wav','mp3','mp4'] \}
+
+#### Signature
+
+```ruby
+def enum(name, values, description = nil, required: false, default: nil, type: STRING)
+```
+
+#### Parameters
+
+<ParamField path="name" type="String | Symbol" required>
+  property name
+</ParamField>
+
+<ParamField path="values" type="Array" required>
+  the closed set (e.g. a constant module's +ALL+)
+</ParamField>
+
+<ParamField path="description" type="String | nil" default="nil">
+  LLM-facing description
+</ParamField>
+
+<ParamField path="required:" default="false" />
+
+<ParamField path="default:" default="nil" />
+
+<ParamField path="type:" default="STRING" />
+
+#### Returns
+
+`self`
+
+#### Source
+
+[`lib/signalwire/swaig/parameter_schema.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/swaig/parameter_schema.rb)
+
+Line 146.
+
+***
+
+### initialize
+
+#### Signature
+
+```ruby
+def initialize
+```
+
+#### Returns
+
+`ParameterSchema` — a new instance of ParameterSchema
+
+#### Source
+
+[`lib/signalwire/swaig/parameter_schema.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/swaig/parameter_schema.rb)
+
+Line 94.
+
+***
+
+### integer
+
+Add an +integer+ property. Same options as \{#string\}.
+
+#### Signature
+
+```ruby
+def integer(name, description = nil, required: false, default: nil, enum: nil, format: nil)
+```
+
+#### Parameters
+
+<ParamField path="name" required />
+
+<ParamField path="description" default="nil" />
+
+<ParamField path="required:" default="false" />
+
+<ParamField path="default:" default="nil" />
+
+<ParamField path="enum:" default="nil" />
+
+<ParamField path="format:" default="nil" />
+
+#### Returns
+
+`self`
+
+#### Source
+
+[`lib/signalwire/swaig/parameter_schema.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/swaig/parameter_schema.rb)
+
+Line 119.
+
+***
+
+### number
+
+Add a +number+ (floating-point) property. Same options as \{#string\}.
+
+#### Signature
+
+```ruby
+def number(name, description = nil, required: false, default: nil, enum: nil, format: nil)
+```
+
+#### Parameters
+
+<ParamField path="name" required />
+
+<ParamField path="description" default="nil" />
+
+<ParamField path="required:" default="false" />
+
+<ParamField path="default:" default="nil" />
+
+<ParamField path="enum:" default="nil" />
+
+<ParamField path="format:" default="nil" />
+
+#### Returns
+
+`self`
+
+#### Source
+
+[`lib/signalwire/swaig/parameter_schema.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/swaig/parameter_schema.rb)
+
+Line 113.
+
+***
+
+### object
+
+Add a nested +object+ property whose sub-properties are defined in
+the block (a recursively-evaluated \{ParameterSchema\}).
+
+object :address, 'Mailing address' do
+string :street, 'Street line'
+string :zip,    'Postal code'
+required :street
+end
+
+The nested object's own +required+ list (from a nested +required+
+call) is carried inside the sub-schema, exactly as a hand-written
+nested object would render.
+
+#### Signature
+
+```ruby
+def object(name, description = nil, required: false, &block)
+```
+
+#### Parameters
+
+<ParamField path="name" type="String | Symbol" required>
+  property name
+</ParamField>
+
+<ParamField path="description" type="String | nil" default="nil">
+  LLM-facing description
+</ParamField>
+
+<ParamField path="required:" default="false" />
+
+<ParamField path="...block" />
+
+#### Returns
+
+`self`
+
+#### Yields
+
+- nested property DSL
+
+#### Source
+
+[`lib/signalwire/swaig/parameter_schema.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/swaig/parameter_schema.rb)
+
+Line 210.
+
+***
+
+### require
+
+Singular alias of \{#required\} for fluent single-property chains
+(+.string(:q,'..').require(:q)+). Avoids reading as a plural when
+only one name is passed.
+
+#### Signature
+
+```ruby
+def require(*names)
+```
+
+#### Parameters
+
+<ParamField path="...names" />
+
+#### Returns
+
+`self`
+
+#### Source
+
+[`lib/signalwire/swaig/parameter_schema.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/swaig/parameter_schema.rb)
+
+Line 244.
+
+***
+
+### required
+
+Mark one or more already-declared (or to-be-declared) properties as
+required. Names are de-duplicated, preserving first-seen order — the
+same shape +define\_tool(required:)+ produces.
+
+required :service, :date
+
+#### Signature
+
+```ruby
+def required(*names)
+```
+
+#### Parameters
+
+<ParamField path="...names" type="Array<String, Symbol>" />
+
+#### Returns
+
+`self`
+
+#### Source
+
+[`lib/signalwire/swaig/parameter_schema.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/swaig/parameter_schema.rb)
+
+Line 232.
+
+***
+
+### string
+
+Add a +string+ property.
+
+#### Signature
+
+```ruby
+def string(name, description = nil, required: false, default: nil, enum: nil, format: nil)
+```
+
+#### Parameters
+
+<ParamField path="name" type="String | Symbol" required>
+  property name (rendered as a String key)
+</ParamField>
+
+<ParamField path="description" type="String | nil" default="nil">
+  LLM-facing description
+</ParamField>
+
+<ParamField path="required:" default="false" />
+
+<ParamField path="default:" default="nil" />
+
+<ParamField path="enum:" default="nil" />
+
+<ParamField path="format:" default="nil" />
+
+#### Returns
+
+`self`
+
+#### Source
+
+[`lib/signalwire/swaig/parameter_schema.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/swaig/parameter_schema.rb)
+
+Line 107.
+
+***
+
+### to\_h
+
+Render the JSON-Schema parameters object.
+
+Shape (byte-identical to a hand-written + normalised schema):
+
+- always +'type' => 'object'+
+- +'properties' => \{...\}+ (insertion-ordered)
+- +'required' => \[...]+ ONLY when at least one name is required
+  (omitted entirely otherwise — matching +define\_tool+, which only
+  writes +required+ when the supplied Array is non-empty)
+
+#### Signature
+
+```ruby
+def to_h
+```
+
+#### Returns
+
+`Hash`
+
+#### Source
+
+[`lib/signalwire/swaig/parameter_schema.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/swaig/parameter_schema.rb)
+
+Line 258.
+
+***
+
+### to\_hash
+
+Render the JSON-Schema parameters object.
+
+Shape (byte-identical to a hand-written + normalised schema):
+
+- always +'type' => 'object'+
+- +'properties' => \{...\}+ (insertion-ordered)
+- +'required' => \[...]+ ONLY when at least one name is required
+  (omitted entirely otherwise — matching +define\_tool+, which only
+  writes +required+ when the supplied Array is non-empty)
+
+#### Signature
+
+```ruby
+def to_h
+```
+
+#### Returns
+
+`Hash`
+
+#### Source
+
+[`lib/signalwire/swaig/parameter_schema.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/swaig/parameter_schema.rb)
+
+Line 266.
+
+***
+
+### to\_json
+
+#### Signature
+
+```ruby
+def to_json(*args)
+```
+
+#### Parameters
+
+<ParamField path="...args" />
+
+#### Returns
+
+`String` — JSON serialization of \{#to\_h\}
+
+#### Source
+
+[`lib/signalwire/swaig/parameter_schema.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/swaig/parameter_schema.rb)
+
+Line 269.
+
+## Source
+
+[`lib/signalwire/swaig/parameter_schema.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/swaig/parameter_schema.rb)
+
+Line 67.

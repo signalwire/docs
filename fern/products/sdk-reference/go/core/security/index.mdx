@@ -1,0 +1,362 @@
+---
+slug: "/reference/go/core/security"
+title: "security"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "module"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/security"
+  parent: "core"
+  module: "core"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/security/session_manager.go"
+---
+# `security`
+
+Package security provides session management and token-based authentication for SWAIG function calls, preventing unauthorized tool execution.
+
+## Signature
+
+```go
+package security
+```
+
+## Constants
+
+<ParamField path="ErrMissingSigningKey" type="ErrMissingSigningKey" required>
+  ErrMissingSigningKey is returned by ValidateWebhookSignatureE / ValidateRequestE when an empty signing key is supplied. Per the spec, a missing signing key is a programming error rather than a validation failure, so the bool-returning entry points panic; the \*E variants return this sentinel for callers that prefer error returns.
+</ParamField>
+
+<ParamField path="RawBodyContextKey" type="RawBodyContextKey" required>
+  RawBodyContextKey is the context key under which WebhookMiddleware stashes the raw request body. Downstream handlers should retrieve via RawBodyFromContext rather than reaching for this key directly.
+</ParamField>
+
+## Modules
+
+<CardGroup cols={2}>
+  <Card title="security" href="/docs/sdk-reference/reference/go/core/security/security" />
+</CardGroup>
+
+## Functions
+
+### NewSessionManager
+
+NewSessionManager creates a new SessionManager. If tokenExpirySecs is \<= 0, a default of 900 seconds (15 minutes) is used, matching the Python SDK default. Provide functional options (e.g. WithSecret) to customise behaviour.
+
+#### Signature
+
+```go
+func NewSessionManager(tokenExpirySecs int, opts ...Option) *SessionManager
+```
+
+#### Parameters
+
+<ParamField path="tokenExpirySecs" type="int" required />
+
+<ParamField path="...opts" type="Option" />
+
+#### Returns
+
+`*SessionManager`
+
+#### Source
+
+[`pkg/security/session_manager.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/security/session_manager.go)
+
+Line 55.
+
+***
+
+### RawBodyFromContext
+
+RawBodyFromContext returns the raw request body bytes that the webhook middleware captured before signature validation. Returns nil and false when called from a handler that wasn't wrapped by WebhookMiddleware (or when the request had no body).
+
+#### Signature
+
+```go
+func RawBodyFromContext(ctx context.Context) ([]byte, bool)
+```
+
+#### Parameters
+
+<ParamField path="ctx" type="context.Context" required />
+
+#### Returns
+
+`([]byte, bool)`
+
+#### Source
+
+[`pkg/security/webhook_middleware.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/security/webhook_middleware.go)
+
+Line 42.
+
+***
+
+### ValidateRequest
+
+ValidateRequest is the legacy @signalwire/compatibility-api drop-in entry point. The fourth argument is dynamically dispatched:
+
+- string: delegate to ValidateWebhookSignature (Scheme A then Scheme B with parsed form);
+- map\[string]\[]string / url.Values / map\[string]string: pre-parsed form params, run Scheme B directly with URL port normalization;
+- nil: pre-parsed empty params, run Scheme B with empty concat string;
+- anything else: panic with a clear message (programmer error).
+
+#### Signature
+
+```go
+func ValidateRequest(
+	signingKey string,
+	signature string,
+	urlStr string,
+	paramsOrRawBody any
+) bool
+```
+
+#### Parameters
+
+<ParamField path="signingKey" type="string" required />
+
+<ParamField path="signature" type="string" required />
+
+<ParamField path="urlStr" type="string" required />
+
+<ParamField path="paramsOrRawBody" type="any" required />
+
+#### Returns
+
+`bool`
+
+#### Source
+
+[`pkg/security/webhook.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/security/webhook.go)
+
+Line 243.
+
+***
+
+### ValidateRequestE
+
+ValidateRequestE is the error-returning variant of ValidateRequest. Returns ErrMissingSigningKey when signingKey is empty, or a typed error when paramsOrRawBody is neither a string, nil, nor a recognized map shape.
+
+#### Signature
+
+```go
+func ValidateRequestE(
+	signingKey string,
+	signature string,
+	urlStr string,
+	paramsOrRawBody any
+) (bool, error)
+```
+
+#### Parameters
+
+<ParamField path="signingKey" type="string" required />
+
+<ParamField path="signature" type="string" required />
+
+<ParamField path="urlStr" type="string" required />
+
+<ParamField path="paramsOrRawBody" type="any" required />
+
+#### Returns
+
+`(bool, error)`
+
+#### Source
+
+[`pkg/security/webhook.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/security/webhook.go)
+
+Line 299.
+
+***
+
+### ValidateWebhookSignature
+
+ValidateWebhookSignature validates a SignalWire webhook signature against both schemes. Returns true if the signature matches Scheme A (hex JSON) or Scheme B (base64 form, with port-normalization variants and optional bodySHA256 fallback); false otherwise.
+
+signingKey: customer's Signing Key. Empty string panics — that's a programming error, not a validation failure (use ValidateWebhookSignatureE for the error-returning variant).
+
+signature: X-SignalWire-Signature (or X-Twilio-Signature) header value. Empty returns false without panicking.
+
+url: full URL SignalWire POSTed to (scheme, host, optional port, path, query). Must match what the platform saw — see the URL reconstruction section of porting-sdk/webhooks.md.
+
+rawBody: raw request body bytes as a UTF-8 string, BEFORE any JSON / form parsing.
+
+All comparisons use crypto/subtle.ConstantTimeCompare. The function does not log which scheme was tried, what the expected signature was, or any other branch information.
+
+#### Signature
+
+```go
+func ValidateWebhookSignature(
+	signingKey string,
+	signature string,
+	url string,
+	rawBody string
+) bool
+```
+
+#### Parameters
+
+<ParamField path="signingKey" type="string" required />
+
+<ParamField path="signature" type="string" required />
+
+<ParamField path="url" type="string" required />
+
+<ParamField path="rawBody" type="string" required />
+
+#### Returns
+
+`bool`
+
+#### Source
+
+[`pkg/security/webhook.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/security/webhook.go)
+
+Line 226.
+
+***
+
+### ValidateWebhookSignatureE
+
+ValidateWebhookSignatureE is the error-returning variant of ValidateWebhookSignature. Returns ErrMissingSigningKey when signingKey is empty; otherwise (matched, nil).
+
+#### Signature
+
+```go
+func ValidateWebhookSignatureE(
+	signingKey string,
+	signature string,
+	urlStr string,
+	rawBody string
+) (bool, error)
+```
+
+#### Parameters
+
+<ParamField path="signingKey" type="string" required />
+
+<ParamField path="signature" type="string" required />
+
+<ParamField path="urlStr" type="string" required />
+
+<ParamField path="rawBody" type="string" required />
+
+#### Returns
+
+`(bool, error)`
+
+#### Source
+
+[`pkg/security/webhook.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/security/webhook.go)
+
+Line 258.
+
+***
+
+### WebhookMiddleware
+
+WebhookMiddleware returns an http.Handler middleware that validates the X-SignalWire-Signature (or X-Twilio-Signature) header against signingKey before invoking the wrapped handler.
+
+Pass nil for opts to use defaults (no proxy trust, no size cap, env-var override consulted).
+
+The middleware never logs the signing key, the expected signature, or which validation branch matched — per porting-sdk/webhooks.md §"Required SDK Behaviors / Error modes".
+
+#### Signature
+
+```go
+func WebhookMiddleware(signingKey string, opts *WebhookOpts) func(http.Handler) http.Handler
+```
+
+#### Parameters
+
+<ParamField path="signingKey" type="string" required />
+
+<ParamField path="opts" type="*WebhookOpts" required />
+
+#### Returns
+
+`func(http.Handler) http.Handler`
+
+#### Source
+
+[`pkg/security/webhook_middleware.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/security/webhook_middleware.go)
+
+Line 82.
+
+***
+
+### WithDebugMode
+
+WithDebugMode enables the DebugToken method. Off by default to prevent accidental token introspection in production.
+
+#### Signature
+
+```go
+func WithDebugMode(enabled bool) Option
+```
+
+#### Parameters
+
+<ParamField path="enabled" type="bool" required />
+
+#### Returns
+
+`Option`
+
+#### Source
+
+[`pkg/security/session_manager.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/security/session_manager.go)
+
+Line 46.
+
+***
+
+### WithSecret
+
+WithSecret injects a fixed secret key into the SessionManager. Use this when you need multiple processes or instances to validate each other's tokens. Pass nil to keep the default behaviour (auto-generate a random 32-byte secret).
+
+#### Signature
+
+```go
+func WithSecret(key []byte) Option
+```
+
+#### Parameters
+
+<ParamField path="key" type="[]byte" required />
+
+#### Returns
+
+`Option`
+
+#### Source
+
+[`pkg/security/session_manager.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/security/session_manager.go)
+
+Line 36.
+
+## Type Aliases
+
+### Option
+
+Option is a functional option for NewSessionManager.
+
+#### Signature
+
+```go
+type Option alias
+```
+
+#### Source
+
+[`pkg/security/session_manager.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/security/session_manager.go)
+
+Line 31.
+
+## Source
+
+[`pkg/security/session_manager.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/security/session_manager.go)

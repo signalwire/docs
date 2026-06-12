@@ -1,0 +1,195 @@
+---
+slug: "/reference/dotnet/core/security/webhook-validation-middleware"
+title: "WebhookValidationMiddleware"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "class"
+  language: "dotnet"
+  qualified_name: "SignalWire.Security.WebhookValidationMiddleware"
+  parent: "core.security"
+  module: "core.security"
+  source_url: "https://github.com/signalwire/signalwire-dotnet/blob/main/src/SignalWire/Security/WebhookValidationMiddleware.cs"
+  visibility: "public"
+---
+# `WebhookValidationMiddleware`
+
+HTTP middleware that validates the `X-SignalWire-Signature` header
+on incoming requests using &lt;xref href="SignalWire.Security.WebhookValidator" data-throw-if-not-resolved="false">&lt;/xref>. Designed for
+the .NET port's HttpListener-based dispatch surface; adapts the same
+contract Python's FastAPI dependency provides.
+
+&lt;p>Use &lt;xref href="SignalWire.Security.WebhookValidationMiddleware.Validate(System.String%2cSystem.String%2cSystem.Collections.Generic.Dictionary%7bSystem.String%2cSystem.String%7d%2cSystem.String%2cSystem.String%2cSystem.Int32)" data-throw-if-not-resolved="false">&lt;/xref> to short-circuit invalid requests with
+403 before they reach an agent's POST handler. Returns null on success
+so the caller continues to dispatch.&lt;/p>
+
+&lt;p>This is intentionally a non-async type: the underlying validator
+is pure CPU work and the dispatch surface uses synchronous strings.&lt;/p>
+
+**Modifiers:** `sealed`
+
+## Signature
+
+```dotnet
+public sealed class WebhookValidationMiddleware
+```
+
+## Properties
+
+<ParamField path="SignalWireSignatureHeader" type="public const string SignalWireSignatureHeader = &#x22;X-SignalWire-Signature&#x22;" required>
+  The canonical SignalWire signature header name.
+</ParamField>
+
+<ParamField path="TwilioCompatSignatureHeader" type="public const string TwilioCompatSignatureHeader = &#x22;X-Twilio-Signature&#x22;" required>
+  Legacy alias for cXML/Twilio-compat callers.
+</ParamField>
+
+## Methods
+
+### ExtractSignatureHeader(Dictionary\<string, string>)
+
+Pull `X-SignalWire-Signature` from request headers, or the
+`X-Twilio-Signature` alias for cXML/Compat callers. Header
+lookups are case-insensitive (proxies / browsers vary).
+
+**Modifiers:** `static`
+
+#### Signature
+
+```dotnet
+public static string? ExtractSignatureHeader(Dictionary<string, string> headers)
+```
+
+#### Parameters
+
+<ParamField path="headers" type="Dictionary<string,string>" required />
+
+#### Returns
+
+`string`
+
+#### Source
+
+[`src/SignalWire/Security/WebhookValidationMiddleware.cs`](https://github.com/signalwire/signalwire-dotnet/blob/main/src/SignalWire/Security/WebhookValidationMiddleware.cs)
+
+Line 134.
+
+***
+
+### ReconstructUrl(Dictionary\<string, string>, string, string?, int)
+
+Reconstruct the public URL SignalWire POSTed to. Resolution order:
+
+&lt;ol>&lt;li>`SWML_PROXY_URL_BASE` env var (joined with path + query).&lt;/li>&lt;li>`X-Forwarded-Proto` / `X-Forwarded-Host` headers
+    when `trustProxy=true`.&lt;/li>&lt;li>`http://hostFallback:portFallback&#123;path&#125;` as a last-resort
+    local construction.&lt;/li>&lt;/ol>
+
+#### Signature
+
+```dotnet
+public string ReconstructUrl(Dictionary<string, string> headers, string path, string? hostFallback = null, int portFallback = 0)
+```
+
+#### Parameters
+
+<ParamField path="headers" type="Dictionary<string,string>" required />
+
+<ParamField path="path" type="string" required />
+
+<ParamField path="hostFallback" type="string" default="null" />
+
+<ParamField path="portFallback" type="int" default="0" />
+
+#### Returns
+
+`string`
+
+#### Source
+
+[`src/SignalWire/Security/WebhookValidationMiddleware.cs`](https://github.com/signalwire/signalwire-dotnet/blob/main/src/SignalWire/Security/WebhookValidationMiddleware.cs)
+
+Line 154.
+
+***
+
+### Validate(string, string, Dictionary\<string, string>, string?, string?, int)
+
+Validate the incoming request and return a 403 short-circuit
+response if the signature is missing / invalid. Returns null when
+the request passed validation — caller proceeds to the real handler.
+
+**Remarks:** The raw body is the caller's &lt;code class="paramref">body&lt;/code> string verbatim;
+the caller is expected to capture the body once (before any JSON /
+form parser consumes the stream) and pass it here. The
+HttpListenerContext dispatcher in
+`SignalWire.SWML.Service.Run` already does this, so AgentBase
+and standalone HttpListener integrations can wire it in directly.
+
+#### Signature
+
+```dotnet
+public (int Status, Dictionary<string, string> Headers, string Body)? Validate(string method, string path, Dictionary<string, string> headers, string? body, string? hostFallback = null, int portFallback = 0)
+```
+
+#### Parameters
+
+<ParamField path="method" type="string" required />
+
+<ParamField path="path" type="string" required />
+
+<ParamField path="headers" type="Dictionary<string,string>" required />
+
+<ParamField path="body" type="string" required />
+
+<ParamField path="hostFallback" type="string" required />
+
+<ParamField path="portFallback" type="int" required />
+
+#### Returns
+
+`System.Nullable<System.ValueTuple<int,Dictionary<string,string>,string>>`
+
+#### Source
+
+[`src/SignalWire/Security/WebhookValidationMiddleware.cs`](https://github.com/signalwire/signalwire-dotnet/blob/main/src/SignalWire/Security/WebhookValidationMiddleware.cs)
+
+Line 96.
+
+***
+
+### WebhookValidationMiddleware(string, bool)
+
+Construct a middleware bound to a single signing key.
+
+#### Signature
+
+```dotnet
+public WebhookValidationMiddleware(string signingKey, bool trustProxy = false)
+```
+
+#### Parameters
+
+<ParamField path="signingKey" type="string" required>
+  The customer's Signing Key from the SignalWire Dashboard. Required, non-empty. Treated as a secret — never logged or echoed.
+</ParamField>
+
+<ParamField path="trustProxy" type="bool" default="false">
+  When true, honor `X-Forwarded-Proto` / `X-Forwarded-Host` when reconstructing the URL. Default false because proxy headers are spoofable; opt in only when you control the proxy chain.
+</ParamField>
+
+#### Throws
+
+- `System.ArgumentException` — Thrown when &lt;code class="paramref">signingKey&lt;/code> is null or empty.
+
+#### Source
+
+[`src/SignalWire/Security/WebhookValidationMiddleware.cs`](https://github.com/signalwire/signalwire-dotnet/blob/main/src/SignalWire/Security/WebhookValidationMiddleware.cs)
+
+Line 73.
+
+## Source
+
+[`src/SignalWire/Security/WebhookValidationMiddleware.cs`](https://github.com/signalwire/signalwire-dotnet/blob/main/src/SignalWire/Security/WebhookValidationMiddleware.cs)
+
+Line 47.

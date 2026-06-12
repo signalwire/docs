@@ -1,0 +1,532 @@
+---
+slug: "/reference/typescript/agents/skills/skill-manager"
+title: "SkillManager"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "class"
+  language: "typescript"
+  qualified_name: "skills.SkillManager"
+  parent: "skills"
+  module: "agents.skills"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/SkillManager.ts"
+---
+# `SkillManager`
+
+Manages the lifecycle of skills attached to an agent.
+
+Handles loading, unloading, validation, and aggregation of skill tools,
+hints, global data, and prompt sections.
+
+**Remarks:** **Architectural note — push vs pull model:**
+Python's `SkillManager.__init__(self, agent)` stores the agent reference and
+uses a **push model**: when a skill is loaded via `load_skill()`, the manager
+immediately calls `agent.add_hints()`, `agent.update_global_data()`, and
+`agent.prompt_add_section()` to inject skill data into the agent.
+
+This TypeScript implementation uses a **pull model** instead: `SkillManager`
+has no agent reference and no constructor. `AgentBase` owns the manager and
+calls `getAllHints()`, `getMergedGlobalData()`, and `getAllPromptSections()`
+at render time. Both approaches produce the same observable behavior at the
+SWML / SWAIG level. The pull model avoids circular-reference issues between
+`AgentBase` and `SkillManager` and is better suited to TypeScript's
+import-graph constraints.
+
+## Signature
+
+```typescript
+class SkillManager
+```
+
+## Properties
+
+<ParamField path="loadedSkills" type="get loadedSkills(): ReadonlyMap<string, SkillBase>" required>
+  Public read-only view of all loaded skill instances, keyed by instance key. Python equivalent: `self.loaded_skills` (public `Dict[str, SkillBase]`). Use this to iterate or inspect loaded skills without mutating the internal map.
+</ParamField>
+
+<ParamField path="size" type="get size(): number" required>
+  Get the number of currently loaded skill instances.
+</ParamField>
+
+## Methods
+
+### addSkill
+
+Add a skill to the manager, validating env vars and calling setup().
+Uses the skill's instance key for deduplication.
+
+[loadSkill](/docs/sdk-reference/reference/typescript/agents/skills/skill-manager#load-skill) / [loadSkillByName](/docs/sdk-reference/reference/typescript/agents/skills/skill-manager#load-skill-by-name) wrap this and catch to return
+`[false, msg]`, matching Python `load_skill`'s return contract
+(`skill_manager.py` lines 114-118).
+
+#### Signature
+
+```typescript
+addSkill(skill: SkillBase): Promise<void>
+```
+
+#### Parameters
+
+<ParamField path="skill" type="SkillBase" required>
+  The skill instance to add.
+</ParamField>
+
+#### Returns
+
+`Promise<void>` — Resolves once the skill is registered.
+
+#### Throws
+
+- When a single-instance skill is already loaded, its required environment variables are missing, its parameter schema is empty, its required packages cannot be imported, or `setup()` returns `false`.
+
+#### Source
+
+[`src/skills/SkillManager.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/SkillManager.ts)
+
+Line 74.
+
+***
+
+### clear
+
+Remove all skills and clean up.
+
+#### Signature
+
+```typescript
+clear(): Promise<void>
+```
+
+#### Returns
+
+`Promise<void>`
+
+#### Source
+
+[`src/skills/SkillManager.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/SkillManager.ts)
+
+Line 412.
+
+***
+
+### constructor
+
+#### Signature
+
+```typescript
+constructor(): SkillManager
+```
+
+#### Returns
+
+`SkillManager`
+
+***
+
+### getAllHints
+
+Aggregate speech recognition hints from all loaded skills.
+
+#### Signature
+
+```typescript
+getAllHints(): string[]
+```
+
+#### Returns
+
+`string[]` — Combined array of all skill hint strings.
+
+#### Source
+
+[`src/skills/SkillManager.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/SkillManager.ts)
+
+Line 369.
+
+***
+
+### getAllPromptSections
+
+Aggregate prompt sections from all loaded skills.
+
+#### Signature
+
+```typescript
+getAllPromptSections(): SkillPromptSection[]
+```
+
+#### Returns
+
+`SkillPromptSection[]` — Combined array of all skill prompt sections.
+
+#### Source
+
+[`src/skills/SkillManager.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/SkillManager.ts)
+
+Line 357.
+
+***
+
+### getAllTools
+
+Aggregate tool definitions from all loaded skills.
+
+#### Signature
+
+```typescript
+getAllTools(): SkillToolDefinition[]
+```
+
+#### Returns
+
+`SkillToolDefinition[]` — Combined array of all skill tool definitions.
+
+#### Source
+
+[`src/skills/SkillManager.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/SkillManager.ts)
+
+Line 345.
+
+***
+
+### getLoadedSkillEntries
+
+Get metadata for all loaded skills, enabling ephemeral copy re-instantiation.
+
+#### Signature
+
+```typescript
+getLoadedSkillEntries(): { config: SkillConfig; SkillClass: typeof SkillBase; skillName: string }[]
+```
+
+#### Returns
+
+`{ config: SkillConfig; SkillClass: typeof SkillBase; skillName: string }[]` — Array of entries containing skill name, class constructor, and config.
+
+#### Source
+
+[`src/skills/SkillManager.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/SkillManager.ts)
+
+Line 401.
+
+***
+
+### getMergedGlobalData
+
+Merge global data from all loaded skills into a single object.
+
+#### Signature
+
+```typescript
+getMergedGlobalData(): Record<string, unknown>
+```
+
+#### Returns
+
+`Record<string, unknown>` — Combined global data (later skills override earlier ones on key conflicts).
+
+#### Source
+
+[`src/skills/SkillManager.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/SkillManager.ts)
+
+Line 381.
+
+***
+
+### getSkill
+
+Get a skill by its instance key or instance ID.
+
+#### Signature
+
+```typescript
+getSkill(keyOrId: string): SkillBase | undefined
+```
+
+#### Parameters
+
+<ParamField path="keyOrId" type="string" required>
+  The instance key or instance ID to look up.
+</ParamField>
+
+#### Returns
+
+`SkillBase | undefined` — The skill instance, or undefined if not found.
+
+#### Source
+
+[`src/skills/SkillManager.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/SkillManager.ts)
+
+Line 319.
+
+***
+
+### hasSkill
+
+Check if any skill instance with the given name is currently loaded.
+
+#### Signature
+
+```typescript
+hasSkill(skillName: string): boolean
+```
+
+#### Parameters
+
+<ParamField path="skillName" type="string" required>
+  The skill name to check for.
+</ParamField>
+
+#### Returns
+
+`boolean` — True if at least one instance with this name is loaded.
+
+#### Source
+
+[`src/skills/SkillManager.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/SkillManager.ts)
+
+Line 196.
+
+***
+
+### hasSkillByKey
+
+Check if a skill with the given instance key is currently loaded.
+This matches Python's `has_skill` semantics, which performs a direct
+dictionary key lookup (`skill_identifier in self.loaded_skills`).
+
+Use `hasSkill(name)` to check by skill name (iterates values).
+Use `hasSkillByKey(key)` to check by instance key (direct map lookup).
+
+**Remarks:** Equivalent to Python's `has_skill(skill_identifier)`. Callers porting
+from Python should change `skill_manager.has_skill(key)` →
+`skillManager.hasSkillByKey(key)`.
+
+#### Signature
+
+```typescript
+hasSkillByKey(instanceKey: string): boolean
+```
+
+#### Parameters
+
+<ParamField path="instanceKey" type="string" required>
+  The instance key to look up.
+</ParamField>
+
+#### Returns
+
+`boolean` — True if a skill with this exact instance key is loaded.
+
+#### Source
+
+[`src/skills/SkillManager.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/SkillManager.ts)
+
+Line 218.
+
+***
+
+### listSkillKeys
+
+List the instance keys of all currently loaded skills.
+Python equivalent: `list_loaded_skills() -> List[str]` which returns
+`list(self.loaded_skills.keys())`.
+
+Use `listSkills()` for richer objects (name, instanceId, initialized).
+Use `listSkillKeys()` for a flat list of instance key strings.
+
+**Remarks:** Equivalent to Python's `list_loaded_skills()`. Callers porting from
+Python should change `skill_manager.list_loaded_skills()` →
+`skillManager.listSkillKeys()`.
+
+#### Signature
+
+```typescript
+listSkillKeys(): string[]
+```
+
+#### Returns
+
+`string[]` — Array of instance key strings.
+
+#### Source
+
+[`src/skills/SkillManager.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/SkillManager.ts)
+
+Line 310.
+
+***
+
+### listSkills
+
+List all loaded skill instances with their name, ID, and initialization state.
+
+#### Signature
+
+```typescript
+listSkills(): { initialized: boolean; instanceId: string; name: string }[]
+```
+
+#### Returns
+
+`{ initialized: boolean; instanceId: string; name: string }[]` — Array of skill summary objects.
+
+#### Source
+
+[`src/skills/SkillManager.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/SkillManager.ts)
+
+Line 333.
+
+***
+
+### loadSkill
+
+Load a skill by providing the class constructor directly, bypassing the registry.
+This is the TypeScript equivalent of Python's `load_skill(skill_name, skill_class, params)`
+path where a caller-provided `skill_class` is used instead of a registry lookup.
+
+**Remarks:** Equivalent to Python's `load_skill(skill_name, skill_class=MySkillClass, params)`.
+
+#### Signature
+
+```typescript
+loadSkill(
+  skillClass: typeof SkillBase,
+  config?: SkillConfig
+): Promise<[boolean, string]>
+```
+
+#### Parameters
+
+<ParamField path="skillClass" type="typeof SkillBase" required>
+  The skill class constructor (a subclass of `SkillBase`).
+</ParamField>
+
+<ParamField path="config" type="SkillConfig">
+  Optional configuration to pass to the skill constructor.
+</ParamField>
+
+#### Returns
+
+`Promise<[boolean, string]>` — A tuple `[success, errorMessage]` matching Python's `load_skill` return contract. `errorMessage` is an empty string on success.
+
+#### Examples
+
+```typescript
+const [ok, err] = await manager.loadSkill(MyCustomSkill, { api_key: 'secret' });
+if (!ok) console.error(err);
+```
+
+#### Source
+
+[`src/skills/SkillManager.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/SkillManager.ts)
+
+Line 240.
+
+***
+
+### loadSkillByName
+
+Load a skill by name from the global SkillRegistry, construct it, and add it.
+This is the TypeScript equivalent of Python's `load_skill(skill_name)` path
+where `skill_class=None` triggers a registry lookup.
+
+**Remarks:** Equivalent to Python's `load_skill(skill_name)` (registry path, where
+`skill_class=None`). Callers porting from Python should change
+`skill_manager.load_skill(name)` → `skillManager.loadSkillByName(name)`.
+
+#### Signature
+
+```typescript
+loadSkillByName(
+  skillName: string,
+  config?: SkillConfig
+): Promise<[boolean, string]>
+```
+
+#### Parameters
+
+<ParamField path="skillName" type="string" required>
+  The registered skill name to look up in the SkillRegistry.
+</ParamField>
+
+<ParamField path="config" type="SkillConfig">
+  Optional configuration to pass to the skill factory.
+</ParamField>
+
+#### Returns
+
+`Promise<[boolean, string]>` — A tuple `[success, errorMessage]` matching Python's `load_skill` return contract. `errorMessage` is an empty string on success.
+
+#### Source
+
+[`src/skills/SkillManager.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/SkillManager.ts)
+
+Line 270.
+
+***
+
+### removeSkill
+
+Remove a skill by its instance key or instance ID, calling cleanup() before removal.
+
+**Remarks:** Equivalent to Python's `unload_skill(skill_identifier)`. Callers porting
+from Python should change `skill_manager.unload_skill(id)` →
+`skillManager.removeSkill(id)`.
+
+#### Signature
+
+```typescript
+removeSkill(keyOrId: string): Promise<boolean>
+```
+
+#### Parameters
+
+<ParamField path="keyOrId" type="string" required>
+  The instance key or instance ID of the skill to remove.
+</ParamField>
+
+#### Returns
+
+`Promise<boolean>` — True if the skill was found and removed, false otherwise.
+
+#### Source
+
+[`src/skills/SkillManager.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/SkillManager.ts)
+
+Line 148.
+
+***
+
+### removeSkillByName
+
+Remove all skill instances matching a given skill name.
+
+#### Signature
+
+```typescript
+removeSkillByName(skillName: string): Promise<number>
+```
+
+#### Parameters
+
+<ParamField path="skillName" type="string" required>
+  The skill name to match against.
+</ParamField>
+
+#### Returns
+
+`Promise<number>` — The number of skill instances removed.
+
+#### Source
+
+[`src/skills/SkillManager.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/SkillManager.ts)
+
+Line 178.
+
+## Source
+
+[`src/skills/SkillManager.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/SkillManager.ts)
+
+Line 45.

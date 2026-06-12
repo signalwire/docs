@@ -1,0 +1,697 @@
+---
+slug: "/reference/java/agents/swml/swml"
+title: "swml"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "module"
+  language: "java"
+  qualified_name: "agents.swml.swml"
+  parent: "com.signalwire.sdk.swml"
+  module: "agents.swml"
+---
+# `swml`
+
+## Classes
+
+<CardGroup cols={2}>
+  <Card title="Document" href="/docs/sdk-reference/reference/java/agents/swml/swml/document">
+    SWML Document model. &lt;p> A document has a version, sections (each a list of verbs), and a top-level verbs list that maps to the "main" section.
+  </Card>
+
+  <Card title="Schema" href="/docs/sdk-reference/reference/java/agents/swml/swml/schema">
+    Singleton that loads schema.json from resources and extracts the 38 SWML verb definitions. &lt;p> The extraction algorithm: &lt;ol> &lt;li>Parse schema.json&lt;/li> &lt;li>For each entry in $defs.SWMLMethod.anyOf, get the $ref&lt;/li> &lt;li>Look up the definition in $defs&lt;/li> &lt;li>The actual verb name is the first key in properties&lt;/li> &lt;/ol>
+  </Card>
+
+  <Card title="SchemaUtils" href="/docs/sdk-reference/reference/java/agents/swml/swml/schema-utils">
+    SchemaUtils — Java port of `signalwire.utils.schema_utils.SchemaUtils`. &lt;p>Loads the SWML JSON Schema, extracts verb metadata, and validates either a single verb config or a complete SWML document.&lt;/p> &lt;p>Construction rules mirror Python:&lt;/p> &lt;ul> &lt;li>Pass `schemaPath=null` to use the embedded `schema.json`.&lt;/li> &lt;li>`schemaValidation=false` disables validation (returns valid=true for every `validateVerb` call).&lt;/li> &lt;li>The env var `SWML_SKIP_SCHEMA_VALIDATION=1/true/yes` also disables validation regardless of the constructor argument.&lt;/li> &lt;/ul> &lt;p>The Java port currently ships only the lightweight validator (verb existence + required-property check).
+  </Card>
+
+  <Card title="SchemaValidationError" href="/docs/sdk-reference/reference/java/agents/swml/swml/schema-validation-error">
+    SchemaValidationError — Java port of `signalwire.utils.schema_utils.SchemaValidationError`. &lt;p>Raised when SWML schema validation of a verb config fails.&lt;/p>
+  </Card>
+
+  <Card title="Service" href="/docs/sdk-reference/reference/java/agents/swml/swml/service">
+    Base SWML service with an embedded HTTP server, basic auth, security headers, and explicit methods for all 38 schema-driven verbs. &lt;p> Uses JDK built-in com.sun.net.httpserver.HttpServer with virtual threads.
+  </Card>
+</CardGroup>
+
+## Modules
+
+<CardGroup cols={2}>
+  <Card title="SchemaUtils" href="/docs/sdk-reference/reference/java/agents/swml/swml/schema-utils/index__2" />
+</CardGroup>
+
+## Interfaces
+
+### WireEnum
+
+Marker for the typed, compile-time-checked closed-set enums whose constants
+carry a canonical &lt;em>wire string&lt;/em> (`RecordFormat`, `RecordDirection`,
+`TapDirection`, `Codec`).
+
+&lt;p>Every such enum already exposes `#getValue()` returning the exact
+string the SignalWire platform expects on the wire (e.g.
+
+`"mp3"`,
+`"listen"`, `"PCMU"`). This interface simply names that shared
+shape so a single API can accept any of them generically — most importantly
+WireEnum\[], String),
+which turns `RecordFormat.values()` into a JSON-schema `enum:[...]`
+of wire strings without per-enum overloads.
+
+&lt;p>Because Java arrays are covariant, `RecordFormat.values()` (typed
+`RecordFormat[]`) is directly usable wherever a `WireEnum[]` is
+expected. The interface adds &lt;strong>no&lt;/strong> new method to the enums —
+`getValue()` already existed — so it is purely a unifying type, and
+routing a value through it is byte-for-byte identical to passing its
+`getValue()` string.
+
+&lt;p>This is the SWAIG/SWML "has a canonical wire value" set only. It is
+deliberately NOT implemented by RELAY device codecs or other open-ended
+string fields — see the per-enum Javadoc for the 3-vocabulary trap.
+
+#### Signature
+
+```java
+public interface WireEnum
+```
+
+#### Methods
+
+##### getValue
+
+The canonical wire string for this constant — the exact value the
+SignalWire platform expects (e.g.
+
+`"mp3"` / `"listen"` /
+`"PCMU"`). Equivalent to PHP's backed-enum `->value`.
+
+###### Signature
+
+```java
+String getValue()
+```
+
+###### Returns
+
+`String` — the wire string as it appears on the wire.
+
+###### Source
+
+[`src/main/java/com/signalwire/sdk/swml/WireEnum.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swml/WireEnum.java)
+
+Line 36.
+
+#### Source
+
+[`src/main/java/com/signalwire/sdk/swml/WireEnum.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swml/WireEnum.java)
+
+Line 27.
+
+## Enums
+
+### Codec
+
+Media codec for the SWML `tap` verb, as a typed, compile-time-checked
+closed set.
+
+&lt;p>The Python reference `FunctionResult.tap` validates `codec`
+against "PCMA"] and raises `ValueError` on anything
+else.
+
+The methods that take a tap codec
+(String, String, Codec))
+accept this enum &lt;em>or&lt;/em> a plain `String`. The enum gives editor
+autocompletion and makes a typo fail at compile time (a bare string like
+`"PCMX"` only fails at runtime, on the server). Strings keep parity
+with the Python reference (which uses a bare `str`):
+
+&lt;pre>"t1", "both", Codec.PCMA);   // typed, autocompleted
+result.tap("wss://x", "t1", "both", "PCMA");       // string still works (parity)&lt;/pre>
+
+&lt;p>&lt;strong>This is the SWAIG `tap` codec set only — do NOT reuse it for
+RELAY `stream`/`connect`.&lt;/strong> RELAY device codecs are a much
+larger superset (e.g. `PCMU,PCMA,OPUS,G729,G722,VP8,H264`, comma-joined);
+the 2-value SWAIG tap codec set is deliberately distinct and never shared.
+
+&lt;p>The wire strings are upper-case (`"PCMU"` / `"PCMA"`), matching
+the reference's literal list exactly. Each constant's value
+is the canonical wire string, so routing a tap through the enum is
+byte-for-byte identical to passing that string.
+
+#### Signature
+
+```java
+public enum Codec
+```
+
+#### Variants
+
+<ParamField path="PCMA" type="PCMA" required />
+
+<ParamField path="PCMU" type="PCMU" required />
+
+#### Methods
+
+##### fromWire
+
+Parse a wire string into a `Codec`, or return `null` if it is
+not a recognised codec.
+
+Matching is exact (case-sensitive), mirroring the
+reference's literal \["PCMU", "PCMA"] check (so `"pcmu"`
+returns `null`). The Java analog of Rust's `from_str`.
+
+**Modifiers:** `static`
+
+###### Signature
+
+```java
+public static Codec fromWire(String wire)
+```
+
+###### Parameters
+
+<ParamField path="wire" type="String" required>
+  the candidate wire string (case-sensitive).
+</ParamField>
+
+###### Returns
+
+`Codec` — the matching constant, or `null` if none matches.
+
+###### Source
+
+[`src/main/java/com/signalwire/sdk/swml/Codec.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swml/Codec.java)
+
+Line 61.
+
+***
+
+##### getValue
+
+The canonical (upper-case) wire string for this codec (`"PCMU"` /
+`"PCMA"`).
+
+Equivalent to PHP's backed-enum `->value`.
+
+###### Signature
+
+```java
+public String getValue()
+```
+
+###### Returns
+
+`String` — the upper-case codec name as it appears on the wire.
+
+###### Source
+
+[`src/main/java/com/signalwire/sdk/swml/Codec.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swml/Codec.java)
+
+Line 48.
+
+***
+
+##### valueOf
+
+**Modifiers:** `static`
+
+###### Signature
+
+```java
+public static Codec valueOf(String name)
+```
+
+###### Parameters
+
+<ParamField path="name" type="String" required />
+
+###### Returns
+
+`Codec`
+
+###### Source
+
+[`src/main/java/com/signalwire/sdk/swml/Codec.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swml/Codec.java)
+
+***
+
+##### values
+
+**Modifiers:** `static`
+
+###### Signature
+
+```java
+public static Codec[] values()
+```
+
+###### Returns
+
+`Codec[]`
+
+###### Source
+
+[`src/main/java/com/signalwire/sdk/swml/Codec.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swml/Codec.java)
+
+#### Source
+
+[`src/main/java/com/signalwire/sdk/swml/Codec.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swml/Codec.java)
+
+Line 31.
+
+***
+
+### RecordDirection
+
+Audio direction for the SWML `record_call` verb, as a typed,
+compile-time-checked closed set.
+
+&lt;p>The Python reference `FunctionResult.record_call` validates
+`direction` against "listen", "both"] and raises
+`ValueError` on anything else.
+
+The methods that take a record
+direction
+(boolean, String, RecordDirection))
+accept this enum &lt;em>or&lt;/em> a plain `String`. The enum gives editor
+autocompletion and makes a typo fail at compile time (a bare string like
+`"listenn"` only fails at runtime, on the server). Strings keep parity
+with the Python reference (which uses a bare `str`):
+
+&lt;pre>true, "mp3", RecordDirection.LISTEN);   // typed, autocompleted
+result.recordCall("rec1", true, "mp3", "listen");                 // string still works (parity)&lt;/pre>
+
+&lt;p>&lt;strong>This is a DIFFERENT set from `TapDirection`.&lt;/strong>
+`record_call` uses `listen` where `tap` uses `hear`,
+mirroring the reference's two separate validation lists — the two sets are
+modelled as two distinct enums and are never shared (see the 3-vocabulary
+trap: SWML `record_call` `&#123;speak,listen,both`&#125; vs SWML
+`tap` `&#123;speak,hear,both`&#125; vs RELAY `&#123;listen,speak,both`&#125;).
+
+&lt;p>Each constant's value is the canonical wire string, so
+routing a recording through the enum is byte-for-byte identical to passing
+that string.
+
+#### Signature
+
+```java
+public enum RecordDirection
+```
+
+#### Variants
+
+<ParamField path="BOTH" type="BOTH" required />
+
+<ParamField path="LISTEN" type="LISTEN" required />
+
+<ParamField path="SPEAK" type="SPEAK" required />
+
+#### Methods
+
+##### fromWire
+
+Parse a wire string into a `RecordDirection`, or return
+`null` if it is not a recognised direction (the same strings the
+Python reference would reject with `ValueError`).
+
+Note `"hear"`
+is valid for `TapDirection` but NOT for `record_call`, so it
+returns `null` here. The Java analog of Rust's `from_str`.
+
+**Modifiers:** `static`
+
+###### Signature
+
+```java
+public static RecordDirection fromWire(String wire)
+```
+
+###### Parameters
+
+<ParamField path="wire" type="String" required>
+  the candidate wire string (case-sensitive).
+</ParamField>
+
+###### Returns
+
+`RecordDirection` — the matching constant, or `null` if none matches.
+
+###### Source
+
+[`src/main/java/com/signalwire/sdk/swml/RecordDirection.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swml/RecordDirection.java)
+
+Line 66.
+
+***
+
+##### getValue
+
+The canonical wire string for this direction (`"speak"` /
+`"listen"` / `"both"`).
+
+Equivalent to PHP's backed-enum
+`->value`.
+
+###### Signature
+
+```java
+public String getValue()
+```
+
+###### Returns
+
+`String` — the lower-case direction name as it appears on the wire.
+
+###### Source
+
+[`src/main/java/com/signalwire/sdk/swml/RecordDirection.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swml/RecordDirection.java)
+
+Line 52.
+
+***
+
+##### valueOf
+
+**Modifiers:** `static`
+
+###### Signature
+
+```java
+public static RecordDirection valueOf(String name)
+```
+
+###### Parameters
+
+<ParamField path="name" type="String" required />
+
+###### Returns
+
+`RecordDirection`
+
+###### Source
+
+[`src/main/java/com/signalwire/sdk/swml/RecordDirection.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swml/RecordDirection.java)
+
+***
+
+##### values
+
+**Modifiers:** `static`
+
+###### Signature
+
+```java
+public static RecordDirection[] values()
+```
+
+###### Returns
+
+`RecordDirection[]`
+
+###### Source
+
+[`src/main/java/com/signalwire/sdk/swml/RecordDirection.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swml/RecordDirection.java)
+
+#### Source
+
+[`src/main/java/com/signalwire/sdk/swml/RecordDirection.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swml/RecordDirection.java)
+
+Line 33.
+
+***
+
+### RecordFormat
+
+Audio container format for call recording, as a typed, compile-time-checked
+closed set.
+
+&lt;p>The SWML `record_call` verb (and the SignalWire calling REST API)
+accept a fixed set of recording formats — `mp3`, `wav`, and
+`mp4`.
+
+The methods that take a format
+(boolean, RecordFormat, String)
+and the `recordFormat(RecordFormat)` builder setter) accept this enum &lt;em>or&lt;/em> a plain `String`. The enum gives editor autocompletion and
+makes a typo fail at compile time (a bare string like `"mp33"` only
+fails at runtime, on the server). Strings keep parity with the Python
+reference (which uses a bare `str`):
+
+&lt;pre>true, RecordFormat.MP3, "both");   // typed, autocompleted
+result.recordCall(null, true, "mp3", "both");              // string still works (parity)
+AgentBase.builder().recordFormat(RecordFormat.WAV);        // typed builder
+AgentBase.builder().recordFormat("wav");                   // string still works (parity)&lt;/pre>
+
+&lt;p>Each constant's value is the canonical wire string, so
+routing a recording through the enum is byte-for-byte identical to passing
+that string.
+
+#### Signature
+
+```java
+public enum RecordFormat
+```
+
+#### Variants
+
+<ParamField path="MP3" type="MP3" required />
+
+<ParamField path="MP4" type="MP4" required />
+
+<ParamField path="WAV" type="WAV" required />
+
+#### Methods
+
+##### getValue
+
+The canonical wire string for this format (`"mp3"` / `"wav"` /
+`"mp4"`).
+
+Equivalent to PHP's backed-enum `->value`.
+
+###### Signature
+
+```java
+public String getValue()
+```
+
+###### Returns
+
+`String` — the lower-case format name as it appears on the wire.
+
+###### Source
+
+[`src/main/java/com/signalwire/sdk/swml/RecordFormat.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swml/RecordFormat.java)
+
+Line 46.
+
+***
+
+##### valueOf
+
+**Modifiers:** `static`
+
+###### Signature
+
+```java
+public static RecordFormat valueOf(String name)
+```
+
+###### Parameters
+
+<ParamField path="name" type="String" required />
+
+###### Returns
+
+`RecordFormat`
+
+###### Source
+
+[`src/main/java/com/signalwire/sdk/swml/RecordFormat.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swml/RecordFormat.java)
+
+***
+
+##### values
+
+**Modifiers:** `static`
+
+###### Signature
+
+```java
+public static RecordFormat[] values()
+```
+
+###### Returns
+
+`RecordFormat[]`
+
+###### Source
+
+[`src/main/java/com/signalwire/sdk/swml/RecordFormat.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swml/RecordFormat.java)
+
+#### Source
+
+[`src/main/java/com/signalwire/sdk/swml/RecordFormat.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swml/RecordFormat.java)
+
+Line 28.
+
+***
+
+### TapDirection
+
+Audio direction for the SWML `tap` verb, as a typed,
+compile-time-checked closed set.
+
+&lt;p>The Python reference `FunctionResult.tap` validates `direction`
+against "hear", "both"] and raises `ValueError` on
+anything else.
+
+The methods that take a tap direction
+(String, TapDirection, String))
+accept this enum &lt;em>or&lt;/em> a plain `String`. The enum gives editor
+autocompletion and makes a typo fail at compile time (a bare string like
+`"haer"` only fails at runtime, on the server). Strings keep parity
+with the Python reference (which uses a bare `str`):
+
+&lt;pre>"t1", TapDirection.HEAR, "PCMU");   // typed, autocompleted
+result.tap("wss://x", "t1", "hear", "PCMU");              // string still works (parity)&lt;/pre>
+
+&lt;p>&lt;strong>This is a DIFFERENT set from `RecordDirection`.&lt;/strong>
+`tap` uses `hear` where `record_call` uses `listen`,
+mirroring the reference's two separate validation lists — the two sets are
+modelled as two distinct enums and are never shared (see the 3-vocabulary
+trap: SWML `record_call` `&#123;speak,listen,both`&#125; vs SWML
+`tap` `&#123;speak,hear,both`&#125; vs RELAY `&#123;listen,speak,both`&#125;).
+
+&lt;p>Each constant's value is the canonical wire string, so
+routing a tap through the enum is byte-for-byte identical to passing that
+string.
+
+#### Signature
+
+```java
+public enum TapDirection
+```
+
+#### Variants
+
+<ParamField path="BOTH" type="BOTH" required />
+
+<ParamField path="HEAR" type="HEAR" required />
+
+<ParamField path="SPEAK" type="SPEAK" required />
+
+#### Methods
+
+##### fromWire
+
+Parse a wire string into a `TapDirection`, or return `null`
+if it is not a recognised direction (the same strings the Python
+reference would reject with `ValueError`).
+
+Note `"listen"` is
+valid for `RecordDirection` but NOT for `tap`, so it returns
+`null` here. The Java analog of Rust's `from_str`.
+
+**Modifiers:** `static`
+
+###### Signature
+
+```java
+public static TapDirection fromWire(String wire)
+```
+
+###### Parameters
+
+<ParamField path="wire" type="String" required>
+  the candidate wire string (case-sensitive).
+</ParamField>
+
+###### Returns
+
+`TapDirection` — the matching constant, or `null` if none matches.
+
+###### Source
+
+[`src/main/java/com/signalwire/sdk/swml/TapDirection.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swml/TapDirection.java)
+
+Line 65.
+
+***
+
+##### getValue
+
+The canonical wire string for this direction (`"speak"` /
+`"hear"` / `"both"`).
+
+Equivalent to PHP's backed-enum
+`->value`.
+
+###### Signature
+
+```java
+public String getValue()
+```
+
+###### Returns
+
+`String` — the lower-case direction name as it appears on the wire.
+
+###### Source
+
+[`src/main/java/com/signalwire/sdk/swml/TapDirection.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swml/TapDirection.java)
+
+Line 51.
+
+***
+
+##### valueOf
+
+**Modifiers:** `static`
+
+###### Signature
+
+```java
+public static TapDirection valueOf(String name)
+```
+
+###### Parameters
+
+<ParamField path="name" type="String" required />
+
+###### Returns
+
+`TapDirection`
+
+###### Source
+
+[`src/main/java/com/signalwire/sdk/swml/TapDirection.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swml/TapDirection.java)
+
+***
+
+##### values
+
+**Modifiers:** `static`
+
+###### Signature
+
+```java
+public static TapDirection[] values()
+```
+
+###### Returns
+
+`TapDirection[]`
+
+###### Source
+
+[`src/main/java/com/signalwire/sdk/swml/TapDirection.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swml/TapDirection.java)
+
+#### Source
+
+[`src/main/java/com/signalwire/sdk/swml/TapDirection.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swml/TapDirection.java)
+
+Line 32.
