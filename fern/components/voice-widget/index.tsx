@@ -369,7 +369,7 @@ export function VoiceWidget({
           {lock && baseRows[0] ? `${baseRows[0].provider} voices` : "TTS Voices"}
           <span className="vw-count">
             {baseRows.length.toLocaleString()} {baseRows.length === 1 ? "voice" : "voices"}
-            {filtered.length !== baseRows.length && <> · {filtered.length.toLocaleString()} match</>}
+            {filtered.length !== baseRows.length && <> · {filtered.length.toLocaleString()} matching</>}
           </span>
         </div>
       </header>
