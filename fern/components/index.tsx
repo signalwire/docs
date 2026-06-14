@@ -5,4 +5,5 @@
 // explicit `/index` file paths rather than bare directory paths. `export *` pulls in each
 // component's public surface (components + types) without enumerating them.
 export * from "./voice-widget/index";
+export * from "./voice-widget-rows/index";
 export * from "./skeleton/index";

@@ -21,12 +21,15 @@ import { Skeleton } from "../skeleton/index";
 const ASSET_BASE = "https://mcdn.signalwire.com/voice_widget/dist"; // catalog.json + manifest.json
 const AUDIO_BASE = "https://mcdn.signalwire.com";                   // /audio/<engine>/<voice_id>.mp3
 
-const ALL = "__all__";
-const DEFAULT_PAGE_SIZE = 48;
-const MOBILE_PAGE_SIZE = 12;
+// Exported (with the helpers/sub-components/types below) so the sibling rows preview
+// (components/voice-widget-rows) reuses this module's data layer and display logic verbatim instead
+// of forking it — keeping the two previews' behavior identical. See that file's header.
+export const ALL = "__all__";
+export const DEFAULT_PAGE_SIZE = 48;
+export const MOBILE_PAGE_SIZE = 12;
 const MOBILE_QUERY = "(max-width: 640px)";
 // Multiples of the max column count (4) so every page fills complete rows; 4 = a single row.
-const PAGE_SIZE_OPTIONS = [4, 8, 12, 24, 48, 96];
+export const PAGE_SIZE_OPTIONS = [4, 8, 12, 24, 48, 96];
 
 // ── Display-time data cleanup ────────────────────────────────────────────────────────────────
 // These three helpers normalize the raw catalog values for display only — the underlying data,
@@ -41,7 +44,7 @@ const PAGE_SIZE_OPTIONS = [4, 8, 12, 24, 48, 96];
 // Cartesia (535), 0 false positives — Google/Polly/Azure names use spaceless hyphens
 // ("ar-XA-Chirp3-HD-Achernar", "Joanna-Neural") and are never touched. The full original stays in
 // title=/the icon tooltip. Pipeline home: providers/{elevenlabs,cartesia}.py make_voice().
-function cleanName(displayName: string): string {
+export function cleanName(displayName: string): string {
   const m = displayName.match(/\s[-–—]\s/);
   if (!m || m.index === undefined) return displayName;
   const lead = displayName.slice(0, m.index).trim();
@@ -51,7 +54,7 @@ function cleanName(displayName: string): string {
 
 // Friendly language: turn a BCP-47 code ("af-ZA", "el") into an English name via Intl.DisplayNames
 // (resolves ~99% of real codes); fall back to the raw code on any miss/throw.
-function friendlyLanguage(code: string): string {
+export function friendlyLanguage(code: string): string {
   if (!code) return code;
   try {
     return new Intl.DisplayNames(["en"], { type: "language" }).of(code) || code;
@@ -62,7 +65,7 @@ function friendlyLanguage(code: string): string {
 
 // Normalize gender: the catalog mixes "feminine"/"masculine" with "male"/"female"; map to the
 // display forms and HIDE "unknown" (599 voices) rather than render "Unknown". Returns "" to hide.
-function normalizeGender(gender: string): string {
+export function normalizeGender(gender: string): string {
   switch (gender) {
     case "feminine": case "female": return "Female";
     case "masculine": case "male": return "Male";
@@ -73,22 +76,21 @@ function normalizeGender(gender: string): string {
   }
 }
 
-
 type FilterKey = "search" | "provider" | "language" | "gender" | "group" | "pageSize";
 
 // Client-side row: a catalog voice joined with its clip, plus two precomputed fields — `_search`,
 // a lowercased blob so the per-keystroke filter runs one substring test per row instead of
 // re-lowercasing 4–5 fields, and `_uid`, a collision-free identity for React keys and play state
 // (assigned in loadBundle; the catalog's key+model is not unique on its own).
-type Row = VoiceRow & { _search: string; _uid: string };
+export type Row = VoiceRow & { _search: string; _uid: string };
 
 // The asset bundle (catalog.json + manifest.json) is one large artifact (~5 MB, ~4.9k voices)
 // shared by every TTS page that embeds the widget. Cache the parsed+joined rows per URL pair so
 // navigating across the index and the provider pages fetches and parses it once per session, not
 // once per mount. Each embed then narrows this shared set down to the voices it shows (see baseRows).
-const bundleCache = new Map<string, Promise<Row[]>>();
+export const bundleCache = new Map<string, Promise<Row[]>>();
 
-function loadBundle(catalogUrl: string, manifestUrl: string): Promise<Row[]> {
+export function loadBundle(catalogUrl: string, manifestUrl: string): Promise<Row[]> {
   const cacheKey = `${catalogUrl}\n${manifestUrl}`;
   let cached = bundleCache.get(cacheKey);
   if (!cached) {
@@ -128,7 +130,7 @@ function loadBundle(catalogUrl: string, manifestUrl: string): Promise<Row[]> {
 }
 
 // Tracks whether the viewport is in the mobile breakpoint (matches the CSS media query below).
-function useIsMobile() {
+export function useIsMobile() {
   const [mobile, setMobile] = useState(false);
   useEffect(() => {
     if (typeof window === "undefined" || !window.matchMedia) return;
@@ -645,7 +647,7 @@ function VoiceWidgetSkeleton({ gridStyle, pills = 3 }: { gridStyle?: CSSProperti
   );
 }
 
-function Select({ label, value, onChange, opts }:
+export function Select({ label, value, onChange, opts }:
   { label: string; value: string; onChange: (v: string) => void; opts: string[] }) {
   return (
     <label className="vw-select">
@@ -658,7 +660,7 @@ function Select({ label, value, onChange, opts }:
   );
 }
 
-function uniq(xs?: string[]): string[] {
+export function uniq(xs?: string[]): string[] {
   return [...new Set((xs ?? []).filter(Boolean))].sort();
 }
 
@@ -666,7 +668,7 @@ function uniq(xs?: string[]): string[] {
 // marking each collapsed gap (rendered as an ellipsis). A gap of exactly one page emits that page
 // number instead — an ellipsis standing in for a single page reads worse than just showing it.
 // Pages are 0-based here, 1-based in the UI.
-function pageNumbers(current: number, count: number): (number | null)[] {
+export function pageNumbers(current: number, count: number): (number | null)[] {
   const wanted = [...new Set([0, count - 1, current - 1, current, current + 1])]
     .filter((p) => p >= 0 && p < count)
     .sort((a, b) => a - b);
@@ -685,6 +687,6 @@ function pageNumbers(current: number, count: number): (number | null)[] {
 // the voiceIds allowlist. NOT unique in the wild: a few rime voices repeat key+model (once per
 // language, plus literal duplicate rows), so row identity uses Row._uid — this plus a collision
 // counter, assigned in loadBundle.
-function modelKeyOf(v: { key: string; model: string | null }): string {
+export function modelKeyOf(v: { key: string; model: string | null }): string {
   return v.model ? `${v.key}:${v.model}` : v.key;
 }
