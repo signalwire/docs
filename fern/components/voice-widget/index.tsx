@@ -1,5 +1,5 @@
 import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import type { Catalog, Manifest, VoiceRow } from "./types";
 import { Skeleton } from "../skeleton/index";
 
@@ -27,6 +27,100 @@ const MOBILE_PAGE_SIZE = 12;
 const MOBILE_QUERY = "(max-width: 640px)";
 // Multiples of the max column count (4) so every page fills complete rows; 4 = a single row.
 const PAGE_SIZE_OPTIONS = [4, 8, 12, 24, 48, 96];
+
+// ── Display-time data cleanup ────────────────────────────────────────────────────────────────
+// These four helpers normalize the raw catalog values for display only — the underlying data,
+// the copy payload, and the tooltips keep the originals. They are an INTERIM UI fix: the canonical
+// home for this cleanup is the generation pipeline (temp/voice_widget/providers/{elevenlabs,
+// cartesia}.py via make_voice(), plus the per-provider model strings), so re-running the pipeline
+// and re-uploading the CDN bundle is a clean lift-and-shift that retires these.
+
+// Clean display name: ElevenLabs/Cartesia bake a marketing sentence into the name
+// ("Austin Knox V3 - Good ol' Texas boy…"); split on the first SPACE-BOUNDED dash (" -"/" –"/" —")
+// and keep the leading segment. Verified against the full catalog: fires only on ElevenLabs (70) +
+// Cartesia (535), 0 false positives — Google/Polly/Azure names use spaceless hyphens
+// ("ar-XA-Chirp3-HD-Achernar", "Joanna-Neural") and are never touched. The full original stays in
+// title=/the icon tooltip. Pipeline home: providers/{elevenlabs,cartesia}.py make_voice().
+function cleanName(displayName: string): string {
+  const m = displayName.match(/\s[-–—]\s/);
+  if (!m || m.index === undefined) return displayName;
+  const lead = displayName.slice(0, m.index).trim();
+  // Guard against degenerate leads (too short/long to be a real name) — fall back to the original.
+  return lead.length >= 2 && lead.length <= 28 ? lead : displayName;
+}
+
+// Friendly language: turn a BCP-47 code ("af-ZA", "el") into an English name via Intl.DisplayNames
+// (resolves ~99% of real codes); fall back to the raw code on any miss/throw.
+function friendlyLanguage(code: string): string {
+  if (!code) return code;
+  try {
+    return new Intl.DisplayNames(["en"], { type: "language" }).of(code) || code;
+  } catch {
+    return code;
+  }
+}
+
+// Normalize gender: the catalog mixes "feminine"/"masculine" with "male"/"female"; map to the
+// display forms and HIDE "unknown" (599 voices) rather than render "Unknown". Returns "" to hide.
+function normalizeGender(gender: string): string {
+  switch (gender) {
+    case "feminine": case "female": return "Female";
+    case "masculine": case "male": return "Male";
+    case "neutral": return "Neutral";
+    case "non-binary": return "Non-binary";
+    case "unknown": case "": return "";
+    default: return gender.charAt(0).toUpperCase() + gender.slice(1);
+  }
+}
+
+// Normalize the model name: show the REAL model, lightly stripped of prefixes/suffixes that just
+// duplicate info already on the card (the provider, the voice id, the language). One rule per
+// provider (~10). This is NOT a lossy family token — it's the real model with redundant noise
+// removed. The raw value is always preserved in title=/copy. Pipeline home: the per-provider model
+// string in make_voice() (each provider module).
+const MODEL_RULES: { engines: string[]; clean: (model: string) => string }[] = [
+  // ElevenLabs: eleven_flash_v2_5 → Flash v2.5, eleven_turbo_v2 → Turbo v2, eleven_multilingual_v2
+  { engines: ["elevenlabs"], clean: (m) =>
+    titleWords(m.replace(/^eleven_/, "").replace(/_v(\d)_(\d)/, " v$1.$2").replace(/_v(\d)/, " v$1").replace(/_/g, " ")) },
+  // Cartesia: sonic-2 → Sonic 2, sonic-turbo → Sonic Turbo.
+  { engines: ["cartesia"], clean: (m) => titleWords(m.replace(/-/g, " ")) },
+  // Deepgram: aura-2-aurelia-de → Aura 2 (drop the voice+lang suffix, keep the real model family).
+  { engines: ["deepgram"], clean: (m) => {
+    const seg = m.split("-");
+    return /^\d+$/.test(seg[1] ?? "") ? `${cap(seg[0])} ${seg[1]}` : cap(seg[0]); } },
+  // MiniMax: speech-2.6-turbo → Speech 2.6 Turbo.
+  { engines: ["minimax"], clean: (m) => titleWords(m.replace(/-/g, " ")) },
+  // OpenAI: gpt-4o-mini-tts -> GPT-4o Mini. Drop the "-tts" suffix, then split into segments and
+  // re-join: the leading gpt[-4o] family token keeps its hyphen ("GPT-4o"), the rest become
+  // title-cased, space-separated words.
+  { engines: ["openai"], clean: (m) => {
+    const seg = m.replace(/-tts$/, "").split("-");
+    const head = seg[0].toLowerCase() === "gpt"
+      ? (seg[1]?.toLowerCase() === "4o" ? (seg.splice(0, 2), "GPT-4o") : (seg.shift(), "GPT"))
+      : cap(seg.shift()!);
+    return [head, ...seg.map(cap)].join(" "); } },
+  // Inworld: inworld-tts-1.5-max → TTS 1.5 Max.
+  { engines: ["inworld"], clean: (m) => titleWords(m.replace(/^inworld-/, "").replace(/-/g, " ")) },
+  // Rime: mist → Mist, mistv2 stays as-is via title-casing; arcana → Arcana.
+  { engines: ["rime"], clean: (m) => titleWords(m.replace(/v(\d)/, " v$1").replace(/-/g, " ")) },
+];
+function normalizeModel(engine: string, model: string): string {
+  const eng = engine.toLowerCase();
+  const rule = MODEL_RULES.find((r) => r.engines.includes(eng));
+  // Default (engines without a dedicated rule): just title-case the separated tokens. Slashes
+  // (e.g. a namespaced id) become spaces so it doesn't read as a path.
+  const out = (rule ? rule.clean(model) : titleWords(model.replace(/[-_/]/g, " "))).trim();
+  return out || model;
+}
+// Title-case helpers shared by the model rules. `cap` upper-cases the first letter only;
+// `titleWords` does it per word but leaves version-ish tokens ("v2.5", "4o") and already-cased
+// tokens alone, and upper-cases the common "tts" acronym.
+function cap(s: string): string { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+function titleWords(s: string): string {
+  return s.split(/\s+/).filter(Boolean)
+    .map((w) => w.toLowerCase() === "tts" ? "TTS"
+      : /^v?\d/.test(w) || /[A-Z]/.test(w) ? w : cap(w)).join(" ");
+}
 
 type FilterKey = "search" | "provider" | "language" | "gender" | "group" | "pageSize";
 
@@ -109,8 +203,10 @@ export interface VoiceWidgetProps {
   /** Cards rendered per page (page-size limit). Default: 48. Keeps the DOM small and the catalog fast. */
   pageSize?: number;
   /**
-   * Fixed number of grid columns. Default: 3. Collapses to 1 column on phones regardless. Pass 0
-   * for a responsive auto-fill grid (≈240px min per card) instead of a fixed count.
+   * Fixed number of grid columns. Default: 0 (a responsive equal-width auto-fill grid — 2-up in the
+   * docs prose column, 3-up only when the container is genuinely wide, every card a fixed ≥320px so
+   * none is squished). Pass a positive N to force exactly N equal columns. Collapses to 1 column on
+   * phones regardless.
    */
   columns?: number;
   /**
@@ -143,7 +239,7 @@ export function VoiceWidget({
   audioBaseUrl = AUDIO_BASE,
   groupBy: initialGroup = "provider",
   pageSize = DEFAULT_PAGE_SIZE,
-  columns = 3,
+  columns = 0,
   provider: lockedProvider,
   voiceIds,
   filters,
@@ -210,10 +306,15 @@ export function VoiceWidget({
   // them once here instead of re-checking the full catalog inside the per-keystroke filter below.
   // Everything downstream — dropdown options, search, grouping, pagination — then works over only
   // the voices this embed can ever show (12 on the index, one provider's voices on a provider page).
+  // Also drops no-preview voices (missing/errored clip) here so every visible card is auditionable —
+  // no dimmed "no sample" cards. Defensive: the current bundle has 0 such voices (the catalog/
+  // manifest delta is duplicate-key Rime rows sharing a clip). Caveat: if a provider's synthesis
+  // ever fails wholesale its voices silently drop from the widget — the pipeline's --diff flag
+  // catches that, and it beats showing broken cards.
   const baseRows = useMemo(() => {
     if (!allRows) return null;
-    if (!idAllowlist && !lock) return allRows;
     return allRows.filter((r) =>
+      r.clip?.status === "ok" &&
       (!idAllowlist ||
         idAllowlist.has(r.voice_id.toLowerCase()) ||
         idAllowlist.has(r.key.toLowerCase()) ||
@@ -403,11 +504,11 @@ export function VoiceWidget({
         pageSections.map((sec, i) => (
           <section key={`${sec.name}-${i}`} className="vw-section">
             {sec.name && <h3 className="vw-section-title">{sec.name} <span>{groupTotals.get(sec.name)}</span></h3>}
-            <div className="vw-grid" style={gridStyle}>
+            <FadeGrid style={gridStyle}>
               {sec.items.map((r) => (
                 <Card key={r._uid} r={r} playing={playingKey === r._uid} onPlay={play} onCopy={copyConfig} />
               ))}
-            </div>
+            </FadeGrid>
           </section>
         ))
       )}
@@ -417,12 +518,50 @@ export function VoiceWidget({
   );
 }
 
+// The loaded grid, fading/rising into the slots the skeleton held (no hard swap; reduced-motion-
+// gated in CSS). The `vw-fadein` animation (opacity + translateY) makes the grid a stacking context
+// for its duration AND — because of animation-fill-mode — permanently afterward. That would trap a
+// first-row card's sample-text popover *below* the sticky toolbar (z-index:2): the card's hover/
+// focus z-index can't escape the grid's stacking context. So drop the class once the animation ends,
+// returning the grid to a plain (z-index:auto) element whose hovered card can rise above the toolbar.
+function FadeGrid({ style, children }: { style?: CSSProperties; children: ReactNode }) {
+  const [animating, setAnimating] = useState(true);
+  return (
+    <div className={`vw-grid${animating ? " vw-fadein" : ""}`} style={style}
+         onAnimationEnd={() => setAnimating(false)}>
+      {children}
+    </div>
+  );
+}
+
+// Inline SVG icons with a shared `vw-` styling hook. Fern's <Icon>/<Tooltip> are global MDX-only
+// components — there is no @fern-* package to import them from (the components bundler only resolves
+// React + this folder), and FontAwesome ships only as Fern component props (icon="fa-…"), not a
+// global stylesheet that would style raw <i class="fa-…"> we emit here — so neither is usable from
+// this custom TSX. Self-contained SVGs (matching the design mockups) are the only path that's
+// guaranteed to render. Decorative ones are marked aria-hidden where rendered.
+const IconGlobe = () => (
+  <span className="vw-ic" aria-hidden="true">
+    <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.2" stroke="currentColor" strokeWidth="1.3" /><ellipse cx="8" cy="8" rx="2.6" ry="6.2" stroke="currentColor" strokeWidth="1.3" /><path d="M2 8h12" stroke="currentColor" strokeWidth="1.3" /></svg>
+  </span>
+);
+const IconPerson = () => (
+  <span className="vw-ic" aria-hidden="true">
+    <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="2.6" stroke="currentColor" strokeWidth="1.3" /><path d="M3.5 13c0-2.4 2-4 4.5-4s4.5 1.6 4.5 4" stroke="currentColor" strokeWidth="1.3" /></svg>
+  </span>
+);
+const IconInfo = () => (
+  <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.4" /><path d="M8 7v4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /><circle cx="8" cy="5" r="0.8" fill="currentColor" /></svg>
+);
+const IconCopy = () => (
+  <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="5" y="5" width="8" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.4" /><path d="M11 5V3.5A1.5 1.5 0 0 0 9.5 2H4a1.5 1.5 0 0 0-1.5 1.5V11A1.5 1.5 0 0 0 4 12.5" stroke="currentColor" strokeWidth="1.4" /></svg>
+);
+
 // Memoized so that playing/pausing a voice (which re-renders the widget) only re-renders the two
 // cards whose `playing` flag actually changed — not all ~60 cards on the page.
 const Card = memo(function Card({ r, playing, onPlay, onCopy }: {
   r: Row; playing: boolean; onPlay: (r: Row) => void; onCopy: (r: VoiceRow) => Promise<boolean> | void;
 }) {
-  const disabled = !r.clip || r.clip.status !== "ok";
   const [copied, setCopied] = useState(false);
   const copyTimer = useRef<ReturnType<typeof setTimeout>>();
   useEffect(() => () => clearTimeout(copyTimer.current), []);
@@ -436,11 +575,19 @@ const Card = memo(function Card({ r, playing, onPlay, onCopy }: {
     });
   };
 
+  // Display-time cleanup (originals stay in the catalog, the copy payload, and the title/tooltip).
+  const name = cleanName(r.display_name);
+  const language = friendlyLanguage(r.primary_language);
+  const gender = normalizeGender(r.gender);
+  const model = r.model ? normalizeModel(r.engine, r.model) : null;
+  const tipId = `vw-tip-${r._uid}`;
+
   return (
-    <article className={`vw-card${r.clip?.status === "error" || !r.clip ? " vw-disabled" : ""}`}>
+    // Per-card accessible name so screen-reader users navigate the grid as a list of named voices.
+    <article className="vw-card" aria-label={name}>
       <div className="vw-card-top">
-        <button className={`vw-play${playing ? " vw-playing" : ""}`} disabled={disabled} onClick={() => onPlay(r)}
-                aria-label={playing ? `Stop ${r.display_name}` : `Play ${r.display_name}`}>
+        <button className={`vw-play${playing ? " vw-playing" : ""}`} onClick={() => onPlay(r)}
+                aria-label={playing ? `Stop ${name}` : `Play ${name}`}>
           {playing ? (
             <>
               {/* Two glyphs for the playing state: animated bars normally, a static stop square when
@@ -450,50 +597,58 @@ const Card = memo(function Card({ r, playing, onPlay, onCopy }: {
             </>
           ) : "▶"}
         </button>
-        <div className="vw-name" title={r.display_name}>{r.display_name}</div>
+        {/* Cleaned name; the full original stays in title= (and the tooltip below). */}
+        <div className="vw-name" title={r.display_name}>{name}</div>
         {r.clip?.sample_text && (
-          <span className="vw-tooltip-wrap">
-            <span className="vw-tooltip-icon" role="img" aria-label="Sample text" tabIndex={0}>
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" />
-                <path d="M8 7v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                <circle cx="8" cy="5" r="0.75" fill="currentColor" />
-              </svg>
-            </span>
-            <span className="vw-tooltip" role="tooltip">“{r.clip.sample_text}”</span>
+          // Icon-anchored sample-text popover. Focusable trigger + aria-describedby so the sample is
+          // announced (not just shown on hover); reveal is hover/focus-within (see CSS).
+          <span className="vw-tooltip-wrap" tabIndex={0} aria-describedby={tipId}>
+            <span className="vw-tooltip-icon"><IconInfo /></span>
+            <span className="vw-tooltip" id={tipId} role="tooltip">“{r.clip.sample_text}”</span>
           </span>
         )}
       </div>
+      {/* Meta — language · gender, each with a decorative type icon. "unknown" gender is hidden. */}
       <div className="vw-meta">
-        <span>{r.primary_language}</span>
-        <span className="vw-meta-dot" aria-hidden="true">·</span>
-        <span className="vw-gender">{r.gender}</span>
-        {r.model && <><span className="vw-meta-dot" aria-hidden="true">·</span><span>{r.model}</span></>}
+        <span className="vw-it"><IconGlobe />{language}</span>
+        {gender && <span className="vw-it"><IconPerson /><span className="vw-gender">{gender}</span></span>}
       </div>
-      {(!r.clip || r.clip.status === "error") &&
-        <p className="vw-note">{r.clip?.error ?? "no sample (provider key missing)"}</p>}
+      {/* Footer — PROVIDER · model (neutral inline-code) left, copy right. The left group is shrink-
+          safe (min-width:0 + model ellipsis) so it never forces the grid column wider. */}
       <div className="vw-foot">
-        <span className="vw-prov" title={r.provider}>{r.provider}</span>
-        {/* Both labels stay in the DOM and grid-stacked (see CSS) so the button keeps the width
-            of the wider one — no layout shift when it swaps to the copied state. */}
-        <button className={`vw-copy${copied ? " vw-copied" : ""}`} onClick={handleCopy} aria-live="polite">
-          <span className="vw-copy-default">Copy config</span>
-          <span className="vw-copy-done">✓ Copied</span>
+        <span className="vw-foot-l">
+          <span className="vw-prov" title={r.provider}>{r.provider}</span>
+          {model && <>
+            <span className="vw-foot-mid" aria-hidden="true">·</span>
+            <code className="vw-model" title={r.model!}>{model}</code>
+          </>}
+        </span>
+        {/* Both copy variants stay in the DOM; the container query (CSS) shows the labeled button at
+            ≤2 columns and the icon-only one at 3+. Payload is identical (display_name) for both. */}
+        <button className={`vw-copy-t${copied ? " vw-copied" : ""}`} onClick={handleCopy} aria-live="polite">
+          <IconCopy />{copied ? "✓ Copied" : "Copy config"}
+        </button>
+        <button className={`vw-copy-i${copied ? " vw-copied" : ""}`} onClick={handleCopy} aria-live="polite"
+                aria-label={copied ? "Copied" : "Copy config"} title="Copy config">
+          {copied ? "✓" : <IconCopy />}
         </button>
       </div>
     </article>
   );
 });
 
-// Loading state: skeleton placeholders that mirror the real header + toolbar + card grid, so the
-// layout doesn't jump when the data arrives. Built from the shared <Skeleton> primitive. `pills`
-// is the number of toolbar pill placeholders — pass the count of controls that will actually
-// render so filters-off embeds get no phantom toolbar.
+// Loading state: skeleton placeholders that mirror the NEW card on the same grid at MATCHING height,
+// so the layout doesn't jump when the data arrives (the core requirement). Built from the shared
+// <Skeleton> shimmer primitive. The footer is the height trap — the real footer is ~34px (copy
+// button + icon) — so the meta/footer placeholders carry the same min-heights as the real card
+// (.vw-sk-meta / .vw-sk-foot). `pills` is the number of toolbar pill placeholders — pass the count
+// of controls that will actually render so filters-off embeds get no phantom toolbar.
 function VoiceWidgetSkeleton({ gridStyle, pills = 3 }: { gridStyle?: CSSProperties; pills?: number }) {
   return (
     <div className="vw" aria-busy="true" aria-label="Loading voices">
       <header className="vw-head">
-        <Skeleton width={170} height={24} />
+        <Skeleton width={120} height={22} />
+        <Skeleton width={90} height={13} />
       </header>
       {pills > 0 && (
         <div className="vw-filters">
@@ -506,13 +661,20 @@ function VoiceWidgetSkeleton({ gridStyle, pills = 3 }: { gridStyle?: CSSProperti
         {Array.from({ length: 8 }).map((_, i) => (
           <article key={i} className="vw-card">
             <div className="vw-card-top">
-              <Skeleton width={34} height={34} radius="50%" />
-              <Skeleton width="55%" height={14} />
+              <Skeleton width={42} height={42} radius="50%" />
+              <Skeleton width="55%" height={15} />
             </div>
-            <Skeleton width="70%" height={16} />
-            <div className="vw-foot">
-              <Skeleton width={70} height={14} />
-              <Skeleton width={80} height={16} />
+            {/* Meta: two (icon-dot + text-bar) pairs — language, gender. */}
+            <div className="vw-meta vw-sk-meta">
+              <Skeleton width={13} height={13} radius="50%" />
+              <Skeleton width={54} height={11} />
+              <Skeleton width={13} height={13} radius="50%" />
+              <Skeleton width={42} height={11} />
+            </div>
+            {/* Footer: provider bar + copy bar, pinned at the real footer height. */}
+            <div className="vw-foot vw-sk-foot">
+              <Skeleton width={74} height={11} />
+              <Skeleton width={86} height={13} />
             </div>
           </article>
         ))}

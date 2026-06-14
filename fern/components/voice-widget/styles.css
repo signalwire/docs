@@ -1,21 +1,39 @@
 /* Voice widget styles, scoped under .vw so it can be dropped into the docs without clobbering host
-   styles. The palette maps onto the docs' theme-aware brand tokens so the widget follows light/dark
-   mode automatically. */
+   styles. The palette maps onto the docs' theme-aware brand tokens (fern/brand-tokens.css) so the
+   widget follows light/dark mode automatically — no hardcoded colors. The card/grid/meta/footer/
+   model/copy/skeleton rules are ported from the design mockups in
+   docs/superpowers/specs/2026-06-14-voice-widget-card-assets/, with their hardcoded hex values
+   mapped to these tokens:
+     --page  → --bg-page            --card → --bg-surface-raised   --ink  → --fg-default
+     --ink2  → --fg-secondary       --muted → --fg-muted           --line → --border-default
+     --line2 → --grayscale-a4 (lighter hairline)                   --accent → --accent
+     --codebg → --code-bg           --good → --status-success      card lift → --card-shadow/--card-inset
+   The model code is deliberately NEUTRAL (--fg-secondary), NOT --code-fg: the docs inline-<code>
+   --code-fg equals --accent in both themes (blue/turquoise), so a default <code> would render the
+   model the same color as the Copy link and read as clickable. */
 .vw {
   --vw-bg: var(--bg-page);
   --vw-card: var(--bg-surface-raised);
   --vw-line: var(--border-default);
+  /* Lighter than the card border — used only for the footer hairline. Grayscale alpha so it stays
+     subtle on both the light (#E8EAF0) and dark (#222436) card surfaces. */
+  --vw-line2: var(--grayscale-a4);
   --vw-fg: var(--fg-default);
+  --vw-fg2: var(--fg-secondary);
   --vw-muted: var(--fg-muted);
   --vw-accent: var(--accent);
   --vw-radius: 12px;
   color: var(--vw-fg); font: 14px/1.45 system-ui, sans-serif;
+  /* The widget root is the query container for the responsive Copy switch (see .vw-copy-* below). */
+  container-type: inline-size;
 }
 .vw-error { padding: 2rem; color: var(--error-text); }
 
 .vw-head { display: flex; align-items: baseline; gap: 1rem; margin-bottom: .6rem; }
 .vw-title { font-size: 1.1rem; font-weight: 700; }
-.vw-count { color: var(--vw-muted); font-weight: 400; font-size: .82rem; margin-left: .4rem; }
+/* --fg-secondary (not --fg-muted): the count is 10.5–12.5px small text and --fg-muted (#737371)
+   is only ~3.95:1 on the light card — below the AA 4.5:1 floor. */
+.vw-count { color: var(--vw-fg2); font-weight: 400; font-size: .82rem; margin-left: .4rem; }
 
 /* Toolbar: one row of pill controls; sticks below the fixed docs header while the grid scrolls
    (--header-height is set on :root by the Fern platform; 0 fallback for safety). */
@@ -31,7 +49,7 @@
 .vw-search { padding: .4rem .7rem; min-width: 200px; background: var(--vw-card);
   border: 1px solid var(--vw-line); border-radius: 9px; color: inherit; font-size: .8rem; }
 
-/* Group toggle as a segmented control: gray track, raised white active segment. */
+/* Group toggle as a segmented control: gray track, raised active segment. */
 .vw-group { display: flex; margin-left: auto; background: var(--grayscale-a3); border-radius: 9px; padding: 2px; }
 .vw-group button { padding: .35rem .7rem; background: transparent; color: var(--vw-muted); border: none;
   border-radius: 7px; cursor: pointer; font-size: .78rem; }
@@ -42,92 +60,156 @@
 .vw-section-title { font-size: .85rem; font-weight: 650; margin: .5rem 0 .6rem; text-transform: capitalize; }
 .vw-section-title span { color: var(--vw-muted); font-weight: 400; margin-left: .3rem; }
 
-/* Column count is driven by --vw-cols (set inline by the `columns` prop; falls back to responsive
-   auto-fill). Defining the template here lets the mobile media query override it regardless. */
+/* Equal-width responsive grid. The column minimum is a FIXED width (set via --vw-col-min), not
+   `auto`: a bare 1fr track is minmax(auto, 1fr) whose minimum is the content's min-content width,
+   so a card with a longer nowrap footer would force its column wider and others narrower (the
+   unequal-width bug). Flooring the minimum guarantees every column — and every card — is exactly
+   equal. `auto-fill` (not auto-fit) keeps a partial last row's cards the same size, left-aligned
+   with trailing space, instead of stretching them to a different width.
+   The 300px floor is tuned to the docs prose column (Fern's w-content-width = 640px): 2×300 + the
+   12px gap = 612 ≤ 640, so the prose column reliably shows 2-up (cards ~314px — comfortably not
+   squished); a genuinely wide container goes 3-up at ≥924px (3×300 + gaps), where the copy switch
+   below also flips. The `columns` prop overrides --vw-cols to a fixed N with --vw-col-min:0 →
+   repeat(N, minmax(0,1fr)); defining the template here (not inline) lets the mobile media query
+   collapse to one column regardless. */
 .vw-grid { display: grid; gap: .75rem;
-  grid-template-columns: repeat(var(--vw-cols, auto-fill), minmax(var(--vw-col-min, 240px), 1fr)); }
-.vw-card { background: var(--vw-card); border: 1px solid var(--vw-line); border-radius: var(--vw-radius);
-  padding: 1rem; display: flex; flex-direction: column; gap: .6rem; overflow: visible; position: relative;
-  transition: border-color .15s ease, box-shadow .15s ease; }
-.vw-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,.08); border-color: var(--grayscale-a4); }
-.vw-card.vw-disabled { opacity: .6; }
-.vw-card-top { display: flex; align-items: center; gap: .6rem; min-width: 0; }
+  grid-template-columns: repeat(var(--vw-cols, auto-fill), minmax(var(--vw-col-min, 300px), 1fr)); }
 
-/* Ghost play button: outline at rest, fills with the accent while its clip plays. */
-.vw-play { width: 34px; height: 34px; flex: 0 0 auto; border-radius: 50%; cursor: pointer;
-  background: transparent; color: var(--vw-fg); border: 1.5px solid var(--vw-line); font-size: .72rem;
+/* Card: uniform shell. overflow:visible so the sample-text popover can escape the card; the grid's
+   default align-items:stretch sizes every card in a row to the tallest, and the footer's
+   margin-top:auto (below) pins it to the bottom so footers line up across the row. The light card
+   (#E8EAF0) is slightly darker than the page, so the lift comes from the border + --card-shadow;
+   --card-inset adds a top highlight in dark mode where the card (#222436) is already lighter. */
+.vw-card { background: var(--vw-card); border: 1px solid var(--vw-line); border-radius: var(--vw-radius);
+  padding: 15px 16px 13px; display: flex; flex-direction: column; gap: 12px; overflow: visible;
+  position: relative; box-shadow: var(--card-shadow), var(--card-inset);
+  transition: border-color .15s ease, box-shadow .15s ease; }
+.vw-card:hover { box-shadow: var(--card-hover-shadow), var(--card-inset-hover); border-color: var(--card-hover-border); }
+/* While a card is hovered/focused (the only states its sample-text popover opens), lift the whole
+   card into a stacking context above the sticky toolbar. The toolbar has z-index:2, which would
+   otherwise paint over a first-row card's popover (the popover's own z-index can't escape the card's
+   default z-index:auto level). 3 > 2 is enough; scoped to hover/focus so it never affects layout. */
+.vw-card:hover, .vw-card:focus-within { z-index: 3; }
+.vw-card-top { display: flex; align-items: center; gap: 12px; }
+
+/* Ghost play button: 42px outline circle at rest, fills with the accent while its clip plays. */
+.vw-play { width: 42px; height: 42px; flex: 0 0 auto; border-radius: 50%; cursor: pointer;
+  background: transparent; color: var(--vw-fg); border: 1.5px solid var(--vw-line); font-size: 12px;
   display: inline-flex; align-items: center; justify-content: center;
   transition: background .15s ease, border-color .15s ease, color .15s ease; }
-.vw-play:hover:not(:disabled):not(.vw-playing) { border-color: var(--vw-accent); color: var(--vw-accent); }
+.vw-play:hover:not(.vw-playing) { border-color: var(--vw-accent); color: var(--vw-accent); }
 .vw-play.vw-playing { background: var(--vw-accent); border-color: var(--vw-accent); color: var(--accent-contrast); }
-.vw-play:disabled { border-style: dashed; color: var(--vw-muted); cursor: not-allowed; }
 
-/* Equalizer bars while playing; .vw-stop is the reduced-motion fallback (swapped in below). */
-.vw-eq { display: inline-flex; gap: 2px; align-items: flex-end; height: 12px; }
+/* Equalizer bars while playing; .vw-stop is the reduced-motion fallback (swapped in below).
+   Mirrors the mockup's @keyframes vw-eqb (staggered scaleY bars). */
+.vw-eq { display: inline-flex; gap: 2.5px; align-items: flex-end; height: 13px; }
 .vw-eq i { width: 2.5px; background: currentColor; border-radius: 1px; transform-origin: 50% 100%;
   animation: vw-eqb 1s ease-in-out infinite; }
 .vw-eq i:nth-child(1) { height: 60%; }
 .vw-eq i:nth-child(2) { height: 100%; animation-delay: .2s; }
-.vw-eq i:nth-child(3) { height: 40%; animation-delay: .4s; }
+.vw-eq i:nth-child(3) { height: 45%; animation-delay: .4s; }
 @keyframes vw-eqb { 0%, 100% { transform: scaleY(.5); } 50% { transform: scaleY(1); } }
 .vw-stop { display: none; }
 
-/* No flex-grow: the tooltip icon hugs the name instead of floating at the card's far edge.
-   Long technical names (Google's "ar-XA-Chirp3-HD-Achernar") wrap to two lines at their hyphens
-   instead of truncating — the name is the copyable identity, so cutting it defeats the card.
-   line-clamp ellipsizes anything past two lines; the title attr still carries the full name. */
-.vw-name { font-weight: 600; font-size: .92rem; letter-spacing: -.01em; flex: 0 1 auto;
-  min-width: 0; line-height: 1.3; overflow: hidden; word-break: break-word;
+/* Name is the copyable identity, so it's never ellipsized mid-name: cleaned community names sit on
+   one line, only the longest untouched technical names (cmn-CN-Chirp3-HD-Zubenelgenubi) take a
+   graceful 2nd line at their hyphens. The full original name lives in title=/the icon tooltip. */
+.vw-name { flex: 1; min-width: 0; font-weight: 650; font-size: 15.5px; letter-spacing: -.012em;
+  line-height: 1.25; overflow: hidden; word-break: break-word;
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 
-/* Meta reads as a single muted line with middot separators — no chip backgrounds. */
-.vw-meta { font-size: .78rem; color: var(--vw-muted); display: flex; flex-wrap: wrap; gap: .35rem; align-items: center; }
-.vw-meta-dot { color: var(--vw-line); }
+/* Meta line — perceptual identity: language · gender, each with a small type icon. */
+.vw-meta { display: flex; align-items: center; gap: 13px; font-size: 12.5px; color: var(--vw-fg2);
+  min-height: 15px; }
+.vw-meta .vw-it { display: inline-flex; align-items: center; gap: 5px; }
 .vw-gender { text-transform: capitalize; }
+/* Small decorative type icons (globe/person) — muted, sized 13px. aria-hidden in the markup. */
+.vw-ic { display: inline-flex; align-items: center; color: var(--vw-muted); flex: 0 0 auto; }
+.vw-ic svg { width: 13px; height: 13px; }
 
-/* Transcript tooltip is anchored to the card (the nearest positioned ancestor), so it spans the
-   card's width just above it — always fits the grid column, can't escape the viewport. */
-.vw-tooltip-wrap { display: inline-flex; align-items: center; flex: 0 0 auto; }
-.vw-tooltip-icon { cursor: help; color: var(--vw-muted); display: inline-flex; align-items: center;
-  transition: color .15s ease; }
-.vw-tooltip-wrap:hover .vw-tooltip-icon,
-.vw-tooltip-wrap:focus-within .vw-tooltip-icon { color: var(--vw-accent); }
-.vw-tooltip { display: none; position: absolute; bottom: calc(100% + 8px); left: .5rem; right: .5rem;
-  width: auto; padding: .5rem .7rem;
-  background: var(--vw-card); color: var(--fg-secondary);
-  border: 1px solid var(--vw-line); border-radius: 8px;
-  font-size: .78rem; font-style: italic; line-height: 1.45;
-  box-shadow: 0 6px 20px rgba(0,0,0,.15); z-index: 20; pointer-events: none; }
-.vw-tooltip::after { content: ""; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+/* Sample-text popover: a fixed-width (210px), icon-anchored disclosure clamped to the card edge —
+   consistent at any column count and independent of name length (it positions on the icon, not the
+   card width). Revealed on hover/focus-within; the trigger carries aria-describedby → .vw-tooltip. */
+.vw-tooltip-wrap { flex: 0 0 auto; position: relative; display: inline-flex; align-items: center;
+  color: var(--vw-muted); cursor: help; transition: color .15s ease; }
+.vw-tooltip-wrap:hover, .vw-tooltip-wrap:focus-within { color: var(--vw-accent); }
+.vw-tooltip-icon { display: inline-flex; }
+.vw-tooltip-icon svg { width: 15px; height: 15px; }
+.vw-tooltip { display: none; position: absolute; bottom: calc(100% + 9px); right: -5px; width: 210px;
+  background: var(--vw-card); color: var(--vw-fg2);
+  border: 1px solid var(--vw-line); border-radius: 9px; padding: 8px 11px;
+  font-size: 11.5px; font-style: italic; line-height: 1.45;
+  box-shadow: var(--card-hover-shadow); z-index: 30; pointer-events: none; }
+.vw-tooltip::after { content: ""; position: absolute; top: 100%; right: 14px;
   border: 6px solid transparent; border-top-color: var(--vw-card); }
 .vw-tooltip-wrap:hover .vw-tooltip,
 .vw-tooltip-wrap:focus-within .vw-tooltip { display: block; }
 
-.vw-note { margin: 0; font-size: .72rem; color: var(--warning-text); }
+/* Footer — config identity. Hairline top border; provider · inline-code model on the left, copy on
+   the right. margin-top:auto pins it to the card bottom so footers align across a row. */
+.vw-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  margin-top: auto; padding-top: 12px; border-top: 1px solid var(--vw-line2); }
+/* Shrink-safe left group: min-width:0 + the model ellipsis below let it shrink instead of forcing
+   the grid column wider (the unequal-width fix). */
+.vw-foot-l { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.vw-foot-mid { color: var(--vw-muted); opacity: .5; flex: 0 0 auto; }
+/* --fg-secondary (not --fg-muted): 10.5px provider label needs AA ≥4.5:1 on the light card. */
+.vw-prov { font-size: 10.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase;
+  color: var(--vw-fg2); white-space: nowrap; flex: 0 1 auto; overflow: hidden; text-overflow: ellipsis; }
+/* Model: the real (normalized) model as NEUTRAL inline-code — mono + --code-bg + --fg-secondary fg
+   (NOT --code-fg, which equals --accent and would read as clickable). Single-line, ellipsizes at the
+   tail if unusually long; the raw model stays in title=/copy. */
+.vw-model { font: 11px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--vw-fg2);
+  background: var(--code-bg); border-radius: 5px; padding: 1px 6px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 
-/* Footer pins to the card bottom; provider label left, copy action right. */
-.vw-foot { display: flex; align-items: center; justify-content: space-between; gap: .5rem; margin-top: auto; }
-/* Sentence case, not uppercase: in a 3-column card the label shares ~160px with the copy button,
-   and "GOOGLE CLOUD" in caps + tracking needs more than its share — sentence case fits all
-   providers with room to spare. Ellipsis stays as a last resort only. */
-.vw-prov { font-size: .72rem; font-weight: 500; color: var(--vw-muted);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.vw-copy { font-size: .78rem; background: transparent; color: var(--vw-accent); border: none;
-  padding: .35rem .5rem; margin: -.35rem -.5rem; /* invisible padding keeps a >=24px tap target */
-  cursor: pointer; font-weight: 500; display: inline-grid; text-align: right;
-  white-space: nowrap; flex: 0 0 auto; /* never wraps or shrinks — the provider label ellipsizes instead */ }
-.vw-copy > span { grid-area: 1 / 1; }
-.vw-copy .vw-copy-done { visibility: hidden; }            /* reserves space but hidden until copied */
-.vw-copy.vw-copied .vw-copy-default { visibility: hidden; }
-.vw-copy.vw-copied .vw-copy-done { visibility: visible; }
-.vw-copy.vw-copied { color: #16a34a; }  /* green check, readable on light + dark */
+/* Responsive copy. The trigger is column count, not card width (cards are ~314px+ at every density),
+   so a container query on the widget root toggles which variant shows: labeled "Copy config" at
+   ≤2 columns (container < 924px, incl. the docs prose column), icon-only clipboard at 3+ columns
+   (≥ 924px = 3 × 300px + gaps — the same width the grid flips to 3-up). Both stay in the DOM; the
+   container query toggles display. The copied state greens via --status-success (theme-aware). */
+.vw-copy-t { font-size: 12.5px; color: var(--vw-accent); background: none; border: none; font-weight: 550;
+  display: inline-flex; align-items: center; gap: 6px; cursor: pointer; flex: 0 0 auto;
+  padding: 0; white-space: nowrap; }
+.vw-copy-t svg { width: 13px; height: 13px; }
+.vw-copy-i { display: none; flex: 0 0 auto; width: 28px; height: 28px; margin: -4px -4px -4px 0;
+  border: none; background: none; color: var(--vw-accent); border-radius: 7px;
+  align-items: center; justify-content: center; cursor: pointer; }
+.vw-copy-i svg { width: 15px; height: 15px; }
+.vw-copy-t.vw-copied, .vw-copy-i.vw-copied { color: var(--status-success); }
+@container (min-width: 924px) {
+  .vw-copy-t { display: none; }
+  .vw-copy-i { display: inline-flex; }
+}
 
-/* Reduced motion: static stop glyph instead of animated bars; no hover/state transitions. */
+/* Smooth resolve: the loaded grid fades/rises into the slots the skeleton held, instead of a hard
+   swap. Gated behind reduced-motion below. */
+.vw-fadein { animation: vw-in .45s cubic-bezier(.2,.7,.2,1) both; }
+@keyframes vw-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+/* Skeleton: the loading card mirrors the real one on the same grid at MATCHING height (zero layout
+   shift). The footer is the height trap — these min-heights pin the meta/footer sections to the real
+   card's values (~15px meta, ~34px footer) so the skeleton card height equals the loaded one. */
+.vw-sk-meta { min-height: 15px; }
+.vw-sk-foot { min-height: 34px; }
+
+/* Reduced motion: static stop glyph instead of animated bars, no transitions, no fade-in.
+   (The shimmer primitive disables its own animation in components/skeleton/styles.css.) */
 @media (prefers-reduced-motion: reduce) {
   .vw-eq { display: none; }
   .vw-stop { display: inline; }
-  .vw-card, .vw-play, .vw-tooltip-icon { transition: none; }
+  .vw-card, .vw-play, .vw-tooltip-wrap { transition: none; }
+  .vw-fadein { animation: none; }
 }
+
+/* Visible focus rings on every interactive control, both themes (2px accent outline + offset). */
+.vw-play:focus-visible, .vw-copy-t:focus-visible, .vw-copy-i:focus-visible,
+.vw-tooltip-wrap:focus-visible, .vw-page:focus-visible,
+.vw-select select:focus-visible, .vw-search:focus-visible,
+.vw-group button:focus-visible, .vw-perpage select:focus-visible {
+  outline: 2px solid var(--vw-accent); outline-offset: 2px; border-radius: 8px;
+}
+.vw-play:focus-visible { border-radius: 50%; }
 
 /* Numbered pager: ghost number buttons, inverted current page, bordered Prev/Next. */
 .vw-pager { display: flex; align-items: center; justify-content: center; gap: .3rem;
@@ -145,7 +227,7 @@
 .vw-perpage select { font-size: .75rem; color: var(--vw-muted); background: transparent;
   border: none; cursor: pointer; }
 .vw-perpage option { background: var(--vw-card); color: var(--vw-fg); }
-.vw-empty { padding: 2rem 0; color: var(--fg-muted); font-size: .9rem; }
+.vw-empty { padding: 2rem 0; color: var(--vw-fg2); font-size: .9rem; }
 
 /* On phones, collapse to a single column no matter what `columns` was set to. */
 @media (max-width: 640px) {
