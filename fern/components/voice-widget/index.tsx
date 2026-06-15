@@ -29,11 +29,11 @@ const MOBILE_QUERY = "(max-width: 640px)";
 const PAGE_SIZE_OPTIONS = [4, 8, 12, 24, 48, 96];
 
 // ── Display-time data cleanup ────────────────────────────────────────────────────────────────
-// These four helpers normalize the raw catalog values for display only — the underlying data,
+// These three helpers normalize the raw catalog values for display only — the underlying data,
 // the copy payload, and the tooltips keep the originals. They are an INTERIM UI fix: the canonical
 // home for this cleanup is the generation pipeline (temp/voice_widget/providers/{elevenlabs,
-// cartesia}.py via make_voice(), plus the per-provider model strings), so re-running the pipeline
-// and re-uploading the CDN bundle is a clean lift-and-shift that retires these.
+// cartesia}.py via make_voice()), so re-running the pipeline and re-uploading the CDN bundle is a
+// clean lift-and-shift that retires these. The model string is shown verbatim (no remapping).
 
 // Clean display name: ElevenLabs/Cartesia bake a marketing sentence into the name
 // ("Austin Knox V3 - Good ol' Texas boy…"); split on the first SPACE-BOUNDED dash (" -"/" –"/" —")
@@ -73,54 +73,6 @@ function normalizeGender(gender: string): string {
   }
 }
 
-// Normalize the model name: show the REAL model, lightly stripped of prefixes/suffixes that just
-// duplicate info already on the card (the provider, the voice id, the language). One rule per
-// provider (~10). This is NOT a lossy family token — it's the real model with redundant noise
-// removed. The raw value is always preserved in title=/copy. Pipeline home: the per-provider model
-// string in make_voice() (each provider module).
-const MODEL_RULES: { engines: string[]; clean: (model: string) => string }[] = [
-  // ElevenLabs: eleven_flash_v2_5 → Flash v2.5, eleven_turbo_v2 → Turbo v2, eleven_multilingual_v2
-  { engines: ["elevenlabs"], clean: (m) =>
-    titleWords(m.replace(/^eleven_/, "").replace(/_v(\d)_(\d)/, " v$1.$2").replace(/_v(\d)/, " v$1").replace(/_/g, " ")) },
-  // Cartesia: sonic-2 → Sonic 2, sonic-turbo → Sonic Turbo.
-  { engines: ["cartesia"], clean: (m) => titleWords(m.replace(/-/g, " ")) },
-  // Deepgram: aura-2-aurelia-de → Aura 2 (drop the voice+lang suffix, keep the real model family).
-  { engines: ["deepgram"], clean: (m) => {
-    const seg = m.split("-");
-    return /^\d+$/.test(seg[1] ?? "") ? `${cap(seg[0])} ${seg[1]}` : cap(seg[0]); } },
-  // MiniMax: speech-2.6-turbo → Speech 2.6 Turbo.
-  { engines: ["minimax"], clean: (m) => titleWords(m.replace(/-/g, " ")) },
-  // OpenAI: gpt-4o-mini-tts -> GPT-4o Mini. Drop the "-tts" suffix, then split into segments and
-  // re-join: the leading gpt[-4o] family token keeps its hyphen ("GPT-4o"), the rest become
-  // title-cased, space-separated words.
-  { engines: ["openai"], clean: (m) => {
-    const seg = m.replace(/-tts$/, "").split("-");
-    const head = seg[0].toLowerCase() === "gpt"
-      ? (seg[1]?.toLowerCase() === "4o" ? (seg.splice(0, 2), "GPT-4o") : (seg.shift(), "GPT"))
-      : cap(seg.shift()!);
-    return [head, ...seg.map(cap)].join(" "); } },
-  // Inworld: inworld-tts-1.5-max → TTS 1.5 Max.
-  { engines: ["inworld"], clean: (m) => titleWords(m.replace(/^inworld-/, "").replace(/-/g, " ")) },
-  // Rime: mist → Mist, mistv2 stays as-is via title-casing; arcana → Arcana.
-  { engines: ["rime"], clean: (m) => titleWords(m.replace(/v(\d)/, " v$1").replace(/-/g, " ")) },
-];
-function normalizeModel(engine: string, model: string): string {
-  const eng = engine.toLowerCase();
-  const rule = MODEL_RULES.find((r) => r.engines.includes(eng));
-  // Default (engines without a dedicated rule): just title-case the separated tokens. Slashes
-  // (e.g. a namespaced id) become spaces so it doesn't read as a path.
-  const out = (rule ? rule.clean(model) : titleWords(model.replace(/[-_/]/g, " "))).trim();
-  return out || model;
-}
-// Title-case helpers shared by the model rules. `cap` upper-cases the first letter only;
-// `titleWords` does it per word but leaves version-ish tokens ("v2.5", "4o") and already-cased
-// tokens alone, and upper-cases the common "tts" acronym.
-function cap(s: string): string { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
-function titleWords(s: string): string {
-  return s.split(/\s+/).filter(Boolean)
-    .map((w) => w.toLowerCase() === "tts" ? "TTS"
-      : /^v?\d/.test(w) || /[A-Z]/.test(w) ? w : cap(w)).join(" ");
-}
 
 type FilterKey = "search" | "provider" | "language" | "gender" | "group" | "pageSize";
 
@@ -579,7 +531,7 @@ const Card = memo(function Card({ r, playing, onPlay, onCopy }: {
   const name = cleanName(r.display_name);
   const language = friendlyLanguage(r.primary_language);
   const gender = normalizeGender(r.gender);
-  const model = r.model ? normalizeModel(r.engine, r.model) : null;
+  const model = r.model || null;
   const tipId = `vw-tip-${r._uid}`;
 
   return (
@@ -621,7 +573,7 @@ const Card = memo(function Card({ r, playing, onPlay, onCopy }: {
           <span className="vw-prov" title={r.provider}>{r.provider}</span>
           {model && <>
             <span className="vw-foot-mid" aria-hidden="true">·</span>
-            <code className="vw-model" title={r.model!}>{model}</code>
+            <code className="vw-model">{model}</code>
           </>}
         </span>
         {/* Both copy variants stay in the DOM; the container query (CSS) shows the labeled button at
