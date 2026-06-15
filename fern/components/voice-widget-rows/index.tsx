@@ -5,7 +5,8 @@ import { Skeleton } from "../skeleton/index";
 import {
   // Data layer + display-time helpers reused VERBATIM from the cards widget so the two previews
   // stay behaviorally identical (no logic drift): same fetch/cache, name cleaning, friendly
-  // language, gender/model normalization, no-preview filtering, toolbar/pager UI, breakpoint.
+  // language, gender normalization, no-preview filtering, toolbar/pager UI, breakpoint. The model
+  // string is shown verbatim (no remapping), matching the cards.
   ALL,
   DEFAULT_PAGE_SIZE,
   MOBILE_PAGE_SIZE,
@@ -16,7 +17,6 @@ import {
   loadBundle,
   modelKeyOf,
   normalizeGender,
-  normalizeModel,
   pageNumbers,
   uniq,
   useIsMobile,
@@ -354,7 +354,7 @@ const VoiceRowItem = memo(function VoiceRowItem({ r, playing, onPlay, onCopy }: 
   const name = cleanName(r.display_name);
   const language = friendlyLanguage(r.primary_language);
   const gender = normalizeGender(r.gender);
-  const model = r.model ? normalizeModel(r.engine, r.model) : null;
+  const model = r.model || null;
   const tipId = `vwr-tip-${r._uid}`;
 
   return (
@@ -389,7 +389,7 @@ const VoiceRowItem = memo(function VoiceRowItem({ r, playing, onPlay, onCopy }: 
             <span className="vw-prov" title={r.provider}>{r.provider}</span>
             {model && <>
               <span className="vw-dot" aria-hidden="true">·</span>
-              <code className="vw-model" title={r.model!}>{model}</code>
+              <code className="vw-model">{model}</code>
             </>}
           </div>
         </div>
