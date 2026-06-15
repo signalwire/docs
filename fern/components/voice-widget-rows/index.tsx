@@ -375,8 +375,9 @@ const VoiceRowItem = memo(function VoiceRowItem({ r, playing, onPlay, onCopy }: 
         {/* Name + meta block — min-width:0 so the name/meta can ellipsize instead of widening the row. */}
         <div className="vw-row-mid">
           <div className="vw-row-nm">
-            {/* Cleaned name; the full original stays in title= (and the sample-text popover by Copy). */}
-            <span className="vw-name" title={r.display_name}>{name}</span>
+            {/* Cleaned name; the full original stays in title= (and the sample-text popover by Copy).
+                lang tags the native script for screen-reader pronunciation + language-appropriate glyphs. */}
+            <span className="vw-name" lang={r.primary_language || undefined} title={r.display_name}>{name}</span>
           </div>
           {/* Meta — muted plain-middot: language · gender · provider · model. No type icons (density).
               "unknown" gender is hidden. Provider is ALWAYS shown. Model is the neutral inline-code.
@@ -400,7 +401,7 @@ const VoiceRowItem = memo(function VoiceRowItem({ r, playing, onPlay, onCopy }: 
         {r.clip?.sample_text && (
           <span className="vw-tooltip-wrap" tabIndex={0} aria-describedby={tipId}>
             <span className="vw-tooltip-icon"><IconInfo /></span>
-            <span className="vw-tooltip" id={tipId} role="tooltip">“{r.clip.sample_text}”</span>
+            <span className="vw-tooltip" id={tipId} role="tooltip" lang={r.primary_language || undefined}>“{r.clip.sample_text}”</span>
           </span>
         )}
         {/* Copy — always labeled (rows have the horizontal room; no icon-only variant). Copied →

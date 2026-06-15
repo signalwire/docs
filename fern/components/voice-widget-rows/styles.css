@@ -1,3 +1,14 @@
+/* Non-Latin voice-name fallback (mirrors the cards). The catalog carries ~190 names across ~24
+   scripts (Arabic, CJK, Devanagari, Ethiopic, Hangul, …) and the docs body font (Lexend, Latin-only
+   subset) can't render them — Firefox then walks the SYSTEM font list and tofu's on any script the OS
+   lacks. Fix: serve Noto via the Google Fonts CSS API, which returns one @font-face per script EACH
+   WITH ITS OWN unicode-range, so the browser downloads only the slices whose glyphs actually appear
+   (CJK is the only heavy one and is itself range-sliced). Needs no build-time knowledge of the glyph
+   set — right for a runtime CDN catalog. Wired into --vw-i18n-font below, used per-character after the
+   body font (Latin stays Lexend). If a CSP ever blocks fonts.googleapis.com/gstatic.com, self-host
+   range-subsetted Noto instead. */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&family=Noto+Sans+Arabic:wght@400;700&family=Noto+Sans+Hebrew:wght@400;700&family=Noto+Sans+Devanagari:wght@400;700&family=Noto+Sans+Bengali:wght@400;700&family=Noto+Sans+Tamil:wght@400;700&family=Noto+Sans+Telugu:wght@400;700&family=Noto+Sans+Kannada:wght@400;700&family=Noto+Sans+Malayalam:wght@400;700&family=Noto+Sans+Gujarati:wght@400;700&family=Noto+Sans+Gurmukhi:wght@400;700&family=Noto+Sans+Oriya:wght@400;700&family=Noto+Sans+Sinhala:wght@400;700&family=Noto+Sans+Thai:wght@400;700&family=Noto+Sans+Lao:wght@400;700&family=Noto+Sans+Khmer:wght@400;700&family=Noto+Sans+Myanmar:wght@400;700&family=Noto+Sans+Ethiopic:wght@400;700&family=Noto+Sans+Armenian:wght@400;700&family=Noto+Sans+Georgian:wght@400;700&family=Noto+Sans+Canadian+Aboriginal:wght@400;700&family=Noto+Sans+SC:wght@400;700&family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+KR:wght@400;700&display=swap');
+
 /* Voice widget — COMPACT ROWS (Direction B). A sibling to the cards (components/voice-widget); this
    file styles only the rows. Ported from the design mockups in
    docs/superpowers/specs/2026-06-14-voice-widget-rows-assets/ (vw-rows-theme.html / vw-rows.html /
@@ -26,9 +37,22 @@
   --vw-fg2: var(--fg-secondary);
   --vw-muted: var(--fg-muted);
   --vw-accent: var(--accent);
-  /* Size/line-height only — DON'T override font-family: inherit the docs body font (Lexend + its
-     fallback chain). `system-ui` tofu'd non-Latin voice names (e.g. Azure's Amharic/Ethiopic names)
-     on Firefox, whose system-ui fallback doesn't cover those scripts. */
+  /* i18n name stack: the docs body font FIRST (Latin names stay Lexend), then the Noto script
+     families (loaded by the @import above) for per-character fallback on non-Latin glyphs. Applied
+     only to the text that comes from the catalog (.vw-name, .vw-tooltip) — meta/provider/model are
+     always Latin. CJK order is SC→JP→KR: the catalog's Han names are mostly Chinese (zh/wuu/yue), so
+     SC first gives the majority correct glyph shapes; Japanese kanji render with SC Han forms
+     (legible, a hair off — Han unification), Korean Hangul resolves to KR regardless. */
+  --vw-i18n-font: var(--typography-body-font-family), "Noto Sans", "Noto Sans Arabic",
+    "Noto Sans Hebrew", "Noto Sans Devanagari", "Noto Sans Bengali", "Noto Sans Tamil",
+    "Noto Sans Telugu", "Noto Sans Kannada", "Noto Sans Malayalam", "Noto Sans Gujarati",
+    "Noto Sans Gurmukhi", "Noto Sans Oriya", "Noto Sans Sinhala", "Noto Sans Thai", "Noto Sans Lao",
+    "Noto Sans Khmer", "Noto Sans Myanmar", "Noto Sans Ethiopic", "Noto Sans Armenian",
+    "Noto Sans Georgian", "Noto Sans Canadian Aboriginal", "Noto Sans SC", "Noto Sans JP",
+    "Noto Sans KR", sans-serif;
+  /* Size/line-height only — DON'T override font-family here: inherit the docs body font (Lexend) for
+     the chrome; the non-Latin fallback is scoped to .vw-name/.vw-tooltip via --vw-i18n-font. The
+     earlier `system-ui` override tofu'd non-Latin names on Firefox (system fallback misses scripts). */
   color: var(--vw-fg); font-size: 14px; line-height: 1.45;
 }
 .vw.vw-rows.vw-error { padding: 2rem; color: var(--error-text); }
@@ -123,7 +147,8 @@
    override the cards' bare `.vw-name` (which sets -webkit-box + -webkit-line-clamp:2 for the cards'
    2-line wrap; it also matches here because the rows root carries the `vw` class) so the row name
    stays strictly single-line with a tail ellipsis. */
-.vw-rows .vw-name { display: block; flex: 0 1 auto; font-weight: 650; font-size: 14.5px; line-height: 18px;
+.vw-rows .vw-name { display: block; flex: 0 1 auto; font-family: var(--vw-i18n-font); font-weight: 650;
+  font-size: 14.5px; line-height: 18px;
   letter-spacing: -.01em; color: var(--vw-fg); white-space: nowrap; word-break: normal;
   -webkit-line-clamp: none; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 
@@ -162,7 +187,7 @@
 .vw-rows .vw-tooltip { display: none; position: absolute; bottom: calc(100% + 9px); right: -8px; width: 220px;
   background: var(--vw-card); color: var(--vw-fg2);
   border: 1px solid var(--vw-line); border-radius: 9px; padding: 8px 11px;
-  font-size: 11.5px; font-style: italic; line-height: 1.45;
+  font-family: var(--vw-i18n-font); font-size: 11.5px; font-style: italic; line-height: 1.45;
   box-shadow: var(--card-hover-shadow); z-index: 30; pointer-events: none; white-space: normal; }
 .vw-rows .vw-tooltip::after { content: ""; position: absolute; top: 100%; right: 14px;
   border: 6px solid transparent; border-top-color: var(--vw-card); }
