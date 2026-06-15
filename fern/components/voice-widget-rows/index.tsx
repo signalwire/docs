@@ -331,6 +331,15 @@ const IconInfo = () => (
 const IconCopy = () => (
   <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="5" y="5" width="8" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.4" /><path d="M11 5V3.5A1.5 1.5 0 0 0 9.5 2H4a1.5 1.5 0 0 0-1.5 1.5V11A1.5 1.5 0 0 0 4 12.5" stroke="currentColor" strokeWidth="1.4" /></svg>
 );
+// Play/stop as inline SVG (not the "▶"/"■" chars, which are emoji-capable and render as an OS color
+// emoji on some platforms). Same glyphs as the cards. Filled with currentColor so they follow the
+// button's rest/hover/playing color; the triangle is nudged right of center to read optically centered.
+const IconPlay = () => (
+  <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3.5v9l7-4.5z" fill="currentColor" /></svg>
+);
+const IconStop = () => (
+  <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="4.5" y="4.5" width="7" height="7" rx="1" fill="currentColor" /></svg>
+);
 
 // Memoized so playing/pausing a voice (which re-renders the widget) only re-renders the two rows
 // whose `playing` flag actually changed — not the whole page of rows.
@@ -367,9 +376,9 @@ const VoiceRowItem = memo(function VoiceRowItem({ r, playing, onPlay, onCopy }: 
             <>
               {/* Animated bars normally; a static stop square under prefers-reduced-motion (CSS swap). */}
               <span className="vw-eq" aria-hidden="true"><i /><i /><i /></span>
-              <span className="vw-stop" aria-hidden="true">■</span>
+              <span className="vw-stop" aria-hidden="true"><IconStop /></span>
             </>
-          ) : "▶"}
+          ) : <IconPlay />}
         </button>
 
         {/* Name + meta block — min-width:0 so the name/meta can ellipsize instead of widening the row. */}
