@@ -1,3 +1,14 @@
+/* Non-Latin voice-name fallback. The catalog carries ~190 names across ~24 scripts (Arabic, CJK,
+   Devanagari, Ethiopic, Hangul, …) and the docs body font (Lexend, Latin-only subset) can't render
+   them — Firefox then walks the SYSTEM font list and tofu's on any script the OS lacks (Chrome
+   hardcodes per-script fonts so it hid the bug). Fix: serve Noto via the Google Fonts CSS API, which
+   returns one @font-face per script EACH WITH ITS OWN unicode-range, so the browser downloads only
+   the slices whose glyphs actually appear (CJK is the only heavy one and is itself range-sliced).
+   This needs no build-time knowledge of the glyph set — right for a runtime CDN catalog. The families
+   are wired into --vw-i18n-font below and used per-character after the body font (Latin still Lexend).
+   If a CSP ever blocks fonts.googleapis.com/gstatic.com, self-host range-subsetted Noto instead. */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&family=Noto+Sans+Arabic:wght@400;700&family=Noto+Sans+Hebrew:wght@400;700&family=Noto+Sans+Devanagari:wght@400;700&family=Noto+Sans+Bengali:wght@400;700&family=Noto+Sans+Tamil:wght@400;700&family=Noto+Sans+Telugu:wght@400;700&family=Noto+Sans+Kannada:wght@400;700&family=Noto+Sans+Malayalam:wght@400;700&family=Noto+Sans+Gujarati:wght@400;700&family=Noto+Sans+Gurmukhi:wght@400;700&family=Noto+Sans+Oriya:wght@400;700&family=Noto+Sans+Sinhala:wght@400;700&family=Noto+Sans+Thai:wght@400;700&family=Noto+Sans+Lao:wght@400;700&family=Noto+Sans+Khmer:wght@400;700&family=Noto+Sans+Myanmar:wght@400;700&family=Noto+Sans+Ethiopic:wght@400;700&family=Noto+Sans+Armenian:wght@400;700&family=Noto+Sans+Georgian:wght@400;700&family=Noto+Sans+Canadian+Aboriginal:wght@400;700&family=Noto+Sans+SC:wght@400;700&family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+KR:wght@400;700&display=swap');
+
 /* Voice widget styles, scoped under .vw so it can be dropped into the docs without clobbering host
    styles. The palette maps onto the docs' theme-aware brand tokens (fern/brand-tokens.css) so the
    widget follows light/dark mode automatically — no hardcoded colors. The card/grid/meta/footer/
@@ -23,9 +34,22 @@
   --vw-muted: var(--fg-muted);
   --vw-accent: var(--accent);
   --vw-radius: 12px;
-  /* Size/line-height only — DON'T override font-family: inherit the docs body font (Lexend + its
-     fallback chain). The previous `system-ui` override tofu'd non-Latin voice names (e.g. Azure's
-     Amharic/Ethiopic names) on Firefox, whose system-ui fallback doesn't cover those scripts. */
+  /* i18n name stack: the docs body font FIRST (Latin names stay Lexend), then the Noto script
+     families (loaded by the @import above) for per-character fallback on non-Latin glyphs. Applied
+     only to the elements that render catalog text (.vw-name, .vw-tooltip) — provider/model/meta are
+     always Latin. CJK order is SC→JP→KR: the catalog's Han names are mostly Chinese (zh/wuu/yue),
+     so SC first gives the majority correct glyph shapes; Japanese kanji names render with SC Han
+     forms (legible, a hair off — Han unification), Korean Hangul resolves to KR regardless. */
+  --vw-i18n-font: var(--typography-body-font-family), "Noto Sans", "Noto Sans Arabic",
+    "Noto Sans Hebrew", "Noto Sans Devanagari", "Noto Sans Bengali", "Noto Sans Tamil",
+    "Noto Sans Telugu", "Noto Sans Kannada", "Noto Sans Malayalam", "Noto Sans Gujarati",
+    "Noto Sans Gurmukhi", "Noto Sans Oriya", "Noto Sans Sinhala", "Noto Sans Thai", "Noto Sans Lao",
+    "Noto Sans Khmer", "Noto Sans Myanmar", "Noto Sans Ethiopic", "Noto Sans Armenian",
+    "Noto Sans Georgian", "Noto Sans Canadian Aboriginal", "Noto Sans SC", "Noto Sans JP",
+    "Noto Sans KR", sans-serif;
+  /* Size/line-height only — DON'T override font-family here: inherit the docs body font (Lexend) for
+     the chrome; the non-Latin fallback is scoped to .vw-name/.vw-tooltip via --vw-i18n-font. The
+     earlier `system-ui` override tofu'd non-Latin names on Firefox (system fallback misses scripts). */
   color: var(--vw-fg); font-size: 14px; line-height: 1.45;
   /* The widget root is the query container for the responsive Copy switch (see .vw-copy-* below). */
   container-type: inline-size;
@@ -117,7 +141,8 @@
 /* Name is the copyable identity, so it's never ellipsized mid-name: cleaned community names sit on
    one line, only the longest untouched technical names (cmn-CN-Chirp3-HD-Zubenelgenubi) take a
    graceful 2nd line at their hyphens. The full original name lives in title=/the icon tooltip. */
-.vw-name { flex: 1; min-width: 0; font-weight: 650; font-size: 15.5px; letter-spacing: -.012em;
+.vw-name { flex: 1; min-width: 0; font-family: var(--vw-i18n-font); font-weight: 650;
+  font-size: 15.5px; letter-spacing: -.012em;
   line-height: 1.25; overflow: hidden; word-break: break-word;
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 
@@ -141,7 +166,7 @@
 .vw-tooltip { display: none; position: absolute; bottom: calc(100% + 9px); right: -5px; width: 210px;
   background: var(--vw-card); color: var(--vw-fg2);
   border: 1px solid var(--vw-line); border-radius: 9px; padding: 8px 11px;
-  font-size: 11.5px; font-style: italic; line-height: 1.45;
+  font-family: var(--vw-i18n-font); font-size: 11.5px; font-style: italic; line-height: 1.45;
   box-shadow: var(--card-hover-shadow); z-index: 30; pointer-events: none; }
 .vw-tooltip::after { content: ""; position: absolute; top: 100%; right: 14px;
   border: 6px solid transparent; border-top-color: var(--vw-card); }

@@ -597,14 +597,15 @@ const Card = memo(function Card({ r, playing, onPlay, onCopy }: {
             </>
           ) : "▶"}
         </button>
-        {/* Cleaned name; the full original stays in title= (and the tooltip below). */}
-        <div className="vw-name" title={r.display_name}>{name}</div>
+        {/* Cleaned name; the full original stays in title= (and the tooltip below). lang tags the
+            native script for screen-reader pronunciation and language-appropriate glyph forms. */}
+        <div className="vw-name" lang={r.primary_language || undefined} title={r.display_name}>{name}</div>
         {r.clip?.sample_text && (
           // Icon-anchored sample-text popover. Focusable trigger + aria-describedby so the sample is
           // announced (not just shown on hover); reveal is hover/focus-within (see CSS).
           <span className="vw-tooltip-wrap" tabIndex={0} aria-describedby={tipId}>
             <span className="vw-tooltip-icon"><IconInfo /></span>
-            <span className="vw-tooltip" id={tipId} role="tooltip">“{r.clip.sample_text}”</span>
+            <span className="vw-tooltip" id={tipId} role="tooltip" lang={r.primary_language || undefined}>“{r.clip.sample_text}”</span>
           </span>
         )}
       </div>
