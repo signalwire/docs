@@ -375,16 +375,8 @@ const VoiceRowItem = memo(function VoiceRowItem({ r, playing, onPlay, onCopy }: 
         {/* Name + meta block — min-width:0 so the name/meta can ellipsize instead of widening the row. */}
         <div className="vw-row-mid">
           <div className="vw-row-nm">
-            {/* Cleaned name; the full original stays in title= (and the tooltip below). */}
+            {/* Cleaned name; the full original stays in title= (and the sample-text popover by Copy). */}
             <span className="vw-name" title={r.display_name}>{name}</span>
-            {r.clip?.sample_text && (
-              // Icon-anchored sample-text popover. Focusable trigger + aria-describedby so the sample
-              // is announced (not just shown on hover); reveal is hover/focus-within (see CSS).
-              <span className="vw-tooltip-wrap" tabIndex={0} aria-describedby={tipId}>
-                <span className="vw-tooltip-icon"><IconInfo /></span>
-                <span className="vw-tooltip" id={tipId} role="tooltip">“{r.clip.sample_text}”</span>
-              </span>
-            )}
           </div>
           {/* Meta — muted plain-middot: language · gender · provider · model. No type icons (density).
               "unknown" gender is hidden. Provider is ALWAYS shown. Model is the neutral inline-code.
@@ -401,6 +393,16 @@ const VoiceRowItem = memo(function VoiceRowItem({ r, playing, onPlay, onCopy }: 
           </div>
         </div>
 
+        {/* Sample-text popover — its trigger sits on the right, just left of Copy, where there's
+            room (rather than crowding the name). Focusable + aria-describedby so the sample is
+            announced (not just shown on hover); reveal is hover/focus-within. The popover opens
+            upward and is right-anchored (see CSS) so it stays within the row width. */}
+        {r.clip?.sample_text && (
+          <span className="vw-tooltip-wrap" tabIndex={0} aria-describedby={tipId}>
+            <span className="vw-tooltip-icon"><IconInfo /></span>
+            <span className="vw-tooltip" id={tipId} role="tooltip">“{r.clip.sample_text}”</span>
+          </span>
+        )}
         {/* Copy — always labeled (rows have the horizontal room; no icon-only variant). Copied →
             "✓ Copied" in --status-success. Payload identical to the cards. */}
         <button className={`vw-copy-t${copied ? " vw-copied" : ""}`} onClick={handleCopy} aria-live="polite">
