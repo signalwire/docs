@@ -508,6 +508,15 @@ const IconInfo = () => (
 const IconCopy = () => (
   <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="5" y="5" width="8" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.4" /><path d="M11 5V3.5A1.5 1.5 0 0 0 9.5 2H4a1.5 1.5 0 0 0-1.5 1.5V11A1.5 1.5 0 0 0 4 12.5" stroke="currentColor" strokeWidth="1.4" /></svg>
 );
+// Play/stop as inline SVG (not the "▶"/"■" chars, which are emoji-capable and render as an OS color
+// emoji on some platforms). Filled with currentColor so they follow the button's rest/hover/playing
+// color. The triangle is nudged right of viewBox-center so it reads optically centered in the circle.
+const IconPlay = () => (
+  <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3.5v9l7-4.5z" fill="currentColor" /></svg>
+);
+const IconStop = () => (
+  <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="4.5" y="4.5" width="7" height="7" rx="1" fill="currentColor" /></svg>
+);
 
 // Memoized so that playing/pausing a voice (which re-renders the widget) only re-renders the two
 // cards whose `playing` flag actually changed — not all ~60 cards on the page.
@@ -545,9 +554,9 @@ const Card = memo(function Card({ r, playing, onPlay, onCopy }: {
               {/* Two glyphs for the playing state: animated bars normally, a static stop square when
                   the user prefers reduced motion (CSS swaps their display). */}
               <span className="vw-eq" aria-hidden="true"><i /><i /><i /></span>
-              <span className="vw-stop" aria-hidden="true">■</span>
+              <span className="vw-stop" aria-hidden="true"><IconStop /></span>
             </>
-          ) : "▶"}
+          ) : <IconPlay />}
         </button>
         {/* Cleaned name; the full original stays in title= (and the tooltip below). lang tags the
             native script for screen-reader pronunciation and language-appropriate glyph forms. */}
