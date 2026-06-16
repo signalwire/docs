@@ -1,4 +1,4 @@
-import { createTypeSpecLibrary, JSONSchemaType } from "@typespec/compiler";
+import { createTypeSpecLibrary, JSONSchemaType, paramMessage } from "@typespec/compiler";
 
 export interface AsyncAPIEmitterOptions {
   /** Output file name. Default: `asyncapi.yaml`. */
@@ -33,6 +33,12 @@ export const $lib = createTypeSpecLibrary({
       severity: "error",
       messages: {
         default: "An @rpcMethod operation must be under a namespace marked with @channel.",
+      },
+    },
+    "duplicate-rpc-method": {
+      severity: "error",
+      messages: {
+        default: paramMessage`Duplicate @rpcMethod "${"method"}". JSON-RPC method names must be unique within a service.`,
       },
     },
   },

@@ -38,4 +38,18 @@ describe("diagnostics", () => {
     `);
     strictEqual(diagnostics.some((d) => d.code.endsWith("missing-channel")), true);
   });
+
+  it("errors on duplicate @rpcMethod names", async () => {
+    const diagnostics = await Tester.diagnose(`
+      @service(#{ title: "X" })
+      @server("p", #{ host: "h", protocol: "wss" })
+      @channel("calling")
+      namespace Relay.Calling {
+        model R { code: string; }
+        @rpcMethod("calling.dial") op dial(): R;
+        @rpcMethod("calling.dial") op dialAgain(): R;
+      }
+    `);
+    strictEqual(diagnostics.some((d) => d.code.endsWith("duplicate-rpc-method")), true);
+  });
 });
