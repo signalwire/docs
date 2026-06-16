@@ -9,10 +9,10 @@ import {
   Program,
   resolvePath,
 } from "@typespec/compiler";
-import { stringify } from "yaml";
-import { getChannel, getEvent, getRpcMethod, getServer } from "./decorators.js";
+import { getBearerAuth, getChannel, getEvent, getRpcMethod, getServer } from "./decorators.js";
 import { AsyncAPIEmitterOptions, reportDiagnostic } from "./lib.js";
 import { createSchemaRegistry, RefFn } from "./schema-emitter.js";
+import { serialize } from "./serialize.js";
 import { AsyncAPI3Document, SchemaObject } from "./types.js";
 
 function findServiceNamespace(program: Program): Namespace | undefined {
@@ -188,6 +188,18 @@ function emitEvents(
   }
 }
 
+function emitSecurity(program: Program, ns: Namespace, serverName: string, doc: AsyncAPI3Document): void {
+  const auth = getBearerAuth(program, ns);
+  if (!auth) return;
+  doc.components!.securitySchemes ??= {};
+  doc.components!.securitySchemes["httpBearer"] = {
+    type: "http",
+    scheme: "bearer",
+    ...(auth.bearerFormat ? { bearerFormat: auth.bearerFormat } : {}),
+  };
+  doc.servers![serverName].security = [{ $ref: "#/components/securitySchemes/httpBearer" }];
+}
+
 export async function $onEmit(context: EmitContext<AsyncAPIEmitterOptions>): Promise<void> {
   if (context.program.compilerOptions.noEmit) return;
   const program = context.program;
@@ -235,7 +247,8 @@ export async function $onEmit(context: EmitContext<AsyncAPIEmitterOptions>): Pro
 
   emitRpcMethods(program, ns, channelId, doc, registry.refFor);
   emitEvents(program, ns, channelId, doc, registry.refFor);
+  emitSecurity(program, ns, serverCfg.name, doc);
 
   const outputFile = resolvePath(context.emitterOutputDir, "asyncapi.yaml");
-  await emitFile(program, { path: outputFile, content: stringify(doc) });
+  await emitFile(program, { path: outputFile, content: serialize(doc) });
 }

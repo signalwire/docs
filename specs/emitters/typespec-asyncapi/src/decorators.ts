@@ -49,3 +49,15 @@ export function $event(context: DecoratorContext, target: Model, eventType: stri
 export function getEvent(program: Program, target: Model): string | undefined {
   return program.stateMap(stateKeys.event).get(target);
 }
+
+export interface BearerAuthConfig {
+  bearerFormat?: string;
+}
+
+export function $bearerAuth(context: DecoratorContext, target: Namespace, bearerFormat?: string): void {
+  context.program.stateMap(stateKeys.bearerAuth).set(target, { bearerFormat } satisfies BearerAuthConfig);
+}
+
+export function getBearerAuth(program: Program, target: Namespace): BearerAuthConfig | undefined {
+  return program.stateMap(stateKeys.bearerAuth).get(target);
+}

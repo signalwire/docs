@@ -23,3 +23,6 @@ extern dec rpcMethod(target: Operation, name: valueof string);
 
 /** Mark a model as a server-pushed event delivered via signalwire.event. */
 extern dec event(target: Model, eventType: valueof string);
+
+/** Declare HTTP bearer (token) authentication for the service. */
+extern dec bearerAuth(target: Namespace, bearerFormat?: valueof string);

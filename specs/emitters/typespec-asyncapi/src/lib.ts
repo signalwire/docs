@@ -41,6 +41,7 @@ export const $lib = createTypeSpecLibrary({
     channel: { description: "State for @channel" },
     rpcMethod: { description: "State for @rpcMethod" },
     event: { description: "State for @event" },
+    bearerAuth: { description: "State for @bearerAuth" },
   },
   emitter: {
     options: EmitterOptionsSchema,
