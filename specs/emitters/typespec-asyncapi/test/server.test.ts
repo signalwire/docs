@@ -1,6 +1,6 @@
 import { strictEqual } from "assert";
 import { describe, it } from "vitest";
-import { asyncApiFor } from "./host.js";
+import { asyncApiFor, Tester } from "./host.js";
 
 describe("@server", () => {
   it("emits an AsyncAPI server with host, protocol, and pathname", async () => {
@@ -17,5 +17,25 @@ describe("@server", () => {
     strictEqual(doc.servers.production.host, "relay.signalwire.com");
     strictEqual(doc.servers.production.protocol, "wss");
     strictEqual(doc.servers.production.pathname, "/api/relay/wss");
+  });
+});
+
+describe("diagnostics", () => {
+  it("errors when @server is missing", async () => {
+    const diagnostics = await Tester.diagnose(`
+      @service(#{ title: "X" })
+      @channel("calling")
+      namespace Relay.Calling { @rpcMethod("x") op x(): {}; }
+    `);
+    strictEqual(diagnostics.some((d) => d.code.endsWith("missing-server")), true);
+  });
+
+  it("errors when @channel is missing", async () => {
+    const diagnostics = await Tester.diagnose(`
+      @service(#{ title: "X" })
+      @server("p", #{ host: "h", protocol: "wss" })
+      namespace Relay.Calling { @rpcMethod("x") op x(): {}; }
+    `);
+    strictEqual(diagnostics.some((d) => d.code.endsWith("missing-channel")), true);
   });
 });
