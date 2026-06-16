@@ -68,6 +68,28 @@ describe("constraints, defaults, and examples", () => {
   });
 });
 
+describe("@encode and @encodedName", () => {
+  it("decays @encode to the wire type + format and renames via @encodedName", async () => {
+    const program = await compileModels(`
+      model Foo {
+        @encode("rfc3339") createdAt: utcDateTime;
+        @encode("seconds", int32) ttl: duration;
+        @encodedName("application/json", "from_number") fromNumber: string;
+      }
+    `);
+    const Foo = program.getGlobalNamespaceType().models.get("Foo")!;
+    const s: any = typeToSchema(program, Foo, () => ({}));
+    // utcDateTime + rfc3339 → string/date-time
+    deepStrictEqual(s.properties.createdAt, { type: "string", format: "date-time" });
+    // duration encoded as int32 seconds → integer (no format)
+    deepStrictEqual(s.properties.ttl, { type: "integer", format: "int32" });
+    // @encodedName remaps the JSON property key
+    strictEqual("from_number" in s.properties, true);
+    strictEqual("fromNumber" in s.properties, false);
+    deepStrictEqual(s.required, ["createdAt", "ttl", "from_number"]);
+  });
+});
+
 describe("createSchemaRegistry — discriminated inheritance", () => {
   it("emits @discriminator base + extends variants as allOf-inheritance", async () => {
     const program = await compileModels(`

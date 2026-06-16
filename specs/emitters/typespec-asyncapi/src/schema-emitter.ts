@@ -1,6 +1,7 @@
 import {
   getDiscriminator,
   getDoc,
+  getEncode,
   getExamples,
   getFormat,
   getMaxItems,
@@ -16,6 +17,7 @@ import {
   Model,
   ModelProperty,
   Program,
+  resolveEncodedName,
   Scalar,
   serializeValueAsJson,
   Type,
@@ -80,6 +82,42 @@ function enumSchema(values: unknown[]): SchemaObject {
   return { enum: values };
 }
 
+/** Map a TypeSpec `@encode` encoding to a JSON-Schema `format` (open vocabulary). */
+function encodeFormat(encoding?: string): string | undefined {
+  switch (encoding) {
+    case "rfc3339":
+      return "date-time";
+    case "rfc7231":
+      return "http-date";
+    case "ISO8601":
+      return "duration";
+    case "base64":
+      return "byte";
+    case "base64url":
+      return "base64url";
+    default:
+      // unixTimestamp / seconds / milliseconds / base10 string → wire type carries it, no format
+      return undefined;
+  }
+}
+
+/**
+ * If `@encode` is present, "decay" to the wire type's schema (per the compiler's
+ * encoding guidance) and carry the encoding as a JSON-Schema `format` where known.
+ */
+function encodeSchema(program: Program, target: ModelProperty | Scalar): SchemaObject | undefined {
+  const enc = getEncode(program, target);
+  if (!enc) return undefined;
+  const base = scalarSchema(enc.type);
+  const fmt = encodeFormat(enc.encoding);
+  return fmt ? { ...base, format: fmt } : base;
+}
+
+/** The JSON wire name of a property, honoring `@encodedName("application/json", ...)`. */
+export function encodedPropName(program: Program, prop: ModelProperty): string {
+  return resolveEncodedName(program, prop, "application/json");
+}
+
 /** JSON-Schema for a single constant, inferring `type` from the value. */
 function constSchema(value: unknown): SchemaObject {
   if (typeof value === "number") return { type: Number.isInteger(value) ? "integer" : "number", const: value };
@@ -123,7 +161,7 @@ function applyConstraints(program: Program, target: Type, schema: SchemaObject):
  * merged onto inline schemas — a `$ref` ignores sibling keywords in Draft-07.
  */
 export function propertySchema(program: Program, prop: ModelProperty, ref: RefFn): SchemaObject {
-  let s = schemaForType(program, prop.type, ref);
+  let s = encodeSchema(program, prop) ?? schemaForType(program, prop.type, ref);
   const doc = getDoc(program, prop);
   if (doc) s = { ...s, description: doc };
   if (!("$ref" in s)) {
@@ -144,7 +182,8 @@ export function propertySchema(program: Program, prop: ModelProperty, ref: RefFn
 function ownObjectSchema(program: Program, model: Model, ref: RefFn): SchemaObject {
   const properties: Record<string, SchemaObject> = {};
   const required: string[] = [];
-  for (const [name, prop] of model.properties as Map<string, ModelProperty>) {
+  for (const prop of (model.properties as Map<string, ModelProperty>).values()) {
+    const name = encodedPropName(program, prop);
     properties[name] = propertySchema(program, prop, ref);
     if (!prop.optional) required.push(name);
   }
@@ -167,7 +206,7 @@ function unionInline(program: Program, union: { variants: Map<string | symbol, {
 export function typeToSchema(program: Program, type: Type, ref: RefFn): SchemaObject {
   switch (type.kind) {
     case "Scalar":
-      return applyConstraints(program, type, scalarSchema(type));
+      return applyConstraints(program, type, encodeSchema(program, type) ?? scalarSchema(type));
     case "String":
     case "Number":
     case "Boolean":
