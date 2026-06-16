@@ -1,0 +1,54 @@
+import { deepStrictEqual, strictEqual } from "assert";
+import { describe, it } from "vitest";
+import { createSchemaRegistry, typeToSchema } from "../src/schema-emitter.js";
+import { Tester } from "./host.js";
+
+async function compileModels(def: string) {
+  const { program } = await Tester.compile(def);
+  return program;
+}
+
+describe("typeToSchema", () => {
+  it("converts a simple model to a JSON-schema object", async () => {
+    const program = await compileModels(`model Foo { a: string; b?: int32; }`);
+    const Foo = program.getGlobalNamespaceType().models.get("Foo")!;
+    const s = typeToSchema(program, Foo, () => ({}));
+    deepStrictEqual(s, {
+      type: "object",
+      required: ["a"],
+      properties: { a: { type: "string" }, b: { type: "integer", format: "int32" } },
+    });
+  });
+
+  it("converts arrays and string-literal unions to enums", async () => {
+    const program = await compileModels(`model Foo { items: string[]; state: "a" | "b"; }`);
+    const Foo = program.getGlobalNamespaceType().models.get("Foo")!;
+    const s: any = typeToSchema(program, Foo, () => ({}));
+    deepStrictEqual(s.properties.items, { type: "array", items: { type: "string" } });
+    deepStrictEqual(s.properties.state, { type: "string", enum: ["a", "b"] });
+  });
+});
+
+describe("createSchemaRegistry — discriminated inheritance", () => {
+  it("emits @discriminator base + extends variants as allOf-inheritance", async () => {
+    const program = await compileModels(`
+      @discriminator("type") model Device { type: string; }
+      model PhoneDevice extends Device { type: "phone"; from_number: string; }
+      model SipDevice extends Device { type: "sip"; from: string; }
+    `);
+    const Device = program.getGlobalNamespaceType().models.get("Device")!;
+    const reg = createSchemaRegistry(program);
+    reg.refFor(Device);
+    const s: any = reg.schemas;
+
+    // base: required string discriminator
+    strictEqual(s.Device.discriminator, "type");
+    deepStrictEqual(s.Device.required, ["type"]);
+    strictEqual(s.Device.properties.type.type, "string");
+
+    // variants: allOf-inherit the base, override the discriminator to a const
+    deepStrictEqual(s.PhoneDevice.allOf[0], { $ref: "#/components/schemas/Device" });
+    deepStrictEqual(s.PhoneDevice.allOf[1].properties.type, { type: "string", const: "phone" });
+    deepStrictEqual(s.SipDevice.allOf[1].properties.type, { type: "string", const: "sip" });
+  });
+});
