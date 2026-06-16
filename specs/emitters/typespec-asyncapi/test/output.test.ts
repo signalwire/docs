@@ -1,4 +1,4 @@
-import { strictEqual } from "assert";
+import { deepStrictEqual, strictEqual } from "assert";
 import { describe, it } from "vitest";
 import { asyncApiFor } from "./host.js";
 
@@ -19,5 +19,19 @@ describe("output", () => {
     strictEqual(doc.components.securitySchemes.httpBearer.scheme, "bearer");
     strictEqual(doc.components.securitySchemes.httpBearer.bearerFormat, "JWT");
     strictEqual(doc.servers.production.security[0].$ref, "#/components/securitySchemes/httpBearer");
+  });
+
+  it("adds a ws binding to wss servers and the channel", async () => {
+    const { doc } = await asyncApiFor(`
+      @service(#{ title: "Relay Calling" })
+      @server("production", #{ host: "relay.signalwire.com", protocol: "wss" })
+      @channel("calling")
+      namespace Relay.Calling {
+        model DialResult { code: string; }
+        @rpcMethod("calling.dial") op dial(): DialResult;
+      }
+    `);
+    deepStrictEqual(doc.servers.production.bindings, { ws: {} });
+    deepStrictEqual(doc.channels.calling.bindings, { ws: {} });
   });
 });

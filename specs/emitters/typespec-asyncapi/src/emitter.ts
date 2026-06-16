@@ -9,6 +9,7 @@ import {
   Program,
   resolvePath,
 } from "@typespec/compiler";
+import { applyWebSocketBindings } from "./bindings/ws.js";
 import { getBearerAuth, getChannel, getEvent, getRpcMethod, getServer } from "./decorators.js";
 import { AsyncAPIEmitterOptions, reportDiagnostic } from "./lib.js";
 import { createSchemaRegistry, RefFn } from "./schema-emitter.js";
@@ -248,6 +249,7 @@ export async function $onEmit(context: EmitContext<AsyncAPIEmitterOptions>): Pro
   emitRpcMethods(program, ns, channelId, doc, registry.refFor);
   emitEvents(program, ns, channelId, doc, registry.refFor);
   emitSecurity(program, ns, serverCfg.name, doc);
+  applyWebSocketBindings(doc, serverCfg.name, channelId);
 
   const outputFile = resolvePath(context.emitterOutputDir, "asyncapi.yaml");
   await emitFile(program, { path: outputFile, content: serialize(doc) });
