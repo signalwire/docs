@@ -10,7 +10,7 @@ import {
   resolvePath,
 } from "@typespec/compiler";
 import { stringify } from "yaml";
-import { getChannel, getRpcMethod, getServer } from "./decorators.js";
+import { getChannel, getEvent, getRpcMethod, getServer } from "./decorators.js";
 import { AsyncAPIEmitterOptions, reportDiagnostic } from "./lib.js";
 import { createSchemaRegistry, RefFn } from "./schema-emitter.js";
 import { AsyncAPI3Document, SchemaObject } from "./types.js";
@@ -124,6 +124,70 @@ function emitRpcMethods(
   })(ns);
 }
 
+function emitEvents(
+  program: Program,
+  ns: Namespace,
+  channelId: string,
+  doc: AsyncAPI3Document,
+  ref: RefFn,
+): void {
+  const schemas = doc.components!.schemas!;
+  const messages = doc.components!.messages!;
+  const channelMessages = doc.channels![channelId].messages!;
+  const eventRefs: { $ref: string }[] = [];
+
+  (function visit(n: Namespace): void {
+    for (const model of n.models.values()) {
+      const eventType = getEvent(program, model);
+      if (!eventType) continue;
+
+      const frameId = `${model.name}Frame`;
+      schemas[frameId] = {
+        type: "object",
+        required: ["jsonrpc", "method", "id", "params"],
+        properties: {
+          jsonrpc: { type: "string", const: "2.0" },
+          method: { type: "string", const: "signalwire.event" },
+          id: { type: "string", format: "uuid" },
+          params: {
+            type: "object",
+            required: ["event_type", "params"],
+            properties: {
+              event_type: { type: "string", const: eventType },
+              event_channel: { type: "string" },
+              timestamp: { type: "number" },
+              space_id: { type: "string" },
+              project_id: { type: "string" },
+              params: ref(model),
+            },
+          },
+        },
+      };
+
+      const msgId = lcfirst(model.name);
+      messages[msgId] = {
+        name: eventType,
+        title: `${eventType} event`,
+        contentType: "application/json",
+        payload: { $ref: `#/components/schemas/${frameId}` },
+      };
+      channelMessages[msgId] = { $ref: `#/components/messages/${msgId}` };
+      eventRefs.push({ $ref: `#/channels/${channelId}/messages/${msgId}` });
+    }
+    n.namespaces.forEach(visit);
+  })(ns);
+
+  if (eventRefs.length) {
+    doc.operations![`on${pascal(channelId)}Event`] = {
+      action: "receive",
+      channel: { $ref: `#/channels/${channelId}` },
+      title: "signalwire.event",
+      summary: "Asynchronous events pushed by the server over the signalwire.event carrier.",
+      messages: eventRefs,
+    };
+  }
+}
+
 export async function $onEmit(context: EmitContext<AsyncAPIEmitterOptions>): Promise<void> {
   if (context.program.compilerOptions.noEmit) return;
   const program = context.program;
@@ -170,6 +234,7 @@ export async function $onEmit(context: EmitContext<AsyncAPIEmitterOptions>): Pro
   if (desc) doc.info.description = desc;
 
   emitRpcMethods(program, ns, channelId, doc, registry.refFor);
+  emitEvents(program, ns, channelId, doc, registry.refFor);
 
   const outputFile = resolvePath(context.emitterOutputDir, "asyncapi.yaml");
   await emitFile(program, { path: outputFile, content: stringify(doc) });
