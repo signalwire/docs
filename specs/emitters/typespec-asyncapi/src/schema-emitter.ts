@@ -45,13 +45,33 @@ function scalarSchema(scalar: Scalar): SchemaObject {
   return { type: "string" };
 }
 
+/** A model emitted as a named component (excludes Array/Record/anonymous models). */
+function isNamedModel(t: Type): t is Model {
+  return (
+    t.kind === "Model" && !!t.name && t.name !== "Array" && t.name !== "Record" && !(t as Model).indexer
+  );
+}
+
 /** True for types that should be emitted as a named component and `$ref`'d. */
 function isRefworthy(t: Type): boolean {
-  if (t.kind === "Model" && !!t.name && t.name !== "Array" && t.name !== "Record" && !(t as Model).indexer) {
-    return true;
+  return isNamedModel(t) || (t.kind === "Union" && !!t.name);
+}
+
+/** JSON-Schema for a set of literal values, inferring `type` from the values. */
+function enumSchema(values: unknown[]): SchemaObject {
+  if (values.every((v) => typeof v === "string")) return { type: "string", enum: values };
+  if (values.every((v) => typeof v === "number")) {
+    return { type: values.every((v) => Number.isInteger(v)) ? "integer" : "number", enum: values };
   }
-  if (t.kind === "Union" && !!t.name) return true;
-  return false;
+  if (values.every((v) => typeof v === "boolean")) return { type: "boolean", enum: values };
+  return { enum: values };
+}
+
+/** JSON-Schema for a single constant, inferring `type` from the value. */
+function constSchema(value: unknown): SchemaObject {
+  if (typeof value === "number") return { type: Number.isInteger(value) ? "integer" : "number", const: value };
+  if (typeof value === "boolean") return { type: "boolean", const: value };
+  return { type: "string", const: value };
 }
 
 /** Schema for a property/element type: `$ref` if named, inline otherwise. */
@@ -59,7 +79,14 @@ function schemaForType(program: Program, t: Type, ref: RefFn): SchemaObject {
   return isRefworthy(t) ? ref(t) : typeToSchema(program, t, ref);
 }
 
-/** Build an inline object schema from a model's OWN properties. */
+/**
+ * Build an inline object schema from a model's OWN properties.
+ *
+ * NOTE: JSON-Schema constraints (`@minValue`/`@maxValue`/`@minLength`/`@maxLength`/
+ * `@pattern`/`@format`) and property `default`s are intentionally NOT emitted yet —
+ * out of scope for the current Relay slice. Adding them (via the compiler's
+ * get* helpers + `ModelProperty.defaultValue`) is a documented follow-up.
+ */
 function ownObjectSchema(program: Program, model: Model, ref: RefFn): SchemaObject {
   const properties: Record<string, SchemaObject> = {};
   const required: string[] = [];
@@ -91,11 +118,9 @@ export function typeToSchema(program: Program, type: Type, ref: RefFn): SchemaOb
     case "Scalar":
       return scalarSchema(type);
     case "String":
-      return { type: "string", enum: [type.value] };
     case "Number":
-      return { type: "number", enum: [type.value] };
     case "Boolean":
-      return { type: "boolean", enum: [type.value] };
+      return enumSchema([type.value]);
     case "Model": {
       const m = type as Model;
       if (m.name === "Array" && m.indexer) {
@@ -109,9 +134,9 @@ export function typeToSchema(program: Program, type: Type, ref: RefFn): SchemaOb
     case "Union":
       return unionInline(program, type as any, ref);
     case "Enum":
-      return { type: "string", enum: [...type.members.values()].map((mem) => mem.value ?? mem.name) };
+      return enumSchema([...type.members.values()].map((mem) => mem.value ?? mem.name));
     case "EnumMember":
-      return { type: "string", enum: [type.value ?? type.name] };
+      return enumSchema([type.value ?? type.name]);
     default:
       return {};
   }
@@ -133,8 +158,8 @@ export function createSchemaRegistry(program: Program): SchemaRegistry {
   const schemas: Record<string, SchemaObject> = {};
 
   function refFor(t: Type): SchemaObject {
-    if (t.kind === "Model" && !!t.name && t.name !== "Array" && t.name !== "Record" && !(t as Model).indexer) {
-      registerModel(t as Model);
+    if (isNamedModel(t)) {
+      registerModel(t);
       return { $ref: `#/components/schemas/${t.name}` };
     }
     if (t.kind === "Union" && !!t.name) {
@@ -166,8 +191,11 @@ export function createSchemaRegistry(program: Program): SchemaRegistry {
       const own = ownObjectSchema(program, model, refFor);
       const baseDisc = getDiscriminator(program, model.baseModel)?.propertyName;
       const props = own.properties as Record<string, SchemaObject> | undefined;
-      if (baseDisc && props?.[baseDisc]?.enum && (props[baseDisc].enum as unknown[]).length === 1) {
-        props[baseDisc] = { type: "string", const: (props[baseDisc].enum as unknown[])[0] };
+      const discEnum = baseDisc ? props?.[baseDisc]?.enum : undefined;
+      if (baseDisc && props && Array.isArray(discEnum) && discEnum.length === 1) {
+        // Override the inherited discriminator with the variant's literal value,
+        // inferring the JSON-Schema type from the value (string/number/boolean).
+        props[baseDisc] = constSchema(discEnum[0]);
       }
       schemas[name] = { allOf: [baseRef, own] };
       return;

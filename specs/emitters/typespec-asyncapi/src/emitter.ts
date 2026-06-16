@@ -33,7 +33,7 @@ function lcfirst(s: string): string {
 }
 
 /** Schema for an operation's parameters: a `$ref` when it's a single spread model, else an inline object. */
-function paramsSchema(op: Operation, ref: RefFn): SchemaObject {
+function paramsSchema(program: Program, op: Operation, ref: RefFn): SchemaObject {
   const params = op.parameters;
   const spreads = params.sourceModels.filter((s) => s.usage === "spread");
   if (spreads.length === 1 && spreads[0].model.name) {
@@ -42,7 +42,10 @@ function paramsSchema(op: Operation, ref: RefFn): SchemaObject {
   const properties: Record<string, SchemaObject> = {};
   const required: string[] = [];
   for (const [name, prop] of params.properties) {
-    properties[name] = ref(prop.type);
+    let s = ref(prop.type);
+    const doc = getDoc(program, prop);
+    if (doc) s = { ...s, description: doc };
+    properties[name] = s;
     if (!prop.optional) required.push(name);
   }
   const schema: SchemaObject = { type: "object", properties };
@@ -77,7 +80,7 @@ function emitRpcMethods(
           jsonrpc: { type: "string", const: "2.0" },
           id: { type: "string", format: "uuid" },
           method: { type: "string", const: method },
-          params: paramsSchema(op, ref),
+          params: paramsSchema(program, op, ref),
         },
       };
       schemas[`${baseId}Response`] = {
