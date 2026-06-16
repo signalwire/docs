@@ -5,7 +5,8 @@ import { parse } from "yaml";
 export const Tester = createTester(resolvePath(import.meta.dirname, ".."), {
   libraries: ["@signalwire/typespec-asyncapi"],
 })
-  .using("AsyncAPI")
+  .import("@signalwire/typespec-asyncapi")
+  .using("SignalWire.AsyncAPI")
   .emit("@signalwire/typespec-asyncapi");
 
 /** Compile relay tsp and return the emitted AsyncAPI document (parsed) + raw yaml. */

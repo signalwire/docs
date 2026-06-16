@@ -1,1 +1,25 @@
 import "../dist/src/index.js";
+
+using TypeSpec.Reflection;
+
+namespace SignalWire.AsyncAPI;
+
+/** AsyncAPI server config for a service namespace. */
+model ServerOptions {
+  host: string;
+  protocol: string;
+  pathname?: string;
+  description?: string;
+}
+
+/** Declare an AsyncAPI server on the service namespace. */
+extern dec server(target: Namespace, name: valueof string, options: valueof ServerOptions);
+
+/** Declare the AsyncAPI channel id for a service. */
+extern dec channel(target: Namespace, id: valueof string);
+
+/** Mark an operation as a JSON-RPC method with the given wire name. */
+extern dec rpcMethod(target: Operation, name: valueof string);
+
+/** Mark a model as a server-pushed event delivered via signalwire.event. */
+extern dec event(target: Model, eventType: valueof string);
