@@ -433,3 +433,62 @@ model CallWebrtcDevice extends CallDevice {
   /** WebRTC device params (shapes not documented in the protocol reference). */
   params: Record<unknown>;
 }
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Play media union (calling.play / calling.play_and_collect `play[]`)
+//
+// Discriminated on `type`. Mirrors Ringback, but the `tts` variant additionally
+// accepts a `voice` field. Shared by calling.play and calling.play_and_collect.
+// ═════════════════════════════════════════════════════════════════════════════
+
+/** A media element to play. Discriminated on `type`. */
+@discriminator("type")
+model PlayMedia {
+  type: string;
+}
+
+model PlayMediaAudio extends PlayMedia {
+  type: "audio";
+  params: {
+    /** HTTP(s) URL to the audio resource to play. */
+    url: url;
+  };
+}
+
+model PlayMediaTts extends PlayMedia {
+  type: "tts";
+  params: {
+    /** Text to speak — plain text or SSML markup. */
+    text: string;
+
+    /** TTS language (e.g. `en-US`). Default `en-US`. */
+    language?: string = "en-US";
+
+    /** TTS voice gender. Default `female`. */
+    gender?: TtsGender = "female";
+
+    /** Specific voice to use. Highest precedence when selecting the TTS voice. */
+    voice?: string;
+  };
+}
+
+model PlayMediaSilence extends PlayMedia {
+  type: "silence";
+  params: {
+    /** Seconds of silence to play. */
+    @minValueExclusive(0)
+    duration: float64;
+  };
+}
+
+model PlayMediaRingtone extends PlayMedia {
+  type: "ringtone";
+  params: {
+    /** Built-in ringtone name (country code). */
+    name: ToneName;
+
+    /** Seconds of ringtone to play. */
+    @minValueExclusive(0)
+    duration?: float64;
+  };
+}

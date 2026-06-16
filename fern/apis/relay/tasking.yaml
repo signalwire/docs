@@ -1,0 +1,216 @@
+asyncapi: 3.0.0
+info:
+  title: SignalWire Relay — Tasking
+  version: 1.0.0
+  description: |-
+    The `tasking` service delivers arbitrary, caller-defined JSON messages to
+    Relay consumers subscribed to a context. A client calls `tasking.deliver`
+    with a `context` and an opaque `message`; SignalWire queues the task and
+    pushes a `queuing.relay.tasks` event to every consumer listening on that
+    context. The `message` payload is never inspected — it is echoed verbatim
+    from the deliver request into the task event.
+defaultContentType: application/json
+servers:
+  production:
+    host: relay.signalwire.com
+    protocol: wss
+    pathname: /api/relay/wss
+    description: SignalWire Relay WebSocket endpoint.
+    security:
+      - $ref: "#/components/securitySchemes/httpBearer"
+    bindings:
+      ws: {}
+channels:
+  tasking:
+    address: null
+    title: SignalWire Relay — Tasking
+    servers:
+      - $ref: "#/servers/production"
+    messages:
+      taskingDeliverRequest:
+        $ref: "#/components/messages/taskingDeliverRequest"
+      taskingDeliverResponse:
+        $ref: "#/components/messages/taskingDeliverResponse"
+      tasksEvent:
+        $ref: "#/components/messages/tasksEvent"
+    bindings:
+      ws: {}
+operations:
+  taskingDeliver:
+    action: send
+    channel:
+      $ref: "#/channels/tasking"
+    title: tasking.deliver
+    summary: Deliver a task message to a context
+    messages:
+      - $ref: "#/channels/tasking/messages/taskingDeliverRequest"
+    reply:
+      channel:
+        $ref: "#/channels/tasking"
+      messages:
+        - $ref: "#/channels/tasking/messages/taskingDeliverResponse"
+  onTaskingEvent:
+    action: receive
+    channel:
+      $ref: "#/channels/tasking"
+    title: signalwire.event
+    summary: Asynchronous events pushed by the server over the signalwire.event carrier.
+    messages:
+      - $ref: "#/channels/tasking/messages/tasksEvent"
+components:
+  schemas:
+    DeliverParams:
+      type: object
+      properties:
+        context:
+          type: string
+          description: The context to deliver the task to. Consumers subscribed to this context receive the `queuing.relay.tasks` event.
+        message:
+          type: object
+          additionalProperties: {}
+          description: |-
+            The message to send. Opaque, caller-defined JSON (e.g. `{ "foo": 123 }`);
+            SignalWire imposes no schema and echoes it verbatim into the task event.
+      required:
+        - context
+        - message
+    TaskingDeliverRequest:
+      type: object
+      required:
+        - jsonrpc
+        - id
+        - method
+        - params
+      properties:
+        jsonrpc:
+          type: string
+          const: "2.0"
+        id:
+          type: string
+          format: uuid
+        method:
+          type: string
+          const: tasking.deliver
+        params:
+          $ref: "#/components/schemas/DeliverParams"
+    DeliverResult:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Result code (string). `"200"` on success.
+        message:
+          type: string
+          description: Human-readable result message.
+      required:
+        - code
+        - message
+      description: Acknowledgement of a `tasking.deliver` request.
+    TaskingDeliverResponse:
+      type: object
+      required:
+        - jsonrpc
+        - id
+      properties:
+        jsonrpc:
+          type: string
+          const: "2.0"
+        id:
+          type: string
+          format: uuid
+        result:
+          $ref: "#/components/schemas/DeliverResult"
+    TasksEvent:
+      type: object
+      properties:
+        context:
+          type: string
+          description: The context that received the event.
+        timestamp:
+          type: number
+          format: double
+          description: Seconds since the epoch, with up to microsecond resolution. The time the task was received.
+        space_id:
+          type: string
+          description: The SignalWire space the task belongs to.
+        project_id:
+          type: string
+          description: The SignalWire project the task belongs to.
+        message:
+          type: object
+          additionalProperties: {}
+          description: The opaque message passed to the task, echoed verbatim from `tasking.deliver`.
+      required:
+        - context
+        - timestamp
+        - space_id
+        - project_id
+        - message
+      description: |-
+        A task has been received. Pushed to consumers subscribed to the task's
+        `context`, carrying the opaque `message` echoed verbatim from the
+        originating `tasking.deliver` call.
+    TasksEventFrame:
+      type: object
+      required:
+        - jsonrpc
+        - method
+        - id
+        - params
+      properties:
+        jsonrpc:
+          type: string
+          const: "2.0"
+        method:
+          type: string
+          const: signalwire.event
+        id:
+          type: string
+          format: uuid
+        params:
+          type: object
+          required:
+            - event_type
+            - params
+          properties:
+            event_type:
+              type: string
+              const: queuing.relay.tasks
+            event_channel:
+              type: string
+            timestamp:
+              type: number
+            space_id:
+              type: string
+            project_id:
+              type: string
+            params:
+              $ref: "#/components/schemas/TasksEvent"
+  messages:
+    taskingDeliverRequest:
+      name: tasking.deliver.request
+      title: tasking.deliver request
+      contentType: application/json
+      correlationId:
+        location: $message.payload#/id
+      payload:
+        $ref: "#/components/schemas/TaskingDeliverRequest"
+    taskingDeliverResponse:
+      name: tasking.deliver.response
+      title: tasking.deliver response
+      contentType: application/json
+      correlationId:
+        location: $message.payload#/id
+      payload:
+        $ref: "#/components/schemas/TaskingDeliverResponse"
+    tasksEvent:
+      name: queuing.relay.tasks
+      title: queuing.relay.tasks event
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/TasksEventFrame"
+  securitySchemes:
+    httpBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

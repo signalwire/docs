@@ -1,0 +1,374 @@
+asyncapi: 3.0.0
+info:
+  title: SignalWire Relay — Messaging
+  version: 1.0.0
+  description: |-
+    The Relay **Messaging** service sends outbound SMS/MMS to PSTN numbers and
+    delivers inbound-message and delivery-state events. It rides on a connection
+    established by `signalwire.connect`; messages are routed by **context**.
+defaultContentType: application/json
+servers:
+  production:
+    host: relay.signalwire.com
+    protocol: wss
+    pathname: /api/relay/wss
+    description: SignalWire Relay WebSocket endpoint.
+    security:
+      - $ref: "#/components/securitySchemes/httpBearer"
+    bindings:
+      ws: {}
+channels:
+  messaging:
+    address: null
+    title: SignalWire Relay — Messaging
+    servers:
+      - $ref: "#/servers/production"
+    messages:
+      messagingSendRequest:
+        $ref: "#/components/messages/messagingSendRequest"
+      messagingSendResponse:
+        $ref: "#/components/messages/messagingSendResponse"
+      receiveEvent:
+        $ref: "#/components/messages/receiveEvent"
+      stateEvent:
+        $ref: "#/components/messages/stateEvent"
+    bindings:
+      ws: {}
+operations:
+  messagingSend:
+    action: send
+    channel:
+      $ref: "#/channels/messaging"
+    title: messaging.send
+    summary: Send an outbound message
+    messages:
+      - $ref: "#/channels/messaging/messages/messagingSendRequest"
+    reply:
+      channel:
+        $ref: "#/channels/messaging"
+      messages:
+        - $ref: "#/channels/messaging/messages/messagingSendResponse"
+  onMessagingEvent:
+    action: receive
+    channel:
+      $ref: "#/channels/messaging"
+    title: signalwire.event
+    summary: Asynchronous events pushed by the server over the signalwire.event carrier.
+    messages:
+      - $ref: "#/channels/messaging/messages/receiveEvent"
+      - $ref: "#/channels/messaging/messages/stateEvent"
+components:
+  schemas:
+    SendParams:
+      type: object
+      properties:
+        context:
+          type: string
+          description: The context to receive inbound events for this message.
+        tags:
+          type: array
+          items:
+            type: string
+          description: Optional client-defined tags, surfaced for searching in the UI.
+        region:
+          type: string
+          description: |-
+            Region of the world to originate the message from. Defaults to a value
+            picked from account preferences or device location.
+        to_number:
+          type: string
+          description: Destination phone number, in E.164 format.
+        from_number:
+          type: string
+          description: Origin phone number, in E.164 format.
+        body:
+          type: string
+          description: |-
+            Body of the message. Required if `media` is absent; at least one of `body`
+            or `media` must be present (both may be supplied).
+        media:
+          type: array
+          items:
+            type: string
+          description: |-
+            An array of media URLs to send (MMS). Required if `body` is absent; at
+            least one of `body` or `media` must be present (both may be supplied).
+      required:
+        - context
+        - to_number
+        - from_number
+    MessagingSendRequest:
+      type: object
+      required:
+        - jsonrpc
+        - id
+        - method
+        - params
+      properties:
+        jsonrpc:
+          type: string
+          const: "2.0"
+        id:
+          type: string
+          format: uuid
+        method:
+          type: string
+          const: messaging.send
+        params:
+          $ref: "#/components/schemas/SendParams"
+    SendResult:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+        message:
+          type: string
+          description: Human-readable result message.
+        message_id:
+          type: string
+          description: The UUID of the accepted message (present on success).
+      required:
+        - code
+        - message
+        - message_id
+    MessagingSendResponse:
+      type: object
+      required:
+        - jsonrpc
+        - id
+      properties:
+        jsonrpc:
+          type: string
+          const: "2.0"
+        id:
+          type: string
+          format: uuid
+        result:
+          $ref: "#/components/schemas/SendResult"
+    ReceiveEvent:
+      type: object
+      properties:
+        message_id:
+          type: string
+          description: The UUID of the message.
+        context:
+          type: string
+          description: The context the message was set on.
+        direction:
+          description: The message's direction. Always `inbound` for this event.
+          allOf:
+            - $ref: "#/components/schemas/MessageDirection"
+        tags:
+          type: array
+          items:
+            type: string
+          description: Optional client data this message is tagged with.
+        from_number:
+          type: string
+          description: Origin phone number, in E.164 format.
+        to_number:
+          type: string
+          description: Destination phone number, in E.164 format.
+        body:
+          type: string
+          description: Body of the message.
+        media:
+          type: array
+          items:
+            type: string
+          description: An array of media URLs included with the message.
+        segments:
+          type: integer
+          format: int32
+          description: Number of segments the message was split into.
+        message_state:
+          type: string
+          enum:
+            - received
+          description: The message state. Always `received` for an inbound message.
+      required:
+        - message_id
+        - context
+        - direction
+        - from_number
+        - to_number
+        - body
+        - media
+        - segments
+        - message_state
+      description: An inbound message has been received.
+    MessageDirection:
+      type: string
+      enum:
+        - inbound
+        - outbound
+    ReceiveEventFrame:
+      type: object
+      required:
+        - jsonrpc
+        - method
+        - id
+        - params
+      properties:
+        jsonrpc:
+          type: string
+          const: "2.0"
+        method:
+          type: string
+          const: signalwire.event
+        id:
+          type: string
+          format: uuid
+        params:
+          type: object
+          required:
+            - event_type
+            - params
+          properties:
+            event_type:
+              type: string
+              const: messaging.receive
+            event_channel:
+              type: string
+            timestamp:
+              type: number
+            space_id:
+              type: string
+            project_id:
+              type: string
+            params:
+              $ref: "#/components/schemas/ReceiveEvent"
+    StateEvent:
+      type: object
+      properties:
+        message_id:
+          type: string
+          description: The UUID of the message.
+        context:
+          type: string
+          description: The context the message was set on.
+        direction:
+          description: The message's direction.
+          allOf:
+            - $ref: "#/components/schemas/MessageDirection"
+        tags:
+          type: array
+          items:
+            type: string
+          description: Optional client data this message is tagged with.
+        from_number:
+          type: string
+          description: Origin phone number, in E.164 format.
+        to_number:
+          type: string
+          description: Destination phone number, in E.164 format.
+        body:
+          type: string
+          description: Body of the message.
+        media:
+          type: array
+          items:
+            type: string
+          description: An array of media URLs included with the message.
+        segments:
+          type: integer
+          format: int32
+          description: Number of segments the message was split into.
+        message_state:
+          description: The new delivery-lifecycle state of the message.
+          allOf:
+            - $ref: "#/components/schemas/MessageState"
+        reason:
+          type: string
+          description: Explanation of the state. Present only on `undelivered`/`failed`.
+      required:
+        - message_id
+        - context
+        - direction
+        - from_number
+        - to_number
+        - body
+        - media
+        - segments
+        - message_state
+      description: A change in the delivery state of a message.
+    MessageState:
+      type: string
+      enum:
+        - queued
+        - initiated
+        - sent
+        - delivered
+        - undelivered
+        - failed
+    StateEventFrame:
+      type: object
+      required:
+        - jsonrpc
+        - method
+        - id
+        - params
+      properties:
+        jsonrpc:
+          type: string
+          const: "2.0"
+        method:
+          type: string
+          const: signalwire.event
+        id:
+          type: string
+          format: uuid
+        params:
+          type: object
+          required:
+            - event_type
+            - params
+          properties:
+            event_type:
+              type: string
+              const: messaging.state
+            event_channel:
+              type: string
+            timestamp:
+              type: number
+            space_id:
+              type: string
+            project_id:
+              type: string
+            params:
+              $ref: "#/components/schemas/StateEvent"
+  messages:
+    messagingSendRequest:
+      name: messaging.send.request
+      title: messaging.send request
+      contentType: application/json
+      correlationId:
+        location: $message.payload#/id
+      payload:
+        $ref: "#/components/schemas/MessagingSendRequest"
+    messagingSendResponse:
+      name: messaging.send.response
+      title: messaging.send response
+      contentType: application/json
+      correlationId:
+        location: $message.payload#/id
+      payload:
+        $ref: "#/components/schemas/MessagingSendResponse"
+    receiveEvent:
+      name: messaging.receive
+      title: messaging.receive event
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/ReceiveEventFrame"
+    stateEvent:
+      name: messaging.state
+      title: messaging.state event
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/StateEventFrame"
+  securitySchemes:
+    httpBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

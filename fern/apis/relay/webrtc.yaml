@@ -1,0 +1,340 @@
+asyncapi: 3.0.0
+info:
+  title: SignalWire Relay — WebRTC
+  version: 1.0.0
+  description: |-
+    The Relay **WebRTC** service is a thin transport wrapper around the Verto
+    signaling sub-protocol. Methods are dispatched as `blade.execute`; the
+    `message` method tunnels an opaque inner Verto JSON-RPC frame to FreeSWITCH,
+    and `conference.list` enumerates joinable conferences. It rides on a
+    connection established by `signalwire.connect`.
+
+    The inner Verto message protocol itself (`verto.invite`/`verto.answer`/
+    `verto.bye`/`verto.modify`, `dialogParams`, conference control) is OUT OF
+    SCOPE here and is modeled as a loose pass-through. Its full union is defined
+    separately in `verto_messages.md`.
+defaultContentType: application/json
+servers:
+  production:
+    host: relay.signalwire.com
+    protocol: wss
+    pathname: /api/relay/wss
+    description: SignalWire Relay WebSocket endpoint.
+    security:
+      - $ref: "#/components/securitySchemes/httpBearer"
+    bindings:
+      ws: {}
+channels:
+  webrtc:
+    address: null
+    title: SignalWire Relay — WebRTC
+    servers:
+      - $ref: "#/servers/production"
+    messages:
+      messageRequest:
+        $ref: "#/components/messages/messageRequest"
+      messageResponse:
+        $ref: "#/components/messages/messageResponse"
+      conferenceListRequest:
+        $ref: "#/components/messages/conferenceListRequest"
+      conferenceListResponse:
+        $ref: "#/components/messages/conferenceListResponse"
+      messageEvent:
+        $ref: "#/components/messages/messageEvent"
+    bindings:
+      ws: {}
+operations:
+  message:
+    action: send
+    channel:
+      $ref: "#/channels/webrtc"
+    title: message
+    summary: Transport a Verto message to FreeSWITCH
+    messages:
+      - $ref: "#/channels/webrtc/messages/messageRequest"
+    reply:
+      channel:
+        $ref: "#/channels/webrtc"
+      messages:
+        - $ref: "#/channels/webrtc/messages/messageResponse"
+  conferenceList:
+    action: send
+    channel:
+      $ref: "#/channels/webrtc"
+    title: conference.list
+    summary: List joinable conferences
+    messages:
+      - $ref: "#/channels/webrtc/messages/conferenceListRequest"
+    reply:
+      channel:
+        $ref: "#/channels/webrtc"
+      messages:
+        - $ref: "#/channels/webrtc/messages/conferenceListResponse"
+  onWebrtcEvent:
+    action: receive
+    channel:
+      $ref: "#/channels/webrtc"
+    title: signalwire.event
+    summary: Asynchronous events pushed by the server over the signalwire.event carrier.
+    messages:
+      - $ref: "#/channels/webrtc/messages/messageEvent"
+components:
+  schemas:
+    MessageParams:
+      type: object
+      properties:
+        node_id:
+          type: string
+          description: |-
+            The FreeSWITCH node id this message targets. Set by the client to the FS
+            nodeid once a call exists (sourced from prior events/responses); absent on
+            the very first message before a call is established.
+        message:
+          type: object
+          additionalProperties: {}
+          description: |-
+            The inner Verto JSON-RPC 2.0 frame to transport to FreeSWITCH (e.g. a
+            `verto.invite` with `dialogParams`/`sdp`/`layout`/`positions`). Modeled as
+            a loose pass-through: the full Verto method/`params` union is out of scope
+            here (see `verto_messages.md`).
+        subscribe:
+          type: array
+          items:
+            type: string
+          description: |-
+            "Event channel" subscriptions to apply alongside this request — intended
+            for the case of joining a conference and wanting its event feed. Values are
+            conference/room event channels (e.g. `member.joined`, `member.left`,
+            `room.ended`, `room.updated`, `layout.changed`, `member.updated`);
+            illustrative, not exhaustive.
+      required:
+        - message
+    MessageRequest:
+      type: object
+      required:
+        - jsonrpc
+        - id
+        - method
+        - params
+      properties:
+        jsonrpc:
+          type: string
+          const: "2.0"
+        id:
+          type: string
+          format: uuid
+        method:
+          type: string
+          const: message
+        params:
+          $ref: "#/components/schemas/MessageParams"
+    MessageResult:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+        message:
+          type: string
+          description: Human-readable result message.
+      required:
+        - code
+        - message
+      description: Acknowledgement that the Verto message was received and forwarded.
+    MessageResponse:
+      type: object
+      required:
+        - jsonrpc
+        - id
+      properties:
+        jsonrpc:
+          type: string
+          const: "2.0"
+        id:
+          type: string
+          format: uuid
+        result:
+          $ref: "#/components/schemas/MessageResult"
+    ConferenceListParams:
+      type: object
+      properties: {}
+      description: Empty parameters — `conference.list` takes no arguments.
+    ConferenceListRequest:
+      type: object
+      required:
+        - jsonrpc
+        - id
+        - method
+        - params
+      properties:
+        jsonrpc:
+          type: string
+          const: "2.0"
+        id:
+          type: string
+          format: uuid
+        method:
+          type: string
+          const: conference.list
+        params:
+          $ref: "#/components/schemas/ConferenceListParams"
+    ConferenceListResult:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+        message:
+          type: string
+          description: Human-readable result message.
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Conference"
+          description: The active conferences the current client can join.
+      required:
+        - code
+        - message
+        - data
+    Conference:
+      type: object
+      properties:
+        node_id:
+          type: string
+          description: The FreeSWITCH node id hosting the conference.
+        conference_id:
+          type: string
+          description: The conference's UUID.
+        name:
+          type: string
+          description: Human-readable conference name (e.g. `Awesome Room!`).
+        extension:
+          type: string
+          description: Extension to dial to reach the conference.
+        timestamp:
+          type: number
+          format: double
+          description: Creation/last-activity time, in seconds since epoch (microsecond resolution).
+      required:
+        - node_id
+        - conference_id
+        - name
+        - extension
+        - timestamp
+      description: A single active conference the client may join.
+    ConferenceListResponse:
+      type: object
+      required:
+        - jsonrpc
+        - id
+      properties:
+        jsonrpc:
+          type: string
+          const: "2.0"
+        id:
+          type: string
+          format: uuid
+        result:
+          $ref: "#/components/schemas/ConferenceListResult"
+    MessageEvent:
+      type: object
+      properties:
+        node_id:
+          type: string
+          description: |-
+            The FreeSWITCH node id sending the event. Sent by FS so the client can
+            capture the specific nodeid once a call is started.
+        params:
+          type: object
+          additionalProperties: {}
+          description: |-
+            The Verto JSON-RPC frame being transported (a Verto response or a
+            conference/room event). Loose pass-through — see `verto_messages.md`.
+      required:
+        - params
+      description: |-
+        Transport event delivering a Verto JSON-RPC message from FreeSWITCH back to
+        the client — both Verto responses and subscribed conference/room events.
+
+        The inner `params` is the opaque Verto frame; its full union is out of scope
+        here (see `verto_messages.md`).
+    MessageEventFrame:
+      type: object
+      required:
+        - jsonrpc
+        - method
+        - id
+        - params
+      properties:
+        jsonrpc:
+          type: string
+          const: "2.0"
+        method:
+          type: string
+          const: signalwire.event
+        id:
+          type: string
+          format: uuid
+        params:
+          type: object
+          required:
+            - event_type
+            - params
+          properties:
+            event_type:
+              type: string
+              const: webrtc.message
+            event_channel:
+              type: string
+            timestamp:
+              type: number
+            space_id:
+              type: string
+            project_id:
+              type: string
+            params:
+              $ref: "#/components/schemas/MessageEvent"
+  messages:
+    messageRequest:
+      name: message.request
+      title: message request
+      contentType: application/json
+      correlationId:
+        location: $message.payload#/id
+      payload:
+        $ref: "#/components/schemas/MessageRequest"
+    messageResponse:
+      name: message.response
+      title: message response
+      contentType: application/json
+      correlationId:
+        location: $message.payload#/id
+      payload:
+        $ref: "#/components/schemas/MessageResponse"
+    conferenceListRequest:
+      name: conference.list.request
+      title: conference.list request
+      contentType: application/json
+      correlationId:
+        location: $message.payload#/id
+      payload:
+        $ref: "#/components/schemas/ConferenceListRequest"
+    conferenceListResponse:
+      name: conference.list.response
+      title: conference.list response
+      contentType: application/json
+      correlationId:
+        location: $message.payload#/id
+      payload:
+        $ref: "#/components/schemas/ConferenceListResponse"
+    messageEvent:
+      name: webrtc.message
+      title: webrtc.message event
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/MessageEventFrame"
+  securitySchemes:
+    httpBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

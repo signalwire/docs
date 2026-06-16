@@ -1,0 +1,165 @@
+asyncapi: 3.0.0
+info:
+  title: SignalWire Relay — Connector Provisioning
+  version: 1.0.0
+  description: |-
+    The `provisioning` protocol lets a Relay **connector** request its runtime
+    configuration from SignalWire. The connector reports its identity and network
+    endpoints, and SignalWire returns the rendered connector configuration (for a
+    FreeSWITCH connector, a SIP profile as XML). This service is
+    connector-internal: a single method, no server-pushed events, and currently
+    only the `freeswitch` connector target is supported.
+defaultContentType: application/json
+servers:
+  production:
+    host: relay.signalwire.com
+    protocol: wss
+    pathname: /api/relay/wss
+    description: SignalWire Relay WebSocket endpoint.
+    security:
+      - $ref: "#/components/securitySchemes/httpBearer"
+    bindings:
+      ws: {}
+channels:
+  provisioning:
+    address: null
+    title: SignalWire Relay — Connector Provisioning
+    servers:
+      - $ref: "#/servers/production"
+    messages:
+      provisioningConfigureRequest:
+        $ref: "#/components/messages/provisioningConfigureRequest"
+      provisioningConfigureResponse:
+        $ref: "#/components/messages/provisioningConfigureResponse"
+    bindings:
+      ws: {}
+operations:
+  provisioningConfigure:
+    action: send
+    channel:
+      $ref: "#/channels/provisioning"
+    title: provisioning.configure
+    summary: Request SignalWire connector configuration
+    messages:
+      - $ref: "#/channels/provisioning/messages/provisioningConfigureRequest"
+    reply:
+      channel:
+        $ref: "#/channels/provisioning"
+      messages:
+        - $ref: "#/channels/provisioning/messages/provisioningConfigureResponse"
+components:
+  schemas:
+    ConfigureParams:
+      type: object
+      properties:
+        target:
+          description: The connector type to provision. Currently only `freeswitch` is supported.
+          allOf:
+            - $ref: "#/components/schemas/ConnectorTarget"
+        local_endpoint:
+          type: string
+          description: The connector's local (internal) endpoint as an IPv4 address, e.g. `10.10.0.2`.
+        external_endpoint:
+          type: string
+          description: The connector's external (public) endpoint as an IPv4 address, e.g. `8.8.8.8`.
+        relay_connector_id:
+          type: string
+          description: UUID of the Relay connector being configured.
+      required:
+        - target
+        - local_endpoint
+        - external_endpoint
+        - relay_connector_id
+    ConnectorTarget:
+      oneOf:
+        - type: string
+        - type: string
+          enum:
+            - freeswitch
+    ProvisioningConfigureRequest:
+      type: object
+      required:
+        - jsonrpc
+        - id
+        - method
+        - params
+      properties:
+        jsonrpc:
+          type: string
+          const: "2.0"
+        id:
+          type: string
+          format: uuid
+        method:
+          type: string
+          const: provisioning.configure
+        params:
+          $ref: "#/components/schemas/ConfigureParams"
+    ConfigureResult:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Result code (string). `"200"` on success; e.g. `"400"`/`"404"` on error.
+        message:
+          type: string
+          description: Human-readable result message.
+        configuration:
+          description: The rendered connector configuration.
+          allOf:
+            - $ref: "#/components/schemas/Configuration"
+      required:
+        - code
+        - message
+        - configuration
+    Configuration:
+      type: object
+      properties:
+        profile:
+          type: string
+          description: The FreeSWITCH SIP profile, rendered as an XML document.
+      required:
+        - profile
+      description: |-
+        The rendered connector configuration returned to the connector.
+
+        Note: `profile` is the raw FreeSWITCH SIP profile **rendered as XML**, carried
+        as a single string. The precise shape (raw-XML string vs. a structured object)
+        is not specified by the source and is modeled here as an opaque string. Other
+        keys under `configuration` for non-`freeswitch` targets are unconfirmed.
+    ProvisioningConfigureResponse:
+      type: object
+      required:
+        - jsonrpc
+        - id
+      properties:
+        jsonrpc:
+          type: string
+          const: "2.0"
+        id:
+          type: string
+          format: uuid
+        result:
+          $ref: "#/components/schemas/ConfigureResult"
+  messages:
+    provisioningConfigureRequest:
+      name: provisioning.configure.request
+      title: provisioning.configure request
+      contentType: application/json
+      correlationId:
+        location: $message.payload#/id
+      payload:
+        $ref: "#/components/schemas/ProvisioningConfigureRequest"
+    provisioningConfigureResponse:
+      name: provisioning.configure.response
+      title: provisioning.configure response
+      contentType: application/json
+      correlationId:
+        location: $message.payload#/id
+      payload:
+        $ref: "#/components/schemas/ProvisioningConfigureResponse"
+  securitySchemes:
+    httpBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
