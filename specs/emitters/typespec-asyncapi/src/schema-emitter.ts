@@ -13,6 +13,7 @@ import {
   getMinValue,
   getMinValueExclusive,
   getPattern,
+  isDeprecated,
   isSecret,
   Model,
   ModelProperty,
@@ -174,6 +175,7 @@ export function propertySchema(program: Program, prop: ModelProperty, ref: RefFn
     if (examples.length) {
       s = { ...s, examples: examples.map((e) => serializeValueAsJson(program, e.value, prop.type)) };
     }
+    if (isDeprecated(program, prop)) s = { ...s, deprecated: true };
   }
   return s;
 }
@@ -191,6 +193,7 @@ function ownObjectSchema(program: Program, model: Model, ref: RefFn): SchemaObje
   if (required.length) schema.required = required;
   const doc = getDoc(program, model);
   if (doc) schema.description = doc;
+  if (isDeprecated(program, model)) schema.deprecated = true;
   return schema;
 }
 

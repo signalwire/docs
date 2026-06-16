@@ -68,6 +68,24 @@ describe("constraints, defaults, and examples", () => {
   });
 });
 
+describe("@deprecated", () => {
+  it("emits deprecated: true for deprecated properties and models", async () => {
+    const program = await compileModels(`
+      model Foo {
+        #deprecated "use newField"
+        oldField?: string;
+      }
+      #deprecated "use NewModel"
+      model OldModel { x: string; }
+    `);
+    const ns = program.getGlobalNamespaceType();
+    const foo: any = typeToSchema(program, ns.models.get("Foo")!, () => ({}));
+    const old: any = typeToSchema(program, ns.models.get("OldModel")!, () => ({}));
+    strictEqual(foo.properties.oldField.deprecated, true);
+    strictEqual(old.deprecated, true);
+  });
+});
+
 describe("@encode and @encodedName", () => {
   it("decays @encode to the wire type + format and renames via @encodedName", async () => {
     const program = await compileModels(`
