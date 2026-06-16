@@ -165,14 +165,36 @@ function applyConstraints(program: Program, target: Type, schema: AsyncAPISchema
   return out;
 }
 
+/** Property-site metadata: `description`, `default`, `examples`, `deprecated`. */
+function propertyMetadata(program: Program, prop: ModelProperty): AsyncAPISchema {
+  const meta: AsyncAPISchema = {};
+  const doc = getDoc(program, prop);
+  if (doc) meta.description = doc;
+  if (prop.defaultValue) {
+    const def = serializeValueAsJson(program, prop.defaultValue, prop.type);
+    if (def !== undefined) meta.default = def;
+  }
+  const examples = getExamples(program, prop);
+  if (examples.length) {
+    meta.examples = examples.map((e) => serializeValueAsJson(program, e.value, prop.type));
+  }
+  if (isDeprecated(program, prop)) meta.deprecated = true;
+  return meta;
+}
+
 /**
  * Schema for a model property: resolves the type (honoring `@encode`), then layers on
- * description, constraints, `default`, `examples`, and `deprecated`. These are only
- * merged onto inline schemas — a `$ref` ignores sibling keywords in Draft-07.
+ * description, constraints, `default`, `examples`, and `deprecated`. For an inline
+ * schema these merge directly; for a `$ref` (named enum/union/model) Draft-07 ignores
+ * sibling keywords, so the metadata is attached via an `allOf` wrapper — otherwise a
+ * property's description and default would be silently dropped.
  */
 export function propertySchema(program: Program, prop: ModelProperty, ref: RefFn): SchemaOrRef {
   const resolved = encodeSchema(program, prop) ?? schemaForType(program, prop.type, ref);
-  if ("$ref" in resolved) return resolved;
+  if ("$ref" in resolved) {
+    const meta = propertyMetadata(program, prop);
+    return Object.keys(meta).length ? { ...meta, allOf: [resolved] } : resolved;
+  }
 
   let out: AsyncAPISchema = resolved;
   const doc = getDoc(program, prop);

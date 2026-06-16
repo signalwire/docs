@@ -11,12 +11,20 @@ export const Tester = createTester(resolvePath(import.meta.dirname, ".."), {
 
 /** Compile relay tsp and return the emitted AsyncAPI document (parsed) + raw yaml. */
 export async function asyncApiFor(code: string): Promise<{ doc: any; yaml: string }> {
-  const outPath = "{emitter-output-dir}/asyncapi.yaml";
-  const { outputs } = await Tester.compile(code, {
-    compilerOptions: {
-      options: { "@signalwire/typespec-asyncapi": { "output-file": outPath } },
-    },
-  });
+  const { outputs } = await Tester.compile(code);
   const yaml = outputs["asyncapi.yaml"];
   return { doc: parse(yaml), yaml };
+}
+
+/** Compile with a custom `output-file` option; returns the raw outputs map (keyed by file name). */
+export async function outputsFor(
+  code: string,
+  options: Record<string, unknown>,
+): Promise<Record<string, string>> {
+  const { outputs } = await Tester.compile(code, {
+    compilerOptions: {
+      options: { "@signalwire/typespec-asyncapi": options },
+    },
+  });
+  return outputs;
 }

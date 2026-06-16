@@ -282,6 +282,6 @@ export async function $onEmit(context: EmitContext<AsyncAPIEmitterOptions>): Pro
   emitSecurity(program, ns, server, components);
   applyWebSocketBindings(doc, serverCfg.name, channelId);
 
-  const outputFile = resolvePath(context.emitterOutputDir, "asyncapi.yaml");
+  const outputFile = resolvePath(context.emitterOutputDir, context.options["output-file"] ?? "asyncapi.yaml");
   await emitFile(program, { path: outputFile, content: serialize(doc) });
 }

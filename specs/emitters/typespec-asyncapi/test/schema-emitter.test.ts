@@ -108,6 +108,31 @@ describe("@encode and @encodedName", () => {
   });
 });
 
+describe("$ref property metadata", () => {
+  it("attaches description/default to a named-union (enum) property via allOf", async () => {
+    const program = await compileModels(`
+      union Reason { "hangup", "busy" }
+      model Foo {
+        /** Why the call ended. */
+        reason?: Reason = "hangup";
+        plain?: Reason;
+      }
+    `);
+    const reg = createSchemaRegistry(program);
+    const Foo = program.getGlobalNamespaceType().models.get("Foo")!;
+    reg.refFor(Foo);
+    const foo: any = reg.schemas.Foo;
+    // metadata-bearing ref → allOf wrapper preserves description + default
+    deepStrictEqual(foo.properties.reason, {
+      description: "Why the call ended.",
+      default: "hangup",
+      allOf: [{ $ref: "#/components/schemas/Reason" }],
+    });
+    // bare ref with no metadata stays a clean $ref
+    deepStrictEqual(foo.properties.plain, { $ref: "#/components/schemas/Reason" });
+  });
+});
+
 describe("createSchemaRegistry — discriminated inheritance", () => {
   it("emits @discriminator base + extends variants as allOf-inheritance", async () => {
     const program = await compileModels(`

@@ -1,0 +1,1645 @@
+asyncapi: 3.0.0
+info:
+  title: SignalWire Relay — Calling
+  version: 1.0.0
+  description: |-
+    The `calling` service controls voice calls over Relay: dialing, answering,
+    bridging, media playback/collection, recording, detection, AI, and the
+    asynchronous `calling.call.*` events that report call/leg state.
+defaultContentType: application/json
+servers:
+  production:
+    host: relay.signalwire.com
+    protocol: wss
+    pathname: /api/relay/wss
+    description: SignalWire Relay WebSocket endpoint.
+    security:
+      - $ref: "#/components/securitySchemes/httpBearer"
+    bindings:
+      ws: {}
+channels:
+  calling:
+    address: null
+    title: SignalWire Relay — Calling
+    servers:
+      - $ref: "#/servers/production"
+    messages:
+      callingBeginRequest:
+        $ref: "#/components/messages/callingBeginRequest"
+      callingBeginResponse:
+        $ref: "#/components/messages/callingBeginResponse"
+      callingDialRequest:
+        $ref: "#/components/messages/callingDialRequest"
+      callingDialResponse:
+        $ref: "#/components/messages/callingDialResponse"
+      callingAnswerRequest:
+        $ref: "#/components/messages/callingAnswerRequest"
+      callingAnswerResponse:
+        $ref: "#/components/messages/callingAnswerResponse"
+      callingEndRequest:
+        $ref: "#/components/messages/callingEndRequest"
+      callingEndResponse:
+        $ref: "#/components/messages/callingEndResponse"
+      callingConnectRequest:
+        $ref: "#/components/messages/callingConnectRequest"
+      callingConnectResponse:
+        $ref: "#/components/messages/callingConnectResponse"
+      callingDisconnectRequest:
+        $ref: "#/components/messages/callingDisconnectRequest"
+      callingDisconnectResponse:
+        $ref: "#/components/messages/callingDisconnectResponse"
+      callStateEvent:
+        $ref: "#/components/messages/callStateEvent"
+      callReceiveEvent:
+        $ref: "#/components/messages/callReceiveEvent"
+      callConnectEvent:
+        $ref: "#/components/messages/callConnectEvent"
+      callDialEvent:
+        $ref: "#/components/messages/callDialEvent"
+    bindings:
+      ws: {}
+operations:
+  callingBegin:
+    action: send
+    channel:
+      $ref: "#/channels/calling"
+    title: calling.begin
+    summary: (Deprecated) Make an outbound call to a single device
+    messages:
+      - $ref: "#/channels/calling/messages/callingBeginRequest"
+    reply:
+      channel:
+        $ref: "#/channels/calling"
+      messages:
+        - $ref: "#/channels/calling/messages/callingBeginResponse"
+  callingDial:
+    action: send
+    channel:
+      $ref: "#/channels/calling"
+    title: calling.dial
+    summary: Dial outbound call(s); first to answer wins
+    messages:
+      - $ref: "#/channels/calling/messages/callingDialRequest"
+    reply:
+      channel:
+        $ref: "#/channels/calling"
+      messages:
+        - $ref: "#/channels/calling/messages/callingDialResponse"
+  callingAnswer:
+    action: send
+    channel:
+      $ref: "#/channels/calling"
+    title: calling.answer
+    summary: Answer an incoming call
+    messages:
+      - $ref: "#/channels/calling/messages/callingAnswerRequest"
+    reply:
+      channel:
+        $ref: "#/channels/calling"
+      messages:
+        - $ref: "#/channels/calling/messages/callingAnswerResponse"
+  callingEnd:
+    action: send
+    channel:
+      $ref: "#/channels/calling"
+    title: calling.end
+    summary: End a call
+    messages:
+      - $ref: "#/channels/calling/messages/callingEndRequest"
+    reply:
+      channel:
+        $ref: "#/channels/calling"
+      messages:
+        - $ref: "#/channels/calling/messages/callingEndResponse"
+  callingConnect:
+    action: send
+    channel:
+      $ref: "#/channels/calling"
+    title: calling.connect
+    summary: Connect a device to an active call
+    messages:
+      - $ref: "#/channels/calling/messages/callingConnectRequest"
+    reply:
+      channel:
+        $ref: "#/channels/calling"
+      messages:
+        - $ref: "#/channels/calling/messages/callingConnectResponse"
+  callingDisconnect:
+    action: send
+    channel:
+      $ref: "#/channels/calling"
+    title: calling.disconnect
+    summary: Disconnect connected legs without hanging up
+    messages:
+      - $ref: "#/channels/calling/messages/callingDisconnectRequest"
+    reply:
+      channel:
+        $ref: "#/channels/calling"
+      messages:
+        - $ref: "#/channels/calling/messages/callingDisconnectResponse"
+  onCallingEvent:
+    action: receive
+    channel:
+      $ref: "#/channels/calling"
+    title: signalwire.event
+    summary: Asynchronous events pushed by the server over the signalwire.event carrier.
+    messages:
+      - $ref: "#/channels/calling/messages/callStateEvent"
+      - $ref: "#/channels/calling/messages/callReceiveEvent"
+      - $ref: "#/channels/calling/messages/callConnectEvent"
+      - $ref: "#/channels/calling/messages/callDialEvent"
+components:
+  schemas:
+    BeginParams:
+      type: object
+      properties:
+        tag:
+          type: string
+          description: Identifier added to all call events.
+        region:
+          type: string
+          description: Region to originate from (account/device default if unset).
+        device:
+          description: The single device to call (only `phone` is documented for this method).
+          allOf:
+            - $ref: "#/components/schemas/DialDevice"
+      required:
+        - device
+    DialDevice:
+      type: object
+      properties:
+        type:
+          type: string
+      required:
+        - type
+      description: A device to dial (`calling.dial` / `calling.begin`). Discriminated on `type`.
+      discriminator: type
+    DialPhoneDevice:
+      allOf:
+        - $ref: "#/components/schemas/DialDevice"
+        - type: object
+          properties:
+            type:
+              type: string
+              const: phone
+            params:
+              $ref: "#/components/schemas/PhoneDeviceParams"
+          required:
+            - type
+            - params
+    PhoneDeviceParams:
+      type: object
+      properties:
+        from_number:
+          type: string
+          description: Origination number, E.164.
+        to_number:
+          type: string
+          description: Destination number, E.164.
+        timeout:
+          type: integer
+          format: int32
+          description: Seconds to ring before giving up.
+          minimum: 0
+          default: 30
+        max_duration:
+          type: integer
+          format: int32
+          description: Maximum call duration in seconds.
+          minimum: 0
+        call_state_url:
+          type: string
+          format: uri
+          description: Webhook to receive call-state events for this leg.
+        call_state_events:
+          type: array
+          items:
+            $ref: "#/components/schemas/CallStateEventName"
+          description: Which call states to deliver to `call_state_url`. Default `["ended"]`.
+        confirm:
+          description: |-
+            A confirmation prompt to require before bridging: a SWML URL string or an
+            inline compact SWML document. (Modeled loosely — SWML is documented
+            separately.)
+      required:
+        - from_number
+        - to_number
+      description: "`phone` device params."
+    CallStateEventName:
+      type: string
+      enum:
+        - created
+        - ringing
+        - answered
+        - ended
+    DialSipDevice:
+      allOf:
+        - $ref: "#/components/schemas/DialDevice"
+        - type: object
+          properties:
+            type:
+              type: string
+              const: sip
+            params:
+              $ref: "#/components/schemas/SipDeviceParams"
+          required:
+            - type
+            - params
+    SipDeviceParams:
+      type: object
+      properties:
+        from:
+          type: string
+          description: Origination SIP URI / address.
+        from_name:
+          type: string
+          description: Caller name to present.
+        to:
+          type: string
+          description: Destination SIP URI / address.
+        timeout:
+          type: integer
+          format: int32
+          description: Seconds to ring before giving up.
+          minimum: 0
+          default: 30
+        max_duration:
+          type: integer
+          format: int32
+          description: Maximum call duration in seconds.
+          minimum: 0
+        headers:
+          type: array
+          items:
+            $ref: "#/components/schemas/SipHeader"
+          description: Custom `X-` SIP headers.
+        codecs:
+          type: array
+          items:
+            $ref: "#/components/schemas/SipCodec"
+          description: Negotiable codecs (SignalWire-picked if unset).
+        webrtc_media:
+          type: boolean
+          description: Use WebRTC media for this leg.
+        call_state_url:
+          type: string
+          format: uri
+          description: Webhook to receive call-state events for this leg.
+        call_state_events:
+          type: array
+          items:
+            $ref: "#/components/schemas/CallStateEventName"
+          description: Which call states to deliver to `call_state_url`. Default `["ended"]`.
+        confirm:
+          description: A confirmation prompt (SWML URL or inline SWML).
+      required:
+        - from
+        - to
+      description: "`sip` device params."
+    SipHeader:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Header name (must start with `X-`).
+        value:
+          type: string
+          description: Header value.
+      required:
+        - name
+        - value
+      description: A SIP header. Only `X-`-prefixed custom headers are permitted.
+    SipCodec:
+      type: string
+      enum:
+        - PCMU
+        - PCMA
+        - OPUS
+        - G729
+        - G722
+        - VP8
+        - H264
+    DialWebrtcDevice:
+      allOf:
+        - $ref: "#/components/schemas/DialDevice"
+        - type: object
+          properties:
+            type:
+              type: string
+              const: webrtc
+            params:
+              $ref: "#/components/schemas/WebrtcDeviceParams"
+          required:
+            - type
+            - params
+    WebrtcDeviceParams:
+      type: object
+      properties:
+        from:
+          type: string
+          description: Origination — E.164 or a registered endpoint URI.
+        to:
+          type: string
+          description: Destination — a WebRTC endpoint URI / resource name.
+        timeout:
+          type: integer
+          format: int32
+          description: Seconds to ring before giving up.
+          minimum: 0
+          default: 30
+        max_duration:
+          type: integer
+          format: int32
+          description: Maximum call duration in seconds.
+          minimum: 0
+        codecs:
+          type: array
+          items:
+            $ref: "#/components/schemas/WebrtcCodec"
+          description: Negotiable codecs (SignalWire-picked if unset).
+        call_state_url:
+          type: string
+          format: uri
+          description: Webhook to receive call-state events for this leg.
+        call_state_events:
+          type: array
+          items:
+            $ref: "#/components/schemas/CallStateEventName"
+          description: Which call states to deliver to `call_state_url`. Default `["ended"]`.
+        confirm:
+          description: A confirmation prompt (SWML URL or inline SWML).
+      required:
+        - from
+        - to
+      description: "`webrtc` device params."
+    WebrtcCodec:
+      type: string
+      enum:
+        - PCMU
+        - PCMA
+        - OPUS
+        - VP8
+        - H264
+    CallingBeginRequest:
+      type: object
+      required:
+        - jsonrpc
+        - id
+        - method
+        - params
+      properties:
+        jsonrpc:
+          type: string
+          const: "2.0"
+        id:
+          type: string
+          format: uuid
+        method:
+          type: string
+          const: calling.begin
+        params:
+          $ref: "#/components/schemas/BeginParams"
+    BeginResult:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+        message:
+          type: string
+          description: Human-readable result message.
+        call_id:
+          type: string
+          description: The created call id.
+        node_id:
+          type: string
+          description: Node the call is on.
+      required:
+        - code
+        - message
+    CallingBeginResponse:
+      type: object
+      required:
+        - jsonrpc
+        - id
+      properties:
+        jsonrpc:
+          type: string
+          const: "2.0"
+        id:
+          type: string
+          format: uuid
+        result:
+          $ref: "#/components/schemas/BeginResult"
+    DialParams:
+      type: object
+      properties:
+        tag:
+          type: string
+          description: Identifier added to all call and dial events.
+        region:
+          type: string
+          description: Region to originate from.
+        devices:
+          type: array
+          items:
+            type: array
+            items:
+              $ref: "#/components/schemas/DialDevice"
+          description: |-
+            Devices to dial. The outer array is sequential ringing groups; the inner
+            array is simultaneous (parallel) dials within a group. The first device to
+            answer wins.
+        max_price_per_minute:
+          type: number
+          format: double
+          description: Maximum price per minute willing to be paid.
+      required:
+        - tag
+        - devices
+    CallingDialRequest:
+      type: object
+      required:
+        - jsonrpc
+        - id
+        - method
+        - params
+      properties:
+        jsonrpc:
+          type: string
+          const: "2.0"
+        id:
+          type: string
+          format: uuid
+        method:
+          type: string
+          const: calling.dial
+        params:
+          $ref: "#/components/schemas/DialParams"
+    DialResult:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+        message:
+          type: string
+          description: Human-readable result message.
+      required:
+        - code
+        - message
+    CallingDialResponse:
+      type: object
+      required:
+        - jsonrpc
+        - id
+      properties:
+        jsonrpc:
+          type: string
+          const: "2.0"
+        id:
+          type: string
+          format: uuid
+        result:
+          $ref: "#/components/schemas/DialResult"
+    AnswerParams:
+      type: object
+      properties:
+        node_id:
+          type: string
+          description: Node the call is on.
+        call_id:
+          type: string
+          description: The call id.
+        codecs:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnswerCodec"
+          description: |-
+            Codecs to negotiate (SignalWire-picked if unset). If a listed codec is
+            unsupported by the call type the request fails with `"400"`.
+      required:
+        - node_id
+        - call_id
+    AnswerCodec:
+      type: string
+      enum:
+        - PCMU
+        - PCMA
+        - OPUS
+        - G729
+        - G722
+        - AMR-WB
+        - VP8
+        - H264
+    CallingAnswerRequest:
+      type: object
+      required:
+        - jsonrpc
+        - id
+        - method
+        - params
+      properties:
+        jsonrpc:
+          type: string
+          const: "2.0"
+        id:
+          type: string
+          format: uuid
+        method:
+          type: string
+          const: calling.answer
+        params:
+          $ref: "#/components/schemas/AnswerParams"
+    AnswerResult:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+        message:
+          type: string
+          description: Human-readable result message.
+      required:
+        - code
+        - message
+    CallingAnswerResponse:
+      type: object
+      required:
+        - jsonrpc
+        - id
+      properties:
+        jsonrpc:
+          type: string
+          const: "2.0"
+        id:
+          type: string
+          format: uuid
+        result:
+          $ref: "#/components/schemas/AnswerResult"
+    EndParams:
+      type: object
+      properties:
+        node_id:
+          type: string
+          description: Node the call is on.
+        call_id:
+          type: string
+          description: The call id.
+        reason:
+          description: Why the call is ending.
+          default: hangup
+          allOf:
+            - $ref: "#/components/schemas/CallEndReason"
+      required:
+        - node_id
+        - call_id
+    CallEndReason:
+      type: string
+      enum:
+        - hangup
+        - cancel
+        - busy
+        - noAnswer
+        - decline
+        - error
+    CallingEndRequest:
+      type: object
+      required:
+        - jsonrpc
+        - id
+        - method
+        - params
+      properties:
+        jsonrpc:
+          type: string
+          const: "2.0"
+        id:
+          type: string
+          format: uuid
+        method:
+          type: string
+          const: calling.end
+        params:
+          $ref: "#/components/schemas/EndParams"
+    EndResult:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+        message:
+          type: string
+          description: Human-readable result message.
+      required:
+        - code
+        - message
+    CallingEndResponse:
+      type: object
+      required:
+        - jsonrpc
+        - id
+      properties:
+        jsonrpc:
+          type: string
+          const: "2.0"
+        id:
+          type: string
+          format: uuid
+        result:
+          $ref: "#/components/schemas/EndResult"
+    ConnectParams:
+      type: object
+      properties:
+        node_id:
+          type: string
+          description: Node the call is on.
+        call_id:
+          type: string
+          description: The call id.
+        ringback:
+          type: array
+          items:
+            $ref: "#/components/schemas/Ringback"
+          description: Audio to play to the caller while connecting.
+        tag:
+          type: string
+          description: Identifier added to created calls' events.
+        devices:
+          type: array
+          items:
+            type: array
+            items:
+              $ref: "#/components/schemas/ConnectDevice"
+          description: Devices to connect. Same sequential/parallel topology as `calling.dial`.
+        max_duration:
+          type: integer
+          format: int32
+          description: Maximum duration once connected, in MINUTES.
+        max_price_per_minute:
+          type: number
+          format: double
+          description: Maximum price per minute willing to be paid.
+        status_url:
+          type: string
+          format: uri
+          description: URL to POST connect events to.
+      required:
+        - node_id
+        - call_id
+        - devices
+    Ringback:
+      type: object
+      properties:
+        type:
+          type: string
+      required:
+        - type
+      description: Audio played to the caller while a connect is in progress. Discriminated on `type`.
+      discriminator: type
+    RingbackAudio:
+      allOf:
+        - $ref: "#/components/schemas/Ringback"
+        - type: object
+          properties:
+            type:
+              type: string
+              const: audio
+            params:
+              type: object
+              properties:
+                url:
+                  type: string
+                  format: uri
+                  description: Audio file URL.
+              required:
+                - url
+          required:
+            - type
+            - params
+    RingbackTts:
+      allOf:
+        - $ref: "#/components/schemas/Ringback"
+        - type: object
+          properties:
+            type:
+              type: string
+              const: tts
+            params:
+              type: object
+              properties:
+                text:
+                  type: string
+                  description: Text to speak (plain or SSML).
+                language:
+                  type: string
+                  description: TTS language.
+                  default: en-US
+                gender:
+                  description: TTS voice gender.
+                  default: female
+                  allOf:
+                    - $ref: "#/components/schemas/TtsGender"
+              required:
+                - text
+          required:
+            - type
+            - params
+    TtsGender:
+      type: string
+      enum:
+        - male
+        - female
+    RingbackSilence:
+      allOf:
+        - $ref: "#/components/schemas/Ringback"
+        - type: object
+          properties:
+            type:
+              type: string
+              const: silence
+            params:
+              type: object
+              properties:
+                duration:
+                  type: number
+                  format: double
+                  description: Seconds of silence.
+              required:
+                - duration
+          required:
+            - type
+            - params
+    RingbackRingtone:
+      allOf:
+        - $ref: "#/components/schemas/Ringback"
+        - type: object
+          properties:
+            type:
+              type: string
+              const: ringtone
+            params:
+              type: object
+              properties:
+                name:
+                  description: Tone name (country code).
+                  allOf:
+                    - $ref: "#/components/schemas/ToneName"
+                duration:
+                  type: number
+                  format: double
+                  description: Seconds to play.
+                  exclusiveMinimum: 0
+              required:
+                - name
+          required:
+            - type
+            - params
+    ToneName:
+      type: string
+      enum:
+        - at
+        - au
+        - bg
+        - br
+        - be
+        - ch
+        - cl
+        - cn
+        - cz
+        - de
+        - dk
+        - ee
+        - es
+        - fi
+        - fr
+        - gr
+        - hu
+        - il
+        - in
+        - it
+        - lt
+        - jp
+        - mx
+        - my
+        - nl
+        - no
+        - nz
+        - ph
+        - pl
+        - pt
+        - ru
+        - se
+        - sg
+        - th
+        - uk
+        - us
+        - tw
+        - ve
+        - za
+    ConnectDevice:
+      type: object
+      properties:
+        type:
+          type: string
+      required:
+        - type
+      description: A device to connect to an active call (`calling.connect`). Discriminated on `type`.
+      discriminator: type
+    ConnectCallDevice:
+      allOf:
+        - $ref: "#/components/schemas/ConnectDevice"
+        - type: object
+          properties:
+            type:
+              type: string
+              const: call
+            params:
+              $ref: "#/components/schemas/CallRefDeviceParams"
+          required:
+            - type
+            - params
+    CallRefDeviceParams:
+      type: object
+      properties:
+        node_id:
+          type: string
+          description: Node of the existing call.
+        call_id:
+          type: string
+          description: Existing call id.
+      required:
+        - node_id
+        - call_id
+      description: "`call` device params (connect only) — bridge to an existing call."
+    ConnectQueueDevice:
+      allOf:
+        - $ref: "#/components/schemas/ConnectDevice"
+        - type: object
+          properties:
+            type:
+              type: string
+              const: queue
+            params:
+              $ref: "#/components/schemas/QueueDeviceParams"
+          required:
+            - type
+            - params
+    QueueDeviceParams:
+      type: object
+      properties:
+        node_id:
+          type: string
+          description: Node of the queue.
+        queue_name:
+          type: string
+          description: Queue name.
+        queue_id:
+          type: string
+          description: Queue id.
+      required:
+        - node_id
+        - queue_name
+      description: "`queue` device params (connect only) — pull a call from a queue."
+    ConnectPhoneDevice:
+      allOf:
+        - $ref: "#/components/schemas/ConnectDevice"
+        - type: object
+          properties:
+            type:
+              type: string
+              const: phone
+            params:
+              $ref: "#/components/schemas/PhoneDeviceParams"
+          required:
+            - type
+            - params
+    ConnectSipDevice:
+      allOf:
+        - $ref: "#/components/schemas/ConnectDevice"
+        - type: object
+          properties:
+            type:
+              type: string
+              const: sip
+            params:
+              $ref: "#/components/schemas/SipDeviceParams"
+          required:
+            - type
+            - params
+    ConnectWebrtcDevice:
+      allOf:
+        - $ref: "#/components/schemas/ConnectDevice"
+        - type: object
+          properties:
+            type:
+              type: string
+              const: webrtc
+            params:
+              $ref: "#/components/schemas/WebrtcDeviceParams"
+          required:
+            - type
+            - params
+    ConnectStreamDevice:
+      allOf:
+        - $ref: "#/components/schemas/ConnectDevice"
+        - type: object
+          properties:
+            type:
+              type: string
+              const: stream
+            params:
+              $ref: "#/components/schemas/StreamDeviceParams"
+          required:
+            - type
+            - params
+    StreamDeviceParams:
+      type: object
+      properties:
+        url:
+          type: string
+          format: uri
+          description: Stream target — `wss://` required.
+        name:
+          type: string
+          description: Optional stream name.
+        codec:
+          type: string
+          description: |-
+            Codec, optionally with rate/ptime modifiers (e.g. `PCMU@40i`,
+            `L16@24000h@40i`). One of `PCMU|PCMA|G722|L16`. Default `PCMU`.
+          default: PCMU
+        status_url:
+          type: string
+          format: uri
+          description: Webhook for stream status.
+        status_url_method:
+          type: string
+          enum:
+            - GET
+            - POST
+          description: HTTP method for `status_url`.
+          default: POST
+        realtime:
+          type: boolean
+          description: Stream realtime audio.
+          default: false
+        authorization_bearer_token:
+          type: string
+          description: Bearer token sent to the stream endpoint.
+        custom_parameters:
+          type: object
+          additionalProperties: {}
+          description: Arbitrary custom parameters forwarded to the stream endpoint.
+      required:
+        - url
+      description: "`stream` device params (connect only) — bidirectional audio to a WS endpoint."
+    CallingConnectRequest:
+      type: object
+      required:
+        - jsonrpc
+        - id
+        - method
+        - params
+      properties:
+        jsonrpc:
+          type: string
+          const: "2.0"
+        id:
+          type: string
+          format: uuid
+        method:
+          type: string
+          const: calling.connect
+        params:
+          $ref: "#/components/schemas/ConnectParams"
+    ConnectResult:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+        message:
+          type: string
+          description: Human-readable result message.
+      required:
+        - code
+        - message
+    CallingConnectResponse:
+      type: object
+      required:
+        - jsonrpc
+        - id
+      properties:
+        jsonrpc:
+          type: string
+          const: "2.0"
+        id:
+          type: string
+          format: uuid
+        result:
+          $ref: "#/components/schemas/ConnectResult"
+    DisconnectParams:
+      type: object
+      properties:
+        node_id:
+          type: string
+          description: Node the call is on.
+        call_id:
+          type: string
+          description: The call id.
+      required:
+        - node_id
+        - call_id
+    CallingDisconnectRequest:
+      type: object
+      required:
+        - jsonrpc
+        - id
+        - method
+        - params
+      properties:
+        jsonrpc:
+          type: string
+          const: "2.0"
+        id:
+          type: string
+          format: uuid
+        method:
+          type: string
+          const: calling.disconnect
+        params:
+          $ref: "#/components/schemas/DisconnectParams"
+    DisconnectResult:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+        message:
+          type: string
+          description: Human-readable result message.
+      required:
+        - code
+        - message
+    CallingDisconnectResponse:
+      type: object
+      required:
+        - jsonrpc
+        - id
+      properties:
+        jsonrpc:
+          type: string
+          const: "2.0"
+        id:
+          type: string
+          format: uuid
+        result:
+          $ref: "#/components/schemas/DisconnectResult"
+    CallStateEvent:
+      type: object
+      properties:
+        node_id:
+          type: string
+          description: Node the call is on.
+        call_id:
+          type: string
+          description: The call id.
+        tag:
+          type: string
+          description: Identifier set on the originating dial/connect.
+        device:
+          description: The negotiated device for this call.
+          allOf:
+            - $ref: "#/components/schemas/CallDevice"
+        parent:
+          description: The parent call, when this call was created by another.
+          allOf:
+            - $ref: "#/components/schemas/CallParentRef"
+        peer:
+          description: The peer call, when bridged.
+          allOf:
+            - $ref: "#/components/schemas/CallPeerRef"
+        call_state:
+          description: The new call state.
+          allOf:
+            - $ref: "#/components/schemas/CallState"
+        start_time:
+          type: integer
+          format: int64
+          description: Epoch milliseconds the call started.
+        answer_time:
+          type: integer
+          format: int64
+          description: Epoch milliseconds the call was answered.
+        end_time:
+          type: integer
+          format: int64
+          description: Epoch milliseconds the call ended.
+        created_by:
+          type: string
+          enum:
+            - dial
+            - connect
+            - receive
+          description: What created this call.
+      required:
+        - node_id
+        - call_id
+        - call_state
+      description: A change in state of an active Relay-controlled call.
+    CallDevice:
+      type: object
+      properties:
+        type:
+          type: string
+      required:
+        - type
+      discriminator: type
+    CallPhoneDevice:
+      allOf:
+        - $ref: "#/components/schemas/CallDevice"
+        - type: object
+          properties:
+            type:
+              type: string
+              const: phone
+            params:
+              type: object
+              properties:
+                from_number:
+                  type: string
+                  description: Origination number, E.164.
+                to_number:
+                  type: string
+                  description: Destination number, E.164.
+              required:
+                - from_number
+                - to_number
+          required:
+            - type
+            - params
+    CallSipDevice:
+      allOf:
+        - $ref: "#/components/schemas/CallDevice"
+        - type: object
+          properties:
+            type:
+              type: string
+              const: sip
+            params:
+              type: object
+              properties:
+                from:
+                  type: string
+                  description: Origination SIP address.
+                to:
+                  type: string
+                  description: Destination SIP address.
+                headers:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/SipHeader"
+                  description: Custom `X-` SIP headers.
+              required:
+                - from
+                - to
+          required:
+            - type
+            - params
+    CallWebrtcDevice:
+      allOf:
+        - $ref: "#/components/schemas/CallDevice"
+        - type: object
+          properties:
+            type:
+              type: string
+              const: webrtc
+            params:
+              type: object
+              additionalProperties: {}
+              description: WebRTC device params (shapes not documented in the protocol reference).
+          required:
+            - type
+            - params
+    CallParentRef:
+      type: object
+      properties:
+        node_id:
+          type: string
+        call_id:
+          type: string
+        device_type:
+          type: string
+          description: The parent device type (flattened, e.g. `sip`).
+      description: A parent call referenced by a state event.
+    CallPeerRef:
+      type: object
+      properties:
+        node_id:
+          type: string
+        call_id:
+          type: string
+      description: A peer call referenced by an event.
+    CallState:
+      type: string
+      enum:
+        - created
+        - ringing
+        - answered
+        - ending
+        - ended
+    CallStateEventFrame:
+      type: object
+      required:
+        - jsonrpc
+        - method
+        - id
+        - params
+      properties:
+        jsonrpc:
+          type: string
+          const: "2.0"
+        method:
+          type: string
+          const: signalwire.event
+        id:
+          type: string
+          format: uuid
+        params:
+          type: object
+          required:
+            - event_type
+            - params
+          properties:
+            event_type:
+              type: string
+              const: calling.call.state
+            event_channel:
+              type: string
+            timestamp:
+              type: number
+            space_id:
+              type: string
+            project_id:
+              type: string
+            params:
+              $ref: "#/components/schemas/CallStateEvent"
+    CallReceiveEvent:
+      type: object
+      properties:
+        node_id:
+          type: string
+          description: Node the call is on.
+        call_id:
+          type: string
+          description: The call id.
+        call_state:
+          description: State of the inbound call.
+          allOf:
+            - $ref: "#/components/schemas/ReceiveCallState"
+        context:
+          type: string
+          description: Routing context the call arrived on (e.g. `pbx`).
+        device:
+          description: The inbound device.
+          allOf:
+            - $ref: "#/components/schemas/CallDevice"
+      required:
+        - node_id
+        - call_id
+        - call_state
+        - device
+      description: An incoming call available for a Relay client to control.
+    ReceiveCallState:
+      type: string
+      enum:
+        - created
+        - connecting
+        - connected
+        - disconnecting
+        - disconnected
+    CallReceiveEventFrame:
+      type: object
+      required:
+        - jsonrpc
+        - method
+        - id
+        - params
+      properties:
+        jsonrpc:
+          type: string
+          const: "2.0"
+        method:
+          type: string
+          const: signalwire.event
+        id:
+          type: string
+          format: uuid
+        params:
+          type: object
+          required:
+            - event_type
+            - params
+          properties:
+            event_type:
+              type: string
+              const: calling.call.receive
+            event_channel:
+              type: string
+            timestamp:
+              type: number
+            space_id:
+              type: string
+            project_id:
+              type: string
+            params:
+              $ref: "#/components/schemas/CallReceiveEvent"
+    CallConnectEvent:
+      type: object
+      properties:
+        node_id:
+          type: string
+          description: Node the call is on.
+        call_id:
+          type: string
+          description: The call id.
+        tag:
+          type: string
+          description: Identifier of the connect operation.
+        peer:
+          description: The peer call being connected.
+          allOf:
+            - $ref: "#/components/schemas/ConnectPeer"
+        connect_state:
+          type: string
+          enum:
+            - disconnected
+            - connecting
+            - connected
+            - failed
+          description: The connect (bridge) state.
+      required:
+        - node_id
+        - call_id
+        - peer
+        - connect_state
+      description: A call's connect (bridge/unbridge) state.
+    ConnectPeer:
+      type: object
+      properties:
+        node_id:
+          type: string
+        call_id:
+          type: string
+        tag:
+          type: string
+        queue_id:
+          type: string
+        queue_name:
+          type: string
+        device:
+          description: The peer's negotiated device.
+          allOf:
+            - $ref: "#/components/schemas/CallDevice"
+      description: The peer leg in a connect event.
+    CallConnectEventFrame:
+      type: object
+      required:
+        - jsonrpc
+        - method
+        - id
+        - params
+      properties:
+        jsonrpc:
+          type: string
+          const: "2.0"
+        method:
+          type: string
+          const: signalwire.event
+        id:
+          type: string
+          format: uuid
+        params:
+          type: object
+          required:
+            - event_type
+            - params
+          properties:
+            event_type:
+              type: string
+              const: calling.call.connect
+            event_channel:
+              type: string
+            timestamp:
+              type: number
+            space_id:
+              type: string
+            project_id:
+              type: string
+            params:
+              $ref: "#/components/schemas/CallConnectEvent"
+    CallDialEvent:
+      type: object
+      properties:
+        node_id:
+          type: string
+          description: Node the dial is on.
+        tag:
+          type: string
+          description: Identifier from `calling.dial`.
+        dial_state:
+          type: string
+          enum:
+            - dialing
+            - answered
+            - failed
+          description: The dial operation state.
+        call:
+          description: The answered call (present when `dial_state` is `answered`).
+          allOf:
+            - $ref: "#/components/schemas/DialWinnerCall"
+      required:
+        - node_id
+        - tag
+        - dial_state
+      description: The state of a `calling.dial` operation.
+    DialWinnerCall:
+      type: object
+      properties:
+        node_id:
+          type: string
+        call_id:
+          type: string
+        tag:
+          type: string
+        device:
+          description: The negotiated device.
+          allOf:
+            - $ref: "#/components/schemas/CallDevice"
+        dial_winner:
+          type: boolean
+          description: Whether this call is the selected (first-answered) winner.
+      description: The answered call carried by a `calling.call.dial` event.
+    CallDialEventFrame:
+      type: object
+      required:
+        - jsonrpc
+        - method
+        - id
+        - params
+      properties:
+        jsonrpc:
+          type: string
+          const: "2.0"
+        method:
+          type: string
+          const: signalwire.event
+        id:
+          type: string
+          format: uuid
+        params:
+          type: object
+          required:
+            - event_type
+            - params
+          properties:
+            event_type:
+              type: string
+              const: calling.call.dial
+            event_channel:
+              type: string
+            timestamp:
+              type: number
+            space_id:
+              type: string
+            project_id:
+              type: string
+            params:
+              $ref: "#/components/schemas/CallDialEvent"
+  messages:
+    callingBeginRequest:
+      name: calling.begin.request
+      title: calling.begin request
+      contentType: application/json
+      correlationId:
+        location: $message.payload#/id
+      payload:
+        $ref: "#/components/schemas/CallingBeginRequest"
+    callingBeginResponse:
+      name: calling.begin.response
+      title: calling.begin response
+      contentType: application/json
+      correlationId:
+        location: $message.payload#/id
+      payload:
+        $ref: "#/components/schemas/CallingBeginResponse"
+    callingDialRequest:
+      name: calling.dial.request
+      title: calling.dial request
+      contentType: application/json
+      correlationId:
+        location: $message.payload#/id
+      payload:
+        $ref: "#/components/schemas/CallingDialRequest"
+    callingDialResponse:
+      name: calling.dial.response
+      title: calling.dial response
+      contentType: application/json
+      correlationId:
+        location: $message.payload#/id
+      payload:
+        $ref: "#/components/schemas/CallingDialResponse"
+    callingAnswerRequest:
+      name: calling.answer.request
+      title: calling.answer request
+      contentType: application/json
+      correlationId:
+        location: $message.payload#/id
+      payload:
+        $ref: "#/components/schemas/CallingAnswerRequest"
+    callingAnswerResponse:
+      name: calling.answer.response
+      title: calling.answer response
+      contentType: application/json
+      correlationId:
+        location: $message.payload#/id
+      payload:
+        $ref: "#/components/schemas/CallingAnswerResponse"
+    callingEndRequest:
+      name: calling.end.request
+      title: calling.end request
+      contentType: application/json
+      correlationId:
+        location: $message.payload#/id
+      payload:
+        $ref: "#/components/schemas/CallingEndRequest"
+    callingEndResponse:
+      name: calling.end.response
+      title: calling.end response
+      contentType: application/json
+      correlationId:
+        location: $message.payload#/id
+      payload:
+        $ref: "#/components/schemas/CallingEndResponse"
+    callingConnectRequest:
+      name: calling.connect.request
+      title: calling.connect request
+      contentType: application/json
+      correlationId:
+        location: $message.payload#/id
+      payload:
+        $ref: "#/components/schemas/CallingConnectRequest"
+    callingConnectResponse:
+      name: calling.connect.response
+      title: calling.connect response
+      contentType: application/json
+      correlationId:
+        location: $message.payload#/id
+      payload:
+        $ref: "#/components/schemas/CallingConnectResponse"
+    callingDisconnectRequest:
+      name: calling.disconnect.request
+      title: calling.disconnect request
+      contentType: application/json
+      correlationId:
+        location: $message.payload#/id
+      payload:
+        $ref: "#/components/schemas/CallingDisconnectRequest"
+    callingDisconnectResponse:
+      name: calling.disconnect.response
+      title: calling.disconnect response
+      contentType: application/json
+      correlationId:
+        location: $message.payload#/id
+      payload:
+        $ref: "#/components/schemas/CallingDisconnectResponse"
+    callStateEvent:
+      name: calling.call.state
+      title: calling.call.state event
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/CallStateEventFrame"
+    callReceiveEvent:
+      name: calling.call.receive
+      title: calling.call.receive event
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/CallReceiveEventFrame"
+    callConnectEvent:
+      name: calling.call.connect
+      title: calling.call.connect event
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/CallConnectEventFrame"
+    callDialEvent:
+      name: calling.call.dial
+      title: calling.call.dial event
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/CallDialEventFrame"
+  securitySchemes:
+    httpBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
