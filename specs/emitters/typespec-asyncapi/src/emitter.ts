@@ -12,7 +12,7 @@ import {
 import { applyWebSocketBindings } from "./bindings/ws.js";
 import { getBearerAuth, getChannel, getEvent, getRpcMethod, getServer } from "./decorators.js";
 import { AsyncAPIEmitterOptions, reportDiagnostic } from "./lib.js";
-import { createSchemaRegistry, RefFn } from "./schema-emitter.js";
+import { createSchemaRegistry, propertySchema, RefFn } from "./schema-emitter.js";
 import { serialize } from "./serialize.js";
 import { AsyncAPI3Document, SchemaObject } from "./types.js";
 
@@ -42,10 +42,7 @@ function paramsSchema(program: Program, op: Operation, ref: RefFn): SchemaObject
   const properties: Record<string, SchemaObject> = {};
   const required: string[] = [];
   for (const [name, prop] of params.properties) {
-    let s = ref(prop.type);
-    const doc = getDoc(program, prop);
-    if (doc) s = { ...s, description: doc };
-    properties[name] = s;
+    properties[name] = propertySchema(program, prop, ref);
     if (!prop.optional) required.push(name);
   }
   const schema: SchemaObject = { type: "object", properties };

@@ -1,10 +1,23 @@
 import {
   getDiscriminator,
   getDoc,
+  getExamples,
+  getFormat,
+  getMaxItems,
+  getMaxLength,
+  getMaxValue,
+  getMaxValueExclusive,
+  getMinItems,
+  getMinLength,
+  getMinValue,
+  getMinValueExclusive,
+  getPattern,
+  isSecret,
   Model,
   ModelProperty,
   Program,
   Scalar,
+  serializeValueAsJson,
   Type,
 } from "@typespec/compiler";
 import { SchemaObject } from "./types.js";
@@ -80,21 +93,59 @@ function schemaForType(program: Program, t: Type, ref: RefFn): SchemaObject {
 }
 
 /**
- * Build an inline object schema from a model's OWN properties.
- *
- * NOTE: JSON-Schema constraints (`@minValue`/`@maxValue`/`@minLength`/`@maxLength`/
- * `@pattern`/`@format`) and property `default`s are intentionally NOT emitted yet —
- * out of scope for the current Relay slice. Adding them (via the compiler's
- * get* helpers + `ModelProperty.defaultValue`) is a documented follow-up.
+ * Merge JSON-Schema validation keywords from a target's TypeSpec constraint
+ * decorators (`@minValue`/`@maxValue`/`@minValueExclusive`/`@maxValueExclusive`/
+ * `@minLength`/`@maxLength`/`@minItems`/`@maxItems`/`@pattern`/`@format`/`@secret`).
+ * AsyncAPI 3.0's Schema Object is a JSON-Schema Draft-07 superset, so these are valid.
  */
+function applyConstraints(program: Program, target: Type, schema: SchemaObject): SchemaObject {
+  const out: SchemaObject = { ...schema };
+  const set = (k: string, v: unknown) => {
+    if (v !== undefined) out[k] = v;
+  };
+  set("minimum", getMinValue(program, target));
+  set("maximum", getMaxValue(program, target));
+  set("exclusiveMinimum", getMinValueExclusive(program, target));
+  set("exclusiveMaximum", getMaxValueExclusive(program, target));
+  set("minLength", getMinLength(program, target));
+  set("maxLength", getMaxLength(program, target));
+  set("minItems", getMinItems(program, target));
+  set("maxItems", getMaxItems(program, target));
+  set("pattern", getPattern(program, target));
+  set("format", getFormat(program, target));
+  if (out.format === undefined && isSecret(program, target)) out.format = "password";
+  return out;
+}
+
+/**
+ * Schema for a model property: resolves the type, then layers on description,
+ * constraints, `default`, and `examples`. Constraints/default/examples are only
+ * merged onto inline schemas — a `$ref` ignores sibling keywords in Draft-07.
+ */
+export function propertySchema(program: Program, prop: ModelProperty, ref: RefFn): SchemaObject {
+  let s = schemaForType(program, prop.type, ref);
+  const doc = getDoc(program, prop);
+  if (doc) s = { ...s, description: doc };
+  if (!("$ref" in s)) {
+    s = applyConstraints(program, prop, s);
+    if (prop.defaultValue) {
+      const def = serializeValueAsJson(program, prop.defaultValue, prop.type);
+      if (def !== undefined) s = { ...s, default: def };
+    }
+    const examples = getExamples(program, prop);
+    if (examples.length) {
+      s = { ...s, examples: examples.map((e) => serializeValueAsJson(program, e.value, prop.type)) };
+    }
+  }
+  return s;
+}
+
+/** Build an inline object schema from a model's OWN properties. */
 function ownObjectSchema(program: Program, model: Model, ref: RefFn): SchemaObject {
   const properties: Record<string, SchemaObject> = {};
   const required: string[] = [];
   for (const [name, prop] of model.properties as Map<string, ModelProperty>) {
-    let s = schemaForType(program, prop.type, ref);
-    const doc = getDoc(program, prop);
-    if (doc) s = { ...s, description: doc };
-    properties[name] = s;
+    properties[name] = propertySchema(program, prop, ref);
     if (!prop.optional) required.push(name);
   }
   const schema: SchemaObject = { type: "object", properties };
@@ -116,7 +167,7 @@ function unionInline(program: Program, union: { variants: Map<string | symbol, {
 export function typeToSchema(program: Program, type: Type, ref: RefFn): SchemaObject {
   switch (type.kind) {
     case "Scalar":
-      return scalarSchema(type);
+      return applyConstraints(program, type, scalarSchema(type));
     case "String":
     case "Number":
     case "Boolean":

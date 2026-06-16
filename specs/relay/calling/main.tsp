@@ -17,7 +17,7 @@ model PhoneDevice extends Device {
   params: {
     from_number: string;
     to_number: string;
-    timeout?: int32;
+    @minValue(0) timeout?: int32 = 30;
   };
 }
 model SipDevice extends Device {

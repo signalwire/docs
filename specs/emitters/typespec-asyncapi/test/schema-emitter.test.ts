@@ -29,6 +29,45 @@ describe("typeToSchema", () => {
   });
 });
 
+describe("constraints, defaults, and examples", () => {
+  it("emits JSON-Schema constraint keywords, default, and examples from decorators", async () => {
+    const program = await compileModels(`
+      model Foo {
+        @minValue(0) @maxValue(100) count?: int32 = 30;
+        @minLength(1) @maxLength(64) @pattern("^[a-z]+$") name: string;
+        @minItems(1) @maxItems(5) tags: string[];
+        @secret token: string;
+        @format("uri") link: string;
+      }
+    `);
+    const Foo = program.getGlobalNamespaceType().models.get("Foo")!;
+    const s: any = typeToSchema(program, Foo, () => ({}));
+    deepStrictEqual(s.properties.count, {
+      type: "integer",
+      format: "int32",
+      minimum: 0,
+      maximum: 100,
+      default: 30,
+    });
+    deepStrictEqual(s.properties.name, {
+      type: "string",
+      minLength: 1,
+      maxLength: 64,
+      pattern: "^[a-z]+$",
+    });
+    deepStrictEqual(s.properties.tags, {
+      type: "array",
+      items: { type: "string" },
+      minItems: 1,
+      maxItems: 5,
+    });
+    strictEqual(s.properties.token.format, "password");
+    strictEqual(s.properties.link.format, "uri");
+    // count is optional (has default) → not required; name/tags/token/link required
+    deepStrictEqual(s.required, ["name", "tags", "token", "link"]);
+  });
+});
+
 describe("createSchemaRegistry — discriminated inheritance", () => {
   it("emits @discriminator base + extends variants as allOf-inheritance", async () => {
     const program = await compileModels(`
