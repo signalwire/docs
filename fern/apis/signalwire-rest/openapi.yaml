@@ -8541,7 +8541,7 @@ paths:
         - $ref: '#/components/parameters/RecordingPathID'
       responses:
         '200':
-          description: Recording model. A recording is associated with exactly one call leg type (PSTN, SIP, or WebRTC).
+          description: Recording model. A recording is associated with exactly one source type (PSTN, SIP, WebRTC, or Relay conference).
           content:
             application/json:
               schema:
@@ -8549,6 +8549,7 @@ paths:
                   - $ref: '#/components/schemas/PstnRecording'
                   - $ref: '#/components/schemas/SipRecording'
                   - $ref: '#/components/schemas/WebRtcRecording'
+                  - $ref: '#/components/schemas/ConferenceRecording'
         '401':
           description: Access is unauthorized.
           content:
@@ -20589,6 +20590,97 @@ components:
         - TECHNOLOGY
         - TRANSPORTATION
       description: Company vertical/industry classification.
+    ConferenceRecording:
+      type: object
+      required:
+        - id
+        - project_id
+        - created_at
+        - updated_at
+        - duration_in_seconds
+        - price
+        - price_unit
+        - status
+        - url
+        - stereo
+        - track
+        - relay_conference_id
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Unique ID of the recording.
+          examples:
+            - d369a402-7b43-4512-8735-9d5e1f387814
+        project_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Unique ID of the project.
+          examples:
+            - d369a402-7b43-4512-8735-9d5e1f387814
+        created_at:
+          type: string
+          format: date-time
+          description: Date and time when the recording was created.
+        updated_at:
+          type: string
+          format: date-time
+          description: Date and time when the recording was last updated.
+        duration_in_seconds:
+          type: integer
+          format: int32
+          description: Duration of the recording in seconds.
+          examples:
+            - 2
+        error_code:
+          type: string
+          description: Error code if the recording failed.
+        price:
+          type: number
+          format: double
+          description: Price of the recording.
+          examples:
+            - 0.05
+        price_unit:
+          type: string
+          description: Currency unit for the price.
+          examples:
+            - USD
+        status:
+          type: string
+          description: Status of the recording.
+          examples:
+            - completed
+        url:
+          type: string
+          description: URL of the recording file.
+          examples:
+            - https://example.com/recording.mp3
+        stereo:
+          type: boolean
+          description: Indicates whether the recording is stereo.
+          examples:
+            - false
+        byte_size:
+          type: integer
+          format: int32
+          description: Size of the recording file in bytes.
+          examples:
+            - 10
+        track:
+          type: string
+          description: Audio track of the recording.
+          examples:
+            - inbound
+        relay_conference_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Unique ID of the Relay conference the recording belongs to.
+          examples:
+            - 0089cc48-4f98-4a6b-90d8-61f8a5d1b0e3
+      unevaluatedProperties:
+        not: {}
+      description: Recording from a Relay conference.
     ConferenceRoom:
       type: object
       required:
@@ -28063,12 +28155,6 @@ components:
           description: Unique ID of the project.
           examples:
             - d369a402-7b43-4512-8735-9d5e1f387814
-        relay_conference_id:
-          allOf:
-            - $ref: '#/components/schemas/uuid'
-          description: Unique ID of the Relay conference the recording belongs to, if any.
-          examples:
-            - 0089cc48-4f98-4a6b-90d8-61f8a5d1b0e3
         created_at:
           type: string
           format: date-time
@@ -28123,6 +28209,12 @@ components:
           description: Audio track of the recording.
           examples:
             - inbound
+        relay_conference_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Unique ID of the Relay conference the recording belongs to, if any.
+          examples:
+            - 0089cc48-4f98-4a6b-90d8-61f8a5d1b0e3
         relay_pstn_leg_id:
           allOf:
             - $ref: '#/components/schemas/uuid'
@@ -28534,7 +28626,8 @@ components:
         - $ref: '#/components/schemas/PstnRecording'
         - $ref: '#/components/schemas/SipRecording'
         - $ref: '#/components/schemas/WebRtcRecording'
-      description: Recording model. A recording is associated with exactly one call leg type (PSTN, SIP, or WebRTC).
+        - $ref: '#/components/schemas/ConferenceRecording'
+      description: Recording model. A recording is associated with exactly one source type (PSTN, SIP, WebRTC, or Relay conference).
     RecordingListResponse:
       type: object
       required:
@@ -36789,6 +36882,63 @@ components:
           maximum: 1
           description: 'The similarity slider dictates how closely the AI should adhere to the original voice when attempting to replicate it. The higher the similarity, the closer the AI will sound to the original voice. IMPORTANT: Only works with ElevenLabs TTS engine.'
           default: 0.75
+        speakingRate:
+          anyOf:
+            - type: number
+            - $ref: '#/components/schemas/SWMLVar'
+          minimum: 0.5
+          maximum: 1.5
+          description: 'Adjusts how quickly the voice speaks. Values below `1.0` slow the voice down; values above `1.0` speed it up. IMPORTANT: Only works with the Inworld TTS engine.'
+          default: 1
+        temperature:
+          anyOf:
+            - type: number
+            - $ref: '#/components/schemas/SWMLVar'
+          minimum: 0
+          maximum: 2
+          description: 'Controls the randomness and expressiveness of the generated speech. Lower values produce a more consistent, predictable delivery; higher values introduce more variation. IMPORTANT: Only works with the Inworld TTS engine.'
+          default: 1
+        speed:
+          anyOf:
+            - type: number
+            - $ref: '#/components/schemas/SWMLVar'
+          minimum: 0.5
+          maximum: 2
+          description: 'How quickly the voice speaks. Values below `1.0` slow the voice down; values above `1.0` speed it up. IMPORTANT: Only works with the MiniMax TTS engine.'
+          default: 1
+        vol:
+          anyOf:
+            - type: number
+            - $ref: '#/components/schemas/SWMLVar'
+          minimum: 0.1
+          maximum: 1
+          description: 'The speaking volume. Lower values are quieter. IMPORTANT: Only works with the MiniMax TTS engine.'
+          default: 1
+        pitch:
+          anyOf:
+            - type: integer
+              format: int32
+            - $ref: '#/components/schemas/SWMLVar'
+          minimum: -12
+          maximum: 12
+          description: 'The pitch shift in semitones. Negative values lower the pitch; positive values raise it. IMPORTANT: Only works with the MiniMax TTS engine.'
+          default: 0
+        emotion:
+          type: string
+          enum:
+            - happy
+            - sad
+            - angry
+            - fearful
+            - disgusted
+            - surprised
+            - neutral
+          description: |-
+            A fixed emotional tone for the generated speech.
+            To vary the emotion automatically during a conversation, use [`languages[].emotion`](#languagesemotion) set to `auto` instead.
+            IMPORTANT: Only works with the MiniMax TTS engine.
+          examples:
+            - happy
       unevaluatedProperties:
         not: {}
       title: LanguageParams
@@ -36821,7 +36971,7 @@ components:
           type: string
           description: |-
             Voice to use for the language. String format: `<engine id>.<voice id>`.
-            Select engine from `gcloud`, `polly`, `elevenlabs`, `cartesia`, or `deepgram`.
+            Select engine from `gcloud`, `polly`, `elevenlabs`, `cartesia`, `deepgram`, `rime`, `inworld`, or `minimax`.
             For example, `gcloud.fr-FR-Neural2-B`.
           examples:
             - gcloud.fr-FR-Neural2-B
@@ -36835,9 +36985,10 @@ components:
           enum:
             - auto
           description: |-
-            Enables emotion detection for the set TTS engine. This allows the AI to express emotions when speaking.
+            Enables automatic emotion detection for the set TTS engine. This allows the AI to express emotions when speaking.
             A global emotion or specific emotions for certain topics can be set within the prompt of the AI.
-            IMPORTANT: Only works with [`Cartesia`](/docs/platform/voice/tts/cartesia) TTS engine.
+            IMPORTANT: Only works with the [`Cartesia`](/docs/platform/voice/tts/cartesia) and [`MiniMax`](/docs/platform/voice/tts/minimax) TTS engines.
+            For a fixed (non-automatic) MiniMax emotion, use [`params.emotion`](#languagesparams) instead.
           examples:
             - auto
         speed:
@@ -36906,7 +37057,7 @@ components:
           type: string
           description: |-
             Voice to use for the language. String format: `<engine id>.<voice id>`.
-            Select engine from `gcloud`, `polly`, `elevenlabs`, `cartesia`, or `deepgram`.
+            Select engine from `gcloud`, `polly`, `elevenlabs`, `cartesia`, `deepgram`, `rime`, `inworld`, or `minimax`.
             For example, `gcloud.fr-FR-Neural2-B`.
           examples:
             - gcloud.fr-FR-Neural2-B
@@ -36920,9 +37071,10 @@ components:
           enum:
             - auto
           description: |-
-            Enables emotion detection for the set TTS engine. This allows the AI to express emotions when speaking.
+            Enables automatic emotion detection for the set TTS engine. This allows the AI to express emotions when speaking.
             A global emotion or specific emotions for certain topics can be set within the prompt of the AI.
-            IMPORTANT: Only works with [`Cartesia`](/docs/platform/voice/tts/cartesia) TTS engine.
+            IMPORTANT: Only works with the [`Cartesia`](/docs/platform/voice/tts/cartesia) and [`MiniMax`](/docs/platform/voice/tts/minimax) TTS engines.
+            For a fixed (non-automatic) MiniMax emotion, use [`params.emotion`](#languagesparams) instead.
           examples:
             - auto
         speed:
@@ -42553,12 +42705,6 @@ components:
           description: Unique ID of the project.
           examples:
             - d369a402-7b43-4512-8735-9d5e1f387814
-        relay_conference_id:
-          allOf:
-            - $ref: '#/components/schemas/uuid'
-          description: Unique ID of the Relay conference the recording belongs to, if any.
-          examples:
-            - 0089cc48-4f98-4a6b-90d8-61f8a5d1b0e3
         created_at:
           type: string
           format: date-time
@@ -42613,6 +42759,12 @@ components:
           description: Audio track of the recording.
           examples:
             - inbound
+        relay_conference_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Unique ID of the Relay conference the recording belongs to, if any.
+          examples:
+            - 0089cc48-4f98-4a6b-90d8-61f8a5d1b0e3
         relay_sip_leg_id:
           allOf:
             - $ref: '#/components/schemas/uuid'
@@ -48011,12 +48163,6 @@ components:
           description: Unique ID of the project.
           examples:
             - d369a402-7b43-4512-8735-9d5e1f387814
-        relay_conference_id:
-          allOf:
-            - $ref: '#/components/schemas/uuid'
-          description: Unique ID of the Relay conference the recording belongs to, if any.
-          examples:
-            - 0089cc48-4f98-4a6b-90d8-61f8a5d1b0e3
         created_at:
           type: string
           format: date-time
@@ -48071,6 +48217,12 @@ components:
           description: Audio track of the recording.
           examples:
             - inbound
+        relay_conference_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Unique ID of the Relay conference the recording belongs to, if any.
+          examples:
+            - 0089cc48-4f98-4a6b-90d8-61f8a5d1b0e3
         relay_webrtc_leg_id:
           allOf:
             - $ref: '#/components/schemas/uuid'
