@@ -85,6 +85,9 @@ model CallFaxParams {
   fax: CallFax;
 }
 
+// No `@example`: `fax` is a required `@discriminator` (CallFax) property, and an
+// example value cannot narrow a discriminated base. Per-variant payloads are
+// illustrated by the FaxPage/FaxFinished `type`/`params` fields above.
 /** A fax event (page / finished / error). */
 @event("calling.call.fax")
 model CallFaxEvent {
@@ -163,6 +166,9 @@ model CallTapParams {
   device: CallTapDevice;
 }
 
+// No `@example`: `tap` (TapMedia) and `device` (CallTapDevice) are both required
+// `@discriminator` properties, and an example value cannot narrow a discriminated
+// base. The variant shapes are illustrated by CallTapAudio/CallTapRtpDevice above.
 /** A call-tap state event. */
 @event("calling.call.tap")
 model CallTapEvent {
@@ -197,6 +203,14 @@ model CallStreamParams {
 
 /** A call-stream state change. */
 @event("calling.call.stream")
+@example(#{
+  node_id: "a3e1b2c4-5d6f-7a8b-9c0d-1e2f3a4b5c6d",
+  call_id: "c7f9d2e1-3a4b-5c6d-7e8f-9a0b1c2d3e4f",
+  control_id: "8f14e45f-ceea-167a-5a36-dedd4bea2543",
+  state: "streaming",
+  url: "wss://example.com/audio",
+  name: "my_stream",
+})
 model CallStreamEvent {
   ...CallStreamParams;
 }
@@ -244,6 +258,19 @@ model CallTranscribeParams {
 
 /** A call-transcription state. */
 @event("calling.call.transcribe")
+@example(#{
+  node_id: "a3e1b2c4-5d6f-7a8b-9c0d-1e2f3a4b5c6d",
+  call_id: "c7f9d2e1-3a4b-5c6d-7e8f-9a0b1c2d3e4f",
+  control_id: "8f14e45f-ceea-167a-5a36-dedd4bea2543",
+  state: "finished",
+  url: "recordings/d4f5a6b7-c8d9-0e1f-2a3b-4c5d6e7f8a9b.wav",
+  recording_id: "d4f5a6b7-c8d9-0e1f-2a3b-4c5d6e7f8a9b",
+  status_url: "https://example.com/callback",
+  duration: 30.0,
+  size: 123456,
+  start_time: 1772717474.381,
+  end_time: 1772717504.381,
+})
 model CallTranscribeEvent {
   ...CallTranscribeParams;
 }
@@ -267,6 +294,11 @@ model CallHoldParams {
 
 /** A call hold-state event. (No `control_id`.) */
 @event("calling.call.hold")
+@example(#{
+  node_id: "a3e1b2c4-5d6f-7a8b-9c0d-1e2f3a4b5c6d",
+  call_id: "c7f9d2e1-3a4b-5c6d-7e8f-9a0b1c2d3e4f",
+  state: "hold",
+})
 model CallHoldEvent {
   ...CallHoldParams;
 }
@@ -287,6 +319,12 @@ model CallSendDigitsParams {
 
 /** A send-digits completion event. */
 @event("calling.call.send_digits")
+@example(#{
+  node_id: "a3e1b2c4-5d6f-7a8b-9c0d-1e2f3a4b5c6d",
+  call_id: "c7f9d2e1-3a4b-5c6d-7e8f-9a0b1c2d3e4f",
+  control_id: "8f14e45f-ceea-167a-5a36-dedd4bea2543",
+  state: "finished",
+})
 model CallSendDigitsEvent {
   ...CallSendDigitsParams;
 }
@@ -344,9 +382,9 @@ union ConferenceReasonEnded {
 }
 
 /**
- * A multiplexed conference event. `status` selects which conditional fields are
- * present; all conditional fields are optional here since they depend on
- * `status`.
+ * A conference lifecycle or participant event. The `status` field indicates
+ * which event occurred and therefore which of the optional fields below are
+ * populated; fields tied to a specific status are optional here.
  */
 model ConferenceParams {
   /** The UUID of the node this conference is on. */
@@ -358,7 +396,7 @@ model ConferenceParams {
   /** The name of the conference. */
   name?: string;
 
-  /** The conference event status (secondary discriminator). */
+  /** Which conference event occurred. */
   status: ConferenceStatus;
 
   /** Participant call id. Set on participant statuses. */
@@ -406,6 +444,20 @@ model ConferenceParams {
 
 /** A conference lifecycle / participant event. */
 @event("calling.conference")
+@example(#{
+  node_id: "a3e1b2c4-5d6f-7a8b-9c0d-1e2f3a4b5c6d",
+  conference_id: "f0e9d8c7-b6a5-4938-2716-0a1b2c3d4e5f",
+  name: "sales-standup",
+  status: "participant-leave",
+  call_id: "c7f9d2e1-3a4b-5c6d-7e8f-9a0b1c2d3e4f",
+  muted: false,
+  hold: false,
+  coaching: false,
+  end_on_exit: false,
+  start_on_enter: true,
+  participant_call_status: "completed",
+  reason_participant_left: "participant_hung_up",
+})
 model ConferenceEvent {
   ...ConferenceParams;
 }
@@ -429,6 +481,11 @@ model CallEchoParams {
 
 /** A call echo state event. (No `control_id`.) */
 @event("calling.call.echo")
+@example(#{
+  node_id: "a3e1b2c4-5d6f-7a8b-9c0d-1e2f3a4b5c6d",
+  call_id: "c7f9d2e1-3a4b-5c6d-7e8f-9a0b1c2d3e4f",
+  state: "echoing",
+})
 model CallEchoEvent {
   ...CallEchoParams;
 }
@@ -459,6 +516,12 @@ model CallPayParams {
 
 /** A call payment state event. */
 @event("calling.call.pay")
+@example(#{
+  node_id: "a3e1b2c4-5d6f-7a8b-9c0d-1e2f3a4b5c6d",
+  call_id: "c7f9d2e1-3a4b-5c6d-7e8f-9a0b1c2d3e4f",
+  control_id: "8f14e45f-ceea-167a-5a36-dedd4bea2543",
+  state: "processing",
+})
 model CallPayEvent {
   ...CallPayParams;
 }
@@ -479,6 +542,12 @@ model CallErrorParams {
 
 /** A server-pushed calling error associated with a call. */
 @event("calling.error")
+@example(#{
+  node_id: "a3e1b2c4-5d6f-7a8b-9c0d-1e2f3a4b5c6d",
+  call_id: "c7f9d2e1-3a4b-5c6d-7e8f-9a0b1c2d3e4f",
+  code: "500",
+  message: "Error description",
+})
 model CallErrorEvent {
   ...CallErrorParams;
 }

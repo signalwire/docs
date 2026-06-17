@@ -59,6 +59,16 @@ model DeliverResult {
  */
 @rpcMethod("tasking.deliver")
 @summary("Deliver a task message to a context")
+@opExample(#{
+  parameters: #{
+    context: "test",
+    message: #{ foo: 123 },
+  },
+  returnType: #{
+    code: "200",
+    message: "OK",
+  },
+})
 op deliver(...DeliverParams): DeliverResult;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -71,18 +81,13 @@ op deliver(...DeliverParams): DeliverResult;
  * originating `tasking.deliver` call.
  */
 @event("queuing.relay.tasks")
+@example(#{
+  context: "test",
+  message: #{ foo: 123 },
+})
 model TasksEvent {
   /** The context that received the event. */
   context: string;
-
-  /** Seconds since the epoch, with up to microsecond resolution. The time the task was received. */
-  timestamp: float64;
-
-  /** The SignalWire space the task belongs to. */
-  space_id: string;
-
-  /** The SignalWire project the task belongs to. */
-  project_id: string;
 
   /** The opaque message passed to the task, echoed verbatim from `tasking.deliver`. */
   message: Record<unknown>;

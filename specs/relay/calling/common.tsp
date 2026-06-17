@@ -287,16 +287,19 @@ model DialDevice {
   type: string;
 }
 
+@example(#{ type: "phone", params: #{ from_number: "+15551230001", to_number: "+15551230002", timeout: 30 } })
 model DialPhoneDevice extends DialDevice {
   type: "phone";
   params: PhoneDeviceParams;
 }
 
+@example(#{ type: "sip", params: #{ from: "sip:alice@example.com", to: "sip:bob@example.com", timeout: 30 } })
 model DialSipDevice extends DialDevice {
   type: "sip";
   params: SipDeviceParams;
 }
 
+@example(#{ type: "webrtc", params: #{ from: "+15551230001", to: "wss://example.com/endpoint", timeout: 30 } })
 model DialWebrtcDevice extends DialDevice {
   type: "webrtc";
   params: WebrtcDeviceParams;
@@ -308,31 +311,37 @@ model ConnectDevice {
   type: string;
 }
 
+@example(#{ type: "call", params: #{ node_id: "a3e1b2c4-...", call_id: "c7f9d2e1-..." } })
 model ConnectCallDevice extends ConnectDevice {
   type: "call";
   params: CallRefDeviceParams;
 }
 
+@example(#{ type: "queue", params: #{ node_id: "a3e1b2c4-...", queue_name: "support" } })
 model ConnectQueueDevice extends ConnectDevice {
   type: "queue";
   params: QueueDeviceParams;
 }
 
+@example(#{ type: "phone", params: #{ from_number: "+15551230001", to_number: "+15551230002", timeout: 30 } })
 model ConnectPhoneDevice extends ConnectDevice {
   type: "phone";
   params: PhoneDeviceParams;
 }
 
+@example(#{ type: "sip", params: #{ from: "sip:alice@example.com", to: "sip:bob@example.com", timeout: 30 } })
 model ConnectSipDevice extends ConnectDevice {
   type: "sip";
   params: SipDeviceParams;
 }
 
+@example(#{ type: "webrtc", params: #{ from: "+15551230001", to: "agent-1", timeout: 30 } })
 model ConnectWebrtcDevice extends ConnectDevice {
   type: "webrtc";
   params: WebrtcDeviceParams;
 }
 
+@example(#{ type: "stream", params: #{ url: "wss://example.com/stream", codec: "PCMU" } })
 model ConnectStreamDevice extends ConnectDevice {
   type: "stream";
   params: StreamDeviceParams;
@@ -348,6 +357,7 @@ model Ringback {
   type: string;
 }
 
+@example(#{ type: "audio", params: #{ url: "https://example.com/ringback.mp3" } })
 model RingbackAudio extends Ringback {
   type: "audio";
   params: {
@@ -356,6 +366,7 @@ model RingbackAudio extends Ringback {
   };
 }
 
+@example(#{ type: "tts", params: #{ text: "Connecting your call.", language: "en-US", gender: "female" } })
 model RingbackTts extends Ringback {
   type: "tts";
   params: {
@@ -370,6 +381,7 @@ model RingbackTts extends Ringback {
   };
 }
 
+@example(#{ type: "silence", params: #{ duration: 1.5 } })
 model RingbackSilence extends Ringback {
   type: "silence";
   params: {
@@ -378,6 +390,7 @@ model RingbackSilence extends Ringback {
   };
 }
 
+@example(#{ type: "ringtone", params: #{ name: "us", duration: 5 } })
 model RingbackRingtone extends Ringback {
   type: "ringtone";
   params: {
@@ -397,6 +410,7 @@ model RingbackRingtone extends Ringback {
 // the request device. Discriminated on `type`.
 // ═════════════════════════════════════════════════════════════════════════════
 
+/** The negotiated call leg reported in call events. Discriminated on `type`. */
 @discriminator("type")
 model CallDevice {
   type: string;
@@ -447,6 +461,7 @@ model PlayMedia {
   type: string;
 }
 
+@example(#{ type: "audio", params: #{ url: "https://example.com/welcome.mp3" } })
 model PlayMediaAudio extends PlayMedia {
   type: "audio";
   params: {
@@ -455,6 +470,7 @@ model PlayMediaAudio extends PlayMedia {
   };
 }
 
+@example(#{ type: "tts", params: #{ text: "Please hold while we connect you.", language: "en-US", gender: "female" } })
 model PlayMediaTts extends PlayMedia {
   type: "tts";
   params: {
@@ -472,15 +488,16 @@ model PlayMediaTts extends PlayMedia {
   };
 }
 
+@example(#{ type: "silence", params: #{ duration: 2.5 } })
 model PlayMediaSilence extends PlayMedia {
   type: "silence";
   params: {
     /** Seconds of silence to play. */
-    @minValueExclusive(0)
     duration: float64;
   };
 }
 
+@example(#{ type: "ringtone", params: #{ name: "us", duration: 5 } })
 model PlayMediaRingtone extends PlayMedia {
   type: "ringtone";
   params: {

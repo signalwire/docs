@@ -35,6 +35,16 @@ model QueueEnterResult {
 /** Place the active call into a named queue. */
 @rpcMethod("calling.queue.enter")
 @summary("Place the call into a queue")
+@opExample(#{
+  parameters: #{
+    node_id: "a3b3e8e0-1234-4a4b-8c8d-000000000001",
+    call_id: "b4c4f9f1-2345-4b5c-9d9e-000000000002",
+    control_id: "queue-1",
+    queue_name: "support",
+    status_url: "https://example.com/queue-webhook",
+  },
+  returnType: #{ code: "200", message: "Entering Queue", control_id: "queue-1" },
+})
 op queueEnter(...QueueEnterParams): QueueEnterResult;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -67,6 +77,17 @@ model QueueLeaveResult {
 /** Remove the active call from a queue. */
 @rpcMethod("calling.queue.leave")
 @summary("Remove the call from a queue")
+@opExample(#{
+  parameters: #{
+    node_id: "a3b3e8e0-1234-4a4b-8c8d-000000000001",
+    call_id: "b4c4f9f1-2345-4b5c-9d9e-000000000002",
+    control_id: "queue-1",
+    queue_name: "support",
+    queue_id: "q-7f9d2e1c",
+    status_url: "https://example.com/queue-webhook",
+  },
+  returnType: #{ code: "200", message: "Leaving Queue", control_id: "queue-1" },
+})
 op queueLeave(...QueueLeaveParams): QueueLeaveResult;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -164,6 +185,32 @@ model RecordResult {
 /** Record a call. Async-safe — may be executed multiple times in parallel. */
 @rpcMethod("calling.record")
 @summary("Record a call")
+@opExample(#{
+  parameters: #{
+    node_id: "a3b3e8e0-1234-4a4b-8c8d-000000000001",
+    call_id: "b4c4f9f1-2345-4b5c-9d9e-000000000002",
+    control_id: "record-1",
+    record: #{
+      audio: #{
+        beep: false,
+        format: "mp3",
+        stereo: false,
+        direction: "speak",
+        initial_timeout: 5.0,
+        end_silence_timeout: 1.0,
+        terminators: "#*",
+        input_sensitivity: 44.0,
+      },
+    },
+    status_url: "https://example.com/recording-webhook",
+  },
+  returnType: #{
+    code: "200",
+    message: "Recording",
+    control_id: "record-1",
+    url: "https://example.com/recordings/record-1.mp3",
+  },
+})
 op recordCall(...RecordParams): RecordResult;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -199,6 +246,15 @@ model RecordPauseResult {
 /** Pause an active call recording. Async-safe. */
 @rpcMethod("calling.record.pause")
 @summary("Pause an active recording")
+@opExample(#{
+  parameters: #{
+    node_id: "a3b3e8e0-1234-4a4b-8c8d-000000000001",
+    call_id: "b4c4f9f1-2345-4b5c-9d9e-000000000002",
+    control_id: "record-1",
+    behavior: "silence",
+  },
+  returnType: #{ code: "200", message: "Pausing recording", control_id: "record-1" },
+})
 op recordPause(...RecordPauseParams): RecordPauseResult;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -222,6 +278,14 @@ model RecordResumeResult {
 /** Resume a previously paused call recording. Async-safe. */
 @rpcMethod("calling.record.resume")
 @summary("Resume a paused recording")
+@opExample(#{
+  parameters: #{
+    node_id: "a3b3e8e0-1234-4a4b-8c8d-000000000001",
+    call_id: "b4c4f9f1-2345-4b5c-9d9e-000000000002",
+    control_id: "record-1",
+  },
+  returnType: #{ code: "200", message: "Recording", control_id: "record-1" },
+})
 op recordResume(...RecordResumeParams): RecordResumeResult;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -245,6 +309,14 @@ model RecordStopResult {
 /** Stop an active call recording. Async-safe. */
 @rpcMethod("calling.record.stop")
 @summary("Stop an active recording")
+@opExample(#{
+  parameters: #{
+    node_id: "a3b3e8e0-1234-4a4b-8c8d-000000000001",
+    call_id: "b4c4f9f1-2345-4b5c-9d9e-000000000002",
+    control_id: "record-1",
+  },
+  returnType: #{ code: "200", message: "Stopping recording", control_id: "record-1" },
+})
 op recordStop(...RecordStopParams): RecordStopResult;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -269,11 +341,15 @@ model ReferSipDeviceParams {
 /** Target device for a SIP REFER transfer. Discriminated on `type` (`sip` only). */
 @discriminator("type")
 model ReferDevice {
+  /** Device type discriminator. Only `sip` is valid. */
   type: string;
 }
 
+@example(#{ type: "sip", params: #{ to: "userb@example.com", username: "foo", password: "bar" } })
 model ReferSipDevice extends ReferDevice {
+  /** Always `sip`. */
   type: "sip";
+
   params: ReferSipDeviceParams;
 }
 
@@ -287,10 +363,15 @@ model ReferParams {
   status_url?: url;
 }
 
+/** Result of `calling.refer`. */
 model ReferResult {
   ...RelayResult;
 }
 
+// NOTE: no @opExample here — `device: ReferDevice` is a REQUIRED @discriminator union,
+// and TypeSpec value-checking does not narrow a discriminated base to its variant, so an
+// inline frame example can't carry real `params`. The ReferSipDevice variant model carries
+// a schema-level @example value instead.
 /** Transfer a SIP call to an external SIP endpoint via SIP REFER. Async-safe. */
 @rpcMethod("calling.refer")
 @summary("Transfer a SIP call via SIP REFER")
@@ -300,10 +381,12 @@ op refer(...ReferParams): ReferResult;
 // calling.pass
 // ─────────────────────────────────────────────────────────────────────────────
 
+/** Parameters for `calling.pass` — identifies the call whose offer to pass on. */
 model PassParams {
   ...CallAddress;
 }
 
+/** Result of `calling.pass`. */
 model PassResult {
   ...RelayResult;
 }
@@ -314,4 +397,11 @@ model PassResult {
  */
 @rpcMethod("calling.pass")
 @summary("Pass the call offer to another consumer")
+@opExample(#{
+  parameters: #{
+    node_id: "a3b3e8e0-1234-4a4b-8c8d-000000000001",
+    call_id: "b4c4f9f1-2345-4b5c-9d9e-000000000002",
+  },
+  returnType: #{ code: "200", message: "Passing call to another consumer" },
+})
 op pass(...PassParams): PassResult;

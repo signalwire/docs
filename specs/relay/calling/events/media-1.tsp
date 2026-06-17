@@ -40,6 +40,14 @@ model CallReferParams {
 
 /** A change in state of a transferred (SIP-REFER) call. */
 @event("calling.call.refer")
+@example(#{
+  node_id: "a3e1b2c4-1234-5678-9abc-def012345678",
+  call_id: "c7f9d2e1-8765-4321-0fed-cba987654321",
+  state: "success",
+  sip_refer_to: "sip:agent@example.com",
+  sip_refer_response_code: "202",
+  sip_notify_response_code: "200",
+})
 model CallReferEvent {
   ...CallReferParams;
 }
@@ -68,6 +76,12 @@ model CallPlayParams {
 
 /** A change in a call's play state. */
 @event("calling.call.play")
+@example(#{
+  node_id: "a3e1b2c4-1234-5678-9abc-def012345678",
+  call_id: "c7f9d2e1-8765-4321-0fed-cba987654321",
+  control_id: "b2d4f6a8-1111-2222-3333-444455556666",
+  state: "finished",
+})
 model CallPlayEvent {
   ...CallPlayParams;
 }
@@ -123,6 +137,18 @@ model CallQueueParams {
 
 /** A change in a call's queue state. */
 @event("calling.call.queue")
+@example(#{
+  node_id: "a3e1b2c4-1234-5678-9abc-def012345678",
+  call_id: "c7f9d2e1-8765-4321-0fed-cba987654321",
+  control_id: "b2d4f6a8-1111-2222-3333-444455556666",
+  status: "enqueue",
+  id: "q1a2b3c4-aaaa-bbbb-cccc-ddddeeeeffff",
+  name: "support",
+  position: 3,
+  size: 5,
+  avg_time: 42.0,
+  enqueue_ts: 1718600000.0,
+})
 model CallQueueEvent {
   ...CallQueueParams;
 }
@@ -209,6 +235,15 @@ model CallCollectParams {
 
 /** A call's collect result. */
 @event("calling.call.collect")
+// `result` is omitted: its type `CallCollectResult` is a @discriminator base,
+// which @example cannot narrow to a concrete variant (digit/speech/etc.).
+@example(#{
+  node_id: "a3e1b2c4-1234-5678-9abc-def012345678",
+  call_id: "c7f9d2e1-8765-4321-0fed-cba987654321",
+  control_id: "b2d4f6a8-1111-2222-3333-444455556666",
+  state: "finished",
+  final: true,
+})
 model CallCollectEvent {
   ...CallCollectParams;
 }
@@ -287,6 +322,16 @@ model CallRecordParams {
 
 /** A change in a call recording's state. */
 @event("calling.call.record")
+@example(#{
+  node_id: "a3e1b2c4-1234-5678-9abc-def012345678",
+  call_id: "c7f9d2e1-8765-4321-0fed-cba987654321",
+  control_id: "b2d4f6a8-1111-2222-3333-444455556666",
+  state: "finished",
+  url: "https://example.com/recordings/c7f9d2e1.mp3",
+  duration: 20.0,
+  size: 123456788,
+  record: #{ audio: #{ format: "mp3", stereo: false, direction: "both" } },
+})
 model CallRecordEvent {
   ...CallRecordParams;
 }
@@ -302,6 +347,12 @@ union CallDetectFaxEvent {
 
   /** Calling-station fax tone. */
   "CNG",
+
+  /** The detector completed. */
+  "finished",
+
+  /** The detector was unable to start. */
+  "error",
 }
 
 /** Answering-machine-detector event values. */
@@ -326,12 +377,19 @@ union CallDetectMachineEvent {
    * `detect_interruptions=true`.
    */
   "NOT_READY",
+
+  /** The detector completed. */
+  "finished",
+
+  /** The detector was unable to start. */
+  "error",
 }
 
 /**
  * A detector's event payload. Discriminated on `type` (`fax|machine|digit`).
  * Every variant's `params.event` may also surface the generic `finished` (on
- * completion) or `error` (if unable to start) values noted in the source prose.
+ * completion) or `error` (if unable to start) values in addition to its
+ * type-specific values; these are included in each variant's `event` type.
  */
 @discriminator("type")
 model CallDetectResult {
@@ -376,6 +434,9 @@ model CallDetectParams {
 }
 
 /** A call-detection event from an active detector. */
+// No @example: the required `detect` field is typed as the @discriminator base
+// `CallDetectResult`, which @example cannot narrow to a concrete variant
+// (fax/machine/digit). Omitting a required field would be an invalid example.
 @event("calling.call.detect")
 model CallDetectEvent {
   ...CallDetectParams;
@@ -394,6 +455,11 @@ model CallDenoiseParams {
 
 /** A call-denoiser state event. (Carries no `control_id`.) */
 @event("calling.call.denoise")
+@example(#{
+  node_id: "a3e1b2c4-1234-5678-9abc-def012345678",
+  call_id: "c7f9d2e1-8765-4321-0fed-cba987654321",
+  denoised: true,
+})
 model CallDenoiseEvent {
   ...CallDenoiseParams;
 }

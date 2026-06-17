@@ -11,26 +11,20 @@ namespace Relay.Calling;
 
 /**
  * How the Pay IVR collects payment details. Only `dtmf` is currently supported.
- * (The protocol reference documents `dtmf|voice`, but the gateway parser accepts
- * `dtmf|speech` — see open questions.)
  */
 union PayInput {
   "dtmf",
-  "speech",
+  "voice",
 }
 
 /**
- * Payment method used for the Pay request. The gateway parser accepts
- * `credit-card` and `ach-debit`; only `credit-card` is currently supported.
- * (The doc prose says `credit-card` and the wire example sends `creditcard`,
- * but the canonical/accepted value is `credit-card`.)
+ * Payment method used for the Pay request. Only `credit-card` is supported.
  */
 union PayMethod {
   "credit-card",
-  "ach-debit",
 }
 
-/** Bank account type (used when `payment_method` is `ach-debit`). */
+/** Bank account type, for bank-debit payment flows. */
 union PayBankAccountType {
   "consumer-checking",
   "consumer-savings",
@@ -103,6 +97,18 @@ model PayPrompt {
   card_type?: string;
 
   /**
+   * Which collection attempt(s) this prompt applies to, as a space-delimited list
+   * of attempt numbers (e.g. `"1 2"`). Applies to all attempts if unset.
+   */
+  attempt?: string;
+
+  /**
+   * Whether the caller must enter the same value twice for it to be accepted,
+   * as a string boolean (e.g. `"true"`). Applies to confirmation-style prompts.
+   */
+  require_matching_inputs?: string;
+
+  /**
    * Space-delimited error-type tokens this prompt applies to. Documented tokens:
    * timeout, invalid-card-number, invalid-card-type, invalid-date,
    * invalid-security-code, invalid-postal-code, session-in-progress,
@@ -113,7 +119,7 @@ model PayPrompt {
   error_type?: string;
 
   /** Actions to execute for this prompt. */
-  actions: PayPromptAction[];
+  actions?: PayPromptAction[];
 }
 
 model PayParams {
@@ -131,45 +137,42 @@ model PayParams {
   /** Payment method to use. Default `credit-card`. (Only `credit-card` supported.) */
   payment_method?: PayMethod = "credit-card";
 
-  /**
-   * Bank account type (relevant only for `ach-debit`). Undocumented in the
-   * protocol reference but accepted by the gateway. Default `consumer-checking`.
-   */
+  /** Bank account type, for bank-debit payment flows. Default `consumer-checking`. */
   bank_account_type?: PayBankAccountType = "consumer-checking";
 
   /**
    * Seconds the Pay IVR waits for the next digit before validating the captured
-   * digits. Default `5`. (Sent as a JSON string on the wire, e.g. `"6"`.)
+   * digits, as a string of digits on the wire (e.g. `"6"`). Default `"5"`.
    */
-  @minValue(0)
-  timeout?: int32 = 5;
+  @pattern("^[0-9]+$")
+  timeout?: string = "5";
 
   /**
-   * Number of times the Pay IVR retries when collecting card details. Default
-   * `1`. (Sent as a JSON string on the wire, e.g. `"3"`.)
+   * Number of times the Pay IVR retries when collecting card details, as a string
+   * of digits on the wire (e.g. `"3"`). Default `"1"`.
    */
-  @minValue(1)
-  max_attempts?: int32 = 1;
+  @pattern("^[0-9]+$")
+  max_attempts?: string = "1";
 
   /**
-   * Whether to prompt for the card security code. Default `true`. (Sent as a JSON
-   * string on the wire, e.g. `"false"`.)
+   * Whether to prompt for the card security code, as a string boolean on the wire
+   * (`"true"` or `"false"`). Default `"true"`.
    */
-  security_code?: boolean = true;
+  security_code?: string = "true";
 
   /**
-   * Whether to prompt for the billing postal code. Default `true`. (Sent as a
-   * JSON string on the wire, e.g. `"false"`. A known postcode may instead be
-   * supplied so the IVR skips the prompt — see open questions.)
+   * Whether to prompt for the billing postal code, as a string on the wire
+   * (`"true"`, `"false"`, or a known postcode so the IVR skips the prompt).
+   * Default `"true"`.
    */
-  postal_code?: boolean = true;
+  postal_code?: string = "true";
 
   /**
-   * Minimum number of digits a caller must enter for the postal code. Default
-   * `0`. (Sent as a JSON string on the wire, e.g. `"6"`.)
+   * Minimum number of digits a caller must enter for the postal code, as a string
+   * of digits on the wire (e.g. `"6"`). Default `"0"`.
    */
-  @minValue(0)
-  min_postal_code_length?: int32 = 0;
+  @pattern("^[0-9]+$")
+  min_postal_code_length?: string = "0";
 
   /** URL to POST collected payment details to upon completion. */
   payment_connector_url: url;
@@ -225,6 +228,38 @@ model PayResult {
  */
 @rpcMethod("calling.pay")
 @summary("Collect a payment via the Pay IVR")
+@opExample(#{
+  parameters: #{
+    node_id: "a3b3e8e0-1234-4a4b-8c8d-000000000001",
+    call_id: "b4c4f9f1-2345-4b5c-9d9e-000000000002",
+    control_id: "pay-1",
+    input: "dtmf",
+    status_url: "https://example.com/status-webhook",
+    payment_method: "credit-card",
+    timeout: "6",
+    max_attempts: "3",
+    security_code: "false",
+    postal_code: "false",
+    min_postal_code_length: "6",
+    payment_connector_url: "https://example.com/accept-payment",
+    token_type: "one-time",
+    charge_amount: "15.00",
+    currency: "usd",
+    language: "en-US",
+    voice: "polly.Sally",
+    description: "book",
+    valid_card_types: "amex mastercard visa jcb",
+    parameters: #[#{ name: "customer_id", value: "93652a3c-1234-dcba-abcd-7980d413bv31" }],
+    prompts: #[
+      #{
+        for: "payment-card-number",
+        error_type: "invalid-card-number timeout invalid-card-type",
+        actions: #[#{ type: "Say", phrase: "You entered an invalid card number. Please try again." }],
+      }
+    ],
+  },
+  returnType: #{ code: "200", message: "Processing payment", control_id: "pay-1" },
+})
 op pay(...PayParams): PayResult;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -245,6 +280,14 @@ model PayStopResult {
 /** Stop an active Pay IVR session. */
 @rpcMethod("calling.pay.stop")
 @summary("Stop an active pay")
+@opExample(#{
+  parameters: #{
+    node_id: "a3b3e8e0-1234-4a4b-8c8d-000000000001",
+    call_id: "b4c4f9f1-2345-4b5c-9d9e-000000000002",
+    control_id: "pay-1",
+  },
+  returnType: #{ code: "200", message: "Stopping payment" },
+})
 op payStop(...PayStopParams): PayStopResult;
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -272,7 +315,10 @@ model PlayParams {
   @maxValue(40)
   volume?: float64;
 
-  /** Which side of the call hears the media. Default `listen`. */
+  /**
+   * Which side of the call hears the media: `listen` (what the called party
+   * hears), `speak`, or `both`. Default `listen`.
+   */
   direction?: "listen" | "speak" | "both" = "listen";
 
   /** HTTP(s) URL to POST play events to. */
@@ -296,6 +342,10 @@ model PlayResult {
   control_id?: string;
 }
 
+// NOTE: no @opExample here — `play: PlayMedia[]` is a @discriminator union, and TypeSpec
+// value-checking does not narrow a discriminated base to its variant, so an inline frame
+// example can't carry real `params`. The PlayMedia variant models in common.tsp carry
+// schema-level @example values instead.
 /** Play a sequence of media elements (audio/TTS/silence/ringtone) to a call. */
 @rpcMethod("calling.play")
 @summary("Play media to a call")
@@ -319,6 +369,14 @@ model PlayPauseResult {
 /** Pause an active play. */
 @rpcMethod("calling.play.pause")
 @summary("Pause an active play")
+@opExample(#{
+  parameters: #{
+    node_id: "a3b3e8e0-1234-4a4b-8c8d-000000000001",
+    call_id: "b4c4f9f1-2345-4b5c-9d9e-000000000002",
+    control_id: "play-1",
+  },
+  returnType: #{ code: "200", message: "Paused play" },
+})
 op playPause(...PlayPauseParams): PlayPauseResult;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -339,6 +397,14 @@ model PlayResumeResult {
 /** Resume an active paused play. */
 @rpcMethod("calling.play.resume")
 @summary("Resume a paused play")
+@opExample(#{
+  parameters: #{
+    node_id: "a3b3e8e0-1234-4a4b-8c8d-000000000001",
+    call_id: "b4c4f9f1-2345-4b5c-9d9e-000000000002",
+    control_id: "play-1",
+  },
+  returnType: #{ code: "200", message: "Resumed play" },
+})
 op playResume(...PlayResumeParams): PlayResumeResult;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -359,6 +425,14 @@ model PlayStopResult {
 /** Stop an active play. */
 @rpcMethod("calling.play.stop")
 @summary("Stop an active play")
+@opExample(#{
+  parameters: #{
+    node_id: "a3b3e8e0-1234-4a4b-8c8d-000000000001",
+    call_id: "b4c4f9f1-2345-4b5c-9d9e-000000000002",
+    control_id: "play-1",
+  },
+  returnType: #{ code: "200", message: "Stopping play" },
+})
 op playStop(...PlayStopParams): PlayStopResult;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -387,4 +461,13 @@ model PlayVolumeResult {
 /** Adjust the volume of an active play. */
 @rpcMethod("calling.play.volume")
 @summary("Adjust the volume of an active play")
+@opExample(#{
+  parameters: #{
+    node_id: "a3b3e8e0-1234-4a4b-8c8d-000000000001",
+    call_id: "b4c4f9f1-2345-4b5c-9d9e-000000000002",
+    control_id: "play-1",
+    volume: 3.0,
+  },
+  returnType: #{ code: "200", message: "Changed play volume" },
+})
 op playVolume(...PlayVolumeParams): PlayVolumeResult;

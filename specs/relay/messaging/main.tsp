@@ -113,6 +113,22 @@ model SendResult {
  */
 @rpcMethod("messaging.send")
 @summary("Send an outbound message")
+@opExample(#{
+  parameters: #{
+    context: "my_context",
+    tags: #["Custom", "client", "data"],
+    region: "us",
+    to_number: "+15553214321",
+    from_number: "+15551231234",
+    body: "Message Body",
+    media: #["https://example.com/cat.jpg"],
+  },
+  returnType: #{
+    code: "200",
+    message: "Message accepted",
+    message_id: "b1c2d3e4-5f6a-7b8c-9d0e-1f2a3b4c5d6e",
+  },
+})
 op send(...SendParams): SendResult;
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -126,6 +142,18 @@ op send(...SendParams): SendResult;
  * An inbound message has been received.
  */
 @event("messaging.receive")
+@example(#{
+  message_id: "a1b2c3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
+  context: "my_context",
+  direction: "inbound",
+  tags: #["Custom", "client", "data"],
+  from_number: "+15551231234",
+  to_number: "+15553214321",
+  body: "Message Body",
+  media: #["https://example.com/cat.jpg"],
+  segments: 1,
+  message_state: "received",
+})
 model ReceiveEvent {
   /** The UUID of the message. */
   message_id: string;
@@ -162,6 +190,19 @@ model ReceiveEvent {
  * A change in the delivery state of a message.
  */
 @event("messaging.state")
+@example(#{
+  message_id: "a1b2c3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
+  context: "my_context",
+  direction: "outbound",
+  tags: #["Custom", "client", "data"],
+  from_number: "+15551231234",
+  to_number: "+15553214321",
+  body: "Message Body",
+  media: #[],
+  segments: 1,
+  message_state: "failed",
+  reason: "spam",
+})
 model StateEvent {
   /** The UUID of the message. */
   message_id: string;

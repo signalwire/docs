@@ -16,20 +16,29 @@ model BeginParams {
   /** Region to originate from (account/device default if unset). */
   region?: string;
 
-  /** The single device to call (only `phone` is documented for this method). */
+  /**
+   * The single device to call. Only the `phone` device is documented for this
+   * method, with just `from_number`, `to_number`, and `timeout` — the `sip`/
+   * `webrtc` variants and the extra phone params (`max_duration`, `confirm`,
+   * `call_state_url`, `call_state_events`) are not supported here.
+   */
   device: DialDevice;
 }
 
 model BeginResult {
   ...RelayResult;
 
-  /** The created call id. */
+  /** The created call id. Returned on a `"200"` result; absent on error. */
   call_id?: string;
 
-  /** Node the call is on. */
+  /** Node the call is on. Returned on a `"200"` result; absent on error. */
   node_id?: string;
 }
 
+// NOTE: no @opExample here — the required `device: DialDevice` is a @discriminator
+// base, and TypeSpec value-checking does not narrow a discriminated base to its
+// variant, so an inline frame example can't carry real device `params`. The
+// DialDevice variant models in common.tsp carry schema-level @example values instead.
 /** (Deprecated — use `calling.dial`.) Make an outbound call to a single device. */
 @rpcMethod("calling.begin")
 @summary("(Deprecated) Make an outbound call to a single device")
@@ -66,6 +75,10 @@ model DialResult {
  * identifiers arrive asynchronously via `calling.call.dial` / `calling.call.state`
  * events keyed on `tag` — not in this synchronous result.
  */
+// NOTE: no @opExample here — the required `devices: DialDevice[][]` is a @discriminator
+// base, and TypeSpec value-checking does not narrow a discriminated base to its
+// variant, so an inline frame example can't carry real device `params`. The
+// DialDevice variant models in common.tsp carry schema-level @example values instead.
 @rpcMethod("calling.dial")
 @summary("Dial outbound call(s); first to answer wins")
 op dial(...DialParams): DialResult;
@@ -79,7 +92,9 @@ model AnswerParams {
 
   /**
    * Codecs to negotiate (SignalWire-picked if unset). If a listed codec is
-   * unsupported by the call type the request fails with `"400"`.
+   * unsupported by the call type the request fails with `"400"` — check
+   * `call.device.type` in `calling.call.state` events to determine the call type
+   * (`phone` supports a narrower set than `sip`/`webrtc`).
    */
   codecs?: AnswerCodec[];
 }
@@ -91,6 +106,14 @@ model AnswerResult {
 /** Answer an incoming call. */
 @rpcMethod("calling.answer")
 @summary("Answer an incoming call")
+@opExample(#{
+  parameters: #{
+    node_id: "a3b3e8e0-1234-4a4b-8c8d-000000000001",
+    call_id: "b4c4f9f1-2345-4b5c-9d9e-000000000002",
+    codecs: #["PCMU", "PCMA"],
+  },
+  returnType: #{ code: "200", message: "Answered" },
+})
 op answer(...AnswerParams): AnswerResult;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -111,6 +134,14 @@ model EndResult {
 /** End an active or ringing call. */
 @rpcMethod("calling.end")
 @summary("End a call")
+@opExample(#{
+  parameters: #{
+    node_id: "a3b3e8e0-1234-4a4b-8c8d-000000000001",
+    call_id: "b4c4f9f1-2345-4b5c-9d9e-000000000002",
+    reason: "hangup",
+  },
+  returnType: #{ code: "200", message: "Disconnecting call" },
+})
 op end(...EndParams): EndResult;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -137,7 +168,10 @@ model ConnectParams {
   /** Maximum price per minute willing to be paid. */
   max_price_per_minute?: float64;
 
-  /** URL to POST connect events to. */
+  /**
+   * URL to POST `calling.call.connect` events to (statuses: `connecting`,
+   * `connected`, `failed`, `disconnected`).
+   */
   status_url?: url;
 }
 
@@ -149,6 +183,11 @@ model ConnectResult {
  * Call a device and connect it to this active call. Only one connect may execute
  * at a time per call.
  */
+// NOTE: no @opExample here — the required `devices: ConnectDevice[][]` (and the
+// optional `ringback: Ringback[]`) are @discriminator bases, and TypeSpec
+// value-checking does not narrow a discriminated base to its variant, so an inline
+// frame example can't carry real device/ringback `params`. The ConnectDevice and
+// Ringback variant models in common.tsp carry schema-level @example values instead.
 @rpcMethod("calling.connect")
 @summary("Connect a device to an active call")
 op connect(...ConnectParams): ConnectResult;
@@ -168,4 +207,11 @@ model DisconnectResult {
 /** Disconnect all calls from this call without hanging up on them. */
 @rpcMethod("calling.disconnect")
 @summary("Disconnect connected legs without hanging up")
+@opExample(#{
+  parameters: #{
+    node_id: "a3b3e8e0-1234-4a4b-8c8d-000000000001",
+    call_id: "b4c4f9f1-2345-4b5c-9d9e-000000000002",
+  },
+  returnType: #{ code: "200", message: "Disconnecting" },
+})
 op disconnect(...DisconnectParams): DisconnectResult;

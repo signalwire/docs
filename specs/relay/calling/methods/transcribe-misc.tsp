@@ -34,6 +34,15 @@ model TranscribeResult {
  */
 @rpcMethod("calling.transcribe")
 @summary("Start transcribing a call")
+@opExample(#{
+  parameters: #{
+    node_id: "a3e1b2c4-...",
+    call_id: "c7f9d2e1-...",
+    control_id: "transcribe-1",
+    status_url: "https://example.com/transcribe-callback",
+  },
+  returnType: #{ code: "200", message: "Transcribing", url: "recordings/<UUID>.wav" },
+})
 op transcribe(...TranscribeParams): TranscribeResult;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -54,6 +63,10 @@ model TranscribeStopResult {
 /** (async-safe) Stop an active call transcription. */
 @rpcMethod("calling.transcribe.stop")
 @summary("Stop an active call transcription")
+@opExample(#{
+  parameters: #{ node_id: "a3e1b2c4-...", call_id: "c7f9d2e1-...", control_id: "transcribe-1" },
+  returnType: #{ code: "200", message: "Stopping transcribe" },
+})
 op transcribeStop(...TranscribeStopParams): TranscribeStopResult;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -81,6 +94,10 @@ model EchoResult {
  */
 @rpcMethod("calling.echo")
 @summary("Echo audio back to the caller")
+@opExample(#{
+  parameters: #{ node_id: "a3e1b2c4-...", call_id: "c7f9d2e1-...", timeout: 30 },
+  returnType: #{ code: "200", message: "Echo started" },
+})
 op echo(...EchoParams): EchoResult;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -118,6 +135,18 @@ model BindDigitResult {
 /** Bind a DTMF digit sequence to trigger a RELAY method. */
 @rpcMethod("calling.bind_digit")
 @summary("Bind a DTMF digit sequence to a RELAY method")
+@opExample(#{
+  parameters: #{
+    node_id: "a3e1b2c4-...",
+    call_id: "c7f9d2e1-...",
+    digits: "*1",
+    bind_method: "calling.play",
+    params: #{ play: #[#{ type: "tts", text: "You pressed star one" }] },
+    realm: "menu",
+    max_triggers: 0,
+  },
+  returnType: #{ code: "200", message: "Digit binding created" },
+})
 op bindDigit(...BindDigitParams): BindDigitResult;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -138,6 +167,10 @@ model ClearDigitBindingsResult {
 /** Clear all digit bindings, optionally filtered by realm. */
 @rpcMethod("calling.clear_digit_bindings")
 @summary("Clear digit bindings")
+@opExample(#{
+  parameters: #{ node_id: "a3e1b2c4-...", call_id: "c7f9d2e1-...", realm: "menu" },
+  returnType: #{ code: "200", message: "Digit bindings cleared" },
+})
 op clearDigitBindings(...ClearDigitBindingsParams): ClearDigitBindingsResult;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -179,6 +212,10 @@ model LiveTranscribeResult {
 /** Start or stop live transcription on a call. */
 @rpcMethod("calling.live_transcribe")
 @summary("Start or stop live transcription on a call")
+@opExample(#{
+  parameters: #{ node_id: "a3e1b2c4-...", call_id: "c7f9d2e1-...", action: #{ start: #{} } },
+  returnType: #{ code: "200", message: "Live transcription started" },
+})
 op liveTranscribe(...LiveTranscribeParams): LiveTranscribeResult;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -224,6 +261,15 @@ model LiveTranslateResult {
 /** Start or stop live translation on a call. */
 @rpcMethod("calling.live_translate")
 @summary("Start or stop live translation on a call")
+@opExample(#{
+  parameters: #{
+    node_id: "a3e1b2c4-...",
+    call_id: "c7f9d2e1-...",
+    action: #{ start: #{} },
+    status_url: "https://example.com/translate-callback",
+  },
+  returnType: #{ code: "200", message: "Live translation started" },
+})
 op liveTranslate(...LiveTranslateParams): LiveTranslateResult;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -247,6 +293,10 @@ model JoinRoomResult {
 /** Join a video/audio room by name. */
 @rpcMethod("calling.join_room")
 @summary("Join a video/audio room")
+@opExample(#{
+  parameters: #{ node_id: "a3e1b2c4-...", call_id: "c7f9d2e1-...", name: "my_room" },
+  returnType: #{ code: "200", message: "Joining room" },
+})
 op joinRoom(...JoinRoomParams): JoinRoomResult;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -264,4 +314,8 @@ model LeaveRoomResult {
 /** Leave the current room (operates on the call's current room; no room param). */
 @rpcMethod("calling.leave_room")
 @summary("Leave the current room")
+@opExample(#{
+  parameters: #{ node_id: "a3e1b2c4-...", call_id: "c7f9d2e1-..." },
+  returnType: #{ code: "200", message: "Leaving room" },
+})
 op leaveRoom(...LeaveRoomParams): LeaveRoomResult;

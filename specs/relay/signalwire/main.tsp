@@ -79,21 +79,20 @@ model IceServer {
 }
 
 model ConnectResult {
-  /** The identity of the client on the BLADE network (`<nodeid>@<hagridnodeid>.<fabrichost>`). */
+  /** A unique identifier assigned to this client for the duration of the connection. */
   identity: string;
 
   /**
-   * The current authorization block granted to the client. Opaque to clients;
-   * stored and echoed back. (Field shapes are backend-internal — modeled as a
-   * free-form object pending source confirmation.)
+   * The authorization block granted to this connection. Treat it as opaque:
+   * store it and present it unchanged when reconnecting.
    */
   authorization: Record<unknown>;
 
   /** The protocol the client should use for subsequent requests. */
   protocol: string;
 
-  /** ICE servers for media. */
-  ice_servers: IceServer[];
+  /** ICE servers for media. Present for WebRTC clients; omitted when the connection carries no media. */
+  ice_servers?: IceServer[];
 }
 
 /**
@@ -104,6 +103,29 @@ model ConnectResult {
  */
 @rpcMethod("signalwire.connect")
 @summary("Authenticate and establish a Relay connection")
+@opExample(#{
+  parameters: #{
+    version: #{ major: 3, minor: 0, revision: 0 },
+    authentication: #{ jwt_token: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...." },
+    agent: "somesdk-1.2.3",
+    protocol: "signalwire_........",
+    authorization_state: "<encryptedAuthStateBase64>:<tagBase64>",
+    contexts: #["office"],
+  },
+  returnType: #{
+    identity: "c1a2b3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
+    authorization: #{},
+    protocol: "signalwire_........",
+    ice_servers: #[
+      #{
+        urls: #["turn1.signalwire.com", "turn2.signalwire.com"],
+        credential: "<HMACSHA1Base64>",
+        credentialType: "password",
+        username: "<expiration>:<projectid>",
+      }
+    ],
+  },
+})
 op connect(...ConnectParams): ConnectResult;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -128,6 +150,10 @@ model DisconnectResult {}
  */
 @rpcMethod("signalwire.disconnect")
 @summary("Service is about to disconnect the client")
+@opExample(#{
+  parameters: #{ restart: true },
+  returnType: #{},
+})
 op disconnect(...DisconnectParams): DisconnectResult;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -160,6 +186,10 @@ model ReceiveParams {
  */
 @rpcMethod("signalwire.receive")
 @summary("Subscribe to inbound events on one or more contexts")
+@opExample(#{
+  parameters: #{ contexts: #["pbx"] },
+  returnType: #{ code: "200", message: "Receiving events" },
+})
 op receive(...ReceiveParams): Acknowledgement;
 
 model UnreceiveParams {
@@ -170,6 +200,10 @@ model UnreceiveParams {
 /** Request incoming events from the given SignalWire contexts to stop. */
 @rpcMethod("signalwire.unreceive")
 @summary("Unsubscribe from inbound events on one or more contexts")
+@opExample(#{
+  parameters: #{ contexts: #["pbx", "asdf"] },
+  returnType: #{ code: "200", message: "Unreceiving events" },
+})
 op unreceive(...UnreceiveParams): Acknowledgement;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -192,6 +226,10 @@ model SetupResult {
  */
 @rpcMethod("setup")
 @summary("(Deprecated) Request a Relay protocol — use signalwire.connect")
+@opExample(#{
+  parameters: #{ protocol: "signalwire_<SIGNATURE>_<UUID>_<PROJECT-ID>" },
+  returnType: #{ protocol: "signalwire_xyze2e6acb37a98e6f8363b2a7c5bc5aa90e846752d01a4f0f5a788bafa4682b_ca00e9e7-XXXX-YYYY-ZZZZ-894991ce3f46_78429ef1-1234-5678-9000-16b59f95bb1f" },
+})
 op setup(...SetupParams): SetupResult;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -212,6 +250,9 @@ model AuthorizationStateParams {
  * state if it reconnects to another node.
  */
 @event("signalwire.authorization.state")
+@example(#{
+  authorization_state: "<encryptedAuthStateBase64>:<tagBase64>",
+})
 model AuthorizationStateEvent {
   ...AuthorizationStateParams;
 }

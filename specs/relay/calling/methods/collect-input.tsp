@@ -121,6 +121,26 @@ model CollectResult {
 /** Collect DTMF digits and/or speech from an active call. */
 @rpcMethod("calling.collect")
 @summary("Collect digits and/or speech from a call")
+@opExample(#{
+  parameters: #{
+    node_id: "a3e1b2c4-...",
+    call_id: "c7f9d2e1-...",
+    control_id: "collect-1",
+    initial_timeout: 5.0,
+    partial_results: false,
+    continuous: false,
+    send_start_of_input: true,
+    start_input_timers: false,
+    digits: #{ max: 4, terminators: "#*", digit_timeout: 1.0 },
+    speech: #{
+      end_silence_timeout: 1.0,
+      speech_timeout: 5.0,
+      language: "en-US",
+      hints: #["sales", "support", "representative"],
+    },
+  },
+  returnType: #{ code: "200", message: "Collecting", control_id: "collect-1" },
+})
 op collect(...CollectParams): CollectResult;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -141,6 +161,10 @@ model CollectStopResult {
 /** Stop an active collect. */
 @rpcMethod("calling.collect.stop")
 @summary("Stop an active collect")
+@opExample(#{
+  parameters: #{ node_id: "a3e1b2c4-...", call_id: "c7f9d2e1-...", control_id: "collect-1" },
+  returnType: #{ code: "200", message: "Stopping collect" },
+})
 op collectStop(...CollectStopParams): CollectStopResult;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -164,6 +188,10 @@ model CollectStartInputTimersResult {
  */
 @rpcMethod("calling.collect.start_input_timers")
 @summary("Start the initial-timeout timer on a collect")
+@opExample(#{
+  parameters: #{ node_id: "a3e1b2c4-...", call_id: "c7f9d2e1-...", control_id: "collect-1" },
+  returnType: #{ code: "200", message: "Starting input timers" },
+})
 op collectStartInputTimers(...CollectStartInputTimersParams): CollectStartInputTimersResult;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -218,6 +246,8 @@ model PlayAndCollectResult {
  * Play media to a call and collect input. NOT async-safe. Only one execution at a
  * time per call.
  */
+// NOTE: no @opExample here — the required `play: PlayMedia[]` is a @discriminator
+// union, and TypeSpec example values cannot narrow a discriminator base.
 @rpcMethod("calling.play_and_collect")
 @summary("Play media and collect input")
 op playAndCollect(...PlayAndCollectParams): PlayAndCollectResult;
@@ -240,6 +270,10 @@ model PlayAndCollectStopResult {
 /** Stop an active play-and-collect. */
 @rpcMethod("calling.play_and_collect.stop")
 @summary("Stop an active play-and-collect")
+@opExample(#{
+  parameters: #{ node_id: "a3e1b2c4-...", call_id: "c7f9d2e1-...", control_id: "pc-1" },
+  returnType: #{ code: "200", message: "Stopping play and collect" },
+})
 op playAndCollectStop(...PlayAndCollectStopParams): PlayAndCollectStopResult;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -269,4 +303,8 @@ model PlayAndCollectVolumeResult {
 /** Alter the volume of an active play-and-collect. */
 @rpcMethod("calling.play_and_collect.volume")
 @summary("Change play-and-collect volume")
+@opExample(#{
+  parameters: #{ node_id: "a3e1b2c4-...", call_id: "c7f9d2e1-...", control_id: "pc-1", volume: 3.0 },
+  returnType: #{ code: "200", message: "Changed play and collect volume" },
+})
 op playAndCollectVolume(...PlayAndCollectVolumeParams): PlayAndCollectVolumeResult;

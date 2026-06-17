@@ -80,6 +80,32 @@ model MessageParams {
  */
 @rpcMethod("message")
 @summary("Transport a Verto message to FreeSWITCH")
+@opExample(#{
+  parameters: #{
+    node_id: "f1d2c3b4-a596-4877-8b1e-0123456789ab",
+    message: #{
+      jsonrpc: "2.0",
+      id: "12345",
+      method: "verto.invite",
+      params: #{
+        dialogParams: #{},
+        sdp: "v=0...",
+        layout: "screenshare",
+        restore_layout: true,
+        positions: #{ self: "reserved-1", `12345678`: "standard" },
+      },
+    },
+    subscribe: #[
+      "member.joined",
+      "member.left",
+      "room.ended",
+      "room.updated",
+      "layout.changed",
+      "member.updated",
+    ],
+  },
+  returnType: #{ code: "200", message: "Received" },
+})
 op message(...MessageParams): MessageResult;
 
 /** Acknowledgement that the Verto message was received and forwarded. */
@@ -108,7 +134,7 @@ model Conference {
   /** Extension to dial to reach the conference. */
   extension: string;
 
-  /** Creation/last-activity time, in seconds since epoch (microsecond resolution). */
+  /** Creation/last-activity time, in seconds since epoch (fractional seconds). */
   timestamp: float64;
 }
 
@@ -124,6 +150,22 @@ model ConferenceListResult {
  */
 @rpcMethod("conference.list")
 @summary("List joinable conferences")
+@opExample(#{
+  parameters: #{},
+  returnType: #{
+    code: "200",
+    message: "Success",
+    data: #[
+      #{
+        node_id: "f1d2c3b4-a596-4877-8b1e-0123456789ab",
+        conference_id: "9a8b7c6d-5e4f-4a3b-2c1d-0fedcba98765",
+        name: "Awesome Room!",
+        extension: "5551234",
+        timestamp: 1234567.1234,
+      },
+    ],
+  },
+})
 op conferenceList(...ConferenceListParams): ConferenceListResult;
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -141,6 +183,18 @@ op conferenceList(...ConferenceListParams): ConferenceListResult;
  * here (see `verto_messages.md`).
  */
 @event("webrtc.message")
+@example(#{
+  node_id: "f1d2c3b4-a596-4877-8b1e-0123456789ab",
+  params: #{
+    jsonrpc: "2.0",
+    id: "12345",
+    method: "verto.media",
+    params: #{
+      callID: "7c6d5e4f-3a2b-4c1d-0fed-cba987654321",
+      sdp: "v=0...",
+    },
+  },
+})
 model MessageEvent {
   /**
    * The FreeSWITCH node id sending the event. Sent by FS so the client can

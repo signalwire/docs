@@ -211,14 +211,13 @@ components:
       properties:
         identity:
           type: string
-          description: The identity of the client on the BLADE network (`<nodeid>@<hagridnodeid>.<fabrichost>`).
+          description: A unique identifier assigned to this client for the duration of the connection.
         authorization:
           type: object
           additionalProperties: {}
           description: |-
-            The current authorization block granted to the client. Opaque to clients;
-            stored and echoed back. (Field shapes are backend-internal — modeled as a
-            free-form object pending source confirmation.)
+            The authorization block granted to this connection. Treat it as opaque:
+            store it and present it unchanged when reconnecting.
         protocol:
           type: string
           description: The protocol the client should use for subsequent requests.
@@ -226,12 +225,11 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/IceServer"
-          description: ICE servers for media.
+          description: ICE servers for media. Present for WebRTC clients; omitted when the connection carries no media.
       required:
         - identity
         - authorization
         - protocol
-        - ice_servers
     IceServer:
       type: object
       properties:
@@ -521,6 +519,23 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/SignalwireConnectRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: signalwire.connect
+            params:
+              version:
+                major: 3
+                minor: 0
+                revision: 0
+              authentication:
+                jwt_token: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9....
+              agent: somesdk-1.2.3
+              protocol: signalwire_........
+              authorization_state: <encryptedAuthStateBase64>:<tagBase64>
+              contexts:
+                - office
     signalwireConnectResponse:
       name: signalwire.connect.response
       title: signalwire.connect response
@@ -529,6 +544,21 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/SignalwireConnectResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              identity: c1a2b3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+              authorization: {}
+              protocol: signalwire_........
+              ice_servers:
+                - urls:
+                    - turn1.signalwire.com
+                    - turn2.signalwire.com
+                  credential: <HMACSHA1Base64>
+                  credentialType: password
+                  username: <expiration>:<projectid>
     signalwireDisconnectRequest:
       name: signalwire.disconnect.request
       title: signalwire.disconnect request
@@ -537,6 +567,13 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/SignalwireDisconnectRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: signalwire.disconnect
+            params:
+              restart: true
     signalwireDisconnectResponse:
       name: signalwire.disconnect.response
       title: signalwire.disconnect response
@@ -545,6 +582,11 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/SignalwireDisconnectResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result: {}
     signalwireReceiveRequest:
       name: signalwire.receive.request
       title: signalwire.receive request
@@ -553,6 +595,14 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/SignalwireReceiveRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: signalwire.receive
+            params:
+              contexts:
+                - pbx
     signalwireReceiveResponse:
       name: signalwire.receive.response
       title: signalwire.receive response
@@ -561,6 +611,13 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/SignalwireReceiveResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: Receiving events
     signalwireUnreceiveRequest:
       name: signalwire.unreceive.request
       title: signalwire.unreceive request
@@ -569,6 +626,15 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/SignalwireUnreceiveRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: signalwire.unreceive
+            params:
+              contexts:
+                - pbx
+                - asdf
     signalwireUnreceiveResponse:
       name: signalwire.unreceive.response
       title: signalwire.unreceive response
@@ -577,6 +643,13 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/SignalwireUnreceiveResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: Unreceiving events
     setupRequest:
       name: setup.request
       title: setup request
@@ -585,6 +658,13 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/SetupRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: setup
+            params:
+              protocol: signalwire_<SIGNATURE>_<UUID>_<PROJECT-ID>
     setupResponse:
       name: setup.response
       title: setup response
@@ -593,12 +673,27 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/SetupResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              protocol: signalwire_xyze2e6acb37a98e6f8363b2a7c5bc5aa90e846752d01a4f0f5a788bafa4682b_ca00e9e7-XXXX-YYYY-ZZZZ-894991ce3f46_78429ef1-1234-5678-9000-16b59f95bb1f
     authorizationStateEvent:
       name: signalwire.authorization.state
       title: signalwire.authorization.state event
       contentType: application/json
       payload:
         $ref: "#/components/schemas/AuthorizationStateEventFrame"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            method: signalwire.event
+            id: 550e8400-e29b-41d4-a716-446655440000
+            params:
+              event_type: signalwire.authorization.state
+              params:
+                authorization_state: <encryptedAuthStateBase64>:<tagBase64>
   securitySchemes:
     httpBearer:
       type: http

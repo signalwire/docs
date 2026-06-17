@@ -48,13 +48,6 @@ union ConferenceCallbackMethod {
   "POST",
 }
 
-/** Lifecycle of a conference recording reported via `recording_status_callback`. */
-union ConferenceRecordingCallbackEvent {
-  "in-progress",
-  "completed",
-  "absent",
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // calling.transfer
 // ─────────────────────────────────────────────────────────────────────────────
@@ -80,6 +73,14 @@ model TransferResult {
 /** (async-safe) Transfer call control to another RELAY application or to a SWML script. */
 @rpcMethod("calling.transfer")
 @summary("Transfer call control to a RELAY app or SWML script")
+@opExample(#{
+  parameters: #{
+    node_id: "a3e1b2c4-...",
+    call_id: "c7f9d2e1-...",
+    dest: "https://example.com/swml",
+  },
+  returnType: #{ code: "200", message: "Transferring", call_id: "c7f9d2e1-..." },
+})
 op transfer(...TransferParams): TransferResult;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -144,11 +145,11 @@ model JoinConferenceParams {
   recording_status_callback?: url;
 
   /**
-   * Recording lifecycle events to deliver to `recording_status_callback`.
-   * Default `completed`. (Example uses a space-separated token list, e.g.
-   * `"in-progress completed"` — see openQuestions.)
+   * Space-separated list of recording lifecycle events to deliver to
+   * `recording_status_callback`. Tokens: `in-progress completed absent`
+   * (e.g. `"in-progress completed"`). Default `completed`.
    */
-  recording_status_callback_event?: ConferenceRecordingCallbackEvent;
+  recording_status_callback_event?: string;
 
   /** Encoding of the recording status callback payload. Default `relay`. */
   recording_status_callback_event_type?: ConferenceCallbackEventType;
@@ -170,6 +171,37 @@ model JoinConferenceResult {
 /** Join an ad-hoc audio conference with RELAY and CXML calls. */
 @rpcMethod("calling.join_conference")
 @summary("Join an ad-hoc audio conference")
+@opExample(#{
+  parameters: #{
+    node_id: "a3e1b2c4-...",
+    call_id: "c7f9d2e1-...",
+    name: "my_conference",
+    muted: false,
+    beep: "onEnter",
+    start_on_enter: true,
+    end_on_exit: false,
+    wait_url: "https://hold_music.example/hold_music.wav",
+    max_participants: 3,
+    record: "record-from-start",
+    region: "eu",
+    trim: "do-not-trim",
+    coach: "123-123-123-123",
+    status_callback: "https://my_callback.example/update_conference_status",
+    status_callback_event: "start end join leave",
+    status_callback_method: "POST",
+    recording_status_callback: "https://my_callback.example/update_recording_status",
+    recording_status_callback_event: "in-progress completed",
+    recording_status_callback_method: "POST",
+    stream: #{
+      url: "wss://example.com/conference-audio",
+      name: "conference_bot",
+      codec: "PCMU",
+      authorization_bearer_token: "my-token",
+      custom_parameters: #{ conference_name: "my_conference" },
+    },
+  },
+  returnType: #{ code: "200", message: "Joining conference" },
+})
 op joinConference(...JoinConferenceParams): JoinConferenceResult;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -190,6 +222,14 @@ model LeaveConferenceResult {
 /** Leave an audio conference. */
 @rpcMethod("calling.leave_conference")
 @summary("Leave an audio conference")
+@opExample(#{
+  parameters: #{
+    node_id: "a3e1b2c4-...",
+    call_id: "c7f9d2e1-...",
+    conference_id: "f2b9e8a1-...",
+  },
+  returnType: #{ code: "200", message: "Leaving conference" },
+})
 op leaveConference(...LeaveConferenceParams): LeaveConferenceResult;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -203,13 +243,17 @@ model HoldParams {
 model HoldResult {
   ...RelayResult;
 
-  /** Resulting hold state (`"hold"`). */
-  state?: string;
+  /** Resulting hold state (always `"hold"`). */
+  state?: "hold";
 }
 
 /** (NOT IMPLEMENTED) (async-safe) Put a call into a hold state. */
 @rpcMethod("calling.hold")
 @summary("(Not implemented) Put a call on hold")
+@opExample(#{
+  parameters: #{ node_id: "a3e1b2c4-...", call_id: "c7f9d2e1-..." },
+  returnType: #{ code: "200", message: "Call on hold", state: "hold" },
+})
 op hold(...HoldParams): HoldResult;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -223,13 +267,17 @@ model UnholdParams {
 model UnholdResult {
   ...RelayResult;
 
-  /** Resulting hold state (`"unhold"`). */
-  state?: string;
+  /** Resulting hold state (always `"unhold"`). */
+  state?: "unhold";
 }
 
 /** (NOT IMPLEMENTED) (async-safe) Release a call from a hold state. */
 @rpcMethod("calling.unhold")
 @summary("(Not implemented) Release a call from hold")
+@opExample(#{
+  parameters: #{ node_id: "a3e1b2c4-...", call_id: "c7f9d2e1-..." },
+  returnType: #{ code: "200", message: "Call off hold", state: "unhold" },
+})
 op unhold(...UnholdParams): UnholdResult;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -247,6 +295,10 @@ model DenoiseResult {
 /** (async-safe) Start call noise reduction. */
 @rpcMethod("calling.denoise")
 @summary("Start call noise reduction")
+@opExample(#{
+  parameters: #{ node_id: "a3e1b2c4-...", call_id: "c7f9d2e1-..." },
+  returnType: #{ code: "200", message: "Denoiser on" },
+})
 op denoise(...DenoiseParams): DenoiseResult;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -264,6 +316,10 @@ model DenoiseStopResult {
 /** (async-safe) Stop call noise reduction. */
 @rpcMethod("calling.denoise.stop")
 @summary("Stop call noise reduction")
+@opExample(#{
+  parameters: #{ node_id: "a3e1b2c4-...", call_id: "c7f9d2e1-..." },
+  returnType: #{ code: "200", message: "Denoiser off" },
+})
 op denoiseStop(...DenoiseStopParams): DenoiseStopResult;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -297,4 +353,18 @@ model SendDigitsResult {
 /** Send DTMF digit tones to a call. */
 @rpcMethod("calling.send_digits")
 @summary("Send DTMF digit tones to a call")
+@opExample(#{
+  parameters: #{
+    node_id: "a3e1b2c4-...",
+    call_id: "c7f9d2e1-...",
+    control_id: "send-digits-1",
+    digits: "wW1234567890*#ABCD",
+  },
+  returnType: #{
+    code: "200",
+    message: "Sending Digits",
+    control_id: "send-digits-1",
+    call_id: "c7f9d2e1-...",
+  },
+})
 op sendDigits(...SendDigitsParams): SendDigitsResult;

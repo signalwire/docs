@@ -1145,7 +1145,11 @@ components:
           type: string
           description: Region to originate from (account/device default if unset).
         device:
-          description: The single device to call (only `phone` is documented for this method).
+          description: |-
+            The single device to call. Only the `phone` device is documented for this
+            method, with just `from_number`, `to_number`, and `timeout` — the `sip`/
+            `webrtc` variants and the extra phone params (`max_duration`, `confirm`,
+            `call_state_url`, `call_state_events`) are not supported here.
           allOf:
             - $ref: "#/components/schemas/DialDevice"
       required:
@@ -1395,10 +1399,10 @@ components:
           description: Human-readable result message.
         call_id:
           type: string
-          description: The created call id.
+          description: The created call id. Returned on a `"200"` result; absent on error.
         node_id:
           type: string
-          description: Node the call is on.
+          description: Node the call is on. Returned on a `"200"` result; absent on error.
       required:
         - code
         - message
@@ -1502,7 +1506,9 @@ components:
             $ref: "#/components/schemas/AnswerCodec"
           description: |-
             Codecs to negotiate (SignalWire-picked if unset). If a listed codec is
-            unsupported by the call type the request fails with `"400"`.
+            unsupported by the call type the request fails with `"400"` — check
+            `call.device.type` in `calling.call.state` events to determine the call type
+            (`phone` supports a narrower set than `sip`/`webrtc`).
       required:
         - node_id
         - call_id
@@ -1668,7 +1674,9 @@ components:
         status_url:
           type: string
           format: uri
-          description: URL to POST connect events to.
+          description: |-
+            URL to POST `calling.call.connect` events to (statuses: `connecting`,
+            `connected`, `failed`, `disconnected`).
       required:
         - node_id
         - call_id
@@ -2475,7 +2483,6 @@ components:
                   type: number
                   format: double
                   description: Seconds of silence to play.
-                  exclusiveMinimum: 0
               required:
                 - duration
           required:
@@ -3229,6 +3236,7 @@ components:
       properties:
         type:
           type: string
+          description: Device type discriminator. Only `sip` is valid.
       required:
         - type
       description: Target device for a SIP REFER transfer. Discriminated on `type` (`sip` only).
@@ -3292,6 +3300,7 @@ components:
       required:
         - code
         - message
+      description: Result of `calling.refer`.
     CallingReferResponse:
       type: object
       required:
@@ -3318,6 +3327,7 @@ components:
       required:
         - node_id
         - call_id
+      description: Parameters for `calling.pass` — identifies the call whose offer to pass on.
     CallingPassRequest:
       type: object
       required:
@@ -3349,6 +3359,7 @@ components:
       required:
         - code
         - message
+      description: Result of `calling.pass`.
     CallingPassResponse:
       type: object
       required:
@@ -3390,49 +3401,44 @@ components:
           allOf:
             - $ref: "#/components/schemas/PayMethod"
         bank_account_type:
-          description: |-
-            Bank account type (relevant only for `ach-debit`). Undocumented in the
-            protocol reference but accepted by the gateway. Default `consumer-checking`.
+          description: Bank account type, for bank-debit payment flows. Default `consumer-checking`.
           default: consumer-checking
           allOf:
             - $ref: "#/components/schemas/PayBankAccountType"
         timeout:
-          type: integer
-          format: int32
+          type: string
           description: |-
             Seconds the Pay IVR waits for the next digit before validating the captured
-            digits. Default `5`. (Sent as a JSON string on the wire, e.g. `"6"`.)
-          minimum: 0
-          default: 5
+            digits, as a string of digits on the wire (e.g. `"6"`). Default `"5"`.
+          pattern: ^[0-9]+$
+          default: "5"
         max_attempts:
-          type: integer
-          format: int32
+          type: string
           description: |-
-            Number of times the Pay IVR retries when collecting card details. Default
-            `1`. (Sent as a JSON string on the wire, e.g. `"3"`.)
-          minimum: 1
-          default: 1
+            Number of times the Pay IVR retries when collecting card details, as a string
+            of digits on the wire (e.g. `"3"`). Default `"1"`.
+          pattern: ^[0-9]+$
+          default: "1"
         security_code:
-          type: boolean
+          type: string
           description: |-
-            Whether to prompt for the card security code. Default `true`. (Sent as a JSON
-            string on the wire, e.g. `"false"`.)
-          default: true
+            Whether to prompt for the card security code, as a string boolean on the wire
+            (`"true"` or `"false"`). Default `"true"`.
+          default: "true"
         postal_code:
-          type: boolean
+          type: string
           description: |-
-            Whether to prompt for the billing postal code. Default `true`. (Sent as a
-            JSON string on the wire, e.g. `"false"`. A known postcode may instead be
-            supplied so the IVR skips the prompt — see open questions.)
-          default: true
+            Whether to prompt for the billing postal code, as a string on the wire
+            (`"true"`, `"false"`, or a known postcode so the IVR skips the prompt).
+            Default `"true"`.
+          default: "true"
         min_postal_code_length:
-          type: integer
-          format: int32
+          type: string
           description: |-
-            Minimum number of digits a caller must enter for the postal code. Default
-            `0`. (Sent as a JSON string on the wire, e.g. `"6"`.)
-          minimum: 0
-          default: 0
+            Minimum number of digits a caller must enter for the postal code, as a string
+            of digits on the wire (e.g. `"6"`). Default `"0"`.
+          pattern: ^[0-9]+$
+          default: "0"
         payment_connector_url:
           type: string
           format: uri
@@ -3491,12 +3497,11 @@ components:
       type: string
       enum:
         - dtmf
-        - speech
+        - voice
     PayMethod:
       type: string
       enum:
         - credit-card
-        - ach-debit
     PayBankAccountType:
       type: string
       enum:
@@ -3534,6 +3539,16 @@ components:
             Space-delimited card-type tokens this prompt applies to (subset of
             `visa mastercard amex maestro discover jcb diners-club`). Applies to all
             card types if unset.
+        attempt:
+          type: string
+          description: |-
+            Which collection attempt(s) this prompt applies to, as a space-delimited list
+            of attempt numbers (e.g. `"1 2"`). Applies to all attempts if unset.
+        require_matching_inputs:
+          type: string
+          description: |-
+            Whether the caller must enter the same value twice for it to be accepted,
+            as a string boolean (e.g. `"true"`). Applies to confirmation-style prompts.
         error_type:
           type: string
           description: |-
@@ -3550,7 +3565,6 @@ components:
           description: Actions to execute for this prompt.
       required:
         - for
-        - actions
       description: |-
         A custom prompt overriding the Pay IVR default for a given situation.
 
@@ -3723,7 +3737,9 @@ components:
             - listen
             - speak
             - both
-          description: Which side of the call hears the media. Default `listen`.
+          description: |-
+            Which side of the call hears the media: `listen` (what the called party
+            hears), `speak`, or `both`. Default `listen`.
           default: listen
         status_url:
           type: string
@@ -4122,9 +4138,7 @@ components:
         machine_voice_threshold:
           type: number
           format: double
-          description: |-
-            How much voice (sec > 0) to decide MACHINE. Default `1.25`. (Source says
-            "sec > 0" but the description says "in ms" — units to confirm.)
+          description: How much voice (sec > 0) to decide MACHINE. Default `1.25`.
           exclusiveMinimum: 0
         machine_words_threshold:
           type: integer
@@ -4704,9 +4718,10 @@ components:
           format: int32
           description: RTP port.
         codec:
-          description: Codec — matches the tapped audio if not set.
-          allOf:
-            - $ref: "#/components/schemas/TapCodec"
+          type: string
+          description: |-
+            Codec for the tapped audio (known values: `OPUS`, `PCMA`, `PCMU`).
+            Matches the tapped audio if not set.
         ptime:
           type: integer
           format: int32
@@ -4719,12 +4734,6 @@ components:
         - addr
         - port
       description: "`rtp` device params (delivery target)."
-    TapCodec:
-      type: string
-      enum:
-        - OPUS
-        - PCMA
-        - PCMU
     TapWsDevice:
       allOf:
         - $ref: "#/components/schemas/TapDevice"
@@ -4745,9 +4754,10 @@ components:
           type: string
           description: WebSocket URI.
         codec:
-          description: Codec — matches the tapped audio if not set.
-          allOf:
-            - $ref: "#/components/schemas/TapCodec"
+          type: string
+          description: |-
+            Codec for the tapped audio (known values: `OPUS`, `PCMA`, `PCMU`).
+            Matches the tapped audio if not set.
         rate:
           type: integer
           format: int32
@@ -5201,12 +5211,11 @@ components:
           format: uri
           description: "URL to POST recording status callbacks to. Default: not set."
         recording_status_callback_event:
+          type: string
           description: |-
-            Recording lifecycle events to deliver to `recording_status_callback`.
-            Default `completed`. (Example uses a space-separated token list, e.g.
-            `"in-progress completed"` — see openQuestions.)
-          allOf:
-            - $ref: "#/components/schemas/ConferenceRecordingCallbackEvent"
+            Space-separated list of recording lifecycle events to deliver to
+            `recording_status_callback`. Tokens: `in-progress completed absent`
+            (e.g. `"in-progress completed"`). Default `completed`.
         recording_status_callback_event_type:
           description: Encoding of the recording status callback payload. Default `relay`.
           allOf:
@@ -5258,12 +5267,6 @@ components:
       enum:
         - GET
         - POST
-    ConferenceRecordingCallbackEvent:
-      type: string
-      enum:
-        - in-progress
-        - completed
-        - absent
     CallingJoinConferenceRequest:
       type: object
       required:
@@ -5412,7 +5415,9 @@ components:
           description: Human-readable result message.
         state:
           type: string
-          description: Resulting hold state (`"hold"`).
+          enum:
+            - hold
+          description: Resulting hold state (always `"hold"`).
       required:
         - code
         - message
@@ -5472,7 +5477,9 @@ components:
           description: Human-readable result message.
         state:
           type: string
-          description: Resulting hold state (`"unhold"`).
+          enum:
+            - unhold
+          description: Resulting hold state (always `"unhold"`).
       required:
         - code
         - message
@@ -7130,6 +7137,7 @@ components:
           type: string
       required:
         - type
+      description: The negotiated call leg reported in call events. Discriminated on `type`.
       discriminator: type
     CallPhoneDevice:
       allOf:
@@ -7202,8 +7210,10 @@ components:
       properties:
         node_id:
           type: string
+          description: Node the parent call is on.
         call_id:
           type: string
+          description: The parent call id.
         device_type:
           type: string
           description: The parent device type (flattened, e.g. `sip`).
@@ -7213,8 +7223,10 @@ components:
       properties:
         node_id:
           type: string
+          description: Node the peer call is on.
         call_id:
           type: string
+          description: The peer call id.
       description: A peer call referenced by an event.
     CallState:
       type: string
@@ -7365,14 +7377,19 @@ components:
       properties:
         node_id:
           type: string
+          description: Node the peer call is on.
         call_id:
           type: string
+          description: The peer call id.
         tag:
           type: string
+          description: Client data the peer call is tagged with.
         queue_id:
           type: string
+          description: Id of the queue the peer was pulled from, when connected via a queue.
         queue_name:
           type: string
+          description: Friendly name of that queue.
         device:
           description: The peer's negotiated device.
           allOf:
@@ -7444,10 +7461,13 @@ components:
       properties:
         node_id:
           type: string
+          description: Node the answered call is on.
         call_id:
           type: string
+          description: The answered call id.
         tag:
           type: string
+          description: Client data the answered call is tagged with.
         device:
           description: The negotiated device.
           allOf:
@@ -8043,7 +8063,8 @@ components:
       description: |-
         A detector's event payload. Discriminated on `type` (`fax|machine|digit`).
         Every variant's `params.event` may also surface the generic `finished` (on
-        completion) or `error` (if unable to start) values noted in the source prose.
+        completion) or `error` (if unable to start) values in addition to its
+        type-specific values; these are included in each variant's `event` type.
       discriminator: type
     CallDetectFax:
       allOf:
@@ -8070,6 +8091,8 @@ components:
       enum:
         - CED
         - CNG
+        - finished
+        - error
     CallDetectMachine:
       allOf:
         - $ref: "#/components/schemas/CallDetectResult"
@@ -8101,6 +8124,8 @@ components:
         - UNKNOWN
         - READY
         - NOT_READY
+        - finished
+        - error
     CallDetectDigit:
       allOf:
         - $ref: "#/components/schemas/CallDetectResult"
@@ -8814,7 +8839,7 @@ components:
           type: string
           description: The name of the conference.
         status:
-          description: The conference event status (secondary discriminator).
+          description: Which conference event occurred.
           allOf:
             - $ref: "#/components/schemas/ConferenceStatus"
         call_id:
@@ -9169,6 +9194,17 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingAnswerRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.answer
+            params:
+              node_id: a3b3e8e0-1234-4a4b-8c8d-000000000001
+              call_id: b4c4f9f1-2345-4b5c-9d9e-000000000002
+              codecs:
+                - PCMU
+                - PCMA
     callingAnswerResponse:
       name: calling.answer.response
       title: calling.answer response
@@ -9177,6 +9213,13 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingAnswerResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: Answered
     callingEndRequest:
       name: calling.end.request
       title: calling.end request
@@ -9185,6 +9228,15 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingEndRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.end
+            params:
+              node_id: a3b3e8e0-1234-4a4b-8c8d-000000000001
+              call_id: b4c4f9f1-2345-4b5c-9d9e-000000000002
+              reason: hangup
     callingEndResponse:
       name: calling.end.response
       title: calling.end response
@@ -9193,6 +9245,13 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingEndResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: Disconnecting call
     callingConnectRequest:
       name: calling.connect.request
       title: calling.connect request
@@ -9217,6 +9276,14 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingDisconnectRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.disconnect
+            params:
+              node_id: a3b3e8e0-1234-4a4b-8c8d-000000000001
+              call_id: b4c4f9f1-2345-4b5c-9d9e-000000000002
     callingDisconnectResponse:
       name: calling.disconnect.response
       title: calling.disconnect response
@@ -9225,6 +9292,13 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingDisconnectResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: Disconnecting
     callingCollectRequest:
       name: calling.collect.request
       title: calling.collect request
@@ -9233,6 +9307,32 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingCollectRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.collect
+            params:
+              node_id: a3e1b2c4-...
+              call_id: c7f9d2e1-...
+              control_id: collect-1
+              initial_timeout: 5
+              partial_results: false
+              continuous: false
+              send_start_of_input: true
+              start_input_timers: false
+              digits:
+                max: 4
+                terminators: "#*"
+                digit_timeout: 1
+              speech:
+                end_silence_timeout: 1
+                speech_timeout: 5
+                language: en-US
+                hints:
+                  - sales
+                  - support
+                  - representative
     callingCollectResponse:
       name: calling.collect.response
       title: calling.collect response
@@ -9241,6 +9341,14 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingCollectResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: Collecting
+              control_id: collect-1
     callingCollectStopRequest:
       name: calling.collect.stop.request
       title: calling.collect.stop request
@@ -9249,6 +9357,15 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingCollectStopRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.collect.stop
+            params:
+              node_id: a3e1b2c4-...
+              call_id: c7f9d2e1-...
+              control_id: collect-1
     callingCollectStopResponse:
       name: calling.collect.stop.response
       title: calling.collect.stop response
@@ -9257,6 +9374,13 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingCollectStopResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: Stopping collect
     callingCollectStartInputTimersRequest:
       name: calling.collect.start_input_timers.request
       title: calling.collect.start_input_timers request
@@ -9265,6 +9389,15 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingCollectStartInputTimersRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.collect.start_input_timers
+            params:
+              node_id: a3e1b2c4-...
+              call_id: c7f9d2e1-...
+              control_id: collect-1
     callingCollectStartInputTimersResponse:
       name: calling.collect.start_input_timers.response
       title: calling.collect.start_input_timers response
@@ -9273,6 +9406,13 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingCollectStartInputTimersResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: Starting input timers
     callingPlayAndCollectRequest:
       name: calling.play_and_collect.request
       title: calling.play_and_collect request
@@ -9297,6 +9437,15 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingPlayAndCollectStopRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.play_and_collect.stop
+            params:
+              node_id: a3e1b2c4-...
+              call_id: c7f9d2e1-...
+              control_id: pc-1
     callingPlayAndCollectStopResponse:
       name: calling.play_and_collect.stop.response
       title: calling.play_and_collect.stop response
@@ -9305,6 +9454,13 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingPlayAndCollectStopResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: Stopping play and collect
     callingPlayAndCollectVolumeRequest:
       name: calling.play_and_collect.volume.request
       title: calling.play_and_collect.volume request
@@ -9313,6 +9469,16 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingPlayAndCollectVolumeRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.play_and_collect.volume
+            params:
+              node_id: a3e1b2c4-...
+              call_id: c7f9d2e1-...
+              control_id: pc-1
+              volume: 3
     callingPlayAndCollectVolumeResponse:
       name: calling.play_and_collect.volume.response
       title: calling.play_and_collect.volume response
@@ -9321,6 +9487,13 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingPlayAndCollectVolumeResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: Changed play and collect volume
     callingQueueEnterRequest:
       name: calling.queue.enter.request
       title: calling.queue.enter request
@@ -9329,6 +9502,17 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingQueueEnterRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.queue.enter
+            params:
+              node_id: a3b3e8e0-1234-4a4b-8c8d-000000000001
+              call_id: b4c4f9f1-2345-4b5c-9d9e-000000000002
+              control_id: queue-1
+              queue_name: support
+              status_url: https://example.com/queue-webhook
     callingQueueEnterResponse:
       name: calling.queue.enter.response
       title: calling.queue.enter response
@@ -9337,6 +9521,14 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingQueueEnterResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: Entering Queue
+              control_id: queue-1
     callingQueueLeaveRequest:
       name: calling.queue.leave.request
       title: calling.queue.leave request
@@ -9345,6 +9537,18 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingQueueLeaveRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.queue.leave
+            params:
+              node_id: a3b3e8e0-1234-4a4b-8c8d-000000000001
+              call_id: b4c4f9f1-2345-4b5c-9d9e-000000000002
+              control_id: queue-1
+              queue_name: support
+              queue_id: q-7f9d2e1c
+              status_url: https://example.com/queue-webhook
     callingQueueLeaveResponse:
       name: calling.queue.leave.response
       title: calling.queue.leave response
@@ -9353,6 +9557,14 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingQueueLeaveResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: Leaving Queue
+              control_id: queue-1
     callingRecordRequest:
       name: calling.record.request
       title: calling.record request
@@ -9361,6 +9573,26 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingRecordRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.record
+            params:
+              node_id: a3b3e8e0-1234-4a4b-8c8d-000000000001
+              call_id: b4c4f9f1-2345-4b5c-9d9e-000000000002
+              control_id: record-1
+              record:
+                audio:
+                  beep: false
+                  format: mp3
+                  stereo: false
+                  direction: speak
+                  initial_timeout: 5
+                  end_silence_timeout: 1
+                  terminators: "#*"
+                  input_sensitivity: 44
+              status_url: https://example.com/recording-webhook
     callingRecordResponse:
       name: calling.record.response
       title: calling.record response
@@ -9369,6 +9601,15 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingRecordResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: Recording
+              control_id: record-1
+              url: https://example.com/recordings/record-1.mp3
     callingRecordPauseRequest:
       name: calling.record.pause.request
       title: calling.record.pause request
@@ -9377,6 +9618,16 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingRecordPauseRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.record.pause
+            params:
+              node_id: a3b3e8e0-1234-4a4b-8c8d-000000000001
+              call_id: b4c4f9f1-2345-4b5c-9d9e-000000000002
+              control_id: record-1
+              behavior: silence
     callingRecordPauseResponse:
       name: calling.record.pause.response
       title: calling.record.pause response
@@ -9385,6 +9636,14 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingRecordPauseResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: Pausing recording
+              control_id: record-1
     callingRecordResumeRequest:
       name: calling.record.resume.request
       title: calling.record.resume request
@@ -9393,6 +9652,15 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingRecordResumeRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.record.resume
+            params:
+              node_id: a3b3e8e0-1234-4a4b-8c8d-000000000001
+              call_id: b4c4f9f1-2345-4b5c-9d9e-000000000002
+              control_id: record-1
     callingRecordResumeResponse:
       name: calling.record.resume.response
       title: calling.record.resume response
@@ -9401,6 +9669,14 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingRecordResumeResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: Recording
+              control_id: record-1
     callingRecordStopRequest:
       name: calling.record.stop.request
       title: calling.record.stop request
@@ -9409,6 +9685,15 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingRecordStopRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.record.stop
+            params:
+              node_id: a3b3e8e0-1234-4a4b-8c8d-000000000001
+              call_id: b4c4f9f1-2345-4b5c-9d9e-000000000002
+              control_id: record-1
     callingRecordStopResponse:
       name: calling.record.stop.response
       title: calling.record.stop response
@@ -9417,6 +9702,14 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingRecordStopResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: Stopping recording
+              control_id: record-1
     callingReferRequest:
       name: calling.refer.request
       title: calling.refer request
@@ -9441,6 +9734,14 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingPassRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.pass
+            params:
+              node_id: a3b3e8e0-1234-4a4b-8c8d-000000000001
+              call_id: b4c4f9f1-2345-4b5c-9d9e-000000000002
     callingPassResponse:
       name: calling.pass.response
       title: calling.pass response
@@ -9449,6 +9750,13 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingPassResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: Passing call to another consumer
     callingPayRequest:
       name: calling.pay.request
       title: calling.pay request
@@ -9457,6 +9765,40 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingPayRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.pay
+            params:
+              node_id: a3b3e8e0-1234-4a4b-8c8d-000000000001
+              call_id: b4c4f9f1-2345-4b5c-9d9e-000000000002
+              control_id: pay-1
+              input: dtmf
+              status_url: https://example.com/status-webhook
+              payment_method: credit-card
+              timeout: "6"
+              max_attempts: "3"
+              security_code: "false"
+              postal_code: "false"
+              min_postal_code_length: "6"
+              payment_connector_url: https://example.com/accept-payment
+              token_type: one-time
+              charge_amount: "15.00"
+              currency: usd
+              language: en-US
+              voice: polly.Sally
+              description: book
+              valid_card_types: amex mastercard visa jcb
+              parameters:
+                - name: customer_id
+                  value: 93652a3c-1234-dcba-abcd-7980d413bv31
+              prompts:
+                - for: payment-card-number
+                  error_type: invalid-card-number timeout invalid-card-type
+                  actions:
+                    - type: Say
+                      phrase: You entered an invalid card number. Please try again.
     callingPayResponse:
       name: calling.pay.response
       title: calling.pay response
@@ -9465,6 +9807,14 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingPayResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: Processing payment
+              control_id: pay-1
     callingPayStopRequest:
       name: calling.pay.stop.request
       title: calling.pay.stop request
@@ -9473,6 +9823,15 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingPayStopRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.pay.stop
+            params:
+              node_id: a3b3e8e0-1234-4a4b-8c8d-000000000001
+              call_id: b4c4f9f1-2345-4b5c-9d9e-000000000002
+              control_id: pay-1
     callingPayStopResponse:
       name: calling.pay.stop.response
       title: calling.pay.stop response
@@ -9481,6 +9840,13 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingPayStopResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: Stopping payment
     callingPlayRequest:
       name: calling.play.request
       title: calling.play request
@@ -9505,6 +9871,15 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingPlayPauseRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.play.pause
+            params:
+              node_id: a3b3e8e0-1234-4a4b-8c8d-000000000001
+              call_id: b4c4f9f1-2345-4b5c-9d9e-000000000002
+              control_id: play-1
     callingPlayPauseResponse:
       name: calling.play.pause.response
       title: calling.play.pause response
@@ -9513,6 +9888,13 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingPlayPauseResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: Paused play
     callingPlayResumeRequest:
       name: calling.play.resume.request
       title: calling.play.resume request
@@ -9521,6 +9903,15 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingPlayResumeRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.play.resume
+            params:
+              node_id: a3b3e8e0-1234-4a4b-8c8d-000000000001
+              call_id: b4c4f9f1-2345-4b5c-9d9e-000000000002
+              control_id: play-1
     callingPlayResumeResponse:
       name: calling.play.resume.response
       title: calling.play.resume response
@@ -9529,6 +9920,13 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingPlayResumeResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: Resumed play
     callingPlayStopRequest:
       name: calling.play.stop.request
       title: calling.play.stop request
@@ -9537,6 +9935,15 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingPlayStopRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.play.stop
+            params:
+              node_id: a3b3e8e0-1234-4a4b-8c8d-000000000001
+              call_id: b4c4f9f1-2345-4b5c-9d9e-000000000002
+              control_id: play-1
     callingPlayStopResponse:
       name: calling.play.stop.response
       title: calling.play.stop response
@@ -9545,6 +9952,13 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingPlayStopResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: Stopping play
     callingPlayVolumeRequest:
       name: calling.play.volume.request
       title: calling.play.volume request
@@ -9553,6 +9967,16 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingPlayVolumeRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.play.volume
+            params:
+              node_id: a3b3e8e0-1234-4a4b-8c8d-000000000001
+              call_id: b4c4f9f1-2345-4b5c-9d9e-000000000002
+              control_id: play-1
+              volume: 3
     callingPlayVolumeResponse:
       name: calling.play.volume.response
       title: calling.play.volume response
@@ -9561,6 +9985,13 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingPlayVolumeResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: Changed play volume
     callingDetectRequest:
       name: calling.detect.request
       title: calling.detect request
@@ -9585,6 +10016,15 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingDetectStopRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.detect.stop
+            params:
+              node_id: a3b3e8e0-1234-4a4b-8c8d-000000000001
+              call_id: b4c4f9f1-2345-4b5c-9d9e-000000000002
+              control_id: detect-1
     callingDetectStopResponse:
       name: calling.detect.stop.response
       title: calling.detect.stop response
@@ -9593,6 +10033,15 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingDetectStopResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: Stopping detect
+              control_id: detect-1
+              call_id: b4c4f9f1-2345-4b5c-9d9e-000000000002
     callingSendFaxRequest:
       name: calling.send_fax.request
       title: calling.send_fax request
@@ -9601,6 +10050,18 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingSendFaxRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.send_fax
+            params:
+              node_id: a3b3e8e0-1234-4a4b-8c8d-000000000001
+              call_id: b4c4f9f1-2345-4b5c-9d9e-000000000002
+              control_id: fax-1
+              document: https://example.com/my_doc_to_fax.pdf
+              identity: "+155512312345"
+              header_info: SignalWire
     callingSendFaxResponse:
       name: calling.send_fax.response
       title: calling.send_fax response
@@ -9609,6 +10070,15 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingSendFaxResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: Sending Fax
+              control_id: fax-1
+              call_id: b4c4f9f1-2345-4b5c-9d9e-000000000002
     callingSendFaxStopRequest:
       name: calling.send_fax.stop.request
       title: calling.send_fax.stop request
@@ -9617,6 +10087,15 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingSendFaxStopRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.send_fax.stop
+            params:
+              node_id: a3b3e8e0-1234-4a4b-8c8d-000000000001
+              call_id: b4c4f9f1-2345-4b5c-9d9e-000000000002
+              control_id: fax-1
     callingSendFaxStopResponse:
       name: calling.send_fax.stop.response
       title: calling.send_fax.stop response
@@ -9625,6 +10104,15 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingSendFaxStopResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: Stopping send fax
+              control_id: fax-1
+              call_id: b4c4f9f1-2345-4b5c-9d9e-000000000002
     callingReceiveFaxRequest:
       name: calling.receive_fax.request
       title: calling.receive_fax request
@@ -9633,6 +10121,15 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingReceiveFaxRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.receive_fax
+            params:
+              node_id: a3b3e8e0-1234-4a4b-8c8d-000000000001
+              call_id: b4c4f9f1-2345-4b5c-9d9e-000000000002
+              control_id: fax-1
     callingReceiveFaxResponse:
       name: calling.receive_fax.response
       title: calling.receive_fax response
@@ -9641,6 +10138,15 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingReceiveFaxResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: Receiving Fax
+              control_id: fax-1
+              call_id: b4c4f9f1-2345-4b5c-9d9e-000000000002
     callingReceiveFaxStopRequest:
       name: calling.receive_fax.stop.request
       title: calling.receive_fax.stop request
@@ -9649,6 +10155,15 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingReceiveFaxStopRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.receive_fax.stop
+            params:
+              node_id: a3b3e8e0-1234-4a4b-8c8d-000000000001
+              call_id: b4c4f9f1-2345-4b5c-9d9e-000000000002
+              control_id: fax-1
     callingReceiveFaxStopResponse:
       name: calling.receive_fax.stop.response
       title: calling.receive_fax.stop response
@@ -9657,6 +10172,15 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingReceiveFaxStopResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: Stopping receive fax
+              control_id: fax-1
+              call_id: b4c4f9f1-2345-4b5c-9d9e-000000000002
     callingTapRequest:
       name: calling.tap.request
       title: calling.tap request
@@ -9681,6 +10205,15 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingTapStopRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.tap.stop
+            params:
+              node_id: a3b3e8e0-1234-4a4b-8c8d-000000000001
+              call_id: b4c4f9f1-2345-4b5c-9d9e-000000000002
+              control_id: tap-1
     callingTapStopResponse:
       name: calling.tap.stop.response
       title: calling.tap.stop response
@@ -9689,6 +10222,15 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingTapStopResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: Stopping tap
+              control_id: tap-1
+              call_id: b4c4f9f1-2345-4b5c-9d9e-000000000002
     callingStreamRequest:
       name: calling.stream.request
       title: calling.stream request
@@ -9697,6 +10239,23 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingStreamRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.stream
+            params:
+              node_id: a3b3e8e0-1234-4a4b-8c8d-000000000001
+              call_id: b4c4f9f1-2345-4b5c-9d9e-000000000002
+              control_id: stream-1
+              url: wss://example.com/audio
+              name: my_stream
+              codec: PCMU
+              track: inbound_track
+              status_url: https://example.com/status
+              authorization_bearer_token: my-token
+              custom_parameters:
+                user_id: "12345"
     callingStreamResponse:
       name: calling.stream.response
       title: calling.stream response
@@ -9705,6 +10264,15 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingStreamResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: Starting stream
+              control_id: stream-1
+              node_id: a3b3e8e0-1234-4a4b-8c8d-000000000001
     callingStreamStopRequest:
       name: calling.stream.stop.request
       title: calling.stream.stop request
@@ -9713,6 +10281,15 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingStreamStopRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.stream.stop
+            params:
+              node_id: a3b3e8e0-1234-4a4b-8c8d-000000000001
+              call_id: b4c4f9f1-2345-4b5c-9d9e-000000000002
+              control_id: stream-1
     callingStreamStopResponse:
       name: calling.stream.stop.response
       title: calling.stream.stop response
@@ -9721,6 +10298,15 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingStreamStopResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: Stopping stream
+              control_id: stream-1
+              call_id: b4c4f9f1-2345-4b5c-9d9e-000000000002
     callingTransferRequest:
       name: calling.transfer.request
       title: calling.transfer request
@@ -9729,6 +10315,15 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingTransferRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.transfer
+            params:
+              node_id: a3e1b2c4-...
+              call_id: c7f9d2e1-...
+              dest: https://example.com/swml
     callingTransferResponse:
       name: calling.transfer.response
       title: calling.transfer response
@@ -9737,6 +10332,14 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingTransferResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: Transferring
+              call_id: c7f9d2e1-...
     callingJoinConferenceRequest:
       name: calling.join_conference.request
       title: calling.join_conference request
@@ -9745,6 +10348,38 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingJoinConferenceRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.join_conference
+            params:
+              node_id: a3e1b2c4-...
+              call_id: c7f9d2e1-...
+              name: my_conference
+              muted: false
+              beep: onEnter
+              start_on_enter: true
+              end_on_exit: false
+              wait_url: https://hold_music.example/hold_music.wav
+              max_participants: 3
+              record: record-from-start
+              region: eu
+              trim: do-not-trim
+              coach: 123-123-123-123
+              status_callback: https://my_callback.example/update_conference_status
+              status_callback_event: start end join leave
+              status_callback_method: POST
+              recording_status_callback: https://my_callback.example/update_recording_status
+              recording_status_callback_event: in-progress completed
+              recording_status_callback_method: POST
+              stream:
+                url: wss://example.com/conference-audio
+                name: conference_bot
+                codec: PCMU
+                authorization_bearer_token: my-token
+                custom_parameters:
+                  conference_name: my_conference
     callingJoinConferenceResponse:
       name: calling.join_conference.response
       title: calling.join_conference response
@@ -9753,6 +10388,13 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingJoinConferenceResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: Joining conference
     callingLeaveConferenceRequest:
       name: calling.leave_conference.request
       title: calling.leave_conference request
@@ -9761,6 +10403,15 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingLeaveConferenceRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.leave_conference
+            params:
+              node_id: a3e1b2c4-...
+              call_id: c7f9d2e1-...
+              conference_id: f2b9e8a1-...
     callingLeaveConferenceResponse:
       name: calling.leave_conference.response
       title: calling.leave_conference response
@@ -9769,6 +10420,13 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingLeaveConferenceResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: Leaving conference
     callingHoldRequest:
       name: calling.hold.request
       title: calling.hold request
@@ -9777,6 +10435,14 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingHoldRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.hold
+            params:
+              node_id: a3e1b2c4-...
+              call_id: c7f9d2e1-...
     callingHoldResponse:
       name: calling.hold.response
       title: calling.hold response
@@ -9785,6 +10451,14 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingHoldResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: Call on hold
+              state: hold
     callingUnholdRequest:
       name: calling.unhold.request
       title: calling.unhold request
@@ -9793,6 +10467,14 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingUnholdRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.unhold
+            params:
+              node_id: a3e1b2c4-...
+              call_id: c7f9d2e1-...
     callingUnholdResponse:
       name: calling.unhold.response
       title: calling.unhold response
@@ -9801,6 +10483,14 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingUnholdResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: Call off hold
+              state: unhold
     callingDenoiseRequest:
       name: calling.denoise.request
       title: calling.denoise request
@@ -9809,6 +10499,14 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingDenoiseRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.denoise
+            params:
+              node_id: a3e1b2c4-...
+              call_id: c7f9d2e1-...
     callingDenoiseResponse:
       name: calling.denoise.response
       title: calling.denoise response
@@ -9817,6 +10515,13 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingDenoiseResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: Denoiser on
     callingDenoiseStopRequest:
       name: calling.denoise.stop.request
       title: calling.denoise.stop request
@@ -9825,6 +10530,14 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingDenoiseStopRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.denoise.stop
+            params:
+              node_id: a3e1b2c4-...
+              call_id: c7f9d2e1-...
     callingDenoiseStopResponse:
       name: calling.denoise.stop.response
       title: calling.denoise.stop response
@@ -9833,6 +10546,13 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingDenoiseStopResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: Denoiser off
     callingSendDigitsRequest:
       name: calling.send_digits.request
       title: calling.send_digits request
@@ -9841,6 +10561,16 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingSendDigitsRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.send_digits
+            params:
+              node_id: a3e1b2c4-...
+              call_id: c7f9d2e1-...
+              control_id: send-digits-1
+              digits: wW1234567890*#ABCD
     callingSendDigitsResponse:
       name: calling.send_digits.response
       title: calling.send_digits response
@@ -9849,6 +10579,15 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingSendDigitsResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: Sending Digits
+              control_id: send-digits-1
+              call_id: c7f9d2e1-...
     callingTranscribeRequest:
       name: calling.transcribe.request
       title: calling.transcribe request
@@ -9857,6 +10596,16 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingTranscribeRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.transcribe
+            params:
+              node_id: a3e1b2c4-...
+              call_id: c7f9d2e1-...
+              control_id: transcribe-1
+              status_url: https://example.com/transcribe-callback
     callingTranscribeResponse:
       name: calling.transcribe.response
       title: calling.transcribe response
@@ -9865,6 +10614,14 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingTranscribeResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: Transcribing
+              url: recordings/<UUID>.wav
     callingTranscribeStopRequest:
       name: calling.transcribe.stop.request
       title: calling.transcribe.stop request
@@ -9873,6 +10630,15 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingTranscribeStopRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.transcribe.stop
+            params:
+              node_id: a3e1b2c4-...
+              call_id: c7f9d2e1-...
+              control_id: transcribe-1
     callingTranscribeStopResponse:
       name: calling.transcribe.stop.response
       title: calling.transcribe.stop response
@@ -9881,6 +10647,13 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingTranscribeStopResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: Stopping transcribe
     callingEchoRequest:
       name: calling.echo.request
       title: calling.echo request
@@ -9889,6 +10662,15 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingEchoRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.echo
+            params:
+              node_id: a3e1b2c4-...
+              call_id: c7f9d2e1-...
+              timeout: 30
     callingEchoResponse:
       name: calling.echo.response
       title: calling.echo response
@@ -9897,6 +10679,13 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingEchoResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: Echo started
     callingBindDigitRequest:
       name: calling.bind_digit.request
       title: calling.bind_digit request
@@ -9905,6 +10694,22 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingBindDigitRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.bind_digit
+            params:
+              node_id: a3e1b2c4-...
+              call_id: c7f9d2e1-...
+              digits: "*1"
+              bind_method: calling.play
+              params:
+                play:
+                  - type: tts
+                    text: You pressed star one
+              realm: menu
+              max_triggers: 0
     callingBindDigitResponse:
       name: calling.bind_digit.response
       title: calling.bind_digit response
@@ -9913,6 +10718,13 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingBindDigitResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: Digit binding created
     callingClearDigitBindingsRequest:
       name: calling.clear_digit_bindings.request
       title: calling.clear_digit_bindings request
@@ -9921,6 +10733,15 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingClearDigitBindingsRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.clear_digit_bindings
+            params:
+              node_id: a3e1b2c4-...
+              call_id: c7f9d2e1-...
+              realm: menu
     callingClearDigitBindingsResponse:
       name: calling.clear_digit_bindings.response
       title: calling.clear_digit_bindings response
@@ -9929,6 +10750,13 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingClearDigitBindingsResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: Digit bindings cleared
     callingLiveTranscribeRequest:
       name: calling.live_transcribe.request
       title: calling.live_transcribe request
@@ -9937,6 +10765,16 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingLiveTranscribeRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.live_transcribe
+            params:
+              node_id: a3e1b2c4-...
+              call_id: c7f9d2e1-...
+              action:
+                start: {}
     callingLiveTranscribeResponse:
       name: calling.live_transcribe.response
       title: calling.live_transcribe response
@@ -9945,6 +10783,13 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingLiveTranscribeResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: Live transcription started
     callingLiveTranslateRequest:
       name: calling.live_translate.request
       title: calling.live_translate request
@@ -9953,6 +10798,17 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingLiveTranslateRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.live_translate
+            params:
+              node_id: a3e1b2c4-...
+              call_id: c7f9d2e1-...
+              action:
+                start: {}
+              status_url: https://example.com/translate-callback
     callingLiveTranslateResponse:
       name: calling.live_translate.response
       title: calling.live_translate response
@@ -9961,6 +10817,13 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingLiveTranslateResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: Live translation started
     callingJoinRoomRequest:
       name: calling.join_room.request
       title: calling.join_room request
@@ -9969,6 +10832,15 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingJoinRoomRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.join_room
+            params:
+              node_id: a3e1b2c4-...
+              call_id: c7f9d2e1-...
+              name: my_room
     callingJoinRoomResponse:
       name: calling.join_room.response
       title: calling.join_room response
@@ -9977,6 +10849,13 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingJoinRoomResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: Joining room
     callingLeaveRoomRequest:
       name: calling.leave_room.request
       title: calling.leave_room request
@@ -9985,6 +10864,14 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingLeaveRoomRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.leave_room
+            params:
+              node_id: a3e1b2c4-...
+              call_id: c7f9d2e1-...
     callingLeaveRoomResponse:
       name: calling.leave_room.response
       title: calling.leave_room response
@@ -9993,6 +10880,13 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingLeaveRoomResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: Leaving room
     callingAiRequest:
       name: calling.ai.request
       title: calling.ai request
@@ -10111,6 +11005,29 @@ components:
       contentType: application/json
       payload:
         $ref: "#/components/schemas/CallStateEventFrame"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            method: signalwire.event
+            id: 550e8400-e29b-41d4-a716-446655440000
+            params:
+              event_type: calling.call.state
+              params:
+                node_id: b8d0a8f0-1234-4abc-9def-0123456789ab
+                call_id: c1e2f3a4-5678-4bcd-9efa-1234567890bc
+                tag: my-call-tag
+                parent:
+                  node_id: a1b2c3d4-9012-4cde-9fab-2345678901cd
+                  call_id: d4e5f6a7-3456-4def-9abc-3456789012de
+                  device_type: sip
+                peer:
+                  node_id: e5f6a7b8-7890-4eab-9bcd-4567890123ef
+                  call_id: f6a7b8c9-1234-4fbc-9cde-5678901234fa
+                call_state: ending
+                start_time: 1717000000000
+                answer_time: 1717000002000
+                end_time: 1717000060000
+                created_by: dial
     callReceiveEvent:
       name: calling.call.receive
       title: calling.call.receive event
@@ -10123,42 +11040,153 @@ components:
       contentType: application/json
       payload:
         $ref: "#/components/schemas/CallConnectEventFrame"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            method: signalwire.event
+            id: 550e8400-e29b-41d4-a716-446655440000
+            params:
+              event_type: calling.call.connect
+              params:
+                node_id: b8d0a8f0-1234-4abc-9def-0123456789ab
+                call_id: c1e2f3a4-5678-4bcd-9efa-1234567890bc
+                tag: my-connect-tag
+                peer:
+                  node_id: e5f6a7b8-7890-4eab-9bcd-4567890123ef
+                  call_id: f6a7b8c9-1234-4fbc-9cde-5678901234fa
+                  tag: peer-tag
+                  queue_id: q1a2b3c4-5678-4abc-9def-6789012345ab
+                  queue_name: support
+                connect_state: connected
     callDialEvent:
       name: calling.call.dial
       title: calling.call.dial event
       contentType: application/json
       payload:
         $ref: "#/components/schemas/CallDialEventFrame"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            method: signalwire.event
+            id: 550e8400-e29b-41d4-a716-446655440000
+            params:
+              event_type: calling.call.dial
+              params:
+                node_id: b8d0a8f0-1234-4abc-9def-0123456789ab
+                tag: my-dial-tag
+                dial_state: answered
+                call:
+                  node_id: e5f6a7b8-7890-4eab-9bcd-4567890123ef
+                  call_id: f6a7b8c9-1234-4fbc-9cde-5678901234fa
+                  tag: my-dial-tag
+                  dial_winner: true
     callReferEvent:
       name: calling.call.refer
       title: calling.call.refer event
       contentType: application/json
       payload:
         $ref: "#/components/schemas/CallReferEventFrame"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            method: signalwire.event
+            id: 550e8400-e29b-41d4-a716-446655440000
+            params:
+              event_type: calling.call.refer
+              params:
+                node_id: a3e1b2c4-1234-5678-9abc-def012345678
+                call_id: c7f9d2e1-8765-4321-0fed-cba987654321
+                state: success
+                sip_refer_to: sip:agent@example.com
+                sip_refer_response_code: "202"
+                sip_notify_response_code: "200"
     callPlayEvent:
       name: calling.call.play
       title: calling.call.play event
       contentType: application/json
       payload:
         $ref: "#/components/schemas/CallPlayEventFrame"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            method: signalwire.event
+            id: 550e8400-e29b-41d4-a716-446655440000
+            params:
+              event_type: calling.call.play
+              params:
+                node_id: a3e1b2c4-1234-5678-9abc-def012345678
+                call_id: c7f9d2e1-8765-4321-0fed-cba987654321
+                control_id: b2d4f6a8-1111-2222-3333-444455556666
+                state: finished
     callQueueEvent:
       name: calling.call.queue
       title: calling.call.queue event
       contentType: application/json
       payload:
         $ref: "#/components/schemas/CallQueueEventFrame"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            method: signalwire.event
+            id: 550e8400-e29b-41d4-a716-446655440000
+            params:
+              event_type: calling.call.queue
+              params:
+                node_id: a3e1b2c4-1234-5678-9abc-def012345678
+                call_id: c7f9d2e1-8765-4321-0fed-cba987654321
+                control_id: b2d4f6a8-1111-2222-3333-444455556666
+                status: enqueue
+                id: q1a2b3c4-aaaa-bbbb-cccc-ddddeeeeffff
+                name: support
+                position: 3
+                size: 5
+                avg_time: 42
+                enqueue_ts: 1718600000
     callCollectEvent:
       name: calling.call.collect
       title: calling.call.collect event
       contentType: application/json
       payload:
         $ref: "#/components/schemas/CallCollectEventFrame"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            method: signalwire.event
+            id: 550e8400-e29b-41d4-a716-446655440000
+            params:
+              event_type: calling.call.collect
+              params:
+                node_id: a3e1b2c4-1234-5678-9abc-def012345678
+                call_id: c7f9d2e1-8765-4321-0fed-cba987654321
+                control_id: b2d4f6a8-1111-2222-3333-444455556666
+                state: finished
+                final: true
     callRecordEvent:
       name: calling.call.record
       title: calling.call.record event
       contentType: application/json
       payload:
         $ref: "#/components/schemas/CallRecordEventFrame"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            method: signalwire.event
+            id: 550e8400-e29b-41d4-a716-446655440000
+            params:
+              event_type: calling.call.record
+              params:
+                node_id: a3e1b2c4-1234-5678-9abc-def012345678
+                call_id: c7f9d2e1-8765-4321-0fed-cba987654321
+                control_id: b2d4f6a8-1111-2222-3333-444455556666
+                state: finished
+                url: https://example.com/recordings/c7f9d2e1.mp3
+                duration: 20
+                size: 123456788
+                record:
+                  audio:
+                    format: mp3
+                    stereo: false
+                    direction: both
     callDetectEvent:
       name: calling.call.detect
       title: calling.call.detect event
@@ -10171,6 +11199,17 @@ components:
       contentType: application/json
       payload:
         $ref: "#/components/schemas/CallDenoiseEventFrame"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            method: signalwire.event
+            id: 550e8400-e29b-41d4-a716-446655440000
+            params:
+              event_type: calling.call.denoise
+              params:
+                node_id: a3e1b2c4-1234-5678-9abc-def012345678
+                call_id: c7f9d2e1-8765-4321-0fed-cba987654321
+                denoised: true
     callFaxEvent:
       name: calling.call.fax
       title: calling.call.fax event
@@ -10189,48 +11228,159 @@ components:
       contentType: application/json
       payload:
         $ref: "#/components/schemas/CallStreamEventFrame"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            method: signalwire.event
+            id: 550e8400-e29b-41d4-a716-446655440000
+            params:
+              event_type: calling.call.stream
+              params:
+                node_id: a3e1b2c4-5d6f-7a8b-9c0d-1e2f3a4b5c6d
+                call_id: c7f9d2e1-3a4b-5c6d-7e8f-9a0b1c2d3e4f
+                control_id: 8f14e45f-ceea-167a-5a36-dedd4bea2543
+                state: streaming
+                url: wss://example.com/audio
+                name: my_stream
     callTranscribeEvent:
       name: calling.call.transcribe
       title: calling.call.transcribe event
       contentType: application/json
       payload:
         $ref: "#/components/schemas/CallTranscribeEventFrame"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            method: signalwire.event
+            id: 550e8400-e29b-41d4-a716-446655440000
+            params:
+              event_type: calling.call.transcribe
+              params:
+                node_id: a3e1b2c4-5d6f-7a8b-9c0d-1e2f3a4b5c6d
+                call_id: c7f9d2e1-3a4b-5c6d-7e8f-9a0b1c2d3e4f
+                control_id: 8f14e45f-ceea-167a-5a36-dedd4bea2543
+                state: finished
+                url: recordings/d4f5a6b7-c8d9-0e1f-2a3b-4c5d6e7f8a9b.wav
+                recording_id: d4f5a6b7-c8d9-0e1f-2a3b-4c5d6e7f8a9b
+                status_url: https://example.com/callback
+                duration: 30
+                size: 123456
+                start_time: 1772717474.381
+                end_time: 1772717504.381
     callHoldEvent:
       name: calling.call.hold
       title: calling.call.hold event
       contentType: application/json
       payload:
         $ref: "#/components/schemas/CallHoldEventFrame"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            method: signalwire.event
+            id: 550e8400-e29b-41d4-a716-446655440000
+            params:
+              event_type: calling.call.hold
+              params:
+                node_id: a3e1b2c4-5d6f-7a8b-9c0d-1e2f3a4b5c6d
+                call_id: c7f9d2e1-3a4b-5c6d-7e8f-9a0b1c2d3e4f
+                state: hold
     callSendDigitsEvent:
       name: calling.call.send_digits
       title: calling.call.send_digits event
       contentType: application/json
       payload:
         $ref: "#/components/schemas/CallSendDigitsEventFrame"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            method: signalwire.event
+            id: 550e8400-e29b-41d4-a716-446655440000
+            params:
+              event_type: calling.call.send_digits
+              params:
+                node_id: a3e1b2c4-5d6f-7a8b-9c0d-1e2f3a4b5c6d
+                call_id: c7f9d2e1-3a4b-5c6d-7e8f-9a0b1c2d3e4f
+                control_id: 8f14e45f-ceea-167a-5a36-dedd4bea2543
+                state: finished
     conferenceEvent:
       name: calling.conference
       title: calling.conference event
       contentType: application/json
       payload:
         $ref: "#/components/schemas/ConferenceEventFrame"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            method: signalwire.event
+            id: 550e8400-e29b-41d4-a716-446655440000
+            params:
+              event_type: calling.conference
+              params:
+                node_id: a3e1b2c4-5d6f-7a8b-9c0d-1e2f3a4b5c6d
+                conference_id: f0e9d8c7-b6a5-4938-2716-0a1b2c3d4e5f
+                name: sales-standup
+                status: participant-leave
+                call_id: c7f9d2e1-3a4b-5c6d-7e8f-9a0b1c2d3e4f
+                muted: false
+                hold: false
+                coaching: false
+                end_on_exit: false
+                start_on_enter: true
+                participant_call_status: completed
+                reason_participant_left: participant_hung_up
     callEchoEvent:
       name: calling.call.echo
       title: calling.call.echo event
       contentType: application/json
       payload:
         $ref: "#/components/schemas/CallEchoEventFrame"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            method: signalwire.event
+            id: 550e8400-e29b-41d4-a716-446655440000
+            params:
+              event_type: calling.call.echo
+              params:
+                node_id: a3e1b2c4-5d6f-7a8b-9c0d-1e2f3a4b5c6d
+                call_id: c7f9d2e1-3a4b-5c6d-7e8f-9a0b1c2d3e4f
+                state: echoing
     callPayEvent:
       name: calling.call.pay
       title: calling.call.pay event
       contentType: application/json
       payload:
         $ref: "#/components/schemas/CallPayEventFrame"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            method: signalwire.event
+            id: 550e8400-e29b-41d4-a716-446655440000
+            params:
+              event_type: calling.call.pay
+              params:
+                node_id: a3e1b2c4-5d6f-7a8b-9c0d-1e2f3a4b5c6d
+                call_id: c7f9d2e1-3a4b-5c6d-7e8f-9a0b1c2d3e4f
+                control_id: 8f14e45f-ceea-167a-5a36-dedd4bea2543
+                state: processing
     callErrorEvent:
       name: calling.error
       title: calling.error event
       contentType: application/json
       payload:
         $ref: "#/components/schemas/CallErrorEventFrame"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            method: signalwire.event
+            id: 550e8400-e29b-41d4-a716-446655440000
+            params:
+              event_type: calling.error
+              params:
+                node_id: a3e1b2c4-5d6f-7a8b-9c0d-1e2f3a4b5c6d
+                call_id: c7f9d2e1-3a4b-5c6d-7e8f-9a0b1c2d3e4f
+                code: "500"
+                message: Error description
   securitySchemes:
     httpBearer:
       type: http

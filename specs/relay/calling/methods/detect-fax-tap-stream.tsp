@@ -35,10 +35,7 @@ model DetectMachineParams {
   @minValueExclusive(0)
   machine_ready_timeout?: float64;
 
-  /**
-   * How much voice (sec > 0) to decide MACHINE. Default `1.25`. (Source says
-   * "sec > 0" but the description says "in ms" — units to confirm.)
-   */
+  /** How much voice (sec > 0) to decide MACHINE. Default `1.25`. */
   @minValueExclusive(0)
   machine_voice_threshold?: float64;
 
@@ -78,16 +75,19 @@ model DetectConfig {
   type: string;
 }
 
+@example(#{ type: "machine", params: #{ initial_timeout: 5.0 } })
 model DetectMachine extends DetectConfig {
   type: "machine";
   params?: DetectMachineParams;
 }
 
+@example(#{ type: "fax", params: #{ tone: "CED" } })
 model DetectFax extends DetectConfig {
   type: "fax";
   params?: DetectFaxParams;
 }
 
+@example(#{ type: "digit", params: #{ digits: "0123456789#*" } })
 model DetectDigit extends DetectConfig {
   type: "digit";
   params?: DetectDigitParams;
@@ -124,6 +124,10 @@ model DetectResult {
   call_id?: string;
 }
 
+// NOTE: no @opExample here — the required `detect: DetectConfig` is a @discriminator
+// union, and TypeSpec value-checking does not narrow a discriminated base to its variant,
+// so an inline frame example can't carry real `params`. The DetectMachine/DetectFax/
+// DetectDigit variant models carry schema-level @example values instead.
 /** Start a detector on an active call. May run multiple in parallel. */
 @rpcMethod("calling.detect")
 @summary("Start a detector (machine/fax/digit)")
@@ -153,6 +157,19 @@ model DetectStopResult {
 /** Stop an active detector. */
 @rpcMethod("calling.detect.stop")
 @summary("Stop a detector")
+@opExample(#{
+  parameters: #{
+    node_id: "a3b3e8e0-1234-4a4b-8c8d-000000000001",
+    call_id: "b4c4f9f1-2345-4b5c-9d9e-000000000002",
+    control_id: "detect-1",
+  },
+  returnType: #{
+    code: "200",
+    message: "Stopping detect",
+    control_id: "detect-1",
+    call_id: "b4c4f9f1-2345-4b5c-9d9e-000000000002",
+  },
+})
 op detectStop(...DetectStopParams): DetectStopResult;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -198,6 +215,22 @@ model SendFaxResult {
  */
 @rpcMethod("calling.send_fax")
 @summary("Send a PDF fax")
+@opExample(#{
+  parameters: #{
+    node_id: "a3b3e8e0-1234-4a4b-8c8d-000000000001",
+    call_id: "b4c4f9f1-2345-4b5c-9d9e-000000000002",
+    control_id: "fax-1",
+    document: "https://example.com/my_doc_to_fax.pdf",
+    identity: "+155512312345",
+    header_info: "SignalWire",
+  },
+  returnType: #{
+    code: "200",
+    message: "Sending Fax",
+    control_id: "fax-1",
+    call_id: "b4c4f9f1-2345-4b5c-9d9e-000000000002",
+  },
+})
 op sendFax(...SendFaxParams): SendFaxResult;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -224,6 +257,19 @@ model SendFaxStopResult {
 /** Stop sending a fax. */
 @rpcMethod("calling.send_fax.stop")
 @summary("Stop sending a fax")
+@opExample(#{
+  parameters: #{
+    node_id: "a3b3e8e0-1234-4a4b-8c8d-000000000001",
+    call_id: "b4c4f9f1-2345-4b5c-9d9e-000000000002",
+    control_id: "fax-1",
+  },
+  returnType: #{
+    code: "200",
+    message: "Stopping send fax",
+    control_id: "fax-1",
+    call_id: "b4c4f9f1-2345-4b5c-9d9e-000000000002",
+  },
+})
 op sendFaxStop(...SendFaxStopParams): SendFaxStopResult;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -256,6 +302,19 @@ model ReceiveFaxResult {
  */
 @rpcMethod("calling.receive_fax")
 @summary("Receive a fax")
+@opExample(#{
+  parameters: #{
+    node_id: "a3b3e8e0-1234-4a4b-8c8d-000000000001",
+    call_id: "b4c4f9f1-2345-4b5c-9d9e-000000000002",
+    control_id: "fax-1",
+  },
+  returnType: #{
+    code: "200",
+    message: "Receiving Fax",
+    control_id: "fax-1",
+    call_id: "b4c4f9f1-2345-4b5c-9d9e-000000000002",
+  },
+})
 op receiveFax(...ReceiveFaxParams): ReceiveFaxResult;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -282,6 +341,19 @@ model ReceiveFaxStopResult {
 /** Stop receiving a fax. */
 @rpcMethod("calling.receive_fax.stop")
 @summary("Stop receiving a fax")
+@opExample(#{
+  parameters: #{
+    node_id: "a3b3e8e0-1234-4a4b-8c8d-000000000001",
+    call_id: "b4c4f9f1-2345-4b5c-9d9e-000000000002",
+    control_id: "fax-1",
+  },
+  returnType: #{
+    code: "200",
+    message: "Stopping receive fax",
+    control_id: "fax-1",
+    call_id: "b4c4f9f1-2345-4b5c-9d9e-000000000002",
+  },
+})
 op receiveFaxStop(...ReceiveFaxStopParams): ReceiveFaxStopResult;
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -303,16 +375,6 @@ union TapDirection {
   "both",
 }
 
-/**
- * Audio codec for the tapped media. Open-ended list — it will match the tapped
- * audio if not set.
- */
-union TapCodec {
-  "OPUS",
-  "PCMA",
-  "PCMU",
-}
-
 /** `audio` tap params. */
 model TapAudioParams {
   /** Side of the call to tap. Default `speak`. */
@@ -325,6 +387,7 @@ model TapConfig {
   type: string;
 }
 
+@example(#{ type: "audio", params: #{ direction: "listen" } })
 model TapAudio extends TapConfig {
   type: "audio";
   params: TapAudioParams;
@@ -342,8 +405,11 @@ model TapRtpDeviceParams {
   /** RTP port. */
   port: int32;
 
-  /** Codec — matches the tapped audio if not set. */
-  codec?: TapCodec;
+  /**
+   * Codec for the tapped audio (known values: `OPUS`, `PCMA`, `PCMU`).
+   * Matches the tapped audio if not set.
+   */
+  codec?: string;
 
   /** Packetization time in ms — matches the tapped audio if not set. */
   ptime?: int32;
@@ -357,8 +423,11 @@ model TapWsDeviceParams {
   /** WebSocket URI. */
   uri: string;
 
-  /** Codec — matches the tapped audio if not set. */
-  codec?: TapCodec;
+  /**
+   * Codec for the tapped audio (known values: `OPUS`, `PCMA`, `PCMU`).
+   * Matches the tapped audio if not set.
+   */
+  codec?: string;
 
   /** Sample rate in Hz — matches the tapped audio if not set. */
   rate?: int32;
@@ -374,11 +443,13 @@ model TapDevice {
   type: string;
 }
 
+@example(#{ type: "rtp", params: #{ addr: "127.0.0.1", port: 1234 } })
 model TapRtpDevice extends TapDevice {
   type: "rtp";
   params: TapRtpDeviceParams;
 }
 
+@example(#{ type: "ws", params: #{ uri: "wss://example.com/tap" } })
 model TapWsDevice extends TapDevice {
   type: "ws";
   params: TapWsDeviceParams;
@@ -420,6 +491,10 @@ model TapResult {
   source_device?: TapDevice;
 }
 
+// NOTE: no @opExample here — the required `tap: TapConfig` and `device: TapDevice` are
+// @discriminator unions, and TypeSpec value-checking does not narrow a discriminated base
+// to its variant, so an inline frame example can't carry real `params`. The TapAudio /
+// TapRtpDevice / TapWsDevice variant models carry schema-level @example values instead.
 /**
  * Intercept call media and stream it to an external device. Transcoding and
  * resampling are available on request.
@@ -452,6 +527,19 @@ model TapStopResult {
 /** Stop an active call tap. */
 @rpcMethod("calling.tap.stop")
 @summary("Stop a call tap")
+@opExample(#{
+  parameters: #{
+    node_id: "a3b3e8e0-1234-4a4b-8c8d-000000000001",
+    call_id: "b4c4f9f1-2345-4b5c-9d9e-000000000002",
+    control_id: "tap-1",
+  },
+  returnType: #{
+    code: "200",
+    message: "Stopping tap",
+    control_id: "tap-1",
+    call_id: "b4c4f9f1-2345-4b5c-9d9e-000000000002",
+  },
+})
 op tapStop(...TapStopParams): TapStopResult;
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -519,6 +607,26 @@ model StreamResult {
 /** Start streaming call audio to a WebSocket endpoint. */
 @rpcMethod("calling.stream")
 @summary("Stream call audio to a WebSocket endpoint")
+@opExample(#{
+  parameters: #{
+    node_id: "a3b3e8e0-1234-4a4b-8c8d-000000000001",
+    call_id: "b4c4f9f1-2345-4b5c-9d9e-000000000002",
+    control_id: "stream-1",
+    url: "wss://example.com/audio",
+    name: "my_stream",
+    codec: "PCMU",
+    track: "inbound_track",
+    status_url: "https://example.com/status",
+    authorization_bearer_token: "my-token",
+    custom_parameters: #{ user_id: "12345" },
+  },
+  returnType: #{
+    code: "200",
+    message: "Starting stream",
+    control_id: "stream-1",
+    node_id: "a3b3e8e0-1234-4a4b-8c8d-000000000001",
+  },
+})
 op stream(...StreamParams): StreamResult;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -545,4 +653,17 @@ model StreamStopResult {
 /** Stop an active call stream. */
 @rpcMethod("calling.stream.stop")
 @summary("Stop a call stream")
+@opExample(#{
+  parameters: #{
+    node_id: "a3b3e8e0-1234-4a4b-8c8d-000000000001",
+    call_id: "b4c4f9f1-2345-4b5c-9d9e-000000000002",
+    control_id: "stream-1",
+  },
+  returnType: #{
+    code: "200",
+    message: "Stopping stream",
+    control_id: "stream-1",
+    call_id: "b4c4f9f1-2345-4b5c-9d9e-000000000002",
+  },
+})
 op streamStop(...StreamStopParams): StreamStopResult;
