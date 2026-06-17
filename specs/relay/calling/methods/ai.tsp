@@ -9,313 +9,20 @@ using SignalWire.EmitFilter;
 namespace Relay.Calling;
 
 // ═════════════════════════════════════════════════════════════════════════════
-// Shared AI sub-shapes (calling.ai / calling.amazon_bedrock)
+// AI config (calling.ai / calling.amazon_bedrock)
 //
-// The Relay `calling.ai` surface shares its AI behavior `params` and SWAIG schema
-// with the SWML `ai` verb (one FreeSWITCH engine parses both). `AiBehaviorParams` is
-// imported directly from the SWML `AIParams` model — its template-variable `| SWMLVar`
-// arms are stripped at emit time via @excludeFromEmit (they never reach the live
-// JSON-RPC wire). The remaining sub-shapes below are hand-modeled from the
-// engine-verified SWML schema; a few genuinely open ones (SWAIG `parameters`/`data_map`,
-// `global_data`, `meta_data`) stay `Record<unknown>` and link to the SWML SWAIG reference.
+// The Relay `calling.ai` surface and the SWML `ai` verb are two front-ends to the SAME
+// backend AI-agent config object — FreeSWITCH `mod_openai` parses both through one
+// transport-agnostic parser (`create_app_from_json`), reading each field by literal name.
+// So the AI config sub-shapes are reused DIRECTLY from the engine-verified SWML models
+// (`SWML.Calling.*`) instead of being hand-replicated: prompt, post_prompt, languages,
+// pronounce, hints, SWAIG (incl. the full function/parameters/data_map tree), params, and
+// global_data. The SWML template-variable `| SWMLVar` arms are markup-only and are stripped
+// at emit time via @excludeFromEmit on the entry models (they never reach the live JSON-RPC
+// wire). Relay-specific fields (control_id, agent, post_prompt_auth_*) and the Bedrock
+// plain-string prompt stay local. See SWML-REUSE-GAPS.md for SWML fields still needing truing.
 // ═════════════════════════════════════════════════════════════════════════════
 
-/**
- * Inline prompt configuration for the AI agent. Overrides a pre-configured
- * `agent` UUID when both are present.
- */
-model AiPrompt {
-  /** Instructions sent to the agent (plain text or SSML). */
-  text?: string;
-
-  /** Nucleus-sampling cutoff (0.0–1.0). Alternative to `temperature`. */
-  @minValue(0.0)
-  @maxValue(1.0)
-  top_p?: float64;
-
-  /** Randomness of generation (0.0–1.5). Lower is more deterministic. */
-  @minValue(0.0)
-  @maxValue(1.5)
-  temperature?: float64;
-
-  /** End-of-utterance speech-detect threshold (0.0–1.0). */
-  @minValue(0.0)
-  @maxValue(1.0)
-  confidence?: float64;
-
-  /** Confidence threshold for the user barging in over the agent (0.0–1.0). */
-  @minValue(0.0)
-  @maxValue(1.0)
-  barge_confidence?: float64;
-
-  /** Aversion to new topics (-2.0–2.0). Positive values encourage new topics. */
-  @minValue(-2.0)
-  @maxValue(2.0)
-  presence_penalty?: float64;
-
-  /** Aversion to repetition (-2.0–2.0). Positive values reduce verbatim repeats. */
-  @minValue(-2.0)
-  @maxValue(2.0)
-  frequency_penalty?: float64;
-
-  /** LLM model identifier to use for this prompt. */
-  `model`?: string;
-}
-
-/**
- * Post-conversation prompt configuration. Same shape as `AiPrompt` minus
- * `confidence` (which has no meaning after the conversation has ended).
- */
-model AiPostPrompt {
-  /** Instructions sent to the agent after the conversation ends. */
-  text?: string;
-
-  /** Nucleus-sampling cutoff (0.0–1.0). Alternative to `temperature`. */
-  @minValue(0.0)
-  @maxValue(1.0)
-  top_p?: float64;
-
-  /** Randomness of generation (0.0–1.5). Lower is more deterministic. */
-  @minValue(0.0)
-  @maxValue(1.5)
-  temperature?: float64;
-
-  /** Confidence threshold for the user barging in over the agent (0.0–1.0). */
-  @minValue(0.0)
-  @maxValue(1.0)
-  barge_confidence?: float64;
-
-  /** Aversion to new topics (-2.0–2.0). Positive values encourage new topics. */
-  @minValue(-2.0)
-  @maxValue(2.0)
-  presence_penalty?: float64;
-
-  /** Aversion to repetition (-2.0–2.0). Positive values reduce verbatim repeats. */
-  @minValue(-2.0)
-  @maxValue(2.0)
-  frequency_penalty?: float64;
-
-  /** LLM model identifier to use for this post-prompt. */
-  `model`?: string;
-}
-
-/**
- * A global pronunciation rule. Replaces a matched expression with a phonetic
- * spelling so the TTS engine pronounces it correctly.
- */
-model AiPronounce {
-  /** The expression to replace. */
-  replace: string;
-
-  /** The phonetic spelling to substitute. */
-  with: string;
-
-  /** Match case-insensitively. Default `true`. */
-  ignore_case?: boolean = true;
-}
-
-/**
- * A context hint biasing speech recognition. May be a bare string, or an object
- * that rewrites a matched phrase before it reaches the model.
- */
-model AiHint {
-  /** The hint phrase to match exactly. */
-  hint: string;
-
-  /** A regular expression the hint must match before replacement. */
-  pattern?: string;
-
-  /** Text to replace the matched portion of the hint with. */
-  replace?: string;
-
-  /** Match case-insensitively. Default `false`. */
-  ignore_case?: boolean = false;
-}
-
-/**
- * A supported language configuration for the dialogue. (Modeled per the SWML
- * `ai` verb; additional TTS engine-specific knobs may be accepted.)
- */
-model AiLanguage {
-  /** Human-readable language name, used in the system prompt (e.g. `French`). */
-  name: string;
-
-  /** ASR language code (e.g. `fr-FR`). */
-  code: string;
-
-  /** Voice in `<engine>.<voice>` form (e.g. `gcloud.fr-FR-Neural2-B`). */
-  voice: string;
-
-  /** TTS model for the selected engine. */
-  `model`?: string;
-}
-
-/** Default settings applied to all SWAIG functions unless overridden. */
-model AiSwaigDefaults {
-  /**
-   * Default webhook URL for function status callbacks. Basic auth may be inlined
-   * as `username:password@url`.
-   */
-  web_hook_url?: string;
-
-  /** Default basic-auth username for function webhooks. */
-  web_hook_auth_user?: string;
-
-  /** Default basic-auth password for function webhooks. */
-  web_hook_auth_password?: string;
-
-  /** Default scoping token applied to per-function `meta_data`. */
-  meta_data_token?: string;
-
-  /** Default user-defined metadata available to all functions. */
-  meta_data?: Record<unknown>;
-}
-
-/**
- * A single SWAIG function definition. The agent calls these functions during the
- * conversation; the schema is shared with the `ai_sidecar` service.
- */
-model AiSwaigFunction {
-  /** Unique function name (or a reserved SignalWire hook name). */
-  function: string;
-
-  /**
-   * The context and purpose of the function, explaining to the agent when to use
-   * it. Modern alias for the legacy `purpose` field.
-   */
-  description?: string;
-
-  /**
-   * The context and purpose of the function. Legacy field — use `description`
-   * (its modern alias) instead. If both are set, `description` takes precedence.
-   */
-  purpose?: string;
-
-  /**
-   * JSON Schema object describing the function's input parameters and their
-   * validation rules. Modeled loosely — the structured schema is documented with
-   * the SWML `ai` verb SWAIG reference.
-   */
-  parameters?: Record<unknown>;
-
-  /**
-   * Legacy field describing the function's input. Use `parameters` (the modern,
-   * structured replacement) instead.
-   */
-  argument?: unknown;
-
-  /** Whether the function is callable. Default `true`. */
-  active?: boolean = true;
-
-  /**
-   * Arbitrary per-function data, referenceable within the function (e.g. from the
-   * prompt via template strings). Open key/value object.
-   */
-  meta_data?: Record<unknown>;
-
-  /**
-   * Scoping token for `meta_data`. If unset, metadata is scoped to the function's
-   * `web_hook_url`.
-   */
-  meta_data_token?: string;
-
-  /**
-   * Processes function inputs through expressions, webhooks, or direct output.
-   * Modeled loosely — the structured shape is documented with the SWML `ai` verb
-   * SWAIG reference.
-   */
-  data_map?: Record<unknown>;
-
-  /**
-   * Per-function webhook URL override for status callbacks. Basic auth may be
-   * inlined as `username:password@url`.
-   */
-  web_hook_url?: string;
-
-  /** Per-function basic-auth username for the webhook. */
-  web_hook_auth_user?: string;
-
-  /** Per-function basic-auth password for the webhook. */
-  web_hook_auth_password?: string;
-}
-
-/** Remote SWAIG function include — pull function signatures from a URL. */
-model AiSwaigIncludes {
-  /** URL hosting the remote functions. Basic auth may be inlined. */
-  url: string;
-
-  /** Names of the remote functions to include. */
-  functions: string[];
-
-  /** User-defined metadata passed with the remote-function request. */
-  meta_data?: Record<unknown>;
-}
-
-/** Prebuilt native functions the agent may call. */
-union AiSwaigNativeFunction {
-  /** Returns the current time for the time zone set in `params.local_tz`. */
-  "check_time",
-
-  /** Waits for the given number of seconds. */
-  "wait_seconds",
-
-  /**
-   * Waits until the user speaks again. Used when the user asks the agent to wait
-   * or hold on.
-   */
-  "wait_for_user",
-
-  /** Adjusts how long the agent waits for the user to stop talking. */
-  "adjust_response_latency",
-}
-
-/**
- * A Model Context Protocol (MCP) server the agent can pull tools/resources from.
- */
-model AiMcpServer {
-  /** The MCP server URL. */
-  url: string;
-
-  /**
-   * HTTP headers sent to the MCP server. Authorization tokens go here — there is
-   * no separate auth field.
-   */
-  headers?: Record<string>;
-
-  /**
-   * Whether to fetch the server's resources into `global_data`, when the server
-   * advertises resource support. Default `false`.
-   */
-  resources?: boolean = false;
-
-  /**
-   * Variables passed to the MCP server when fetching resources. Used only when
-   * `resources` is enabled.
-   */
-  resource_vars?: Record<string>;
-}
-
-/** SWAIG (SignalWire AI Gateway) function configuration. */
-model AiSwaig {
-  /** Default settings inherited by all functions. */
-  defaults?: AiSwaigDefaults;
-
-  /** User-defined functions the agent may call. */
-  functions?: AiSwaigFunction[];
-
-  /** Remote function-signature includes. */
-  includes?: AiSwaigIncludes[];
-
-  /** Prebuilt native functions the agent may call. */
-  native_functions?: AiSwaigNativeFunction[];
-
-  /** Model Context Protocol (MCP) servers to source tools/resources from. */
-  mcp_servers?: AiMcpServer[];
-}
-
-// Imported directly from the engine-verified SWML `ai` verb model (one engine parses both
-// surfaces), instead of hand-replicating it. The SWML template-variable arms (`| SWMLVar`)
-// are stripped at emit time via @excludeFromEmit — they never reach the live wire.
 /**
  * AI agent behavior parameters — automatic speech recognition (ASR), text-to-speech
  * (TTS), turn detection, barge-in, LLM tunables, thinking/vision, video, SWAIG knobs,
@@ -330,6 +37,11 @@ model AiBehaviorParams {
 // calling.ai
 // ═════════════════════════════════════════════════════════════════════════════
 
+// Only SWMLVar is excluded — it is a markup-only template-variable placeholder (resolved at
+// SWML execution time, never present on the live JSON-RPC wire). Everything else SWML accepts,
+// including a full SWML document returned by a SWAIG data_map action, is a legitimate Relay
+// surface and is emitted as-is.
+@excludeFromEmit(SWMLVar)
 model AiParams {
   ...CallAddress;
 
@@ -342,11 +54,11 @@ model AiParams {
    */
   agent?: string;
 
-  /** Inline prompt configuration for the AI agent. */
-  prompt?: AiPrompt;
+  /** Inline prompt configuration for the AI agent (plain text or a structured POM). */
+  prompt?: SWML.Calling.AIPrompt;
 
   /** Post-conversation prompt configuration. */
-  post_prompt?: AiPostPrompt;
+  post_prompt?: SWML.Calling.AIPostPrompt;
 
   /** URL to receive post-prompt status callbacks. */
   post_prompt_url?: url;
@@ -358,19 +70,19 @@ model AiParams {
   post_prompt_auth_password?: string;
 
   /** Global data accessible to all SWAIG functions. */
-  global_data?: Record<unknown>;
+  global_data?: SWML.Calling.GlobalData;
 
   /** Global pronunciation rules. */
-  pronounce?: AiPronounce[];
+  pronounce?: SWML.Calling.Pronounce[];
 
-  /** Context hints biasing speech recognition. */
-  hints?: AiHint[];
+  /** Context hints biasing speech recognition. May be bare strings or rewrite objects. */
+  hints?: (string | SWML.Calling.Hint)[];
 
   /** Supported language configurations. */
-  languages?: AiLanguage[];
+  languages?: SWML.Calling.Languages[];
 
   /** SWAIG function configuration. */
-  SWAIG?: AiSwaig;
+  SWAIG?: SWML.Calling.SWAIG;
 
   /** AI agent behavior parameters (ASR, TTS, turn detection, barge-in, LLM config, video, …). */
   params?: AiBehaviorParams;
@@ -466,6 +178,7 @@ op aiStop(...AiStopParams): AiStopResult;
 // (the system prompt), unlike calling.ai's object form.
 // ═════════════════════════════════════════════════════════════════════════════
 
+@excludeFromEmit(SWMLVar)
 model AmazonBedrockParams {
   ...CallAddress;
 
@@ -473,16 +186,16 @@ model AmazonBedrockParams {
   prompt?: string;
 
   /** SWAIG function configuration. */
-  SWAIG?: AiSwaig;
+  SWAIG?: SWML.Calling.SWAIG;
 
   /** AI agent behavior parameters. See `calling.ai` `params`. */
   params?: AiBehaviorParams;
 
   /** Global data accessible to all SWAIG functions. */
-  global_data?: Record<unknown>;
+  global_data?: SWML.Calling.GlobalData;
 
   /** Post-conversation prompt configuration. */
-  post_prompt?: AiPostPrompt;
+  post_prompt?: SWML.Calling.AIPostPrompt;
 
   /** URL to receive post-prompt results. */
   post_prompt_url?: url;
