@@ -20,6 +20,10 @@ model RecordingBase {
   @example("d369a402-7b43-4512-8735-9d5e1f387814")
   project_id: uuid;
 
+  @doc("Unique ID of the Relay conference the recording belongs to, if any.")
+  @example("0089cc48-4f98-4a6b-90d8-61f8a5d1b0e3")
+  relay_conference_id?: uuid;
+
   @doc("Date and time when the recording was created.")
   created_at: utcDateTime;
 
