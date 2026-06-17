@@ -11,7 +11,6 @@ using SignalWire.AsyncAPI;
 @server("production", #{
   host: "relay.signalwire.com",
   protocol: "wss",
-  pathname: "/api/relay/wss",
   description: "SignalWire Relay WebSocket endpoint.",
 })
 @channel("messaging")
