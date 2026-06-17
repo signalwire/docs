@@ -174,28 +174,191 @@ model ClearDigitBindingsResult {
 op clearDigitBindings(...ClearDigitBindingsParams): ClearDigitBindingsResult;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// calling.live_transcribe
+// calling.live_transcribe / calling.live_translate — shared sub-shapes
 //
 // `action` is a KEY-DISCRIMINATED union: exactly one of `start`/`stop`/
-// `summarize` is present, keyed by the action name (not a `type` field). The
-// source shows each variant only as `{}`, so the inner sub-params are
-// loose-modeled as Record<unknown>. See openQuestions.
+// `summarize` (+ `inject` for translate) is present, keyed by the action name
+// (not a `type` field). The inner field shapes below are verified against the
+// FreeSWITCH engine: the Relay JSON-RPC wire serializes `params` verbatim into
+// the same C parser the SWML methods use, so the accepted inner fields are the
+// SWML field set (minus SWML templating).
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Speech-recognition engine for live transcribe/translate. */
+union LiveSpeechEngine {
+  "deepgram",
+  "google",
+}
+
+/** Direction of the audio leg to transcribe. */
+union TranscribeDirection {
+  "local-caller",
+  "remote-caller",
+}
+
+/** Direction of the audio leg to translate. */
+union TranslateDirection {
+  "local-caller",
+  "remote-caller",
+}
+
+/**
+ * Preset translation tone/style filters. A custom filter may instead be supplied
+ * as a free-form string prefixed with `prompt:` — e.g. `prompt:Use formal business language`.
+ */
+union TranslationFilterPreset {
+  "polite",
+  "rude",
+  "professional",
+  "shakespeare",
+  "gen-z",
+}
+
+/** An action body that carries no fields (its contents are ignored). */
+model LiveActionStop {}
+
+/** Begin live transcription. `lang` and `direction` are required. */
+model LiveTranscribeStart {
+  /** Language to transcribe (e.g. `en-US`). */
+  lang: string;
+
+  /** Which call leg(s) to transcribe. */
+  direction: TranscribeDirection[];
+
+  /** http or https URL the transcription is delivered to. */
+  webhook?: url;
+
+  /** Enable AI summarization; the summary is delivered at the end of the call. */
+  ai_summary?: boolean;
+
+  /** Prompt instructing how to summarize when `ai_summary` is enabled. */
+  ai_summary_prompt?: string;
+
+  /** Emit live transcription events as they occur. */
+  live_events?: boolean;
+
+  /** Speech-recognition timeout in milliseconds. Default `60000`. */
+  @minValue(0)
+  speech_timeout?: int32 = 60000;
+
+  /**
+   * Voice-activity-detection silence time in milliseconds. The default is
+   * engine-dependent (Deepgram vs Google) and is not fixed by this method.
+   */
+  @minValue(0)
+  vad_silence_ms?: int32;
+
+  /** Voice-activity-detection threshold (0-1800). Default `400`. */
+  @minValue(0)
+  vad_thresh?: int32 = 400;
+
+  /** Debug log level (0-2). Default `0`. */
+  @minValue(0)
+  debug_level?: int32 = 0;
+
+  /** Speech engine to use. Default `deepgram`. */
+  speech_engine?: LiveSpeechEngine = "deepgram";
+}
+
+/** Begin live translation. `from_lang`, `to_lang` and `direction` are required. */
+model LiveTranslateStart {
+  /** Language to translate from (e.g. `en-US`). */
+  from_lang: string;
+
+  /** Language to translate to (e.g. `es-ES`). */
+  to_lang: string;
+
+  /** Which call leg(s) to translate. */
+  direction: TranslateDirection[];
+
+  /** http or https URL the translation is delivered to. */
+  webhook?: url;
+
+  /** TTS voice for the source language. */
+  from_voice?: string;
+
+  /** TTS voice for the target language. */
+  to_voice?: string;
+
+  /**
+   * Tone/style filter for the source-language direction — a preset or a
+   * `prompt:`-prefixed custom instruction.
+   */
+  filter_from?: TranslationFilterPreset | string;
+
+  /**
+   * Tone/style filter for the target-language direction — a preset or a
+   * `prompt:`-prefixed custom instruction.
+   */
+  filter_to?: TranslationFilterPreset | string;
+
+  /** Emit live translation events as they occur. */
+  live_events?: boolean;
+
+  /** Enable AI summarization; the summary is delivered at the end of the call. */
+  ai_summary?: boolean;
+
+  /** Prompt instructing how to summarize when `ai_summary` is enabled. */
+  ai_summary_prompt?: string;
+
+  /** Speech-recognition timeout in milliseconds. Default `60000`. */
+  @minValue(0)
+  speech_timeout?: int32 = 60000;
+
+  /**
+   * Voice-activity-detection silence time in milliseconds. The default is
+   * engine-dependent (Deepgram vs Google) and is not fixed by this method.
+   */
+  @minValue(0)
+  vad_silence_ms?: int32;
+
+  /** Voice-activity-detection threshold (0-1800). Default `400`. */
+  @minValue(0)
+  vad_thresh?: int32 = 400;
+
+  /** Debug log level (0-2). Default `0`. */
+  @minValue(0)
+  debug_level?: int32 = 0;
+
+  /** Speech engine to use. Default `deepgram`. */
+  speech_engine?: LiveSpeechEngine = "deepgram";
+}
+
+/** Summarize the live transcription/translation. */
+model LiveSummarize {
+  /** http or https URL the summary is delivered to. */
+  webhook?: url;
+
+  /** Prompt instructing how to summarize the conversation. */
+  prompt?: string;
+}
+
+/** Inject a message into the live translation to be translated and spoken. */
+model LiveTranslateInject {
+  /** The message to inject. */
+  message: string;
+
+  /** Which call leg to speak the injected message to (single direction). */
+  direction: TranslateDirection;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// calling.live_transcribe
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
  * Live-transcribe action. Key-discriminated: provide exactly one of `start`,
- * `stop`, or `summarize`. Inner sub-params are undocumented in the protocol
- * reference (loose-modeled).
+ * `stop`, or `summarize`.
  */
 model LiveTranscribeAction {
-  /** Begin live transcription. Sub-params undocumented. */
-  start?: Record<unknown>;
+  /** Begin live transcription. */
+  start?: LiveTranscribeStart;
 
-  /** Stop live transcription. Sub-params undocumented. */
-  stop?: Record<unknown>;
+  /** Stop live transcription (body ignored). */
+  stop?: LiveActionStop;
 
-  /** Summarize the live transcription. Sub-params undocumented. */
-  summarize?: Record<unknown>;
+  /** Summarize the live transcription. */
+  summarize?: LiveSummarize;
 }
 
 model LiveTranscribeParams {
@@ -213,7 +376,11 @@ model LiveTranscribeResult {
 @rpcMethod("calling.live_transcribe")
 @summary("Start or stop live transcription on a call")
 @opExample(#{
-  parameters: #{ node_id: "a3e1b2c4-...", call_id: "c7f9d2e1-...", action: #{ start: #{} } },
+  parameters: #{
+    node_id: "a3e1b2c4-...",
+    call_id: "c7f9d2e1-...",
+    action: #{ start: #{ lang: "en-US", direction: #["remote-caller"] } },
+  },
   returnType: #{ code: "200", message: "Live transcription started" },
 })
 op liveTranscribe(...LiveTranscribeParams): LiveTranscribeResult;
@@ -222,26 +389,25 @@ op liveTranscribe(...LiveTranscribeParams): LiveTranscribeResult;
 // calling.live_translate
 //
 // Superset of live_transcribe's action: adds `inject`. Same key-discriminated
-// modeling; inner sub-params loose-modeled. See openQuestions.
+// modeling.
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
  * Live-translate action. Key-discriminated: provide exactly one of `start`,
- * `stop`, `summarize`, or `inject`. Inner sub-params are undocumented in the
- * protocol reference (loose-modeled).
+ * `stop`, `summarize`, or `inject`.
  */
 model LiveTranslateAction {
-  /** Begin live translation. Sub-params undocumented. */
-  start?: Record<unknown>;
+  /** Begin live translation. */
+  start?: LiveTranslateStart;
 
-  /** Stop live translation. Sub-params undocumented. */
-  stop?: Record<unknown>;
+  /** Stop live translation (body ignored). */
+  stop?: LiveActionStop;
 
-  /** Summarize the live translation. Sub-params undocumented. */
-  summarize?: Record<unknown>;
+  /** Summarize the live translation. */
+  summarize?: LiveSummarize;
 
-  /** Inject content into the live translation. Sub-params undocumented. */
-  inject?: Record<unknown>;
+  /** Inject a message into the live translation. */
+  inject?: LiveTranslateInject;
 }
 
 model LiveTranslateParams {
@@ -265,7 +431,7 @@ model LiveTranslateResult {
   parameters: #{
     node_id: "a3e1b2c4-...",
     call_id: "c7f9d2e1-...",
-    action: #{ start: #{} },
+    action: #{ start: #{ from_lang: "en-US", to_lang: "es-ES", direction: #["remote-caller"] } },
     status_url: "https://example.com/translate-callback",
   },
   returnType: #{ code: "200", message: "Live translation started" },

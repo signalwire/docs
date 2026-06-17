@@ -6041,21 +6041,103 @@ components:
       type: object
       properties:
         start:
-          type: object
-          additionalProperties: {}
-          description: Begin live transcription. Sub-params undocumented.
+          description: Begin live transcription.
+          allOf:
+            - $ref: "#/components/schemas/LiveTranscribeStart"
         stop:
-          type: object
-          additionalProperties: {}
-          description: Stop live transcription. Sub-params undocumented.
+          description: Stop live transcription (body ignored).
+          allOf:
+            - $ref: "#/components/schemas/LiveActionStop"
         summarize:
-          type: object
-          additionalProperties: {}
-          description: Summarize the live transcription. Sub-params undocumented.
+          description: Summarize the live transcription.
+          allOf:
+            - $ref: "#/components/schemas/LiveSummarize"
       description: |-
         Live-transcribe action. Key-discriminated: provide exactly one of `start`,
-        `stop`, or `summarize`. Inner sub-params are undocumented in the protocol
-        reference (loose-modeled).
+        `stop`, or `summarize`.
+    LiveTranscribeStart:
+      type: object
+      properties:
+        lang:
+          type: string
+          description: Language to transcribe (e.g. `en-US`).
+        direction:
+          type: array
+          items:
+            $ref: "#/components/schemas/TranscribeDirection"
+          description: Which call leg(s) to transcribe.
+        webhook:
+          type: string
+          format: uri
+          description: http or https URL the transcription is delivered to.
+        ai_summary:
+          type: boolean
+          description: Enable AI summarization; the summary is delivered at the end of the call.
+        ai_summary_prompt:
+          type: string
+          description: Prompt instructing how to summarize when `ai_summary` is enabled.
+        live_events:
+          type: boolean
+          description: Emit live transcription events as they occur.
+        speech_timeout:
+          type: integer
+          format: int32
+          description: Speech-recognition timeout in milliseconds. Default `60000`.
+          minimum: 0
+          default: 60000
+        vad_silence_ms:
+          type: integer
+          format: int32
+          description: |-
+            Voice-activity-detection silence time in milliseconds. The default is
+            engine-dependent (Deepgram vs Google) and is not fixed by this method.
+          minimum: 0
+        vad_thresh:
+          type: integer
+          format: int32
+          description: Voice-activity-detection threshold (0-1800). Default `400`.
+          minimum: 0
+          default: 400
+        debug_level:
+          type: integer
+          format: int32
+          description: Debug log level (0-2). Default `0`.
+          minimum: 0
+          default: 0
+        speech_engine:
+          description: Speech engine to use. Default `deepgram`.
+          default: deepgram
+          allOf:
+            - $ref: "#/components/schemas/LiveSpeechEngine"
+      required:
+        - lang
+        - direction
+      description: Begin live transcription. `lang` and `direction` are required.
+    TranscribeDirection:
+      type: string
+      enum:
+        - local-caller
+        - remote-caller
+    LiveSpeechEngine:
+      type: string
+      enum:
+        - deepgram
+        - google
+    LiveActionStop:
+      type: object
+      properties: {}
+      description: An action body that carries no fields (its contents are ignored).
+    LiveSummarize:
+      type: object
+      properties:
+        webhook:
+          type: string
+          format: uri
+          description: http or https URL the summary is delivered to.
+        prompt:
+          type: string
+          description: Prompt instructing how to summarize the conversation.
+      description: Summarize the live transcription/translation.
     CallingLiveTranscribeRequest:
       type: object
       required:
@@ -6126,25 +6208,133 @@ components:
       type: object
       properties:
         start:
-          type: object
-          additionalProperties: {}
-          description: Begin live translation. Sub-params undocumented.
+          description: Begin live translation.
+          allOf:
+            - $ref: "#/components/schemas/LiveTranslateStart"
         stop:
-          type: object
-          additionalProperties: {}
-          description: Stop live translation. Sub-params undocumented.
+          description: Stop live translation (body ignored).
+          allOf:
+            - $ref: "#/components/schemas/LiveActionStop"
         summarize:
-          type: object
-          additionalProperties: {}
-          description: Summarize the live translation. Sub-params undocumented.
+          description: Summarize the live translation.
+          allOf:
+            - $ref: "#/components/schemas/LiveSummarize"
         inject:
-          type: object
-          additionalProperties: {}
-          description: Inject content into the live translation. Sub-params undocumented.
+          description: Inject a message into the live translation.
+          allOf:
+            - $ref: "#/components/schemas/LiveTranslateInject"
       description: |-
         Live-translate action. Key-discriminated: provide exactly one of `start`,
-        `stop`, `summarize`, or `inject`. Inner sub-params are undocumented in the
-        protocol reference (loose-modeled).
+        `stop`, `summarize`, or `inject`.
+    LiveTranslateStart:
+      type: object
+      properties:
+        from_lang:
+          type: string
+          description: Language to translate from (e.g. `en-US`).
+        to_lang:
+          type: string
+          description: Language to translate to (e.g. `es-ES`).
+        direction:
+          type: array
+          items:
+            $ref: "#/components/schemas/TranslateDirection"
+          description: Which call leg(s) to translate.
+        webhook:
+          type: string
+          format: uri
+          description: http or https URL the translation is delivered to.
+        from_voice:
+          type: string
+          description: TTS voice for the source language.
+        to_voice:
+          type: string
+          description: TTS voice for the target language.
+        filter_from:
+          oneOf:
+            - $ref: "#/components/schemas/TranslationFilterPreset"
+            - type: string
+          description: |-
+            Tone/style filter for the source-language direction — a preset or a
+            `prompt:`-prefixed custom instruction.
+        filter_to:
+          oneOf:
+            - $ref: "#/components/schemas/TranslationFilterPreset"
+            - type: string
+          description: |-
+            Tone/style filter for the target-language direction — a preset or a
+            `prompt:`-prefixed custom instruction.
+        live_events:
+          type: boolean
+          description: Emit live translation events as they occur.
+        ai_summary:
+          type: boolean
+          description: Enable AI summarization; the summary is delivered at the end of the call.
+        ai_summary_prompt:
+          type: string
+          description: Prompt instructing how to summarize when `ai_summary` is enabled.
+        speech_timeout:
+          type: integer
+          format: int32
+          description: Speech-recognition timeout in milliseconds. Default `60000`.
+          minimum: 0
+          default: 60000
+        vad_silence_ms:
+          type: integer
+          format: int32
+          description: |-
+            Voice-activity-detection silence time in milliseconds. The default is
+            engine-dependent (Deepgram vs Google) and is not fixed by this method.
+          minimum: 0
+        vad_thresh:
+          type: integer
+          format: int32
+          description: Voice-activity-detection threshold (0-1800). Default `400`.
+          minimum: 0
+          default: 400
+        debug_level:
+          type: integer
+          format: int32
+          description: Debug log level (0-2). Default `0`.
+          minimum: 0
+          default: 0
+        speech_engine:
+          description: Speech engine to use. Default `deepgram`.
+          default: deepgram
+          allOf:
+            - $ref: "#/components/schemas/LiveSpeechEngine"
+      required:
+        - from_lang
+        - to_lang
+        - direction
+      description: Begin live translation. `from_lang`, `to_lang` and `direction` are required.
+    TranslateDirection:
+      type: string
+      enum:
+        - local-caller
+        - remote-caller
+    TranslationFilterPreset:
+      type: string
+      enum:
+        - polite
+        - rude
+        - professional
+        - shakespeare
+        - gen-z
+    LiveTranslateInject:
+      type: object
+      properties:
+        message:
+          type: string
+          description: The message to inject.
+        direction:
+          description: Which call leg to speak the injected message to (single direction).
+          allOf:
+            - $ref: "#/components/schemas/TranslateDirection"
+      required:
+        - message
+        - direction
+      description: Inject a message into the live translation to be translated and spoken.
     CallingLiveTranslateRequest:
       type: object
       required:
@@ -6372,11 +6562,528 @@ components:
             - $ref: "#/components/schemas/AiSwaig"
         params:
           type: object
-          additionalProperties: {}
-          description: |-
-            Open-ended AI behavior parameters (ASR, TTS, turn detection, barge-in, LLM
-            config, video, …). Loose-modeled — the full enumeration lives with the SWML
-            `ai` verb. Example fields: `end_of_speech_timeout`, `attention_timeout` (ms).
+          properties:
+            acknowledge_interruptions:
+              type: boolean
+              description: Acknowledge crosstalk and confirm user input when the user speaks over the agent.
+            ai_model:
+              type: string
+              description: "LLM model for the AI. Suggested values: `gpt-4o-mini`, `gpt-4.1-mini`, `gpt-4.1-nano`."
+              default: gpt-4o-mini
+            ai_name:
+              type: string
+              description: |-
+                The name the agent responds to for wake/activation. When using `enable_pause`,
+                `start_paused`, or `speak_when_spoken_to`, the user must say this name to get
+                the agent's attention. Matching is case-insensitive.
+              default: computer
+            ai_volume:
+              type: integer
+              format: int32
+              description: AI playback volume, `-50` to `50`. Default `0`.
+              minimum: -50
+              maximum: 50
+              default: 0
+            app_name:
+              type: string
+              description: |-
+                Custom identifier for the AI application instance. Included in webhook
+                payloads so backends can identify which configuration made the request.
+              default: swml app
+            asr_smart_format:
+              type: boolean
+              description: |-
+                Enable smart formatting in ASR, improving formatting of numbers, dates, times,
+                and similar entities in the transcript. Default `false`.
+            attention_timeout:
+              oneOf:
+                - type: integer
+                  format: int32
+                - type: integer
+                  enum:
+                    - 0
+              description: |-
+                Time, in ms, to wait before prompting the user to respond. `10000`–`600000`,
+                or `0` to disable. Default `5000` ms.
+            attention_timeout_prompt:
+              type: string
+              description: Prompt fed into the AI when `attention_timeout` is reached.
+            asr_diarize:
+              type: boolean
+              description: |-
+                Enable speaker diarization in ASR, breaking the transcript into per-speaker
+                chunks. Default `false`.
+            asr_speaker_affinity:
+              type: boolean
+              description: |-
+                Force the agent to respond only to the speaker who responds first; other
+                speakers are ignored. Default `false`.
+            audible_debug:
+              type: boolean
+              description: Announce the function being executed on the call. Default `false`.
+              default: false
+            audible_latency:
+              type: boolean
+              description: Announce latency information during the call (debugging). Default `false`.
+              default: false
+            background_file:
+              type: string
+              format: uri
+              description: URL of an audio file to play in the background while the AI plays in the foreground.
+            background_file_loops:
+              oneOf:
+                - type: integer
+                  format: int32
+                - {}
+              description: Maximum times to loop the background file. `null` loops indefinitely.
+            background_file_volume:
+              type: integer
+              format: int32
+              description: Background-file volume, `-50` to `50`. Default `0`.
+              minimum: -50
+              maximum: 50
+              default: 0
+            enable_barge:
+              oneOf:
+                - type: string
+                - type: boolean
+              description: |-
+                Controls barge behavior. Accepts `"complete"`, `"partial"`, `"all"`, a
+                comma-separated combination, or a boolean. Default `"complete,partial"`.
+              default: complete,partial
+            enable_inner_dialog:
+              type: boolean
+              description: |-
+                Run a separate background AI process that analyzes the conversation and gives
+                the main agent real-time insights ("internal thought process"). Default `false`.
+              default: false
+            enable_pause:
+              type: boolean
+              description: |-
+                Enable pause/resume. Adds a `pause_conversation` function the AI can call when
+                the user says things like "hold on". While paused, the agent waits until the
+                user speaks its name (`ai_name`) to resume. Cannot be combined with
+                `speak_when_spoken_to`. Default `false`.
+              default: false
+            enable_turn_detection:
+              type: boolean
+              description: |-
+                Monitor partial transcripts for sentence-ending punctuation to proactively
+                finalize recognition, reducing latency. Works with `turn_detection_timeout`.
+                Default `true`.
+              default: true
+            barge_match_string:
+              type: string
+              description: |-
+                A string (may be a regular expression) defining barge behavior — e.g. stop
+                when a specific word is heard.
+            barge_min_words:
+              type: integer
+              format: int32
+              description: Number of words that must be heard before barge triggers, `1`–`99`.
+              minimum: 1
+              maximum: 99
+            barge_functions:
+              type: boolean
+              description: Allow functions to execute while the AI is being interrupted. Default `true`.
+              default: true
+            cache_mode:
+              type: boolean
+              description: Enable response caching for improved performance. Default `false`.
+              default: false
+            conscience:
+              type: string
+              description: Prompt that binds the agent to its purpose.
+            convo:
+              type: array
+              items:
+                $ref: "#/components/schemas/AiConversationMessage"
+              description: |-
+                Pre-existing conversation history injected at session startup, to seed the
+                agent with prior context or example interactions.
+            conversation_id:
+              type: string
+              description: Identifies a conversation, used by `check_for_input` and `save_conversation`.
+            conversation_sliding_window:
+              type: integer
+              format: int32
+              description: |-
+                Size of the sliding window for conversation history sent to the model, limiting
+                how much history is included.
+            debug_webhook_level:
+              type: integer
+              format: int32
+              description: Debug verbosity posted to the debug webhook, `0`–`2`. Default `1` if a URL is set.
+              minimum: 0
+              maximum: 2
+            debug_webhook_url:
+              type: string
+              format: uri
+              description: URL to which each interaction between the AI and user is posted in real time.
+            debug:
+              oneOf:
+                - type: boolean
+                - type: integer
+                  format: int32
+              description: |-
+                Enable debug mode for the session, logging extra diagnostics (turn-detection
+                events, speech processing, internal state changes).
+            direction:
+              description: Force the call direction presented to the assistant (`inbound` or `outbound`).
+              allOf:
+                - $ref: "#/components/schemas/AiCallDirection"
+            digit_terminators:
+              type: string
+              description: DTMF digit (as a string) that signals end of input (e.g. `#`).
+            digit_timeout:
+              type: integer
+              format: int32
+              description: Time, in ms, after digit input to detect end of input, `0`–`30000`. Default `3000` ms.
+              minimum: 0
+              maximum: 30000
+              default: 3000
+            end_of_speech_timeout:
+              type: integer
+              format: int32
+              description: |-
+                Silence, in ms, at the end of an utterance to detect end of speech,
+                `250`–`10000`. Default `700` ms.
+              minimum: 250
+              maximum: 10000
+              default: 700
+            enable_accounting:
+              type: boolean
+              description: Enable usage accounting. Default `false`.
+            enable_thinking:
+              type: boolean
+              description: |-
+                Enable thinking output for the agent. May add slight latency, as the AI uses an
+                extra turn to think about the query. Default `false`.
+              default: false
+            enable_text_normalization:
+              type: string
+              enum:
+                - heard
+                - spoken
+                - both
+                - "true"
+                - on
+                - "false"
+                - off
+                - none
+              description: |-
+                Converts numbers, currency, dates, and similar values between written and
+                spoken forms. `heard` converts caller speech to written form; `spoken` converts
+                the AI's written response to spoken form; `both` applies both. `false`/`off`/
+                `none` disable it; `true`/`on` are aliases for `both`. Default `both`.
+              default: both
+            enable_vision:
+              type: boolean
+              description: |-
+                Enable visual input processing, letting the agent use the `get_visual_input`
+                function. Default `false`.
+              default: false
+            energy_level:
+              type: number
+              format: double
+              description: Energy (in dB) required for the bot to hear the user, `0.0`–`100.0`. Default `52.0` dB.
+              minimum: 0
+              maximum: 100
+              default: 52
+            first_word_timeout:
+              type: integer
+              format: int32
+              description: Time, in ms, to wait for the first word after speech is detected, `0`–`10000`. Default `1000` ms.
+              minimum: 0
+              maximum: 10000
+              default: 1000
+            function_wait_for_talking:
+              type: boolean
+              description: |-
+                If `true`, wait for any filler to finish before executing a function; if
+                `false`, execute asynchronously as the filler plays. Default `false`.
+              default: false
+            functions_on_no_response:
+              type: boolean
+              description: Allow functions to execute when there is no user response after a timeout. Default `false`.
+              default: false
+            hard_stop_prompt:
+              type: string
+              description: Final prompt fed into the AI when `hard_stop_time` is reached.
+            hard_stop_time:
+              type: string
+              description: |-
+                Maximum duration the agent stays active before exiting the session. Formats:
+                seconds (`30s`), minutes (`2m`), hours (`1h`), or combined (`1h45m30s`).
+            hold_music:
+              type: string
+              format: uri
+              description: URL of hold music to play. Accepts WAV, mp3, and FreeSWITCH tone_stream.
+            hold_on_process:
+              type: boolean
+              description: Enable hold music during SWAIG processing. Default `false`.
+              default: false
+            inactivity_timeout:
+              type: integer
+              format: int32
+              description: |-
+                Time, in ms, to wait before exiting due to inactivity, `10000`–`3600000`.
+                Default `600000` ms (10 minutes).
+              minimum: 10000
+              maximum: 3600000
+              default: 600000
+            inner_dialog_model:
+              type: string
+              description: |-
+                Model for the inner-dialog feature (often a smaller/faster model). Suggested
+                values: `gpt-4o-mini`, `gpt-4.1-mini`, `gpt-4.1-nano`. Used only when
+                `enable_inner_dialog` is `true`.
+            inner_dialog_prompt:
+              type: string
+              description: |-
+                System prompt guiding the inner-dialog AI's analysis. Used only when
+                `enable_inner_dialog` is `true`.
+            inner_dialog_synced:
+              type: boolean
+              description: |-
+                Synchronize the inner dialog with the main conversation flow, so it waits for
+                each turn to complete before providing analysis. Used only when
+                `enable_inner_dialog` is `true`. Default `false`.
+              default: false
+            initial_sleep_ms:
+              type: integer
+              format: int32
+              description: Time, in ms, to wait before starting the conversation, `0`–`300000`. Default `0`.
+              minimum: 0
+              maximum: 300000
+              default: 0
+            input_poll_freq:
+              type: integer
+              format: int32
+              description: |-
+                Polling frequency, in ms, for `check_for_input` (e.g. feeding an inbound SMS to
+                the AI on a voice call), `1000`–`10000`. Default `2000` ms.
+              minimum: 1000
+              maximum: 10000
+              default: 2000
+            interrupt_on_noise:
+              type: boolean
+              description: Barge the agent on any sound interruption longer than one second.
+            interrupt_prompt:
+              type: string
+              description: Prompt for the agent to handle crosstalk.
+            languages_enabled:
+              type: boolean
+              description: Allow multilingualism. Default `false`.
+              default: false
+            local_tz:
+              type: string
+              description: Local timezone for the AI, as an IANA TZ ID (e.g. `America/Ensenada`).
+            llm_diarize_aware:
+              type: boolean
+              description: |-
+                Involve the agent in diarization: users can state who they are at the start so
+                the agent can identify them later. Default `false`.
+            max_emotion:
+              type: integer
+              format: int32
+              description: Maximum emotion intensity for the AI voice, `1`–`30`. Default `30`.
+              minimum: 1
+              maximum: 30
+              default: 30
+            max_response_tokens:
+              type: integer
+              format: int32
+              description: |-
+                Maximum tokens the model may generate in a single response. Lower values
+                produce shorter responses and reduce latency.
+              minimum: 1
+              maximum: 16384
+            openai_asr_engine:
+              type: string
+              description: ASR engine to use. Common values include `nova-2` and `nova-3`.
+            outbound_attention_timeout:
+              type: integer
+              format: int32
+              description: |-
+                Time, in ms, for an outbound recipient to respond before timeout,
+                `10000`–`600000`. Default `120000` ms (2 minutes).
+              minimum: 10000
+              maximum: 600000
+              default: 120000
+            persist_global_data:
+              type: boolean
+              description: |-
+                Automatically save `global_data` to a channel variable and restore it when a
+                new AI session starts on the same call, persisting data across invocations.
+                Default `true`.
+              default: true
+            pom_format:
+              type: string
+              enum:
+                - markdown
+                - xml
+              description: Output format for structured (`pom`) prompts. `markdown` or `xml`. Default `markdown`.
+              default: markdown
+            save_conversation:
+              type: boolean
+              description: |-
+                Send a summary of the conversation after the call ends. Requires a post URL and
+                a `conversation_id`; removes the need for a `post_prompt`.
+            speech_event_timeout:
+              type: integer
+              format: int32
+              description: Time, in ms, to wait for a speech event, `0`–`10000`. Default `1400` ms.
+              minimum: 0
+              maximum: 10000
+              default: 1400
+            speech_gen_quick_stops:
+              type: integer
+              format: int32
+              description: Number of quick stops to generate for speech, `0`–`10`. Default `3`.
+              minimum: 0
+              maximum: 10
+              default: 3
+            speech_timeout:
+              type: integer
+              format: int32
+              description: Overall speech timeout, in ms, `0`–`600000`. Default `60000` ms.
+              minimum: 0
+              maximum: 600000
+              default: 60000
+            speak_when_spoken_to:
+              type: boolean
+              description: |-
+                Keep the agent silent until directly addressed by name (`ai_name`), a
+                push-to-talk style interaction. Cannot be combined with `enable_pause`.
+                Default `false`.
+              default: false
+            start_paused:
+              type: boolean
+              description: |-
+                Start the agent paused until the user speaks its name (`ai_name`). Automatically
+                enables `enable_pause`. Default `false`.
+              default: false
+            static_greeting:
+              type: string
+              description: Static greeting played when the call is answered; always plays at the start.
+            static_greeting_no_barge:
+              type: boolean
+              description: Prevent the user from interrupting the static greeting by speaking over it. Default `false`.
+              default: false
+            summary_mode:
+              type: string
+              enum:
+                - string
+                - original
+              description: Mode for summary generation. `string` or `original`.
+            swaig_allow_settings:
+              type: boolean
+              description: |-
+                Allow tweaking settings (e.g. `barge_match_string`) via the SWML returned from a
+                SWAIG function. Default `true`.
+              default: true
+            swaig_allow_swml:
+              type: boolean
+              description: Allow SWAIG functions to return SWML to be executed. Default `true`.
+              default: true
+            swaig_post_conversation:
+              type: boolean
+              description: Post the entire conversation to every SWAIG call. Default `false`.
+              default: false
+            swaig_set_global_data:
+              type: boolean
+              description: Allow SWAIG to set global data that persists across calls. Default `true`.
+              default: true
+            swaig_post_swml_vars:
+              oneOf:
+                - type: boolean
+                - type: array
+                  items:
+                    type: string
+              description: |-
+                Controls which SWML variables are posted in SWAIG webhook payloads. `true`
+                posts all; an array of names posts only those variables.
+            thinking_model:
+              type: string
+              description: |-
+                Model for the agent's thinking capabilities. Suggested values: `gpt-4o-mini`,
+                `gpt-4.1-mini`, `gpt-4.1-nano`.
+            transparent_barge:
+              type: boolean
+              description: |-
+                Ignore the user's input while they speak over the agent; the agent waits for
+                them to finish. The LLM's own barge attempts are ignored and scrubbed from the
+                logs. Default `true`.
+              default: true
+            transparent_barge_max_time:
+              type: integer
+              format: int32
+              description: Maximum time, in ms, for transparent-barge mode, `0`–`60000`. Default `3000` ms.
+              minimum: 0
+              maximum: 60000
+              default: 3000
+            transfer_summary:
+              type: boolean
+              description: Pass a conversation summary from one agent to another (e.g. between departments). Default `false`.
+              default: false
+            turn_detection_timeout:
+              type: integer
+              format: int32
+              description: |-
+                Time, in ms, to wait after detecting a potential end-of-turn before finalizing
+                recognition. Shorter is faster but may cut off mid-sentence; `0` finalizes
+                immediately. Used only when `enable_turn_detection` is `true`. Default `250` ms.
+              minimum: 0
+              maximum: 10000
+              default: 250
+            tts_number_format:
+              type: string
+              enum:
+                - international
+                - national
+              description: |-
+                Format for the agent to reference phone numbers. `international` (e.g.
+                `+12345678901`) or `national` (e.g. `(234) 567-8901`). Default `international`.
+              default: international
+            verbose_logs:
+              type: boolean
+              description: Enable verbose logging. Default `false`.
+              default: false
+            video_listening_file:
+              type: string
+              format: uri
+              description: URL of a video file to play when the AI is listening. Video-capable calls only.
+            video_idle_file:
+              type: string
+              format: uri
+              description: URL of a video file to play when the AI is idle. Video-capable calls only.
+            video_talking_file:
+              type: string
+              format: uri
+              description: URL of a video file to play when the AI is talking. Video-capable calls only.
+            vision_model:
+              type: string
+              description: |-
+                Model for the agent's vision capabilities. Suggested values: `gpt-4o-mini`,
+                `gpt-4.1-mini`, `gpt-4.1-nano`.
+            vad_config:
+              type: string
+              description: |-
+                Silero Voice Activity Detection (VAD) settings. Format `"threshold"` or
+                `"threshold:frame_ms"`. Threshold (`0`–`100`) sets sensitivity; optional
+                frame_ms (`16`–`40`) sets frame duration.
+            wait_for_user:
+              type: boolean
+              description: When `true`, the agent waits for the user to speak first. Default `false`.
+              default: false
+            wake_prefix:
+              type: string
+              description: |-
+                Additional prefix that must precede `ai_name` to wake the agent from a paused
+                state (e.g. with `ai_name` "computer" and `wake_prefix` "hey", say "hey
+                computer").
+          description: AI agent behavior parameters (ASR, TTS, turn detection, barge-in, LLM config, video, …).
       required:
         - node_id
         - call_id
@@ -6553,11 +7260,13 @@ components:
         native_functions:
           type: array
           items:
-            type: string
-          description: |-
-            Names of prebuilt native functions the agent may call (e.g. `check_time`,
-            `wait_seconds`). Modeled loosely — the available set is documented with the
-            SWML `ai` verb.
+            $ref: "#/components/schemas/AiSwaigNativeFunction"
+          description: Prebuilt native functions the agent may call.
+        mcp_servers:
+          type: array
+          items:
+            $ref: "#/components/schemas/AiMcpServer"
+          description: Model Context Protocol (MCP) servers to source tools/resources from.
       description: SWAIG (SignalWire AI Gateway) function configuration.
     AiSwaigDefaults:
       type: object
@@ -6567,6 +7276,19 @@ components:
           description: |-
             Default webhook URL for function status callbacks. Basic auth may be inlined
             as `username:password@url`.
+        web_hook_auth_user:
+          type: string
+          description: Default basic-auth username for function webhooks.
+        web_hook_auth_password:
+          type: string
+          description: Default basic-auth password for function webhooks.
+        meta_data_token:
+          type: string
+          description: Default scoping token applied to per-function `meta_data`.
+        meta_data:
+          type: object
+          additionalProperties: {}
+          description: Default user-defined metadata available to all functions.
       description: Default settings applied to all SWAIG functions unless overridden.
     AiSwaigFunction:
       type: object
@@ -6574,21 +7296,65 @@ components:
         function:
           type: string
           description: Unique function name (or a reserved SignalWire hook name).
+        description:
+          type: string
+          description: |-
+            The context and purpose of the function, explaining to the agent when to use
+            it. Modern alias for the legacy `purpose` field.
         purpose:
           type: string
-          description: Description of when/why the agent should call this function.
+          description: |-
+            The context and purpose of the function. Legacy field — use `description`
+            (its modern alias) instead. If both are set, `description` takes precedence.
+        parameters:
+          type: object
+          additionalProperties: {}
+          description: |-
+            JSON Schema object describing the function's input parameters and their
+            validation rules. Modeled loosely — the structured schema is documented with
+            the SWML `ai` verb SWAIG reference.
         argument:
-          description: Description of the input the function expects.
+          description: |-
+            Legacy field describing the function's input. Use `parameters` (the modern,
+            structured replacement) instead.
+        active:
+          type: boolean
+          description: Whether the function is callable. Default `true`.
+          default: true
+        meta_data:
+          type: object
+          additionalProperties: {}
+          description: |-
+            Arbitrary per-function data, referenceable within the function (e.g. from the
+            prompt via template strings). Open key/value object.
+        meta_data_token:
+          type: string
+          description: |-
+            Scoping token for `meta_data`. If unset, metadata is scoped to the function's
+            `web_hook_url`.
+        data_map:
+          type: object
+          additionalProperties: {}
+          description: |-
+            Processes function inputs through expressions, webhooks, or direct output.
+            Modeled loosely — the structured shape is documented with the SWML `ai` verb
+            SWAIG reference.
         web_hook_url:
           type: string
-          description: Per-function webhook URL override.
+          description: |-
+            Per-function webhook URL override for status callbacks. Basic auth may be
+            inlined as `username:password@url`.
+        web_hook_auth_user:
+          type: string
+          description: Per-function basic-auth username for the webhook.
+        web_hook_auth_password:
+          type: string
+          description: Per-function basic-auth password for the webhook.
       required:
         - function
       description: |-
-        A single SWAIG function definition. Only the historically documented fields
-        (`function`, `purpose`, `argument`) are typed; the live SWAIG schema accepts
-        many more (`description`, `parameters`, `data_map`, `web_hook_url`, fillers,
-        …) — see openQuestions.
+        A single SWAIG function definition. The agent calls these functions during the
+        conversation; the schema is shared with the `ai_sidecar` service.
     AiSwaigIncludes:
       type: object
       properties:
@@ -6600,10 +7366,78 @@ components:
           items:
             type: string
           description: Names of the remote functions to include.
+        meta_data:
+          type: object
+          additionalProperties: {}
+          description: User-defined metadata passed with the remote-function request.
       required:
         - url
         - functions
       description: Remote SWAIG function include — pull function signatures from a URL.
+    AiSwaigNativeFunction:
+      type: string
+      enum:
+        - check_time
+        - wait_seconds
+        - wait_for_user
+        - adjust_response_latency
+    AiMcpServer:
+      type: object
+      properties:
+        url:
+          type: string
+          description: The MCP server URL.
+        headers:
+          type: object
+          additionalProperties:
+            type: string
+          description: |-
+            HTTP headers sent to the MCP server. Authorization tokens go here — there is
+            no separate auth field.
+        resources:
+          type: boolean
+          description: |-
+            Whether to fetch the server's resources into `global_data`, when the server
+            advertises resource support. Default `false`.
+          default: false
+        resource_vars:
+          type: object
+          additionalProperties:
+            type: string
+          description: |-
+            Variables passed to the MCP server when fetching resources. Used only when
+            `resources` is enabled.
+      required:
+        - url
+      description: A Model Context Protocol (MCP) server the agent can pull tools/resources from.
+    AiConversationMessage:
+      type: object
+      properties:
+        role:
+          description: Role of the message sender.
+          allOf:
+            - $ref: "#/components/schemas/AiConversationRole"
+        content:
+          type: string
+          description: Text content of the message.
+        lang:
+          type: string
+          description: Optional language code for the message (e.g. `en`, `es`, `fr`).
+      required:
+        - role
+        - content
+      description: A single turn in seeded conversation history (`params.convo`).
+    AiConversationRole:
+      type: string
+      enum:
+        - user
+        - assistant
+        - system
+    AiCallDirection:
+      type: string
+      enum:
+        - inbound
+        - outbound
     CallingAiRequest:
       type: object
       required:
@@ -6740,8 +7574,528 @@ components:
             - $ref: "#/components/schemas/AiSwaig"
         params:
           type: object
-          additionalProperties: {}
-          description: Open-ended AI behavior parameters. Loose-modeled — see `calling.ai` `params`.
+          properties:
+            acknowledge_interruptions:
+              type: boolean
+              description: Acknowledge crosstalk and confirm user input when the user speaks over the agent.
+            ai_model:
+              type: string
+              description: "LLM model for the AI. Suggested values: `gpt-4o-mini`, `gpt-4.1-mini`, `gpt-4.1-nano`."
+              default: gpt-4o-mini
+            ai_name:
+              type: string
+              description: |-
+                The name the agent responds to for wake/activation. When using `enable_pause`,
+                `start_paused`, or `speak_when_spoken_to`, the user must say this name to get
+                the agent's attention. Matching is case-insensitive.
+              default: computer
+            ai_volume:
+              type: integer
+              format: int32
+              description: AI playback volume, `-50` to `50`. Default `0`.
+              minimum: -50
+              maximum: 50
+              default: 0
+            app_name:
+              type: string
+              description: |-
+                Custom identifier for the AI application instance. Included in webhook
+                payloads so backends can identify which configuration made the request.
+              default: swml app
+            asr_smart_format:
+              type: boolean
+              description: |-
+                Enable smart formatting in ASR, improving formatting of numbers, dates, times,
+                and similar entities in the transcript. Default `false`.
+            attention_timeout:
+              oneOf:
+                - type: integer
+                  format: int32
+                - type: integer
+                  enum:
+                    - 0
+              description: |-
+                Time, in ms, to wait before prompting the user to respond. `10000`–`600000`,
+                or `0` to disable. Default `5000` ms.
+            attention_timeout_prompt:
+              type: string
+              description: Prompt fed into the AI when `attention_timeout` is reached.
+            asr_diarize:
+              type: boolean
+              description: |-
+                Enable speaker diarization in ASR, breaking the transcript into per-speaker
+                chunks. Default `false`.
+            asr_speaker_affinity:
+              type: boolean
+              description: |-
+                Force the agent to respond only to the speaker who responds first; other
+                speakers are ignored. Default `false`.
+            audible_debug:
+              type: boolean
+              description: Announce the function being executed on the call. Default `false`.
+              default: false
+            audible_latency:
+              type: boolean
+              description: Announce latency information during the call (debugging). Default `false`.
+              default: false
+            background_file:
+              type: string
+              format: uri
+              description: URL of an audio file to play in the background while the AI plays in the foreground.
+            background_file_loops:
+              oneOf:
+                - type: integer
+                  format: int32
+                - {}
+              description: Maximum times to loop the background file. `null` loops indefinitely.
+            background_file_volume:
+              type: integer
+              format: int32
+              description: Background-file volume, `-50` to `50`. Default `0`.
+              minimum: -50
+              maximum: 50
+              default: 0
+            enable_barge:
+              oneOf:
+                - type: string
+                - type: boolean
+              description: |-
+                Controls barge behavior. Accepts `"complete"`, `"partial"`, `"all"`, a
+                comma-separated combination, or a boolean. Default `"complete,partial"`.
+              default: complete,partial
+            enable_inner_dialog:
+              type: boolean
+              description: |-
+                Run a separate background AI process that analyzes the conversation and gives
+                the main agent real-time insights ("internal thought process"). Default `false`.
+              default: false
+            enable_pause:
+              type: boolean
+              description: |-
+                Enable pause/resume. Adds a `pause_conversation` function the AI can call when
+                the user says things like "hold on". While paused, the agent waits until the
+                user speaks its name (`ai_name`) to resume. Cannot be combined with
+                `speak_when_spoken_to`. Default `false`.
+              default: false
+            enable_turn_detection:
+              type: boolean
+              description: |-
+                Monitor partial transcripts for sentence-ending punctuation to proactively
+                finalize recognition, reducing latency. Works with `turn_detection_timeout`.
+                Default `true`.
+              default: true
+            barge_match_string:
+              type: string
+              description: |-
+                A string (may be a regular expression) defining barge behavior — e.g. stop
+                when a specific word is heard.
+            barge_min_words:
+              type: integer
+              format: int32
+              description: Number of words that must be heard before barge triggers, `1`–`99`.
+              minimum: 1
+              maximum: 99
+            barge_functions:
+              type: boolean
+              description: Allow functions to execute while the AI is being interrupted. Default `true`.
+              default: true
+            cache_mode:
+              type: boolean
+              description: Enable response caching for improved performance. Default `false`.
+              default: false
+            conscience:
+              type: string
+              description: Prompt that binds the agent to its purpose.
+            convo:
+              type: array
+              items:
+                $ref: "#/components/schemas/AiConversationMessage"
+              description: |-
+                Pre-existing conversation history injected at session startup, to seed the
+                agent with prior context or example interactions.
+            conversation_id:
+              type: string
+              description: Identifies a conversation, used by `check_for_input` and `save_conversation`.
+            conversation_sliding_window:
+              type: integer
+              format: int32
+              description: |-
+                Size of the sliding window for conversation history sent to the model, limiting
+                how much history is included.
+            debug_webhook_level:
+              type: integer
+              format: int32
+              description: Debug verbosity posted to the debug webhook, `0`–`2`. Default `1` if a URL is set.
+              minimum: 0
+              maximum: 2
+            debug_webhook_url:
+              type: string
+              format: uri
+              description: URL to which each interaction between the AI and user is posted in real time.
+            debug:
+              oneOf:
+                - type: boolean
+                - type: integer
+                  format: int32
+              description: |-
+                Enable debug mode for the session, logging extra diagnostics (turn-detection
+                events, speech processing, internal state changes).
+            direction:
+              description: Force the call direction presented to the assistant (`inbound` or `outbound`).
+              allOf:
+                - $ref: "#/components/schemas/AiCallDirection"
+            digit_terminators:
+              type: string
+              description: DTMF digit (as a string) that signals end of input (e.g. `#`).
+            digit_timeout:
+              type: integer
+              format: int32
+              description: Time, in ms, after digit input to detect end of input, `0`–`30000`. Default `3000` ms.
+              minimum: 0
+              maximum: 30000
+              default: 3000
+            end_of_speech_timeout:
+              type: integer
+              format: int32
+              description: |-
+                Silence, in ms, at the end of an utterance to detect end of speech,
+                `250`–`10000`. Default `700` ms.
+              minimum: 250
+              maximum: 10000
+              default: 700
+            enable_accounting:
+              type: boolean
+              description: Enable usage accounting. Default `false`.
+            enable_thinking:
+              type: boolean
+              description: |-
+                Enable thinking output for the agent. May add slight latency, as the AI uses an
+                extra turn to think about the query. Default `false`.
+              default: false
+            enable_text_normalization:
+              type: string
+              enum:
+                - heard
+                - spoken
+                - both
+                - "true"
+                - on
+                - "false"
+                - off
+                - none
+              description: |-
+                Converts numbers, currency, dates, and similar values between written and
+                spoken forms. `heard` converts caller speech to written form; `spoken` converts
+                the AI's written response to spoken form; `both` applies both. `false`/`off`/
+                `none` disable it; `true`/`on` are aliases for `both`. Default `both`.
+              default: both
+            enable_vision:
+              type: boolean
+              description: |-
+                Enable visual input processing, letting the agent use the `get_visual_input`
+                function. Default `false`.
+              default: false
+            energy_level:
+              type: number
+              format: double
+              description: Energy (in dB) required for the bot to hear the user, `0.0`–`100.0`. Default `52.0` dB.
+              minimum: 0
+              maximum: 100
+              default: 52
+            first_word_timeout:
+              type: integer
+              format: int32
+              description: Time, in ms, to wait for the first word after speech is detected, `0`–`10000`. Default `1000` ms.
+              minimum: 0
+              maximum: 10000
+              default: 1000
+            function_wait_for_talking:
+              type: boolean
+              description: |-
+                If `true`, wait for any filler to finish before executing a function; if
+                `false`, execute asynchronously as the filler plays. Default `false`.
+              default: false
+            functions_on_no_response:
+              type: boolean
+              description: Allow functions to execute when there is no user response after a timeout. Default `false`.
+              default: false
+            hard_stop_prompt:
+              type: string
+              description: Final prompt fed into the AI when `hard_stop_time` is reached.
+            hard_stop_time:
+              type: string
+              description: |-
+                Maximum duration the agent stays active before exiting the session. Formats:
+                seconds (`30s`), minutes (`2m`), hours (`1h`), or combined (`1h45m30s`).
+            hold_music:
+              type: string
+              format: uri
+              description: URL of hold music to play. Accepts WAV, mp3, and FreeSWITCH tone_stream.
+            hold_on_process:
+              type: boolean
+              description: Enable hold music during SWAIG processing. Default `false`.
+              default: false
+            inactivity_timeout:
+              type: integer
+              format: int32
+              description: |-
+                Time, in ms, to wait before exiting due to inactivity, `10000`–`3600000`.
+                Default `600000` ms (10 minutes).
+              minimum: 10000
+              maximum: 3600000
+              default: 600000
+            inner_dialog_model:
+              type: string
+              description: |-
+                Model for the inner-dialog feature (often a smaller/faster model). Suggested
+                values: `gpt-4o-mini`, `gpt-4.1-mini`, `gpt-4.1-nano`. Used only when
+                `enable_inner_dialog` is `true`.
+            inner_dialog_prompt:
+              type: string
+              description: |-
+                System prompt guiding the inner-dialog AI's analysis. Used only when
+                `enable_inner_dialog` is `true`.
+            inner_dialog_synced:
+              type: boolean
+              description: |-
+                Synchronize the inner dialog with the main conversation flow, so it waits for
+                each turn to complete before providing analysis. Used only when
+                `enable_inner_dialog` is `true`. Default `false`.
+              default: false
+            initial_sleep_ms:
+              type: integer
+              format: int32
+              description: Time, in ms, to wait before starting the conversation, `0`–`300000`. Default `0`.
+              minimum: 0
+              maximum: 300000
+              default: 0
+            input_poll_freq:
+              type: integer
+              format: int32
+              description: |-
+                Polling frequency, in ms, for `check_for_input` (e.g. feeding an inbound SMS to
+                the AI on a voice call), `1000`–`10000`. Default `2000` ms.
+              minimum: 1000
+              maximum: 10000
+              default: 2000
+            interrupt_on_noise:
+              type: boolean
+              description: Barge the agent on any sound interruption longer than one second.
+            interrupt_prompt:
+              type: string
+              description: Prompt for the agent to handle crosstalk.
+            languages_enabled:
+              type: boolean
+              description: Allow multilingualism. Default `false`.
+              default: false
+            local_tz:
+              type: string
+              description: Local timezone for the AI, as an IANA TZ ID (e.g. `America/Ensenada`).
+            llm_diarize_aware:
+              type: boolean
+              description: |-
+                Involve the agent in diarization: users can state who they are at the start so
+                the agent can identify them later. Default `false`.
+            max_emotion:
+              type: integer
+              format: int32
+              description: Maximum emotion intensity for the AI voice, `1`–`30`. Default `30`.
+              minimum: 1
+              maximum: 30
+              default: 30
+            max_response_tokens:
+              type: integer
+              format: int32
+              description: |-
+                Maximum tokens the model may generate in a single response. Lower values
+                produce shorter responses and reduce latency.
+              minimum: 1
+              maximum: 16384
+            openai_asr_engine:
+              type: string
+              description: ASR engine to use. Common values include `nova-2` and `nova-3`.
+            outbound_attention_timeout:
+              type: integer
+              format: int32
+              description: |-
+                Time, in ms, for an outbound recipient to respond before timeout,
+                `10000`–`600000`. Default `120000` ms (2 minutes).
+              minimum: 10000
+              maximum: 600000
+              default: 120000
+            persist_global_data:
+              type: boolean
+              description: |-
+                Automatically save `global_data` to a channel variable and restore it when a
+                new AI session starts on the same call, persisting data across invocations.
+                Default `true`.
+              default: true
+            pom_format:
+              type: string
+              enum:
+                - markdown
+                - xml
+              description: Output format for structured (`pom`) prompts. `markdown` or `xml`. Default `markdown`.
+              default: markdown
+            save_conversation:
+              type: boolean
+              description: |-
+                Send a summary of the conversation after the call ends. Requires a post URL and
+                a `conversation_id`; removes the need for a `post_prompt`.
+            speech_event_timeout:
+              type: integer
+              format: int32
+              description: Time, in ms, to wait for a speech event, `0`–`10000`. Default `1400` ms.
+              minimum: 0
+              maximum: 10000
+              default: 1400
+            speech_gen_quick_stops:
+              type: integer
+              format: int32
+              description: Number of quick stops to generate for speech, `0`–`10`. Default `3`.
+              minimum: 0
+              maximum: 10
+              default: 3
+            speech_timeout:
+              type: integer
+              format: int32
+              description: Overall speech timeout, in ms, `0`–`600000`. Default `60000` ms.
+              minimum: 0
+              maximum: 600000
+              default: 60000
+            speak_when_spoken_to:
+              type: boolean
+              description: |-
+                Keep the agent silent until directly addressed by name (`ai_name`), a
+                push-to-talk style interaction. Cannot be combined with `enable_pause`.
+                Default `false`.
+              default: false
+            start_paused:
+              type: boolean
+              description: |-
+                Start the agent paused until the user speaks its name (`ai_name`). Automatically
+                enables `enable_pause`. Default `false`.
+              default: false
+            static_greeting:
+              type: string
+              description: Static greeting played when the call is answered; always plays at the start.
+            static_greeting_no_barge:
+              type: boolean
+              description: Prevent the user from interrupting the static greeting by speaking over it. Default `false`.
+              default: false
+            summary_mode:
+              type: string
+              enum:
+                - string
+                - original
+              description: Mode for summary generation. `string` or `original`.
+            swaig_allow_settings:
+              type: boolean
+              description: |-
+                Allow tweaking settings (e.g. `barge_match_string`) via the SWML returned from a
+                SWAIG function. Default `true`.
+              default: true
+            swaig_allow_swml:
+              type: boolean
+              description: Allow SWAIG functions to return SWML to be executed. Default `true`.
+              default: true
+            swaig_post_conversation:
+              type: boolean
+              description: Post the entire conversation to every SWAIG call. Default `false`.
+              default: false
+            swaig_set_global_data:
+              type: boolean
+              description: Allow SWAIG to set global data that persists across calls. Default `true`.
+              default: true
+            swaig_post_swml_vars:
+              oneOf:
+                - type: boolean
+                - type: array
+                  items:
+                    type: string
+              description: |-
+                Controls which SWML variables are posted in SWAIG webhook payloads. `true`
+                posts all; an array of names posts only those variables.
+            thinking_model:
+              type: string
+              description: |-
+                Model for the agent's thinking capabilities. Suggested values: `gpt-4o-mini`,
+                `gpt-4.1-mini`, `gpt-4.1-nano`.
+            transparent_barge:
+              type: boolean
+              description: |-
+                Ignore the user's input while they speak over the agent; the agent waits for
+                them to finish. The LLM's own barge attempts are ignored and scrubbed from the
+                logs. Default `true`.
+              default: true
+            transparent_barge_max_time:
+              type: integer
+              format: int32
+              description: Maximum time, in ms, for transparent-barge mode, `0`–`60000`. Default `3000` ms.
+              minimum: 0
+              maximum: 60000
+              default: 3000
+            transfer_summary:
+              type: boolean
+              description: Pass a conversation summary from one agent to another (e.g. between departments). Default `false`.
+              default: false
+            turn_detection_timeout:
+              type: integer
+              format: int32
+              description: |-
+                Time, in ms, to wait after detecting a potential end-of-turn before finalizing
+                recognition. Shorter is faster but may cut off mid-sentence; `0` finalizes
+                immediately. Used only when `enable_turn_detection` is `true`. Default `250` ms.
+              minimum: 0
+              maximum: 10000
+              default: 250
+            tts_number_format:
+              type: string
+              enum:
+                - international
+                - national
+              description: |-
+                Format for the agent to reference phone numbers. `international` (e.g.
+                `+12345678901`) or `national` (e.g. `(234) 567-8901`). Default `international`.
+              default: international
+            verbose_logs:
+              type: boolean
+              description: Enable verbose logging. Default `false`.
+              default: false
+            video_listening_file:
+              type: string
+              format: uri
+              description: URL of a video file to play when the AI is listening. Video-capable calls only.
+            video_idle_file:
+              type: string
+              format: uri
+              description: URL of a video file to play when the AI is idle. Video-capable calls only.
+            video_talking_file:
+              type: string
+              format: uri
+              description: URL of a video file to play when the AI is talking. Video-capable calls only.
+            vision_model:
+              type: string
+              description: |-
+                Model for the agent's vision capabilities. Suggested values: `gpt-4o-mini`,
+                `gpt-4.1-mini`, `gpt-4.1-nano`.
+            vad_config:
+              type: string
+              description: |-
+                Silero Voice Activity Detection (VAD) settings. Format `"threshold"` or
+                `"threshold:frame_ms"`. Threshold (`0`–`100`) sets sensitivity; optional
+                frame_ms (`16`–`40`) sets frame duration.
+            wait_for_user:
+              type: boolean
+              description: When `true`, the agent waits for the user to speak first. Default `false`.
+              default: false
+            wake_prefix:
+              type: string
+              description: |-
+                Additional prefix that must precede `ai_name` to wake the agent from a paused
+                state (e.g. with `ai_name` "computer" and `wake_prefix` "hey", say "hey
+                computer").
+          description: AI agent behavior parameters. See `calling.ai` `params`.
         global_data:
           type: object
           additionalProperties: {}
@@ -10774,7 +12128,10 @@ components:
               node_id: a3e1b2c4-...
               call_id: c7f9d2e1-...
               action:
-                start: {}
+                start:
+                  lang: en-US
+                  direction:
+                    - remote-caller
     callingLiveTranscribeResponse:
       name: calling.live_transcribe.response
       title: calling.live_transcribe response
@@ -10807,7 +12164,11 @@ components:
               node_id: a3e1b2c4-...
               call_id: c7f9d2e1-...
               action:
-                start: {}
+                start:
+                  from_lang: en-US
+                  to_lang: es-ES
+                  direction:
+                    - remote-caller
               status_url: https://example.com/translate-callback
     callingLiveTranslateResponse:
       name: calling.live_translate.response
@@ -10895,6 +12256,26 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingAiRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.ai
+            params:
+              node_id: a3e1b2c4-...
+              call_id: c7f9d2e1-...
+              control_id: ai-session-1
+              prompt:
+                text: You are a helpful assistant. Greet the user and ask how you can help.
+                temperature: 0.3
+              SWAIG:
+                functions:
+                  - function: get_weather
+                    description: Get current weather for a location
+                    web_hook_url: https://example.com/swaig
+              params:
+                end_of_speech_timeout: 3000
+                attention_timeout: 30000
     callingAiResponse:
       name: calling.ai.response
       title: calling.ai response
@@ -10903,6 +12284,15 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingAiResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: AI started
+              call_id: c7f9d2e1-...
+              control_id: ai-session-1
     callingAiStopRequest:
       name: calling.ai.stop.request
       title: calling.ai.stop request
@@ -10911,6 +12301,15 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingAiStopRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.ai.stop
+            params:
+              node_id: a3e1b2c4-...
+              call_id: c7f9d2e1-...
+              control_id: ai-session-1
     callingAiStopResponse:
       name: calling.ai.stop.response
       title: calling.ai.stop response
@@ -10919,6 +12318,15 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingAiStopResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: +OK stopped
+              call_id: c7f9d2e1-...
+              control_id: ai-session-1
     callingAmazonBedrockRequest:
       name: calling.amazon_bedrock.request
       title: calling.amazon_bedrock request
@@ -10927,6 +12335,15 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingAmazonBedrockRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.amazon_bedrock
+            params:
+              node_id: a3e1b2c4-...
+              call_id: c7f9d2e1-...
+              prompt: You are a helpful assistant.
     callingAmazonBedrockResponse:
       name: calling.amazon_bedrock.response
       title: calling.amazon_bedrock response
@@ -10935,6 +12352,13 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingAmazonBedrockResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: AI started
     callingAiMessageRequest:
       name: calling.ai_message.request
       title: calling.ai_message request
@@ -10943,6 +12367,16 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingAiMessageRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.ai_message
+            params:
+              node_id: a3e1b2c4-...
+              call_id: c7f9d2e1-...
+              message_text: The user's order has been confirmed.
+              role: system
     callingAiMessageResponse:
       name: calling.ai_message.response
       title: calling.ai_message response
@@ -10951,6 +12385,13 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingAiMessageResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: Message sent
     callingAiHoldRequest:
       name: calling.ai_hold.request
       title: calling.ai_hold request
@@ -10959,6 +12400,16 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingAiHoldRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.ai_hold
+            params:
+              node_id: a3e1b2c4-...
+              call_id: c7f9d2e1-...
+              timeout: "60"
+              prompt: Please hold while we transfer you.
     callingAiHoldResponse:
       name: calling.ai_hold.response
       title: calling.ai_hold response
@@ -10967,6 +12418,13 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingAiHoldResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: AI on hold
     callingAiUnholdRequest:
       name: calling.ai_unhold.request
       title: calling.ai_unhold request
@@ -10975,6 +12433,15 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingAiUnholdRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.ai_unhold
+            params:
+              node_id: a3e1b2c4-...
+              call_id: c7f9d2e1-...
+              prompt: Thank you for holding.
     callingAiUnholdResponse:
       name: calling.ai_unhold.response
       title: calling.ai_unhold response
@@ -10983,6 +12450,13 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingAiUnholdResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: AI resumed
     callingUserEventRequest:
       name: calling.user_event.request
       title: calling.user_event request
@@ -10991,6 +12465,15 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingUserEventRequest"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            method: calling.user_event
+            params:
+              node_id: a3e1b2c4-...
+              call_id: c7f9d2e1-...
+              event: custom_event_name
     callingUserEventResponse:
       name: calling.user_event.response
       title: calling.user_event response
@@ -10999,6 +12482,13 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/CallingUserEventResponse"
+      examples:
+        - payload:
+            jsonrpc: "2.0"
+            id: 550e8400-e29b-41d4-a716-446655440000
+            result:
+              code: "200"
+              message: Event sent
     callStateEvent:
       name: calling.call.state
       title: calling.call.state event
