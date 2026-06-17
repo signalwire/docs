@@ -1,4 +1,5 @@
 import { deepStrictEqual, strictEqual } from "assert";
+import { $decorators } from "@signalwire/typespec-emit-filter";
 import { describe, it } from "vitest";
 import { createSchemaRegistry, typeToSchema } from "../src/schema-emitter.js";
 import { Tester } from "./host.js";
@@ -6,6 +7,15 @@ import { Tester } from "./host.js";
 async function compileModels(def: string) {
   const { program } = await Tester.compile(def);
   return program;
+}
+
+// Apply `@excludeFromEmit`'s real implementation to a target post-compile — the decorator
+// only needs `{ program }` as its context. This exercises the actual decorator/state
+// round-trip the emitter reads, without loading the decorator library into the in-memory
+// compiler (its virtual FS can't resolve the hoisted workspace package).
+const excludeFromEmitImpl: any = ($decorators as any)["SignalWire.EmitFilter"].excludeFromEmit;
+function exclude(program: any, target: any, ...types: any[]): void {
+  excludeFromEmitImpl({ program }, target, ...types);
 }
 
 describe("typeToSchema", () => {
@@ -154,5 +164,146 @@ describe("createSchemaRegistry — discriminated inheritance", () => {
     deepStrictEqual(s.PhoneDevice.allOf[0], { $ref: "#/components/schemas/Device" });
     deepStrictEqual(s.PhoneDevice.allOf[1].properties.type, { type: "string", const: "phone" });
     deepStrictEqual(s.SipDevice.allOf[1].properties.type, { type: "string", const: "sip" });
+  });
+});
+
+describe("@excludeFromEmit", () => {
+  it("collapses `T | SWMLVar` props to `T` when the model excludes SWMLVar", async () => {
+    const program = await compileModels(`
+      scalar SWMLVar extends string;
+      model Foo {
+        a?: int32 | SWMLVar;
+        b?: string;
+      }
+    `);
+    const ns = program.getGlobalNamespaceType();
+    const Foo = ns.models.get("Foo")!;
+    exclude(program, Foo, ns.scalars.get("SWMLVar")!);
+    const reg = createSchemaRegistry(program);
+    reg.refFor(Foo);
+    const foo: any = reg.schemas.Foo;
+    deepStrictEqual(foo.properties.a, { type: "integer", format: "int32" });
+    deepStrictEqual(foo.properties.b, { type: "string" });
+  });
+
+  it("drops the excluded arm and keeps the surviving arms as a oneOf", async () => {
+    const program = await compileModels(`
+      scalar SWMLVar extends string;
+      model Foo { x?: string | boolean | SWMLVar; }
+    `);
+    const ns = program.getGlobalNamespaceType();
+    const Foo = ns.models.get("Foo")!;
+    exclude(program, Foo, ns.scalars.get("SWMLVar")!);
+    const reg = createSchemaRegistry(program);
+    reg.refFor(Foo);
+    deepStrictEqual((reg.schemas.Foo as any).properties.x, {
+      oneOf: [{ type: "string" }, { type: "boolean" }],
+    });
+  });
+
+  it("honors exclusion attached to a named union (drops the arm + collapses)", async () => {
+    const program = await compileModels(`
+      scalar SWMLVar extends string;
+      union Status { "active", "inactive", SWMLVar }
+      model Foo { status?: Status; }
+    `);
+    const ns = program.getGlobalNamespaceType();
+    exclude(program, ns.unions.get("Status")!, ns.scalars.get("SWMLVar")!);
+    const reg = createSchemaRegistry(program);
+    reg.refFor(ns.models.get("Foo")!);
+    deepStrictEqual(reg.schemas.Status, { type: "string", enum: ["active", "inactive"] });
+    deepStrictEqual((reg.schemas.Foo as any).properties.status, {
+      $ref: "#/components/schemas/Status",
+    });
+  });
+
+  it("strips a nested model reached under the decorated root (subtree walk)", async () => {
+    const program = await compileModels(`
+      scalar SWMLVar extends string;
+      model Inner { p?: int32 | SWMLVar; }
+      model Outer { inner?: Inner; q?: boolean | SWMLVar; }
+    `);
+    const ns = program.getGlobalNamespaceType();
+    const Outer = ns.models.get("Outer")!;
+    exclude(program, Outer, ns.scalars.get("SWMLVar")!);
+    const reg = createSchemaRegistry(program);
+    reg.refFor(Outer);
+    deepStrictEqual((reg.schemas.Inner as any).properties.p, { type: "integer", format: "int32" });
+    deepStrictEqual((reg.schemas.Outer as any).properties.q, { type: "boolean" });
+  });
+
+  it("retains SWMLVar arms when the decorator is absent (opt-in, not global)", async () => {
+    const program = await compileModels(`
+      scalar SWMLVar extends string;
+      model Foo { a?: int32 | SWMLVar; }
+    `);
+    const reg = createSchemaRegistry(program);
+    reg.refFor(program.getGlobalNamespaceType().models.get("Foo")!);
+    deepStrictEqual((reg.schemas.Foo as any).properties.a, {
+      oneOf: [{ type: "integer", format: "int32" }, { type: "string" }],
+    });
+  });
+
+  it("strips arms on a decorated OPEN model even though it inlines (index signature)", async () => {
+    const program = await compileModels(`
+      scalar SWMLVar extends string;
+      model Behavior {
+        a?: int32 | SWMLVar;
+        ...Record<unknown>;
+      }
+      model Parent { behavior?: Behavior; }
+    `);
+    const ns = program.getGlobalNamespaceType();
+    exclude(program, ns.models.get("Behavior")!, ns.scalars.get("SWMLVar")!);
+    const reg = createSchemaRegistry(program);
+    reg.refFor(ns.models.get("Parent")!);
+    // Behavior has an index signature → inlined into Parent.behavior, never a $ref
+    // component, so its exclusions must be honored on the inline path.
+    const behavior = (reg.schemas.Parent as any).properties.behavior;
+    strictEqual("$ref" in behavior, false);
+    deepStrictEqual(behavior.properties.a, { type: "integer", format: "int32" });
+  });
+});
+
+describe("namespace-qualified component names", () => {
+  it("keeps service-local types bare and qualifies cross-namespace types", async () => {
+    const program = await compileModels(`
+      namespace SWML.Calling { model Thing { id: string; } }
+      namespace Relay.Calling {
+        model Thing { name: string; }
+        model Root { a: SWML.Calling.Thing; b: Relay.Calling.Thing; }
+      }
+    `);
+    const relay = program
+      .getGlobalNamespaceType()
+      .namespaces.get("Relay")!
+      .namespaces.get("Calling")!;
+    const reg = createSchemaRegistry(program, relay);
+    reg.refFor(relay.models.get("Root")!);
+    strictEqual("Root" in reg.schemas, true);
+    strictEqual("Thing" in reg.schemas, true); // Relay.Calling.Thing → service-local → bare
+    strictEqual("SWML.Calling.Thing" in reg.schemas, true); // imported → qualified
+    deepStrictEqual((reg.schemas.Root as any).properties.a, {
+      $ref: "#/components/schemas/SWML.Calling.Thing",
+    });
+    deepStrictEqual((reg.schemas.Root as any).properties.b, {
+      $ref: "#/components/schemas/Thing",
+    });
+  });
+
+  it("raises duplicate-type-name when two distinct types resolve to the same name", async () => {
+    const program = await compileModels(`
+      model Thing { g: string; }
+      namespace Relay.Calling { model Thing { r: string; } }
+    `);
+    const global = program.getGlobalNamespaceType();
+    const relay = global.namespaces.get("Relay")!.namespaces.get("Calling")!;
+    const reg = createSchemaRegistry(program, relay);
+    reg.refFor(global.models.get("Thing")!); // global namespace → "Thing"
+    reg.refFor(relay.models.get("Thing")!); // Relay.Calling.Thing → "Thing" → collision
+    strictEqual(
+      program.diagnostics.some((d) => d.code.endsWith("duplicate-type-name")),
+      true,
+    );
   });
 });

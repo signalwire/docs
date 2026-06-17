@@ -277,7 +277,7 @@ export async function $onEmit(context: EmitContext<AsyncAPIEmitterOptions>): Pro
     return;
   }
 
-  const registry = createSchemaRegistry(program);
+  const registry = createSchemaRegistry(program, ns);
   const title = getService(program, ns)?.title ?? ns.name;
 
   // Concrete component maps the emitters write into — referenced by `doc` so writes show through.

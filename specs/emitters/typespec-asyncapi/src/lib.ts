@@ -41,6 +41,12 @@ export const $lib = createTypeSpecLibrary({
         default: paramMessage`Duplicate @rpcMethod "${"method"}". JSON-RPC method names must be unique within a service.`,
       },
     },
+    "duplicate-type-name": {
+      severity: "error",
+      messages: {
+        default: paramMessage`Duplicate type name "${"value"}". Two distinct types resolve to the same component name; qualify or rename one.`,
+      },
+    },
   },
   state: {
     server: { description: "State for @server" },
