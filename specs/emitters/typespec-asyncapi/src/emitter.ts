@@ -2,12 +2,15 @@ import {
   EmitContext,
   emitFile,
   getDoc,
+  getExamples,
+  getOpExamples,
   getService,
   getSummary,
   Namespace,
   Operation,
   Program,
   resolvePath,
+  serializeValueAsJson,
 } from "@typespec/compiler";
 import { applyWebSocketBindings } from "./bindings/ws.js";
 import { getBearerAuth, getChannel, getEvent, getRpcMethod, getServer } from "./decorators.js";
@@ -48,6 +51,9 @@ function pascal(s: string): string {
 function lcfirst(s: string): string {
   return s.charAt(0).toLowerCase() + s.slice(1);
 }
+
+/** Placeholder JSON-RPC id used in synthesized request/reply/event example frames. */
+const EXAMPLE_ID = "550e8400-e29b-41d4-a716-446655440000";
 
 /** Schema for an operation's parameters: a `$ref` when it's a single spread model, else an inline object. */
 function paramsSchema(program: Program, op: Operation, ref: RefFn): SchemaOrRef {
@@ -125,6 +131,23 @@ function emitRpcMethods(
         payload: { $ref: `#/components/schemas/${baseId}Response` },
       };
 
+      // Wrap any @opExample on the operation into full JSON-RPC request/reply frame
+      // examples on the synthesized messages (params -> request, returnType -> reply).
+      for (const ex of getOpExamples(program, op)) {
+        if (ex.parameters) {
+          const params = serializeValueAsJson(program, ex.parameters, op.parameters);
+          (target.messages[reqMsgId].examples ??= []).push({
+            payload: { jsonrpc: "2.0", id: EXAMPLE_ID, method, params },
+          });
+        }
+        if (ex.returnType) {
+          const result = serializeValueAsJson(program, ex.returnType, op.returnType);
+          (target.messages[resMsgId].examples ??= []).push({
+            payload: { jsonrpc: "2.0", id: EXAMPLE_ID, result },
+          });
+        }
+      }
+
       target.channelMessages[reqMsgId] = { $ref: `#/components/messages/${reqMsgId}` };
       target.channelMessages[resMsgId] = { $ref: `#/components/messages/${resMsgId}` };
 
@@ -189,6 +212,20 @@ function emitEvents(
         contentType: "application/json",
         payload: { $ref: `#/components/schemas/${frameId}` },
       };
+
+      // Wrap any @example on the event model into a full signalwire.event carrier frame.
+      for (const ex of getExamples(program, model)) {
+        const params = serializeValueAsJson(program, ex.value, model);
+        (target.messages[msgId].examples ??= []).push({
+          payload: {
+            jsonrpc: "2.0",
+            method: "signalwire.event",
+            id: EXAMPLE_ID,
+            params: { event_type: eventType, params },
+          },
+        });
+      }
+
       target.channelMessages[msgId] = { $ref: `#/components/messages/${msgId}` };
       eventRefs.push({ $ref: `#/channels/${channelId}/messages/${msgId}` });
     }
