@@ -265,7 +265,11 @@ export async function $onEmit(context: EmitContext<AsyncAPIEmitterOptions>): Pro
     servers: { [serverCfg.name]: server },
     channels: {
       [channelId]: {
-        address: null,
+        // The Relay WS endpoint is a single root connection (`wss://<host>`); every
+        // service multiplexes over it and routes by the JSON-RPC `method` in the
+        // payload, not by a URL path. Emit the root address `"/"` so renderers show
+        // the bare endpoint instead of treating the channel id as a path segment.
+        address: "/",
         title,
         servers: [{ $ref: `#/servers/${serverCfg.name}` }],
         messages: target.channelMessages,

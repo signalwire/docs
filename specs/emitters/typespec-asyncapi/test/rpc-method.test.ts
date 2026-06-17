@@ -14,9 +14,9 @@ export const SVC = `
 `;
 
 describe("@channel", () => {
-  it("emits a single channel with address null", async () => {
+  it("emits a single channel addressed at the WS root", async () => {
     const { doc } = await asyncApiFor(SVC);
-    strictEqual(doc.channels.calling.address, null);
+    strictEqual(doc.channels.calling.address, "/");
     deepStrictEqual(doc.channels.calling.servers, [{ $ref: "#/servers/production" }]);
   });
 });
