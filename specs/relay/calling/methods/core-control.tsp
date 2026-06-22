@@ -81,7 +81,7 @@ model DialResult {
 // DialDevice variant models in common.tsp carry schema-level @example values instead.
 @rpcMethod("calling.dial")
 @summary("Dial outbound call(s); first to answer wins")
-op dial(...DialParams): DialResult;
+op dial(...DialParams): DialResult | CallDialEvent;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // calling.answer
@@ -190,7 +190,7 @@ model ConnectResult {
 // Ringback variant models in common.tsp carry schema-level @example values instead.
 @rpcMethod("calling.connect")
 @summary("Connect a device to an active call")
-op connect(...ConnectParams): ConnectResult;
+op connect(...ConnectParams): ConnectResult | CallConnectEvent;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // calling.disconnect

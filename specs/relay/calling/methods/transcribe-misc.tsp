@@ -43,7 +43,7 @@ model TranscribeResult {
   },
   returnType: #{ code: "200", message: "Transcribing", url: "recordings/<UUID>.wav" },
 })
-op transcribe(...TranscribeParams): TranscribeResult;
+op transcribe(...TranscribeParams): TranscribeResult | CallTranscribeEvent;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // calling.transcribe.stop
@@ -98,7 +98,7 @@ model EchoResult {
   parameters: #{ node_id: "a3e1b2c4-...", call_id: "c7f9d2e1-...", timeout: 30 },
   returnType: #{ code: "200", message: "Echo started" },
 })
-op echo(...EchoParams): EchoResult;
+op echo(...EchoParams): EchoResult | CallEchoEvent;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // calling.bind_digit
@@ -383,7 +383,7 @@ model LiveTranscribeResult {
   },
   returnType: #{ code: "200", message: "Live transcription started" },
 })
-op liveTranscribe(...LiveTranscribeParams): LiveTranscribeResult;
+op liveTranscribe(...LiveTranscribeParams): LiveTranscribeResult | CallTranscribeEvent;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // calling.live_translate

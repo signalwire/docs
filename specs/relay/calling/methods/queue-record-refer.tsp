@@ -45,7 +45,7 @@ model QueueEnterResult {
   },
   returnType: #{ code: "200", message: "Entering Queue", control_id: "queue-1" },
 })
-op queueEnter(...QueueEnterParams): QueueEnterResult;
+op queueEnter(...QueueEnterParams): QueueEnterResult | CallQueueEvent;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // calling.queue.leave
@@ -211,7 +211,7 @@ model RecordResult {
     url: "https://example.com/recordings/record-1.mp3",
   },
 })
-op recordCall(...RecordParams): RecordResult;
+op recordCall(...RecordParams): RecordResult | CallRecordEvent;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // calling.record.pause
@@ -375,7 +375,7 @@ model ReferResult {
 /** Transfer a SIP call to an external SIP endpoint via SIP REFER. Async-safe. */
 @rpcMethod("calling.refer")
 @summary("Transfer a SIP call via SIP REFER")
-op refer(...ReferParams): ReferResult;
+op refer(...ReferParams): ReferResult | CallReferEvent;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // calling.pass

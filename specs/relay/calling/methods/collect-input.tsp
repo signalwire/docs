@@ -141,7 +141,7 @@ model CollectResult {
   },
   returnType: #{ code: "200", message: "Collecting", control_id: "collect-1" },
 })
-op collect(...CollectParams): CollectResult;
+op collect(...CollectParams): CollectResult | CallCollectEvent;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // calling.collect.stop
@@ -250,7 +250,7 @@ model PlayAndCollectResult {
 // union, and TypeSpec example values cannot narrow a discriminator base.
 @rpcMethod("calling.play_and_collect")
 @summary("Play media and collect input")
-op playAndCollect(...PlayAndCollectParams): PlayAndCollectResult;
+op playAndCollect(...PlayAndCollectParams): PlayAndCollectResult | CallCollectEvent;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // calling.play_and_collect.stop

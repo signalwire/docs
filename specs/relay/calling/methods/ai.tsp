@@ -188,7 +188,7 @@ model AiSidecarResult {
     call_id: "c7f9d2e1-...",
   },
 })
-op aiSidecar(...AiSidecarParams): AiSidecarResult;
+op aiSidecar(...AiSidecarParams): AiSidecarResult | AiSidecarEvent;
 
 model AiSidecarPokeParams {
   ...CallAddress;

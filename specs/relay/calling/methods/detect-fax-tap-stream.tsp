@@ -131,7 +131,7 @@ model DetectResult {
 /** Start a detector on an active call. May run multiple in parallel. */
 @rpcMethod("calling.detect")
 @summary("Start a detector (machine/fax/digit)")
-op detect(...DetectParams): DetectResult;
+op detect(...DetectParams): DetectResult | CallDetectEvent;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // calling.detect.stop
@@ -231,7 +231,7 @@ model SendFaxResult {
     call_id: "b4c4f9f1-2345-4b5c-9d9e-000000000002",
   },
 })
-op sendFax(...SendFaxParams): SendFaxResult;
+op sendFax(...SendFaxParams): SendFaxResult | CallFaxEvent;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // calling.send_fax.stop
@@ -315,7 +315,7 @@ model ReceiveFaxResult {
     call_id: "b4c4f9f1-2345-4b5c-9d9e-000000000002",
   },
 })
-op receiveFax(...ReceiveFaxParams): ReceiveFaxResult;
+op receiveFax(...ReceiveFaxParams): ReceiveFaxResult | CallFaxEvent;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // calling.receive_fax.stop
@@ -501,7 +501,7 @@ model TapResult {
  */
 @rpcMethod("calling.tap")
 @summary("Tap call media to an external device")
-op tap(...TapParams): TapResult;
+op tap(...TapParams): TapResult | CallTapEvent;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // calling.tap.stop
@@ -627,7 +627,7 @@ model StreamResult {
     node_id: "a3b3e8e0-1234-4a4b-8c8d-000000000001",
   },
 })
-op stream(...StreamParams): StreamResult;
+op stream(...StreamParams): StreamResult | CallStreamEvent;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // calling.stream.stop

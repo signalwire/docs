@@ -260,7 +260,7 @@ model PayResult {
   },
   returnType: #{ code: "200", message: "Processing payment", control_id: "pay-1" },
 })
-op pay(...PayParams): PayResult;
+op pay(...PayParams): PayResult | CallPayEvent;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // calling.pay.stop
@@ -349,7 +349,7 @@ model PlayResult {
 /** Play a sequence of media elements (audio/TTS/silence/ringtone) to a call. */
 @rpcMethod("calling.play")
 @summary("Play media to a call")
-op play(...PlayParams): PlayResult;
+op play(...PlayParams): PlayResult | CallPlayEvent;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // calling.play.pause

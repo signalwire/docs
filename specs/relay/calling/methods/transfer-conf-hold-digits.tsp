@@ -202,7 +202,7 @@ model JoinConferenceResult {
   },
   returnType: #{ code: "200", message: "Joining conference" },
 })
-op joinConference(...JoinConferenceParams): JoinConferenceResult;
+op joinConference(...JoinConferenceParams): JoinConferenceResult | ConferenceEvent;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // calling.leave_conference
@@ -230,7 +230,7 @@ model LeaveConferenceResult {
   },
   returnType: #{ code: "200", message: "Leaving conference" },
 })
-op leaveConference(...LeaveConferenceParams): LeaveConferenceResult;
+op leaveConference(...LeaveConferenceParams): LeaveConferenceResult | ConferenceEvent;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // calling.hold (NOT IMPLEMENTED)
@@ -254,7 +254,7 @@ model HoldResult {
   parameters: #{ node_id: "a3e1b2c4-...", call_id: "c7f9d2e1-..." },
   returnType: #{ code: "200", message: "Call on hold", state: "hold" },
 })
-op hold(...HoldParams): HoldResult;
+op hold(...HoldParams): HoldResult | CallHoldEvent;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // calling.unhold (NOT IMPLEMENTED)
@@ -278,7 +278,7 @@ model UnholdResult {
   parameters: #{ node_id: "a3e1b2c4-...", call_id: "c7f9d2e1-..." },
   returnType: #{ code: "200", message: "Call off hold", state: "unhold" },
 })
-op unhold(...UnholdParams): UnholdResult;
+op unhold(...UnholdParams): UnholdResult | CallHoldEvent;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // calling.denoise
@@ -299,7 +299,7 @@ model DenoiseResult {
   parameters: #{ node_id: "a3e1b2c4-...", call_id: "c7f9d2e1-..." },
   returnType: #{ code: "200", message: "Denoiser on" },
 })
-op denoise(...DenoiseParams): DenoiseResult;
+op denoise(...DenoiseParams): DenoiseResult | CallDenoiseEvent;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // calling.denoise.stop
@@ -367,4 +367,4 @@ model SendDigitsResult {
     call_id: "c7f9d2e1-...",
   },
 })
-op sendDigits(...SendDigitsParams): SendDigitsResult;
+op sendDigits(...SendDigitsParams): SendDigitsResult | CallSendDigitsEvent;
