@@ -22,4 +22,5 @@ using SignalWire.AsyncAPI;
  * asynchronous `calling.call.*` events that report call/leg state.
  */
 @channel("calling")
+@channelPerCommand
 namespace Relay.Calling;
