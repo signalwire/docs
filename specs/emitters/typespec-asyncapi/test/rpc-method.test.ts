@@ -60,6 +60,52 @@ describe("@channel — multiple sub-services under one @service", () => {
   });
 });
 
+describe("@channelPerCommand", () => {
+  it("emits one channel per command (shared address '/'), with events on the umbrella channel", async () => {
+    const { doc } = await asyncApiFor(`
+      @service(#{ title: "Relay Calling" })
+      @server("production", #{ host: "relay.signalwire.com", protocol: "wss" })
+      @channel("calling")
+      @channelPerCommand
+      namespace Relay.Calling {
+        model DialResult { code: string; }
+        model PlayResult { code: string; }
+        @rpcMethod("calling.dial") @summary("Dial out") op dial(): DialResult;
+        @rpcMethod("calling.play") op play(): PlayResult;
+        model StateParams { call_state: string; }
+        @event("calling.call.state") model CallStateEvent { ...StateParams; }
+      }
+    `);
+
+    // each command is its own channel, all at the WS root address
+    strictEqual(doc.channels.callingDial.address, "/");
+    strictEqual(doc.channels.callingPlay.address, "/");
+    deepStrictEqual(doc.channels.callingDial.servers, [{ $ref: "#/servers/production" }]);
+    // @summary flows to the per-command channel description
+    strictEqual(doc.channels.callingDial.description, "Dial out");
+    // per-command channel carries only its own messages (no cross-contamination)
+    strictEqual("callingDialRequest" in doc.channels.callingDial.messages, true);
+    strictEqual("callingDialResponse" in doc.channels.callingDial.messages, true);
+    strictEqual("callingPlayRequest" in doc.channels.callingDial.messages, false);
+    // the send operation references its own per-command channel
+    deepStrictEqual(doc.operations.callingDial.channel, { $ref: "#/channels/callingDial" });
+    deepStrictEqual(doc.operations.callingDial.messages, [
+      { $ref: "#/channels/callingDial/messages/callingDialRequest" },
+    ]);
+    deepStrictEqual(doc.operations.callingDial.reply.messages, [
+      { $ref: "#/channels/callingDial/messages/callingDialResponse" },
+    ]);
+    // per-command channel gets WS bindings
+    deepStrictEqual(doc.channels.callingDial.bindings, { ws: {} });
+
+    // events stay on the umbrella service channel, not on a per-command channel
+    deepStrictEqual(doc.operations.onCallingEvent.channel, { $ref: "#/channels/calling" });
+    strictEqual("callStateEvent" in doc.channels.calling.messages, true);
+    // commands are NOT on the umbrella channel
+    strictEqual("callingDialRequest" in doc.channels.calling.messages, false);
+  });
+});
+
 describe("@rpcMethod", () => {
   it("synthesizes request envelope, response envelope, send op, and reply", async () => {
     const { doc } = await asyncApiFor(SVC);

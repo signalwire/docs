@@ -13,7 +13,7 @@ import {
   serializeValueAsJson,
 } from "@typespec/compiler";
 import { applyWebSocketBindings } from "./bindings/ws.js";
-import { getBearerAuth, getChannel, getEvent, getRpcMethod, getServer } from "./decorators.js";
+import { getBearerAuth, getChannel, getChannelPerCommand, getEvent, getRpcMethod, getServer } from "./decorators.js";
 import { AsyncAPIEmitterOptions, reportDiagnostic } from "./lib.js";
 import { createSchemaRegistry, encodedPropName, propertySchema, RefFn } from "./schema-emitter.js";
 import { serialize } from "./serialize.js";
@@ -82,6 +82,9 @@ function emitRpcMethods(
   target: EmitTarget,
   channelMessages: Record<string, AsyncAPIRef>,
   seen: Set<string>,
+  channels: Record<string, AsyncAPIChannel>,
+  serverName: string,
+  perCommand: boolean,
 ): void {
   (function visit(n: Namespace): void {
     for (const op of n.operations.values()) {
@@ -149,19 +152,37 @@ function emitRpcMethods(
         }
       }
 
-      channelMessages[reqMsgId] = { $ref: `#/components/messages/${reqMsgId}` };
-      channelMessages[resMsgId] = { $ref: `#/components/messages/${resMsgId}` };
-
+      const opKey = lcfirst(baseId);
       const summary = getSummary(program, op);
-      target.operations[lcfirst(baseId)] = {
+      const chId = perCommand ? opKey : channelId;
+
+      // In per-command mode, mint a dedicated channel for this command.
+      let msgs = channelMessages;
+      if (perCommand) {
+        const perMsgs: Record<string, AsyncAPIRef> = {};
+        const desc = summary ?? getDoc(program, op);
+        channels[chId] = {
+          address: "/",
+          title: method,
+          ...(desc ? { description: desc } : {}),
+          servers: [{ $ref: `#/servers/${serverName}` }],
+          messages: perMsgs,
+        };
+        msgs = perMsgs;
+      }
+
+      msgs[reqMsgId] = { $ref: `#/components/messages/${reqMsgId}` };
+      msgs[resMsgId] = { $ref: `#/components/messages/${resMsgId}` };
+
+      target.operations[opKey] = {
         action: "send",
-        channel: { $ref: `#/channels/${channelId}` },
+        channel: { $ref: `#/channels/${chId}` },
         title: method,
         ...(summary ? { summary } : {}),
-        messages: [{ $ref: `#/channels/${channelId}/messages/${reqMsgId}` }],
+        messages: [{ $ref: `#/channels/${chId}/messages/${reqMsgId}` }],
         reply: {
-          channel: { $ref: `#/channels/${channelId}` },
-          messages: [{ $ref: `#/channels/${channelId}/messages/${resMsgId}` }],
+          channel: { $ref: `#/channels/${chId}` },
+          messages: [{ $ref: `#/channels/${chId}/messages/${resMsgId}` }],
         },
       };
     }
@@ -326,7 +347,8 @@ export async function $onEmit(context: EmitContext<AsyncAPIEmitterOptions>): Pro
     if (cdesc) channel.description = cdesc;
     channels[id] = channel;
 
-    emitRpcMethods(program, cns, id, registry.refFor, target, channelMessages, seen);
+    const perCommand = getChannelPerCommand(program, cns);
+    emitRpcMethods(program, cns, id, registry.refFor, target, channelMessages, seen, channels, serverCfg.name, perCommand);
     emitEvents(program, cns, id, registry.refFor, target, channelMessages);
   }
 
@@ -343,7 +365,7 @@ export async function $onEmit(context: EmitContext<AsyncAPIEmitterOptions>): Pro
   if (desc) doc.info.description = desc;
 
   emitSecurity(program, serviceNs, server, components);
-  for (const { id } of channelNamespaces) applyWebSocketBindings(doc, serverCfg.name, id);
+  for (const id of Object.keys(channels)) applyWebSocketBindings(doc, serverCfg.name, id);
 
   const outputFile = resolvePath(context.emitterOutputDir, context.options["output-file"] ?? "asyncapi.yaml");
   await emitFile(program, { path: outputFile, content: serialize(doc) });
