@@ -21,12 +21,5 @@ using SignalWire.AsyncAPI;
  * bridging, media playback/collection, recording, detection, AI, and the
  * asynchronous `calling.call.*` events that report call/leg state.
  */
-@service(#{ title: "SignalWire Relay — Calling" })
-@server("production", #{
-  host: "relay.signalwire.com",
-  protocol: "wss",
-  description: "SignalWire Relay WebSocket endpoint.",
-})
 @channel("calling")
-@bearerAuth("JWT")
 namespace Relay.Calling;

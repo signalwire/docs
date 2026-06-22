@@ -30,7 +30,7 @@ model AmazonBedrockObject {
   post_prompt_url?: url;
 
   @doc("Establishes the initial set of instructions and settings to configure the agent.")
-  prompt: BedrockPrompt;
+  prompt?: BedrockPrompt;
 
   @doc("An array of JSON objects to create user-defined functions/endpoints that can be executed during the dialogue.")
   SWAIG?: BedrockSWAIG;

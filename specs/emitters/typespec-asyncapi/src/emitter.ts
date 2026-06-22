@@ -19,6 +19,7 @@ import { createSchemaRegistry, encodedPropName, propertySchema, RefFn } from "./
 import { serialize } from "./serialize.js";
 import {
   AsyncAPI3Document,
+  AsyncAPIChannel,
   AsyncAPIComponents,
   AsyncAPIMessage,
   AsyncAPIOperation,
@@ -28,11 +29,10 @@ import {
   SchemaOrRef,
 } from "./types.js";
 
-/** The mutable component/operation maps the channel emitters write into. */
+/** The mutable doc-level component/operation maps the channel emitters write into. */
 interface EmitTarget {
   schemas: Record<string, AsyncAPISchema>;
   messages: Record<string, AsyncAPIMessage>;
-  channelMessages: Record<string, AsyncAPIRef>;
   operations: Record<string, AsyncAPIOperation>;
 }
 
@@ -80,8 +80,9 @@ function emitRpcMethods(
   channelId: string,
   ref: RefFn,
   target: EmitTarget,
+  channelMessages: Record<string, AsyncAPIRef>,
+  seen: Set<string>,
 ): void {
-  const seen = new Set<string>();
   (function visit(n: Namespace): void {
     for (const op of n.operations.values()) {
       const method = getRpcMethod(program, op);
@@ -148,8 +149,8 @@ function emitRpcMethods(
         }
       }
 
-      target.channelMessages[reqMsgId] = { $ref: `#/components/messages/${reqMsgId}` };
-      target.channelMessages[resMsgId] = { $ref: `#/components/messages/${resMsgId}` };
+      channelMessages[reqMsgId] = { $ref: `#/components/messages/${reqMsgId}` };
+      channelMessages[resMsgId] = { $ref: `#/components/messages/${resMsgId}` };
 
       const summary = getSummary(program, op);
       target.operations[lcfirst(baseId)] = {
@@ -164,7 +165,11 @@ function emitRpcMethods(
         },
       };
     }
-    n.namespaces.forEach(visit);
+    // Recurse into descendants, but stop at any nested @channel namespace — it is
+    // emitted as its own channel by the top-level loop.
+    for (const child of n.namespaces.values()) {
+      if (!getChannel(program, child)) visit(child);
+    }
   })(ns);
 }
 
@@ -174,6 +179,7 @@ function emitEvents(
   channelId: string,
   ref: RefFn,
   target: EmitTarget,
+  channelMessages: Record<string, AsyncAPIRef>,
 ): void {
   const eventRefs: AsyncAPIRef[] = [];
 
@@ -226,10 +232,12 @@ function emitEvents(
         });
       }
 
-      target.channelMessages[msgId] = { $ref: `#/components/messages/${msgId}` };
+      channelMessages[msgId] = { $ref: `#/components/messages/${msgId}` };
       eventRefs.push({ $ref: `#/channels/${channelId}/messages/${msgId}` });
     }
-    n.namespaces.forEach(visit);
+    for (const child of n.namespaces.values()) {
+      if (!getChannel(program, child)) visit(child);
+    }
   })(ns);
 
   if (eventRefs.length) {
@@ -263,30 +271,35 @@ function emitSecurity(
 export async function $onEmit(context: EmitContext<AsyncAPIEmitterOptions>): Promise<void> {
   if (context.program.compilerOptions.noEmit) return;
   const program = context.program;
-  const ns = findServiceNamespace(program);
-  if (!ns) return;
+  const serviceNs = findServiceNamespace(program);
+  if (!serviceNs) return;
 
-  const serverCfg = getServer(program, ns);
+  const serverCfg = getServer(program, serviceNs);
   if (!serverCfg) {
-    reportDiagnostic(program, { code: "missing-server", target: ns });
-    return;
-  }
-  const channelId = getChannel(program, ns);
-  if (!channelId) {
-    reportDiagnostic(program, { code: "missing-channel", target: ns });
+    reportDiagnostic(program, { code: "missing-server", target: serviceNs });
     return;
   }
 
-  const registry = createSchemaRegistry(program, ns);
-  const title = getService(program, ns)?.title ?? ns.name;
+  // A single Relay connection multiplexes many sub-services, each tagged with its own
+  // `@channel`. Collect every `@channel` namespace in the service subtree — the service
+  // namespace itself (single-service spec) or its sub-namespaces (unified multi-service
+  // spec) — and emit one channel per service, all bound to the one server.
+  const channelNamespaces: { ns: Namespace; id: string }[] = [];
+  (function collect(n: Namespace): void {
+    const id = getChannel(program, n);
+    if (id) channelNamespaces.push({ ns: n, id });
+    n.namespaces.forEach(collect);
+  })(serviceNs);
+  if (channelNamespaces.length === 0) {
+    reportDiagnostic(program, { code: "missing-channel", target: serviceNs });
+    return;
+  }
 
-  // Concrete component maps the emitters write into — referenced by `doc` so writes show through.
-  const target: EmitTarget = {
-    schemas: registry.schemas,
-    messages: {},
-    channelMessages: {},
-    operations: {},
-  };
+  const registry = createSchemaRegistry(program, serviceNs);
+  const title = getService(program, serviceNs)?.title ?? serviceNs.name;
+
+  // Concrete doc-level maps the emitters write into — referenced by `doc` so writes show through.
+  const target: EmitTarget = { schemas: registry.schemas, messages: {}, operations: {} };
   const server: AsyncAPIServer = {
     host: serverCfg.host,
     protocol: serverCfg.protocol,
@@ -295,33 +308,42 @@ export async function $onEmit(context: EmitContext<AsyncAPIEmitterOptions>): Pro
   };
   const components: AsyncAPIComponents = { schemas: target.schemas, messages: target.messages };
 
+  const channels: Record<string, AsyncAPIChannel> = {};
+  // One method namespace is global across the whole connection — guard duplicates across channels.
+  const seen = new Set<string>();
+  for (const { ns: cns, id } of channelNamespaces) {
+    const channelMessages: Record<string, AsyncAPIRef> = {};
+    // The Relay WS endpoint is a single root connection (`wss://<host>`); every service
+    // multiplexes over it and routes by the JSON-RPC `method` in the payload, not by a URL
+    // path. Emit the root address `"/"` so renderers show the bare endpoint.
+    const channel: AsyncAPIChannel = {
+      address: "/",
+      title: getService(program, cns)?.title ?? cns.name,
+      servers: [{ $ref: `#/servers/${serverCfg.name}` }],
+      messages: channelMessages,
+    };
+    const cdesc = getDoc(program, cns);
+    if (cdesc) channel.description = cdesc;
+    channels[id] = channel;
+
+    emitRpcMethods(program, cns, id, registry.refFor, target, channelMessages, seen);
+    emitEvents(program, cns, id, registry.refFor, target, channelMessages);
+  }
+
   const doc: AsyncAPI3Document = {
     asyncapi: "3.0.0",
     info: { title, version: "1.0.0" },
     defaultContentType: "application/json",
     servers: { [serverCfg.name]: server },
-    channels: {
-      [channelId]: {
-        // The Relay WS endpoint is a single root connection (`wss://<host>`); every
-        // service multiplexes over it and routes by the JSON-RPC `method` in the
-        // payload, not by a URL path. Emit the root address `"/"` so renderers show
-        // the bare endpoint instead of treating the channel id as a path segment.
-        address: "/",
-        title,
-        servers: [{ $ref: `#/servers/${serverCfg.name}` }],
-        messages: target.channelMessages,
-      },
-    },
+    channels,
     operations: target.operations,
     components,
   };
-  const desc = getDoc(program, ns);
+  const desc = getDoc(program, serviceNs);
   if (desc) doc.info.description = desc;
 
-  emitRpcMethods(program, ns, channelId, registry.refFor, target);
-  emitEvents(program, ns, channelId, registry.refFor, target);
-  emitSecurity(program, ns, server, components);
-  applyWebSocketBindings(doc, serverCfg.name, channelId);
+  emitSecurity(program, serviceNs, server, components);
+  for (const { id } of channelNamespaces) applyWebSocketBindings(doc, serverCfg.name, id);
 
   const outputFile = resolvePath(context.emitterOutputDir, context.options["output-file"] ?? "asyncapi.yaml");
   await emitFile(program, { path: outputFile, content: serialize(doc) });

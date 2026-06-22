@@ -24,11 +24,11 @@ union BedrockPrompt {
   OmitProperties<BedrockPromptPom, OmittedPromptProps>,
 }
 
-model BedrockPostPomptText is AIPostPromptText;
+model BedrockPostPromptText is AIPostPromptText;
 
 model BedrockPostPromptPom is AIPostPromptPom;
 
 union BedrockPostPrompt {
-  OmitProperties<BedrockPostPomptText, OmittedPromptProps>,
+  OmitProperties<BedrockPostPromptText, OmittedPromptProps>,
   OmitProperties<BedrockPostPromptPom, OmittedPromptProps>,
 }

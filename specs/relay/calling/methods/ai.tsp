@@ -18,74 +18,40 @@ namespace Relay.Calling;
 // (`SWML.Calling.*`) instead of being hand-replicated: prompt, post_prompt, languages,
 // pronounce, hints, SWAIG (incl. the full function/parameters/data_map tree), params, and
 // global_data. The SWML template-variable `| SWMLVar` arms are markup-only and are stripped
-// at emit time via @excludeFromEmit on the entry models (they never reach the live JSON-RPC
-// wire). Relay-specific fields (control_id, agent, post_prompt_auth_*) and the Bedrock
-// plain-string prompt stay local. See SWML-REUSE-GAPS.md for SWML fields still needing truing.
+// at emit time via a single `@@excludeFromEmit(SWMLVar)` self-exclusion below (they never
+// reach the live JSON-RPC wire). Marking the scalar once removes it everywhere it appears in
+// this emit — a `T | SWMLVar` arm collapses to `T`, a bare-`SWMLVar` property disappears — so
+// no per-model decorator is needed. The augment lives here (not on the SWML scalar itself) to
+// keep the standalone SWML build free of the emit-filter dependency. Relay-specific fields
+// (control_id, agent, post_prompt_auth_*) and the Bedrock plain-string prompt stay local.
+// See SWML-REUSE-GAPS.md for SWML fields still needing truing.
 // ═════════════════════════════════════════════════════════════════════════════
 
-/**
- * AI agent behavior parameters — automatic speech recognition (ASR), text-to-speech
- * (TTS), turn detection, barge-in, LLM tunables, thinking/vision, video, SWAIG knobs,
- * and debugging. Every field is optional.
- */
-@excludeFromEmit(SWMLVar)
-model AiBehaviorParams {
-  ...SWML.Calling.AIParams;
-}
+// SWMLVar is a markup-only template-variable placeholder (resolved at SWML execution time,
+// never present on the live JSON-RPC wire), so it is excluded from every reused SWML shape in
+// this AsyncAPI emit. Honoring is per-emitter — the SWML JSON Schema / OpenAPI builds ignore
+// this and still render SWMLVar.
+@@excludeFromEmit(SWMLVar);
 
 // ═════════════════════════════════════════════════════════════════════════════
 // calling.ai
 // ═════════════════════════════════════════════════════════════════════════════
 
-// Only SWMLVar is excluded — it is a markup-only template-variable placeholder (resolved at
-// SWML execution time, never present on the live JSON-RPC wire). Everything else SWML accepts,
-// including a full SWML document returned by a SWAIG data_map action, is a legitimate Relay
-// surface and is emitted as-is.
-@excludeFromEmit(SWMLVar)
+// The AI-agent config is reused WHOLESALE from the shared SWML `AIObject` — the engine parses
+// both the SWML `ai` verb and Relay `calling.ai` through one `create_app_from_json`
+// (`mod_openai/app_config.c`), so the field set is one-to-one (prompt, post_prompt[_url],
+// post_prompt_auth_*, pronounce, hints, languages, SWAIG, global_data, params). `control_id` is
+// the only Relay-specific field: a transport session id (used by `calling.ai.stop`), not part of
+// the AI config the engine parses. The internal `agent` UUID is intentionally NOT exposed — there
+// is no public way for a customer to obtain one — so an inline `prompt` is the only configuration
+// path and is correctly required (inherited from `AIObject`).
 model AiParams {
   ...CallAddress;
 
   /** Identifier used to control (e.g. stop) this AI session. */
   control_id: string;
 
-  /**
-   * Pre-configured agent UUID. If an inline `prompt` is also present, the inline
-   * configuration takes precedence.
-   */
-  agent?: string;
-
-  /** Inline prompt configuration for the AI agent (plain text or a structured POM). */
-  prompt?: SWML.Calling.AIPrompt;
-
-  /** Post-conversation prompt configuration. */
-  post_prompt?: SWML.Calling.AIPostPrompt;
-
-  /** URL to receive post-prompt status callbacks. */
-  post_prompt_url?: url;
-
-  /** Basic-auth username for `post_prompt_url`. */
-  post_prompt_auth_user?: string;
-
-  /** Basic-auth password for `post_prompt_url`. */
-  post_prompt_auth_password?: string;
-
-  /** Global data accessible to all SWAIG functions. */
-  global_data?: SWML.Calling.GlobalData;
-
-  /** Global pronunciation rules. */
-  pronounce?: SWML.Calling.Pronounce[];
-
-  /** Context hints biasing speech recognition. May be bare strings or rewrite objects. */
-  hints?: (string | SWML.Calling.Hint)[];
-
-  /** Supported language configurations. */
-  languages?: SWML.Calling.Languages[];
-
-  /** SWAIG function configuration. */
-  SWAIG?: SWML.Calling.SWAIG;
-
-  /** AI agent behavior parameters (ASR, TTS, turn detection, barge-in, LLM config, video, …). */
-  params?: AiBehaviorParams;
+  ...SWML.Calling.AIObject;
 }
 
 model AiResult {
@@ -160,7 +126,11 @@ model AiStopResult {
 @rpcMethod("calling.ai.stop")
 @summary("Stop an active AI agent session")
 @opExample(#{
-  parameters: #{ node_id: "a3e1b2c4-...", call_id: "c7f9d2e1-...", control_id: "ai-session-1" },
+  parameters: #{
+    node_id: "a3e1b2c4-...",
+    call_id: "c7f9d2e1-...",
+    control_id: "ai-session-1",
+  },
   returnType: #{
     code: "200",
     message: "+OK stopped",
@@ -173,32 +143,15 @@ op aiStop(...AiStopParams): AiStopResult;
 // ═════════════════════════════════════════════════════════════════════════════
 // calling.amazon_bedrock
 //
-// Parallels calling.ai but with a smaller surface: no control_id, agent,
-// post_prompt_auth_*, pronounce, hints, or languages. `prompt` is a plain string
-// (the system prompt), unlike calling.ai's object form.
-// ═════════════════════════════════════════════════════════════════════════════
-
-@excludeFromEmit(SWMLVar)
+// Bedrock is a SEPARATE engine path (`mod_openai/bedrock.c`) with its own, smaller config object.
+// Reused wholesale from the shared SWML `AmazonBedrockObject`: a narrowed `BedrockParams` (only the
+// handful of `params` Bedrock actually reads), `BedrockSWAIG`, `BedrockPostPrompt`, plus
+// `global_data`/`post_prompt_url`. `prompt` is a structured `BedrockPrompt` (text|POM + voice_id +
+// inference tunables) — the engine parses it as an object, NOT a plain string. No `control_id`,
+// `post_prompt_auth_*`, `pronounce`, `hints`, or `languages` on this surface.
 model AmazonBedrockParams {
   ...CallAddress;
-
-  /** System prompt for the Bedrock agent. */
-  prompt?: string;
-
-  /** SWAIG function configuration. */
-  SWAIG?: SWML.Calling.SWAIG;
-
-  /** AI agent behavior parameters. See `calling.ai` `params`. */
-  params?: AiBehaviorParams;
-
-  /** Global data accessible to all SWAIG functions. */
-  global_data?: SWML.Calling.GlobalData;
-
-  /** Post-conversation prompt configuration. */
-  post_prompt?: SWML.Calling.AIPostPrompt;
-
-  /** URL to receive post-prompt results. */
-  post_prompt_url?: url;
+  ...SWML.Calling.AmazonBedrockObject;
 }
 
 model AmazonBedrockResult {
@@ -212,7 +165,7 @@ model AmazonBedrockResult {
   parameters: #{
     node_id: "a3e1b2c4-...",
     call_id: "c7f9d2e1-...",
-    prompt: "You are a helpful assistant.",
+    prompt: #{ text: "You are a helpful assistant." },
   },
   returnType: #{ code: "200", message: "AI started" },
 })
@@ -357,7 +310,11 @@ model UserEventResult {
 @rpcMethod("calling.user_event")
 @summary("Send a custom user-defined event")
 @opExample(#{
-  parameters: #{ node_id: "a3e1b2c4-...", call_id: "c7f9d2e1-...", event: "custom_event_name" },
+  parameters: #{
+    node_id: "a3e1b2c4-...",
+    call_id: "c7f9d2e1-...",
+    event: "custom_event_name",
+  },
   returnType: #{ code: "200", message: "Event sent" },
 })
 op userEvent(...UserEventParams): UserEventResult;

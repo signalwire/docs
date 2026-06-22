@@ -7,14 +7,7 @@ using SignalWire.AsyncAPI;
  * delivers inbound-message and delivery-state events. It rides on a connection
  * established by `signalwire.connect`; messages are routed by **context**.
  */
-@service(#{ title: "SignalWire Relay — Messaging" })
-@server("production", #{
-  host: "relay.signalwire.com",
-  protocol: "wss",
-  description: "SignalWire Relay WebSocket endpoint.",
-})
 @channel("messaging")
-@bearerAuth("JWT")
 namespace Relay.Messaging;
 
 // ═════════════════════════════════════════════════════════════════════════════

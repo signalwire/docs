@@ -9,14 +9,7 @@ using SignalWire.AsyncAPI;
  * (`calling`, `messaging`, `tasking`, …) rides on top of a connection
  * established here.
  */
-@service(#{ title: "SignalWire Relay — Signalwire (handshake & control)" })
-@server("production", #{
-  host: "relay.signalwire.com",
-  protocol: "wss",
-  description: "SignalWire Relay WebSocket endpoint.",
-})
 @channel("signalwire")
-@bearerAuth("JWT")
 namespace Relay.Signalwire;
 
 // ─────────────────────────────────────────────────────────────────────────────

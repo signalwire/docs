@@ -10,14 +10,7 @@ using SignalWire.AsyncAPI;
  * connector-internal: a single method, no server-pushed events, and currently
  * only the `freeswitch` connector target is supported.
  */
-@service(#{ title: "SignalWire Relay — Connector Provisioning" })
-@server("production", #{
-  host: "relay.signalwire.com",
-  protocol: "wss",
-  description: "SignalWire Relay WebSocket endpoint.",
-})
 @channel("provisioning")
-@bearerAuth("JWT")
 namespace Relay.Provisioning;
 
 // ─────────────────────────────────────────────────────────────────────────────

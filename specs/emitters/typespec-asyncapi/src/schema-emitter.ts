@@ -29,7 +29,7 @@ import {
   TypeNameOptions,
   Union,
 } from "@typespec/compiler";
-import { getExcludedTypes, isExcludedType } from "@signalwire/typespec-emit-filter";
+import { getExcludedTypes, isExcludedType, isSelfExcluded } from "@signalwire/typespec-emit-filter";
 import { reportDiagnostic } from "./lib.js";
 import { AsyncAPISchema, SchemaOrRef } from "./types.js";
 
@@ -50,6 +50,15 @@ const NO_EXCLUSIONS: readonly Type[] = [];
  */
 function augment(excluded: readonly Type[], add: readonly Type[]): readonly Type[] {
   return add.length ? [...excluded, ...add] : excluded;
+}
+
+/**
+ * True if `t` must be dropped from this emit — either by an in-scope scoped
+ * `@excludeFromEmit(...types)` or by a bare `@excludeFromEmit` on `t` itself
+ * (self-exclusion, honored globally wherever the type appears).
+ */
+function isDropped(program: Program, scoped: readonly Type[], t: Type): boolean {
+  return isExcludedType(scoped, t) || isSelfExcluded(program, t);
 }
 
 const SCALAR_MAP: Record<string, AsyncAPISchema> = {
@@ -265,7 +274,7 @@ function ownObjectSchema(
   const required: string[] = [];
   for (const prop of model.properties.values()) {
     const propScoped = augment(scoped, getExcludedTypes(program, prop));
-    if (isExcludedType(propScoped, prop.type)) continue;
+    if (isDropped(program, propScoped, prop.type)) continue;
     const name = encodedPropName(program, prop);
     properties[name] = propertySchema(program, prop, ref, propScoped);
     if (!prop.optional) required.push(name);
@@ -293,7 +302,7 @@ function unionInline(
   const scoped = augment(excluded, getExcludedTypes(program, union));
   const variants = [...union.variants.values()]
     .map((v) => v.type)
-    .filter((v) => !isExcludedType(scoped, v));
+    .filter((v) => !isDropped(program, scoped, v));
   if (variants.length === 0) return {};
   if (variants.length === 1) return schemaForType(program, variants[0], ref, scoped);
   if (variants.every((v) => v.kind === "String")) {

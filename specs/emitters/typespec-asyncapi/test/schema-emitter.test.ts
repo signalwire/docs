@@ -265,6 +265,72 @@ describe("@excludeFromEmit", () => {
   });
 });
 
+describe("@excludeFromEmit on the type itself (self-exclusion)", () => {
+  it("drops a self-excluded scalar everywhere and collapses a 2-arm union to the survivor", async () => {
+    const program = await compileModels(`
+      scalar SWMLVar extends string;
+      model Foo {
+        a?: int32 | SWMLVar;
+        b?: SWMLVar;
+        c?: string;
+      }
+    `);
+    const ns = program.getGlobalNamespaceType();
+    // Mark the scalar itself — no scope, no per-model decorator.
+    exclude(program, ns.scalars.get("SWMLVar")!);
+    const reg = createSchemaRegistry(program);
+    reg.refFor(ns.models.get("Foo")!);
+    const foo: any = reg.schemas.Foo;
+    // `int32 | SWMLVar` collapses to the lone surviving arm (no oneOf wrapper)
+    deepStrictEqual(foo.properties.a, { type: "integer", format: "int32" });
+    // a property typed as the bare excluded scalar disappears entirely
+    strictEqual("b" in foo.properties, false);
+    deepStrictEqual(foo.properties.c, { type: "string" });
+  });
+
+  it("keeps surviving arms as a oneOf when more than one remains", async () => {
+    const program = await compileModels(`
+      scalar SWMLVar extends string;
+      model Foo { x?: string | boolean | SWMLVar; }
+    `);
+    const ns = program.getGlobalNamespaceType();
+    exclude(program, ns.scalars.get("SWMLVar")!);
+    const reg = createSchemaRegistry(program);
+    reg.refFor(ns.models.get("Foo")!);
+    deepStrictEqual((reg.schemas.Foo as any).properties.x, {
+      oneOf: [{ type: "string" }, { type: "boolean" }],
+    });
+  });
+
+  it("applies globally across all models from a single mark (no per-model decorator)", async () => {
+    const program = await compileModels(`
+      scalar SWMLVar extends string;
+      model A { p?: int32 | SWMLVar; }
+      model B { q?: boolean | SWMLVar; }
+    `);
+    const ns = program.getGlobalNamespaceType();
+    exclude(program, ns.scalars.get("SWMLVar")!); // one mark, both models honor it
+    const reg = createSchemaRegistry(program);
+    reg.refFor(ns.models.get("A")!);
+    reg.refFor(ns.models.get("B")!);
+    deepStrictEqual((reg.schemas.A as any).properties.p, { type: "integer", format: "int32" });
+    deepStrictEqual((reg.schemas.B as any).properties.q, { type: "boolean" });
+  });
+
+  it("matches scalars that extend a self-excluded scalar (base-chain walk)", async () => {
+    const program = await compileModels(`
+      scalar SWMLVar extends string;
+      scalar TemplatedInt extends SWMLVar;
+      model Foo { a?: int32 | TemplatedInt; }
+    `);
+    const ns = program.getGlobalNamespaceType();
+    exclude(program, ns.scalars.get("SWMLVar")!); // mark the base; derived arm must still drop
+    const reg = createSchemaRegistry(program);
+    reg.refFor(ns.models.get("Foo")!);
+    deepStrictEqual((reg.schemas.Foo as any).properties.a, { type: "integer", format: "int32" });
+  });
+});
+
 describe("namespace-qualified component names", () => {
   it("keeps service-local types bare and qualifies cross-namespace types", async () => {
     const program = await compileModels(`

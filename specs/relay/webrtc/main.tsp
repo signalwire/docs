@@ -14,14 +14,7 @@ using SignalWire.AsyncAPI;
  * SCOPE here and is modeled as a loose pass-through. Its full union is defined
  * separately in `verto_messages.md`.
  */
-@service(#{ title: "SignalWire Relay — WebRTC" })
-@server("production", #{
-  host: "relay.signalwire.com",
-  protocol: "wss",
-  description: "SignalWire Relay WebSocket endpoint.",
-})
 @channel("webrtc")
-@bearerAuth("JWT")
 namespace Relay.WebRTC;
 
 // ═════════════════════════════════════════════════════════════════════════════

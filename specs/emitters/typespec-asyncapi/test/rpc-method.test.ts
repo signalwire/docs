@@ -21,6 +21,45 @@ describe("@channel", () => {
   });
 });
 
+describe("@channel — multiple sub-services under one @service", () => {
+  it("emits one channel per @channel sub-namespace, all bound to the single server", async () => {
+    const { doc } = await asyncApiFor(`
+      @service(#{ title: "SignalWire Relay" })
+      @server("production", #{ host: "relay.signalwire.com", protocol: "wss" })
+      namespace Relay {
+        @channel("calling")
+        namespace Calling {
+          model DialResult { code: string; }
+          @rpcMethod("calling.dial") op dial(): DialResult;
+          model StateParams { call_state: string; }
+          @event("calling.call.state") model CallStateEvent { ...StateParams; }
+        }
+        @channel("messaging")
+        namespace Messaging {
+          model SendResult { code: string; }
+          @rpcMethod("messaging.send") op send(): SendResult;
+        }
+      }
+    `);
+    // one server, one channel per sub-service
+    deepStrictEqual(Object.keys(doc.servers), ["production"]);
+    deepStrictEqual(Object.keys(doc.channels).sort(), ["calling", "messaging"]);
+    // each method routed to its own channel
+    deepStrictEqual(doc.operations.callingDial.channel, { $ref: "#/channels/calling" });
+    deepStrictEqual(doc.operations.messagingSend.channel, { $ref: "#/channels/messaging" });
+    // channels carry only their own messages (no cross-contamination)
+    strictEqual("callingDialRequest" in doc.channels.calling.messages, true);
+    strictEqual("messagingSendRequest" in doc.channels.messaging.messages, true);
+    strictEqual("messagingSendRequest" in doc.channels.calling.messages, false);
+    // events routed to the owning channel's receive op
+    strictEqual(doc.operations.onCallingEvent.action, "receive");
+    deepStrictEqual(doc.operations.onCallingEvent.channel, { $ref: "#/channels/calling" });
+    // both channels bound to the single shared server
+    deepStrictEqual(doc.channels.calling.servers, [{ $ref: "#/servers/production" }]);
+    deepStrictEqual(doc.channels.messaging.servers, [{ $ref: "#/servers/production" }]);
+  });
+});
+
 describe("@rpcMethod", () => {
   it("synthesizes request envelope, response envelope, send op, and reply", async () => {
     const { doc } = await asyncApiFor(SVC);

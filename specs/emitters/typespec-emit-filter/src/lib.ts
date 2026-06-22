@@ -7,6 +7,9 @@ export const $lib = createTypeSpecLibrary({
     excludeFromEmit: {
       description: "Types to exclude from emission within the decorated scope.",
     },
+    selfExclude: {
+      description: "The decorated type itself is excluded from emission wherever it appears.",
+    },
   },
 });
 

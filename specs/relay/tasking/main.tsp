@@ -10,14 +10,7 @@ using SignalWire.AsyncAPI;
  * context. The `message` payload is never inspected — it is echoed verbatim
  * from the deliver request into the task event.
  */
-@service(#{ title: "SignalWire Relay — Tasking" })
-@server("production", #{
-  host: "relay.signalwire.com",
-  protocol: "wss",
-  description: "SignalWire Relay WebSocket endpoint.",
-})
 @channel("tasking")
-@bearerAuth("JWT")
 namespace Relay.Tasking;
 
 // ─────────────────────────────────────────────────────────────────────────────

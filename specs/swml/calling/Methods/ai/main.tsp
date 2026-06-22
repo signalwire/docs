@@ -38,6 +38,12 @@ model AIObject {
   @example("username:password@https://example.com")
   post_prompt_url?: url;
 
+  @doc("Basic-auth username for `post_prompt_url`. Alternatively, embed credentials inline in the URL as `username:password@url`.")
+  post_prompt_auth_user?: string;
+
+  @doc("Basic-auth password for `post_prompt_url`. Alternatively, embed credentials inline in the URL as `username:password@url`.")
+  post_prompt_auth_password?: string;
+
   @doc("An array of JSON objects to clarify the AI's pronunciation of words or expressions.")
   pronounce?: Pronounce[];
 
