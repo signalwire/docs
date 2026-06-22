@@ -18,6 +18,9 @@ extern dec server(target: Namespace, name: valueof string, options: valueof Serv
 /** Declare the AsyncAPI channel id for a service. */
 extern dec channel(target: Namespace, id: valueof string);
 
+/** Emit one channel per @rpcMethod command in this service (instead of one channel for the whole service). Events stay on the @channel-named channel. */
+extern dec channelPerCommand(target: Namespace);
+
 /** Mark an operation as a JSON-RPC method with the given wire name. */
 extern dec rpcMethod(target: Operation, name: valueof string);
 

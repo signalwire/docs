@@ -30,6 +30,14 @@ export function getChannel(program: Program, target: Namespace): string | undefi
   return program.stateMap(stateKeys.channel).get(target);
 }
 
+export function $channelPerCommand(context: DecoratorContext, target: Namespace): void {
+  context.program.stateMap(stateKeys.channelPerCommand).set(target, true);
+}
+
+export function getChannelPerCommand(program: Program, target: Namespace): boolean {
+  return program.stateMap(stateKeys.channelPerCommand).get(target) === true;
+}
+
 export function $rpcMethod(context: DecoratorContext, target: Operation, name: string): void {
   if (target.kind !== "Operation") {
     reportDiagnostic(context.program, { code: "rpc-method-on-non-op", target });
