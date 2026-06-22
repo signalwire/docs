@@ -10,6 +10,7 @@ using SignalWire.AsyncAPI;
  * established here.
  */
 @channel("signalwire")
+@channelPerCommand
 namespace Relay.Signalwire;
 
 // ─────────────────────────────────────────────────────────────────────────────

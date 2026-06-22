@@ -15,6 +15,7 @@ using SignalWire.AsyncAPI;
  * separately in `verto_messages.md`.
  */
 @channel("webrtc")
+@channelPerCommand
 namespace Relay.WebRTC;
 
 // ═════════════════════════════════════════════════════════════════════════════
