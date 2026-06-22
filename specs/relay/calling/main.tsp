@@ -20,6 +20,10 @@ using SignalWire.AsyncAPI;
  * The `calling` service controls voice calls over Relay: dialing, answering,
  * bridging, media playback/collection, recording, detection, AI, and the
  * asynchronous `calling.call.*` events that report call/leg state.
+ *
+ * **Audience:** server-side. Exposed by the server SDKs (Python, Node, Java, Ruby)
+ * for backend call control. Browser clients place peer calls via the WebRTC (Verto)
+ * service instead.
  */
 @channel("calling")
 @channelPerCommand

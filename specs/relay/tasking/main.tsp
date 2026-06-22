@@ -9,6 +9,9 @@ using SignalWire.AsyncAPI;
  * pushes a `queuing.relay.tasks` event to every consumer listening on that
  * context. The `message` payload is never inspected — it is echoed verbatim
  * from the deliver request into the task event.
+ *
+ * **Audience:** server-side. A queuing bridge for short-lived/stateless processes
+ * to hand work to long-running Relay consumers.
  */
 @channel("tasking")
 namespace Relay.Tasking;

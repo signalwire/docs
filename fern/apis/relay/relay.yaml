@@ -8,14 +8,25 @@ info:
     then multiplexes every service — calling, messaging, tasking, provisioning, and
     webrtc — over the same socket, routing each request by its JSON-RPC `method`
     namespace. Each service is grouped as its own channel.
+
+    ## Authentication
+
+    Authentication is performed **in-band as the first message** — there is no HTTP
+    `Authorization` header on the WebSocket handshake. After the socket opens, the
+    client sends `signalwire.connect` with its credentials in `params.authentication`:
+
+    - **Browser / client SDKs** send a server-minted **`jwt_token`** (an API token must
+    never be exposed in the browser).
+    - **Server SDKs** send a **`project` + `token`** pair (or a `jwt_token`).
+
+    Once connected, every subsequent request rides the authenticated socket; a
+    `signalwire.authorization.state` event is returned for fast reconnection.
 defaultContentType: application/json
 servers:
   production:
     host: relay.signalwire.com
     protocol: wss
-    description: SignalWire Relay WebSocket endpoint.
-    security:
-      - $ref: "#/components/securitySchemes/httpBearer"
+    description: SignalWire Relay WebSocket endpoint. Authenticate in-band via signalwire.connect (no HTTP Authorization header).
     bindings:
       ws: {}
 channels:
@@ -33,6 +44,10 @@ channels:
       controls context (event) subscriptions. Every other Relay service
       (`calling`, `messaging`, `tasking`, …) rides on top of a connection
       established here.
+
+      **Audience:** both client (browser) and server SDKs — every Relay connection
+      starts here. Browser clients authenticate with a `jwt_token`; server SDKs with a
+      `project` + `token` pair (see `signalwire.connect`).
     bindings:
       ws: {}
   signalwireConnect:
@@ -116,6 +131,10 @@ channels:
       The `calling` service controls voice calls over Relay: dialing, answering,
       bridging, media playback/collection, recording, detection, AI, and the
       asynchronous `calling.call.*` events that report call/leg state.
+
+      **Audience:** server-side. Exposed by the server SDKs (Python, Node, Java, Ruby)
+      for backend call control. Browser clients place peer calls via the WebRTC (Verto)
+      service instead.
     bindings:
       ws: {}
   callingBegin:
@@ -1042,6 +1061,9 @@ channels:
       The Relay **Messaging** service sends outbound SMS/MMS to PSTN numbers and
       delivers inbound-message and delivery-state events. It rides on a connection
       established by `signalwire.connect`; messages are routed by **context**.
+
+      **Audience:** server-side. Exposed by the server SDKs; browser clients send
+      messages via the REST API instead.
     bindings:
       ws: {}
   tasking:
@@ -1063,6 +1085,9 @@ channels:
       pushes a `queuing.relay.tasks` event to every consumer listening on that
       context. The `message` payload is never inspected — it is echoed verbatim
       from the deliver request into the task event.
+
+      **Audience:** server-side. A queuing bridge for short-lived/stateless processes
+      to hand work to long-running Relay consumers.
     bindings:
       ws: {}
   provisioning:
@@ -1103,6 +1128,9 @@ channels:
       `verto.bye`/`verto.modify`, `dialogParams`, conference control) is OUT OF
       SCOPE here and is modeled as a loose pass-through. Its full union is defined
       separately in `verto_messages.md`.
+
+      **Audience:** client-side. Exposed by the browser SDK for peer (Verto) calling;
+      server SDKs use the `calling` service instead. Authenticates with a `jwt_token`.
     bindings:
       ws: {}
   message:
@@ -2933,9 +2961,14 @@ components:
           allOf:
             - $ref: "#/components/schemas/Signalwire.Version"
         authentication:
-          description: The authentication token block.
-          allOf:
-            - $ref: "#/components/schemas/Signalwire.Authentication"
+          oneOf:
+            - $ref: "#/components/schemas/Signalwire.JwtAuthentication"
+            - $ref: "#/components/schemas/Signalwire.ProjectTokenAuthentication"
+          description: |-
+            The credentials authenticating this connection. This is THE Relay
+            authentication step — there is no HTTP `Authorization` header on the WebSocket
+            handshake. Send a `jwt_token` (browser/client SDKs) **or** a `project` + `token`
+            pair (server SDKs).
         agent:
           type: string
           description: Descriptive information about the SDK and application (e.g. `somesdk-1.2.3`).
@@ -2978,15 +3011,32 @@ components:
         - minor
         - revision
       description: Relay protocol version. Clients currently send `3.0.0`.
-    Signalwire.Authentication:
+    Signalwire.JwtAuthentication:
       type: object
       properties:
         jwt_token:
           type: string
-          description: The project JWT used to authenticate the client.
+          description: A server-minted JWT used to authenticate the client.
       required:
         - jwt_token
-      description: Authentication material for the connection.
+      description: |-
+        JWT authentication — used by **browser / client SDKs**. The JWT is minted
+        server-side (an API token must never be exposed in the browser).
+    Signalwire.ProjectTokenAuthentication:
+      type: object
+      properties:
+        project:
+          type: string
+          description: Your SignalWire Project ID.
+        token:
+          type: string
+          description: Your SignalWire API token.
+      required:
+        - project
+        - token
+      description: |-
+        Project + API token authentication — used by **server SDKs** that hold the
+        project credentials directly.
     SignalwireConnectRequest:
       type: object
       required:
@@ -24032,8 +24082,3 @@ components:
                   params:
                     callID: 7c6d5e4f-3a2b-4c1d-0fed-cba987654321
                     sdp: v=0...
-  securitySchemes:
-    httpBearer:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT

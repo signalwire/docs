@@ -13,6 +13,9 @@ using SignalWire.AsyncAPI;
  * `verto.bye`/`verto.modify`, `dialogParams`, conference control) is OUT OF
  * SCOPE here and is modeled as a loose pass-through. Its full union is defined
  * separately in `verto_messages.md`.
+ *
+ * **Audience:** client-side. Exposed by the browser SDK for peer (Verto) calling;
+ * server SDKs use the `calling` service instead. Authenticates with a `jwt_token`.
  */
 @channel("webrtc")
 @channelPerCommand

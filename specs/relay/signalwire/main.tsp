@@ -8,6 +8,10 @@ using SignalWire.AsyncAPI;
  * controls context (event) subscriptions. Every other Relay service
  * (`calling`, `messaging`, `tasking`, …) rides on top of a connection
  * established here.
+ *
+ * **Audience:** both client (browser) and server SDKs — every Relay connection
+ * starts here. Browser clients authenticate with a `jwt_token`; server SDKs with a
+ * `project` + `token` pair (see `signalwire.connect`).
  */
 @channel("signalwire")
 @channelPerCommand
@@ -27,18 +31,38 @@ model Version {
   revision: int32;
 }
 
-/** Authentication material for the connection. */
-model Authentication {
-  /** The project JWT used to authenticate the client. */
+/**
+ * JWT authentication — used by **browser / client SDKs**. The JWT is minted
+ * server-side (an API token must never be exposed in the browser).
+ */
+model JwtAuthentication {
+  /** A server-minted JWT used to authenticate the client. */
   jwt_token: string;
+}
+
+/**
+ * Project + API token authentication — used by **server SDKs** that hold the
+ * project credentials directly.
+ */
+model ProjectTokenAuthentication {
+  /** Your SignalWire Project ID. */
+  project: string;
+
+  /** Your SignalWire API token. */
+  token: string;
 }
 
 model ConnectParams {
   /** Protocol version the client speaks. */
   version: Version;
 
-  /** The authentication token block. */
-  authentication: Authentication;
+  /**
+   * The credentials authenticating this connection. This is THE Relay
+   * authentication step — there is no HTTP `Authorization` header on the WebSocket
+   * handshake. Send a `jwt_token` (browser/client SDKs) **or** a `project` + `token`
+   * pair (server SDKs).
+   */
+  authentication: JwtAuthentication | ProjectTokenAuthentication;
 
   /** Descriptive information about the SDK and application (e.g. `somesdk-1.2.3`). */
   agent?: string;

@@ -6,6 +6,9 @@ using SignalWire.AsyncAPI;
  * The Relay **Messaging** service sends outbound SMS/MMS to PSTN numbers and
  * delivers inbound-message and delivery-state events. It rides on a connection
  * established by `signalwire.connect`; messages are routed by **context**.
+ *
+ * **Audience:** server-side. Exposed by the server SDKs; browser clients send
+ * messages via the REST API instead.
  */
 @channel("messaging")
 namespace Relay.Messaging;
