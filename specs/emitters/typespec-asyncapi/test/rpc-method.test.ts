@@ -51,9 +51,9 @@ describe("@channel — multiple sub-services under one @service", () => {
     strictEqual("callingDialRequest" in doc.channels.calling.messages, true);
     strictEqual("messagingSendRequest" in doc.channels.messaging.messages, true);
     strictEqual("messagingSendRequest" in doc.channels.calling.messages, false);
-    // events routed to the owning channel's receive op
-    strictEqual(doc.operations.onCallingEvent.action, "receive");
-    deepStrictEqual(doc.operations.onCallingEvent.channel, { $ref: "#/channels/calling" });
+    // central event (not returned by any op) → its own receive op on the owning channel
+    strictEqual(doc.operations.onCallingCallStateEvent.action, "receive");
+    deepStrictEqual(doc.operations.onCallingCallStateEvent.channel, { $ref: "#/channels/calling" });
     // both channels bound to the single shared server
     deepStrictEqual(doc.channels.calling.servers, [{ $ref: "#/servers/production" }]);
     deepStrictEqual(doc.channels.messaging.servers, [{ $ref: "#/servers/production" }]);
@@ -61,7 +61,7 @@ describe("@channel — multiple sub-services under one @service", () => {
 });
 
 describe("@channelPerCommand", () => {
-  it("emits one channel per command (shared address '/'), with events on the umbrella channel", async () => {
+  it("emits one channel per command (shared address '/'), with central events on the umbrella 'Events' channel", async () => {
     const { doc } = await asyncApiFor(`
       @service(#{ title: "Relay Calling" })
       @server("production", #{ host: "relay.signalwire.com", protocol: "wss" })
@@ -92,14 +92,21 @@ describe("@channelPerCommand", () => {
     deepStrictEqual(doc.operations.callingDial.messages, [
       { $ref: "#/channels/callingDial/messages/callingDialRequest" },
     ]);
+    // the send op keeps the canonical, correlated reply (standards-correct AsyncAPI 3.0)
     deepStrictEqual(doc.operations.callingDial.reply.messages, [
+      { $ref: "#/channels/callingDial/messages/callingDialResponse" },
+    ]);
+    // the response render-shim: a receive op mirroring the response on the same channel
+    strictEqual(doc.operations.onCallingDialResponse.action, "receive");
+    deepStrictEqual(doc.operations.onCallingDialResponse.messages, [
       { $ref: "#/channels/callingDial/messages/callingDialResponse" },
     ]);
     // per-command channel gets WS bindings
     deepStrictEqual(doc.channels.callingDial.bindings, { ws: {} });
 
-    // events stay on the umbrella service channel, not on a per-command channel
-    deepStrictEqual(doc.operations.onCallingEvent.channel, { $ref: "#/channels/calling" });
+    // umbrella channel is the "Events" page holding central events (not commands)
+    strictEqual(doc.channels.calling.title, "Events");
+    deepStrictEqual(doc.operations.onCallingCallStateEvent.channel, { $ref: "#/channels/calling" });
     strictEqual("callStateEvent" in doc.channels.calling.messages, true);
     // commands are NOT on the umbrella channel
     strictEqual("callingDialRequest" in doc.channels.calling.messages, false);
@@ -118,6 +125,11 @@ describe("@rpcMethod", () => {
       { $ref: "#/channels/calling/messages/callingDialResponse" },
     ]);
 
+    // response render-shim mirrors the response as a receive op (for renderers that ignore `reply`)
+    const shim = doc.operations.onCallingDialResponse;
+    strictEqual(shim.action, "receive");
+    deepStrictEqual(shim.messages, [{ $ref: "#/channels/calling/messages/callingDialResponse" }]);
+
     const reqMsg = doc.components.messages.callingDialRequest;
     deepStrictEqual(reqMsg.correlationId, { location: "$message.payload#/id" });
 
@@ -130,7 +142,7 @@ describe("@rpcMethod", () => {
     strictEqual(resSchema.properties.result.$ref, "#/components/schemas/DialResult");
   });
 
-  it("emits distinct operations/schemas/messages for multiple methods and one receive op for all events", async () => {
+  it("emits distinct operations/schemas/messages for multiple methods and a separate receive op per central event", async () => {
     const { doc } = await asyncApiFor(`
       @service(#{ title: "Relay Calling" })
       @server("production", #{ host: "relay.signalwire.com", protocol: "wss" })
@@ -156,8 +168,10 @@ describe("@rpcMethod", () => {
     strictEqual(typeof doc.components.schemas.CallingAnswerRequest, "object");
     // 2 messages per method (req+resp) + 1 per event = 6 channel messages, none overwritten
     strictEqual(Object.keys(doc.channels.calling.messages).length, 6);
-    // a single receive op carrying both events
-    strictEqual(doc.operations.onCallingEvent.action, "receive");
-    strictEqual(doc.operations.onCallingEvent.messages.length, 2);
+    // each central event gets its own labeled receive op (separate entries, not pooled)
+    strictEqual(doc.operations.onCallingCallStateEvent.action, "receive");
+    strictEqual(doc.operations.onCallingCallStateEvent.title, "calling.call.state");
+    strictEqual(doc.operations.onCallingCallReferEvent.action, "receive");
+    strictEqual(doc.operations.onCallingCallReferEvent.title, "calling.call.refer");
   });
 });

@@ -6,11 +6,13 @@ import {
   getOpExamples,
   getService,
   getSummary,
+  Model,
   Namespace,
   Operation,
   Program,
   resolvePath,
   serializeValueAsJson,
+  Type,
 } from "@typespec/compiler";
 import { applyWebSocketBindings } from "./bindings/ws.js";
 import { getBearerAuth, getChannel, getChannelPerCommand, getEvent, getRpcMethod, getServer } from "./decorators.js";
@@ -34,6 +36,19 @@ interface EmitTarget {
   schemas: Record<string, AsyncAPISchema>;
   messages: Record<string, AsyncAPIMessage>;
   operations: Record<string, AsyncAPIOperation>;
+}
+
+/**
+ * Per-channel-namespace coordination shared between the rpc pass and the event pass:
+ * which event models were already attached to a command channel (so the central-events
+ * pass skips them) and which event component messages were already emitted (so the
+ * schema/message are defined exactly once and merely referenced from each channel).
+ */
+interface EventState {
+  /** Event component message ids already emitted (`lcfirst(model.name)`). */
+  emitted: Set<string>;
+  /** Event models already attached to at least one command channel. */
+  referenced: Set<Model>;
 }
 
 function findServiceNamespace(program: Program): Namespace | undefined {
@@ -74,6 +89,106 @@ function paramsSchema(program: Program, op: Operation, ref: RefFn): SchemaOrRef 
   return schema;
 }
 
+/**
+ * Partition an operation's return type into the response arm(s) and any `@event` arm(s).
+ * An event is just another message the operation can return — assigned by listing it in the
+ * return type union (no routing decorator). The non-event arm(s) are the correlated response.
+ */
+function partitionReturn(program: Program, returnType: Type): { responseArms: Type[]; eventArms: Model[] } {
+  const arms: Type[] = returnType.kind === "Union" ? [...returnType.variants.values()].map((v) => v.type) : [returnType];
+  const responseArms: Type[] = [];
+  const eventArms: Model[] = [];
+  for (const arm of arms) {
+    if (arm.kind === "Model" && getEvent(program, arm)) eventArms.push(arm);
+    else responseArms.push(arm);
+  }
+  return { responseArms, eventArms };
+}
+
+/** Build the JSON-RPC `result` schema from the non-event response arm(s). */
+function resultSchema(responseArms: Type[], ref: RefFn): SchemaOrRef | undefined {
+  if (responseArms.length === 0) return undefined;
+  if (responseArms.length === 1) return ref(responseArms[0]);
+  return { oneOf: responseArms.map((a) => ref(a)) };
+}
+
+/**
+ * Emit the `signalwire.event` carrier frame schema + component message for an event model
+ * exactly once (component-level). Multiple channels then merely `$ref` it — no duplication.
+ */
+function ensureEventComponent(
+  program: Program,
+  model: Model,
+  ref: RefFn,
+  target: EmitTarget,
+  emitted: Set<string>,
+): { msgId: string; eventType: string } {
+  const eventType = getEvent(program, model)!;
+  const msgId = lcfirst(model.name);
+  if (!emitted.has(msgId)) {
+    emitted.add(msgId);
+    const frameId = `${model.name}Frame`;
+    target.schemas[frameId] = {
+      type: "object",
+      required: ["jsonrpc", "method", "id", "params"],
+      properties: {
+        jsonrpc: { type: "string", const: "2.0" },
+        method: { type: "string", const: "signalwire.event" },
+        id: { type: "string", format: "uuid" },
+        params: {
+          type: "object",
+          required: ["event_type", "params"],
+          properties: {
+            event_type: { type: "string", const: eventType },
+            event_channel: { type: "string" },
+            timestamp: { type: "number" },
+            space_id: { type: "string" },
+            project_id: { type: "string" },
+            params: ref(model),
+          },
+        },
+      },
+    };
+    target.messages[msgId] = {
+      name: eventType,
+      title: `${eventType} event`,
+      contentType: "application/json",
+      payload: { $ref: `#/components/schemas/${frameId}` },
+    };
+    // Wrap any @example on the event model into a full signalwire.event carrier frame.
+    for (const ex of getExamples(program, model)) {
+      const params = serializeValueAsJson(program, ex.value, model);
+      (target.messages[msgId].examples ??= []).push({
+        payload: {
+          jsonrpc: "2.0",
+          method: "signalwire.event",
+          id: EXAMPLE_ID,
+          params: { event_type: eventType, params },
+        },
+      });
+    }
+  }
+  return { msgId, eventType };
+}
+
+/** Reference an event message on a channel and emit a dedicated `receive` op for it (own label). */
+function emitEventReceiveOp(
+  target: EmitTarget,
+  chId: string,
+  opId: string,
+  msgId: string,
+  eventType: string,
+  channelMessages: Record<string, AsyncAPIRef>,
+): void {
+  channelMessages[msgId] = { $ref: `#/components/messages/${msgId}` };
+  target.operations[opId] = {
+    action: "receive",
+    channel: { $ref: `#/channels/${chId}` },
+    title: eventType,
+    messages: [{ $ref: `#/channels/${chId}/messages/${msgId}` }],
+  };
+}
+
 function emitRpcMethods(
   program: Program,
   ns: Namespace,
@@ -85,6 +200,8 @@ function emitRpcMethods(
   channels: Record<string, AsyncAPIChannel>,
   serverName: string,
   perCommand: boolean,
+  shim: boolean,
+  events: EventState,
 ): void {
   (function visit(n: Namespace): void {
     for (const op of n.operations.values()) {
@@ -97,8 +214,13 @@ function emitRpcMethods(
       seen.add(method);
 
       const baseId = pascal(method); // e.g. CallingDial
-      const reqMsgId = `${lcfirst(baseId)}Request`;
-      const resMsgId = `${lcfirst(baseId)}Response`;
+      const opKey = lcfirst(baseId);
+      const reqMsgId = `${opKey}Request`;
+      const resMsgId = `${opKey}Response`;
+
+      // The return type carries the response (non-event arm[s]) plus any events the command emits.
+      const { responseArms, eventArms } = partitionReturn(program, op.returnType);
+      const result = resultSchema(responseArms, ref);
 
       target.schemas[`${baseId}Request`] = {
         type: "object",
@@ -116,7 +238,7 @@ function emitRpcMethods(
         properties: {
           jsonrpc: { type: "string", const: "2.0" },
           id: { type: "string", format: "uuid" },
-          result: ref(op.returnType),
+          ...(result ? { result } : {}),
         },
       };
 
@@ -135,8 +257,9 @@ function emitRpcMethods(
         payload: { $ref: `#/components/schemas/${baseId}Response` },
       };
 
-      // Wrap any @opExample on the operation into full JSON-RPC request/reply frame
-      // examples on the synthesized messages (params -> request, returnType -> reply).
+      // Wrap any @opExample into JSON-RPC request/response example frames (params -> request,
+      // returnType -> response). Serialize the result against the single response arm when there
+      // is one (avoids union-arm ambiguity now that events may share the return).
       for (const ex of getOpExamples(program, op)) {
         if (ex.parameters) {
           const params = serializeValueAsJson(program, ex.parameters, op.parameters);
@@ -145,14 +268,14 @@ function emitRpcMethods(
           });
         }
         if (ex.returnType) {
-          const result = serializeValueAsJson(program, ex.returnType, op.returnType);
+          const resultType = responseArms.length === 1 ? responseArms[0] : op.returnType;
+          const resultValue = serializeValueAsJson(program, ex.returnType, resultType);
           (target.messages[resMsgId].examples ??= []).push({
-            payload: { jsonrpc: "2.0", id: EXAMPLE_ID, result },
+            payload: { jsonrpc: "2.0", id: EXAMPLE_ID, result: resultValue },
           });
         }
       }
 
-      const opKey = lcfirst(baseId);
       const summary = getSummary(program, op);
       // Per-command channel id is derived from the same base as the operation key so all refs stay consistent.
       const chId = perCommand ? opKey : channelId;
@@ -175,6 +298,7 @@ function emitRpcMethods(
       msgs[reqMsgId] = { $ref: `#/components/messages/${reqMsgId}` };
       msgs[resMsgId] = { $ref: `#/components/messages/${resMsgId}` };
 
+      // Send op (request) — keeps the canonical, correlated `reply` (standards-correct AsyncAPI 3.0).
       target.operations[opKey] = {
         action: "send",
         channel: { $ref: `#/channels/${chId}` },
@@ -186,6 +310,26 @@ function emitRpcMethods(
           messages: [{ $ref: `#/channels/${chId}/messages/${resMsgId}` }],
         },
       };
+
+      // Response render-shim: a `receive` op mirroring the response, so renderers that ignore the
+      // `reply` object (e.g. Fern) still show the response. Isolated + toggleable; remove when the
+      // renderer supports `reply`.
+      if (shim) {
+        target.operations[`on${baseId}Response`] = {
+          action: "receive",
+          channel: { $ref: `#/channels/${chId}` },
+          title: `${method} response`,
+          messages: [{ $ref: `#/channels/${chId}/messages/${resMsgId}` }],
+        };
+      }
+
+      // Events the command emits (its `@event` return arms) render as their own `receive` ops on
+      // this command's channel. The component schema/message is defined once; this channel just refs it.
+      for (const ev of eventArms) {
+        const { msgId, eventType } = ensureEventComponent(program, ev, ref, target, events.emitted);
+        events.referenced.add(ev);
+        emitEventReceiveOp(target, chId, `on${pascal(chId)}${ev.name}`, msgId, eventType, msgs);
+      }
     }
     // Recurse into descendants, but stop at any nested @channel namespace — it is
     // emitted as its own channel by the top-level loop.
@@ -195,82 +339,30 @@ function emitRpcMethods(
   })(ns);
 }
 
-function emitEvents(
+/**
+ * Emit cross-cutting events — `@event` models NOT assigned to any operation's return — onto the
+ * service's umbrella channel (the "Events" page). Each gets its own `receive` op (own label).
+ */
+function emitCentralEvents(
   program: Program,
   ns: Namespace,
   channelId: string,
   ref: RefFn,
   target: EmitTarget,
   channelMessages: Record<string, AsyncAPIRef>,
+  events: EventState,
 ): void {
-  const eventRefs: AsyncAPIRef[] = [];
-
   (function visit(n: Namespace): void {
     for (const model of n.models.values()) {
-      const eventType = getEvent(program, model);
-      if (!eventType) continue;
-
-      const frameId = `${model.name}Frame`;
-      target.schemas[frameId] = {
-        type: "object",
-        required: ["jsonrpc", "method", "id", "params"],
-        properties: {
-          jsonrpc: { type: "string", const: "2.0" },
-          method: { type: "string", const: "signalwire.event" },
-          id: { type: "string", format: "uuid" },
-          params: {
-            type: "object",
-            required: ["event_type", "params"],
-            properties: {
-              event_type: { type: "string", const: eventType },
-              event_channel: { type: "string" },
-              timestamp: { type: "number" },
-              space_id: { type: "string" },
-              project_id: { type: "string" },
-              params: ref(model),
-            },
-          },
-        },
-      };
-
-      const msgId = lcfirst(model.name);
-      target.messages[msgId] = {
-        name: eventType,
-        title: `${eventType} event`,
-        contentType: "application/json",
-        payload: { $ref: `#/components/schemas/${frameId}` },
-      };
-
-      // Wrap any @example on the event model into a full signalwire.event carrier frame.
-      for (const ex of getExamples(program, model)) {
-        const params = serializeValueAsJson(program, ex.value, model);
-        (target.messages[msgId].examples ??= []).push({
-          payload: {
-            jsonrpc: "2.0",
-            method: "signalwire.event",
-            id: EXAMPLE_ID,
-            params: { event_type: eventType, params },
-          },
-        });
-      }
-
-      channelMessages[msgId] = { $ref: `#/components/messages/${msgId}` };
-      eventRefs.push({ $ref: `#/channels/${channelId}/messages/${msgId}` });
+      if (!getEvent(program, model)) continue;
+      if (events.referenced.has(model)) continue; // already on a command channel
+      const { msgId, eventType } = ensureEventComponent(program, model, ref, target, events.emitted);
+      emitEventReceiveOp(target, channelId, `on${pascal(channelId)}${model.name}`, msgId, eventType, channelMessages);
     }
     for (const child of n.namespaces.values()) {
       if (!getChannel(program, child)) visit(child);
     }
   })(ns);
-
-  if (eventRefs.length) {
-    target.operations[`on${pascal(channelId)}Event`] = {
-      action: "receive",
-      channel: { $ref: `#/channels/${channelId}` },
-      title: "signalwire.event",
-      summary: "Asynchronous events pushed by the server over the signalwire.event carrier.",
-      messages: eventRefs,
-    };
-  }
 }
 
 function emitSecurity(
@@ -319,6 +411,7 @@ export async function $onEmit(context: EmitContext<AsyncAPIEmitterOptions>): Pro
 
   const registry = createSchemaRegistry(program, serviceNs);
   const title = getService(program, serviceNs)?.title ?? serviceNs.name;
+  const shim = context.options["response-receive-shim"] ?? true;
 
   // Concrete doc-level maps the emitters write into — referenced by `doc` so writes show through.
   const target: EmitTarget = { schemas: registry.schemas, messages: {}, operations: {} };
@@ -334,13 +427,16 @@ export async function $onEmit(context: EmitContext<AsyncAPIEmitterOptions>): Pro
   // One method namespace is global across the whole connection — guard duplicates across channels.
   const seen = new Set<string>();
   for (const { ns: cns, id } of channelNamespaces) {
+    const perCommand = getChannelPerCommand(program, cns);
     const channelMessages: Record<string, AsyncAPIRef> = {};
     // The Relay WS endpoint is a single root connection (`wss://<host>`); every service
     // multiplexes over it and routes by the JSON-RPC `method` in the payload, not by a URL
-    // path. Emit the root address `"/"` so renderers show the bare endpoint.
+    // path. Emit the root address `"/"` so renderers show the bare endpoint. Under
+    // @channelPerCommand commands move to their own channels and this umbrella holds only the
+    // cross-cutting events, so it is titled "Events".
     const channel: AsyncAPIChannel = {
       address: "/",
-      title: getService(program, cns)?.title ?? cns.name,
+      title: perCommand ? "Events" : (getService(program, cns)?.title ?? cns.name),
       servers: [{ $ref: `#/servers/${serverCfg.name}` }],
       messages: channelMessages,
     };
@@ -348,12 +444,10 @@ export async function $onEmit(context: EmitContext<AsyncAPIEmitterOptions>): Pro
     if (cdesc) channel.description = cdesc;
     channels[id] = channel;
 
-    const perCommand = getChannelPerCommand(program, cns);
-    emitRpcMethods(program, cns, id, registry.refFor, target, channelMessages, seen, channels, serverCfg.name, perCommand);
-    // Under @channelPerCommand the umbrella channel carries only events. A per-command namespace
-    // with no @event models emits this channel with an empty messages map (acceptable for now —
-    // calling has events; revisit when applying @channelPerCommand to event-less services).
-    emitEvents(program, cns, id, registry.refFor, target, channelMessages);
+    const events: EventState = { emitted: new Set<string>(), referenced: new Set<Model>() };
+    emitRpcMethods(program, cns, id, registry.refFor, target, channelMessages, seen, channels, serverCfg.name, perCommand, shim, events);
+    // Cross-cutting events (not returned by any op) land on this umbrella/"Events" channel.
+    emitCentralEvents(program, cns, id, registry.refFor, target, channelMessages, events);
   }
 
   const doc: AsyncAPI3Document = {

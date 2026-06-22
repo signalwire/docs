@@ -3,6 +3,13 @@ import { createTypeSpecLibrary, JSONSchemaType, paramMessage } from "@typespec/c
 export interface AsyncAPIEmitterOptions {
   /** Output file name. Default: `asyncapi.yaml`. */
   "output-file"?: string;
+  /**
+   * Emit a `receive` operation that mirrors each command's response, in addition to the
+   * canonical `reply` block. This is a rendering shim for tools (e.g. Fern) that don't
+   * render the AsyncAPI `reply` object. Default: `true`. Set `false` once the renderer
+   * supports `reply` — the spec then carries only the standards-correct `reply`.
+   */
+  "response-receive-shim"?: boolean;
 }
 
 const EmitterOptionsSchema: JSONSchemaType<AsyncAPIEmitterOptions> = {
@@ -10,6 +17,7 @@ const EmitterOptionsSchema: JSONSchemaType<AsyncAPIEmitterOptions> = {
   additionalProperties: false,
   properties: {
     "output-file": { type: "string", nullable: true },
+    "response-receive-shim": { type: "boolean", nullable: true },
   },
   required: [],
 };

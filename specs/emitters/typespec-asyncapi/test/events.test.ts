@@ -17,8 +17,10 @@ describe("@event", () => {
       }
     `);
 
-    const op = doc.operations.onCallingEvent;
+    // An event not returned by any op is a central event: its own receive op on the channel.
+    const op = doc.operations.onCallingCallStateEvent;
     strictEqual(op.action, "receive");
+    strictEqual(op.title, "calling.call.state");
     strictEqual(op.messages[0].$ref, "#/channels/calling/messages/callStateEvent");
 
     const frame = doc.components.schemas.CallStateEventFrame;
