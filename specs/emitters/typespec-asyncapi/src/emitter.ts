@@ -154,6 +154,7 @@ function emitRpcMethods(
 
       const opKey = lcfirst(baseId);
       const summary = getSummary(program, op);
+      // Per-command channel id is derived from the same base as the operation key so all refs stay consistent.
       const chId = perCommand ? opKey : channelId;
 
       // In per-command mode, mint a dedicated channel for this command.
@@ -349,6 +350,9 @@ export async function $onEmit(context: EmitContext<AsyncAPIEmitterOptions>): Pro
 
     const perCommand = getChannelPerCommand(program, cns);
     emitRpcMethods(program, cns, id, registry.refFor, target, channelMessages, seen, channels, serverCfg.name, perCommand);
+    // Under @channelPerCommand the umbrella channel carries only events. A per-command namespace
+    // with no @event models emits this channel with an empty messages map (acceptable for now —
+    // calling has events; revisit when applying @channelPerCommand to event-less services).
     emitEvents(program, cns, id, registry.refFor, target, channelMessages);
   }
 
