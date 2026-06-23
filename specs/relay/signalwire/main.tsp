@@ -144,7 +144,7 @@ model ConnectResult {
     ],
   },
 })
-op connect(...ConnectParams): ConnectResult;
+op connect(...ConnectParams): ConnectResult | AuthorizationStateEvent;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // signalwire.disconnect (server-initiated)
@@ -187,20 +187,17 @@ model Acknowledgement {
 }
 
 model ReceiveParams {
-  /**
-   * A single context to set up for receiving inbound events.
-   * Deprecated — use `contexts`.
-   */
-  #deprecated "Use `contexts` instead."
-  context?: string;
-
-  /** Multiple contexts to set up for receiving inbound events at once. */
+  /** Contexts to set up for receiving inbound events. */
   contexts?: string[];
 }
 
 /**
  * Request incoming events from SignalWire contexts on a previously-setup
  * protocol. Used for many different inbound receivers.
+ *
+ * Subscribing to a context is the precondition for receiving unsolicited inbound
+ * notifications on this connection — most notably `calling.call.receive`, the inbound
+ * call offered to context-subscribed clients (it is not produced by any calling command).
  */
 @rpcMethod("signalwire.receive")
 @summary("Subscribe to inbound events on one or more contexts")
@@ -208,7 +205,7 @@ model ReceiveParams {
   parameters: #{ contexts: #["pbx"] },
   returnType: #{ code: "200", message: "Receiving events" },
 })
-op receive(...ReceiveParams): Acknowledgement;
+op receive(...ReceiveParams): Acknowledgement | Relay.Calling.CallReceiveEvent;
 
 model UnreceiveParams {
   /** Contexts to stop receiving events for. */
@@ -223,32 +220,6 @@ model UnreceiveParams {
   returnType: #{ code: "200", message: "Unreceiving events" },
 })
 op unreceive(...UnreceiveParams): Acknowledgement;
-
-// ─────────────────────────────────────────────────────────────────────────────
-// setup (deprecated — superseded by signalwire.connect)
-// ─────────────────────────────────────────────────────────────────────────────
-
-model SetupParams {
-  /** A protocol to recover. */
-  protocol?: string;
-}
-
-model SetupResult {
-  /** The protocol string the client should use for subsequent requests. */
-  protocol: string;
-}
-
-/**
- * Request a Relay protocol. Deprecated — use `signalwire.connect`, which
- * supersedes setup and also accepts `contexts` directly.
- */
-@rpcMethod("setup")
-@summary("(Deprecated) Request a Relay protocol — use signalwire.connect")
-@opExample(#{
-  parameters: #{ protocol: "signalwire_<SIGNATURE>_<UUID>_<PROJECT-ID>" },
-  returnType: #{ protocol: "signalwire_xyze2e6acb37a98e6f8363b2a7c5bc5aa90e846752d01a4f0f5a788bafa4682b_ca00e9e7-XXXX-YYYY-ZZZZ-894991ce3f46_78429ef1-1234-5678-9000-16b59f95bb1f" },
-})
-op setup(...SetupParams): SetupResult;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Events

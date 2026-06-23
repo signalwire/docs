@@ -18,17 +18,20 @@ describe("event routing via operation return type", () => {
       }
     `);
 
-    // response: canonical reply kept + render shim added
+    // response: canonical reply always kept
     deepStrictEqual(doc.operations.callingPlay.reply.messages, [
       { $ref: "#/channels/callingPlay/messages/callingPlayResponse" },
     ]);
-    strictEqual(doc.operations.onCallingPlayResponse.action, "receive");
 
-    // the event is a receive op on the command's own channel
+    // one labeled receive op PER message on the command's channel: the event + (shim) the response
     const evOp = doc.operations.onCallingPlayCallPlayEvent;
     strictEqual(evOp.action, "receive");
-    strictEqual(evOp.title, "calling.call.play");
+    strictEqual(evOp["x-fern-display-name"], "calling.call.play");
     deepStrictEqual(evOp.channel, { $ref: "#/channels/callingPlay" });
+    deepStrictEqual(evOp.messages, [{ $ref: "#/channels/callingPlay/messages/callPlayEvent" }]);
+    const shim = doc.operations.onCallingPlayResponse;
+    strictEqual(shim.action, "receive");
+    strictEqual(shim["x-fern-display-name"], "calling.play response");
     strictEqual("callPlayEvent" in doc.channels.callingPlay.messages, true);
 
     // the response result is built ONLY from the non-event arm
@@ -54,12 +57,16 @@ describe("event routing via operation return type", () => {
       }
     `);
 
+    // the shared event gets its own labeled receive op on each command's channel
     deepStrictEqual(doc.operations.onCallingSendFaxCallFaxEvent.channel, {
       $ref: "#/channels/callingSendFax",
     });
     deepStrictEqual(doc.operations.onCallingReceiveFaxCallFaxEvent.channel, {
       $ref: "#/channels/callingReceiveFax",
     });
+    deepStrictEqual(doc.operations.onCallingSendFaxCallFaxEvent.messages, [
+      { $ref: "#/channels/callingSendFax/messages/callFaxEvent" },
+    ]);
     strictEqual("callFaxEvent" in doc.channels.callingSendFax.messages, true);
     strictEqual("callFaxEvent" in doc.channels.callingReceiveFax.messages, true);
     // component schema + message defined exactly once
@@ -90,6 +97,68 @@ describe("event routing via operation return type", () => {
     strictEqual("callErrorEvent" in doc.channels.calling.messages, true);
   });
 
+  it("@globalEvents are merged into every command's receive union, not a separate umbrella page", async () => {
+    const { doc } = await asyncApiFor(`
+      @service(#{ title: "Relay Calling" })
+      @server("production", #{ host: "relay.signalwire.com", protocol: "wss" })
+      @channel("calling")
+      @channelPerCommand
+      @globalEvents(CallStateEvent, CallErrorEvent)
+      namespace Relay.Calling {
+        model DialResult { code: string; }
+        model PlayResult { code: string; }
+        @event("calling.call.play") model CallPlayEvent { state: string; }
+        @event("calling.call.state") model CallStateEvent { call_state: string; }
+        @event("calling.error") model CallErrorEvent { code: string; }
+        @rpcMethod("calling.dial") op dial(): DialResult;
+        @rpcMethod("calling.play") op play(): PlayResult | CallPlayEvent;
+      }
+    `);
+
+    // every command gets a labeled receive op for each global event…
+    for (const cmd of ["onCallingDial", "onCallingPlay"]) {
+      strictEqual(doc.operations[`${cmd}CallStateEvent`].action, "receive");
+      strictEqual(doc.operations[`${cmd}CallStateEvent`]["x-fern-display-name"], "calling.call.state");
+      strictEqual(doc.operations[`${cmd}CallErrorEvent`].action, "receive");
+    }
+    // play also keeps its own command-specific event op
+    strictEqual(doc.operations.onCallingPlayCallPlayEvent.action, "receive");
+    // the global events are referenced by commands, so they are NOT stranded on an umbrella channel
+    strictEqual("calling" in doc.channels, false);
+    strictEqual("onCallingCallStateEvent" in doc.operations, false);
+  });
+
+  it("an event defined in one service but attached to another service's op is not re-stranded centrally", async () => {
+    const { doc } = await asyncApiFor(`
+      @service(#{ title: "SignalWire Relay" })
+      @server("production", #{ host: "relay.signalwire.com", protocol: "wss" })
+      namespace Relay {
+        @channel("calling")
+        @channelPerCommand
+        namespace Calling {
+          model DialResult { code: string; }
+          @event("calling.call.receive") model CallReceiveEvent { call_id: string; }
+          @rpcMethod("calling.dial") op dial(): DialResult;
+        }
+        @channel("signalwire")
+        @channelPerCommand
+        namespace Signalwire {
+          model Ack { code: string; }
+          @rpcMethod("signalwire.receive") op receive(): Ack | Relay.Calling.CallReceiveEvent;
+        }
+      }
+    `);
+
+    // the inbound event gets its own labeled receive op on the subscribing op's channel…
+    deepStrictEqual(doc.operations.onSignalwireReceiveCallReceiveEvent.messages, [
+      { $ref: "#/channels/signalwireReceive/messages/callReceiveEvent" },
+    ]);
+    // …and is NOT re-emitted as a central event on a stranded calling umbrella (two-pass, shared
+    // referenced set across services)
+    strictEqual("calling" in doc.channels, false);
+    strictEqual("onCallingCallReceiveEvent" in doc.operations, false);
+  });
+
   it("response-receive-shim:false omits the shim but keeps the canonical reply", async () => {
     const outputs = await outputsFor(
       `
@@ -104,6 +173,7 @@ describe("event routing via operation return type", () => {
       { "response-receive-shim": false },
     );
     const doc = parse(outputs["asyncapi.yaml"]);
+    // shim off + no events → no receive op at all; response lives only in the canonical reply
     strictEqual("onCallingDialResponse" in doc.operations, false);
     deepStrictEqual(doc.operations.callingDial.reply.messages, [
       { $ref: "#/channels/calling/messages/callingDialResponse" },

@@ -96,8 +96,10 @@ describe("@channelPerCommand", () => {
     deepStrictEqual(doc.operations.callingDial.reply.messages, [
       { $ref: "#/channels/callingDial/messages/callingDialResponse" },
     ]);
-    // the response render-shim: a receive op mirroring the response on the same channel
+    // the response render-shim is its own labeled receive op on the same channel (dial has no
+    // events, so it's the only receive op)
     strictEqual(doc.operations.onCallingDialResponse.action, "receive");
+    strictEqual(doc.operations.onCallingDialResponse["x-fern-display-name"], "calling.dial response");
     deepStrictEqual(doc.operations.onCallingDialResponse.messages, [
       { $ref: "#/channels/callingDial/messages/callingDialResponse" },
     ]);
@@ -125,7 +127,7 @@ describe("@rpcMethod", () => {
       { $ref: "#/channels/calling/messages/callingDialResponse" },
     ]);
 
-    // response render-shim mirrors the response as a receive op (for renderers that ignore `reply`)
+    // response render-shim is its own labeled receive op (for renderers that ignore `reply`)
     const shim = doc.operations.onCallingDialResponse;
     strictEqual(shim.action, "receive");
     deepStrictEqual(shim.messages, [{ $ref: "#/channels/calling/messages/callingDialResponse" }]);

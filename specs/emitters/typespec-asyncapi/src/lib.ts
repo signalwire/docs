@@ -10,6 +10,15 @@ export interface AsyncAPIEmitterOptions {
    * supports `reply` — the spec then carries only the standards-correct `reply`.
    */
   "response-receive-shim"?: boolean;
+  /**
+   * How operations are grouped into channels:
+   * - `per-command` (default): honor `@channel` / `@channelPerCommand` — one channel per
+   *   service, or one per command under `@channelPerCommand`.
+   * - `single`: collapse the entire API onto ONE channel (the single WebSocket connection),
+   *   with every method/event as an operation on it. This is the idiomatic AsyncAPI shape for
+   *   a single-socket, payload-routed protocol (cf. Kraken/Slack request-reply examples).
+   */
+  "channel-mode"?: "per-command" | "single";
 }
 
 const EmitterOptionsSchema: JSONSchemaType<AsyncAPIEmitterOptions> = {
@@ -18,6 +27,7 @@ const EmitterOptionsSchema: JSONSchemaType<AsyncAPIEmitterOptions> = {
   properties: {
     "output-file": { type: "string", nullable: true },
     "response-receive-shim": { type: "boolean", nullable: true },
+    "channel-mode": { type: "string", enum: ["per-command", "single"], nullable: true },
   },
   required: [],
 };
@@ -61,6 +71,7 @@ export const $lib = createTypeSpecLibrary({
     channel: { description: "State for @channel" },
     rpcMethod: { description: "State for @rpcMethod" },
     event: { description: "State for @event" },
+    globalEvents: { description: "State for @globalEvents" },
     bearerAuth: { description: "State for @bearerAuth" },
     channelPerCommand: { description: "State for @channelPerCommand" },
   },

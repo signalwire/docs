@@ -1,4 +1,4 @@
-import { $bearerAuth, $channel, $channelPerCommand, $event, $rpcMethod, $server } from "./decorators.js";
+import { $bearerAuth, $channel, $channelPerCommand, $event, $globalEvents, $rpcMethod, $server } from "./decorators.js";
 
 export { $lib } from "./lib.js";
 
@@ -10,6 +10,7 @@ export const $decorators = {
     channelPerCommand: $channelPerCommand,
     rpcMethod: $rpcMethod,
     event: $event,
+    globalEvents: $globalEvents,
     bearerAuth: $bearerAuth,
   },
 };

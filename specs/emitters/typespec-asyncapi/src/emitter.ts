@@ -14,8 +14,9 @@ import {
   serializeValueAsJson,
   Type,
 } from "@typespec/compiler";
+import { getExtensions } from "@typespec/openapi";
 import { applyWebSocketBindings } from "./bindings/ws.js";
-import { getBearerAuth, getChannel, getChannelPerCommand, getEvent, getRpcMethod, getServer } from "./decorators.js";
+import { getBearerAuth, getChannel, getChannelPerCommand, getEvent, getGlobalEvents, getRpcMethod, getServer } from "./decorators.js";
 import { AsyncAPIEmitterOptions, reportDiagnostic } from "./lib.js";
 import { createSchemaRegistry, encodedPropName, propertySchema, RefFn } from "./schema-emitter.js";
 import { serialize } from "./serialize.js";
@@ -49,6 +50,10 @@ interface EventState {
   emitted: Set<string>;
   /** Event models already attached to at least one command channel. */
   referenced: Set<Model>;
+  /** `${channelId}::${msgId}` pairs already given a receive op — guards against emitting the same
+   *  message twice on one channel (e.g. a global event lands on every command, which all share the
+   *  one channel in single-channel mode → it should render once, not once per command). */
+  receive: Set<string>;
 }
 
 function findServiceNamespace(program: Program): Namespace | undefined {
@@ -171,20 +176,32 @@ function ensureEventComponent(
   return { msgId, eventType };
 }
 
-/** Reference an event message on a channel and emit a dedicated `receive` op for it (own label). */
-function emitEventReceiveOp(
+/**
+ * Reference a message on a channel and emit a dedicated `receive` op for it, each with its own
+ * `x-fern-display-name` so it renders as a distinct, human-readable entry. Fern labels every
+ * rendered message by the operation key and ignores AsyncAPI `title`/`summary`, so one receive op
+ * per message (not a message union) is what produces individually-labeled entries.
+ */
+function emitReceiveOp(
   target: EmitTarget,
   chId: string,
   opId: string,
   msgId: string,
-  eventType: string,
+  displayName: string,
   channelMessages: Record<string, AsyncAPIRef>,
+  seen: Set<string>,
 ): void {
+  // At most one receive op per (channel, message): the same message reaching one channel via
+  // multiple commands (single-channel mode) must render once, not once per command.
+  const key = `${chId}::${msgId}`;
+  if (seen.has(key)) return;
+  seen.add(key);
   channelMessages[msgId] = { $ref: `#/components/messages/${msgId}` };
   target.operations[opId] = {
     action: "receive",
     channel: { $ref: `#/channels/${chId}` },
-    title: eventType,
+    title: displayName,
+    "x-fern-display-name": displayName,
     messages: [{ $ref: `#/channels/${chId}/messages/${msgId}` }],
   };
 }
@@ -203,6 +220,9 @@ function emitRpcMethods(
   shim: boolean,
   events: EventState,
 ): void {
+  // Events received during EVERY command on this channel (e.g. call.state), declared once via
+  // @globalEvents on the @channel namespace and merged into each command's receive union.
+  const globalEvents = getGlobalEvents(program, ns);
   (function visit(n: Namespace): void {
     for (const op of n.operations.values()) {
       const method = getRpcMethod(program, op);
@@ -285,13 +305,20 @@ function emitRpcMethods(
       if (perCommand) {
         const perMsgs: Record<string, AsyncAPIRef> = {};
         const desc = summary ?? getDoc(program, op);
-        channels[chId] = {
+        const channel: AsyncAPIChannel = {
           address: "/",
           title: method,
           ...(desc ? { description: desc } : {}),
           servers: [{ $ref: `#/servers/${serverName}` }],
           messages: perMsgs,
         };
+        // Honor standard TypeSpec `@extension` (AsyncAPI permits `x-*` vendor extensions): emit any
+        // `x-*` the spec attached to the operation onto its channel. Generic and vendor-agnostic —
+        // currently unused by the Relay specs, but part of the emitter's baseline support.
+        for (const [key, value] of getExtensions(program, op)) {
+          (channel as unknown as Record<string, unknown>)[key] = value;
+        }
+        channels[chId] = channel;
         msgs = perMsgs;
       }
 
@@ -311,24 +338,27 @@ function emitRpcMethods(
         },
       };
 
-      // Response render-shim: a `receive` op mirroring the response, so renderers that ignore the
-      // `reply` object (e.g. Fern) still show the response. Isolated + toggleable; remove when the
-      // renderer supports `reply`.
-      if (shim) {
-        target.operations[`on${baseId}Response`] = {
-          action: "receive",
-          channel: { $ref: `#/channels/${chId}` },
-          title: `${method} response`,
-          messages: [{ $ref: `#/channels/${chId}/messages/${resMsgId}` }],
-        };
-      }
-
-      // Events the command emits (its `@event` return arms) render as their own `receive` ops on
-      // this command's channel. The component schema/message is defined once; this channel just refs it.
-      for (const ev of eventArms) {
+      // Everything this operation may RECEIVE, as ONE `receive` op PER message — each with its own
+      // `x-fern-display-name` so it renders as a distinct, labeled entry (Fern labels by operation
+      // key and ignores AsyncAPI title/summary, and a single message-union op would render as N
+      // identical labels). Covered here:
+      //  - the command's own `@event` return arms,
+      //  - shared global events attached to every command on this channel (e.g. call.state),
+      //  - and — only when `response-receive-shim` is on — the correlated response message, because
+      //    Fern does not render the `reply` object.
+      // The `reply` above is ALWAYS kept (standards-correct). The shim merely *also* surfaces the
+      // response here for rendering; flipping `response-receive-shim: false` drops this op with no
+      // other spec change, leaving only the canonical `reply`.
+      const seenReceive = new Set<string>();
+      for (const ev of [...eventArms, ...globalEvents]) {
         const { msgId, eventType } = ensureEventComponent(program, ev, ref, target, events.emitted);
         events.referenced.add(ev);
-        emitEventReceiveOp(target, chId, `on${pascal(chId)}${ev.name}`, msgId, eventType, msgs);
+        if (seenReceive.has(msgId)) continue;
+        seenReceive.add(msgId);
+        emitReceiveOp(target, chId, `on${baseId}${ev.name}`, msgId, eventType, msgs, events.receive);
+      }
+      if (shim) {
+        emitReceiveOp(target, chId, `on${baseId}Response`, resMsgId, `${method} response`, msgs, events.receive);
       }
     }
     // Recurse into descendants, but stop at any nested @channel namespace — it is
@@ -357,7 +387,7 @@ function emitCentralEvents(
       if (!getEvent(program, model)) continue;
       if (events.referenced.has(model)) continue; // already on a command channel
       const { msgId, eventType } = ensureEventComponent(program, model, ref, target, events.emitted);
-      emitEventReceiveOp(target, channelId, `on${pascal(channelId)}${model.name}`, msgId, eventType, channelMessages);
+      emitReceiveOp(target, channelId, `on${pascal(channelId)}${model.name}`, msgId, eventType, channelMessages, events.receive);
     }
     for (const child of n.namespaces.values()) {
       if (!getChannel(program, child)) visit(child);
@@ -423,31 +453,75 @@ export async function $onEmit(context: EmitContext<AsyncAPIEmitterOptions>): Pro
   };
   const components: AsyncAPIComponents = { schemas: target.schemas, messages: target.messages };
 
+  const channelMode = context.options["channel-mode"] ?? "per-command";
   const channels: Record<string, AsyncAPIChannel> = {};
   // One method namespace is global across the whole connection — guard duplicates across channels.
   const seen = new Set<string>();
-  for (const { ns: cns, id } of channelNamespaces) {
-    const perCommand = getChannelPerCommand(program, cns);
+
+  if (channelMode === "single") {
+    // Idiomatic AsyncAPI shape for a single-socket, payload-routed protocol: ONE channel (the
+    // single WebSocket connection at "/"), carrying EVERY service's operations + events, routed
+    // by the JSON-RPC `method` in the payload (cf. Kraken / Slack request-reply examples).
+    const channelId = "relay";
     const channelMessages: Record<string, AsyncAPIRef> = {};
-    // The Relay WS endpoint is a single root connection (`wss://<host>`); every service
-    // multiplexes over it and routes by the JSON-RPC `method` in the payload, not by a URL
-    // path. Emit the root address `"/"` so renderers show the bare endpoint. Under
-    // @channelPerCommand commands move to their own channels and this umbrella holds only the
-    // cross-cutting events, so it is titled "Events".
     const channel: AsyncAPIChannel = {
       address: "/",
-      title: perCommand ? "Events" : (getService(program, cns)?.title ?? cns.name),
+      title,
       servers: [{ $ref: `#/servers/${serverCfg.name}` }],
       messages: channelMessages,
     };
-    const cdesc = getDoc(program, cns);
-    if (cdesc) channel.description = cdesc;
-    channels[id] = channel;
+    const sdesc = getDoc(program, serviceNs);
+    if (sdesc) channel.description = sdesc;
+    channels[channelId] = channel;
 
-    const events: EventState = { emitted: new Set<string>(), referenced: new Set<Model>() };
-    emitRpcMethods(program, cns, id, registry.refFor, target, channelMessages, seen, channels, serverCfg.name, perCommand, shim, events);
-    // Cross-cutting events (not returned by any op) land on this umbrella/"Events" channel.
-    emitCentralEvents(program, cns, id, registry.refFor, target, channelMessages, events);
+    const events: EventState = { emitted: new Set<string>(), referenced: new Set<Model>(), receive: new Set<string>() };
+    // Pass 1: every service's RPC methods (send + reply + response shim + return-type events),
+    // all onto the one channel. perCommand is forced off — there are no per-command channels here.
+    for (const { ns: cns } of channelNamespaces) {
+      emitRpcMethods(program, cns, channelId, registry.refFor, target, channelMessages, seen, channels, serverCfg.name, false, shim, events);
+    }
+    // Pass 2: cross-cutting events (returned by no op) — also onto the one channel.
+    for (const { ns: cns } of channelNamespaces) {
+      emitCentralEvents(program, cns, channelId, registry.refFor, target, channelMessages, events);
+    }
+  } else {
+    // Shared across services so an event referenced by ANY operation (even cross-service, e.g.
+    // calling's call.receive attached to signalwire.receive) is not re-emitted as a central event
+    // elsewhere. Two passes — all sends first, then central events — so every cross-service
+    // reference is known before we decide what is "central" (mirrors single-channel mode).
+    const events: EventState = { emitted: new Set<string>(), referenced: new Set<Model>(), receive: new Set<string>() };
+    const umbrellas: { cns: Namespace; id: string; channelMessages: Record<string, AsyncAPIRef>; perCommand: boolean }[] = [];
+    // Pass 1: create each service's channel + emit its send ops (and command/global event receives).
+    for (const { ns: cns, id } of channelNamespaces) {
+      const perCommand = getChannelPerCommand(program, cns);
+      const channelMessages: Record<string, AsyncAPIRef> = {};
+      // The Relay WS endpoint is a single root connection (`wss://<host>`); every service
+      // multiplexes over it and routes by the JSON-RPC `method` in the payload, not by a URL
+      // path. Emit the root address `"/"` so renderers show the bare endpoint. Under
+      // @channelPerCommand commands move to their own channels and this umbrella holds only the
+      // cross-cutting events, so it is titled "Events".
+      const channel: AsyncAPIChannel = {
+        address: "/",
+        title: perCommand ? "Events" : (getService(program, cns)?.title ?? cns.name),
+        servers: [{ $ref: `#/servers/${serverCfg.name}` }],
+        messages: channelMessages,
+      };
+      const cdesc = getDoc(program, cns);
+      if (cdesc) channel.description = cdesc;
+      channels[id] = channel;
+      emitRpcMethods(program, cns, id, registry.refFor, target, channelMessages, seen, channels, serverCfg.name, perCommand, shim, events);
+      umbrellas.push({ cns, id, channelMessages, perCommand });
+    }
+    // Pass 2: cross-cutting events not referenced by any op land on their service umbrella channel.
+    for (const { cns, id, channelMessages, perCommand } of umbrellas) {
+      emitCentralEvents(program, cns, id, registry.refFor, target, channelMessages, events);
+      // Under @channelPerCommand this umbrella holds ONLY cross-cutting events. If every event is
+      // command-bound, @globalEvents, or attached to another service's op (so referenced), nothing
+      // remains — drop the empty "Events" page rather than emit a stranded, contentless channel.
+      if (perCommand && Object.keys(channelMessages).length === 0) {
+        delete channels[id];
+      }
+    }
   }
 
   const doc: AsyncAPI3Document = {

@@ -39,6 +39,9 @@ export interface AsyncAPIOperation {
   title?: string;
   summary?: string;
   description?: string;
+  /** Fern's per-operation label override. Fern labels each rendered message by the operation key
+   *  (ignoring AsyncAPI title/summary), so this is how a receive op gets a human-readable name. */
+  "x-fern-display-name"?: string;
   messages?: AsyncAPIRef[];
   reply?: { channel: AsyncAPIRef; messages: AsyncAPIRef[] };
   bindings?: Record<string, unknown>;

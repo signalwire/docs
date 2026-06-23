@@ -6,45 +6,6 @@ using SignalWire.AsyncAPI;
 namespace Relay.Calling;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// calling.begin (deprecated)
-// ─────────────────────────────────────────────────────────────────────────────
-
-model BeginParams {
-  /** Identifier added to all call events. */
-  tag?: string;
-
-  /** Region to originate from (account/device default if unset). */
-  region?: string;
-
-  /**
-   * The single device to call. Only the `phone` device is documented for this
-   * method, with just `from_number`, `to_number`, and `timeout` — the `sip`/
-   * `webrtc` variants and the extra phone params (`max_duration`, `confirm`,
-   * `call_state_url`, `call_state_events`) are not supported here.
-   */
-  device: DialDevice;
-}
-
-model BeginResult {
-  ...RelayResult;
-
-  /** The created call id. Returned on a `"200"` result; absent on error. */
-  call_id?: string;
-
-  /** Node the call is on. Returned on a `"200"` result; absent on error. */
-  node_id?: string;
-}
-
-// NOTE: no @opExample here — the required `device: DialDevice` is a @discriminator
-// base, and TypeSpec value-checking does not narrow a discriminated base to its
-// variant, so an inline frame example can't carry real device `params`. The
-// DialDevice variant models in common.tsp carry schema-level @example values instead.
-/** (Deprecated — use `calling.dial`.) Make an outbound call to a single device. */
-@rpcMethod("calling.begin")
-@summary("(Deprecated) Make an outbound call to a single device")
-op begin(...BeginParams): BeginResult;
-
-// ─────────────────────────────────────────────────────────────────────────────
 // calling.dial
 // ─────────────────────────────────────────────────────────────────────────────
 

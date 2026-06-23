@@ -58,6 +58,18 @@ export function getEvent(program: Program, target: Model): string | undefined {
   return program.stateMap(stateKeys.event).get(target);
 }
 
+export function $globalEvents(
+  context: DecoratorContext,
+  target: Namespace,
+  ...events: Model[]
+): void {
+  context.program.stateMap(stateKeys.globalEvents).set(target, events);
+}
+
+export function getGlobalEvents(program: Program, target: Namespace): Model[] {
+  return program.stateMap(stateKeys.globalEvents).get(target) ?? [];
+}
+
 export interface BearerAuthConfig {
   bearerFormat?: string;
 }

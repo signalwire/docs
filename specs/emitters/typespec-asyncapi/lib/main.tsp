@@ -27,5 +27,12 @@ extern dec rpcMethod(target: Operation, name: valueof string);
 /** Mark a model as a server-pushed event delivered via signalwire.event. */
 extern dec event(target: Model, eventType: valueof string);
 
+/**
+ * Events that may be received during EVERY operation on this channel (e.g. call-lifecycle
+ * events like call.state). Each is merged into every command's receive union, so it is
+ * documented on each operation page without per-method repetition.
+ */
+extern dec globalEvents(target: Namespace, ...events: Model[]);
+
 /** Declare HTTP bearer (token) authentication for the service. */
 extern dec bearerAuth(target: Namespace, bearerFormat?: valueof string);

@@ -27,4 +27,14 @@ using SignalWire.AsyncAPI;
  */
 @channel("calling")
 @channelPerCommand
+// calling.call.state fires for any call the client controls, across its whole lifecycle and
+// regardless of which command is in flight — verified in mod_infrastructure/relay.c: it fires via
+// relay_call_event_fire keyed by call_id (not by request), and is delivered to clients. It is not
+// the correlated reply to a specific command, so it rides every command's receive union.
+//   NB: calling.error is NOT here (and not modeled at all) — it is internal-only (DB/UI), never
+//   delivered to the client SDK (relay_call_error_event_create rewrites its event_channel).
+//   calling.call.receive is also NOT here — it is the unsolicited inbound-call notification offered
+//   to context-subscribed clients (relay.c:17564 task queue; Call.md CallNetwork(context) →
+//   onInboundCall), so it is attached to signalwire.receive (the subscription) instead.
+@globalEvents(CallStateEvent)
 namespace Relay.Calling;

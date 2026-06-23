@@ -526,28 +526,9 @@ model CallPayEvent {
   ...CallPayParams;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// calling.error
-// ─────────────────────────────────────────────────────────────────────────────
-
-model CallErrorParams {
-  ...CallAddress;
-
-  /** Error code (string, e.g. `"500"`). */
-  code: string;
-
-  /** Error description. */
-  message: string;
-}
-
-/** A server-pushed calling error associated with a call. */
-@event("calling.error")
-@example(#{
-  node_id: "a3e1b2c4-5d6f-7a8b-9c0d-1e2f3a4b5c6d",
-  call_id: "c7f9d2e1-3a4b-5c6d-7e8f-9a0b1c2d3e4f",
-  code: "500",
-  message: "Error description",
-})
-model CallErrorEvent {
-  ...CallErrorParams;
-}
+// NOTE: `calling.error` is intentionally NOT modeled here. Verified in
+// mod_infrastructure/relay.c (relay_call_error_event_create, ~line 1545): error events have their
+// event_channel rewritten to the call_id specifically so they are "only delivered to database / UI"
+// and "do not get delivered over websocket to client SDK." Clients never receive it. Operation
+// failures surface to clients via each command's own event error state (e.g. call.play
+// state:"error", CallCollectResultError, call.detect "error") and the RPC reply.

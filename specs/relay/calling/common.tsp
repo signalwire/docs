@@ -281,7 +281,7 @@ model StreamDeviceParams {
 // every derived model of a base — dial accepts 3 variants, connect 6.
 // ═════════════════════════════════════════════════════════════════════════════
 
-/** A device to dial (`calling.dial` / `calling.begin`). Discriminated on `type`. */
+/** A device to dial (`calling.dial`). Discriminated on `type`. */
 @discriminator("type")
 model DialDevice {
   type: string;
