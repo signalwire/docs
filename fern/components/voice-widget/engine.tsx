@@ -72,6 +72,25 @@ export function normalizeGender(gender: string): string {
   }
 }
 
+// ── TEMPORARY: hide voices whose CDN audio was renamed but whose manifest is stale ─────────────
+// Six sample files were renamed on the CDN to strip non-ASCII chars from the path (e.g.
+// inworld/_tienne.mp3 → inworld/Etienne.mp3), but the published manifest.json still points at the
+// OLD filenames, so these clips 404. Hide them until the regenerated manifest is merged onto the
+// CDN — then DELETE this block AND its filter() call in loadBundle. Keyed by the catalog `key`
+// (the same value manifest clips are keyed by). Remove the whole thing once the CDN is updated.
+const TEMP_HIDDEN_VOICE_KEYS = new Set<string>([
+  "inworld/Étienne",
+  "inworld/Maitê",
+  "inworld/Hélène",
+  "azure/hu-HU-Réka:MAI-Voice-2",
+  "minimax/Cantonese_ProfessionalHost（F)",
+  "minimax/Cantonese_ProfessionalHost（M)",
+]);
+
+export function isTemporarilyHiddenVoice(key: string): boolean {
+  return TEMP_HIDDEN_VOICE_KEYS.has(key);
+}
+
 export type FilterKey = "search" | "provider" | "language" | "gender" | "group" | "pageSize";
 
 // Client-side row: a catalog voice joined with its clip, plus two precomputed fields — `_search`,
@@ -105,7 +124,9 @@ export function loadBundle(catalogUrl: string, manifestUrl: string): Promise<Row
       // using `_uid` as the React key lets a row survive filter/page changes (the memoized row
       // skips re-rendering), and play state highlights exactly one row even for collisions.
       const seen = new Map<string, number>();
-      return cat.voices.map((v) => {
+      // TEMP: drop the renamed-audio voices (see isTemporarilyHiddenVoice). Remove this filter()
+      // once the regenerated manifest is on the CDN.
+      return cat.voices.filter((v) => !isTemporarilyHiddenVoice(v.key)).map((v) => {
         const base = modelKeyOf(v);
         const n = seen.get(base) ?? 0;
         seen.set(base, n + 1);
