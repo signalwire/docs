@@ -12,13 +12,14 @@ export interface AsyncAPIEmitterOptions {
   "response-receive-shim"?: boolean;
   /**
    * How operations are grouped into channels:
-   * - `per-command` (default): honor `@channel` / `@channelPerCommand` — one channel per
-   *   service, or one per command under `@channelPerCommand`.
+   * - `multi` (default): every `@channel` operation gets its own root-addressed channel, and
+   *   each server-pushed (`@event`) message that no operation returns gets its own receive-only
+   *   channel. This is the AsyncAPI 3.0 per-operation-channel idiom.
    * - `single`: collapse the entire API onto ONE channel (the single WebSocket connection),
    *   with every method/event as an operation on it. This is the idiomatic AsyncAPI shape for
    *   a single-socket, payload-routed protocol (cf. Kraken/Slack request-reply examples).
    */
-  "channel-mode"?: "per-command" | "single";
+  "channel-mode"?: "multi" | "single";
 }
 
 const EmitterOptionsSchema: JSONSchemaType<AsyncAPIEmitterOptions> = {
@@ -27,7 +28,7 @@ const EmitterOptionsSchema: JSONSchemaType<AsyncAPIEmitterOptions> = {
   properties: {
     "output-file": { type: "string", nullable: true },
     "response-receive-shim": { type: "boolean", nullable: true },
-    "channel-mode": { type: "string", enum: ["per-command", "single"], nullable: true },
+    "channel-mode": { type: "string", enum: ["multi", "single"], nullable: true },
   },
   required: [],
 };
@@ -41,22 +42,22 @@ export const $lib = createTypeSpecLibrary({
         default: "AsyncAPI output requires a @server on the service namespace.",
       },
     },
-    "rpc-method-on-non-op": {
+    "channel-on-non-op": {
       severity: "error",
       messages: {
-        default: "@rpcMethod can only be applied to an operation.",
+        default: "@channel can only be applied to an operation.",
       },
     },
     "missing-channel": {
       severity: "error",
       messages: {
-        default: "An @rpcMethod operation must be under a namespace marked with @channel.",
+        default: "AsyncAPI output requires at least one operation marked with @channel.",
       },
     },
-    "duplicate-rpc-method": {
+    "duplicate-channel": {
       severity: "error",
       messages: {
-        default: paramMessage`Duplicate @rpcMethod "${"method"}". JSON-RPC method names must be unique within a service.`,
+        default: paramMessage`Duplicate @channel "${"method"}". JSON-RPC method names must be unique within a service.`,
       },
     },
     "duplicate-type-name": {
@@ -69,11 +70,9 @@ export const $lib = createTypeSpecLibrary({
   state: {
     server: { description: "State for @server" },
     channel: { description: "State for @channel" },
-    rpcMethod: { description: "State for @rpcMethod" },
     event: { description: "State for @event" },
     globalEvents: { description: "State for @globalEvents" },
     bearerAuth: { description: "State for @bearerAuth" },
-    channelPerCommand: { description: "State for @channelPerCommand" },
   },
   emitter: {
     options: EmitterOptionsSchema,

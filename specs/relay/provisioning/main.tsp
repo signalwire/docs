@@ -9,7 +9,6 @@ using SignalWire.AsyncAPI;
  * events. The only connector type supported today is `freeswitch`, which returns
  * a SIP profile.
  */
-@channel("provisioning")
 namespace Relay.Provisioning;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -76,7 +75,7 @@ model ConfigureResult {
  * `external_endpoint`), and SignalWire returns its configuration. For a
  * `freeswitch` target, the response includes a SIP profile rendered as XML.
  */
-@rpcMethod("provisioning.configure")
+@channel("provisioning.configure")
 @summary("Request SignalWire connector configuration")
 @opExample(#{
   parameters: #{

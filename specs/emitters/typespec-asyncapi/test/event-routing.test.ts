@@ -8,13 +8,12 @@ describe("event routing via operation return type", () => {
     const { doc } = await asyncApiFor(`
       @service(#{ title: "Relay Calling" })
       @server("production", #{ host: "relay.signalwire.com", protocol: "wss" })
-      @channel("calling")
-      @channelPerCommand
+      namespace Relay;
       namespace Relay.Calling {
         model PlayParams { node_id: string; }
         model PlayResult { code: string; }
         @event("calling.call.play") model CallPlayEvent { state: string; }
-        @rpcMethod("calling.play") op play(...PlayParams): PlayResult | CallPlayEvent;
+        @channel("calling.play") op play(...PlayParams): PlayResult | CallPlayEvent;
       }
     `);
 
@@ -37,7 +36,7 @@ describe("event routing via operation return type", () => {
     // the response result is built ONLY from the non-event arm
     strictEqual(
       doc.components.schemas.CallingPlayResponse.properties.result.$ref,
-      "#/components/schemas/PlayResult",
+      "#/components/schemas/Relay.Calling.PlayResult",
     );
     // event component message defined once
     strictEqual(typeof doc.components.messages.callPlayEvent, "object");
@@ -47,13 +46,12 @@ describe("event routing via operation return type", () => {
     const { doc } = await asyncApiFor(`
       @service(#{ title: "Relay Calling" })
       @server("production", #{ host: "relay.signalwire.com", protocol: "wss" })
-      @channel("calling")
-      @channelPerCommand
+      namespace Relay;
       namespace Relay.Calling {
         model FaxResult { code: string; }
         @event("calling.call.fax") model CallFaxEvent { direction: string; }
-        @rpcMethod("calling.send_fax") op sendFax(): FaxResult | CallFaxEvent;
-        @rpcMethod("calling.receive_fax") op receiveFax(): FaxResult | CallFaxEvent;
+        @channel("calling.send_fax") op sendFax(): FaxResult | CallFaxEvent;
+        @channel("calling.receive_fax") op receiveFax(): FaxResult | CallFaxEvent;
       }
     `);
 
@@ -74,44 +72,45 @@ describe("event routing via operation return type", () => {
     strictEqual(typeof doc.components.schemas.CallFaxEventFrame, "object");
   });
 
-  it("an @event assigned to no op lands on the central 'Events' channel", async () => {
+  it("an @event assigned to no op gets its own receive-only channel", async () => {
     const { doc } = await asyncApiFor(`
       @service(#{ title: "Relay Calling" })
       @server("production", #{ host: "relay.signalwire.com", protocol: "wss" })
-      @channel("calling")
-      @channelPerCommand
+      namespace Relay;
       namespace Relay.Calling {
         model PlayResult { code: string; }
         @event("calling.call.play") model CallPlayEvent { state: string; }
         @event("calling.error") model CallErrorEvent { code: string; }
-        @rpcMethod("calling.play") op play(): PlayResult | CallPlayEvent;
+        @channel("calling.play") op play(): PlayResult | CallPlayEvent;
       }
     `);
 
-    // umbrella becomes the "Events" page; the unassigned error lands there
-    strictEqual(doc.channels.calling.title, "Events");
-    deepStrictEqual(doc.operations.onCallingCallErrorEvent.channel, { $ref: "#/channels/calling" });
-    strictEqual(doc.operations.onCallingCallErrorEvent.title, "calling.error");
-    // the play event is mapped to its command, NOT duplicated on the umbrella
-    strictEqual("callPlayEvent" in doc.channels.calling.messages, false);
-    strictEqual("callErrorEvent" in doc.channels.calling.messages, true);
+    // the unassigned error becomes its own root-addressed receive-only channel
+    strictEqual(doc.channels.callingError.title, "calling.error");
+    strictEqual(doc.channels.callingError.address, "/");
+    deepStrictEqual(doc.operations.onCallingError.channel, { $ref: "#/channels/callingError" });
+    strictEqual(doc.operations.onCallingError.title, "calling.error");
+    strictEqual("callErrorEvent" in doc.channels.callingError.messages, true);
+    // the play event is mapped to its command's channel, NOT a central event channel
+    strictEqual("callPlayError" in doc.channels, false);
+    strictEqual("callPlayEvent" in doc.channels.callingPlay.messages, true);
   });
 
-  it("@globalEvents are merged into every command's receive union, not a separate umbrella page", async () => {
+  it("@globalEvents are merged into every command's receive union, not a separate channel", async () => {
     const { doc } = await asyncApiFor(`
       @service(#{ title: "Relay Calling" })
       @server("production", #{ host: "relay.signalwire.com", protocol: "wss" })
-      @channel("calling")
-      @channelPerCommand
-      @globalEvents(CallStateEvent, CallErrorEvent)
-      namespace Relay.Calling {
-        model DialResult { code: string; }
-        model PlayResult { code: string; }
-        @event("calling.call.play") model CallPlayEvent { state: string; }
-        @event("calling.call.state") model CallStateEvent { call_state: string; }
-        @event("calling.error") model CallErrorEvent { code: string; }
-        @rpcMethod("calling.dial") op dial(): DialResult;
-        @rpcMethod("calling.play") op play(): PlayResult | CallPlayEvent;
+      namespace Relay {
+        @globalEvents(Calling.CallStateEvent, Calling.CallErrorEvent)
+        namespace Calling {
+          model DialResult { code: string; }
+          model PlayResult { code: string; }
+          @event("calling.call.play") model CallPlayEvent { state: string; }
+          @event("calling.call.state") model CallStateEvent { call_state: string; }
+          @event("calling.error") model CallErrorEvent { code: string; }
+          @channel("calling.dial") op dial(): DialResult;
+          @channel("calling.play") op play(): PlayResult | CallPlayEvent;
+        }
       }
     `);
 
@@ -123,9 +122,11 @@ describe("event routing via operation return type", () => {
     }
     // play also keeps its own command-specific event op
     strictEqual(doc.operations.onCallingPlayCallPlayEvent.action, "receive");
-    // the global events are referenced by commands, so they are NOT stranded on an umbrella channel
-    strictEqual("calling" in doc.channels, false);
-    strictEqual("onCallingCallStateEvent" in doc.operations, false);
+    // the global events are referenced by commands, so they are NOT stranded on their own
+    // central event channels
+    strictEqual("callingCallState" in doc.channels, false);
+    strictEqual("callingError" in doc.channels, false);
+    strictEqual("onCallingCallState" in doc.operations, false);
   });
 
   it("an event defined in one service but attached to another service's op is not re-stranded centrally", async () => {
@@ -133,18 +134,14 @@ describe("event routing via operation return type", () => {
       @service(#{ title: "SignalWire Relay" })
       @server("production", #{ host: "relay.signalwire.com", protocol: "wss" })
       namespace Relay {
-        @channel("calling")
-        @channelPerCommand
         namespace Calling {
           model DialResult { code: string; }
           @event("calling.call.receive") model CallReceiveEvent { call_id: string; }
-          @rpcMethod("calling.dial") op dial(): DialResult;
+          @channel("calling.dial") op dial(): DialResult;
         }
-        @channel("signalwire")
-        @channelPerCommand
         namespace Signalwire {
           model Ack { code: string; }
-          @rpcMethod("signalwire.receive") op receive(): Ack | Relay.Calling.CallReceiveEvent;
+          @channel("signalwire.receive") op receive(): Ack | Relay.Calling.CallReceiveEvent;
         }
       }
     `);
@@ -153,10 +150,10 @@ describe("event routing via operation return type", () => {
     deepStrictEqual(doc.operations.onSignalwireReceiveCallReceiveEvent.messages, [
       { $ref: "#/channels/signalwireReceive/messages/callReceiveEvent" },
     ]);
-    // …and is NOT re-emitted as a central event on a stranded calling umbrella (two-pass, shared
-    // referenced set across services)
-    strictEqual("calling" in doc.channels, false);
-    strictEqual("onCallingCallReceiveEvent" in doc.operations, false);
+    // …and is NOT re-emitted as a stranded central event channel (two-pass, shared referenced
+    // set across services)
+    strictEqual("callingCallReceive" in doc.channels, false);
+    strictEqual("onCallingCallReceive" in doc.operations, false);
   });
 
   it("response-receive-shim:false omits the shim but keeps the canonical reply", async () => {
@@ -164,10 +161,10 @@ describe("event routing via operation return type", () => {
       `
       @service(#{ title: "Relay Calling" })
       @server("production", #{ host: "relay.signalwire.com", protocol: "wss" })
-      @channel("calling")
+      namespace Relay;
       namespace Relay.Calling {
         model DialResult { code: string; }
-        @rpcMethod("calling.dial") op dial(): DialResult;
+        @channel("calling.dial") op dial(): DialResult;
       }
     `,
       { "response-receive-shim": false },
@@ -176,7 +173,7 @@ describe("event routing via operation return type", () => {
     // shim off + no events → no receive op at all; response lives only in the canonical reply
     strictEqual("onCallingDialResponse" in doc.operations, false);
     deepStrictEqual(doc.operations.callingDial.reply.messages, [
-      { $ref: "#/channels/calling/messages/callingDialResponse" },
+      { $ref: "#/channels/callingDial/messages/callingDialResponse" },
     ]);
   });
 });

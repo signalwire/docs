@@ -30,7 +30,7 @@ model QueueEnterResult {
 }
 
 /** Places the active call into a named queue (creating the queue if it doesn't exist yet). Use it to hold callers while you wait for an agent or resource to free up. You get a result confirming entry, and the call's queue position, size, and wait estimate arrive as queue events keyed on your `control_id`. */
-@rpcMethod("calling.queue.enter")
+@channel("calling.queue.enter")
 @summary("Place the call into a queue")
 @opExample(#{
   parameters: #{
@@ -72,7 +72,7 @@ model QueueLeaveResult {
 }
 
 /** Removes the active call from the queue it's waiting in. Use it to pull a caller out early, for example to hand them to an agent or end their wait. */
-@rpcMethod("calling.queue.leave")
+@channel("calling.queue.leave")
 @summary("Remove the call from a queue")
 @opExample(#{
   parameters: #{
@@ -177,7 +177,7 @@ model RecordResult {
 }
 
 /** Records the audio of an active call. The result confirms recording started and the recording's URL arrives on a recording event when it finishes. You can run several recordings on the same call at once — give each its own `control_id`. */
-@rpcMethod("calling.record")
+@channel("calling.record")
 @summary("Record a call")
 @opExample(#{
   parameters: #{
@@ -238,7 +238,7 @@ model RecordPauseResult {
 }
 
 /** Pauses a recording you started with `calling.record`, identified by its `control_id`. Audio captured while paused is either dropped or kept as silence depending on `behavior`. Resume it later with `calling.record.resume`. */
-@rpcMethod("calling.record.pause")
+@channel("calling.record.pause")
 @summary("Pause an active recording")
 @opExample(#{
   parameters: #{
@@ -270,7 +270,7 @@ model RecordResumeResult {
 }
 
 /** Resumes a recording you paused with `calling.record.pause`, identified by its `control_id`. Audio capture picks back up where it left off. */
-@rpcMethod("calling.record.resume")
+@channel("calling.record.resume")
 @summary("Resume a paused recording")
 @opExample(#{
   parameters: #{
@@ -301,7 +301,7 @@ model RecordStopResult {
 }
 
 /** Stops a recording you started with `calling.record`, identified by its `control_id`. Once stopped, the recording is finalized and its URL becomes available on the recording event. */
-@rpcMethod("calling.record.stop")
+@channel("calling.record.stop")
 @summary("Stop an active recording")
 @opExample(#{
   parameters: #{
@@ -367,7 +367,7 @@ model ReferResult {
 // inline frame example can't carry real `params`. The ReferSipDevice variant model carries
 // a schema-level @example value instead.
 /** Transfers a SIP call to another SIP endpoint using a SIP REFER. Use it to hand the call off to an external destination without staying in the media path. The result confirms the refer was sent; the transfer's progress and final outcome arrive on a refer event. */
-@rpcMethod("calling.refer")
+@channel("calling.refer")
 @summary("Transfer a SIP call via SIP REFER")
 op refer(...ReferParams): ReferResult | CallReferEvent;
 
@@ -386,7 +386,7 @@ model PassResult {
 }
 
 /** Declines an inbound call offer (a `calling.call.receive` event) without answering it, returning the call to routing so SignalWire can offer it to another consumer. Use it when your app gets a call it shouldn't handle and you want someone else to pick it up. */
-@rpcMethod("calling.pass")
+@channel("calling.pass")
 @summary("Pass the call offer to another consumer")
 @opExample(#{
   parameters: #{

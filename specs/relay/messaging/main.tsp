@@ -12,7 +12,6 @@ using SignalWire.AsyncAPI;
  * Use this from your server. Browser clients send messages through the REST API
  * instead.
  */
-@channel("messaging")
 namespace Relay.Messaging;
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -115,7 +114,7 @@ model SendResult {
  * `message_id` — it does not mean the message was delivered yet. Watch for
  * `messaging.state` events on the same `context` to follow delivery.
  */
-@rpcMethod("messaging.send")
+@channel("messaging.send")
 @summary("Send an outbound message")
 @opExample(#{
   parameters: #{

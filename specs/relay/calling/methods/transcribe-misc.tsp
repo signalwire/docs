@@ -34,7 +34,7 @@ model TranscribeResult {
  * is active returns `"409"` "Transcribe is already in progress". Stop it with
  * `calling.transcribe.stop`.
  */
-@rpcMethod("calling.transcribe")
+@channel("calling.transcribe")
 @summary("Start transcribing a call")
 @opExample(#{
   parameters: #{
@@ -63,7 +63,7 @@ model TranscribeStopResult {
 }
 
 /** Stops a transcription that is currently running on a call. */
-@rpcMethod("calling.transcribe.stop")
+@channel("calling.transcribe.stop")
 @summary("Stop an active call transcription")
 @opExample(#{
   parameters: #{ node_id: "a3e1b2c4-...", call_id: "c7f9d2e1-...", control_id: "transcribe-1" },
@@ -95,7 +95,7 @@ model EchoResult {
  * back. Handy for testing that audio is flowing in both directions on a call.
  * Echo stops on its own when the `timeout` expires or the call ends.
  */
-@rpcMethod("calling.echo")
+@channel("calling.echo")
 @summary("Echo audio back to the caller")
 @opExample(#{
   parameters: #{ node_id: "a3e1b2c4-...", call_id: "c7f9d2e1-...", timeout: 30 },
@@ -132,7 +132,7 @@ model BindDigitResult {
 }
 
 /** Runs a call method automatically when the caller presses a specific DTMF digit sequence — for example, play a message when they press `*1`. */
-@rpcMethod("calling.bind_digit")
+@channel("calling.bind_digit")
 @summary("Trigger a call method when a DTMF sequence is pressed")
 @opExample(#{
   parameters: #{
@@ -164,7 +164,7 @@ model ClearDigitBindingsResult {
 }
 
 /** Removes digit bindings previously set with `calling.bind_digit`. Clears every binding on the call, or only those in a given `realm`. */
-@rpcMethod("calling.clear_digit_bindings")
+@channel("calling.clear_digit_bindings")
 @summary("Clear digit bindings")
 @opExample(#{
   parameters: #{ node_id: "a3e1b2c4-...", call_id: "c7f9d2e1-...", realm: "menu" },
@@ -378,7 +378,7 @@ model LiveTranscribeResult {
  * method to start, stop, or summarize by setting the matching `action`. Live
  * results also arrive as `calling.call.transcribe` events.
  */
-@rpcMethod("calling.live_transcribe")
+@channel("calling.live_transcribe")
 @summary("Start or stop live transcription on a call")
 @opExample(#{
   parameters: #{
@@ -435,7 +435,7 @@ model LiveTranslateResult {
  * `webhook` and is voiced into the call. Use the same method to start, stop, summarize,
  * or inject a message by setting the matching `action`.
  */
-@rpcMethod("calling.live_translate")
+@channel("calling.live_translate")
 @summary("Start or stop live translation on a call")
 @opExample(#{
   parameters: #{
@@ -467,7 +467,7 @@ model JoinRoomResult {
 }
 
 /** Connects this call into a named audio/video room, bridging it with everyone else already in that room. */
-@rpcMethod("calling.join_room")
+@channel("calling.join_room")
 @summary("Join a video/audio room")
 @opExample(#{
   parameters: #{ node_id: "a3e1b2c4-...", call_id: "c7f9d2e1-...", name: "my_room" },
@@ -488,7 +488,7 @@ model LeaveRoomResult {
 }
 
 /** Removes this call from the room it is currently in. There is no room parameter — it always acts on the call's current room. */
-@rpcMethod("calling.leave_room")
+@channel("calling.leave_room")
 @summary("Leave the current room")
 @opExample(#{
   parameters: #{ node_id: "a3e1b2c4-...", call_id: "c7f9d2e1-..." },

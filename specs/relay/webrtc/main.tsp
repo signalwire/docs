@@ -18,8 +18,6 @@ using SignalWire.AsyncAPI;
  * calling; server-side code uses the `calling` service instead. Authenticate
  * with a `jwt_token`.
  */
-@channel("webrtc")
-@channelPerCommand
 namespace Relay.WebRTC;
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -80,7 +78,7 @@ model MessageParams {
  * event, so wait for that event rather than treating this acknowledgement as
  * the call result.
  */
-@rpcMethod("message")
+@channel("message")
 @summary("Send a Verto frame")
 @opExample(#{
   parameters: #{
@@ -151,7 +149,7 @@ model ConferenceListResult {
  * List the active conferences you can join. Each entry gives you the name,
  * extension, and `node_id` you need to join. Takes no arguments.
  */
-@rpcMethod("conference.list")
+@channel("conference.list")
 @summary("List joinable conferences")
 @opExample(#{
   parameters: #{},

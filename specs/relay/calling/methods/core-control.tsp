@@ -43,7 +43,7 @@ model DialResult {
 // base, and TypeSpec value-checking does not narrow a discriminated base to its
 // variant, so an inline frame example can't carry real device `params`. The
 // DialDevice variant models in common.tsp carry schema-level @example values instead.
-@rpcMethod("calling.dial")
+@channel("calling.dial")
 @summary("Dial outbound call(s); first to answer wins")
 op dial(...DialParams): DialResult | CallDialEvent;
 
@@ -70,7 +70,7 @@ model AnswerResult {
 }
 
 /** Answers an incoming call so audio begins flowing and you can start controlling it. */
-@rpcMethod("calling.answer")
+@channel("calling.answer")
 @summary("Answer an incoming call")
 @opExample(#{
   parameters: #{
@@ -98,7 +98,7 @@ model EndResult {
 }
 
 /** Ends a call, whether it's already connected or still ringing. */
-@rpcMethod("calling.end")
+@channel("calling.end")
 @summary("End a call")
 @opExample(#{
   parameters: #{
@@ -161,7 +161,7 @@ model ConnectResult {
 // value-checking does not narrow a discriminated base to its variant, so an inline
 // frame example can't carry real device/ringback `params`. The ConnectDevice and
 // Ringback variant models in common.tsp carry schema-level @example values instead.
-@rpcMethod("calling.connect")
+@channel("calling.connect")
 @summary("Connect a device to an active call")
 op connect(...ConnectParams): ConnectResult | CallConnectEvent;
 
@@ -182,7 +182,7 @@ model DisconnectResult {
  * without hanging up on either one. Each call stays live so you can keep
  * controlling it or connect it elsewhere.
  */
-@rpcMethod("calling.disconnect")
+@channel("calling.disconnect")
 @summary("Disconnect connected legs without hanging up")
 @opExample(#{
   parameters: #{

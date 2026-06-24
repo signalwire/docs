@@ -5,10 +5,10 @@ import { asyncApiFor, outputsFor } from "./host.js";
 const SVC = `
   @service(#{ title: "Relay Calling" })
   @server("production", #{ host: "relay.signalwire.com", protocol: "wss" })
-  @channel("calling")
+  namespace Relay;
   namespace Relay.Calling {
     model DialResult { code: string; }
-    @rpcMethod("calling.dial") op dial(): DialResult;
+    @channel("calling.dial") op dial(): DialResult;
   }
 `;
 
@@ -28,11 +28,11 @@ describe("output", () => {
     const { doc, yaml } = await asyncApiFor(`
       @service(#{ title: "Relay Calling" })
       @server("production", #{ host: "relay.signalwire.com", protocol: "wss" })
-      @channel("calling")
       @bearerAuth("JWT")
+      namespace Relay;
       namespace Relay.Calling {
         model DialResult { code: string; }
-        @rpcMethod("calling.dial") op dial(): DialResult;
+        @channel("calling.dial") op dial(): DialResult;
       }
     `);
     strictEqual(typeof yaml, "string");
@@ -46,13 +46,13 @@ describe("output", () => {
     const { doc } = await asyncApiFor(`
       @service(#{ title: "Relay Calling" })
       @server("production", #{ host: "relay.signalwire.com", protocol: "wss" })
-      @channel("calling")
+      namespace Relay;
       namespace Relay.Calling {
         model DialResult { code: string; }
-        @rpcMethod("calling.dial") op dial(): DialResult;
+        @channel("calling.dial") op dial(): DialResult;
       }
     `);
     deepStrictEqual(doc.servers.production.bindings, { ws: {} });
-    deepStrictEqual(doc.channels.calling.bindings, { ws: {} });
+    deepStrictEqual(doc.channels.callingDial.bindings, { ws: {} });
   });
 });

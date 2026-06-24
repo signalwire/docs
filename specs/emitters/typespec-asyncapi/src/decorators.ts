@@ -22,32 +22,16 @@ export function getServer(program: Program, target: Namespace): ServerConfig | u
   return program.stateMap(stateKeys.server).get(target);
 }
 
-export function $channel(context: DecoratorContext, target: Namespace, id: string): void {
-  context.program.stateMap(stateKeys.channel).set(target, id);
-}
-
-export function getChannel(program: Program, target: Namespace): string | undefined {
-  return program.stateMap(stateKeys.channel).get(target);
-}
-
-export function $channelPerCommand(context: DecoratorContext, target: Namespace): void {
-  context.program.stateMap(stateKeys.channelPerCommand).set(target, true);
-}
-
-export function getChannelPerCommand(program: Program, target: Namespace): boolean {
-  return program.stateMap(stateKeys.channelPerCommand).get(target) === true;
-}
-
-export function $rpcMethod(context: DecoratorContext, target: Operation, name: string): void {
+export function $channel(context: DecoratorContext, target: Operation, method: string): void {
   if (target.kind !== "Operation") {
-    reportDiagnostic(context.program, { code: "rpc-method-on-non-op", target });
+    reportDiagnostic(context.program, { code: "channel-on-non-op", target });
     return;
   }
-  context.program.stateMap(stateKeys.rpcMethod).set(target, name);
+  context.program.stateMap(stateKeys.channel).set(target, method);
 }
 
-export function getRpcMethod(program: Program, target: Operation): string | undefined {
-  return program.stateMap(stateKeys.rpcMethod).get(target);
+export function getChannel(program: Program, target: Operation): string | undefined {
+  return program.stateMap(stateKeys.channel).get(target);
 }
 
 export function $event(context: DecoratorContext, target: Model, eventType: string): void {

@@ -135,7 +135,7 @@ model DetectResult {
  * detection outcome arrives asynchronously as `calling.call.detect` events
  * keyed on your `control_id`, not in this result.
  */
-@rpcMethod("calling.detect")
+@channel("calling.detect")
 @summary("Start a detector (machine/fax/digit)")
 op detect(...DetectParams): DetectResult | CallDetectEvent;
 
@@ -161,7 +161,7 @@ model DetectStopResult {
 }
 
 /** Stop an active detector. */
-@rpcMethod("calling.detect.stop")
+@channel("calling.detect.stop")
 @summary("Stop a detector")
 @opExample(#{
   parameters: #{
@@ -221,7 +221,7 @@ model SendFaxResult {
  * away; progress and the final outcome arrive asynchronously as
  * `calling.call.fax` events keyed on your `control_id`.
  */
-@rpcMethod("calling.send_fax")
+@channel("calling.send_fax")
 @summary("Send a PDF fax")
 @opExample(#{
   parameters: #{
@@ -263,7 +263,7 @@ model SendFaxStopResult {
 }
 
 /** Stop sending a fax. */
-@rpcMethod("calling.send_fax.stop")
+@channel("calling.send_fax.stop")
 @summary("Stop sending a fax")
 @opExample(#{
   parameters: #{
@@ -310,7 +310,7 @@ model ReceiveFaxResult {
  * request right away; progress and the final outcome arrive asynchronously as
  * `calling.call.fax` events keyed on your `control_id`.
  */
-@rpcMethod("calling.receive_fax")
+@channel("calling.receive_fax")
 @summary("Receive a fax")
 @opExample(#{
   parameters: #{
@@ -349,7 +349,7 @@ model ReceiveFaxStopResult {
 }
 
 /** Stop receiving a fax. */
-@rpcMethod("calling.receive_fax.stop")
+@channel("calling.receive_fax.stop")
 @summary("Stop receiving a fax")
 @opExample(#{
   parameters: #{
@@ -516,7 +516,7 @@ model TapResult {
  * what is coming. Tap lifecycle events arrive as `calling.call.tap` events
  * keyed on your `control_id`.
  */
-@rpcMethod("calling.tap")
+@channel("calling.tap")
 @summary("Tap call media to an external device")
 op tap(...TapParams): TapResult | CallTapEvent;
 
@@ -542,7 +542,7 @@ model TapStopResult {
 }
 
 /** Stop an active call tap. */
-@rpcMethod("calling.tap.stop")
+@channel("calling.tap.stop")
 @summary("Stop a call tap")
 @opExample(#{
   parameters: #{
@@ -629,7 +629,7 @@ model StreamResult {
  * arrive as `calling.call.stream` events keyed on your `control_id`. Note this
  * result echoes `node_id` rather than `call_id`.
  */
-@rpcMethod("calling.stream")
+@channel("calling.stream")
 @summary("Stream call audio to a WebSocket endpoint")
 @opExample(#{
   parameters: #{
@@ -675,7 +675,7 @@ model StreamStopResult {
 }
 
 /** Stop an active call stream. */
-@rpcMethod("calling.stream.stop")
+@channel("calling.stream.stop")
 @summary("Stop a call stream")
 @opExample(#{
   parameters: #{

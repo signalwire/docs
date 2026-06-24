@@ -71,7 +71,7 @@ model AiResult {
  * session; the block is released when the session ends. Events continue to flow
  * while the session is active.
  */
-@rpcMethod("calling.ai")
+@channel("calling.ai")
 @summary("Start an AI agent on the call")
 @opExample(#{
   parameters: #{
@@ -124,7 +124,7 @@ model AiStopResult {
 }
 
 /** (async-safe) Stop an active AI agent session on the call. */
-@rpcMethod("calling.ai.stop")
+@channel("calling.ai.stop")
 @summary("Stop an active AI agent session")
 @opExample(#{
   parameters: #{
@@ -171,7 +171,7 @@ model AiSidecarResult {
  * `action.summarize` is present — generate a one-off conversation summary instead
  * of attaching a sidecar. Requires an active `live_transcribe`.
  */
-@rpcMethod("calling.ai_sidecar")
+@channel("calling.ai_sidecar")
 @summary("Attach a real-time AI observer (sidecar) to the call")
 @opExample(#{
   parameters: #{
@@ -202,7 +202,7 @@ model AiSidecarPokeParams {
  * (async-safe) Send a message to the sidecar and prompt it to respond right away,
  * without waiting for the next customer turn.
  */
-@rpcMethod("calling.ai_sidecar.poke")
+@channel("calling.ai_sidecar.poke")
 @summary("Poke the sidecar to respond immediately")
 @opExample(#{
   parameters: #{
@@ -239,7 +239,7 @@ model AiSidecarAskResult {
  * conversation. Returns an `ask_id` immediately; the answer is delivered later as a
  * `calling.ai.sidecar` event (`type: ask_answer`) with the matching `ask_id`.
  */
-@rpcMethod("calling.ai_sidecar.ask")
+@channel("calling.ai_sidecar.ask")
 @summary("Ask the sidecar a one-off question")
 @opExample(#{
   parameters: #{
@@ -261,7 +261,7 @@ model AiSidecarStopParams {
 }
 
 /** (async-safe) Stop and detach the AI sidecar from the call. */
-@rpcMethod("calling.ai_sidecar.stop")
+@channel("calling.ai_sidecar.stop")
 @summary("Stop and detach the AI sidecar")
 @opExample(#{
   parameters: #{ node_id: "a3e1b2c4-...", call_id: "c7f9d2e1-..." },
@@ -286,7 +286,7 @@ model AiSidecarStatusResult {
 }
 
 /** (async-safe) Get a snapshot of the sidecar's activity counters. */
-@rpcMethod("calling.ai_sidecar.status")
+@channel("calling.ai_sidecar.status")
 @summary("Get a snapshot of the sidecar's activity counters")
 @opExample(#{
   parameters: #{ node_id: "a3e1b2c4-...", call_id: "c7f9d2e1-..." },
@@ -368,7 +368,7 @@ model AmazonBedrockResult {
 }
 
 /** Connect to an Amazon Bedrock AI agent. */
-@rpcMethod("calling.amazon_bedrock")
+@channel("calling.amazon_bedrock")
 @summary("Connect to an Amazon Bedrock AI agent")
 @opExample(#{
   parameters: #{
@@ -427,7 +427,7 @@ model AiMessageResult {
 }
 
 /** (async-safe) Send (inject) a message into an active AI agent session. */
-@rpcMethod("calling.ai_message")
+@channel("calling.ai_message")
 @summary("Send a message to an active AI agent session")
 @opExample(#{
   parameters: #{
@@ -459,7 +459,7 @@ model AiHoldResult {
 }
 
 /** Put an AI agent session on hold. */
-@rpcMethod("calling.ai_hold")
+@channel("calling.ai_hold")
 @summary("Put an AI agent session on hold")
 @opExample(#{
   parameters: #{
@@ -488,7 +488,7 @@ model AiUnholdResult {
 }
 
 /** Resume an AI agent session from hold. */
-@rpcMethod("calling.ai_unhold")
+@channel("calling.ai_unhold")
 @summary("Resume an AI agent session from hold")
 @opExample(#{
   parameters: #{
@@ -517,7 +517,7 @@ model UserEventResult {
 }
 
 /** Send a custom user-defined event. */
-@rpcMethod("calling.user_event")
+@channel("calling.user_event")
 @summary("Send a custom user-defined event")
 @opExample(#{
   parameters: #{

@@ -72,7 +72,7 @@ model TransferResult {
 }
 
 /** Hands off control of an active call to another RELAY application or to a SWML script. Use this to move a call to a different flow, for example to route it to an IVR, queue, or a fresh script. Once transferred, the original application no longer controls the call. */
-@rpcMethod("calling.transfer")
+@channel("calling.transfer")
 @summary("Transfer a call to a RELAY app or SWML script")
 @opExample(#{
   parameters: #{
@@ -171,7 +171,7 @@ model JoinConferenceResult {
 }
 
 /** Adds this call to an ad-hoc audio conference, creating the conference if it does not already exist. RELAY and cXML calls can share the same conference. Use this to bridge multiple callers together with options like recording, hold music, participant limits, and status callbacks. */
-@rpcMethod("calling.join_conference")
+@channel("calling.join_conference")
 @summary("Join an ad-hoc audio conference")
 @opExample(#{
   parameters: #{
@@ -222,7 +222,7 @@ model LeaveConferenceResult {
 }
 
 /** Removes this call from an audio conference it has joined. Use the `conference_id` you received from `calling.conference` events. */
-@rpcMethod("calling.leave_conference")
+@channel("calling.leave_conference")
 @summary("Leave an audio conference")
 @opExample(#{
   parameters: #{
@@ -250,7 +250,7 @@ model HoldResult {
 }
 
 /** (Not implemented) Places a call on hold. */
-@rpcMethod("calling.hold")
+@channel("calling.hold")
 @summary("(Not implemented) Put a call on hold")
 @opExample(#{
   parameters: #{ node_id: "a3e1b2c4-...", call_id: "c7f9d2e1-..." },
@@ -274,7 +274,7 @@ model UnholdResult {
 }
 
 /** (Not implemented) Takes a call off hold and returns it to the active state. */
-@rpcMethod("calling.unhold")
+@channel("calling.unhold")
 @summary("(Not implemented) Release a call from hold")
 @opExample(#{
   parameters: #{ node_id: "a3e1b2c4-...", call_id: "c7f9d2e1-..." },
@@ -295,7 +295,7 @@ model DenoiseResult {
 }
 
 /** Starts noise reduction on a call, filtering background noise out of the audio. Use this on noisy connections to improve clarity. Stop it later with `calling.denoise.stop`. */
-@rpcMethod("calling.denoise")
+@channel("calling.denoise")
 @summary("Start call noise reduction")
 @opExample(#{
   parameters: #{ node_id: "a3e1b2c4-...", call_id: "c7f9d2e1-..." },
@@ -316,7 +316,7 @@ model DenoiseStopResult {
 }
 
 /** Stops noise reduction previously started with `calling.denoise` on a call. */
-@rpcMethod("calling.denoise.stop")
+@channel("calling.denoise.stop")
 @summary("Stop call noise reduction")
 @opExample(#{
   parameters: #{ node_id: "a3e1b2c4-...", call_id: "c7f9d2e1-..." },
@@ -354,7 +354,7 @@ model SendDigitsResult {
 }
 
 /** Plays a sequence of DTMF tones on a call, as if a caller pressed those keys. Use this to navigate IVR menus or send key presses to the far end. The string accepts digits, `*`, `#`, `A`-`D`, and `w`/`W` for pauses. */
-@rpcMethod("calling.send_digits")
+@channel("calling.send_digits")
 @summary("Send DTMF digit tones to a call")
 @opExample(#{
   parameters: #{

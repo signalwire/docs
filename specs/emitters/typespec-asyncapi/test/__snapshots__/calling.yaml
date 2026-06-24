@@ -13,9 +13,10 @@ servers:
     bindings:
       ws: {}
 channels:
-  calling:
+  callingDial:
     address: /
-    title: Relay Kitchen Sink
+    title: calling.dial
+    description: Dial outbound call(s); first to answer wins
     servers:
       - $ref: "#/servers/production"
     messages:
@@ -23,6 +24,14 @@ channels:
         $ref: "#/components/messages/callingDialRequest"
       callingDialResponse:
         $ref: "#/components/messages/callingDialResponse"
+    bindings:
+      ws: {}
+  callingCallState:
+    address: /
+    title: calling.call.state
+    servers:
+      - $ref: "#/servers/production"
+    messages:
       callStateEvent:
         $ref: "#/components/messages/callStateEvent"
     bindings:
@@ -31,35 +40,35 @@ operations:
   callingDial:
     action: send
     channel:
-      $ref: "#/channels/calling"
+      $ref: "#/channels/callingDial"
     title: calling.dial
     summary: Dial outbound call(s); first to answer wins
     messages:
-      - $ref: "#/channels/calling/messages/callingDialRequest"
+      - $ref: "#/channels/callingDial/messages/callingDialRequest"
     reply:
       channel:
-        $ref: "#/channels/calling"
+        $ref: "#/channels/callingDial"
       messages:
-        - $ref: "#/channels/calling/messages/callingDialResponse"
+        - $ref: "#/channels/callingDial/messages/callingDialResponse"
   onCallingDialResponse:
     action: receive
     channel:
-      $ref: "#/channels/calling"
+      $ref: "#/channels/callingDial"
     title: calling.dial response
     x-fern-display-name: calling.dial response
     messages:
-      - $ref: "#/channels/calling/messages/callingDialResponse"
-  onCallingCallStateEvent:
+      - $ref: "#/channels/callingDial/messages/callingDialResponse"
+  onCallingCallState:
     action: receive
     channel:
-      $ref: "#/channels/calling"
+      $ref: "#/channels/callingCallState"
     title: calling.call.state
     x-fern-display-name: calling.call.state
     messages:
-      - $ref: "#/channels/calling/messages/callStateEvent"
+      - $ref: "#/channels/callingCallState/messages/callStateEvent"
 components:
   schemas:
-    DialResult:
+    Relay.Calling.DialResult:
       type: object
       properties:
         code:
@@ -73,7 +82,7 @@ components:
       required:
         - code
         - message
-    DialParams:
+    Relay.Calling.DialParams:
       type: object
       properties:
         tag:
@@ -86,11 +95,11 @@ components:
           items:
             type: array
             items:
-              $ref: "#/components/schemas/Device"
+              $ref: "#/components/schemas/Relay.Calling.Device"
       required:
         - tag
         - devices
-    Device:
+    Relay.Calling.Device:
       type: object
       properties:
         type:
@@ -98,9 +107,9 @@ components:
       required:
         - type
       discriminator: type
-    PhoneDevice:
+    Relay.Calling.PhoneDevice:
       allOf:
-        - $ref: "#/components/schemas/Device"
+        - $ref: "#/components/schemas/Relay.Calling.Device"
         - type: object
           properties:
             type:
@@ -124,9 +133,9 @@ components:
           required:
             - type
             - params
-    SipDevice:
+    Relay.Calling.SipDevice:
       allOf:
-        - $ref: "#/components/schemas/Device"
+        - $ref: "#/components/schemas/Relay.Calling.Device"
         - type: object
           properties:
             type:
@@ -163,7 +172,7 @@ components:
           type: string
           const: calling.dial
         params:
-          $ref: "#/components/schemas/DialParams"
+          $ref: "#/components/schemas/Relay.Calling.DialParams"
     CallingDialResponse:
       type: object
       required:
@@ -177,8 +186,8 @@ components:
           type: string
           format: uuid
         result:
-          $ref: "#/components/schemas/DialResult"
-    CallStateEvent:
+          $ref: "#/components/schemas/Relay.Calling.DialResult"
+    Relay.Calling.CallStateEvent:
       type: object
       properties:
         node_id:
@@ -232,7 +241,7 @@ components:
             project_id:
               type: string
             params:
-              $ref: "#/components/schemas/CallStateEvent"
+              $ref: "#/components/schemas/Relay.Calling.CallStateEvent"
   messages:
     callingDialRequest:
       name: calling.dial.request

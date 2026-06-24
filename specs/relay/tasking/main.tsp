@@ -12,7 +12,6 @@ using SignalWire.AsyncAPI;
  * Reach for this when a short-lived or stateless process (a web request handler,
  * a cron job) needs to push work to a long-running Relay client.
  */
-@channel("tasking")
 namespace Relay.Tasking;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -53,7 +52,7 @@ model DeliverResult {
  * short-lived process to your long-running Relay clients. You get back a result
  * confirming SignalWire accepted the request.
  */
-@rpcMethod("tasking.deliver")
+@channel("tasking.deliver")
 @summary("Deliver a task message to a context")
 @opExample(#{
   parameters: #{

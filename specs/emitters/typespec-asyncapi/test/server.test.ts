@@ -7,9 +7,9 @@ describe("@server", () => {
     const { doc } = await asyncApiFor(`
       @service(#{ title: "Relay Calling" })
       @server("production", #{ host: "relay.signalwire.com", protocol: "wss", pathname: "/api/relay/wss" })
-      @channel("calling")
+      namespace Relay;
       namespace Relay.Calling {
-        @rpcMethod("calling.ping") op ping(): { code: string; message: string; };
+        @channel("calling.ping") op ping(): { code: string; message: string; };
       }
     `);
     strictEqual(doc.asyncapi, "3.0.0");
@@ -24,32 +24,33 @@ describe("diagnostics", () => {
   it("errors when @server is missing", async () => {
     const diagnostics = await Tester.diagnose(`
       @service(#{ title: "X" })
-      @channel("calling")
-      namespace Relay.Calling { @rpcMethod("x") op x(): {}; }
+      namespace Relay;
+      namespace Relay.Calling { @channel("x") op x(): {}; }
     `);
     strictEqual(diagnostics.some((d) => d.code.endsWith("missing-server")), true);
   });
 
-  it("errors when @channel is missing", async () => {
+  it("errors when no operation is marked with @channel", async () => {
     const diagnostics = await Tester.diagnose(`
       @service(#{ title: "X" })
       @server("p", #{ host: "h", protocol: "wss" })
-      namespace Relay.Calling { @rpcMethod("x") op x(): {}; }
+      namespace Relay;
+      namespace Relay.Calling { op x(): {}; }
     `);
     strictEqual(diagnostics.some((d) => d.code.endsWith("missing-channel")), true);
   });
 
-  it("errors on duplicate @rpcMethod names", async () => {
+  it("errors on duplicate @channel method names", async () => {
     const diagnostics = await Tester.diagnose(`
       @service(#{ title: "X" })
       @server("p", #{ host: "h", protocol: "wss" })
-      @channel("calling")
+      namespace Relay;
       namespace Relay.Calling {
         model R { code: string; }
-        @rpcMethod("calling.dial") op dial(): R;
-        @rpcMethod("calling.dial") op dialAgain(): R;
+        @channel("calling.dial") op dial(): R;
+        @channel("calling.dial") op dialAgain(): R;
       }
     `);
-    strictEqual(diagnostics.some((d) => d.code.endsWith("duplicate-rpc-method")), true);
+    strictEqual(diagnostics.some((d) => d.code.endsWith("duplicate-channel")), true);
   });
 });

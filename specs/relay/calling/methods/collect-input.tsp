@@ -131,7 +131,7 @@ model CollectResult {
  * the collected input arrives asynchronously in `calling.call.collect` events
  * keyed on your `control_id`.
  */
-@rpcMethod("calling.collect")
+@channel("calling.collect")
 @summary("Collect digits and/or speech from a call")
 @opExample(#{
   parameters: #{
@@ -171,7 +171,7 @@ model CollectStopResult {
 }
 
 /** Stops a running collect before it finishes on its own, for example when you no longer need the caller's input. */
-@rpcMethod("calling.collect.stop")
+@channel("calling.collect.stop")
 @summary("Stop an active collect")
 @opExample(#{
   parameters: #{ node_id: "a3e1b2c4-...", call_id: "c7f9d2e1-...", control_id: "collect-1" },
@@ -199,7 +199,7 @@ model CollectStartInputTimersResult {
  * `start_input_timers: false`. Use it to begin the wait for input on your own
  * schedule — for example, only after you have finished playing a prompt.
  */
-@rpcMethod("calling.collect.start_input_timers")
+@channel("calling.collect.start_input_timers")
 @summary("Start the initial-timeout timer on a collect")
 @opExample(#{
   parameters: #{ node_id: "a3e1b2c4-...", call_id: "c7f9d2e1-...", control_id: "collect-1" },
@@ -264,7 +264,7 @@ model PlayAndCollectResult {
  */
 // NOTE: no @opExample here — the required `play: PlayMedia[]` is a @discriminator
 // union, and TypeSpec example values cannot narrow a discriminator base.
-@rpcMethod("calling.play_and_collect")
+@channel("calling.play_and_collect")
 @summary("Play media and collect input")
 op playAndCollect(...PlayAndCollectParams): PlayAndCollectResult | CallCollectEvent;
 
@@ -284,7 +284,7 @@ model PlayAndCollectStopResult {
 }
 
 /** Stops a running play-and-collect, halting both the media playback and the input collection. */
-@rpcMethod("calling.play_and_collect.stop")
+@channel("calling.play_and_collect.stop")
 @summary("Stop an active play-and-collect")
 @opExample(#{
   parameters: #{ node_id: "a3e1b2c4-...", call_id: "c7f9d2e1-...", control_id: "pc-1" },
@@ -317,7 +317,7 @@ model PlayAndCollectVolumeResult {
 }
 
 /** Adjusts the playback volume of a running play-and-collect on the fly, without stopping it. */
-@rpcMethod("calling.play_and_collect.volume")
+@channel("calling.play_and_collect.volume")
 @summary("Change play-and-collect volume")
 @opExample(#{
   parameters: #{ node_id: "a3e1b2c4-...", call_id: "c7f9d2e1-...", control_id: "pc-1", volume: 3.0 },

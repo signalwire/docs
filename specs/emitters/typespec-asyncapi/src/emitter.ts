@@ -16,7 +16,7 @@ import {
 } from "@typespec/compiler";
 import { getExtensions } from "@typespec/openapi";
 import { applyWebSocketBindings } from "./bindings/ws.js";
-import { getBearerAuth, getChannel, getChannelPerCommand, getEvent, getGlobalEvents, getRpcMethod, getServer } from "./decorators.js";
+import { getBearerAuth, getChannel, getEvent, getGlobalEvents, getServer } from "./decorators.js";
 import { AsyncAPIEmitterOptions, reportDiagnostic } from "./lib.js";
 import { createSchemaRegistry, encodedPropName, propertySchema, RefFn } from "./schema-emitter.js";
 import { serialize } from "./serialize.js";
@@ -209,26 +209,26 @@ function emitReceiveOp(
 function emitRpcMethods(
   program: Program,
   ns: Namespace,
-  channelId: string,
   ref: RefFn,
   target: EmitTarget,
-  channelMessages: Record<string, AsyncAPIRef>,
   seen: Set<string>,
   channels: Record<string, AsyncAPIChannel>,
   serverName: string,
-  perCommand: boolean,
+  // When set, single-channel mode: every op lands on this one shared channel and no per-op
+  // channel is minted. When undefined, multi mode: each op gets its own root-addressed channel.
+  single: { channelId: string; channelMessages: Record<string, AsyncAPIRef> } | undefined,
   shim: boolean,
   events: EventState,
 ): void {
-  // Events received during EVERY command on this channel (e.g. call.state), declared once via
-  // @globalEvents on the @channel namespace and merged into each command's receive union.
+  // Events received during EVERY command in this service (e.g. call.state), declared once via
+  // @globalEvents on the service namespace and merged into each command's receive union.
   const globalEvents = getGlobalEvents(program, ns);
   (function visit(n: Namespace): void {
     for (const op of n.operations.values()) {
-      const method = getRpcMethod(program, op);
+      const method = getChannel(program, op);
       if (!method) continue;
       if (seen.has(method)) {
-        reportDiagnostic(program, { code: "duplicate-rpc-method", target: op, format: { method } });
+        reportDiagnostic(program, { code: "duplicate-channel", target: op, format: { method } });
         continue;
       }
       seen.add(method);
@@ -297,12 +297,14 @@ function emitRpcMethods(
       }
 
       const summary = getSummary(program, op);
-      // Per-command channel id is derived from the same base as the operation key so all refs stay consistent.
-      const chId = perCommand ? opKey : channelId;
+      // Multi mode: each op gets its OWN root-addressed channel keyed by the operation. Single
+      // mode: the op lands on the one shared channel.
+      const chId = single ? single.channelId : opKey;
 
-      // In per-command mode, mint a dedicated channel for this command.
-      let msgs = channelMessages;
-      if (perCommand) {
+      let msgs: Record<string, AsyncAPIRef>;
+      if (single) {
+        msgs = single.channelMessages;
+      } else {
         const perMsgs: Record<string, AsyncAPIRef> = {};
         const desc = summary ?? getDoc(program, op);
         const channel: AsyncAPIChannel = {
@@ -361,17 +363,17 @@ function emitRpcMethods(
         emitReceiveOp(target, chId, `on${baseId}Response`, resMsgId, `${method} response`, msgs, events.receive);
       }
     }
-    // Recurse into descendants, but stop at any nested @channel namespace — it is
-    // emitted as its own channel by the top-level loop.
+    // Recurse into descendant namespaces; @channel now lives on operations, so every
+    // operation in this service subtree is collected here.
     for (const child of n.namespaces.values()) {
-      if (!getChannel(program, child)) visit(child);
+      visit(child);
     }
   })(ns);
 }
 
 /**
- * Emit cross-cutting events — `@event` models NOT assigned to any operation's return — onto the
- * service's umbrella channel (the "Events" page). Each gets its own `receive` op (own label).
+ * Single-channel mode: emit cross-cutting events — `@event` models NOT assigned to any
+ * operation's return — onto the one shared channel. Each gets its own `receive` op (own label).
  */
 function emitCentralEvents(
   program: Program,
@@ -390,7 +392,42 @@ function emitCentralEvents(
       emitReceiveOp(target, channelId, `on${pascal(channelId)}${model.name}`, msgId, eventType, channelMessages, events.receive);
     }
     for (const child of n.namespaces.values()) {
-      if (!getChannel(program, child)) visit(child);
+      visit(child);
+    }
+  })(ns);
+}
+
+/**
+ * Multi-channel mode: each cross-cutting event — `@event` models NOT returned by any operation —
+ * gets its OWN root-addressed receive-only channel, keyed by the event type (e.g.
+ * `messaging.receive` -> `messagingReceive`), with a single `receive` op.
+ */
+function emitCentralEventChannels(
+  program: Program,
+  ns: Namespace,
+  ref: RefFn,
+  target: EmitTarget,
+  channels: Record<string, AsyncAPIChannel>,
+  serverName: string,
+  events: EventState,
+): void {
+  (function visit(n: Namespace): void {
+    for (const model of n.models.values()) {
+      if (!getEvent(program, model)) continue;
+      if (events.referenced.has(model)) continue; // already returned by an operation
+      const { msgId, eventType } = ensureEventComponent(program, model, ref, target, events.emitted);
+      const evChId = lcfirst(pascal(eventType));
+      const channelMessages: Record<string, AsyncAPIRef> = {};
+      channels[evChId] = {
+        address: "/",
+        title: eventType,
+        servers: [{ $ref: `#/servers/${serverName}` }],
+        messages: channelMessages,
+      };
+      emitReceiveOp(target, evChId, `on${pascal(eventType)}`, msgId, eventType, channelMessages, events.receive);
+    }
+    for (const child of n.namespaces.values()) {
+      visit(child);
     }
   })(ns);
 }
@@ -424,17 +461,28 @@ export async function $onEmit(context: EmitContext<AsyncAPIEmitterOptions>): Pro
     return;
   }
 
-  // A single Relay connection multiplexes many sub-services, each tagged with its own
-  // `@channel`. Collect every `@channel` namespace in the service subtree — the service
-  // namespace itself (single-service spec) or its sub-namespaces (unified multi-service
-  // spec) — and emit one channel per service, all bound to the one server.
-  const channelNamespaces: { ns: Namespace; id: string }[] = [];
-  (function collect(n: Namespace): void {
-    const id = getChannel(program, n);
-    if (id) channelNamespaces.push({ ns: n, id });
-    n.namespaces.forEach(collect);
-  })(serviceNs);
-  if (channelNamespaces.length === 0) {
+  // A single Relay connection multiplexes many sub-services (calling, messaging, …), each a
+  // direct sub-namespace of the @service namespace. Discover them in declaration order; every
+  // operation marked with @channel becomes its own root-addressed channel, and every
+  // server-pushed @event model gets one too.
+  const hasChannelOp = (ns: Namespace): boolean => {
+    let found = false;
+    (function visit(n: Namespace): void {
+      for (const op of n.operations.values()) if (getChannel(program, op)) found = true;
+      n.namespaces.forEach(visit);
+    })(ns);
+    return found;
+  };
+  const hasEventModel = (ns: Namespace): boolean => {
+    let found = false;
+    (function visit(n: Namespace): void {
+      for (const model of n.models.values()) if (getEvent(program, model)) found = true;
+      n.namespaces.forEach(visit);
+    })(ns);
+    return found;
+  };
+  const serviceGroups = [...serviceNs.namespaces.values()].filter((ns) => hasChannelOp(ns) || hasEventModel(ns));
+  if (!serviceGroups.some(hasChannelOp)) {
     reportDiagnostic(program, { code: "missing-channel", target: serviceNs });
     return;
   }
@@ -453,10 +501,15 @@ export async function $onEmit(context: EmitContext<AsyncAPIEmitterOptions>): Pro
   };
   const components: AsyncAPIComponents = { schemas: target.schemas, messages: target.messages };
 
-  const channelMode = context.options["channel-mode"] ?? "per-command";
+  const channelMode = context.options["channel-mode"] ?? "multi";
   const channels: Record<string, AsyncAPIChannel> = {};
   // One method namespace is global across the whole connection — guard duplicates across channels.
   const seen = new Set<string>();
+  // Shared across services so an event referenced by ANY operation (even cross-service, e.g.
+  // calling's call.receive attached to signalwire.receive) is not re-emitted as a central event
+  // elsewhere. Two passes — all sends first, then central events — so every cross-service
+  // reference is known before we decide what is "central".
+  const events: EventState = { emitted: new Set<string>(), referenced: new Set<Model>(), receive: new Set<string>() };
 
   if (channelMode === "single") {
     // Idiomatic AsyncAPI shape for a single-socket, payload-routed protocol: ONE channel (the
@@ -474,53 +527,25 @@ export async function $onEmit(context: EmitContext<AsyncAPIEmitterOptions>): Pro
     if (sdesc) channel.description = sdesc;
     channels[channelId] = channel;
 
-    const events: EventState = { emitted: new Set<string>(), referenced: new Set<Model>(), receive: new Set<string>() };
     // Pass 1: every service's RPC methods (send + reply + response shim + return-type events),
-    // all onto the one channel. perCommand is forced off — there are no per-command channels here.
-    for (const { ns: cns } of channelNamespaces) {
-      emitRpcMethods(program, cns, channelId, registry.refFor, target, channelMessages, seen, channels, serverCfg.name, false, shim, events);
+    // all onto the one channel.
+    for (const cns of serviceGroups) {
+      emitRpcMethods(program, cns, registry.refFor, target, seen, channels, serverCfg.name, { channelId, channelMessages }, shim, events);
     }
     // Pass 2: cross-cutting events (returned by no op) — also onto the one channel.
-    for (const { ns: cns } of channelNamespaces) {
+    for (const cns of serviceGroups) {
       emitCentralEvents(program, cns, channelId, registry.refFor, target, channelMessages, events);
     }
   } else {
-    // Shared across services so an event referenced by ANY operation (even cross-service, e.g.
-    // calling's call.receive attached to signalwire.receive) is not re-emitted as a central event
-    // elsewhere. Two passes — all sends first, then central events — so every cross-service
-    // reference is known before we decide what is "central" (mirrors single-channel mode).
-    const events: EventState = { emitted: new Set<string>(), referenced: new Set<Model>(), receive: new Set<string>() };
-    const umbrellas: { cns: Namespace; id: string; channelMessages: Record<string, AsyncAPIRef>; perCommand: boolean }[] = [];
-    // Pass 1: create each service's channel + emit its send ops (and command/global event receives).
-    for (const { ns: cns, id } of channelNamespaces) {
-      const perCommand = getChannelPerCommand(program, cns);
-      const channelMessages: Record<string, AsyncAPIRef> = {};
-      // The Relay WS endpoint is a single root connection (`wss://<host>`); every service
-      // multiplexes over it and routes by the JSON-RPC `method` in the payload, not by a URL
-      // path. Emit the root address `"/"` so renderers show the bare endpoint. Under
-      // @channelPerCommand commands move to their own channels and this umbrella holds only the
-      // cross-cutting events, so it is titled "Events".
-      const channel: AsyncAPIChannel = {
-        address: "/",
-        title: perCommand ? "Events" : (getService(program, cns)?.title ?? cns.name),
-        servers: [{ $ref: `#/servers/${serverCfg.name}` }],
-        messages: channelMessages,
-      };
-      const cdesc = getDoc(program, cns);
-      if (cdesc) channel.description = cdesc;
-      channels[id] = channel;
-      emitRpcMethods(program, cns, id, registry.refFor, target, channelMessages, seen, channels, serverCfg.name, perCommand, shim, events);
-      umbrellas.push({ cns, id, channelMessages, perCommand });
+    // Multi mode: every @channel operation gets its own root-addressed channel, and every
+    // server-pushed @event not returned by any operation gets its own receive-only channel.
+    // Pass 1: send ops (+ their command/global event receives) across all services.
+    for (const cns of serviceGroups) {
+      emitRpcMethods(program, cns, registry.refFor, target, seen, channels, serverCfg.name, undefined, shim, events);
     }
-    // Pass 2: cross-cutting events not referenced by any op land on their service umbrella channel.
-    for (const { cns, id, channelMessages, perCommand } of umbrellas) {
-      emitCentralEvents(program, cns, id, registry.refFor, target, channelMessages, events);
-      // Under @channelPerCommand this umbrella holds ONLY cross-cutting events. If every event is
-      // command-bound, @globalEvents, or attached to another service's op (so referenced), nothing
-      // remains — drop the empty "Events" page rather than emit a stranded, contentless channel.
-      if (perCommand && Object.keys(channelMessages).length === 0) {
-        delete channels[id];
-      }
+    // Pass 2: cross-cutting events — each its own channel — once every cross-service reference is known.
+    for (const cns of serviceGroups) {
+      emitCentralEventChannels(program, cns, registry.refFor, target, channels, serverCfg.name, events);
     }
   }
 

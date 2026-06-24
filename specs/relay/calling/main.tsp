@@ -25,8 +25,6 @@ using SignalWire.AsyncAPI;
  * Use it from your backend — it's available in the server SDKs (Python, Node, Java,
  * Ruby). To place a call directly from a browser, use the WebRTC service instead.
  */
-@channel("calling")
-@channelPerCommand
 // calling.call.state fires for any call the client controls, across its whole lifecycle and
 // regardless of which command is in flight — verified in mod_infrastructure/relay.c: it fires via
 // relay_call_event_fire keyed by call_id (not by request), and is delivered to clients. It is not

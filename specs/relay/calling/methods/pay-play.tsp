@@ -232,7 +232,7 @@ model PayResult {
  * payment (and progress updates) arrives asynchronously via `calling.call.pay`
  * events keyed on your `control_id`, and at `status_url` if you set one.
  */
-@rpcMethod("calling.pay")
+@channel("calling.pay")
 @summary("Collect a payment via the Pay IVR")
 @opExample(#{
   parameters: #{
@@ -284,7 +284,7 @@ model PayStopResult {
 }
 
 /** Stop an active Pay IVR session. */
-@rpcMethod("calling.pay.stop")
+@channel("calling.pay.stop")
 @summary("Stop an active pay")
 @opExample(#{
   parameters: #{
@@ -363,7 +363,7 @@ model PlayResult {
  * on your `control_id`. Pause, resume, change the volume, or stop it mid-play
  * with the matching `calling.play.*` methods using the same `control_id`.
  */
-@rpcMethod("calling.play")
+@channel("calling.play")
 @summary("Play media to a call")
 op play(...PlayParams): PlayResult | CallPlayEvent;
 
@@ -383,7 +383,7 @@ model PlayPauseResult {
 }
 
 /** Pause an active play. */
-@rpcMethod("calling.play.pause")
+@channel("calling.play.pause")
 @summary("Pause an active play")
 @opExample(#{
   parameters: #{
@@ -411,7 +411,7 @@ model PlayResumeResult {
 }
 
 /** Resume an active paused play. */
-@rpcMethod("calling.play.resume")
+@channel("calling.play.resume")
 @summary("Resume a paused play")
 @opExample(#{
   parameters: #{
@@ -439,7 +439,7 @@ model PlayStopResult {
 }
 
 /** Stop an active play. */
-@rpcMethod("calling.play.stop")
+@channel("calling.play.stop")
 @summary("Stop an active play")
 @opExample(#{
   parameters: #{
@@ -475,7 +475,7 @@ model PlayVolumeResult {
 }
 
 /** Adjust the volume of an active play. */
-@rpcMethod("calling.play.volume")
+@channel("calling.play.volume")
 @summary("Adjust the volume of an active play")
 @opExample(#{
   parameters: #{

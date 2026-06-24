@@ -7,11 +7,11 @@ describe("@opExample / @example → JSON-RPC frame examples", () => {
     const { doc } = await asyncApiFor(`
       @service(#{ title: "Relay Calling" })
       @server("production", #{ host: "relay.signalwire.com", protocol: "wss" })
-      @channel("calling")
+      namespace Relay;
       namespace Relay.Calling {
         model SendParams { to: string; }
         model SendResult { code: string; message: string; }
-        @rpcMethod("calling.send")
+        @channel("calling.send")
         @opExample(#{ parameters: #{ to: "+15551112222" }, returnType: #{ code: "200", message: "OK" } })
         op send(...SendParams): SendResult;
       }
@@ -32,10 +32,10 @@ describe("@opExample / @example → JSON-RPC frame examples", () => {
     const { doc } = await asyncApiFor(`
       @service(#{ title: "Relay Calling" })
       @server("production", #{ host: "relay.signalwire.com", protocol: "wss" })
-      @channel("calling")
+      namespace Relay;
       namespace Relay.Calling {
         model DialResult { code: string; }
-        @rpcMethod("calling.dial") op dial(): DialResult;
+        @channel("calling.dial") op dial(): DialResult;
 
         @event("calling.call.state")
         @example(#{ call_state: "created" })
@@ -53,10 +53,10 @@ describe("@opExample / @example → JSON-RPC frame examples", () => {
     const { doc } = await asyncApiFor(`
       @service(#{ title: "Relay Calling" })
       @server("production", #{ host: "relay.signalwire.com", protocol: "wss" })
-      @channel("calling")
+      namespace Relay;
       namespace Relay.Calling {
         model SendResult { code: string; }
-        @rpcMethod("calling.send") op send(): SendResult;
+        @channel("calling.send") op send(): SendResult;
       }
     `);
     strictEqual(doc.components.messages.callingSendRequest.examples, undefined);

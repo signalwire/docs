@@ -13,8 +13,6 @@ using SignalWire.AsyncAPI;
  * your credentials authenticate with a `project` + `token` pair. Start with
  * `signalwire.connect`.
  */
-@channel("signalwire")
-@channelPerCommand
 namespace Relay.Signalwire;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -120,7 +118,7 @@ model ConnectResult {
  * `signalwire.authorization.state` event — save its `authorization_state` so you
  * can restore your session if you need to reconnect.
  */
-@rpcMethod("signalwire.connect")
+@channel("signalwire.connect")
 @summary("Authenticate and establish a Relay connection")
 @opExample(#{
   parameters: #{
@@ -167,7 +165,7 @@ model DisconnectResult {}
  *
  * You receive this message; you don't send it.
  */
-@rpcMethod("signalwire.disconnect")
+@channel("signalwire.disconnect")
 @summary("Service is about to disconnect the client")
 @opExample(#{
   parameters: #{ restart: true },
@@ -199,7 +197,7 @@ model ReceiveParams {
  * inbound call, which only reaches clients that have subscribed to the call's
  * context.
  */
-@rpcMethod("signalwire.receive")
+@channel("signalwire.receive")
 @summary("Subscribe to inbound events on one or more contexts")
 @opExample(#{
   parameters: #{ contexts: #["pbx"] },
@@ -213,7 +211,7 @@ model UnreceiveParams {
 }
 
 /** Unsubscribe from one or more contexts so you stop receiving their inbound events. */
-@rpcMethod("signalwire.unreceive")
+@channel("signalwire.unreceive")
 @summary("Unsubscribe from inbound events on one or more contexts")
 @opExample(#{
   parameters: #{ contexts: #["pbx", "asdf"] },
