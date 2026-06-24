@@ -7,7 +7,7 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
-/** Send a custom user-defined event. */
+@doc("Send a custom user-defined event.")
 @channel("calling.user_event")
 @summary("Send a custom user-defined event")
 @opExample(#{

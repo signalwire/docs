@@ -8,7 +8,7 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
-/** Starts noise reduction on a call, filtering background noise out of the audio. Use this on noisy connections to improve clarity. Stop it later with `calling.denoise.stop`. */
+@doc("Starts noise reduction on a call, filtering background noise out of the audio. Use this on noisy connections to improve clarity. Stop it later with `calling.denoise.stop`.")
 @channel("calling.denoise")
 @summary("Start call noise reduction")
 @opExample(#{
@@ -17,7 +17,7 @@ namespace Relay.Calling;
 })
 op denoise(...DenoiseParams): DenoiseResult | CallDenoiseEvent;
 
-/** Stops noise reduction previously started with `calling.denoise` on a call. */
+@doc("Stops noise reduction previously started with `calling.denoise` on a call.")
 @channel("calling.denoise.stop")
 @summary("Stop call noise reduction")
 @opExample(#{

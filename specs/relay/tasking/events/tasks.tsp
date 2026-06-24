@@ -4,20 +4,20 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Tasking;
 
-/**
- * Fires when a task arrives on a context you're subscribed to. The payload tells
- * you which `context` the task came in on and carries the `message` exactly as
- * the sender passed it to `tasking.deliver`.
- */
+@doc("""
+  Fires when a task arrives on a context you're subscribed to. The payload tells
+  you which `context` the task came in on and carries the `message` exactly as
+  the sender passed it to `tasking.deliver`.
+  """)
 @event("queuing.relay.tasks")
 @example(#{
   context: "test",
   message: #{ foo: 123 },
 })
 model TasksEvent {
-  /** The context this task arrived on. */
+  @doc("The context this task arrived on.")
   context: string;
 
-  /** The message payload, exactly as the sender passed it to `tasking.deliver`. */
+  @doc("The message payload, exactly as the sender passed it to `tasking.deliver`.")
   message: Record<unknown>;
 }

@@ -13,7 +13,7 @@ namespace Relay.Calling;
 // accepts a `voice` field. Shared by calling.play and calling.play_and_collect.
 // ═════════════════════════════════════════════════════════════════════════════
 
-/** A media element to play. Discriminated on `type`. */
+@doc("A media element to play. Discriminated on `type`.")
 @discriminator("type")
 model PlayMedia {
   type: string;
@@ -23,7 +23,7 @@ model PlayMedia {
 model PlayMediaAudio extends PlayMedia {
   type: "audio";
   params: {
-    /** HTTP(s) URL to the audio resource to play. */
+    @doc("HTTP(s) URL to the audio resource to play.")
     url: url;
   };
 }
@@ -32,16 +32,16 @@ model PlayMediaAudio extends PlayMedia {
 model PlayMediaTts extends PlayMedia {
   type: "tts";
   params: {
-    /** Text to speak — plain text or SSML markup. */
+    @doc("Text to speak — plain text or SSML markup.")
     text: string;
 
-    /** TTS language (e.g. `en-US`). Default `en-US`. */
+    @doc("TTS language (e.g. `en-US`). Default `en-US`.")
     language?: string = "en-US";
 
-    /** TTS voice gender. Default `female`. */
+    @doc("TTS voice gender. Default `female`.")
     gender?: TtsGender = "female";
 
-    /** Specific voice to use. Highest precedence when selecting the TTS voice. */
+    @doc("Specific voice to use. Highest precedence when selecting the TTS voice.")
     voice?: string;
   };
 }
@@ -50,7 +50,7 @@ model PlayMediaTts extends PlayMedia {
 model PlayMediaSilence extends PlayMedia {
   type: "silence";
   params: {
-    /** Seconds of silence to play. */
+    @doc("Seconds of silence to play.")
     duration: float64;
   };
 }
@@ -59,10 +59,10 @@ model PlayMediaSilence extends PlayMedia {
 model PlayMediaRingtone extends PlayMedia {
   type: "ringtone";
   params: {
-    /** Built-in ringtone name (country code). */
+    @doc("Built-in ringtone name (country code).")
     name: ToneName;
 
-    /** Seconds of ringtone to play. */
+    @doc("Seconds of ringtone to play.")
     @minValueExclusive(0)
     duration?: float64;
   };

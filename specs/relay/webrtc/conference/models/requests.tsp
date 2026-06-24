@@ -4,5 +4,5 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.WebRTC;
 
-/** `conference.list` takes no arguments. */
+@doc("`conference.list` takes no arguments.")
 model ConferenceListParams {}

@@ -7,7 +7,7 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
-/** Runs a call method automatically when the caller presses a specific DTMF digit sequence — for example, play a message when they press `*1`. */
+@doc("Runs a call method automatically when the caller presses a specific DTMF digit sequence — for example, play a message when they press `*1`.")
 @channel("calling.bind_digit")
 @summary("Trigger a call method when a DTMF sequence is pressed")
 @opExample(#{
@@ -24,7 +24,7 @@ namespace Relay.Calling;
 })
 op bindDigit(...BindDigitParams): BindDigitResult;
 
-/** Removes digit bindings previously set with `calling.bind_digit`. Clears every binding on the call, or only those in a given `realm`. */
+@doc("Removes digit bindings previously set with `calling.bind_digit`. Clears every binding on the call, or only those in a given `realm`.")
 @channel("calling.clear_digit_bindings")
 @summary("Clear digit bindings")
 @opExample(#{

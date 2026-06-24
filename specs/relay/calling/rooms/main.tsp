@@ -7,7 +7,7 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
-/** Connects this call into a named audio/video room, bridging it with everyone else already in that room. */
+@doc("Connects this call into a named audio/video room, bridging it with everyone else already in that room.")
 @channel("calling.join_room")
 @summary("Join a video/audio room")
 @opExample(#{
@@ -16,7 +16,7 @@ namespace Relay.Calling;
 })
 op joinRoom(...JoinRoomParams): JoinRoomResult;
 
-/** Removes this call from the room it is currently in. There is no room parameter — it always acts on the call's current room. */
+@doc("Removes this call from the room it is currently in. There is no room parameter — it always acts on the call's current room.")
 @channel("calling.leave_room")
 @summary("Leave the current room")
 @opExample(#{

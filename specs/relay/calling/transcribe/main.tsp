@@ -8,14 +8,14 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
-/**
- * Starts transcribing speech on a call to text. SignalWire records the call audio
- * and transcribes it in the background. Transcription results are not returned
- * here — they arrive as `calling.call.transcribe` events keyed on your `control_id`.
- * Only one transcription can run on a call at a time; starting another while one
- * is active returns `"409"` "Transcribe is already in progress". Stop it with
- * `calling.transcribe.stop`.
- */
+@doc("""
+  Starts transcribing speech on a call to text. SignalWire records the call audio
+  and transcribes it in the background. Transcription results are not returned
+  here — they arrive as `calling.call.transcribe` events keyed on your `control_id`.
+  Only one transcription can run on a call at a time; starting another while one
+  is active returns `"409"` "Transcribe is already in progress". Stop it with
+  `calling.transcribe.stop`.
+  """)
 @channel("calling.transcribe")
 @summary("Start transcribing a call")
 @opExample(#{
@@ -29,7 +29,7 @@ namespace Relay.Calling;
 })
 op transcribe(...TranscribeParams): TranscribeResult | CallTranscribeEvent;
 
-/** Stops a transcription that is currently running on a call. */
+@doc("Stops a transcription that is currently running on a call.")
 @channel("calling.transcribe.stop")
 @summary("Stop an active call transcription")
 @opExample(#{

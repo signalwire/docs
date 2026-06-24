@@ -14,7 +14,7 @@ namespace Relay.Calling;
 // `turn.transcript_delta`, `ask_answer.ask_id`, `final.summary`).
 // ═════════════════════════════════════════════════════════════════════════════
 
-/** The kind of AI sidecar callback. */
+@doc("The kind of AI sidecar callback.")
 union AiSidecarCallbackType {
   "start",
   "turn",
@@ -42,15 +42,15 @@ union AiSidecarCallbackType {
   channel_data: #{ call_id: "c7f9d2e1-..." },
 })
 model AiSidecarEvent {
-  /** The callback type. Determines which type-specific fields are present. */
+  @doc("The callback type. Determines which type-specific fields are present.")
   type: AiSidecarCallbackType;
 
-  /** When the event was produced, as a Unix timestamp in microseconds. */
+  @doc("When the event was produced, as a Unix timestamp in microseconds.")
   ts: int64;
 
-  /** Evaluation id — callbacks produced in the same evaluation share a `tick_id`. */
+  @doc("Evaluation id — callbacks produced in the same evaluation share a `tick_id`.")
   tick_id: int64;
 
-  /** Call/channel context (`call_id`, plus caller id fields when available). */
+  @doc("Call/channel context (`call_id`, plus caller id fields when available).")
   channel_data: Record<unknown>;
 }

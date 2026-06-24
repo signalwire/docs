@@ -13,11 +13,11 @@ namespace Relay.Calling;
 model CallDenoiseParams {
   ...CallAddress;
 
-  /** Whether background noise reduction is now on (`true`) or off. */
+  @doc("Whether background noise reduction is now on (`true`) or off.")
   denoised: boolean;
 }
 
-/** Fires when background noise reduction is turned on or off for the call. Unlike most media events, this one carries no `control_id`. */
+@doc("Fires when background noise reduction is turned on or off for the call. Unlike most media events, this one carries no `control_id`.")
 @event("calling.call.denoise")
 @example(#{
   node_id: "a3e1b2c4-1234-5678-9abc-def012345678",

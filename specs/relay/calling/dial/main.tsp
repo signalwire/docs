@@ -8,14 +8,14 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
-/**
- * Places one or more outbound calls to the devices you specify. The first device
- * to answer wins, and any others stop ringing. Use this to start a brand-new call
- * (as opposed to `calling.connect`, which adds a leg to an existing call). The
- * synchronous result only confirms the request was accepted — the call's
- * identifiers and progress arrive asynchronously through `calling.call.dial` and
- * `calling.call.state` events keyed on `tag`.
- */
+@doc("""
+  Places one or more outbound calls to the devices you specify. The first device
+  to answer wins, and any others stop ringing. Use this to start a brand-new call
+  (as opposed to `calling.connect`, which adds a leg to an existing call). The
+  synchronous result only confirms the request was accepted — the call's
+  identifiers and progress arrive asynchronously through `calling.call.dial` and
+  `calling.call.state` events keyed on `tag`.
+  """)
 // NOTE: no @opExample here — the required `devices: DialDevice[][]` is a @discriminator
 // base, and TypeSpec value-checking does not narrow a discriminated base to its
 // variant, so an inline frame example can't carry real device `params`. The

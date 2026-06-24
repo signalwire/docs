@@ -15,23 +15,23 @@ namespace Relay.Calling;
 // echoed back in the result as `source_device` with all params resolved.
 // ═════════════════════════════════════════════════════════════════════════════
 
-/**
- * Which side of the call to tap. `listen` = what the call party hears; `speak`
- * = what the call party says.
- */
+@doc("""
+  Which side of the call to tap. `listen` = what the call party hears; `speak`
+  = what the call party says.
+  """)
 union TapDirection {
   "listen",
   "speak",
   "both",
 }
 
-/** `audio` tap params. */
+@doc("`audio` tap params.")
 model TapAudioParams {
-  /** Side of the call to tap. Default `speak`. */
+  @doc("Side of the call to tap. Default `speak`.")
   direction?: TapDirection = "speak";
 }
 
-/** Media to intercept. Discriminated on `type` (documented value `audio`). */
+@doc("Media to intercept. Discriminated on `type` (documented value `audio`).")
 @discriminator("type")
 model TapConfig {
   type: string;
@@ -43,51 +43,51 @@ model TapAudio extends TapConfig {
   params: TapAudioParams;
 }
 
-/** `rtp` device params (delivery target). */
+@doc("`rtp` device params (delivery target).")
 model TapRtpDeviceParams {
-  /**
-   * RTP IPv4 address. Must be an IP owned by the customer or expecting our
-   * traffic; specifying a private IP or a SignalWire-owned public IP is
-   * forbidden.
-   */
+  @doc("""
+    RTP IPv4 address. Must be an IP owned by the customer or expecting our
+    traffic; specifying a private IP or a SignalWire-owned public IP is
+    forbidden.
+    """)
   addr: string;
 
-  /** RTP port. */
+  @doc("RTP port.")
   port: int32;
 
-  /**
-   * Codec for the tapped audio (known values: `OPUS`, `PCMA`, `PCMU`).
-   * Matches the tapped audio if not set.
-   */
+  @doc("""
+    Codec for the tapped audio (known values: `OPUS`, `PCMA`, `PCMU`).
+    Matches the tapped audio if not set.
+    """)
   codec?: string;
 
-  /** Packetization time in ms — matches the tapped audio if not set. */
+  @doc("Packetization time in ms — matches the tapped audio if not set.")
   ptime?: int32;
 
-  /** Sample rate in Hz (present in the resolved `source_device` echo). */
+  @doc("Sample rate in Hz (present in the resolved `source_device` echo).")
   rate?: int32;
 }
 
-/** `ws` device params (delivery target). */
+@doc("`ws` device params (delivery target).")
 model TapWsDeviceParams {
-  /** WebSocket URI. */
+  @doc("WebSocket URI.")
   uri: string;
 
-  /**
-   * Codec for the tapped audio (known values: `OPUS`, `PCMA`, `PCMU`).
-   * Matches the tapped audio if not set.
-   */
+  @doc("""
+    Codec for the tapped audio (known values: `OPUS`, `PCMA`, `PCMU`).
+    Matches the tapped audio if not set.
+    """)
   codec?: string;
 
-  /** Sample rate in Hz — matches the tapped audio if not set. */
+  @doc("Sample rate in Hz — matches the tapped audio if not set.")
   rate?: int32;
 }
 
-/**
- * Device to receive the tapped media. Discriminated on `type` (`rtp`|`ws`;
- * future: `phone`|`webrtc`|`sip`). Echoed back fully-resolved as the result's
- * `source_device`.
- */
+@doc("""
+  Device to receive the tapped media. Discriminated on `type` (`rtp`|`ws`;
+  future: `phone`|`webrtc`|`sip`). Echoed back fully-resolved as the result's
+  `source_device`.
+  """)
 @discriminator("type")
 model TapDevice {
   type: string;
@@ -108,22 +108,22 @@ model TapWsDevice extends TapDevice {
 model TapParams {
   ...CallAddress;
 
-  /** Identifier used to control the active tap. */
+  @doc("Identifier used to control the active tap.")
   control_id: string;
 
-  /** Media to intercept (variant keyed on `tap.type`). */
+  @doc("Media to intercept (variant keyed on `tap.type`).")
   tap: TapConfig;
 
-  /** Device to receive the tapped media (variant keyed on `device.type`). */
+  @doc("Device to receive the tapped media (variant keyed on `device.type`).")
   device: TapDevice;
 
-  /** HTTP(s) URL to POST tap events to. */
+  @doc("HTTP(s) URL to POST tap events to.")
   status_url?: url;
 }
 
 model TapStopParams {
   ...CallAddress;
 
-  /** The tap `control_id` assigned in `calling.tap`. */
+  @doc("The tap `control_id` assigned in `calling.tap`.")
   control_id: string;
 }

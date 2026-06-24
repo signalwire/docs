@@ -8,7 +8,7 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
-/** (Not implemented) Places a call on hold. */
+@doc("(Not implemented) Places a call on hold.")
 @channel("calling.hold")
 @summary("(Not implemented) Put a call on hold")
 @opExample(#{
@@ -17,7 +17,7 @@ namespace Relay.Calling;
 })
 op hold(...HoldParams): HoldResult | CallHoldEvent;
 
-/** (Not implemented) Takes a call off hold and returns it to the active state. */
+@doc("(Not implemented) Takes a call off hold and returns it to the active state.")
 @channel("calling.unhold")
 @summary("(Not implemented) Release a call from hold")
 @opExample(#{

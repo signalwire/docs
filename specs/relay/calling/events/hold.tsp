@@ -10,7 +10,7 @@ namespace Relay.Calling;
 // calling.call.hold
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Whether the call was just placed on `hold` or taken off hold (`unhold`). */
+@doc("Whether the call was just placed on `hold` or taken off hold (`unhold`).")
 union HoldState {
   "hold",
   "unhold",
@@ -19,11 +19,11 @@ union HoldState {
 model CallHoldParams {
   ...CallAddress;
 
-  /** Whether the call is now on hold (`hold`) or off hold (`unhold`). */
+  @doc("Whether the call is now on hold (`hold`) or off hold (`unhold`).")
   state: HoldState;
 }
 
-/** Fires whenever a call is placed on hold or taken off hold. */
+@doc("Fires whenever a call is placed on hold or taken off hold.")
 @event("calling.call.hold")
 @example(#{
   node_id: "a3e1b2c4-5d6f-7a8b-9c0d-1e2f3a4b5c6d",

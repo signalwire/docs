@@ -7,7 +7,7 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
-/** Answers an incoming call so audio begins flowing and you can start controlling it. */
+@doc("Answers an incoming call so audio begins flowing and you can start controlling it.")
 @channel("calling.answer")
 @summary("Answer an incoming call")
 @opExample(#{

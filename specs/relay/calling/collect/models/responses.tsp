@@ -9,7 +9,7 @@ namespace Relay.Calling;
 model CollectResult {
   ...RelayResult;
 
-  /** Echoes back the `control_id` you supplied so you can correlate the response. */
+  @doc("Echoes back the `control_id` you supplied so you can correlate the response.")
   control_id?: string;
 }
 

@@ -6,7 +6,7 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
-/** Result of `calling.pass`. */
+@doc("Result of `calling.pass`.")
 model PassResult {
   ...RelayResult;
 }

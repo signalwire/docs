@@ -8,7 +8,7 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
-/** Places the active call into a named queue (creating the queue if it doesn't exist yet). Use it to hold callers while you wait for an agent or resource to free up. You get a result confirming entry, and the call's queue position, size, and wait estimate arrive as queue events keyed on your `control_id`. */
+@doc("Places the active call into a named queue (creating the queue if it doesn't exist yet). Use it to hold callers while you wait for an agent or resource to free up. You get a result confirming entry, and the call's queue position, size, and wait estimate arrive as queue events keyed on your `control_id`.")
 @channel("calling.queue.enter")
 @summary("Place the call into a queue")
 @opExample(#{
@@ -23,7 +23,7 @@ namespace Relay.Calling;
 })
 op queueEnter(...QueueEnterParams): QueueEnterResult | CallQueueEvent;
 
-/** Removes the active call from the queue it's waiting in. Use it to pull a caller out early, for example to hand them to an agent or end their wait. */
+@doc("Removes the active call from the queue it's waiting in. Use it to pull a caller out early, for example to hand them to an agent or end their wait.")
 @channel("calling.queue.leave")
 @summary("Remove the call from a queue")
 @opExample(#{

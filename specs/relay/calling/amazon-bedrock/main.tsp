@@ -7,7 +7,7 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
-/** Connect to an Amazon Bedrock AI agent. */
+@doc("Connect to an Amazon Bedrock AI agent.")
 @channel("calling.amazon_bedrock")
 @summary("Connect to an Amazon Bedrock AI agent")
 @opExample(#{

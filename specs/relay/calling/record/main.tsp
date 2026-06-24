@@ -8,7 +8,7 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
-/** Records the audio of an active call. The result confirms recording started and the recording's URL arrives on a recording event when it finishes. You can run several recordings on the same call at once — give each its own `control_id`. */
+@doc("Records the audio of an active call. The result confirms recording started and the recording's URL arrives on a recording event when it finishes. You can run several recordings on the same call at once — give each its own `control_id`.")
 @channel("calling.record")
 @summary("Record a call")
 @opExample(#{
@@ -39,7 +39,7 @@ namespace Relay.Calling;
 })
 op recordCall(...RecordParams): RecordResult | CallRecordEvent;
 
-/** Pauses a recording you started with `calling.record`, identified by its `control_id`. Audio captured while paused is either dropped or kept as silence depending on `behavior`. Resume it later with `calling.record.resume`. */
+@doc("Pauses a recording you started with `calling.record`, identified by its `control_id`. Audio captured while paused is either dropped or kept as silence depending on `behavior`. Resume it later with `calling.record.resume`.")
 @channel("calling.record.pause")
 @summary("Pause an active recording")
 @opExample(#{
@@ -53,7 +53,7 @@ op recordCall(...RecordParams): RecordResult | CallRecordEvent;
 })
 op recordPause(...RecordPauseParams): RecordPauseResult;
 
-/** Resumes a recording you paused with `calling.record.pause`, identified by its `control_id`. Audio capture picks back up where it left off. */
+@doc("Resumes a recording you paused with `calling.record.pause`, identified by its `control_id`. Audio capture picks back up where it left off.")
 @channel("calling.record.resume")
 @summary("Resume a paused recording")
 @opExample(#{
@@ -66,7 +66,7 @@ op recordPause(...RecordPauseParams): RecordPauseResult;
 })
 op recordResume(...RecordResumeParams): RecordResumeResult;
 
-/** Stops a recording you started with `calling.record`, identified by its `control_id`. Once stopped, the recording is finalized and its URL becomes available on the recording event. */
+@doc("Stops a recording you started with `calling.record`, identified by its `control_id`. Once stopped, the recording is finalized and its URL becomes available on the recording event.")
 @channel("calling.record.stop")
 @summary("Stop an active recording")
 @opExample(#{

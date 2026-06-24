@@ -7,12 +7,12 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Tasking;
 
-/**
- * Send a JSON message to a context. Every client subscribed to that context
- * receives it as a `queuing.relay.tasks` event. Use this to push work from a
- * short-lived process to your long-running Relay clients. You get back a result
- * confirming SignalWire accepted the request.
- */
+@doc("""
+  Send a JSON message to a context. Every client subscribed to that context
+  receives it as a `queuing.relay.tasks` event. Use this to push work from a
+  short-lived process to your long-running Relay clients. You get back a result
+  confirming SignalWire accepted the request.
+  """)
 @channel("tasking.deliver")
 @summary("Deliver a task message to a context")
 @opExample(#{

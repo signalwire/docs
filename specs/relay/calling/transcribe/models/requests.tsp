@@ -9,16 +9,16 @@ namespace Relay.Calling;
 model TranscribeParams {
   ...CallAddress;
 
-  /** Your identifier for this transcription. Use the same `control_id` with `calling.transcribe.stop` to stop it. */
+  @doc("Your identifier for this transcription. Use the same `control_id` with `calling.transcribe.stop` to stop it.")
   control_id: string;
 
-  /** An `http` or `https` URL to receive transcription status updates as the transcription starts, runs, and ends. */
+  @doc("An `http` or `https` URL to receive transcription status updates as the transcription starts, runs, and ends.")
   status_url?: url;
 }
 
 model TranscribeStopParams {
   ...CallAddress;
 
-  /** The `control_id` you passed to `calling.transcribe` when you started this transcription. */
+  @doc("The `control_id` you passed to `calling.transcribe` when you started this transcription.")
   control_id: string;
 }

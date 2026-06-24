@@ -7,11 +7,11 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
-/**
- * Splits apart legs that were joined with `calling.connect`, separating the calls
- * without hanging up on either one. Each call stays live so you can keep
- * controlling it or connect it elsewhere.
- */
+@doc("""
+  Splits apart legs that were joined with `calling.connect`, separating the calls
+  without hanging up on either one. Each call stays live so you can keep
+  controlling it or connect it elsewhere.
+  """)
 @channel("calling.disconnect")
 @summary("Disconnect connected legs without hanging up")
 @opExample(#{

@@ -58,15 +58,15 @@ import "./events/pay.tsp";
 
 using SignalWire.AsyncAPI;
 
-/**
- * The `calling` service lets you control voice calls over Relay: dial and answer
- * calls, bridge legs together, play and collect media, record, run detection, add
- * AI, and react to the `calling.call.*` events that report call and leg state as it
- * changes.
- *
- * Use it from your backend — it's available in the server SDKs (Python, Node, Java,
- * Ruby). To place a call directly from a browser, use the WebRTC service instead.
- */
+@doc("""
+  The `calling` service lets you control voice calls over Relay: dial and answer
+  calls, bridge legs together, play and collect media, record, run detection, add
+  AI, and react to the `calling.call.*` events that report call and leg state as it
+  changes.
+
+  Use it from your backend — it's available in the server SDKs (Python, Node, Java,
+  Ruby). To place a call directly from a browser, use the WebRTC service instead.
+  """)
 // calling.call.state fires for any call the client controls, across its whole lifecycle and
 // regardless of which command is in flight — verified in mod_infrastructure/relay.c: it fires via
 // relay_call_event_fire keyed by call_id (not by request), and is delivered to clients. It is not

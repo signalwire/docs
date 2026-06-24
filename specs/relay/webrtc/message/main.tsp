@@ -7,16 +7,16 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.WebRTC;
 
-/**
- * Send a Verto frame from your client to SignalWire — this is how you place,
- * answer, modify, or end a peer call. Pass the frame in `message`, and
- * optionally subscribe to conference/room event channels in the same request.
- *
- * The result only confirms that SignalWire received and forwarded the frame
- * (`"Received"`). The actual Verto outcome arrives later as a `webrtc.message`
- * event, so wait for that event rather than treating this acknowledgement as
- * the call result.
- */
+@doc("""
+  Send a Verto frame from your client to SignalWire — this is how you place,
+  answer, modify, or end a peer call. Pass the frame in `message`, and
+  optionally subscribe to conference/room event channels in the same request.
+
+  The result only confirms that SignalWire received and forwarded the frame
+  (`"Received"`). The actual Verto outcome arrives later as a `webrtc.message`
+  event, so wait for that event rather than treating this acknowledgement as
+  the call result.
+  """)
 @channel("message")
 @summary("Send a Verto frame")
 @opExample(#{

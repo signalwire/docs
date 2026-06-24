@@ -8,14 +8,14 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
-/**
- * Calls a new device and bridges it to this already-active call, joining both
- * legs together. Use this to add a party to a live call, such as forwarding or
- * transferring a caller. Only one connect can run at a time on a given call — if
- * another operation is still in progress, the request fails with a conflict error
- * telling you to wait for it to finish. Connection progress arrives through
- * `calling.call.connect` events.
- */
+@doc("""
+  Calls a new device and bridges it to this already-active call, joining both
+  legs together. Use this to add a party to a live call, such as forwarding or
+  transferring a caller. Only one connect can run at a time on a given call — if
+  another operation is still in progress, the request fails with a conflict error
+  telling you to wait for it to finish. Connection progress arrives through
+  `calling.call.connect` events.
+  """)
 // NOTE: no @opExample here — the required `devices: ConnectDevice[][]` (and the
 // optional `ringback: Ringback[]`) are @discriminator bases, and TypeSpec
 // value-checking does not narrow a discriminated base to its variant, so an inline

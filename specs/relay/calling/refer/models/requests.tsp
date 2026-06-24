@@ -13,28 +13,28 @@ namespace Relay.Calling;
 // variant is valid, modeled as a `@discriminator("type")` base + variant.
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Where to send a SIP call when transferring it with `calling.refer`. */
+@doc("Where to send a SIP call when transferring it with `calling.refer`.")
 model ReferSipDeviceParams {
-  /** SIP URI to transfer the call to, for example `userb@example.com`. */
+  @doc("SIP URI to transfer the call to, for example `userb@example.com`.")
   to: string;
 
-  /** Username for authenticating against the destination SIP endpoint, if it requires credentials. */
+  @doc("Username for authenticating against the destination SIP endpoint, if it requires credentials.")
   username?: string;
 
-  /** Password for authenticating against the destination SIP endpoint, if it requires credentials. */
+  @doc("Password for authenticating against the destination SIP endpoint, if it requires credentials.")
   password?: string;
 }
 
-/** Where to transfer the call. Set `type` to `sip` and supply the SIP destination in `params`. */
+@doc("Where to transfer the call. Set `type` to `sip` and supply the SIP destination in `params`.")
 @discriminator("type")
 model ReferDevice {
-  /** The transfer destination type. Only `sip` is supported. */
+  @doc("The transfer destination type. Only `sip` is supported.")
   type: string;
 }
 
 @example(#{ type: "sip", params: #{ to: "userb@example.com", username: "foo", password: "bar" } })
 model ReferSipDevice extends ReferDevice {
-  /** Always `sip`. */
+  @doc("Always `sip`.")
   type: "sip";
 
   params: ReferSipDeviceParams;
@@ -43,9 +43,9 @@ model ReferSipDevice extends ReferDevice {
 model ReferParams {
   ...CallAddress;
 
-  /** Where to transfer the call. Only SIP destinations are supported (`type: "sip"`). */
+  @doc("Where to transfer the call. Only SIP destinations are supported (`type: \"sip\"`).")
   device: ReferDevice;
 
-  /** HTTPS URL where SignalWire POSTs the outcome of the transfer. */
+  @doc("HTTPS URL where SignalWire POSTs the outcome of the transfer.")
   status_url?: url;
 }

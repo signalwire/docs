@@ -4,5 +4,5 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Signalwire;
 
-/** Empty acknowledgement. */
+@doc("Empty acknowledgement.")
 model DisconnectResult {}

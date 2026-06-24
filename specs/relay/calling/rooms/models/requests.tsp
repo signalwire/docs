@@ -9,10 +9,10 @@ namespace Relay.Calling;
 model JoinRoomParams {
   ...CallAddress;
 
-  /** The name of the room to join. */
+  @doc("The name of the room to join.")
   name: string;
 
-  /** An `http` or `https` URL to receive room status updates, such as when the call joins or leaves. */
+  @doc("An `http` or `https` URL to receive room status updates, such as when the call joins or leaves.")
   status_url?: url;
 }
 

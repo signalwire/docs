@@ -14,150 +14,150 @@ namespace Relay.Calling;
 // separately); connect additionally accepts call/queue/stream devices.
 // ═════════════════════════════════════════════════════════════════════════════
 
-/** `phone` device params. */
+@doc("`phone` device params.")
 model PhoneDeviceParams {
-  /** Origination number, E.164. */
+  @doc("Origination number, E.164.")
   from_number: string;
 
-  /** Destination number, E.164. */
+  @doc("Destination number, E.164.")
   to_number: string;
 
-  /** Seconds to ring before giving up. */
+  @doc("Seconds to ring before giving up.")
   @minValue(0)
   timeout?: int32 = 30;
 
-  /** Maximum call duration in seconds. */
+  @doc("Maximum call duration in seconds.")
   @minValue(0)
   max_duration?: int32;
 
-  /** Webhook to receive call-state events for this leg. */
+  @doc("Webhook to receive call-state events for this leg.")
   call_state_url?: url;
 
-  /** Which call states to deliver to `call_state_url`. Default `["ended"]`. */
+  @doc("Which call states to deliver to `call_state_url`. Default `[\"ended\"]`.")
   call_state_events?: CallStateEventName[];
 
-  /**
-   * A prompt that must be confirmed before this leg is bridged. Provide a URL to a
-   * SWML document or an inline SWML document. See the SWML reference for details.
-   */
+  @doc("""
+    A prompt that must be confirmed before this leg is bridged. Provide a URL to a
+    SWML document or an inline SWML document. See the SWML reference for details.
+    """)
   confirm?: unknown;
 }
 
-/** `sip` device params. */
+@doc("`sip` device params.")
 model SipDeviceParams {
-  /** Origination SIP URI / address. */
+  @doc("Origination SIP URI / address.")
   from: string;
 
-  /** Caller name to present. */
+  @doc("Caller name to present.")
   from_name?: string;
 
-  /** Destination SIP URI / address. */
+  @doc("Destination SIP URI / address.")
   to: string;
 
-  /** Seconds to ring before giving up. */
+  @doc("Seconds to ring before giving up.")
   @minValue(0)
   timeout?: int32 = 30;
 
-  /** Maximum call duration in seconds. */
+  @doc("Maximum call duration in seconds.")
   @minValue(0)
   max_duration?: int32;
 
-  /** Custom `X-` SIP headers. */
+  @doc("Custom `X-` SIP headers.")
   headers?: SipHeader[];
 
-  /** Negotiable codecs (SignalWire-picked if unset). */
+  @doc("Negotiable codecs (SignalWire-picked if unset).")
   codecs?: SipCodec[];
 
-  /** Use WebRTC media for this leg. */
+  @doc("Use WebRTC media for this leg.")
   webrtc_media?: boolean;
 
-  /** Webhook to receive call-state events for this leg. */
+  @doc("Webhook to receive call-state events for this leg.")
   call_state_url?: url;
 
-  /** Which call states to deliver to `call_state_url`. Default `["ended"]`. */
+  @doc("Which call states to deliver to `call_state_url`. Default `[\"ended\"]`.")
   call_state_events?: CallStateEventName[];
 
-  /** A confirmation prompt (SWML URL or inline SWML). */
+  @doc("A confirmation prompt (SWML URL or inline SWML).")
   confirm?: unknown;
 }
 
-/** `webrtc` device params. */
+@doc("`webrtc` device params.")
 model WebrtcDeviceParams {
-  /** Origination — E.164 or a registered endpoint URI. */
+  @doc("Origination — E.164 or a registered endpoint URI.")
   from: string;
 
-  /** Destination — a WebRTC endpoint URI / resource name. */
+  @doc("Destination — a WebRTC endpoint URI / resource name.")
   to: string;
 
-  /** Seconds to ring before giving up. */
+  @doc("Seconds to ring before giving up.")
   @minValue(0)
   timeout?: int32 = 30;
 
-  /** Maximum call duration in seconds. */
+  @doc("Maximum call duration in seconds.")
   @minValue(0)
   max_duration?: int32;
 
-  /** Negotiable codecs (SignalWire-picked if unset). */
+  @doc("Negotiable codecs (SignalWire-picked if unset).")
   codecs?: WebrtcCodec[];
 
-  /** Webhook to receive call-state events for this leg. */
+  @doc("Webhook to receive call-state events for this leg.")
   call_state_url?: url;
 
-  /** Which call states to deliver to `call_state_url`. Default `["ended"]`. */
+  @doc("Which call states to deliver to `call_state_url`. Default `[\"ended\"]`.")
   call_state_events?: CallStateEventName[];
 
-  /** A confirmation prompt (SWML URL or inline SWML). */
+  @doc("A confirmation prompt (SWML URL or inline SWML).")
   confirm?: unknown;
 }
 
-/** `call` device params (connect only) — bridge to an existing call. */
+@doc("`call` device params (connect only) — bridge to an existing call.")
 model CallRefDeviceParams {
-  /** Node of the existing call. */
+  @doc("Node of the existing call.")
   node_id: string;
 
-  /** Existing call id. */
+  @doc("Existing call id.")
   call_id: string;
 }
 
-/** `queue` device params (connect only) — pull a call from a queue. */
+@doc("`queue` device params (connect only) — pull a call from a queue.")
 model QueueDeviceParams {
-  /** Node of the queue. */
+  @doc("Node of the queue.")
   node_id: string;
 
-  /** Queue name. */
+  @doc("Queue name.")
   queue_name: string;
 
-  /** Queue id. */
+  @doc("Queue id.")
   queue_id?: string;
 }
 
-/** `stream` device params (connect only) — bidirectional audio to a WS endpoint. */
+@doc("`stream` device params (connect only) — bidirectional audio to a WS endpoint.")
 model StreamDeviceParams {
-  /** Stream target — `wss://` required. */
+  @doc("Stream target — `wss://` required.")
   url: url;
 
-  /** Optional stream name. */
+  @doc("Optional stream name.")
   name?: string;
 
-  /**
-   * Codec, optionally with rate/ptime modifiers (e.g. `PCMU@40i`,
-   * `L16@24000h@40i`). One of `PCMU|PCMA|G722|L16`. Default `PCMU`.
-   */
+  @doc("""
+    Codec, optionally with rate/ptime modifiers (e.g. `PCMU@40i`,
+    `L16@24000h@40i`). One of `PCMU|PCMA|G722|L16`. Default `PCMU`.
+    """)
   codec?: string = "PCMU";
 
-  /** Webhook for stream status. */
+  @doc("Webhook for stream status.")
   status_url?: url;
 
-  /** HTTP method for `status_url`. */
+  @doc("HTTP method for `status_url`.")
   status_url_method?: "GET" | "POST" = "POST";
 
-  /** Stream realtime audio. */
+  @doc("Stream realtime audio.")
   realtime?: boolean = false;
 
-  /** Bearer token sent to the stream endpoint. */
+  @doc("Bearer token sent to the stream endpoint.")
   authorization_bearer_token?: string;
 
-  /** Arbitrary custom parameters forwarded to the stream endpoint. */
+  @doc("Arbitrary custom parameters forwarded to the stream endpoint.")
   custom_parameters?: Record<unknown>;
 }
 
@@ -168,7 +168,7 @@ model StreamDeviceParams {
 // every derived model of a base — dial accepts 3 variants, connect 6.
 // ═════════════════════════════════════════════════════════════════════════════
 
-/** A device to dial (`calling.dial`). Discriminated on `type`. */
+@doc("A device to dial (`calling.dial`). Discriminated on `type`.")
 @discriminator("type")
 model DialDevice {
   type: string;
@@ -192,7 +192,7 @@ model DialWebrtcDevice extends DialDevice {
   params: WebrtcDeviceParams;
 }
 
-/** A device to connect to an active call (`calling.connect`). Discriminated on `type`. */
+@doc("A device to connect to an active call (`calling.connect`). Discriminated on `type`.")
 @discriminator("type")
 model ConnectDevice {
   type: string;
@@ -238,7 +238,7 @@ model ConnectStreamDevice extends ConnectDevice {
 // Ringback union (calling.connect)
 // ═════════════════════════════════════════════════════════════════════════════
 
-/** Audio played to the caller while a connect is in progress. Discriminated on `type`. */
+@doc("Audio played to the caller while a connect is in progress. Discriminated on `type`.")
 @discriminator("type")
 model Ringback {
   type: string;
@@ -248,7 +248,7 @@ model Ringback {
 model RingbackAudio extends Ringback {
   type: "audio";
   params: {
-    /** Audio file URL. */
+    @doc("Audio file URL.")
     url: url;
   };
 }
@@ -257,13 +257,13 @@ model RingbackAudio extends Ringback {
 model RingbackTts extends Ringback {
   type: "tts";
   params: {
-    /** Text to speak (plain or SSML). */
+    @doc("Text to speak (plain or SSML).")
     text: string;
 
-    /** TTS language. */
+    @doc("TTS language.")
     language?: string = "en-US";
 
-    /** TTS voice gender. */
+    @doc("TTS voice gender.")
     gender?: TtsGender = "female";
   };
 }
@@ -272,7 +272,7 @@ model RingbackTts extends Ringback {
 model RingbackSilence extends Ringback {
   type: "silence";
   params: {
-    /** Seconds of silence. */
+    @doc("Seconds of silence.")
     duration: float64;
   };
 }
@@ -281,10 +281,10 @@ model RingbackSilence extends Ringback {
 model RingbackRingtone extends Ringback {
   type: "ringtone";
   params: {
-    /** Tone name (country code). */
+    @doc("Tone name (country code).")
     name: ToneName;
 
-    /** Seconds to play. */
+    @doc("Seconds to play.")
     @minValueExclusive(0)
     duration?: float64;
   };
@@ -297,7 +297,7 @@ model RingbackRingtone extends Ringback {
 // the request device. Discriminated on `type`.
 // ═════════════════════════════════════════════════════════════════════════════
 
-/** The negotiated call leg reported in call events. Discriminated on `type`. */
+@doc("The negotiated call leg reported in call events. Discriminated on `type`.")
 @discriminator("type")
 model CallDevice {
   type: string;
@@ -306,10 +306,10 @@ model CallDevice {
 model CallPhoneDevice extends CallDevice {
   type: "phone";
   params: {
-    /** Origination number, E.164. */
+    @doc("Origination number, E.164.")
     from_number: string;
 
-    /** Destination number, E.164. */
+    @doc("Destination number, E.164.")
     to_number: string;
   };
 }
@@ -317,13 +317,13 @@ model CallPhoneDevice extends CallDevice {
 model CallSipDevice extends CallDevice {
   type: "sip";
   params: {
-    /** Origination SIP address. */
+    @doc("Origination SIP address.")
     from: string;
 
-    /** Destination SIP address. */
+    @doc("Destination SIP address.")
     to: string;
 
-    /** Custom `X-` SIP headers. */
+    @doc("Custom `X-` SIP headers.")
     headers?: SipHeader[];
   };
 }
@@ -331,6 +331,6 @@ model CallSipDevice extends CallDevice {
 model CallWebrtcDevice extends CallDevice {
   type: "webrtc";
 
-  /** Parameters of the negotiated WebRTC leg. */
+  @doc("Parameters of the negotiated WebRTC leg.")
   params: Record<unknown>;
 }

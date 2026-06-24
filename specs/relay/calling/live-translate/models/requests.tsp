@@ -14,30 +14,30 @@ namespace Relay.Calling;
 // modeling.
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * The live-translate action to perform. Set exactly one of `start`, `stop`,
- * `summarize`, or `inject`.
- */
+@doc("""
+  The live-translate action to perform. Set exactly one of `start`, `stop`,
+  `summarize`, or `inject`.
+  """)
 model LiveTranslateAction {
-  /** Start live translation. */
+  @doc("Start live translation.")
   start?: LiveTranslateStart;
 
-  /** Stop live translation. */
+  @doc("Stop live translation.")
   stop?: LiveActionStop;
 
-  /** Summarize the live translation so far. */
+  @doc("Summarize the live translation so far.")
   summarize?: LiveSummarize;
 
-  /** Insert a message to be translated and spoken into the call. */
+  @doc("Insert a message to be translated and spoken into the call.")
   inject?: LiveTranslateInject;
 }
 
 model LiveTranslateParams {
   ...CallAddress;
 
-  /** The action to perform. Set exactly one of `start`, `stop`, `summarize`, or `inject`. */
+  @doc("The action to perform. Set exactly one of `start`, `stop`, `summarize`, or `inject`.")
   action: LiveTranslateAction;
 
-  /** An `http` or `https` URL to receive translation status updates. */
+  @doc("An `http` or `https` URL to receive translation status updates.")
   status_url?: url;
 }

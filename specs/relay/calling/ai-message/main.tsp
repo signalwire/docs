@@ -7,7 +7,7 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
-/** (async-safe) Send (inject) a message into an active AI agent session. */
+@doc("(async-safe) Send (inject) a message into an active AI agent session.")
 @channel("calling.ai_message")
 @summary("Send a message to an active AI agent session")
 @opExample(#{

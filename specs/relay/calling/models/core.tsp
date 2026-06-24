@@ -8,34 +8,34 @@ namespace Relay.Calling;
 // Shared mixins
 // ═════════════════════════════════════════════════════════════════════════════
 
-/** Identifies a specific active call. Nearly every method and event includes it. */
+@doc("Identifies a specific active call. Nearly every method and event includes it.")
 model CallAddress {
-  /** Identifier of the node handling the call. Pair it with `call_id` to address the call. */
+  @doc("Identifier of the node handling the call. Pair it with `call_id` to address the call.")
   node_id: string;
 
-  /** Unique identifier of the call. */
+  @doc("Unique identifier of the call.")
   call_id: string;
 }
 
-/**
- * The result returned by calling methods. Check `code`: `"200"` means success;
- * anything else means the request failed, and `message` explains why. Failures are
- * reported through these fields rather than thrown as a separate error.
- */
+@doc("""
+  The result returned by calling methods. Check `code`: `"200"` means success;
+  anything else means the request failed, and `message` explains why. Failures are
+  reported through these fields rather than thrown as a separate error.
+  """)
 model RelayResult {
-  /** Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`. */
+  @doc("Result code as a string, e.g. `\"200\"` (success), `\"400\"`, `\"404\"`.")
   code: string;
 
-  /** Human-readable description of the result. On failure, explains what went wrong. */
+  @doc("Human-readable description of the result. On failure, explains what went wrong.")
   message: string;
 }
 
-/** A SIP header. Only `X-`-prefixed custom headers are permitted. */
+@doc("A SIP header. Only `X-`-prefixed custom headers are permitted.")
 model SipHeader {
-  /** Header name (must start with `X-`). */
+  @doc("Header name (must start with `X-`).")
   name: string;
 
-  /** Header value. */
+  @doc("Header value.")
   value: string;
 }
 
@@ -43,7 +43,7 @@ model SipHeader {
 // Shared enums
 // ═════════════════════════════════════════════════════════════════════════════
 
-/** Lifecycle states of a Relay-controlled call (`calling.call.state`). */
+@doc("Lifecycle states of a Relay-controlled call (`calling.call.state`).")
 union CallState {
   "created",
   "ringing",
@@ -52,7 +52,7 @@ union CallState {
   "ended",
 }
 
-/** Subset of call states a device may be asked to report via `call_state_events`. */
+@doc("Subset of call states a device may be asked to report via `call_state_events`.")
 union CallStateEventName {
   "created",
   "ringing",
@@ -60,7 +60,7 @@ union CallStateEventName {
   "ended",
 }
 
-/** Reason an outbound/active call is ended (`calling.end`). */
+@doc("Reason an outbound/active call is ended (`calling.end`).")
 union CallEndReason {
   "hangup",
   "cancel",
@@ -70,13 +70,13 @@ union CallEndReason {
   "error",
 }
 
-/** Text-to-speech voice gender. */
+@doc("Text-to-speech voice gender.")
 union TtsGender {
   "male",
   "female",
 }
 
-/** Codecs you can negotiate when answering a call, across all call types. */
+@doc("Codecs you can negotiate when answering a call, across all call types.")
 union AnswerCodec {
   "PCMU",
   "PCMA",
@@ -88,7 +88,7 @@ union AnswerCodec {
   "H264",
 }
 
-/** Codecs you can request for a SIP device when you dial or connect. */
+@doc("Codecs you can request for a SIP device when you dial or connect.")
 union SipCodec {
   "PCMU",
   "PCMA",
@@ -99,7 +99,7 @@ union SipCodec {
   "H264",
 }
 
-/** Codecs you can request for a WebRTC device when you dial or connect. */
+@doc("Codecs you can request for a WebRTC device when you dial or connect.")
 union WebrtcCodec {
   "PCMU",
   "PCMA",
@@ -108,10 +108,10 @@ union WebrtcCodec {
   "H264",
 }
 
-/**
- * Ringtone names (ITU-T country tone codes) usable by the `ringtone` ringback /
- * play element.
- */
+@doc("""
+  Ringtone names (ITU-T country tone codes) usable by the `ringtone` ringback /
+  play element.
+  """)
 union ToneName {
   "at", "au", "bg", "br", "be", "ch", "cl", "cn", "cz", "de", "dk", "ee", "es",
   "fi", "fr", "gr", "hu", "il", "in", "it", "lt", "jp", "mx", "my", "nl", "no",

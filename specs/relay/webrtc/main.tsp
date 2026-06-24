@@ -7,20 +7,20 @@ import "./events/message.tsp";
 
 using SignalWire.AsyncAPI;
 
-/**
- * The Relay **WebRTC** service carries WebRTC signaling. You use the `message`
- * method to send a Verto frame between your client and SignalWire — this is how
- * you place, answer, and modify peer calls — and `conference.list` to discover
- * the conferences you can join. The service runs over a connection you've already
- * established with `signalwire.connect`.
- *
- * You build and read Verto frames yourself (`verto.invite`/`verto.answer`/
- * `verto.bye`/`verto.modify`, `dialogParams`, conference control). The frame
- * payload is passed through as-is; the full set of Verto methods and their
- * `params` is documented separately in `verto_messages.md`.
- *
- * **Audience:** client-side. The browser SDK exposes this for peer (Verto)
- * calling; server-side code uses the `calling` service instead. Authenticate
- * with a `jwt_token`.
- */
+@doc("""
+  The Relay **WebRTC** service carries WebRTC signaling. You use the `message`
+  method to send a Verto frame between your client and SignalWire — this is how
+  you place, answer, and modify peer calls — and `conference.list` to discover
+  the conferences you can join. The service runs over a connection you've already
+  established with `signalwire.connect`.
+
+  You build and read Verto frames yourself (`verto.invite`/`verto.answer`/
+  `verto.bye`/`verto.modify`, `dialogParams`, conference control). The frame
+  payload is passed through as-is; the full set of Verto methods and their
+  `params` is documented separately in `verto_messages.md`.
+
+  **Audience:** client-side. The browser SDK exposes this for peer (Verto)
+  calling; server-side code uses the `calling` service instead. Authenticate
+  with a `jwt_token`.
+  """)
 namespace Relay.WebRTC;

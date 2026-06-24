@@ -8,13 +8,13 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
-/**
- * Collects DTMF key presses, spoken input, or both from a caller on an active
- * call. Use it to gather menu selections, account numbers, or short voice
- * responses. The immediate response only confirms that collection started;
- * the collected input arrives asynchronously in `calling.call.collect` events
- * keyed on your `control_id`.
- */
+@doc("""
+  Collects DTMF key presses, spoken input, or both from a caller on an active
+  call. Use it to gather menu selections, account numbers, or short voice
+  responses. The immediate response only confirms that collection started;
+  the collected input arrives asynchronously in `calling.call.collect` events
+  keyed on your `control_id`.
+  """)
 @channel("calling.collect")
 @summary("Collect digits and/or speech from a call")
 @opExample(#{
@@ -39,7 +39,7 @@ namespace Relay.Calling;
 })
 op collect(...CollectParams): CollectResult | CallCollectEvent;
 
-/** Stops a running collect before it finishes on its own, for example when you no longer need the caller's input. */
+@doc("Stops a running collect before it finishes on its own, for example when you no longer need the caller's input.")
 @channel("calling.collect.stop")
 @summary("Stop an active collect")
 @opExample(#{
@@ -48,11 +48,11 @@ op collect(...CollectParams): CollectResult | CallCollectEvent;
 })
 op collectStop(...CollectStopParams): CollectStopResult;
 
-/**
- * Starts the `initial_timeout` countdown on a collect that was started with
- * `start_input_timers: false`. Use it to begin the wait for input on your own
- * schedule — for example, only after you have finished playing a prompt.
- */
+@doc("""
+  Starts the `initial_timeout` countdown on a collect that was started with
+  `start_input_timers: false`. Use it to begin the wait for input on your own
+  schedule — for example, only after you have finished playing a prompt.
+  """)
 @channel("calling.collect.start_input_timers")
 @summary("Start the initial-timeout timer on a collect")
 @opExample(#{

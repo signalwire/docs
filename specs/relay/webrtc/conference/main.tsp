@@ -7,10 +7,10 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.WebRTC;
 
-/**
- * List the active conferences you can join. Each entry gives you the name,
- * extension, and `node_id` you need to join. Takes no arguments.
- */
+@doc("""
+  List the active conferences you can join. Each entry gives you the name,
+  extension, and `node_id` you need to join. Takes no arguments.
+  """)
 @channel("conference.list")
 @summary("List joinable conferences")
 @opExample(#{

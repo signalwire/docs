@@ -9,13 +9,13 @@ namespace Relay.Calling;
 model HoldResult {
   ...RelayResult;
 
-  /** The resulting hold state, always `"hold"`. */
+  @doc("The resulting hold state, always `\"hold\"`.")
   state?: "hold";
 }
 
 model UnholdResult {
   ...RelayResult;
 
-  /** The resulting hold state, always `"unhold"`. */
+  @doc("The resulting hold state, always `\"unhold\"`.")
   state?: "unhold";
 }

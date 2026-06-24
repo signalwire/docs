@@ -8,14 +8,14 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
-/**
- * Stream the call's audio in real time to a `wss://` WebSocket endpoint while
- * the call continues normally. Pick which track to send with `track`, and
- * optionally pass an `authorization_bearer_token` and `custom_parameters` that
- * are sent to your endpoint when the connection opens. Stream lifecycle events
- * arrive as `calling.call.stream` events keyed on your `control_id`. Note this
- * result echoes `node_id` rather than `call_id`.
- */
+@doc("""
+  Stream the call's audio in real time to a `wss://` WebSocket endpoint while
+  the call continues normally. Pick which track to send with `track`, and
+  optionally pass an `authorization_bearer_token` and `custom_parameters` that
+  are sent to your endpoint when the connection opens. Stream lifecycle events
+  arrive as `calling.call.stream` events keyed on your `control_id`. Note this
+  result echoes `node_id` rather than `call_id`.
+  """)
 @channel("calling.stream")
 @summary("Stream call audio to a WebSocket endpoint")
 @opExample(#{
@@ -40,7 +40,7 @@ namespace Relay.Calling;
 })
 op stream(...StreamParams): StreamResult | CallStreamEvent;
 
-/** Stop an active call stream. */
+@doc("Stop an active call stream.")
 @channel("calling.stream.stop")
 @summary("Stop a call stream")
 @opExample(#{

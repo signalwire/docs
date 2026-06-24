@@ -5,6 +5,6 @@ using SignalWire.AsyncAPI;
 namespace Relay.Signalwire;
 
 model DisconnectParams {
-  /** When `true`, you should open a fresh connection after disconnecting. */
+  @doc("When `true`, you should open a fresh connection after disconnecting.")
   restart?: boolean;
 }

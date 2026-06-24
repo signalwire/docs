@@ -10,54 +10,54 @@ namespace Relay.Calling;
 // calling.call.tap
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Where the tap is in its lifecycle: `tapping` while audio is flowing, `finished` once it stops. */
+@doc("Where the tap is in its lifecycle: `tapping` while audio is flowing, `finished` once it stops.")
 union TapState {
   "tapping",
   "finished",
 }
 
-/** Which side of the call audio is being tapped: the caller speaking, what they hear, or both. */
+@doc("Which side of the call audio is being tapped: the caller speaking, what they hear, or both.")
 union CallTapDirection {
   "speak",
   "listen",
   "both",
 }
 
-/** Describes the media being tapped. Currently always `audio`. */
+@doc("Describes the media being tapped. Currently always `audio`.")
 @discriminator("type")
 model TapMedia {
   type: string;
 }
 
-/** An audio tap. */
+@doc("An audio tap.")
 model CallTapAudio extends TapMedia {
   type: "audio";
   params: {
-    /** Which side(s) of the call audio this tap captures. */
+    @doc("Which side(s) of the call audio this tap captures.")
     direction: CallTapDirection;
   };
 }
 
-/** Describes where the tapped audio is being sent. Currently always `rtp`. */
+@doc("Describes where the tapped audio is being sent. Currently always `rtp`.")
 @discriminator("type")
 model CallTapDevice {
   type: string;
 }
 
-/** The tapped audio is streamed to an RTP destination. */
+@doc("The tapped audio is streamed to an RTP destination.")
 model CallTapRtpDevice extends CallTapDevice {
   type: "rtp";
   params: {
-    /** IP address the tapped audio is sent to. */
+    @doc("IP address the tapped audio is sent to.")
     addr: string;
 
-    /** Port the tapped audio is sent to. */
+    @doc("Port the tapped audio is sent to.")
     port: int32;
 
-    /** Codec used for the tapped audio stream. */
+    @doc("Codec used for the tapped audio stream.")
     codec: string;
 
-    /** Packetization time of the stream, in milliseconds. */
+    @doc("Packetization time of the stream, in milliseconds.")
     ptime: int32;
   };
 }
@@ -65,23 +65,23 @@ model CallTapRtpDevice extends CallTapDevice {
 model CallTapParams {
   ...CallAddress;
 
-  /** The `control_id` of the tap this event belongs to. */
+  @doc("The `control_id` of the tap this event belongs to.")
   control_id: string;
 
-  /** Whether the tap is still running (`tapping`) or has stopped (`finished`). */
+  @doc("Whether the tap is still running (`tapping`) or has stopped (`finished`).")
   state: TapState;
 
-  /** What media is being tapped. */
+  @doc("What media is being tapped.")
   tap: TapMedia;
 
-  /** Where the tapped audio is being sent. */
+  @doc("Where the tapped audio is being sent.")
   device: CallTapDevice;
 }
 
 // No `@example`: `tap` (TapMedia) and `device` (CallTapDevice) are both required
 // `@discriminator` properties, and an example value cannot narrow a discriminated
 // base. The variant shapes are illustrated by CallTapAudio/CallTapRtpDevice above.
-/** Fires when a tap starts streaming call audio and again when it stops. Check `state` to tell which. */
+@doc("Fires when a tap starts streaming call audio and again when it stops. Check `state` to tell which.")
 @event("calling.call.tap")
 model CallTapEvent {
   ...CallTapParams;

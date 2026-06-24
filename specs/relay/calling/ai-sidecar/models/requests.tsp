@@ -28,14 +28,14 @@ model AiSidecarParams {
 model AiSidecarPokeParams {
   ...CallAddress;
 
-  /** The message to send to the sidecar. */
+  @doc("The message to send to the sidecar.")
   text: string;
 }
 
 model AiSidecarAskParams {
   ...CallAddress;
 
-  /** The question for the sidecar to answer. */
+  @doc("The question for the sidecar to answer.")
   text: string;
 }
 

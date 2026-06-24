@@ -10,7 +10,7 @@ namespace Relay.Calling;
 // calling.call.transcribe
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Whether transcription is currently `transcribing` or has `finished`. */
+@doc("Whether transcription is currently `transcribing` or has `finished`.")
 union TranscribeState {
   "transcribing",
   "finished",
@@ -19,35 +19,35 @@ union TranscribeState {
 model CallTranscribeParams {
   ...CallAddress;
 
-  /** The `control_id` of the transcription this event belongs to. */
+  @doc("The `control_id` of the transcription this event belongs to.")
   control_id: string;
 
-  /** Whether transcription is still running (`transcribing`) or has stopped (`finished`). */
+  @doc("Whether transcription is still running (`transcribing`) or has stopped (`finished`).")
   state: TranscribeState;
 
-  /** Location of the recording captured alongside the transcription (for example, `recordings/<UUID>.wav`). */
+  @doc("Location of the recording captured alongside the transcription (for example, `recordings/<UUID>.wav`).")
   url: string;
 
-  /** The UUID of the recording captured alongside the transcription. */
+  @doc("The UUID of the recording captured alongside the transcription.")
   recording_id: string;
 
-  /** The callback URL you provided to receive transcription updates, if any. */
+  @doc("The callback URL you provided to receive transcription updates, if any.")
   status_url?: string;
 
-  /** Length of the recording in seconds. Present only when `state` is `finished`. */
+  @doc("Length of the recording in seconds. Present only when `state` is `finished`.")
   duration?: float64;
 
-  /** Size of the recording in bytes. Present only when `state` is `finished`. */
+  @doc("Size of the recording in bytes. Present only when `state` is `finished`.")
   size?: int32;
 
-  /** Unix timestamp for when the recording started. Present only when `state` is `finished`. */
+  @doc("Unix timestamp for when the recording started. Present only when `state` is `finished`.")
   start_time?: float64;
 
-  /** Unix timestamp for when the recording ended. Present only when `state` is `finished`. */
+  @doc("Unix timestamp for when the recording ended. Present only when `state` is `finished`.")
   end_time?: float64;
 }
 
-/** Fires when transcription starts and again when it stops. The `finished` event includes the recording's duration, size, and timestamps. */
+@doc("Fires when transcription starts and again when it stops. The `finished` event includes the recording's duration, size, and timestamps.")
 @event("calling.call.transcribe")
 @example(#{
   node_id: "a3e1b2c4-5d6f-7a8b-9c0d-1e2f3a4b5c6d",

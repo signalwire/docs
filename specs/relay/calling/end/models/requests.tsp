@@ -9,6 +9,6 @@ namespace Relay.Calling;
 model EndParams {
   ...CallAddress;
 
-  /** Why the call is ending. Defaults to `hangup` (a normal end). */
+  @doc("Why the call is ending. Defaults to `hangup` (a normal end).")
   reason?: CallEndReason = "hangup";
 }

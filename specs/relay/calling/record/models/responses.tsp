@@ -9,30 +9,30 @@ namespace Relay.Calling;
 model RecordResult {
   ...RelayResult;
 
-  /** Echoes back the `control_id` you sent, so you can match this result to your request. */
+  @doc("Echoes back the `control_id` you sent, so you can match this result to your request.")
   control_id?: string;
 
-  /** URL of the finished recording. */
+  @doc("URL of the finished recording.")
   url?: url;
 }
 
 model RecordPauseResult {
   ...RelayResult;
 
-  /** Echoes back the `control_id` you sent, so you can match this result to your request. */
+  @doc("Echoes back the `control_id` you sent, so you can match this result to your request.")
   control_id?: string;
 }
 
 model RecordResumeResult {
   ...RelayResult;
 
-  /** Echoes back the `control_id` you sent, so you can match this result to your request. */
+  @doc("Echoes back the `control_id` you sent, so you can match this result to your request.")
   control_id?: string;
 }
 
 model RecordStopResult {
   ...RelayResult;
 
-  /** Echoes back the `control_id` you sent, so you can match this result to your request. */
+  @doc("Echoes back the `control_id` you sent, so you can match this result to your request.")
   control_id?: string;
 }

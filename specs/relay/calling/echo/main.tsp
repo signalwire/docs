@@ -8,11 +8,11 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
-/**
- * Echoes the caller's audio back to them — whatever they say is played straight
- * back. Handy for testing that audio is flowing in both directions on a call.
- * Echo stops on its own when the `timeout` expires or the call ends.
- */
+@doc("""
+  Echoes the caller's audio back to them — whatever they say is played straight
+  back. Handy for testing that audio is flowing in both directions on a call.
+  Echo stops on its own when the `timeout` expires or the call ends.
+  """)
 @channel("calling.echo")
 @summary("Echo audio back to the caller")
 @opExample(#{

@@ -10,19 +10,19 @@ namespace Relay.Calling;
 // calling.call.collect
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Where input collection currently stands: still listening, finished, or stopped on an error. */
+@doc("Where input collection currently stands: still listening, finished, or stopped on an error.")
 union CallCollectState {
   "collecting",
   "error",
   "finished",
 }
 
-/**
- * What the caller gave you. Read `type` to know which kind of result this is. The
- * `error`, `no_input`, `no_match`, and `start_of_input` types are markers with no
- * extra data, while `digit` and `speech` include a `params` object with the
- * collected input.
- */
+@doc("""
+  What the caller gave you. Read `type` to know which kind of result this is. The
+  `error`, `no_input`, `no_match`, and `start_of_input` types are markers with no
+  extra data, while `digit` and `speech` include a `params` object with the
+  collected input.
+  """)
 @discriminator("type")
 model CallCollectResult {
   type: string;
@@ -40,7 +40,7 @@ model CallCollectResultNoMatch extends CallCollectResult {
   type: "no_match";
 }
 
-/** Signals that the caller has started speaking. You only receive this when you collect with `calling.collect`. */
+@doc("Signals that the caller has started speaking. You only receive this when you collect with `calling.collect`.")
 model CallCollectResultStartOfInput extends CallCollectResult {
   type: "start_of_input";
 }
@@ -48,10 +48,10 @@ model CallCollectResultStartOfInput extends CallCollectResult {
 model CallCollectResultDigit extends CallCollectResult {
   type: "digit";
   params: {
-    /** The DTMF digits the caller pressed. */
+    @doc("The DTMF digits the caller pressed.")
     digits: string;
 
-    /** The digit that ended collection, if the caller pressed your terminator key. */
+    @doc("The digit that ended collection, if the caller pressed your terminator key.")
     terminator?: string;
   };
 }
@@ -59,10 +59,10 @@ model CallCollectResultDigit extends CallCollectResult {
 model CallCollectResultSpeech extends CallCollectResult {
   type: "speech";
   params: {
-    /** The text the speech recognizer heard the caller say. */
+    @doc("The text the speech recognizer heard the caller say.")
     text: string;
 
-    /** How confident the recognizer is in the result (for example `83.2`). */
+    @doc("How confident the recognizer is in the result (for example `83.2`).")
     confidence?: float64;
   };
 }
@@ -70,24 +70,24 @@ model CallCollectResultSpeech extends CallCollectResult {
 model CallCollectParams {
   ...CallAddress;
 
-  /** The `control_id` of the collection this event refers to, returned when you started it with `calling.collect`. */
+  @doc("The `control_id` of the collection this event refers to, returned when you started it with `calling.collect`.")
   control_id: string;
 
-  /** Where the collection currently stands. `error` means it stopped because something went wrong. */
+  @doc("Where the collection currently stands. `error` means it stopped because something went wrong.")
   state: CallCollectState;
 
-  /** What the caller gave you. Check its `type` to handle digits, speech, or a no-input/no-match marker. */
+  @doc("What the caller gave you. Check its `type` to handle digits, speech, or a no-input/no-match marker.")
   result?: CallCollectResult;
 
-  /**
-   * Relevant when you requested partial or continuous results: `true` once the
-   * recognizer has finished the current utterance. With `continuous: true`, the
-   * collector then restarts to listen for the next one.
-   */
+  @doc("""
+    Relevant when you requested partial or continuous results: `true` once the
+    recognizer has finished the current utterance. With `continuous: true`, the
+    collector then restarts to listen for the next one.
+    """)
   final?: boolean;
 }
 
-/** Fires as you collect input from a caller — DTMF digits or speech — reporting partial and final results so you can react to what they said or pressed. */
+@doc("Fires as you collect input from a caller — DTMF digits or speech — reporting partial and final results so you can react to what they said or pressed.")
 @event("calling.call.collect")
 // `result` is omitted: its type `CallCollectResult` is a @discriminator base,
 // which @example cannot narrow to a concrete variant (digit/speech/etc.).

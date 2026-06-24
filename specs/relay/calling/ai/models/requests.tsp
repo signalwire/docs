@@ -45,8 +45,10 @@ namespace Relay.Calling;
 model AiParams {
   ...CallAddress;
 
-  /** Your own identifier for this AI session. Reuse it later to control the
-  session — for example, pass it to `calling.ai.stop` to end the agent. */
+  @doc("""
+    Your own identifier for this AI session. Reuse it later to control the
+      session — for example, pass it to `calling.ai.stop` to end the agent.
+    """)
   control_id: string;
 
   ...SWML.Calling.AIObject;
@@ -55,6 +57,6 @@ model AiParams {
 model AiStopParams {
   ...CallAddress;
 
-  /** The `control_id` assigned in `calling.ai`. */
+  @doc("The `control_id` assigned in `calling.ai`.")
   control_id: string;
 }

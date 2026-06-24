@@ -7,7 +7,7 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
-/** Ends a call, whether it's already connected or still ringing. */
+@doc("Ends a call, whether it's already connected or still ringing.")
 @channel("calling.end")
 @summary("End a call")
 @opExample(#{

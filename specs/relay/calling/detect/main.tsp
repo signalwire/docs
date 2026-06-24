@@ -12,18 +12,18 @@ namespace Relay.Calling;
 // union, and TypeSpec value-checking does not narrow a discriminated base to its variant,
 // so an inline frame example can't carry real `params`. The DetectMachine/DetectFax/
 // DetectDigit variant models carry schema-level @example values instead.
-/**
- * Start a detector on an active call to listen for an answering machine,
- * a fax tone, or DTMF digits. You can run several detectors at once on the
- * same call. This call returns right away with an acknowledgement; the actual
- * detection outcome arrives asynchronously as `calling.call.detect` events
- * keyed on your `control_id`, not in this result.
- */
+@doc("""
+  Start a detector on an active call to listen for an answering machine,
+  a fax tone, or DTMF digits. You can run several detectors at once on the
+  same call. This call returns right away with an acknowledgement; the actual
+  detection outcome arrives asynchronously as `calling.call.detect` events
+  keyed on your `control_id`, not in this result.
+  """)
 @channel("calling.detect")
 @summary("Start a detector (machine/fax/digit)")
 op detect(...DetectParams): DetectResult | CallDetectEvent;
 
-/** Stop an active detector. */
+@doc("Stop an active detector.")
 @channel("calling.detect.stop")
 @summary("Stop a detector")
 @opExample(#{

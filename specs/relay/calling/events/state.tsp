@@ -11,59 +11,59 @@ namespace Relay.Calling;
 // calling.call.state
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** The call that created this one, when it was spawned by another call. */
+@doc("The call that created this one, when it was spawned by another call.")
 model CallParentRef {
-  /** Identifier of the node hosting the parent call. */
+  @doc("Identifier of the node hosting the parent call.")
   node_id?: string;
 
-  /** The parent call's `call_id`. */
+  @doc("The parent call's `call_id`.")
   call_id?: string;
 
-  /** The parent's device type, such as `sip`. */
+  @doc("The parent's device type, such as `sip`.")
   device_type?: string;
 }
 
-/** The other call this one is bridged to. */
+@doc("The other call this one is bridged to.")
 model CallPeerRef {
-  /** Identifier of the node hosting the peer call. */
+  @doc("Identifier of the node hosting the peer call.")
   node_id?: string;
 
-  /** The peer call's `call_id`. */
+  @doc("The peer call's `call_id`.")
   call_id?: string;
 }
 
 model CallStateParams {
   ...CallAddress;
 
-  /** The `tag` you set when you placed the call, so you can match this event back to your request. */
+  @doc("The `tag` you set when you placed the call, so you can match this event back to your request.")
   tag?: string;
 
-  /** The device handling this call, once it has been determined. */
+  @doc("The device handling this call, once it has been determined.")
   device?: CallDevice;
 
-  /** Present when this call was created by another call, describing that originating call. */
+  @doc("Present when this call was created by another call, describing that originating call.")
   parent?: CallParentRef;
 
-  /** Present when this call is bridged to another, describing the other call. */
+  @doc("Present when this call is bridged to another, describing the other call.")
   peer?: CallPeerRef;
 
-  /** The state the call has just moved into. */
+  @doc("The state the call has just moved into.")
   call_state: CallState;
 
-  /** When the call started, in epoch milliseconds. */
+  @doc("When the call started, in epoch milliseconds.")
   start_time?: int64;
 
-  /** When the call was answered, in epoch milliseconds. */
+  @doc("When the call was answered, in epoch milliseconds.")
   answer_time?: int64;
 
-  /** When the call ended, in epoch milliseconds. */
+  @doc("When the call ended, in epoch milliseconds.")
   end_time?: int64;
 
-  /** How the call came to be: `dial` (you placed it), `connect` (created by a bridge), or `receive` (inbound). */
+  @doc("How the call came to be: `dial` (you placed it), `connect` (created by a bridge), or `receive` (inbound).")
   created_by?: "dial" | "connect" | "receive";
 }
 
-/** Fires every time one of your calls changes state. Use the `call_state` field to track the call through its lifecycle, and `tag` to match the event back to the call you placed. */
+@doc("Fires every time one of your calls changes state. Use the `call_state` field to track the call through its lifecycle, and `tag` to match the event back to the call you placed.")
 @event("calling.call.state")
 @example(#{
   node_id: "b8d0a8f0-1234-4abc-9def-0123456789ab",
@@ -92,7 +92,7 @@ model CallStateEvent {
 // calling.call.receive
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** The states an inbound call can report on `calling.call.receive`. */
+@doc("The states an inbound call can report on `calling.call.receive`.")
 union ReceiveCallState {
   "created",
   "connecting",
@@ -104,17 +104,17 @@ union ReceiveCallState {
 model CallReceiveParams {
   ...CallAddress;
 
-  /** The current state of the inbound call. */
+  @doc("The current state of the inbound call.")
   call_state: ReceiveCallState;
 
-  /** The context the call arrived on, such as `pbx`. */
+  @doc("The context the call arrived on, such as `pbx`.")
   context?: string;
 
-  /** The device the call is coming in on, including the caller's number. */
+  @doc("The device the call is coming in on, including the caller's number.")
   device: CallDevice;
 }
 
-/** Fires when a new call comes in that your application can answer and control. The payload tells you who is calling and on which context. */
+@doc("Fires when a new call comes in that your application can answer and control. The payload tells you who is calling and on which context.")
 @event("calling.call.receive")
 model CallReceiveEvent {
   ...CallReceiveParams;
@@ -124,41 +124,41 @@ model CallReceiveEvent {
 // calling.call.connect
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** The other call being connected to yours. */
+@doc("The other call being connected to yours.")
 model ConnectPeer {
-  /** Identifier of the node hosting the peer call. */
+  @doc("Identifier of the node hosting the peer call.")
   node_id?: string;
 
-  /** The peer call's `call_id`. */
+  @doc("The peer call's `call_id`.")
   call_id?: string;
 
-  /** The `tag` set on the peer call. */
+  @doc("The `tag` set on the peer call.")
   tag?: string;
 
-  /** When the peer was reached through a queue, the queue's id. */
+  @doc("When the peer was reached through a queue, the queue's id.")
   queue_id?: string;
 
-  /** The queue's friendly name. */
+  @doc("The queue's friendly name.")
   queue_name?: string;
 
-  /** The device handling the peer call. */
+  @doc("The device handling the peer call.")
   device?: CallDevice;
 }
 
 model CallConnectParams {
   ...CallAddress;
 
-  /** The `tag` you set on the connect request, so you can match this event to it. */
+  @doc("The `tag` you set on the connect request, so you can match this event to it.")
   tag?: string;
 
-  /** The other call yours is being connected to. */
+  @doc("The other call yours is being connected to.")
   peer: ConnectPeer;
 
-  /** Where the connection stands: `connecting`, `connected`, `disconnected`, or `failed`. */
+  @doc("Where the connection stands: `connecting`, `connected`, `disconnected`, or `failed`.")
   connect_state: "disconnected" | "connecting" | "connected" | "failed";
 }
 
-/** Fires as a connect request progresses, telling you whether your call has been bridged to the peer. Watch `connect_state` to know when the two calls are joined, torn down, or have failed to connect. */
+@doc("Fires as a connect request progresses, telling you whether your call has been bridged to the peer. Watch `connect_state` to know when the two calls are joined, torn down, or have failed to connect.")
 @event("calling.call.connect")
 @example(#{
   node_id: "b8d0a8f0-1234-4abc-9def-0123456789ab",
@@ -181,39 +181,39 @@ model CallConnectEvent {
 // calling.call.dial
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** The call that answered, included once a `calling.dial` succeeds. */
+@doc("The call that answered, included once a `calling.dial` succeeds.")
 model DialWinnerCall {
-  /** Identifier of the node hosting the answered call. */
+  @doc("Identifier of the node hosting the answered call.")
   node_id?: string;
 
-  /** The answered call's `call_id`. */
+  @doc("The answered call's `call_id`.")
   call_id?: string;
 
-  /** The `tag` set on the answered call. */
+  @doc("The `tag` set on the answered call.")
   tag?: string;
 
-  /** The device that answered. */
+  @doc("The device that answered.")
   device?: CallDevice;
 
-  /** `true` for the call that won the dial. When you dial several destinations at once, this marks the first one to answer. */
+  @doc("`true` for the call that won the dial. When you dial several destinations at once, this marks the first one to answer.")
   dial_winner?: boolean;
 }
 
 model CallDialParams {
-  /** Identifier of the node handling the dial. */
+  @doc("Identifier of the node handling the dial.")
   node_id: string;
 
-  /** The `tag` you set on the `calling.dial` request, so you can match this event to it. */
+  @doc("The `tag` you set on the `calling.dial` request, so you can match this event to it.")
   tag: string;
 
-  /** Where the dial stands: `dialing`, `answered`, or `failed`. */
+  @doc("Where the dial stands: `dialing`, `answered`, or `failed`.")
   dial_state: "dialing" | "answered" | "failed";
 
-  /** The call that answered. Present only when `dial_state` is `answered`. */
+  @doc("The call that answered. Present only when `dial_state` is `answered`.")
   call?: DialWinnerCall;
 }
 
-/** Fires as a `calling.dial` request progresses. Watch `dial_state` to know when your call is ringing, has been answered, or failed; when it is answered the `call` field gives you the call that picked up. */
+@doc("Fires as a `calling.dial` request progresses. Watch `dial_state` to know when your call is ringing, has been answered, or failed; when it is answered the `call` field gives you the call that picked up.")
 @event("calling.call.dial")
 @example(#{
   node_id: "b8d0a8f0-1234-4abc-9def-0123456789ab",

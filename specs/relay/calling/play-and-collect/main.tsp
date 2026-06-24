@@ -8,19 +8,19 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
-/**
- * Plays media to the caller and collects their input at the same time, so you
- * can prompt and gather a response in one step. Collected input arrives
- * asynchronously in `calling.call.collect` events keyed on your `control_id`.
- * Only one play-and-collect can run on a call at a time.
- */
+@doc("""
+  Plays media to the caller and collects their input at the same time, so you
+  can prompt and gather a response in one step. Collected input arrives
+  asynchronously in `calling.call.collect` events keyed on your `control_id`.
+  Only one play-and-collect can run on a call at a time.
+  """)
 // NOTE: no @opExample here — the required `play: PlayMedia[]` is a @discriminator
 // union, and TypeSpec example values cannot narrow a discriminator base.
 @channel("calling.play_and_collect")
 @summary("Play media and collect input")
 op playAndCollect(...PlayAndCollectParams): PlayAndCollectResult | CallCollectEvent;
 
-/** Stops a running play-and-collect, halting both the media playback and the input collection. */
+@doc("Stops a running play-and-collect, halting both the media playback and the input collection.")
 @channel("calling.play_and_collect.stop")
 @summary("Stop an active play-and-collect")
 @opExample(#{
@@ -29,7 +29,7 @@ op playAndCollect(...PlayAndCollectParams): PlayAndCollectResult | CallCollectEv
 })
 op playAndCollectStop(...PlayAndCollectStopParams): PlayAndCollectStopResult;
 
-/** Adjusts the playback volume of a running play-and-collect on the fly, without stopping it. */
+@doc("Adjusts the playback volume of a running play-and-collect on the fly, without stopping it.")
 @channel("calling.play_and_collect.volume")
 @summary("Change play-and-collect volume")
 @opExample(#{

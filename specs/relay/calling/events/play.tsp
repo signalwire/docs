@@ -10,7 +10,7 @@ namespace Relay.Calling;
 // calling.call.play
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** The current state of audio playback on the call. */
+@doc("The current state of audio playback on the call.")
 union CallPlayState {
   "playing",
   "paused",
@@ -21,14 +21,14 @@ union CallPlayState {
 model CallPlayParams {
   ...CallAddress;
 
-  /** The `control_id` of the playback this event refers to, returned when you started it with `calling.play`. */
+  @doc("The `control_id` of the playback this event refers to, returned when you started it with `calling.play`.")
   control_id: string;
 
-  /** Where the playback currently stands. */
+  @doc("Where the playback currently stands.")
   state: CallPlayState;
 }
 
-/** Fires when audio playback on a call starts, pauses, resumes, finishes, or errors, so you can track a `calling.play` through to completion. */
+@doc("Fires when audio playback on a call starts, pauses, resumes, finishes, or errors, so you can track a `calling.play` through to completion.")
 @event("calling.call.play")
 @example(#{
   node_id: "a3e1b2c4-1234-5678-9abc-def012345678",

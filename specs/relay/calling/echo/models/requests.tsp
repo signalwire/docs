@@ -9,10 +9,10 @@ namespace Relay.Calling;
 model EchoParams {
   ...CallAddress;
 
-  /** How long to keep echoing, in seconds. Use `0` to echo until the call ends. */
+  @doc("How long to keep echoing, in seconds. Use `0` to echo until the call ends.")
   @minValue(0)
   timeout?: int32;
 
-  /** An `http` or `https` URL to receive echo status updates. */
+  @doc("An `http` or `https` URL to receive echo status updates.")
   status_url?: url;
 }

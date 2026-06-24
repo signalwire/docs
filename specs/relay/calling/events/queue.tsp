@@ -10,7 +10,7 @@ namespace Relay.Calling;
 // calling.call.queue
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** What just happened to the call in the queue: it entered (`enqueue`), was pulled out to be connected (`dequeue`), or left on its own (`leave`). */
+@doc("What just happened to the call in the queue: it entered (`enqueue`), was pulled out to be connected (`dequeue`), or left on its own (`leave`).")
 union CallQueueStatus {
   "enqueue",
   "dequeue",
@@ -20,38 +20,38 @@ union CallQueueStatus {
 model CallQueueParams {
   ...CallAddress;
 
-  /** The `control_id` of the queue session this event refers to, returned when the call entered with `calling.queue.enter`. */
+  @doc("The `control_id` of the queue session this event refers to, returned when the call entered with `calling.queue.enter`.")
   control_id: string;
 
-  /** What just happened to the call in the queue. */
+  @doc("What just happened to the call in the queue.")
   status?: CallQueueStatus;
 
-  /** The queue's unique id. */
+  @doc("The queue's unique id.")
   id?: string;
 
-  /** The queue's name. */
+  @doc("The queue's name.")
   name?: string;
 
-  /** Where this call currently sits in line, counting from the front. */
+  @doc("Where this call currently sits in line, counting from the front.")
   position?: float64;
 
-  /** How many calls are currently waiting in the queue. */
+  @doc("How many calls are currently waiting in the queue.")
   size?: float64;
 
-  /** The average time, in seconds, calls have been spending in this queue. */
+  @doc("The average time, in seconds, calls have been spending in this queue.")
   avg_time?: float64;
 
-  /** The time, as a Unix timestamp in seconds, when the call entered the queue. */
+  @doc("The time, as a Unix timestamp in seconds, when the call entered the queue.")
   enqueue_ts?: float64;
 
-  /** The time, as a Unix timestamp in seconds, when the call was pulled from the queue. */
+  @doc("The time, as a Unix timestamp in seconds, when the call was pulled from the queue.")
   dequeue_ts?: float64;
 
-  /** The time, as a Unix timestamp in seconds, when the call left the queue. */
+  @doc("The time, as a Unix timestamp in seconds, when the call left the queue.")
   leave_ts?: float64;
 }
 
-/** Fires as a call moves through a queue — when it joins, gets connected, or leaves — and reports its position along with live queue stats. */
+@doc("Fires as a call moves through a queue — when it joins, gets connected, or leaves — and reports its position along with live queue stats.")
 @event("calling.call.queue")
 @example(#{
   node_id: "a3e1b2c4-1234-5678-9abc-def012345678",

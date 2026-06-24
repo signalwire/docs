@@ -6,7 +6,7 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
-/** Result of `calling.refer`. */
+@doc("Result of `calling.refer`.")
 model ReferResult {
   ...RelayResult;
 }

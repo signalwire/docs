@@ -10,7 +10,7 @@ namespace Relay.Calling;
 // calling.call.record
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Where the recording currently stands, including `no_input` when nothing was captured. */
+@doc("Where the recording currently stands, including `no_input` when nothing was captured.")
 union CallRecordState {
   "recording",
   "paused",
@@ -18,59 +18,59 @@ union CallRecordState {
   "no_input",
 }
 
-/** Which side of the conversation was recorded. */
+@doc("Which side of the conversation was recorded.")
 union RecordEventDirection {
-  /** Only what the party hears. */
+  @doc("Only what the party hears.")
   "listen",
 
-  /** Only what the party says. */
+  @doc("Only what the party says.")
   "speak",
 
-  /** Both sides of the conversation. */
+  @doc("Both sides of the conversation.")
   "both",
 }
 
-/** The audio settings the recording was captured with. */
+@doc("The audio settings the recording was captured with.")
 model RecordEventAudio {
-  /** The file format of the recording (for example `mp3` or `wav`). */
+  @doc("The file format of the recording (for example `mp3` or `wav`).")
   format?: string;
 
-  /** Whether the recording was captured in stereo. */
+  @doc("Whether the recording was captured in stereo.")
   stereo?: boolean;
 
-  /** Which side(s) of the conversation were captured. */
+  @doc("Which side(s) of the conversation were captured.")
   direction?: RecordEventDirection;
 }
 
-/** Describes how the recording was made. The `audio` field is present when you recorded audio. */
+@doc("Describes how the recording was made. The `audio` field is present when you recorded audio.")
 model RecordEventSpec {
-  /** The audio settings used for this recording. */
+  @doc("The audio settings used for this recording.")
   audio?: RecordEventAudio;
 }
 
 model CallRecordParams {
   ...CallAddress;
 
-  /** The `control_id` of the recording this event refers to, returned when you started it with `calling.record`. */
+  @doc("The `control_id` of the recording this event refers to, returned when you started it with `calling.record`.")
   control_id: string;
 
-  /** Where the recording currently stands. */
+  @doc("Where the recording currently stands.")
   state: CallRecordState;
 
-  /** Where to download the finished recording. Not available until the state is `finished`. */
+  @doc("Where to download the finished recording. Not available until the state is `finished`.")
   url?: url;
 
-  /** How long the recording is, in seconds. Set once the state is `finished`. */
+  @doc("How long the recording is, in seconds. Set once the state is `finished`.")
   duration?: float64;
 
-  /** How large the recording file is, in bytes. Set once the state is `finished`. */
+  @doc("How large the recording file is, in bytes. Set once the state is `finished`.")
   size?: int32;
 
-  /** The settings this recording was captured with. */
+  @doc("The settings this recording was captured with.")
   record?: RecordEventSpec;
 }
 
-/** Fires when a recording starts, pauses, resumes, or finishes. The finished event includes the download URL, duration, and file size. */
+@doc("Fires when a recording starts, pauses, resumes, or finishes. The finished event includes the download URL, duration, and file size.")
 @event("calling.call.record")
 @example(#{
   node_id: "a3e1b2c4-1234-5678-9abc-def012345678",

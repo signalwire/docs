@@ -9,19 +9,19 @@ namespace Relay.Calling;
 model DetectResult {
   ...RelayResult;
 
-  /** Echo of the detector `control_id`. */
+  @doc("Echo of the detector `control_id`.")
   control_id?: string;
 
-  /** The call id. */
+  @doc("The call id.")
   call_id?: string;
 }
 
 model DetectStopResult {
   ...RelayResult;
 
-  /** Echo of the detector `control_id`. */
+  @doc("Echo of the detector `control_id`.")
   control_id?: string;
 
-  /** The call id. */
+  @doc("The call id.")
   call_id?: string;
 }

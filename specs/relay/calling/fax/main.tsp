@@ -8,12 +8,12 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
-/**
- * Send a PDF document as a fax over an active call. The call must be a single
- * leg with nothing else running on it. This call acknowledges the request right
- * away; progress and the final outcome arrive asynchronously as
- * `calling.call.fax` events keyed on your `control_id`.
- */
+@doc("""
+  Send a PDF document as a fax over an active call. The call must be a single
+  leg with nothing else running on it. This call acknowledges the request right
+  away; progress and the final outcome arrive asynchronously as
+  `calling.call.fax` events keyed on your `control_id`.
+  """)
 @channel("calling.send_fax")
 @summary("Send a PDF fax")
 @opExample(#{
@@ -34,7 +34,7 @@ namespace Relay.Calling;
 })
 op sendFax(...SendFaxParams): SendFaxResult | CallFaxEvent;
 
-/** Stop sending a fax. */
+@doc("Stop sending a fax.")
 @channel("calling.send_fax.stop")
 @summary("Stop sending a fax")
 @opExample(#{
@@ -52,12 +52,12 @@ op sendFax(...SendFaxParams): SendFaxResult | CallFaxEvent;
 })
 op sendFaxStop(...SendFaxStopParams): SendFaxStopResult;
 
-/**
- * Receive an incoming fax on an active call and save it as a PDF. The call must
- * be a single leg with nothing else running on it. This call acknowledges the
- * request right away; progress and the final outcome arrive asynchronously as
- * `calling.call.fax` events keyed on your `control_id`.
- */
+@doc("""
+  Receive an incoming fax on an active call and save it as a PDF. The call must
+  be a single leg with nothing else running on it. This call acknowledges the
+  request right away; progress and the final outcome arrive asynchronously as
+  `calling.call.fax` events keyed on your `control_id`.
+  """)
 @channel("calling.receive_fax")
 @summary("Receive a fax")
 @opExample(#{
@@ -75,7 +75,7 @@ op sendFaxStop(...SendFaxStopParams): SendFaxStopResult;
 })
 op receiveFax(...ReceiveFaxParams): ReceiveFaxResult | CallFaxEvent;
 
-/** Stop receiving a fax. */
+@doc("Stop receiving a fax.")
 @channel("calling.receive_fax.stop")
 @summary("Stop receiving a fax")
 @opExample(#{

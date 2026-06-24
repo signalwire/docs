@@ -8,7 +8,7 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
-/** Adds this call to an ad-hoc audio conference, creating the conference if it does not already exist. RELAY and cXML calls can share the same conference. Use this to bridge multiple callers together with options like recording, hold music, participant limits, and status callbacks. */
+@doc("Adds this call to an ad-hoc audio conference, creating the conference if it does not already exist. RELAY and cXML calls can share the same conference. Use this to bridge multiple callers together with options like recording, hold music, participant limits, and status callbacks.")
 @channel("calling.join_conference")
 @summary("Join an ad-hoc audio conference")
 @opExample(#{
@@ -44,7 +44,7 @@ namespace Relay.Calling;
 })
 op joinConference(...JoinConferenceParams): JoinConferenceResult | ConferenceEvent;
 
-/** Removes this call from an audio conference it has joined. Use the `conference_id` you received from `calling.conference` events. */
+@doc("Removes this call from an audio conference it has joined. Use the `conference_id` you received from `calling.conference` events.")
 @channel("calling.leave_conference")
 @summary("Leave an audio conference")
 @opExample(#{

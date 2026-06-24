@@ -10,7 +10,7 @@ namespace Relay.Calling;
 // calling.call.pay
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Where a payment is in its lifecycle: `processing`, `finished`, or `error`. */
+@doc("Where a payment is in its lifecycle: `processing`, `finished`, or `error`.")
 union PayState {
   "processing",
   "finished",
@@ -20,14 +20,14 @@ union PayState {
 model CallPayParams {
   ...CallAddress;
 
-  /** The `control_id` of the payment this event belongs to. */
+  @doc("The `control_id` of the payment this event belongs to.")
   control_id: string;
 
-  /** Whether the payment is in progress (`processing`), completed (`finished`), or failed (`error`). */
+  @doc("Whether the payment is in progress (`processing`), completed (`finished`), or failed (`error`).")
   state: PayState;
 }
 
-/** Fires as a pay session progresses, letting you track whether it is processing, has finished, or hit an error. */
+@doc("Fires as a pay session progresses, letting you track whether it is processing, has finished, or hit an error.")
 @event("calling.call.pay")
 @example(#{
   node_id: "a3e1b2c4-5d6f-7a8b-9c0d-1e2f3a4b5c6d",

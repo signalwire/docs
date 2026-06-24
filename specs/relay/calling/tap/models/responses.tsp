@@ -10,26 +10,26 @@ namespace Relay.Calling;
 model TapResult {
   ...RelayResult;
 
-  /** The call id. */
+  @doc("The call id.")
   call_id?: string;
 
-  /** Echo of the tap `control_id`. */
+  @doc("Echo of the tap `control_id`.")
   control_id?: string;
 
-  /**
-   * Your requested delivery device echoed back with every parameter resolved
-   * (codec, sample rate, and so on), so the receiving end knows exactly what
-   * audio it will get.
-   */
+  @doc("""
+    Your requested delivery device echoed back with every parameter resolved
+    (codec, sample rate, and so on), so the receiving end knows exactly what
+    audio it will get.
+    """)
   source_device?: TapDevice;
 }
 
 model TapStopResult {
   ...RelayResult;
 
-  /** Echo of the tap `control_id`. */
+  @doc("Echo of the tap `control_id`.")
   control_id?: string;
 
-  /** The call id. */
+  @doc("The call id.")
   call_id?: string;
 }

@@ -7,12 +7,12 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Provisioning;
 
-/**
- * Request the runtime configuration for a connector. Supply the connector's
- * identity (`relay_connector_id`) and network endpoints (`local_endpoint`,
- * `external_endpoint`), and SignalWire returns its configuration. For a
- * `freeswitch` target, the response includes a SIP profile rendered as XML.
- */
+@doc("""
+  Request the runtime configuration for a connector. Supply the connector's
+  identity (`relay_connector_id`) and network endpoints (`local_endpoint`,
+  `external_endpoint`), and SignalWire returns its configuration. For a
+  `freeswitch` target, the response includes a SIP profile rendered as XML.
+  """)
 @channel("provisioning.configure")
 @summary("Request SignalWire connector configuration")
 @opExample(#{

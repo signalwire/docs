@@ -13,14 +13,14 @@ namespace Relay.Calling;
 model CallSendDigitsParams {
   ...CallAddress;
 
-  /** The `control_id` of the send-digits operation this event belongs to. */
+  @doc("The `control_id` of the send-digits operation this event belongs to.")
   control_id: string;
 
-  /** Always `finished`: the digits have all been sent. */
+  @doc("Always `finished`: the digits have all been sent.")
   state: "finished";
 }
 
-/** Fires once all requested DTMF digits have finished playing on the call. */
+@doc("Fires once all requested DTMF digits have finished playing on the call.")
 @event("calling.call.send_digits")
 @example(#{
   node_id: "a3e1b2c4-5d6f-7a8b-9c0d-1e2f3a4b5c6d",

@@ -9,7 +9,7 @@ namespace Relay.Calling;
 model PlayResult {
   ...RelayResult;
 
-  /** Echo of the `control_id` from the request. */
+  @doc("Echo of the `control_id` from the request.")
   control_id?: string;
 }
 
