@@ -12,25 +12,27 @@ namespace Relay.Calling;
 model TranscribeParams {
   ...CallAddress;
 
-  /** Identifier used to control (e.g. stop) the active transcription. */
+  /** Your identifier for this transcription. Use the same `control_id` with `calling.transcribe.stop` to stop it. */
   control_id: string;
 
-  /** http or https URL to deliver transcription status event callbacks to. */
+  /** An `http` or `https` URL to receive transcription status updates as the transcription starts, runs, and ends. */
   status_url?: url;
 }
 
 model TranscribeResult {
   ...RelayResult;
 
-  /** Path/URL of the shadow recording created for the transcription (e.g. `recordings/<UUID>.wav`). */
+  /** Path of the audio recording captured for this transcription, e.g. `recordings/<UUID>.wav`. */
   url?: string;
 }
 
 /**
- * (async-safe) Start transcribing a call. Creates a shadow recording with
- * transcription enabled. Only one active transcription per call at a time —
- * starting a second while one is active returns `"409"` "Transcribe is already
- * in progress".
+ * Starts transcribing speech on a call to text. SignalWire records the call audio
+ * and transcribes it in the background. Transcription results are not returned
+ * here — they arrive as `calling.call.transcribe` events keyed on your `control_id`.
+ * Only one transcription can run on a call at a time; starting another while one
+ * is active returns `"409"` "Transcribe is already in progress". Stop it with
+ * `calling.transcribe.stop`.
  */
 @rpcMethod("calling.transcribe")
 @summary("Start transcribing a call")
@@ -52,7 +54,7 @@ op transcribe(...TranscribeParams): TranscribeResult | CallTranscribeEvent;
 model TranscribeStopParams {
   ...CallAddress;
 
-  /** The `control_id` assigned in `calling.transcribe`. */
+  /** The `control_id` you passed to `calling.transcribe` when you started this transcription. */
   control_id: string;
 }
 
@@ -60,7 +62,7 @@ model TranscribeStopResult {
   ...RelayResult;
 }
 
-/** (async-safe) Stop an active call transcription. */
+/** Stops a transcription that is currently running on a call. */
 @rpcMethod("calling.transcribe.stop")
 @summary("Stop an active call transcription")
 @opExample(#{
@@ -76,11 +78,11 @@ op transcribeStop(...TranscribeStopParams): TranscribeStopResult;
 model EchoParams {
   ...CallAddress;
 
-  /** Echo duration in seconds (`0` = until the call ends). */
+  /** How long to keep echoing, in seconds. Use `0` to echo until the call ends. */
   @minValue(0)
   timeout?: int32;
 
-  /** http or https URL to deliver echo status event callbacks to. */
+  /** An `http` or `https` URL to receive echo status updates. */
   status_url?: url;
 }
 
@@ -89,8 +91,9 @@ model EchoResult {
 }
 
 /**
- * Echo audio back to the caller (useful for testing). Echo ends when the
- * timeout expires or the call ends. (No documented stop method — self-terminates.)
+ * Echoes the caller's audio back to them — whatever they say is played straight
+ * back. Handy for testing that audio is flowing in both directions on a call.
+ * Echo stops on its own when the `timeout` expires or the call ends.
  */
 @rpcMethod("calling.echo")
 @summary("Echo audio back to the caller")
@@ -107,23 +110,19 @@ op echo(...EchoParams): EchoResult | CallEchoEvent;
 model BindDigitParams {
   ...CallAddress;
 
-  /** DTMF digit sequence to bind (e.g. `"*1"`). */
+  /** The DTMF digit sequence the caller must press to trigger this binding, e.g. `"*1"`. */
   digits: string;
 
-  /** Method name to invoke when the digits are pressed (e.g. `calling.play`). */
+  /** The call method to run when the digits are pressed, e.g. `calling.play`. */
   bind_method: string;
 
-  /**
-   * Parameters to pass to the bound method. Free-form: the shape matches the
-   * params model of `bind_method` (polymorphic by `bind_method`, no own
-   * discriminator). Modeled loosely.
-   */
+  /** Parameters to pass to `bind_method` when it runs. Use the same shape that method expects for its parameters. */
   params?: Record<unknown>;
 
-  /** Namespace for this binding (used for selective clearing). */
+  /** A label that groups this binding with others, so you can clear them together later. */
   realm?: string;
 
-  /** Maximum times this binding can fire (`0` = unlimited). */
+  /** How many times this binding can fire before it stops working. Use `0` for no limit. */
   @minValue(0)
   max_triggers?: int32;
 }
@@ -132,9 +131,9 @@ model BindDigitResult {
   ...RelayResult;
 }
 
-/** Bind a DTMF digit sequence to trigger a RELAY method. */
+/** Runs a call method automatically when the caller presses a specific DTMF digit sequence — for example, play a message when they press `*1`. */
 @rpcMethod("calling.bind_digit")
-@summary("Bind a DTMF digit sequence to a RELAY method")
+@summary("Trigger a call method when a DTMF sequence is pressed")
 @opExample(#{
   parameters: #{
     node_id: "a3e1b2c4-...",
@@ -156,7 +155,7 @@ op bindDigit(...BindDigitParams): BindDigitResult;
 model ClearDigitBindingsParams {
   ...CallAddress;
 
-  /** Only clear bindings in this realm. Clears all bindings when omitted. */
+  /** Clear only the bindings with this `realm` label. Omit to clear every digit binding on the call. */
   realm?: string;
 }
 
@@ -164,7 +163,7 @@ model ClearDigitBindingsResult {
   ...RelayResult;
 }
 
-/** Clear all digit bindings, optionally filtered by realm. */
+/** Removes digit bindings previously set with `calling.bind_digit`. Clears every binding on the call, or only those in a given `realm`. */
 @rpcMethod("calling.clear_digit_bindings")
 @summary("Clear digit bindings")
 @opExample(#{
@@ -184,27 +183,27 @@ op clearDigitBindings(...ClearDigitBindingsParams): ClearDigitBindingsResult;
 // SWML field set (minus SWML templating).
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Speech-recognition engine for live transcribe/translate. */
+/** The speech-recognition engine used to convert speech to text for live transcribe and translate. */
 union LiveSpeechEngine {
   "deepgram",
   "google",
 }
 
-/** Direction of the audio leg to transcribe. */
+/** Which side of the call to transcribe: `local-caller` (your side) or `remote-caller` (the other party). */
 union TranscribeDirection {
   "local-caller",
   "remote-caller",
 }
 
-/** Direction of the audio leg to translate. */
+/** Which side of the call to translate: `local-caller` (your side) or `remote-caller` (the other party). */
 union TranslateDirection {
   "local-caller",
   "remote-caller",
 }
 
 /**
- * Preset translation tone/style filters. A custom filter may instead be supplied
- * as a free-form string prefixed with `prompt:` — e.g. `prompt:Use formal business language`.
+ * Built-in tone/style presets for translation. To use your own style instead,
+ * pass a string prefixed with `prompt:`, e.g. `prompt:Use formal business language`.
  */
 union TranslationFilterPreset {
   "polite",
@@ -214,27 +213,27 @@ union TranslationFilterPreset {
   "gen-z",
 }
 
-/** An action body that carries no fields (its contents are ignored). */
+/** A stop action takes no fields — pass an empty object. */
 model LiveActionStop {}
 
-/** Begin live transcription. `lang` and `direction` are required. */
+/** Settings for starting live transcription. `lang` and `direction` are required. */
 model LiveTranscribeStart {
-  /** Language to transcribe (e.g. `en-US`). */
+  /** The language to transcribe, e.g. `en-US`. */
   lang: string;
 
-  /** Which call leg(s) to transcribe. */
+  /** Which side(s) of the call to transcribe. */
   direction: TranscribeDirection[];
 
-  /** http or https URL the transcription is delivered to. */
+  /** An `http` or `https` URL to receive the transcription as it is produced. */
   webhook?: url;
 
-  /** Enable AI summarization; the summary is delivered at the end of the call. */
+  /** Generate an AI summary of the conversation. The summary is delivered when the call ends. */
   ai_summary?: boolean;
 
-  /** Prompt instructing how to summarize when `ai_summary` is enabled. */
+  /** Instructions telling the AI how to summarize, used when `ai_summary` is enabled. */
   ai_summary_prompt?: string;
 
-  /** Emit live transcription events as they occur. */
+  /** Deliver transcription results live as the conversation happens, rather than only at the end. */
   live_events?: boolean;
 
   /** Speech-recognition timeout in milliseconds. Default `60000`. */
@@ -260,45 +259,45 @@ model LiveTranscribeStart {
   speech_engine?: LiveSpeechEngine = "deepgram";
 }
 
-/** Begin live translation. `from_lang`, `to_lang` and `direction` are required. */
+/** Settings for starting live translation. `from_lang`, `to_lang` and `direction` are required. */
 model LiveTranslateStart {
-  /** Language to translate from (e.g. `en-US`). */
+  /** The language being spoken, e.g. `en-US`. */
   from_lang: string;
 
-  /** Language to translate to (e.g. `es-ES`). */
+  /** The language to translate into, e.g. `es-ES`. */
   to_lang: string;
 
-  /** Which call leg(s) to translate. */
+  /** Which side(s) of the call to translate. */
   direction: TranslateDirection[];
 
-  /** http or https URL the translation is delivered to. */
+  /** An `http` or `https` URL to receive the translation as it is produced. */
   webhook?: url;
 
-  /** TTS voice for the source language. */
+  /** The voice used to speak the source language. */
   from_voice?: string;
 
-  /** TTS voice for the target language. */
+  /** The voice used to speak the translated language. */
   to_voice?: string;
 
   /**
-   * Tone/style filter for the source-language direction — a preset or a
-   * `prompt:`-prefixed custom instruction.
+   * Adjusts the tone or style applied when translating the source speaker — a
+   * preset, or a `prompt:`-prefixed custom instruction.
    */
   filter_from?: TranslationFilterPreset | string;
 
   /**
-   * Tone/style filter for the target-language direction — a preset or a
-   * `prompt:`-prefixed custom instruction.
+   * Adjusts the tone or style applied when translating toward the target speaker
+   * — a preset, or a `prompt:`-prefixed custom instruction.
    */
   filter_to?: TranslationFilterPreset | string;
 
-  /** Emit live translation events as they occur. */
+  /** Deliver translation results live as the conversation happens, rather than only at the end. */
   live_events?: boolean;
 
-  /** Enable AI summarization; the summary is delivered at the end of the call. */
+  /** Generate an AI summary of the conversation. The summary is delivered when the call ends. */
   ai_summary?: boolean;
 
-  /** Prompt instructing how to summarize when `ai_summary` is enabled. */
+  /** Instructions telling the AI how to summarize, used when `ai_summary` is enabled. */
   ai_summary_prompt?: string;
 
   /** Speech-recognition timeout in milliseconds. Default `60000`. */
@@ -324,21 +323,21 @@ model LiveTranslateStart {
   speech_engine?: LiveSpeechEngine = "deepgram";
 }
 
-/** Summarize the live transcription/translation. */
+/** Settings for generating a summary of the live transcription or translation so far. */
 model LiveSummarize {
-  /** http or https URL the summary is delivered to. */
+  /** An `http` or `https` URL to receive the summary. */
   webhook?: url;
 
-  /** Prompt instructing how to summarize the conversation. */
+  /** Instructions telling the AI how to summarize the conversation. */
   prompt?: string;
 }
 
-/** Inject a message into the live translation to be translated and spoken. */
+/** A message to insert into a live translation. It is translated and spoken into the call. */
 model LiveTranslateInject {
-  /** The message to inject. */
+  /** The text to translate and speak into the call. */
   message: string;
 
-  /** Which call leg to speak the injected message to (single direction). */
+  /** Which side of the call to speak the message to. */
   direction: TranslateDirection;
 }
 
@@ -347,24 +346,24 @@ model LiveTranslateInject {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Live-transcribe action. Key-discriminated: provide exactly one of `start`,
- * `stop`, or `summarize`.
+ * The live-transcribe action to perform. Set exactly one of `start`, `stop`, or
+ * `summarize`.
  */
 model LiveTranscribeAction {
-  /** Begin live transcription. */
+  /** Start live transcription. */
   start?: LiveTranscribeStart;
 
-  /** Stop live transcription (body ignored). */
+  /** Stop live transcription. */
   stop?: LiveActionStop;
 
-  /** Summarize the live transcription. */
+  /** Summarize the live transcription so far. */
   summarize?: LiveSummarize;
 }
 
 model LiveTranscribeParams {
   ...CallAddress;
 
-  /** Action to perform (provide exactly one of `start`/`stop`/`summarize`). */
+  /** The action to perform. Set exactly one of `start`, `stop`, or `summarize`. */
   action: LiveTranscribeAction;
 }
 
@@ -372,7 +371,13 @@ model LiveTranscribeResult {
   ...RelayResult;
 }
 
-/** Start or stop live transcription on a call. */
+/**
+ * Transcribes a call to text in real time, optionally on both legs at once. Unlike
+ * `calling.transcribe`, results stream live to your `webhook` while the call is
+ * still in progress, and you can request an AI summary at the end. Use the same
+ * method to start, stop, or summarize by setting the matching `action`. Live
+ * results also arrive as `calling.call.transcribe` events.
+ */
 @rpcMethod("calling.live_transcribe")
 @summary("Start or stop live transcription on a call")
 @opExample(#{
@@ -393,30 +398,30 @@ op liveTranscribe(...LiveTranscribeParams): LiveTranscribeResult | CallTranscrib
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Live-translate action. Key-discriminated: provide exactly one of `start`,
- * `stop`, `summarize`, or `inject`.
+ * The live-translate action to perform. Set exactly one of `start`, `stop`,
+ * `summarize`, or `inject`.
  */
 model LiveTranslateAction {
-  /** Begin live translation. */
+  /** Start live translation. */
   start?: LiveTranslateStart;
 
-  /** Stop live translation (body ignored). */
+  /** Stop live translation. */
   stop?: LiveActionStop;
 
-  /** Summarize the live translation. */
+  /** Summarize the live translation so far. */
   summarize?: LiveSummarize;
 
-  /** Inject a message into the live translation. */
+  /** Insert a message to be translated and spoken into the call. */
   inject?: LiveTranslateInject;
 }
 
 model LiveTranslateParams {
   ...CallAddress;
 
-  /** Action to perform (provide exactly one of `start`/`stop`/`summarize`/`inject`). */
+  /** The action to perform. Set exactly one of `start`, `stop`, `summarize`, or `inject`. */
   action: LiveTranslateAction;
 
-  /** http or https URL to deliver translation status event callbacks to. */
+  /** An `http` or `https` URL to receive translation status updates. */
   status_url?: url;
 }
 
@@ -424,7 +429,12 @@ model LiveTranslateResult {
   ...RelayResult;
 }
 
-/** Start or stop live translation on a call. */
+/**
+ * Translates speech on a call into another language in real time and speaks it back,
+ * so two parties can talk across a language barrier. Translation streams live to your
+ * `webhook` and is voiced into the call. Use the same method to start, stop, summarize,
+ * or inject a message by setting the matching `action`.
+ */
 @rpcMethod("calling.live_translate")
 @summary("Start or stop live translation on a call")
 @opExample(#{
@@ -445,10 +455,10 @@ op liveTranslate(...LiveTranslateParams): LiveTranslateResult;
 model JoinRoomParams {
   ...CallAddress;
 
-  /** Room name to join. */
+  /** The name of the room to join. */
   name: string;
 
-  /** http or https URL to deliver room status event callbacks to. */
+  /** An `http` or `https` URL to receive room status updates, such as when the call joins or leaves. */
   status_url?: url;
 }
 
@@ -456,7 +466,7 @@ model JoinRoomResult {
   ...RelayResult;
 }
 
-/** Join a video/audio room by name. */
+/** Connects this call into a named audio/video room, bridging it with everyone else already in that room. */
 @rpcMethod("calling.join_room")
 @summary("Join a video/audio room")
 @opExample(#{
@@ -477,7 +487,7 @@ model LeaveRoomResult {
   ...RelayResult;
 }
 
-/** Leave the current room (operates on the call's current room; no room param). */
+/** Removes this call from the room it is currently in. There is no room parameter — it always acts on the call's current room. */
 @rpcMethod("calling.leave_room")
 @summary("Leave the current room")
 @opExample(#{

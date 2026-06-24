@@ -128,7 +128,13 @@ model DetectResult {
 // union, and TypeSpec value-checking does not narrow a discriminated base to its variant,
 // so an inline frame example can't carry real `params`. The DetectMachine/DetectFax/
 // DetectDigit variant models carry schema-level @example values instead.
-/** Start a detector on an active call. May run multiple in parallel. */
+/**
+ * Start a detector on an active call to listen for an answering machine,
+ * a fax tone, or DTMF digits. You can run several detectors at once on the
+ * same call. This call returns right away with an acknowledgement; the actual
+ * detection outcome arrives asynchronously as `calling.call.detect` events
+ * keyed on your `control_id`, not in this result.
+ */
 @rpcMethod("calling.detect")
 @summary("Start a detector (machine/fax/digit)")
 op detect(...DetectParams): DetectResult | CallDetectEvent;
@@ -210,8 +216,10 @@ model SendFaxResult {
 }
 
 /**
- * Send a fax. Can only be executed on a one-legged call that is not executing
- * anything else.
+ * Send a PDF document as a fax over an active call. The call must be a single
+ * leg with nothing else running on it. This call acknowledges the request right
+ * away; progress and the final outcome arrive asynchronously as
+ * `calling.call.fax` events keyed on your `control_id`.
  */
 @rpcMethod("calling.send_fax")
 @summary("Send a PDF fax")
@@ -297,8 +305,10 @@ model ReceiveFaxResult {
 }
 
 /**
- * Receive a fax. Can only be executed on a one-legged call that is not executing
- * anything else.
+ * Receive an incoming fax on an active call and save it as a PDF. The call must
+ * be a single leg with nothing else running on it. This call acknowledges the
+ * request right away; progress and the final outcome arrive asynchronously as
+ * `calling.call.fax` events keyed on your `control_id`.
  */
 @rpcMethod("calling.receive_fax")
 @summary("Receive a fax")
@@ -485,8 +495,9 @@ model TapResult {
   control_id?: string;
 
   /**
-   * The source device with all params filled in, so the destination knows what
-   * is being delivered (offer/answer model).
+   * Your requested delivery device echoed back with every parameter resolved
+   * (codec, sample rate, and so on), so the receiving end knows exactly what
+   * audio it will get.
    */
   source_device?: TapDevice;
 }
@@ -496,8 +507,14 @@ model TapResult {
 // to its variant, so an inline frame example can't carry real `params`. The TapAudio /
 // TapRtpDevice / TapWsDevice variant models carry schema-level @example values instead.
 /**
- * Intercept call media and stream it to an external device. Transcoding and
- * resampling are available on request.
+ * Fork a copy of the call's audio and deliver it in real time to an external
+ * device over RTP or a WebSocket, while the call continues normally. Choose
+ * which side of the call to capture with `tap`, and where to send it with
+ * `device`; set a `codec` or `ptime` on the device to have the audio transcoded
+ * or resampled for you. The result echoes your `device` back as
+ * `source_device` with every field filled in, so the receiver knows exactly
+ * what is coming. Tap lifecycle events arrive as `calling.call.tap` events
+ * keyed on your `control_id`.
  */
 @rpcMethod("calling.tap")
 @summary("Tap call media to an external device")
@@ -604,7 +621,14 @@ model StreamResult {
   node_id?: string;
 }
 
-/** Start streaming call audio to a WebSocket endpoint. */
+/**
+ * Stream the call's audio in real time to a `wss://` WebSocket endpoint while
+ * the call continues normally. Pick which track to send with `track`, and
+ * optionally pass an `authorization_bearer_token` and `custom_parameters` that
+ * are sent to your endpoint when the connection opens. Stream lifecycle events
+ * arrive as `calling.call.stream` events keyed on your `control_id`. Note this
+ * result echoes `node_id` rather than `call_id`.
+ */
 @rpcMethod("calling.stream")
 @summary("Stream call audio to a WebSocket endpoint")
 @opExample(#{

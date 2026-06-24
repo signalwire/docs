@@ -48,7 +48,8 @@ namespace Relay.Calling;
 model AiParams {
   ...CallAddress;
 
-  /** Identifier used to control (e.g. stop) this AI session. */
+  /** Your own identifier for this AI session. Reuse it later to control the
+  session — for example, pass it to `calling.ai.stop` to end the agent. */
   control_id: string;
 
   ...SWML.Calling.AIObject;
@@ -446,10 +447,10 @@ op aiMessage(...AiMessageParams): AiMessageResult;
 model AiHoldParams {
   ...CallAddress;
 
-  /** Hold timeout. Sent as a string in the example (e.g. `"60"`); unit is seconds. */
+  /** How long to stay on hold, in seconds. Pass it as a string, e.g. `"60"`. */
   timeout?: string;
 
-  /** Hold prompt / music (plain string). */
+  /** What to play while on hold — a hold prompt or music, as a plain string. */
   prompt?: string;
 }
 
@@ -506,7 +507,8 @@ op aiUnhold(...AiUnholdParams): AiUnholdResult;
 model UserEventParams {
   ...CallAddress;
 
-  /** The custom event name. */
+  /** A name you choose for the event. Your application receives it as a
+  `calling.user_event` event. */
   event?: string;
 }
 

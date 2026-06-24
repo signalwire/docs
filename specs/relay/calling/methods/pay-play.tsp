@@ -223,8 +223,14 @@ model PayResult {
 }
 
 /**
- * Start a Pay IVR session on an active call: collect card details via DTMF and
- * POST them to a payment connector.
+ * Collects a payment on an active call. The caller is prompted to enter their
+ * card details on the keypad (DTMF), and the collected details are POSTed to
+ * the payment connector at `payment_connector_url` for processing. Use this to
+ * take card payments over the phone without handling raw card data yourself.
+ *
+ * The immediate result confirms the request was accepted; the outcome of the
+ * payment (and progress updates) arrives asynchronously via `calling.call.pay`
+ * events keyed on your `control_id`, and at `status_url` if you set one.
  */
 @rpcMethod("calling.pay")
 @summary("Collect a payment via the Pay IVR")
@@ -346,7 +352,17 @@ model PlayResult {
 // value-checking does not narrow a discriminated base to its variant, so an inline frame
 // example can't carry real `params`. The PlayMedia variant models in common.tsp carry
 // schema-level @example values instead.
-/** Play a sequence of media elements (audio/TTS/silence/ringtone) to a call. */
+/**
+ * Plays a sequence of media to a call. Each element is one of audio (a file at
+ * a URL), TTS (spoken text), silence, or ringtone, and they play in the order
+ * given. Use it to play prompts, hold music, announcements, or generated speech.
+ *
+ * The immediate result confirms the play started; playback state changes
+ * (`playing`, `paused`, `finished`, `error`) arrive asynchronously via
+ * `calling.call.play` events keyed
+ * on your `control_id`. Pause, resume, change the volume, or stop it mid-play
+ * with the matching `calling.play.*` methods using the same `control_id`.
+ */
 @rpcMethod("calling.play")
 @summary("Play media to a call")
 op play(...PlayParams): PlayResult | CallPlayEvent;
