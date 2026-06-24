@@ -1,0 +1,262 @@
+/* Non-Latin voice-name fallback. The catalog carries ~190 names across ~24
+   scripts (Arabic, CJK, Devanagari, Ethiopic, Hangul, …) and the docs body font (Lexend, Latin-only
+   subset) can't render them — Firefox then walks the SYSTEM font list and tofu's on any script the OS
+   lacks. Fix: serve Noto via the Google Fonts CSS API, which returns one @font-face per script EACH
+   WITH ITS OWN unicode-range, so the browser downloads only the slices whose glyphs actually appear
+   (CJK is the only heavy one and is itself range-sliced). Needs no build-time knowledge of the glyph
+   set — right for a runtime CDN catalog. Wired into --vw-i18n-font below, used per-character after the
+   body font (Latin stays Lexend). If a CSP ever blocks fonts.googleapis.com/gstatic.com, self-host
+   range-subsetted Noto instead. */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&family=Noto+Sans+Arabic:wght@400;700&family=Noto+Sans+Hebrew:wght@400;700&family=Noto+Sans+Devanagari:wght@400;700&family=Noto+Sans+Bengali:wght@400;700&family=Noto+Sans+Tamil:wght@400;700&family=Noto+Sans+Telugu:wght@400;700&family=Noto+Sans+Kannada:wght@400;700&family=Noto+Sans+Malayalam:wght@400;700&family=Noto+Sans+Gujarati:wght@400;700&family=Noto+Sans+Gurmukhi:wght@400;700&family=Noto+Sans+Oriya:wght@400;700&family=Noto+Sans+Sinhala:wght@400;700&family=Noto+Sans+Thai:wght@400;700&family=Noto+Sans+Lao:wght@400;700&family=Noto+Sans+Khmer:wght@400;700&family=Noto+Sans+Myanmar:wght@400;700&family=Noto+Sans+Ethiopic:wght@400;700&family=Noto+Sans+Armenian:wght@400;700&family=Noto+Sans+Georgian:wght@400;700&family=Noto+Sans+Canadian+Aboriginal:wght@400;700&family=Noto+Sans+SC:wght@400;700&family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+KR:wght@400;700&display=swap');
+
+/* Voice widget — compact rows. Ported from the design mockups in
+   docs/superpowers/specs/2026-06-14-voice-widget-rows-assets/ (vw-rows-theme.html / vw-rows.html /
+   vw-rows-skeleton.html), with their hardcoded hex mapped to the docs' theme-aware brand tokens
+   (fern/brand-tokens.css) so the widget follows light/dark automatically:
+     mockup --page → --bg-page     --surface/--card → --bg-surface-raised   --ink → --fg-default
+     --meta/--ink2/--codefg → --fg-secondary   --muted → --fg-muted   --line → --border-default
+     --line2 → --grayscale-a4 (lighter hairline)   --hover → --table-row-hover
+     --accent → --accent   --accon → --accent-contrast   --codebg → --code-bg   --good → --status-success
+
+   Self-contained and scoped under .vw.vw-rows (the widget's root className). The model code is
+   deliberately NEUTRAL (--fg-secondary), NOT --code-fg: the docs inline-<code> --code-fg equals
+   --accent in both themes (blue/turquoise), so a default <code> would render the model the same
+   color as Copy and read as clickable. */
+.vw.vw-rows {
+  --vw-bg: var(--bg-page);
+  --vw-card: var(--bg-surface-raised);
+  --vw-line: var(--border-default);
+  /* Lighter than the container border — used only for the row dividers. Grayscale alpha so it stays
+     subtle on both the light (#E8EAF0) and dark (#222436) surfaces. */
+  --vw-line2: var(--grayscale-a4);
+  --vw-fg: var(--fg-default);
+  --vw-fg2: var(--fg-secondary);
+  --vw-muted: var(--fg-muted);
+  --vw-accent: var(--accent);
+  /* i18n name stack: the docs body font FIRST (Latin names stay Lexend), then the Noto script
+     families (loaded by the @import above) for per-character fallback on non-Latin glyphs. Applied
+     only to the text that comes from the catalog (.vw-name, .vw-tooltip) — meta/provider/model are
+     always Latin. CJK order is SC→JP→KR: the catalog's Han names are mostly Chinese (zh/wuu/yue), so
+     SC first gives the majority correct glyph shapes; Japanese kanji render with SC Han forms
+     (legible, a hair off — Han unification), Korean Hangul resolves to KR regardless. */
+  --vw-i18n-font: var(--typography-body-font-family), "Noto Sans", "Noto Sans Arabic",
+    "Noto Sans Hebrew", "Noto Sans Devanagari", "Noto Sans Bengali", "Noto Sans Tamil",
+    "Noto Sans Telugu", "Noto Sans Kannada", "Noto Sans Malayalam", "Noto Sans Gujarati",
+    "Noto Sans Gurmukhi", "Noto Sans Oriya", "Noto Sans Sinhala", "Noto Sans Thai", "Noto Sans Lao",
+    "Noto Sans Khmer", "Noto Sans Myanmar", "Noto Sans Ethiopic", "Noto Sans Armenian",
+    "Noto Sans Georgian", "Noto Sans Canadian Aboriginal", "Noto Sans SC", "Noto Sans JP",
+    "Noto Sans KR", sans-serif;
+  /* Size/line-height only — DON'T override font-family here: inherit the docs body font (Lexend) for
+     the chrome; the non-Latin fallback is scoped to .vw-name/.vw-tooltip via --vw-i18n-font. The
+     earlier `system-ui` override tofu'd non-Latin names on Firefox (system fallback misses scripts). */
+  color: var(--vw-fg); font-size: 14px; line-height: 1.45;
+}
+.vw.vw-rows.vw-error { padding: 2rem; color: var(--error-text); }
+
+/* ── Header (title + live count) ─────────────────────────────────────────────────────────────── */
+.vw-rows .vw-head { display: flex; align-items: baseline; gap: 1rem; margin-bottom: .6rem; }
+.vw-rows .vw-title { font-size: 1.1rem; font-weight: 700; }
+/* --fg-secondary (not --fg-muted): small text, --fg-muted (#737371) is only ~3.95:1 on the light
+   surface — below the AA 4.5:1 floor. */
+.vw-rows .vw-count { color: var(--vw-fg2); font-weight: 400; font-size: .82rem; margin-left: .4rem; }
+
+/* ── Toolbar: pill controls; sticks below the fixed docs header while the list scrolls. ────────── */
+.vw-rows .vw-filters { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin-bottom: 1rem;
+  position: sticky; top: var(--header-height, 0px); background: var(--vw-bg); padding: .5rem 8px; z-index: 2; }
+/* flex:1 1 auto (NOT 1 1 0): the selects stretch to fill the bar edge-to-edge, but keep their content
+   width as the flex-basis so the free space is shared on top of it — final widths track each pill's
+   label/value length (Provider wider than Gender) rather than being forced equal. */
+.vw-rows .vw-select { display: flex; align-items: center; gap: .35rem; flex: 1 1 auto; min-width: 0;
+  font-size: .8rem; color: var(--vw-muted);
+  background: var(--vw-card); border: 1px solid var(--vw-line); border-radius: 9px; padding: .4rem .7rem; }
+/* flex:1 + min-width:0 so the native control fills the stretched pill (and can shrink to ellipsis). */
+.vw-rows .vw-select select { border: none; background: transparent; color: var(--vw-fg); font-weight: 600;
+  font-size: .8rem; padding: 0; cursor: pointer; flex: 1; min-width: 0; }
+/* Chromium derives the option popup's colors from the select's computed background — transparent
+   would yield a white popup with near-white text in dark mode, so pin both explicitly. */
+.vw-rows .vw-select option { background: var(--vw-card); color: var(--vw-fg); }
+.vw-rows .vw-search { padding: .4rem .7rem; min-width: 200px; background: var(--vw-card);
+  border: 1px solid var(--vw-line); border-radius: 9px; color: inherit; font-size: .8rem; }
+
+/* Group toggle as a segmented control: gray track, raised active segment. */
+.vw-rows .vw-group { display: flex; margin-left: auto; background: var(--grayscale-a3); border-radius: 9px; padding: 2px; }
+.vw-rows .vw-group button { padding: .35rem .7rem; background: transparent; color: var(--vw-muted); border: none;
+  border-radius: 7px; cursor: pointer; font-size: .78rem; }
+.vw-rows .vw-group button.on { background: var(--vw-card); color: var(--vw-fg); font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+
+/* Section header between row-groups when grouping by provider/language. */
+.vw-rows .vw-rsection { margin-bottom: 1.25rem; }
+.vw-rows .vw-section-title { font-size: .85rem; font-weight: 650; margin: .5rem 0 .55rem; text-transform: capitalize; }
+.vw-rows .vw-section-title span { color: var(--vw-muted); font-weight: 400; margin-left: .3rem; }
+
+/* ── The list: bordered, rounded container that lifts off the page (like the card). ───────────── */
+/* overflow:VISIBLE (not hidden): a row's sample-text popover must be able to escape the list — the
+   cards' grid likewise never clips. The rounded corners are instead carried by rounding the first/
+   last rows below, so on-hover row backgrounds still follow the container's rounded shape. */
+.vw-rows .vw-list { list-style: none; margin: 0; padding: 0;
+  border: 1px solid var(--vw-line); border-radius: 14px; overflow: visible; background: var(--vw-card);
+  box-shadow: var(--card-shadow), var(--card-inset); }
+
+/* Row: hairline-divided, full-width, uniform height; subtle background on hover. The inner <article>
+   carries the flex layout + the per-row accessible name. overflow:visible on the row so the sample-
+   text popover can escape upward.
+   margin/padding RESET: the rows are <li>s rendered inside MDX, so Fern's prose styles apply a
+   vertical `margin: 7px 0` and a `padding-inline-start` to every <li>. The margins open a ~7px gap
+   between rows (filled by the list's card background) that the per-row :hover background — painted on
+   the <li> border-box — does NOT cover, so the highlight cut off short above/below each row; the
+   inline padding also indented the rows. Zero both so the hover fill spans the full row edge-to-edge
+   and rows sit flush like the source mockup. */
+.vw-rows .vw-row { margin: 0; padding: 0; border-bottom: 1px solid var(--vw-line2); transition: background .12s ease; }
+.vw-rows .vw-row:last-child { border-bottom: none; }
+/* Round the end rows to ~the list's inner radius (14px border-radius − 1px border) so a hovered
+   first/last row's background doesn't square off the container's rounded corners now that the list
+   no longer clips. */
+.vw-rows .vw-row:first-child { border-top-left-radius: 13px; border-top-right-radius: 13px; }
+.vw-rows .vw-row:last-child { border-bottom-left-radius: 13px; border-bottom-right-radius: 13px; }
+.vw-rows .vw-row:hover { background: var(--table-row-hover); }
+.vw-rows .vw-row:focus-within { background: var(--table-row-hover); }
+.vw-rows .vw-row-inner { display: flex; align-items: center; gap: 13px; padding: 10px 15px;
+  min-height: 58px; position: relative; }
+/* The row deliberately does NOT take a z-index on hover. Lifting it made the whole row a stacking
+   context above the sticky toolbar (z-index:2), so a row scrolled partly under the toolbar painted
+   OVER it on hover. The row stays at z-index:auto (below the toolbar); only the sample-text popover
+   (z-index:30) needs to escape, and it beats the toolbar's z-index on its own — so the popover
+   paints above the toolbar while the row body never does. */
+
+/* Ghost play button: 38px outline circle at rest; fills with the accent + equalizer while playing. */
+.vw-rows .vw-play { width: 38px; height: 38px; flex: 0 0 auto; border-radius: 50%; cursor: pointer;
+  background: transparent; color: var(--vw-fg); border: 1.5px solid var(--vw-line); font-size: 11px;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: background .15s ease, border-color .15s ease, color .15s ease; }
+.vw-rows .vw-play:hover:not(.vw-playing) { border-color: var(--vw-accent); color: var(--vw-accent); }
+.vw-rows .vw-play.vw-playing { background: var(--vw-accent); border-color: var(--vw-accent); color: var(--accent-contrast); }
+/* Play (rest) + stop (reduced-motion) SVG glyphs, sized to the old "▶"/"■" footprint. */
+.vw-rows .vw-play svg { width: 13px; height: 13px; display: block; }
+
+/* Equalizer bars while playing; .vw-stop is the reduced-motion fallback (swapped in below). */
+.vw-rows .vw-eq { display: inline-flex; gap: 2.5px; align-items: flex-end; height: 12px; }
+.vw-rows .vw-eq i { width: 2.5px; background: currentColor; border-radius: 1px; transform-origin: 50% 100%;
+  animation: vw-eqb 1s ease-in-out infinite; }
+.vw-rows .vw-eq i:nth-child(1) { height: 60%; }
+.vw-rows .vw-eq i:nth-child(2) { height: 100%; animation-delay: .2s; }
+.vw-rows .vw-eq i:nth-child(3) { height: 45%; animation-delay: .4s; }
+@keyframes vw-eqb { 0%, 100% { transform: scaleY(.5); } 50% { transform: scaleY(1); } }
+.vw-rows .vw-stop { display: none; }
+
+/* Name + meta block — min-width:0 so the name/meta ellipsize instead of widening the row. The two
+   lines carry FIXED line-heights (18px + 16px + the 2px gap = 36px) so the block is shorter than the
+   38px play circle: the play circle is then the tallest cell in every row, which (with the row's
+   min-height:58px and 10px top/bottom padding → 58px) keeps every loaded row EXACTLY the same height
+   as a skeleton row (whose 38px play placeholder is likewise the tallest) → zero layout shift. */
+.vw-rows .vw-row-mid { flex: 1; min-width: 0; }
+.vw-rows .vw-row-nm { display: flex; align-items: center; gap: 6px; min-width: 0; }
+/* Name: cleaned display name, single line, ellipsis if absurdly long (cleaned names fit). The full
+   original lives in title=/the icon tooltip. The display:block + word-break/line-clamp resets
+   override the cards' bare `.vw-name` (which sets -webkit-box + -webkit-line-clamp:2 for the cards'
+   2-line wrap; it also matches here because the rows root carries the `vw` class) so the row name
+   stays strictly single-line with a tail ellipsis. */
+.vw-rows .vw-name { display: block; flex: 0 1 auto; font-family: var(--vw-i18n-font); font-weight: 650;
+  font-size: 14.5px; line-height: 18px;
+  letter-spacing: -.01em; color: var(--vw-fg); white-space: nowrap; word-break: normal;
+  -webkit-line-clamp: none; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+
+/* Meta — muted plain-middot: language · gender · provider · model. Single line; truncates with
+   ellipsis (never wraps → uniform row height). */
+.vw-rows .vw-row-meta { display: flex; align-items: center; gap: 6px; margin-top: 2px;
+  font-size: 12px; line-height: 16px; color: var(--vw-fg2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vw-rows .vw-row-meta > span { flex: 0 0 auto; }
+.vw-rows .vw-dot { opacity: .5; }
+.vw-rows .vw-gender { text-transform: capitalize; }
+/* Provider in the meta is plain text (NOT the uppercase chip the cards use in their footer) — it
+   reads as one of the middot-separated meta facts. The text-transform/letter-spacing/font-* resets
+   override the cards' bare `.vw-prov` rule (loaded globally; it also matches because the rows root
+   carries the `vw` class). Shrink-safe so a long provider truncates. */
+.vw-rows .vw-prov { min-width: 0; overflow: hidden; text-overflow: ellipsis; flex: 0 1 auto;
+  text-transform: none; letter-spacing: normal; font-size: inherit; font-weight: inherit;
+  color: inherit; white-space: nowrap; }
+/* Model: the real (normalized) model as NEUTRAL inline-code — mono + --code-bg + --fg-secondary fg
+   (NOT --code-fg, which equals --accent and would read as clickable). Single-line; ellipsizes at the
+   tail if unusually long; the raw model stays in title=/copy. */
+.vw-rows .vw-model { font: 11px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--vw-fg2);
+  background: var(--code-bg); border-radius: 5px; padding: 1px 6px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 0 1 auto; }
+
+/* Sample-text popover: a fixed-width (220px), icon-anchored disclosure on the right of the row (left
+   of Copy). Opens upward and is RIGHT-anchored so it extends leftward into the row and never spills
+   off the right edge. Revealed on hover/focus-within; the trigger carries aria-describedby → .vw-tooltip. */
+.vw-rows .vw-tooltip-wrap { flex: 0 0 auto; position: relative; display: inline-flex; align-items: center;
+  color: var(--vw-muted); cursor: help; transition: color .15s ease; }
+.vw-rows .vw-tooltip-wrap:hover, .vw-rows .vw-tooltip-wrap:focus-within { color: var(--vw-accent); }
+.vw-rows .vw-tooltip-icon { display: inline-flex; opacity: .75; }
+.vw-rows .vw-tooltip-wrap:hover .vw-tooltip-icon,
+.vw-rows .vw-tooltip-wrap:focus-within .vw-tooltip-icon { opacity: 1; }
+.vw-rows .vw-tooltip-icon svg { width: 14px; height: 14px; }
+.vw-rows .vw-tooltip { display: none; position: absolute; bottom: calc(100% + 9px); right: -8px; width: 220px;
+  background: var(--vw-card); color: var(--vw-fg2);
+  border: 1px solid var(--vw-line); border-radius: 9px; padding: 8px 11px;
+  font-family: var(--vw-i18n-font); font-size: 11.5px; font-style: italic; line-height: 1.45;
+  box-shadow: var(--card-hover-shadow); z-index: 30; pointer-events: none; white-space: normal; }
+.vw-rows .vw-tooltip::after { content: ""; position: absolute; top: 100%; right: 14px;
+  border: 6px solid transparent; border-top-color: var(--vw-card); }
+.vw-rows .vw-tooltip-wrap:hover .vw-tooltip,
+.vw-rows .vw-tooltip-wrap:focus-within .vw-tooltip { display: block; }
+
+/* Copy — always labeled (rows have the room; no icon-only variant). Copied → --status-success. */
+.vw-rows .vw-copy-t { flex: 0 0 auto; font-size: 12.5px; color: var(--vw-accent); background: none; border: none;
+  font-weight: 600; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; padding: 0;
+  white-space: nowrap; }
+.vw-rows .vw-copy-t svg { width: 13px; height: 13px; }
+.vw-rows .vw-copy-t.vw-copied { color: var(--status-success); }
+
+/* Smooth resolve: the loaded list fades/rises into the slot the skeleton list held. Reduced-motion-
+   gated below. */
+.vw-rows .vw-list.vw-fadein { animation: vw-in .45s cubic-bezier(.2,.7,.2,1) both; }
+@keyframes vw-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+/* Numbered pager: ghost number buttons, inverted current page, bordered Prev/Next. */
+.vw-rows .vw-pager { display: flex; align-items: center; justify-content: center; gap: .3rem;
+  margin: 1.1rem 0 .25rem; flex-wrap: wrap; }
+.vw-rows .vw-page { min-width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center;
+  padding: 0 .35rem; border-radius: 8px; font-size: .8rem; color: var(--vw-fg); background: transparent;
+  border: 1px solid transparent; cursor: pointer; }
+.vw-rows .vw-page:hover:not(:disabled):not(.vw-page-on) { border-color: var(--vw-line); }
+.vw-rows .vw-page-on { background: var(--vw-fg); color: var(--vw-bg); font-weight: 600; }
+.vw-rows .vw-page-nav { border-color: var(--vw-line); background: var(--vw-card); padding: 0 .65rem; }
+.vw-rows .vw-page-nav:hover:not(:disabled) { border-color: var(--vw-accent); color: var(--vw-accent); }
+.vw-rows .vw-page-nav:disabled { opacity: .45; cursor: not-allowed; }
+.vw-rows .vw-page-gap { color: var(--vw-muted); padding: 0 .2rem; }
+.vw-rows .vw-perpage { margin-left: .6rem; }
+.vw-rows .vw-perpage select { font-size: .75rem; color: var(--vw-muted); background: transparent;
+  border: none; cursor: pointer; }
+.vw-rows .vw-perpage option { background: var(--vw-card); color: var(--vw-fg); }
+.vw-rows .vw-empty { padding: 2rem 0; color: var(--vw-fg2); font-size: .9rem; }
+
+/* Reduced motion: static stop glyph instead of animated bars, no transitions, no fade-in. (The
+   shimmer primitive disables its own animation in components/skeleton/styles.css.) */
+@media (prefers-reduced-motion: reduce) {
+  .vw-rows .vw-eq { display: none; }
+  .vw-rows .vw-stop { display: inline; }
+  .vw-rows .vw-row, .vw-rows .vw-play, .vw-rows .vw-tooltip-wrap { transition: none; }
+  .vw-rows .vw-list.vw-fadein { animation: none; }
+}
+
+/* Visible focus rings on every interactive control, both themes (2px accent outline + offset). */
+.vw-rows .vw-play:focus-visible, .vw-rows .vw-copy-t:focus-visible,
+.vw-rows .vw-tooltip-wrap:focus-visible, .vw-rows .vw-page:focus-visible,
+.vw-rows .vw-select select:focus-visible, .vw-rows .vw-search:focus-visible,
+.vw-rows .vw-group button:focus-visible, .vw-rows .vw-perpage select:focus-visible {
+  outline: 2px solid var(--vw-accent); outline-offset: 2px; border-radius: 8px;
+}
+.vw-rows .vw-play:focus-visible { border-radius: 50%; }
+
+/* Mobile: rows stay single-column full-width; the name+meta block shrinks (meta truncates). Copy
+   stays labeled (it fits). */
+@media (max-width: 640px) {
+  .vw-rows .vw-filters { gap: .4rem; }
+  .vw-rows .vw-search { min-width: 0; flex: 1; }
+  .vw-rows .vw-group { margin-left: 0; }
+  .vw-rows .vw-perpage { margin-left: 0; }
+  .vw-rows .vw-row-inner { gap: 11px; padding: 10px 13px; }
+}
