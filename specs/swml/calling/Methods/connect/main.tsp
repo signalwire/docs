@@ -210,6 +210,13 @@ model ConnectDestination {
   @example("Support Team")
   from_name?: string;
 
+  @doc("""
+    Comma-separated string of codecs to offer for this destination.
+    Overrides the top-level `codecs`. It has no effect on calls to phone numbers.
+    """)
+  @example("PCMU")
+  codecs?: string;
+
   @doc("SIP username to use for authentication when dialing a SIP URI. Has no effect on calls to phone numbers.")
   @example("sipuser")
   username?: string;
@@ -298,7 +305,7 @@ model ConnectDestination {
  */
 @summary("Single Destination")
 model ConnectDeviceSingle is ConnectDeviceBase {
-  ...OmitProperties<ConnectDestination, "from" | "from_name" | "timeout" | "call_state_events" | "call_state_url" | "confirm" | "confirm_timeout" | "encryption">;
+  ...OmitProperties<ConnectDestination, "from" | "from_name" | "codecs" | "timeout" | "call_state_events" | "call_state_url" | "confirm" | "confirm_timeout" | "encryption">;
 }
 
 @summary("Serial Dialing")
