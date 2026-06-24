@@ -329,23 +329,27 @@ model ConnectDeviceSingle is ConnectDeviceBase {
 }
 
 @summary("Serial Dialing")
+@doc("Dial destinations one at a time in sequence. If the first destination does not answer, the next destination in the array is tried, and so on.")
 model ConnectDeviceSerial is ConnectDeviceBase {
-  @doc("Array of destinations to dial in order. Each destination is tried sequentially — if the first fails, the next is attempted.")
+  @doc("Array of destination objects to dial in order. Each destination is tried sequentially — if the current destination does not answer, the next one in the array is attempted.")
   serial: ConnectDestination[];
 }
 
 @summary("Parallel Dialing")
+@doc("Dial multiple destinations simultaneously. All destinations in the array ring at the same time — the first to answer is bridged and the remaining calls are cancelled.")
 model ConnectDeviceParallel is ConnectDeviceBase {
-  @doc("Array of destinations to dial simultaneously. The first destination to answer is bridged and the rest are cancelled.")
+  @doc("Array of destination objects to dial simultaneously. All destinations ring at the same time — the first to answer is bridged and the remaining calls are cancelled.")
   parallel: ConnectDestination[];
 }
 
 @summary("Serial-Parallel Dialing")
+@doc("Combine both serial and parallel strategies using a two-dimensional array. The outer array is the serial dimension — each element is a group tried one at a time, in order. Each inner array is the parallel dimension — all destinations in that group are dialed simultaneously. If no destination in the current group answers, the next group is attempted.")
 model ConnectDeviceSerialParallel is ConnectDeviceBase {
   @doc("""
-    Array of arrays.
-    Inner arrays contain destinations to dial simultaneously.
-    Outer array attempts each parallel group in order.
+    Two-dimensional array combining serial and parallel strategies.
+    The outer array is the **serial** dimension — each element is a group tried in order.
+    Each inner array is the **parallel** dimension — all destinations in that group are dialed simultaneously.
+    If no destination in the current group answers, the next group is attempted.
     """)
   serial_parallel: ConnectDestination[][];
 }
