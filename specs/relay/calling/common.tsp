@@ -8,25 +8,25 @@ namespace Relay.Calling;
 // Shared mixins
 // ═════════════════════════════════════════════════════════════════════════════
 
-/** Identifies an active call on a node. Spread into nearly every method/event. */
+/** Identifies a specific active call. Nearly every method and event includes it. */
 model CallAddress {
-  /** Node the call is on. */
+  /** Identifier of the node handling the call. Pair it with `call_id` to address the call. */
   node_id: string;
 
-  /** The call id. */
+  /** Unique identifier of the call. */
   call_id: string;
 }
 
 /**
- * The common Relay result envelope. `code` is a STRING (`"200"` on success);
- * errors are carried in-band via a non-`"200"` `code` plus `message` — there is
- * no JSON-RPC `error` object.
+ * The result returned by calling methods. Check `code`: `"200"` means success;
+ * anything else means the request failed, and `message` explains why. Failures are
+ * reported through these fields rather than thrown as a separate error.
  */
 model RelayResult {
-  /** Result code (string), e.g. `"200"`, `"400"`, `"404"`. */
+  /** Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`. */
   code: string;
 
-  /** Human-readable result message. */
+  /** Human-readable description of the result. On failure, explains what went wrong. */
   message: string;
 }
 
@@ -76,7 +76,7 @@ union TtsGender {
   "female",
 }
 
-/** Codecs negotiable when answering a call (documented superset across call types). */
+/** Codecs you can negotiate when answering a call, across all call types. */
 union AnswerCodec {
   "PCMU",
   "PCMA",
@@ -88,7 +88,7 @@ union AnswerCodec {
   "H264",
 }
 
-/** Codecs selectable for SIP devices on dial/connect. */
+/** Codecs you can request for a SIP device when you dial or connect. */
 union SipCodec {
   "PCMU",
   "PCMA",
@@ -99,7 +99,7 @@ union SipCodec {
   "H264",
 }
 
-/** Codecs selectable for WebRTC devices on dial/connect. */
+/** Codecs you can request for a WebRTC device when you dial or connect. */
 union WebrtcCodec {
   "PCMU",
   "PCMA",
@@ -149,9 +149,8 @@ model PhoneDeviceParams {
   call_state_events?: CallStateEventName[];
 
   /**
-   * A confirmation prompt to require before bridging: a SWML URL string or an
-   * inline compact SWML document. (Modeled loosely — SWML is documented
-   * separately.)
+   * A prompt that must be confirmed before this leg is bridged. Provide a URL to a
+   * SWML document or an inline SWML document. See the SWML reference for details.
    */
   confirm?: unknown;
 }
@@ -444,7 +443,7 @@ model CallSipDevice extends CallDevice {
 model CallWebrtcDevice extends CallDevice {
   type: "webrtc";
 
-  /** WebRTC device params (shapes not documented in the protocol reference). */
+  /** Parameters of the negotiated WebRTC leg. */
   params: Record<unknown>;
 }
 

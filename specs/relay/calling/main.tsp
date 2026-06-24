@@ -17,13 +17,13 @@ import "./events/media-2.tsp";
 using SignalWire.AsyncAPI;
 
 /**
- * The `calling` service controls voice calls over Relay: dialing, answering,
- * bridging, media playback/collection, recording, detection, AI, and the
- * asynchronous `calling.call.*` events that report call/leg state.
+ * The `calling` service lets you control voice calls over Relay: dial and answer
+ * calls, bridge legs together, play and collect media, record, run detection, add
+ * AI, and react to the `calling.call.*` events that report call and leg state as it
+ * changes.
  *
- * **Audience:** server-side. Exposed by the server SDKs (Python, Node, Java, Ruby)
- * for backend call control. Browser clients place peer calls via the WebRTC (Verto)
- * service instead.
+ * Use it from your backend — it's available in the server SDKs (Python, Node, Java,
+ * Ruby). To place a call directly from a browser, use the WebRTC service instead.
  */
 @channel("calling")
 @channelPerCommand

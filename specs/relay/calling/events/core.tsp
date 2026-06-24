@@ -9,59 +9,59 @@ namespace Relay.Calling;
 // calling.call.state
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** A parent call referenced by a state event. */
+/** The call that created this one, when it was spawned by another call. */
 model CallParentRef {
-  /** Node the parent call is on. */
+  /** Identifier of the node hosting the parent call. */
   node_id?: string;
 
-  /** The parent call id. */
+  /** The parent call's `call_id`. */
   call_id?: string;
 
-  /** The parent device type (flattened, e.g. `sip`). */
+  /** The parent's device type, such as `sip`. */
   device_type?: string;
 }
 
-/** A peer call referenced by an event. */
+/** The other call this one is bridged to. */
 model CallPeerRef {
-  /** Node the peer call is on. */
+  /** Identifier of the node hosting the peer call. */
   node_id?: string;
 
-  /** The peer call id. */
+  /** The peer call's `call_id`. */
   call_id?: string;
 }
 
 model CallStateParams {
   ...CallAddress;
 
-  /** Identifier set on the originating dial/connect. */
+  /** The `tag` you set when you placed the call, so you can match this event back to your request. */
   tag?: string;
 
-  /** The negotiated device for this call. */
+  /** The device handling this call, once it has been determined. */
   device?: CallDevice;
 
-  /** The parent call, when this call was created by another. */
+  /** Present when this call was created by another call, describing that originating call. */
   parent?: CallParentRef;
 
-  /** The peer call, when bridged. */
+  /** Present when this call is bridged to another, describing the other call. */
   peer?: CallPeerRef;
 
-  /** The new call state. */
+  /** The state the call has just moved into. */
   call_state: CallState;
 
-  /** Epoch milliseconds the call started. */
+  /** When the call started, in epoch milliseconds. */
   start_time?: int64;
 
-  /** Epoch milliseconds the call was answered. */
+  /** When the call was answered, in epoch milliseconds. */
   answer_time?: int64;
 
-  /** Epoch milliseconds the call ended. */
+  /** When the call ended, in epoch milliseconds. */
   end_time?: int64;
 
-  /** What created this call. */
+  /** How the call came to be: `dial` (you placed it), `connect` (created by a bridge), or `receive` (inbound). */
   created_by?: "dial" | "connect" | "receive";
 }
 
-/** A change in state of an active Relay-controlled call. */
+/** Fires every time one of your calls changes state. Use the `call_state` field to track the call through its lifecycle, and `tag` to match the event back to the call you placed. */
 @event("calling.call.state")
 @example(#{
   node_id: "b8d0a8f0-1234-4abc-9def-0123456789ab",
@@ -90,7 +90,7 @@ model CallStateEvent {
 // calling.call.receive
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Call states reported on an inbound `calling.call.receive`. */
+/** The states an inbound call can report on `calling.call.receive`. */
 union ReceiveCallState {
   "created",
   "connecting",
@@ -102,17 +102,17 @@ union ReceiveCallState {
 model CallReceiveParams {
   ...CallAddress;
 
-  /** State of the inbound call. */
+  /** The current state of the inbound call. */
   call_state: ReceiveCallState;
 
-  /** Routing context the call arrived on (e.g. `pbx`). */
+  /** The context the call arrived on, such as `pbx`. */
   context?: string;
 
-  /** The inbound device. */
+  /** The device the call is coming in on, including the caller's number. */
   device: CallDevice;
 }
 
-/** An incoming call available for a Relay client to control. */
+/** Fires when a new call comes in that your application can answer and control. The payload tells you who is calling and on which context. */
 @event("calling.call.receive")
 model CallReceiveEvent {
   ...CallReceiveParams;
@@ -122,41 +122,41 @@ model CallReceiveEvent {
 // calling.call.connect
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** The peer leg in a connect event. */
+/** The other call being connected to yours. */
 model ConnectPeer {
-  /** Node the peer call is on. */
+  /** Identifier of the node hosting the peer call. */
   node_id?: string;
 
-  /** The peer call id. */
+  /** The peer call's `call_id`. */
   call_id?: string;
 
-  /** Client data the peer call is tagged with. */
+  /** The `tag` set on the peer call. */
   tag?: string;
 
-  /** Id of the queue the peer was pulled from, when connected via a queue. */
+  /** When the peer was reached through a queue, the queue's id. */
   queue_id?: string;
 
-  /** Friendly name of that queue. */
+  /** The queue's friendly name. */
   queue_name?: string;
 
-  /** The peer's negotiated device. */
+  /** The device handling the peer call. */
   device?: CallDevice;
 }
 
 model CallConnectParams {
   ...CallAddress;
 
-  /** Identifier of the connect operation. */
+  /** The `tag` you set on the connect request, so you can match this event to it. */
   tag?: string;
 
-  /** The peer call being connected. */
+  /** The other call yours is being connected to. */
   peer: ConnectPeer;
 
-  /** The connect (bridge) state. */
+  /** Where the connection stands: `connecting`, `connected`, `disconnected`, or `failed`. */
   connect_state: "disconnected" | "connecting" | "connected" | "failed";
 }
 
-/** A call's connect (bridge/unbridge) state. */
+/** Fires as a connect request progresses, telling you whether your call has been bridged to the peer. Watch `connect_state` to know when the two calls are joined, torn down, or have failed to connect. */
 @event("calling.call.connect")
 @example(#{
   node_id: "b8d0a8f0-1234-4abc-9def-0123456789ab",
@@ -179,39 +179,39 @@ model CallConnectEvent {
 // calling.call.dial
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** The answered call carried by a `calling.call.dial` event. */
+/** The call that answered, included once a `calling.dial` succeeds. */
 model DialWinnerCall {
-  /** Node the answered call is on. */
+  /** Identifier of the node hosting the answered call. */
   node_id?: string;
 
-  /** The answered call id. */
+  /** The answered call's `call_id`. */
   call_id?: string;
 
-  /** Client data the answered call is tagged with. */
+  /** The `tag` set on the answered call. */
   tag?: string;
 
-  /** The negotiated device. */
+  /** The device that answered. */
   device?: CallDevice;
 
-  /** Whether this call is the selected (first-answered) winner. */
+  /** `true` for the call that won the dial. When you dial several destinations at once, this marks the first one to answer. */
   dial_winner?: boolean;
 }
 
 model CallDialParams {
-  /** Node the dial is on. */
+  /** Identifier of the node handling the dial. */
   node_id: string;
 
-  /** Identifier from `calling.dial`. */
+  /** The `tag` you set on the `calling.dial` request, so you can match this event to it. */
   tag: string;
 
-  /** The dial operation state. */
+  /** Where the dial stands: `dialing`, `answered`, or `failed`. */
   dial_state: "dialing" | "answered" | "failed";
 
-  /** The answered call (present when `dial_state` is `answered`). */
+  /** The call that answered. Present only when `dial_state` is `answered`. */
   call?: DialWinnerCall;
 }
 
-/** The state of a `calling.dial` operation. */
+/** Fires as a `calling.dial` request progresses. Watch `dial_state` to know when your call is ringing, has been answered, or failed; when it is answered the `call` field gives you the call that picked up. */
 @event("calling.call.dial")
 @example(#{
   node_id: "b8d0a8f0-1234-4abc-9def-0123456789ab",

@@ -9,7 +9,7 @@ namespace Relay.Calling;
 // calling.call.refer
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** State of a SIP-REFER transfer (`calling.call.refer`). */
+/** How a transfer (SIP REFER) is progressing. */
 union ReferState {
   "inProgress",
   "cancel",
@@ -22,23 +22,24 @@ union ReferState {
 model CallReferParams {
   ...CallAddress;
 
-  /** The transfer state. */
+  /** Where the transfer currently stands. */
   state: ReferState;
 
   /** The SIP URI the call is being transferred to. */
   sip_refer_to?: string;
 
-  /** SIP response code to the REFER request (string, e.g. `"202"`). */
+  /** The SIP response code the far end returned to the REFER request, as a string (for example `"202"`). */
   sip_refer_response_code?: string;
 
   /**
-   * SIP response code to the NOTIFY(s) received after the REFER (string, e.g.
-   * `"200"`). Indicates whether the transfer ultimately succeeded.
+   * The SIP response code from the NOTIFY messages that follow the REFER, as a
+   * string (for example `"200"`). This tells you whether the transfer ultimately
+   * succeeded.
    */
   sip_notify_response_code?: string;
 }
 
-/** A change in state of a transferred (SIP-REFER) call. */
+/** Fires each time a transferred call (SIP REFER) changes state, so you can follow the handoff from start to success or failure. */
 @event("calling.call.refer")
 @example(#{
   node_id: "a3e1b2c4-1234-5678-9abc-def012345678",
@@ -56,7 +57,7 @@ model CallReferEvent {
 // calling.call.play
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** State of an active play (`calling.call.play`). */
+/** The current state of audio playback on the call. */
 union CallPlayState {
   "playing",
   "paused",
@@ -67,14 +68,14 @@ union CallPlayState {
 model CallPlayParams {
   ...CallAddress;
 
-  /** Identifier of the active play (from `calling.play`). */
+  /** The `control_id` of the playback this event refers to, returned when you started it with `calling.play`. */
   control_id: string;
 
-  /** The play state. */
+  /** Where the playback currently stands. */
   state: CallPlayState;
 }
 
-/** A change in a call's play state. */
+/** Fires when audio playback on a call starts, pauses, resumes, finishes, or errors, so you can track a `calling.play` through to completion. */
 @event("calling.call.play")
 @example(#{
   node_id: "a3e1b2c4-1234-5678-9abc-def012345678",
@@ -90,11 +91,7 @@ model CallPlayEvent {
 // calling.call.queue
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Queue transition reported by `calling.call.queue`. (The prose param-list
- * mislabels this field `state` with play-style values; the wire payload field is
- * `status` with these values — payload is authoritative.)
- */
+/** What just happened to the call in the queue: it entered (`enqueue`), was pulled out to be connected (`dequeue`), or left on its own (`leave`). */
 union CallQueueStatus {
   "enqueue",
   "dequeue",
@@ -104,38 +101,38 @@ union CallQueueStatus {
 model CallQueueParams {
   ...CallAddress;
 
-  /** Identifier of the active queue (from `calling.queue.enter`). */
+  /** The `control_id` of the queue session this event refers to, returned when the call entered with `calling.queue.enter`. */
   control_id: string;
 
-  /** The queue transition. */
+  /** What just happened to the call in the queue. */
   status?: CallQueueStatus;
 
-  /** Queue id. */
+  /** The queue's unique id. */
   id?: string;
 
-  /** Queue name. */
+  /** The queue's name. */
   name?: string;
 
-  /** Position of the call within the queue. */
+  /** Where this call currently sits in line, counting from the front. */
   position?: float64;
 
-  /** Number of calls in the queue. */
+  /** How many calls are currently waiting in the queue. */
   size?: float64;
 
-  /** Average time (seconds) calls spend in the queue. */
+  /** The average time, in seconds, calls have been spending in this queue. */
   avg_time?: float64;
 
-  /** Epoch (seconds) the call entered the queue. */
+  /** The time, as a Unix timestamp in seconds, when the call entered the queue. */
   enqueue_ts?: float64;
 
-  /** Epoch (seconds) the call was dequeued. */
+  /** The time, as a Unix timestamp in seconds, when the call was pulled from the queue. */
   dequeue_ts?: float64;
 
-  /** Epoch (seconds) the call left the queue. */
+  /** The time, as a Unix timestamp in seconds, when the call left the queue. */
   leave_ts?: float64;
 }
 
-/** A change in a call's queue state. */
+/** Fires as a call moves through a queue — when it joins, gets connected, or leaves — and reports its position along with live queue stats. */
 @event("calling.call.queue")
 @example(#{
   node_id: "a3e1b2c4-1234-5678-9abc-def012345678",
@@ -157,7 +154,7 @@ model CallQueueEvent {
 // calling.call.collect
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Overall state of an active collect (`calling.call.collect`). */
+/** Where input collection currently stands: still listening, finished, or stopped on an error. */
 union CallCollectState {
   "collecting",
   "error",
@@ -165,9 +162,10 @@ union CallCollectState {
 }
 
 /**
- * The collected input. Discriminated on `type`. The `error`, `no_input`,
- * `no_match` and `start_of_input` variants carry no `params`; `digit` and
- * `speech` carry a `params` payload.
+ * What the caller gave you. Read `type` to know which kind of result this is. The
+ * `error`, `no_input`, `no_match`, and `start_of_input` types are markers with no
+ * extra data, while `digit` and `speech` include a `params` object with the
+ * collected input.
  */
 @discriminator("type")
 model CallCollectResult {
@@ -186,7 +184,7 @@ model CallCollectResultNoMatch extends CallCollectResult {
   type: "no_match";
 }
 
-/** Fired only when using the `calling.collect` API (start-of-speech marker). */
+/** Signals that the caller has started speaking. You only receive this when you collect with `calling.collect`. */
 model CallCollectResultStartOfInput extends CallCollectResult {
   type: "start_of_input";
 }
@@ -194,10 +192,10 @@ model CallCollectResultStartOfInput extends CallCollectResult {
 model CallCollectResultDigit extends CallCollectResult {
   type: "digit";
   params: {
-    /** The collected DTMF digits. */
+    /** The DTMF digits the caller pressed. */
     digits: string;
 
-    /** The terminator digit that ended collection, if any. */
+    /** The digit that ended collection, if the caller pressed your terminator key. */
     terminator?: string;
   };
 }
@@ -205,10 +203,10 @@ model CallCollectResultDigit extends CallCollectResult {
 model CallCollectResultSpeech extends CallCollectResult {
   type: "speech";
   params: {
-    /** The recognized utterance. */
+    /** The text the speech recognizer heard the caller say. */
     text: string;
 
-    /** Recognition confidence (e.g. `83.2`). */
+    /** How confident the recognizer is in the result (for example `83.2`). */
     confidence?: float64;
   };
 }
@@ -216,24 +214,24 @@ model CallCollectResultSpeech extends CallCollectResult {
 model CallCollectParams {
   ...CallAddress;
 
-  /** Identifier of the active collect (from `calling.collect`). */
+  /** The `control_id` of the collection this event refers to, returned when you started it with `calling.collect`. */
   control_id: string;
 
-  /** The collect state. `error` means the detector ended with an error. */
+  /** Where the collection currently stands. `error` means it stopped because something went wrong. */
   state: CallCollectState;
 
-  /** The collect result. */
+  /** What the caller gave you. Check its `type` to handle digits, speech, or a no-input/no-match marker. */
   result?: CallCollectResult;
 
   /**
-   * Meaningful when `partial_results`/`continuous` was set: `true` once utterance
-   * detection has completed. With `continuous: true` the collector restarts for
-   * the next utterance.
+   * Relevant when you requested partial or continuous results: `true` once the
+   * recognizer has finished the current utterance. With `continuous: true`, the
+   * collector then restarts to listen for the next one.
    */
   final?: boolean;
 }
 
-/** A call's collect result. */
+/** Fires as you collect input from a caller — DTMF digits or speech — reporting partial and final results so you can react to what they said or pressed. */
 @event("calling.call.collect")
 // `result` is omitted: its type `CallCollectResult` is a @discriminator base,
 // which @example cannot narrow to a concrete variant (digit/speech/etc.).
@@ -252,7 +250,7 @@ model CallCollectEvent {
 // calling.call.record
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** State of an active recording (`calling.call.record`). */
+/** Where the recording currently stands, including `no_input` when nothing was captured. */
 union CallRecordState {
   "recording",
   "paused",
@@ -260,67 +258,59 @@ union CallRecordState {
   "no_input",
 }
 
-/** Audio direction reported on a recording event. */
+/** Which side of the conversation was recorded. */
 union RecordEventDirection {
-  /** What the call party hears. */
+  /** Only what the party hears. */
   "listen",
 
-  /** What the call party says. */
+  /** Only what the party says. */
   "speak",
 
-  /** Both directions. */
+  /** Both sides of the conversation. */
   "both",
 }
 
-/**
- * The reported `record.audio` subobject — a slimmer echo of the recording
- * configuration than the request-side `RecordAudio`.
- */
+/** The audio settings the recording was captured with. */
 model RecordEventAudio {
-  /** Output file format (e.g. `mp3`, `wav`). */
+  /** The file format of the recording (for example `mp3` or `wav`). */
   format?: string;
 
   /** Whether the recording was captured in stereo. */
   stereo?: boolean;
 
-  /** Which audio direction(s) were captured. */
+  /** Which side(s) of the conversation were captured. */
   direction?: RecordEventDirection;
 }
 
-/**
- * Reported recording spec. Keyed by the subobject name (`audio`) rather than a
- * `type` discriminator; only the `audio` variant is documented. (Prose also
- * references a `record.params` subobject for non-audio types — shape
- * undocumented.)
- */
+/** Describes how the recording was made. The `audio` field is present when you recorded audio. */
 model RecordEventSpec {
-  /** Audio-recording configuration (present when recording audio). */
+  /** The audio settings used for this recording. */
   audio?: RecordEventAudio;
 }
 
 model CallRecordParams {
   ...CallAddress;
 
-  /** Identifier of the active recording (from `calling.record`). */
+  /** The `control_id` of the recording this event refers to, returned when you started it with `calling.record`. */
   control_id: string;
 
-  /** The recording state. */
+  /** Where the recording currently stands. */
   state: CallRecordState;
 
-  /** Location of the recording — not accessible until `finished`. */
+  /** Where to download the finished recording. Not available until the state is `finished`. */
   url?: url;
 
-  /** Length of the recording in seconds — set when `finished`. */
+  /** How long the recording is, in seconds. Set once the state is `finished`. */
   duration?: float64;
 
-  /** Size of the recording in bytes — set when `finished`. */
+  /** How large the recording file is, in bytes. Set once the state is `finished`. */
   size?: int32;
 
-  /** The recording configuration. */
+  /** The settings this recording was captured with. */
   record?: RecordEventSpec;
 }
 
-/** A change in a call recording's state. */
+/** Fires when a recording starts, pauses, resumes, or finishes. The finished event includes the download URL, duration, and file size. */
 @event("calling.call.record")
 @example(#{
   node_id: "a3e1b2c4-1234-5678-9abc-def012345678",
@@ -340,56 +330,56 @@ model CallRecordEvent {
 // calling.call.detect
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Fax-detector event values. */
+/** What the fax detector heard. */
 union CallDetectFaxEvent {
-  /** Called-station fax tone. */
+  /** The answering fax machine's tone (CED). */
   "CED",
 
-  /** Calling-station fax tone. */
+  /** The calling fax machine's tone (CNG). */
   "CNG",
 
-  /** The detector completed. */
+  /** The detector finished. */
   "finished",
 
-  /** The detector was unable to start. */
+  /** The detector could not start. */
   "error",
 }
 
-/** Answering-machine-detector event values. */
+/** What the answering-machine detector concluded. */
 union CallDetectMachineEvent {
-  /** Machine detected. */
+  /** An answering machine picked up. */
   "MACHINE",
 
-  /** Human detected — a final event. */
+  /** A human answered. This is a final result. */
   "HUMAN",
 
-  /** Not sure. */
+  /** The detector could not tell whether it was a human or a machine. */
   "UNKNOWN",
 
   /**
-   * Machine ready for voicemail delivery — final if `detect_interruptions=false`
-   * or `beep=true`.
+   * The machine is ready for you to leave your message. This is a final result
+   * when `detect_interruptions=false` or `beep=true`.
    */
   "READY",
 
   /**
-   * Machine voicemail restarted, interrupting delivery. Only fired if
-   * `detect_interruptions=true`.
+   * The machine's greeting started over and interrupted your message. You only
+   * receive this when `detect_interruptions=true`.
    */
   "NOT_READY",
 
-  /** The detector completed. */
+  /** The detector finished. */
   "finished",
 
-  /** The detector was unable to start. */
+  /** The detector could not start. */
   "error",
 }
 
 /**
- * A detector's event payload. Discriminated on `type` (`fax|machine|digit`).
- * Every variant's `params.event` may also surface the generic `finished` (on
- * completion) or `error` (if unable to start) values in addition to its
- * type-specific values; these are included in each variant's `event` type.
+ * What the detector found. Read `type` to know which detector reported it: `fax`,
+ * `machine`, or `digit`. Whatever the type, the `event` field can also carry the
+ * generic `finished` value when the detector completes, or `error` if it could not
+ * start.
  */
 @discriminator("type")
 model CallDetectResult {
@@ -399,7 +389,7 @@ model CallDetectResult {
 model CallDetectFax extends CallDetectResult {
   type: "fax";
   params: {
-    /** The fax-detector event. */
+    /** What the fax detector heard. */
     event: CallDetectFaxEvent;
   };
 }
@@ -407,10 +397,10 @@ model CallDetectFax extends CallDetectResult {
 model CallDetectMachine extends CallDetectResult {
   type: "machine";
   params: {
-    /** The machine-detector event. */
+    /** What the answering-machine detector concluded. */
     event: CallDetectMachineEvent;
 
-    /** Whether a beep has been detected. */
+    /** Whether a beep was detected, signaling it's your turn to leave a message. */
     beep?: boolean;
   };
 }
@@ -418,7 +408,7 @@ model CallDetectMachine extends CallDetectResult {
 model CallDetectDigit extends CallDetectResult {
   type: "digit";
   params: {
-    /** The detected DTMF digit (one of `0-9`, `#`, `*`). */
+    /** The DTMF digit that was detected: one of `0`-`9`, `#`, or `*`. */
     event: string;
   };
 }
@@ -426,14 +416,14 @@ model CallDetectDigit extends CallDetectResult {
 model CallDetectParams {
   ...CallAddress;
 
-  /** Identifier of the active detector (from `calling.detect`). */
+  /** The `control_id` of the detector this event refers to, returned when you started it with `calling.detect`. */
   control_id: string;
 
-  /** The detector-specific information. */
+  /** What the detector found, including which kind of detector reported it. */
   detect: CallDetectResult;
 }
 
-/** A call-detection event from an active detector. */
+/** Fires when a detector reports a result — a fax tone, an answering machine versus a human, or a DTMF digit. */
 // No @example: the required `detect` field is typed as the @discriminator base
 // `CallDetectResult`, which @example cannot narrow to a concrete variant
 // (fax/machine/digit). Omitting a required field would be an invalid example.
@@ -449,11 +439,11 @@ model CallDetectEvent {
 model CallDenoiseParams {
   ...CallAddress;
 
-  /** Whether noise reduction is enabled (`true`) or disabled. */
+  /** Whether background noise reduction is now on (`true`) or off. */
   denoised: boolean;
 }
 
-/** A call-denoiser state event. (Carries no `control_id`.) */
+/** Fires when background noise reduction is turned on or off for the call. Unlike most media events, this one carries no `control_id`. */
 @event("calling.call.denoise")
 @example(#{
   node_id: "a3e1b2c4-1234-5678-9abc-def012345678",

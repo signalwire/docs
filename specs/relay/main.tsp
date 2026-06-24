@@ -13,24 +13,23 @@ import "./webrtc/main.tsp";
 using SignalWire.AsyncAPI;
 
 /**
- * SignalWire Relay is a single WebSocket connection to `relay.signalwire.com`
- * speaking JSON-RPC (BLADE). A connection is bootstrapped by `signalwire.connect`,
- * then multiplexes every service — calling, messaging, tasking, provisioning, and
- * webrtc — over the same socket, routing each request by its JSON-RPC `method`
- * namespace. Each service is grouped as its own channel.
+ * SignalWire Relay gives you a single WebSocket connection to
+ * `relay.signalwire.com`. Open it with `signalwire.connect`, then use any service —
+ * calling, messaging, tasking, provisioning, and webrtc — over that one connection.
+ * Each service is grouped as its own channel.
  *
  * ## Authentication
  *
- * Authentication is performed **in-band as the first message** — there is no HTTP
- * `Authorization` header on the WebSocket handshake. After the socket opens, the
- * client sends `signalwire.connect` with its credentials in `params.authentication`:
+ * You authenticate with your **first message** — there is no HTTP `Authorization`
+ * header on the WebSocket handshake. Once the socket opens, send `signalwire.connect`
+ * with your credentials in `params.authentication`:
  *
- * - **Browser / client SDKs** send a server-minted **`jwt_token`** (an API token must
- *   never be exposed in the browser).
+ * - **Browser / client SDKs** send a server-generated **`jwt_token`** (never expose
+ *   an API token in the browser).
  * - **Server SDKs** send a **`project` + `token`** pair (or a `jwt_token`).
  *
- * Once connected, every subsequent request rides the authenticated socket; a
- * `signalwire.authorization.state` event is returned for fast reconnection.
+ * After you connect, every request you send reuses the authenticated connection, and a
+ * `signalwire.authorization.state` event comes back that lets you reconnect quickly.
  */
 @service(#{ title: "SignalWire Relay" })
 @server("production", #{

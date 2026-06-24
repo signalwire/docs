@@ -9,86 +9,85 @@ namespace Relay.Calling;
 // calling.call.fax
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Direction of a fax page / transmission. */
+/** Whether the fax is being sent or received. */
 union FaxDirection {
   "send",
   "receive",
 }
 
-/** A fax event payload, discriminated on `type`. */
+/** Details of a fax event. The `type` field tells you which stage it describes. */
 @discriminator("type")
 model CallFax {
   type: string;
 }
 
-/** A single page was sent or received. */
+/** Fires each time a single fax page is sent or received, so you can track progress mid-transmission. */
 model FaxPage extends CallFax {
   type: "page";
   params: {
-    /** Whether the page was sent or received. */
+    /** Whether this page was sent or received. */
     direction: FaxDirection;
 
-    /** Page number. */
+    /** The page number that was just transmitted. */
     number: int32;
   };
 }
 
-/** The fax transmission finished. */
+/** Fires once the whole fax is done, with the final result and a link to the document. */
 model FaxFinished extends CallFax {
   type: "finished";
   params: {
     /** Whether the fax was sent or received. */
     direction: FaxDirection;
 
-    /** Local fax identity (e.g. an E.164 number). */
+    /** Your side's fax identity, typically an E.164 phone number. */
     identity?: string;
 
-    /** Remote fax identity (e.g. an E.164 number). */
+    /** The other party's fax identity, typically an E.164 phone number. */
     remote_identity?: string;
 
-    /** Document URL location. */
+    /** Link to the transmitted fax document. */
     document?: url;
 
-    /** Number of pages sent / received. */
+    /** Total number of pages sent or received. */
     pages?: int32;
 
-    /** Whether the fax completed successfully. */
+    /** `true` if the fax completed successfully, `false` if it failed. */
     success?: boolean;
 
-    /** Fax result code (e.g. `1231`). */
+    /** Numeric fax result code (for example, `1231`). */
     result?: int32;
 
-    /** Human-readable fax result text. */
+    /** Human-readable explanation of the fax result. */
     result_text?: string;
   };
 }
 
 /**
- * The fax transmission errored. The wire shape for this variant is not
- * documented in the protocol reference; it is modeled loosely and likely
- * shares the `finished` result/result_text fields.
+ * Fires if the fax fails. The payload here can vary; expect the same
+ * `result` and `result_text` fields you get on a finished fax.
  */
 model FaxError extends CallFax {
   type: "error";
 
-  /** Error-variant params (shape undocumented). */
+  /** Error details. The exact fields can vary. */
   params?: Record<unknown>;
 }
 
 model CallFaxParams {
   ...CallAddress;
 
-  /** The ID used to control the active fax. */
+  /** The `control_id` of the fax this event belongs to. */
   control_id: string;
 
-  /** Fax event information. */
+  /** The fax event details. Check `type` to see which stage it reports. */
   fax: CallFax;
 }
 
 // No `@example`: `fax` is a required `@discriminator` (CallFax) property, and an
 // example value cannot narrow a discriminated base. Per-variant payloads are
 // illustrated by the FaxPage/FaxFinished `type`/`params` fields above.
-/** A fax event (page / finished / error). */
+/** Sent as a fax progresses: one event per page, then a final event when it finishes or errors. */
 @event("calling.call.fax")
 model CallFaxEvent {
   ...CallFaxParams;
@@ -98,54 +97,54 @@ model CallFaxEvent {
 // calling.call.tap
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** State of an active tap. */
+/** Where the tap is in its lifecycle: `tapping` while audio is flowing, `finished` once it stops. */
 union TapState {
   "tapping",
   "finished",
 }
 
-/** Direction of tapped media. (Only `speak` is shown in the reference.) */
+/** Which side of the call audio is being tapped: the caller speaking, what they hear, or both. */
 union CallTapDirection {
   "speak",
   "listen",
   "both",
 }
 
-/** The tapped media, discriminated on `type`. (Only `audio` is documented.) */
+/** Describes the media being tapped. Currently always `audio`. */
 @discriminator("type")
 model TapMedia {
   type: string;
 }
 
-/** Audio tap. */
+/** An audio tap. */
 model CallTapAudio extends TapMedia {
   type: "audio";
   params: {
-    /** Which side(s) of the media are tapped. */
+    /** Which side(s) of the call audio this tap captures. */
     direction: CallTapDirection;
   };
 }
 
-/** The device receiving the tapped media, discriminated on `type`. (Only `rtp` is documented.) */
+/** Describes where the tapped audio is being sent. Currently always `rtp`. */
 @discriminator("type")
 model CallTapDevice {
   type: string;
 }
 
-/** RTP tap sink. */
+/** The tapped audio is streamed to an RTP destination. */
 model CallTapRtpDevice extends CallTapDevice {
   type: "rtp";
   params: {
-    /** Destination address. */
+    /** IP address the tapped audio is sent to. */
     addr: string;
 
-    /** Destination port. */
+    /** Port the tapped audio is sent to. */
     port: int32;
 
-    /** Negotiated codec. */
+    /** Codec used for the tapped audio stream. */
     codec: string;
 
-    /** Packetization time, in milliseconds. */
+    /** Packetization time of the stream, in milliseconds. */
     ptime: int32;
   };
 }
@@ -153,23 +152,23 @@ model CallTapRtpDevice extends CallTapDevice {
 model CallTapParams {
   ...CallAddress;
 
-  /** The ID used to control the active tap. */
+  /** The `control_id` of the tap this event belongs to. */
   control_id: string;
 
-  /** The tap state. */
+  /** Whether the tap is still running (`tapping`) or has stopped (`finished`). */
   state: TapState;
 
-  /** The tapped media info. */
+  /** What media is being tapped. */
   tap: TapMedia;
 
-  /** The device receiving the tapped media. */
+  /** Where the tapped audio is being sent. */
   device: CallTapDevice;
 }
 
 // No `@example`: `tap` (TapMedia) and `device` (CallTapDevice) are both required
 // `@discriminator` properties, and an example value cannot narrow a discriminated
 // base. The variant shapes are illustrated by CallTapAudio/CallTapRtpDevice above.
-/** A call-tap state event. */
+/** Fires when a tap starts streaming call audio and again when it stops. Check `state` to tell which. */
 @event("calling.call.tap")
 model CallTapEvent {
   ...CallTapParams;
@@ -179,7 +178,7 @@ model CallTapEvent {
 // calling.call.stream
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** State of an active stream. */
+/** Whether the stream is currently `streaming` or has `finished`. */
 union StreamState {
   "streaming",
   "finished",
@@ -188,20 +187,20 @@ union StreamState {
 model CallStreamParams {
   ...CallAddress;
 
-  /** The ID used to control the active stream. */
+  /** The `control_id` of the stream this event belongs to. */
   control_id: string;
 
-  /** The stream state. */
+  /** Whether audio is still streaming (`streaming`) or the stream has stopped (`finished`). */
   state: StreamState;
 
-  /** The WebSocket URL being streamed to. */
+  /** The WebSocket URL the call audio is being streamed to. */
   url: url;
 
-  /** The friendly name of the stream (if provided). */
+  /** The friendly name you gave the stream, if you set one. */
   name?: string;
 }
 
-/** A call-stream state change. */
+/** Fires when a media stream starts and again when it stops. Check `state` to tell which. */
 @event("calling.call.stream")
 @example(#{
   node_id: "a3e1b2c4-5d6f-7a8b-9c0d-1e2f3a4b5c6d",
@@ -219,7 +218,7 @@ model CallStreamEvent {
 // calling.call.transcribe
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** State of an active transcription. */
+/** Whether transcription is currently `transcribing` or has `finished`. */
 union TranscribeState {
   "transcribing",
   "finished",
@@ -228,35 +227,35 @@ union TranscribeState {
 model CallTranscribeParams {
   ...CallAddress;
 
-  /** The ID used to control the active transcription. */
+  /** The `control_id` of the transcription this event belongs to. */
   control_id: string;
 
-  /** The transcription state. */
+  /** Whether transcription is still running (`transcribing`) or has stopped (`finished`). */
   state: TranscribeState;
 
-  /** Location of the recording (e.g. `recordings/<UUID>.wav`). */
+  /** Location of the recording captured alongside the transcription (for example, `recordings/<UUID>.wav`). */
   url: string;
 
-  /** The UUID of the shadow recording. */
+  /** The UUID of the recording captured alongside the transcription. */
   recording_id: string;
 
-  /** The callback URL, if one was provided. */
+  /** The callback URL you provided to receive transcription updates, if any. */
   status_url?: string;
 
-  /** Length of the recording in seconds. Set only on `finished`. */
+  /** Length of the recording in seconds. Present only when `state` is `finished`. */
   duration?: float64;
 
-  /** Size of the recording in bytes. Set only on `finished`. */
+  /** Size of the recording in bytes. Present only when `state` is `finished`. */
   size?: int32;
 
-  /** Unix timestamp when recording started. Set only on `finished`. */
+  /** Unix timestamp for when the recording started. Present only when `state` is `finished`. */
   start_time?: float64;
 
-  /** Unix timestamp when recording ended. Set only on `finished`. */
+  /** Unix timestamp for when the recording ended. Present only when `state` is `finished`. */
   end_time?: float64;
 }
 
-/** A call-transcription state. */
+/** Fires when transcription starts and again when it stops. The `finished` event includes the recording's duration, size, and timestamps. */
 @event("calling.call.transcribe")
 @example(#{
   node_id: "a3e1b2c4-5d6f-7a8b-9c0d-1e2f3a4b5c6d",
@@ -279,7 +278,7 @@ model CallTranscribeEvent {
 // calling.call.hold
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** A call's hold state. */
+/** Whether the call was just placed on `hold` or taken off hold (`unhold`). */
 union HoldState {
   "hold",
   "unhold",
@@ -288,11 +287,11 @@ union HoldState {
 model CallHoldParams {
   ...CallAddress;
 
-  /** The hold state. */
+  /** Whether the call is now on hold (`hold`) or off hold (`unhold`). */
   state: HoldState;
 }
 
-/** A call hold-state event. (No `control_id`.) */
+/** Fires whenever a call is placed on hold or taken off hold. */
 @event("calling.call.hold")
 @example(#{
   node_id: "a3e1b2c4-5d6f-7a8b-9c0d-1e2f3a4b5c6d",
@@ -310,14 +309,14 @@ model CallHoldEvent {
 model CallSendDigitsParams {
   ...CallAddress;
 
-  /** The ID used to control the active send_digits operation. */
+  /** The `control_id` of the send-digits operation this event belongs to. */
   control_id: string;
 
-  /** The send_digits state. (Only `finished` is documented.) */
+  /** Always `finished`: the digits have all been sent. */
   state: "finished";
 }
 
-/** A send-digits completion event. */
+/** Fires once all requested DTMF digits have finished playing on the call. */
 @event("calling.call.send_digits")
 @example(#{
   node_id: "a3e1b2c4-5d6f-7a8b-9c0d-1e2f3a4b5c6d",
@@ -333,10 +332,7 @@ model CallSendDigitsEvent {
 // calling.conference
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * The conference event status — a secondary discriminator multiplexing all
- * `calling.conference` payloads.
- */
+/** Tells you exactly what happened in the conference, from start and end to each participant action. */
 union ConferenceStatus {
   "conference-end",
   "conference-start",
@@ -353,7 +349,7 @@ union ConferenceStatus {
   "announcement-fail",
 }
 
-/** Final call status of a participant who left (`participant-leave`). */
+/** The final state of a participant's call when they left (`participant-leave`). */
 union ConferenceParticipantCallStatus {
   "no-answer",
   "busy",
@@ -363,7 +359,7 @@ union ConferenceParticipantCallStatus {
   "completed",
 }
 
-/** Why a participant left (`participant-leave`). */
+/** The reason a participant left the conference (`participant-leave`). */
 union ConferenceReasonParticipantLeft {
   "conference_ended_via_api",
   "moderator_ended_conference",
@@ -372,7 +368,7 @@ union ConferenceReasonParticipantLeft {
   "participant_add_failed",
 }
 
-/** Why a conference ended (`conference-end`). */
+/** The reason the conference ended (`conference-end`). */
 union ConferenceReasonEnded {
   "conference-ended-via-api",
   "last-participant-kicked",
@@ -382,12 +378,11 @@ union ConferenceReasonEnded {
 }
 
 /**
- * A conference lifecycle or participant event. The `status` field indicates
- * which event occurred and therefore which of the optional fields below are
- * populated; fields tied to a specific status are optional here.
+ * The details of a conference event. Read `status` first: it tells you what
+ * happened and therefore which of the optional fields below are filled in.
  */
 model ConferenceParams {
-  /** The UUID of the node this conference is on. */
+  /** The UUID of the node the conference is running on. */
   node_id: string;
 
   /** The UUID of the conference. */
@@ -396,53 +391,53 @@ model ConferenceParams {
   /** The name of the conference. */
   name?: string;
 
-  /** Which conference event occurred. */
+  /** What happened in the conference. */
   status: ConferenceStatus;
 
-  /** Participant call id. Set on participant statuses. */
+  /** The `call_id` of the participant this event is about. Present on participant events. */
   call_id?: string;
 
-  /** Whether the participant is muted. Set on participant statuses. */
+  /** Whether the participant is muted. Present on participant events. */
   muted?: boolean;
 
-  /** Whether the participant is on hold. Set on participant statuses. */
+  /** Whether the participant is on hold. Present on participant events. */
   hold?: boolean;
 
-  /** Whether the participant is coaching. Set on participant statuses. */
+  /** Whether the participant is coaching another participant. Present on participant events. */
   coaching?: boolean;
 
-  /** Whether the conference ends when this participant exits. Set on participant statuses. */
+  /** Whether the conference ends when this participant leaves. Present on participant events. */
   end_on_exit?: boolean;
 
-  /** Whether the conference starts when this participant enters. Set on participant statuses. */
+  /** Whether the conference starts when this participant joins. Present on participant events. */
   start_on_enter?: boolean;
 
-  /** The participant's final call status. Set on `participant-leave`. */
+  /** The participant's final call status. Present on `participant-leave`. */
   participant_call_status?: ConferenceParticipantCallStatus;
 
-  /** Why the participant left. Set on `participant-leave`. */
+  /** Why the participant left. Present on `participant-leave`. */
   reason_participant_left?: ConferenceReasonParticipantLeft;
 
-  /** UUID of the call that ended the conference. Set on `conference-end`. */
+  /** The `call_id` of the participant whose departure ended the conference. Present on `conference-end`. */
   call_ending_conference?: string;
 
-  /** Why the conference ended. Set on `conference-end`. */
+  /** Why the conference ended. Present on `conference-end`. */
   reason_ended?: ConferenceReasonEnded;
 
-  /** URL of the conference recording. Set on `conference-end`. */
+  /** Link to the conference recording. Present on `conference-end`. */
   recording_url?: url;
 
-  /** Recording duration in seconds. Set on `conference-end`. */
+  /** Recording duration in seconds. Present on `conference-end`. */
   recording_duration?: int32;
 
-  /** Recording file size in bytes. Set on `conference-end`. */
+  /** Recording file size in bytes. Present on `conference-end`. */
   recording_file_size?: int32;
 
-  /** Announcement URL. Set on announcement statuses. */
+  /** The URL of the announcement being played. Present on announcement events. */
   announce_url?: url;
 }
 
-/** A conference lifecycle / participant event. */
+/** Fires throughout a conference's life: when it starts and ends, and each time a participant joins, leaves, mutes, holds, speaks, or an announcement plays. Check `status` to see what happened. */
 @event("calling.conference")
 @example(#{
   node_id: "a3e1b2c4-5d6f-7a8b-9c0d-1e2f3a4b5c6d",
@@ -466,7 +461,7 @@ model ConferenceEvent {
 // calling.call.echo
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** A call's echo state. */
+/** Whether the call is currently `echoing` its audio back or has `finished`. */
 union EchoState {
   "echoing",
   "finished",
@@ -475,11 +470,11 @@ union EchoState {
 model CallEchoParams {
   ...CallAddress;
 
-  /** The echo state. */
+  /** Whether the echo is still running (`echoing`) or has stopped (`finished`). */
   state: EchoState;
 }
 
-/** A call echo state event. (No `control_id`.) */
+/** Fires when audio echo starts on a call and again when it stops. */
 @event("calling.call.echo")
 @example(#{
   node_id: "a3e1b2c4-5d6f-7a8b-9c0d-1e2f3a4b5c6d",
@@ -494,10 +489,7 @@ model CallEchoEvent {
 // calling.call.pay
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * A call payment state. The example shows `processing|finished|error`; the full
- * set is not confirmed in the reference.
- */
+/** Where a payment is in its lifecycle: `processing`, `finished`, or `error`. */
 union PayState {
   "processing",
   "finished",
@@ -507,14 +499,14 @@ union PayState {
 model CallPayParams {
   ...CallAddress;
 
-  /** The ID used to control the active pay. */
+  /** The `control_id` of the payment this event belongs to. */
   control_id: string;
 
-  /** The payment state. */
+  /** Whether the payment is in progress (`processing`), completed (`finished`), or failed (`error`). */
   state: PayState;
 }
 
-/** A call payment state event. */
+/** Fires as a pay session progresses, letting you track whether it is processing, has finished, or hit an error. */
 @event("calling.call.pay")
 @example(#{
   node_id: "a3e1b2c4-5d6f-7a8b-9c0d-1e2f3a4b5c6d",
