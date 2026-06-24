@@ -239,3 +239,23 @@ export function pageNumbers(current: number, count: number): (number | null)[] {
 export function modelKeyOf(v: { key: string; model: string | null }): string {
   return v.model ? `${v.key}:${v.model}` : v.key;
 }
+
+// Compose the SWML voice identifier string for a row: `engine.voice_id[:model]`. This is the form
+// SWML expects today — the old split `{ engine, voice }` shape is deprecated (mod_openai reads the
+// top-level `engine` property only in developer mode; otherwise the engine comes from this string's
+// prefix). Grammar: the first `.` splits engine from voice id, an optional `:model` follows. Verified
+// per-engine against the TTS reference pages (fern/products/platform/pages/calling/voice/TTS/*.mdx):
+//   • azure / gcloud / deepgram bake the model into the voice id, so NEVER append `:model`
+//     (deepgram's model field just mirrors the voice id — a suffix would duplicate it).
+//   • cartesia / elevenlabs / openai / inworld / minimax / rime take an optional `:model` suffix; we
+//     emit the exact model that synthesized the sample so the copied config reproduces that voice.
+//   • polly: `amazon` is the canonical (non-deprecated) prefix and the model rides as a colon segment
+//     (`amazon.Joanna:neural`), so the engine is remapped polly → amazon.
+// Uses voice_id (the value the engine resolves), NOT display_name (a UI label).
+const VOICE_ID_ENCODES_MODEL = new Set(["azure", "gcloud", "deepgram"]);
+
+export function swmlVoiceString(r: { engine: string; voice_id: string; model: string | null }): string {
+  const engine = r.engine === "polly" ? "amazon" : r.engine;
+  const base = `${engine}.${r.voice_id}`;
+  return r.model && !VOICE_ID_ENCODES_MODEL.has(r.engine) ? `${base}:${r.model}` : base;
+}

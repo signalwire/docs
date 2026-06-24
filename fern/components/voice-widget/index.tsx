@@ -18,6 +18,7 @@ import {
   modelKeyOf,
   normalizeGender,
   pageNumbers,
+  swmlVoiceString,
   uniq,
   useIsMobile,
 } from "./engine";
@@ -198,10 +199,11 @@ export function VoiceWidget({
   }, [audioBaseUrl]);
 
   const copyConfig = useCallback(async (r: VoiceRow) => {
-    const cfg: Record<string, unknown> = { engine: r.engine, voice: r.display_name };
-    if (r.model) cfg.params = { model: r.model };
+    // SWML takes a single combined voice identifier string now; the old `{ engine, voice }` split is
+    // deprecated. swmlVoiceString builds `engine.voice_id[:model]` (see engine.tsx for the per-engine
+    // rules — baked-model engines, the optional `:model` suffix, and the polly → amazon remap).
     try {
-      await navigator.clipboard.writeText(JSON.stringify(cfg));
+      await navigator.clipboard.writeText(JSON.stringify({ voice: swmlVoiceString(r) }));
       return true;
     } catch {
       return false;
