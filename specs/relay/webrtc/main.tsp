@@ -3,19 +3,20 @@ import "@signalwire/typespec-asyncapi";
 using SignalWire.AsyncAPI;
 
 /**
- * The Relay **WebRTC** service is a thin transport wrapper around the Verto
- * signaling sub-protocol. Methods are dispatched as `blade.execute`; the
- * `message` method tunnels an opaque inner Verto JSON-RPC frame to FreeSWITCH,
- * and `conference.list` enumerates joinable conferences. It rides on a
- * connection established by `signalwire.connect`.
+ * The Relay **WebRTC** service carries WebRTC signaling. You use the `message`
+ * method to send a Verto frame between your client and SignalWire — this is how
+ * you place, answer, and modify peer calls — and `conference.list` to discover
+ * the conferences you can join. The service runs over a connection you've already
+ * established with `signalwire.connect`.
  *
- * The inner Verto message protocol itself (`verto.invite`/`verto.answer`/
- * `verto.bye`/`verto.modify`, `dialogParams`, conference control) is OUT OF
- * SCOPE here and is modeled as a loose pass-through. Its full union is defined
- * separately in `verto_messages.md`.
+ * You build and read Verto frames yourself (`verto.invite`/`verto.answer`/
+ * `verto.bye`/`verto.modify`, `dialogParams`, conference control). The frame
+ * payload is passed through as-is; the full set of Verto methods and their
+ * `params` is documented separately in `verto_messages.md`.
  *
- * **Audience:** client-side. Exposed by the browser SDK for peer (Verto) calling;
- * server SDKs use the `calling` service instead. Authenticates with a `jwt_token`.
+ * **Audience:** client-side. The browser SDK exposes this for peer (Verto)
+ * calling; server-side code uses the `calling` service instead. Authenticate
+ * with a `jwt_token`.
  */
 @channel("webrtc")
 @channelPerCommand
@@ -26,9 +27,9 @@ namespace Relay.WebRTC;
 // ═════════════════════════════════════════════════════════════════════════════
 
 /**
- * The common Relay result envelope. `code` is a STRING (`"200"` on success);
- * errors are carried in-band via a non-`"200"` `code` plus `message` — there is
- * no JSON-RPC `error` object.
+ * The result envelope returned by every WebRTC method. `code` is a string
+ * (`"200"` on success); on failure you get a non-`"200"` `code` and a
+ * `message` explaining what went wrong.
  */
 model Result {
   /** Result code (string), e.g. `"200"`, `"400"`, `"404"`. */
@@ -44,39 +45,43 @@ model Result {
 
 model MessageParams {
   /**
-   * The FreeSWITCH node id this message targets. Set by the client to the FS
-   * nodeid once a call exists (sourced from prior events/responses); absent on
-   * the very first message before a call is established.
+   * The node hosting your call. Once a call exists, set this to the `node_id`
+   * you received in an earlier event or response so the frame reaches the right
+   * place. Leave it absent on your first message, before a call has been
+   * established — SignalWire picks the node.
    */
   node_id?: string;
 
   /**
-   * The inner Verto JSON-RPC 2.0 frame to transport to FreeSWITCH (e.g. a
-   * `verto.invite` with `dialogParams`/`sdp`/`layout`/`positions`). Modeled as
-   * a loose pass-through: the full Verto method/`params` union is out of scope
-   * here (see `verto_messages.md`).
+   * The Verto frame to send (for example a `verto.invite` carrying
+   * `dialogParams`/`sdp`/`layout`/`positions`). The frame is passed through
+   * as-is; see `verto_messages.md` for the full list of Verto methods and their
+   * `params`.
    */
   message: Record<unknown>;
 
   /**
-   * "Event channel" subscriptions to apply alongside this request — intended
-   * for the case of joining a conference and wanting its event feed. Values are
-   * conference/room event channels (e.g. `member.joined`, `member.left`,
-   * `room.ended`, `room.updated`, `layout.changed`, `member.updated`);
-   * illustrative, not exhaustive.
+   * Event channels to subscribe to alongside this request — useful when you
+   * join a conference and want its event feed. Values are conference/room event
+   * channels such as `member.joined`, `member.left`, `room.ended`,
+   * `room.updated`, `layout.changed`, and `member.updated` (illustrative, not
+   * exhaustive).
    */
   subscribe?: string[];
 }
 
 /**
- * Transport a Verto JSON-RPC message from the client to FreeSWITCH. Carries the
- * opaque inner Verto frame plus optional event-channel subscriptions.
+ * Send a Verto frame from your client to SignalWire — this is how you place,
+ * answer, modify, or end a peer call. Pass the frame in `message`, and
+ * optionally subscribe to conference/room event channels in the same request.
  *
- * The result only acknowledges receipt/forwarding (`"Received"`); the actual
- * Verto outcome arrives asynchronously via the `webrtc.message` event.
+ * The result only confirms that SignalWire received and forwarded the frame
+ * (`"Received"`). The actual Verto outcome arrives later as a `webrtc.message`
+ * event, so wait for that event rather than treating this acknowledgement as
+ * the call result.
  */
 @rpcMethod("message")
-@summary("Transport a Verto message to FreeSWITCH")
+@summary("Send a Verto frame")
 @opExample(#{
   parameters: #{
     node_id: "f1d2c3b4-a596-4877-8b1e-0123456789ab",
@@ -105,7 +110,7 @@ model MessageParams {
 })
 op message(...MessageParams): MessageResult;
 
-/** Acknowledgement that the Verto message was received and forwarded. */
+/** Confirms that SignalWire received and forwarded your Verto frame. */
 model MessageResult {
   ...Result;
 }
@@ -114,12 +119,12 @@ model MessageResult {
 // conference.list
 // ═════════════════════════════════════════════════════════════════════════════
 
-/** Empty parameters — `conference.list` takes no arguments. */
+/** `conference.list` takes no arguments. */
 model ConferenceListParams {}
 
-/** A single active conference the client may join. */
+/** A single active conference you can join. */
 model Conference {
-  /** The FreeSWITCH node id hosting the conference. */
+  /** The node hosting this conference. Use it as the `node_id` when you join. */
   node_id: string;
 
   /** The conference's UUID. */
@@ -128,22 +133,23 @@ model Conference {
   /** Human-readable conference name (e.g. `Awesome Room!`). */
   name: string;
 
-  /** Extension to dial to reach the conference. */
+  /** The extension to dial to reach the conference. */
   extension: string;
 
-  /** Creation/last-activity time, in seconds since epoch (fractional seconds). */
+  /** When the conference was created or last active, in seconds since the epoch (with fractional seconds). */
   timestamp: float64;
 }
 
 model ConferenceListResult {
   ...Result;
 
-  /** The active conferences the current client can join. */
+  /** The active conferences you can join. */
   data: Conference[];
 }
 
 /**
- * List the active conferences the current client can join. Async-safe.
+ * List the active conferences you can join. Each entry gives you the name,
+ * extension, and `node_id` you need to join. Takes no arguments.
  */
 @rpcMethod("conference.list")
 @summary("List joinable conferences")
@@ -173,11 +179,13 @@ op conferenceList(...ConferenceListParams): ConferenceListResult;
 // ═════════════════════════════════════════════════════════════════════════════
 
 /**
- * Transport event delivering a Verto JSON-RPC message from FreeSWITCH back to
- * the client — both Verto responses and subscribed conference/room events.
+ * Delivers a Verto frame from SignalWire back to your client. This fires when
+ * SignalWire has a Verto response to one of your `message` requests, or when a
+ * conference/room event arrives on a channel you subscribed to. Read the frame
+ * in `params` to learn the outcome.
  *
- * The inner `params` is the opaque Verto frame; its full union is out of scope
- * here (see `verto_messages.md`).
+ * The frame in `params` is passed through as-is; see `verto_messages.md` for
+ * the full set of Verto methods and their `params`.
  */
 @event("webrtc.message")
 @example(#{
@@ -194,14 +202,15 @@ op conferenceList(...ConferenceListParams): ConferenceListResult;
 })
 model MessageEvent {
   /**
-   * The FreeSWITCH node id sending the event. Sent by FS so the client can
-   * capture the specific nodeid once a call is started.
+   * The node that sent this event. Capture it once your call starts and reuse
+   * it as the `node_id` on your subsequent `message` requests so they reach the
+   * same node.
    */
   node_id?: string;
 
   /**
-   * The Verto JSON-RPC frame being transported (a Verto response or a
-   * conference/room event). Loose pass-through — see `verto_messages.md`.
+   * The Verto frame being delivered — either a Verto response or a
+   * conference/room event. Passed through as-is; see `verto_messages.md`.
    */
   params: Record<unknown>;
 }

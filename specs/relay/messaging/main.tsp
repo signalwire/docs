@@ -3,12 +3,14 @@ import "@signalwire/typespec-asyncapi";
 using SignalWire.AsyncAPI;
 
 /**
- * The Relay **Messaging** service sends outbound SMS/MMS to PSTN numbers and
- * delivers inbound-message and delivery-state events. It rides on a connection
- * established by `signalwire.connect`; messages are routed by **context**.
+ * Send SMS and MMS messages to phone numbers and react to incoming messages and
+ * delivery updates. Call `messaging.send` to send a message, then listen for
+ * `messaging.state` events to track delivery and `messaging.receive` events to
+ * handle replies. Messages are grouped by a **context** you choose, so you can
+ * route events for different parts of your app to different handlers.
  *
- * **Audience:** server-side. Exposed by the server SDKs; browser clients send
- * messages via the REST API instead.
+ * Use this from your server. Browser clients send messages through the REST API
+ * instead.
  */
 @channel("messaging")
 namespace Relay.Messaging;
@@ -18,45 +20,49 @@ namespace Relay.Messaging;
 // ═════════════════════════════════════════════════════════════════════════════
 
 /**
- * The common Relay result envelope. `code` is a STRING (`"200"` on success);
- * errors are carried in-band via a non-`"200"` `code` plus `message` — there is
- * no JSON-RPC `error` object.
+ * The outcome of a request. `code` is a string set to `"200"` when the request
+ * succeeds; any other value (such as `"400"` or `"404"`) means it failed, and
+ * `message` explains why.
  */
 model Result {
-  /** Result code (string), e.g. `"200"`, `"400"`, `"404"`. */
+  /** Result code as a string. `"200"` means success; anything else is an error. */
   code: string;
 
-  /** Human-readable result message. */
+  /** A human-readable explanation of the result. */
   message: string;
 }
 
-/** The direction of a message relative to the SignalWire platform. */
+/** Whether a message is coming in to you or going out from you. */
 union MessageDirection {
-  /** Message received from the carrier network (toward the client). */
+  /** A message someone sent to you. */
   "inbound",
 
-  /** Message sent toward the carrier network (away from the client). */
+  /** A message you sent out. */
   "outbound",
 }
 
-/** Delivery-lifecycle state of a message (`messaging.state`). */
+/**
+ * The delivery state of a message, reported through `messaging.state` events.
+ * An outbound message moves through `queued`, `initiated`, and `sent`, then
+ * settles on one of the final states: `delivered`, `undelivered`, or `failed`.
+ */
 union MessageState {
-  /** Message accepted and waiting to be processed. */
+  /** Accepted and waiting to be processed. */
   "queued",
 
-  /** Message processing has started. */
+  /** Processing has started. */
   "initiated",
 
-  /** Message handed off to the carrier. */
+  /** Handed off to the carrier for delivery. */
   "sent",
 
-  /** Carrier confirmed delivery to the handset. */
+  /** Confirmed delivered to the recipient's phone. A final state. */
   "delivered",
 
-  /** Carrier reported the message could not be delivered. */
+  /** The carrier could not deliver the message. A final state. */
   "undelivered",
 
-  /** Message failed before/at the carrier. */
+  /** The message failed before reaching the carrier. A final state. */
   "failed",
 }
 
@@ -65,33 +71,33 @@ union MessageState {
 // ═════════════════════════════════════════════════════════════════════════════
 
 model SendParams {
-  /** The context to receive inbound events for this message. */
+  /** The context that delivery and reply events for this message are sent to. */
   context: string;
 
-  /** Optional client-defined tags, surfaced for searching in the UI. */
+  /** Your own labels to attach to the message, so you can search for it in the UI later. */
   tags?: string[];
 
   /**
-   * Region of the world to originate the message from. Defaults to a value
-   * picked from account preferences or device location.
+   * The region of the world to send the message from. If you leave this out,
+   * SignalWire picks one based on your account settings.
    */
   region?: string;
 
-  /** Destination phone number, in E.164 format. */
+  /** The recipient's phone number, in E.164 format (for example, `+15551231234`). */
   to_number: string;
 
-  /** Origin phone number, in E.164 format. */
+  /** The phone number to send from, in E.164 format. Must be a number on your account. */
   from_number: string;
 
   /**
-   * Body of the message. Required if `media` is absent; at least one of `body`
-   * or `media` must be present (both may be supplied).
+   * The text of the message. You must include `body`, `media`, or both — at
+   * least one is required.
    */
   body?: string;
 
   /**
-   * An array of media URLs to send (MMS). Required if `body` is absent; at
-   * least one of `body` or `media` must be present (both may be supplied).
+   * One or more media URLs to send as an MMS. You must include `body`, `media`,
+   * or both — at least one is required.
    */
   media?: string[];
 }
@@ -99,13 +105,15 @@ model SendParams {
 model SendResult {
   ...Result;
 
-  /** The UUID of the accepted message (present on success). */
+  /** The ID of the accepted message, returned when the send succeeds. Use it to match up later state events. */
   message_id: string;
 }
 
 /**
- * Send an outbound SMS/MMS to a PSTN phone number. At least one of `body` or
- * `media` must be supplied.
+ * Send an SMS or MMS to a phone number. Include `body`, `media`, or both. A
+ * successful response means SignalWire accepted the message and returns its
+ * `message_id` — it does not mean the message was delivered yet. Watch for
+ * `messaging.state` events on the same `context` to follow delivery.
  */
 @rpcMethod("messaging.send")
 @summary("Send an outbound message")
@@ -135,7 +143,9 @@ op send(...SendParams): SendResult;
 // ═════════════════════════════════════════════════════════════════════════════
 
 /**
- * An inbound message has been received.
+ * Fires when someone sends a message to one of your numbers. The payload gives
+ * you the full incoming message — who it's from, the text, and any media — so
+ * you can react or reply.
  */
 @event("messaging.receive")
 @example(#{
@@ -151,39 +161,42 @@ op send(...SendParams): SendResult;
   message_state: "received",
 })
 model ReceiveEvent {
-  /** The UUID of the message. */
+  /** The ID of the message. */
   message_id: string;
 
-  /** The context the message was set on. */
+  /** The context this message arrived on. */
   context: string;
 
-  /** The message's direction. Always `inbound` for this event. */
+  /** The direction of the message. Always `inbound` here. */
   direction: MessageDirection;
 
-  /** Optional client data this message is tagged with. */
+  /** Any tags attached to the message. */
   tags?: string[];
 
-  /** Origin phone number, in E.164 format. */
+  /** The sender's phone number, in E.164 format. */
   from_number: string;
 
-  /** Destination phone number, in E.164 format. */
+  /** The number it was sent to, in E.164 format. */
   to_number: string;
 
-  /** Body of the message. */
+  /** The text of the message. */
   body: string;
 
-  /** An array of media URLs included with the message. */
+  /** Any media URLs included with the message. */
   media: string[];
 
-  /** Number of segments the message was split into. */
+  /** How many SMS segments the message was split into. */
   segments: int32;
 
-  /** The message state. Always `received` for an inbound message. */
+  /** The message state. Always `received` for an incoming message. */
   message_state: "received";
 }
 
 /**
- * A change in the delivery state of a message.
+ * Fires each time a message's delivery state changes. Match `message_id` to the
+ * one you got from `messaging.send` and read `message_state` to see where the
+ * message is in its journey. The event keeps firing until the message reaches a
+ * final state of `delivered`, `undelivered`, or `failed`.
  */
 @event("messaging.state")
 @example(#{
@@ -200,36 +213,36 @@ model ReceiveEvent {
   reason: "spam",
 })
 model StateEvent {
-  /** The UUID of the message. */
+  /** The ID of the message, matching the one returned by `messaging.send`. */
   message_id: string;
 
-  /** The context the message was set on. */
+  /** The context the message belongs to. */
   context: string;
 
-  /** The message's direction. */
+  /** The direction of the message, `inbound` or `outbound`. */
   direction: MessageDirection;
 
-  /** Optional client data this message is tagged with. */
+  /** Any tags attached to the message. */
   tags?: string[];
 
-  /** Origin phone number, in E.164 format. */
+  /** The sender's phone number, in E.164 format. */
   from_number: string;
 
-  /** Destination phone number, in E.164 format. */
+  /** The recipient's phone number, in E.164 format. */
   to_number: string;
 
-  /** Body of the message. */
+  /** The text of the message. */
   body: string;
 
-  /** An array of media URLs included with the message. */
+  /** Any media URLs included with the message. */
   media: string[];
 
-  /** Number of segments the message was split into. */
+  /** How many SMS segments the message was split into. */
   segments: int32;
 
-  /** The new delivery-lifecycle state of the message. */
+  /** The message's new delivery state. */
   message_state: MessageState;
 
-  /** Explanation of the state. Present only on `undelivered`/`failed`. */
+  /** Why the message ended up in this state. Included only when it is `undelivered` or `failed`. */
   reason?: string;
 }

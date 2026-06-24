@@ -3,12 +3,11 @@ import "@signalwire/typespec-asyncapi";
 using SignalWire.AsyncAPI;
 
 /**
- * The `provisioning` protocol lets a Relay **connector** request its runtime
- * configuration from SignalWire. The connector reports its identity and network
- * endpoints, and SignalWire returns the rendered connector configuration (for a
- * FreeSWITCH connector, a SIP profile as XML). This service is
- * connector-internal: a single method, no server-pushed events, and currently
- * only the `freeswitch` connector target is supported.
+ * Provision a Relay connector. A connector reports its identity and network
+ * endpoints, and SignalWire returns the runtime configuration it should run with.
+ * The service exposes a single method, `provisioning.configure`, and sends no
+ * events. The only connector type supported today is `freeswitch`, which returns
+ * a SIP profile.
  */
 @channel("provisioning")
 namespace Relay.Provisioning;
@@ -18,8 +17,8 @@ namespace Relay.Provisioning;
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Standard `{code, message}` result fields shared by every Relay response.
- * `code` is a STRING (e.g. `"200"`); any value other than `"200"` is an error.
+ * The `code` and `message` fields shared by every Relay response. `code` is a
+ * string (e.g. `"200"`); any value other than `"200"` means the request failed.
  */
 model Result {
   /** Result code (string). `"200"` on success; e.g. `"400"`/`"404"` on error. */
@@ -45,7 +44,7 @@ model ConfigureParams {
   /** The connector type to provision. Currently only `freeswitch` is supported. */
   target: ConnectorTarget;
 
-  /** The connector's local (internal) endpoint as an IPv4 address, e.g. `10.10.0.2`. */
+  /** The connector's local endpoint, as an IPv4 address, e.g. `10.10.0.2`. */
   local_endpoint: string;
 
   /** The connector's external (public) endpoint as an IPv4 address, e.g. `8.8.8.8`. */
@@ -56,12 +55,8 @@ model ConfigureParams {
 }
 
 /**
- * The rendered connector configuration returned to the connector.
- *
- * Note: `profile` is the raw FreeSWITCH SIP profile **rendered as XML**, carried
- * as a single string. The precise shape (raw-XML string vs. a structured object)
- * is not specified by the source and is modeled here as an opaque string. Other
- * keys under `configuration` for non-`freeswitch` targets are unconfirmed.
+ * The runtime configuration returned for your connector. For a `freeswitch`
+ * target, this contains the SIP profile your connector should run with.
  */
 model Configuration {
   /** The FreeSWITCH SIP profile, rendered as an XML document. */
@@ -76,10 +71,10 @@ model ConfigureResult {
 }
 
 /**
- * Request a connector's SignalWire configuration. The connector supplies its
+ * Request the runtime configuration for a connector. Supply the connector's
  * identity (`relay_connector_id`) and network endpoints (`local_endpoint`,
- * `external_endpoint`) and receives its configuration payload — for a
- * `freeswitch` target, a FreeSWITCH SIP profile rendered as XML.
+ * `external_endpoint`), and SignalWire returns its configuration. For a
+ * `freeswitch` target, the response includes a SIP profile rendered as XML.
  */
 @rpcMethod("provisioning.configure")
 @summary("Request SignalWire connector configuration")

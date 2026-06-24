@@ -3,15 +3,14 @@ import "@signalwire/typespec-asyncapi";
 using SignalWire.AsyncAPI;
 
 /**
- * The `tasking` service delivers arbitrary, caller-defined JSON messages to
- * Relay consumers subscribed to a context. A client calls `tasking.deliver`
- * with a `context` and an opaque `message`; SignalWire queues the task and
- * pushes a `queuing.relay.tasks` event to every consumer listening on that
- * context. The `message` payload is never inspected — it is echoed verbatim
- * from the deliver request into the task event.
+ * Tasking lets you hand a JSON payload from one process to another over Relay.
+ * You call `tasking.deliver` with a `context` and a `message`, and SignalWire
+ * forwards that message as a `queuing.relay.tasks` event to every client
+ * subscribed to that context. The message is your own data — SignalWire doesn't
+ * read or change it, it just carries it through to your consumers unchanged.
  *
- * **Audience:** server-side. A queuing bridge for short-lived/stateless processes
- * to hand work to long-running Relay consumers.
+ * Reach for this when a short-lived or stateless process (a web request handler,
+ * a cron job) needs to push work to a long-running Relay client.
  */
 @channel("tasking")
 namespace Relay.Tasking;
@@ -21,37 +20,38 @@ namespace Relay.Tasking;
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Standard Relay `{code, message}` result. `code` is a STRING (`"200"` on
- * success). The Tasking source does not enumerate result fields or non-200
- * codes; per the Relay convention every response carries at least these two.
+ * The standard result you get back from a Relay call: a `code` and a `message`.
+ * `code` is a string, and you'll see `"200"` when the call succeeds.
  */
 model Result {
-  /** Result code (string). `"200"` on success. */
+  /** The result code, as a string. `"200"` means success. */
   code: string;
-  /** Human-readable result message. */
+  /** A human-readable description of the result. */
   message: string;
 }
 
 model DeliverParams {
-  /** The context to deliver the task to. Consumers subscribed to this context receive the `queuing.relay.tasks` event. */
+  /** The context to deliver the task to. Every client subscribed to this context receives the `queuing.relay.tasks` event. */
   context: string;
 
   /**
-   * The message to send. Opaque, caller-defined JSON (e.g. `{ "foo": 123 }`);
-   * SignalWire imposes no schema and echoes it verbatim into the task event.
+   * Your JSON payload to send (for example, `{ "foo": 123 }`). Use any shape you
+   * like — SignalWire doesn't enforce a schema and passes it through to your
+   * consumers unchanged.
    */
   message: Record<unknown>;
 }
 
-/** Acknowledgement of a `tasking.deliver` request. */
+/** Confirms that SignalWire accepted your `tasking.deliver` request. */
 model DeliverResult {
   ...Result;
 }
 
 /**
- * Send an arbitrary JSON message to a context for delivery to subscribed Relay
- * consumers. SignalWire queues the task and pushes it as a
- * `queuing.relay.tasks` event.
+ * Send a JSON message to a context. Every client subscribed to that context
+ * receives it as a `queuing.relay.tasks` event. Use this to push work from a
+ * short-lived process to your long-running Relay clients. You get back a result
+ * confirming SignalWire accepted the request.
  */
 @rpcMethod("tasking.deliver")
 @summary("Deliver a task message to a context")
@@ -72,9 +72,9 @@ op deliver(...DeliverParams): DeliverResult;
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * A task has been received. Pushed to consumers subscribed to the task's
- * `context`, carrying the opaque `message` echoed verbatim from the
- * originating `tasking.deliver` call.
+ * Fires when a task arrives on a context you're subscribed to. The payload tells
+ * you which `context` the task came in on and carries the `message` exactly as
+ * the sender passed it to `tasking.deliver`.
  */
 @event("queuing.relay.tasks")
 @example(#{
@@ -82,9 +82,9 @@ op deliver(...DeliverParams): DeliverResult;
   message: #{ foo: 123 },
 })
 model TasksEvent {
-  /** The context that received the event. */
+  /** The context this task arrived on. */
   context: string;
 
-  /** The opaque message passed to the task, echoed verbatim from `tasking.deliver`. */
+  /** The message payload, exactly as the sender passed it to `tasking.deliver`. */
   message: Record<unknown>;
 }

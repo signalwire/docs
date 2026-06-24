@@ -3,15 +3,15 @@ import "@signalwire/typespec-asyncapi";
 using SignalWire.AsyncAPI;
 
 /**
- * The `signalwire` protocol bootstraps a Relay connection: it authenticates the
- * client to the network, returns the authorization block and ICE servers, and
- * controls context (event) subscriptions. Every other Relay service
- * (`calling`, `messaging`, `tasking`, …) rides on top of a connection
- * established here.
+ * The starting point for every Relay connection. Use the `signalwire` methods to
+ * authenticate, get back your authorization details and ICE servers for media, and
+ * subscribe to the contexts whose events you want to receive. Every other Relay
+ * service (`calling`, `messaging`, `tasking`, and so on) runs over a connection you
+ * open here.
  *
- * **Audience:** both client (browser) and server SDKs — every Relay connection
- * starts here. Browser clients authenticate with a `jwt_token`; server SDKs with a
- * `project` + `token` pair (see `signalwire.connect`).
+ * Browser and client apps authenticate with a `jwt_token`; backend apps that hold
+ * your credentials authenticate with a `project` + `token` pair. Start with
+ * `signalwire.connect`.
  */
 @channel("signalwire")
 @channelPerCommand
@@ -21,7 +21,7 @@ namespace Relay.Signalwire;
 // signalwire.connect
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Relay protocol version. Clients currently send `3.0.0`. */
+/** The Relay protocol version your client speaks. Currently `3.0.0`. */
 model Version {
   /** Major version. Currently `3`. */
   major: int32;
@@ -32,17 +32,17 @@ model Version {
 }
 
 /**
- * JWT authentication — used by **browser / client SDKs**. The JWT is minted
- * server-side (an API token must never be exposed in the browser).
+ * JWT authentication, for browser and client apps. Generate the JWT on your
+ * backend and hand it to the client — never ship a project API token to the browser.
  */
 model JwtAuthentication {
-  /** A server-minted JWT used to authenticate the client. */
+  /** The JWT that authenticates this client, created by your backend. */
   jwt_token: string;
 }
 
 /**
- * Project + API token authentication — used by **server SDKs** that hold the
- * project credentials directly.
+ * Project + API token authentication, for backend apps that hold your
+ * SignalWire credentials directly.
  */
 model ProjectTokenAuthentication {
   /** Your SignalWire Project ID. */
@@ -53,71 +53,72 @@ model ProjectTokenAuthentication {
 }
 
 model ConnectParams {
-  /** Protocol version the client speaks. */
+  /** The Relay protocol version your client speaks. */
   version: Version;
 
   /**
-   * The credentials authenticating this connection. This is THE Relay
-   * authentication step — there is no HTTP `Authorization` header on the WebSocket
-   * handshake. Send a `jwt_token` (browser/client SDKs) **or** a `project` + `token`
-   * pair (server SDKs).
+   * The credentials that authenticate this connection — this is how you log in to
+   * Relay. Send either a `jwt_token` (browser and client apps) or a `project` +
+   * `token` pair (backend apps).
    */
   authentication: JwtAuthentication | ProjectTokenAuthentication;
 
-  /** Descriptive information about the SDK and application (e.g. `somesdk-1.2.3`). */
+  /** A label identifying your SDK and application, for example `somesdk-1.2.3`. */
   agent?: string;
 
   /**
-   * When provided, lets the client attempt to "hijack" a previously-established
-   * protocol (provided the project and signature allow it).
+   * The protocol identifier to resume. Provide this to rejoin a protocol you
+   * established earlier, when your project and signature permit it.
    */
   protocol?: string;
 
   /**
-   * Encrypted authorization state from a previous `signalwire.authorization.state`
-   * event, used to reestablish permissions/state on a new node after reconnect.
+   * Authorization state from an earlier `signalwire.authorization.state` event.
+   * Pass it back when reconnecting to restore your permissions and state.
    * Format: `<encryptedAuthStateBase64>:<tagBase64>`.
    */
   authorization_state?: string;
 
-  /** Contexts to begin receiving inbound events for on connect. */
+  /** Contexts to start receiving inbound events for as soon as you connect. */
   contexts?: string[];
 }
 
-/** A STUN/TURN ICE server the client should use for media. */
+/** A STUN/TURN ICE server to use for media in WebRTC connections. */
 model IceServer {
-  /** ICE server URLs. */
+  /** The ICE server URLs. */
   urls: string[];
-  /** Credential for the ICE servers (HMAC-SHA1, base64). */
+  /** The credential (password) for connecting to these ICE servers. */
   credential: string;
-  /** Credential type. Currently always `password`. */
+  /** The credential type. Currently always `password`. */
   credentialType: string;
-  /** Username to use — the project id with an expiration-encoded prefix. */
+  /** The username to authenticate with against these ICE servers. */
   username: string;
 }
 
 model ConnectResult {
-  /** A unique identifier assigned to this client for the duration of the connection. */
+  /** A unique identifier for this client, valid for the life of the connection. */
   identity: string;
 
   /**
-   * The authorization block granted to this connection. Treat it as opaque:
-   * store it and present it unchanged when reconnecting.
+   * The authorization granted to this connection. Treat it as opaque: store it
+   * and pass it back unchanged when you reconnect.
    */
   authorization: Record<unknown>;
 
-  /** The protocol the client should use for subsequent requests. */
+  /** The protocol identifier to use on your subsequent requests. */
   protocol: string;
 
-  /** ICE servers for media. Present for WebRTC clients; omitted when the connection carries no media. */
+  /** ICE servers to use for media. Returned for WebRTC connections; omitted when the connection carries no media. */
   ice_servers?: IceServer[];
 }
 
 /**
- * Establish connectivity with the network as an edge client and recover critical
- * connection information. After a successful connect a
- * `signalwire.authorization.state` event is sent with the current authorization
- * state for future reconnections.
+ * Authenticate and open your Relay connection. Call this first, before any other
+ * Relay command: send your credentials and protocol version, and you get back your
+ * `identity`, `authorization`, the `protocol` to use on later requests, and ICE
+ * servers for media. Right after a successful connect you also receive a
+ * `signalwire.authorization.state` event — save its `authorization_state` so you
+ * can restore your session if you need to reconnect.
  */
 @rpcMethod("signalwire.connect")
 @summary("Authenticate and establish a Relay connection")
@@ -151,7 +152,7 @@ op connect(...ConnectParams): ConnectResult | AuthorizationStateEvent;
 // ─────────────────────────────────────────────────────────────────────────────
 
 model DisconnectParams {
-  /** Indicates the client should restart with a fresh connection. */
+  /** When `true`, you should open a fresh connection after disconnecting. */
   restart?: boolean;
 }
 
@@ -159,12 +160,12 @@ model DisconnectParams {
 model DisconnectResult {}
 
 /**
- * Tells the client the service is about to disconnect it and that buffers should
- * be flushed (e.g. during a deployment). The client is expected to reply; this
- * reply should be the last thing it sends before the socket closes.
+ * A heads-up that SignalWire is about to close your connection — for example
+ * during a deployment — so you can flush anything pending. Reply to acknowledge;
+ * that reply should be the last thing you send before the connection closes. If
+ * `restart` is `true`, reconnect afterward.
  *
- * Note: this message is sent server→client. It is documented here for
- * completeness; clients respond rather than initiate it.
+ * You receive this message; you don't send it.
  */
 @rpcMethod("signalwire.disconnect")
 @summary("Service is about to disconnect the client")
@@ -178,26 +179,25 @@ op disconnect(...DisconnectParams): DisconnectResult;
 // signalwire.receive / signalwire.unreceive
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Standard `{code, message}` acknowledgement used by receive/unreceive. */
+/** A `{code, message}` acknowledgement returned by receive and unreceive. */
 model Acknowledgement {
-  /** Result code (string). `"200"` on success; e.g. `"402"` Payment required. */
+  /** The result code as a string. `"200"` means success; `"402"` means payment required. */
   code: string;
-  /** Human-readable result message. */
+  /** A human-readable message describing the result. */
   message: string;
 }
 
 model ReceiveParams {
-  /** Contexts to set up for receiving inbound events. */
+  /** The contexts to start receiving inbound events for. */
   contexts?: string[];
 }
 
 /**
- * Request incoming events from SignalWire contexts on a previously-setup
- * protocol. Used for many different inbound receivers.
- *
- * Subscribing to a context is the precondition for receiving unsolicited inbound
- * notifications on this connection — most notably `calling.call.receive`, the inbound
- * call offered to context-subscribed clients (it is not produced by any calling command).
+ * Subscribe to one or more contexts so you start receiving inbound events for
+ * them. This is how you ask SignalWire to deliver unsolicited notifications to
+ * your connection — most importantly the `calling.call.receive` event for an
+ * inbound call, which only reaches clients that have subscribed to the call's
+ * context.
  */
 @rpcMethod("signalwire.receive")
 @summary("Subscribe to inbound events on one or more contexts")
@@ -208,11 +208,11 @@ model ReceiveParams {
 op receive(...ReceiveParams): Acknowledgement | Relay.Calling.CallReceiveEvent;
 
 model UnreceiveParams {
-  /** Contexts to stop receiving events for. */
+  /** The contexts to stop receiving events for. */
   contexts: string[];
 }
 
-/** Request incoming events from the given SignalWire contexts to stop. */
+/** Unsubscribe from one or more contexts so you stop receiving their inbound events. */
 @rpcMethod("signalwire.unreceive")
 @summary("Unsubscribe from inbound events on one or more contexts")
 @opExample(#{
@@ -227,16 +227,16 @@ op unreceive(...UnreceiveParams): Acknowledgement;
 
 model AuthorizationStateParams {
   /**
-   * Encrypted authorization state (and validation tag) the client can present on
-   * reconnect via `connect.authorization_state`.
+   * Your current authorization state. Save it and pass it back as
+   * `connect.authorization_state` when you reconnect.
    * Format: `<encryptedAuthStateBase64>:<tagBase64>`.
    */
   authorization_state: string;
 }
 
 /**
- * Provides updated authorization state to the client so it can reestablish that
- * state if it reconnects to another node.
+ * Delivers your latest authorization state so you can restore it if you
+ * reconnect. Save the `authorization_state` value each time this event arrives.
  */
 @event("signalwire.authorization.state")
 @example(#{
