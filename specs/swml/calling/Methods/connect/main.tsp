@@ -210,12 +210,32 @@ model ConnectDestination {
   @example("Support Team")
   from_name?: string;
 
+  @doc("Custom SIP headers to add to INVITE for this destination. Overrides the top-level `headers`. It has no effect on calls to phone numbers.")
+  headers?: ConnectHeaders[];
+
   @doc("""
     Comma-separated string of codecs to offer for this destination.
     Overrides the top-level `codecs`. It has no effect on calls to phone numbers.
     """)
   @example("PCMU")
   codecs?: string;
+
+  @doc("""
+    If true, WebRTC media is offered to this SIP destination.
+    Overrides the top-level `webrtc_media`. It has no effect on calls to phone numbers.
+    Default is `false`.
+    """)
+  @example(true)
+  webrtc_media?: boolean | SWMLVar = false;
+
+  @doc("""
+    Time, in seconds, to set the SIP `Session-Expires` header in INVITE for this destination.
+    Overrides the top-level `session_timeout`. Must be a positive, non-zero number.
+    It has no effect on calls to phone numbers.
+    """)
+  @minValue(1)
+  @example(1800)
+  session_timeout?: integer | SWMLVar = 0;
 
   @doc("SIP username to use for authentication when dialing a SIP URI. Has no effect on calls to phone numbers.")
   @example("sipuser")
@@ -305,7 +325,7 @@ model ConnectDestination {
  */
 @summary("Single Destination")
 model ConnectDeviceSingle is ConnectDeviceBase {
-  ...OmitProperties<ConnectDestination, "from" | "from_name" | "codecs" | "timeout" | "call_state_events" | "call_state_url" | "confirm" | "confirm_timeout" | "encryption">;
+  ...OmitProperties<ConnectDestination, "from" | "from_name" | "headers" | "codecs" | "webrtc_media" | "session_timeout" | "timeout" | "call_state_events" | "call_state_url" | "confirm" | "confirm_timeout" | "encryption">;
 }
 
 @summary("Serial Dialing")
