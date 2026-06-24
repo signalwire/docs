@@ -10,10 +10,10 @@ namespace Relay.Calling;
 // ─────────────────────────────────────────────────────────────────────────────
 
 model DialParams {
-  /** Identifier added to all call and dial events. */
+  /** Your label for this dial. Every resulting `calling.call.*` and `calling.call.dial` event carries this `tag`, so use it to match events back to this request. */
   tag: string;
 
-  /** Region to originate from. */
+  /** Geographic region to place the outbound call from. */
   region?: string;
 
   /**
@@ -23,7 +23,7 @@ model DialParams {
    */
   devices: DialDevice[][];
 
-  /** Maximum price per minute willing to be paid. */
+  /** Highest price per minute you're willing to pay. Devices that would exceed this rate aren't dialed. */
   max_price_per_minute?: float64;
 }
 
@@ -32,9 +32,12 @@ model DialResult {
 }
 
 /**
- * Dial outbound call(s) to device(s). First device to answer wins. Call
- * identifiers arrive asynchronously via `calling.call.dial` / `calling.call.state`
- * events keyed on `tag` — not in this synchronous result.
+ * Places one or more outbound calls to the devices you specify. The first device
+ * to answer wins, and any others stop ringing. Use this to start a brand-new call
+ * (as opposed to `calling.connect`, which adds a leg to an existing call). The
+ * synchronous result only confirms the request was accepted — the call's
+ * identifiers and progress arrive asynchronously through `calling.call.dial` and
+ * `calling.call.state` events keyed on `tag`.
  */
 // NOTE: no @opExample here — the required `devices: DialDevice[][]` is a @discriminator
 // base, and TypeSpec value-checking does not narrow a discriminated base to its
@@ -52,10 +55,12 @@ model AnswerParams {
   ...CallAddress;
 
   /**
-   * Codecs to negotiate (SignalWire-picked if unset). If a listed codec is
-   * unsupported by the call type the request fails with `"400"` — check
-   * `call.device.type` in `calling.call.state` events to determine the call type
-   * (`phone` supports a narrower set than `sip`/`webrtc`).
+   * Audio codecs to offer when answering, in preference order. If you omit this,
+   * SignalWire picks suitable codecs for you. Every codec you list must be
+   * supported by the call type — otherwise the request fails with `"400"`. Phone
+   * calls accept a narrower set than `sip` or `webrtc` calls, so check
+   * `call.device.type` in the `calling.call.state` events to know which call type
+   * you're answering.
    */
   codecs?: AnswerCodec[];
 }
@@ -64,7 +69,7 @@ model AnswerResult {
   ...RelayResult;
 }
 
-/** Answer an incoming call. */
+/** Answers an incoming call so audio begins flowing and you can start controlling it. */
 @rpcMethod("calling.answer")
 @summary("Answer an incoming call")
 @opExample(#{
@@ -84,7 +89,7 @@ op answer(...AnswerParams): AnswerResult;
 model EndParams {
   ...CallAddress;
 
-  /** Why the call is ending. */
+  /** Why the call is ending. Defaults to `hangup` (a normal end). */
   reason?: CallEndReason = "hangup";
 }
 
@@ -92,7 +97,7 @@ model EndResult {
   ...RelayResult;
 }
 
-/** End an active or ringing call. */
+/** Ends a call, whether it's already connected or still ringing. */
 @rpcMethod("calling.end")
 @summary("End a call")
 @opExample(#{
@@ -112,26 +117,29 @@ op end(...EndParams): EndResult;
 model ConnectParams {
   ...CallAddress;
 
-  /** Audio to play to the caller while connecting. */
+  /** Audio to play to the existing caller while the new device rings. Plays in order until the device answers. */
   ringback?: Ringback[];
 
-  /** Identifier added to created calls' events. */
+  /** Your label for the new call leg. Its `calling.call.*` events carry this `tag`. */
   tag?: string;
 
   /**
-   * Devices to connect. Same sequential/parallel topology as `calling.dial`.
+   * Devices to call and connect. Uses the same layout as `calling.dial`: the outer
+   * array rings groups in sequence, the inner array rings devices in a group at
+   * once, and the first device to answer is the one that gets connected.
    */
   devices: ConnectDevice[][];
 
-  /** Maximum duration once connected, in MINUTES. */
+  /** Maximum length of the connected call, in seconds. The call ends automatically once this is reached. */
   max_duration?: int32;
 
-  /** Maximum price per minute willing to be paid. */
+  /** Highest price per minute you're willing to pay. Devices that would exceed this rate aren't called. */
   max_price_per_minute?: float64;
 
   /**
-   * URL to POST `calling.call.connect` events to (statuses: `connecting`,
-   * `connected`, `failed`, `disconnected`).
+   * URL to receive `calling.call.connect` events via POST as the connection
+   * progresses through the `connecting`, `connected`, `failed`, and `disconnected`
+   * statuses.
    */
   status_url?: url;
 }
@@ -141,8 +149,12 @@ model ConnectResult {
 }
 
 /**
- * Call a device and connect it to this active call. Only one connect may execute
- * at a time per call.
+ * Calls a new device and bridges it to this already-active call, joining both
+ * legs together. Use this to add a party to a live call, such as forwarding or
+ * transferring a caller. Only one connect can run at a time on a given call — if
+ * another operation is still in progress, the request fails with a conflict error
+ * telling you to wait for it to finish. Connection progress arrives through
+ * `calling.call.connect` events.
  */
 // NOTE: no @opExample here — the required `devices: ConnectDevice[][]` (and the
 // optional `ringback: Ringback[]`) are @discriminator bases, and TypeSpec
@@ -165,7 +177,11 @@ model DisconnectResult {
   ...RelayResult;
 }
 
-/** Disconnect all calls from this call without hanging up on them. */
+/**
+ * Splits apart legs that were joined with `calling.connect`, separating the calls
+ * without hanging up on either one. Each call stays live so you can keep
+ * controlling it or connect it elsewhere.
+ */
 @rpcMethod("calling.disconnect")
 @summary("Disconnect connected legs without hanging up")
 @opExample(#{

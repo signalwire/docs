@@ -12,27 +12,24 @@ namespace Relay.Calling;
 model QueueEnterParams {
   ...CallAddress;
 
-  /** Identifier used to control this queue placement. */
+  /** Your own identifier for this queue placement. Reuse it to leave the queue later, and it comes back on queue events so you can correlate them. */
   control_id: string;
 
-  /**
-   * Name of the queue to place the call in. If it does not exist, a new queue is
-   * created and the call becomes first in it.
-   */
+  /** Name of the queue to place the call in. If no queue by this name exists yet, one is created and the call joins it. */
   queue_name: string;
 
-  /** HTTP(S) URL to deliver RELAY queue event callbacks to. */
+  /** HTTPS URL where SignalWire POSTs queue status updates as the call moves through the queue. */
   status_url?: url;
 }
 
 model QueueEnterResult {
   ...RelayResult;
 
-  /** Echo of the `control_id` supplied in the request. */
+  /** Echoes back the `control_id` you sent, so you can match this result to your request. */
   control_id?: string;
 }
 
-/** Place the active call into a named queue. */
+/** Places the active call into a named queue (creating the queue if it doesn't exist yet). Use it to hold callers while you wait for an agent or resource to free up. You get a result confirming entry, and the call's queue position, size, and wait estimate arrive as queue events keyed on your `control_id`. */
 @rpcMethod("calling.queue.enter")
 @summary("Place the call into a queue")
 @opExample(#{
@@ -54,27 +51,27 @@ op queueEnter(...QueueEnterParams): QueueEnterResult | CallQueueEvent;
 model QueueLeaveParams {
   ...CallAddress;
 
-  /** Identifier used to control this queue placement. */
+  /** The `control_id` you used when the call entered the queue. */
   control_id: string;
 
   /** Name of the queue to remove the call from. */
   queue_name: string;
 
-  /** ID of the queue to remove the call from. */
+  /** ID of the queue to remove the call from. The queue id is reported on queue events. */
   queue_id?: string;
 
-  /** HTTP(S) URL to deliver RELAY queue event callbacks to. */
+  /** HTTPS URL where SignalWire POSTs queue status updates. */
   status_url?: url;
 }
 
 model QueueLeaveResult {
   ...RelayResult;
 
-  /** Echo of the `control_id` supplied in the request. */
+  /** Echoes back the `control_id` you sent, so you can match this result to your request. */
   control_id?: string;
 }
 
-/** Remove the active call from a queue. */
+/** Removes the active call from the queue it's waiting in. Use it to pull a caller out early, for example to hand them to an agent or end their wait. */
 @rpcMethod("calling.queue.leave")
 @summary("Remove the call from a queue")
 @opExample(#{
@@ -98,19 +95,19 @@ op queueLeave(...QueueLeaveParams): QueueLeaveResult;
 // an object keyed by `audio` (the only documented variant). See openQuestions.
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Audio direction to capture in a recording. */
+/** Which side of the conversation to capture in a recording. */
 union RecordAudioDirection {
-  /** What the call party hears. */
+  /** Record what the remote party hears (audio sent to them). */
   "listen",
 
-  /** What the call party says. */
+  /** Record what the remote party says (audio from them). */
   "speak",
 
-  /** Both directions. */
+  /** Record both sides of the conversation. */
   "both",
 }
 
-/** Audio-recording parameters (the `record.audio` subobject). */
+/** Audio recording settings, passed under `record.audio`. */
 model RecordAudio {
   /** Play a beep before recording starts. Default `false`. */
   beep?: boolean = false;
@@ -150,39 +147,36 @@ model RecordAudio {
   input_sensitivity?: float64 = 44.0;
 }
 
-/**
- * Recording spec. Keyed by subobject name (`audio`) rather than a `type`
- * discriminator; only the `audio` variant is documented.
- */
+/** What to record. Audio is currently the only supported type — put its settings under `audio`. */
 model RecordSpec {
-  /** Audio-recording parameters. */
+  /** Audio recording settings. */
   audio: RecordAudio;
 }
 
 model RecordParams {
   ...CallAddress;
 
-  /** Identifier used to control active recordings. */
+  /** Your own identifier for this recording. Use it to pause, resume, or stop the recording later, and it comes back on recording events so you can correlate them. */
   control_id: string;
 
-  /** The recording spec (subobject-keyed; only `audio` is documented). */
+  /** What to record. Currently audio is the only option — set its parameters under `audio`. */
   record: RecordSpec;
 
-  /** HTTP(S) URL to deliver RELAY recording event callbacks to. */
+  /** HTTPS URL where SignalWire POSTs recording status updates. */
   status_url?: url;
 }
 
 model RecordResult {
   ...RelayResult;
 
-  /** Echo of the `control_id` supplied in the request. */
+  /** Echoes back the `control_id` you sent, so you can match this result to your request. */
   control_id?: string;
 
-  /** URL of the resulting recording. */
+  /** URL of the finished recording. */
   url?: url;
 }
 
-/** Record a call. Async-safe — may be executed multiple times in parallel. */
+/** Records the audio of an active call. The result confirms recording started and the recording's URL arrives on a recording event when it finishes. You can run several recordings on the same call at once — give each its own `control_id`. */
 @rpcMethod("calling.record")
 @summary("Record a call")
 @opExample(#{
@@ -229,21 +223,21 @@ union RecordPauseBehavior {
 model RecordPauseParams {
   ...CallAddress;
 
-  /** The `control_id` assigned in `calling.record`. */
+  /** The `control_id` you set when you started the recording with `calling.record`. */
   control_id: string;
 
-  /** Behavior of the recording while paused. Default `skip`. */
+  /** Whether the paused stretch is dropped from the recording (`skip`) or kept as silence (`silence`). Default `skip`. */
   behavior?: RecordPauseBehavior = "skip";
 }
 
 model RecordPauseResult {
   ...RelayResult;
 
-  /** Echo of the `control_id` supplied in the request. */
+  /** Echoes back the `control_id` you sent, so you can match this result to your request. */
   control_id?: string;
 }
 
-/** Pause an active call recording. Async-safe. */
+/** Pauses a recording you started with `calling.record`, identified by its `control_id`. Audio captured while paused is either dropped or kept as silence depending on `behavior`. Resume it later with `calling.record.resume`. */
 @rpcMethod("calling.record.pause")
 @summary("Pause an active recording")
 @opExample(#{
@@ -264,18 +258,18 @@ op recordPause(...RecordPauseParams): RecordPauseResult;
 model RecordResumeParams {
   ...CallAddress;
 
-  /** The `control_id` assigned in `calling.record`. */
+  /** The `control_id` you set when you started the recording with `calling.record`. */
   control_id: string;
 }
 
 model RecordResumeResult {
   ...RelayResult;
 
-  /** Echo of the `control_id` supplied in the request. */
+  /** Echoes back the `control_id` you sent, so you can match this result to your request. */
   control_id?: string;
 }
 
-/** Resume a previously paused call recording. Async-safe. */
+/** Resumes a recording you paused with `calling.record.pause`, identified by its `control_id`. Audio capture picks back up where it left off. */
 @rpcMethod("calling.record.resume")
 @summary("Resume a paused recording")
 @opExample(#{
@@ -295,18 +289,18 @@ op recordResume(...RecordResumeParams): RecordResumeResult;
 model RecordStopParams {
   ...CallAddress;
 
-  /** The `control_id` assigned in `calling.record`. */
+  /** The `control_id` you set when you started the recording with `calling.record`. */
   control_id: string;
 }
 
 model RecordStopResult {
   ...RelayResult;
 
-  /** Echo of the `control_id` supplied in the request. */
+  /** Echoes back the `control_id` you sent, so you can match this result to your request. */
   control_id?: string;
 }
 
-/** Stop an active call recording. Async-safe. */
+/** Stops a recording you started with `calling.record`, identified by its `control_id`. Once stopped, the recording is finalized and its URL becomes available on the recording event. */
 @rpcMethod("calling.record.stop")
 @summary("Stop an active recording")
 @opExample(#{
@@ -326,22 +320,22 @@ op recordStop(...RecordStopParams): RecordStopResult;
 // variant is valid, modeled as a `@discriminator("type")` base + variant.
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** `sip` REFER device params. */
+/** Where to send a SIP call when transferring it with `calling.refer`. */
 model ReferSipDeviceParams {
-  /** SIP URI to transfer the call to (e.g. `userb@example.com`). */
+  /** SIP URI to transfer the call to, for example `userb@example.com`. */
   to: string;
 
-  /** Username used to authenticate the REFER request. */
+  /** Username for authenticating against the destination SIP endpoint, if it requires credentials. */
   username?: string;
 
-  /** Password used to authenticate the REFER request. */
+  /** Password for authenticating against the destination SIP endpoint, if it requires credentials. */
   password?: string;
 }
 
-/** Target device for a SIP REFER transfer. Discriminated on `type` (`sip` only). */
+/** Where to transfer the call. Set `type` to `sip` and supply the SIP destination in `params`. */
 @discriminator("type")
 model ReferDevice {
-  /** Device type discriminator. Only `sip` is valid. */
+  /** The transfer destination type. Only `sip` is supported. */
   type: string;
 }
 
@@ -356,10 +350,10 @@ model ReferSipDevice extends ReferDevice {
 model ReferParams {
   ...CallAddress;
 
-  /** The device to transfer the call to (only `sip` is valid). */
+  /** Where to transfer the call. Only SIP destinations are supported (`type: "sip"`). */
   device: ReferDevice;
 
-  /** HTTP(S) URL to POST refer events to. */
+  /** HTTPS URL where SignalWire POSTs the outcome of the transfer. */
   status_url?: url;
 }
 
@@ -372,7 +366,7 @@ model ReferResult {
 // and TypeSpec value-checking does not narrow a discriminated base to its variant, so an
 // inline frame example can't carry real `params`. The ReferSipDevice variant model carries
 // a schema-level @example value instead.
-/** Transfer a SIP call to an external SIP endpoint via SIP REFER. Async-safe. */
+/** Transfers a SIP call to another SIP endpoint using a SIP REFER. Use it to hand the call off to an external destination without staying in the media path. The result confirms the refer was sent; the transfer's progress and final outcome arrive on a refer event. */
 @rpcMethod("calling.refer")
 @summary("Transfer a SIP call via SIP REFER")
 op refer(...ReferParams): ReferResult | CallReferEvent;
@@ -381,7 +375,7 @@ op refer(...ReferParams): ReferResult | CallReferEvent;
 // calling.pass
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Parameters for `calling.pass` — identifies the call whose offer to pass on. */
+/** Identifies the inbound call offer you want to pass on. */
 model PassParams {
   ...CallAddress;
 }
@@ -391,10 +385,7 @@ model PassResult {
   ...RelayResult;
 }
 
-/**
- * Pass on a `calling.call.receive` offer so SignalWire offers the call to another
- * RELAY consumer.
- */
+/** Declines an inbound call offer (a `calling.call.receive` event) without answering it, returning the call to routing so SignalWire can offer it to another consumer. Use it when your app gets a call it shouldn't handle and you want someone else to pick it up. */
 @rpcMethod("calling.pass")
 @summary("Pass the call offer to another consumer")
 @opExample(#{

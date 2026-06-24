@@ -14,48 +14,52 @@ namespace Relay.Calling;
 // ═════════════════════════════════════════════════════════════════════════════
 
 /**
- * Speech-recognition engine to force for a collect. Must support the requested
- * `language`. Unset means SignalWire picks the engine.
+ * Pins speech recognition to a specific engine for a collect. The engine you
+ * choose must support the `language` you request. Leave it unset to let
+ * SignalWire pick an engine for you.
  */
 union CollectSpeechEngine {
   "Deepgram",
   "Google",
 }
 
-/** DTMF-digit collection settings. */
+/** Settings that control how the caller's DTMF key presses are collected. */
 model CollectDigits {
-  /** Maximum number of digits to collect. Positive integer. */
+  /** Maximum number of digits to collect before collection finishes. Must be a positive integer. */
   @minValue(1)
   max: int32;
 
-  /** Digits that terminate collection (e.g. `"#*"`). Default not set. */
+  /** Keys that end collection early when pressed, such as `"#*"`. Not set by default. */
   terminators?: string;
 
   /**
-   * Maximum seconds to wait for the next digit after a digit is received.
-   * Default `5.0`.
+   * How long to wait, in seconds, for the next key press after one is received
+   * before giving up. Defaults to `5.0`.
    */
   @minValueExclusive(0)
   digit_timeout?: float64 = 5.0;
 }
 
-/** Speech-recognition collection settings. */
+/** Settings that control how the caller's speech is recognized and collected. */
 model CollectSpeech {
-  /** Silence (seconds) to wait for before declaring end of speech. Default `1`. */
+  /**
+   * How much silence, in seconds, to wait for before treating the caller as
+   * finished speaking. Defaults to `1`.
+   */
   @minValueExclusive(0)
   end_silence_timeout?: float64 = 1.0;
 
-  /** Maximum seconds to collect speech. Default `60`. */
+  /** Maximum time, in seconds, to spend collecting speech. Defaults to `60`. */
   @minValueExclusive(0)
   speech_timeout?: float64 = 60.0;
 
-  /** Language to detect. Default `en-US`. */
+  /** Language to recognize, as a BCP-47 tag such as `en-US`. Defaults to `en-US`. */
   language?: string = "en-US";
 
-  /** Expected phrases to bias detection toward. Default not set. */
+  /** Words or phrases you expect to hear, used to bias recognition toward them. Not set by default. */
   hints?: string[];
 
-  /** Force a specific speech-recognition engine. Default unset (auto-selected). */
+  /** Pins recognition to a specific engine. Defaults to unset, which lets SignalWire choose. */
   engine?: CollectSpeechEngine;
 }
 
@@ -76,49 +80,57 @@ model CollectSpeech {
 model CollectParams {
   ...CallAddress;
 
-  /** Identifier added to the created collect events. */
+  /** Your own identifier for this collect. It is attached to every event the collect produces so you can match events back to this request. */
   control_id: string;
 
   /**
-   * Seconds to wait for initial input. Used only when `start_input_timers: true`.
-   * Default `4.0`.
+   * How long to wait, in seconds, for the caller to start giving input. This
+   * timer only runs once it has been started — either at the outset when
+   * `start_input_timers` is `true`, or later via `calling.collect.start_input_timers`.
+   * Defaults to `4.0`.
    */
   @minValueExclusive(0)
   initial_timeout?: float64 = 4.0;
 
-  /** Digit-collection settings. Required if `speech` is not set. */
+  /** How to collect DTMF key presses. Provide this, `speech`, or both; at least one is required. */
   digits?: CollectDigits;
 
-  /** Speech-collection settings. Required if `digits` is not set. */
+  /** How to collect spoken input. Provide this, `digits`, or both; at least one is required. */
   speech?: CollectSpeech;
 
-  /** If true, partial-result events are fired. Default `false`. */
+  /** When `true`, emit partial-result events as input comes in rather than only a final result. Defaults to `false`. */
   partial_results?: boolean = false;
 
   /**
-   * If true, utterances and digits are detected continuously until the collect is
-   * stopped. Default `false`.
+   * When `true`, keep listening for speech and digits until you stop the collect
+   * yourself, instead of finishing after the first complete input. Defaults to `false`.
    */
   continuous?: boolean = false;
 
-  /** If true, the `start_of_input` event is fired when input is detected. Default `false`. */
+  /** When `true`, fire a `start_of_input` event the moment the caller begins giving input. Defaults to `false`. */
   send_start_of_input?: boolean = false;
 
-  /** If true, the `initial_timeout` timer is started immediately. Default `false`. */
+  /** When `true`, start the `initial_timeout` timer immediately. Set `false` to start it later with `calling.collect.start_input_timers`. Defaults to `false`. */
   start_input_timers?: boolean = false;
 
-  /** HTTP(s) URL to POST collect events to. */
+  /** HTTP or HTTPS URL that collect events are also POSTed to as they occur. */
   status_url?: url;
 }
 
 model CollectResult {
   ...RelayResult;
 
-  /** Echoes the `control_id` from the params. */
+  /** Echoes back the `control_id` you supplied so you can correlate the response. */
   control_id?: string;
 }
 
-/** Collect DTMF digits and/or speech from an active call. */
+/**
+ * Collects DTMF key presses, spoken input, or both from a caller on an active
+ * call. Use it to gather menu selections, account numbers, or short voice
+ * responses. The immediate response only confirms that collection started;
+ * the collected input arrives asynchronously in `calling.call.collect` events
+ * keyed on your `control_id`.
+ */
 @rpcMethod("calling.collect")
 @summary("Collect digits and/or speech from a call")
 @opExample(#{
@@ -150,7 +162,7 @@ op collect(...CollectParams): CollectResult | CallCollectEvent;
 model CollectStopParams {
   ...CallAddress;
 
-  /** The `control_id` assigned in `calling.collect`. */
+  /** The `control_id` you gave to the `calling.collect` you want to stop. */
   control_id: string;
 }
 
@@ -158,7 +170,7 @@ model CollectStopResult {
   ...RelayResult;
 }
 
-/** Stop an active collect. */
+/** Stops a running collect before it finishes on its own, for example when you no longer need the caller's input. */
 @rpcMethod("calling.collect.stop")
 @summary("Stop an active collect")
 @opExample(#{
@@ -174,7 +186,7 @@ op collectStop(...CollectStopParams): CollectStopResult;
 model CollectStartInputTimersParams {
   ...CallAddress;
 
-  /** The `control_id` assigned in `calling.collect`. */
+  /** The `control_id` of the active `calling.collect` whose timer you want to start. */
   control_id: string;
 }
 
@@ -183,8 +195,9 @@ model CollectStartInputTimersResult {
 }
 
 /**
- * Start the `initial_timeout` timer on an active collect — the companion call when
- * a collect was started with `start_input_timers: false`.
+ * Starts the `initial_timeout` countdown on a collect that was started with
+ * `start_input_timers: false`. Use it to begin the wait for input on your own
+ * schedule — for example, only after you have finished playing a prompt.
  */
 @rpcMethod("calling.collect.start_input_timers")
 @summary("Start the initial-timeout timer on a collect")
@@ -198,53 +211,56 @@ op collectStartInputTimers(...CollectStartInputTimersParams): CollectStartInputT
 // calling.play_and_collect (NOT async-safe)
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** The `collect` block of `calling.play_and_collect`. At least one of `digits`/`speech`. */
+/** The `collect` settings for a `calling.play_and_collect`, describing what to listen for while the media plays. Provide `digits`, `speech`, or both. */
 model PlayAndCollectCollect {
-  /** Seconds to wait for initial input. Default `4.0`. */
+  /** How long to wait, in seconds, for the caller to start giving input. Defaults to `4.0`. */
   @minValueExclusive(0)
   initial_timeout?: float64 = 4.0;
 
-  /** Digit-collection settings. Required if `speech` is not set. */
+  /** How to collect DTMF key presses. Provide this, `speech`, or both; at least one is required. */
   digits?: CollectDigits;
 
-  /** Speech-collection settings. Required if `digits` is not set. */
+  /** How to collect spoken input. Provide this, `digits`, or both; at least one is required. */
   speech?: CollectSpeech;
 }
 
 model PlayAndCollectParams {
   ...CallAddress;
 
-  /** Identifier added to the created play-and-collect events. */
+  /** Your own identifier for this play-and-collect. It is attached to every event it produces so you can match events back to this request. */
   control_id: string;
 
   /**
-   * Playback volume in dB, from `-40` (muted) to `+40`, where `0` is the original
-   * audio. Follows the standard amplitude voltage gain factor: `10 ^ (value / 20)`.
+   * Playback volume in dB, from `-40` (muted) to `+40`, where `0` keeps the
+   * original audio level. The value is applied as the standard amplitude gain
+   * factor `10 ^ (value / 20)`.
    */
   @minValue(-40)
   @maxValue(40)
   volume?: float64;
 
-  /** Media elements to play. */
+  /** The media to play, in order — audio files, text-to-speech, silence, or ringtone. */
   play: PlayMedia[];
 
-  /** Collection settings applied while playing. */
+  /** What to listen for from the caller while the media plays. */
   collect: PlayAndCollectCollect;
 
-  /** HTTP(s) URL to POST play-and-collect events to. */
+  /** HTTP or HTTPS URL that play-and-collect events are also POSTed to as they occur. */
   status_url?: url;
 }
 
 model PlayAndCollectResult {
   ...RelayResult;
 
-  /** Echoes the `control_id` from the params. */
+  /** Echoes back the `control_id` you supplied so you can correlate the response. */
   control_id?: string;
 }
 
 /**
- * Play media to a call and collect input. NOT async-safe. Only one execution at a
- * time per call.
+ * Plays media to the caller and collects their input at the same time, so you
+ * can prompt and gather a response in one step. Collected input arrives
+ * asynchronously in `calling.call.collect` events keyed on your `control_id`.
+ * Only one play-and-collect can run on a call at a time.
  */
 // NOTE: no @opExample here — the required `play: PlayMedia[]` is a @discriminator
 // union, and TypeSpec example values cannot narrow a discriminator base.
@@ -259,7 +275,7 @@ op playAndCollect(...PlayAndCollectParams): PlayAndCollectResult | CallCollectEv
 model PlayAndCollectStopParams {
   ...CallAddress;
 
-  /** The `control_id` assigned in `calling.play_and_collect`. */
+  /** The `control_id` you gave to the `calling.play_and_collect` you want to stop. */
   control_id: string;
 }
 
@@ -267,7 +283,7 @@ model PlayAndCollectStopResult {
   ...RelayResult;
 }
 
-/** Stop an active play-and-collect. */
+/** Stops a running play-and-collect, halting both the media playback and the input collection. */
 @rpcMethod("calling.play_and_collect.stop")
 @summary("Stop an active play-and-collect")
 @opExample(#{
@@ -283,13 +299,13 @@ op playAndCollectStop(...PlayAndCollectStopParams): PlayAndCollectStopResult;
 model PlayAndCollectVolumeParams {
   ...CallAddress;
 
-  /** The `control_id` assigned in `calling.play_and_collect`. */
+  /** The `control_id` of the active `calling.play_and_collect` whose volume you want to change. */
   control_id: string;
 
   /**
-   * New playback volume in dB, from `-40` (muted) to `+40`, where `0` is the
-   * original audio. Follows the standard amplitude voltage gain factor:
-   * `10 ^ (value / 20)`.
+   * New playback volume in dB, from `-40` (muted) to `+40`, where `0` keeps the
+   * original audio level. The value is applied as the standard amplitude gain
+   * factor `10 ^ (value / 20)`.
    */
   @minValue(-40)
   @maxValue(40)
@@ -300,7 +316,7 @@ model PlayAndCollectVolumeResult {
   ...RelayResult;
 }
 
-/** Alter the volume of an active play-and-collect. */
+/** Adjusts the playback volume of a running play-and-collect on the fly, without stopping it. */
 @rpcMethod("calling.play_and_collect.volume")
 @summary("Change play-and-collect volume")
 @opExample(#{
