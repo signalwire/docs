@@ -48,6 +48,11 @@ model ConnectSwitch {
   default?: SWMLMethod[];
 }
 
+/**
+ * Connect-level properties shared across all dialing strategies.
+ * Does NOT include `username` or `password` — those belong on
+ * ConnectDestination (per-destination) and ConnectDeviceSingle only.
+ */
 @summary("ConnectDeviceBase object")
 model ConnectDeviceBase {
   @doc("The caller ID to use when dialing the number.")
@@ -136,14 +141,6 @@ model ConnectDeviceBase {
   @example(30)
   confirm_timeout?: integer | SWMLVar;
 
-  @doc("SIP username to use for authentication when dialing a SIP URI. Has no effect on calls to phone numbers.")
-  @example("sipuser")
-  username?: string;
-
-  @doc("SIP password to use for authentication when dialing a SIP URI. Has no effect on calls to phone numbers.")
-  @example("sippassword")
-  password?: string;
-
   @doc("Encryption setting to use. **Possible values:** `mandatory`, `optional`, `forbidden`")
   @example("optional")
   encryption?: "mandatory" | "optional" | "forbidden" = "optional";
@@ -182,8 +179,15 @@ model ConnectDeviceBase {
   status_url?: url;
 }
 
-@summary("Single Destination")
-model ConnectDeviceSingle is ConnectDeviceBase {
+/**
+ * Per-destination model used inside `serial`, `parallel`, and `serial_parallel` arrays.
+ *
+ * Contains only the properties that apply to an individual destination:
+ * addressing, caller-ID overrides, SIP auth, per-leg timeouts/confirmations,
+ * and stream-specific settings.
+ */
+@summary("ConnectDestination object")
+model ConnectDestination {
   @doc("""
     Destination to dial. Can be:
     - Phone number in E.164 format (e.g., "+15552345678")
@@ -194,6 +198,60 @@ model ConnectDeviceSingle is ConnectDeviceBase {
     """)
   @example("+15559876543")
   to: string;
+
+  @doc("The caller ID to use when dialing this destination. Overrides the top-level `from`.")
+  @example("+15551234567")
+  from?: string;
+
+  @doc("""
+    The caller ID name for this destination. Overrides the top-level `from_name`.
+    Applies to SIP calls only — it has no effect on calls to phone numbers.
+    """)
+  @example("Support Team")
+  from_name?: string;
+
+  @doc("SIP username to use for authentication when dialing a SIP URI. Has no effect on calls to phone numbers.")
+  @example("sipuser")
+  username?: string;
+
+  @doc("SIP password to use for authentication when dialing a SIP URI. Has no effect on calls to phone numbers.")
+  @example("sippassword")
+  password?: string;
+
+  @doc("""
+    Time, in seconds, to wait for this destination to answer.
+    Overrides the top-level `timeout`. Default is 60 seconds.
+    """)
+  @example(30)
+  timeout?: integer | SWMLVar = 60;
+
+  @doc("""
+    An array of call state event names to be notified about for this destination.
+    Overrides the top-level `call_state_events`.
+    Allowed event names are: `created`, `ringing`, `answered`, `ended`.
+    """)
+  call_state_events?: CallStatus[] = #[CallStatus.ended];
+
+  @doc("Webhook URL for call status change notifications for this destination. Overrides the top-level `call_state_url`.")
+  @example("https://example.com/call-status")
+  call_state_url?: url;
+
+  @doc("""
+    Confirmation to execute on this destination when answered.
+    Overrides the top-level `confirm`. Can be either:
+    - A URL (string) that returns a SWML document
+    - An array of SWML methods to execute inline
+    """)
+  @example("https://example.com/confirm.swml")
+  confirm?: string | ValidConfirmMethods[];
+
+  @doc("Seconds to wait for the `confirm` script on this destination. Overrides the top-level `confirm_timeout`.")
+  @example(30)
+  confirm_timeout?: integer | SWMLVar;
+
+  @doc("Encryption setting for this destination. Overrides the top-level `encryption`. **Possible values:** `mandatory`, `optional`, `forbidden`")
+  @example("optional")
+  encryption?: "mandatory" | "optional" | "forbidden" = "optional";
 
   // Stream-specific properties (only apply when `to` starts with "stream:wss://")
 
@@ -231,15 +289,28 @@ model ConnectDeviceSingle is ConnectDeviceBase {
   custom_parameters?: TypeSpec.Record<string>;
 }
 
+/**
+ * Single-destination connect object.
+ *
+ * Inherits connect-level properties from ConnectDeviceBase, then spreads the
+ * destination-only properties from ConnectDestination (using `Omit` to skip
+ * the fields already present on ConnectDeviceBase, avoiding duplication).
+ */
+@summary("Single Destination")
+model ConnectDeviceSingle is ConnectDeviceBase {
+  ...OmitProperties<ConnectDestination, "from" | "from_name" | "timeout" | "call_state_events" | "call_state_url" | "confirm" | "confirm_timeout" | "encryption">;
+}
+
 @summary("Serial Dialing")
 model ConnectDeviceSerial is ConnectDeviceBase {
-  serial: ConnectDeviceSingle[];
+  @doc("Array of destinations to dial in order. Each destination is tried sequentially — if the first fails, the next is attempted.")
+  serial: ConnectDestination[];
 }
 
 @summary("Parallel Dialing")
 model ConnectDeviceParallel is ConnectDeviceBase {
-  @doc("Array of destinations to dial simultaneously.")
-  parallel: ConnectDeviceSingle[];
+  @doc("Array of destinations to dial simultaneously. The first destination to answer is bridged and the rest are cancelled.")
+  parallel: ConnectDestination[];
 }
 
 @summary("Serial-Parallel Dialing")
@@ -249,7 +320,7 @@ model ConnectDeviceSerialParallel is ConnectDeviceBase {
     Inner arrays contain destinations to dial simultaneously.
     Outer array attempts each parallel group in order.
     """)
-  serial_parallel: ConnectDeviceSingle[][];
+  serial_parallel: ConnectDestination[][];
 }
 
 alias ConnectDevice =
