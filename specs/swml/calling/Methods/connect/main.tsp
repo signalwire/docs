@@ -192,7 +192,7 @@ model ConnectDestination {
     Destination to dial. Can be:
     - Phone number in E.164 format (e.g., "+15552345678")
     - SIP URI (e.g., "sip:alice@example.com")
-    - Call Fabric Resource address (e.g., "/public/test_room")
+    - Resource Address (e.g., "/public/test_room")
     - Queue (e.g., "queue:support")
     - WebSocket stream (e.g., "stream:wss://example.com/audio")
     """)
@@ -362,7 +362,7 @@ alias ConnectDevice =
 
 @summary("connect Method")
 model Connect {
-  @doc("Connect to a phone number, SIP URI, Call Fabric resource, queue, or WebSocket stream.")
+  @doc("Connect to a phone number, SIP URI, Resource Address, queue, or WebSocket stream.")
   @oneOf
   connect: ConnectDevice;
 }
