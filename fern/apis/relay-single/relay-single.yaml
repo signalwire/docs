@@ -3,30 +3,29 @@ info:
   title: SignalWire Relay
   version: 1.0.0
   description: |-
-    SignalWire Relay is a single WebSocket connection to `relay.signalwire.com`
-    speaking JSON-RPC (BLADE). A connection is bootstrapped by `signalwire.connect`,
-    then multiplexes every service — calling, messaging, tasking, provisioning, and
-    webrtc — over the same socket, routing each request by its JSON-RPC `method`
-    namespace. Each service is grouped as its own channel.
+    SignalWire Relay gives you a single WebSocket connection to
+    `relay.signalwire.com`. Open it with `signalwire.connect`, then use any service —
+    calling, messaging, tasking, provisioning, and webrtc — over that one connection.
+    Each service is grouped as its own channel.
 
     ## Authentication
 
-    Authentication is performed **in-band as the first message** — there is no HTTP
-    `Authorization` header on the WebSocket handshake. After the socket opens, the
-    client sends `signalwire.connect` with its credentials in `params.authentication`:
+    You authenticate with your **first message** — there is no HTTP `Authorization`
+    header on the WebSocket handshake. Once the socket opens, send `signalwire.connect`
+    with your credentials in `params.authentication`:
 
-    - **Browser / client SDKs** send a server-minted **`jwt_token`** (an API token must
-    never be exposed in the browser).
+    - **Browser / client SDKs** send a server-generated **`jwt_token`** (never expose
+    an API token in the browser).
     - **Server SDKs** send a **`project` + `token`** pair (or a `jwt_token`).
 
-    Once connected, every subsequent request rides the authenticated socket; a
-    `signalwire.authorization.state` event is returned for fast reconnection.
+    After you connect, every request you send reuses the authenticated connection, and a
+    `signalwire.authorization.state` event comes back that lets you reconnect quickly.
 defaultContentType: application/json
 servers:
   production:
     host: relay.signalwire.com
     protocol: wss
-    description: SignalWire Relay WebSocket endpoint. Authenticate in-band via signalwire.connect (no HTTP Authorization header).
+    description: SignalWire Relay WebSocket endpoint. Open the connection, then authenticate by sending `signalwire.connect` as your first message.
     bindings:
       ws: {}
 channels:
@@ -385,24 +384,23 @@ channels:
       messageEvent:
         $ref: "#/components/messages/messageEvent"
     description: |-
-      SignalWire Relay is a single WebSocket connection to `relay.signalwire.com`
-      speaking JSON-RPC (BLADE). A connection is bootstrapped by `signalwire.connect`,
-      then multiplexes every service — calling, messaging, tasking, provisioning, and
-      webrtc — over the same socket, routing each request by its JSON-RPC `method`
-      namespace. Each service is grouped as its own channel.
+      SignalWire Relay gives you a single WebSocket connection to
+      `relay.signalwire.com`. Open it with `signalwire.connect`, then use any service —
+      calling, messaging, tasking, provisioning, and webrtc — over that one connection.
+      Each service is grouped as its own channel.
 
       ## Authentication
 
-      Authentication is performed **in-band as the first message** — there is no HTTP
-      `Authorization` header on the WebSocket handshake. After the socket opens, the
-      client sends `signalwire.connect` with its credentials in `params.authentication`:
+      You authenticate with your **first message** — there is no HTTP `Authorization`
+      header on the WebSocket handshake. Once the socket opens, send `signalwire.connect`
+      with your credentials in `params.authentication`:
 
-      - **Browser / client SDKs** send a server-minted **`jwt_token`** (an API token must
-      never be exposed in the browser).
+      - **Browser / client SDKs** send a server-generated **`jwt_token`** (never expose
+      an API token in the browser).
       - **Server SDKs** send a **`project` + `token`** pair (or a `jwt_token`).
 
-      Once connected, every subsequent request rides the authenticated socket; a
-      `signalwire.authorization.state` event is returned for fast reconnection.
+      After you connect, every request you send reuses the authenticated connection, and a
+      `signalwire.authorization.state` event comes back that lets you reconnect quickly.
     bindings:
       ws: {}
 operations:
@@ -1371,7 +1369,7 @@ operations:
     channel:
       $ref: "#/channels/relay"
     title: calling.transfer
-    summary: Transfer call control to a RELAY app or SWML script
+    summary: Transfer a call to a RELAY app or SWML script
     messages:
       - $ref: "#/channels/relay/messages/callingTransferRequest"
     reply:
@@ -1650,7 +1648,7 @@ operations:
     channel:
       $ref: "#/channels/relay"
     title: calling.bind_digit
-    summary: Bind a DTMF digit sequence to a RELAY method
+    summary: Trigger a call method when a DTMF sequence is pressed
     messages:
       - $ref: "#/channels/relay/messages/callingBindDigitRequest"
     reply:
@@ -2099,7 +2097,7 @@ operations:
     channel:
       $ref: "#/channels/relay"
     title: message
-    summary: Transport a Verto message to FreeSWITCH
+    summary: Send a Verto frame
     messages:
       - $ref: "#/channels/relay/messages/messageRequest"
     reply:
@@ -2175,21 +2173,21 @@ components:
       properties:
         identity:
           type: string
-          description: A unique identifier assigned to this client for the duration of the connection.
+          description: A unique identifier for this client, valid for the life of the connection.
         authorization:
           type: object
           additionalProperties: {}
           description: |-
-            The authorization block granted to this connection. Treat it as opaque:
-            store it and present it unchanged when reconnecting.
+            The authorization granted to this connection. Treat it as opaque: store it
+            and pass it back unchanged when you reconnect.
         protocol:
           type: string
-          description: The protocol the client should use for subsequent requests.
+          description: The protocol identifier to use on your subsequent requests.
         ice_servers:
           type: array
           items:
             $ref: "#/components/schemas/Signalwire.IceServer"
-          description: ICE servers for media. Present for WebRTC clients; omitted when the connection carries no media.
+          description: ICE servers to use for media. Returned for WebRTC connections; omitted when the connection carries no media.
       required:
         - identity
         - authorization
@@ -2201,27 +2199,27 @@ components:
           type: array
           items:
             type: string
-          description: ICE server URLs.
+          description: The ICE server URLs.
         credential:
           type: string
-          description: Credential for the ICE servers (HMAC-SHA1, base64).
+          description: The credential (password) for connecting to these ICE servers.
         credentialType:
           type: string
-          description: Credential type. Currently always `password`.
+          description: The credential type. Currently always `password`.
         username:
           type: string
-          description: Username to use — the project id with an expiration-encoded prefix.
+          description: The username to authenticate with against these ICE servers.
       required:
         - urls
         - credential
         - credentialType
         - username
-      description: A STUN/TURN ICE server the client should use for media.
+      description: A STUN/TURN ICE server to use for media in WebRTC connections.
     Signalwire.ConnectParams:
       type: object
       properties:
         version:
-          description: Protocol version the client speaks.
+          description: The Relay protocol version your client speaks.
           allOf:
             - $ref: "#/components/schemas/Signalwire.Version"
         authentication:
@@ -2229,29 +2227,28 @@ components:
             - $ref: "#/components/schemas/Signalwire.JwtAuthentication"
             - $ref: "#/components/schemas/Signalwire.ProjectTokenAuthentication"
           description: |-
-            The credentials authenticating this connection. This is THE Relay
-            authentication step — there is no HTTP `Authorization` header on the WebSocket
-            handshake. Send a `jwt_token` (browser/client SDKs) **or** a `project` + `token`
-            pair (server SDKs).
+            The credentials that authenticate this connection — this is how you log in to
+            Relay. Send either a `jwt_token` (browser and client apps) or a `project` +
+            `token` pair (backend apps).
         agent:
           type: string
-          description: Descriptive information about the SDK and application (e.g. `somesdk-1.2.3`).
+          description: A label identifying your SDK and application, for example `somesdk-1.2.3`.
         protocol:
           type: string
           description: |-
-            When provided, lets the client attempt to "hijack" a previously-established
-            protocol (provided the project and signature allow it).
+            The protocol identifier to resume. Provide this to rejoin a protocol you
+            established earlier, when your project and signature permit it.
         authorization_state:
           type: string
           description: |-
-            Encrypted authorization state from a previous `signalwire.authorization.state`
-            event, used to reestablish permissions/state on a new node after reconnect.
+            Authorization state from an earlier `signalwire.authorization.state` event.
+            Pass it back when reconnecting to restore your permissions and state.
             Format: `<encryptedAuthStateBase64>:<tagBase64>`.
         contexts:
           type: array
           items:
             type: string
-          description: Contexts to begin receiving inbound events for on connect.
+          description: Contexts to start receiving inbound events for as soon as you connect.
       required:
         - version
         - authentication
@@ -2274,18 +2271,18 @@ components:
         - major
         - minor
         - revision
-      description: Relay protocol version. Clients currently send `3.0.0`.
+      description: The Relay protocol version your client speaks. Currently `3.0.0`.
     Signalwire.JwtAuthentication:
       type: object
       properties:
         jwt_token:
           type: string
-          description: A server-minted JWT used to authenticate the client.
+          description: The JWT that authenticates this client, created by your backend.
       required:
         - jwt_token
       description: |-
-        JWT authentication — used by **browser / client SDKs**. The JWT is minted
-        server-side (an API token must never be exposed in the browser).
+        JWT authentication, for browser and client apps. Generate the JWT on your
+        backend and hand it to the client — never ship a project API token to the browser.
     Signalwire.ProjectTokenAuthentication:
       type: object
       properties:
@@ -2299,8 +2296,8 @@ components:
         - project
         - token
       description: |-
-        Project + API token authentication — used by **server SDKs** that hold the
-        project credentials directly.
+        Project + API token authentication, for backend apps that hold your
+        SignalWire credentials directly.
     SignalwireConnectRequest:
       type: object
       required:
@@ -2340,14 +2337,14 @@ components:
         authorization_state:
           type: string
           description: |-
-            Encrypted authorization state (and validation tag) the client can present on
-            reconnect via `connect.authorization_state`.
+            Your current authorization state. Save it and pass it back as
+            `connect.authorization_state` when you reconnect.
             Format: `<encryptedAuthStateBase64>:<tagBase64>`.
       required:
         - authorization_state
       description: |-
-        Provides updated authorization state to the client so it can reestablish that
-        state if it reconnects to another node.
+        Delivers your latest authorization state so you can restore it if you
+        reconnect. Save the `authorization_state` value each time this event arrives.
     AuthorizationStateEventFrame:
       type: object
       required:
@@ -2393,7 +2390,7 @@ components:
       properties:
         restart:
           type: boolean
-          description: Indicates the client should restart with a fresh connection.
+          description: When `true`, you should open a fresh connection after disconnecting.
     SignalwireDisconnectRequest:
       type: object
       required:
@@ -2432,14 +2429,14 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string). `"200"` on success; e.g. `"402"` Payment required.
+          description: The result code as a string. `"200"` means success; `"402"` means payment required.
         message:
           type: string
-          description: Human-readable result message.
+          description: A human-readable message describing the result.
       required:
         - code
         - message
-      description: Standard `{code, message}` acknowledgement used by receive/unreceive.
+      description: A `{code, message}` acknowledgement returned by receive and unreceive.
     Signalwire.ReceiveParams:
       type: object
       properties:
@@ -2447,7 +2444,7 @@ components:
           type: array
           items:
             type: string
-          description: Contexts to set up for receiving inbound events.
+          description: The contexts to start receiving inbound events for.
     SignalwireReceiveRequest:
       type: object
       required:
@@ -2486,19 +2483,19 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         call_state:
-          description: State of the inbound call.
+          description: The current state of the inbound call.
           allOf:
             - $ref: "#/components/schemas/Calling.ReceiveCallState"
         context:
           type: string
-          description: Routing context the call arrived on (e.g. `pbx`).
+          description: The context the call arrived on, such as `pbx`.
         device:
-          description: The inbound device.
+          description: The device the call is coming in on, including the caller's number.
           allOf:
             - $ref: "#/components/schemas/Calling.CallDevice"
       required:
@@ -2506,7 +2503,7 @@ components:
         - call_id
         - call_state
         - device
-      description: An incoming call available for a Relay client to control.
+      description: Fires when a new call comes in that your application can answer and control. The payload tells you who is calling and on which context.
     Calling.ReceiveCallState:
       type: string
       enum:
@@ -2599,7 +2596,7 @@ components:
             params:
               type: object
               additionalProperties: {}
-              description: WebRTC device params (shapes not documented in the protocol reference).
+              description: Parameters of the negotiated WebRTC leg.
           required:
             - type
             - params
@@ -2646,7 +2643,7 @@ components:
           type: array
           items:
             type: string
-          description: Contexts to stop receiving events for.
+          description: The contexts to stop receiving events for.
       required:
         - contexts
     SignalwireUnreceiveRequest:
@@ -2687,10 +2684,10 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
       required:
         - code
         - message
@@ -2699,10 +2696,10 @@ components:
       properties:
         tag:
           type: string
-          description: Identifier added to all call and dial events.
+          description: Your label for this dial. Every resulting `calling.call.*` and `calling.call.dial` event carries this `tag`, so use it to match events back to this request.
         region:
           type: string
-          description: Region to originate from.
+          description: Geographic region to place the outbound call from.
         devices:
           type: array
           items:
@@ -2716,7 +2713,7 @@ components:
         max_price_per_minute:
           type: number
           format: double
-          description: Maximum price per minute willing to be paid.
+          description: Highest price per minute you're willing to pay. Devices that would exceed this rate aren't dialed.
       required:
         - tag
         - devices
@@ -2773,9 +2770,8 @@ components:
           description: Which call states to deliver to `call_state_url`. Default `["ended"]`.
         confirm:
           description: |-
-            A confirmation prompt to require before bridging: a SWML URL string or an
-            inline compact SWML document. (Modeled loosely — SWML is documented
-            separately.)
+            A prompt that must be confirmed before this leg is bridged. Provide a URL to a
+            SWML document or an inline SWML document. See the SWML reference for details.
       required:
         - from_number
         - to_number
@@ -2960,46 +2956,46 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the dial is on.
+          description: Identifier of the node handling the dial.
         tag:
           type: string
-          description: Identifier from `calling.dial`.
+          description: The `tag` you set on the `calling.dial` request, so you can match this event to it.
         dial_state:
           type: string
           enum:
             - dialing
             - answered
             - failed
-          description: The dial operation state.
+          description: "Where the dial stands: `dialing`, `answered`, or `failed`."
         call:
-          description: The answered call (present when `dial_state` is `answered`).
+          description: The call that answered. Present only when `dial_state` is `answered`.
           allOf:
             - $ref: "#/components/schemas/Calling.DialWinnerCall"
       required:
         - node_id
         - tag
         - dial_state
-      description: The state of a `calling.dial` operation.
+      description: Fires as a `calling.dial` request progresses. Watch `dial_state` to know when your call is ringing, has been answered, or failed; when it is answered the `call` field gives you the call that picked up.
     Calling.DialWinnerCall:
       type: object
       properties:
         node_id:
           type: string
-          description: Node the answered call is on.
+          description: Identifier of the node hosting the answered call.
         call_id:
           type: string
-          description: The answered call id.
+          description: The answered call's `call_id`.
         tag:
           type: string
-          description: Client data the answered call is tagged with.
+          description: The `tag` set on the answered call.
         device:
-          description: The negotiated device.
+          description: The device that answered.
           allOf:
             - $ref: "#/components/schemas/Calling.CallDevice"
         dial_winner:
           type: boolean
-          description: Whether this call is the selected (first-answered) winner.
-      description: The answered call carried by a `calling.call.dial` event.
+          description: "`true` for the call that won the dial. When you dial several destinations at once, this marks the first one to answer."
+      description: The call that answered, included once a `calling.dial` succeeds.
     CallDialEventFrame:
       type: object
       required:
@@ -3041,76 +3037,76 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         tag:
           type: string
-          description: Identifier set on the originating dial/connect.
+          description: The `tag` you set when you placed the call, so you can match this event back to your request.
         device:
-          description: The negotiated device for this call.
+          description: The device handling this call, once it has been determined.
           allOf:
             - $ref: "#/components/schemas/Calling.CallDevice"
         parent:
-          description: The parent call, when this call was created by another.
+          description: Present when this call was created by another call, describing that originating call.
           allOf:
             - $ref: "#/components/schemas/Calling.CallParentRef"
         peer:
-          description: The peer call, when bridged.
+          description: Present when this call is bridged to another, describing the other call.
           allOf:
             - $ref: "#/components/schemas/Calling.CallPeerRef"
         call_state:
-          description: The new call state.
+          description: The state the call has just moved into.
           allOf:
             - $ref: "#/components/schemas/Calling.CallState"
         start_time:
           type: integer
           format: int64
-          description: Epoch milliseconds the call started.
+          description: When the call started, in epoch milliseconds.
         answer_time:
           type: integer
           format: int64
-          description: Epoch milliseconds the call was answered.
+          description: When the call was answered, in epoch milliseconds.
         end_time:
           type: integer
           format: int64
-          description: Epoch milliseconds the call ended.
+          description: When the call ended, in epoch milliseconds.
         created_by:
           type: string
           enum:
             - dial
             - connect
             - receive
-          description: What created this call.
+          description: "How the call came to be: `dial` (you placed it), `connect` (created by a bridge), or `receive` (inbound)."
       required:
         - node_id
         - call_id
         - call_state
-      description: A change in state of an active Relay-controlled call.
+      description: Fires every time one of your calls changes state. Use the `call_state` field to track the call through its lifecycle, and `tag` to match the event back to the call you placed.
     Calling.CallParentRef:
       type: object
       properties:
         node_id:
           type: string
-          description: Node the parent call is on.
+          description: Identifier of the node hosting the parent call.
         call_id:
           type: string
-          description: The parent call id.
+          description: The parent call's `call_id`.
         device_type:
           type: string
-          description: The parent device type (flattened, e.g. `sip`).
-      description: A parent call referenced by a state event.
+          description: The parent's device type, such as `sip`.
+      description: The call that created this one, when it was spawned by another call.
     Calling.CallPeerRef:
       type: object
       properties:
         node_id:
           type: string
-          description: Node the peer call is on.
+          description: Identifier of the node hosting the peer call.
         call_id:
           type: string
-          description: The peer call id.
-      description: A peer call referenced by an event.
+          description: The peer call's `call_id`.
+      description: The other call this one is bridged to.
     Calling.CallState:
       type: string
       enum:
@@ -3160,10 +3156,10 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
       required:
         - code
         - message
@@ -3172,19 +3168,21 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         codecs:
           type: array
           items:
             $ref: "#/components/schemas/Calling.AnswerCodec"
           description: |-
-            Codecs to negotiate (SignalWire-picked if unset). If a listed codec is
-            unsupported by the call type the request fails with `"400"` — check
-            `call.device.type` in `calling.call.state` events to determine the call type
-            (`phone` supports a narrower set than `sip`/`webrtc`).
+            Audio codecs to offer when answering, in preference order. If you omit this,
+            SignalWire picks suitable codecs for you. Every codec you list must be
+            supported by the call type — otherwise the request fails with `"400"`. Phone
+            calls accept a narrower set than `sip` or `webrtc` calls, so check
+            `call.device.type` in the `calling.call.state` events to know which call type
+            you're answering.
       required:
         - node_id
         - call_id
@@ -3237,10 +3235,10 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
       required:
         - code
         - message
@@ -3249,12 +3247,12 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         reason:
-          description: Why the call is ending.
+          description: Why the call is ending. Defaults to `hangup` (a normal end).
           default: hangup
           allOf:
             - $ref: "#/components/schemas/Calling.CallEndReason"
@@ -3308,10 +3306,10 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
       required:
         - code
         - message
@@ -3320,39 +3318,43 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         ringback:
           type: array
           items:
             $ref: "#/components/schemas/Calling.Ringback"
-          description: Audio to play to the caller while connecting.
+          description: Audio to play to the existing caller while the new device rings. Plays in order until the device answers.
         tag:
           type: string
-          description: Identifier added to created calls' events.
+          description: Your label for the new call leg. Its `calling.call.*` events carry this `tag`.
         devices:
           type: array
           items:
             type: array
             items:
               $ref: "#/components/schemas/Calling.ConnectDevice"
-          description: Devices to connect. Same sequential/parallel topology as `calling.dial`.
+          description: |-
+            Devices to call and connect. Uses the same layout as `calling.dial`: the outer
+            array rings groups in sequence, the inner array rings devices in a group at
+            once, and the first device to answer is the one that gets connected.
         max_duration:
           type: integer
           format: int32
-          description: Maximum duration once connected, in MINUTES.
+          description: Maximum length of the connected call, in seconds. The call ends automatically once this is reached.
         max_price_per_minute:
           type: number
           format: double
-          description: Maximum price per minute willing to be paid.
+          description: Highest price per minute you're willing to pay. Devices that would exceed this rate aren't called.
         status_url:
           type: string
           format: uri
           description: |-
-            URL to POST `calling.call.connect` events to (statuses: `connecting`,
-            `connected`, `failed`, `disconnected`).
+            URL to receive `calling.call.connect` events via POST as the connection
+            progresses through the `connecting`, `connected`, `failed`, and `disconnected`
+            statuses.
       required:
         - node_id
         - call_id
@@ -3701,15 +3703,15 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         tag:
           type: string
-          description: Identifier of the connect operation.
+          description: The `tag` you set on the connect request, so you can match this event to it.
         peer:
-          description: The peer call being connected.
+          description: The other call yours is being connected to.
           allOf:
             - $ref: "#/components/schemas/Calling.ConnectPeer"
         connect_state:
@@ -3719,36 +3721,36 @@ components:
             - connecting
             - connected
             - failed
-          description: The connect (bridge) state.
+          description: "Where the connection stands: `connecting`, `connected`, `disconnected`, or `failed`."
       required:
         - node_id
         - call_id
         - peer
         - connect_state
-      description: A call's connect (bridge/unbridge) state.
+      description: Fires as a connect request progresses, telling you whether your call has been bridged to the peer. Watch `connect_state` to know when the two calls are joined, torn down, or have failed to connect.
     Calling.ConnectPeer:
       type: object
       properties:
         node_id:
           type: string
-          description: Node the peer call is on.
+          description: Identifier of the node hosting the peer call.
         call_id:
           type: string
-          description: The peer call id.
+          description: The peer call's `call_id`.
         tag:
           type: string
-          description: Client data the peer call is tagged with.
+          description: The `tag` set on the peer call.
         queue_id:
           type: string
-          description: Id of the queue the peer was pulled from, when connected via a queue.
+          description: When the peer was reached through a queue, the queue's id.
         queue_name:
           type: string
-          description: Friendly name of that queue.
+          description: The queue's friendly name.
         device:
-          description: The peer's negotiated device.
+          description: The device handling the peer call.
           allOf:
             - $ref: "#/components/schemas/Calling.CallDevice"
-      description: The peer leg in a connect event.
+      description: The other call being connected to yours.
     CallConnectEventFrame:
       type: object
       required:
@@ -3790,10 +3792,10 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
       required:
         - code
         - message
@@ -3802,10 +3804,10 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
       required:
         - node_id
         - call_id
@@ -3847,13 +3849,13 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
         control_id:
           type: string
-          description: Echoes the `control_id` from the params.
+          description: Echoes back the `control_id` you supplied so you can correlate the response.
       required:
         - code
         - message
@@ -3862,51 +3864,53 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         control_id:
           type: string
-          description: Identifier added to the created collect events.
+          description: Your own identifier for this collect. It is attached to every event the collect produces so you can match events back to this request.
         initial_timeout:
           type: number
           format: double
           description: |-
-            Seconds to wait for initial input. Used only when `start_input_timers: true`.
-            Default `4.0`.
+            How long to wait, in seconds, for the caller to start giving input. This
+            timer only runs once it has been started — either at the outset when
+            `start_input_timers` is `true`, or later via `calling.collect.start_input_timers`.
+            Defaults to `4.0`.
           exclusiveMinimum: 0
           default: 4
         digits:
-          description: Digit-collection settings. Required if `speech` is not set.
+          description: How to collect DTMF key presses. Provide this, `speech`, or both; at least one is required.
           allOf:
             - $ref: "#/components/schemas/Calling.CollectDigits"
         speech:
-          description: Speech-collection settings. Required if `digits` is not set.
+          description: How to collect spoken input. Provide this, `digits`, or both; at least one is required.
           allOf:
             - $ref: "#/components/schemas/Calling.CollectSpeech"
         partial_results:
           type: boolean
-          description: If true, partial-result events are fired. Default `false`.
+          description: When `true`, emit partial-result events as input comes in rather than only a final result. Defaults to `false`.
           default: false
         continuous:
           type: boolean
           description: |-
-            If true, utterances and digits are detected continuously until the collect is
-            stopped. Default `false`.
+            When `true`, keep listening for speech and digits until you stop the collect
+            yourself, instead of finishing after the first complete input. Defaults to `false`.
           default: false
         send_start_of_input:
           type: boolean
-          description: If true, the `start_of_input` event is fired when input is detected. Default `false`.
+          description: When `true`, fire a `start_of_input` event the moment the caller begins giving input. Defaults to `false`.
           default: false
         start_input_timers:
           type: boolean
-          description: If true, the `initial_timeout` timer is started immediately. Default `false`.
+          description: When `true`, start the `initial_timeout` timer immediately. Set `false` to start it later with `calling.collect.start_input_timers`. Defaults to `false`.
           default: false
         status_url:
           type: string
           format: uri
-          description: HTTP(s) URL to POST collect events to.
+          description: HTTP or HTTPS URL that collect events are also POSTed to as they occur.
       required:
         - node_id
         - call_id
@@ -3917,51 +3921,53 @@ components:
         max:
           type: integer
           format: int32
-          description: Maximum number of digits to collect. Positive integer.
+          description: Maximum number of digits to collect before collection finishes. Must be a positive integer.
           minimum: 1
         terminators:
           type: string
-          description: Digits that terminate collection (e.g. `"#*"`). Default not set.
+          description: Keys that end collection early when pressed, such as `"#*"`. Not set by default.
         digit_timeout:
           type: number
           format: double
           description: |-
-            Maximum seconds to wait for the next digit after a digit is received.
-            Default `5.0`.
+            How long to wait, in seconds, for the next key press after one is received
+            before giving up. Defaults to `5.0`.
           exclusiveMinimum: 0
           default: 5
       required:
         - max
-      description: DTMF-digit collection settings.
+      description: Settings that control how the caller's DTMF key presses are collected.
     Calling.CollectSpeech:
       type: object
       properties:
         end_silence_timeout:
           type: number
           format: double
-          description: Silence (seconds) to wait for before declaring end of speech. Default `1`.
+          description: |-
+            How much silence, in seconds, to wait for before treating the caller as
+            finished speaking. Defaults to `1`.
           exclusiveMinimum: 0
           default: 1
         speech_timeout:
           type: number
           format: double
-          description: Maximum seconds to collect speech. Default `60`.
+          description: Maximum time, in seconds, to spend collecting speech. Defaults to `60`.
           exclusiveMinimum: 0
           default: 60
         language:
           type: string
-          description: Language to detect. Default `en-US`.
+          description: Language to recognize, as a BCP-47 tag such as `en-US`. Defaults to `en-US`.
           default: en-US
         hints:
           type: array
           items:
             type: string
-          description: Expected phrases to bias detection toward. Default not set.
+          description: Words or phrases you expect to hear, used to bias recognition toward them. Not set by default.
         engine:
-          description: Force a specific speech-recognition engine. Default unset (auto-selected).
+          description: Pins recognition to a specific engine. Defaults to unset, which lets SignalWire choose.
           allOf:
             - $ref: "#/components/schemas/Calling.CollectSpeechEngine"
-      description: Speech-recognition collection settings.
+      description: Settings that control how the caller's speech is recognized and collected.
     Calling.CollectSpeechEngine:
       type: string
       enum:
@@ -4005,33 +4011,33 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         control_id:
           type: string
-          description: Identifier of the active collect (from `calling.collect`).
+          description: The `control_id` of the collection this event refers to, returned when you started it with `calling.collect`.
         state:
-          description: The collect state. `error` means the detector ended with an error.
+          description: Where the collection currently stands. `error` means it stopped because something went wrong.
           allOf:
             - $ref: "#/components/schemas/Calling.CallCollectState"
         result:
-          description: The collect result.
+          description: What the caller gave you. Check its `type` to handle digits, speech, or a no-input/no-match marker.
           allOf:
             - $ref: "#/components/schemas/Calling.CallCollectResult"
         final:
           type: boolean
           description: |-
-            Meaningful when `partial_results`/`continuous` was set: `true` once utterance
-            detection has completed. With `continuous: true` the collector restarts for
-            the next utterance.
+            Relevant when you requested partial or continuous results: `true` once the
+            recognizer has finished the current utterance. With `continuous: true`, the
+            collector then restarts to listen for the next one.
       required:
         - node_id
         - call_id
         - control_id
         - state
-      description: A call's collect result.
+      description: Fires as you collect input from a caller — DTMF digits or speech — reporting partial and final results so you can react to what they said or pressed.
     Calling.CallCollectState:
       type: string
       enum:
@@ -4046,9 +4052,10 @@ components:
       required:
         - type
       description: |-
-        The collected input. Discriminated on `type`. The `error`, `no_input`,
-        `no_match` and `start_of_input` variants carry no `params`; `digit` and
-        `speech` carry a `params` payload.
+        What the caller gave you. Read `type` to know which kind of result this is. The
+        `error`, `no_input`, `no_match`, and `start_of_input` types are markers with no
+        extra data, while `digit` and `speech` include a `params` object with the
+        collected input.
       discriminator: type
     Calling.CallCollectResultError:
       allOf:
@@ -4090,7 +4097,7 @@ components:
               const: start_of_input
           required:
             - type
-          description: Fired only when using the `calling.collect` API (start-of-speech marker).
+          description: Signals that the caller has started speaking. You only receive this when you collect with `calling.collect`.
     Calling.CallCollectResultDigit:
       allOf:
         - $ref: "#/components/schemas/Calling.CallCollectResult"
@@ -4104,10 +4111,10 @@ components:
               properties:
                 digits:
                   type: string
-                  description: The collected DTMF digits.
+                  description: The DTMF digits the caller pressed.
                 terminator:
                   type: string
-                  description: The terminator digit that ended collection, if any.
+                  description: The digit that ended collection, if the caller pressed your terminator key.
               required:
                 - digits
           required:
@@ -4126,11 +4133,11 @@ components:
               properties:
                 text:
                   type: string
-                  description: The recognized utterance.
+                  description: The text the speech recognizer heard the caller say.
                 confidence:
                   type: number
                   format: double
-                  description: Recognition confidence (e.g. `83.2`).
+                  description: How confident the recognizer is in the result (for example `83.2`).
               required:
                 - text
           required:
@@ -4177,10 +4184,10 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
       required:
         - code
         - message
@@ -4189,13 +4196,13 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         control_id:
           type: string
-          description: The `control_id` assigned in `calling.collect`.
+          description: The `control_id` you gave to the `calling.collect` you want to stop.
       required:
         - node_id
         - call_id
@@ -4238,10 +4245,10 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
       required:
         - code
         - message
@@ -4250,13 +4257,13 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         control_id:
           type: string
-          description: The `control_id` assigned in `calling.collect`.
+          description: The `control_id` of the active `calling.collect` whose timer you want to start.
       required:
         - node_id
         - call_id
@@ -4299,13 +4306,13 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
         control_id:
           type: string
-          description: Echoes the `control_id` from the params.
+          description: Echoes back the `control_id` you supplied so you can correlate the response.
       required:
         - code
         - message
@@ -4314,34 +4321,35 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         control_id:
           type: string
-          description: Identifier added to the created play-and-collect events.
+          description: Your own identifier for this play-and-collect. It is attached to every event it produces so you can match events back to this request.
         volume:
           type: number
           format: double
           description: |-
-            Playback volume in dB, from `-40` (muted) to `+40`, where `0` is the original
-            audio. Follows the standard amplitude voltage gain factor: `10 ^ (value / 20)`.
+            Playback volume in dB, from `-40` (muted) to `+40`, where `0` keeps the
+            original audio level. The value is applied as the standard amplitude gain
+            factor `10 ^ (value / 20)`.
           minimum: -40
           maximum: 40
         play:
           type: array
           items:
             $ref: "#/components/schemas/Calling.PlayMedia"
-          description: Media elements to play.
+          description: The media to play, in order — audio files, text-to-speech, silence, or ringtone.
         collect:
-          description: Collection settings applied while playing.
+          description: What to listen for from the caller while the media plays.
           allOf:
             - $ref: "#/components/schemas/Calling.PlayAndCollectCollect"
         status_url:
           type: string
           format: uri
-          description: HTTP(s) URL to POST play-and-collect events to.
+          description: HTTP or HTTPS URL that play-and-collect events are also POSTed to as they occur.
       required:
         - node_id
         - call_id
@@ -4459,18 +4467,18 @@ components:
         initial_timeout:
           type: number
           format: double
-          description: Seconds to wait for initial input. Default `4.0`.
+          description: How long to wait, in seconds, for the caller to start giving input. Defaults to `4.0`.
           exclusiveMinimum: 0
           default: 4
         digits:
-          description: Digit-collection settings. Required if `speech` is not set.
+          description: How to collect DTMF key presses. Provide this, `speech`, or both; at least one is required.
           allOf:
             - $ref: "#/components/schemas/Calling.CollectDigits"
         speech:
-          description: Speech-collection settings. Required if `digits` is not set.
+          description: How to collect spoken input. Provide this, `digits`, or both; at least one is required.
           allOf:
             - $ref: "#/components/schemas/Calling.CollectSpeech"
-      description: The `collect` block of `calling.play_and_collect`. At least one of `digits`/`speech`.
+      description: The `collect` settings for a `calling.play_and_collect`, describing what to listen for while the media plays. Provide `digits`, `speech`, or both.
     CallingPlayAndCollectRequest:
       type: object
       required:
@@ -4509,10 +4517,10 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
       required:
         - code
         - message
@@ -4521,13 +4529,13 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         control_id:
           type: string
-          description: The `control_id` assigned in `calling.play_and_collect`.
+          description: The `control_id` you gave to the `calling.play_and_collect` you want to stop.
       required:
         - node_id
         - call_id
@@ -4570,10 +4578,10 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
       required:
         - code
         - message
@@ -4582,20 +4590,20 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         control_id:
           type: string
-          description: The `control_id` assigned in `calling.play_and_collect`.
+          description: The `control_id` of the active `calling.play_and_collect` whose volume you want to change.
         volume:
           type: number
           format: double
           description: |-
-            New playback volume in dB, from `-40` (muted) to `+40`, where `0` is the
-            original audio. Follows the standard amplitude voltage gain factor:
-            `10 ^ (value / 20)`.
+            New playback volume in dB, from `-40` (muted) to `+40`, where `0` keeps the
+            original audio level. The value is applied as the standard amplitude gain
+            factor `10 ^ (value / 20)`.
           minimum: -40
           maximum: 40
       required:
@@ -4641,13 +4649,13 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
         control_id:
           type: string
-          description: Echo of the `control_id` supplied in the request.
+          description: Echoes back the `control_id` you sent, so you can match this result to your request.
       required:
         - code
         - message
@@ -4656,22 +4664,20 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         control_id:
           type: string
-          description: Identifier used to control this queue placement.
+          description: Your own identifier for this queue placement. Reuse it to leave the queue later, and it comes back on queue events so you can correlate them.
         queue_name:
           type: string
-          description: |-
-            Name of the queue to place the call in. If it does not exist, a new queue is
-            created and the call becomes first in it.
+          description: Name of the queue to place the call in. If no queue by this name exists yet, one is created and the call joins it.
         status_url:
           type: string
           format: uri
-          description: HTTP(S) URL to deliver RELAY queue event callbacks to.
+          description: HTTPS URL where SignalWire POSTs queue status updates as the call moves through the queue.
       required:
         - node_id
         - call_id
@@ -4715,52 +4721,52 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         control_id:
           type: string
-          description: Identifier of the active queue (from `calling.queue.enter`).
+          description: The `control_id` of the queue session this event refers to, returned when the call entered with `calling.queue.enter`.
         status:
-          description: The queue transition.
+          description: What just happened to the call in the queue.
           allOf:
             - $ref: "#/components/schemas/Calling.CallQueueStatus"
         id:
           type: string
-          description: Queue id.
+          description: The queue's unique id.
         name:
           type: string
-          description: Queue name.
+          description: The queue's name.
         position:
           type: number
           format: double
-          description: Position of the call within the queue.
+          description: Where this call currently sits in line, counting from the front.
         size:
           type: number
           format: double
-          description: Number of calls in the queue.
+          description: How many calls are currently waiting in the queue.
         avg_time:
           type: number
           format: double
-          description: Average time (seconds) calls spend in the queue.
+          description: The average time, in seconds, calls have been spending in this queue.
         enqueue_ts:
           type: number
           format: double
-          description: Epoch (seconds) the call entered the queue.
+          description: The time, as a Unix timestamp in seconds, when the call entered the queue.
         dequeue_ts:
           type: number
           format: double
-          description: Epoch (seconds) the call was dequeued.
+          description: The time, as a Unix timestamp in seconds, when the call was pulled from the queue.
         leave_ts:
           type: number
           format: double
-          description: Epoch (seconds) the call left the queue.
+          description: The time, as a Unix timestamp in seconds, when the call left the queue.
       required:
         - node_id
         - call_id
         - control_id
-      description: A change in a call's queue state.
+      description: Fires as a call moves through a queue — when it joins, gets connected, or leaves — and reports its position along with live queue stats.
     Calling.CallQueueStatus:
       type: string
       enum:
@@ -4808,13 +4814,13 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
         control_id:
           type: string
-          description: Echo of the `control_id` supplied in the request.
+          description: Echoes back the `control_id` you sent, so you can match this result to your request.
       required:
         - code
         - message
@@ -4823,23 +4829,23 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         control_id:
           type: string
-          description: Identifier used to control this queue placement.
+          description: The `control_id` you used when the call entered the queue.
         queue_name:
           type: string
           description: Name of the queue to remove the call from.
         queue_id:
           type: string
-          description: ID of the queue to remove the call from.
+          description: ID of the queue to remove the call from. The queue id is reported on queue events.
         status_url:
           type: string
           format: uri
-          description: HTTP(S) URL to deliver RELAY queue event callbacks to.
+          description: HTTPS URL where SignalWire POSTs queue status updates.
       required:
         - node_id
         - call_id
@@ -4883,17 +4889,17 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
         control_id:
           type: string
-          description: Echo of the `control_id` supplied in the request.
+          description: Echoes back the `control_id` you sent, so you can match this result to your request.
         url:
           type: string
           format: uri
-          description: URL of the resulting recording.
+          description: URL of the finished recording.
       required:
         - code
         - message
@@ -4902,21 +4908,21 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         control_id:
           type: string
-          description: Identifier used to control active recordings.
+          description: Your own identifier for this recording. Use it to pause, resume, or stop the recording later, and it comes back on recording events so you can correlate them.
         record:
-          description: The recording spec (subobject-keyed; only `audio` is documented).
+          description: What to record. Currently audio is the only option — set its parameters under `audio`.
           allOf:
             - $ref: "#/components/schemas/Calling.RecordSpec"
         status_url:
           type: string
           format: uri
-          description: HTTP(S) URL to deliver RELAY recording event callbacks to.
+          description: HTTPS URL where SignalWire POSTs recording status updates.
       required:
         - node_id
         - call_id
@@ -4926,14 +4932,12 @@ components:
       type: object
       properties:
         audio:
-          description: Audio-recording parameters.
+          description: Audio recording settings.
           allOf:
             - $ref: "#/components/schemas/Calling.RecordAudio"
       required:
         - audio
-      description: |-
-        Recording spec. Keyed by subobject name (`audio`) rather than a `type`
-        discriminator; only the `audio` variant is documented.
+      description: What to record. Audio is currently the only supported type — put its settings under `audio`.
     Calling.RecordAudio:
       type: object
       properties:
@@ -4986,7 +4990,7 @@ components:
           minimum: 0
           maximum: 100
           default: 44
-      description: Audio-recording parameters (the `record.audio` subobject).
+      description: Audio recording settings, passed under `record.audio`.
     Calling.RecordAudioDirection:
       type: string
       enum:
@@ -5031,31 +5035,31 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         control_id:
           type: string
-          description: Identifier of the active recording (from `calling.record`).
+          description: The `control_id` of the recording this event refers to, returned when you started it with `calling.record`.
         state:
-          description: The recording state.
+          description: Where the recording currently stands.
           allOf:
             - $ref: "#/components/schemas/Calling.CallRecordState"
         url:
           type: string
           format: uri
-          description: Location of the recording — not accessible until `finished`.
+          description: Where to download the finished recording. Not available until the state is `finished`.
         duration:
           type: number
           format: double
-          description: Length of the recording in seconds — set when `finished`.
+          description: How long the recording is, in seconds. Set once the state is `finished`.
         size:
           type: integer
           format: int32
-          description: Size of the recording in bytes — set when `finished`.
+          description: How large the recording file is, in bytes. Set once the state is `finished`.
         record:
-          description: The recording configuration.
+          description: The settings this recording was captured with.
           allOf:
             - $ref: "#/components/schemas/Calling.RecordEventSpec"
       required:
@@ -5063,7 +5067,7 @@ components:
         - call_id
         - control_id
         - state
-      description: A change in a call recording's state.
+      description: Fires when a recording starts, pauses, resumes, or finishes. The finished event includes the download URL, duration, and file size.
     Calling.CallRecordState:
       type: string
       enum:
@@ -5075,30 +5079,24 @@ components:
       type: object
       properties:
         audio:
-          description: Audio-recording configuration (present when recording audio).
+          description: The audio settings used for this recording.
           allOf:
             - $ref: "#/components/schemas/Calling.RecordEventAudio"
-      description: |-
-        Reported recording spec. Keyed by the subobject name (`audio`) rather than a
-        `type` discriminator; only the `audio` variant is documented. (Prose also
-        references a `record.params` subobject for non-audio types — shape
-        undocumented.)
+      description: Describes how the recording was made. The `audio` field is present when you recorded audio.
     Calling.RecordEventAudio:
       type: object
       properties:
         format:
           type: string
-          description: Output file format (e.g. `mp3`, `wav`).
+          description: The file format of the recording (for example `mp3` or `wav`).
         stereo:
           type: boolean
           description: Whether the recording was captured in stereo.
         direction:
-          description: Which audio direction(s) were captured.
+          description: Which side(s) of the conversation were captured.
           allOf:
             - $ref: "#/components/schemas/Calling.RecordEventDirection"
-      description: |-
-        The reported `record.audio` subobject — a slimmer echo of the recording
-        configuration than the request-side `RecordAudio`.
+      description: The audio settings the recording was captured with.
     Calling.RecordEventDirection:
       type: string
       enum:
@@ -5146,13 +5144,13 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
         control_id:
           type: string
-          description: Echo of the `control_id` supplied in the request.
+          description: Echoes back the `control_id` you sent, so you can match this result to your request.
       required:
         - code
         - message
@@ -5161,15 +5159,15 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         control_id:
           type: string
-          description: The `control_id` assigned in `calling.record`.
+          description: The `control_id` you set when you started the recording with `calling.record`.
         behavior:
-          description: Behavior of the recording while paused. Default `skip`.
+          description: Whether the paused stretch is dropped from the recording (`skip`) or kept as silence (`silence`). Default `skip`.
           default: skip
           allOf:
             - $ref: "#/components/schemas/Calling.RecordPauseBehavior"
@@ -5220,13 +5218,13 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
         control_id:
           type: string
-          description: Echo of the `control_id` supplied in the request.
+          description: Echoes back the `control_id` you sent, so you can match this result to your request.
       required:
         - code
         - message
@@ -5235,13 +5233,13 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         control_id:
           type: string
-          description: The `control_id` assigned in `calling.record`.
+          description: The `control_id` you set when you started the recording with `calling.record`.
       required:
         - node_id
         - call_id
@@ -5284,13 +5282,13 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
         control_id:
           type: string
-          description: Echo of the `control_id` supplied in the request.
+          description: Echoes back the `control_id` you sent, so you can match this result to your request.
       required:
         - code
         - message
@@ -5299,13 +5297,13 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         control_id:
           type: string
-          description: The `control_id` assigned in `calling.record`.
+          description: The `control_id` you set when you started the recording with `calling.record`.
       required:
         - node_id
         - call_id
@@ -5348,10 +5346,10 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
       required:
         - code
         - message
@@ -5361,18 +5359,18 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         device:
-          description: The device to transfer the call to (only `sip` is valid).
+          description: 'Where to transfer the call. Only SIP destinations are supported (`type: "sip"`).'
           allOf:
             - $ref: "#/components/schemas/Calling.ReferDevice"
         status_url:
           type: string
           format: uri
-          description: HTTP(S) URL to POST refer events to.
+          description: HTTPS URL where SignalWire POSTs the outcome of the transfer.
       required:
         - node_id
         - call_id
@@ -5382,10 +5380,10 @@ components:
       properties:
         type:
           type: string
-          description: Device type discriminator. Only `sip` is valid.
+          description: The transfer destination type. Only `sip` is supported.
       required:
         - type
-      description: Target device for a SIP REFER transfer. Discriminated on `type` (`sip` only).
+      description: Where to transfer the call. Set `type` to `sip` and supply the SIP destination in `params`.
       discriminator: type
     Calling.ReferSipDevice:
       allOf:
@@ -5405,16 +5403,16 @@ components:
       properties:
         to:
           type: string
-          description: SIP URI to transfer the call to (e.g. `userb@example.com`).
+          description: SIP URI to transfer the call to, for example `userb@example.com`.
         username:
           type: string
-          description: Username used to authenticate the REFER request.
+          description: Username for authenticating against the destination SIP endpoint, if it requires credentials.
         password:
           type: string
-          description: Password used to authenticate the REFER request.
+          description: Password for authenticating against the destination SIP endpoint, if it requires credentials.
       required:
         - to
-      description: "`sip` REFER device params."
+      description: Where to send a SIP call when transferring it with `calling.refer`.
     CallingReferRequest:
       type: object
       required:
@@ -5453,12 +5451,12 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         state:
-          description: The transfer state.
+          description: Where the transfer currently stands.
           allOf:
             - $ref: "#/components/schemas/Calling.ReferState"
         sip_refer_to:
@@ -5466,17 +5464,18 @@ components:
           description: The SIP URI the call is being transferred to.
         sip_refer_response_code:
           type: string
-          description: SIP response code to the REFER request (string, e.g. `"202"`).
+          description: The SIP response code the far end returned to the REFER request, as a string (for example `"202"`).
         sip_notify_response_code:
           type: string
           description: |-
-            SIP response code to the NOTIFY(s) received after the REFER (string, e.g.
-            `"200"`). Indicates whether the transfer ultimately succeeded.
+            The SIP response code from the NOTIFY messages that follow the REFER, as a
+            string (for example `"200"`). This tells you whether the transfer ultimately
+            succeeded.
       required:
         - node_id
         - call_id
         - state
-      description: A change in state of a transferred (SIP-REFER) call.
+      description: Fires each time a transferred call (SIP REFER) changes state, so you can follow the handoff from start to success or failure.
     Calling.ReferState:
       type: string
       enum:
@@ -5527,10 +5526,10 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
       required:
         - code
         - message
@@ -5540,14 +5539,14 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
       required:
         - node_id
         - call_id
-      description: Parameters for `calling.pass` — identifies the call whose offer to pass on.
+      description: Identifies the inbound call offer you want to pass on.
     CallingPassRequest:
       type: object
       required:
@@ -5586,10 +5585,10 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
         control_id:
           type: string
           description: Echo of the `control_id` from the request.
@@ -5601,10 +5600,10 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         control_id:
           type: string
           description: Identifier used to control this active pay (e.g. `calling.pay.stop`).
@@ -5862,15 +5861,15 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         control_id:
           type: string
-          description: The ID used to control the active pay.
+          description: The `control_id` of the payment this event belongs to.
         state:
-          description: The payment state.
+          description: Whether the payment is in progress (`processing`), completed (`finished`), or failed (`error`).
           allOf:
             - $ref: "#/components/schemas/Calling.PayState"
       required:
@@ -5878,7 +5877,7 @@ components:
         - call_id
         - control_id
         - state
-      description: A call payment state event.
+      description: Fires as a pay session progresses, letting you track whether it is processing, has finished, or hit an error.
     Calling.PayState:
       type: string
       enum:
@@ -5926,10 +5925,10 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
       required:
         - code
         - message
@@ -5938,10 +5937,10 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         control_id:
           type: string
           description: The `control_id` assigned in `calling.pay`.
@@ -5987,10 +5986,10 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
         control_id:
           type: string
           description: Echo of the `control_id` from the request.
@@ -6002,10 +6001,10 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         control_id:
           type: string
           description: Identifier used to control this active play (pause/resume/stop/volume).
@@ -6087,15 +6086,15 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         control_id:
           type: string
-          description: Identifier of the active play (from `calling.play`).
+          description: The `control_id` of the playback this event refers to, returned when you started it with `calling.play`.
         state:
-          description: The play state.
+          description: Where the playback currently stands.
           allOf:
             - $ref: "#/components/schemas/Calling.CallPlayState"
       required:
@@ -6103,7 +6102,7 @@ components:
         - call_id
         - control_id
         - state
-      description: A change in a call's play state.
+      description: Fires when audio playback on a call starts, pauses, resumes, finishes, or errors, so you can track a `calling.play` through to completion.
     Calling.CallPlayState:
       type: string
       enum:
@@ -6152,10 +6151,10 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
       required:
         - code
         - message
@@ -6164,10 +6163,10 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         control_id:
           type: string
           description: The playing `control_id` assigned in `calling.play`.
@@ -6213,10 +6212,10 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
       required:
         - code
         - message
@@ -6225,10 +6224,10 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         control_id:
           type: string
           description: The playing `control_id` assigned in `calling.play`.
@@ -6274,10 +6273,10 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
       required:
         - code
         - message
@@ -6286,10 +6285,10 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         control_id:
           type: string
           description: The `control_id` assigned in `calling.play`.
@@ -6335,10 +6334,10 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
       required:
         - code
         - message
@@ -6347,10 +6346,10 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         control_id:
           type: string
           description: The `control_id` assigned in `calling.play`.
@@ -6405,10 +6404,10 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
         control_id:
           type: string
           description: Echo of the detector `control_id`.
@@ -6423,10 +6422,10 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         control_id:
           type: string
           description: Identifier used to control the active detector.
@@ -6595,15 +6594,15 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         control_id:
           type: string
-          description: Identifier of the active detector (from `calling.detect`).
+          description: The `control_id` of the detector this event refers to, returned when you started it with `calling.detect`.
         detect:
-          description: The detector-specific information.
+          description: What the detector found, including which kind of detector reported it.
           allOf:
             - $ref: "#/components/schemas/Calling.CallDetectResult"
       required:
@@ -6611,7 +6610,7 @@ components:
         - call_id
         - control_id
         - detect
-      description: A call-detection event from an active detector.
+      description: Fires when a detector reports a result — a fax tone, an answering machine versus a human, or a DTMF digit.
     Calling.CallDetectResult:
       type: object
       properties:
@@ -6620,10 +6619,10 @@ components:
       required:
         - type
       description: |-
-        A detector's event payload. Discriminated on `type` (`fax|machine|digit`).
-        Every variant's `params.event` may also surface the generic `finished` (on
-        completion) or `error` (if unable to start) values in addition to its
-        type-specific values; these are included in each variant's `event` type.
+        What the detector found. Read `type` to know which detector reported it: `fax`,
+        `machine`, or `digit`. Whatever the type, the `event` field can also carry the
+        generic `finished` value when the detector completes, or `error` if it could not
+        start.
       discriminator: type
     Calling.CallDetectFax:
       allOf:
@@ -6637,7 +6636,7 @@ components:
               type: object
               properties:
                 event:
-                  description: The fax-detector event.
+                  description: What the fax detector heard.
                   allOf:
                     - $ref: "#/components/schemas/Calling.CallDetectFaxEvent"
               required:
@@ -6664,12 +6663,12 @@ components:
               type: object
               properties:
                 event:
-                  description: The machine-detector event.
+                  description: What the answering-machine detector concluded.
                   allOf:
                     - $ref: "#/components/schemas/Calling.CallDetectMachineEvent"
                 beep:
                   type: boolean
-                  description: Whether a beep has been detected.
+                  description: Whether a beep was detected, signaling it's your turn to leave a message.
               required:
                 - event
           required:
@@ -6698,7 +6697,7 @@ components:
               properties:
                 event:
                   type: string
-                  description: The detected DTMF digit (one of `0-9`, `#`, `*`).
+                  description: "The DTMF digit that was detected: one of `0`-`9`, `#`, or `*`."
               required:
                 - event
           required:
@@ -6745,10 +6744,10 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
         control_id:
           type: string
           description: Echo of the detector `control_id`.
@@ -6763,10 +6762,10 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         control_id:
           type: string
           description: The detector `control_id` assigned in `calling.detect`.
@@ -6812,10 +6811,10 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
         control_id:
           type: string
           description: Echo of the fax `control_id`.
@@ -6830,10 +6829,10 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         control_id:
           type: string
           description: Identifier used to control the active faxing.
@@ -6898,15 +6897,15 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         control_id:
           type: string
-          description: The ID used to control the active fax.
+          description: The `control_id` of the fax this event belongs to.
         fax:
-          description: Fax event information.
+          description: The fax event details. Check `type` to see which stage it reports.
           allOf:
             - $ref: "#/components/schemas/Calling.CallFax"
       required:
@@ -6914,7 +6913,7 @@ components:
         - call_id
         - control_id
         - fax
-      description: A fax event (page / finished / error).
+      description: "Sent as a fax progresses: one event per page, then a final event when it finishes or errors."
     Calling.CallFax:
       type: object
       properties:
@@ -6922,7 +6921,7 @@ components:
           type: string
       required:
         - type
-      description: A fax event payload, discriminated on `type`.
+      description: Details of a fax event. The `type` field tells you which stage it describes.
       discriminator: type
     Calling.FaxPage:
       allOf:
@@ -6936,20 +6935,20 @@ components:
               type: object
               properties:
                 direction:
-                  description: Whether the page was sent or received.
+                  description: Whether this page was sent or received.
                   allOf:
                     - $ref: "#/components/schemas/Calling.FaxDirection"
                 number:
                   type: integer
                   format: int32
-                  description: Page number.
+                  description: The page number that was just transmitted.
               required:
                 - direction
                 - number
           required:
             - type
             - params
-          description: A single page was sent or received.
+          description: Fires each time a single fax page is sent or received, so you can track progress mid-transmission.
     Calling.FaxDirection:
       type: string
       enum:
@@ -6972,34 +6971,34 @@ components:
                     - $ref: "#/components/schemas/Calling.FaxDirection"
                 identity:
                   type: string
-                  description: Local fax identity (e.g. an E.164 number).
+                  description: Your side's fax identity, typically an E.164 phone number.
                 remote_identity:
                   type: string
-                  description: Remote fax identity (e.g. an E.164 number).
+                  description: The other party's fax identity, typically an E.164 phone number.
                 document:
                   type: string
                   format: uri
-                  description: Document URL location.
+                  description: Link to the transmitted fax document.
                 pages:
                   type: integer
                   format: int32
-                  description: Number of pages sent / received.
+                  description: Total number of pages sent or received.
                 success:
                   type: boolean
-                  description: Whether the fax completed successfully.
+                  description: "`true` if the fax completed successfully, `false` if it failed."
                 result:
                   type: integer
                   format: int32
-                  description: Fax result code (e.g. `1231`).
+                  description: Numeric fax result code (for example, `1231`).
                 result_text:
                   type: string
-                  description: Human-readable fax result text.
+                  description: Human-readable explanation of the fax result.
               required:
                 - direction
           required:
             - type
             - params
-          description: The fax transmission finished.
+          description: Fires once the whole fax is done, with the final result and a link to the document.
     Calling.FaxError:
       allOf:
         - $ref: "#/components/schemas/Calling.CallFax"
@@ -7011,13 +7010,12 @@ components:
             params:
               type: object
               additionalProperties: {}
-              description: Error-variant params (shape undocumented).
+              description: Error details. The exact fields can vary.
           required:
             - type
           description: |-
-            The fax transmission errored. The wire shape for this variant is not
-            documented in the protocol reference; it is modeled loosely and likely
-            shares the `finished` result/result_text fields.
+            Fires if the fax fails. The payload here can vary; expect the same
+            `result` and `result_text` fields you get on a finished fax.
     CallFaxEventFrame:
       type: object
       required:
@@ -7059,10 +7057,10 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
         control_id:
           type: string
           description: Echo of the fax `control_id`.
@@ -7077,10 +7075,10 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         control_id:
           type: string
           description: The send-fax `control_id` assigned in `calling.send_fax`.
@@ -7126,10 +7124,10 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
         control_id:
           type: string
           description: Echo of the fax `control_id`.
@@ -7144,10 +7142,10 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         control_id:
           type: string
           description: Identifier used to control the active faxing.
@@ -7197,10 +7195,10 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
         control_id:
           type: string
           description: Echo of the fax `control_id`.
@@ -7215,10 +7213,10 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         control_id:
           type: string
           description: The fax `control_id` assigned in `calling.receive_fax`.
@@ -7264,10 +7262,10 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
         call_id:
           type: string
           description: The call id.
@@ -7276,8 +7274,9 @@ components:
           description: Echo of the tap `control_id`.
         source_device:
           description: |-
-            The source device with all params filled in, so the destination knows what
-            is being delivered (offer/answer model).
+            Your requested delivery device echoed back with every parameter resolved
+            (codec, sample rate, and so on), so the receiving end knows exactly what
+            audio it will get.
           allOf:
             - $ref: "#/components/schemas/Calling.TapDevice"
       required:
@@ -7374,10 +7373,10 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         control_id:
           type: string
           description: Identifier used to control the active tap.
@@ -7474,23 +7473,23 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         control_id:
           type: string
-          description: The ID used to control the active tap.
+          description: The `control_id` of the tap this event belongs to.
         state:
-          description: The tap state.
+          description: Whether the tap is still running (`tapping`) or has stopped (`finished`).
           allOf:
             - $ref: "#/components/schemas/Calling.TapState"
         tap:
-          description: The tapped media info.
+          description: What media is being tapped.
           allOf:
             - $ref: "#/components/schemas/Calling.TapMedia"
         device:
-          description: The device receiving the tapped media.
+          description: Where the tapped audio is being sent.
           allOf:
             - $ref: "#/components/schemas/Calling.CallTapDevice"
       required:
@@ -7500,7 +7499,7 @@ components:
         - state
         - tap
         - device
-      description: A call-tap state event.
+      description: Fires when a tap starts streaming call audio and again when it stops. Check `state` to tell which.
     Calling.TapState:
       type: string
       enum:
@@ -7513,7 +7512,7 @@ components:
           type: string
       required:
         - type
-      description: The tapped media, discriminated on `type`. (Only `audio` is documented.)
+      description: Describes the media being tapped. Currently always `audio`.
       discriminator: type
     Calling.CallTapAudio:
       allOf:
@@ -7527,7 +7526,7 @@ components:
               type: object
               properties:
                 direction:
-                  description: Which side(s) of the media are tapped.
+                  description: Which side(s) of the call audio this tap captures.
                   allOf:
                     - $ref: "#/components/schemas/Calling.CallTapDirection"
               required:
@@ -7535,7 +7534,7 @@ components:
           required:
             - type
             - params
-          description: Audio tap.
+          description: An audio tap.
     Calling.CallTapDirection:
       type: string
       enum:
@@ -7549,7 +7548,7 @@ components:
           type: string
       required:
         - type
-      description: The device receiving the tapped media, discriminated on `type`. (Only `rtp` is documented.)
+      description: Describes where the tapped audio is being sent. Currently always `rtp`.
       discriminator: type
     Calling.CallTapRtpDevice:
       allOf:
@@ -7564,18 +7563,18 @@ components:
               properties:
                 addr:
                   type: string
-                  description: Destination address.
+                  description: IP address the tapped audio is sent to.
                 port:
                   type: integer
                   format: int32
-                  description: Destination port.
+                  description: Port the tapped audio is sent to.
                 codec:
                   type: string
-                  description: Negotiated codec.
+                  description: Codec used for the tapped audio stream.
                 ptime:
                   type: integer
                   format: int32
-                  description: Packetization time, in milliseconds.
+                  description: Packetization time of the stream, in milliseconds.
               required:
                 - addr
                 - port
@@ -7584,7 +7583,7 @@ components:
           required:
             - type
             - params
-          description: RTP tap sink.
+          description: The tapped audio is streamed to an RTP destination.
     CallTapEventFrame:
       type: object
       required:
@@ -7626,10 +7625,10 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
         control_id:
           type: string
           description: Echo of the tap `control_id`.
@@ -7644,10 +7643,10 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         control_id:
           type: string
           description: The tap `control_id` assigned in `calling.tap`.
@@ -7693,10 +7692,10 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
         control_id:
           type: string
           description: Echo of the stream `control_id`.
@@ -7711,10 +7710,10 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         control_id:
           type: string
           description: Identifier used to control the active stream.
@@ -7805,31 +7804,31 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         control_id:
           type: string
-          description: The ID used to control the active stream.
+          description: The `control_id` of the stream this event belongs to.
         state:
-          description: The stream state.
+          description: Whether audio is still streaming (`streaming`) or the stream has stopped (`finished`).
           allOf:
             - $ref: "#/components/schemas/Calling.StreamState"
         url:
           type: string
           format: uri
-          description: The WebSocket URL being streamed to.
+          description: The WebSocket URL the call audio is being streamed to.
         name:
           type: string
-          description: The friendly name of the stream (if provided).
+          description: The friendly name you gave the stream, if you set one.
       required:
         - node_id
         - call_id
         - control_id
         - state
         - url
-      description: A call-stream state change.
+      description: Fires when a media stream starts and again when it stops. Check `state` to tell which.
     Calling.StreamState:
       type: string
       enum:
@@ -7876,10 +7875,10 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
         control_id:
           type: string
           description: Echo of the stream `control_id`.
@@ -7894,10 +7893,10 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         control_id:
           type: string
           description: The stream `control_id` assigned in `calling.stream`.
@@ -7943,13 +7942,13 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
         call_id:
           type: string
-          description: The transferred call id (echoed).
+          description: The id of the call that was transferred, echoed back from your request.
       required:
         - code
         - message
@@ -7958,16 +7957,17 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         dest:
           type: string
           description: |-
-            Where to transfer call control. One of: an `https://` script URL to POST, an
-            inline SWML script, or a relay application prefixed with `context:`. A single
-            wire string — polymorphic by prefix/scheme.
+            Where to hand off the call. Pass one of three forms in this single string:
+            an `https://` URL that returns a SWML script, an inline SWML script, or the
+            name of another RELAY application prefixed with `context:`. The form is
+            detected from the prefix or scheme you use.
       required:
         - node_id
         - call_id
@@ -8010,10 +8010,10 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
       required:
         - code
         - message
@@ -8022,94 +8022,95 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         name:
           type: string
-          description: Name of the conference to join.
+          description: The name of the conference to join. If a conference with this name does not exist yet, it is created.
         muted:
           type: boolean
-          description: Join muted.
+          description: Join the conference with this participant muted. Defaults to `false`.
           default: false
         beep:
-          description: Beep behaviour on enter/exit. Default `true`.
+          description: Whether a beep plays as participants enter or leave. Defaults to `true`.
           allOf:
             - $ref: "#/components/schemas/Calling.ConferenceBeep"
         start_on_enter:
           type: boolean
-          description: Start the conference when this participant enters.
+          description: Whether the conference starts when this participant enters. Defaults to `true`.
           default: true
         end_on_exit:
           type: boolean
-          description: End the conference when this participant exits.
+          description: Whether the conference ends for everyone when this participant leaves. Defaults to `false`.
           default: false
         wait_url:
           type: string
           format: uri
-          description: "URL to CXML or an mp3/wav to play while waiting. Default: hold music."
+          description: A URL to cXML, or to an mp3/wav file, to play while this participant waits for the conference to start. Defaults to hold music.
         max_participants:
           type: integer
           format: int32
-          description: Maximum number of participants (positive, `<= 250`). Default `250`.
+          description: The maximum number of participants allowed in the conference, up to 250. Defaults to `250`.
           maximum: 250
           exclusiveMinimum: 0
         record:
-          description: Whether/when to record the conference. Default `do-not-record`.
+          description: Whether and when to record the conference. Defaults to `do-not-record`.
           allOf:
             - $ref: "#/components/schemas/Calling.ConferenceRecord"
         region:
-          description: Region the conference media is anchored in. Default `global`.
+          description: The region where the conference media is hosted. Defaults to `global`.
           allOf:
             - $ref: "#/components/schemas/Calling.ConferenceRegion"
         trim:
-          description: Trim silence from the recording. Default `trim-silence`.
+          description: Whether to trim silence from the recording. Defaults to `trim-silence`.
           allOf:
             - $ref: "#/components/schemas/Calling.ConferenceTrim"
         coach:
           type: string
-          description: "A SWML Call ID or CXML CallSid to coach. Default: not set."
+          description: The id of a call (SWML Call ID or cXML CallSid) that this participant coaches. A coach can be heard only by the call being coached, not by the rest of the conference. Not set by default.
         status_callback:
           type: string
           format: uri
-          description: "URL to POST conference status callbacks to. Default: not set."
+          description: A URL to receive conference status callbacks. Not set by default.
         status_callback_event:
           type: string
           description: |-
-            Space-separated list of conference events to deliver to `status_callback`.
-            Tokens: `start end join leave mute hold modify speaker announcement`.
-            Default: not set.
+            A space-separated list of which conference events to deliver to
+            `status_callback`. Available events: `start`, `end`, `join`, `leave`,
+            `mute`, `hold`, `modify`, `speaker`, `announcement`. Not set by default.
         status_callback_event_type:
-          description: Encoding of the status callback payload. Default `relay`.
+          description: The payload format for `status_callback`. Defaults to `relay`.
           allOf:
             - $ref: "#/components/schemas/Calling.ConferenceCallbackEventType"
         status_callback_method:
-          description: HTTP method for `status_callback`. Default `POST`. Ignored when `status_callback_event_type` is `relay`.
+          description: The HTTP method used to deliver `status_callback`. Defaults to `POST`. Ignored when `status_callback_event_type` is `relay`.
           allOf:
             - $ref: "#/components/schemas/Calling.ConferenceCallbackMethod"
         recording_status_callback:
           type: string
           format: uri
-          description: "URL to POST recording status callbacks to. Default: not set."
+          description: A URL to receive recording status callbacks. Not set by default.
         recording_status_callback_event:
           type: string
           description: |-
-            Space-separated list of recording lifecycle events to deliver to
-            `recording_status_callback`. Tokens: `in-progress completed absent`
-            (e.g. `"in-progress completed"`). Default `completed`.
+            A space-separated list of which recording lifecycle events to deliver to
+            `recording_status_callback`. Available events: `in-progress completed absent`
+            (for example, `"in-progress completed"`). Defaults to `completed`.
         recording_status_callback_event_type:
-          description: Encoding of the recording status callback payload. Default `relay`.
+          description: The payload format for `recording_status_callback`. Defaults to `relay`.
           allOf:
             - $ref: "#/components/schemas/Calling.ConferenceCallbackEventType"
         recording_status_callback_method:
-          description: HTTP method for `recording_status_callback`. Default `POST`. Ignored when `recording_status_callback_event_type` is `relay`.
+          description: The HTTP method used to deliver `recording_status_callback`. Defaults to `POST`. Ignored when `recording_status_callback_event_type` is `relay`.
           allOf:
             - $ref: "#/components/schemas/Calling.ConferenceCallbackMethod"
         stream:
           description: |-
-            Attach a bidirectional WebSocket stream to the conference. Reuses the same
-            `call_device_stream` schema as `calling.connect`'s stream device.
+            Attach a bidirectional WebSocket audio stream to the conference, for example to
+            feed audio to a bot or transcription service. Uses the same stream settings as
+            the stream device in `calling.connect`.
           allOf:
             - $ref: "#/components/schemas/Calling.StreamDeviceParams"
       required:
@@ -8187,7 +8188,7 @@ components:
       properties:
         node_id:
           type: string
-          description: The UUID of the node this conference is on.
+          description: The UUID of the node the conference is running on.
         conference_id:
           type: string
           description: The UUID of the conference.
@@ -8195,63 +8196,63 @@ components:
           type: string
           description: The name of the conference.
         status:
-          description: Which conference event occurred.
+          description: What happened in the conference.
           allOf:
             - $ref: "#/components/schemas/Calling.ConferenceStatus"
         call_id:
           type: string
-          description: Participant call id. Set on participant statuses.
+          description: The `call_id` of the participant this event is about. Present on participant events.
         muted:
           type: boolean
-          description: Whether the participant is muted. Set on participant statuses.
+          description: Whether the participant is muted. Present on participant events.
         hold:
           type: boolean
-          description: Whether the participant is on hold. Set on participant statuses.
+          description: Whether the participant is on hold. Present on participant events.
         coaching:
           type: boolean
-          description: Whether the participant is coaching. Set on participant statuses.
+          description: Whether the participant is coaching another participant. Present on participant events.
         end_on_exit:
           type: boolean
-          description: Whether the conference ends when this participant exits. Set on participant statuses.
+          description: Whether the conference ends when this participant leaves. Present on participant events.
         start_on_enter:
           type: boolean
-          description: Whether the conference starts when this participant enters. Set on participant statuses.
+          description: Whether the conference starts when this participant joins. Present on participant events.
         participant_call_status:
-          description: The participant's final call status. Set on `participant-leave`.
+          description: The participant's final call status. Present on `participant-leave`.
           allOf:
             - $ref: "#/components/schemas/Calling.ConferenceParticipantCallStatus"
         reason_participant_left:
-          description: Why the participant left. Set on `participant-leave`.
+          description: Why the participant left. Present on `participant-leave`.
           allOf:
             - $ref: "#/components/schemas/Calling.ConferenceReasonParticipantLeft"
         call_ending_conference:
           type: string
-          description: UUID of the call that ended the conference. Set on `conference-end`.
+          description: The `call_id` of the participant whose departure ended the conference. Present on `conference-end`.
         reason_ended:
-          description: Why the conference ended. Set on `conference-end`.
+          description: Why the conference ended. Present on `conference-end`.
           allOf:
             - $ref: "#/components/schemas/Calling.ConferenceReasonEnded"
         recording_url:
           type: string
           format: uri
-          description: URL of the conference recording. Set on `conference-end`.
+          description: Link to the conference recording. Present on `conference-end`.
         recording_duration:
           type: integer
           format: int32
-          description: Recording duration in seconds. Set on `conference-end`.
+          description: Recording duration in seconds. Present on `conference-end`.
         recording_file_size:
           type: integer
           format: int32
-          description: Recording file size in bytes. Set on `conference-end`.
+          description: Recording file size in bytes. Present on `conference-end`.
         announce_url:
           type: string
           format: uri
-          description: Announcement URL. Set on announcement statuses.
+          description: The URL of the announcement being played. Present on announcement events.
       required:
         - node_id
         - conference_id
         - status
-      description: A conference lifecycle / participant event.
+      description: "Fires throughout a conference's life: when it starts and ends, and each time a participant joins, leaves, mutes, holds, speaks, or an announcement plays. Check `status` to see what happened."
     Calling.ConferenceStatus:
       type: string
       enum:
@@ -8334,10 +8335,10 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
       required:
         - code
         - message
@@ -8346,13 +8347,13 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         conference_id:
           type: string
-          description: The conference identifier. Comes from `calling.conference` events.
+          description: The id of the conference to leave. You receive this from `calling.conference` events when a participant joins.
       required:
         - node_id
         - call_id
@@ -8395,15 +8396,15 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
         state:
           type: string
           enum:
             - hold
-          description: Resulting hold state (always `"hold"`).
+          description: The resulting hold state, always `"hold"`.
       required:
         - code
         - message
@@ -8412,10 +8413,10 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
       required:
         - node_id
         - call_id
@@ -8457,19 +8458,19 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         state:
-          description: The hold state.
+          description: Whether the call is now on hold (`hold`) or off hold (`unhold`).
           allOf:
             - $ref: "#/components/schemas/Calling.HoldState"
       required:
         - node_id
         - call_id
         - state
-      description: A call hold-state event. (No `control_id`.)
+      description: Fires whenever a call is placed on hold or taken off hold.
     Calling.HoldState:
       type: string
       enum:
@@ -8516,15 +8517,15 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
         state:
           type: string
           enum:
             - unhold
-          description: Resulting hold state (always `"unhold"`).
+          description: The resulting hold state, always `"unhold"`.
       required:
         - code
         - message
@@ -8533,10 +8534,10 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
       required:
         - node_id
         - call_id
@@ -8578,10 +8579,10 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
       required:
         - code
         - message
@@ -8590,10 +8591,10 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
       required:
         - node_id
         - call_id
@@ -8635,18 +8636,18 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         denoised:
           type: boolean
-          description: Whether noise reduction is enabled (`true`) or disabled.
+          description: Whether background noise reduction is now on (`true`) or off.
       required:
         - node_id
         - call_id
         - denoised
-      description: A call-denoiser state event. (Carries no `control_id`.)
+      description: Fires when background noise reduction is turned on or off for the call. Unlike most media events, this one carries no `control_id`.
     CallDenoiseEventFrame:
       type: object
       required:
@@ -8688,10 +8689,10 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
       required:
         - code
         - message
@@ -8700,10 +8701,10 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
       required:
         - node_id
         - call_id
@@ -8745,16 +8746,16 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
         control_id:
           type: string
-          description: The send-digits control id (echoed).
+          description: The `control_id` you supplied, echoed back.
         call_id:
           type: string
-          description: The call id (echoed).
+          description: The id of the call, echoed back from your request.
       required:
         - code
         - message
@@ -8763,19 +8764,20 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         control_id:
           type: string
-          description: An identifier used to control the active send-digits operation.
+          description: Your own identifier for this send-digits operation. Use it to correlate the request with the `calling.call.send_digits` events it produces.
         digits:
           type: string
           description: |-
-            The string of digits to play. Allowed: `1234567890*#ABCD`, plus `w` (0.5s
-            wait) and `W` (1s wait), repeated for longer waits. Any invalid character
-            rejects the entire operation.
+            The string of DTMF tones to play, in order. Allowed characters are the digits
+            `0`-`9`, `*`, `#`, and `A`-`D` (case-insensitive), plus `w` for a short pause
+            and `W` for a longer pause (repeat them for longer waits). The whole string is
+            rejected if it contains any other character.
       required:
         - node_id
         - call_id
@@ -8819,24 +8821,24 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         control_id:
           type: string
-          description: The ID used to control the active send_digits operation.
+          description: The `control_id` of the send-digits operation this event belongs to.
         state:
           type: string
           enum:
             - finished
-          description: The send_digits state. (Only `finished` is documented.)
+          description: "Always `finished`: the digits have all been sent."
       required:
         - node_id
         - call_id
         - control_id
         - state
-      description: A send-digits completion event.
+      description: Fires once all requested DTMF digits have finished playing on the call.
     CallSendDigitsEventFrame:
       type: object
       required:
@@ -8878,13 +8880,13 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
         url:
           type: string
-          description: Path/URL of the shadow recording created for the transcription (e.g. `recordings/<UUID>.wav`).
+          description: Path of the audio recording captured for this transcription, e.g. `recordings/<UUID>.wav`.
       required:
         - code
         - message
@@ -8893,17 +8895,17 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         control_id:
           type: string
-          description: Identifier used to control (e.g. stop) the active transcription.
+          description: Your identifier for this transcription. Use the same `control_id` with `calling.transcribe.stop` to stop it.
         status_url:
           type: string
           format: uri
-          description: http or https URL to deliver transcription status event callbacks to.
+          description: An `http` or `https` URL to receive transcription status updates as the transcription starts, runs, and ends.
       required:
         - node_id
         - call_id
@@ -8946,42 +8948,42 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         control_id:
           type: string
-          description: The ID used to control the active transcription.
+          description: The `control_id` of the transcription this event belongs to.
         state:
-          description: The transcription state.
+          description: Whether transcription is still running (`transcribing`) or has stopped (`finished`).
           allOf:
             - $ref: "#/components/schemas/Calling.TranscribeState"
         url:
           type: string
-          description: Location of the recording (e.g. `recordings/<UUID>.wav`).
+          description: Location of the recording captured alongside the transcription (for example, `recordings/<UUID>.wav`).
         recording_id:
           type: string
-          description: The UUID of the shadow recording.
+          description: The UUID of the recording captured alongside the transcription.
         status_url:
           type: string
-          description: The callback URL, if one was provided.
+          description: The callback URL you provided to receive transcription updates, if any.
         duration:
           type: number
           format: double
-          description: Length of the recording in seconds. Set only on `finished`.
+          description: Length of the recording in seconds. Present only when `state` is `finished`.
         size:
           type: integer
           format: int32
-          description: Size of the recording in bytes. Set only on `finished`.
+          description: Size of the recording in bytes. Present only when `state` is `finished`.
         start_time:
           type: number
           format: double
-          description: Unix timestamp when recording started. Set only on `finished`.
+          description: Unix timestamp for when the recording started. Present only when `state` is `finished`.
         end_time:
           type: number
           format: double
-          description: Unix timestamp when recording ended. Set only on `finished`.
+          description: Unix timestamp for when the recording ended. Present only when `state` is `finished`.
       required:
         - node_id
         - call_id
@@ -8989,7 +8991,7 @@ components:
         - state
         - url
         - recording_id
-      description: A call-transcription state.
+      description: Fires when transcription starts and again when it stops. The `finished` event includes the recording's duration, size, and timestamps.
     Calling.TranscribeState:
       type: string
       enum:
@@ -9036,10 +9038,10 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
       required:
         - code
         - message
@@ -9048,13 +9050,13 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         control_id:
           type: string
-          description: The `control_id` assigned in `calling.transcribe`.
+          description: The `control_id` you passed to `calling.transcribe` when you started this transcription.
       required:
         - node_id
         - call_id
@@ -9097,10 +9099,10 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
       required:
         - code
         - message
@@ -9109,19 +9111,19 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         timeout:
           type: integer
           format: int32
-          description: Echo duration in seconds (`0` = until the call ends).
+          description: How long to keep echoing, in seconds. Use `0` to echo until the call ends.
           minimum: 0
         status_url:
           type: string
           format: uri
-          description: http or https URL to deliver echo status event callbacks to.
+          description: An `http` or `https` URL to receive echo status updates.
       required:
         - node_id
         - call_id
@@ -9163,19 +9165,19 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         state:
-          description: The echo state.
+          description: Whether the echo is still running (`echoing`) or has stopped (`finished`).
           allOf:
             - $ref: "#/components/schemas/Calling.EchoState"
       required:
         - node_id
         - call_id
         - state
-      description: A call echo state event. (No `control_id`.)
+      description: Fires when audio echo starts on a call and again when it stops.
     Calling.EchoState:
       type: string
       enum:
@@ -9222,10 +9224,10 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
       required:
         - code
         - message
@@ -9234,30 +9236,27 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         digits:
           type: string
-          description: DTMF digit sequence to bind (e.g. `"*1"`).
+          description: The DTMF digit sequence the caller must press to trigger this binding, e.g. `"*1"`.
         bind_method:
           type: string
-          description: Method name to invoke when the digits are pressed (e.g. `calling.play`).
+          description: The call method to run when the digits are pressed, e.g. `calling.play`.
         params:
           type: object
           additionalProperties: {}
-          description: |-
-            Parameters to pass to the bound method. Free-form: the shape matches the
-            params model of `bind_method` (polymorphic by `bind_method`, no own
-            discriminator). Modeled loosely.
+          description: Parameters to pass to `bind_method` when it runs. Use the same shape that method expects for its parameters.
         realm:
           type: string
-          description: Namespace for this binding (used for selective clearing).
+          description: A label that groups this binding with others, so you can clear them together later.
         max_triggers:
           type: integer
           format: int32
-          description: Maximum times this binding can fire (`0` = unlimited).
+          description: How many times this binding can fire before it stops working. Use `0` for no limit.
           minimum: 0
       required:
         - node_id
@@ -9302,10 +9301,10 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
       required:
         - code
         - message
@@ -9314,13 +9313,13 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         realm:
           type: string
-          description: Only clear bindings in this realm. Clears all bindings when omitted.
+          description: Clear only the bindings with this `realm` label. Omit to clear every digit binding on the call.
       required:
         - node_id
         - call_id
@@ -9362,10 +9361,10 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
       required:
         - code
         - message
@@ -9374,12 +9373,12 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         action:
-          description: Action to perform (provide exactly one of `start`/`stop`/`summarize`).
+          description: The action to perform. Set exactly one of `start`, `stop`, or `summarize`.
           allOf:
             - $ref: "#/components/schemas/Calling.LiveTranscribeAction"
       required:
@@ -9390,44 +9389,44 @@ components:
       type: object
       properties:
         start:
-          description: Begin live transcription.
+          description: Start live transcription.
           allOf:
             - $ref: "#/components/schemas/Calling.LiveTranscribeStart"
         stop:
-          description: Stop live transcription (body ignored).
+          description: Stop live transcription.
           allOf:
             - $ref: "#/components/schemas/Calling.LiveActionStop"
         summarize:
-          description: Summarize the live transcription.
+          description: Summarize the live transcription so far.
           allOf:
             - $ref: "#/components/schemas/Calling.LiveSummarize"
       description: |-
-        Live-transcribe action. Key-discriminated: provide exactly one of `start`,
-        `stop`, or `summarize`.
+        The live-transcribe action to perform. Set exactly one of `start`, `stop`, or
+        `summarize`.
     Calling.LiveTranscribeStart:
       type: object
       properties:
         lang:
           type: string
-          description: Language to transcribe (e.g. `en-US`).
+          description: The language to transcribe, e.g. `en-US`.
         direction:
           type: array
           items:
             $ref: "#/components/schemas/Calling.TranscribeDirection"
-          description: Which call leg(s) to transcribe.
+          description: Which side(s) of the call to transcribe.
         webhook:
           type: string
           format: uri
-          description: http or https URL the transcription is delivered to.
+          description: An `http` or `https` URL to receive the transcription as it is produced.
         ai_summary:
           type: boolean
-          description: Enable AI summarization; the summary is delivered at the end of the call.
+          description: Generate an AI summary of the conversation. The summary is delivered when the call ends.
         ai_summary_prompt:
           type: string
-          description: Prompt instructing how to summarize when `ai_summary` is enabled.
+          description: Instructions telling the AI how to summarize, used when `ai_summary` is enabled.
         live_events:
           type: boolean
-          description: Emit live transcription events as they occur.
+          description: Deliver transcription results live as the conversation happens, rather than only at the end.
         speech_timeout:
           type: integer
           format: int32
@@ -9461,7 +9460,7 @@ components:
       required:
         - lang
         - direction
-      description: Begin live transcription. `lang` and `direction` are required.
+      description: Settings for starting live transcription. `lang` and `direction` are required.
     Calling.TranscribeDirection:
       type: string
       enum:
@@ -9475,18 +9474,18 @@ components:
     Calling.LiveActionStop:
       type: object
       properties: {}
-      description: An action body that carries no fields (its contents are ignored).
+      description: A stop action takes no fields — pass an empty object.
     Calling.LiveSummarize:
       type: object
       properties:
         webhook:
           type: string
           format: uri
-          description: http or https URL the summary is delivered to.
+          description: An `http` or `https` URL to receive the summary.
         prompt:
           type: string
-          description: Prompt instructing how to summarize the conversation.
-      description: Summarize the live transcription/translation.
+          description: Instructions telling the AI how to summarize the conversation.
+      description: Settings for generating a summary of the live transcription or translation so far.
     CallingLiveTranscribeRequest:
       type: object
       required:
@@ -9525,10 +9524,10 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
       required:
         - code
         - message
@@ -9537,18 +9536,18 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         action:
-          description: Action to perform (provide exactly one of `start`/`stop`/`summarize`/`inject`).
+          description: The action to perform. Set exactly one of `start`, `stop`, `summarize`, or `inject`.
           allOf:
             - $ref: "#/components/schemas/Calling.LiveTranslateAction"
         status_url:
           type: string
           format: uri
-          description: http or https URL to deliver translation status event callbacks to.
+          description: An `http` or `https` URL to receive translation status updates.
       required:
         - node_id
         - call_id
@@ -9557,71 +9556,71 @@ components:
       type: object
       properties:
         start:
-          description: Begin live translation.
+          description: Start live translation.
           allOf:
             - $ref: "#/components/schemas/Calling.LiveTranslateStart"
         stop:
-          description: Stop live translation (body ignored).
+          description: Stop live translation.
           allOf:
             - $ref: "#/components/schemas/Calling.LiveActionStop"
         summarize:
-          description: Summarize the live translation.
+          description: Summarize the live translation so far.
           allOf:
             - $ref: "#/components/schemas/Calling.LiveSummarize"
         inject:
-          description: Inject a message into the live translation.
+          description: Insert a message to be translated and spoken into the call.
           allOf:
             - $ref: "#/components/schemas/Calling.LiveTranslateInject"
       description: |-
-        Live-translate action. Key-discriminated: provide exactly one of `start`,
-        `stop`, `summarize`, or `inject`.
+        The live-translate action to perform. Set exactly one of `start`, `stop`,
+        `summarize`, or `inject`.
     Calling.LiveTranslateStart:
       type: object
       properties:
         from_lang:
           type: string
-          description: Language to translate from (e.g. `en-US`).
+          description: The language being spoken, e.g. `en-US`.
         to_lang:
           type: string
-          description: Language to translate to (e.g. `es-ES`).
+          description: The language to translate into, e.g. `es-ES`.
         direction:
           type: array
           items:
             $ref: "#/components/schemas/Calling.TranslateDirection"
-          description: Which call leg(s) to translate.
+          description: Which side(s) of the call to translate.
         webhook:
           type: string
           format: uri
-          description: http or https URL the translation is delivered to.
+          description: An `http` or `https` URL to receive the translation as it is produced.
         from_voice:
           type: string
-          description: TTS voice for the source language.
+          description: The voice used to speak the source language.
         to_voice:
           type: string
-          description: TTS voice for the target language.
+          description: The voice used to speak the translated language.
         filter_from:
           oneOf:
             - $ref: "#/components/schemas/Calling.TranslationFilterPreset"
             - type: string
           description: |-
-            Tone/style filter for the source-language direction — a preset or a
-            `prompt:`-prefixed custom instruction.
+            Adjusts the tone or style applied when translating the source speaker — a
+            preset, or a `prompt:`-prefixed custom instruction.
         filter_to:
           oneOf:
             - $ref: "#/components/schemas/Calling.TranslationFilterPreset"
             - type: string
           description: |-
-            Tone/style filter for the target-language direction — a preset or a
-            `prompt:`-prefixed custom instruction.
+            Adjusts the tone or style applied when translating toward the target speaker
+            — a preset, or a `prompt:`-prefixed custom instruction.
         live_events:
           type: boolean
-          description: Emit live translation events as they occur.
+          description: Deliver translation results live as the conversation happens, rather than only at the end.
         ai_summary:
           type: boolean
-          description: Enable AI summarization; the summary is delivered at the end of the call.
+          description: Generate an AI summary of the conversation. The summary is delivered when the call ends.
         ai_summary_prompt:
           type: string
-          description: Prompt instructing how to summarize when `ai_summary` is enabled.
+          description: Instructions telling the AI how to summarize, used when `ai_summary` is enabled.
         speech_timeout:
           type: integer
           format: int32
@@ -9656,7 +9655,7 @@ components:
         - from_lang
         - to_lang
         - direction
-      description: Begin live translation. `from_lang`, `to_lang` and `direction` are required.
+      description: Settings for starting live translation. `from_lang`, `to_lang` and `direction` are required.
     Calling.TranslateDirection:
       type: string
       enum:
@@ -9675,15 +9674,15 @@ components:
       properties:
         message:
           type: string
-          description: The message to inject.
+          description: The text to translate and speak into the call.
         direction:
-          description: Which call leg to speak the injected message to (single direction).
+          description: Which side of the call to speak the message to.
           allOf:
             - $ref: "#/components/schemas/Calling.TranslateDirection"
       required:
         - message
         - direction
-      description: Inject a message into the live translation to be translated and spoken.
+      description: A message to insert into a live translation. It is translated and spoken into the call.
     CallingLiveTranslateRequest:
       type: object
       required:
@@ -9722,10 +9721,10 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
       required:
         - code
         - message
@@ -9734,17 +9733,17 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         name:
           type: string
-          description: Room name to join.
+          description: The name of the room to join.
         status_url:
           type: string
           format: uri
-          description: http or https URL to deliver room status event callbacks to.
+          description: An `http` or `https` URL to receive room status updates, such as when the call joins or leaves.
       required:
         - node_id
         - call_id
@@ -9787,10 +9786,10 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
       required:
         - code
         - message
@@ -9799,10 +9798,10 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
       required:
         - node_id
         - call_id
@@ -9844,10 +9843,10 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
         call_id:
           type: string
           description: Echo of the call id.
@@ -9862,13 +9861,15 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         control_id:
           type: string
-          description: Identifier used to control (e.g. stop) this AI session.
+          description: |-
+            Your own identifier for this AI session. Reuse it later to control the
+              session — for example, pass it to `calling.ai.stop` to end the agent.
         global_data:
           type: object
           properties: {}
@@ -18496,10 +18497,10 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
         call_id:
           type: string
           description: Echo of the call id.
@@ -18514,10 +18515,10 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         control_id:
           type: string
           description: The `control_id` assigned in `calling.ai`.
@@ -18563,10 +18564,10 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
         call_id:
           type: string
           description: Echo of the call id.
@@ -18578,10 +18579,10 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         prompt:
           description: |-
             The operator prompt that instructs the sidecar how to coach the agent. May be a plain string, a Prompt Object Model (POM), or a server-side file reference.
@@ -18800,10 +18801,10 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         text:
           type: string
           description: The message to send to the sidecar.
@@ -18849,10 +18850,10 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
         call_id:
           type: string
           description: Echo of the call id.
@@ -18869,10 +18870,10 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         text:
           type: string
           description: The question for the sidecar to answer.
@@ -18918,10 +18919,10 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
       required:
         - node_id
         - call_id
@@ -18963,10 +18964,10 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
         call_id:
           type: string
           description: |-
@@ -18982,10 +18983,10 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
       required:
         - node_id
         - call_id
@@ -19027,10 +19028,10 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
       required:
         - code
         - message
@@ -19039,10 +19040,10 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         global_data:
           type: object
           properties: {}
@@ -19173,10 +19174,10 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
       required:
         - code
         - message
@@ -19185,10 +19186,10 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         message_text:
           type: string
           description: Message text to inject into the session.
@@ -19266,10 +19267,10 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
       required:
         - code
         - message
@@ -19278,16 +19279,16 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         timeout:
           type: string
-          description: Hold timeout. Sent as a string in the example (e.g. `"60"`); unit is seconds.
+          description: How long to stay on hold, in seconds. Pass it as a string, e.g. `"60"`.
         prompt:
           type: string
-          description: Hold prompt / music (plain string).
+          description: What to play while on hold — a hold prompt or music, as a plain string.
       required:
         - node_id
         - call_id
@@ -19329,10 +19330,10 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
       required:
         - code
         - message
@@ -19341,10 +19342,10 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         prompt:
           type: string
           description: Resume prompt (plain string).
@@ -19389,10 +19390,10 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string, e.g. `"200"` (success), `"400"`, `"404"`.
         message:
           type: string
-          description: Human-readable result message.
+          description: Human-readable description of the result. On failure, explains what went wrong.
       required:
         - code
         - message
@@ -19401,13 +19402,15 @@ components:
       properties:
         node_id:
           type: string
-          description: Node the call is on.
+          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
         call_id:
           type: string
-          description: The call id.
+          description: Unique identifier of the call.
         event:
           type: string
-          description: The custom event name.
+          description: |-
+            A name you choose for the event. Your application receives it as a
+              `calling.user_event` event.
       required:
         - node_id
         - call_id
@@ -19449,13 +19452,13 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
+          description: Result code as a string. `"200"` means success; anything else is an error.
         message:
           type: string
-          description: Human-readable result message.
+          description: A human-readable explanation of the result.
         message_id:
           type: string
-          description: The UUID of the accepted message (present on success).
+          description: The ID of the accepted message, returned when the send succeeds. Use it to match up later state events.
       required:
         - code
         - message
@@ -19465,35 +19468,35 @@ components:
       properties:
         context:
           type: string
-          description: The context to receive inbound events for this message.
+          description: The context that delivery and reply events for this message are sent to.
         tags:
           type: array
           items:
             type: string
-          description: Optional client-defined tags, surfaced for searching in the UI.
+          description: Your own labels to attach to the message, so you can search for it in the UI later.
         region:
           type: string
           description: |-
-            Region of the world to originate the message from. Defaults to a value
-            picked from account preferences or device location.
+            The region of the world to send the message from. If you leave this out,
+            SignalWire picks one based on your account settings.
         to_number:
           type: string
-          description: Destination phone number, in E.164 format.
+          description: The recipient's phone number, in E.164 format (for example, `+15551231234`).
         from_number:
           type: string
-          description: Origin phone number, in E.164 format.
+          description: The phone number to send from, in E.164 format. Must be a number on your account.
         body:
           type: string
           description: |-
-            Body of the message. Required if `media` is absent; at least one of `body`
-            or `media` must be present (both may be supplied).
+            The text of the message. You must include `body`, `media`, or both — at
+            least one is required.
         media:
           type: array
           items:
             type: string
           description: |-
-            An array of media URLs to send (MMS). Required if `body` is absent; at
-            least one of `body` or `media` must be present (both may be supplied).
+            One or more media URLs to send as an MMS. You must include `body`, `media`,
+            or both — at least one is required.
       required:
         - context
         - to_number
@@ -19536,26 +19539,27 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string). `"200"` on success.
+          description: The result code, as a string. `"200"` means success.
         message:
           type: string
-          description: Human-readable result message.
+          description: A human-readable description of the result.
       required:
         - code
         - message
-      description: Acknowledgement of a `tasking.deliver` request.
+      description: Confirms that SignalWire accepted your `tasking.deliver` request.
     Tasking.DeliverParams:
       type: object
       properties:
         context:
           type: string
-          description: The context to deliver the task to. Consumers subscribed to this context receive the `queuing.relay.tasks` event.
+          description: The context to deliver the task to. Every client subscribed to this context receives the `queuing.relay.tasks` event.
         message:
           type: object
           additionalProperties: {}
           description: |-
-            The message to send. Opaque, caller-defined JSON (e.g. `{ "foo": 123 }`);
-            SignalWire imposes no schema and echoes it verbatim into the task event.
+            Your JSON payload to send (for example, `{ "foo": 123 }`). Use any shape you
+            like — SignalWire doesn't enforce a schema and passes it through to your
+            consumers unchanged.
       required:
         - context
         - message
@@ -19618,12 +19622,8 @@ components:
       required:
         - profile
       description: |-
-        The rendered connector configuration returned to the connector.
-
-        Note: `profile` is the raw FreeSWITCH SIP profile **rendered as XML**, carried
-        as a single string. The precise shape (raw-XML string vs. a structured object)
-        is not specified by the source and is modeled here as an opaque string. Other
-        keys under `configuration` for non-`freeswitch` targets are unconfirmed.
+        The runtime configuration returned for your connector. For a `freeswitch`
+        target, this contains the SIP profile your connector should run with.
     Provisioning.ConfigureParams:
       type: object
       properties:
@@ -19633,7 +19633,7 @@ components:
             - $ref: "#/components/schemas/Provisioning.ConnectorTarget"
         local_endpoint:
           type: string
-          description: The connector's local (internal) endpoint as an IPv4 address, e.g. `10.10.0.2`.
+          description: The connector's local endpoint, as an IPv4 address, e.g. `10.10.0.2`.
         external_endpoint:
           type: string
           description: The connector's external (public) endpoint as an IPv4 address, e.g. `8.8.8.8`.
@@ -19696,34 +19696,35 @@ components:
       required:
         - code
         - message
-      description: Acknowledgement that the Verto message was received and forwarded.
+      description: Confirms that SignalWire received and forwarded your Verto frame.
     WebRTC.MessageParams:
       type: object
       properties:
         node_id:
           type: string
           description: |-
-            The FreeSWITCH node id this message targets. Set by the client to the FS
-            nodeid once a call exists (sourced from prior events/responses); absent on
-            the very first message before a call is established.
+            The node hosting your call. Once a call exists, set this to the `node_id`
+            you received in an earlier event or response so the frame reaches the right
+            place. Leave it absent on your first message, before a call has been
+            established — SignalWire picks the node.
         message:
           type: object
           additionalProperties: {}
           description: |-
-            The inner Verto JSON-RPC 2.0 frame to transport to FreeSWITCH (e.g. a
-            `verto.invite` with `dialogParams`/`sdp`/`layout`/`positions`). Modeled as
-            a loose pass-through: the full Verto method/`params` union is out of scope
-            here (see `verto_messages.md`).
+            The Verto frame to send (for example a `verto.invite` carrying
+            `dialogParams`/`sdp`/`layout`/`positions`). The frame is passed through
+            as-is; see `verto_messages.md` for the full list of Verto methods and their
+            `params`.
         subscribe:
           type: array
           items:
             type: string
           description: |-
-            "Event channel" subscriptions to apply alongside this request — intended
-            for the case of joining a conference and wanting its event feed. Values are
-            conference/room event channels (e.g. `member.joined`, `member.left`,
-            `room.ended`, `room.updated`, `layout.changed`, `member.updated`);
-            illustrative, not exhaustive.
+            Event channels to subscribe to alongside this request — useful when you
+            join a conference and want its event feed. Values are conference/room event
+            channels such as `member.joined`, `member.left`, `room.ended`,
+            `room.updated`, `layout.changed`, and `member.updated` (illustrative, not
+            exhaustive).
       required:
         - message
     MessageRequest:
@@ -19772,7 +19773,7 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/WebRTC.Conference"
-          description: The active conferences the current client can join.
+          description: The active conferences you can join.
       required:
         - code
         - message
@@ -19782,7 +19783,7 @@ components:
       properties:
         node_id:
           type: string
-          description: The FreeSWITCH node id hosting the conference.
+          description: The node hosting this conference. Use it as the `node_id` when you join.
         conference_id:
           type: string
           description: The conference's UUID.
@@ -19791,22 +19792,22 @@ components:
           description: Human-readable conference name (e.g. `Awesome Room!`).
         extension:
           type: string
-          description: Extension to dial to reach the conference.
+          description: The extension to dial to reach the conference.
         timestamp:
           type: number
           format: double
-          description: Creation/last-activity time, in seconds since epoch (fractional seconds).
+          description: When the conference was created or last active, in seconds since the epoch (with fractional seconds).
       required:
         - node_id
         - conference_id
         - name
         - extension
         - timestamp
-      description: A single active conference the client may join.
+      description: A single active conference you can join.
     WebRTC.ConferenceListParams:
       type: object
       properties: {}
-      description: Empty parameters — `conference.list` takes no arguments.
+      description: "`conference.list` takes no arguments."
     ConferenceListRequest:
       type: object
       required:
@@ -19845,42 +19846,42 @@ components:
       properties:
         message_id:
           type: string
-          description: The UUID of the message.
+          description: The ID of the message.
         context:
           type: string
-          description: The context the message was set on.
+          description: The context this message arrived on.
         direction:
-          description: The message's direction. Always `inbound` for this event.
+          description: The direction of the message. Always `inbound` here.
           allOf:
             - $ref: "#/components/schemas/Messaging.MessageDirection"
         tags:
           type: array
           items:
             type: string
-          description: Optional client data this message is tagged with.
+          description: Any tags attached to the message.
         from_number:
           type: string
-          description: Origin phone number, in E.164 format.
+          description: The sender's phone number, in E.164 format.
         to_number:
           type: string
-          description: Destination phone number, in E.164 format.
+          description: The number it was sent to, in E.164 format.
         body:
           type: string
-          description: Body of the message.
+          description: The text of the message.
         media:
           type: array
           items:
             type: string
-          description: An array of media URLs included with the message.
+          description: Any media URLs included with the message.
         segments:
           type: integer
           format: int32
-          description: Number of segments the message was split into.
+          description: How many SMS segments the message was split into.
         message_state:
           type: string
           enum:
             - received
-          description: The message state. Always `received` for an inbound message.
+          description: The message state. Always `received` for an incoming message.
       required:
         - message_id
         - context
@@ -19891,7 +19892,10 @@ components:
         - media
         - segments
         - message_state
-      description: An inbound message has been received.
+      description: |-
+        Fires when someone sends a message to one of your numbers. The payload gives
+        you the full incoming message — who it's from, the text, and any media — so
+        you can react or reply.
     Messaging.MessageDirection:
       type: string
       enum:
@@ -19938,44 +19942,44 @@ components:
       properties:
         message_id:
           type: string
-          description: The UUID of the message.
+          description: The ID of the message, matching the one returned by `messaging.send`.
         context:
           type: string
-          description: The context the message was set on.
+          description: The context the message belongs to.
         direction:
-          description: The message's direction.
+          description: The direction of the message, `inbound` or `outbound`.
           allOf:
             - $ref: "#/components/schemas/Messaging.MessageDirection"
         tags:
           type: array
           items:
             type: string
-          description: Optional client data this message is tagged with.
+          description: Any tags attached to the message.
         from_number:
           type: string
-          description: Origin phone number, in E.164 format.
+          description: The sender's phone number, in E.164 format.
         to_number:
           type: string
-          description: Destination phone number, in E.164 format.
+          description: The recipient's phone number, in E.164 format.
         body:
           type: string
-          description: Body of the message.
+          description: The text of the message.
         media:
           type: array
           items:
             type: string
-          description: An array of media URLs included with the message.
+          description: Any media URLs included with the message.
         segments:
           type: integer
           format: int32
-          description: Number of segments the message was split into.
+          description: How many SMS segments the message was split into.
         message_state:
-          description: The new delivery-lifecycle state of the message.
+          description: The message's new delivery state.
           allOf:
             - $ref: "#/components/schemas/Messaging.MessageState"
         reason:
           type: string
-          description: Explanation of the state. Present only on `undelivered`/`failed`.
+          description: Why the message ended up in this state. Included only when it is `undelivered` or `failed`.
       required:
         - message_id
         - context
@@ -19986,7 +19990,11 @@ components:
         - media
         - segments
         - message_state
-      description: A change in the delivery state of a message.
+      description: |-
+        Fires each time a message's delivery state changes. Match `message_id` to the
+        one you got from `messaging.send` and read `message_state` to see where the
+        message is in its journey. The event keeps firing until the message reaches a
+        final state of `delivered`, `undelivered`, or `failed`.
     Messaging.MessageState:
       type: string
       enum:
@@ -20037,18 +20045,18 @@ components:
       properties:
         context:
           type: string
-          description: The context that received the event.
+          description: The context this task arrived on.
         message:
           type: object
           additionalProperties: {}
-          description: The opaque message passed to the task, echoed verbatim from `tasking.deliver`.
+          description: The message payload, exactly as the sender passed it to `tasking.deliver`.
       required:
         - context
         - message
       description: |-
-        A task has been received. Pushed to consumers subscribed to the task's
-        `context`, carrying the opaque `message` echoed verbatim from the
-        originating `tasking.deliver` call.
+        Fires when a task arrives on a context you're subscribed to. The payload tells
+        you which `context` the task came in on and carries the `message` exactly as
+        the sender passed it to `tasking.deliver`.
     TasksEventFrame:
       type: object
       required:
@@ -20091,22 +20099,25 @@ components:
         node_id:
           type: string
           description: |-
-            The FreeSWITCH node id sending the event. Sent by FS so the client can
-            capture the specific nodeid once a call is started.
+            The node that sent this event. Capture it once your call starts and reuse
+            it as the `node_id` on your subsequent `message` requests so they reach the
+            same node.
         params:
           type: object
           additionalProperties: {}
           description: |-
-            The Verto JSON-RPC frame being transported (a Verto response or a
-            conference/room event). Loose pass-through — see `verto_messages.md`.
+            The Verto frame being delivered — either a Verto response or a
+            conference/room event. Passed through as-is; see `verto_messages.md`.
       required:
         - params
       description: |-
-        Transport event delivering a Verto JSON-RPC message from FreeSWITCH back to
-        the client — both Verto responses and subscribed conference/room events.
+        Delivers a Verto frame from SignalWire back to your client. This fires when
+        SignalWire has a Verto response to one of your `message` requests, or when a
+        conference/room event arrives on a channel you subscribed to. Read the frame
+        in `params` to learn the outcome.
 
-        The inner `params` is the opaque Verto frame; its full union is out of scope
-        here (see `verto_messages.md`).
+        The frame in `params` is passed through as-is; see `verto_messages.md` for
+        the full set of Verto methods and their `params`.
     MessageEventFrame:
       type: object
       required:

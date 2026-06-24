@@ -131,8 +131,8 @@ model JoinConferenceParams {
 
   /**
    * A space-separated list of which conference events to deliver to
-   * `status_callback`. Available events: `start end join leave mute hold modify
-   * speaker announcement`. Not set by default.
+   * `status_callback`. Available events: `start`, `end`, `join`, `leave`,
+   * `mute`, `hold`, `modify`, `speaker`, `announcement`. Not set by default.
    */
   status_callback_event?: string;
 

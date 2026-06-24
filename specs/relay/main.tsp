@@ -35,6 +35,6 @@ using SignalWire.AsyncAPI;
 @server("production", #{
   host: "relay.signalwire.com",
   protocol: "wss",
-  description: "SignalWire Relay WebSocket endpoint. Authenticate in-band via signalwire.connect (no HTTP Authorization header).",
+  description: "SignalWire Relay WebSocket endpoint. Open the connection, then authenticate by sending `signalwire.connect` as your first message.",
 })
 namespace Relay;
