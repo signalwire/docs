@@ -1,6 +1,8 @@
 import "@signalwire/typespec-asyncapi";
 
+import "../models/core.tsp";
 import "./models/requests.tsp";
+import "../../calling/events/state.tsp";
 
 using SignalWire.AsyncAPI;
 
