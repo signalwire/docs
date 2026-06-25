@@ -1,9 +1,9 @@
 import "@signalwire/typespec-asyncapi";
 
 import "./models/core.tsp";
-import "./connect/main.tsp";
-import "./disconnect/main.tsp";
-import "./receive/main.tsp";
+import "./operations/connect/main.tsp";
+import "./operations/disconnect/main.tsp";
+import "./operations/receive/main.tsp";
 
 using SignalWire.AsyncAPI;
 

@@ -1,7 +1,7 @@
 import "@signalwire/typespec-asyncapi";
 
 import "./models/core.tsp";
-import "./send/main.tsp";
+import "./operations/send/main.tsp";
 import "./events/receive.tsp";
 import "./events/state.tsp";
 

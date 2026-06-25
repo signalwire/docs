@@ -1,7 +1,7 @@
 import "@signalwire/typespec-asyncapi";
 
 import "./models/core.tsp";
-import "./deliver/main.tsp";
+import "./operations/deliver/main.tsp";
 import "./events/tasks.tsp";
 
 using SignalWire.AsyncAPI;
