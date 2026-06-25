@@ -34,25 +34,6 @@ union ConferenceStatus {
   "stream-error",
 }
 
-@doc("The final state of a participant's call when they left (`participant-leave`).")
-union ConferenceParticipantCallStatus {
-  "no-answer",
-  "busy",
-  "in-progress",
-  "failed",
-  "canceled",
-  "completed",
-}
-
-@doc("The reason a participant left the conference (`participant-leave`).")
-union ConferenceReasonParticipantLeft {
-  "conference_ended_via_api",
-  "moderator_ended_conference",
-  "participant_updated_via_api",
-  "participant_hung_up",
-  "participant_add_failed",
-}
-
 @doc("The reason the conference ended (`conference-end`).")
 union ConferenceReasonEnded {
   "conference-ended-via-api",
@@ -101,19 +82,13 @@ model ConferenceParams {
   call_id_to_coach?: string;
 
   @doc("Whether the conference ends when this participant leaves. Present on participant events.")
-  end_on_exit?: boolean;
+  end_on_leave?: boolean;
 
   @doc("Whether the conference starts when this participant joins. Present on participant events.")
-  start_on_enter?: boolean;
-
-  @doc("The participant's final call status. Present on `participant-leave`.")
-  participant_call_status?: ConferenceParticipantCallStatus;
-
-  @doc("Why the participant left. Present on `participant-leave`.")
-  reason_participant_left?: ConferenceReasonParticipantLeft;
+  start_on_join?: boolean;
 
   @doc("The `call_id` of the participant whose departure ended the conference. Present on `conference-end`.")
-  call_ending_conference?: string;
+  call_id_ending_conf?: string;
 
   @doc("Why the conference ended. Present on `conference-end`.")
   reason_ended?: ConferenceReasonEnded;
@@ -142,10 +117,8 @@ model ConferenceParams {
   muted: false,
   hold: false,
   coaching: false,
-  end_on_exit: false,
-  start_on_enter: true,
-  participant_call_status: "completed",
-  reason_participant_left: "participant_hung_up",
+  end_on_leave: false,
+  start_on_join: true,
 })
 model ConferenceEvent {
   ...ConferenceParams;
