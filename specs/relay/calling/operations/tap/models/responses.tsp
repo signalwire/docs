@@ -10,12 +10,6 @@ namespace Relay.Calling;
 model TapResult {
   ...RelayResult;
 
-  @doc("The call id.")
-  call_id?: string;
-
-  @doc("Echo of the tap `control_id`.")
-  control_id?: string;
-
   @doc("""
     Your requested delivery device echoed back with every parameter resolved
     (codec, sample rate, and so on), so the receiving end knows exactly what
@@ -26,10 +20,4 @@ model TapResult {
 
 model TapStopResult {
   ...RelayResult;
-
-  @doc("Echo of the tap `control_id`.")
-  control_id?: string;
-
-  @doc("The call id.")
-  call_id?: string;
 }

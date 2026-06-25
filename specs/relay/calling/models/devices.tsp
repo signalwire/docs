@@ -36,7 +36,7 @@ model PhoneDeviceParams {
     A prompt that must be confirmed before this leg is bridged. Provide a URL to a
     SWML document or an inline SWML document. See the SWML reference for details.
     """)
-  confirm?: unknown;
+  confirm?: url | unknown[];
 
   @doc("Seconds to wait for the confirmation prompt to complete before giving up.")
   @minValue(0)
@@ -67,6 +67,9 @@ model SipDeviceParams {
   @doc("Use WebRTC media for this leg.")
   webrtc_media?: boolean;
 
+  @doc("Media encryption policy for the SIP leg.")
+  encryption?: "forbidden" | "mandatory" | "optional";
+
   @doc("Username used to authenticate the SIP leg.")
   username?: string;
 
@@ -84,7 +87,7 @@ model SipDeviceParams {
   call_state_events?: CallStateEventName[];
 
   @doc("A confirmation prompt (SWML URL or inline SWML).")
-  confirm?: unknown;
+  confirm?: url | unknown[];
 
   @doc("Seconds to wait for the confirmation prompt to complete before giving up.")
   @minValue(0)
@@ -110,7 +113,7 @@ model WebrtcDeviceParams {
   call_state_events?: CallStateEventName[];
 
   @doc("A confirmation prompt (SWML URL or inline SWML).")
-  confirm?: unknown;
+  confirm?: url | unknown[];
 
   @doc("Seconds to wait for the confirmation prompt to complete before giving up.")
   @minValue(0)

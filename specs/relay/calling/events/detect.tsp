@@ -20,9 +20,6 @@ union CallDetectFaxEvent {
 
   @doc("The detector finished.")
   "finished",
-
-  @doc("The detector could not start.")
-  "error",
 }
 
 @doc("What the answering-machine detector concluded.")
@@ -50,16 +47,12 @@ union CallDetectMachineEvent {
 
   @doc("The detector finished.")
   "finished",
-
-  @doc("The detector could not start.")
-  "error",
 }
 
 @doc("""
   What the detector found. Read `type` to know which detector reported it: `fax`,
-  `machine`, or `digit`. Whatever the type, the `event` field can also carry the
-  generic `finished` value when the detector completes, or `error` if it could not
-  start.
+  `machine`, or `digit`. Whatever the type, the `event` field also carries the
+  generic `finished` value when the detector completes.
   """)
 @discriminator("type")
 model CallDetectResult {

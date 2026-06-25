@@ -86,9 +86,6 @@ model CallStateParams {
 
   @doc("What ended the call. Present once the call has ended.")
   end_source?: string;
-
-  @doc("How the call came to be: `dial` (you placed it), `connect` (created by a bridge), or `receive` (inbound).")
-  created_by?: "dial" | "connect" | "receive";
 }
 
 @doc("Fires every time one of your calls changes state. Use the `call_state` field to track the call through its lifecycle, and `tag` to match the event back to the call you placed.")
@@ -110,7 +107,6 @@ model CallStateParams {
   start_time: 1717000000000,
   answer_time: 1717000002000,
   end_time: 1717000060000,
-  created_by: "dial",
 })
 model CallStateEvent {
   ...CallStateParams;
@@ -120,20 +116,11 @@ model CallStateEvent {
 // calling.call.receive
 // ─────────────────────────────────────────────────────────────────────────────
 
-@doc("The states an inbound call can report on `calling.call.receive`.")
-union ReceiveCallState {
-  "created",
-  "connecting",
-  "connected",
-  "disconnecting",
-  "disconnected",
-}
-
 model CallReceiveParams {
   ...CallAddress;
 
   @doc("The current state of the inbound call.")
-  call_state: ReceiveCallState;
+  call_state: CallState;
 
   @doc("Whether the call is inbound or outbound.")
   direction?: CallDirection;

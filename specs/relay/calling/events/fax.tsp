@@ -67,17 +67,6 @@ model FaxFinished extends CallFax {
   };
 }
 
-@doc("""
-  Fires if the fax fails. The payload here can vary; expect the same
-  `result` and `result_text` fields you get on a finished fax.
-  """)
-model FaxError extends CallFax {
-  type: "error";
-
-  @doc("Error details. The exact fields can vary.")
-  params?: Record<unknown>;
-}
-
 model CallFaxParams {
   ...CallAddress;
 
@@ -91,7 +80,7 @@ model CallFaxParams {
 // No `@example`: `fax` is a required `@discriminator` (CallFax) property, and an
 // example value cannot narrow a discriminated base. Per-variant payloads are
 // illustrated by the FaxPage/FaxFinished `type`/`params` fields above.
-@doc("Sent as a fax progresses: one event per page, then a final event when it finishes or errors.")
+@doc("Sent as a fax progresses: one event per page, then a final event when it finishes.")
 @event("calling.call.fax")
 model CallFaxEvent {
   ...CallFaxParams;

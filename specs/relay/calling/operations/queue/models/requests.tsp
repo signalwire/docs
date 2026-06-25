@@ -17,6 +17,19 @@ model QueueEnterParams {
 
   @doc("HTTPS URL where SignalWire POSTs queue status updates as the call moves through the queue.")
   status_url?: url;
+
+  @doc("URL of audio to play to the caller while they wait in the queue.")
+  wait_url?: url;
+
+  @doc("How long, in seconds, to keep the caller in the queue before giving up.")
+  @minValue(0)
+  wait_time?: int32;
+
+  @doc("Destination to send the call to after it leaves the queue.")
+  execute_after_queue?: string;
+
+  @doc("URL of audio to play to the agent when the queued call is bridged.")
+  whisper_url?: url;
 }
 
 model QueueLeaveParams {

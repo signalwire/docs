@@ -47,7 +47,7 @@ model ReceiveEvent {
   body: string;
 
   @doc("Any media URLs included with the message.")
-  media: string[];
+  media?: string[];
 
   @doc("How many SMS segments the message was split into.")
   segments: int32;

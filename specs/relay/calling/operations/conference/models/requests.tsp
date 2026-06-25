@@ -52,6 +52,12 @@ union ConferenceCallbackMethod {
   "POST",
 }
 
+@doc("Controls who can access the conference recording: `private` or `public-read`.")
+union ConferenceAcl {
+  "private",
+  "public-read",
+}
+
 model JoinConferenceParams {
   ...CallAddress;
 
@@ -86,6 +92,9 @@ model JoinConferenceParams {
 
   @doc("Whether to trim silence from the recording. Defaults to `trim-silence`.")
   trim?: ConferenceTrim;
+
+  @doc("Controls who can access the conference recording: `private` or `public-read`.")
+  acl?: ConferenceAcl;
 
   @doc("The `call_id` (UUID) of the participant being coached. A coach can be heard only by the call being coached, not by the rest of the conference. Not set by default.")
   coach?: string;

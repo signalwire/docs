@@ -8,9 +8,6 @@ namespace Relay.Calling;
 
 model PlayAndCollectResult {
   ...RelayResult;
-
-  @doc("Echoes back the `control_id` you supplied so you can correlate the response.")
-  control_id?: string;
 }
 
 model PlayAndCollectStopResult {

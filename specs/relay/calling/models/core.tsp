@@ -28,6 +28,12 @@ model RelayResult {
 
   @doc("Human-readable description of the result. On failure, explains what went wrong.")
   message: string;
+
+  @doc("The call this result is for, echoed from your request. Absent on `calling.dial`, which has no call yet.")
+  call_id?: string;
+
+  @doc("Your control identifier for the started action, echoed when your request included one.")
+  control_id?: string;
 }
 
 @doc("A SIP header. Only `X-`-prefixed custom headers are permitted.")
