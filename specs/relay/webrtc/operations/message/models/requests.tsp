@@ -6,6 +6,12 @@ namespace Relay.WebRTC;
 
 model MessageParams {
   @doc("""
+    The Verto call ID this frame belongs to. Generate one when you create a call
+    and reuse it on every frame for that call.
+    """)
+  callID: string;
+
+  @doc("""
     The node hosting your call. Once a call exists, set this to the `node_id`
     you received in an earlier event or response so the frame reaches the right
     place. Leave it absent on your first message, before a call has been

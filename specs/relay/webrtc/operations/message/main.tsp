@@ -8,19 +8,20 @@ using SignalWire.AsyncAPI;
 namespace Relay.WebRTC;
 
 @doc("""
-  Send a Verto frame from your client to SignalWire — this is how you place,
-  answer, modify, or end a peer call. Pass the frame in `message`, and
-  optionally subscribe to conference/room event channels in the same request.
+  Send a Verto frame to SignalWire over the Relay connection — this is how you
+  place, answer, modify, or end a peer call from the browser. Pass the frame in
+  `message` and the call's `callID`; optionally subscribe to conference/room
+  event channels in the same request.
 
-  The result only confirms that SignalWire received and forwarded the frame
-  (`"Received"`). The actual Verto outcome arrives later as a `webrtc.message`
-  event, so wait for that event rather than treating this acknowledgement as
-  the call result.
+  The reply carries the Verto outcome in `result` (for example the answer to a
+  `verto.invite`), along with the `node_id` now hosting the call. Capture that
+  `node_id` and send it on later frames for the same call.
   """)
-@channel("message")
+@channel("webrtc.verto")
 @summary("Send a Verto frame")
 @opExample(#{
   parameters: #{
+    callID: "c7f9d2e1-3a4b-5c6d-7e8f-9a0b1c2d3e4f",
     node_id: "f1d2c3b4-a596-4877-8b1e-0123456789ab",
     message: #{
       jsonrpc: "2.0",
@@ -43,6 +44,10 @@ namespace Relay.WebRTC;
       "member.updated",
     ],
   },
-  returnType: #{ code: "200", message: "Received" },
+  returnType: #{
+    code: "200",
+    node_id: "f1d2c3b4-a596-4877-8b1e-0123456789ab",
+    result: #{ message: "CALL CREATED", callID: "c7f9d2e1-3a4b-5c6d-7e8f-9a0b1c2d3e4f" },
+  },
 })
-op message(...MessageParams): MessageResult;
+op verto(...MessageParams): MessageResult;

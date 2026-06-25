@@ -1,12 +1,17 @@
 import "@signalwire/typespec-asyncapi";
 
-import "../../../models/core.tsp";
-
 using SignalWire.AsyncAPI;
 
 namespace Relay.WebRTC;
 
-@doc("Confirms that SignalWire received and forwarded your Verto frame.")
+@doc("The reply to a Verto frame: the Verto outcome plus the node now hosting the call.")
 model MessageResult {
-  ...Result;
+  @doc("Result code as a string, e.g. `\"200\"`.")
+  code: string;
+
+  @doc("The Verto reply payload — for example the answer to a `verto.invite`.")
+  result?: Record<unknown>;
+
+  @doc("The node now hosting the call. Capture it and send it on later frames for this call.")
+  node_id?: string;
 }

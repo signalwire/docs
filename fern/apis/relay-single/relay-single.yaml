@@ -367,10 +367,10 @@ channels:
         $ref: "#/components/messages/provisioningConfigureRequest"
       provisioningConfigureResponse:
         $ref: "#/components/messages/provisioningConfigureResponse"
-      messageRequest:
-        $ref: "#/components/messages/messageRequest"
-      messageResponse:
-        $ref: "#/components/messages/messageResponse"
+      webrtcVertoRequest:
+        $ref: "#/components/messages/webrtcVertoRequest"
+      webrtcVertoResponse:
+        $ref: "#/components/messages/webrtcVertoResponse"
       conferenceListRequest:
         $ref: "#/components/messages/conferenceListRequest"
       conferenceListResponse:
@@ -2092,27 +2092,27 @@ operations:
     x-fern-display-name: provisioning.configure response
     messages:
       - $ref: "#/channels/relay/messages/provisioningConfigureResponse"
-  message:
+  webrtcVerto:
     action: send
     channel:
       $ref: "#/channels/relay"
-    title: message
+    title: webrtc.verto
     summary: Send a Verto frame
     messages:
-      - $ref: "#/channels/relay/messages/messageRequest"
+      - $ref: "#/channels/relay/messages/webrtcVertoRequest"
     reply:
       channel:
         $ref: "#/channels/relay"
       messages:
-        - $ref: "#/channels/relay/messages/messageResponse"
-  onMessageResponse:
+        - $ref: "#/channels/relay/messages/webrtcVertoResponse"
+  onWebrtcVertoResponse:
     action: receive
     channel:
       $ref: "#/channels/relay"
-    title: message response
-    x-fern-display-name: message response
+    title: webrtc.verto response
+    x-fern-display-name: webrtc.verto response
     messages:
-      - $ref: "#/channels/relay/messages/messageResponse"
+      - $ref: "#/channels/relay/messages/webrtcVertoResponse"
   conferenceList:
     action: send
     channel:
@@ -20120,17 +20120,25 @@ components:
       properties:
         code:
           type: string
-          description: Result code (string), e.g. `"200"`, `"400"`, `"404"`.
-        message:
+          description: Result code as a string, e.g. `"200"`.
+        result:
+          type: object
+          additionalProperties: {}
+          description: The Verto reply payload — for example the answer to a `verto.invite`.
+        node_id:
           type: string
-          description: Human-readable result message.
+          description: The node now hosting the call. Capture it and send it on later frames for this call.
       required:
         - code
-        - message
-      description: Confirms that SignalWire received and forwarded your Verto frame.
+      description: "The reply to a Verto frame: the Verto outcome plus the node now hosting the call."
     WebRTC.MessageParams:
       type: object
       properties:
+        callID:
+          type: string
+          description: |-
+            The Verto call ID this frame belongs to. Generate one when you create a call
+            and reuse it on every frame for that call.
         node_id:
           type: string
           description: |-
@@ -20157,8 +20165,9 @@ components:
             `room.updated`, `layout.changed`, and `member.updated` (illustrative, not
             exhaustive).
       required:
+        - callID
         - message
-    MessageRequest:
+    WebrtcVertoRequest:
       type: object
       required:
         - jsonrpc
@@ -20174,10 +20183,10 @@ components:
           format: uuid
         method:
           type: string
-          const: message
+          const: webrtc.verto
         params:
           $ref: "#/components/schemas/WebRTC.MessageParams"
-    MessageResponse:
+    WebrtcVertoResponse:
       type: object
       required:
         - jsonrpc
@@ -23365,20 +23374,21 @@ components:
               message: OK
               configuration:
                 profile: <FS profile XML>...
-    messageRequest:
-      name: message.request
-      title: message request
+    webrtcVertoRequest:
+      name: webrtc.verto.request
+      title: webrtc.verto request
       contentType: application/json
       correlationId:
         location: $message.payload#/id
       payload:
-        $ref: "#/components/schemas/MessageRequest"
+        $ref: "#/components/schemas/WebrtcVertoRequest"
       examples:
         - payload:
             jsonrpc: "2.0"
             id: 550e8400-e29b-41d4-a716-446655440000
-            method: message
+            method: webrtc.verto
             params:
+              callID: c7f9d2e1-3a4b-5c6d-7e8f-9a0b1c2d3e4f
               node_id: f1d2c3b4-a596-4877-8b1e-0123456789ab
               message:
                 jsonrpc: "2.0"
@@ -23399,21 +23409,24 @@ components:
                 - room.updated
                 - layout.changed
                 - member.updated
-    messageResponse:
-      name: message.response
-      title: message response
+    webrtcVertoResponse:
+      name: webrtc.verto.response
+      title: webrtc.verto response
       contentType: application/json
       correlationId:
         location: $message.payload#/id
       payload:
-        $ref: "#/components/schemas/MessageResponse"
+        $ref: "#/components/schemas/WebrtcVertoResponse"
       examples:
         - payload:
             jsonrpc: "2.0"
             id: 550e8400-e29b-41d4-a716-446655440000
             result:
               code: "200"
-              message: Received
+              node_id: f1d2c3b4-a596-4877-8b1e-0123456789ab
+              result:
+                message: CALL CREATED
+                callID: c7f9d2e1-3a4b-5c6d-7e8f-9a0b1c2d3e4f
     conferenceListRequest:
       name: conference.list.request
       title: conference.list request
