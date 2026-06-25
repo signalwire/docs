@@ -1,0 +1,188 @@
+---
+title: WhatsApp message templates
+slug: /messaging/whatsapp/message-templates
+sidebar-title: Message templates
+description: Create and manage the Meta-approved templates required to start WhatsApp conversations.
+max-toc-depth: 3
+---
+
+Templates are pre-approved message formats required when reaching out to customers who have not
+contacted you first. Think of them as pre-written scripts that Meta reviews and approves in advance —
+once approved, you can send them to any customer at any time. See
+[Send a template message](/docs/platform/messaging/whatsapp/send-messages#send-a-template-message) for how to
+deliver one.
+
+All template endpoints use the same [authentication](/docs/platform/messaging/whatsapp/send-messages#authentication)
+as the Messaging API.
+
+<Info>
+WhatsApp on SignalWire is in **early-access alpha**. Template management through the SignalWire
+Dashboard is planned; today, templates are managed via the API below or directly in the Meta Business
+dashboard.
+</Info>
+
+## Template components
+
+A template is made up of optional components. All components are optional, but a **Body** is strongly
+recommended.
+
+| Component | Description |
+|---|---|
+| `HEADER` | Optional title line. Can be plain text or media (image, video, document). |
+| `BODY` | Main message text. Supports variable placeholders for personalization. |
+| `FOOTER` | Optional closing line (e.g. "Thank you for your order"). |
+| `BUTTONS` | Optional interactive buttons: quick reply, phone number, or URL. |
+
+### Parameters
+
+Templates support variable placeholders so you can personalize messages with customer names, order
+numbers, and so on. There are two styles, set by `parameter_format`:
+
+- **Positional** (`positional`) — referenced as `{{1}}`, `{{2}}`, `{{3}}` in order.
+- **Named** (`named`) — referenced by descriptive labels like `{{first_name}}` or `{{order_status}}`.
+
+### Categories
+
+The `category` field must be one of:
+
+- `marketing` — promotional messages, offers, announcements
+- `utility` — transactional messages, order updates, account alerts
+- `authentication` — one-time passwords and verification codes
+
+## Create a template
+
+```
+POST /api/relay/rest/whatsapp/message_templates
+```
+
+<ParamField path="whatsapp_business_id" type="string" required>
+  The WhatsApp Business Account the template belongs to. List your accounts at
+  `GET /api/relay/rest/whatsapp/businesses`.
+</ParamField>
+
+<ParamField path="name" type="string" required>
+  Template name. Maximum 512 characters; lowercase letters, numbers, and underscores only.
+</ParamField>
+
+<ParamField path="language" type="string" required>
+  Template language code (e.g. `en_US`).
+</ParamField>
+
+<ParamField path="category" type="string" required>
+  One of `marketing`, `utility`, or `authentication`.
+</ParamField>
+
+<ParamField path="parameter_format" type="string" required>
+  Either `positional` or `named`.
+</ParamField>
+
+<ParamField path="components" type="array" required>
+  The template's components. Must include a `BODY` object.
+</ParamField>
+
+The example below creates an order-update template with positional parameters:
+
+```json
+{
+  "name": "order_update",
+  "language": "en_US",
+  "category": "utility",
+  "parameter_format": "positional",
+  "components": [
+    {
+      "type": "HEADER",
+      "format": "TEXT",
+      "text": "Order Update for {{1}}",
+      "example": { "header_text": ["Jane Smith"] }
+    },
+    {
+      "type": "BODY",
+      "text": "Your order {{1}} is currently {{2}}.",
+      "example": { "body_text": [["ORD-9821", "out for delivery"]] }
+    },
+    {
+      "type": "FOOTER",
+      "text": "Thank you for shopping with us."
+    },
+    {
+      "type": "BUTTONS",
+      "buttons": [
+        { "type": "QUICK_REPLY", "text": "Track Order" },
+        { "type": "URL", "text": "Contact Support", "url": "https://example.com/support" }
+      ]
+    }
+  ]
+}
+```
+
+<Note>
+Templates must be reviewed and approved by Meta before use. Approval typically takes a few minutes
+to a few hours. A template's current state is reported in its `template_status` field — it must be
+`approved` before it can be used to send messages.
+</Note>
+
+## List templates
+
+```
+GET /api/relay/rest/whatsapp/message_templates
+```
+
+Optional query parameters:
+
+<ParamField path="whatsapp_business_id" type="string">
+  Filter to templates belonging to a specific WhatsApp Business Account.
+</ParamField>
+
+<ParamField path="status" type="string">
+  Filter by approval status, such as `approved`, `pending`, or `paused`.
+</ParamField>
+
+Each template in the response includes:
+
+| Field | Description |
+|---|---|
+| `id` | SignalWire template ID |
+| `name` | Template name |
+| `category` | `marketing`, `utility`, or `authentication` |
+| `language` | Language code |
+| `parameter_format` | `positional` or `named` |
+| `components` | The template's component definitions |
+| `template_id` | Meta's template ID |
+| `template_status` | Current approval status |
+| `whatsapp_business_id` | Owning WhatsApp Business Account |
+| `created_at` / `updated_at` | ISO 8601 timestamps |
+
+Retrieve a single template with `GET /api/relay/rest/whatsapp/message_templates/{id}`.
+
+## Update a template
+
+You can update the `category` or `components` of a template, but only while it is **not yet approved**.
+Once approved, you must delete and recreate it to make changes.
+
+```
+PATCH /api/relay/rest/whatsapp/message_templates/{id}
+```
+
+<Tabs>
+<Tab title="Update category">
+```json
+{ "category": "marketing" }
+```
+</Tab>
+<Tab title="Update body text">
+```json
+{ "components": [{ "type": "BODY", "text": "Your payment is confirmed!" }] }
+```
+</Tab>
+</Tabs>
+
+## Delete a template
+
+```
+DELETE /api/relay/rest/whatsapp/message_templates/{id}
+```
+
+<Note>
+The `{id}` can be either the SignalWire template ID (e.g. `2c6de5b9-8e05-4cac-…`) or the Meta template
+ID (e.g. `1164792772433648`). Both are accepted across all template endpoints.
+</Note>
