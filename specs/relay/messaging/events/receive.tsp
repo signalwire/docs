@@ -16,7 +16,7 @@ namespace Relay.Messaging;
   message_id: "a1b2c3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
   context: "my_context",
   direction: "inbound",
-  tags: #["Custom", "client", "data"],
+  tags: #[],
   from_number: "+15551231234",
   to_number: "+15553214321",
   body: "Message Body",

@@ -32,6 +32,13 @@ model AmazonBedrockObject {
   @doc("Establishes the initial set of instructions and settings to configure the agent.")
   prompt?: BedrockPrompt;
 
+  @doc("""
+    The voice the agent speaks with. Accepts an Amazon Nova Sonic voice name, which is mapped
+    internally to the underlying TTS voice. When omitted, the default voice (`tiffany`) is used.
+    """)
+  @example("matthew")
+  voice_id?: "tiffany" | "matthew" | "amy" | "lupe" | "carlos" = "tiffany";
+
   @doc("An array of JSON objects to create user-defined functions/endpoints that can be executed during the dialogue.")
   SWAIG?: BedrockSWAIG;
 }

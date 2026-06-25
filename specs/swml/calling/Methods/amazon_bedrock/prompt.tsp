@@ -6,18 +6,9 @@ union OmittedPromptProps {
   "contexts",
 }
 
-model BedrockPromptBase {
-  @example("matthew")
-  voice_id?: "tiffany" | "matthew" | "amy" | "lupe" | "carlos" = "matthew";
-}
+model BedrockPromptText is AIPromptText;
 
-model BedrockPromptText is BedrockPromptBase {
-  ...AIPromptText;
-}
-
-model BedrockPromptPom is BedrockPromptBase {
-  ...AIPostPromptPom;
-}
+model BedrockPromptPom is AIPostPromptPom;
 
 union BedrockPrompt {
   OmitProperties<BedrockPromptText, OmittedPromptProps>,

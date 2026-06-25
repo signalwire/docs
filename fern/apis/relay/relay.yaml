@@ -9857,13 +9857,20 @@ components:
       properties:
         node_id:
           type: string
-          description: The UUID of the node the conference is running on.
+          description: The UUID of the node. Present on participant and stream events; absent on `conference-start`/`conference-end`.
         conference_id:
           type: string
           description: The UUID of the conference.
         name:
           type: string
           description: The name of the conference.
+        region:
+          type: string
+          description: The region the conference is running in (`global`, `us`, `eu`, or `ch`).
+        size:
+          type: integer
+          format: int32
+          description: The number of members currently in the conference.
         status:
           description: What happened in the conference.
           allOf:
@@ -9880,6 +9887,9 @@ components:
         coaching:
           type: boolean
           description: Whether the participant is coaching another participant. Present on participant events.
+        call_id_to_coach:
+          type: string
+          description: The `call_id` of the participant being coached. Present on coaching participant events.
         end_on_exit:
           type: boolean
           description: Whether the conference ends when this participant leaves. Present on participant events.
@@ -9918,7 +9928,6 @@ components:
           format: uri
           description: The URL of the announcement being played. Present on announcement events.
       required:
-        - node_id
         - conference_id
         - status
       description: "Fires throughout a conference's life: when it starts and ends, and each time a participant joins, leaves, mutes, holds, speaks, or an announcement plays. Check `status` to see what happened."
@@ -9938,6 +9947,13 @@ components:
         - participant-speech-stop
         - announcement-end
         - announcement-fail
+        - record-start
+        - record-pause
+        - record-resume
+        - record-stop
+        - stream-started
+        - stream-stopped
+        - stream-error
     Calling.ConferenceParticipantCallStatus:
       type: string
       enum:
@@ -15664,6 +15680,20 @@ components:
           description: Establishes the initial set of instructions and settings to configure the agent.
           allOf:
             - $ref: "#/components/schemas/SWML.Calling.BedrockPrompt"
+        voice_id:
+          type: string
+          enum:
+            - tiffany
+            - matthew
+            - amy
+            - lupe
+            - carlos
+          description: |-
+            The voice the agent speaks with. Accepts an Amazon Nova Sonic voice name, which is mapped
+            internally to the underlying TTS voice. When omitted, the default voice (`tiffany`) is used.
+          default: tiffany
+          examples:
+            - matthew
         SWAIG:
           description: An array of JSON objects to create user-defined functions/endpoints that can be executed during the dialogue.
           allOf:
@@ -15802,17 +15832,6 @@ components:
     OmitProperties<SWML.Calling.BedrockPromptText, SWML.Calling.OmittedPromptProps>:
       type: object
       properties:
-        voice_id:
-          type: string
-          enum:
-            - tiffany
-            - matthew
-            - amy
-            - lupe
-            - carlos
-          default: matthew
-          examples:
-            - matthew
         max_tokens:
           type: integer
           format: int32
@@ -15876,17 +15895,6 @@ components:
     OmitProperties<SWML.Calling.BedrockPromptPom, SWML.Calling.OmittedPromptProps>:
       type: object
       properties:
-        voice_id:
-          type: string
-          enum:
-            - tiffany
-            - matthew
-            - amy
-            - lupe
-            - carlos
-          default: matthew
-          examples:
-            - matthew
         max_tokens:
           type: integer
           format: int32
@@ -20897,6 +20905,20 @@ components:
           description: Establishes the initial set of instructions and settings to configure the agent.
           allOf:
             - $ref: "#/components/schemas/SWML.Calling.BedrockPrompt"
+        voice_id:
+          type: string
+          enum:
+            - tiffany
+            - matthew
+            - amy
+            - lupe
+            - carlos
+          description: |-
+            The voice the agent speaks with. Accepts an Amazon Nova Sonic voice name, which is mapped
+            internally to the underlying TTS voice. When omitted, the default voice (`tiffany`) is used.
+          default: tiffany
+          examples:
+            - matthew
         SWAIG:
           description: An array of JSON objects to create user-defined functions/endpoints that can be executed during the dialogue.
           allOf:
@@ -21797,6 +21819,7 @@ components:
         - initiated
         - sent
         - delivered
+        - read
         - undelivered
         - failed
     StateEventFrame:
@@ -24832,10 +24855,7 @@ components:
                 message_id: a1b2c3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
                 context: my_context
                 direction: inbound
-                tags:
-                  - Custom
-                  - client
-                  - data
+                tags: []
                 from_number: "+15551231234"
                 to_number: "+15553214321"
                 body: Message Body
@@ -24860,10 +24880,7 @@ components:
                 message_id: a1b2c3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
                 context: my_context
                 direction: outbound
-                tags:
-                  - Custom
-                  - client
-                  - data
+                tags: []
                 from_number: "+15551231234"
                 to_number: "+15553214321"
                 body: Message Body

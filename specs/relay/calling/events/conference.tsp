@@ -25,6 +25,13 @@ union ConferenceStatus {
   "participant-speech-stop",
   "announcement-end",
   "announcement-fail",
+  "record-start",
+  "record-pause",
+  "record-resume",
+  "record-stop",
+  "stream-started",
+  "stream-stopped",
+  "stream-error",
 }
 
 @doc("The final state of a participant's call when they left (`participant-leave`).")
@@ -60,14 +67,20 @@ union ConferenceReasonEnded {
   happened and therefore which of the optional fields below are filled in.
   """)
 model ConferenceParams {
-  @doc("The UUID of the node the conference is running on.")
-  node_id: string;
+  @doc("The UUID of the node. Present on participant and stream events; absent on `conference-start`/`conference-end`.")
+  node_id?: string;
 
   @doc("The UUID of the conference.")
   conference_id: string;
 
   @doc("The name of the conference.")
   name?: string;
+
+  @doc("The region the conference is running in (`global`, `us`, `eu`, or `ch`).")
+  region?: string;
+
+  @doc("The number of members currently in the conference.")
+  size?: int32;
 
   @doc("What happened in the conference.")
   status: ConferenceStatus;
@@ -83,6 +96,9 @@ model ConferenceParams {
 
   @doc("Whether the participant is coaching another participant. Present on participant events.")
   coaching?: boolean;
+
+  @doc("The `call_id` of the participant being coached. Present on coaching participant events.")
+  call_id_to_coach?: string;
 
   @doc("Whether the conference ends when this participant leaves. Present on participant events.")
   end_on_exit?: boolean;

@@ -44,6 +44,9 @@ union MessageState {
   @doc("Confirmed delivered to the recipient's phone. A final state.")
   "delivered",
 
+  @doc("The recipient read the message (messaging channels that support read receipts). A final state.")
+  "read",
+
   @doc("The carrier could not deliver the message. A final state.")
   "undelivered",
 
