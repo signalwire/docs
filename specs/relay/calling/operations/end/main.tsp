@@ -16,6 +16,6 @@ namespace Relay.Calling;
     call_id: "b4c4f9f1-2345-4b5c-9d9e-000000000002",
     reason: "hangup",
   },
-  returnType: #{ code: "200", message: "Disconnecting call" },
+  returnType: #{ code: "200", message: "Ending call" },
 })
 op end(...EndParams): EndResult;

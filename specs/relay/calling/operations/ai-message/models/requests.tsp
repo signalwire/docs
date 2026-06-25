@@ -26,6 +26,9 @@ model AiMessageReset {
 
   @doc("Replace (or clear) the system prompt context.")
   system_prompt?: string;
+
+  @doc("Summarize the existing conversation into a condensed form before applying the reset.")
+  consolidate?: boolean;
 }
 
 model AiMessageParams {

@@ -12,4 +12,7 @@ model BindDigitResult {
 
 model ClearDigitBindingsResult {
   ...RelayResult;
+
+  @doc("Number of digit bindings removed.")
+  cleared: int32;
 }

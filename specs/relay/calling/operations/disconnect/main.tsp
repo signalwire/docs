@@ -19,6 +19,6 @@ namespace Relay.Calling;
     node_id: "a3b3e8e0-1234-4a4b-8c8d-000000000001",
     call_id: "b4c4f9f1-2345-4b5c-9d9e-000000000002",
   },
-  returnType: #{ code: "200", message: "Disconnecting" },
+  returnType: #{ code: "200", message: "Disconnecting call" },
 })
 op disconnect(...DisconnectParams): DisconnectResult;

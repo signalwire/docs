@@ -50,6 +50,9 @@ model FaxFinished extends CallFax {
     @doc("Link to the transmitted fax document.")
     document?: url;
 
+    @doc("Document format, for example `tif` or `pdf`.")
+    format?: string;
+
     @doc("Total number of pages sent or received.")
     pages?: int32;
 

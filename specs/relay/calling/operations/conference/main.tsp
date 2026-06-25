@@ -25,7 +25,7 @@ namespace Relay.Calling;
     record: "record-from-start",
     region: "eu",
     trim: "do-not-trim",
-    coach: "123-123-123-123",
+    coach: "c7f9d2e1-3a4b-5c6d-7e8f-9a0b1c2d3e4f",
     status_callback: "https://my_callback.example/update_conference_status",
     status_callback_event: "start end join leave",
     status_callback_method: "POST",

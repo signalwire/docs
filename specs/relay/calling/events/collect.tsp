@@ -73,8 +73,8 @@ model CallCollectParams {
   @doc("The `control_id` of the collection this event refers to, returned when you started it with `calling.collect`.")
   control_id: string;
 
-  @doc("Where the collection currently stands. `error` means it stopped because something went wrong.")
-  state: CallCollectState;
+  @doc("Where the collection currently stands. `error` means it stopped because something went wrong. Present for partial and continuous collections; a one-shot collect reports its `result` without a `state`.")
+  state?: CallCollectState;
 
   @doc("What the caller gave you. Check its `type` to handle digits, speech, or a no-input/no-match marker.")
   result?: CallCollectResult;

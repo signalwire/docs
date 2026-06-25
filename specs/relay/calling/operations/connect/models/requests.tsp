@@ -26,6 +26,13 @@ model ConnectParams {
   @doc("Maximum length of the connected call, in seconds. The call ends automatically once this is reached.")
   max_duration?: int32;
 
+  @doc("Default ring timeout, in seconds, used when a device doesn't set its own.")
+  @minValueExclusive(0)
+  timeout?: float64;
+
+  @doc("DTMF digits to send once the call is answered. Use `w` or `W` to insert pauses.")
+  send_digits?: string;
+
   @doc("Highest price per minute you're willing to pay. Devices that would exceed this rate aren't called.")
   max_price_per_minute?: float64;
 

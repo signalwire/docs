@@ -64,6 +64,10 @@ model RecordAudio {
   @minValue(0)
   @maxValue(100)
   input_sensitivity?: float64 = 44.0;
+
+  @doc("Maximum recording length, in seconds. Use `0` for no limit. Default `0`.")
+  @minValue(0)
+  max_length?: float64 = 0;
 }
 
 @doc("What to record. Audio is currently the only supported type — put its settings under `audio`.")

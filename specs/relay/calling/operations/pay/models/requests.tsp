@@ -171,7 +171,7 @@ model PayParams {
   @pattern("^[0-9]+$")
   min_postal_code_length?: string = "0";
 
-  @doc("URL to POST collected payment details to upon completion.")
+  @doc("URL that collected payment details are POSTed to upon completion. Must be an `https://` URL.")
   payment_connector_url: url;
 
   @doc("Whether the payment token is one-off or reusable. Default `reusable`.")

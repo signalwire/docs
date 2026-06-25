@@ -51,6 +51,7 @@ model PlayMediaSilence extends PlayMedia {
   type: "silence";
   params: {
     @doc("Seconds of silence to play.")
+    @minValueExclusive(0)
     duration: float64;
   };
 }

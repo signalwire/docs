@@ -57,6 +57,9 @@ model CallRecordParams {
   @doc("Where the recording currently stands.")
   state: CallRecordState;
 
+  @doc("The unique identifier of the recording.")
+  recording_id?: string;
+
   @doc("Where to download the finished recording. Not available until the state is `finished`.")
   url?: url;
 
@@ -65,6 +68,15 @@ model CallRecordParams {
 
   @doc("How large the recording file is, in bytes. Set once the state is `finished`.")
   size?: int32;
+
+  @doc("Unix timestamp for when the recording started, in seconds. Set once the state is `finished`.")
+  start_time?: float64;
+
+  @doc("Unix timestamp for when the recording ended, in seconds. Set once the state is `finished`.")
+  end_time?: float64;
+
+  @doc("How paused time is handled in the recording: `silence` inserts silence for the paused span, while `skip` leaves it out entirely.")
+  pause_behavior?: "silence" | "skip";
 
   @doc("The settings this recording was captured with.")
   record?: RecordEventSpec;

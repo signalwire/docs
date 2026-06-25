@@ -18,4 +18,8 @@ model AnswerParams {
     you're answering.
     """)
   codecs?: AnswerCodec[];
+
+  @doc("Maximum length of the call, in seconds. The call ends automatically once this is reached.")
+  @minValue(0)
+  max_duration?: int32;
 }

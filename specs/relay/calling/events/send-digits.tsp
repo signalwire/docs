@@ -16,8 +16,8 @@ model CallSendDigitsParams {
   @doc("The `control_id` of the send-digits operation this event belongs to.")
   control_id: string;
 
-  @doc("Always `finished`: the digits have all been sent.")
-  state: "finished";
+  @doc("`finished` once all the digits have been sent, or `error` if the request failed.")
+  state: "finished" | "error";
 }
 
 @doc("Fires once all requested DTMF digits have finished playing on the call.")

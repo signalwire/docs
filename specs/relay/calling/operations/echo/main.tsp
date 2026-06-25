@@ -17,6 +17,6 @@ namespace Relay.Calling;
 @summary("Echo audio back to the caller")
 @opExample(#{
   parameters: #{ node_id: "a3e1b2c4-...", call_id: "c7f9d2e1-...", timeout: 30 },
-  returnType: #{ code: "200", message: "Echo started" },
+  returnType: #{ code: "200", message: "Echoing" },
 })
 op echo(...EchoParams): EchoResult | CallEchoEvent;

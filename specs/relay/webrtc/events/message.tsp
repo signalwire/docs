@@ -32,7 +32,7 @@ model MessageEvent {
     it as the `node_id` on your subsequent `message` requests so they reach the
     same node.
     """)
-  node_id?: string;
+  node_id: string;
 
   @doc("""
     The Verto frame being delivered — either a Verto response or a

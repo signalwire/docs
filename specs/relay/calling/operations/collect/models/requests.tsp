@@ -22,6 +22,7 @@ namespace Relay.Calling;
 union CollectSpeechEngine {
   "Deepgram",
   "Google",
+  "Google.V2",
 }
 
 @doc("Settings that control how the caller's DTMF key presses are collected.")
@@ -62,6 +63,12 @@ model CollectSpeech {
 
   @doc("Pins recognition to a specific engine. Defaults to unset, which lets SignalWire choose.")
   engine?: CollectSpeechEngine;
+
+  @doc("""
+    Recognition model to use. One of `default`, `enhanced`, `enhanced.phone_call`,
+    or `enhanced.video`. Not set by default.
+    """)
+  `model`?: string;
 }
 
 model CollectParams {

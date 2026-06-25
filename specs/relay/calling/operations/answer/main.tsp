@@ -16,6 +16,6 @@ namespace Relay.Calling;
     call_id: "b4c4f9f1-2345-4b5c-9d9e-000000000002",
     codecs: #["PCMU", "PCMA"],
   },
-  returnType: #{ code: "200", message: "Answered" },
+  returnType: #{ code: "200", message: "Answering call" },
 })
 op answer(...AnswerParams): AnswerResult;

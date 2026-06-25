@@ -26,10 +26,10 @@ model CallTranscribeParams {
   state: TranscribeState;
 
   @doc("Location of the recording captured alongside the transcription (for example, `recordings/<UUID>.wav`).")
-  url: string;
+  url?: string;
 
   @doc("The UUID of the recording captured alongside the transcription.")
-  recording_id: string;
+  recording_id?: string;
 
   @doc("The callback URL you provided to receive transcription updates, if any.")
   status_url?: string;

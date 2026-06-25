@@ -30,6 +30,7 @@ union ConferenceRegion {
   "global",
   "us",
   "eu",
+  "ch",
 }
 
 @doc("Whether leading and trailing silence is trimmed from the conference recording.")
@@ -38,10 +39,11 @@ union ConferenceTrim {
   "do-not-trim",
 }
 
-@doc("The payload format for a conference status callback. Use `\"relay\"` for SignalWire's native event format or `\"cxml\"` for the cXML-compatible format.")
+@doc("The payload format for a conference status callback. Use `\"relay\"` for SignalWire's native event format, or `\"cxml\"` / `\"laml\"` for the cXML-compatible format.")
 union ConferenceCallbackEventType {
   "relay",
   "cxml",
+  "laml",
 }
 
 @doc("The HTTP method used to deliver a conference status callback to your URL.")
@@ -85,7 +87,7 @@ model JoinConferenceParams {
   @doc("Whether to trim silence from the recording. Defaults to `trim-silence`.")
   trim?: ConferenceTrim;
 
-  @doc("The id of a call (SWML Call ID or cXML CallSid) that this participant coaches. A coach can be heard only by the call being coached, not by the rest of the conference. Not set by default.")
+  @doc("The `call_id` (UUID) of the participant being coached. A coach can be heard only by the call being coached, not by the rest of the conference. Not set by default.")
   coach?: string;
 
   @doc("A URL to receive conference status callbacks. Not set by default.")

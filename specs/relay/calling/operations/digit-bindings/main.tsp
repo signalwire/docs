@@ -29,6 +29,6 @@ op bindDigit(...BindDigitParams): BindDigitResult;
 @summary("Clear digit bindings")
 @opExample(#{
   parameters: #{ node_id: "a3e1b2c4-...", call_id: "c7f9d2e1-...", realm: "menu" },
-  returnType: #{ code: "200", message: "Digit bindings cleared" },
+  returnType: #{ code: "200", message: "Digit bindings cleared", cleared: 2 },
 })
 op clearDigitBindings(...ClearDigitBindingsParams): ClearDigitBindingsResult;

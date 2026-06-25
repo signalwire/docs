@@ -88,7 +88,7 @@ model CallDetectMachine extends CallDetectResult {
 model CallDetectDigit extends CallDetectResult {
   type: "digit";
   params: {
-    @doc("The DTMF digit that was detected: one of `0`-`9`, `#`, or `*`.")
+    @doc("The DTMF digit that was detected: one of `0`-`9`, `#`, or `*`. Carries the terminal `finished` value once the detector completes.")
     event: string;
   };
 }

@@ -15,7 +15,7 @@ namespace Relay.Calling;
 
 @doc("Where to send a SIP call when transferring it with `calling.refer`.")
 model ReferSipDeviceParams {
-  @doc("SIP URI to transfer the call to, for example `userb@example.com`.")
+  @doc("SIP URI to transfer the call to. Must be a `sip:` or `sips:` URI, for example `sip:userb@example.com`.")
   to: string;
 
   @doc("Username for authenticating against the destination SIP endpoint, if it requires credentials.")
@@ -32,7 +32,7 @@ model ReferDevice {
   type: string;
 }
 
-@example(#{ type: "sip", params: #{ to: "userb@example.com", username: "foo", password: "bar" } })
+@example(#{ type: "sip", params: #{ to: "sip:userb@example.com", username: "foo", password: "bar" } })
 model ReferSipDevice extends ReferDevice {
   @doc("Always `sip`.")
   type: "sip";

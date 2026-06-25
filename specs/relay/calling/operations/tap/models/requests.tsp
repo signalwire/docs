@@ -25,10 +25,17 @@ union TapDirection {
   "both",
 }
 
+@doc("Codec for the tapped audio.")
+union TapCodec {
+  "OPUS",
+  "PCMA",
+  "PCMU",
+}
+
 @doc("`audio` tap params.")
 model TapAudioParams {
-  @doc("Side of the call to tap. Default `speak`.")
-  direction?: TapDirection = "speak";
+  @doc("Side of the call to tap.")
+  direction: TapDirection;
 }
 
 @doc("Media to intercept. Discriminated on `type` (documented value `audio`).")
@@ -55,11 +62,8 @@ model TapRtpDeviceParams {
   @doc("RTP port.")
   port: int32;
 
-  @doc("""
-    Codec for the tapped audio (known values: `OPUS`, `PCMA`, `PCMU`).
-    Matches the tapped audio if not set.
-    """)
-  codec?: string;
+  @doc("Codec for the tapped audio. Matches the tapped audio if not set.")
+  codec?: TapCodec;
 
   @doc("Packetization time in ms — matches the tapped audio if not set.")
   ptime?: int32;
@@ -73,11 +77,8 @@ model TapWsDeviceParams {
   @doc("WebSocket URI.")
   uri: string;
 
-  @doc("""
-    Codec for the tapped audio (known values: `OPUS`, `PCMA`, `PCMU`).
-    Matches the tapped audio if not set.
-    """)
-  codec?: string;
+  @doc("Codec for the tapped audio. Matches the tapped audio if not set.")
+  codec?: TapCodec;
 
   @doc("Sample rate in Hz — matches the tapped audio if not set.")
   rate?: int32;

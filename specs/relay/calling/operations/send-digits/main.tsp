@@ -20,7 +20,7 @@ namespace Relay.Calling;
   },
   returnType: #{
     code: "200",
-    message: "Sending Digits",
+    message: "Sending",
     control_id: "send-digits-1",
     call_id: "c7f9d2e1-...",
   },

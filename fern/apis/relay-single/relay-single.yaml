@@ -2491,6 +2491,10 @@ components:
           description: The current state of the inbound call.
           allOf:
             - $ref: "#/components/schemas/Calling.ReceiveCallState"
+        direction:
+          description: Whether the call is inbound or outbound.
+          allOf:
+            - $ref: "#/components/schemas/Calling.CallDirection"
         context:
           type: string
           description: The context the call arrived on, such as `pbx`.
@@ -2512,6 +2516,11 @@ components:
         - connected
         - disconnecting
         - disconnected
+    Calling.CallDirection:
+      type: string
+      enum:
+        - inbound
+        - outbound
     Calling.CallDevice:
       type: object
       properties:
@@ -2538,12 +2547,30 @@ components:
                 to_number:
                   type: string
                   description: Destination number, E.164.
+                headers:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/Calling.SipHeader"
+                  description: Custom `X-` SIP headers carried on the leg, when present.
               required:
                 - from_number
                 - to_number
           required:
             - type
             - params
+    Calling.SipHeader:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Header name (must start with `X-`).
+        value:
+          type: string
+          description: Header value.
+      required:
+        - name
+        - value
+      description: A SIP header. Only `X-`-prefixed custom headers are permitted.
     Calling.CallSipDevice:
       allOf:
         - $ref: "#/components/schemas/Calling.CallDevice"
@@ -2572,19 +2599,6 @@ components:
           required:
             - type
             - params
-    Calling.SipHeader:
-      type: object
-      properties:
-        name:
-          type: string
-          description: Header name (must start with `X-`).
-        value:
-          type: string
-          description: Header value.
-      required:
-        - name
-        - value
-      description: A SIP header. Only `X-`-prefixed custom headers are permitted.
     Calling.CallWebrtcDevice:
       allOf:
         - $ref: "#/components/schemas/Calling.CallDevice"
@@ -2595,8 +2609,16 @@ components:
               const: webrtc
             params:
               type: object
-              additionalProperties: {}
-              description: Parameters of the negotiated WebRTC leg.
+              properties:
+                from:
+                  type: string
+                  description: Origination — the WebRTC endpoint the leg was placed from.
+                to:
+                  type: string
+                  description: Destination — the WebRTC endpoint the leg was placed to.
+              required:
+                - from
+                - to
           required:
             - type
             - params
@@ -2710,6 +2732,19 @@ components:
             Devices to dial. The outer array is sequential ringing groups; the inner
             array is simultaneous (parallel) dials within a group. The first device to
             answer wins.
+        max_duration:
+          type: integer
+          format: int32
+          description: Maximum length of the call, in seconds. The call ends automatically once this is reached.
+          minimum: 0
+        timeout:
+          type: number
+          format: double
+          description: Default ring timeout, in seconds, used when a device doesn't set its own.
+          exclusiveMinimum: 0
+        send_digits:
+          type: string
+          description: DTMF digits to send once the call is answered. Use `w` or `W` to insert pauses.
         max_price_per_minute:
           type: number
           format: double
@@ -2744,7 +2779,7 @@ components:
       properties:
         from_number:
           type: string
-          description: Origination number, E.164.
+          description: Origination number, E.164. When omitted, SignalWire fills in a caller ID.
         to_number:
           type: string
           description: Destination number, E.164.
@@ -2754,11 +2789,6 @@ components:
           description: Seconds to ring before giving up.
           minimum: 0
           default: 30
-        max_duration:
-          type: integer
-          format: int32
-          description: Maximum call duration in seconds.
-          minimum: 0
         call_state_url:
           type: string
           format: uri
@@ -2772,8 +2802,12 @@ components:
           description: |-
             A prompt that must be confirmed before this leg is bridged. Provide a URL to a
             SWML document or an inline SWML document. See the SWML reference for details.
+        confirm_timeout:
+          type: integer
+          format: int32
+          description: Seconds to wait for the confirmation prompt to complete before giving up.
+          minimum: 0
       required:
-        - from_number
         - to_number
       description: "`phone` device params."
     Calling.CallStateEventName:
@@ -2801,7 +2835,7 @@ components:
       properties:
         from:
           type: string
-          description: Origination SIP URI / address.
+          description: Origination SIP URI / address. When omitted, SignalWire fills in a caller ID.
         from_name:
           type: string
           description: Caller name to present.
@@ -2814,11 +2848,6 @@ components:
           description: Seconds to ring before giving up.
           minimum: 0
           default: 30
-        max_duration:
-          type: integer
-          format: int32
-          description: Maximum call duration in seconds.
-          minimum: 0
         headers:
           type: array
           items:
@@ -2832,6 +2861,17 @@ components:
         webrtc_media:
           type: boolean
           description: Use WebRTC media for this leg.
+        username:
+          type: string
+          description: Username used to authenticate the SIP leg.
+        password:
+          type: string
+          description: Password used to authenticate the SIP leg.
+        session_timeout:
+          type: integer
+          format: int32
+          description: Seconds between SIP session-timer refreshes for this leg.
+          minimum: 0
         call_state_url:
           type: string
           format: uri
@@ -2843,8 +2883,12 @@ components:
           description: Which call states to deliver to `call_state_url`. Default `["ended"]`.
         confirm:
           description: A confirmation prompt (SWML URL or inline SWML).
+        confirm_timeout:
+          type: integer
+          format: int32
+          description: Seconds to wait for the confirmation prompt to complete before giving up.
+          minimum: 0
       required:
-        - from
         - to
       description: "`sip` device params."
     Calling.SipCodec:
@@ -2855,6 +2899,7 @@ components:
         - OPUS
         - G729
         - G722
+        - AMR-WB
         - VP8
         - H264
     Calling.DialWebrtcDevice:
@@ -2875,7 +2920,7 @@ components:
       properties:
         from:
           type: string
-          description: Origination — E.164 or a registered endpoint URI.
+          description: Origination — E.164 or a registered endpoint URI. When omitted, SignalWire fills in a caller ID.
         to:
           type: string
           description: Destination — a WebRTC endpoint URI / resource name.
@@ -2885,16 +2930,6 @@ components:
           description: Seconds to ring before giving up.
           minimum: 0
           default: 30
-        max_duration:
-          type: integer
-          format: int32
-          description: Maximum call duration in seconds.
-          minimum: 0
-        codecs:
-          type: array
-          items:
-            $ref: "#/components/schemas/Calling.WebrtcCodec"
-          description: Negotiable codecs (SignalWire-picked if unset).
         call_state_url:
           type: string
           format: uri
@@ -2906,18 +2941,14 @@ components:
           description: Which call states to deliver to `call_state_url`. Default `["ended"]`.
         confirm:
           description: A confirmation prompt (SWML URL or inline SWML).
+        confirm_timeout:
+          type: integer
+          format: int32
+          description: Seconds to wait for the confirmation prompt to complete before giving up.
+          minimum: 0
       required:
-        - from
         - to
       description: "`webrtc` device params."
-    Calling.WebrtcCodec:
-      type: string
-      enum:
-        - PCMU
-        - PCMA
-        - OPUS
-        - VP8
-        - H264
     CallingDialRequest:
       type: object
       required:
@@ -2971,6 +3002,12 @@ components:
           description: The call that answered. Present only when `dial_state` is `answered`.
           allOf:
             - $ref: "#/components/schemas/Calling.DialWinnerCall"
+        reason:
+          type: string
+          description: Why the dial failed. Present when `dial_state` is `failed`.
+        source:
+          type: string
+          description: What caused the dial to fail. Present when `dial_state` is `failed`.
       required:
         - node_id
         - tag
@@ -2993,8 +3030,10 @@ components:
           allOf:
             - $ref: "#/components/schemas/Calling.CallDevice"
         dial_winner:
-          type: boolean
-          description: "`true` for the call that won the dial. When you dial several destinations at once, this marks the first one to answer."
+          type: string
+          enum:
+            - "true"
+          description: '`"true"` for the call that won the dial. When you dial several destinations at once, this marks the first one to answer. Present only on the winning call.'
       description: The call that answered, included once a `calling.dial` succeeds.
     CallDialEventFrame:
       type: object
@@ -3060,6 +3099,10 @@ components:
           description: The state the call has just moved into.
           allOf:
             - $ref: "#/components/schemas/Calling.CallState"
+        direction:
+          description: Whether the call is inbound or outbound.
+          allOf:
+            - $ref: "#/components/schemas/Calling.CallDirection"
         start_time:
           type: integer
           format: int64
@@ -3072,6 +3115,13 @@ components:
           type: integer
           format: int64
           description: When the call ended, in epoch milliseconds.
+        end_reason:
+          description: Why the call ended. Present once the call has ended.
+          allOf:
+            - $ref: "#/components/schemas/Calling.CallStateEndReason"
+        end_source:
+          type: string
+          description: What ended the call. Present once the call has ended.
         created_by:
           type: string
           enum:
@@ -3115,6 +3165,18 @@ components:
         - answered
         - ending
         - ended
+    Calling.CallStateEndReason:
+      type: string
+      enum:
+        - hangup
+        - cancel
+        - busy
+        - noAnswer
+        - decline
+        - error
+        - abandoned
+        - maxDuration
+        - notFound
     CallStateEventFrame:
       type: object
       required:
@@ -3183,6 +3245,11 @@ components:
             calls accept a narrower set than `sip` or `webrtc` calls, so check
             `call.device.type` in the `calling.call.state` events to know which call type
             you're answering.
+        max_duration:
+          type: integer
+          format: int32
+          description: Maximum length of the call, in seconds. The call ends automatically once this is reached.
+          minimum: 0
       required:
         - node_id
         - call_id
@@ -3344,6 +3411,14 @@ components:
           type: integer
           format: int32
           description: Maximum length of the connected call, in seconds. The call ends automatically once this is reached.
+        timeout:
+          type: number
+          format: double
+          description: Default ring timeout, in seconds, used when a device doesn't set its own.
+          exclusiveMinimum: 0
+        send_digits:
+          type: string
+          description: DTMF digits to send once the call is answered. Use `w` or `W` to insert pauses.
         max_price_per_minute:
           type: number
           format: double
@@ -3411,6 +3486,9 @@ components:
                   default: female
                   allOf:
                     - $ref: "#/components/schemas/Calling.TtsGender"
+                voice:
+                  type: string
+                  description: Specific voice to use. Highest precedence when selecting the TTS voice.
               required:
                 - text
           required:
@@ -3436,6 +3514,7 @@ components:
                   type: number
                   format: double
                   description: Seconds of silence.
+                  exclusiveMinimum: 0
               required:
                 - duration
           required:
@@ -3508,6 +3587,16 @@ components:
         - tw
         - ve
         - za
+        - ca
+        - cy
+        - dz
+        - eg
+        - ko
+        - pk
+        - ro
+        - rs
+        - sa
+        - tr
     Calling.ConnectDevice:
       type: object
       properties:
@@ -3568,6 +3657,9 @@ components:
         queue_id:
           type: string
           description: Queue id.
+        execute_after_queue:
+          type: string
+          description: Destination to execute after the queued call is bridged.
       required:
         - node_id
         - queue_name
@@ -3722,10 +3814,12 @@ components:
             - connected
             - failed
           description: "Where the connection stands: `connecting`, `connected`, `disconnected`, or `failed`."
+        failed_reason:
+          type: string
+          description: Why the connect failed. Present when `connect_state` is `failed`.
       required:
         - node_id
         - call_id
-        - peer
         - connect_state
       description: Fires as a connect request progresses, telling you whether your call has been bridged to the peer. Watch `connect_state` to know when the two calls are joined, torn down, or have failed to connect.
     Calling.ConnectPeer:
@@ -3967,12 +4061,18 @@ components:
           description: Pins recognition to a specific engine. Defaults to unset, which lets SignalWire choose.
           allOf:
             - $ref: "#/components/schemas/Calling.CollectSpeechEngine"
+        model:
+          type: string
+          description: |-
+            Recognition model to use. One of `default`, `enhanced`, `enhanced.phone_call`,
+            or `enhanced.video`. Not set by default.
       description: Settings that control how the caller's speech is recognized and collected.
     Calling.CollectSpeechEngine:
       type: string
       enum:
         - Deepgram
         - Google
+        - Google.V2
     CallingCollectRequest:
       type: object
       required:
@@ -4019,7 +4119,7 @@ components:
           type: string
           description: The `control_id` of the collection this event refers to, returned when you started it with `calling.collect`.
         state:
-          description: Where the collection currently stands. `error` means it stopped because something went wrong.
+          description: Where the collection currently stands. `error` means it stopped because something went wrong. Present for partial and continuous collections; a one-shot collect reports its `result` without a `state`.
           allOf:
             - $ref: "#/components/schemas/Calling.CallCollectState"
         result:
@@ -4036,7 +4136,6 @@ components:
         - node_id
         - call_id
         - control_id
-        - state
       description: Fires as you collect input from a caller — DTMF digits or speech — reporting partial and final results so you can react to what they said or pressed.
     Calling.CallCollectState:
       type: string
@@ -4431,6 +4530,7 @@ components:
                   type: number
                   format: double
                   description: Seconds of silence to play.
+                  exclusiveMinimum: 0
               required:
                 - duration
           required:
@@ -4990,6 +5090,12 @@ components:
           minimum: 0
           maximum: 100
           default: 44
+        max_length:
+          type: number
+          format: double
+          description: Maximum recording length, in seconds. Use `0` for no limit. Default `0`.
+          minimum: 0
+          default: 0
       description: Audio recording settings, passed under `record.audio`.
     Calling.RecordAudioDirection:
       type: string
@@ -5046,6 +5152,9 @@ components:
           description: Where the recording currently stands.
           allOf:
             - $ref: "#/components/schemas/Calling.CallRecordState"
+        recording_id:
+          type: string
+          description: The unique identifier of the recording.
         url:
           type: string
           format: uri
@@ -5058,6 +5167,20 @@ components:
           type: integer
           format: int32
           description: How large the recording file is, in bytes. Set once the state is `finished`.
+        start_time:
+          type: number
+          format: double
+          description: Unix timestamp for when the recording started, in seconds. Set once the state is `finished`.
+        end_time:
+          type: number
+          format: double
+          description: Unix timestamp for when the recording ended, in seconds. Set once the state is `finished`.
+        pause_behavior:
+          type: string
+          enum:
+            - silence
+            - skip
+          description: "How paused time is handled in the recording: `silence` inserts silence for the paused span, while `skip` leaves it out entirely."
         record:
           description: The settings this recording was captured with.
           allOf:
@@ -5403,7 +5526,7 @@ components:
       properties:
         to:
           type: string
-          description: SIP URI to transfer the call to, for example `userb@example.com`.
+          description: SIP URI to transfer the call to. Must be a `sip:` or `sips:` URI, for example `sip:userb@example.com`.
         username:
           type: string
           description: Username for authenticating against the destination SIP endpoint, if it requires credentials.
@@ -5663,7 +5786,7 @@ components:
         payment_connector_url:
           type: string
           format: uri
-          description: URL to POST collected payment details to upon completion.
+          description: URL that collected payment details are POSTed to upon completion. Must be an `https://` URL.
         token_type:
           description: Whether the payment token is one-off or reusable. Default `reusable`.
           default: reusable
@@ -6697,7 +6820,7 @@ components:
               properties:
                 event:
                   type: string
-                  description: "The DTMF digit that was detected: one of `0`-`9`, `#`, or `*`."
+                  description: "The DTMF digit that was detected: one of `0`-`9`, `#`, or `*`. Carries the terminal `finished` value once the detector completes."
               required:
                 - event
           required:
@@ -6979,6 +7102,9 @@ components:
                   type: string
                   format: uri
                   description: Link to the transmitted fax document.
+                format:
+                  type: string
+                  description: Document format, for example `tif` or `pdf`.
                 pages:
                   type: integer
                   format: int32
@@ -7321,10 +7447,9 @@ components:
           format: int32
           description: RTP port.
         codec:
-          type: string
-          description: |-
-            Codec for the tapped audio (known values: `OPUS`, `PCMA`, `PCMU`).
-            Matches the tapped audio if not set.
+          description: Codec for the tapped audio. Matches the tapped audio if not set.
+          allOf:
+            - $ref: "#/components/schemas/Calling.TapCodec"
         ptime:
           type: integer
           format: int32
@@ -7337,6 +7462,12 @@ components:
         - addr
         - port
       description: "`rtp` device params (delivery target)."
+    Calling.TapCodec:
+      type: string
+      enum:
+        - OPUS
+        - PCMA
+        - PCMU
     Calling.TapWsDevice:
       allOf:
         - $ref: "#/components/schemas/Calling.TapDevice"
@@ -7357,10 +7488,9 @@ components:
           type: string
           description: WebSocket URI.
         codec:
-          type: string
-          description: |-
-            Codec for the tapped audio (known values: `OPUS`, `PCMA`, `PCMU`).
-            Matches the tapped audio if not set.
+          description: Codec for the tapped audio. Matches the tapped audio if not set.
+          allOf:
+            - $ref: "#/components/schemas/Calling.TapCodec"
         rate:
           type: integer
           format: int32
@@ -7424,10 +7554,11 @@ components:
       type: object
       properties:
         direction:
-          description: Side of the call to tap. Default `speak`.
-          default: speak
+          description: Side of the call to tap.
           allOf:
             - $ref: "#/components/schemas/Calling.TapDirection"
+      required:
+        - direction
       description: "`audio` tap params."
     Calling.TapDirection:
       type: string
@@ -7548,7 +7679,7 @@ components:
           type: string
       required:
         - type
-      description: Describes where the tapped audio is being sent. Currently always `rtp`.
+      description: "Describes where the tapped audio is being sent: `rtp` or `ws`."
       discriminator: type
     Calling.CallTapRtpDevice:
       allOf:
@@ -7570,20 +7701,41 @@ components:
                   description: Port the tapped audio is sent to.
                 codec:
                   type: string
-                  description: Codec used for the tapped audio stream.
+                  description: Codec used for the tapped audio stream. Absent when it matches the tapped audio.
                 ptime:
                   type: integer
                   format: int32
-                  description: Packetization time of the stream, in milliseconds.
+                  description: Packetization time of the stream, in milliseconds. Absent when it matches the tapped audio.
               required:
                 - addr
                 - port
-                - codec
-                - ptime
           required:
             - type
             - params
           description: The tapped audio is streamed to an RTP destination.
+    Calling.CallTapWsDevice:
+      allOf:
+        - $ref: "#/components/schemas/Calling.CallTapDevice"
+        - type: object
+          properties:
+            type:
+              type: string
+              const: ws
+            params:
+              type: object
+              properties:
+                uri:
+                  type: string
+                  description: WebSocket URI the tapped audio is sent to.
+                codec:
+                  type: string
+                  description: Codec used for the tapped audio stream. Absent when it matches the tapped audio.
+              required:
+                - uri
+          required:
+            - type
+            - params
+          description: The tapped audio is streamed to a WebSocket destination.
     CallTapEventFrame:
       type: object
       required:
@@ -7962,12 +8114,15 @@ components:
           type: string
           description: Unique identifier of the call.
         dest:
-          type: string
+          oneOf:
+            - type: string
+            - type: object
+              additionalProperties: {}
           description: |-
-            Where to hand off the call. Pass one of three forms in this single string:
-            an `https://` URL that returns a SWML script, an inline SWML script, or the
-            name of another RELAY application prefixed with `context:`. The form is
-            detected from the prefix or scheme you use.
+            Where to hand off the call. Pass an `https://` URL that returns a SWML
+            script, the name of another RELAY application prefixed with `context:`, or an
+            inline SWML script — either as a string or as a SWML object. The form is
+            detected from the value you provide.
       required:
         - node_id
         - call_id
@@ -8069,7 +8224,7 @@ components:
             - $ref: "#/components/schemas/Calling.ConferenceTrim"
         coach:
           type: string
-          description: The id of a call (SWML Call ID or cXML CallSid) that this participant coaches. A coach can be heard only by the call being coached, not by the rest of the conference. Not set by default.
+          description: The `call_id` (UUID) of the participant being coached. A coach can be heard only by the call being coached, not by the rest of the conference. Not set by default.
         status_callback:
           type: string
           format: uri
@@ -8135,6 +8290,7 @@ components:
         - global
         - us
         - eu
+        - ch
     Calling.ConferenceTrim:
       type: string
       enum:
@@ -8145,6 +8301,7 @@ components:
       enum:
         - relay
         - cxml
+        - laml
     Calling.ConferenceCallbackMethod:
       type: string
       enum:
@@ -8832,7 +8989,8 @@ components:
           type: string
           enum:
             - finished
-          description: "Always `finished`: the digits have all been sent."
+            - error
+          description: "`finished` once all the digits have been sent, or `error` if the request failed."
       required:
         - node_id
         - call_id
@@ -8989,8 +9147,6 @@ components:
         - call_id
         - control_id
         - state
-        - url
-        - recording_id
       description: Fires when transcription starts and again when it stops. The `finished` event includes the recording's duration, size, and timestamps.
     Calling.TranscribeState:
       type: string
@@ -9118,7 +9274,7 @@ components:
         timeout:
           type: integer
           format: int32
-          description: How long to keep echoing, in seconds. Use `0` to echo until the call ends.
+          description: How long to keep echoing, in seconds. Effective range 5–120; values outside this range are clamped. Default 60.
           minimum: 0
         status_url:
           type: string
@@ -9242,7 +9398,7 @@ components:
           description: Unique identifier of the call.
         digits:
           type: string
-          description: The DTMF digit sequence the caller must press to trigger this binding, e.g. `"*1"`.
+          description: The DTMF digit sequence the caller must press to trigger this binding, e.g. `"*1"`. Accepts the characters `0`-`9`, `#`, `*`, `A`-`D`, and `w`/`W`.
         bind_method:
           type: string
           description: The call method to run when the digits are pressed, e.g. `calling.play`.
@@ -9252,7 +9408,7 @@ components:
           description: Parameters to pass to `bind_method` when it runs. Use the same shape that method expects for its parameters.
         realm:
           type: string
-          description: A label that groups this binding with others, so you can clear them together later.
+          description: A label that groups this binding with others, so you can clear them together later. Defaults to `"default"`.
         max_triggers:
           type: integer
           format: int32
@@ -9305,9 +9461,14 @@ components:
         message:
           type: string
           description: Human-readable description of the result. On failure, explains what went wrong.
+        cleared:
+          type: integer
+          format: int32
+          description: Number of digit bindings removed.
       required:
         - code
         - message
+        - cleared
     Calling.ClearDigitBindingsParams:
       type: object
       properties:
@@ -9319,7 +9480,7 @@ components:
           description: Unique identifier of the call.
         realm:
           type: string
-          description: Clear only the bindings with this `realm` label. Omit to clear every digit binding on the call.
+          description: The `realm` label to clear. Omit to clear only bindings in the default realm (`"default"`).
       required:
         - node_id
         - call_id
@@ -19226,6 +19387,9 @@ components:
         system_prompt:
           type: string
           description: Replace (or clear) the system prompt context.
+        consolidate:
+          type: boolean
+          description: Summarize the existing conversation into a condensed form before applying the reset.
       description: |-
         Conversation-reset configuration. Each field clears or replaces part of the
         session context.
@@ -19285,7 +19449,7 @@ components:
           description: Unique identifier of the call.
         timeout:
           type: string
-          description: How long to stay on hold, in seconds. Pass it as a string, e.g. `"60"`.
+          description: How long to stay on hold. Accepts a duration string such as `"5m"` or a number of seconds such as `"60"`. Defaults to 300 seconds; values of `0` or below, or above 300, are clamped to 300.
         prompt:
           type: string
           description: What to play while on hold — a hold prompt or music, as a plain string.
@@ -19552,16 +19716,17 @@ components:
       properties:
         context:
           type: string
-          description: The context to deliver the task to. Every client subscribed to this context receives the `queuing.relay.tasks` event.
+          description: The context to deliver the task to. Every client subscribed to this context receives the `queuing.relay.tasks` event. Defaults to `"default"` when omitted.
+          default: default
         message:
           type: object
           additionalProperties: {}
           description: |-
             Your JSON payload to send (for example, `{ "foo": 123 }`). Use any shape you
             like — SignalWire doesn't enforce a schema and passes it through to your
-            consumers unchanged.
+            consumers unchanged. The payload must not be empty, and its serialized JSON
+            must not exceed 2000 characters.
       required:
-        - context
         - message
     TaskingDeliverRequest:
       type: object
@@ -20109,6 +20274,7 @@ components:
             The Verto frame being delivered — either a Verto response or a
             conference/room event. Passed through as-is; see `verto_messages.md`.
       required:
+        - node_id
         - params
       description: |-
         Delivers a Verto frame from SignalWire back to your client. This fires when
@@ -20352,7 +20518,7 @@ components:
                   node_id: e5f6a7b8-7890-4eab-9bcd-4567890123ef
                   call_id: f6a7b8c9-1234-4fbc-9cde-5678901234fa
                   tag: my-dial-tag
-                  dial_winner: true
+                  dial_winner: "true"
     callStateEvent:
       name: calling.call.state
       title: calling.call.state event
@@ -20415,7 +20581,7 @@ components:
             id: 550e8400-e29b-41d4-a716-446655440000
             result:
               code: "200"
-              message: Answered
+              message: Answering call
     callingEndRequest:
       name: calling.end.request
       title: calling.end request
@@ -20447,7 +20613,7 @@ components:
             id: 550e8400-e29b-41d4-a716-446655440000
             result:
               code: "200"
-              message: Disconnecting call
+              message: Ending call
     callingConnectRequest:
       name: calling.connect.request
       title: calling.connect request
@@ -20518,7 +20684,7 @@ components:
             id: 550e8400-e29b-41d4-a716-446655440000
             result:
               code: "200"
-              message: Disconnecting
+              message: Disconnecting call
     callingCollectRequest:
       name: calling.collect.request
       title: calling.collect request
@@ -21749,7 +21915,7 @@ components:
               record: record-from-start
               region: eu
               trim: do-not-trim
-              coach: 123-123-123-123
+              coach: c7f9d2e1-3a4b-5c6d-7e8f-9a0b1c2d3e4f
               status_callback: https://my_callback.example/update_conference_status
               status_callback_event: start end join leave
               status_callback_method: POST
@@ -22028,7 +22194,7 @@ components:
             id: 550e8400-e29b-41d4-a716-446655440000
             result:
               code: "200"
-              message: Sending Digits
+              message: Sending
               control_id: send-digits-1
               call_id: c7f9d2e1-...
     callSendDigitsEvent:
@@ -22171,7 +22337,7 @@ components:
             id: 550e8400-e29b-41d4-a716-446655440000
             result:
               code: "200"
-              message: Echo started
+              message: Echoing
     callEchoEvent:
       name: calling.call.echo
       title: calling.call.echo event
@@ -22260,6 +22426,7 @@ components:
             result:
               code: "200"
               message: Digit bindings cleared
+              cleared: 2
     callingLiveTranscribeRequest:
       name: calling.live_transcribe.request
       title: calling.live_transcribe request

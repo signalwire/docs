@@ -38,7 +38,7 @@ model CallTapAudio extends TapMedia {
   };
 }
 
-@doc("Describes where the tapped audio is being sent. Currently always `rtp`.")
+@doc("Describes where the tapped audio is being sent: `rtp` or `ws`.")
 @discriminator("type")
 model CallTapDevice {
   type: string;
@@ -54,11 +54,23 @@ model CallTapRtpDevice extends CallTapDevice {
     @doc("Port the tapped audio is sent to.")
     port: int32;
 
-    @doc("Codec used for the tapped audio stream.")
-    codec: string;
+    @doc("Codec used for the tapped audio stream. Absent when it matches the tapped audio.")
+    codec?: string;
 
-    @doc("Packetization time of the stream, in milliseconds.")
-    ptime: int32;
+    @doc("Packetization time of the stream, in milliseconds. Absent when it matches the tapped audio.")
+    ptime?: int32;
+  };
+}
+
+@doc("The tapped audio is streamed to a WebSocket destination.")
+model CallTapWsDevice extends CallTapDevice {
+  type: "ws";
+  params: {
+    @doc("WebSocket URI the tapped audio is sent to.")
+    uri: string;
+
+    @doc("Codec used for the tapped audio stream. Absent when it matches the tapped audio.")
+    codec?: string;
   };
 }
 

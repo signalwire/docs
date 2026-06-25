@@ -16,8 +16,8 @@ namespace Relay.Calling;
 
 @doc("`phone` device params.")
 model PhoneDeviceParams {
-  @doc("Origination number, E.164.")
-  from_number: string;
+  @doc("Origination number, E.164. When omitted, SignalWire fills in a caller ID.")
+  from_number?: string;
 
   @doc("Destination number, E.164.")
   to_number: string;
@@ -25,10 +25,6 @@ model PhoneDeviceParams {
   @doc("Seconds to ring before giving up.")
   @minValue(0)
   timeout?: int32 = 30;
-
-  @doc("Maximum call duration in seconds.")
-  @minValue(0)
-  max_duration?: int32;
 
   @doc("Webhook to receive call-state events for this leg.")
   call_state_url?: url;
@@ -41,12 +37,16 @@ model PhoneDeviceParams {
     SWML document or an inline SWML document. See the SWML reference for details.
     """)
   confirm?: unknown;
+
+  @doc("Seconds to wait for the confirmation prompt to complete before giving up.")
+  @minValue(0)
+  confirm_timeout?: int32;
 }
 
 @doc("`sip` device params.")
 model SipDeviceParams {
-  @doc("Origination SIP URI / address.")
-  from: string;
+  @doc("Origination SIP URI / address. When omitted, SignalWire fills in a caller ID.")
+  from?: string;
 
   @doc("Caller name to present.")
   from_name?: string;
@@ -58,10 +58,6 @@ model SipDeviceParams {
   @minValue(0)
   timeout?: int32 = 30;
 
-  @doc("Maximum call duration in seconds.")
-  @minValue(0)
-  max_duration?: int32;
-
   @doc("Custom `X-` SIP headers.")
   headers?: SipHeader[];
 
@@ -71,6 +67,16 @@ model SipDeviceParams {
   @doc("Use WebRTC media for this leg.")
   webrtc_media?: boolean;
 
+  @doc("Username used to authenticate the SIP leg.")
+  username?: string;
+
+  @doc("Password used to authenticate the SIP leg.")
+  password?: string;
+
+  @doc("Seconds between SIP session-timer refreshes for this leg.")
+  @minValue(0)
+  session_timeout?: int32;
+
   @doc("Webhook to receive call-state events for this leg.")
   call_state_url?: url;
 
@@ -79,12 +85,16 @@ model SipDeviceParams {
 
   @doc("A confirmation prompt (SWML URL or inline SWML).")
   confirm?: unknown;
+
+  @doc("Seconds to wait for the confirmation prompt to complete before giving up.")
+  @minValue(0)
+  confirm_timeout?: int32;
 }
 
 @doc("`webrtc` device params.")
 model WebrtcDeviceParams {
-  @doc("Origination — E.164 or a registered endpoint URI.")
-  from: string;
+  @doc("Origination — E.164 or a registered endpoint URI. When omitted, SignalWire fills in a caller ID.")
+  from?: string;
 
   @doc("Destination — a WebRTC endpoint URI / resource name.")
   to: string;
@@ -93,13 +103,6 @@ model WebrtcDeviceParams {
   @minValue(0)
   timeout?: int32 = 30;
 
-  @doc("Maximum call duration in seconds.")
-  @minValue(0)
-  max_duration?: int32;
-
-  @doc("Negotiable codecs (SignalWire-picked if unset).")
-  codecs?: WebrtcCodec[];
-
   @doc("Webhook to receive call-state events for this leg.")
   call_state_url?: url;
 
@@ -108,6 +111,10 @@ model WebrtcDeviceParams {
 
   @doc("A confirmation prompt (SWML URL or inline SWML).")
   confirm?: unknown;
+
+  @doc("Seconds to wait for the confirmation prompt to complete before giving up.")
+  @minValue(0)
+  confirm_timeout?: int32;
 }
 
 @doc("`call` device params (connect only) — bridge to an existing call.")
@@ -129,6 +136,9 @@ model QueueDeviceParams {
 
   @doc("Queue id.")
   queue_id?: string;
+
+  @doc("Destination to execute after the queued call is bridged.")
+  execute_after_queue?: string;
 }
 
 @doc("`stream` device params (connect only) — bidirectional audio to a WS endpoint.")
@@ -265,6 +275,9 @@ model RingbackTts extends Ringback {
 
     @doc("TTS voice gender.")
     gender?: TtsGender = "female";
+
+    @doc("Specific voice to use. Highest precedence when selecting the TTS voice.")
+    voice?: string;
   };
 }
 
@@ -273,6 +286,7 @@ model RingbackSilence extends Ringback {
   type: "silence";
   params: {
     @doc("Seconds of silence.")
+    @minValueExclusive(0)
     duration: float64;
   };
 }
@@ -311,6 +325,9 @@ model CallPhoneDevice extends CallDevice {
 
     @doc("Destination number, E.164.")
     to_number: string;
+
+    @doc("Custom `X-` SIP headers carried on the leg, when present.")
+    headers?: SipHeader[];
   };
 }
 
@@ -330,7 +347,11 @@ model CallSipDevice extends CallDevice {
 
 model CallWebrtcDevice extends CallDevice {
   type: "webrtc";
+  params: {
+    @doc("Origination — the WebRTC endpoint the leg was placed from.")
+    from: string;
 
-  @doc("Parameters of the negotiated WebRTC leg.")
-  params: Record<unknown>;
+    @doc("Destination — the WebRTC endpoint the leg was placed to.")
+    to: string;
+  };
 }
