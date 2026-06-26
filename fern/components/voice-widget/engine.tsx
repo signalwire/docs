@@ -12,14 +12,15 @@ import type { Catalog, Manifest, VoiceRow } from "./types";
 // assets it statically discovers in MDX/CSS and rewrites to content-hashed URLs, so a runtime
 // fetch() has no resolvable path. It must be served from an external origin with CORS enabled.
 //
-// On the production CDN the JSON and the audio/ tree sit under different prefixes: catalog.json +
-// manifest.json are served from /voice_widget/dist/, while the audio is served from the domain root
-// (/audio/<engine>/<voice_id>.mp3). The manifest stores each clip's `audio` as a path relative to
-// AUDIO_BASE (e.g. "audio/rime/zion.mp3"), so the two bases are independent — keep each in sync with
-// the CDN layout. For local dev against `http-server temp/voice_widget/dist -p 8080 --cors`, set
-// both to "http://localhost:8080".
-export const ASSET_BASE = "https://mcdn.signalwire.com/voice_widget/dist"; // catalog.json + manifest.json
-export const AUDIO_BASE = "https://mcdn.signalwire.com";                   // /audio/<engine>/<voice_id>.mp3
+// The whole hosted bundle lives under one CDN directory — /audio — so a single base covers it all:
+// catalog.json + manifest.json sit at its root (CDN_BASE/catalog.json, CDN_BASE/manifest.json) and
+// the audio clips live in per-provider subdirs (CDN_BASE/<engine>/<voice_id>.mp3). The manifest
+// stores each clip's `audio` with a leading `audio/` segment (e.g. "audio/rime/zion.mp3") because
+// the path is authored relative to the CDN origin; the widget strips that segment when resolving a
+// clip against CDN_BASE (see the audio src in index.tsx), so everything hangs off this one base.
+// For local dev against `http-server temp/voice_widget/dist -p 8080 --cors`, set this to
+// "http://localhost:8080/audio".
+export const CDN_BASE = "https://devexcdn.signalwire.com/audio";
 
 export const ALL = "__all__";
 export const DEFAULT_PAGE_SIZE = 48;
@@ -72,25 +73,6 @@ export function normalizeGender(gender: string): string {
   }
 }
 
-// ── TEMPORARY: hide voices whose CDN audio was renamed but whose manifest is stale ─────────────
-// Six sample files were renamed on the CDN to strip non-ASCII chars from the path (e.g.
-// inworld/_tienne.mp3 → inworld/Etienne.mp3), but the published manifest.json still points at the
-// OLD filenames, so these clips 404. Hide them until the regenerated manifest is merged onto the
-// CDN — then DELETE this block AND its filter() call in loadBundle. Keyed by the catalog `key`
-// (the same value manifest clips are keyed by). Remove the whole thing once the CDN is updated.
-const TEMP_HIDDEN_VOICE_KEYS = new Set<string>([
-  "inworld/Étienne",
-  "inworld/Maitê",
-  "inworld/Hélène",
-  "azure/hu-HU-Réka:MAI-Voice-2",
-  "minimax/Cantonese_ProfessionalHost（F)",
-  "minimax/Cantonese_ProfessionalHost（M)",
-]);
-
-export function isTemporarilyHiddenVoice(key: string): boolean {
-  return TEMP_HIDDEN_VOICE_KEYS.has(key);
-}
-
 export type FilterKey = "search" | "provider" | "language" | "gender" | "group" | "pageSize";
 
 // Client-side row: a catalog voice joined with its clip, plus two precomputed fields — `_search`,
@@ -124,9 +106,7 @@ export function loadBundle(catalogUrl: string, manifestUrl: string): Promise<Row
       // using `_uid` as the React key lets a row survive filter/page changes (the memoized row
       // skips re-rendering), and play state highlights exactly one row even for collisions.
       const seen = new Map<string, number>();
-      // TEMP: drop the renamed-audio voices (see isTemporarilyHiddenVoice). Remove this filter()
-      // once the regenerated manifest is on the CDN.
-      return cat.voices.filter((v) => !isTemporarilyHiddenVoice(v.key)).map((v) => {
+      return cat.voices.map((v) => {
         const base = modelKeyOf(v);
         const n = seen.get(base) ?? 0;
         seen.set(base, n + 1);
@@ -161,13 +141,13 @@ export function useIsMobile() {
 }
 
 export interface VoiceWidgetProps {
-  /** Base URL of the hosted bundle (serves catalog.json, manifest.json, audio/). Default: ASSET_BASE. */
+  /** Base URL of the hosted bundle's /audio dir (serves catalog.json, manifest.json, and the clip subdirs). Default: CDN_BASE. */
   assetBaseUrl?: string;
   /** Override the catalog.json URL. Default: `${assetBaseUrl}/catalog.json`. */
   catalogUrl?: string;
   /** Override the manifest.json URL. Default: `${assetBaseUrl}/manifest.json`. */
   manifestUrl?: string;
-  /** Override the base the clip `audio` paths resolve against. Default: AUDIO_BASE. */
+  /** Override the base the clip `audio` paths resolve against (after their leading `audio/` is stripped). Default: CDN_BASE. */
   audioBaseUrl?: string;
   /** Initial grouping. "none" renders a flat list with no section headers or group toggle. Default: "provider". */
   groupBy?: "provider" | "language" | "none";
