@@ -1,18 +1,15 @@
 import "@signalwire/typespec-asyncapi";
 
-import "./models/core.tsp";
 import "./operations/message/main.tsp";
-import "./operations/conference/main.tsp";
 import "./events/message.tsp";
 
 using SignalWire.AsyncAPI;
 
 @doc("""
-  The Relay **WebRTC** service carries WebRTC signaling. You use the `message`
+  The Relay **WebRTC** service carries WebRTC signaling. You use the `webrtc.verto`
   method to send a Verto frame between your client and SignalWire — this is how
-  you place, answer, and modify peer calls — and `conference.list` to discover
-  the conferences you can join. The service runs over a connection you've already
-  established with `signalwire.connect`.
+  you place, answer, and modify peer calls. The service runs over a connection
+  you've already established with `signalwire.connect`.
 
   You build and read Verto frames yourself (`verto.invite`/`verto.answer`/
   `verto.bye`/`verto.modify`, `dialogParams`, conference control). The frame
