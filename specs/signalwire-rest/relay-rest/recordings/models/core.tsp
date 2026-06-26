@@ -66,6 +66,10 @@ model RecordingBase {
 model PstnRecording {
   ...RecordingBase;
 
+  @doc("Unique ID of the Relay conference the recording belongs to, if any.")
+  @example("0089cc48-4f98-4a6b-90d8-61f8a5d1b0e3")
+  relay_conference_id?: uuid;
+
   @doc("ID of the PSTN leg associated with the recording.")
   relay_pstn_leg_id: uuid;
 }
@@ -73,6 +77,10 @@ model PstnRecording {
 @doc("Recording from a SIP call leg.")
 model SipRecording {
   ...RecordingBase;
+
+  @doc("Unique ID of the Relay conference the recording belongs to, if any.")
+  @example("0089cc48-4f98-4a6b-90d8-61f8a5d1b0e3")
+  relay_conference_id?: uuid;
 
   @doc("ID of the SIP leg associated with the recording.")
   relay_sip_leg_id: uuid;
@@ -82,13 +90,27 @@ model SipRecording {
 model WebRtcRecording {
   ...RecordingBase;
 
+  @doc("Unique ID of the Relay conference the recording belongs to, if any.")
+  @example("0089cc48-4f98-4a6b-90d8-61f8a5d1b0e3")
+  relay_conference_id?: uuid;
+
   @doc("ID of the WebRTC leg associated with the recording.")
   relay_webrtc_leg_id: uuid;
 }
 
-@doc("Recording model. A recording is associated with exactly one call leg type (PSTN, SIP, or WebRTC).")
+@doc("Recording from a Relay conference.")
+model ConferenceRecording {
+  ...RecordingBase;
+
+  @doc("Unique ID of the Relay conference the recording belongs to.")
+  @example("0089cc48-4f98-4a6b-90d8-61f8a5d1b0e3")
+  relay_conference_id: uuid;
+}
+
+@doc("Recording model. A recording is associated with exactly one source type (PSTN, SIP, WebRTC, or Relay conference).")
 union Recording {
   pstn: PstnRecording,
   sip: SipRecording,
   webrtc: WebRtcRecording,
+  conference: ConferenceRecording,
 }

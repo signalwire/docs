@@ -21,7 +21,7 @@ model LanguagesBase {
 
   @doc("""
     Voice to use for the language. String format: `<engine id>.<voice id>`.
-    Select engine from `gcloud`, `polly`, `elevenlabs`, `cartesia`, or `deepgram`.
+    Select engine from `gcloud`, `polly`, `elevenlabs`, `cartesia`, `deepgram`, `rime`, `inworld`, or `minimax`.
     For example, `gcloud.fr-FR-Neural2-B`.
     """)
   @example("gcloud.fr-FR-Neural2-B")
@@ -32,9 +32,10 @@ model LanguagesBase {
   `model`?: string;
 
   @doc("""
-    Enables emotion detection for the set TTS engine. This allows the AI to express emotions when speaking.
+    Enables automatic emotion detection for the set TTS engine. This allows the AI to express emotions when speaking.
     A global emotion or specific emotions for certain topics can be set within the prompt of the AI.
-    IMPORTANT: Only works with [`Cartesia`](/docs/platform/voice/tts/cartesia) TTS engine.
+    IMPORTANT: Only works with the [`Cartesia`](/docs/platform/voice/tts/cartesia) and [`MiniMax`](/docs/platform/voice/tts/minimax) TTS engines.
+    For a fixed (non-automatic) MiniMax emotion, use [`params.emotion`](#languagesparams) instead.
     """)
   @example("auto")
   emotion?: "auto";
@@ -67,6 +68,39 @@ model LanguageParams {
   @minValue(0.0)
   @maxValue(1.0)
   similarity?: float | SWMLVar = 0.75;
+
+  @doc("Adjusts how quickly the voice speaks. Values below `1.0` slow the voice down; values above `1.0` speed it up. IMPORTANT: Only works with the Inworld TTS engine.")
+  @minValue(0.5)
+  @maxValue(1.5)
+  speakingRate?: float | SWMLVar = 1.0;
+
+  @doc("Controls the randomness and expressiveness of the generated speech. Lower values produce a more consistent, predictable delivery; higher values introduce more variation. IMPORTANT: Only works with the Inworld TTS engine.")
+  @minValue(0.0)
+  @maxValue(2.0)
+  temperature?: float | SWMLVar = 1.0;
+
+  @doc("How quickly the voice speaks. Values below `1.0` slow the voice down; values above `1.0` speed it up. IMPORTANT: Only works with the MiniMax TTS engine.")
+  @minValue(0.5)
+  @maxValue(2.0)
+  speed?: float | SWMLVar = 1.0;
+
+  @doc("The speaking volume. Lower values are quieter. IMPORTANT: Only works with the MiniMax TTS engine.")
+  @minValue(0.1)
+  @maxValue(1.0)
+  vol?: float | SWMLVar = 1.0;
+
+  @doc("The pitch shift in semitones. Negative values lower the pitch; positive values raise it. IMPORTANT: Only works with the MiniMax TTS engine.")
+  @minValue(-12)
+  @maxValue(12)
+  pitch?: int32 | SWMLVar = 0;
+
+  @doc("""
+    A fixed emotional tone for the generated speech.
+    To vary the emotion automatically during a conversation, use [`languages[].emotion`](#languagesemotion) set to `auto` instead.
+    IMPORTANT: Only works with the MiniMax TTS engine.
+    """)
+  @example("happy")
+  emotion?: "happy" | "sad" | "angry" | "fearful" | "disgusted" | "surprised" | "neutral";
 }
 
 @summary("Language with Fillers (Deprecated)")
