@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Video Conference</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <!-- Lobby step 1: connect. The backend mints the SAT — the user never
+         pastes a token. -->
+    <section id="lobby-signin">
+      <h1>Video Conference</h1>
+      <p>Sign in to come online. The backend mints a token for you.</p>
+      <button id="connect" type="button">Sign in</button>
+      <p id="signin-error" hidden></p>
+    </section>
+
+    <!-- Lobby step 2: shown after the client connects. Device pickers and the
+         directory populate from the SDK; the user can also wait for a call. -->
+    <section id="lobby-prejoin" hidden>
+      <h1>Join a conference</h1>
+
+      <p>
+        <label>Microphone <select id="device-audio-in"></select></label>
+      </p>
+      <p>
+        <label>Camera <select id="device-video-in"></select></label>
+      </p>
+      <p>
+        <label>Speaker <select id="device-audio-out"></select></label>
+      </p>
+
+      <p>
+        <label>Room destination
+          <input id="destination" type="text" value="/public/test-room" />
+        </label>
+      </p>
+      <fieldset>
+        <legend>Send</legend>
+        <label><input id="opt-audio" type="checkbox" checked /> Mic</label>
+        <label><input id="opt-video" type="checkbox" checked /> Camera</label>
+      </fieldset>
+
+      <button id="join" type="button">Join</button>
+      <p id="join-error" hidden></p>
+
+      <details>
+        <summary>Directory</summary>
+        <ul id="directory"></ul>
+        <button id="directory-more" type="button" hidden>Load more</button>
+      </details>
+
+      <p><small>Or wait here — incoming calls pop up automatically.</small></p>
+    </section>
+
+    <!-- Incoming call. A native <dialog> gives us a modal + backdrop for free. -->
+    <dialog id="incoming">
+      <p>Incoming call from <strong id="incoming-from">…</strong></p>
+      <form method="dialog">
+        <button id="incoming-reject" value="reject">Reject</button>
+        <button id="incoming-accept" value="accept">Accept</button>
+      </form>
+    </dialog>
+
+    <!-- Conference -->
+    <section id="conference" hidden>
+      <header>
+        <span id="call-status">connecting…</span>
+        <span id="call-direction"></span>
+        <label>Layout <select id="layout-select"><option value="">…</option></select></label>
+      </header>
+
+      <div class="stage">
+        <video id="remote-video" autoplay playsinline></video>
+        <video id="local-video" class="local-preview" autoplay playsinline muted></video>
+      </div>
+
+      <div class="controls">
+        <button id="toggle-mic" type="button">Mic</button>
+        <button id="toggle-cam" type="button">Camera</button>
+        <button id="toggle-share" type="button">Share screen</button>
+        <button id="toggle-hand" type="button">Raise hand</button>
+        <button id="toggle-deaf" type="button">Deafen</button>
+        <button id="remove-self" type="button">Leave (remove me)</button>
+        <button id="end-call" type="button">End for all</button>
+        <button id="leave" type="button">Hang up</button>
+      </div>
+
+      <details>
+        <summary>Audio processing</summary>
+        <div class="controls">
+          <button id="toggle-echo" type="button">Echo cancel: ?</button>
+          <button id="toggle-gain" type="button">Auto gain: ?</button>
+          <button id="toggle-noise" type="button">Noise suppression: ?</button>
+        </div>
+        <p>
+          <label>Input volume
+            <input id="input-volume" type="range" min="-50" max="50" step="1" />
+          </label>
+          <output id="input-volume-out"></output>
+        </p>
+        <p>
+          <label>Output volume
+            <input id="output-volume" type="range" min="-50" max="50" step="1" />
+          </label>
+          <output id="output-volume-out"></output>
+        </p>
+        <p>
+          <label>Input sensitivity
+            <input id="input-sensitivity" type="range" min="0" max="100" step="1" />
+          </label>
+          <output id="input-sensitivity-out"></output>
+        </p>
+      </details>
+
+      <details>
+        <summary>Dialpad (DTMF)</summary>
+        <div class="controls" id="dialpad">
+          <button type="button" data-digit="1">1</button>
+          <button type="button" data-digit="2">2</button>
+          <button type="button" data-digit="3">3</button>
+          <button type="button" data-digit="4">4</button>
+          <button type="button" data-digit="5">5</button>
+          <button type="button" data-digit="6">6</button>
+          <button type="button" data-digit="7">7</button>
+          <button type="button" data-digit="8">8</button>
+          <button type="button" data-digit="9">9</button>
+          <button type="button" data-digit="*">*</button>
+          <button type="button" data-digit="0">0</button>
+          <button type="button" data-digit="#">#</button>
+        </div>
+        <p id="dialpad-sent"></p>
+      </details>
+
+      <section>
+        <h2>Participants (<span id="participant-count">0</span>)</h2>
+        <ul id="participants"></ul>
+      </section>
+
+      <section>
+        <h2>Chat</h2>
+        <div id="chat-log" class="chat-log"></div>
+        <form id="chat-form">
+          <input id="chat-input" type="text" placeholder="Message…" autocomplete="off" />
+          <button type="submit">Send</button>
+        </form>
+      </section>
+
+      <details>
+        <summary>Call info</summary>
+        <dl>
+          <dt>Recording</dt><dd id="info-recording">–</dd>
+          <dt>Streaming</dt><dd id="info-streaming">–</dd>
+          <dt>Locked</dt><dd id="info-locked">–</dd>
+          <dt>Raise-hand priority</dt><dd id="info-handpriority">–</dd>
+          <dt>Audio direction</dt><dd id="info-media-audio">–</dd>
+          <dt>Video direction</dt><dd id="info-media-video">–</dd>
+          <dt>Capabilities</dt><dd id="info-capabilities">–</dd>
+          <dt>Meta</dt><dd id="info-meta">–</dd>
+        </dl>
+      </details>
+
+      <details>
+        <summary>Connection quality</summary>
+        <dl>
+          <dt>MOS score</dt><dd id="q-mos">–</dd>
+          <dt>Quality level</dt><dd id="q-level">–</dd>
+          <dt>Network</dt><dd id="q-health">–</dd>
+          <dt>Round-trip time</dt><dd id="q-rtt">–</dd>
+          <dt>Audio jitter</dt><dd id="q-jitter">–</dd>
+          <dt>Audio packets</dt><dd id="q-audio-packets">–</dd>
+          <dt>Video packets</dt><dd id="q-video-packets">–</dd>
+          <dt>Packet loss</dt><dd id="q-loss">–</dd>
+          <dt>Outgoing bitrate</dt><dd id="q-bitrate">–</dd>
+          <dt>Recovery state</dt><dd id="q-recovery">–</dd>
+        </dl>
+        <p id="q-bandwidth" hidden>Bandwidth constrained — video may be paused.</p>
+        <p>Issues: <span id="q-issues">none</span></p>
+        <div class="controls">
+          <button id="q-keyframe" type="button">Request keyframe</button>
+          <button id="q-ice-restart" type="button">Request ICE restart</button>
+        </div>
+        <ul id="q-recovery-log"></ul>
+      </details>
+    </section>
+
+    <!-- One row per remote participant. Cloned in room.ts. -->
+    <template id="participant-row">
+      <li>
+        <strong class="name"></strong>
+        <small class="type"></small>
+        <small class="mic">🎤</small>
+        <small class="cam">📷</small>
+        <small class="hand" hidden>✋</small>
+        <small class="talking" hidden>🔊</small>
+        <small class="deaf" hidden>🔇</small>
+        <small class="hidden-flag" hidden>(off-canvas)</small>
+      </li>
+    </template>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
