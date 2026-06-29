@@ -48,6 +48,11 @@ model ConnectSwitch {
   default?: SWMLMethod[];
 }
 
+/**
+ * Connect-level properties shared across all dialing strategies.
+ * Does NOT include `username` or `password` — those belong on
+ * ConnectDestination (per-destination) and ConnectDeviceSingle only.
+ */
 @summary("ConnectDeviceBase object")
 model ConnectDeviceBase {
   @doc("The caller ID to use when dialing the number.")
@@ -136,14 +141,6 @@ model ConnectDeviceBase {
   @example(30)
   confirm_timeout?: integer | SWMLVar;
 
-  @doc("SIP username to use for authentication when dialing a SIP URI. Has no effect on calls to phone numbers.")
-  @example("sipuser")
-  username?: string;
-
-  @doc("SIP password to use for authentication when dialing a SIP URI. Has no effect on calls to phone numbers.")
-  @example("sippassword")
-  password?: string;
-
   @doc("Encryption setting to use. **Possible values:** `mandatory`, `optional`, `forbidden`")
   @example("optional")
   encryption?: "mandatory" | "optional" | "forbidden" = "optional";
@@ -182,18 +179,106 @@ model ConnectDeviceBase {
   status_url?: url;
 }
 
-@summary("Single Destination")
-model ConnectDeviceSingle is ConnectDeviceBase {
+/**
+ * Per-destination model used inside `serial`, `parallel`, and `serial_parallel` arrays.
+ *
+ * Contains only the properties that apply to an individual destination:
+ * addressing, caller-ID overrides, SIP auth, per-leg timeouts/confirmations,
+ * and stream-specific settings.
+ */
+@summary("ConnectDestination object")
+model ConnectDestination {
   @doc("""
     Destination to dial. Can be:
     - Phone number in E.164 format (e.g., "+15552345678")
     - SIP URI (e.g., "sip:alice@example.com")
-    - Call Fabric Resource address (e.g., "/public/test_room")
+    - Resource Address (e.g., "/public/test_room")
     - Queue (e.g., "queue:support")
     - WebSocket stream (e.g., "stream:wss://example.com/audio")
     """)
   @example("+15559876543")
   to: string;
+
+  @doc("The caller ID to use when dialing this destination. Overrides the top-level `from`.")
+  @example("+15551234567")
+  from?: string;
+
+  @doc("""
+    The caller ID name for this destination. Overrides the top-level `from_name`.
+    Applies to SIP calls only — it has no effect on calls to phone numbers.
+    """)
+  @example("Support Team")
+  from_name?: string;
+
+  @doc("Custom SIP headers to add to INVITE for this destination. Overrides the top-level `headers`. It has no effect on calls to phone numbers.")
+  headers?: ConnectHeaders[];
+
+  @doc("""
+    Comma-separated string of codecs to offer for this destination.
+    Overrides the top-level `codecs`. It has no effect on calls to phone numbers.
+    """)
+  @example("PCMU")
+  codecs?: string;
+
+  @doc("""
+    If true, WebRTC media is offered to this SIP destination.
+    Overrides the top-level `webrtc_media`. It has no effect on calls to phone numbers.
+    Default is `false`.
+    """)
+  @example(true)
+  webrtc_media?: boolean | SWMLVar = false;
+
+  @doc("""
+    Time, in seconds, to set the SIP `Session-Expires` header in INVITE for this destination.
+    Overrides the top-level `session_timeout`. Must be a positive, non-zero number.
+    It has no effect on calls to phone numbers.
+    """)
+  @minValue(1)
+  @example(1800)
+  session_timeout?: integer | SWMLVar = 0;
+
+  @doc("SIP username to use for authentication when dialing a SIP URI. Has no effect on calls to phone numbers.")
+  @example("sipuser")
+  username?: string;
+
+  @doc("SIP password to use for authentication when dialing a SIP URI. Has no effect on calls to phone numbers.")
+  @example("sippassword")
+  password?: string;
+
+  @doc("""
+    Time, in seconds, to wait for this destination to answer.
+    Overrides the top-level `timeout`. Default is 60 seconds.
+    """)
+  @example(30)
+  timeout?: integer | SWMLVar = 60;
+
+  @doc("""
+    An array of call state event names to be notified about for this destination.
+    Overrides the top-level `call_state_events`.
+    Allowed event names are: `created`, `ringing`, `answered`, `ended`.
+    """)
+  call_state_events?: CallStatus[] = #[CallStatus.ended];
+
+  @doc("Webhook URL for call status change notifications for this destination. Overrides the top-level `call_state_url`.")
+  @example("https://example.com/call-status")
+  call_state_url?: url;
+
+  @doc("""
+    Confirmation to execute on this destination when answered.
+    Overrides the top-level `confirm`. Can be either:
+    - A URL (string) that returns a SWML document
+    - An array of SWML methods to execute inline
+    """)
+  @example("https://example.com/confirm.swml")
+  confirm?: string | ValidConfirmMethods[];
+
+  @doc("Seconds to wait for the `confirm` script on this destination. Overrides the top-level `confirm_timeout`.")
+  @example(30)
+  confirm_timeout?: integer | SWMLVar;
+
+  @doc("Encryption setting for this destination. Overrides the top-level `encryption`. **Possible values:** `mandatory`, `optional`, `forbidden`")
+  @example("optional")
+  encryption?: "mandatory" | "optional" | "forbidden" = "optional";
 
   // Stream-specific properties (only apply when `to` starts with "stream:wss://")
 
@@ -231,25 +316,42 @@ model ConnectDeviceSingle is ConnectDeviceBase {
   custom_parameters?: TypeSpec.Record<string>;
 }
 
+/**
+ * Single-destination connect object.
+ *
+ * Inherits connect-level properties from ConnectDeviceBase, then spreads the
+ * destination-only properties from ConnectDestination (using `Omit` to skip
+ * the fields already present on ConnectDeviceBase, avoiding duplication).
+ */
+@summary("Single Destination")
+model ConnectDeviceSingle is ConnectDeviceBase {
+  ...OmitProperties<ConnectDestination, "from" | "from_name" | "headers" | "codecs" | "webrtc_media" | "session_timeout" | "timeout" | "call_state_events" | "call_state_url" | "confirm" | "confirm_timeout" | "encryption">;
+}
+
 @summary("Serial Dialing")
+@doc("Dial destinations one at a time in sequence. If the first destination does not answer, the next destination in the array is tried, and so on.")
 model ConnectDeviceSerial is ConnectDeviceBase {
-  serial: ConnectDeviceSingle[];
+  @doc("Array of destination objects to dial in order. Each destination is tried sequentially — if the current destination does not answer, the next one in the array is attempted.")
+  serial: ConnectDestination[];
 }
 
 @summary("Parallel Dialing")
+@doc("Dial multiple destinations simultaneously. All destinations in the array ring at the same time — the first to answer is bridged and the remaining calls are cancelled.")
 model ConnectDeviceParallel is ConnectDeviceBase {
-  @doc("Array of destinations to dial simultaneously.")
-  parallel: ConnectDeviceSingle[];
+  @doc("Array of destination objects to dial simultaneously. All destinations ring at the same time — the first to answer is bridged and the remaining calls are cancelled.")
+  parallel: ConnectDestination[];
 }
 
 @summary("Serial-Parallel Dialing")
+@doc("Combine both serial and parallel strategies using a two-dimensional array. The outer array is the serial dimension — each element is a group tried one at a time, in order. Each inner array is the parallel dimension — all destinations in that group are dialed simultaneously. If no destination in the current group answers, the next group is attempted.")
 model ConnectDeviceSerialParallel is ConnectDeviceBase {
   @doc("""
-    Array of arrays.
-    Inner arrays contain destinations to dial simultaneously.
-    Outer array attempts each parallel group in order.
+    Two-dimensional array combining serial and parallel strategies.
+    The outer array is the **serial** dimension — each element is a group tried in order.
+    Each inner array is the **parallel** dimension — all destinations in that group are dialed simultaneously.
+    If no destination in the current group answers, the next group is attempted.
     """)
-  serial_parallel: ConnectDeviceSingle[][];
+  serial_parallel: ConnectDestination[][];
 }
 
 alias ConnectDevice =
@@ -260,7 +362,7 @@ alias ConnectDevice =
 
 @summary("connect Method")
 model Connect {
-  @doc("Connect to a phone number, SIP URI, Call Fabric resource, queue, or WebSocket stream.")
+  @doc("Connect to a phone number, SIP URI, Resource Address, queue, or WebSocket stream.")
   @oneOf
   connect: ConnectDevice;
 }
