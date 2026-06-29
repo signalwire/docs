@@ -4,24 +4,89 @@ title: Webhooks
 position: 0
 slug: /webhooks
 description: An introduction to using webhooks to receive information and events about calls and messages.
+max-toc-depth: 3
 ---
 
-<Note>
-Looking for TwiML™ compatible webhooks? Please refer to the [Compatibility API webhooks](/docs/compatibility-api/guides/webhooks) documentation.
-</Note>
+[Webhooks](https://en.wikipedia.org/wiki/Webhook) are HTTP requests sent to your server from SignalWire when an event occurs. 
+They help receive information about events like inbound calls to your phone numbers, or messages.
 
-[Webhooks](https://en.wikipedia.org/wiki/Webhook) are HTTP requests sent to your server from SignalWire when an event occurs. They help receive information about events like inbound calls to your phone numbers, or messages. 
+In addition to getting information about events, some webhooks also allow you to tell SignalWire how an event should be handled.
 
-In addition to getting information about events, some webhooks also allow you to tell SignalWire how an event should be handled (via [SWML](/docs/swml)). 
- 
-During development, you can use localhost tunneling applications like [ngrok](https://ngrok.com) to test your webhook handlers running on your development machine..
+During development, you can use localhost tunneling applications like [ngrok](https://ngrok.com) to test your webhook handlers locally. 
+See [the ngrok quickstart guide](https://ngrok.com/docs/getting-started) to get started.
 
-To learn how to use ngrok for local testing, visit [the ngrok quickstart guide](https://ngrok.com/docs/getting-started).
+## Configure webhooks for phone numbers
+
+To handle an inbound call or message, you point your phone number at a [Resource](/docs/platform/resources) that holds your webhook URL. 
+When an event arrives, SignalWire requests that URL and your server responds with [SWML](/docs/swml), the SignalWire Markup Language that tells SignalWire how to handle the call.
+
+```mermaid
+flowchart LR
+    A["Incoming message"] --> B[SignalWire]
+    B --> C["Webhook HTTP request to your server"]
+    C --> D[[Your webhook handler]]
+    D --> F["Generate SWML to reply to the message"]
+    F -- "200 OK, SWML" --> B
+```
+
+<Markdown src="/snippets/common/dashboard/_resource-admonition.mdx" />
+
+<Steps>
+
+### Create a Resource for your webhook URL
+
+In the SignalWire Dashboard, open the **My Resources** tab and click **+ Add**, then choose **SWML Script**.
+
+<Frame caption="The Resource selection menu">
+
+![Selecting a Resource type in the SignalWire Dashboard](/assets/images/dashboard/resources/add-new-resource.webp)
+
+</Frame>
+
+Give the script a name, set **Handle Calls Using** to **External URL**, and enter your webhook URL in the **Primary Script URL** field. Click **Create** to save the Resource.
+
+<Frame caption="A SWML Script Resource configured to fetch SWML from an external webhook URL">
+
+![Configuring a SWML Script Resource with an external URL in the SignalWire Dashboard](/assets/images/dashboard/resources/external-swml-script.webp)
+
+</Frame>
+
+### Assign the Resource to your phone number
+
+Open the **Phone Numbers** tab and select the number you want to configure.
+
+<Frame caption="The purchased phone number list in the SignalWire Dashboard">
+
+![The Phone Numbers tab of a SignalWire Space showing a list of phone numbers](/assets/images/dashboard/phone-numbers/purchased-phone-numbers.webp)
+
+</Frame>
+
+Click **Edit Settings**. Under **Inbound Call Settings** (or **Inbound Message Settings** for messaging), choose **Assign Resource**, select the Resource you created, and click **Save**.
+
+<Frame caption="Assigning a Resource to a phone number's inbound call settings">
+
+![A phone number's settings page showing the Assign Resource option for inbound calls](/assets/images/dashboard/phone-numbers/assign-resource-full.webp)
+
+</Frame>
+
+</Steps>
+
+<CardGroup cols={3}>
+<Card title="Mapping numbers" href="/docs/server-sdks/guides/mapping-numbers">
+  A full walkthrough of connecting a phone number to your application.
+</Card>
+<Card title="Phone numbers" href="/docs/platform/phone-numbers">
+  How to purchase and manage phone numbers in your SignalWire Space.
+</Card>
+<Card title="Handling calls from code" href="/docs/swml/guides/remote-server">
+  Learn how to handle incoming calls and messages from code.
+</Card>
+</CardGroup>
 
 ## Status callbacks to keep track of events
 
-You can configure SignalWire to send status callbacks to your webhook handler when certain events occur. The setting
-for webhooks can be found in the **Phone Number Settings** page in the SignalWire Dashboard, and they are assigned per phone number.
+Status callbacks are asynchronous HTTP requests SignalWire sends to your server as a call, 
+message, or recording moves through its lifecycle, so your application can react to each state change as it happens.
 
 ```mermaid
 flowchart LR
@@ -32,52 +97,45 @@ flowchart LR
     D --> F[Other internal services]
 ```
 
-You can also set status callback URLs programmatically when creating a resource or a phone number from the API.
+You subscribe to a status callback **programmatically**: when you create the call or message, provide a callback URL on the relevant SWML method, 
+and SignalWire posts to it each time the state changes. 
+What you set and the states you receive depend on what you're tracking:
 
-<Cards cols={2}>
+| To track | Provide a callback URL on | States you'll receive |
+| :--- | :--- | :--- |
+| **Voice calls** | `call_state_url` on [`connect`](/docs/swml/reference/calling/connect) | `created`, `ringing`, `answered`, `ended` |
+| **Messages** | `status_callback` on [`send_sms`](/docs/swml/reference/calling/send-sms), or `status_url` on [`reply`](/docs/swml/reference/messaging/reply) | `queued`, `initiated`, `sent`, `delivered`, `undelivered`, `failed`, `read` |
+| **Recordings** | `status_url` on [`record_call`](/docs/swml/reference/calling/record-call) | `recording`, `paused`, `finished`, `no_input`, `error` |
+
+<Note>
+For voice calls, `call_state_events` defaults to `['ended']` — set it explicitly to also receive `created`, `ringing`, and `answered`.
+</Note>
+
+<Info>
+SignalWire only marks a message **Delivered** once it receives a Delivery Receipt (DLR) confirming the message reached the end carrier's network. 
+A status of **Sent** means the message left SignalWire successfully. 
+MMS messages do not support DLRs, so they only ever show **Sent**.
+</Info>
+
+<CardGroup cols={2}>
+<Card
+  title="Message status callback"
+  href="/docs/apis/rest/messages/webhooks/message-status-callback"
+>
+  The full field reference and status values for outbound message status callbacks.
+</Card>
 <Card
   title="10DLC status callback"
   href="/docs/apis/rest/campaign-registry/webhooks/ten-dlc-status-callback"
 >
-  Learn how to receive 10DLC campaign registration status updates via webhooks.
+  Receive 10DLC campaign registration status updates via webhooks.
 </Card>
-</Cards>
-
-## Handle events with SWML
-
-You can configure a phone number to handle incoming calls by using a [SWML script](/docs/swml). SWML is a JSON or YAML format that tells SignalWire how to handle a phone call. You can return SWML from your webhook handler to SignalWire to handle the call.
-
-```mermaid
-flowchart LR
-    A["Incoming messsage"] --> B[SignalWire]
-    B --> C["Webhook HTTP request to your server"]
-    C --> D[[Your webhook handler]]
-    D --> F["Generate SWML to reply to the message"]
-    F -- "200 OK, SWML" --> B
-```
-
-<Card
-  title="Handling calls from code"
-  href="/docs/swml/guides/remote-server"
->
-  Learn how to handle incoming calls and messages from code.
-</Card>
-
-## Configure webhooks for phone numbers
-
-To access the number settings and configure the webhooks in the SignalWire Space, click on **Phone Numbers** and find the number to set up.
-
-<Frame caption="Purchased Phone Number List page in SignalWire Dashboard">
-
-![The Phone Numbers tab of a SignalWire Space showing a list of phone numbers](/assets/images/dashboard/phone-numbers/purchased-phone-numbers.webp)
-
-</Frame>
-
-Click on the phone number to be set up and then click to **Edit Settings**. In phone number settings you can set webhooks to handle events with SWML, or cXML. You can also set status callback URLs for events.
+</CardGroup>
 
 ## Verify webhook signature
 
-To verify webhooks that originated from SignalWire, SignalWire signs its requests with a digital HMAC security key. You can verify that the security key matches the key documented in your Dashboard's [API Credentials](https://my.signalwire.com?page=credentials) with the `validateRequest` method.
+To verify webhooks that originated from SignalWire, SignalWire signs its requests with a digital HMAC security key. 
+You can verify that the security key matches the key documented in your Dashboard's [API Credentials](https://my.signalwire.com?page=credentials) with the `validateRequest` method.
 
 <Frame caption="The Signing Key on the API Credentials page">
 
@@ -86,7 +144,7 @@ To verify webhooks that originated from SignalWire, SignalWire signs its request
 </Frame>
 
 <Warning title="This step is not optional!">
-For production applications, it is extremely important to verify the webhook signature to ensure the requests are coming from SignalWire and not a malicious third party. 
+For production applications, it is extremely important to verify the webhook signature to ensure the requests are coming from SignalWire and not a malicious third party.
 </Warning>
 
 ```js
@@ -112,5 +170,3 @@ app.post("/mywebhook", (req: any, res) => {
   res.sendStatus(200);
 });
 ```
-
-This ensures that if a malicious third party tries to spoof a webhook request, it will be rejected.

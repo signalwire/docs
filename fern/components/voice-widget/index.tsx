@@ -6,8 +6,7 @@ import {
   // Data layer + display-time helpers + shared toolbar UI live in ./engine; this file holds only
   // the row rendering and the row skeleton.
   ALL,
-  ASSET_BASE,
-  AUDIO_BASE,
+  CDN_BASE,
   DEFAULT_PAGE_SIZE,
   MOBILE_PAGE_SIZE,
   PAGE_SIZE_OPTIONS,
@@ -30,10 +29,10 @@ import type { FilterKey, Row, VoiceWidgetProps } from "./engine";
 // is reused from ./engine. Styles live in this folder's styles.css (loaded via docs.yml `css:`).
 
 export function VoiceWidget({
-  assetBaseUrl = ASSET_BASE,
+  assetBaseUrl = CDN_BASE,
   catalogUrl = `${assetBaseUrl}/catalog.json`,
   manifestUrl = `${assetBaseUrl}/manifest.json`,
-  audioBaseUrl = AUDIO_BASE,
+  audioBaseUrl = CDN_BASE,
   groupBy: initialGroup = "provider",
   pageSize = DEFAULT_PAGE_SIZE,
   provider: lockedProvider,
@@ -87,7 +86,8 @@ export function VoiceWidget({
     let alive = true;
     loadBundle(catalogUrl, manifestUrl)
       .then((loaded) => { if (alive) setAllRows(loaded); })
-      .catch((e) => { if (alive) setError(String(e)); });
+      // Don't surface load failures in the docs UI — log for debugging and render nothing (below).
+      .catch((e) => { if (alive) { console.error("VoiceWidget: failed to load voices", e); setError(String(e)); } });
     return () => { alive = false; };
   }, [catalogUrl, manifestUrl]);
 
@@ -183,7 +183,11 @@ export function VoiceWidget({
       setPlayingKey(null);
       return;
     }
-    a.src = audioBaseUrl ? `${audioBaseUrl.replace(/\/$/, "")}/${r.clip.audio}` : r.clip.audio;
+    // clip.audio carries a leading `audio/` (it's authored relative to the CDN origin); strip it so
+    // the path resolves under audioBaseUrl, which already points at the /audio dir (see CDN_BASE).
+    a.src = audioBaseUrl
+      ? `${audioBaseUrl.replace(/\/$/, "")}/${r.clip.audio.replace(/^audio\//, "")}`
+      : r.clip.audio;
     // Mark playing immediately (and synchronously in the ref), not when play() resolves: with
     // preload="none" the clip downloads first, and during that window a second click must read this
     // row as already playing so it pauses instead of restarting the download. The eager icon flip
@@ -210,7 +214,8 @@ export function VoiceWidget({
     }
   }, []);
 
-  if (error) return <div className="vw vw-error">Failed to load voices: {error}</div>;
+  // On load failure, render nothing rather than a visible error in public docs (logged to console).
+  if (error) return null;
   if (!baseRows) return <VoiceRowsSkeleton pills={[showProvider, showFilter("language"), showFilter("gender")].filter(Boolean).length} />;
 
   const pager = pageCount > 1 ? (
