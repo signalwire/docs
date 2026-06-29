@@ -2,10 +2,14 @@ import "@signalwire/typespec-asyncapi";
 
 import "./models/requests.tsp";
 import "./models/responses.tsp";
+import "../../events/message.tsp";
 
 using SignalWire.AsyncAPI;
 
 namespace Relay.WebRTC;
+
+model VertoRequest is JsonRpcRequest<"webrtc.verto", MessageParams>;
+@reply model VertoReply is JsonRpcResponse<MessageResult>;
 
 @doc("""
   Send a Verto frame to SignalWire over the Relay connection — this is how you
@@ -19,35 +23,4 @@ namespace Relay.WebRTC;
   """)
 @channel("webrtc.verto")
 @summary("Send a Verto frame")
-@opExample(#{
-  parameters: #{
-    callID: "c7f9d2e1-3a4b-5c6d-7e8f-9a0b1c2d3e4f",
-    node_id: "f1d2c3b4-a596-4877-8b1e-0123456789ab",
-    message: #{
-      jsonrpc: "2.0",
-      id: "12345",
-      method: "verto.invite",
-      params: #{
-        dialogParams: #{},
-        sdp: "v=0...",
-        layout: "screenshare",
-        restore_layout: true,
-        positions: #{ self: "reserved-1", `12345678`: "standard" },
-      },
-    },
-    subscribe: #[
-      "member.joined",
-      "member.left",
-      "room.ended",
-      "room.updated",
-      "layout.changed",
-      "member.updated",
-    ],
-  },
-  returnType: #{
-    code: "200",
-    node_id: "f1d2c3b4-a596-4877-8b1e-0123456789ab",
-    result: #{ message: "CALL CREATED", callID: "c7f9d2e1-3a4b-5c6d-7e8f-9a0b1c2d3e4f" },
-  },
-})
-op verto(...MessageParams): MessageResult;
+op verto(...VertoRequest): VertoReply | MessageEvent;

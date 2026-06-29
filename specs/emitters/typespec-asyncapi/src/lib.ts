@@ -57,7 +57,13 @@ export const $lib = createTypeSpecLibrary({
     "duplicate-channel": {
       severity: "error",
       messages: {
-        default: paramMessage`Duplicate @channel "${"method"}". JSON-RPC method names must be unique within a service.`,
+        default: paramMessage`Duplicate @channel "${"method"}". Channel names must be unique within a service.`,
+      },
+    },
+    "reply-on-non-model": {
+      severity: "error",
+      messages: {
+        default: "@reply can only be applied to a model.",
       },
     },
     "duplicate-type-name": {
@@ -70,8 +76,7 @@ export const $lib = createTypeSpecLibrary({
   state: {
     server: { description: "State for @server" },
     channel: { description: "State for @channel" },
-    event: { description: "State for @event" },
-    globalEvents: { description: "State for @globalEvents" },
+    reply: { description: "State for @reply" },
     bearerAuth: { description: "State for @bearerAuth" },
   },
   emitter: {

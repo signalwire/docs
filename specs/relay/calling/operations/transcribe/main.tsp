@@ -8,6 +8,9 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
+model TranscribeRequest is JsonRpcRequest<"calling.transcribe", TranscribeParams>;
+@reply model TranscribeReply is JsonRpcResponse<TranscribeResult>;
+
 @doc("""
   Starts transcribing speech on a call to text. SignalWire records the call audio
   and transcribes it in the background. Transcription results are not returned
@@ -18,22 +21,12 @@ namespace Relay.Calling;
   """)
 @channel("calling.transcribe")
 @summary("Start transcribing a call")
-@opExample(#{
-  parameters: #{
-    node_id: "a3e1b2c4-...",
-    call_id: "c7f9d2e1-...",
-    control_id: "transcribe-1",
-    status_url: "https://example.com/transcribe-callback",
-  },
-  returnType: #{ code: "200", message: "Transcribing", url: "recordings/<UUID>.wav" },
-})
-op transcribe(...TranscribeParams): TranscribeResult | CallTranscribeEvent;
+op transcribe(...TranscribeRequest): TranscribeReply | CallTranscribeEvent;
+
+model TranscribeStopRequest is JsonRpcRequest<"calling.transcribe.stop", TranscribeStopParams>;
+@reply model TranscribeStopReply is JsonRpcResponse<TranscribeStopResult>;
 
 @doc("Stops a transcription that is currently running on a call.")
 @channel("calling.transcribe.stop")
 @summary("Stop an active call transcription")
-@opExample(#{
-  parameters: #{ node_id: "a3e1b2c4-...", call_id: "c7f9d2e1-...", control_id: "transcribe-1" },
-  returnType: #{ code: "200", message: "Stopping transcribe" },
-})
-op transcribeStop(...TranscribeStopParams): TranscribeStopResult;
+op transcribeStop(...TranscribeStopRequest): TranscribeStopReply;

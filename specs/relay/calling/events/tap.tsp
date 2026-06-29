@@ -90,11 +90,6 @@ model CallTapParams {
   device: CallTapDevice;
 }
 
-// No `@example`: `tap` (TapMedia) and `device` (CallTapDevice) are both required
-// `@discriminator` properties, and an example value cannot narrow a discriminated
-// base. The variant shapes are illustrated by CallTapAudio/CallTapRtpDevice above.
 @doc("Fires when a tap starts streaming call audio and again when it stops. Check `state` to tell which.")
-@event("calling.call.tap")
-model CallTapEvent {
-  ...CallTapParams;
-}
+@summary("calling.call.tap")
+model CallTapEvent is SignalwireEvent<"calling.call.tap", CallTapParams>;

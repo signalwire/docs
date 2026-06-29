@@ -8,20 +8,18 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
+model DenoiseRequest is JsonRpcRequest<"calling.denoise", DenoiseParams>;
+@reply model DenoiseReply is JsonRpcResponse<DenoiseResult>;
+
 @doc("Starts noise reduction on a call, filtering background noise out of the audio. Use this on noisy connections to improve clarity. Stop it later with `calling.denoise.stop`.")
 @channel("calling.denoise")
 @summary("Start call noise reduction")
-@opExample(#{
-  parameters: #{ node_id: "a3e1b2c4-...", call_id: "c7f9d2e1-..." },
-  returnType: #{ code: "200", message: "Denoiser on" },
-})
-op denoise(...DenoiseParams): DenoiseResult | CallDenoiseEvent;
+op denoise(...DenoiseRequest): DenoiseReply | CallDenoiseEvent;
+
+model DenoiseStopRequest is JsonRpcRequest<"calling.denoise.stop", DenoiseStopParams>;
+@reply model DenoiseStopReply is JsonRpcResponse<DenoiseStopResult>;
 
 @doc("Stops noise reduction previously started with `calling.denoise` on a call.")
 @channel("calling.denoise.stop")
 @summary("Stop call noise reduction")
-@opExample(#{
-  parameters: #{ node_id: "a3e1b2c4-...", call_id: "c7f9d2e1-..." },
-  returnType: #{ code: "200", message: "Denoiser off" },
-})
-op denoiseStop(...DenoiseStopParams): DenoiseStopResult;
+op denoiseStop(...DenoiseStopRequest): DenoiseStopReply;

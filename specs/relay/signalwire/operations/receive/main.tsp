@@ -3,10 +3,16 @@ import "@signalwire/typespec-asyncapi";
 import "../../models/core.tsp";
 import "./models/requests.tsp";
 import "../../../calling/events/state.tsp";
+import "../../../tasking/events/tasks.tsp";
 
 using SignalWire.AsyncAPI;
 
 namespace Relay.Signalwire;
+
+model ReceiveRequest is JsonRpcRequest<"signalwire.receive", ReceiveParams>;
+@reply model ReceiveReply is JsonRpcResponse<Acknowledgement>;
+model UnreceiveRequest is JsonRpcRequest<"signalwire.unreceive", UnreceiveParams>;
+@reply model UnreceiveReply is JsonRpcResponse<Acknowledgement>;
 
 @doc("""
   Subscribe to one or more contexts so you start receiving inbound events for
@@ -17,17 +23,9 @@ namespace Relay.Signalwire;
   """)
 @channel("signalwire.receive")
 @summary("Subscribe to inbound events on one or more contexts")
-@opExample(#{
-  parameters: #{ contexts: #["pbx"] },
-  returnType: #{ code: "200", message: "Receiving events" },
-})
-op receive(...ReceiveParams): Acknowledgement | Relay.Calling.CallReceiveEvent;
+op receive(...ReceiveRequest): ReceiveReply | Relay.Calling.CallReceiveEvent | Relay.Tasking.TasksEvent;
 
 @doc("Unsubscribe from one or more contexts so you stop receiving their inbound events.")
 @channel("signalwire.unreceive")
 @summary("Unsubscribe from inbound events on one or more contexts")
-@opExample(#{
-  parameters: #{ contexts: #["pbx", "asdf"] },
-  returnType: #{ code: "200", message: "Unreceiving events" },
-})
-op unreceive(...UnreceiveParams): Acknowledgement;
+op unreceive(...UnreceiveRequest): UnreceiveReply;

@@ -2,10 +2,15 @@ import "@signalwire/typespec-asyncapi";
 
 import "./models/requests.tsp";
 import "./models/responses.tsp";
+import "../../events/state.tsp";
+import "../../events/receive.tsp";
 
 using SignalWire.AsyncAPI;
 
 namespace Relay.Messaging;
+
+model SendRequest is JsonRpcRequest<"messaging.send", SendParams>;
+@reply model SendReply is JsonRpcResponse<SendResult>;
 
 @doc("""
   Send an SMS or MMS to a phone number. Include `body`, `media`, or both. A
@@ -15,20 +20,4 @@ namespace Relay.Messaging;
   """)
 @channel("messaging.send")
 @summary("Send an outbound message")
-@opExample(#{
-  parameters: #{
-    context: "my_context",
-    tags: #["Custom", "client", "data"],
-    region: "us",
-    to_number: "+15553214321",
-    from_number: "+15551231234",
-    body: "Message Body",
-    media: #["https://example.com/cat.jpg"],
-  },
-  returnType: #{
-    code: "200",
-    message: "Message accepted",
-    message_id: "b1c2d3e4-5f6a-7b8c-9d0e-1f2a3b4c5d6e",
-  },
-})
-op send(...SendParams): SendResult;
+op send(...SendRequest): SendReply | StateEvent | ReceiveEvent;

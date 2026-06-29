@@ -8,6 +8,9 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
+model DialRequest is JsonRpcRequest<"calling.dial", DialParams>;
+@reply model DialReply is JsonRpcResponse<DialResult>;
+
 @doc("""
   Places one or more outbound calls to the devices you specify. The first device
   to answer wins, and any others stop ringing. Use this to start a brand-new call
@@ -22,4 +25,4 @@ namespace Relay.Calling;
 // DialDevice variant models in common.tsp carry schema-level @example values instead.
 @channel("calling.dial")
 @summary("Dial outbound call(s); first to answer wins")
-op dial(...DialParams): DialResult | CallDialEvent;
+op dial(...DialRequest): DialReply | CallDialEvent;

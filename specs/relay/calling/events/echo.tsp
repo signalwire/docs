@@ -24,12 +24,5 @@ model CallEchoParams {
 }
 
 @doc("Fires when audio echo starts on a call and again when it stops.")
-@event("calling.call.echo")
-@example(#{
-  node_id: "a3e1b2c4-5d6f-7a8b-9c0d-1e2f3a4b5c6d",
-  call_id: "c7f9d2e1-3a4b-5c6d-7e8f-9a0b1c2d3e4f",
-  state: "echoing",
-})
-model CallEchoEvent {
-  ...CallEchoParams;
-}
+@summary("calling.call.echo")
+model CallEchoEvent is SignalwireEvent<"calling.call.echo", CallEchoParams>;

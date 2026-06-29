@@ -41,15 +41,5 @@ model CallReferParams {
 }
 
 @doc("Fires each time a transferred call (SIP REFER) changes state, so you can follow the handoff from start to success or failure.")
-@event("calling.call.refer")
-@example(#{
-  node_id: "a3e1b2c4-1234-5678-9abc-def012345678",
-  call_id: "c7f9d2e1-8765-4321-0fed-cba987654321",
-  state: "success",
-  sip_refer_to: "sip:agent@example.com",
-  sip_refer_response_code: "202",
-  sip_notify_response_code: "200",
-})
-model CallReferEvent {
-  ...CallReferParams;
-}
+@summary("calling.call.refer")
+model CallReferEvent is SignalwireEvent<"calling.call.refer", CallReferParams>;

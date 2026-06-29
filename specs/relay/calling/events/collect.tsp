@@ -88,16 +88,5 @@ model CallCollectParams {
 }
 
 @doc("Fires as you collect input from a caller — DTMF digits or speech — reporting partial and final results so you can react to what they said or pressed.")
-@event("calling.call.collect")
-// `result` is omitted: its type `CallCollectResult` is a @discriminator base,
-// which @example cannot narrow to a concrete variant (digit/speech/etc.).
-@example(#{
-  node_id: "a3e1b2c4-1234-5678-9abc-def012345678",
-  call_id: "c7f9d2e1-8765-4321-0fed-cba987654321",
-  control_id: "b2d4f6a8-1111-2222-3333-444455556666",
-  state: "finished",
-  final: true,
-})
-model CallCollectEvent {
-  ...CallCollectParams;
-}
+@summary("calling.call.collect")
+model CallCollectEvent is SignalwireEvent<"calling.call.collect", CallCollectParams>;

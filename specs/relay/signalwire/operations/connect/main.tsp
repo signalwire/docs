@@ -2,10 +2,14 @@ import "@signalwire/typespec-asyncapi";
 
 import "./models/requests.tsp";
 import "./models/responses.tsp";
+import "../../../calling/events/state.tsp";
 
 using SignalWire.AsyncAPI;
 
 namespace Relay.Signalwire;
+
+model ConnectRequest is JsonRpcRequest<"signalwire.connect", ConnectParams>;
+@reply model ConnectReply is JsonRpcResponse<ConnectResult>;
 
 @doc("""
   Authenticate and open your Relay connection. Call this first, before any other
@@ -17,27 +21,4 @@ namespace Relay.Signalwire;
   """)
 @channel("signalwire.connect")
 @summary("Authenticate and establish a Relay connection")
-@opExample(#{
-  parameters: #{
-    version: #{ major: 3, minor: 0, revision: 0 },
-    authentication: #{ jwt_token: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...." },
-    agent: "somesdk-1.2.3",
-    protocol: "signalwire_........",
-    authorization_state: "<encryptedAuthStateBase64>:<tagBase64>",
-    contexts: #["office"],
-  },
-  returnType: #{
-    identity: "c1a2b3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
-    authorization: #{},
-    protocol: "signalwire_........",
-    ice_servers: #[
-      #{
-        urls: #["turn1.signalwire.com", "turn2.signalwire.com"],
-        credential: "<HMACSHA1Base64>",
-        credentialType: "password",
-        username: "<expiration>:<projectid>",
-      }
-    ],
-  },
-})
-op connect(...ConnectParams): ConnectResult | AuthorizationStateEvent;
+op connect(...ConnectRequest): ConnectReply | AuthorizationStateEvent | Relay.Calling.CallStateEvent;

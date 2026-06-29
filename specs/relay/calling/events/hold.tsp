@@ -24,12 +24,5 @@ model CallHoldParams {
 }
 
 @doc("Fires whenever a call is placed on hold or taken off hold.")
-@event("calling.call.hold")
-@example(#{
-  node_id: "a3e1b2c4-5d6f-7a8b-9c0d-1e2f3a4b5c6d",
-  call_id: "c7f9d2e1-3a4b-5c6d-7e8f-9a0b1c2d3e4f",
-  state: "hold",
-})
-model CallHoldEvent {
-  ...CallHoldParams;
-}
+@summary("calling.call.hold")
+model CallHoldEvent is SignalwireEvent<"calling.call.hold", CallHoldParams>;

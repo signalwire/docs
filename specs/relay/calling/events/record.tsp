@@ -83,17 +83,5 @@ model CallRecordParams {
 }
 
 @doc("Fires when a recording starts, pauses, resumes, or finishes. The finished event includes the download URL, duration, and file size.")
-@event("calling.call.record")
-@example(#{
-  node_id: "a3e1b2c4-1234-5678-9abc-def012345678",
-  call_id: "c7f9d2e1-8765-4321-0fed-cba987654321",
-  control_id: "b2d4f6a8-1111-2222-3333-444455556666",
-  state: "finished",
-  url: "https://example.com/recordings/c7f9d2e1.mp3",
-  duration: 20.0,
-  size: 123456788,
-  record: #{ audio: #{ format: "mp3", stereo: false, direction: "both" } },
-})
-model CallRecordEvent {
-  ...CallRecordParams;
-}
+@summary("calling.call.record")
+model CallRecordEvent is SignalwireEvent<"calling.call.record", CallRecordParams>;

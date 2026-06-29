@@ -8,6 +8,9 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
+model TapRequest is JsonRpcRequest<"calling.tap", TapParams>;
+@reply model TapReply is JsonRpcResponse<TapResult>;
+
 // NOTE: no @opExample here — the required `tap: TapConfig` and `device: TapDevice` are
 // @discriminator unions, and TypeSpec value-checking does not narrow a discriminated base
 // to its variant, so an inline frame example can't carry real `params`. The TapAudio /
@@ -24,22 +27,12 @@ namespace Relay.Calling;
   """)
 @channel("calling.tap")
 @summary("Tap call media to an external device")
-op tap(...TapParams): TapResult | CallTapEvent;
+op tap(...TapRequest): TapReply | CallTapEvent;
+
+model TapStopRequest is JsonRpcRequest<"calling.tap.stop", TapStopParams>;
+@reply model TapStopReply is JsonRpcResponse<TapStopResult>;
 
 @doc("Stop an active call tap.")
 @channel("calling.tap.stop")
 @summary("Stop a call tap")
-@opExample(#{
-  parameters: #{
-    node_id: "a3b3e8e0-1234-4a4b-8c8d-000000000001",
-    call_id: "b4c4f9f1-2345-4b5c-9d9e-000000000002",
-    control_id: "tap-1",
-  },
-  returnType: #{
-    code: "200",
-    message: "Stopping tap",
-    control_id: "tap-1",
-    call_id: "b4c4f9f1-2345-4b5c-9d9e-000000000002",
-  },
-})
-op tapStop(...TapStopParams): TapStopResult;
+op tapStop(...TapStopRequest): TapStopReply;

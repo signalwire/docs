@@ -7,29 +7,18 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
+model AiHoldRequest is JsonRpcRequest<"calling.ai_hold", AiHoldParams>;
+@reply model AiHoldReply is JsonRpcResponse<AiHoldResult>;
+
 @doc("Put an AI agent session on hold.")
 @channel("calling.ai_hold")
 @summary("Put an AI agent session on hold")
-@opExample(#{
-  parameters: #{
-    node_id: "a3e1b2c4-...",
-    call_id: "c7f9d2e1-...",
-    timeout: "60",
-    prompt: "Please hold while we transfer you.",
-  },
-  returnType: #{ code: "200", message: "AI on hold" },
-})
-op aiHold(...AiHoldParams): AiHoldResult;
+op aiHold(...AiHoldRequest): AiHoldReply;
+
+model AiUnholdRequest is JsonRpcRequest<"calling.ai_unhold", AiUnholdParams>;
+@reply model AiUnholdReply is JsonRpcResponse<AiUnholdResult>;
 
 @doc("Resume an AI agent session from hold.")
 @channel("calling.ai_unhold")
 @summary("Resume an AI agent session from hold")
-@opExample(#{
-  parameters: #{
-    node_id: "a3e1b2c4-...",
-    call_id: "c7f9d2e1-...",
-    prompt: "Thank you for holding.",
-  },
-  returnType: #{ code: "200", message: "AI resumed" },
-})
-op aiUnhold(...AiUnholdParams): AiUnholdResult;
+op aiUnhold(...AiUnholdRequest): AiUnholdReply;

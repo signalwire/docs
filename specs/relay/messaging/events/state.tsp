@@ -6,27 +6,7 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Messaging;
 
-@doc("""
-  Fires each time a message's delivery state changes. Match `message_id` to the
-  one you got from `messaging.send` and read `message_state` to see where the
-  message is in its journey. The event keeps firing until the message reaches a
-  final state of `delivered`, `undelivered`, or `failed`.
-  """)
-@event("messaging.state")
-@example(#{
-  message_id: "a1b2c3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
-  context: "my_context",
-  direction: "outbound",
-  tags: #[],
-  from_number: "+15551231234",
-  to_number: "+15553214321",
-  body: "Message Body",
-  media: #[],
-  segments: 1,
-  message_state: "failed",
-  reason: "spam",
-})
-model StateEvent {
+model StateEventData {
   @doc("The ID of the message, matching the one returned by `messaging.send`.")
   message_id: string;
 
@@ -60,3 +40,12 @@ model StateEvent {
   @doc("Why the message ended up in this state. Included only when it is `undelivered` or `failed`.")
   reason?: string;
 }
+
+@doc("""
+  Fires each time a message's delivery state changes. Match `message_id` to the
+  one you got from `messaging.send` and read `message_state` to see where the
+  message is in its journey. The event keeps firing until the message reaches a
+  final state of `delivered`, `undelivered`, or `failed`.
+  """)
+@summary("messaging.state")
+model StateEvent is SignalwireEvent<"messaging.state", StateEventData>;

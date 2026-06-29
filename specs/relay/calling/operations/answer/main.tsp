@@ -7,15 +7,10 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
+model AnswerRequest is JsonRpcRequest<"calling.answer", AnswerParams>;
+@reply model AnswerReply is JsonRpcResponse<AnswerResult>;
+
 @doc("Answers an incoming call so audio begins flowing and you can start controlling it.")
 @channel("calling.answer")
 @summary("Answer an incoming call")
-@opExample(#{
-  parameters: #{
-    node_id: "a3b3e8e0-1234-4a4b-8c8d-000000000001",
-    call_id: "b4c4f9f1-2345-4b5c-9d9e-000000000002",
-    codecs: #["PCMU", "PCMA"],
-  },
-  returnType: #{ code: "200", message: "Answering call" },
-})
-op answer(...AnswerParams): AnswerResult;
+op answer(...AnswerRequest): AnswerReply;

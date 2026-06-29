@@ -16,23 +16,20 @@ model ServerOptions {
 extern dec server(target: Namespace, name: valueof string, options: valueof ServerOptions);
 
 /**
- * Mark an operation as a JSON-RPC method and place it on its own AsyncAPI channel.
- * The string is the wire `method` constant in the request/response frames, the channel id
- * (camelized, e.g. `calling.dial` -> `callingDial`), and the channel title. The channel
- * address defaults to the root WebSocket connection `/`. Every operation thus becomes its
- * own root-addressed channel — the AsyncAPI 3.0 per-operation-channel idiom.
+ * Place an operation on its own AsyncAPI channel. The string is the channel id (camelized,
+ * e.g. `calling.dial` -> `callingDial`) and the channel title; the channel address defaults
+ * to the root WebSocket connection `/`. Every operation thus becomes its own root-addressed
+ * channel — the AsyncAPI 3.0 per-operation-channel idiom. Channel identity only: the protocol
+ * `method` constant (if any) lives in the request message payload, authored in the spec.
  */
 extern dec channel(target: Operation, method: valueof string);
 
-/** Mark a model as a server-pushed event delivered via signalwire.event. */
-extern dec event(target: Model, eventType: valueof string);
-
 /**
- * Events that may be received during EVERY operation on this channel (e.g. call-lifecycle
- * events like call.state). Each is merged into every command's receive union, so it is
- * documented on each operation page without per-method repetition.
+ * Mark a return-type model as the operation's correlated reply (the AsyncAPI `reply`). Every
+ * other model in the return type is treated as a received message on the operation's channel.
+ * A model marked `@error` (TypeSpec core) is also treated as a reply (an error response).
  */
-extern dec globalEvents(target: Namespace, ...events: Model[]);
+extern dec reply(target: Model);
 
 /** Declare HTTP bearer (token) authentication for the service. */
 extern dec bearerAuth(target: Namespace, bearerFormat?: valueof string);

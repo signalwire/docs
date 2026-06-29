@@ -24,14 +24,6 @@ channels:
         $ref: "#/components/messages/callingDialRequest"
       callingDialResponse:
         $ref: "#/components/messages/callingDialResponse"
-    bindings:
-      ws: {}
-  callingCallState:
-    address: /
-    title: calling.call.state
-    servers:
-      - $ref: "#/servers/production"
-    messages:
       callStateEvent:
         $ref: "#/components/messages/callStateEvent"
     bindings:
@@ -50,6 +42,14 @@ operations:
         $ref: "#/channels/callingDial"
       messages:
         - $ref: "#/channels/callingDial/messages/callingDialResponse"
+  onCallingDialCallStateEvent:
+    action: receive
+    channel:
+      $ref: "#/channels/callingDial"
+    title: calling.call.state
+    x-fern-display-name: calling.call.state
+    messages:
+      - $ref: "#/channels/callingDial/messages/callStateEvent"
   onCallingDialResponse:
     action: receive
     channel:
@@ -58,30 +58,28 @@ operations:
     x-fern-display-name: calling.dial response
     messages:
       - $ref: "#/channels/callingDial/messages/callingDialResponse"
-  onCallingCallState:
-    action: receive
-    channel:
-      $ref: "#/channels/callingCallState"
-    title: calling.call.state
-    x-fern-display-name: calling.call.state
-    messages:
-      - $ref: "#/channels/callingCallState/messages/callStateEvent"
 components:
   schemas:
-    Relay.Calling.DialResult:
+    Relay.Calling.DialRequest:
       type: object
       properties:
-        code:
+        jsonrpc:
           type: string
-        message:
+          enum:
+            - "2.0"
+        id:
           type: string
-        call_id:
+        method:
           type: string
-        node_id:
-          type: string
+          enum:
+            - calling.dial
+        params:
+          $ref: "#/components/schemas/Relay.Calling.DialParams"
       required:
-        - code
-        - message
+        - jsonrpc
+        - id
+        - method
+        - params
     Relay.Calling.DialParams:
       type: object
       properties:
@@ -154,40 +152,75 @@ components:
           required:
             - type
             - params
-    CallingDialRequest:
+    Relay.Calling.DialReply:
       type: object
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - "2.0"
+        id:
+          type: string
+        result:
+          $ref: "#/components/schemas/Relay.Calling.DialResult"
+      required:
+        - jsonrpc
+        - id
+        - result
+    Relay.Calling.DialResult:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        call_id:
+          type: string
+        node_id:
+          type: string
+      required:
+        - code
+        - message
+    Relay.Calling.CallStateEvent:
+      type: object
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - "2.0"
+        id:
+          type: string
+        method:
+          type: string
+          enum:
+            - signalwire.event
+        params:
+          type: object
+          properties:
+            event_type:
+              type: string
+              enum:
+                - calling.call.state
+            event_channel:
+              type: string
+            timestamp:
+              type: number
+              format: double
+            project_id:
+              type: string
+            space_id:
+              type: string
+            params:
+              $ref: "#/components/schemas/Relay.Calling.CallStateParams"
+          required:
+            - event_type
+            - params
       required:
         - jsonrpc
         - id
         - method
         - params
-      properties:
-        jsonrpc:
-          type: string
-          const: "2.0"
-        id:
-          type: string
-          format: uuid
-        method:
-          type: string
-          const: calling.dial
-        params:
-          $ref: "#/components/schemas/Relay.Calling.DialParams"
-    CallingDialResponse:
-      type: object
-      required:
-        - jsonrpc
-        - id
-      properties:
-        jsonrpc:
-          type: string
-          const: "2.0"
-        id:
-          type: string
-          format: uuid
-        result:
-          $ref: "#/components/schemas/Relay.Calling.DialResult"
-    Relay.Calling.CallStateEvent:
+    Relay.Calling.CallStateParams:
       type: object
       properties:
         node_id:
@@ -206,42 +239,6 @@ components:
         - node_id
         - call_id
         - call_state
-    CallStateEventFrame:
-      type: object
-      required:
-        - jsonrpc
-        - method
-        - id
-        - params
-      properties:
-        jsonrpc:
-          type: string
-          const: "2.0"
-        method:
-          type: string
-          const: signalwire.event
-        id:
-          type: string
-          format: uuid
-        params:
-          type: object
-          required:
-            - event_type
-            - params
-          properties:
-            event_type:
-              type: string
-              const: calling.call.state
-            event_channel:
-              type: string
-            timestamp:
-              type: number
-            space_id:
-              type: string
-            project_id:
-              type: string
-            params:
-              $ref: "#/components/schemas/Relay.Calling.CallStateEvent"
   messages:
     callingDialRequest:
       name: calling.dial.request
@@ -250,7 +247,7 @@ components:
       correlationId:
         location: $message.payload#/id
       payload:
-        $ref: "#/components/schemas/CallingDialRequest"
+        $ref: "#/components/schemas/Relay.Calling.DialRequest"
     callingDialResponse:
       name: calling.dial.response
       title: calling.dial response
@@ -258,13 +255,13 @@ components:
       correlationId:
         location: $message.payload#/id
       payload:
-        $ref: "#/components/schemas/CallingDialResponse"
+        $ref: "#/components/schemas/Relay.Calling.DialReply"
     callStateEvent:
-      name: calling.call.state
-      title: calling.call.state event
+      name: CallStateEvent
+      title: calling.call.state
       contentType: application/json
       payload:
-        $ref: "#/components/schemas/CallStateEventFrame"
+        $ref: "#/components/schemas/Relay.Calling.CallStateEvent"
   securitySchemes:
     httpBearer:
       type: http

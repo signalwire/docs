@@ -34,14 +34,7 @@ union AiSidecarCallbackType {
   "final",
 }
 
-@event("calling.ai.sidecar")
-@example(#{
-  type: "insight",
-  ts: 1745870400123456,
-  tick_id: 7,
-  channel_data: #{ call_id: "c7f9d2e1-..." },
-})
-model AiSidecarEvent {
+model AiSidecarEventData {
   @doc("The callback type. Determines which type-specific fields are present.")
   type: AiSidecarCallbackType;
 
@@ -54,3 +47,6 @@ model AiSidecarEvent {
   @doc("Call/channel context (`call_id`, plus caller id fields when available).")
   channel_data: Record<unknown>;
 }
+
+@summary("calling.ai.sidecar")
+model AiSidecarEvent is SignalwireEvent<"calling.ai.sidecar", AiSidecarEventData>;

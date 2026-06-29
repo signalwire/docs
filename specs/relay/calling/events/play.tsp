@@ -29,13 +29,5 @@ model CallPlayParams {
 }
 
 @doc("Fires when audio playback on a call starts, pauses, resumes, finishes, or errors, so you can track a `calling.play` through to completion.")
-@event("calling.call.play")
-@example(#{
-  node_id: "a3e1b2c4-1234-5678-9abc-def012345678",
-  call_id: "c7f9d2e1-8765-4321-0fed-cba987654321",
-  control_id: "b2d4f6a8-1111-2222-3333-444455556666",
-  state: "finished",
-})
-model CallPlayEvent {
-  ...CallPlayParams;
-}
+@summary("calling.call.play")
+model CallPlayEvent is SignalwireEvent<"calling.call.play", CallPlayParams>;

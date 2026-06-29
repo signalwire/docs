@@ -34,24 +34,16 @@ export function getChannel(program: Program, target: Operation): string | undefi
   return program.stateMap(stateKeys.channel).get(target);
 }
 
-export function $event(context: DecoratorContext, target: Model, eventType: string): void {
-  context.program.stateMap(stateKeys.event).set(target, eventType);
+export function $reply(context: DecoratorContext, target: Model): void {
+  if (target.kind !== "Model") {
+    reportDiagnostic(context.program, { code: "reply-on-non-model", target });
+    return;
+  }
+  context.program.stateMap(stateKeys.reply).set(target, true);
 }
 
-export function getEvent(program: Program, target: Model): string | undefined {
-  return program.stateMap(stateKeys.event).get(target);
-}
-
-export function $globalEvents(
-  context: DecoratorContext,
-  target: Namespace,
-  ...events: Model[]
-): void {
-  context.program.stateMap(stateKeys.globalEvents).set(target, events);
-}
-
-export function getGlobalEvents(program: Program, target: Namespace): Model[] {
-  return program.stateMap(stateKeys.globalEvents).get(target) ?? [];
+export function getReply(program: Program, target: Model): boolean {
+  return program.stateMap(stateKeys.reply).get(target) === true;
 }
 
 export interface BearerAuthConfig {

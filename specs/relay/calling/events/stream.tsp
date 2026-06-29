@@ -33,15 +33,5 @@ model CallStreamParams {
 }
 
 @doc("Fires when a media stream starts and again when it stops. Check `state` to tell which.")
-@event("calling.call.stream")
-@example(#{
-  node_id: "a3e1b2c4-5d6f-7a8b-9c0d-1e2f3a4b5c6d",
-  call_id: "c7f9d2e1-3a4b-5c6d-7e8f-9a0b1c2d3e4f",
-  control_id: "8f14e45f-ceea-167a-5a36-dedd4bea2543",
-  state: "streaming",
-  url: "wss://example.com/audio",
-  name: "my_stream",
-})
-model CallStreamEvent {
-  ...CallStreamParams;
-}
+@summary("calling.call.stream")
+model CallStreamEvent is SignalwireEvent<"calling.call.stream", CallStreamParams>;

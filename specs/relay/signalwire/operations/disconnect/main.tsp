@@ -7,6 +7,9 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Signalwire;
 
+model DisconnectRequest is JsonRpcRequest<"signalwire.disconnect", DisconnectParams>;
+@reply model DisconnectReply is JsonRpcResponse<DisconnectResult>;
+
 @doc("""
   A heads-up that SignalWire is about to close your connection — for example
   during a deployment — so you can flush anything pending. Reply to acknowledge;
@@ -17,8 +20,4 @@ namespace Relay.Signalwire;
   """)
 @channel("signalwire.disconnect")
 @summary("Service is about to disconnect the client")
-@opExample(#{
-  parameters: #{ restart: true },
-  returnType: #{},
-})
-op disconnect(...DisconnectParams): DisconnectResult;
+op disconnect(...DisconnectRequest): DisconnectReply;

@@ -97,10 +97,5 @@ model CallDetectParams {
 }
 
 @doc("Fires when a detector reports a result — a fax tone, an answering machine versus a human, or a DTMF digit.")
-// No @example: the required `detect` field is typed as the @discriminator base
-// `CallDetectResult`, which @example cannot narrow to a concrete variant
-// (fax/machine/digit). Omitting a required field would be an invalid example.
-@event("calling.call.detect")
-model CallDetectEvent {
-  ...CallDetectParams;
-}
+@summary("calling.call.detect")
+model CallDetectEvent is SignalwireEvent<"calling.call.detect", CallDetectParams>;

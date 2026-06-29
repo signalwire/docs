@@ -8,6 +8,9 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
+model LiveTranscribeRequest is JsonRpcRequest<"calling.live_transcribe", LiveTranscribeParams>;
+@reply model LiveTranscribeReply is JsonRpcResponse<LiveTranscribeResult>;
+
 @doc("""
   Transcribes a call to text in real time, optionally on both legs at once. Unlike
   `calling.transcribe`, results stream live to your `webhook` while the call is
@@ -17,12 +20,4 @@ namespace Relay.Calling;
   """)
 @channel("calling.live_transcribe")
 @summary("Start or stop live transcription on a call")
-@opExample(#{
-  parameters: #{
-    node_id: "a3e1b2c4-...",
-    call_id: "c7f9d2e1-...",
-    action: #{ start: #{ lang: "en-US", direction: #["remote-caller"] } },
-  },
-  returnType: #{ code: "200", message: "Live transcription started" },
-})
-op liveTranscribe(...LiveTranscribeParams): LiveTranscribeResult | CallTranscribeEvent;
+op liveTranscribe(...LiveTranscribeRequest): LiveTranscribeReply | CallTranscribeEvent;

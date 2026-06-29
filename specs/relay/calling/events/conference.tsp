@@ -107,19 +107,5 @@ model ConferenceParams {
 }
 
 @doc("Fires throughout a conference's life: when it starts and ends, and each time a participant joins, leaves, mutes, holds, speaks, or an announcement plays. Check `status` to see what happened.")
-@event("calling.conference")
-@example(#{
-  node_id: "a3e1b2c4-5d6f-7a8b-9c0d-1e2f3a4b5c6d",
-  conference_id: "f0e9d8c7-b6a5-4938-2716-0a1b2c3d4e5f",
-  name: "sales-standup",
-  status: "participant-leave",
-  call_id: "c7f9d2e1-3a4b-5c6d-7e8f-9a0b1c2d3e4f",
-  muted: false,
-  hold: false,
-  coaching: false,
-  end_on_leave: false,
-  start_on_join: true,
-})
-model ConferenceEvent {
-  ...ConferenceParams;
-}
+@summary("calling.conference")
+model ConferenceEvent is SignalwireEvent<"calling.conference", ConferenceParams>;

@@ -67,14 +67,9 @@ using SignalWire.AsyncAPI;
   Use it from your backend — it's available in the server SDKs (Python, Node, Java,
   Ruby). To place a call directly from a browser, use the WebRTC service instead.
   """)
-// calling.call.state fires for any call the client controls, across its whole lifecycle and
-// regardless of which command is in flight — verified in mod_infrastructure/relay.c: it fires via
-// relay_call_event_fire keyed by call_id (not by request), and is delivered to clients. It is not
-// the correlated reply to a specific command, so it rides every command's receive union.
-//   NB: calling.error is NOT here (and not modeled at all) — it is internal-only (DB/UI), never
-//   delivered to the client SDK (relay_call_error_event_create rewrites its event_channel).
-//   calling.call.receive is also NOT here — it is the unsolicited inbound-call notification offered
-//   to context-subscribed clients (relay.c:17564 task queue; Call.md CallNetwork(context) →
-//   onInboundCall), so it is attached to signalwire.receive (the subscription) instead.
-@globalEvents(CallStateEvent)
+// calling.call.state fires for any call the client controls, regardless of which command is in
+// flight (verified in mod_infrastructure/relay.c: relay_call_event_fire keyed by call_id, not by
+// request). As an always-on event with no single triggering command, it rides `signalwire.connect`
+// (see signalwire/operations/connect). calling.error is internal-only and not modeled. The
+// unsolicited inbound-call notification calling.call.receive is attached to signalwire.receive.
 namespace Relay.Calling;

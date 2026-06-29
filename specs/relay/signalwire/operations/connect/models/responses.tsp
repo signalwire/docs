@@ -46,10 +46,5 @@ model AuthorizationStateParams {
   Delivers your latest authorization state so you can restore it if you
   reconnect. Save the `authorization_state` value each time this event arrives.
   """)
-@event("signalwire.authorization.state")
-@example(#{
-  authorization_state: "<encryptedAuthStateBase64>:<tagBase64>",
-})
-model AuthorizationStateEvent {
-  ...AuthorizationStateParams;
-}
+@summary("signalwire.authorization.state")
+model AuthorizationStateEvent is SignalwireEvent<"signalwire.authorization.state", AuthorizationStateParams>;

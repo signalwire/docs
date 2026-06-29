@@ -77,11 +77,6 @@ model CallFaxParams {
   fax: CallFax;
 }
 
-// No `@example`: `fax` is a required `@discriminator` (CallFax) property, and an
-// example value cannot narrow a discriminated base. Per-variant payloads are
-// illustrated by the FaxPage/FaxFinished `type`/`params` fields above.
 @doc("Sent as a fax progresses: one event per page, then a final event when it finishes.")
-@event("calling.call.fax")
-model CallFaxEvent {
-  ...CallFaxParams;
-}
+@summary("calling.call.fax")
+model CallFaxEvent is SignalwireEvent<"calling.call.fax", CallFaxParams>;

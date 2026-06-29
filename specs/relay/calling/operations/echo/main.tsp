@@ -8,6 +8,9 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
+model EchoRequest is JsonRpcRequest<"calling.echo", EchoParams>;
+@reply model EchoReply is JsonRpcResponse<EchoResult>;
+
 @doc("""
   Echoes the caller's audio back to them — whatever they say is played straight
   back. Handy for testing that audio is flowing in both directions on a call.
@@ -15,8 +18,4 @@ namespace Relay.Calling;
   """)
 @channel("calling.echo")
 @summary("Echo audio back to the caller")
-@opExample(#{
-  parameters: #{ node_id: "a3e1b2c4-...", call_id: "c7f9d2e1-...", timeout: 30 },
-  returnType: #{ code: "200", message: "Echoing" },
-})
-op echo(...EchoParams): EchoResult | CallEchoEvent;
+op echo(...EchoRequest): EchoReply | CallEchoEvent;

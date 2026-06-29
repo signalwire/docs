@@ -1,0 +1,74 @@
+---
+title: Errors
+slug: /relay/errors
+description: Every Relay response carries a code and message you check for success or failure.
+max-toc-depth: 3
+---
+
+Relay doesn't fail with HTTP status codes — there's no HTTP response on a WebSocket. Instead, **every command you send comes back with a result you check**: a `code` and a `message`. Failures are reported through that result, not raised as a separate kind of error, so you handle success and failure the same way — by reading the `code`.
+
+## The result shape
+
+A typical result looks like this:
+
+```json
+{
+  "code": "200",
+  "message": "OK",
+  "call_id": "c1a2b3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
+  "control_id": "b9f8e7d6-4a3b-2c1d-0e9f-8a7b6c5d4e3f"
+}
+```
+
+| Field | Description |
+|---|---|
+| `code` | The result code, as a **string**. `"200"` means success; any other value means the request failed. |
+| `message` | A human-readable description of the result. On failure, it explains what went wrong. The exact text varies by command. |
+| `call_id` | The call this result is for, echoed from your request. Present when the command acts on a call. |
+| `control_id` | Your control identifier for the started action, echoed when your request included one. |
+
+## Checking for success
+
+The one thing to check is `code`, and remember it's a **string**, not a number:
+
+- `"200"` — the request succeeded.
+- Anything else — the request failed, and `message` explains why.
+
+```python
+result = call.play(url="https://example.com/audio.mp3")
+if result.code != "200":
+    print(f"Play failed: {result.message}")
+```
+
+The codes mirror familiar HTTP status conventions, so a `"4xx"` value means the request was rejected and a `"5xx"` value means something went wrong on SignalWire's side.
+
+## Common codes
+
+| Code | Meaning |
+|---|---|
+| `"200"` | **Success.** The command was accepted. |
+| `"400"` | **Bad request.** A parameter was missing or invalid — for example, requesting a codec the call type doesn't support. Fix the request before retrying. |
+| `"402"` | **Payment required.** Your account isn't permitted to perform this action (for example, subscribing to receive events). |
+| `"404"` | **Not found.** The call or resource the request targeted doesn't exist — often because it has already ended. |
+| `"409"` | **Conflict.** The request clashes with the call's current state — for example, starting transcription on a call that already has it running. |
+
+## Examples
+
+A failed request returns the same shape, with a non-`"200"` code and a message explaining the cause:
+
+```json
+{
+  "code": "409",
+  "message": "Transcribe is already in progress",
+  "call_id": "c1a2b3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
+  "control_id": "b9f8e7d6-4a3b-2c1d-0e9f-8a7b6c5d4e3f"
+}
+```
+
+<Note>
+Authentication failures follow the same pattern: if `signalwire.connect` can't validate your credentials, it returns a failing result with a message describing why. See [Authentication](/docs/apis/relay/authentication).
+</Note>
+
+## Using an SDK
+
+The [SignalWire SDKs](/docs/server-sdks) surface this result for you — successful commands return a result object you can inspect, and failures are raised or returned in your language's idiomatic style instead of leaving you to compare code strings by hand. The `code` and `message` are still there when you need the underlying detail.

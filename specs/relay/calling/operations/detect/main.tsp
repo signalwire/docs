@@ -8,6 +8,9 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
+model DetectRequest is JsonRpcRequest<"calling.detect", DetectParams>;
+@reply model DetectReply is JsonRpcResponse<DetectResult>;
+
 // NOTE: no @opExample here — the required `detect: DetectConfig` is a @discriminator
 // union, and TypeSpec value-checking does not narrow a discriminated base to its variant,
 // so an inline frame example can't carry real `params`. The DetectMachine/DetectFax/
@@ -21,22 +24,12 @@ namespace Relay.Calling;
   """)
 @channel("calling.detect")
 @summary("Start a detector (machine/fax/digit)")
-op detect(...DetectParams): DetectResult | CallDetectEvent;
+op detect(...DetectRequest): DetectReply | CallDetectEvent;
+
+model DetectStopRequest is JsonRpcRequest<"calling.detect.stop", DetectStopParams>;
+@reply model DetectStopReply is JsonRpcResponse<DetectStopResult>;
 
 @doc("Stop an active detector.")
 @channel("calling.detect.stop")
 @summary("Stop a detector")
-@opExample(#{
-  parameters: #{
-    node_id: "a3b3e8e0-1234-4a4b-8c8d-000000000001",
-    call_id: "b4c4f9f1-2345-4b5c-9d9e-000000000002",
-    control_id: "detect-1",
-  },
-  returnType: #{
-    code: "200",
-    message: "Stopping detect",
-    control_id: "detect-1",
-    call_id: "b4c4f9f1-2345-4b5c-9d9e-000000000002",
-  },
-})
-op detectStop(...DetectStopParams): DetectStopResult;
+op detectStop(...DetectStopRequest): DetectStopReply;

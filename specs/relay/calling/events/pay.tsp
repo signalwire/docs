@@ -28,16 +28,8 @@ model CallPayParams {
 }
 
 @doc("Fires as a pay session progresses, letting you track whether it is processing, has finished, or hit an error.")
-@event("calling.call.pay")
-@example(#{
-  node_id: "a3e1b2c4-5d6f-7a8b-9c0d-1e2f3a4b5c6d",
-  call_id: "c7f9d2e1-3a4b-5c6d-7e8f-9a0b1c2d3e4f",
-  control_id: "8f14e45f-ceea-167a-5a36-dedd4bea2543",
-  state: "processing",
-})
-model CallPayEvent {
-  ...CallPayParams;
-}
+@summary("calling.call.pay")
+model CallPayEvent is SignalwireEvent<"calling.call.pay", CallPayParams>;
 
 // NOTE: `calling.error` is intentionally NOT modeled here. Verified in
 // mod_infrastructure/relay.c (relay_call_error_event_create, ~line 1545): error events have their

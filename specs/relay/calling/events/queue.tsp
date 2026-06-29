@@ -52,19 +52,5 @@ model CallQueueParams {
 }
 
 @doc("Fires as a call moves through a queue — when it joins, gets connected, or leaves — and reports its position along with live queue stats.")
-@event("calling.call.queue")
-@example(#{
-  node_id: "a3e1b2c4-1234-5678-9abc-def012345678",
-  call_id: "c7f9d2e1-8765-4321-0fed-cba987654321",
-  control_id: "b2d4f6a8-1111-2222-3333-444455556666",
-  status: "enqueue",
-  id: "q1a2b3c4-aaaa-bbbb-cccc-ddddeeeeffff",
-  name: "support",
-  position: 3,
-  size: 5,
-  avg_time: 42.0,
-  enqueue_ts: 1718600000.0,
-})
-model CallQueueEvent {
-  ...CallQueueParams;
-}
+@summary("calling.call.queue")
+model CallQueueEvent is SignalwireEvent<"calling.call.queue", CallQueueParams>;

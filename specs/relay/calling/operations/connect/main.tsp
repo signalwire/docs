@@ -8,6 +8,9 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
+model ConnectRequest is JsonRpcRequest<"calling.connect", ConnectParams>;
+@reply model ConnectReply is JsonRpcResponse<ConnectResult>;
+
 @doc("""
   Calls a new device and bridges it to this already-active call, joining both
   legs together. Use this to add a party to a live call, such as forwarding or
@@ -23,4 +26,4 @@ namespace Relay.Calling;
 // Ringback variant models in common.tsp carry schema-level @example values instead.
 @channel("calling.connect")
 @summary("Connect a device to an active call")
-op connect(...ConnectParams): ConnectResult | CallConnectEvent;
+op connect(...ConnectRequest): ConnectReply | CallConnectEvent;

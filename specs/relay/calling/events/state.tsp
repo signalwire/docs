@@ -89,28 +89,8 @@ model CallStateParams {
 }
 
 @doc("Fires every time one of your calls changes state. Use the `call_state` field to track the call through its lifecycle, and `tag` to match the event back to the call you placed.")
-@event("calling.call.state")
-@example(#{
-  node_id: "b8d0a8f0-1234-4abc-9def-0123456789ab",
-  call_id: "c1e2f3a4-5678-4bcd-9efa-1234567890bc",
-  tag: "my-call-tag",
-  parent: #{
-    node_id: "a1b2c3d4-9012-4cde-9fab-2345678901cd",
-    call_id: "d4e5f6a7-3456-4def-9abc-3456789012de",
-    device_type: "sip",
-  },
-  peer: #{
-    node_id: "e5f6a7b8-7890-4eab-9bcd-4567890123ef",
-    call_id: "f6a7b8c9-1234-4fbc-9cde-5678901234fa",
-  },
-  call_state: "ending",
-  start_time: 1717000000000,
-  answer_time: 1717000002000,
-  end_time: 1717000060000,
-})
-model CallStateEvent {
-  ...CallStateParams;
-}
+@summary("calling.call.state")
+model CallStateEvent is SignalwireEvent<"calling.call.state", CallStateParams>;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // calling.call.receive
@@ -133,10 +113,8 @@ model CallReceiveParams {
 }
 
 @doc("Fires when a new call comes in that your application can answer and control. The payload tells you who is calling and on which context.")
-@event("calling.call.receive")
-model CallReceiveEvent {
-  ...CallReceiveParams;
-}
+@summary("calling.call.receive")
+model CallReceiveEvent is SignalwireEvent<"calling.call.receive", CallReceiveParams>;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // calling.call.connect
@@ -180,23 +158,8 @@ model CallConnectParams {
 }
 
 @doc("Fires as a connect request progresses, telling you whether your call has been bridged to the peer. Watch `connect_state` to know when the two calls are joined, torn down, or have failed to connect.")
-@event("calling.call.connect")
-@example(#{
-  node_id: "b8d0a8f0-1234-4abc-9def-0123456789ab",
-  call_id: "c1e2f3a4-5678-4bcd-9efa-1234567890bc",
-  tag: "my-connect-tag",
-  peer: #{
-    node_id: "e5f6a7b8-7890-4eab-9bcd-4567890123ef",
-    call_id: "f6a7b8c9-1234-4fbc-9cde-5678901234fa",
-    tag: "peer-tag",
-    queue_id: "q1a2b3c4-5678-4abc-9def-6789012345ab",
-    queue_name: "support",
-  },
-  connect_state: "connected",
-})
-model CallConnectEvent {
-  ...CallConnectParams;
-}
+@summary("calling.call.connect")
+model CallConnectEvent is SignalwireEvent<"calling.call.connect", CallConnectParams>;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // calling.call.dial
@@ -241,18 +204,5 @@ model CallDialParams {
 }
 
 @doc("Fires as a `calling.dial` request progresses. Watch `dial_state` to know when your call is ringing, has been answered, or failed; when it is answered the `call` field gives you the call that picked up.")
-@event("calling.call.dial")
-@example(#{
-  node_id: "b8d0a8f0-1234-4abc-9def-0123456789ab",
-  tag: "my-dial-tag",
-  dial_state: "answered",
-  call: #{
-    node_id: "e5f6a7b8-7890-4eab-9bcd-4567890123ef",
-    call_id: "f6a7b8c9-1234-4fbc-9cde-5678901234fa",
-    tag: "my-dial-tag",
-    dial_winner: "true",
-  },
-})
-model CallDialEvent {
-  ...CallDialParams;
-}
+@summary("calling.call.dial")
+model CallDialEvent is SignalwireEvent<"calling.call.dial", CallDialParams>;

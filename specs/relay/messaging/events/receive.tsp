@@ -6,25 +6,7 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Messaging;
 
-@doc("""
-  Fires when someone sends a message to one of your numbers. The payload gives
-  you the full incoming message — who it's from, the text, and any media — so
-  you can react or reply.
-  """)
-@event("messaging.receive")
-@example(#{
-  message_id: "a1b2c3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
-  context: "my_context",
-  direction: "inbound",
-  tags: #[],
-  from_number: "+15551231234",
-  to_number: "+15553214321",
-  body: "Message Body",
-  media: #["https://example.com/cat.jpg"],
-  segments: 1,
-  message_state: "received",
-})
-model ReceiveEvent {
+model ReceiveEventData {
   @doc("The ID of the message.")
   message_id: string;
 
@@ -55,3 +37,11 @@ model ReceiveEvent {
   @doc("The message state. Always `received` for an incoming message.")
   message_state: "received";
 }
+
+@doc("""
+  Fires when someone sends a message to one of your numbers. The payload gives
+  you the full incoming message — who it's from, the text, and any media — so
+  you can react or reply.
+  """)
+@summary("messaging.receive")
+model ReceiveEvent is SignalwireEvent<"messaging.receive", ReceiveEventData>;
