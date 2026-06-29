@@ -16630,7 +16630,7 @@ components:
             - $ref: "#/components/schemas/SWML.Calling.ConnectDeviceSerial"
             - $ref: "#/components/schemas/SWML.Calling.ConnectDeviceParallel"
             - $ref: "#/components/schemas/SWML.Calling.ConnectDeviceSerialParallel"
-          description: Connect to a phone number, SIP URI, Call Fabric resource, queue, or WebSocket stream.
+          description: Connect to a phone number, SIP URI, Resource Address, queue, or WebSocket stream.
       required:
         - connect
     SWML.Calling.ConnectDeviceSingle:
@@ -16739,16 +16739,6 @@ components:
           description: The amount of time, in seconds, to wait for the `confirm` URL to return a response
           examples:
             - 30
-        username:
-          type: string
-          description: SIP username to use for authentication when dialing a SIP URI. Has no effect on calls to phone numbers.
-          examples:
-            - sipuser
-        password:
-          type: string
-          description: SIP password to use for authentication when dialing a SIP URI. Has no effect on calls to phone numbers.
-          examples:
-            - sippassword
         encryption:
           type: string
           enum:
@@ -16809,11 +16799,21 @@ components:
             Destination to dial. Can be:
             - Phone number in E.164 format (e.g., "+15552345678")
             - SIP URI (e.g., "sip:alice@example.com")
-            - Call Fabric Resource address (e.g., "/public/test_room")
+            - Resource Address (e.g., "/public/test_room")
             - Queue (e.g., "queue:support")
             - WebSocket stream (e.g., "stream:wss://example.com/audio")
           examples:
             - "+15559876543"
+        username:
+          type: string
+          description: SIP username to use for authentication when dialing a SIP URI. Has no effect on calls to phone numbers.
+          examples:
+            - sipuser
+        password:
+          type: string
+          description: SIP password to use for authentication when dialing a SIP URI. Has no effect on calls to phone numbers.
+          examples:
+            - sippassword
         name:
           type: string
           description: Stream name identifier. Only applies to stream destinations.
@@ -16858,6 +16858,12 @@ components:
           description: Custom key-value pairs sent in the WebSocket start message. Only applies to stream destinations.
       required:
         - to
+      description: |-
+        Single-destination connect object.
+
+        Inherits connect-level properties from ConnectDeviceBase, then spreads the
+        destination-only properties from ConnectDestination (using `Omit` to skip
+        the fields already present on ConnectDeviceBase, avoiding duplication).
     SWML.Calling.ConnectHeaders:
       type: object
       properties:
@@ -19378,16 +19384,6 @@ components:
           description: The amount of time, in seconds, to wait for the `confirm` URL to return a response
           examples:
             - 30
-        username:
-          type: string
-          description: SIP username to use for authentication when dialing a SIP URI. Has no effect on calls to phone numbers.
-          examples:
-            - sipuser
-        password:
-          type: string
-          description: SIP password to use for authentication when dialing a SIP URI. Has no effect on calls to phone numbers.
-          examples:
-            - sippassword
         encryption:
           type: string
           enum:
@@ -19445,9 +19441,185 @@ components:
         serial:
           type: array
           items:
-            $ref: "#/components/schemas/SWML.Calling.ConnectDeviceSingle"
+            $ref: "#/components/schemas/SWML.Calling.ConnectDestination"
+          description: Array of destination objects to dial in order. Each destination is tried sequentially — if the current destination does not answer, the next one in the array is attempted.
       required:
         - serial
+      description: Dial destinations one at a time in sequence. If the first destination does not answer, the next destination in the array is tried, and so on.
+    SWML.Calling.ConnectDestination:
+      type: object
+      properties:
+        to:
+          type: string
+          description: |-
+            Destination to dial. Can be:
+            - Phone number in E.164 format (e.g., "+15552345678")
+            - SIP URI (e.g., "sip:alice@example.com")
+            - Resource Address (e.g., "/public/test_room")
+            - Queue (e.g., "queue:support")
+            - WebSocket stream (e.g., "stream:wss://example.com/audio")
+          examples:
+            - "+15559876543"
+        from:
+          type: string
+          description: The caller ID to use when dialing this destination. Overrides the top-level `from`.
+          examples:
+            - "+15551234567"
+        from_name:
+          type: string
+          description: |-
+            The caller ID name for this destination. Overrides the top-level `from_name`.
+            Applies to SIP calls only — it has no effect on calls to phone numbers.
+          examples:
+            - Support Team
+        headers:
+          type: array
+          items:
+            $ref: "#/components/schemas/SWML.Calling.ConnectHeaders"
+          description: Custom SIP headers to add to INVITE for this destination. Overrides the top-level `headers`. It has no effect on calls to phone numbers.
+        codecs:
+          type: string
+          description: |-
+            Comma-separated string of codecs to offer for this destination.
+            Overrides the top-level `codecs`. It has no effect on calls to phone numbers.
+          examples:
+            - PCMU
+        webrtc_media:
+          type: boolean
+          description: |-
+            If true, WebRTC media is offered to this SIP destination.
+            Overrides the top-level `webrtc_media`. It has no effect on calls to phone numbers.
+            Default is `false`.
+          default: false
+          examples:
+            - true
+        session_timeout:
+          type: integer
+          description: |-
+            Time, in seconds, to set the SIP `Session-Expires` header in INVITE for this destination.
+            Overrides the top-level `session_timeout`. Must be a positive, non-zero number.
+            It has no effect on calls to phone numbers.
+          minimum: 1
+          default: 0
+          examples:
+            - 1800
+        username:
+          type: string
+          description: SIP username to use for authentication when dialing a SIP URI. Has no effect on calls to phone numbers.
+          examples:
+            - sipuser
+        password:
+          type: string
+          description: SIP password to use for authentication when dialing a SIP URI. Has no effect on calls to phone numbers.
+          examples:
+            - sippassword
+        timeout:
+          type: integer
+          description: |-
+            Time, in seconds, to wait for this destination to answer.
+            Overrides the top-level `timeout`. Default is 60 seconds.
+          default: 60
+          examples:
+            - 30
+        call_state_events:
+          type: array
+          items:
+            type: string
+            enum:
+              - created
+              - ringing
+              - answered
+              - ended
+          description: |-
+            An array of call state event names to be notified about for this destination.
+            Overrides the top-level `call_state_events`.
+            Allowed event names are: `created`, `ringing`, `answered`, `ended`.
+          default:
+            - ended
+        call_state_url:
+          type: string
+          format: uri
+          description: Webhook URL for call status change notifications for this destination. Overrides the top-level `call_state_url`.
+          examples:
+            - https://example.com/call-status
+        confirm:
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                $ref: "#/components/schemas/SWML.Calling.ValidConfirmMethods"
+          description: |-
+            Confirmation to execute on this destination when answered.
+            Overrides the top-level `confirm`. Can be either:
+            - A URL (string) that returns a SWML document
+            - An array of SWML methods to execute inline
+          examples:
+            - https://example.com/confirm.swml
+        confirm_timeout:
+          type: integer
+          description: Seconds to wait for the `confirm` script on this destination. Overrides the top-level `confirm_timeout`.
+          examples:
+            - 30
+        encryption:
+          type: string
+          enum:
+            - mandatory
+            - optional
+            - forbidden
+          description: Encryption setting for this destination. Overrides the top-level `encryption`. **Possible values:** `mandatory`, `optional`, `forbidden`
+          default: optional
+          examples:
+            - optional
+        name:
+          type: string
+          description: Stream name identifier. Only applies to stream destinations.
+          examples:
+            - my-stream
+        codec:
+          type: string
+          description: |-
+            Audio codec for the stream. Supported values: `PCMU`, `PCMA`, `G722`, `L16`.
+            Codec can include rate and ptime modifiers (e.g., `PCMU@40i`, `L16@24000h@40i`).
+            Only applies to stream destinations.
+          examples:
+            - PCMU
+        realtime:
+          type: boolean
+          description: |-
+            Enable realtime mode for bidirectional audio.
+            Only applies to stream destinations.
+          default: false
+          examples:
+            - true
+        status_url_method:
+          type: string
+          enum:
+            - GET
+            - POST
+          description: |-
+            HTTP method for the stream status webhook.
+            Only applies to stream destinations.
+          default: POST
+          examples:
+            - POST
+        authorization_bearer_token:
+          type: string
+          description: Bearer token sent as an `Authorization` header during the WebSocket handshake. Only applies to stream destinations.
+          examples:
+            - my-secret-token
+        custom_parameters:
+          type: object
+          additionalProperties:
+            type: string
+          description: Custom key-value pairs sent in the WebSocket start message. Only applies to stream destinations.
+      required:
+        - to
+      description: |-
+        Per-destination model used inside `serial`, `parallel`, and `serial_parallel` arrays.
+
+        Contains only the properties that apply to an individual destination:
+        addressing, caller-ID overrides, SIP auth, per-leg timeouts/confirmations,
+        and stream-specific settings.
     SWML.Calling.ConnectDeviceParallel:
       type: object
       properties:
@@ -19554,16 +19726,6 @@ components:
           description: The amount of time, in seconds, to wait for the `confirm` URL to return a response
           examples:
             - 30
-        username:
-          type: string
-          description: SIP username to use for authentication when dialing a SIP URI. Has no effect on calls to phone numbers.
-          examples:
-            - sipuser
-        password:
-          type: string
-          description: SIP password to use for authentication when dialing a SIP URI. Has no effect on calls to phone numbers.
-          examples:
-            - sippassword
         encryption:
           type: string
           enum:
@@ -19621,10 +19783,11 @@ components:
         parallel:
           type: array
           items:
-            $ref: "#/components/schemas/SWML.Calling.ConnectDeviceSingle"
-          description: Array of destinations to dial simultaneously.
+            $ref: "#/components/schemas/SWML.Calling.ConnectDestination"
+          description: Array of destination objects to dial simultaneously. All destinations ring at the same time — the first to answer is bridged and the remaining calls are cancelled.
       required:
         - parallel
+      description: Dial multiple destinations simultaneously. All destinations in the array ring at the same time — the first to answer is bridged and the remaining calls are cancelled.
     SWML.Calling.ConnectDeviceSerialParallel:
       type: object
       properties:
@@ -19731,16 +19894,6 @@ components:
           description: The amount of time, in seconds, to wait for the `confirm` URL to return a response
           examples:
             - 30
-        username:
-          type: string
-          description: SIP username to use for authentication when dialing a SIP URI. Has no effect on calls to phone numbers.
-          examples:
-            - sipuser
-        password:
-          type: string
-          description: SIP password to use for authentication when dialing a SIP URI. Has no effect on calls to phone numbers.
-          examples:
-            - sippassword
         encryption:
           type: string
           enum:
@@ -19800,13 +19953,15 @@ components:
           items:
             type: array
             items:
-              $ref: "#/components/schemas/SWML.Calling.ConnectDeviceSingle"
+              $ref: "#/components/schemas/SWML.Calling.ConnectDestination"
           description: |-
-            Array of arrays.
-            Inner arrays contain destinations to dial simultaneously.
-            Outer array attempts each parallel group in order.
+            Two-dimensional array combining serial and parallel strategies.
+            The outer array is the **serial** dimension — each element is a group tried in order.
+            Each inner array is the **parallel** dimension — all destinations in that group are dialed simultaneously.
+            If no destination in the current group answers, the next group is attempted.
       required:
         - serial_parallel
+      description: Combine both serial and parallel strategies using a two-dimensional array. The outer array is the serial dimension — each element is a group tried one at a time, in order. Each inner array is the parallel dimension — all destinations in that group are dialed simultaneously. If no destination in the current group answers, the next group is attempted.
     SWML.Calling.CondElse:
       type: object
       properties:
