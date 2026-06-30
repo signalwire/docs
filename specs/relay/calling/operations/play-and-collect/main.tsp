@@ -24,8 +24,6 @@ model PlayAndCollectRequest is JsonRpcRequest<typeof callingPlayAndCollect, Play
   asynchronously in `calling.call.collect` events keyed on your `control_id`.
   Only one play-and-collect can run on a call at a time.
   """)
-// NOTE: no @opExample here — the required `play: PlayMedia[]` is a @discriminator
-// union, and TypeSpec example values cannot narrow a discriminator base.
 @channel(callingPlayAndCollect)
 @summary("Play media and collect input")
 @extension("x-fern-display-name", callingPlayAndCollect)

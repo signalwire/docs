@@ -8,10 +8,6 @@ using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// calling.call.collect
-// ─────────────────────────────────────────────────────────────────────────────
-
 @doc("Where input collection currently stands: still listening, finished, or stopped on an error.")
 union CallCollectState {
   "collecting",

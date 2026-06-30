@@ -6,13 +6,6 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
-// ═════════════════════════════════════════════════════════════════════════════
-// Detector subobject (calling.detect)
-//
-// `detect` carries a variant with a `type` and a per-type `params` body.
-// Discriminated on `type` (machine|fax|digit), exactly like Device/Ringback.
-// ═════════════════════════════════════════════════════════════════════════════
-
 @doc("Tone the fax detector listens for (remote side only).")
 union DetectFaxTone {
   "CED",

@@ -8,10 +8,6 @@ using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// calling.call.refer
-// ─────────────────────────────────────────────────────────────────────────────
-
 @doc("How a transfer (SIP REFER) is progressing.")
 union ReferState {
   "inProgress",

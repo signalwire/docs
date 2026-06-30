@@ -9,15 +9,6 @@ using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
-// Cross-service calling events: `calling.call.state` fires for any controlled call and rides
-// `signalwire.connect`; `calling.call.receive` is the unsolicited inbound-call notification on
-// `signalwire.receive`. Both are consumed outside the calling service, so they stay shared here
-// rather than under a single operation directory.
-
-// ─────────────────────────────────────────────────────────────────────────────
-// calling.call.state
-// ─────────────────────────────────────────────────────────────────────────────
-
 @doc("The call that created this one, when it was spawned by another call.")
 model CallParentRef {
   @doc("Identifier of the node hosting the parent call.")
@@ -100,10 +91,6 @@ const callingCallState = "calling.call.state";
 @summary(callingCallState)
 @extension("x-fern-display-name", callingCallState)
 model CallStateEvent is SignalwireEvent<typeof callingCallState, CallStateParams>;
-
-// ─────────────────────────────────────────────────────────────────────────────
-// calling.call.receive
-// ─────────────────────────────────────────────────────────────────────────────
 
 model CallReceiveParams {
   ...CallAddress;

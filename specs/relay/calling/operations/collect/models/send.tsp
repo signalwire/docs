@@ -6,14 +6,6 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
-// ═════════════════════════════════════════════════════════════════════════════
-// Shared collect sub-objects (digits / speech)
-//
-// The same `digits` and `speech` shapes are used by `calling.collect` (top-level)
-// and `calling.play_and_collect` (nested under `collect`). At least one of the
-// two must be present.
-// ═════════════════════════════════════════════════════════════════════════════
-
 @doc("""
   Pins speech recognition to a specific engine for a collect. The engine you
   choose must support the `language` you request. Leave it unset to let

@@ -18,10 +18,6 @@ model TapRequest is JsonRpcRequest<typeof callingTap, TapParams>;
 @extension("x-fern-display-name", callingTapResponse)
 @reply model TapReply is JsonRpcResponse<TapResult>;
 
-// NOTE: no @opExample here — the required `tap: TapConfig` and `device: TapDevice` are
-// @discriminator unions, and TypeSpec value-checking does not narrow a discriminated base
-// to its variant, so an inline frame example can't carry real `params`. The TapAudio /
-// TapRtpDevice / TapWsDevice variant models carry schema-level @example values instead.
 @doc("""
   Fork a copy of the call's audio and deliver it in real time to an external
   device over RTP or a WebSocket, while the call continues normally. Choose

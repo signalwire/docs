@@ -1,6 +1,4 @@
 import "@signalwire/typespec-asyncapi";
-
-// Shared models, then one file per method family / event group.
 import "./models/core.tsp";
 import "./models/devices.tsp";
 import "./models/media.tsp";
@@ -38,8 +36,6 @@ import "./operations/amazon-bedrock/main.tsp";
 import "./operations/ai-message/main.tsp";
 import "./operations/ai-hold/main.tsp";
 import "./operations/user-event/main.tsp";
-// Per-operation events now live in each op's models/events.tsp (loaded via its main.tsp).
-// Only cross-service shared events (calling.call.state / calling.call.receive) remain here.
 import "./events/shared.tsp";
 
 using SignalWire.AsyncAPI;
@@ -53,9 +49,4 @@ using SignalWire.AsyncAPI;
   Use it from your backend — it's available in the server SDKs (Python, Node, Java,
   Ruby). To place a call directly from a browser, use the WebRTC service instead.
   """)
-// calling.call.state fires for any call the client controls, regardless of which command is in
-// flight (verified in mod_infrastructure/relay.c: relay_call_event_fire keyed by call_id, not by
-// request). As an always-on event with no single triggering command, it rides `signalwire.connect`
-// (see signalwire/operations/connect). calling.error is internal-only and not modeled. The
-// unsolicited inbound-call notification calling.call.receive is attached to signalwire.receive.
 namespace Relay.Calling;

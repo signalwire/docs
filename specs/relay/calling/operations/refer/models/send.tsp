@@ -6,13 +6,6 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// calling.refer
-//
-// SIP REFER transfer. `device` is a discriminated union but only the `sip`
-// variant is valid, modeled as a `@discriminator("type")` base + variant.
-// ─────────────────────────────────────────────────────────────────────────────
-
 @doc("Where to send a SIP call when transferring it with `calling.refer`.")
 model ReferSipDeviceParams {
   @doc("SIP URI to transfer the call to. Must be a `sip:` or `sips:` URI, for example `sip:userb@example.com`.")

@@ -6,15 +6,6 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
-// ═════════════════════════════════════════════════════════════════════════════
-// Tap subobjects (calling.tap)
-//
-// `tap` carries the media-selection variant (keyed on `tap.type`); `device`
-// carries the delivery-target variant (keyed on `device.type`). Both are
-// discriminated bases with `extends` variants. The same TapDevice shape is
-// echoed back in the result as `source_device` with all params resolved.
-// ═════════════════════════════════════════════════════════════════════════════
-
 @doc("""
   Which side of the call to tap. `listen` = what the call party hears; `speak`
   = what the call party says.

@@ -8,10 +8,6 @@ using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// calling.call.play
-// ─────────────────────────────────────────────────────────────────────────────
-
 @doc("The current state of audio playback on the call.")
 union CallPlayState {
   "playing",

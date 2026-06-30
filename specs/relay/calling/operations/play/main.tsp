@@ -19,10 +19,6 @@ model PlayRequest is JsonRpcRequest<typeof callingPlay, PlayParams>;
 @extension("x-fern-display-name", callingPlayResponse)
 @reply model PlayReply is JsonRpcResponse<PlayResult>;
 
-// NOTE: no @opExample here — `play: PlayMedia[]` is a @discriminator union, and TypeSpec
-// value-checking does not narrow a discriminated base to its variant, so an inline frame
-// example can't carry real `params`. The PlayMedia variant models in common.tsp carry
-// schema-level @example values instead.
 @doc("""
   Plays a sequence of media to a call. Each element is one of audio (a file at
   a URL), TTS (spoken text), silence, or ringtone, and they play in the order

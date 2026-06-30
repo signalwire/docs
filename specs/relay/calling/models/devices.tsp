@@ -6,14 +6,6 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
-// ═════════════════════════════════════════════════════════════════════════════
-// Request device params (shared by dial & connect)
-//
-// Each device's `params` body. dial and connect accept near-identical phone/sip/
-// webrtc shapes (minor documented per-context omissions are not modeled
-// separately); connect additionally accepts call/queue/stream devices.
-// ═════════════════════════════════════════════════════════════════════════════
-
 @doc("`phone` device params.")
 model PhoneDeviceParams {
   @doc("Origination number, E.164. When omitted, SignalWire fills in a caller ID.")
@@ -174,13 +166,6 @@ model StreamDeviceParams {
   custom_parameters?: Record<unknown>;
 }
 
-// ═════════════════════════════════════════════════════════════════════════════
-// Request device unions
-//
-// dial and connect use DISTINCT discriminated bases because the emitter emits
-// every derived model of a base — dial accepts 3 variants, connect 6.
-// ═════════════════════════════════════════════════════════════════════════════
-
 @doc("A device to dial (`calling.dial`). Discriminated on `type`.")
 @discriminator("type")
 model DialDevice {
@@ -247,10 +232,6 @@ model ConnectStreamDevice extends ConnectDevice {
   params: StreamDeviceParams;
 }
 
-// ═════════════════════════════════════════════════════════════════════════════
-// Ringback union (calling.connect)
-// ═════════════════════════════════════════════════════════════════════════════
-
 @doc("Audio played to the caller while a connect is in progress. Discriminated on `type`.")
 @discriminator("type")
 model Ringback {
@@ -306,13 +287,6 @@ model RingbackRingtone extends Ringback {
     duration?: float64;
   };
 }
-
-// ═════════════════════════════════════════════════════════════════════════════
-// Negotiated call device (events)
-//
-// The device reported in events — the negotiated leg, with simpler params than
-// the request device. Discriminated on `type`.
-// ═════════════════════════════════════════════════════════════════════════════
 
 @doc("The negotiated call leg reported in call events. Discriminated on `type`.")
 @discriminator("type")

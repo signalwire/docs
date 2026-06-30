@@ -8,16 +8,6 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
-// ═════════════════════════════════════════════════════════════════════════════
-// Play media union (calling.play_and_collect `play[]`)
-//
-// Discriminated on `type`. Mirrors the Ringback shape but the `tts` variant
-// additionally accepts a `voice` field.
-// ═════════════════════════════════════════════════════════════════════════════
-
-// The `PlayMedia` union (audio|tts|silence|ringtone) is defined in models/media.tsp —
-// shared with `calling.play`.
-
 @doc("The `collect` settings for a `calling.play_and_collect`, describing what to listen for while the media plays. Provide `digits`, `speech`, or both.")
 model PlayAndCollectCollect {
   @doc("How long to wait, in seconds, for the caller to start giving input. Defaults to `4.0`.")

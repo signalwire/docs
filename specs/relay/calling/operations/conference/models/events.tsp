@@ -8,10 +8,6 @@ using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// calling.conference
-// ─────────────────────────────────────────────────────────────────────────────
-
 @doc("Tells you exactly what happened in the conference, from start and end to each participant action.")
 union ConferenceStatus {
   "conference-end",

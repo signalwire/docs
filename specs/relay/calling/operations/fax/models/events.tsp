@@ -8,10 +8,6 @@ using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// calling.call.fax
-// ─────────────────────────────────────────────────────────────────────────────
-
 @doc("Whether the fax is being sent or received.")
 union FaxDirection {
   "send",

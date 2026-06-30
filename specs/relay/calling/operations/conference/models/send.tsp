@@ -7,10 +7,6 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
-// ═════════════════════════════════════════════════════════════════════════════
-// Shared enums for this family (conference status-callback knobs)
-// ═════════════════════════════════════════════════════════════════════════════
-
 @doc("Controls whether a beep plays as participants enter or leave the conference. Use `\"true\"` for both, `\"onEnter\"` or `\"onExit\"` to limit it to one direction, or `\"false\"` to disable. Note these are strings, not booleans.")
 union ConferenceBeep {
   "true",

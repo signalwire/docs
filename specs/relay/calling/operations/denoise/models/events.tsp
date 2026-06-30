@@ -8,10 +8,6 @@ using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// calling.call.denoise
-// ─────────────────────────────────────────────────────────────────────────────
-
 model CallDenoiseParams {
   ...CallAddress;
 

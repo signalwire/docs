@@ -4,10 +4,6 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
-// ═════════════════════════════════════════════════════════════════════════════
-// Shared mixins
-// ═════════════════════════════════════════════════════════════════════════════
-
 @doc("Identifies a specific active call. Nearly every method and event includes it.")
 model CallAddress {
   @doc("Identifier of the node handling the call. Pair it with `call_id` to address the call.")
@@ -44,10 +40,6 @@ model SipHeader {
   @doc("Header value.")
   value: string;
 }
-
-// ═════════════════════════════════════════════════════════════════════════════
-// Shared enums
-// ═════════════════════════════════════════════════════════════════════════════
 
 @doc("Lifecycle states of a Relay-controlled call (`calling.call.state`).")
 union CallState {

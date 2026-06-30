@@ -7,17 +7,6 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
-// ═════════════════════════════════════════════════════════════════════════════
-// calling.play — media elements
-//
-// `play[]` is a discriminated union on `type`: audio | tts | silence | ringtone.
-// Distinct from common.tsp's `Ringback` (connect ringback) — kept separate so
-// the emitter emits exactly these four play variants for the play method.
-// ═════════════════════════════════════════════════════════════════════════════
-
-// The `PlayMedia` union (audio|tts|silence|ringtone) is defined in common.tsp —
-// shared with `calling.play_and_collect`.
-
 model PlayParams {
   ...CallAddress;
 

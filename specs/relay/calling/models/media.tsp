@@ -6,13 +6,6 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
-// ═════════════════════════════════════════════════════════════════════════════
-// Play media union (calling.play / calling.play_and_collect `play[]`)
-//
-// Discriminated on `type`. Mirrors Ringback, but the `tts` variant additionally
-// accepts a `voice` field. Shared by calling.play and calling.play_and_collect.
-// ═════════════════════════════════════════════════════════════════════════════
-
 @doc("A media element to play. Discriminated on `type`.")
 @discriminator("type")
 model PlayMedia {

@@ -2,10 +2,6 @@ import "@signalwire/typespec-asyncapi";
 
 using SignalWire.AsyncAPI;
 
-// The Relay wire is JSON-RPC 2.0 over one WebSocket. The framing is modeled here, in the spec,
-// as base model templates that each operation/event specializes — the emitter is a generic
-// AsyncAPI emitter and synthesizes none of this. Declared on the `Relay` namespace so every
-// sub-service (`Relay.Calling`, `Relay.Messaging`, …) resolves them unqualified.
 namespace Relay;
 
 @doc("A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.")

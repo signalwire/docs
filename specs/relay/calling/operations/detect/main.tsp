@@ -19,10 +19,6 @@ model DetectRequest is JsonRpcRequest<typeof callingDetect, DetectParams>;
 @extension("x-fern-display-name", callingDetectResponse)
 @reply model DetectReply is JsonRpcResponse<DetectResult>;
 
-// NOTE: no @opExample here — the required `detect: DetectConfig` is a @discriminator
-// union, and TypeSpec value-checking does not narrow a discriminated base to its variant,
-// so an inline frame example can't carry real `params`. The DetectMachine/DetectFax/
-// DetectDigit variant models carry schema-level @example values instead.
 @doc("""
   Start a detector on an active call to listen for an answering machine,
   a fax tone, or DTMF digits. You can run several detectors at once on the

@@ -1,11 +1,5 @@
 import "@signalwire/typespec-asyncapi";
-
-// JSON-RPC framing (request/response/event base templates), modeled in-spec.
 import "./common/frames.tsp";
-
-// SignalWire Relay is ONE WebSocket/JSON-RPC (BLADE) connection. Each sub-service is
-// authored in its own directory and tagged with a `@channel`; this entry point binds
-// them together under the single `Relay` service, server, and auth.
 import "./signalwire/main.tsp";
 import "./calling/main.tsp";
 import "./messaging/main.tsp";

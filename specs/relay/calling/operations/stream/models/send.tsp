@@ -6,13 +6,6 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
-// ═════════════════════════════════════════════════════════════════════════════
-// calling.stream
-//
-// Flat params (no nested tap/device union). NOTE: the result echoes `node_id`,
-// unlike sibling methods that echo `call_id`.
-// ═════════════════════════════════════════════════════════════════════════════
-
 @doc("Which audio track to stream.")
 union StreamTrack {
   "inbound_track",

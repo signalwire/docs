@@ -6,16 +6,6 @@ using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
-// ═════════════════════════════════════════════════════════════════════════════
-// calling.ai.sidecar (event)
-//
-// Every sidecar callback is published in real time on the Relay event channel as a
-// `calling.ai.sidecar` event (the same payload optionally POSTed to the sidecar's
-// `url`). Each event carries the `sidecar_event` envelope below plus type-specific
-// fields documented on the SWML ai_sidecar reference (e.g. `insight.raw`,
-// `turn.transcript_delta`, `ask_answer.ask_id`, `final.summary`).
-// ═════════════════════════════════════════════════════════════════════════════
-
 @doc("The kind of AI sidecar callback.")
 union AiSidecarCallbackType {
   "start",

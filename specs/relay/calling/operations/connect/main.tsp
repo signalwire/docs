@@ -27,11 +27,6 @@ model ConnectRequest is JsonRpcRequest<typeof callingConnect, ConnectParams>;
   telling you to wait for it to finish. Connection progress arrives through
   `calling.call.connect` events.
   """)
-// NOTE: no @opExample here — the required `devices: ConnectDevice[][]` (and the
-// optional `ringback: Ringback[]`) are @discriminator bases, and TypeSpec
-// value-checking does not narrow a discriminated base to its variant, so an inline
-// frame example can't carry real device/ringback `params`. The ConnectDevice and
-// Ringback variant models in common.tsp carry schema-level @example values instead.
 @channel(callingConnect)
 @summary("Connect a device to an active call")
 @extension("x-fern-display-name", callingConnect)

@@ -8,10 +8,6 @@ using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// calling.call.send_digits
-// ─────────────────────────────────────────────────────────────────────────────
-
 model CallSendDigitsParams {
   ...CallAddress;
 

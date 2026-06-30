@@ -6,17 +6,6 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// calling.live_transcribe / calling.live_translate — shared sub-shapes
-//
-// `action` is a KEY-DISCRIMINATED union: exactly one of `start`/`stop`/
-// `summarize` (+ `inject` for translate) is present, keyed by the action name
-// (not a `type` field). The inner field shapes below are verified against the
-// FreeSWITCH engine: the Relay JSON-RPC wire serializes `params` verbatim into
-// the same C parser the SWML methods use, so the accepted inner fields are the
-// SWML field set (minus SWML templating).
-// ─────────────────────────────────────────────────────────────────────────────
-
 @doc("The speech-recognition engine used to convert speech to text for live transcribe and translate.")
 union LiveSpeechEngine {
   "deepgram",

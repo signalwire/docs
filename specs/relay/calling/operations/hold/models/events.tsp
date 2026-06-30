@@ -8,10 +8,6 @@ using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// calling.call.hold
-// ─────────────────────────────────────────────────────────────────────────────
-
 @doc("Whether the call was just placed on `hold` or taken off hold (`unhold`).")
 union HoldState {
   "hold",

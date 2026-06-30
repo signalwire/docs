@@ -8,10 +8,6 @@ using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// calling.call.record
-// ─────────────────────────────────────────────────────────────────────────────
-
 @doc("Where the recording currently stands, including `no_input` when nothing was captured.")
 union CallRecordState {
   "recording",

@@ -8,10 +8,6 @@ using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// calling.call.detect
-// ─────────────────────────────────────────────────────────────────────────────
-
 @doc("What the fax detector heard.")
 union CallDetectFaxEvent {
   @doc("The answering fax machine's tone (CED).")

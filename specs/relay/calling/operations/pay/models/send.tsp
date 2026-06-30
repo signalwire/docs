@@ -6,10 +6,6 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
-// ═════════════════════════════════════════════════════════════════════════════
-// Shared enums (pay / play family)
-// ═════════════════════════════════════════════════════════════════════════════
-
 @doc("""
   How the Pay IVR collects payment details. Only `dtmf` is currently supported.
   """)

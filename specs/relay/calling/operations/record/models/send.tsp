@@ -6,14 +6,6 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// calling.record
-//
-// The wire shape keys the recording spec by subobject NAME (`record:{audio:{}}`)
-// rather than a `type` discriminator, so `RecordSpec` is modeled faithfully as
-// an object keyed by `audio` (the only documented variant). See openQuestions.
-// ─────────────────────────────────────────────────────────────────────────────
-
 @doc("Which side of the conversation to capture in a recording.")
 union RecordAudioDirection {
   @doc("Record what the remote party hears (audio sent to them).")
