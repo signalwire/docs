@@ -38,23 +38,9 @@ import "./operations/amazon-bedrock/main.tsp";
 import "./operations/ai-message/main.tsp";
 import "./operations/ai-hold/main.tsp";
 import "./operations/user-event/main.tsp";
-import "./events/state.tsp";
-import "./events/refer.tsp";
-import "./events/play.tsp";
-import "./events/queue.tsp";
-import "./events/collect.tsp";
-import "./events/record.tsp";
-import "./events/detect.tsp";
-import "./events/denoise.tsp";
-import "./events/fax.tsp";
-import "./events/tap.tsp";
-import "./events/stream.tsp";
-import "./events/transcribe.tsp";
-import "./events/hold.tsp";
-import "./events/send-digits.tsp";
-import "./events/conference.tsp";
-import "./events/echo.tsp";
-import "./events/pay.tsp";
+// Per-operation events now live in each op's models/events.tsp (loaded via its main.tsp).
+// Only cross-service shared events (calling.call.state / calling.call.receive) remain here.
+import "./events/shared.tsp";
 
 using SignalWire.AsyncAPI;
 

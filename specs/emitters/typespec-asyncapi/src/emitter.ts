@@ -209,42 +209,55 @@ function emitRpcMethods(
       const reqMsgId = `${opKey}Request`;
       const summary = getSummary(program, op);
 
+      // An op with no parameters models a RECEIVE-ONLY channel: there is no request frame to send,
+      // so we emit neither a request message nor a `send` op — only the channel and the `receive`
+      // ops for the server-pushed events it returns. An op WITH parameters is a send/reply command.
+      const hasRequest = op.parameters.properties.size > 0;
+
       // Request message — payload is the operation's parameters (the in-spec request frame), verbatim.
-      target.messages[reqMsgId] = {
-        name: `${method}.request`,
-        title: `${method} request`,
-        contentType: "application/json",
-        correlationId: { location: "$message.payload#/id" },
-        payload: paramsSchema(program, op, ref),
-      };
-
-      const { replyArms, eventArms } = partitionReturn(program, op.returnType);
-
-      // Reply message(s) — one per reply arm, payload emitted verbatim (the in-spec response frame).
-      const replyMsgIds: string[] = [];
-      replyArms.forEach((arm, i) => {
-        const resMsgId = replyArms.length === 1 ? `${opKey}Response` : `${opKey}Response${i + 1}`;
-        target.messages[resMsgId] = {
-          name: `${method}.response`,
-          title: `${method} response`,
+      if (hasRequest) {
+        target.messages[reqMsgId] = {
+          name: `${method}.request`,
+          title: `${method} request`,
           contentType: "application/json",
           correlationId: { location: "$message.payload#/id" },
-          payload: ref(arm),
+          payload: paramsSchema(program, op, ref),
         };
-        replyMsgIds.push(resMsgId);
-      });
+      }
 
-      // Examples — serialize @opExample parameters/returnType verbatim (the frames are authored).
-      for (const ex of getOpExamples(program, op)) {
-        if (ex.parameters) {
-          (target.messages[reqMsgId].examples ??= []).push({
-            payload: serializeValueAsJson(program, ex.parameters, op.parameters),
-          });
-        }
-        if (ex.returnType && replyArms.length === 1) {
-          (target.messages[replyMsgIds[0]].examples ??= []).push({
-            payload: serializeValueAsJson(program, ex.returnType, replyArms[0]),
-          });
+      const { replyArms, eventArms } = partitionReturn(program, op.returnType);
+      if (!hasRequest && replyArms.length) {
+        reportDiagnostic(program, { code: "reply-without-request", target: op, format: { method } });
+      }
+
+      // Reply message(s) — one per reply arm; a reply correlates to a request, so a receive-only
+      // (no-request) channel has none.
+      const replyMsgIds: string[] = [];
+      if (hasRequest) {
+        replyArms.forEach((arm, i) => {
+          const resMsgId = replyArms.length === 1 ? `${opKey}Response` : `${opKey}Response${i + 1}`;
+          target.messages[resMsgId] = {
+            name: `${method}.response`,
+            title: `${method} response`,
+            contentType: "application/json",
+            correlationId: { location: "$message.payload#/id" },
+            payload: ref(arm),
+          };
+          replyMsgIds.push(resMsgId);
+        });
+
+        // Examples — serialize @opExample parameters/returnType verbatim (the frames are authored).
+        for (const ex of getOpExamples(program, op)) {
+          if (ex.parameters) {
+            (target.messages[reqMsgId].examples ??= []).push({
+              payload: serializeValueAsJson(program, ex.parameters, op.parameters),
+            });
+          }
+          if (ex.returnType && replyArms.length === 1) {
+            (target.messages[replyMsgIds[0]].examples ??= []).push({
+              payload: serializeValueAsJson(program, ex.returnType, replyArms[0]),
+            });
+          }
         }
       }
 
@@ -276,29 +289,33 @@ function emitRpcMethods(
         msgs = perMsgs;
       }
 
-      msgs[reqMsgId] = { $ref: `#/components/messages/${reqMsgId}` };
-      for (const resMsgId of replyMsgIds) msgs[resMsgId] = { $ref: `#/components/messages/${resMsgId}` };
+      // Send op + request/reply message refs — only when the op actually sends a request. A
+      // receive-only channel (no parameters) has neither; its channel carries only `receive` ops.
+      if (hasRequest) {
+        msgs[reqMsgId] = { $ref: `#/components/messages/${reqMsgId}` };
+        for (const resMsgId of replyMsgIds) msgs[resMsgId] = { $ref: `#/components/messages/${resMsgId}` };
 
-      // Send op (request) — keeps the canonical, correlated `reply` (standards-correct AsyncAPI 3.0).
-      const sendOp: AsyncAPIOperation = {
-        action: "send",
-        channel: { $ref: `#/channels/${chId}` },
-        title: method,
-        ...(summary ? { summary } : {}),
-        messages: [{ $ref: `#/channels/${chId}/messages/${reqMsgId}` }],
-      };
-      if (replyMsgIds.length) {
-        sendOp.reply = {
+        // Send op (request) — keeps the canonical, correlated `reply` (standards-correct AsyncAPI 3.0).
+        const sendOp: AsyncAPIOperation = {
+          action: "send",
           channel: { $ref: `#/channels/${chId}` },
-          messages: replyMsgIds.map((id) => ({ $ref: `#/channels/${chId}/messages/${id}` })),
+          title: method,
+          ...(summary ? { summary } : {}),
+          messages: [{ $ref: `#/channels/${chId}/messages/${reqMsgId}` }],
         };
+        if (replyMsgIds.length) {
+          sendOp.reply = {
+            channel: { $ref: `#/channels/${chId}` },
+            messages: replyMsgIds.map((id) => ({ $ref: `#/channels/${chId}/messages/${id}` })),
+          };
+        }
+        // The same op authors the channel display name (above) and the send-entry display name —
+        // pass its authored `@extension` (e.g. x-fern-display-name) through to the send op too.
+        for (const [key, value] of getExtensions(program, op)) {
+          (sendOp as unknown as Record<string, unknown>)[key] = value;
+        }
+        target.operations[opKey] = sendOp;
       }
-      // The same op authors the channel display name (above) and the send-entry display name —
-      // pass its authored `@extension` (e.g. x-fern-display-name) through to the send op too.
-      for (const [key, value] of getExtensions(program, op)) {
-        (sendOp as unknown as Record<string, unknown>)[key] = value;
-      }
-      target.operations[opKey] = sendOp;
 
       // Received events — one `receive` op PER message (each with its own `x-fern-display-name`),
       // plus — when the shim is on — the reply message, because Fern does not render `reply`.

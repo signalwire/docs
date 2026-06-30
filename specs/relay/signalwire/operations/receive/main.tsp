@@ -3,9 +3,8 @@ import "../../../common/frames.tsp";
 import "@typespec/openapi";
 
 import "../../models/core.tsp";
-import "./models/requests.tsp";
-import "../../../calling/events/state.tsp";
-import "../../../tasking/events/tasks.tsp";
+import "./models/send.tsp";
+import "../../../calling/events/shared.tsp";
 
 using SignalWire.AsyncAPI;
 using TypeSpec.OpenAPI;
@@ -34,11 +33,15 @@ model UnreceiveRequest is JsonRpcRequest<typeof signalwireUnreceive, UnreceivePa
   your connection — most importantly the `calling.call.receive` event for an
   inbound call, which only reaches clients that have subscribed to the call's
   context.
+
+  Subscribing also delivers other context-scoped inbound events — for example
+  `queuing.relay.tasks` (see the Tasking channel). Each such event is documented
+  on its own page, so the full set you may receive isn't repeated here.
   """)
 @channel(signalwireReceive)
 @summary("Subscribe to inbound events on one or more contexts")
 @extension("x-fern-display-name", signalwireReceive)
-op receive(...ReceiveRequest): ReceiveReply | Relay.Calling.CallReceiveEvent | Relay.Tasking.TasksEvent;
+op receive(...ReceiveRequest): ReceiveReply | Relay.Calling.CallReceiveEvent;
 
 @doc("Unsubscribe from one or more contexts so you stop receiving their inbound events.")
 @channel(signalwireUnreceive)

@@ -74,8 +74,6 @@ channels:
         $ref: "#/components/messages/signalwireReceiveResponse"
       callReceiveEvent:
         $ref: "#/components/messages/callReceiveEvent"
-      tasksEvent:
-        $ref: "#/components/messages/tasksEvent"
     x-fern-display-name: signalwire.receive
     bindings:
       ws: {}
@@ -1069,6 +1067,18 @@ channels:
     x-fern-display-name: messaging.send
     bindings:
       ws: {}
+  queuing.relay.tasks:
+    address: /
+    title: queuing.relay.tasks
+    description: Receive tasks delivered to a subscribed context
+    servers:
+      - $ref: "#/servers/production"
+    messages:
+      tasksEvent:
+        $ref: "#/components/messages/tasksEvent"
+    x-fern-display-name: queuing.relay.tasks
+    bindings:
+      ws: {}
   provisioning.configure:
     address: /
     title: provisioning.configure
@@ -1182,14 +1192,6 @@ operations:
     messages:
       - $ref: "#/channels/signalwire.receive/messages/callReceiveEvent"
     x-fern-display-name: calling.call.receive
-  onSignalwireReceiveTasksEvent:
-    action: receive
-    channel:
-      $ref: "#/channels/signalwire.receive"
-    title: queuing.relay.tasks
-    messages:
-      - $ref: "#/channels/signalwire.receive/messages/tasksEvent"
-    x-fern-display-name: queuing.relay.tasks
   onSignalwireReceiveResponse:
     action: receive
     channel:
@@ -2880,6 +2882,14 @@ operations:
     messages:
       - $ref: "#/channels/messaging.send/messages/messagingSendResponse"
     x-fern-display-name: messaging.send response
+  onQueuingRelayTasksTasksEvent:
+    action: receive
+    channel:
+      $ref: "#/channels/queuing.relay.tasks"
+    title: queuing.relay.tasks
+    messages:
+      - $ref: "#/channels/queuing.relay.tasks/messages/tasksEvent"
+    x-fern-display-name: queuing.relay.tasks
   provisioningConfigure:
     action: send
     channel:
@@ -3632,73 +3642,6 @@ components:
         - call_id
         - call_state
         - device
-    Tasking.TasksEvent:
-      type: object
-      properties:
-        jsonrpc:
-          type: string
-          enum:
-            - "2.0"
-          description: JSON-RPC version. Always `2.0`.
-        id:
-          type: string
-          description: Event id.
-        method:
-          type: string
-          enum:
-            - signalwire.event
-          description: Always `signalwire.event`.
-        params:
-          type: object
-          properties:
-            event_type:
-              type: string
-              enum:
-                - queuing.relay.tasks
-              description: The event type — identifies which event this is.
-            event_channel:
-              type: string
-              description: The channel the event was delivered on.
-            timestamp:
-              type: number
-              format: double
-              description: When the event was emitted, as a Unix timestamp in seconds.
-            project_id:
-              type: string
-              description: Your project ID.
-            space_id:
-              type: string
-              description: Your space ID.
-            params:
-              description: The event-specific payload.
-              allOf:
-                - $ref: "#/components/schemas/Tasking.TasksEventData"
-          required:
-            - event_type
-            - params
-          description: The event envelope.
-      required:
-        - jsonrpc
-        - id
-        - method
-        - params
-      description: |-
-        Fires when a task arrives on a context you're subscribed to. The payload tells
-        you which `context` the task came in on and carries the `message` exactly as
-        the sender passed it to `tasking.deliver`.
-    Tasking.TasksEventData:
-      type: object
-      properties:
-        context:
-          type: string
-          description: The context this task arrived on.
-        message:
-          type: object
-          additionalProperties: {}
-          description: The message payload, exactly as the sender passed it to `tasking.deliver`.
-      required:
-        - context
-        - message
     Signalwire.UnreceiveRequest:
       type: object
       properties:
@@ -22403,6 +22346,73 @@ components:
         - body
         - segments
         - message_state
+    Tasking.TasksEvent:
+      type: object
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - "2.0"
+          description: JSON-RPC version. Always `2.0`.
+        id:
+          type: string
+          description: Event id.
+        method:
+          type: string
+          enum:
+            - signalwire.event
+          description: Always `signalwire.event`.
+        params:
+          type: object
+          properties:
+            event_type:
+              type: string
+              enum:
+                - queuing.relay.tasks
+              description: The event type — identifies which event this is.
+            event_channel:
+              type: string
+              description: The channel the event was delivered on.
+            timestamp:
+              type: number
+              format: double
+              description: When the event was emitted, as a Unix timestamp in seconds.
+            project_id:
+              type: string
+              description: Your project ID.
+            space_id:
+              type: string
+              description: Your space ID.
+            params:
+              description: The event-specific payload.
+              allOf:
+                - $ref: "#/components/schemas/Tasking.TasksEventData"
+          required:
+            - event_type
+            - params
+          description: The event envelope.
+      required:
+        - jsonrpc
+        - id
+        - method
+        - params
+      description: |-
+        Fires when a task arrives on a context you're subscribed to. The payload tells
+        you which `context` the task came in on and carries the `message` exactly as
+        the sender passed it to `tasking.deliver`.
+    Tasking.TasksEventData:
+      type: object
+      properties:
+        context:
+          type: string
+          description: The context this task arrived on.
+        message:
+          type: object
+          additionalProperties: {}
+          description: The message payload, exactly as the sender passed it to `tasking.deliver`.
+      required:
+        - context
+        - message
     Provisioning.ConfigureRequest:
       type: object
       properties:
@@ -22745,12 +22755,6 @@ components:
       contentType: application/json
       payload:
         $ref: "#/components/schemas/Calling.CallReceiveEvent"
-    tasksEvent:
-      name: TasksEvent
-      title: queuing.relay.tasks
-      contentType: application/json
-      payload:
-        $ref: "#/components/schemas/Tasking.TasksEvent"
     signalwireUnreceiveRequest:
       name: signalwire.unreceive.request
       title: signalwire.unreceive request
@@ -23949,6 +23953,12 @@ components:
       contentType: application/json
       payload:
         $ref: "#/components/schemas/Messaging.ReceiveEvent"
+    tasksEvent:
+      name: TasksEvent
+      title: queuing.relay.tasks
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/Tasking.TasksEvent"
     provisioningConfigureRequest:
       name: provisioning.configure.request
       title: provisioning.configure request

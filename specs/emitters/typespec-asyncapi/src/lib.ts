@@ -12,9 +12,10 @@ export interface AsyncAPIEmitterOptions {
   "response-receive-shim"?: boolean;
   /**
    * How operations are grouped into channels:
-   * - `multi` (default): every `@channel` operation gets its own root-addressed channel, and
-   *   each server-pushed (`@event`) message that no operation returns gets its own receive-only
-   *   channel. This is the AsyncAPI 3.0 per-operation-channel idiom.
+   * - `multi` (default): every `@channel` operation gets its own root-addressed channel. An
+   *   operation WITH request parameters is a normal send/reply command; an operation with NO
+   *   parameters models a receive-only channel — only `receive` ops for the server-pushed events
+   *   it returns, no `send` op or request frame. This is the AsyncAPI 3.0 per-operation-channel idiom.
    * - `single`: collapse the entire API onto ONE channel (the single WebSocket connection),
    *   with every method/event as an operation on it. This is the idiomatic AsyncAPI shape for
    *   a single-socket, payload-routed protocol (cf. Kraken/Slack request-reply examples).
@@ -64,6 +65,12 @@ export const $lib = createTypeSpecLibrary({
       severity: "error",
       messages: {
         default: "@reply can only be applied to a model.",
+      },
+    },
+    "reply-without-request": {
+      severity: "error",
+      messages: {
+        default: paramMessage`@channel "${"method"}" has no request parameters (a receive-only channel) but returns a @reply/@error model. A reply correlates to a request; either give the operation request parameters or return only server-pushed event models.`,
       },
     },
     "duplicate-type-name": {

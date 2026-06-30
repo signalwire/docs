@@ -1,7 +1,7 @@
 import "@signalwire/typespec-asyncapi";
 
 import "../../../models/core.tsp";
-import "../../live-transcribe/models/requests.tsp";
+import "../../live-transcribe/models/send.tsp";
 
 using SignalWire.AsyncAPI;
 

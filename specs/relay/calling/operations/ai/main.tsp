@@ -2,8 +2,8 @@ import "@signalwire/typespec-asyncapi";
 import "../../../common/frames.tsp";
 import "@typespec/openapi";
 
-import "./models/requests.tsp";
-import "./models/responses.tsp";
+import "./models/send.tsp";
+import "./models/reply.tsp";
 
 using SignalWire.AsyncAPI;
 using TypeSpec.OpenAPI;
@@ -42,3 +42,4 @@ model AiStopRequest is JsonRpcRequest<typeof callingAiStop, AiStopParams>;
 @summary("Stop an active AI agent session")
 @extension("x-fern-display-name", callingAiStop)
 op aiStop(...AiStopRequest): AiStopReply;
+

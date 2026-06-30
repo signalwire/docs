@@ -1,5 +1,5 @@
 import "@signalwire/typespec-asyncapi";
-import "../../common/frames.tsp";
+import "../../../../common/frames.tsp";
 import "@typespec/openapi";
 
 using TypeSpec.OpenAPI;

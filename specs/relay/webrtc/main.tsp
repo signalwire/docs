@@ -1,7 +1,6 @@
 import "@signalwire/typespec-asyncapi";
 
 import "./operations/message/main.tsp";
-import "./events/message.tsp";
 
 using SignalWire.AsyncAPI;
 

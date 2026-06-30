@@ -2,9 +2,9 @@ import "@signalwire/typespec-asyncapi";
 import "../../../common/frames.tsp";
 import "@typespec/openapi";
 
-import "./models/requests.tsp";
-import "./models/responses.tsp";
-import "../../events/transcribe.tsp";
+import "./models/send.tsp";
+import "./models/reply.tsp";
+import "../transcribe/models/events.tsp";
 
 using SignalWire.AsyncAPI;
 using TypeSpec.OpenAPI;

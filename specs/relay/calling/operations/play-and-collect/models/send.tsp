@@ -2,7 +2,7 @@ import "@signalwire/typespec-asyncapi";
 
 import "../../../models/core.tsp";
 import "../../../models/media.tsp";
-import "../../collect/models/requests.tsp";
+import "../../collect/models/send.tsp";
 
 using SignalWire.AsyncAPI;
 
