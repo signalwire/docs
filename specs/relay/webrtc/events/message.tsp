@@ -1,6 +1,8 @@
 import "@signalwire/typespec-asyncapi";
+import "../../common/frames.tsp";
+import "@typespec/openapi";
 
-using SignalWire.AsyncAPI;
+using TypeSpec.OpenAPI;
 
 namespace Relay.WebRTC;
 
@@ -19,6 +21,7 @@ model MessageEventData {
   params: Record<unknown>;
 }
 
+const webrtcMessage = "webrtc.message";
 @doc("""
   Delivers a Verto frame from SignalWire back to your client. This fires when
   SignalWire has a Verto response to one of your `message` requests, or when a
@@ -28,5 +31,6 @@ model MessageEventData {
   The frame in `params` is passed through as-is; see `verto_messages.md` for
   the full set of Verto methods and their `params`.
   """)
-@summary("webrtc.message")
-model MessageEvent is SignalwireEvent<"webrtc.message", MessageEventData>;
+@summary(webrtcMessage)
+@extension("x-fern-display-name", webrtcMessage)
+model MessageEvent is SignalwireEvent<typeof webrtcMessage, MessageEventData>;

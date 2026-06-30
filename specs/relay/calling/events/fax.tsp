@@ -1,8 +1,10 @@
 import "@signalwire/typespec-asyncapi";
+import "../../common/frames.tsp";
+import "@typespec/openapi";
 
 import "../models/core.tsp";
 
-using SignalWire.AsyncAPI;
+using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
@@ -77,6 +79,8 @@ model CallFaxParams {
   fax: CallFax;
 }
 
+const callingCallFax = "calling.call.fax";
 @doc("Sent as a fax progresses: one event per page, then a final event when it finishes.")
-@summary("calling.call.fax")
-model CallFaxEvent is SignalwireEvent<"calling.call.fax", CallFaxParams>;
+@summary(callingCallFax)
+@extension("x-fern-display-name", callingCallFax)
+model CallFaxEvent is SignalwireEvent<typeof callingCallFax, CallFaxParams>;

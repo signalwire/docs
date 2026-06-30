@@ -1,14 +1,22 @@
 import "@signalwire/typespec-asyncapi";
+import "../../../common/frames.tsp";
+import "@typespec/openapi";
 
 import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "../../../calling/events/state.tsp";
 
 using SignalWire.AsyncAPI;
+using TypeSpec.OpenAPI;
 
 namespace Relay.Signalwire;
 
-model ConnectRequest is JsonRpcRequest<"signalwire.connect", ConnectParams>;
+const signalwireConnect = "signalwire.connect";
+const signalwireConnectResponse = "${signalwireConnect} response";
+
+model ConnectRequest is JsonRpcRequest<typeof signalwireConnect, ConnectParams>;
+
+@extension("x-fern-display-name", signalwireConnectResponse)
 @reply model ConnectReply is JsonRpcResponse<ConnectResult>;
 
 @doc("""
@@ -19,6 +27,7 @@ model ConnectRequest is JsonRpcRequest<"signalwire.connect", ConnectParams>;
   `signalwire.authorization.state` event — save its `authorization_state` so you
   can restore your session if you need to reconnect.
   """)
-@channel("signalwire.connect")
+@channel(signalwireConnect)
 @summary("Authenticate and establish a Relay connection")
+@extension("x-fern-display-name", signalwireConnect)
 op connect(...ConnectRequest): ConnectReply | AuthorizationStateEvent | Relay.Calling.CallStateEvent;

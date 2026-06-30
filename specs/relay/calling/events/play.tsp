@@ -1,8 +1,10 @@
 import "@signalwire/typespec-asyncapi";
+import "../../common/frames.tsp";
+import "@typespec/openapi";
 
 import "../models/core.tsp";
 
-using SignalWire.AsyncAPI;
+using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
@@ -28,6 +30,8 @@ model CallPlayParams {
   state: CallPlayState;
 }
 
+const callingCallPlay = "calling.call.play";
 @doc("Fires when audio playback on a call starts, pauses, resumes, finishes, or errors, so you can track a `calling.play` through to completion.")
-@summary("calling.call.play")
-model CallPlayEvent is SignalwireEvent<"calling.call.play", CallPlayParams>;
+@summary(callingCallPlay)
+@extension("x-fern-display-name", callingCallPlay)
+model CallPlayEvent is SignalwireEvent<typeof callingCallPlay, CallPlayParams>;

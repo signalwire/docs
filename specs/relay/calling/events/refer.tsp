@@ -1,8 +1,10 @@
 import "@signalwire/typespec-asyncapi";
+import "../../common/frames.tsp";
+import "@typespec/openapi";
 
 import "../models/core.tsp";
 
-using SignalWire.AsyncAPI;
+using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
@@ -40,6 +42,8 @@ model CallReferParams {
   sip_notify_response_code?: string;
 }
 
+const callingCallRefer = "calling.call.refer";
 @doc("Fires each time a transferred call (SIP REFER) changes state, so you can follow the handoff from start to success or failure.")
-@summary("calling.call.refer")
-model CallReferEvent is SignalwireEvent<"calling.call.refer", CallReferParams>;
+@summary(callingCallRefer)
+@extension("x-fern-display-name", callingCallRefer)
+model CallReferEvent is SignalwireEvent<typeof callingCallRefer, CallReferParams>;

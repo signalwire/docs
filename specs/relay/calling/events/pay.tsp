@@ -1,8 +1,10 @@
 import "@signalwire/typespec-asyncapi";
+import "../../common/frames.tsp";
+import "@typespec/openapi";
 
 import "../models/core.tsp";
 
-using SignalWire.AsyncAPI;
+using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
@@ -27,9 +29,11 @@ model CallPayParams {
   state: PayState;
 }
 
+const callingCallPay = "calling.call.pay";
 @doc("Fires as a pay session progresses, letting you track whether it is processing, has finished, or hit an error.")
-@summary("calling.call.pay")
-model CallPayEvent is SignalwireEvent<"calling.call.pay", CallPayParams>;
+@summary(callingCallPay)
+@extension("x-fern-display-name", callingCallPay)
+model CallPayEvent is SignalwireEvent<typeof callingCallPay, CallPayParams>;
 
 // NOTE: `calling.error` is intentionally NOT modeled here. Verified in
 // mod_infrastructure/relay.c (relay_call_error_event_create, ~line 1545): error events have their

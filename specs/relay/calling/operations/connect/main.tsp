@@ -1,14 +1,22 @@
 import "@signalwire/typespec-asyncapi";
+import "../../../common/frames.tsp";
+import "@typespec/openapi";
 
 import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "../../events/state.tsp";
 
 using SignalWire.AsyncAPI;
+using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
-model ConnectRequest is JsonRpcRequest<"calling.connect", ConnectParams>;
+const callingConnect = "calling.connect";
+const callingConnectResponse = "${callingConnect} response";
+
+model ConnectRequest is JsonRpcRequest<typeof callingConnect, ConnectParams>;
+
+@extension("x-fern-display-name", callingConnectResponse)
 @reply model ConnectReply is JsonRpcResponse<ConnectResult>;
 
 @doc("""
@@ -24,6 +32,7 @@ model ConnectRequest is JsonRpcRequest<"calling.connect", ConnectParams>;
 // value-checking does not narrow a discriminated base to its variant, so an inline
 // frame example can't carry real device/ringback `params`. The ConnectDevice and
 // Ringback variant models in common.tsp carry schema-level @example values instead.
-@channel("calling.connect")
+@channel(callingConnect)
 @summary("Connect a device to an active call")
+@extension("x-fern-display-name", callingConnect)
 op connect(...ConnectRequest): ConnectReply | CallConnectEvent;

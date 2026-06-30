@@ -1,8 +1,10 @@
 import "@signalwire/typespec-asyncapi";
+import "../../common/frames.tsp";
+import "@typespec/openapi";
 
 import "../models/core.tsp";
 
-using SignalWire.AsyncAPI;
+using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
@@ -32,6 +34,8 @@ model CallStreamParams {
   name?: string;
 }
 
+const callingCallStream = "calling.call.stream";
 @doc("Fires when a media stream starts and again when it stops. Check `state` to tell which.")
-@summary("calling.call.stream")
-model CallStreamEvent is SignalwireEvent<"calling.call.stream", CallStreamParams>;
+@summary(callingCallStream)
+@extension("x-fern-display-name", callingCallStream)
+model CallStreamEvent is SignalwireEvent<typeof callingCallStream, CallStreamParams>;

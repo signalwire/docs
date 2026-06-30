@@ -1,8 +1,10 @@
 import "@signalwire/typespec-asyncapi";
+import "../../common/frames.tsp";
+import "@typespec/openapi";
 
 import "../models/core.tsp";
 
-using SignalWire.AsyncAPI;
+using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
@@ -47,6 +49,8 @@ model CallTranscribeParams {
   end_time?: float64;
 }
 
+const callingCallTranscribe = "calling.call.transcribe";
 @doc("Fires when transcription starts and again when it stops. The `finished` event includes the recording's duration, size, and timestamps.")
-@summary("calling.call.transcribe")
-model CallTranscribeEvent is SignalwireEvent<"calling.call.transcribe", CallTranscribeParams>;
+@summary(callingCallTranscribe)
+@extension("x-fern-display-name", callingCallTranscribe)
+model CallTranscribeEvent is SignalwireEvent<typeof callingCallTranscribe, CallTranscribeParams>;

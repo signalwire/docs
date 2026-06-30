@@ -1,8 +1,10 @@
 import "@signalwire/typespec-asyncapi";
+import "../../common/frames.tsp";
+import "@typespec/openapi";
 
 import "../models/core.tsp";
 
-using SignalWire.AsyncAPI;
+using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
@@ -17,6 +19,8 @@ model CallDenoiseParams {
   denoised: boolean;
 }
 
+const callingCallDenoise = "calling.call.denoise";
 @doc("Fires when background noise reduction is turned on or off for the call. Unlike most media events, this one carries no `control_id`.")
-@summary("calling.call.denoise")
-model CallDenoiseEvent is SignalwireEvent<"calling.call.denoise", CallDenoiseParams>;
+@summary(callingCallDenoise)
+@extension("x-fern-display-name", callingCallDenoise)
+model CallDenoiseEvent is SignalwireEvent<typeof callingCallDenoise, CallDenoiseParams>;

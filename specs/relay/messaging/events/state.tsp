@@ -1,8 +1,10 @@
 import "@signalwire/typespec-asyncapi";
+import "../../common/frames.tsp";
+import "@typespec/openapi";
 
 import "../models/core.tsp";
 
-using SignalWire.AsyncAPI;
+using TypeSpec.OpenAPI;
 
 namespace Relay.Messaging;
 
@@ -41,11 +43,13 @@ model StateEventData {
   reason?: string;
 }
 
+const messagingState = "messaging.state";
 @doc("""
   Fires each time a message's delivery state changes. Match `message_id` to the
   one you got from `messaging.send` and read `message_state` to see where the
   message is in its journey. The event keeps firing until the message reaches a
   final state of `delivered`, `undelivered`, or `failed`.
   """)
-@summary("messaging.state")
-model StateEvent is SignalwireEvent<"messaging.state", StateEventData>;
+@summary(messagingState)
+@extension("x-fern-display-name", messagingState)
+model StateEvent is SignalwireEvent<typeof messagingState, StateEventData>;

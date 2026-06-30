@@ -1,13 +1,21 @@
 import "@signalwire/typespec-asyncapi";
+import "../../../common/frames.tsp";
+import "@typespec/openapi";
 
 import "./models/requests.tsp";
 import "./models/responses.tsp";
 
 using SignalWire.AsyncAPI;
+using TypeSpec.OpenAPI;
 
 namespace Relay.Provisioning;
 
-model ConfigureRequest is JsonRpcRequest<"provisioning.configure", ConfigureParams>;
+const provisioningConfigure = "provisioning.configure";
+const provisioningConfigureResponse = "${provisioningConfigure} response";
+
+model ConfigureRequest is JsonRpcRequest<typeof provisioningConfigure, ConfigureParams>;
+
+@extension("x-fern-display-name", provisioningConfigureResponse)
 @reply model ConfigureReply is JsonRpcResponse<ConfigureResult>;
 
 @doc("""
@@ -16,6 +24,7 @@ model ConfigureRequest is JsonRpcRequest<"provisioning.configure", ConfigurePara
   `external_endpoint`), and SignalWire returns its configuration. For a
   `freeswitch` target, the response includes a SIP profile rendered as XML.
   """)
-@channel("provisioning.configure")
+@channel(provisioningConfigure)
 @summary("Request SignalWire connector configuration")
+@extension("x-fern-display-name", provisioningConfigure)
 op configure(...ConfigureRequest): ConfigureReply;

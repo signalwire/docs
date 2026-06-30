@@ -1,8 +1,10 @@
 import "@signalwire/typespec-asyncapi";
+import "../../common/frames.tsp";
+import "@typespec/openapi";
 
 import "../models/core.tsp";
 
-using SignalWire.AsyncAPI;
+using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
@@ -20,6 +22,8 @@ model CallSendDigitsParams {
   state: "finished" | "error";
 }
 
+const callingCallSendDigits = "calling.call.send_digits";
 @doc("Fires once all requested DTMF digits have finished playing on the call.")
-@summary("calling.call.send_digits")
-model CallSendDigitsEvent is SignalwireEvent<"calling.call.send_digits", CallSendDigitsParams>;
+@summary(callingCallSendDigits)
+@extension("x-fern-display-name", callingCallSendDigits)
+model CallSendDigitsEvent is SignalwireEvent<typeof callingCallSendDigits, CallSendDigitsParams>;

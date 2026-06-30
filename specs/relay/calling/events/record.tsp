@@ -1,8 +1,10 @@
 import "@signalwire/typespec-asyncapi";
+import "../../common/frames.tsp";
+import "@typespec/openapi";
 
 import "../models/core.tsp";
 
-using SignalWire.AsyncAPI;
+using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
@@ -82,6 +84,8 @@ model CallRecordParams {
   record?: RecordEventSpec;
 }
 
+const callingCallRecord = "calling.call.record";
 @doc("Fires when a recording starts, pauses, resumes, or finishes. The finished event includes the download URL, duration, and file size.")
-@summary("calling.call.record")
-model CallRecordEvent is SignalwireEvent<"calling.call.record", CallRecordParams>;
+@summary(callingCallRecord)
+@extension("x-fern-display-name", callingCallRecord)
+model CallRecordEvent is SignalwireEvent<typeof callingCallRecord, CallRecordParams>;

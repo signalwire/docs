@@ -1,25 +1,40 @@
 import "@signalwire/typespec-asyncapi";
+import "../../../common/frames.tsp";
+import "@typespec/openapi";
 
 import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "../../events/denoise.tsp";
 
 using SignalWire.AsyncAPI;
+using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
-model DenoiseRequest is JsonRpcRequest<"calling.denoise", DenoiseParams>;
+const callingDenoise = "calling.denoise";
+const callingDenoiseResponse = "${callingDenoise} response";
+
+model DenoiseRequest is JsonRpcRequest<typeof callingDenoise, DenoiseParams>;
+
+@extension("x-fern-display-name", callingDenoiseResponse)
 @reply model DenoiseReply is JsonRpcResponse<DenoiseResult>;
 
 @doc("Starts noise reduction on a call, filtering background noise out of the audio. Use this on noisy connections to improve clarity. Stop it later with `calling.denoise.stop`.")
-@channel("calling.denoise")
+@channel(callingDenoise)
 @summary("Start call noise reduction")
+@extension("x-fern-display-name", callingDenoise)
 op denoise(...DenoiseRequest): DenoiseReply | CallDenoiseEvent;
 
-model DenoiseStopRequest is JsonRpcRequest<"calling.denoise.stop", DenoiseStopParams>;
+const callingDenoiseStop = "calling.denoise.stop";
+const callingDenoiseStopResponse = "${callingDenoiseStop} response";
+
+model DenoiseStopRequest is JsonRpcRequest<typeof callingDenoiseStop, DenoiseStopParams>;
+
+@extension("x-fern-display-name", callingDenoiseStopResponse)
 @reply model DenoiseStopReply is JsonRpcResponse<DenoiseStopResult>;
 
 @doc("Stops noise reduction previously started with `calling.denoise` on a call.")
-@channel("calling.denoise.stop")
+@channel(callingDenoiseStop)
 @summary("Stop call noise reduction")
+@extension("x-fern-display-name", callingDenoiseStop)
 op denoiseStop(...DenoiseStopRequest): DenoiseStopReply;

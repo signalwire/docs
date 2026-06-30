@@ -1,41 +1,64 @@
 import "@signalwire/typespec-asyncapi";
+import "../../../common/frames.tsp";
+import "@typespec/openapi";
 
 import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "../../events/record.tsp";
 
 using SignalWire.AsyncAPI;
+using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
-model RecordCallRequest is JsonRpcRequest<"calling.record", RecordParams>;
+const callingRecord = "calling.record";
+const callingRecordResponse = "${callingRecord} response";
+
+model RecordCallRequest is JsonRpcRequest<typeof callingRecord, RecordParams>;
+@extension("x-fern-display-name", callingRecordResponse)
 @reply model RecordCallReply is JsonRpcResponse<RecordResult>;
 
 @doc("Records the audio of an active call. The result confirms recording started and the recording's URL arrives on a recording event when it finishes. You can run several recordings on the same call at once — give each its own `control_id`.")
-@channel("calling.record")
+@channel(callingRecord)
 @summary("Record a call")
+@extension("x-fern-display-name", callingRecord)
 op recordCall(...RecordCallRequest): RecordCallReply | CallRecordEvent;
 
-model RecordPauseRequest is JsonRpcRequest<"calling.record.pause", RecordPauseParams>;
+const callingRecordPause = "calling.record.pause";
+const callingRecordPauseResponse = "${callingRecordPause} response";
+
+model RecordPauseRequest is JsonRpcRequest<typeof callingRecordPause, RecordPauseParams>;
+@extension("x-fern-display-name", callingRecordPauseResponse)
 @reply model RecordPauseReply is JsonRpcResponse<RecordPauseResult>;
 
 @doc("Pauses a recording you started with `calling.record`, identified by its `control_id`. Audio captured while paused is either dropped or kept as silence depending on `behavior`. Resume it later with `calling.record.resume`.")
-@channel("calling.record.pause")
+@channel(callingRecordPause)
 @summary("Pause an active recording")
+@extension("x-fern-display-name", callingRecordPause)
 op recordPause(...RecordPauseRequest): RecordPauseReply;
 
-model RecordResumeRequest is JsonRpcRequest<"calling.record.resume", RecordResumeParams>;
+const callingRecordResume = "calling.record.resume";
+const callingRecordResumeResponse = "${callingRecordResume} response";
+
+model RecordResumeRequest is JsonRpcRequest<typeof callingRecordResume, RecordResumeParams>;
+@extension("x-fern-display-name", callingRecordResumeResponse)
 @reply model RecordResumeReply is JsonRpcResponse<RecordResumeResult>;
 
 @doc("Resumes a recording you paused with `calling.record.pause`, identified by its `control_id`. Audio capture picks back up where it left off.")
-@channel("calling.record.resume")
+@channel(callingRecordResume)
 @summary("Resume a paused recording")
+@extension("x-fern-display-name", callingRecordResume)
 op recordResume(...RecordResumeRequest): RecordResumeReply;
 
-model RecordStopRequest is JsonRpcRequest<"calling.record.stop", RecordStopParams>;
+const callingRecordStop = "calling.record.stop";
+const callingRecordStopResponse = "${callingRecordStop} response";
+
+model RecordStopRequest is JsonRpcRequest<typeof callingRecordStop, RecordStopParams>;
+@extension("x-fern-display-name", callingRecordStopResponse)
 @reply model RecordStopReply is JsonRpcResponse<RecordStopResult>;
 
 @doc("Stops a recording you started with `calling.record`, identified by its `control_id`. Once stopped, the recording is finalized and its URL becomes available on the recording event.")
-@channel("calling.record.stop")
+@channel(callingRecordStop)
 @summary("Stop an active recording")
+@extension("x-fern-display-name", callingRecordStop)
 op recordStop(...RecordStopRequest): RecordStopReply;

@@ -1,8 +1,10 @@
 import "@signalwire/typespec-asyncapi";
+import "../../common/frames.tsp";
+import "@typespec/openapi";
 
 import "../models/core.tsp";
 
-using SignalWire.AsyncAPI;
+using TypeSpec.OpenAPI;
 
 namespace Relay.Messaging;
 
@@ -38,10 +40,12 @@ model ReceiveEventData {
   message_state: "received";
 }
 
+const messagingReceive = "messaging.receive";
 @doc("""
   Fires when someone sends a message to one of your numbers. The payload gives
   you the full incoming message — who it's from, the text, and any media — so
   you can react or reply.
   """)
-@summary("messaging.receive")
-model ReceiveEvent is SignalwireEvent<"messaging.receive", ReceiveEventData>;
+@summary(messagingReceive)
+@extension("x-fern-display-name", messagingReceive)
+model ReceiveEvent is SignalwireEvent<typeof messagingReceive, ReceiveEventData>;

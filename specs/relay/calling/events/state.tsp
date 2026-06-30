@@ -1,9 +1,11 @@
 import "@signalwire/typespec-asyncapi";
+import "../../common/frames.tsp";
+import "@typespec/openapi";
 
 import "../models/core.tsp";
 import "../models/devices.tsp";
 
-using SignalWire.AsyncAPI;
+using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
@@ -88,9 +90,11 @@ model CallStateParams {
   end_source?: string;
 }
 
+const callingCallState = "calling.call.state";
 @doc("Fires every time one of your calls changes state. Use the `call_state` field to track the call through its lifecycle, and `tag` to match the event back to the call you placed.")
-@summary("calling.call.state")
-model CallStateEvent is SignalwireEvent<"calling.call.state", CallStateParams>;
+@summary(callingCallState)
+@extension("x-fern-display-name", callingCallState)
+model CallStateEvent is SignalwireEvent<typeof callingCallState, CallStateParams>;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // calling.call.receive
@@ -112,9 +116,11 @@ model CallReceiveParams {
   device: CallDevice;
 }
 
+const callingCallReceive = "calling.call.receive";
 @doc("Fires when a new call comes in that your application can answer and control. The payload tells you who is calling and on which context.")
-@summary("calling.call.receive")
-model CallReceiveEvent is SignalwireEvent<"calling.call.receive", CallReceiveParams>;
+@summary(callingCallReceive)
+@extension("x-fern-display-name", callingCallReceive)
+model CallReceiveEvent is SignalwireEvent<typeof callingCallReceive, CallReceiveParams>;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // calling.call.connect
@@ -157,9 +163,11 @@ model CallConnectParams {
   failed_reason?: string;
 }
 
+const callingCallConnect = "calling.call.connect";
 @doc("Fires as a connect request progresses, telling you whether your call has been bridged to the peer. Watch `connect_state` to know when the two calls are joined, torn down, or have failed to connect.")
-@summary("calling.call.connect")
-model CallConnectEvent is SignalwireEvent<"calling.call.connect", CallConnectParams>;
+@summary(callingCallConnect)
+@extension("x-fern-display-name", callingCallConnect)
+model CallConnectEvent is SignalwireEvent<typeof callingCallConnect, CallConnectParams>;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // calling.call.dial
@@ -203,6 +211,8 @@ model CallDialParams {
   source?: string;
 }
 
+const callingCallDial = "calling.call.dial";
 @doc("Fires as a `calling.dial` request progresses. Watch `dial_state` to know when your call is ringing, has been answered, or failed; when it is answered the `call` field gives you the call that picked up.")
-@summary("calling.call.dial")
-model CallDialEvent is SignalwireEvent<"calling.call.dial", CallDialParams>;
+@summary(callingCallDial)
+@extension("x-fern-display-name", callingCallDial)
+model CallDialEvent is SignalwireEvent<typeof callingCallDial, CallDialParams>;

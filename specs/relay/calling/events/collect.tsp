@@ -1,8 +1,10 @@
 import "@signalwire/typespec-asyncapi";
+import "../../common/frames.tsp";
+import "@typespec/openapi";
 
 import "../models/core.tsp";
 
-using SignalWire.AsyncAPI;
+using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
@@ -87,6 +89,8 @@ model CallCollectParams {
   final?: boolean;
 }
 
+const callingCallCollect = "calling.call.collect";
 @doc("Fires as you collect input from a caller — DTMF digits or speech — reporting partial and final results so you can react to what they said or pressed.")
-@summary("calling.call.collect")
-model CallCollectEvent is SignalwireEvent<"calling.call.collect", CallCollectParams>;
+@summary(callingCallCollect)
+@extension("x-fern-display-name", callingCallCollect)
+model CallCollectEvent is SignalwireEvent<typeof callingCallCollect, CallCollectParams>;

@@ -1,14 +1,22 @@
 import "@signalwire/typespec-asyncapi";
+import "../../../common/frames.tsp";
+import "@typespec/openapi";
 
 import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "../../events/fax.tsp";
 
 using SignalWire.AsyncAPI;
+using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
-model SendFaxRequest is JsonRpcRequest<"calling.send_fax", SendFaxParams>;
+const callingSendFax = "calling.send_fax";
+const callingSendFaxResponse = "${callingSendFax} response";
+
+model SendFaxRequest is JsonRpcRequest<typeof callingSendFax, SendFaxParams>;
+
+@extension("x-fern-display-name", callingSendFaxResponse)
 @reply model SendFaxReply is JsonRpcResponse<SendFaxResult>;
 
 @doc("""
@@ -17,19 +25,31 @@ model SendFaxRequest is JsonRpcRequest<"calling.send_fax", SendFaxParams>;
   away; progress and the final outcome arrive asynchronously as
   `calling.call.fax` events keyed on your `control_id`.
   """)
-@channel("calling.send_fax")
+@channel(callingSendFax)
 @summary("Send a PDF fax")
+@extension("x-fern-display-name", callingSendFax)
 op sendFax(...SendFaxRequest): SendFaxReply | CallFaxEvent;
 
-model SendFaxStopRequest is JsonRpcRequest<"calling.send_fax.stop", SendFaxStopParams>;
+const callingSendFaxStop = "calling.send_fax.stop";
+const callingSendFaxStopResponse = "${callingSendFaxStop} response";
+
+model SendFaxStopRequest is JsonRpcRequest<typeof callingSendFaxStop, SendFaxStopParams>;
+
+@extension("x-fern-display-name", callingSendFaxStopResponse)
 @reply model SendFaxStopReply is JsonRpcResponse<SendFaxStopResult>;
 
 @doc("Stop sending a fax.")
-@channel("calling.send_fax.stop")
+@channel(callingSendFaxStop)
 @summary("Stop sending a fax")
+@extension("x-fern-display-name", callingSendFaxStop)
 op sendFaxStop(...SendFaxStopRequest): SendFaxStopReply;
 
-model ReceiveFaxRequest is JsonRpcRequest<"calling.receive_fax", ReceiveFaxParams>;
+const callingReceiveFax = "calling.receive_fax";
+const callingReceiveFaxResponse = "${callingReceiveFax} response";
+
+model ReceiveFaxRequest is JsonRpcRequest<typeof callingReceiveFax, ReceiveFaxParams>;
+
+@extension("x-fern-display-name", callingReceiveFaxResponse)
 @reply model ReceiveFaxReply is JsonRpcResponse<ReceiveFaxResult>;
 
 @doc("""
@@ -38,14 +58,21 @@ model ReceiveFaxRequest is JsonRpcRequest<"calling.receive_fax", ReceiveFaxParam
   request right away; progress and the final outcome arrive asynchronously as
   `calling.call.fax` events keyed on your `control_id`.
   """)
-@channel("calling.receive_fax")
+@channel(callingReceiveFax)
 @summary("Receive a fax")
+@extension("x-fern-display-name", callingReceiveFax)
 op receiveFax(...ReceiveFaxRequest): ReceiveFaxReply | CallFaxEvent;
 
-model ReceiveFaxStopRequest is JsonRpcRequest<"calling.receive_fax.stop", ReceiveFaxStopParams>;
+const callingReceiveFaxStop = "calling.receive_fax.stop";
+const callingReceiveFaxStopResponse = "${callingReceiveFaxStop} response";
+
+model ReceiveFaxStopRequest is JsonRpcRequest<typeof callingReceiveFaxStop, ReceiveFaxStopParams>;
+
+@extension("x-fern-display-name", callingReceiveFaxStopResponse)
 @reply model ReceiveFaxStopReply is JsonRpcResponse<ReceiveFaxStopResult>;
 
 @doc("Stop receiving a fax.")
-@channel("calling.receive_fax.stop")
+@channel(callingReceiveFaxStop)
 @summary("Stop receiving a fax")
+@extension("x-fern-display-name", callingReceiveFaxStop)
 op receiveFaxStop(...ReceiveFaxStopRequest): ReceiveFaxStopReply;

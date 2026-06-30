@@ -1,8 +1,10 @@
 import "@signalwire/typespec-asyncapi";
+import "../../common/frames.tsp";
+import "@typespec/openapi";
 
 import "../models/core.tsp";
 
-using SignalWire.AsyncAPI;
+using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
@@ -90,6 +92,8 @@ model CallTapParams {
   device: CallTapDevice;
 }
 
+const callingCallTap = "calling.call.tap";
 @doc("Fires when a tap starts streaming call audio and again when it stops. Check `state` to tell which.")
-@summary("calling.call.tap")
-model CallTapEvent is SignalwireEvent<"calling.call.tap", CallTapParams>;
+@summary(callingCallTap)
+@extension("x-fern-display-name", callingCallTap)
+model CallTapEvent is SignalwireEvent<typeof callingCallTap, CallTapParams>;

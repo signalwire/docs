@@ -1,14 +1,21 @@
 import "@signalwire/typespec-asyncapi";
+import "../../../common/frames.tsp";
+import "@typespec/openapi";
 
 import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "../../events/transcribe.tsp";
 
 using SignalWire.AsyncAPI;
+using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
-model TranscribeRequest is JsonRpcRequest<"calling.transcribe", TranscribeParams>;
+const callingTranscribe = "calling.transcribe";
+const callingTranscribeResponse = "${callingTranscribe} response";
+
+model TranscribeRequest is JsonRpcRequest<typeof callingTranscribe, TranscribeParams>;
+@extension("x-fern-display-name", callingTranscribeResponse)
 @reply model TranscribeReply is JsonRpcResponse<TranscribeResult>;
 
 @doc("""
@@ -19,14 +26,20 @@ model TranscribeRequest is JsonRpcRequest<"calling.transcribe", TranscribeParams
   is active returns `"409"` "Transcribe is already in progress". Stop it with
   `calling.transcribe.stop`.
   """)
-@channel("calling.transcribe")
+@channel(callingTranscribe)
 @summary("Start transcribing a call")
+@extension("x-fern-display-name", callingTranscribe)
 op transcribe(...TranscribeRequest): TranscribeReply | CallTranscribeEvent;
 
-model TranscribeStopRequest is JsonRpcRequest<"calling.transcribe.stop", TranscribeStopParams>;
+const callingTranscribeStop = "calling.transcribe.stop";
+const callingTranscribeStopResponse = "${callingTranscribeStop} response";
+
+model TranscribeStopRequest is JsonRpcRequest<typeof callingTranscribeStop, TranscribeStopParams>;
+@extension("x-fern-display-name", callingTranscribeStopResponse)
 @reply model TranscribeStopReply is JsonRpcResponse<TranscribeStopResult>;
 
 @doc("Stops a transcription that is currently running on a call.")
-@channel("calling.transcribe.stop")
+@channel(callingTranscribeStop)
 @summary("Stop an active call transcription")
+@extension("x-fern-display-name", callingTranscribeStop)
 op transcribeStop(...TranscribeStopRequest): TranscribeStopReply;

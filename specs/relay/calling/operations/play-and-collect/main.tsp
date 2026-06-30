@@ -1,14 +1,21 @@
 import "@signalwire/typespec-asyncapi";
+import "../../../common/frames.tsp";
+import "@typespec/openapi";
 
 import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "../../events/collect.tsp";
 
 using SignalWire.AsyncAPI;
+using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
-model PlayAndCollectRequest is JsonRpcRequest<"calling.play_and_collect", PlayAndCollectParams>;
+const callingPlayAndCollect = "calling.play_and_collect";
+const callingPlayAndCollectResponse = "${callingPlayAndCollect} response";
+
+model PlayAndCollectRequest is JsonRpcRequest<typeof callingPlayAndCollect, PlayAndCollectParams>;
+@extension("x-fern-display-name", callingPlayAndCollectResponse)
 @reply model PlayAndCollectReply is JsonRpcResponse<PlayAndCollectResult>;
 
 @doc("""
@@ -19,22 +26,33 @@ model PlayAndCollectRequest is JsonRpcRequest<"calling.play_and_collect", PlayAn
   """)
 // NOTE: no @opExample here — the required `play: PlayMedia[]` is a @discriminator
 // union, and TypeSpec example values cannot narrow a discriminator base.
-@channel("calling.play_and_collect")
+@channel(callingPlayAndCollect)
 @summary("Play media and collect input")
+@extension("x-fern-display-name", callingPlayAndCollect)
 op playAndCollect(...PlayAndCollectRequest): PlayAndCollectReply | CallCollectEvent;
 
-model PlayAndCollectStopRequest is JsonRpcRequest<"calling.play_and_collect.stop", PlayAndCollectStopParams>;
+const callingPlayAndCollectStop = "calling.play_and_collect.stop";
+const callingPlayAndCollectStopResponse = "${callingPlayAndCollectStop} response";
+
+model PlayAndCollectStopRequest is JsonRpcRequest<typeof callingPlayAndCollectStop, PlayAndCollectStopParams>;
+@extension("x-fern-display-name", callingPlayAndCollectStopResponse)
 @reply model PlayAndCollectStopReply is JsonRpcResponse<PlayAndCollectStopResult>;
 
 @doc("Stops a running play-and-collect, halting both the media playback and the input collection.")
-@channel("calling.play_and_collect.stop")
+@channel(callingPlayAndCollectStop)
 @summary("Stop an active play-and-collect")
+@extension("x-fern-display-name", callingPlayAndCollectStop)
 op playAndCollectStop(...PlayAndCollectStopRequest): PlayAndCollectStopReply;
 
-model PlayAndCollectVolumeRequest is JsonRpcRequest<"calling.play_and_collect.volume", PlayAndCollectVolumeParams>;
+const callingPlayAndCollectVolume = "calling.play_and_collect.volume";
+const callingPlayAndCollectVolumeResponse = "${callingPlayAndCollectVolume} response";
+
+model PlayAndCollectVolumeRequest is JsonRpcRequest<typeof callingPlayAndCollectVolume, PlayAndCollectVolumeParams>;
+@extension("x-fern-display-name", callingPlayAndCollectVolumeResponse)
 @reply model PlayAndCollectVolumeReply is JsonRpcResponse<PlayAndCollectVolumeResult>;
 
 @doc("Adjusts the playback volume of a running play-and-collect on the fly, without stopping it.")
-@channel("calling.play_and_collect.volume")
+@channel(callingPlayAndCollectVolume)
 @summary("Change play-and-collect volume")
+@extension("x-fern-display-name", callingPlayAndCollectVolume)
 op playAndCollectVolume(...PlayAndCollectVolumeRequest): PlayAndCollectVolumeReply;

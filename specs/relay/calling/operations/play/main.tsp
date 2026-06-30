@@ -1,14 +1,22 @@
 import "@signalwire/typespec-asyncapi";
+import "../../../common/frames.tsp";
+import "@typespec/openapi";
 
 import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "../../events/play.tsp";
 
 using SignalWire.AsyncAPI;
+using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
-model PlayRequest is JsonRpcRequest<"calling.play", PlayParams>;
+const callingPlay = "calling.play";
+const callingPlayResponse = "${callingPlay} response";
+
+model PlayRequest is JsonRpcRequest<typeof callingPlay, PlayParams>;
+
+@extension("x-fern-display-name", callingPlayResponse)
 @reply model PlayReply is JsonRpcResponse<PlayResult>;
 
 // NOTE: no @opExample here — `play: PlayMedia[]` is a @discriminator union, and TypeSpec
@@ -26,38 +34,63 @@ model PlayRequest is JsonRpcRequest<"calling.play", PlayParams>;
   on your `control_id`. Pause, resume, change the volume, or stop it mid-play
   with the matching `calling.play.*` methods using the same `control_id`.
   """)
-@channel("calling.play")
+@channel(callingPlay)
 @summary("Play media to a call")
+@extension("x-fern-display-name", callingPlay)
 op play(...PlayRequest): PlayReply | CallPlayEvent;
 
-model PlayPauseRequest is JsonRpcRequest<"calling.play.pause", PlayPauseParams>;
+const callingPlayPause = "calling.play.pause";
+const callingPlayPauseResponse = "${callingPlayPause} response";
+
+model PlayPauseRequest is JsonRpcRequest<typeof callingPlayPause, PlayPauseParams>;
+
+@extension("x-fern-display-name", callingPlayPauseResponse)
 @reply model PlayPauseReply is JsonRpcResponse<PlayPauseResult>;
 
 @doc("Pause an active play.")
-@channel("calling.play.pause")
+@channel(callingPlayPause)
 @summary("Pause an active play")
+@extension("x-fern-display-name", callingPlayPause)
 op playPause(...PlayPauseRequest): PlayPauseReply;
 
-model PlayResumeRequest is JsonRpcRequest<"calling.play.resume", PlayResumeParams>;
+const callingPlayResume = "calling.play.resume";
+const callingPlayResumeResponse = "${callingPlayResume} response";
+
+model PlayResumeRequest is JsonRpcRequest<typeof callingPlayResume, PlayResumeParams>;
+
+@extension("x-fern-display-name", callingPlayResumeResponse)
 @reply model PlayResumeReply is JsonRpcResponse<PlayResumeResult>;
 
 @doc("Resume an active paused play.")
-@channel("calling.play.resume")
+@channel(callingPlayResume)
 @summary("Resume a paused play")
+@extension("x-fern-display-name", callingPlayResume)
 op playResume(...PlayResumeRequest): PlayResumeReply;
 
-model PlayStopRequest is JsonRpcRequest<"calling.play.stop", PlayStopParams>;
+const callingPlayStop = "calling.play.stop";
+const callingPlayStopResponse = "${callingPlayStop} response";
+
+model PlayStopRequest is JsonRpcRequest<typeof callingPlayStop, PlayStopParams>;
+
+@extension("x-fern-display-name", callingPlayStopResponse)
 @reply model PlayStopReply is JsonRpcResponse<PlayStopResult>;
 
 @doc("Stop an active play.")
-@channel("calling.play.stop")
+@channel(callingPlayStop)
 @summary("Stop an active play")
+@extension("x-fern-display-name", callingPlayStop)
 op playStop(...PlayStopRequest): PlayStopReply;
 
-model PlayVolumeRequest is JsonRpcRequest<"calling.play.volume", PlayVolumeParams>;
+const callingPlayVolume = "calling.play.volume";
+const callingPlayVolumeResponse = "${callingPlayVolume} response";
+
+model PlayVolumeRequest is JsonRpcRequest<typeof callingPlayVolume, PlayVolumeParams>;
+
+@extension("x-fern-display-name", callingPlayVolumeResponse)
 @reply model PlayVolumeReply is JsonRpcResponse<PlayVolumeResult>;
 
 @doc("Adjust the volume of an active play.")
-@channel("calling.play.volume")
+@channel(callingPlayVolume)
 @summary("Adjust the volume of an active play")
+@extension("x-fern-display-name", callingPlayVolume)
 op playVolume(...PlayVolumeRequest): PlayVolumeReply;

@@ -147,10 +147,11 @@ function ensureEventMessage(
 }
 
 /**
- * Reference a message on a channel and emit a dedicated `receive` op for it, each with its own
- * `x-fern-display-name` so it renders as a distinct, human-readable entry. Fern labels every
- * rendered message by the operation key and ignores AsyncAPI `title`/`summary`, so one receive op
- * per message (not a message union) is what produces individually-labeled entries.
+ * Reference a message on a channel and emit a dedicated `receive` op for it — one receive op per
+ * message (not a message union) is what makes Fern render individually-labeled entries. The
+ * human-readable label is NOT synthesized here: any `x-fern-display-name` comes from `@extension`
+ * authored on the source model and passed in via `extensions` (the emitter never invents extensions).
+ * `title` stays a standard AsyncAPI field, derived from the model's `@summary`.
  */
 function emitReceiveOp(
   target: EmitTarget,
@@ -160,6 +161,7 @@ function emitReceiveOp(
   displayName: string,
   channelMessages: Record<string, AsyncAPIRef>,
   seen: Set<string>,
+  extensions: Iterable<[string, unknown]> = [],
 ): void {
   // At most one receive op per (channel, message): the same message reaching one channel via
   // multiple commands (single-channel mode) must render once, not once per command.
@@ -167,13 +169,15 @@ function emitReceiveOp(
   if (seen.has(key)) return;
   seen.add(key);
   channelMessages[msgId] = { $ref: `#/components/messages/${msgId}` };
-  target.operations[opId] = {
+  const op: AsyncAPIOperation = {
     action: "receive",
     channel: { $ref: `#/channels/${chId}` },
     title: displayName,
-    "x-fern-display-name": displayName,
     messages: [{ $ref: `#/channels/${chId}/messages/${msgId}` }],
   };
+  // Pass through authored vendor extensions (e.g. x-fern-display-name) from the source model.
+  for (const [k, v] of extensions) (op as unknown as Record<string, unknown>)[k] = v;
+  target.operations[opId] = op;
 }
 
 function emitRpcMethods(
@@ -244,9 +248,12 @@ function emitRpcMethods(
         }
       }
 
-      // Multi mode: each op gets its OWN root-addressed channel keyed by the operation. Single
-      // mode: the op lands on the one shared channel.
-      const chId = single ? single.channelId : opKey;
+      // Multi mode: each op gets its OWN root-addressed channel, keyed by the real dotted method
+      // name (the @channel value, verbatim). AsyncAPI channel keys are free-form strings and Fern
+      // uses the key as the sidebar label + page header, so the dotted name renders directly — no
+      // vendor extension needed. (Dots are literal in JSON pointers, so `#/channels/calling.dial`
+      // still resolves.) Single mode: the op lands on the one shared channel.
+      const chId = single ? single.channelId : method;
 
       let msgs: Record<string, AsyncAPIRef>;
       if (single) {
@@ -286,6 +293,11 @@ function emitRpcMethods(
           messages: replyMsgIds.map((id) => ({ $ref: `#/channels/${chId}/messages/${id}` })),
         };
       }
+      // The same op authors the channel display name (above) and the send-entry display name —
+      // pass its authored `@extension` (e.g. x-fern-display-name) through to the send op too.
+      for (const [key, value] of getExtensions(program, op)) {
+        (sendOp as unknown as Record<string, unknown>)[key] = value;
+      }
       target.operations[opKey] = sendOp;
 
       // Received events — one `receive` op PER message (each with its own `x-fern-display-name`),
@@ -296,12 +308,12 @@ function emitRpcMethods(
         const msgId = ensureEventMessage(program, ev, dn, ref, target, events.emitted);
         if (seenReceive.has(msgId)) continue;
         seenReceive.add(msgId);
-        emitReceiveOp(target, chId, `on${baseId}${ev.name}`, msgId, dn, msgs, events.receive);
+        emitReceiveOp(target, chId, `on${baseId}${ev.name}`, msgId, dn, msgs, events.receive, getExtensions(program, ev));
       }
       if (shim) {
         replyMsgIds.forEach((resMsgId, i) => {
           const opId = `on${baseId}Response${replyMsgIds.length > 1 ? i + 1 : ""}`;
-          emitReceiveOp(target, chId, opId, resMsgId, `${method} response`, msgs, events.receive);
+          emitReceiveOp(target, chId, opId, resMsgId, `${method} response`, msgs, events.receive, getExtensions(program, replyArms[i]));
         });
       }
     }

@@ -1,14 +1,21 @@
 import "@signalwire/typespec-asyncapi";
+import "../../../common/frames.tsp";
+import "@typespec/openapi";
 
 import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "../../events/tap.tsp";
 
 using SignalWire.AsyncAPI;
+using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
-model TapRequest is JsonRpcRequest<"calling.tap", TapParams>;
+const callingTap = "calling.tap";
+const callingTapResponse = "${callingTap} response";
+
+model TapRequest is JsonRpcRequest<typeof callingTap, TapParams>;
+@extension("x-fern-display-name", callingTapResponse)
 @reply model TapReply is JsonRpcResponse<TapResult>;
 
 // NOTE: no @opExample here — the required `tap: TapConfig` and `device: TapDevice` are
@@ -25,14 +32,20 @@ model TapRequest is JsonRpcRequest<"calling.tap", TapParams>;
   what is coming. Tap lifecycle events arrive as `calling.call.tap` events
   keyed on your `control_id`.
   """)
-@channel("calling.tap")
+@channel(callingTap)
 @summary("Tap call media to an external device")
+@extension("x-fern-display-name", callingTap)
 op tap(...TapRequest): TapReply | CallTapEvent;
 
-model TapStopRequest is JsonRpcRequest<"calling.tap.stop", TapStopParams>;
+const callingTapStop = "calling.tap.stop";
+const callingTapStopResponse = "${callingTapStop} response";
+
+model TapStopRequest is JsonRpcRequest<typeof callingTapStop, TapStopParams>;
+@extension("x-fern-display-name", callingTapStopResponse)
 @reply model TapStopReply is JsonRpcResponse<TapStopResult>;
 
 @doc("Stop an active call tap.")
-@channel("calling.tap.stop")
+@channel(callingTapStop)
 @summary("Stop a call tap")
+@extension("x-fern-display-name", callingTapStop)
 op tapStop(...TapStopRequest): TapStopReply;

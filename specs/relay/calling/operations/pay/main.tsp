@@ -1,14 +1,22 @@
 import "@signalwire/typespec-asyncapi";
+import "../../../common/frames.tsp";
+import "@typespec/openapi";
 
 import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "../../events/pay.tsp";
 
 using SignalWire.AsyncAPI;
+using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
-model PayRequest is JsonRpcRequest<"calling.pay", PayParams>;
+const callingPay = "calling.pay";
+const callingPayResponse = "${callingPay} response";
+
+model PayRequest is JsonRpcRequest<typeof callingPay, PayParams>;
+
+@extension("x-fern-display-name", callingPayResponse)
 @reply model PayReply is JsonRpcResponse<PayResult>;
 
 @doc("""
@@ -21,14 +29,21 @@ model PayRequest is JsonRpcRequest<"calling.pay", PayParams>;
   payment (and progress updates) arrives asynchronously via `calling.call.pay`
   events keyed on your `control_id`, and at `status_url` if you set one.
   """)
-@channel("calling.pay")
+@channel(callingPay)
 @summary("Collect a payment via the Pay IVR")
+@extension("x-fern-display-name", callingPay)
 op pay(...PayRequest): PayReply | CallPayEvent;
 
-model PayStopRequest is JsonRpcRequest<"calling.pay.stop", PayStopParams>;
+const callingPayStop = "calling.pay.stop";
+const callingPayStopResponse = "${callingPayStop} response";
+
+model PayStopRequest is JsonRpcRequest<typeof callingPayStop, PayStopParams>;
+
+@extension("x-fern-display-name", callingPayStopResponse)
 @reply model PayStopReply is JsonRpcResponse<PayStopResult>;
 
 @doc("Stop an active Pay IVR session.")
-@channel("calling.pay.stop")
+@channel(callingPayStop)
 @summary("Stop an active pay")
+@extension("x-fern-display-name", callingPayStop)
 op payStop(...PayStopRequest): PayStopReply;

@@ -1,8 +1,10 @@
 import "@signalwire/typespec-asyncapi";
+import "../../common/frames.tsp";
+import "@typespec/openapi";
 
 import "../models/core.tsp";
 
-using SignalWire.AsyncAPI;
+using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
@@ -96,6 +98,8 @@ model CallDetectParams {
   detect: CallDetectResult;
 }
 
+const callingCallDetect = "calling.call.detect";
 @doc("Fires when a detector reports a result — a fax tone, an answering machine versus a human, or a DTMF digit.")
-@summary("calling.call.detect")
-model CallDetectEvent is SignalwireEvent<"calling.call.detect", CallDetectParams>;
+@summary(callingCallDetect)
+@extension("x-fern-display-name", callingCallDetect)
+model CallDetectEvent is SignalwireEvent<typeof callingCallDetect, CallDetectParams>;

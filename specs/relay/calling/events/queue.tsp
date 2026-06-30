@@ -1,8 +1,10 @@
 import "@signalwire/typespec-asyncapi";
+import "@typespec/openapi";
 
 import "../models/core.tsp";
+import "../../common/frames.tsp";
 
-using SignalWire.AsyncAPI;
+using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
@@ -51,6 +53,8 @@ model CallQueueParams {
   leave_ts?: float64;
 }
 
+const callingCallQueue = "calling.call.queue";
 @doc("Fires as a call moves through a queue — when it joins, gets connected, or leaves — and reports its position along with live queue stats.")
-@summary("calling.call.queue")
-model CallQueueEvent is SignalwireEvent<"calling.call.queue", CallQueueParams>;
+@summary(callingCallQueue)
+@extension("x-fern-display-name", callingCallQueue)
+model CallQueueEvent is SignalwireEvent<typeof callingCallQueue, CallQueueParams>;

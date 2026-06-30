@@ -1,14 +1,21 @@
 import "@signalwire/typespec-asyncapi";
+import "../../../common/frames.tsp";
+import "@typespec/openapi";
 
 import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "../../events/stream.tsp";
 
 using SignalWire.AsyncAPI;
+using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
-model StreamRequest is JsonRpcRequest<"calling.stream", StreamParams>;
+const callingStream = "calling.stream";
+const callingStreamResponse = "${callingStream} response";
+
+model StreamRequest is JsonRpcRequest<typeof callingStream, StreamParams>;
+@extension("x-fern-display-name", callingStreamResponse)
 @reply model StreamReply is JsonRpcResponse<StreamResult>;
 
 @doc("""
@@ -19,14 +26,20 @@ model StreamRequest is JsonRpcRequest<"calling.stream", StreamParams>;
   arrive as `calling.call.stream` events keyed on your `control_id`. Note this
   result echoes `node_id` rather than `call_id`.
   """)
-@channel("calling.stream")
+@channel(callingStream)
 @summary("Stream call audio to a WebSocket endpoint")
+@extension("x-fern-display-name", callingStream)
 op stream(...StreamRequest): StreamReply | CallStreamEvent;
 
-model StreamStopRequest is JsonRpcRequest<"calling.stream.stop", StreamStopParams>;
+const callingStreamStop = "calling.stream.stop";
+const callingStreamStopResponse = "${callingStreamStop} response";
+
+model StreamStopRequest is JsonRpcRequest<typeof callingStreamStop, StreamStopParams>;
+@extension("x-fern-display-name", callingStreamStopResponse)
 @reply model StreamStopReply is JsonRpcResponse<StreamStopResult>;
 
 @doc("Stop an active call stream.")
-@channel("calling.stream.stop")
+@channel(callingStreamStop)
 @summary("Stop a call stream")
+@extension("x-fern-display-name", callingStreamStop)
 op streamStop(...StreamStopRequest): StreamStopReply;

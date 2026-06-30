@@ -1,8 +1,10 @@
 import "@signalwire/typespec-asyncapi";
+import "../../common/frames.tsp";
+import "@typespec/openapi";
 
 import "../models/core.tsp";
 
-using SignalWire.AsyncAPI;
+using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
@@ -23,6 +25,8 @@ model CallHoldParams {
   state: HoldState;
 }
 
+const callingCallHold = "calling.call.hold";
 @doc("Fires whenever a call is placed on hold or taken off hold.")
-@summary("calling.call.hold")
-model CallHoldEvent is SignalwireEvent<"calling.call.hold", CallHoldParams>;
+@summary(callingCallHold)
+@extension("x-fern-display-name", callingCallHold)
+model CallHoldEvent is SignalwireEvent<typeof callingCallHold, CallHoldParams>;

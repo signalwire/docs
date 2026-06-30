@@ -1,8 +1,10 @@
 import "@signalwire/typespec-asyncapi";
+import "../../common/frames.tsp";
+import "@typespec/openapi";
 
 import "../models/core.tsp";
 
-using SignalWire.AsyncAPI;
+using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
@@ -106,6 +108,8 @@ model ConferenceParams {
   announce_url?: url;
 }
 
+const callingConference = "calling.conference";
 @doc("Fires throughout a conference's life: when it starts and ends, and each time a participant joins, leaves, mutes, holds, speaks, or an announcement plays. Check `status` to see what happened.")
-@summary("calling.conference")
-model ConferenceEvent is SignalwireEvent<"calling.conference", ConferenceParams>;
+@summary(callingConference)
+@extension("x-fern-display-name", callingConference)
+model ConferenceEvent is SignalwireEvent<typeof callingConference, ConferenceParams>;

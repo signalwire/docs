@@ -1,14 +1,22 @@
 import "@signalwire/typespec-asyncapi";
+import "../../../common/frames.tsp";
+import "@typespec/openapi";
 
 import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "../../events/echo.tsp";
 
 using SignalWire.AsyncAPI;
+using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
-model EchoRequest is JsonRpcRequest<"calling.echo", EchoParams>;
+const callingEcho = "calling.echo";
+const callingEchoResponse = "${callingEcho} response";
+
+model EchoRequest is JsonRpcRequest<typeof callingEcho, EchoParams>;
+
+@extension("x-fern-display-name", callingEchoResponse)
 @reply model EchoReply is JsonRpcResponse<EchoResult>;
 
 @doc("""
@@ -16,6 +24,7 @@ model EchoRequest is JsonRpcRequest<"calling.echo", EchoParams>;
   back. Handy for testing that audio is flowing in both directions on a call.
   Echo stops on its own when the `timeout` expires or the call ends.
   """)
-@channel("calling.echo")
+@channel(callingEcho)
 @summary("Echo audio back to the caller")
+@extension("x-fern-display-name", callingEcho)
 op echo(...EchoRequest): EchoReply | CallEchoEvent;

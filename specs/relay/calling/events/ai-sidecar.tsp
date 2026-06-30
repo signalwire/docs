@@ -1,6 +1,8 @@
 import "@signalwire/typespec-asyncapi";
+import "../../common/frames.tsp";
+import "@typespec/openapi";
 
-using SignalWire.AsyncAPI;
+using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
@@ -48,5 +50,7 @@ model AiSidecarEventData {
   channel_data: Record<unknown>;
 }
 
-@summary("calling.ai.sidecar")
-model AiSidecarEvent is SignalwireEvent<"calling.ai.sidecar", AiSidecarEventData>;
+const callingAiSidecarEvent = "calling.ai.sidecar";
+@summary(callingAiSidecarEvent)
+@extension("x-fern-display-name", callingAiSidecarEvent)
+model AiSidecarEvent is SignalwireEvent<typeof callingAiSidecarEvent, AiSidecarEventData>;

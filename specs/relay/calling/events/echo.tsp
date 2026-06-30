@@ -1,8 +1,10 @@
 import "@signalwire/typespec-asyncapi";
+import "../../common/frames.tsp";
+import "@typespec/openapi";
 
 import "../models/core.tsp";
 
-using SignalWire.AsyncAPI;
+using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
@@ -23,6 +25,8 @@ model CallEchoParams {
   state: EchoState;
 }
 
+const callingCallEcho = "calling.call.echo";
 @doc("Fires when audio echo starts on a call and again when it stops.")
-@summary("calling.call.echo")
-model CallEchoEvent is SignalwireEvent<"calling.call.echo", CallEchoParams>;
+@summary(callingCallEcho)
+@extension("x-fern-display-name", callingCallEcho)
+model CallEchoEvent is SignalwireEvent<typeof callingCallEcho, CallEchoParams>;

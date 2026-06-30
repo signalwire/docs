@@ -1,6 +1,8 @@
 import "@signalwire/typespec-asyncapi";
+import "../../../../common/frames.tsp";
+import "@typespec/openapi";
 
-using SignalWire.AsyncAPI;
+using TypeSpec.OpenAPI;
 
 namespace Relay.Signalwire;
 
@@ -42,9 +44,11 @@ model AuthorizationStateParams {
   authorization_state: string;
 }
 
+const signalwireAuthorizationState = "signalwire.authorization.state";
 @doc("""
   Delivers your latest authorization state so you can restore it if you
   reconnect. Save the `authorization_state` value each time this event arrives.
   """)
-@summary("signalwire.authorization.state")
-model AuthorizationStateEvent is SignalwireEvent<"signalwire.authorization.state", AuthorizationStateParams>;
+@summary(signalwireAuthorizationState)
+@extension("x-fern-display-name", signalwireAuthorizationState)
+model AuthorizationStateEvent is SignalwireEvent<typeof signalwireAuthorizationState, AuthorizationStateParams>;
