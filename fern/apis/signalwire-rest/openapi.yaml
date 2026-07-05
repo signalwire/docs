@@ -8541,7 +8541,7 @@ paths:
         - $ref: '#/components/parameters/RecordingPathID'
       responses:
         '200':
-          description: Recording model. A recording is associated with exactly one call leg type (PSTN, SIP, or WebRTC).
+          description: Recording model. A recording is associated with exactly one source type (PSTN, SIP, WebRTC, or Relay conference).
           content:
             application/json:
               schema:
@@ -8549,6 +8549,7 @@ paths:
                   - $ref: '#/components/schemas/PstnRecording'
                   - $ref: '#/components/schemas/SipRecording'
                   - $ref: '#/components/schemas/WebRtcRecording'
+                  - $ref: '#/components/schemas/ConferenceRecording'
         '401':
           description: Access is unauthorized.
           content:
@@ -20560,6 +20561,10 @@ components:
         - G722
         - G729
         - OPUS
+        - OPUS@48000H@20I
+        - OPUS@24000H@20I
+        - OPUS@16000H@20I
+        - OPUS@8000H@20I
         - VP8
         - H264
     CompanyVertical:
@@ -20589,6 +20594,97 @@ components:
         - TECHNOLOGY
         - TRANSPORTATION
       description: Company vertical/industry classification.
+    ConferenceRecording:
+      type: object
+      required:
+        - id
+        - project_id
+        - created_at
+        - updated_at
+        - duration_in_seconds
+        - price
+        - price_unit
+        - status
+        - url
+        - stereo
+        - track
+        - relay_conference_id
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Unique ID of the recording.
+          examples:
+            - d369a402-7b43-4512-8735-9d5e1f387814
+        project_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Unique ID of the project.
+          examples:
+            - d369a402-7b43-4512-8735-9d5e1f387814
+        created_at:
+          type: string
+          format: date-time
+          description: Date and time when the recording was created.
+        updated_at:
+          type: string
+          format: date-time
+          description: Date and time when the recording was last updated.
+        duration_in_seconds:
+          type: integer
+          format: int32
+          description: Duration of the recording in seconds.
+          examples:
+            - 2
+        error_code:
+          type: string
+          description: Error code if the recording failed.
+        price:
+          type: number
+          format: double
+          description: Price of the recording.
+          examples:
+            - 0.05
+        price_unit:
+          type: string
+          description: Currency unit for the price.
+          examples:
+            - USD
+        status:
+          type: string
+          description: Status of the recording.
+          examples:
+            - completed
+        url:
+          type: string
+          description: URL of the recording file.
+          examples:
+            - https://example.com/recording.mp3
+        stereo:
+          type: boolean
+          description: Indicates whether the recording is stereo.
+          examples:
+            - false
+        byte_size:
+          type: integer
+          format: int32
+          description: Size of the recording file in bytes.
+          examples:
+            - 10
+        track:
+          type: string
+          description: Audio track of the recording.
+          examples:
+            - inbound
+        relay_conference_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Unique ID of the Relay conference the recording belongs to.
+          examples:
+            - 0089cc48-4f98-4a6b-90d8-61f8a5d1b0e3
+      unevaluatedProperties:
+        not: {}
+      description: Recording from a Relay conference.
     ConferenceRoom:
       type: object
       required:
@@ -28117,6 +28213,12 @@ components:
           description: Audio track of the recording.
           examples:
             - inbound
+        relay_conference_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Unique ID of the Relay conference the recording belongs to, if any.
+          examples:
+            - 0089cc48-4f98-4a6b-90d8-61f8a5d1b0e3
         relay_pstn_leg_id:
           allOf:
             - $ref: '#/components/schemas/uuid'
@@ -28528,7 +28630,8 @@ components:
         - $ref: '#/components/schemas/PstnRecording'
         - $ref: '#/components/schemas/SipRecording'
         - $ref: '#/components/schemas/WebRtcRecording'
-      description: Recording model. A recording is associated with exactly one call leg type (PSTN, SIP, or WebRTC).
+        - $ref: '#/components/schemas/ConferenceRecording'
+      description: Recording model. A recording is associated with exactly one source type (PSTN, SIP, WebRTC, or Relay conference).
     RecordingListResponse:
       type: object
       required:
@@ -33049,10 +33152,192 @@ components:
             - $ref: '#/components/schemas/SWML.Calling.ConnectDeviceSerial'
             - $ref: '#/components/schemas/SWML.Calling.ConnectDeviceParallel'
             - $ref: '#/components/schemas/SWML.Calling.ConnectDeviceSerialParallel'
-          description: Connect to a phone number, SIP URI, Call Fabric resource, queue, or WebSocket stream.
+          description: Connect to a phone number, SIP URI, Resource Address, queue, or WebSocket stream.
       unevaluatedProperties:
         not: {}
       title: connect Method
+    SWML.Calling.ConnectDestination:
+      type: object
+      required:
+        - to
+      properties:
+        to:
+          type: string
+          description: |-
+            Destination to dial. Can be:
+            - Phone number in E.164 format (e.g., "+15552345678")
+            - SIP URI (e.g., "sip:alice@example.com")
+            - Resource Address (e.g., "/public/test_room")
+            - Queue (e.g., "queue:support")
+            - WebSocket stream (e.g., "stream:wss://example.com/audio")
+          examples:
+            - '+15559876543'
+        from:
+          type: string
+          description: The caller ID to use when dialing this destination. Overrides the top-level `from`.
+          examples:
+            - '+15551234567'
+        from_name:
+          type: string
+          description: |-
+            The caller ID name for this destination. Overrides the top-level `from_name`.
+            Applies to SIP calls only — it has no effect on calls to phone numbers.
+          examples:
+            - Support Team
+        headers:
+          type: array
+          items:
+            $ref: '#/components/schemas/SWML.Calling.ConnectHeaders'
+          description: Custom SIP headers to add to INVITE for this destination. Overrides the top-level `headers`. It has no effect on calls to phone numbers.
+        codecs:
+          type: string
+          description: |-
+            Comma-separated string of codecs to offer for this destination.
+            Overrides the top-level `codecs`. It has no effect on calls to phone numbers.
+          examples:
+            - PCMU
+        webrtc_media:
+          anyOf:
+            - type: boolean
+            - $ref: '#/components/schemas/SWMLVar'
+          description: |-
+            If true, WebRTC media is offered to this SIP destination.
+            Overrides the top-level `webrtc_media`. It has no effect on calls to phone numbers.
+            Default is `false`.
+          examples:
+            - true
+          default: false
+        session_timeout:
+          anyOf:
+            - type: integer
+            - $ref: '#/components/schemas/SWMLVar'
+          minimum: 1
+          description: |-
+            Time, in seconds, to set the SIP `Session-Expires` header in INVITE for this destination.
+            Overrides the top-level `session_timeout`. Must be a positive, non-zero number.
+            It has no effect on calls to phone numbers.
+          examples:
+            - 1800
+          default: 0
+        username:
+          type: string
+          description: SIP username to use for authentication when dialing a SIP URI. Has no effect on calls to phone numbers.
+          examples:
+            - sipuser
+        password:
+          type: string
+          description: SIP password to use for authentication when dialing a SIP URI. Has no effect on calls to phone numbers.
+          examples:
+            - sippassword
+        timeout:
+          anyOf:
+            - type: integer
+            - $ref: '#/components/schemas/SWMLVar'
+          description: |-
+            Time, in seconds, to wait for this destination to answer.
+            Overrides the top-level `timeout`. Default is 60 seconds.
+          examples:
+            - 30
+          default: 60
+        call_state_events:
+          type: array
+          items:
+            $ref: '#/components/schemas/SWML.Calling.CallStatus'
+          description: |-
+            An array of call state event names to be notified about for this destination.
+            Overrides the top-level `call_state_events`.
+            Allowed event names are: `created`, `ringing`, `answered`, `ended`.
+          default:
+            - ended
+        call_state_url:
+          type: string
+          format: uri
+          description: Webhook URL for call status change notifications for this destination. Overrides the top-level `call_state_url`.
+          examples:
+            - https://example.com/call-status
+        confirm:
+          anyOf:
+            - type: string
+            - type: array
+              items:
+                $ref: '#/components/schemas/SWML.Calling.ValidConfirmMethods'
+          description: |-
+            Confirmation to execute on this destination when answered.
+            Overrides the top-level `confirm`. Can be either:
+            - A URL (string) that returns a SWML document
+            - An array of SWML methods to execute inline
+          examples:
+            - https://example.com/confirm.swml
+        confirm_timeout:
+          anyOf:
+            - type: integer
+            - $ref: '#/components/schemas/SWMLVar'
+          description: Seconds to wait for the `confirm` script on this destination. Overrides the top-level `confirm_timeout`.
+          examples:
+            - 30
+        encryption:
+          type: string
+          enum:
+            - mandatory
+            - optional
+            - forbidden
+          description: Encryption setting for this destination. Overrides the top-level `encryption`. **Possible values:** `mandatory`, `optional`, `forbidden`
+          examples:
+            - optional
+          default: optional
+        name:
+          type: string
+          description: Stream name identifier. Only applies to stream destinations.
+          examples:
+            - my-stream
+        codec:
+          type: string
+          description: |-
+            Audio codec for the stream. Supported values: `PCMU`, `PCMA`, `G722`, `L16`.
+            Codec can include rate and ptime modifiers (e.g., `PCMU@40i`, `L16@24000h@40i`).
+            Only applies to stream destinations.
+          examples:
+            - PCMU
+        realtime:
+          anyOf:
+            - type: boolean
+            - $ref: '#/components/schemas/SWMLVar'
+          description: |-
+            Enable realtime mode for bidirectional audio.
+            Only applies to stream destinations.
+          examples:
+            - true
+          default: false
+        status_url_method:
+          type: string
+          enum:
+            - GET
+            - POST
+          description: |-
+            HTTP method for the stream status webhook.
+            Only applies to stream destinations.
+          examples:
+            - POST
+          default: POST
+        authorization_bearer_token:
+          type: string
+          description: Bearer token sent as an `Authorization` header during the WebSocket handshake. Only applies to stream destinations.
+          examples:
+            - my-secret-token
+        custom_parameters:
+          type: object
+          unevaluatedProperties:
+            type: string
+          description: Custom key-value pairs sent in the WebSocket start message. Only applies to stream destinations.
+      unevaluatedProperties:
+        not: {}
+      description: |-
+        Per-destination model used inside `serial`, `parallel`, and `serial_parallel` arrays.
+
+        Contains only the properties that apply to an individual destination:
+        addressing, caller-ID overrides, SIP auth, per-leg timeouts/confirmations,
+        and stream-specific settings.
+      title: ConnectDestination object
     SWML.Calling.ConnectDeviceParallel:
       type: object
       required:
@@ -33177,16 +33462,6 @@ components:
           description: The amount of time, in seconds, to wait for the `confirm` URL to return a response
           examples:
             - 30
-        username:
-          type: string
-          description: SIP username to use for authentication when dialing a SIP URI. Has no effect on calls to phone numbers.
-          examples:
-            - sipuser
-        password:
-          type: string
-          description: SIP password to use for authentication when dialing a SIP URI. Has no effect on calls to phone numbers.
-          examples:
-            - sippassword
         encryption:
           type: string
           enum:
@@ -33241,10 +33516,11 @@ components:
         parallel:
           type: array
           items:
-            $ref: '#/components/schemas/SWML.Calling.ConnectDeviceSingle'
-          description: Array of destinations to dial simultaneously.
+            $ref: '#/components/schemas/SWML.Calling.ConnectDestination'
+          description: Array of destination objects to dial simultaneously. All destinations ring at the same time — the first to answer is bridged and the remaining calls are cancelled.
       unevaluatedProperties:
         not: {}
+      description: Dial multiple destinations simultaneously. All destinations in the array ring at the same time — the first to answer is bridged and the remaining calls are cancelled.
       title: Parallel Dialing
     SWML.Calling.ConnectDeviceSerial:
       type: object
@@ -33370,16 +33646,6 @@ components:
           description: The amount of time, in seconds, to wait for the `confirm` URL to return a response
           examples:
             - 30
-        username:
-          type: string
-          description: SIP username to use for authentication when dialing a SIP URI. Has no effect on calls to phone numbers.
-          examples:
-            - sipuser
-        password:
-          type: string
-          description: SIP password to use for authentication when dialing a SIP URI. Has no effect on calls to phone numbers.
-          examples:
-            - sippassword
         encryption:
           type: string
           enum:
@@ -33434,9 +33700,11 @@ components:
         serial:
           type: array
           items:
-            $ref: '#/components/schemas/SWML.Calling.ConnectDeviceSingle'
+            $ref: '#/components/schemas/SWML.Calling.ConnectDestination'
+          description: Array of destination objects to dial in order. Each destination is tried sequentially — if the current destination does not answer, the next one in the array is attempted.
       unevaluatedProperties:
         not: {}
+      description: Dial destinations one at a time in sequence. If the first destination does not answer, the next destination in the array is tried, and so on.
       title: Serial Dialing
     SWML.Calling.ConnectDeviceSerialParallel:
       type: object
@@ -33562,16 +33830,6 @@ components:
           description: The amount of time, in seconds, to wait for the `confirm` URL to return a response
           examples:
             - 30
-        username:
-          type: string
-          description: SIP username to use for authentication when dialing a SIP URI. Has no effect on calls to phone numbers.
-          examples:
-            - sipuser
-        password:
-          type: string
-          description: SIP password to use for authentication when dialing a SIP URI. Has no effect on calls to phone numbers.
-          examples:
-            - sippassword
         encryption:
           type: string
           enum:
@@ -33628,13 +33886,15 @@ components:
           items:
             type: array
             items:
-              $ref: '#/components/schemas/SWML.Calling.ConnectDeviceSingle'
+              $ref: '#/components/schemas/SWML.Calling.ConnectDestination'
           description: |-
-            Array of arrays.
-            Inner arrays contain destinations to dial simultaneously.
-            Outer array attempts each parallel group in order.
+            Two-dimensional array combining serial and parallel strategies.
+            The outer array is the **serial** dimension — each element is a group tried in order.
+            Each inner array is the **parallel** dimension — all destinations in that group are dialed simultaneously.
+            If no destination in the current group answers, the next group is attempted.
       unevaluatedProperties:
         not: {}
+      description: Combine both serial and parallel strategies using a two-dimensional array. The outer array is the serial dimension — each element is a group tried one at a time, in order. Each inner array is the parallel dimension — all destinations in that group are dialed simultaneously. If no destination in the current group answers, the next group is attempted.
       title: Serial-Parallel Dialing
     SWML.Calling.ConnectDeviceSingle:
       type: object
@@ -33760,16 +34020,6 @@ components:
           description: The amount of time, in seconds, to wait for the `confirm` URL to return a response
           examples:
             - 30
-        username:
-          type: string
-          description: SIP username to use for authentication when dialing a SIP URI. Has no effect on calls to phone numbers.
-          examples:
-            - sipuser
-        password:
-          type: string
-          description: SIP password to use for authentication when dialing a SIP URI. Has no effect on calls to phone numbers.
-          examples:
-            - sippassword
         encryption:
           type: string
           enum:
@@ -33827,11 +34077,21 @@ components:
             Destination to dial. Can be:
             - Phone number in E.164 format (e.g., "+15552345678")
             - SIP URI (e.g., "sip:alice@example.com")
-            - Call Fabric Resource address (e.g., "/public/test_room")
+            - Resource Address (e.g., "/public/test_room")
             - Queue (e.g., "queue:support")
             - WebSocket stream (e.g., "stream:wss://example.com/audio")
           examples:
             - '+15559876543'
+        username:
+          type: string
+          description: SIP username to use for authentication when dialing a SIP URI. Has no effect on calls to phone numbers.
+          examples:
+            - sipuser
+        password:
+          type: string
+          description: SIP password to use for authentication when dialing a SIP URI. Has no effect on calls to phone numbers.
+          examples:
+            - sippassword
         name:
           type: string
           description: Stream name identifier. Only applies to stream destinations.
@@ -33878,6 +34138,12 @@ components:
           description: Custom key-value pairs sent in the WebSocket start message. Only applies to stream destinations.
       unevaluatedProperties:
         not: {}
+      description: |-
+        Single-destination connect object.
+
+        Inherits connect-level properties from ConnectDeviceBase, then spreads the
+        destination-only properties from ConnectDestination (using `Omit` to skip
+        the fields already present on ConnectDeviceBase, avoiding duplication).
       title: Single Destination
     SWML.Calling.ConnectHeaders:
       type: object
@@ -36783,6 +37049,63 @@ components:
           maximum: 1
           description: 'The similarity slider dictates how closely the AI should adhere to the original voice when attempting to replicate it. The higher the similarity, the closer the AI will sound to the original voice. IMPORTANT: Only works with ElevenLabs TTS engine.'
           default: 0.75
+        speakingRate:
+          anyOf:
+            - type: number
+            - $ref: '#/components/schemas/SWMLVar'
+          minimum: 0.5
+          maximum: 1.5
+          description: 'Adjusts how quickly the voice speaks. Values below `1.0` slow the voice down; values above `1.0` speed it up. IMPORTANT: Only works with the Inworld TTS engine.'
+          default: 1
+        temperature:
+          anyOf:
+            - type: number
+            - $ref: '#/components/schemas/SWMLVar'
+          minimum: 0
+          maximum: 2
+          description: 'Controls the randomness and expressiveness of the generated speech. Lower values produce a more consistent, predictable delivery; higher values introduce more variation. IMPORTANT: Only works with the Inworld TTS engine.'
+          default: 1
+        speed:
+          anyOf:
+            - type: number
+            - $ref: '#/components/schemas/SWMLVar'
+          minimum: 0.5
+          maximum: 2
+          description: 'How quickly the voice speaks. Values below `1.0` slow the voice down; values above `1.0` speed it up. IMPORTANT: Only works with the MiniMax TTS engine.'
+          default: 1
+        vol:
+          anyOf:
+            - type: number
+            - $ref: '#/components/schemas/SWMLVar'
+          minimum: 0.1
+          maximum: 1
+          description: 'The speaking volume. Lower values are quieter. IMPORTANT: Only works with the MiniMax TTS engine.'
+          default: 1
+        pitch:
+          anyOf:
+            - type: integer
+              format: int32
+            - $ref: '#/components/schemas/SWMLVar'
+          minimum: -12
+          maximum: 12
+          description: 'The pitch shift in semitones. Negative values lower the pitch; positive values raise it. IMPORTANT: Only works with the MiniMax TTS engine.'
+          default: 0
+        emotion:
+          type: string
+          enum:
+            - happy
+            - sad
+            - angry
+            - fearful
+            - disgusted
+            - surprised
+            - neutral
+          description: |-
+            A fixed emotional tone for the generated speech.
+            To vary the emotion automatically during a conversation, use [`languages[].emotion`](#languagesemotion) set to `auto` instead.
+            IMPORTANT: Only works with the MiniMax TTS engine.
+          examples:
+            - happy
       unevaluatedProperties:
         not: {}
       title: LanguageParams
@@ -36815,7 +37138,7 @@ components:
           type: string
           description: |-
             Voice to use for the language. String format: `<engine id>.<voice id>`.
-            Select engine from `gcloud`, `polly`, `elevenlabs`, `cartesia`, or `deepgram`.
+            Select engine from `gcloud`, `polly`, `elevenlabs`, `cartesia`, `deepgram`, `rime`, `inworld`, or `minimax`.
             For example, `gcloud.fr-FR-Neural2-B`.
           examples:
             - gcloud.fr-FR-Neural2-B
@@ -36829,9 +37152,10 @@ components:
           enum:
             - auto
           description: |-
-            Enables emotion detection for the set TTS engine. This allows the AI to express emotions when speaking.
+            Enables automatic emotion detection for the set TTS engine. This allows the AI to express emotions when speaking.
             A global emotion or specific emotions for certain topics can be set within the prompt of the AI.
-            IMPORTANT: Only works with [`Cartesia`](/docs/platform/voice/tts/cartesia) TTS engine.
+            IMPORTANT: Only works with the [`Cartesia`](/docs/platform/voice/tts/cartesia) and [`MiniMax`](/docs/platform/voice/tts/minimax) TTS engines.
+            For a fixed (non-automatic) MiniMax emotion, use [`params.emotion`](#languagesparams) instead.
           examples:
             - auto
         speed:
@@ -36900,7 +37224,7 @@ components:
           type: string
           description: |-
             Voice to use for the language. String format: `<engine id>.<voice id>`.
-            Select engine from `gcloud`, `polly`, `elevenlabs`, `cartesia`, or `deepgram`.
+            Select engine from `gcloud`, `polly`, `elevenlabs`, `cartesia`, `deepgram`, `rime`, `inworld`, or `minimax`.
             For example, `gcloud.fr-FR-Neural2-B`.
           examples:
             - gcloud.fr-FR-Neural2-B
@@ -36914,9 +37238,10 @@ components:
           enum:
             - auto
           description: |-
-            Enables emotion detection for the set TTS engine. This allows the AI to express emotions when speaking.
+            Enables automatic emotion detection for the set TTS engine. This allows the AI to express emotions when speaking.
             A global emotion or specific emotions for certain topics can be set within the prompt of the AI.
-            IMPORTANT: Only works with [`Cartesia`](/docs/platform/voice/tts/cartesia) TTS engine.
+            IMPORTANT: Only works with the [`Cartesia`](/docs/platform/voice/tts/cartesia) and [`MiniMax`](/docs/platform/voice/tts/minimax) TTS engines.
+            For a fixed (non-automatic) MiniMax emotion, use [`params.emotion`](#languagesparams) instead.
           examples:
             - auto
         speed:
@@ -42601,6 +42926,12 @@ components:
           description: Audio track of the recording.
           examples:
             - inbound
+        relay_conference_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Unique ID of the Relay conference the recording belongs to, if any.
+          examples:
+            - 0089cc48-4f98-4a6b-90d8-61f8a5d1b0e3
         relay_sip_leg_id:
           allOf:
             - $ref: '#/components/schemas/uuid'
@@ -48053,6 +48384,12 @@ components:
           description: Audio track of the recording.
           examples:
             - inbound
+        relay_conference_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Unique ID of the Relay conference the recording belongs to, if any.
+          examples:
+            - 0089cc48-4f98-4a6b-90d8-61f8a5d1b0e3
         relay_webrtc_leg_id:
           allOf:
             - $ref: '#/components/schemas/uuid'
