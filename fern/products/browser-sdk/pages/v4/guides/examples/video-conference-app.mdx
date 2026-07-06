@@ -7,12 +7,12 @@ position: 1
 max-toc-depth: 3
 ---
 
-A Zoom-style multi-party video conference built on the Browser SDK: a backend that mints tokens, a lobby with device selection, multi-party video, in-call controls, screen share, server-side layouts, a participant roster, and chat.
+A Zoom-style multi-party video conference built on the Browser SDK: a backend that registers users and mints tokens, a dashboard with device selection, multi-party video, in-call controls, screen share, server-side layouts, a participant roster, and chat.
 
-The app has two parts — a small **backend** that exchanges your API token for short-lived user tokens, and a **browser client** that does everything else. Every piece of the client is driven by [RxJS observables][rxjs] on the SDK: nothing polls, everything subscribes and reacts to state the SDK pushes.
+The app has two parts — a small **backend** that creates accounts, checks passwords, and exchanges your API token for short-lived user tokens, and a **browser client** that does everything else. Every piece of the client is driven by [RxJS observables][rxjs] on the SDK: nothing polls, everything subscribes and reacts to state the SDK pushes.
 
 <Info>
-**Before you start.** You'll need a SignalWire Space, a project (Project ID + API token), and a [user][users] the backend can issue tokens for. Mic and camera access requires an HTTPS origin (`localhost` is the development exception).
+**Before you start.** You'll need a SignalWire Space and a project (Project ID + API token) with at least one of the **Voice / Messaging / Fax / Video** scopes — the backend uses it to create [Subscribers][users] and mint their tokens. Mic and camera access requires an HTTPS origin (`localhost` is the development exception).
 </Info>
 
 ## Architecture
@@ -24,10 +24,13 @@ flowchart LR
         SW["SignalWire client"]
     end
     subgraph Backend["Backend (Node / Express)"]
+        AUTH["/api/register<br/>/api/login<br/>(local users, password check)"]
         SAT["/api/sat<br/>/api/sat/refresh<br/>(stores refresh_token)"]
     end
     Fabric["SignalWire Fabric"]
 
+    CP -->|"POST + session cookie"| AUTH
+    AUTH -->|"Basic auth — create Subscriber"| Fabric
     CP -->|"POST + session cookie"| SAT
     SAT -->|"Basic auth (Project ID + API token)"| Fabric
     Fabric -->|"token + refresh_token"| SAT
@@ -35,7 +38,7 @@ flowchart LR
     SW <-->|"WebRTC / signaling"| Fabric
 ```
 
-The browser **never sees your API token**, and refresh tokens **never reach the browser** — they live server-side, keyed by a session cookie, and rotate on every refresh. The client authenticates by calling the backend, gets a short-lived [Subscriber Access Token][auth] (SAT), and lets the SDK schedule its own refresh through the same backend.
+The browser **never sees your API token**, and refresh tokens **never reach the browser** — they live server-side, keyed by a session cookie, and rotate on every refresh. Registering creates a local user record and a matching SignalWire [Subscriber][users]; signing in checks the password against that local record. Either way, the client ends up with a short-lived [Subscriber Access Token][auth] (SAT), and the SDK schedules its own refresh through the same backend.
 
 ## Project layout
 
@@ -69,7 +72,7 @@ The full runnable app lives alongside this guide:
 
 ### Configure your environment
 
-Copy `.env.example` to `.env` and fill in your Space, project credentials, and the user the backend issues tokens for:
+Copy `.env.example` to `.env` and fill in your Space and project credentials:
 
 ```bash
 cp .env.example .env
@@ -79,8 +82,6 @@ cp .env.example .env
 SW_SPACE=example.signalwire.com
 SW_PROJECT_ID=...
 SW_API_TOKEN=...
-SW_SUBSCRIBER_REFERENCE=...
-SW_SUBSCRIBER_PASSWORD=...
 ```
 
 ### Install and start
@@ -90,28 +91,54 @@ npm install
 npm run dev
 ```
 
-`npm run dev` starts the backend on port `3001` and the Vite dev server on `5173`. Vite proxies `/api/*` to the backend, so the browser only ever talks to one origin. Open `http://localhost:5173`, click **Sign in** to come online, pick your devices, and **Join** the default room (`/public/test-room`).
+`npm run dev` starts the backend on port `3001` and the Vite dev server on `5173`. Vite proxies `/api/*` to the backend, so the browser only ever talks to one origin. Open `http://localhost:5173`, click **Need an account? Create one**, fill in a name/email/password to register, pick your devices, and **Join** the default room (`/public/test-room`). Open a second browser (or an incognito window) and register a second account to call between them.
 
 </Steps>
 
 ## How it works
 
-### The backend mints tokens
+### The backend registers users and mints tokens
 
-`server/index.ts` exposes two endpoints. `POST /api/sat` exchanges your API token (sent as HTTP Basic auth) for a fresh SAT, stashes the returned `refresh_token` in memory keyed by a session cookie, and returns **only** the `token` and `expires_at` to the browser:
+`server/index.ts` exposes endpoints for account creation and token minting, all backed by in-memory `Map`s keyed by a session cookie.
+
+`POST /api/register` creates a local user record — the password is hashed with `scrypt`, never stored in plain text — and a matching SignalWire [Subscriber][users], using your Project API token as HTTP Basic auth:
+
+```ts title="server/index.ts"
+app.post('/api/register', async (req, res) => {
+  const { name, email, password } = req.body ?? {};
+
+  const r = await fetch(`${FABRIC_BASE}/resources/subscribers`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Basic ${BASIC_AUTH}`
+    },
+    body: JSON.stringify({ email, password, display_name: name })
+  });
+  await r.json();
+
+  users.set(email, { name, passwordHash: hashPassword(password) });
+  sessionUsers.set(req.sid, email);
+  res.json({ name, email });
+});
+```
+
+`POST /api/login` checks the submitted password against the stored hash and, on success, associates the session cookie with that email. Neither endpoint hands the browser anything but the user's own name and email — the Project API token never leaves the server.
+
+`POST /api/sat` looks up the email tied to the current session, then exchanges your API token for a fresh SAT scoped to that Subscriber's `reference`, stashes the returned `refresh_token` in memory, and returns **only** the `token` and `expires_at` to the browser:
 
 ```ts title="server/index.ts"
 app.post('/api/sat', async (req, res) => {
+  const email = sessionUsers.get(req.sid);
+  if (!email) return res.status(401).json({ error: 'Not signed in' });
+
   const r = await fetch(`${FABRIC_BASE}/subscribers/tokens`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Basic ${BASIC_AUTH}`
     },
-    body: JSON.stringify({
-      reference: SW_SUBSCRIBER_REFERENCE,
-      password: SW_SUBSCRIBER_PASSWORD
-    })
+    body: JSON.stringify({ reference: email })
   });
 
   const { token, refresh_token, expires_at } = await r.json();
@@ -123,8 +150,22 @@ app.post('/api/sat', async (req, res) => {
 `POST /api/sat/refresh` swaps the stored `refresh_token` for a new SAT **and** a new `refresh_token`, then persists the rotation. Because the refresh token rotates on every call, a leaked one only works once.
 
 <Note>
-The demo issues SATs for one hardcoded user and uses an in-memory `Map` keyed by a session cookie that proves nothing. A real app gates `/api/sat` behind your existing user auth and stores refresh tokens in an encrypted, per-user column. See [Authentication][auth].
+The demo keeps users and refresh tokens in in-memory `Map`s, so accounts don't survive a server restart. A real app stores both in a database, with refresh tokens in an encrypted, per-user column. See [Authentication][auth].
 </Note>
+
+Three REST API endpoints back those routes:
+
+<CardGroup cols={3}>
+  <Card title="Create Subscriber" icon="fa-regular fa-user-plus" href="/docs/apis/rest/subscribers/create-subscriber">
+    Called from `/api/register` to create the Subscriber.
+  </Card>
+  <Card title="Create Subscriber Token" icon="fa-regular fa-key" href="/docs/apis/rest/subscribers/tokens/create-subscriber-token">
+    Called from `/api/sat` to mint a SAT for the signed-in user.
+  </Card>
+  <Card title="Refresh Subscriber Token" icon="fa-regular fa-arrows-rotate" href="/docs/apis/rest/subscribers/tokens/refresh-subscriber-token">
+    Called from `/api/sat/refresh` to rotate the SAT before it expires.
+  </Card>
+</CardGroup>
 
 ### The client plugs in a credential provider
 
@@ -151,15 +192,21 @@ async function fetchSat(path: string) {
 
 ### Connecting and placing calls
 
-`src/main.ts` builds the client with that provider and calls [`register()`][register] — without it, inbound calls never arrive even when someone dials this user:
+Submitting either form posts JSON to `/api/register` or `/api/login`; on success `src/main.ts` builds the client with that provider and calls [`register()`][register] — without it, inbound calls never arrive even when someone dials this user:
 
 ```ts title="src/main.ts"
-client = new SignalWire(new BackendCredentialProvider());
-await client.register();
+async function connect(name: string): Promise<void> {
+  client = new SignalWire(new BackendCredentialProvider());
+  await client.register();
 
-bindDevicePickers(client);
-bindIncomingCalls(client);
-bindDirectory(client);
+  bindDevicePickers(client);
+  bindIncomingCalls(client);
+  bindDirectory(client);
+
+  dashboardName.textContent = name;
+  authSection.hidden = true;
+  prejoinSection.hidden = false;
+}
 ```
 
 **Device pickers.** The client owns the *currently selected* device for the whole session. The lobby `<select>` elements populate from the device observables, and changing one hot-swaps the active track mid-call without renegotiating:

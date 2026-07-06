@@ -1,18 +1,33 @@
-// Entry point: builds the SignalWire client with our BackendCredentialProvider,
-// wires the pre-join lobby (device pickers + directory) and the inbound-call
-// dialog, then hands off to room.ts once a call is connected.
+// Entry point: handles register/login, builds the SignalWire client with our
+// BackendCredentialProvider, wires the dashboard (device pickers + directory)
+// and the inbound-call dialog, then hands off to room.ts once a call is
+// connected.
 
 import { SignalWire, type Call, type Address } from '@signalwire/js';
 import { BackendCredentialProvider } from './credentials';
 import { joinRoom } from './room';
 import { $ } from './dom';
 
-const signinSection = $<HTMLElement>('#lobby-signin');
+const authSection = $<HTMLElement>('#lobby-auth');
 const prejoinSection = $<HTMLElement>('#lobby-prejoin');
 const conference = $<HTMLElement>('#conference');
 
-const connectBtn = $<HTMLButtonElement>('#connect');
-const signinError = $<HTMLParagraphElement>('#signin-error');
+const loginForm = $<HTMLFormElement>('#login-form');
+const loginEmail = $<HTMLInputElement>('#login-email');
+const loginPassword = $<HTMLInputElement>('#login-password');
+const loginError = $<HTMLParagraphElement>('#login-error');
+
+const registerForm = $<HTMLFormElement>('#register-form');
+const registerName = $<HTMLInputElement>('#register-name');
+const registerEmail = $<HTMLInputElement>('#register-email');
+const registerPassword = $<HTMLInputElement>('#register-password');
+const registerError = $<HTMLParagraphElement>('#register-error');
+
+const showRegisterBtn = $<HTMLButtonElement>('#show-register');
+const showLoginBtn = $<HTMLButtonElement>('#show-login');
+
+const dashboardName = $<HTMLElement>('#dashboard-name');
+const signOutBtn = $<HTMLButtonElement>('#sign-out');
 
 const destInput = $<HTMLInputElement>('#destination');
 const audioOpt = $<HTMLInputElement>('#opt-audio');
@@ -29,31 +44,92 @@ const incomingFrom = $<HTMLElement>('#incoming-from');
 
 let client: InstanceType<typeof SignalWire> | null = null;
 
-// ── Step 1: connect. The backend mints the SAT; the SDK schedules refresh.
-connectBtn.onclick = async () => {
-  signinError.hidden = true;
-  connectBtn.disabled = true;
-  connectBtn.textContent = 'Connecting…';
+// ── Step 1: register or sign in, then connect. The backend creates a
+// Subscriber (register) or checks the password (login); either way it then
+// mints the SAT and the SDK schedules its refresh.
+showRegisterBtn.onclick = () => {
+  loginForm.hidden = true;
+  registerForm.hidden = false;
+  showRegisterBtn.hidden = true;
+  showLoginBtn.hidden = false;
+};
+
+showLoginBtn.onclick = () => {
+  registerForm.hidden = true;
+  loginForm.hidden = false;
+  showLoginBtn.hidden = true;
+  showRegisterBtn.hidden = false;
+};
+
+loginForm.onsubmit = (e) => {
+  e.preventDefault();
+  authenticate('/api/login', { email: loginEmail.value.trim(), password: loginPassword.value }, loginError);
+};
+
+registerForm.onsubmit = (e) => {
+  e.preventDefault();
+  authenticate(
+    '/api/register',
+    {
+      name: registerName.value.trim(),
+      email: registerEmail.value.trim(),
+      password: registerPassword.value
+    },
+    registerError
+  );
+};
+
+async function authenticate(
+  path: string,
+  body: Record<string, string>,
+  errorEl: HTMLParagraphElement
+): Promise<void> {
+  errorEl.hidden = true;
 
   try {
-    client = new SignalWire(new BackendCredentialProvider());
+    const r = await fetch(path, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || 'Request failed');
 
-    // register() opens the inbound channel: without it, incomingCalls$ never
-    // fires, even if someone dials this user.
-    await client.register();
-
-    bindDevicePickers(client);
-    bindIncomingCalls(client);
-    bindDirectory(client);
-
-    signinSection.hidden = true;
-    prejoinSection.hidden = false;
+    await connect(data.name);
   } catch (err) {
-    signinError.textContent = (err as Error).message || 'Failed to connect';
-    signinError.hidden = false;
-    connectBtn.disabled = false;
-    connectBtn.textContent = 'Sign in';
+    errorEl.textContent = (err as Error).message || 'Something went wrong';
+    errorEl.hidden = false;
   }
+}
+
+async function connect(name: string): Promise<void> {
+  client = new SignalWire(new BackendCredentialProvider());
+
+  // register() opens the inbound channel: without it, incomingCalls$ never
+  // fires, even if someone dials this user.
+  await client.register();
+
+  bindDevicePickers(client);
+  bindIncomingCalls(client);
+  bindDirectory(client);
+
+  dashboardName.textContent = name;
+  authSection.hidden = true;
+  prejoinSection.hidden = false;
+}
+
+signOutBtn.onclick = async () => {
+  await fetch('/api/logout', { method: 'POST', credentials: 'include' });
+
+  await client?.disconnect();
+  client = null;
+
+  prejoinSection.hidden = true;
+  conference.hidden = true;
+  loginForm.reset();
+  registerForm.reset();
+  authSection.hidden = false;
 };
 
 // ── Step 2: place an outbound call.
@@ -183,7 +259,7 @@ function showIncomingCall(ringing: Call): void {
 }
 
 function enterConference(call: Call): void {
-  signinSection.hidden = true;
+  authSection.hidden = true;
   prejoinSection.hidden = true;
   incoming.close();
   conference.hidden = false;
