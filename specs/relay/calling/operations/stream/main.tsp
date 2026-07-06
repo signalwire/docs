@@ -23,12 +23,12 @@ model StreamRequest is JsonRpcRequest<typeof callingStream, StreamParams>;
   the call continues normally. Pick which track to send with `track`, and
   optionally pass an `authorization_bearer_token` and `custom_parameters` that
   are sent to your endpoint when the connection opens. Stream lifecycle events
-  arrive as `calling.call.stream` events keyed on your `control_id`. Note this
-  result echoes `node_id` rather than `call_id`.
+  arrive as `calling.call.stream` events keyed on your `control_id`.
   """)
 @channel(callingStream)
 @summary("Stream call audio to a WebSocket endpoint")
 @extension("x-fern-display-name", callingStream)
+@extension("x-fern-sdk-group-name", GroupMediaStream)
 op stream(...StreamRequest): StreamReply | CallStreamEvent;
 
 const callingStreamStop = "calling.stream.stop";
@@ -42,4 +42,5 @@ model StreamStopRequest is JsonRpcRequest<typeof callingStreamStop, StreamStopPa
 @channel(callingStreamStop)
 @summary("Stop a call stream")
 @extension("x-fern-display-name", callingStreamStop)
+@extension("x-fern-sdk-group-name", GroupMediaStreamStop)
 op streamStop(...StreamStopRequest): StreamStopReply;

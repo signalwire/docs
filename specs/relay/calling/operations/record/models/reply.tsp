@@ -7,20 +7,21 @@ using SignalWire.AsyncAPI;
 namespace Relay.Calling;
 
 model RecordResult {
-  ...RelayResult;
+  ...RelayResult<"Recording">;
 
   @doc("URL of the finished recording.")
+  @example("https://example.com/recordings/c2a1e9f4.mp3")
   url?: url;
 }
 
 model RecordPauseResult {
-  ...RelayResult;
+  ...RelayResult<"Pausing recording">;
 }
 
 model RecordResumeResult {
-  ...RelayResult;
+  ...RelayResult<"Resuming recording">;
 }
 
 model RecordStopResult {
-  ...RelayResult;
+  ...RelayResult<"Stopping recording">;
 }

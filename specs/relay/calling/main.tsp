@@ -1,4 +1,5 @@
 import "@signalwire/typespec-asyncapi";
+import "./groups.tsp";
 import "./models/core.tsp";
 import "./models/devices.tsp";
 import "./models/media.tsp";
@@ -21,7 +22,6 @@ import "./operations/tap/main.tsp";
 import "./operations/stream/main.tsp";
 import "./operations/transfer/main.tsp";
 import "./operations/conference/main.tsp";
-import "./operations/hold/main.tsp";
 import "./operations/denoise/main.tsp";
 import "./operations/send-digits/main.tsp";
 import "./operations/transcribe/main.tsp";

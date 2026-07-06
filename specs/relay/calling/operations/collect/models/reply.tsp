@@ -7,13 +7,13 @@ using SignalWire.AsyncAPI;
 namespace Relay.Calling;
 
 model CollectResult {
-  ...RelayResult;
+  ...RelayResult<"Collecting">;
 }
 
 model CollectStopResult {
-  ...RelayResult;
+  ...RelayResult<"Stopping">;
 }
 
 model CollectStartInputTimersResult {
-  ...RelayResult;
+  ...RelayResult<"Starting input timers">;
 }

@@ -15,18 +15,22 @@ union StreamState {
 }
 
 model CallStreamParams {
-  ...CallAddress;
+  ...CallEventAddress;
 
   @doc("The `control_id` of the stream this event belongs to.")
+  @example("d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e")
   control_id: string;
 
   @doc("Whether audio is still streaming (`streaming`) or the stream has stopped (`finished`).")
+  @example("streaming")
   state: StreamState;
 
   @doc("The WebSocket URL the call audio is being streamed to.")
+  @example("wss://example.com/media")
   url: url;
 
   @doc("The friendly name you gave the stream, if you set one.")
+  @example("my_stream")
   name?: string;
 }
 

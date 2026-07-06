@@ -31,6 +31,7 @@ model TapRequest is JsonRpcRequest<typeof callingTap, TapParams>;
 @channel(callingTap)
 @summary("Tap call media to an external device")
 @extension("x-fern-display-name", callingTap)
+@extension("x-fern-sdk-group-name", GroupMediaTap)
 op tap(...TapRequest): TapReply | CallTapEvent;
 
 const callingTapStop = "calling.tap.stop";
@@ -44,4 +45,5 @@ model TapStopRequest is JsonRpcRequest<typeof callingTapStop, TapStopParams>;
 @channel(callingTapStop)
 @summary("Stop a call tap")
 @extension("x-fern-display-name", callingTapStop)
+@extension("x-fern-sdk-group-name", GroupMediaTapStop)
 op tapStop(...TapStopRequest): TapStopReply;

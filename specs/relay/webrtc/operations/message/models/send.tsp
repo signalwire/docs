@@ -6,24 +6,21 @@ namespace Relay.WebRTC;
 
 model MessageParams {
   @doc("""
-    The Verto call ID this frame belongs to. Generate one when you create a call
-    and reuse it on every frame for that call.
-    """)
-  callID: string;
-
-  @doc("""
     The node hosting your call. Once a call exists, set this to the `node_id`
     you received in an earlier event or response so the frame reaches the right
     place. Leave it absent on your first message, before a call has been
     established — SignalWire picks the node.
     """)
+  @example("a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d")
   node_id?: string;
 
   @doc("""
     The Verto frame to send (for example a `verto.invite` carrying
     `dialogParams`/`sdp`/`layout`/`positions`). The frame is passed through
     as-is; see `verto_messages.md` for the full list of Verto methods and their
-    `params`.
+    `params`. The Verto call ID belongs inside this frame, at
+    `dialogParams.callID` — generate one when you create a call and reuse it on
+    every frame for that call. There is no top-level `callID`.
     """)
   message: Record<unknown>;
 
@@ -34,5 +31,6 @@ model MessageParams {
     `room.updated`, `layout.changed`, and `member.updated` (illustrative, not
     exhaustive).
     """)
+  @example(#["member.joined", "member.left", "room.ended"])
   subscribe?: string[];
 }

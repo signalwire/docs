@@ -19,30 +19,45 @@ union AiMessageRole {
   """)
 model AiMessageReset {
   @doc("Clear the entire conversation history.")
+  @example(false)
   full_reset?: boolean;
 
   @doc("Replace (or clear) the user prompt context.")
+  @example("I'd like to order a large pepperoni pizza for delivery.")
   user_prompt?: string;
 
   @doc("Replace (or clear) the system prompt context.")
+  @example("You are a helpful assistant taking pizza orders.")
   system_prompt?: string;
 
-  @doc("Summarize the existing conversation into a condensed form before applying the reset.")
-  consolidate?: boolean;
+  // NOTE: reset.consolidate is supported by mod_openai but REJECTED by the relay_apis.c:1950 allowlist (is_reset = full_reset,user_prompt,system_prompt) before it reaches mod_openai — omitted from the Relay wire. Flag to engineering if it should be whitelisted.
 }
 
+@doc("""
+  Parameters for `calling.ai_message`. There are two modes: send `reset` to
+  reconfigure the conversation context, or send `message_text` and/or
+  `global_data` to inject a message and update state. If `reset` is present,
+  `message_text` and `global_data` in the same request are ignored — send those in
+  a separate request.
+  """)
 model AiMessageParams {
   ...CallAddress;
 
   @doc("Message text to inject into the session.")
+  @example("The user's order has been confirmed.")
   message_text?: string;
 
   @doc("Role of the message sender.")
+  @example("system")
   role?: AiMessageRole;
 
-  @doc("Conversation-reset configuration.")
+  @doc("Conversation-reset configuration. When present, `message_text` and `global_data` in the same request are ignored.")
   reset?: AiMessageReset;
 
-  @doc("Updated global data for SWAIG functions.")
+  @doc("""
+    Updates the global data available to SWAIG functions. Merges into the existing
+    global data; set a key to `null` to remove it. Can be sent on its own to update
+    state without injecting a message.
+    """)
   global_data?: Record<unknown>;
 }

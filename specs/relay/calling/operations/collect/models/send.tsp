@@ -21,9 +21,11 @@ union CollectSpeechEngine {
 model CollectDigits {
   @doc("Maximum number of digits to collect before collection finishes. Must be a positive integer.")
   @minValue(1)
+  @example(4)
   max: int32;
 
   @doc("Keys that end collection early when pressed, such as `\"#*\"`. Not set by default.")
+  @example("#*")
   terminators?: string;
 
   @doc("""
@@ -31,6 +33,7 @@ model CollectDigits {
     before giving up. Defaults to `5.0`.
     """)
   @minValueExclusive(0)
+  @example(1.0)
   digit_timeout?: float64 = 5.0;
 }
 
@@ -41,25 +44,32 @@ model CollectSpeech {
     finished speaking. Defaults to `1`.
     """)
   @minValueExclusive(0)
+  @example(1.0)
   end_silence_timeout?: float64 = 1.0;
 
   @doc("Maximum time, in seconds, to spend collecting speech. Defaults to `60`.")
   @minValueExclusive(0)
+  @example(5.0)
   speech_timeout?: float64 = 60.0;
 
   @doc("Language to recognize, as a BCP-47 tag such as `en-US`. Defaults to `en-US`.")
+  @example("en-US")
   language?: string = "en-US";
 
   @doc("Words or phrases you expect to hear, used to bias recognition toward them. Not set by default.")
+  @example(#["sales", "support", "representative"])
   hints?: string[];
 
-  @doc("Pins recognition to a specific engine. Defaults to unset, which lets SignalWire choose.")
+  #deprecated "Use `model` instead."
+  @doc("(DEPRECATED — use `model` instead.) Pins recognition to a specific engine. Defaults to unset, which lets SignalWire choose.")
+  @example("Google")
   engine?: CollectSpeechEngine;
 
   @doc("""
     Recognition model to use. One of `default`, `enhanced`, `enhanced.phone_call`,
     or `enhanced.video`. Not set by default.
     """)
+  @example("enhanced.phone_call")
   `model`?: string;
 }
 
@@ -67,6 +77,7 @@ model CollectParams {
   ...CallAddress;
 
   @doc("Your own identifier for this collect. It is attached to every event the collect produces so you can match events back to this request.")
+  @example("d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e")
   control_id: string;
 
   @doc("""
@@ -76,6 +87,7 @@ model CollectParams {
     Defaults to `4.0`.
     """)
   @minValueExclusive(0)
+  @example(5.0)
   initial_timeout?: float64 = 4.0;
 
   @doc("How to collect DTMF key presses. Provide this, `speech`, or both; at least one is required.")
@@ -85,18 +97,22 @@ model CollectParams {
   speech?: CollectSpeech;
 
   @doc("When `true`, emit partial-result events as input comes in rather than only a final result. Defaults to `false`.")
+  @example(false)
   partial_results?: boolean = false;
 
   @doc("""
     When `true`, keep listening for speech and digits until you stop the collect
     yourself, instead of finishing after the first complete input. Defaults to `false`.
     """)
+  @example(false)
   continuous?: boolean = false;
 
   @doc("When `true`, fire a `start_of_input` event the moment the caller begins giving input. Defaults to `false`.")
+  @example(true)
   send_start_of_input?: boolean = false;
 
   @doc("When `true`, start the `initial_timeout` timer immediately. Set `false` to start it later with `calling.collect.start_input_timers`. Defaults to `false`.")
+  @example(false)
   start_input_timers?: boolean = false;
 
   @doc("HTTP or HTTPS URL that collect events are also POSTed to as they occur.")
@@ -107,6 +123,7 @@ model CollectStopParams {
   ...CallAddress;
 
   @doc("The `control_id` you gave to the `calling.collect` you want to stop.")
+  @example("d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e")
   control_id: string;
 }
 
@@ -114,5 +131,6 @@ model CollectStartInputTimersParams {
   ...CallAddress;
 
   @doc("The `control_id` of the active `calling.collect` whose timer you want to start.")
+  @example("d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e")
   control_id: string;
 }

@@ -7,12 +7,9 @@ using SignalWire.AsyncAPI;
 namespace Relay.Calling;
 
 model StreamResult {
-  ...RelayResult;
-
-  @doc("Node the call is on (this method echoes `node_id`, not `call_id`).")
-  node_id?: string;
+  ...RelayResult<"Starting stream">;
 }
 
 model StreamStopResult {
-  ...RelayResult;
+  ...RelayResult<"Stopping stream">;
 }

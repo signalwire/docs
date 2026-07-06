@@ -7,10 +7,28 @@ namespace Relay.Calling;
 @doc("Identifies a specific active call. Nearly every method and event includes it.")
 model CallAddress {
   @doc("Identifier of the node handling the call. Pair it with `call_id` to address the call.")
+  @example("a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d")
   node_id: string;
 
   @doc("Unique identifier of the call.")
+  @example("c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c")
   call_id: string;
+}
+
+@doc("""
+  `CallAddress` plus the correlation fields the platform adds to most call events.
+  Used by event payloads, not requests.
+  """)
+model CallEventAddress {
+  ...CallAddress;
+
+  @doc("Identifier of the call segment this event belongs to, for correlating events within the same segment of a call.")
+  @example("e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f")
+  segment_id?: string;
+
+  @doc("The `tag` you set when placing the call, echoed back so you can match the event to your request.")
+  @example("my-tag-1")
+  tag?: string;
 }
 
 @doc("""
@@ -18,26 +36,41 @@ model CallAddress {
   anything else means the request failed, and `message` explains why. Failures are
   reported through these fields rather than thrown as a separate error.
   """)
-model RelayResult {
+model RelayResult<Message extends valueof string = "OK"> {
   @doc("Result code as a string, e.g. `\"200\"` (success), `\"400\"`, `\"404\"`.")
+  @example("200")
   code: string;
 
   @doc("Human-readable description of the result. On failure, explains what went wrong.")
+  @example(Message)
   message: string;
 
   @doc("The call this result is for, echoed from your request. Absent on `calling.dial`, which has no call yet.")
+  @example("c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c")
   call_id?: string;
 
-  @doc("Your control identifier for the started action, echoed when your request included one.")
+  @doc("Your control identifier for the started action, echoed when your request included one. NOT populated for: `bind_digit`, `clear_digit_bindings`, `join_conference`, `echo`, `user_event`, `ai_message`, `ai_hold`, `ai_unhold`, `amazon_bedrock`.")
+  @example("d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e")
   control_id?: string;
+
+  @doc("Present on partial failures; per-device user_errors propagated by the backend.")
+  data?: {
+    user_errors?: unknown[];
+  };
 }
 
-@doc("A SIP header. Only `X-`-prefixed custom headers are permitted.")
+@doc("""
+  A custom SIP header. Custom `X-` headers are allowed; the reserved `X-SignalWire*`
+  and `X-CID*` names (and internal `SignalWire*` names) are rejected. A few standard
+  headers (`Privacy`, `P-Asserted-Identity`, `User-to-User`) are also permitted.
+  """)
 model SipHeader {
-  @doc("Header name (must start with `X-`).")
+  @doc("Header name. Typically an `X-`-prefixed custom header; the reserved `X-SignalWire*` and `X-CID*` names are rejected.")
+  @example("X-Custom-Key")
   name: string;
 
-  @doc("Header value.")
+  @doc("Header value. Must not contain CR or LF characters.")
+  @example("custom-value")
   value: string;
 }
 
@@ -74,7 +107,12 @@ union TtsGender {
   "female",
 }
 
-@doc("Codecs you can negotiate when answering a call, across all call types.")
+@doc("""
+  Codecs you can negotiate when answering a call. The full set applies to SIP and
+  WebRTC calls; **phone** calls accept only `PCMU`, `PCMA`, `G729`, `G722`, and
+  `AMR-WB` — requesting `OPUS`, `VP8`, or `H264` on a phone answer is rejected with
+  a `"400"`.
+  """)
 union AnswerCodec {
   "PCMU",
   "PCMA",

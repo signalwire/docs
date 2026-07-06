@@ -12,6 +12,7 @@ model AuthorizationStateParams {
     `connect.authorization_state` when you reconnect.
     Format: `<encryptedAuthStateBase64>:<tagBase64>`.
     """)
+  @example("eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIn0..aBcDeF:Z9y8x7w6v5")
   authorization_state: string;
 }
 

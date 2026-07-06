@@ -4,6 +4,7 @@ import "@typespec/openapi";
 
 import "./models/send.tsp";
 import "./models/reply.tsp";
+import "./models/events.tsp";
 
 using SignalWire.AsyncAPI;
 using TypeSpec.OpenAPI;
@@ -27,7 +28,22 @@ model AiRequest is JsonRpcRequest<typeof callingAi, AiParams>;
 @channel(callingAi)
 @summary("Start an AI agent on the call")
 @extension("x-fern-display-name", callingAi)
-op ai(...AiRequest): AiReply;
+@extension("x-fern-sdk-group-name", GroupAgentAi)
+op ai(...AiRequest):
+  | AiReply
+  | CallAiEvent
+  | AiCompletionEvent
+  | AiResponseEvent
+  | AiResponseUtteranceEvent
+  | AiSpeechDetectEvent
+  | AiPartialResultEvent
+  | AiBeginSpeakingEvent
+  | AiWarningEvent
+  | AiTransparentBargeEvent
+  | AiStopEvent
+  | AiPostPromptEvent
+  | AiSwaigEvent
+  | AiSwaigActionEvent;
 
 const callingAiStop = "calling.ai.stop";
 const callingAiStopResponse = "${callingAiStop} response";
@@ -41,5 +57,6 @@ model AiStopRequest is JsonRpcRequest<typeof callingAiStop, AiStopParams>;
 @channel(callingAiStop)
 @summary("Stop an active AI agent session")
 @extension("x-fern-display-name", callingAiStop)
+@extension("x-fern-sdk-group-name", GroupAgentAiStop)
 op aiStop(...AiStopRequest): AiStopReply;
 

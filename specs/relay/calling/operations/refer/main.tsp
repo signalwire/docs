@@ -22,4 +22,5 @@ model ReferRequest is JsonRpcRequest<typeof callingRefer, ReferParams>;
 @channel(callingRefer)
 @summary("Transfer a SIP call via SIP REFER")
 @extension("x-fern-display-name", callingRefer)
+@extension("x-fern-sdk-group-name", GroupControlRefer)
 op refer(...ReferRequest): ReferReply | CallReferEvent;

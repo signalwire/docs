@@ -27,6 +27,7 @@ model AiSidecarRequest is JsonRpcRequest<typeof callingAiSidecar, AiSidecarParam
 @channel(callingAiSidecar)
 @summary("Attach a real-time AI observer (sidecar) to the call")
 @extension("x-fern-display-name", callingAiSidecar)
+@extension("x-fern-sdk-group-name", GroupSidecarBase)
 op aiSidecar(...AiSidecarRequest): AiSidecarReply | AiSidecarEvent;
 
 const callingAiSidecarPoke = "calling.ai_sidecar.poke";
@@ -44,6 +45,7 @@ model AiSidecarPokeRequest is JsonRpcRequest<typeof callingAiSidecarPoke, AiSide
 @channel(callingAiSidecarPoke)
 @summary("Poke the sidecar to respond immediately")
 @extension("x-fern-display-name", callingAiSidecarPoke)
+@extension("x-fern-sdk-group-name", GroupSidecarPoke)
 op aiSidecarPoke(...AiSidecarPokeRequest): AiSidecarPokeReply;
 
 const callingAiSidecarAsk = "calling.ai_sidecar.ask";
@@ -62,6 +64,7 @@ model AiSidecarAskRequest is JsonRpcRequest<typeof callingAiSidecarAsk, AiSideca
 @channel(callingAiSidecarAsk)
 @summary("Ask the sidecar a one-off question")
 @extension("x-fern-display-name", callingAiSidecarAsk)
+@extension("x-fern-sdk-group-name", GroupSidecarAsk)
 op aiSidecarAsk(...AiSidecarAskRequest): AiSidecarAskReply;
 
 const callingAiSidecarStop = "calling.ai_sidecar.stop";
@@ -76,6 +79,7 @@ model AiSidecarStopRequest is JsonRpcRequest<typeof callingAiSidecarStop, AiSide
 @channel(callingAiSidecarStop)
 @summary("Stop and detach the AI sidecar")
 @extension("x-fern-display-name", callingAiSidecarStop)
+@extension("x-fern-sdk-group-name", GroupSidecarStop)
 op aiSidecarStop(...AiSidecarStopRequest): AiSidecarStopReply;
 
 const callingAiSidecarStatus = "calling.ai_sidecar.status";
@@ -90,4 +94,5 @@ model AiSidecarStatusRequest is JsonRpcRequest<typeof callingAiSidecarStatus, Ai
 @channel(callingAiSidecarStatus)
 @summary("Get a snapshot of the sidecar's activity counters")
 @extension("x-fern-display-name", callingAiSidecarStatus)
+@extension("x-fern-sdk-group-name", GroupSidecarStatus)
 op aiSidecarStatus(...AiSidecarStatusRequest): AiSidecarStatusReply;

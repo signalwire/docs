@@ -8,45 +8,63 @@ using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
-@doc("What just happened to the call in the queue: it entered (`enqueue`), was pulled out to be connected (`dequeue`), or left on its own (`leave`).")
+@doc("The call's current standing in the queue: `entering` while it joins, `connecting`/`connected` as it is bridged out to an agent, `leaving` when it exits, and `failed`/`timeout`/`hangup` for the ways it can drop out.")
 union CallQueueStatus {
-  "enqueue",
-  "dequeue",
-  "leave",
+  "connected",
+  "connecting",
+  "entering",
+  "failed",
+  "leaving",
+  "timeout",
+  "hangup",
 }
 
 model CallQueueParams {
   ...CallAddress;
 
   @doc("The `control_id` of the queue session this event refers to, returned when the call entered with `calling.queue.enter`.")
+  @example("d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e")
   control_id: string;
 
-  @doc("What just happened to the call in the queue.")
+  @doc("The call's current standing in the queue.")
+  @example("connected")
   status?: CallQueueStatus;
 
   @doc("The queue's unique id.")
+  @example("q-9a3f1c2d")
   id?: string;
 
   @doc("The queue's name.")
+  @example("support")
   name?: string;
 
   @doc("Where this call currently sits in line, counting from the front.")
+  @example(0)
   position?: float64;
 
   @doc("How many calls are currently waiting in the queue.")
+  @example(2)
   size?: float64;
 
   @doc("The average time, in seconds, calls have been spending in this queue.")
+  @example(45)
   avg_time?: float64;
 
   @doc("The time, as a Unix timestamp in seconds, when the call entered the queue.")
+  @example(1712345678.123)
   enqueue_ts?: float64;
 
   @doc("The time, as a Unix timestamp in seconds, when the call was pulled from the queue.")
+  @example(1712345723.456)
   dequeue_ts?: float64;
 
   @doc("The time, as a Unix timestamp in seconds, when the call left the queue.")
+  @example(1712345730.789)
   leave_ts?: float64;
+
+  @doc("The status callback URL, echoed back from `calling.queue.enter` when one was set.")
+  @example("https://example.com/webhooks/relay")
+  status_url?: url;
 }
 
 const callingCallQueue = "calling.call.queue";

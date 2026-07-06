@@ -10,8 +10,10 @@ model UserEventParams {
   ...CallAddress;
 
   @doc("""
-    A name you choose for the event. Your application receives it as a
-      `calling.user_event` event.
+    Your custom event payload, as a JSON object. The object you pass here is
+    delivered to your application as the `calling.user_event` event, with the call
+    address added. Conventionally includes a `topic` naming the event, plus any
+    fields you choose. Required — the request fails without it.
     """)
-  event?: string;
+  event: Record<unknown>;
 }

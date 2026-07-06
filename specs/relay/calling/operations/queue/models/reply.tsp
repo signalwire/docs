@@ -7,9 +7,9 @@ using SignalWire.AsyncAPI;
 namespace Relay.Calling;
 
 model QueueEnterResult {
-  ...RelayResult;
+  ...RelayResult<"Entering Queue">;
 }
 
 model QueueLeaveResult {
-  ...RelayResult;
+  ...RelayResult<"Leaving Queue">;
 }

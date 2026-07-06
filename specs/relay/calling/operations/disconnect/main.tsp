@@ -26,4 +26,5 @@ model DisconnectRequest is JsonRpcRequest<typeof callingDisconnect, DisconnectPa
 @channel(callingDisconnect)
 @summary("Disconnect connected legs without hanging up")
 @extension("x-fern-display-name", callingDisconnect)
+@extension("x-fern-sdk-group-name", GroupControlDisconnect)
 op disconnect(...DisconnectRequest): DisconnectReply;

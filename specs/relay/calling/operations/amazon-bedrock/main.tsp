@@ -22,4 +22,5 @@ model AmazonBedrockRequest is JsonRpcRequest<typeof callingAmazonBedrock, Amazon
 @channel(callingAmazonBedrock)
 @summary("Connect to an Amazon Bedrock AI agent")
 @extension("x-fern-display-name", callingAmazonBedrock)
+@extension("x-fern-sdk-group-name", GroupAgentAmazonBedrock)
 op amazonBedrock(...AmazonBedrockRequest): AmazonBedrockReply;

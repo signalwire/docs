@@ -32,6 +32,7 @@ model PayRequest is JsonRpcRequest<typeof callingPay, PayParams>;
 @channel(callingPay)
 @summary("Collect a payment via the Pay IVR")
 @extension("x-fern-display-name", callingPay)
+@extension("x-fern-sdk-group-name", GroupPaymentsPay)
 op pay(...PayRequest): PayReply | CallPayEvent;
 
 const callingPayStop = "calling.pay.stop";
@@ -46,4 +47,5 @@ model PayStopRequest is JsonRpcRequest<typeof callingPayStop, PayStopParams>;
 @channel(callingPayStop)
 @summary("Stop an active pay")
 @extension("x-fern-display-name", callingPayStop)
+@extension("x-fern-sdk-group-name", GroupPaymentsPayStop)
 op payStop(...PayStopRequest): PayStopReply;

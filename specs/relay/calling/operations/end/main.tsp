@@ -22,4 +22,5 @@ model EndRequest is JsonRpcRequest<typeof callingEnd, EndParams>;
 @channel(callingEnd)
 @summary("End a call")
 @extension("x-fern-display-name", callingEnd)
+@extension("x-fern-sdk-group-name", GroupSetupEnd)
 op end(...EndRequest): EndReply;

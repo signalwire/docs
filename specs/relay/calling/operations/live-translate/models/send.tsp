@@ -28,9 +28,15 @@ model LiveTranslateAction {
 model LiveTranslateParams {
   ...CallAddress;
 
-  @doc("The action to perform. Set exactly one of `start`, `stop`, `summarize`, or `inject`.")
-  action: LiveTranslateAction;
+  @doc("""
+    The action to perform. Pass the object form and set exactly one of `start`,
+    `stop`, `summarize`, or `inject`. As a shorthand you may instead pass the
+    bare string `"stop"` or `"summarize"` (the object form is required to `start`
+    or `inject`).
+    """)
+  action: LiveTranslateAction | "stop" | "summarize";
 
   @doc("An `http` or `https` URL to receive translation status updates.")
+  @example("https://example.com/webhooks/relay")
   status_url?: url;
 }

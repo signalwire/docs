@@ -12,21 +12,26 @@ namespace Relay.Calling;
 @doc("The call that created this one, when it was spawned by another call.")
 model CallParentRef {
   @doc("Identifier of the node hosting the parent call.")
+  @example("a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d")
   node_id?: string;
 
   @doc("The parent call's `call_id`.")
+  @example("e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f")
   call_id?: string;
 
   @doc("The parent's device type, such as `sip`.")
+  @example("sip")
   device_type?: string;
 }
 
 @doc("The other call this one is bridged to.")
 model CallPeerRef {
   @doc("Identifier of the node hosting the peer call.")
+  @example("a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d")
   node_id?: string;
 
   @doc("The peer call's `call_id`.")
+  @example("e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f")
   call_id?: string;
 }
 
@@ -49,11 +54,79 @@ union CallStateEndReason {
   "notFound",
 }
 
-model CallStateParams {
-  ...CallAddress;
+@doc("Present only for SIP calls (`device.type == \"sip\"`). SIP addressing/header detail extracted from the inbound INVITE. Every sub-field is optional and appears only when the corresponding SIP header was present.")
+model CallSipData {
+  @doc("Request-URI user part.")
+  @example("bob")
+  sip_req_user?: string;
 
-  @doc("The `tag` you set when you placed the call, so you can match this event back to your request.")
-  tag?: string;
+  @doc("Request-URI user@host.")
+  @example("bob@example.com")
+  sip_req_uri?: string;
+
+  @doc("Request-URI host.")
+  @example("example.com")
+  sip_req_host?: string;
+
+  @doc("From-header user part.")
+  @example("alice")
+  sip_from_user?: string;
+
+  @doc("From-header user@host.")
+  @example("alice@example.com")
+  sip_from_uri?: string;
+
+  @doc("From-header host.")
+  @example("example.com")
+  sip_from_host?: string;
+
+  @doc("To-header user part.")
+  @example("bob")
+  sip_to_user?: string;
+
+  @doc("To-header user@host.")
+  @example("bob@example.com")
+  sip_to_uri?: string;
+
+  @doc("To-header host.")
+  @example("example.com")
+  sip_to_host?: string;
+
+  @doc("Contact-header user part.")
+  @example("alice")
+  sip_contact_user?: string;
+
+  @doc("Contact-header port.")
+  @example("5060")
+  sip_contact_port?: string;
+
+  @doc("Contact-header user@host[:port].")
+  @example("alice@203.0.113.10:5060")
+  sip_contact_uri?: string;
+
+  @doc("Contact-header host.")
+  @example("203.0.113.10")
+  sip_contact_host?: string;
+
+  @doc("Parsed From-URI parameters (`key=value` pairs).")
+  sip_from_params?: Record<string>;
+
+  @doc("Parsed To-URI parameters (`key=value` pairs).")
+  sip_to_params?: Record<string>;
+
+  @doc("Parsed Contact-URI parameters (`key=value` pairs).")
+  sip_contact_params?: Record<string>;
+
+  @doc("Parsed Request-URI parameters (`key=value` pairs).")
+  sip_req_params?: Record<string>;
+
+  @doc("The `P-Asserted-Identity` header value, when present.")
+  @example("\"Alice\" <sip:alice@example.com>")
+  sip_p_asserted_identity?: string;
+}
+
+model CallStateParams {
+  ...CallEventAddress;
 
   @doc("The device handling this call, once it has been determined.")
   device?: CallDevice;
@@ -65,25 +138,43 @@ model CallStateParams {
   peer?: CallPeerRef;
 
   @doc("The state the call has just moved into.")
+  @example("ended")
   call_state: CallState;
 
   @doc("Whether the call is inbound or outbound.")
+  @example("outbound")
   direction?: CallDirection;
 
   @doc("When the call started, in epoch milliseconds.")
+  @example(1712345678123)
   start_time?: int64;
 
   @doc("When the call was answered, in epoch milliseconds.")
+  @example(1712345680456)
   answer_time?: int64;
 
   @doc("When the call ended, in epoch milliseconds.")
+  @example(1712345695789)
   end_time?: int64;
 
   @doc("Why the call ended. Present once the call has ended.")
+  @example("hangup")
   end_reason?: CallStateEndReason;
 
   @doc("What ended the call. Present once the call has ended.")
+  @example("peer")
   end_source?: string;
+
+  @doc("Present and set to `\"true\"` when this call won a `calling.dial` race. Emitted as the string `\"true\"`, not a boolean.")
+  @example("true")
+  dial_winner?: "true";
+
+  @doc("SIP addressing/header detail. Present only for SIP calls (`device.type == \"sip\"`).")
+  sip_data?: CallSipData;
+
+  @doc("Inbound-audio Mean Opinion Score (voice quality, ~1.0-5.0). Present when RTP quality stats are available.")
+  @example(4.4)
+  audio_in_mos?: float64;
 }
 
 const callingCallState = "calling.call.state";
@@ -93,15 +184,18 @@ const callingCallState = "calling.call.state";
 model CallStateEvent is SignalwireEvent<typeof callingCallState, CallStateParams>;
 
 model CallReceiveParams {
-  ...CallAddress;
+  ...CallEventAddress;
 
   @doc("The current state of the inbound call.")
+  @example("created")
   call_state: CallState;
 
   @doc("Whether the call is inbound or outbound.")
+  @example("inbound")
   direction?: CallDirection;
 
   @doc("The context the call arrived on, such as `pbx`.")
+  @example("pbx")
   context?: string;
 
   @doc("The device the call is coming in on, including the caller's number.")

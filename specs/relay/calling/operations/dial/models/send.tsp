@@ -8,9 +8,11 @@ namespace Relay.Calling;
 
 model DialParams {
   @doc("Your label for this dial. Every resulting `calling.call.*` and `calling.call.dial` event carries this `tag`, so use it to match events back to this request.")
+  @example("my-tag-1")
   tag: string;
 
   @doc("Geographic region to place the outbound call from.")
+  @example("us")
   region?: string;
 
   @doc("""
@@ -22,15 +24,23 @@ model DialParams {
 
   @doc("Maximum length of the call, in seconds. The call ends automatically once this is reached.")
   @minValue(0)
+  @example(3600)
   max_duration?: int32;
 
   @doc("Default ring timeout, in seconds, used when a device doesn't set its own.")
   @minValueExclusive(0)
+  @example(30)
   timeout?: float64;
 
   @doc("DTMF digits to send once the call is answered. Use `w` or `W` to insert pauses.")
+  @example("1234#")
   send_digits?: string;
 
   @doc("Highest price per minute you're willing to pay. Devices that would exceed this rate aren't dialed.")
+  @example(0.05)
   max_price_per_minute?: float64;
+
+  @doc("SWML script URL or inline SWML to execute on the dialed call.")
+  @example("https://example.com/outbound-script.json")
+  dest_swml?: string | Record<unknown>;
 }

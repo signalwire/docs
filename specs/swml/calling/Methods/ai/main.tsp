@@ -13,6 +13,14 @@ namespace SWML.Calling;
 @summary("AI Object")
 model AIObject {
   @doc("""
+    The UUID of a pre-configured AI agent to run. When set, that agent's saved
+    configuration is applied to the session. `prompt` is still required.
+    """)
+  @format("uuid")
+  @example("13ecec00-1210-4de5-97e3-6a4f2f8fa2b0")
+  agent?: string;
+
+  @doc("""
     A key-value object for storing data that persists throughout the AI session.
     Can be set initially in the SWML script or modified during the conversation using the set_global_data action.
     The global_data object is accessible everywhere in the AI session: prompts, AI parameters,

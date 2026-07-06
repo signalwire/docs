@@ -54,40 +54,51 @@ union CallDetectMachineEvent {
   """)
 @discriminator("type")
 model CallDetectResult {
-  type: string;
+  type: "digit" | "fax" | "machine";
 }
 
 model CallDetectFax extends CallDetectResult {
+  @example("fax")
   type: "fax";
+
   params: {
     @doc("What the fax detector heard.")
+    @example("CED")
     event: CallDetectFaxEvent;
   };
 }
 
 model CallDetectMachine extends CallDetectResult {
+  @example("machine")
   type: "machine";
+
   params: {
     @doc("What the answering-machine detector concluded.")
+    @example("MACHINE")
     event: CallDetectMachineEvent;
 
     @doc("Whether a beep was detected, signaling it's your turn to leave a message.")
+    @example(true)
     beep?: boolean;
   };
 }
 
 model CallDetectDigit extends CallDetectResult {
+  @example("digit")
   type: "digit";
+
   params: {
     @doc("The DTMF digit that was detected: one of `0`-`9`, `#`, or `*`. Carries the terminal `finished` value once the detector completes.")
+    @example("5")
     event: string;
   };
 }
 
 model CallDetectParams {
-  ...CallAddress;
+  ...CallEventAddress;
 
   @doc("The `control_id` of the detector this event refers to, returned when you started it with `calling.detect`.")
+  @example("d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e")
   control_id: string;
 
   @doc("What the detector found, including which kind of detector reported it.")

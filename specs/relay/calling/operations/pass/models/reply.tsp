@@ -8,5 +8,5 @@ namespace Relay.Calling;
 
 @doc("Result of `calling.pass`.")
 model PassResult {
-  ...RelayResult;
+  ...RelayResult<"Passing call to another consumer">;
 }

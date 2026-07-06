@@ -22,4 +22,5 @@ model SendDigitsRequest is JsonRpcRequest<typeof callingSendDigits, SendDigitsPa
 @channel(callingSendDigits)
 @summary("Send DTMF digit tones to a call")
 @extension("x-fern-display-name", callingSendDigits)
+@extension("x-fern-sdk-group-name", GroupPromptSendDigits)
 op sendDigits(...SendDigitsRequest): SendDigitsReply | CallSendDigitsEvent;

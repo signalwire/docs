@@ -7,17 +7,17 @@ using SignalWire.AsyncAPI;
 namespace Relay.Calling;
 
 model SendFaxResult {
-  ...RelayResult;
+  ...RelayResult<"Sending Fax">;
 }
 
 model SendFaxStopResult {
-  ...RelayResult;
+  ...RelayResult<"Stopping fax">;
 }
 
 model ReceiveFaxResult {
-  ...RelayResult;
+  ...RelayResult<"Receiving Fax">;
 }
 
 model ReceiveFaxStopResult {
-  ...RelayResult;
+  ...RelayResult<"Stopping fax">;
 }

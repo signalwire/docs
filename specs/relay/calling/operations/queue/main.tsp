@@ -22,6 +22,7 @@ model QueueEnterRequest is JsonRpcRequest<typeof callingQueueEnter, QueueEnterPa
 @channel(callingQueueEnter)
 @summary("Place the call into a queue")
 @extension("x-fern-display-name", callingQueueEnter)
+@extension("x-fern-sdk-group-name", GroupQueuesEnter)
 op queueEnter(...QueueEnterRequest): QueueEnterReply | CallQueueEvent;
 
 const callingQueueLeave = "calling.queue.leave";
@@ -35,4 +36,5 @@ model QueueLeaveRequest is JsonRpcRequest<typeof callingQueueLeave, QueueLeavePa
 @channel(callingQueueLeave)
 @summary("Remove the call from a queue")
 @extension("x-fern-display-name", callingQueueLeave)
+@extension("x-fern-sdk-group-name", GroupQueuesLeave)
 op queueLeave(...QueueLeaveRequest): QueueLeaveReply;

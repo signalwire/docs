@@ -14,6 +14,7 @@ model ConnectParams {
   ringback?: Ringback[];
 
   @doc("Your label for the new call leg. Its `calling.call.*` events carry this `tag`.")
+  @example("my-tag-1")
   tag?: string;
 
   @doc("""
@@ -24,16 +25,20 @@ model ConnectParams {
   devices: ConnectDevice[][];
 
   @doc("Maximum length of the connected call, in seconds. The call ends automatically once this is reached.")
+  @example(3600)
   max_duration?: int32;
 
   @doc("Default ring timeout, in seconds, used when a device doesn't set its own.")
   @minValueExclusive(0)
+  @example(30)
   timeout?: float64;
 
   @doc("DTMF digits to send once the call is answered. Use `w` or `W` to insert pauses.")
+  @example("1234#")
   send_digits?: string;
 
   @doc("Highest price per minute you're willing to pay. Devices that would exceed this rate aren't called.")
+  @example(0.05)
   max_price_per_minute?: float64;
 
   @doc("""
@@ -41,5 +46,6 @@ model ConnectParams {
     progresses through the `connecting`, `connected`, `failed`, and `disconnected`
     statuses.
     """)
+  @example("https://example.com/webhooks/relay")
   status_url?: url;
 }

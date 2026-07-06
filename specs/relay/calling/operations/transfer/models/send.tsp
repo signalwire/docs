@@ -15,5 +15,6 @@ model TransferParams {
     inline SWML script — either as a string or as a SWML object. The form is
     detected from the value you provide.
     """)
+  @example("https://example.com/swml")
   dest: string | Record<unknown>;
 }

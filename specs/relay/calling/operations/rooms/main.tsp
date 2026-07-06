@@ -4,6 +4,7 @@ import "@typespec/openapi";
 
 import "./models/send.tsp";
 import "./models/reply.tsp";
+import "./models/events.tsp";
 
 using SignalWire.AsyncAPI;
 using TypeSpec.OpenAPI;
@@ -21,7 +22,8 @@ model JoinRoomRequest is JsonRpcRequest<typeof callingJoinRoom, JoinRoomParams>;
 @channel(callingJoinRoom)
 @summary("Join a video/audio room")
 @extension("x-fern-display-name", callingJoinRoom)
-op joinRoom(...JoinRoomRequest): JoinRoomReply;
+@extension("x-fern-sdk-group-name", GroupConferencingJoinRoom)
+op joinRoom(...JoinRoomRequest): JoinRoomReply | CallRoomEvent;
 
 const callingLeaveRoom = "calling.leave_room";
 const callingLeaveRoomResponse = "${callingLeaveRoom} response";
@@ -34,4 +36,5 @@ model LeaveRoomRequest is JsonRpcRequest<typeof callingLeaveRoom, LeaveRoomParam
 @channel(callingLeaveRoom)
 @summary("Leave the current room")
 @extension("x-fern-display-name", callingLeaveRoom)
-op leaveRoom(...LeaveRoomRequest): LeaveRoomReply;
+@extension("x-fern-sdk-group-name", GroupConferencingLeaveRoom)
+op leaveRoom(...LeaveRoomRequest): LeaveRoomReply | CallRoomEvent;

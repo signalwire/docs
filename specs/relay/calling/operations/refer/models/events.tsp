@@ -19,15 +19,18 @@ union ReferState {
 }
 
 model CallReferParams {
-  ...CallAddress;
+  ...CallEventAddress;
 
   @doc("Where the transfer currently stands.")
+  @example("success")
   state: ReferState;
 
   @doc("The SIP URI the call is being transferred to.")
+  @example("sip:bob@example.com")
   sip_refer_to?: string;
 
   @doc("The SIP response code the far end returned to the REFER request, as a string (for example `\"202\"`).")
+  @example("202")
   sip_refer_response_code?: string;
 
   @doc("""
@@ -35,6 +38,7 @@ model CallReferParams {
     string (for example `"200"`). This tells you whether the transfer ultimately
     succeeded.
     """)
+  @example("200")
   sip_notify_response_code?: string;
 }
 

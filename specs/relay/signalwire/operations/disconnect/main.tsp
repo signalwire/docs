@@ -9,6 +9,7 @@ using SignalWire.AsyncAPI;
 using TypeSpec.OpenAPI;
 
 namespace Relay.Signalwire;
+const GroupSignalwireDisconnect = #["signalwire", "disconnect"];
 
 const signalwireDisconnect = "signalwire.disconnect";
 const signalwireDisconnectResponse = "${signalwireDisconnect} response";
@@ -29,4 +30,5 @@ model DisconnectRequest is JsonRpcRequest<typeof signalwireDisconnect, Disconnec
 @channel(signalwireDisconnect)
 @summary("Service is about to disconnect the client")
 @extension("x-fern-display-name", signalwireDisconnect)
+@extension("x-fern-sdk-group-name", GroupSignalwireDisconnect)
 op disconnect(...DisconnectRequest): DisconnectReply;

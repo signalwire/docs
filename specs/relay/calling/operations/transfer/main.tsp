@@ -21,4 +21,5 @@ model TransferRequest is JsonRpcRequest<typeof callingTransfer, TransferParams>;
 @channel(callingTransfer)
 @summary("Transfer a call to a RELAY app or SWML script")
 @extension("x-fern-display-name", callingTransfer)
+@extension("x-fern-sdk-group-name", GroupControlTransfer)
 op transfer(...TransferRequest): TransferReply;

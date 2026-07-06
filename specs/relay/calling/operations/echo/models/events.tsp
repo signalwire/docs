@@ -15,9 +15,10 @@ union EchoState {
 }
 
 model CallEchoParams {
-  ...CallAddress;
+  ...CallEventAddress;
 
   @doc("Whether the echo is still running (`echoing`) or has stopped (`finished`).")
+  @example("echoing")
   state: EchoState;
 }
 

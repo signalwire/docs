@@ -6,21 +6,6 @@ using TypeSpec.OpenAPI;
 
 namespace Relay.WebRTC;
 
-model MessageEventData {
-  @doc("""
-    The node that sent this event. Capture it once your call starts and reuse
-    it as the `node_id` on your subsequent `message` requests so they reach the
-    same node.
-    """)
-  node_id: string;
-
-  @doc("""
-    The Verto frame being delivered — either a Verto response or a
-    conference/room event. Passed through as-is; see `verto_messages.md`.
-    """)
-  params: Record<unknown>;
-}
-
 const webrtcMessage = "webrtc.message";
 @doc("""
   Delivers a Verto frame from SignalWire back to your client. This fires when
@@ -33,4 +18,4 @@ const webrtcMessage = "webrtc.message";
   """)
 @summary(webrtcMessage)
 @extension("x-fern-display-name", webrtcMessage)
-model MessageEvent is SignalwireEvent<typeof webrtcMessage, MessageEventData>;
+model MessageEvent is WebRTCEvent<typeof webrtcMessage, Record<unknown>>;

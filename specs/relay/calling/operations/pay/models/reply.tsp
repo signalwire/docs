@@ -7,9 +7,9 @@ using SignalWire.AsyncAPI;
 namespace Relay.Calling;
 
 model PayResult {
-  ...RelayResult;
+  ...RelayResult<"Processing payment">;
 }
 
 model PayStopResult {
-  ...RelayResult;
+  ...RelayResult<"Stopping payment">;
 }

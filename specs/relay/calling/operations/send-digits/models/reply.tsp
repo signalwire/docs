@@ -7,5 +7,5 @@ using SignalWire.AsyncAPI;
 namespace Relay.Calling;
 
 model SendDigitsResult {
-  ...RelayResult;
+  ...RelayResult<"Sending">;
 }

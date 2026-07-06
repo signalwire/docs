@@ -33,6 +33,7 @@ model PlayRequest is JsonRpcRequest<typeof callingPlay, PlayParams>;
 @channel(callingPlay)
 @summary("Play media to a call")
 @extension("x-fern-display-name", callingPlay)
+@extension("x-fern-sdk-group-name", GroupPlaybackPlay)
 op play(...PlayRequest): PlayReply | CallPlayEvent;
 
 const callingPlayPause = "calling.play.pause";
@@ -47,6 +48,7 @@ model PlayPauseRequest is JsonRpcRequest<typeof callingPlayPause, PlayPauseParam
 @channel(callingPlayPause)
 @summary("Pause an active play")
 @extension("x-fern-display-name", callingPlayPause)
+@extension("x-fern-sdk-group-name", GroupPlaybackPause)
 op playPause(...PlayPauseRequest): PlayPauseReply;
 
 const callingPlayResume = "calling.play.resume";
@@ -61,6 +63,7 @@ model PlayResumeRequest is JsonRpcRequest<typeof callingPlayResume, PlayResumePa
 @channel(callingPlayResume)
 @summary("Resume a paused play")
 @extension("x-fern-display-name", callingPlayResume)
+@extension("x-fern-sdk-group-name", GroupPlaybackResume)
 op playResume(...PlayResumeRequest): PlayResumeReply;
 
 const callingPlayStop = "calling.play.stop";
@@ -75,6 +78,7 @@ model PlayStopRequest is JsonRpcRequest<typeof callingPlayStop, PlayStopParams>;
 @channel(callingPlayStop)
 @summary("Stop an active play")
 @extension("x-fern-display-name", callingPlayStop)
+@extension("x-fern-sdk-group-name", GroupPlaybackStop)
 op playStop(...PlayStopRequest): PlayStopReply;
 
 const callingPlayVolume = "calling.play.volume";
@@ -89,4 +93,5 @@ model PlayVolumeRequest is JsonRpcRequest<typeof callingPlayVolume, PlayVolumePa
 @channel(callingPlayVolume)
 @summary("Adjust the volume of an active play")
 @extension("x-fern-display-name", callingPlayVolume)
+@extension("x-fern-sdk-group-name", GroupPlaybackVolume)
 op playVolume(...PlayVolumeRequest): PlayVolumeReply;

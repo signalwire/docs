@@ -28,16 +28,23 @@ union AiSidecarCallbackType {
 
 model AiSidecarEventData {
   @doc("The callback type. Determines which type-specific fields are present.")
+  @example("ask_answer")
   type: AiSidecarCallbackType;
 
   @doc("When the event was produced, as a Unix timestamp in microseconds.")
+  @example(1718000123000000)
   ts: int64;
 
   @doc("Evaluation id — callbacks produced in the same evaluation share a `tick_id`.")
+  @example(42)
   tick_id: int64;
 
   @doc("Call/channel context (`call_id`, plus caller id fields when available).")
   channel_data: Record<unknown>;
+
+  @doc("Present when `type: ask_answer`; correlates this `ask_answer` event with the originating `ai_sidecar.ask`, matching the `ask_id` returned by `calling.ai_sidecar.ask`.")
+  @example("a1b2c3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d")
+  ask_id?: string;
 }
 
 const callingAiSidecarEvent = "calling.ai.sidecar";

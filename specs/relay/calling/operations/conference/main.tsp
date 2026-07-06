@@ -23,6 +23,7 @@ model JoinConferenceRequest is JsonRpcRequest<typeof callingJoinConference, Join
 @channel(callingJoinConference)
 @summary("Join an ad-hoc audio conference")
 @extension("x-fern-display-name", callingJoinConference)
+@extension("x-fern-sdk-group-name", GroupConferencingJoinConference)
 op joinConference(...JoinConferenceRequest): JoinConferenceReply | ConferenceEvent;
 
 const callingLeaveConference = "calling.leave_conference";
@@ -37,4 +38,5 @@ model LeaveConferenceRequest is JsonRpcRequest<typeof callingLeaveConference, Le
 @channel(callingLeaveConference)
 @summary("Leave an audio conference")
 @extension("x-fern-display-name", callingLeaveConference)
+@extension("x-fern-sdk-group-name", GroupConferencingLeaveConference)
 op leaveConference(...LeaveConferenceRequest): LeaveConferenceReply | ConferenceEvent;

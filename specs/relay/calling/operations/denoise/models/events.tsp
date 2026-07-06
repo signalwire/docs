@@ -9,9 +9,10 @@ using TypeSpec.OpenAPI;
 namespace Relay.Calling;
 
 model CallDenoiseParams {
-  ...CallAddress;
+  ...CallEventAddress;
 
   @doc("Whether background noise reduction is now on (`true`) or off.")
+  @example(true)
   denoised: boolean;
 }
 

@@ -28,6 +28,7 @@ model SendFaxRequest is JsonRpcRequest<typeof callingSendFax, SendFaxParams>;
 @channel(callingSendFax)
 @summary("Send a PDF fax")
 @extension("x-fern-display-name", callingSendFax)
+@extension("x-fern-sdk-group-name", GroupFaxSend)
 op sendFax(...SendFaxRequest): SendFaxReply | CallFaxEvent;
 
 const callingSendFaxStop = "calling.send_fax.stop";
@@ -42,6 +43,7 @@ model SendFaxStopRequest is JsonRpcRequest<typeof callingSendFaxStop, SendFaxSto
 @channel(callingSendFaxStop)
 @summary("Stop sending a fax")
 @extension("x-fern-display-name", callingSendFaxStop)
+@extension("x-fern-sdk-group-name", GroupFaxSendStop)
 op sendFaxStop(...SendFaxStopRequest): SendFaxStopReply;
 
 const callingReceiveFax = "calling.receive_fax";
@@ -61,6 +63,7 @@ model ReceiveFaxRequest is JsonRpcRequest<typeof callingReceiveFax, ReceiveFaxPa
 @channel(callingReceiveFax)
 @summary("Receive a fax")
 @extension("x-fern-display-name", callingReceiveFax)
+@extension("x-fern-sdk-group-name", GroupFaxReceive)
 op receiveFax(...ReceiveFaxRequest): ReceiveFaxReply | CallFaxEvent;
 
 const callingReceiveFaxStop = "calling.receive_fax.stop";
@@ -75,4 +78,5 @@ model ReceiveFaxStopRequest is JsonRpcRequest<typeof callingReceiveFaxStop, Rece
 @channel(callingReceiveFaxStop)
 @summary("Stop receiving a fax")
 @extension("x-fern-display-name", callingReceiveFaxStop)
+@extension("x-fern-sdk-group-name", GroupFaxReceiveStop)
 op receiveFaxStop(...ReceiveFaxStopRequest): ReceiveFaxStopReply;

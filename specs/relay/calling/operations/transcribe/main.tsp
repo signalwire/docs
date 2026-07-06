@@ -29,6 +29,7 @@ model TranscribeRequest is JsonRpcRequest<typeof callingTranscribe, TranscribePa
 @channel(callingTranscribe)
 @summary("Start transcribing a call")
 @extension("x-fern-display-name", callingTranscribe)
+@extension("x-fern-sdk-group-name", GroupTranscriptionTranscribe)
 op transcribe(...TranscribeRequest): TranscribeReply | CallTranscribeEvent;
 
 const callingTranscribeStop = "calling.transcribe.stop";
@@ -42,4 +43,5 @@ model TranscribeStopRequest is JsonRpcRequest<typeof callingTranscribeStop, Tran
 @channel(callingTranscribeStop)
 @summary("Stop an active call transcription")
 @extension("x-fern-display-name", callingTranscribeStop)
+@extension("x-fern-sdk-group-name", GroupTranscriptionStop)
 op transcribeStop(...TranscribeStopRequest): TranscribeStopReply;

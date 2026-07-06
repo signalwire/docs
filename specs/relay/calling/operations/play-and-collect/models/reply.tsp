@@ -7,13 +7,13 @@ using SignalWire.AsyncAPI;
 namespace Relay.Calling;
 
 model PlayAndCollectResult {
-  ...RelayResult;
+  ...RelayResult<"Playing and collecting">;
 }
 
 model PlayAndCollectStopResult {
-  ...RelayResult;
+  ...RelayResult<"Stopping">;
 }
 
 model PlayAndCollectVolumeResult {
-  ...RelayResult;
+  ...RelayResult<"Changed play and collect volume">;
 }

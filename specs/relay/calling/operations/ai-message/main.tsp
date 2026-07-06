@@ -22,4 +22,5 @@ model AiMessageRequest is JsonRpcRequest<typeof callingAiMessage, AiMessageParam
 @channel(callingAiMessage)
 @summary("Send a message to an active AI agent session")
 @extension("x-fern-display-name", callingAiMessage)
+@extension("x-fern-sdk-group-name", GroupAgentAiMessage)
 op aiMessage(...AiMessageRequest): AiMessageReply;

@@ -7,9 +7,9 @@ using SignalWire.AsyncAPI;
 namespace Relay.Calling;
 
 model DetectResult {
-  ...RelayResult;
+  ...RelayResult<"Detecting">;
 }
 
 model DetectStopResult {
-  ...RelayResult;
+  ...RelayResult<"Stopping detect">;
 }

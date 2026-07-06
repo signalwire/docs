@@ -8,5 +8,5 @@ namespace Relay.Calling;
 
 @doc("Result of `calling.refer`.")
 model ReferResult {
-  ...RelayResult;
+  ...RelayResult<"Starting SIP REFER">;
 }

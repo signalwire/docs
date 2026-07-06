@@ -7,9 +7,9 @@ using SignalWire.AsyncAPI;
 namespace Relay.Calling;
 
 model AiHoldResult {
-  ...RelayResult;
+  ...RelayResult<"+OK">;
 }
 
 model AiUnholdResult {
-  ...RelayResult;
+  ...RelayResult<"+OK">;
 }

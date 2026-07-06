@@ -10,6 +10,7 @@ model SendDigitsParams {
   ...CallAddress;
 
   @doc("Your own identifier for this send-digits operation. Use it to correlate the request with the `calling.call.send_digits` events it produces.")
+  @example("d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e")
   control_id: string;
 
   @doc("""
@@ -18,5 +19,6 @@ model SendDigitsParams {
     and `W` for a longer pause (repeat them for longer waits). The whole string is
     rejected if it contains any other character.
     """)
+  @example("wW1234567890*#ABCD")
   digits: string;
 }

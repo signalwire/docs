@@ -10,5 +10,6 @@ model EndParams {
   ...CallAddress;
 
   @doc("Why the call is ending. Defaults to `hangup` (a normal end).")
+  @example("hangup")
   reason?: CallEndReason = "hangup";
 }

@@ -4,6 +4,7 @@ import "@typespec/openapi";
 
 import "./models/send.tsp";
 import "./models/reply.tsp";
+import "./models/events.tsp";
 
 using SignalWire.AsyncAPI;
 using TypeSpec.OpenAPI;
@@ -21,4 +22,5 @@ model UserEventRequest is JsonRpcRequest<typeof callingUserEvent, UserEventParam
 @channel(callingUserEvent)
 @summary("Send a custom user-defined event")
 @extension("x-fern-display-name", callingUserEvent)
-op userEvent(...UserEventRequest): UserEventReply;
+@extension("x-fern-sdk-group-name", GroupEventsUserEvent)
+op userEvent(...UserEventRequest): UserEventReply | CallUserEvent;

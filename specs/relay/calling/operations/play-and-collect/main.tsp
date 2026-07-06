@@ -27,6 +27,7 @@ model PlayAndCollectRequest is JsonRpcRequest<typeof callingPlayAndCollect, Play
 @channel(callingPlayAndCollect)
 @summary("Play media and collect input")
 @extension("x-fern-display-name", callingPlayAndCollect)
+@extension("x-fern-sdk-group-name", GroupPromptPlayAndCollect)
 op playAndCollect(...PlayAndCollectRequest): PlayAndCollectReply | CallCollectEvent;
 
 const callingPlayAndCollectStop = "calling.play_and_collect.stop";
@@ -40,6 +41,7 @@ model PlayAndCollectStopRequest is JsonRpcRequest<typeof callingPlayAndCollectSt
 @channel(callingPlayAndCollectStop)
 @summary("Stop an active play-and-collect")
 @extension("x-fern-display-name", callingPlayAndCollectStop)
+@extension("x-fern-sdk-group-name", GroupPromptPlayAndCollectStop)
 op playAndCollectStop(...PlayAndCollectStopRequest): PlayAndCollectStopReply;
 
 const callingPlayAndCollectVolume = "calling.play_and_collect.volume";
@@ -53,4 +55,5 @@ model PlayAndCollectVolumeRequest is JsonRpcRequest<typeof callingPlayAndCollect
 @channel(callingPlayAndCollectVolume)
 @summary("Change play-and-collect volume")
 @extension("x-fern-display-name", callingPlayAndCollectVolume)
+@extension("x-fern-sdk-group-name", GroupPromptPlayAndCollectVolume)
 op playAndCollectVolume(...PlayAndCollectVolumeRequest): PlayAndCollectVolumeReply;

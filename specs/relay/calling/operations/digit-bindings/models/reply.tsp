@@ -7,12 +7,9 @@ using SignalWire.AsyncAPI;
 namespace Relay.Calling;
 
 model BindDigitResult {
-  ...RelayResult;
+  ...RelayResult<"Digit binding created">;
 }
 
 model ClearDigitBindingsResult {
-  ...RelayResult;
-
-  @doc("Number of digit bindings removed.")
-  cleared: int32;
+  ...RelayResult<"Digit bindings cleared">;
 }

@@ -16,10 +16,12 @@ union DetectFaxTone {
 model DetectMachineParams {
   @doc("How long to wait (sec > 0) for initial voice before giving up. Default `4.5`.")
   @minValueExclusive(0)
+  @example(5.0)
   initial_timeout?: float64;
 
   @doc("How long to wait (sec > 0) for voice to finish. Default `1.0`.")
   @minValueExclusive(0)
+  @example(1.0)
   end_silence_timeout?: float64;
 
   @doc("""
@@ -27,14 +29,17 @@ model DetectMachineParams {
     event. Default is `end_silence_timeout`.
     """)
   @minValueExclusive(0)
+  @example(1.0)
   machine_ready_timeout?: float64;
 
   @doc("How much voice (sec > 0) to decide MACHINE. Default `1.25`.")
   @minValueExclusive(0)
+  @example(1.25)
   machine_voice_threshold?: float64;
 
   @doc("How many words (count > 0) to count to decide MACHINE. Default `6`.")
   @minValueExclusive(0)
+  @example(6)
   machine_words_threshold?: int32;
 
   @doc("""
@@ -42,48 +47,55 @@ model DetectMachineParams {
     lets the application restart message delivery to the answering machine.
     Default `false`.
     """)
+  @example(false)
   detect_interruptions?: boolean = false;
 
   @doc("""
     If false, stop detection on the machine event and don't wait on the beep /
     end of the voicemail greeting. Default `true`.
     """)
+  @example(true)
   detect_message_end?: boolean = true;
 }
 
 @doc("`fax` detector params.")
 model DetectFaxParams {
   @doc("Tone to detect (remote side only). Default `CED`.")
+  @example("CED")
   tone?: DetectFaxTone;
 }
 
 @doc("`digit` detector params.")
 model DetectDigitParams {
   @doc("Digits to detect. Default `0123456789#*`.")
+  @example("0123456789#*")
   digits?: string;
 }
 
 @doc("Detector to start. Discriminated on `type` (`machine`|`fax`|`digit`).")
 @discriminator("type")
 model DetectConfig {
-  type: string;
+  type: "digit" | "fax" | "machine";
 }
 
-@example(#{ type: "machine", params: #{ initial_timeout: 5.0 } })
 model DetectMachine extends DetectConfig {
+  @example("machine")
   type: "machine";
+
   params?: DetectMachineParams;
 }
 
-@example(#{ type: "fax", params: #{ tone: "CED" } })
 model DetectFax extends DetectConfig {
+  @example("fax")
   type: "fax";
+
   params?: DetectFaxParams;
 }
 
-@example(#{ type: "digit", params: #{ digits: "0123456789#*" } })
 model DetectDigit extends DetectConfig {
+  @example("digit")
   type: "digit";
+
   params?: DetectDigitParams;
 }
 
@@ -91,6 +103,7 @@ model DetectParams {
   ...CallAddress;
 
   @doc("Identifier used to control the active detector.")
+  @example("d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e")
   control_id: string;
 
   @doc("Detector to run (variant keyed on `detect.type`).")
@@ -98,6 +111,7 @@ model DetectParams {
 
   @doc("Maximum time (sec >= 0) to run the detector. Default `30.0`.")
   @minValue(0)
+  @example(30.0)
   timeout?: float64;
 
   @doc("HTTP(s) URL to POST detector events to.")
@@ -108,5 +122,6 @@ model DetectStopParams {
   ...CallAddress;
 
   @doc("The detector `control_id` assigned in `calling.detect`.")
+  @example("d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e")
   control_id: string;
 }

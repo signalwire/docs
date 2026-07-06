@@ -17,9 +17,11 @@ model AnswerParams {
     `call.device.type` in the `calling.call.state` events to know which call type
     you're answering.
     """)
+  @example(#["PCMU", "PCMA"])
   codecs?: AnswerCodec[];
 
   @doc("Maximum length of the call, in seconds. The call ends automatically once this is reached.")
   @minValue(0)
+  @example(3600)
   max_duration?: int32;
 }
