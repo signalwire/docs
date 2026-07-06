@@ -5,7 +5,7 @@ description: Guidelines for building TCPA-compliant outbound voice AI applicatio
 max-toc-depth: 3
 ---
 
-The Telephone Consumer Protection Act (TCPA) governs how businesses may place calls and send messages to consumers. As of an [FCC ruling on February 8, 2024](https://www.fcc.gov/document/fcc-makes-ai-generated-voices-robocalls-illegal), AI-generated voices are treated as an "artificial or prerecorded voice" under the statute, which places real-time conversational agents, cloned voices, and LLM-driven dialers within the existing restrictions of [47 U.S.C. § 227(b)](https://www.law.cornell.edu/uscode/text/47/227). TCPA obligations — consent, disclosure, calling hours, and revocation — need to be deterministic and auditable. The proper way to achieve this is to enforce each obligation in code rather than relying on the language model to honor the prompt instructions.
+The Telephone Consumer Protection Act (TCPA) governs how businesses may place calls and send messages to consumers. As of an [FCC ruling on February 8, 2024](https://www.fcc.gov/document/fcc-makes-ai-generated-voices-robocalls-illegal), AI-generated voices are treated as an "artificial or prerecorded voice" under the statute, which places real-time conversational agents, cloned voices, and LLM-driven dialers within the existing restrictions of [47 U.S.C. § 227(b)](https://www.law.cornell.edu/uscode/text/47/227). TCPA obligations — consent, disclosure, calling hours, and revocation — are deterministic and auditable. The proper way to meet them is to enforce each obligation in code rather than relying on the language model to honor instructions in its prompt.
 
 **Compliance is a state machine, not a system prompt.** Each obligation is a gate with a definite answer: Is consent on file? Are we operating inside calling hours? Has the customer opted out? Each must be checked and recorded the same way on every call. A prompt can only *ask* the model to behave; a state machine *guarantees* the behavior and leaves a record. Treat the law's requirements as code your agent runs inside of, not as instructions you hope it follows.
 
@@ -43,7 +43,7 @@ Each TCPA obligation is best modeled as a gate a call must pass before it is all
 
 ## Consent
 
-Consent and Do-Not-Call disputes are the major drivers of the current wave of TCPA litigation, which [surged roughly 95% in 2025](https://natlawreview.com/article/midyear-litigation-report-tcpa-class-actions-staggering-952-2024-previously-highest). Two federal standards apply, and your system must know which one attaches to each number.
+Consent and Do Not Call disputes are the major drivers of the current wave of TCPA litigation, which [surged roughly 95% in 2025](https://natlawreview.com/article/midyear-litigation-report-tcpa-class-actions-staggering-952-2024-previously-highest). Two federal standards apply, and your system must know which one attaches to each number.
 
 | Standard | Abbreviation | Applies to | Requirements |
 |----------|--------------|------------|--------------|
@@ -313,6 +313,9 @@ client = RestClient(
     host="your-space.signalwire.com",
 )
 
+CALLER_ID = "+15551234567"                        # a number you own, shown as the caller ID
+AGENT_SWML_URL = "https://example.com/agent.swml"  # URL that returns your agent's SWML
+
 # Pre-dial gate in your origination service.
 def place_call(number, call_type):
     # 1. Consent: per number, per call type, per called-party state.
@@ -334,12 +337,12 @@ def place_call(number, call_type):
 
     # Only now request origination from SignalWire, pointing at the agent SWML.
     client.calling.dial(to=number, from_=CALLER_ID, url=AGENT_SWML_URL)
-    audit.log("dialed", number, consent_id=consent_store.citation(number, call_type))
+    audit.log("dialed", number, consent_id=consent_store.citation(number, call_type, state))
 ```
 
 ### Record the audit artifact
 
-Enable [`record_call`](/docs/swml/reference/calling/ai) and a [`post_prompt`](/docs/swml/reference/calling/ai) summary so each call produces a transcript and a structured summary alongside the consent citation logged at dial time. Store recordings encrypted at rest with access logs, retained a minimum of four years (the TCPA statute of limitations), and longer where an FDCPA or HIPAA overlap imposes its own retention period.
+Enable [`record_call`](/docs/swml/reference/calling/record-call) and a [`post_prompt`](/docs/swml/reference/calling/ai) summary so each call produces a transcript and a structured summary alongside the consent citation logged at dial time. Store recordings encrypted at rest with access logs, retained a minimum of four years (the TCPA statute of limitations), and longer where an FDCPA or HIPAA overlap imposes its own retention period.
 
 ## Evaluating a platform or vendor
 
@@ -361,7 +364,9 @@ Because liability follows the entity on whose behalf calls are placed, vendor se
 
 ## Summary
 
-A voice AI program is defensible when its compliance controls are enforced and recorded in code on every call — consent gating, real-time suppression, a guaranteed disclosure state, calling-hour arithmetic, and structured opt-out propagation — independent of what the model says on any given turn. SignalWire provides the building blocks for the in-call portion of that system: an unskippable AI disclosure via `static_greeting_no_barge`, SWAIG functions for structured opt-out capture, and recording and post-prompt transcription for the audit trail. Your responsibility is to gate origination on consent, suppression, and timing before the dial; to propagate revocations across every channel; and to retain the records that prove each call was authorized. A practical sequence is to audit your consent records first, then suppression, then disclosure — and to pilot the AI layer only once those controls hold. Always consult qualified telecom counsel to ensure your specific implementation meets all applicable requirements.
+A voice AI program is defensible when its compliance controls are enforced and recorded in code on every call — consent gating, real-time suppression, a guaranteed disclosure state, calling-hour arithmetic, and structured opt-out propagation — independent of what the model says on any given turn.
+
+SignalWire provides the building blocks for the in-call portion of that system: an unskippable AI disclosure via `static_greeting_no_barge`, SWAIG functions for structured opt-out capture, and recording and post-prompt transcription for the audit trail. Your responsibility is to gate origination on consent, suppression, and timing before the dial; to propagate revocations across every channel; and to retain the records that prove each call was authorized. A practical sequence is to audit your consent records first, then suppression, then disclosure — and to pilot the AI layer only once those controls hold. Always consult qualified telecom counsel to ensure your specific implementation meets all applicable requirements.
 
 ## Resources
 
