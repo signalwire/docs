@@ -10,13 +10,10 @@ namespace Relay.Calling;
 
 @doc("The call's current standing in the queue: `entering` while it joins, `connecting`/`connected` as it is bridged out to an agent, `leaving` when it exits, and `failed`/`timeout`/`hangup` for the ways it can drop out.")
 union CallQueueStatus {
-  "connected",
-  "connecting",
-  "entering",
-  "failed",
-  "leaving",
-  "timeout",
-  "hangup",
+  "enqueue",
+  "leave",
+  "stats",
+  string,
 }
 
 model CallQueueParams {
@@ -27,7 +24,7 @@ model CallQueueParams {
   control_id: string;
 
   @doc("The call's current standing in the queue.")
-  @example("connected")
+  @example("enqueue")
   status?: CallQueueStatus;
 
   @doc("The queue's unique id.")

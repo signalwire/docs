@@ -7,5 +7,5 @@ using SignalWire.AsyncAPI;
 namespace Relay.Calling;
 
 model EndResult {
-  ...RelayResult<"Ending call">;
+  ...RelayResultBase<"Ending call">;
 }

@@ -45,6 +45,10 @@ model AiSidecarEventData {
   @doc("Present when `type: ask_answer`; correlates this `ask_answer` event with the originating `ai_sidecar.ask`, matching the `ask_id` returned by `calling.ai_sidecar.ask`.")
   @example("a1b2c3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d")
   ask_id?: string;
+
+  @doc("The answer text. Present on `type: ask_answer` (the reply to your `calling.ai_sidecar.ask`) and on the `final` summary event.")
+  @example("The customer's account is past due by 14 days.")
+  raw?: string;
 }
 
 const callingAiSidecarEvent = "calling.ai.sidecar";

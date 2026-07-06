@@ -37,9 +37,9 @@ model StateEventData {
   @example("Your order has shipped!")
   body: string;
 
-  @doc("Any media URLs included with the message.")
+  @doc("Any media URLs included with the message. Absent for text-only messages.")
   @example(#["https://example.com/receipt.png"])
-  media: string[];
+  media?: string[];
 
   @doc("How many SMS segments the message was split into.")
   @example(1)

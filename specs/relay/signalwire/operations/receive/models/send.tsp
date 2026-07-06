@@ -17,5 +17,6 @@ model ReceiveParams {
 model UnreceiveParams {
   @doc("The contexts to stop receiving events for.")
   @example(#["office", "support"])
+  @minItems(1)
   contexts: string[];
 }

@@ -5,6 +5,7 @@ import "@typespec/openapi";
 import "./models/send.tsp";
 import "./models/reply.tsp";
 import "./models/events.tsp";
+import "../../events/shared.tsp";
 
 using SignalWire.AsyncAPI;
 using TypeSpec.OpenAPI;
@@ -31,4 +32,4 @@ model ConnectRequest is JsonRpcRequest<typeof callingConnect, ConnectParams>;
 @summary("Connect a device to an active call")
 @extension("x-fern-display-name", callingConnect)
 @extension("x-fern-sdk-group-name", GroupControlConnect)
-op connect(...ConnectRequest): ConnectReply | CallConnectEvent;
+op connect(...ConnectRequest): ConnectReply | CallConnectEvent | CallStateEvent;

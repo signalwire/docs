@@ -4,6 +4,7 @@ import "@typespec/openapi";
 
 import "./models/send.tsp";
 import "./models/reply.tsp";
+import "./models/events.tsp";
 
 using SignalWire.AsyncAPI;
 using TypeSpec.OpenAPI;
@@ -28,4 +29,4 @@ model LiveTranslateRequest is JsonRpcRequest<typeof callingLiveTranslate, LiveTr
 @summary("Start or stop live translation on a call")
 @extension("x-fern-display-name", callingLiveTranslate)
 @extension("x-fern-sdk-group-name", GroupTranscriptionLiveTranslate)
-op liveTranslate(...LiveTranslateRequest): LiveTranslateReply;
+op liveTranslate(...LiveTranslateRequest): LiveTranslateReply | TranslateTranscriptDeltaEvent;

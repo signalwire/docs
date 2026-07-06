@@ -7,9 +7,9 @@ using SignalWire.AsyncAPI;
 namespace Relay.Calling;
 
 model BindDigitResult {
-  ...RelayResult<"Digit binding created">;
+  ...RelayResultWithCall<"Digit binding created">;
 }
 
 model ClearDigitBindingsResult {
-  ...RelayResult<"Digit bindings cleared">;
+  ...RelayResultWithCall<"Digit bindings cleared">;
 }

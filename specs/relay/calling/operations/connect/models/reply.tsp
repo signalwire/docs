@@ -7,5 +7,8 @@ using SignalWire.AsyncAPI;
 namespace Relay.Calling;
 
 model ConnectResult {
-  ...RelayResult<"Connecting call">;
+  ...RelayResultBase<"Connecting call">;
+
+  @doc("Per-destination detail returned by `calling.connect`, present on partial failure — one entry per attempted destination.")
+  message_data?: unknown[];
 }

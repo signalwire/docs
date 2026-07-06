@@ -26,19 +26,19 @@ model IceServer {
 }
 
 model ConnectResult {
-  @doc("A unique identifier for this client, valid for the life of the connection.")
+  @doc("The protocol identifier to use on your subsequent requests. The only field guaranteed on every successful connect result.")
+  @example("signalwire_c1d2e3f4a5b6")
+  protocol: string;
+
+  @doc("A unique identifier for this client, valid for the life of the connection. Omitted when the platform does not assign one.")
   @example("a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d@node.example.signalwire.com")
-  identity: string;
+  identity?: string;
 
   @doc("""
     The authorization granted to this connection. Treat it as opaque: store it
-    and pass it back unchanged when you reconnect.
+    and pass it back unchanged when you reconnect. Omitted when there is none.
     """)
-  authorization: Record<unknown>;
-
-  @doc("The protocol identifier to use on your subsequent requests.")
-  @example("signalwire_c1d2e3f4a5b6")
-  protocol: string;
+  authorization?: Record<unknown>;
 
   @doc("ICE servers to use for media. Returned for WebRTC connections; omitted when the connection carries no media.")
   ice_servers?: IceServer[];

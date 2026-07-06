@@ -12,23 +12,28 @@ namespace Relay.Signalwire;
 const GroupSignalwireDisconnect = #["signalwire", "disconnect"];
 
 const signalwireDisconnect = "signalwire.disconnect";
-const signalwireDisconnectResponse = "${signalwireDisconnect} response";
-
-model DisconnectRequest is JsonRpcRequest<typeof signalwireDisconnect, DisconnectParams>;
-
-@extension("x-fern-display-name", signalwireDisconnectResponse)
-@reply model DisconnectReply is JsonRpcResponse<DisconnectResult>;
 
 @doc("""
-  A heads-up that SignalWire is about to close your connection — for example
-  during a deployment — so you can flush anything pending. Reply to acknowledge;
-  that reply should be the last thing you send before the connection closes. If
-  `restart` is `true`, reconnect afterward.
+  A `signalwire.disconnect` request the service pushes to you when it is about to
+  close your connection — for example during a deployment. The frame carries a
+  single `restart` flag. Flush anything pending and reply with an empty result
+  `{}` to acknowledge; that reply should be the last thing you send before the
+  connection closes. If `restart` is `true`, reconnect afterward.
 
-  You receive this message; you don't send it.
+  You receive this message; you do not send it (that is why this channel has no
+  send operation).
+  """)
+@summary("Service is about to disconnect the client")
+@extension("x-fern-display-name", signalwireDisconnect)
+model DisconnectEvent is JsonRpcRequest<typeof signalwireDisconnect, DisconnectParams>;
+
+@doc("""
+  Delivers the server-initiated `signalwire.disconnect` request described above.
+  This channel is receive-only: the SDK receives the disconnect and replies with
+  an empty acknowledgement — it never sends a disconnect.
   """)
 @channel(signalwireDisconnect)
 @summary("Service is about to disconnect the client")
 @extension("x-fern-display-name", signalwireDisconnect)
 @extension("x-fern-sdk-group-name", GroupSignalwireDisconnect)
-op disconnect(...DisconnectRequest): DisconnectReply;
+op disconnect(): DisconnectEvent;

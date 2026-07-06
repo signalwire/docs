@@ -32,6 +32,8 @@ model AiRequest is JsonRpcRequest<typeof callingAi, AiParams>;
 op ai(...AiRequest):
   | AiReply
   | CallAiEvent
+  | AiStartEvent
+  | AiUserSpeakingEvent
   | AiCompletionEvent
   | AiResponseEvent
   | AiResponseUtteranceEvent

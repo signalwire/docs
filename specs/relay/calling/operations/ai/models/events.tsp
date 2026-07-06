@@ -103,6 +103,22 @@ const callingAiBeginSpeaking = "calling.ai.begin_speaking";
 @extension("x-fern-display-name", callingAiBeginSpeaking)
 model AiBeginSpeakingEvent is SignalwireEvent<typeof callingAiBeginSpeaking, AiBeginSpeakingEventData>;
 
+@doc("Signal-only event: the AI session has started. The body is empty.")
+model AiStartEventData {}
+
+const callingAiStart = "calling.ai.start";
+@summary(callingAiStart)
+@extension("x-fern-display-name", callingAiStart)
+model AiStartEvent is SignalwireEvent<typeof callingAiStart, AiStartEventData>;
+
+@doc("Signal-only event: the caller has started speaking (barge-in). The body is empty.")
+model AiUserSpeakingEventData {}
+
+const callingAiUserSpeaking = "calling.ai.user_speaking";
+@summary(callingAiUserSpeaking)
+@extension("x-fern-display-name", callingAiUserSpeaking)
+model AiUserSpeakingEvent is SignalwireEvent<typeof callingAiUserSpeaking, AiUserSpeakingEventData>;
+
 model AiWarningEventData {
   @doc("Human-readable warning message, e.g. an oversized system prompt.")
   @example("Excessive System Prompt.\n")

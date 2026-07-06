@@ -17,7 +17,7 @@ union FaxDirection {
 @doc("Details of a fax event. The `type` field tells you which stage it describes.")
 @discriminator("type")
 model CallFax {
-  type: "error" | "finished" | "page";
+  type: "finished" | "page";
 }
 
 @doc("Fires each time a single fax page is sent or received, so you can track progress mid-transmission.")
@@ -75,24 +75,6 @@ model FaxFinished extends CallFax {
 
     @doc("Human-readable explanation of the fax result.")
     @example("OK")
-    result_text?: string;
-  };
-}
-
-@doc("Fires when the fax terminates in an error state before completing. Best-effort field set mirroring the finished event's failure payload.")
-model FaxError extends CallFax {
-  type: "error";
-  params: {
-    @doc("Whether the fax was being sent or received.")
-    direction: FaxDirection;
-
-    @doc("Always `false` for an error event; the fax did not complete successfully.")
-    success: false;
-
-    @doc("Numeric fax result code (for example, `1231`).")
-    result?: int32;
-
-    @doc("Human-readable explanation of the fax result.")
     result_text?: string;
   };
 }

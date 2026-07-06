@@ -32,31 +32,49 @@ model CallEventAddress {
 }
 
 @doc("""
-  The result returned by calling methods. Check `code`: `"200"` means success;
+  The base result returned by calling methods. Check `code`: `"200"` means success;
   anything else means the request failed, and `message` explains why. Failures are
   reported through these fields rather than thrown as a separate error.
+
+  This base carries only the fields every result has. Methods that echo the call or
+  the control handle use `RelayResultWithCall` or `RelayResult` instead.
   """)
-model RelayResult<Message extends valueof string = "OK"> {
+model RelayResultBase<Message extends valueof string = "OK"> {
   @doc("Result code as a string, e.g. `\"200\"` (success), `\"400\"`, `\"404\"`.")
   @example("200")
   code: string;
 
-  @doc("Human-readable description of the result. On failure, explains what went wrong.")
+  @doc("Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.")
   @example(Message)
-  message: string;
+  message?: string;
 
-  @doc("The call this result is for, echoed from your request. Absent on `calling.dial`, which has no call yet.")
+  @doc("Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped).")
+  data?: unknown[];
+}
+
+@doc("""
+  A calling result that echoes the `call_id` from your request but no control handle.
+  Used by methods that act on a call but do not start a keyed, stoppable action.
+  """)
+model RelayResultWithCall<Message extends valueof string = "OK"> {
+  ...RelayResultBase<Message>;
+
+  @doc("The call this result is for, echoed from your request.")
   @example("c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c")
   call_id?: string;
+}
 
-  @doc("Your control identifier for the started action, echoed when your request included one. NOT populated for: `bind_digit`, `clear_digit_bindings`, `join_conference`, `echo`, `user_event`, `ai_message`, `ai_hold`, `ai_unhold`, `amazon_bedrock`.")
+@doc("""
+  The full calling result: `code`, `message`, the echoed `call_id`, and the
+  `control_id` of the started action. Used by methods that begin a keyed, stoppable
+  action (play, record, collect, detect, tap, stream, pay, fax, transcribe, …).
+  """)
+model RelayResult<Message extends valueof string = "OK"> {
+  ...RelayResultWithCall<Message>;
+
+  @doc("Your control identifier for the started action, echoed from your request.")
   @example("d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e")
   control_id?: string;
-
-  @doc("Present on partial failures; per-device user_errors propagated by the backend.")
-  data?: {
-    user_errors?: unknown[];
-  };
 }
 
 @doc("""

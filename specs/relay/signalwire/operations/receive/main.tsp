@@ -49,7 +49,7 @@ model UnreceiveRequest is JsonRpcRequest<typeof signalwireUnreceive, UnreceivePa
 @summary("Subscribe to inbound events on one or more contexts")
 @extension("x-fern-display-name", signalwireReceive)
 @extension("x-fern-sdk-group-name", GroupSignalwireReceive)
-op receive(...ReceiveRequest): ReceiveReply | Relay.Calling.CallReceiveEvent;
+op receive(...ReceiveRequest): ReceiveReply | Relay.Calling.CallReceiveEvent | Relay.Calling.CallStateEvent;
 
 @doc("""
   Unsubscribe from one or more contexts so you stop receiving their inbound events.

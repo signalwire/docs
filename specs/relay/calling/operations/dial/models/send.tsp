@@ -11,10 +11,6 @@ model DialParams {
   @example("my-tag-1")
   tag: string;
 
-  @doc("Geographic region to place the outbound call from.")
-  @example("us")
-  region?: string;
-
   @doc("""
     Devices to dial. The outer array is sequential ringing groups; the inner
     array is simultaneous (parallel) dials within a group. The first device to
@@ -32,15 +28,7 @@ model DialParams {
   @example(30)
   timeout?: float64;
 
-  @doc("DTMF digits to send once the call is answered. Use `w` or `W` to insert pauses.")
-  @example("1234#")
-  send_digits?: string;
-
   @doc("Highest price per minute you're willing to pay. Devices that would exceed this rate aren't dialed.")
   @example(0.05)
   max_price_per_minute?: float64;
-
-  @doc("SWML script URL or inline SWML to execute on the dialed call.")
-  @example("https://example.com/outbound-script.json")
-  dest_swml?: string | Record<unknown>;
 }

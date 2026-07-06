@@ -7,9 +7,9 @@ using SignalWire.AsyncAPI;
 namespace Relay.Calling;
 
 model DenoiseResult {
-  ...RelayResult<"Denoiser on">;
+  ...RelayResultWithCall<"Denoiser on">;
 }
 
 model DenoiseStopResult {
-  ...RelayResult<"Denoiser off">;
+  ...RelayResultWithCall<"Denoiser off">;
 }

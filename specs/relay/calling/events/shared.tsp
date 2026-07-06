@@ -190,13 +190,13 @@ model CallReceiveParams {
   @example("created")
   call_state: CallState;
 
-  @doc("Whether the call is inbound or outbound.")
+  @doc("Whether the call is inbound or outbound. Always present on the receive event.")
   @example("inbound")
-  direction?: CallDirection;
+  direction: CallDirection;
 
-  @doc("The context the call arrived on, such as `pbx`.")
+  @doc("The context the call arrived on, such as `pbx`. Always present on the receive event.")
   @example("pbx")
-  context?: string;
+  context: string;
 
   @doc("The device the call is coming in on, including the caller's number.")
   device: CallDevice;

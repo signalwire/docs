@@ -7,11 +7,11 @@ using SignalWire.AsyncAPI;
 namespace Relay.Calling;
 
 model AiSidecarResult {
-  ...RelayResult<"+OK">;
+  ...RelayResultWithCall<"+OK">;
 }
 
 model AiSidecarAskResult {
-  ...RelayResult<"queued">;
+  ...RelayResultWithCall<"queued">;
 
   @doc("""
     Identifier for this one-off question. The answer arrives later as a
@@ -22,5 +22,5 @@ model AiSidecarAskResult {
 }
 
 model AiSidecarStatusResult {
-  ...RelayResult<"+OK">;
+  ...RelayResultWithCall<"+OK">;
 }

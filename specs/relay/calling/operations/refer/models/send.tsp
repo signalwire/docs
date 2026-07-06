@@ -23,6 +23,9 @@ model ReferSipDeviceParams {
   @doc("Password for authenticating against the destination SIP endpoint, if it requires credentials.")
   @example("bar")
   password?: string;
+
+  @doc("Custom SIP headers to add to the REFER.")
+  headers?: SipHeader[];
 }
 
 @doc("Where to transfer the call. Set `type` to `sip` and supply the SIP destination in `params`.")

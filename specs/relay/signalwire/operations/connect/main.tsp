@@ -5,7 +5,6 @@ import "@typespec/openapi";
 import "./models/send.tsp";
 import "./models/reply.tsp";
 import "./models/events.tsp";
-import "../../../calling/events/shared.tsp";
 
 using SignalWire.AsyncAPI;
 using TypeSpec.OpenAPI;
@@ -33,4 +32,4 @@ model ConnectRequest is JsonRpcRequest<typeof signalwireConnect, ConnectParams>;
 @summary("Authenticate and establish a Relay connection")
 @extension("x-fern-display-name", signalwireConnect)
 @extension("x-fern-sdk-group-name", GroupSignalwireConnect)
-op connect(...ConnectRequest): ConnectReply | AuthorizationStateEvent | Relay.Calling.CallStateEvent;
+op connect(...ConnectRequest): ConnectReply | AuthorizationStateEvent;

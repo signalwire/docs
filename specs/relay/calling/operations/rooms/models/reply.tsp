@@ -7,9 +7,9 @@ using SignalWire.AsyncAPI;
 namespace Relay.Calling;
 
 model JoinRoomResult {
-  ...RelayResult<"Joining room">;
+  ...RelayResultWithCall<"Joining room">;
 }
 
 model LeaveRoomResult {
-  ...RelayResult<"Leaving room">;
+  ...RelayResultWithCall<"Leaving room">;
 }

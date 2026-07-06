@@ -25,9 +25,9 @@ model CallReferParams {
   @example("success")
   state: ReferState;
 
-  @doc("The SIP URI the call is being transferred to.")
+  @doc("The SIP URI the call is being transferred to. Always present on the event.")
   @example("sip:bob@example.com")
-  sip_refer_to?: string;
+  sip_refer_to: string;
 
   @doc("The SIP response code the far end returned to the REFER request, as a string (for example `\"202\"`).")
   @example("202")

@@ -4,6 +4,7 @@ import "@typespec/openapi";
 
 import "./models/send.tsp";
 import "./models/reply.tsp";
+import "./models/events.tsp";
 
 using SignalWire.AsyncAPI;
 using TypeSpec.OpenAPI;
@@ -28,4 +29,4 @@ model LiveTranscribeRequest is JsonRpcRequest<typeof callingLiveTranscribe, Live
 @summary("Start or stop live transcription on a call")
 @extension("x-fern-display-name", callingLiveTranscribe)
 @extension("x-fern-sdk-group-name", GroupTranscriptionLiveTranscribe)
-op liveTranscribe(...LiveTranscribeRequest): LiveTranscribeReply;
+op liveTranscribe(...LiveTranscribeRequest): LiveTranscribeReply | TranscribeUtteranceEvent;

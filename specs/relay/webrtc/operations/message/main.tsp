@@ -30,6 +30,9 @@ model VertoRequest is JsonRpcRequest<typeof webrtcVerto, MessageParams>;
   The reply carries the Verto outcome in `result` (for example the answer to a
   `verto.invite`), along with the `node_id` now hosting the call. Capture that
   `node_id` and send it on later frames for the same call.
+
+  Authentication: this channel is available only to sessions authenticated with a
+  SignalWire Access Token (SAT); other session types are rejected.
   """)
 @channel(webrtcVerto)
 @summary("Send a Verto frame")

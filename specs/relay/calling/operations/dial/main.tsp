@@ -5,6 +5,7 @@ import "@typespec/openapi";
 import "./models/send.tsp";
 import "./models/reply.tsp";
 import "./models/events.tsp";
+import "../../events/shared.tsp";
 
 using SignalWire.AsyncAPI;
 using TypeSpec.OpenAPI;
@@ -31,4 +32,4 @@ model DialRequest is JsonRpcRequest<typeof callingDial, DialParams>;
 @summary("Dial outbound call(s); first to answer wins")
 @extension("x-fern-display-name", callingDial)
 @extension("x-fern-sdk-group-name", GroupSetupDial)
-op dial(...DialRequest): DialReply | CallDialEvent;
+op dial(...DialRequest): DialReply | CallDialEvent | CallStateEvent;
