@@ -10,7 +10,7 @@ using SignalWire.AsyncAPI;
 using TypeSpec.OpenAPI;
 
 namespace Relay.WebRTC;
-const GroupWebrtcVerto = #["webrtc", "verto"];
+const GroupWebrtcVerto = #["webrtc"];
 
 const webrtcVerto = "webrtc.verto";
 const webrtcVertoResponse = "${webrtcVerto} response";

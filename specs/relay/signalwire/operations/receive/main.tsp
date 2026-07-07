@@ -10,8 +10,8 @@ using SignalWire.AsyncAPI;
 using TypeSpec.OpenAPI;
 
 namespace Relay.Signalwire;
-const GroupSignalwireReceive = #["signalwire", "receive"];
-const GroupSignalwireUnreceive = #["signalwire", "unreceive"];
+const GroupSignalwireReceive = #["signalwire"];
+const GroupSignalwireUnreceive = #["signalwire"];
 
 const signalwireReceive = "signalwire.receive";
 const signalwireReceiveResponse = "${signalwireReceive} response";

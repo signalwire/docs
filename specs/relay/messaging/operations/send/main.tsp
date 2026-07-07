@@ -10,7 +10,7 @@ using SignalWire.AsyncAPI;
 using TypeSpec.OpenAPI;
 
 namespace Relay.Messaging;
-const GroupMessagingSend = #["messaging", "send"];
+const GroupMessagingSend = #["messaging"];
 
 const messagingSend = "messaging.send";
 const messagingSendResponse = "${messagingSend} response";

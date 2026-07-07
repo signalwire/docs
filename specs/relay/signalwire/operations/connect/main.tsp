@@ -10,7 +10,7 @@ using SignalWire.AsyncAPI;
 using TypeSpec.OpenAPI;
 
 namespace Relay.Signalwire;
-const GroupSignalwireConnect = #["signalwire", "connect"];
+const GroupSignalwireConnect = #["signalwire"];
 
 const signalwireConnect = "signalwire.connect";
 const signalwireConnectResponse = "${signalwireConnect} response";

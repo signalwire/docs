@@ -9,7 +9,7 @@ using SignalWire.AsyncAPI;
 using TypeSpec.OpenAPI;
 
 namespace Relay.Signalwire;
-const GroupSignalwireDisconnect = #["signalwire", "disconnect"];
+const GroupSignalwireDisconnect = #["signalwire"];
 
 const signalwireDisconnect = "signalwire.disconnect";
 

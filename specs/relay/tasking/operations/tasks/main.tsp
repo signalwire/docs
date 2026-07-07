@@ -7,7 +7,7 @@ using SignalWire.AsyncAPI;
 using TypeSpec.OpenAPI;
 
 namespace Relay.Tasking;
-const GroupQueuingRelayTasks = #["queuing", "relay.tasks"];
+const GroupQueuingRelayTasks = #["queuing"];
 
 @channel(queuingRelayTasks)
 @summary("Receive tasks delivered to a subscribed context")

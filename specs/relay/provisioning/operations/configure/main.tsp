@@ -9,7 +9,7 @@ using SignalWire.AsyncAPI;
 using TypeSpec.OpenAPI;
 
 namespace Relay.Provisioning;
-const GroupProvisioningConfigure = #["provisioning", "configure"];
+const GroupProvisioningConfigure = #["provisioning"];
 
 const provisioningConfigure = "provisioning.configure";
 const provisioningConfigureResponse = "${provisioningConfigure} response";
