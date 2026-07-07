@@ -9,19 +9,25 @@ const SVC = `
   namespace Relay {
     ${FRAMES}
     namespace Calling {
+      model DialParams { node_id: string; }
       model DialResult { code: string; }
+      model DialRequest is JsonRpcRequest<"calling.dial", DialParams>;
       @reply model DialReply is JsonRpcResponse<DialResult>;
+      model PlayParams { node_id: string; }
       model PlayResult { code: string; }
+      model PlayRequest is JsonRpcRequest<"calling.play", PlayParams>;
       @reply model PlayReply is JsonRpcResponse<PlayResult>;
       model PlayData { state: string; }
       @summary("calling.call.play") model CallPlayEvent is SignalwireEvent<"calling.call.play", PlayData>;
-      @channel("calling.dial") op dial(): DialReply;
-      @channel("calling.play") op play(): PlayReply | CallPlayEvent;
+      @channel("calling.dial") op dial(...DialRequest): DialReply;
+      @channel("calling.play") op play(...PlayRequest): PlayReply | CallPlayEvent;
     }
     namespace Messaging {
+      model SendParams { to: string; }
       model SendResult { code: string; }
+      model SendRequest is JsonRpcRequest<"messaging.send", SendParams>;
       @reply model SendReply is JsonRpcResponse<SendResult>;
-      @channel("messaging.send") op send(): SendReply;
+      @channel("messaging.send") op send(...SendRequest): SendReply;
     }
   }
 `;
@@ -62,14 +68,18 @@ describe("channel-mode: single", () => {
       namespace Relay {
         namespace Calling {
           ${FRAMES}
+          model DialParams { node_id: string; }
+          model AnswerParams { node_id: string; }
           model DialResult { code: string; }
           model AnswerResult { code: string; }
+          model DialRequest is JsonRpcRequest<"calling.dial", DialParams>;
+          model AnswerRequest is JsonRpcRequest<"calling.answer", AnswerParams>;
           @reply model DialReply is JsonRpcResponse<DialResult>;
           @reply model AnswerReply is JsonRpcResponse<AnswerResult>;
           model StateData { call_state: string; }
           @summary("calling.call.state") model CallStateEvent is SignalwireEvent<"calling.call.state", StateData>;
-          @channel("calling.dial") op dial(): DialReply | CallStateEvent;
-          @channel("calling.answer") op answer(): AnswerReply | CallStateEvent;
+          @channel("calling.dial") op dial(...DialRequest): DialReply | CallStateEvent;
+          @channel("calling.answer") op answer(...AnswerRequest): AnswerReply | CallStateEvent;
         }
       }
     `,
@@ -82,6 +92,6 @@ describe("channel-mode: single", () => {
       (o: any) => o.action === "receive" && (o.messages || []).some((m: any) => m.$ref.endsWith("/messages/callStateEvent")),
     );
     strictEqual(stateOps.length, 1);
-    strictEqual((stateOps[0] as any)["x-fern-display-name"], "calling.call.state");
+    strictEqual((stateOps[0] as any).title, "calling.call.state");
   });
 });

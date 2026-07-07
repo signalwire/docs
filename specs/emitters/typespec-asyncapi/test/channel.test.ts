@@ -20,9 +20,9 @@ export const SVC = `
 describe("@channel", () => {
   it("places each operation on its own channel addressed at the WS root", async () => {
     const { doc } = await asyncApiFor(SVC);
-    strictEqual(doc.channels.callingDial.address, "/");
-    strictEqual(doc.channels.callingDial.title, "calling.dial");
-    deepStrictEqual(doc.channels.callingDial.servers, [{ $ref: "#/servers/production" }]);
+    strictEqual(doc.channels["calling.dial"].address, "/");
+    strictEqual(doc.channels["calling.dial"].title, "calling.dial");
+    deepStrictEqual(doc.channels["calling.dial"].servers, [{ $ref: "#/servers/production" }]);
   });
 });
 
@@ -34,34 +34,38 @@ describe("@channel — multiple sub-services under one @service", () => {
       namespace Relay {
         ${FRAMES}
         namespace Calling {
+          model DialParams { node_id: string; }
           model DialResult { code: string; }
+          model DialRequest is JsonRpcRequest<"calling.dial", DialParams>;
           @reply model DialReply is JsonRpcResponse<DialResult>;
           model StateParams { call_state: string; }
           @summary("calling.call.state") model CallStateEvent is SignalwireEvent<"calling.call.state", StateParams>;
-          @channel("calling.dial") op dial(): DialReply | CallStateEvent;
+          @channel("calling.dial") op dial(...DialRequest): DialReply | CallStateEvent;
         }
         namespace Messaging {
+          model SendParams { to: string; }
           model SendResult { code: string; }
+          model SendRequest is JsonRpcRequest<"messaging.send", SendParams>;
           @reply model SendReply is JsonRpcResponse<SendResult>;
-          @channel("messaging.send") op send(): SendReply;
+          @channel("messaging.send") op send(...SendRequest): SendReply;
         }
       }
     `);
     deepStrictEqual(Object.keys(doc.servers), ["production"]);
     // one channel per command (events ride their command's channel, not a separate channel)
-    deepStrictEqual(Object.keys(doc.channels).sort(), ["callingDial", "messagingSend"]);
-    deepStrictEqual(doc.operations.callingDial.channel, { $ref: "#/channels/callingDial" });
-    deepStrictEqual(doc.operations.messagingSend.channel, { $ref: "#/channels/messagingSend" });
+    deepStrictEqual(Object.keys(doc.channels).sort(), ["calling.dial", "messaging.send"]);
+    deepStrictEqual(doc.operations.callingDial.channel, { $ref: "#/channels/calling.dial" });
+    deepStrictEqual(doc.operations.messagingSend.channel, { $ref: "#/channels/messaging.send" });
     // channels carry only their own messages (no cross-contamination)
-    strictEqual("callingDialRequest" in doc.channels.callingDial.messages, true);
-    strictEqual("messagingSendRequest" in doc.channels.messagingSend.messages, true);
-    strictEqual("messagingSendRequest" in doc.channels.callingDial.messages, false);
+    strictEqual("callingDialRequest" in doc.channels["calling.dial"].messages, true);
+    strictEqual("messagingSendRequest" in doc.channels["messaging.send"].messages, true);
+    strictEqual("messagingSendRequest" in doc.channels["calling.dial"].messages, false);
     // the unmarked return arm renders as a receive op on the command's channel
     strictEqual(doc.operations.onCallingDialCallStateEvent.action, "receive");
-    deepStrictEqual(doc.operations.onCallingDialCallStateEvent.channel, { $ref: "#/channels/callingDial" });
+    deepStrictEqual(doc.operations.onCallingDialCallStateEvent.channel, { $ref: "#/channels/calling.dial" });
     // every channel bound to the single shared server
-    deepStrictEqual(doc.channels.callingDial.servers, [{ $ref: "#/servers/production" }]);
-    deepStrictEqual(doc.channels.messagingSend.servers, [{ $ref: "#/servers/production" }]);
+    deepStrictEqual(doc.channels["calling.dial"].servers, [{ $ref: "#/servers/production" }]);
+    deepStrictEqual(doc.channels["messaging.send"].servers, [{ $ref: "#/servers/production" }]);
   });
 });
 
@@ -71,16 +75,16 @@ describe("@channel — generic structural mapping (no synthesis)", () => {
 
     const op = doc.operations.callingDial;
     strictEqual(op.action, "send");
-    deepStrictEqual(op.channel, { $ref: "#/channels/callingDial" });
-    deepStrictEqual(op.messages, [{ $ref: "#/channels/callingDial/messages/callingDialRequest" }]);
+    deepStrictEqual(op.channel, { $ref: "#/channels/calling.dial" });
+    deepStrictEqual(op.messages, [{ $ref: "#/channels/calling.dial/messages/callingDialRequest" }]);
     deepStrictEqual(op.reply.messages, [
-      { $ref: "#/channels/callingDial/messages/callingDialResponse" },
+      { $ref: "#/channels/calling.dial/messages/callingDialResponse" },
     ]);
 
     // response render-shim is its own labeled receive op (for renderers that ignore `reply`)
     const shim = doc.operations.onCallingDialResponse;
     strictEqual(shim.action, "receive");
-    deepStrictEqual(shim.messages, [{ $ref: "#/channels/callingDial/messages/callingDialResponse" }]);
+    deepStrictEqual(shim.messages, [{ $ref: "#/channels/calling.dial/messages/callingDialResponse" }]);
 
     const reqMsg = doc.components.messages.callingDialRequest;
     deepStrictEqual(reqMsg.correlationId, { location: "$message.payload#/id" });
@@ -105,18 +109,22 @@ describe("@channel — generic structural mapping (no synthesis)", () => {
       namespace Relay;
       namespace Relay.Calling {
         ${FRAMES}
+        model DialParams { node_id: string; }
+        model AnswerParams { node_id: string; }
         model DialResult { code: string; }
         model AnswerResult { code: string; }
+        model DialRequest is JsonRpcRequest<"calling.dial", DialParams>;
+        model AnswerRequest is JsonRpcRequest<"calling.answer", AnswerParams>;
         @reply model DialReply is JsonRpcResponse<DialResult>;
         @reply model AnswerReply is JsonRpcResponse<AnswerResult>;
-        @channel("calling.dial") op dial(): DialReply;
-        @channel("calling.answer") op answer(): AnswerReply;
+        @channel("calling.dial") op dial(...DialRequest): DialReply;
+        @channel("calling.answer") op answer(...AnswerRequest): AnswerReply;
       }
     `);
     strictEqual(doc.operations.callingDial.action, "send");
     strictEqual(doc.operations.callingAnswer.action, "send");
-    strictEqual(Object.keys(doc.channels.callingDial.messages).length, 2);
-    strictEqual(Object.keys(doc.channels.callingAnswer.messages).length, 2);
+    strictEqual(Object.keys(doc.channels["calling.dial"].messages).length, 2);
+    strictEqual(Object.keys(doc.channels["calling.answer"].messages).length, 2);
   });
 });
 

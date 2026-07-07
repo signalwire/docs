@@ -23,19 +23,19 @@ describe("event routing via operation return type", () => {
 
     // canonical reply always kept
     deepStrictEqual(doc.operations.callingPlay.reply.messages, [
-      { $ref: "#/channels/callingPlay/messages/callingPlayResponse" },
+      { $ref: "#/channels/calling.play/messages/callingPlayResponse" },
     ]);
 
     // one labeled receive op PER message on the command's channel: the event + (shim) the response
     const evOp = doc.operations.onCallingPlayCallPlayEvent;
     strictEqual(evOp.action, "receive");
-    strictEqual(evOp["x-fern-display-name"], "calling.call.play");
-    deepStrictEqual(evOp.channel, { $ref: "#/channels/callingPlay" });
-    deepStrictEqual(evOp.messages, [{ $ref: "#/channels/callingPlay/messages/callPlayEvent" }]);
+    strictEqual(evOp.title, "calling.call.play");
+    deepStrictEqual(evOp.channel, { $ref: "#/channels/calling.play" });
+    deepStrictEqual(evOp.messages, [{ $ref: "#/channels/calling.play/messages/callPlayEvent" }]);
     const shim = doc.operations.onCallingPlayResponse;
     strictEqual(shim.action, "receive");
-    strictEqual(shim["x-fern-display-name"], "calling.play response");
-    strictEqual("callPlayEvent" in doc.channels.callingPlay.messages, true);
+    strictEqual(shim.title, "calling.play response");
+    strictEqual("callPlayEvent" in doc.channels["calling.play"].messages, true);
 
     // event component message defined once
     strictEqual(typeof doc.components.messages.callPlayEvent, "object");
@@ -48,26 +48,30 @@ describe("event routing via operation return type", () => {
       namespace Relay;
       namespace Relay.Calling {
         ${FRAMES}
+        model SendFaxParams { node_id: string; }
+        model ReceiveFaxParams { node_id: string; }
         model FaxResult { code: string; }
         model FaxData { direction: string; }
+        model SendFaxRequest is JsonRpcRequest<"calling.send_fax", SendFaxParams>;
+        model ReceiveFaxRequest is JsonRpcRequest<"calling.receive_fax", ReceiveFaxParams>;
         @reply model FaxReply is JsonRpcResponse<FaxResult>;
         @summary("calling.call.fax") model CallFaxEvent is SignalwireEvent<"calling.call.fax", FaxData>;
-        @channel("calling.send_fax") op sendFax(): FaxReply | CallFaxEvent;
-        @channel("calling.receive_fax") op receiveFax(): FaxReply | CallFaxEvent;
+        @channel("calling.send_fax") op sendFax(...SendFaxRequest): FaxReply | CallFaxEvent;
+        @channel("calling.receive_fax") op receiveFax(...ReceiveFaxRequest): FaxReply | CallFaxEvent;
       }
     `);
 
     deepStrictEqual(doc.operations.onCallingSendFaxCallFaxEvent.channel, {
-      $ref: "#/channels/callingSendFax",
+      $ref: "#/channels/calling.send_fax",
     });
     deepStrictEqual(doc.operations.onCallingReceiveFaxCallFaxEvent.channel, {
-      $ref: "#/channels/callingReceiveFax",
+      $ref: "#/channels/calling.receive_fax",
     });
     deepStrictEqual(doc.operations.onCallingSendFaxCallFaxEvent.messages, [
-      { $ref: "#/channels/callingSendFax/messages/callFaxEvent" },
+      { $ref: "#/channels/calling.send_fax/messages/callFaxEvent" },
     ]);
-    strictEqual("callFaxEvent" in doc.channels.callingSendFax.messages, true);
-    strictEqual("callFaxEvent" in doc.channels.callingReceiveFax.messages, true);
+    strictEqual("callFaxEvent" in doc.channels["calling.send_fax"].messages, true);
+    strictEqual("callFaxEvent" in doc.channels["calling.receive_fax"].messages, true);
     // component message defined exactly once
     strictEqual(typeof doc.components.messages.callFaxEvent, "object");
   });
@@ -79,13 +83,15 @@ describe("event routing via operation return type", () => {
       namespace Relay;
       namespace Relay.Calling {
         ${FRAMES}
+        model DialParams { node_id: string; }
         model DialResult { code: string; }
         model DialErr { code: string; message: string; }
         model StateData { call_state: string; }
+        model DialRequest is JsonRpcRequest<"calling.dial", DialParams>;
         @reply model DialReply is JsonRpcResponse<DialResult>;
         @error model DialError is JsonRpcResponse<DialErr>;
         @summary("calling.call.state") model CallStateEvent is SignalwireEvent<"calling.call.state", StateData>;
-        @channel("calling.dial") op dial(): DialReply | DialError | CallStateEvent;
+        @channel("calling.dial") op dial(...DialRequest): DialReply | DialError | CallStateEvent;
       }
     `);
 
@@ -103,11 +109,13 @@ describe("event routing via operation return type", () => {
       namespace Relay;
       namespace Relay.Calling {
         ${FRAMES}
+        model DialParams { node_id: string; }
         model DialResult { code: string; }
         model OrphanData { x: string; }
+        model DialRequest is JsonRpcRequest<"calling.dial", DialParams>;
         @reply model DialReply is JsonRpcResponse<DialResult>;
         @summary("calling.orphan") model OrphanEvent is SignalwireEvent<"calling.orphan", OrphanData>;
-        @channel("calling.dial") op dial(): DialReply;
+        @channel("calling.dial") op dial(...DialRequest): DialReply;
       }
     `);
     strictEqual("orphanEvent" in (doc.components.messages ?? {}), false);
@@ -122,9 +130,11 @@ describe("event routing via operation return type", () => {
       namespace Relay;
       namespace Relay.Calling {
         ${FRAMES}
+        model DialParams { node_id: string; }
         model DialResult { code: string; }
+        model DialRequest is JsonRpcRequest<"calling.dial", DialParams>;
         @reply model DialReply is JsonRpcResponse<DialResult>;
-        @channel("calling.dial") op dial(): DialReply;
+        @channel("calling.dial") op dial(...DialRequest): DialReply;
       }
     `,
       { "response-receive-shim": false },
@@ -133,7 +143,7 @@ describe("event routing via operation return type", () => {
     // shim off + no events → no receive op at all; response lives only in the canonical reply
     strictEqual("onCallingDialResponse" in doc.operations, false);
     deepStrictEqual(doc.operations.callingDial.reply.messages, [
-      { $ref: "#/channels/callingDial/messages/callingDialResponse" },
+      { $ref: "#/channels/calling.dial/messages/callingDialResponse" },
     ]);
   });
 });

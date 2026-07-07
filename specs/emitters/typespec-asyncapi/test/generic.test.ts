@@ -44,14 +44,14 @@ describe("generic emitter — in-spec frames, @reply, unmarked = events", () => 
     // send op + reply
     const send = doc.operations.callingDial;
     strictEqual(send.action, "send");
-    strictEqual(send.messages[0].$ref, "#/channels/callingDial/messages/callingDialRequest");
-    strictEqual(send.reply.messages[0].$ref, "#/channels/callingDial/messages/callingDialResponse");
+    strictEqual(send.messages[0].$ref, "#/channels/calling.dial/messages/callingDialRequest");
+    strictEqual(send.reply.messages[0].$ref, "#/channels/calling.dial/messages/callingDialResponse");
 
     // unmarked arm → a receive op on the SAME channel, labeled by @summary
     const recv = doc.operations.onCallingDialCallStateEvent;
     strictEqual(recv.action, "receive");
-    strictEqual(recv.channel.$ref, "#/channels/callingDial");
-    strictEqual(recv["x-fern-display-name"], "calling.call.state");
+    strictEqual(recv.channel.$ref, "#/channels/calling.dial");
+    strictEqual(recv.title, "calling.call.state");
 
     // request/response message payloads are the AUTHORED frames (refs), not synthesized inline frames.
     // Follow the $ref rather than hardcoding the (namespace-qualified) component name.

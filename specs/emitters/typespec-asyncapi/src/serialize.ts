@@ -21,5 +21,10 @@ function orderKeys<T extends Record<string, unknown>>(obj: T, order: string[]): 
 export function serialize(doc: AsyncAPI3Document): string {
   return stringify(orderKeys(doc as unknown as Record<string, unknown>, TOP_ORDER), {
     lineWidth: 0,
+    // Inline repeated values instead of emitting YAML anchors/aliases (`&a1` / `*a1`). The emitter
+    // reuses one array instance across places (e.g. an `x-fern-sdk-group-name` shared by a channel
+    // and its operation); anchors are valid YAML but uncommon and poorly supported by OpenAPI/
+    // AsyncAPI tooling, so we keep the spec plain. (`$ref` strings are unaffected.)
+    aliasDuplicateObjects: false,
   });
 }

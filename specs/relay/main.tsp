@@ -17,16 +17,20 @@ using SignalWire.AsyncAPI;
 
   ## Authentication
 
-  You authenticate with your **first message** — there is no HTTP `Authorization`
-  header on the WebSocket handshake. Once the socket opens, send `signalwire.connect`
-  with your credentials in `params.authentication`:
+  You authenticate with your **first message**, not the WebSocket handshake — there is
+  no HTTP `Authorization` header. Once the socket opens, send `signalwire.connect` with
+  your credentials in `params.authentication`. You choose one of two styles, once, for
+  the whole connection:
 
-  - **Browser / client SDKs** send a server-generated **`jwt_token`** (never expose
-  an API token in the browser).
-  - **Server SDKs** send a **`project` + `token`** pair (or a `jwt_token`).
+  - **`jwt_token`** — a server-generated token, for browser and client SDKs (never
+  expose a project API token in the browser).
+  - **`project` + `token`** — your Project ID and API token, for backend SDKs that hold
+  your SignalWire credentials directly.
 
-  After you connect, every request you send reuses the authenticated connection, and a
-  `signalwire.authorization.state` event comes back that lets you reconnect quickly.
+  Either style opens the same connection; what you can then *do* over it is governed by
+  the scopes granted to your credentials, not by which style you used. Every later
+  request reuses the authenticated connection, and a `signalwire.authorization.state`
+  event comes back that lets you reconnect quickly.
   """)
 @service(#{ title: "SignalWire Relay" })
 @server("production", #{

@@ -41,8 +41,10 @@ describe("examples — emitted verbatim (frames are authored in-spec)", () => {
       namespace Relay;
       namespace Relay.Calling {
         ${FRAMES}
+        model DialParams { node_id: string; }
         model DialResult { code: string; }
         model StateData { call_state: "created" | "ended"; }
+        model DialRequest is JsonRpcRequest<"calling.dial", DialParams>;
         @reply model DialReply is JsonRpcResponse<DialResult>;
         @summary("calling.call.state")
         @example(#{
@@ -52,7 +54,7 @@ describe("examples — emitted verbatim (frames are authored in-spec)", () => {
           params: #{ event_type: "calling.call.state", params: #{ call_state: "created" } },
         })
         model CallStateEvent is SignalwireEvent<"calling.call.state", StateData>;
-        @channel("calling.dial") op dial(): DialReply | CallStateEvent;
+        @channel("calling.dial") op dial(...DialRequest): DialReply | CallStateEvent;
       }
     `);
 
@@ -69,9 +71,11 @@ describe("examples — emitted verbatim (frames are authored in-spec)", () => {
       namespace Relay;
       namespace Relay.Calling {
         ${FRAMES}
+        model SendParams { to: string; }
         model SendResult { code: string; }
+        model SendRequest is JsonRpcRequest<"calling.send", SendParams>;
         @reply model SendReply is JsonRpcResponse<SendResult>;
-        @channel("calling.send") op send(): SendReply;
+        @channel("calling.send") op send(...SendRequest): SendReply;
       }
     `);
     strictEqual(doc.components.messages.callingSendRequest.examples, undefined);

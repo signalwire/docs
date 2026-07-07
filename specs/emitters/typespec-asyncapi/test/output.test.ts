@@ -53,6 +53,6 @@ describe("output", () => {
       }
     `);
     deepStrictEqual(doc.servers.production.bindings, { ws: {} });
-    deepStrictEqual(doc.channels.callingDial.bindings, { ws: {} });
+    deepStrictEqual(doc.channels["calling.dial"].bindings, { ws: {} });
   });
 });
