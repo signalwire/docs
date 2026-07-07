@@ -203,7 +203,7 @@ model CallReceiveParams {
   @example("inbound")
   direction: CallDirection;
 
-  @doc("The context the call arrived on, such as `pbx`. Always present on the receive event.")
+  @doc("The context the call arrived on, such as `pbx`. Always present on the receive event. For this event the same value is also surfaced at the top level of the event envelope (alongside `event_type`), so you can read it from either place.")
   @example("pbx")
   context: string;
 
@@ -216,3 +216,74 @@ const callingCallReceive = "calling.call.receive";
 @summary(callingCallReceive)
 @extension("x-fern-display-name", callingCallReceive)
 model CallReceiveEvent is SignalwireEvent<typeof callingCallReceive, CallReceiveParams>;
+
+@doc("""
+  One turn in a conversation log. Shared by the summary and conversation-log events of
+  `calling.live_transcribe` and `calling.live_translate`. This is a slimmer record than a
+  per-utterance result — it carries the turn's text and speaker, not the low-level ASR metadata.
+  """)
+@summary("Conversation log entry")
+model ConversationLogEntry {
+  @doc("Who spoke this turn: `remote-caller` (the far end) or `local-caller` (your side). Tool/function turns use the `tool` role.")
+  @example("remote-caller")
+  role: string;
+
+  @doc("The text of this turn.")
+  @example("I'd like to check my balance.")
+  content: string;
+
+  @doc("Recognition confidence for this turn, roughly 0.0-1.0. Absent for non-speech turns.")
+  @example(0.94)
+  confidence?: float64;
+
+  @doc("BCP-47 language code of this turn (e.g. `en`, `es-ES`).")
+  @example("en")
+  language?: string;
+
+  @doc("The kind of content filter that matched this turn, when one did.")
+  filter_type?: string;
+
+  @doc("The value the content filter matched, when one did.")
+  filter_value?: string;
+
+  @doc("Correlation id for a tool/function-call turn. Present only on `tool`-role entries.")
+  tool_call_id?: string;
+}
+
+@doc("""
+  Aggregate metrics for a transcription session, included on the final
+  `calling.ai.transcribe.conversation_log` event. In sidecar mode the per-side keys are
+  reported as `customer_*` / `agent_*` instead of `remote_caller_*` / `local_caller_*`.
+  """)
+@summary("Transcription metrics")
+model TranscriptionMetrics {
+  @doc("Total number of utterances recognized during the session.")
+  @example(42)
+  total_utterances?: int32;
+
+  @doc("Timestamp of the first utterance (same units as the event `timestamp`).")
+  first_utterance_ts?: float64;
+
+  @doc("Timestamp of the last utterance.")
+  last_utterance_ts?: float64;
+
+  @doc("Number of speaking turns from the far end.")
+  @example(20)
+  remote_caller_turns?: int32;
+
+  @doc("Number of speaking turns from your side.")
+  @example(22)
+  local_caller_turns?: int32;
+
+  @doc("Total words spoken by the far end.")
+  remote_caller_words?: int32;
+
+  @doc("Total words spoken by your side.")
+  local_caller_words?: int32;
+
+  @doc("Average recognition confidence across the far end's turns, roughly 0.0-1.0.")
+  remote_caller_avg_confidence?: float64;
+
+  @doc("Average recognition confidence across your side's turns, roughly 0.0-1.0.")
+  local_caller_avg_confidence?: float64;
+}

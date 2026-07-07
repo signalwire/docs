@@ -4,33 +4,11 @@ import "@typespec/openapi";
 
 import "../../../models/core.tsp";
 import "../../../models/devices.tsp";
+import "../../../events/shared.tsp";
 
 using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
-
-@doc("The call that answered, included once a `calling.dial` succeeds.")
-@summary("Dial winner call")
-model DialWinnerCall {
-  @doc("Opaque identifier that, paired with `call_id`, scopes this call. Echo it back on follow-up commands that target the call; treat it as opaque.")
-  @example("a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d")
-  node_id?: string;
-
-  @doc("The answered call's `call_id`.")
-  @example("c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c")
-  call_id?: string;
-
-  @doc("The `tag` set on the answered call.")
-  @example("my-tag-1")
-  tag?: string;
-
-  @doc("The device that answered.")
-  device?: CallDevice;
-
-  @doc("`\"true\"` for the call that won the dial. When you dial several destinations at once, this marks the first one to answer. Present only on the winning call.")
-  @example("true")
-  dial_winner?: "true";
-}
 
 @summary("Dial event payload")
 model CallDialParams {
@@ -46,8 +24,8 @@ model CallDialParams {
   @example("answered")
   dial_state: "dialing" | "answered" | "failed";
 
-  @doc("The call that answered. Present only when `dial_state` is `answered`.")
-  call?: DialWinnerCall;
+  @doc("The call that answered, as a full call-state payload (the same shape as a `calling.call.state` event). Present only when `dial_state` is `answered`; the winning leg is marked by `dial_winner`.")
+  call?: CallStateParams;
 
   @doc("Why the dial failed. Present when `dial_state` is `failed`.")
   @example("NO_ANSWER")

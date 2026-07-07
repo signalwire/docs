@@ -1008,6 +1008,10 @@ channels:
         $ref: "#/components/messages/callingLiveTranscribeResponse"
       transcribeUtteranceEvent:
         $ref: "#/components/messages/transcribeUtteranceEvent"
+      transcribeLiveSummarizeEvent:
+        $ref: "#/components/messages/transcribeLiveSummarizeEvent"
+      transcribeConversationLogEvent:
+        $ref: "#/components/messages/transcribeConversationLogEvent"
     x-fern-sdk-group-name:
       - calling
       - transcription
@@ -1028,6 +1032,10 @@ channels:
         $ref: "#/components/messages/callingLiveTranslateResponse"
       translateTranscriptDeltaEvent:
         $ref: "#/components/messages/translateTranscriptDeltaEvent"
+      translateLiveSummaryEvent:
+        $ref: "#/components/messages/translateLiveSummaryEvent"
+      translateConversationLogEvent:
+        $ref: "#/components/messages/translateConversationLogEvent"
     x-fern-sdk-group-name:
       - calling
       - transcription
@@ -2929,6 +2937,22 @@ operations:
     messages:
       - $ref: "#/channels/calling.live_transcribe/messages/transcribeUtteranceEvent"
     x-fern-display-name: calling.ai.transcribe.utterance
+  onCallingLiveTranscribeTranscribeLiveSummarizeEvent:
+    action: receive
+    channel:
+      $ref: "#/channels/calling.live_transcribe"
+    title: calling.ai.transcribe.live_summarize
+    messages:
+      - $ref: "#/channels/calling.live_transcribe/messages/transcribeLiveSummarizeEvent"
+    x-fern-display-name: calling.ai.transcribe.live_summarize
+  onCallingLiveTranscribeTranscribeConversationLogEvent:
+    action: receive
+    channel:
+      $ref: "#/channels/calling.live_transcribe"
+    title: calling.ai.transcribe.conversation_log
+    messages:
+      - $ref: "#/channels/calling.live_transcribe/messages/transcribeConversationLogEvent"
+    x-fern-display-name: calling.ai.transcribe.conversation_log
   onCallingLiveTranscribeResponse:
     action: receive
     channel:
@@ -2963,6 +2987,22 @@ operations:
     messages:
       - $ref: "#/channels/calling.live_translate/messages/translateTranscriptDeltaEvent"
     x-fern-display-name: calling.ai.translate.transcript_delta
+  onCallingLiveTranslateTranslateLiveSummaryEvent:
+    action: receive
+    channel:
+      $ref: "#/channels/calling.live_translate"
+    title: calling.ai.translate.live_summary
+    messages:
+      - $ref: "#/channels/calling.live_translate/messages/translateLiveSummaryEvent"
+    x-fern-display-name: calling.ai.translate.live_summary
+  onCallingLiveTranslateTranslateConversationLogEvent:
+    action: receive
+    channel:
+      $ref: "#/channels/calling.live_translate"
+    title: calling.ai.translate.conversation_log
+    messages:
+      - $ref: "#/channels/calling.live_translate/messages/translateConversationLogEvent"
+    x-fern-display-name: calling.ai.translate.conversation_log
   onCallingLiveTranslateResponse:
     action: receive
     channel:
@@ -4124,7 +4164,7 @@ components:
             - $ref: "#/components/schemas/Calling.CallDirection"
         context:
           type: string
-          description: The context the call arrived on, such as `pbx`. Always present on the receive event.
+          description: The context the call arrived on, such as `pbx`. Always present on the receive event. For this event the same value is also surfaced at the top level of the event envelope (alongside `event_type`), so you can read it from either place.
           examples:
             - pbx
         device:
@@ -5117,9 +5157,9 @@ components:
           examples:
             - answered
         call:
-          description: The call that answered. Present only when `dial_state` is `answered`.
+          description: The call that answered, as a full call-state payload (the same shape as a `calling.call.state` event). Present only when `dial_state` is `answered`; the winning leg is marked by `dial_winner`.
           allOf:
-            - $ref: "#/components/schemas/Calling.DialWinnerCall"
+            - $ref: "#/components/schemas/Calling.CallStateParams"
         reason:
           type: string
           description: Why the dial failed. Present when `dial_state` is `failed`.
@@ -5134,36 +5174,6 @@ components:
         - node_id
         - tag
         - dial_state
-    Calling.DialWinnerCall:
-      type: object
-      properties:
-        node_id:
-          type: string
-          description: Opaque identifier that, paired with `call_id`, scopes this call. Echo it back on follow-up commands that target the call; treat it as opaque.
-          examples:
-            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
-        call_id:
-          type: string
-          description: The answered call's `call_id`.
-          examples:
-            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
-        tag:
-          type: string
-          description: The `tag` set on the answered call.
-          examples:
-            - my-tag-1
-        device:
-          description: The device that answered.
-          allOf:
-            - $ref: "#/components/schemas/Calling.CallDevice"
-        dial_winner:
-          type: string
-          enum:
-            - "true"
-          description: '`"true"` for the call that won the dial. When you dial several destinations at once, this marks the first one to answer. Present only on the winning call.'
-          examples:
-            - "true"
-      description: The call that answered, included once a `calling.dial` succeeds.
     Calling.AnswerRequest:
       type: object
       properties:
@@ -14527,6 +14537,256 @@ components:
         - content
         - lang
       description: A single transcribed utterance from a live-transcription session.
+    Calling.TranscribeLiveSummarizeEvent:
+      type: object
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - "2.0"
+          description: JSON-RPC version. Always `2.0`.
+        id:
+          type: string
+          description: Event id.
+        method:
+          type: string
+          enum:
+            - signalwire.event
+          description: Always `signalwire.event`.
+        params:
+          type: object
+          properties:
+            event_type:
+              type: string
+              enum:
+                - calling.ai.transcribe.live_summarize
+              description: The event type — identifies which event this is.
+            event_channel:
+              type: string
+              description: The channel the event was delivered on.
+              examples:
+                - calling
+            timestamp:
+              type: number
+              format: double
+              description: When the event was emitted, as a Unix timestamp in seconds.
+              examples:
+                - 1712345678.842
+            project_id:
+              type: string
+              description: Your project ID.
+              examples:
+                - b1c2d3e4-f5a6-7b8c-9d0e-1f2a3b4c5d6e
+            space_id:
+              type: string
+              description: Your space ID.
+              examples:
+                - c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f
+            params:
+              description: The event-specific payload.
+              allOf:
+                - $ref: "#/components/schemas/Calling.TranscribeLiveSummarizeEventData"
+          required:
+            - event_type
+            - params
+          description: The event envelope.
+      required:
+        - jsonrpc
+        - id
+        - method
+        - params
+      description: A summary of the transcription so far, emitted for `calling.live_transcribe` when you request the `summarize` action.
+    Calling.TranscribeLiveSummarizeEventData:
+      type: object
+      properties:
+        conversation_log:
+          type: array
+          items:
+            $ref: "#/components/schemas/Calling.ConversationLogEntry"
+          description: The conversation so far, one entry per turn.
+        conversation_summary:
+          type: string
+          description: An AI-generated summary of the conversation so far.
+          examples:
+            - The caller asked to check their balance and confirmed their identity.
+      required:
+        - conversation_log
+        - conversation_summary
+      description: |-
+        An on-demand summary of a `calling.live_transcribe` session so far, produced when you send
+        the `summarize` action (or when a sidecar closes). Requires a `webhook` on the session.
+    Calling.ConversationLogEntry:
+      type: object
+      properties:
+        role:
+          type: string
+          description: "Who spoke this turn: `remote-caller` (the far end) or `local-caller` (your side). Tool/function turns use the `tool` role."
+          examples:
+            - remote-caller
+        content:
+          type: string
+          description: The text of this turn.
+          examples:
+            - I'd like to check my balance.
+        confidence:
+          type: number
+          format: double
+          description: Recognition confidence for this turn, roughly 0.0-1.0. Absent for non-speech turns.
+          examples:
+            - 0.94
+        language:
+          type: string
+          description: BCP-47 language code of this turn (e.g. `en`, `es-ES`).
+          examples:
+            - en
+        filter_type:
+          type: string
+          description: The kind of content filter that matched this turn, when one did.
+        filter_value:
+          type: string
+          description: The value the content filter matched, when one did.
+        tool_call_id:
+          type: string
+          description: Correlation id for a tool/function-call turn. Present only on `tool`-role entries.
+      required:
+        - role
+        - content
+      description: |-
+        One turn in a conversation log. Shared by the summary and conversation-log events of
+        `calling.live_transcribe` and `calling.live_translate`. This is a slimmer record than a
+        per-utterance result — it carries the turn's text and speaker, not the low-level ASR metadata.
+    Calling.TranscribeConversationLogEvent:
+      type: object
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - "2.0"
+          description: JSON-RPC version. Always `2.0`.
+        id:
+          type: string
+          description: Event id.
+        method:
+          type: string
+          enum:
+            - signalwire.event
+          description: Always `signalwire.event`.
+        params:
+          type: object
+          properties:
+            event_type:
+              type: string
+              enum:
+                - calling.ai.transcribe.conversation_log
+              description: The event type — identifies which event this is.
+            event_channel:
+              type: string
+              description: The channel the event was delivered on.
+              examples:
+                - calling
+            timestamp:
+              type: number
+              format: double
+              description: When the event was emitted, as a Unix timestamp in seconds.
+              examples:
+                - 1712345678.842
+            project_id:
+              type: string
+              description: Your project ID.
+              examples:
+                - b1c2d3e4-f5a6-7b8c-9d0e-1f2a3b4c5d6e
+            space_id:
+              type: string
+              description: Your space ID.
+              examples:
+                - c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f
+            params:
+              description: The event-specific payload.
+              allOf:
+                - $ref: "#/components/schemas/Calling.TranscribeConversationLogEventData"
+          required:
+            - event_type
+            - params
+          description: The event envelope.
+      required:
+        - jsonrpc
+        - id
+        - method
+        - params
+      description: The complete conversation log and metrics for a `calling.live_transcribe` session, emitted once the session ends.
+    Calling.TranscribeConversationLogEventData:
+      type: object
+      properties:
+        conversation_log:
+          type: array
+          items:
+            $ref: "#/components/schemas/Calling.ConversationLogEntry"
+          description: The full conversation, one entry per turn.
+        conversation_summary:
+          type: string
+          description: An AI-generated summary of the full conversation. Present only when the session was started with AI summary enabled.
+          examples:
+            - The caller checked their balance and updated their mailing address.
+        metrics:
+          description: Aggregate metrics for the session.
+          allOf:
+            - $ref: "#/components/schemas/Calling.TranscriptionMetrics"
+      required:
+        - conversation_log
+        - metrics
+      description: |-
+        The full conversation log for a `calling.live_transcribe` session, delivered once when the
+        session ends. Distinct from `calling.call.transcribe` (the event of the non-live
+        `calling.transcribe` method) — this one carries the AI/live transcription conversation.
+    Calling.TranscriptionMetrics:
+      type: object
+      properties:
+        total_utterances:
+          type: integer
+          format: int32
+          description: Total number of utterances recognized during the session.
+          examples:
+            - 42
+        first_utterance_ts:
+          type: number
+          format: double
+          description: Timestamp of the first utterance (same units as the event `timestamp`).
+        last_utterance_ts:
+          type: number
+          format: double
+          description: Timestamp of the last utterance.
+        remote_caller_turns:
+          type: integer
+          format: int32
+          description: Number of speaking turns from the far end.
+          examples:
+            - 20
+        local_caller_turns:
+          type: integer
+          format: int32
+          description: Number of speaking turns from your side.
+          examples:
+            - 22
+        remote_caller_words:
+          type: integer
+          format: int32
+          description: Total words spoken by the far end.
+        local_caller_words:
+          type: integer
+          format: int32
+          description: Total words spoken by your side.
+        remote_caller_avg_confidence:
+          type: number
+          format: double
+          description: Average recognition confidence across the far end's turns, roughly 0.0-1.0.
+        local_caller_avg_confidence:
+          type: number
+          format: double
+          description: Average recognition confidence across your side's turns, roughly 0.0-1.0.
+      description: |-
+        Aggregate metrics for a transcription session, included on the final
+        `calling.ai.transcribe.conversation_log` event. In sidecar mode the per-side keys are
+        reported as `customer_*` / `agent_*` instead of `remote_caller_*` / `local_caller_*`.
     Calling.LiveTranslateRequest:
       type: object
       properties:
@@ -14891,8 +15151,9 @@ components:
       description: |-
         A live-translation delta delivered while the call is in progress. Carries the
         incremental source text (`input_utterance`) and/or the translated text
-        (`output_utterance`) as the call proceeds. Streams to your `webhook` when you
-        start `calling.live_translate`.
+        (`output_utterance`) as the call proceeds. Realtime delivery of these deltas is
+        gated: you must start `calling.live_translate` with `live_events` enabled and a
+        `webhook` URL configured — otherwise the incremental deltas are not emitted.
     Calling.TranslateUtterance:
       type: object
       properties:
@@ -14910,6 +15171,176 @@ components:
         - language
         - delta
       description: An incremental translated (or source) text fragment.
+    Calling.TranslateLiveSummaryEvent:
+      type: object
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - "2.0"
+          description: JSON-RPC version. Always `2.0`.
+        id:
+          type: string
+          description: Event id.
+        method:
+          type: string
+          enum:
+            - signalwire.event
+          description: Always `signalwire.event`.
+        params:
+          type: object
+          properties:
+            event_type:
+              type: string
+              enum:
+                - calling.ai.translate.live_summary
+              description: The event type — identifies which event this is.
+            event_channel:
+              type: string
+              description: The channel the event was delivered on.
+              examples:
+                - calling
+            timestamp:
+              type: number
+              format: double
+              description: When the event was emitted, as a Unix timestamp in seconds.
+              examples:
+                - 1712345678.842
+            project_id:
+              type: string
+              description: Your project ID.
+              examples:
+                - b1c2d3e4-f5a6-7b8c-9d0e-1f2a3b4c5d6e
+            space_id:
+              type: string
+              description: Your space ID.
+              examples:
+                - c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f
+            params:
+              description: The event-specific payload.
+              allOf:
+                - $ref: "#/components/schemas/Calling.TranslateLiveSummaryEventData"
+          required:
+            - event_type
+            - params
+          description: The event envelope.
+      required:
+        - jsonrpc
+        - id
+        - method
+        - params
+      description: A summary of a `calling.live_translate` session, covering both the source and translated sides.
+    Calling.TranslateLiveSummaryEventData:
+      type: object
+      properties:
+        primary_conversation_summary:
+          type: string
+          description: "The source-language side: raw transcript text in realtime mode, or an AI-generated summary in on-demand `summarize` mode."
+        secondary_conversation_summary:
+          type: string
+          description: "The translated side: raw transcript text in realtime mode, or an AI-generated summary in on-demand `summarize` mode."
+        primary_conversation_log:
+          type: array
+          items:
+            $ref: "#/components/schemas/Calling.ConversationLogEntry"
+          description: The source-language conversation, one entry per turn. Present only in on-demand `summarize` mode.
+        secondary_conversation_log:
+          type: array
+          items:
+            $ref: "#/components/schemas/Calling.ConversationLogEntry"
+          description: The translated conversation, one entry per turn. Present only in on-demand `summarize` mode.
+      description: |-
+        A summary of a `calling.live_translate` session, covering both the source-language (`primary`)
+        and translated (`secondary`) sides. This event carries two shapes depending on how it was
+        produced: in realtime mode (delivered when the session closes) the two `*_conversation_summary`
+        fields hold the raw transcript text and no logs are included; in on-demand `summarize` mode the
+        `*_conversation_log` arrays are present and the summaries are AI-generated.
+    Calling.TranslateConversationLogEvent:
+      type: object
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - "2.0"
+          description: JSON-RPC version. Always `2.0`.
+        id:
+          type: string
+          description: Event id.
+        method:
+          type: string
+          enum:
+            - signalwire.event
+          description: Always `signalwire.event`.
+        params:
+          type: object
+          properties:
+            event_type:
+              type: string
+              enum:
+                - calling.ai.translate.conversation_log
+              description: The event type — identifies which event this is.
+            event_channel:
+              type: string
+              description: The channel the event was delivered on.
+              examples:
+                - calling
+            timestamp:
+              type: number
+              format: double
+              description: When the event was emitted, as a Unix timestamp in seconds.
+              examples:
+                - 1712345678.842
+            project_id:
+              type: string
+              description: Your project ID.
+              examples:
+                - b1c2d3e4-f5a6-7b8c-9d0e-1f2a3b4c5d6e
+            space_id:
+              type: string
+              description: Your space ID.
+              examples:
+                - c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f
+            params:
+              description: The event-specific payload.
+              allOf:
+                - $ref: "#/components/schemas/Calling.TranslateConversationLogEventData"
+          required:
+            - event_type
+            - params
+          description: The event envelope.
+      required:
+        - jsonrpc
+        - id
+        - method
+        - params
+      description: The complete translated conversation log for a `calling.live_translate` session, emitted once the session ends.
+    Calling.TranslateConversationLogEventData:
+      type: object
+      properties:
+        primary_conversation_log:
+          type: array
+          items:
+            $ref: "#/components/schemas/Calling.ConversationLogEntry"
+          description: The source-language conversation, one entry per turn.
+        primary_conversation_summary:
+          type: string
+          description: An AI-generated summary of the source-language side. Present only when the session was started with AI summary enabled.
+        secondary_conversation_log:
+          type: array
+          items:
+            $ref: "#/components/schemas/Calling.ConversationLogEntry"
+          description: The translated conversation, one entry per turn.
+        secondary_conversation_summary:
+          type: string
+          description: An AI-generated summary of the translated side. Present only when the session was started with AI summary enabled.
+        translate_data:
+          type: object
+          additionalProperties: {}
+          description: Role-keyed translation metadata for the session (source/target language settings and related detail).
+      required:
+        - primary_conversation_log
+        - secondary_conversation_log
+      description: The complete conversation log for a `calling.live_translate` session, delivered once the session ends, with both the source-language and translated sides.
     Calling.JoinRoomRequest:
       type: object
       properties:
@@ -27248,24 +27679,12 @@ components:
         result:
           description: The method result.
           allOf:
-            - $ref: "#/components/schemas/Provisioning.ConfigureExecuteResult"
+            - $ref: "#/components/schemas/Provisioning.ConfigureResult"
       required:
         - jsonrpc
         - id
         - result
       description: A JSON-RPC response frame correlated to a request by `id`. `Result` is the method result.
-    Provisioning.ConfigureExecuteResult:
-      type: object
-      properties:
-        result:
-          description: The provisioning result payload.
-          allOf:
-            - $ref: "#/components/schemas/Provisioning.ConfigureResult"
-      required:
-        - result
-      description: |-
-        The result envelope for a provisioning request. The connector configuration is
-        carried in the nested `result`.
     Provisioning.ConfigureResult:
       type: object
       properties:
@@ -28431,6 +28850,18 @@ components:
       contentType: application/json
       payload:
         $ref: "#/components/schemas/Calling.TranscribeUtteranceEvent"
+    transcribeLiveSummarizeEvent:
+      name: TranscribeLiveSummarizeEvent
+      title: calling.ai.transcribe.live_summarize
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/Calling.TranscribeLiveSummarizeEvent"
+    transcribeConversationLogEvent:
+      name: TranscribeConversationLogEvent
+      title: calling.ai.transcribe.conversation_log
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/Calling.TranscribeConversationLogEvent"
     callingLiveTranslateRequest:
       name: calling.live_translate.request
       title: calling.live_translate request
@@ -28453,6 +28884,18 @@ components:
       contentType: application/json
       payload:
         $ref: "#/components/schemas/Calling.TranslateTranscriptDeltaEvent"
+    translateLiveSummaryEvent:
+      name: TranslateLiveSummaryEvent
+      title: calling.ai.translate.live_summary
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/Calling.TranslateLiveSummaryEvent"
+    translateConversationLogEvent:
+      name: TranslateConversationLogEvent
+      title: calling.ai.translate.conversation_log
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/Calling.TranslateConversationLogEvent"
     callingJoinRoomRequest:
       name: calling.join_room.request
       title: calling.join_room request

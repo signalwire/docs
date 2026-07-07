@@ -24,13 +24,3 @@ model ConfigureResult {
   @doc("The rendered connector configuration.")
   configuration: Configuration;
 }
-
-@doc("""
-  The result envelope for a provisioning request. The connector configuration is
-  carried in the nested `result`.
-  """)
-@summary("Connector configuration response")
-model ConfigureExecuteResult {
-  @doc("The provisioning result payload.")
-  result: ConfigureResult;
-}

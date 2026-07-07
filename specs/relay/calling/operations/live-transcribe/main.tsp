@@ -29,4 +29,8 @@ model LiveTranscribeRequest is JsonRpcRequest<typeof callingLiveTranscribe, Live
 @summary("Start or stop live transcription on a call")
 @extension("x-fern-display-name", callingLiveTranscribe)
 @extension("x-fern-sdk-group-name", GroupTranscriptionLiveTranscribe)
-op liveTranscribe(...LiveTranscribeRequest): LiveTranscribeReply | TranscribeUtteranceEvent;
+op liveTranscribe(...LiveTranscribeRequest):
+  | LiveTranscribeReply
+  | TranscribeUtteranceEvent
+  | TranscribeLiveSummarizeEvent
+  | TranscribeConversationLogEvent;

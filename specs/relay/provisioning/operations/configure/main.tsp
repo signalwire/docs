@@ -17,7 +17,7 @@ const provisioningConfigureResponse = "${provisioningConfigure} response";
 model ConfigureRequest is JsonRpcRequest<typeof provisioningConfigure, ConfigureParams>;
 
 @extension("x-fern-display-name", provisioningConfigureResponse)
-@reply model ConfigureReply is JsonRpcResponse<ConfigureExecuteResult>;
+@reply model ConfigureReply is JsonRpcResponse<ConfigureResult>;
 
 @doc("""
   Request the runtime configuration for a connector. Supply the connector's
