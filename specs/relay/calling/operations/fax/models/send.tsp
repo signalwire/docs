@@ -9,15 +9,15 @@ namespace Relay.Calling;
 model SendFaxParams {
   ...CallAddress;
 
-  @doc("Identifier used to control the active faxing.")
+  @doc("Your identifier for this fax. Reuse it to stop the fax (`calling.send_fax.stop`) and to correlate the `calling.call.fax` events for it.")
   @example("d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e")
   control_id: string;
 
-  @doc("HTTP or HTTPS URL of the fax document to send. Commonly a PDF or TIFF; the server converts it for transmission.")
+  @doc("HTTP or HTTPS URL of the PDF document to send.")
   @example("https://example.com/my_doc_to_fax.pdf")
   document: url;
 
-  @doc("Identity to display on the receiving fax. Default is the SignalWire DID.")
+  @doc("Identity to display on the receiving fax. Defaults to your SignalWire phone number (DID).")
   @example("+15551230001")
   identity?: string;
 
@@ -37,7 +37,7 @@ model SendFaxParams {
 model SendFaxStopParams {
   ...CallAddress;
 
-  @doc("The send-fax `control_id` assigned in `calling.send_fax`.")
+  @doc("The `control_id` you passed to `calling.send_fax`.")
   @example("d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e")
   control_id: string;
 }
@@ -45,7 +45,7 @@ model SendFaxStopParams {
 model ReceiveFaxParams {
   ...CallAddress;
 
-  @doc("Identifier used to control the active faxing.")
+  @doc("Your identifier for this fax. Reuse it to stop the fax (`calling.receive_fax.stop`) and to correlate the `calling.call.fax` events for it.")
   @example("d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e")
   control_id: string;
 
@@ -57,7 +57,7 @@ model ReceiveFaxParams {
 model ReceiveFaxStopParams {
   ...CallAddress;
 
-  @doc("The fax `control_id` assigned in `calling.receive_fax`.")
+  @doc("The `control_id` you passed to `calling.receive_fax`.")
   @example("d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e")
   control_id: string;
 }

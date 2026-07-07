@@ -21,6 +21,5 @@ model Configuration {
 @doc("The provisioning result payload, carrying the rendered connector configuration.")
 @summary("Connector configuration payload")
 model ConfigureResult {
-  @doc("The rendered connector configuration.")
   configuration: Configuration;
 }

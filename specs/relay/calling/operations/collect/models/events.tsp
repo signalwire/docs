@@ -17,8 +17,8 @@ union CallCollectState {
 
 @doc("""
   What the caller gave you. Read `type` to know which kind of result this is. The
-  `error`, `no_input`, `no_match`, and `start_of_input` types are markers with no
-  extra data, while `digit` and `speech` include a `params` object with the
+  `error`, `no_input`, `no_match`, `start_of_input`, and `finished` types are markers
+  with no extra data, while `digit` and `speech` include a `params` object with the
   collected input.
   """)
 @summary("Collect result")
@@ -48,7 +48,7 @@ model CallCollectResultNoMatch extends CallCollectResult {
   type: "no_match";
 }
 
-@doc("Signals that the caller has started speaking. You only receive this when you collect with `calling.collect`.")
+@doc("Signals that the caller has started giving input. You receive this only when you set `send_start_of_input: true` on the collect.")
 @summary("Start-of-input result")
 model CallCollectResultStartOfInput extends CallCollectResult {
   @example("start_of_input")
@@ -62,6 +62,7 @@ model CallCollectResultFinished extends CallCollectResult {
   type: "finished";
 }
 
+@doc("The caller's DTMF key presses. The collected digits (and any terminator) are in `params`.")
 @summary("Collected digit result")
 model CallCollectResultDigit extends CallCollectResult {
   @example("digit")
@@ -78,6 +79,7 @@ model CallCollectResultDigit extends CallCollectResult {
   };
 }
 
+@doc("The caller's recognized speech. The transcribed text and confidence are in `params`.")
 @summary("Collected speech result")
 model CallCollectResultSpeech extends CallCollectResult {
   @example("speech")

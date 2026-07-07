@@ -63,7 +63,7 @@ model ConnectParams {
 
   @doc("""
     The protocol identifier to resume. Provide this to rejoin a protocol you
-    established earlier, when your project and signature permit it.
+    established earlier, when your project's permissions allow it.
     """)
   @example("signalwire_c1d2e3f4a5b6")
   protocol?: string;

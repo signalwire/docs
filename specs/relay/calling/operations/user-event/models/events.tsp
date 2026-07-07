@@ -11,8 +11,8 @@ namespace Relay.Calling;
 @doc("""
   Payload of a `calling.user_event` event: the custom object the sender passed as
   `event`, delivered with the call address fields added. The payload is
-  caller-defined, so only the address fields are fixed — every other field is one
-  you chose (conventionally a `topic` naming the event).
+  whatever object you provide, so only the address fields are fixed — every other
+  field is one you chose (conventionally a `topic` naming the event).
   """)
 @summary("User event payload")
 model CallUserEventParams {

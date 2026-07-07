@@ -65,7 +65,7 @@ model AiSidecarEventData {
   @doc("Call/channel context (`call_id`, plus caller id fields when available).")
   channel_data: Record<unknown>;
 
-  @doc("Present when `type: ask_answer`; correlates this `ask_answer` event with the originating `ai_sidecar.ask`, matching the `ask_id` returned by `calling.ai_sidecar.ask`.")
+  @doc("Present when `type: ask_answer`. Matches the `ask_id` returned by `calling.ai_sidecar.ask`, correlating this answer with the question you sent.")
   @example("a1b2c3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d")
   ask_id?: string;
 

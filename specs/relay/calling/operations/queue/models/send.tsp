@@ -50,7 +50,7 @@ model QueueLeaveParams {
   @example("support")
   queue_name: string;
 
-  @doc("ID of the queue to remove the call from. The queue id is reported on queue events.")
+  @doc("The id of the queue to remove the call from. The queue id is reported on queue events.")
   @example("q-9a3f1c2d")
   queue_id?: string;
 

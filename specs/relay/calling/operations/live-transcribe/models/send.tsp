@@ -242,7 +242,6 @@ model LiveTranscribeAction {
   summarize?: LiveSummarize;
 }
 
-@summary("Live transcribe params")
 model LiveTranscribeParams {
   ...CallAddress;
 

@@ -16,7 +16,7 @@ model IceServer {
   @example("password")
   credentialType: string;
 
-  @doc("The username to authenticate with against these ICE servers.")
+  @doc("The username to authenticate against these ICE servers.")
   @example("1712349999:b1c2d3e4-f5a6-7b8c-9d0e-1f2a3b4c5d6e")
   username: string;
 
@@ -40,8 +40,10 @@ model ConnectResult {
   identity?: string;
 
   @doc("""
-    The authorization granted to this connection. Treat it as opaque: store it
-    and pass it back unchanged when you reconnect. Omitted when there is none.
+    The authorization granted to this connection — the permissions and scopes in
+    effect. Treat it as opaque. To restore your session on reconnect, use the
+    `authorization_state` from the `signalwire.authorization.state` event, not
+    this object. Omitted when there is none.
     """)
   authorization?: Record<unknown>;
 

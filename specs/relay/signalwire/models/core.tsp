@@ -4,7 +4,7 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Signalwire;
 
-@doc("A `{code, message}` acknowledgement returned by receive and unreceive.")
+@doc("A `{code, message}` acknowledgement returned by `signalwire.receive` and `signalwire.unreceive`.")
 model Acknowledgement {
   @doc("The result code as a string. `\"200\"` means success; `\"402\"` means payment required.")
   @example("200")

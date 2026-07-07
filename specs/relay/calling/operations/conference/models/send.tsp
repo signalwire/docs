@@ -133,7 +133,7 @@ model JoinConferenceParams {
 
   @doc("""
     A space-separated list of which recording lifecycle events to deliver to
-    `recording_status_callback`. Available events: `in-progress completed absent`
+    `recording_status_callback`. Available events: `in-progress`, `completed`, `absent`
     (for example, `"in-progress completed"`). Defaults to `completed`.
     """)
   @example("in-progress completed")

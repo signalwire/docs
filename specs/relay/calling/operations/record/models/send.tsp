@@ -90,7 +90,7 @@ model RecordParams {
   @doc("What to record. Currently audio is the only option — set its parameters under `audio`.")
   record: RecordSpec;
 
-  @doc("HTTPS URL where SignalWire POSTs recording status updates.")
+  @doc("HTTPS URL that recording status events are POSTed to.")
   @example("https://example.com/webhooks/relay")
   status_url?: url;
 }

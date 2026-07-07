@@ -23,13 +23,14 @@ model PlayParams {
   volume?: float64;
 
   @doc("""
-    Which side of the call hears the media: `listen` (audio the called party
-    hears), `speak` (audio the called party sends), or `both`. Default `listen`.
+    Which audio channel the media is played into: `listen` (the audio the remote
+    party hears), `speak` (the audio the remote party sends), or `both`. Default
+    `listen`.
     """)
   @example("listen")
   direction?: "listen" | "speak" | "both" = "listen";
 
-  @doc("HTTP(s) URL to POST play events to.")
+  @doc("HTTP(s) URL that play status events are POSTed to.")
   @example("https://example.com/webhooks/relay")
   status_url?: url;
 
@@ -41,7 +42,7 @@ model PlayParams {
   @example("en-US-Standard-C")
   voice?: string;
 
-  @doc("Default text-to-speech voice gender for TTS items in `play` that do not set their own.")
+  @doc("Default text-to-speech voice gender for TTS items in `play` that do not set their own. Falls back to the platform default if unset.")
   @example("female")
   gender?: TtsGender;
 
@@ -60,7 +61,7 @@ model PlayParams {
 model PlayPauseParams {
   ...CallAddress;
 
-  @doc("The playing `control_id` assigned in `calling.play`.")
+  @doc("The `control_id` you set when you started the play with `calling.play`.")
   @example("d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e")
   control_id: string;
 }
@@ -68,7 +69,7 @@ model PlayPauseParams {
 model PlayResumeParams {
   ...CallAddress;
 
-  @doc("The playing `control_id` assigned in `calling.play`.")
+  @doc("The `control_id` you set when you started the play with `calling.play`.")
   @example("d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e")
   control_id: string;
 }
@@ -76,7 +77,7 @@ model PlayResumeParams {
 model PlayStopParams {
   ...CallAddress;
 
-  @doc("The `control_id` assigned in `calling.play`.")
+  @doc("The `control_id` you set when you started the play with `calling.play`.")
   @example("d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e")
   control_id: string;
 }
@@ -84,7 +85,7 @@ model PlayStopParams {
 model PlayVolumeParams {
   ...CallAddress;
 
-  @doc("The `control_id` assigned in `calling.play`.")
+  @doc("The `control_id` you set when you started the play with `calling.play`.")
   @example("d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e")
   control_id: string;
 

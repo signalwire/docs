@@ -9,8 +9,8 @@ namespace Relay.Signalwire;
 @doc("The payload of a `signalwire.authorization.state` event, carrying your latest authorization state.")
 model AuthorizationStateParams {
   @doc("""
-    Your current authorization state — an opaque, colon-delimited string. Save it and
-    pass it back unchanged as `connect.authorization_state` when you reconnect.
+    Your current authorization state — an opaque string. Save it and pass it back
+    unchanged as `connect.authorization_state` when you reconnect.
     """)
   @example("eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIn0..aBcDeF:Z9y8x7w6v5")
   authorization_state: string;

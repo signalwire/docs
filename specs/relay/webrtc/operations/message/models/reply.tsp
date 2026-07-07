@@ -4,7 +4,7 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.WebRTC;
 
-@doc("The reply to a Verto frame (the WebRTC signaling message format used for peer calls): the Verto outcome plus the node now hosting the call.")
+@doc("The reply to your Verto frame: the Verto outcome plus the node now hosting the call.")
 @summary("Verto reply")
 model MessageResult {
   @doc("""

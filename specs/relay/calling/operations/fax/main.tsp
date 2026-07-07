@@ -21,8 +21,8 @@ model SendFaxRequest is JsonRpcRequest<typeof callingSendFax, SendFaxParams>;
 
 @doc("""
   Send a PDF document as a fax over an active call. The call must be a single
-  leg with nothing else running on it. This call acknowledges the request right
-  away; progress and the final outcome arrive asynchronously as
+  leg with nothing else running on it. The request is acknowledged right away;
+  progress and the final outcome arrive asynchronously as
   `calling.call.fax` events keyed on your `control_id`.
   """)
 @channel(callingSendFax)
@@ -38,7 +38,7 @@ model SendFaxStopRequest is JsonRpcRequest<typeof callingSendFaxStop, SendFaxSto
 @extension("x-fern-display-name", callingSendFaxStopResponse)
 @reply model SendFaxStopReply is JsonRpcResponse<SendFaxStopResult>;
 
-@doc("Stop sending a fax.")
+@doc("Stop an in-progress fax send. Targets the fax identified by the `control_id` from `calling.send_fax`.")
 @channel(callingSendFaxStop)
 @summary("Stop sending a fax")
 @extension("x-fern-display-name", callingSendFaxStop)
@@ -54,8 +54,8 @@ model ReceiveFaxRequest is JsonRpcRequest<typeof callingReceiveFax, ReceiveFaxPa
 
 @doc("""
   Receive an incoming fax on an active call and save it as a PDF. The call must
-  be a single leg with nothing else running on it. This call acknowledges the
-  request right away; progress and the final outcome arrive asynchronously as
+  be a single leg with nothing else running on it. The request is acknowledged
+  right away; progress and the final outcome arrive asynchronously as
   `calling.call.fax` events keyed on your `control_id`.
   """)
 @channel(callingReceiveFax)
@@ -71,7 +71,7 @@ model ReceiveFaxStopRequest is JsonRpcRequest<typeof callingReceiveFaxStop, Rece
 @extension("x-fern-display-name", callingReceiveFaxStopResponse)
 @reply model ReceiveFaxStopReply is JsonRpcResponse<ReceiveFaxStopResult>;
 
-@doc("Stop receiving a fax.")
+@doc("Stop an in-progress fax receive. Targets the fax identified by the `control_id` from `calling.receive_fax`.")
 @channel(callingReceiveFaxStop)
 @summary("Stop receiving a fax")
 @extension("x-fern-display-name", callingReceiveFaxStop)

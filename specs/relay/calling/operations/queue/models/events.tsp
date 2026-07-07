@@ -9,14 +9,16 @@ using TypeSpec.OpenAPI;
 namespace Relay.Calling;
 
 @doc("""
-  What this queue event reports: `enqueue` when the call joins the queue, `leave`
-  when it exits, and `stats` for a periodic position/size update while it waits.
-  Other values may appear for future event types, so handle unrecognized strings
-  gracefully.
+  What this queue event reports: `enqueue` when the call joins the queue,
+  `dequeue` when it is pulled from the queue to be connected, `leave` when it
+  exits without connecting, and `stats` for a periodic position/size update while
+  it waits. Other values may appear for future event types, so handle unrecognized
+  strings gracefully.
   """)
 @summary("Queue event type")
 union CallQueueStatus {
   "enqueue",
+  "dequeue",
   "leave",
   "stats",
   string,
@@ -72,7 +74,7 @@ model CallQueueParams {
 }
 
 const callingCallQueue = "calling.call.queue";
-@doc("Fires as a call moves through a queue — when it joins, gets connected, or leaves — and reports its position along with live queue stats.")
+@doc("Fires as a call moves through a queue — when it joins (`enqueue`), when it is pulled from the queue to be connected (`dequeue`), and when it leaves without connecting (`leave`) — and periodically reports its position and live queue stats (`stats`).")
 @summary(callingCallQueue)
 @extension("x-fern-display-name", callingCallQueue)
 model CallQueueEvent is SignalwireEvent<typeof callingCallQueue, CallQueueParams>;

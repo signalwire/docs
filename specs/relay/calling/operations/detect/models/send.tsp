@@ -52,8 +52,8 @@ model DetectMachineParams {
   detect_interruptions?: boolean = false;
 
   @doc("""
-    If false, stop detection on the machine event and don't wait on the beep /
-    end of the voicemail greeting. Default `true`.
+    If `false`, stop detection at the MACHINE event instead of waiting for the
+    beep / end of the voicemail greeting. Default `true`.
     """)
   @example(true)
   detect_message_end?: boolean = true;
@@ -109,14 +109,14 @@ model DetectDigit extends DetectConfig {
 model DetectParams {
   ...CallAddress;
 
-  @doc("Identifier used to control the active detector.")
+  @doc("Your own identifier for this detector. It's attached to the `calling.call.detect` events so you can correlate them, and you pass it to `calling.detect.stop` to stop the detector.")
   @example("d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e")
   control_id: string;
 
-  @doc("Detector to run (variant keyed on `detect.type`).")
+  @doc("The detector to run. Set `type` to `machine`, `fax`, or `digit`, then supply that detector's `params`.")
   detect: DetectConfig;
 
-  @doc("Maximum time (sec >= 0) to run the detector. Default `30.0`.")
+  @doc("Maximum time, in seconds, to run the detector before it stops on its own. Default `30.0`.")
   @minValue(0)
   @example(30.0)
   timeout?: float64;
@@ -128,7 +128,7 @@ model DetectParams {
 model DetectStopParams {
   ...CallAddress;
 
-  @doc("The detector `control_id` assigned in `calling.detect`.")
+  @doc("The `control_id` you set when you started the detector with `calling.detect`.")
   @example("d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e")
   control_id: string;
 }

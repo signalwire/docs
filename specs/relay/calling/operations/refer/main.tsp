@@ -18,7 +18,7 @@ model ReferRequest is JsonRpcRequest<typeof callingRefer, ReferParams>;
 @extension("x-fern-display-name", callingReferResponse)
 @reply model ReferReply is JsonRpcResponse<ReferResult>;
 
-@doc("Transfers a SIP call to another SIP endpoint using SIP REFER (a SIP mechanism that hands the call off directly, so SignalWire drops out of the media path). Use it to hand the call off to an external destination without staying in the media path. The result confirms the refer was sent; the transfer's progress and final outcome arrive on a refer event.")
+@doc("Transfers a SIP call to another SIP endpoint using SIP REFER — a SIP mechanism that hands the call off directly, so SignalWire drops out of the media path. Use it to move a call to an external destination without staying in the audio path. The result confirms the REFER was sent; the transfer's progress and final outcome arrive on `calling.call.refer` events.")
 @channel(callingRefer)
 @summary("Transfer a SIP call via SIP REFER")
 @extension("x-fern-display-name", callingRefer)

@@ -39,7 +39,7 @@ model DetectStopRequest is JsonRpcRequest<typeof callingDetectStop, DetectStopPa
 @extension("x-fern-display-name", callingDetectStopResponse)
 @reply model DetectStopReply is JsonRpcResponse<DetectStopResult>;
 
-@doc("Stop an active detector.")
+@doc("Stops an active detector before its `timeout` elapses — for example, once you already have the result you need.")
 @channel(callingDetectStop)
 @summary("Stop a detector")
 @extension("x-fern-display-name", callingDetectStop)

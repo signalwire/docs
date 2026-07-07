@@ -28,11 +28,11 @@ model CallDialParams {
   call?: CallStateParams;
 
   @doc("Why the dial failed. Present when `dial_state` is `failed`.")
-  @example("NO_ANSWER")
+  @example("noAnswer")
   reason?: string;
 
-  @doc("What caused the dial to fail. Present when `dial_state` is `failed`.")
-  @example("callee")
+  @doc("Which side ended the dial: `outbound` if your side hung up, `inbound` if the far end did, `none` if unknown. Pairs with `reason` (why it failed) and mirrors `end_source`/`end_reason` on call-ended events. Present when `dial_state` is `failed`.")
+  @example("outbound")
   source?: string;
 }
 

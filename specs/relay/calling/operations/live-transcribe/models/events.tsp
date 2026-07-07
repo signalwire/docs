@@ -43,13 +43,15 @@ model TranscribeUtteranceEventData {
 }
 
 const callingAiTranscribeUtterance = "calling.ai.transcribe.utterance";
+@doc("Streams a single recognized utterance during a `calling.live_transcribe` session.")
 @summary(callingAiTranscribeUtterance)
 @extension("x-fern-display-name", callingAiTranscribeUtterance)
 model TranscribeUtteranceEvent is SignalwireEvent<typeof callingAiTranscribeUtterance, TranscribeUtteranceEventData>;
 
 @doc("""
   An on-demand summary of a `calling.live_transcribe` session so far, produced when you send
-  the `summarize` action (or when a sidecar closes). Requires a `webhook` on the session.
+  the `summarize` action (or when an attached AI sidecar closes; see `calling.ai_sidecar`).
+  Requires a `webhook` on the session.
   """)
 @summary("Live transcribe summarize event")
 model TranscribeLiveSummarizeEventData {

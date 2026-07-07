@@ -24,7 +24,7 @@ model ConnectRequest is JsonRpcRequest<typeof signalwireConnect, ConnectParams>;
   Relay command: send your credentials and protocol version, and you get back your
   `identity`, `authorization`, the `protocol` to use on later requests, and ICE
   servers for media. Right after a successful connect you also receive a
-  `signalwire.authorization.state` event (a receive-only channel — see below), and
+  `signalwire.authorization.state` event (delivered on its own receive-only channel), and
   it is delivered again whenever your authorization state changes; save its
   `authorization_state` each time so you can restore your session if you reconnect.
   """)

@@ -6,7 +6,6 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
-@doc("Result of `calling.refer`.")
 @summary("Refer result")
 model ReferResult {
   ...RelayResultBase<"Starting SIP REFER">;

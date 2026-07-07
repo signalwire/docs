@@ -8,10 +8,10 @@ namespace Relay.Calling;
 
 @summary("Queue entered")
 model QueueEnterResult {
-  ...RelayResult<"Entering Queue">;
+  ...RelayResult<"Entering queue">;
 }
 
 @summary("Queue left")
 model QueueLeaveResult {
-  ...RelayResult<"Leaving Queue">;
+  ...RelayResult<"Leaving queue">;
 }

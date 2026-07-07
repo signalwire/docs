@@ -33,7 +33,9 @@ model VertoRequest is JsonRpcRequest<typeof webrtcVerto, MessageParams>;
   updates) arrive separately on the receive-only `webrtc.message` channel.
 
   Authentication: this channel is available only to sessions authenticated with a
-  SignalWire Access Token (SAT); other session types are rejected.
+  `jwt_token` (the browser/client credential); sessions authenticated with a
+  project + API token are rejected — server-side code should use the `calling`
+  service instead.
   """)
 @channel(webrtcVerto)
 @summary("Send a Verto frame")

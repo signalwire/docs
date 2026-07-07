@@ -20,9 +20,10 @@ model ConfigureRequest is JsonRpcRequest<typeof provisioningConfigure, Configure
 
 @doc("""
   Request the runtime configuration for a connector. Supply the connector's
-  identity (`relay_connector_id`) and network endpoints (`local_endpoint`,
-  `external_endpoint`), and SignalWire returns its configuration. For a
-  `freeswitch` target, the response includes a SIP profile rendered as XML.
+  `target` type (`freeswitch`), its identity (`relay_connector_id`), and its
+  network endpoints (`local_endpoint`, `external_endpoint`), and SignalWire
+  returns its configuration. For a `freeswitch` target, the response includes a
+  SIP profile rendered as XML.
 
   If configuration fails, the response carries an error code and a message
   describing the problem instead of a configuration.

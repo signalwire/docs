@@ -140,7 +140,8 @@ model WebrtcDeviceParams {
   confirm_timeout?: int32;
 }
 
-@doc("`call` device params (connect only) — bridge to an existing call.")
+@doc("Parameters for connecting to an existing call by reference (`calling.connect`, `call` device type).")
+@summary("Call reference device parameters")
 model CallRefDeviceParams {
   @doc("Opaque identifier that, paired with `call_id`, addresses the existing call. Echo back the value you received; treat it as opaque.")
   @example("a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d")
@@ -151,7 +152,8 @@ model CallRefDeviceParams {
   call_id: string;
 }
 
-@doc("`queue` device params (connect only) — pull a call from a queue.")
+@doc("Parameters for connecting to a call pulled from a queue (`calling.connect`, `queue` device type).")
+@summary("Queue device parameters")
 model QueueDeviceParams {
   @doc("Opaque identifier that, paired with the queue, addresses it. Echo back the value you received; treat it as opaque.")
   @example("a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d")
@@ -161,16 +163,17 @@ model QueueDeviceParams {
   @example("support")
   queue_name: string;
 
-  @doc("Queue id.")
+  @doc("Identifier of the queue, as an alternative to `queue_name`.")
   @example("q-1a2b3c4d")
   queue_id?: string;
 
-  @doc("Destination to execute after the queued call is bridged.")
+  @doc("Destination to dial after the queued call is bridged.")
   @example("+15551230003")
   execute_after_queue?: string;
 }
 
-@doc("`stream` device params (connect only) — bidirectional audio to a WS endpoint.")
+@doc("Parameters for connecting a call to a bidirectional audio stream over WebSocket (`calling.connect`, `stream` device type).")
+@summary("Stream device parameters")
 model StreamDeviceParams {
   @doc("Stream target — `wss://` required.")
   @example("wss://example.com/media")
@@ -197,7 +200,7 @@ model StreamDeviceParams {
   @example("POST")
   status_url_method?: "GET" | "POST" = "POST";
 
-  @doc("Stream realtime audio.")
+  @doc("When `true`, stream audio in real time rather than buffered. Default `false`.")
   @example(false)
   realtime?: boolean = false;
 

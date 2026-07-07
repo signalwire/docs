@@ -43,7 +43,7 @@ model PlayPauseRequest is JsonRpcRequest<typeof callingPlayPause, PlayPauseParam
 @extension("x-fern-display-name", callingPlayPauseResponse)
 @reply model PlayPauseReply is JsonRpcResponse<PlayPauseResult>;
 
-@doc("Pause an active play.")
+@doc("Pauses a play you started with `calling.play`, identified by its `control_id`. Resume it later with `calling.play.resume`.")
 @channel(callingPlayPause)
 @summary("Pause an active play")
 @extension("x-fern-display-name", callingPlayPause)
@@ -57,7 +57,7 @@ model PlayResumeRequest is JsonRpcRequest<typeof callingPlayResume, PlayResumePa
 @extension("x-fern-display-name", callingPlayResumeResponse)
 @reply model PlayResumeReply is JsonRpcResponse<PlayResumeResult>;
 
-@doc("Resume an active paused play.")
+@doc("Resumes a play you paused with `calling.play.pause`, identified by its `control_id`.")
 @channel(callingPlayResume)
 @summary("Resume a paused play")
 @extension("x-fern-display-name", callingPlayResume)
@@ -71,7 +71,7 @@ model PlayStopRequest is JsonRpcRequest<typeof callingPlayStop, PlayStopParams>;
 @extension("x-fern-display-name", callingPlayStopResponse)
 @reply model PlayStopReply is JsonRpcResponse<PlayStopResult>;
 
-@doc("Stop an active play.")
+@doc("Stops a play you started with `calling.play`, identified by its `control_id`.")
 @channel(callingPlayStop)
 @summary("Stop an active play")
 @extension("x-fern-display-name", callingPlayStop)
@@ -85,7 +85,7 @@ model PlayVolumeRequest is JsonRpcRequest<typeof callingPlayVolume, PlayVolumePa
 @extension("x-fern-display-name", callingPlayVolumeResponse)
 @reply model PlayVolumeReply is JsonRpcResponse<PlayVolumeResult>;
 
-@doc("Adjust the volume of an active play.")
+@doc("Adjusts the volume of a play you started with `calling.play`, identified by its `control_id`.")
 @channel(callingPlayVolume)
 @summary("Adjust the volume of an active play")
 @extension("x-fern-display-name", callingPlayVolume)

@@ -4,7 +4,7 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Provisioning;
 
-@doc("The connector type being provisioned. Currently only `freeswitch` is supported.")
+@doc("The connector type. Currently only `freeswitch` is supported.")
 union ConnectorTarget {
   string,
 
@@ -12,12 +12,13 @@ union ConnectorTarget {
   freeswitch: "freeswitch",
 }
 
+@doc("The target type, identity, and network endpoints of the connector requesting configuration.")
 model ConfigureParams {
   @doc("The connector type to provision. Currently only `freeswitch` is supported.")
   @example("freeswitch")
   target: ConnectorTarget;
 
-  @doc("The connector's local endpoint, as an IPv4 address, e.g. `10.10.0.2`.")
+  @doc("The connector's local endpoint as an IPv4 address, e.g. `10.10.0.2`.")
   @example("10.10.0.2")
   local_endpoint: string;
 

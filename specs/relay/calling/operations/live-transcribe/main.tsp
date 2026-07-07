@@ -26,7 +26,7 @@ model LiveTranscribeRequest is JsonRpcRequest<typeof callingLiveTranscribe, Live
   method to start, stop, or summarize by setting the matching `action`.
   """)
 @channel(callingLiveTranscribe)
-@summary("Start or stop live transcription on a call")
+@summary("Start, stop, or summarize live transcription on a call")
 @extension("x-fern-display-name", callingLiveTranscribe)
 op liveTranscribe(...LiveTranscribeRequest):
   | LiveTranscribeReply

@@ -20,8 +20,12 @@ model TranscribeRequest is JsonRpcRequest<typeof callingTranscribe, TranscribePa
 
 @doc("""
   Starts transcribing speech on a call to text. SignalWire records the call audio
-  and transcribes it in the background. Transcription results are not returned
-  here — they arrive as `calling.call.transcribe` events keyed on your `control_id`.
+  and transcribes it in the background. The `calling.call.transcribe` events (keyed
+  on your `control_id`) report only lifecycle state and the recording's metadata
+  (location, duration, size, timestamps) — the transcript text itself is delivered
+  to the `status_url` webhook you provide, not returned on this channel. For
+  real-time streaming transcripts, use `calling.live_transcribe` instead.
+
   Only one transcription can run on a call at a time; starting another while one
   is active returns `"409"` "Transcribe is already in progress". Stop it with
   `calling.transcribe.stop`.

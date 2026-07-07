@@ -14,7 +14,7 @@ model EchoParams {
   @example(30)
   timeout?: float64;
 
-  @doc("An `http` or `https` URL to receive echo status updates.")
+  @doc("HTTP(s) URL that echo status events are POSTed to.")
   @example("https://example.com/webhooks/relay")
   status_url?: url;
 }

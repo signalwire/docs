@@ -4,12 +4,13 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.WebRTC;
 
+@doc("The parameters for a `webrtc.verto` request: the Verto frame to send, the `node_id` that scopes it to your call, and any event channels to subscribe to.")
 @summary("Verto request parameters")
 model MessageParams {
   @doc("""
-    Opaque identifier that scopes this call. Once a call exists, set this to the
+    The node currently hosting your call. Once a call exists, set this to the
     `node_id` you received in an earlier event or response so the frame reaches
-    the right place. Leave it absent on your first message, before a call has been
+    the right node. Leave it absent on your first message, before a call has been
     established — SignalWire assigns one for you.
     """)
   @example("a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d")

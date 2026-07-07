@@ -19,13 +19,13 @@ model UserEventRequest is JsonRpcRequest<typeof callingUserEvent, UserEventParam
 @reply model UserEventReply is JsonRpcResponse<UserEventResult>;
 
 @doc("""
-  Emits a custom, caller-defined event on this call. Whatever you put in `event` is
+  Emits a custom event you define on this call. Whatever you put in `event` is
   delivered — with the call address added — to every application subscribed to the
   call's context as a `calling.user_event` event. This channel is two-way: you can
   emit events here, and you also receive `calling.user_event` events others emit
   (see the event below), so you don't need to call this to listen.
   """)
 @channel(callingUserEvent)
-@summary("Send a custom user-defined event")
+@summary("Send a custom event you define")
 @extension("x-fern-display-name", callingUserEvent)
 op userEvent(...UserEventRequest): UserEventReply | CallUserEvent;

@@ -26,7 +26,6 @@ model LiveTranslateAction {
   inject?: LiveTranslateInject;
 }
 
-@summary("Live translate params")
 model LiveTranslateParams {
   ...CallAddress;
 

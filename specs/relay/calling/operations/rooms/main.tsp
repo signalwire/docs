@@ -18,7 +18,7 @@ model JoinRoomRequest is JsonRpcRequest<typeof callingJoinRoom, JoinRoomParams>;
 @extension("x-fern-display-name", callingJoinRoomResponse)
 @reply model JoinRoomReply is JsonRpcResponse<JoinRoomResult>;
 
-@doc("Connects this call into a named audio/video room, bridging it with everyone else already in that room.")
+@doc("Connects this call into a named video/audio room, bridging it with everyone else already in that room.")
 @channel(callingJoinRoom)
 @summary("Join a video/audio room")
 @extension("x-fern-display-name", callingJoinRoom)

@@ -55,7 +55,7 @@ model ReferParams {
   @doc("Where to transfer the call. Only SIP destinations are supported (`type: \"sip\"`).")
   device: ReferDevice;
 
-  @doc("HTTPS URL where SignalWire POSTs the outcome of the transfer.")
+  @doc("HTTPS URL that `calling.call.refer` status events are POSTed to.")
   @example("https://example.com/webhooks/relay")
   status_url?: url;
 }

@@ -17,6 +17,8 @@ union CallRoomJoinStatus {
   "locked",
 }
 
+@doc("Payload of a `calling.call.room` event: the call address plus the room name and the outcome of the membership change (`join_status`).")
+@summary("Room event payload")
 model CallRoomParams {
   ...CallEventAddress;
 

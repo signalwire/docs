@@ -51,7 +51,7 @@ model RelayResultBase<Message extends valueof string = "OK"> {
   @example(Message)
   message?: string;
 
-  @doc("Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.")
+  @doc("Present on partial failures — an array of per-device error entries, each describing which device failed and why.")
   data?: unknown[];
 }
 

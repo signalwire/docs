@@ -40,7 +40,7 @@ model StreamParams {
   @example("inbound_track")
   track?: StreamTrack = "inbound_track";
 
-  @doc("HTTP(s) URL to POST stream status events to.")
+  @doc("HTTP(s) URL that stream status events are POSTed to.")
   @example("https://example.com/webhooks/relay")
   status_url?: url;
 
@@ -62,7 +62,7 @@ model StreamParams {
 model StreamStopParams {
   ...CallAddress;
 
-  @doc("The stream `control_id` assigned in `calling.stream`.")
+  @doc("The `control_id` you set when you started the stream with `calling.stream`.")
   @example("d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e")
   control_id: string;
 }

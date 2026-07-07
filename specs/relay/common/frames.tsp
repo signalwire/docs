@@ -13,10 +13,10 @@ model JsonRpcRequest<Method extends string, Params> {
   @doc("Request id, echoed on the correlated response.")
   id: string;
 
-  @doc("The JSON-RPC method.")
+  @doc("The name of the JSON-RPC method being invoked.")
   method: Method;
 
-  @doc("Method parameters.")
+  @doc("The method's input parameters.")
   params: Params;
 }
 

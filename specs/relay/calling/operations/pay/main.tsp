@@ -45,6 +45,6 @@ model PayStopRequest is JsonRpcRequest<typeof callingPayStop, PayStopParams>;
 
 @doc("Stop an active Pay flow (interactive voice response, or IVR) session.")
 @channel(callingPayStop)
-@summary("Stop an active pay")
+@summary("Stop an active Pay session")
 @extension("x-fern-display-name", callingPayStop)
 op payStop(...PayStopRequest): PayStopReply;

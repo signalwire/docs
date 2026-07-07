@@ -36,6 +36,7 @@ model TranslateTranscriptDeltaEventData {
 }
 
 const callingAiTranslateTranscriptDelta = "calling.ai.translate.transcript_delta";
+@doc("Streams an incremental translation delta during a `calling.live_translate` session.")
 @summary(callingAiTranslateTranscriptDelta)
 @extension("x-fern-display-name", callingAiTranslateTranscriptDelta)
 model TranslateTranscriptDeltaEvent is SignalwireEvent<typeof callingAiTranslateTranscriptDelta, TranslateTranscriptDeltaEventData>;
@@ -88,7 +89,7 @@ model TranslateConversationLogEventData {
 }
 
 const callingAiTranslateConversationLog = "calling.ai.translate.conversation_log";
-@doc("The complete translated conversation log for a `calling.live_translate` session, emitted once the session ends.")
+@doc("The complete conversation log for a `calling.live_translate` session — both the source-language and translated sides — emitted once the session ends.")
 @summary(callingAiTranslateConversationLog)
 @extension("x-fern-display-name", callingAiTranslateConversationLog)
 model TranslateConversationLogEvent is SignalwireEvent<typeof callingAiTranslateConversationLog, TranslateConversationLogEventData>;

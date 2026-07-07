@@ -7,8 +7,8 @@ using SignalWire.AsyncAPI;
 namespace Relay.Calling;
 
 @doc("""
-  Which side of the call to tap. `listen` = what the call party hears; `speak`
-  = what the call party says.
+  Which side of the call to tap. `listen` = what the remote party hears; `speak`
+  = what the remote party says; `both` = both sides.
   """)
 union TapDirection {
   "listen",
@@ -109,7 +109,7 @@ model TapParams {
   @doc("Device to receive the tapped media.")
   device: TapDevice;
 
-  @doc("HTTP(s) URL to POST tap events to.")
+  @doc("HTTP(s) URL that tap status events are POSTed to.")
   @example("https://example.com/webhooks/relay")
   status_url?: url;
 }
@@ -117,7 +117,7 @@ model TapParams {
 model TapStopParams {
   ...CallAddress;
 
-  @doc("The tap `control_id` assigned in `calling.tap`.")
+  @doc("The `control_id` you set when you started the tap with `calling.tap`.")
   @example("d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e")
   control_id: string;
 }

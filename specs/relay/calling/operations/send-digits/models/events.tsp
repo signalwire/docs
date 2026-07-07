@@ -21,7 +21,7 @@ model CallSendDigitsParams {
 }
 
 const callingCallSendDigits = "calling.call.send_digits";
-@doc("Fires once all requested DTMF digits have finished playing on the call.")
+@doc("Fires when a send-digits operation completes — `finished` once all requested DTMF tones have played, or `error` if it failed.")
 @summary(callingCallSendDigits)
 @extension("x-fern-display-name", callingCallSendDigits)
 model CallSendDigitsEvent is SignalwireEvent<typeof callingCallSendDigits, CallSendDigitsParams>;

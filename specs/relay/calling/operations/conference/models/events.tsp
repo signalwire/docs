@@ -52,7 +52,7 @@ union ConferenceReasonEnded {
   """)
 @summary("Conference event")
 model ConferenceParams {
-  @doc("Opaque identifier that, paired with `call_id`, addresses this call. Present on participant and stream events; absent on `conference-start`/`conference-end`. Treat it as opaque and echo back the value you received.")
+  @doc("Opaque identifier that, paired with `call_id`, addresses this call. Present on participant events; absent on `conference-start`/`conference-end`. Treat it as opaque and echo back the value you received.")
   @example("a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d")
   node_id?: string;
 
@@ -60,7 +60,7 @@ model ConferenceParams {
   @example("d02c88a9-cf83-4a5a-9c8b-2f4e6b1a0f77")
   conference_id: string;
 
-  @doc("The name of the conference — or, on stream events, the name of the stream.")
+  @doc("The name of the conference.")
   @example("my_conference")
   name?: string;
 

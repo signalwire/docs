@@ -68,7 +68,7 @@ model StateEvent is MessagingEvent<typeof messagingState, StateEventData>;
 
 @summary("Inbound-message event data")
 model ReceiveEventData {
-  @doc("The ID of the message.")
+  @doc("The unique ID of this inbound message.")
   @example("e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f")
   message_id: string;
 

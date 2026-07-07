@@ -19,7 +19,7 @@ model JoinConferenceRequest is JsonRpcRequest<typeof callingJoinConference, Join
 @extension("x-fern-display-name", callingJoinConferenceResponse)
 @reply model JoinConferenceReply is JsonRpcResponse<JoinConferenceResult>;
 
-@doc("Adds this call to an ad-hoc audio conference, creating the conference if it does not already exist. RELAY and cXML calls can share the same conference. Use this to bridge multiple callers together with options like recording, hold music, participant limits, and status callbacks.")
+@doc("Adds this call to an ad-hoc audio conference, creating the conference if it does not already exist. Relay and cXML calls can share the same conference. Use this to bridge multiple callers together with options like recording, hold music, participant limits, and status callbacks.")
 @channel(callingJoinConference)
 @summary("Join an ad-hoc audio conference")
 @extension("x-fern-display-name", callingJoinConference)

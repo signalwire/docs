@@ -8,7 +8,7 @@ namespace Relay.Calling;
 
 @summary("Fax send accepted")
 model SendFaxResult {
-  ...RelayResult<"Sending Fax">;
+  ...RelayResult<"Sending fax">;
 }
 
 @summary("Fax send stopped")
@@ -18,7 +18,7 @@ model SendFaxStopResult {
 
 @summary("Fax receive accepted")
 model ReceiveFaxResult {
-  ...RelayResult<"Receiving Fax">;
+  ...RelayResult<"Receiving fax">;
 }
 
 @summary("Fax receive stopped")

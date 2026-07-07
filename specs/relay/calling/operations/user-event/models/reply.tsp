@@ -6,7 +6,6 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
-@doc("Result of `calling.user_event`.")
 @summary("User event result")
 model UserEventResult {
   ...RelayResultWithCall<"Sending user event">;

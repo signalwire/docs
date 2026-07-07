@@ -61,7 +61,7 @@ model FaxFinished extends CallFax {
     @example("https://example.com/my_doc_to_fax.pdf")
     document?: url;
 
-    @doc("Document format, for example `tif` or `pdf`.")
+    @doc("Document format of the transmitted fax. Currently always `pdf`.")
     format?: string;
 
     @doc("Total number of pages sent or received.")
@@ -72,7 +72,7 @@ model FaxFinished extends CallFax {
     @example(true)
     success?: boolean;
 
-    @doc("Numeric fax result code. `0` means the fax succeeded; a non-zero code indicates why it failed. For example, `0`.")
+    @doc("Numeric fax result code. `0` means the fax succeeded; a non-zero code indicates why it failed.")
     @example(0)
     result?: int32;
 

@@ -20,10 +20,10 @@ model AiRequest is JsonRpcRequest<typeof callingAi, AiParams>;
 @reply model AiReply is JsonRpcResponse<AiResult>;
 
 @doc("""
-  Start an AI agent on the call. Blocking — acquires a block (preventing other
-  blocking operations like `connect` or `play_and_collect`) and runs the AI
-  session; the block is released when the session ends. Events continue to flow
-  while the session is active.
+  Start an AI agent on the call. This is a blocking operation: while the session
+  runs, other blocking operations like `connect` or `play_and_collect` cannot
+  start, and control returns when the session ends. Events continue to flow while
+  the session is active.
   """)
 @channel(callingAi)
 @summary("Start an AI agent on the call")

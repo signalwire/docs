@@ -44,7 +44,7 @@ model ConnectParams {
 
   @doc("""
     URL to receive `calling.call.connect` events via POST as the connection
-    progresses through the `connecting`, `connected`, `failed`, and `disconnected`
+    progresses through the `connecting`, `connected`, `disconnected`, and `failed`
     statuses.
     """)
   @example("https://example.com/webhooks/relay")

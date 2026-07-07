@@ -24,8 +24,7 @@ op receiveCall(): CallReceiveEvent;
   Receive-only. Fires every time a call changes state — created, ringing, answered,
   ending, ended — both for calls you place and for inbound calls on your subscribed
   contexts. Track a call through its lifecycle here, and match `tag` to the call you
-  placed. It is delivered on your connection whenever call state changes; you don't
-  send anything to receive it.
+  placed.
   """)
 @channel(callingCallState)
 @summary("Receive call-state changes")

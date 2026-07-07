@@ -7,6 +7,7 @@ using SignalWire.AsyncAPI;
 namespace Relay.Calling;
 
 @summary("AI sidecar result")
+@doc("Confirmation that the AI sidecar was attached.")
 model AiSidecarResult {
   ...RelayResultWithCall<"+OK">;
 }
@@ -24,6 +25,7 @@ model AiSidecarAskResult {
 }
 
 @summary("AI sidecar status result")
+@doc("Snapshot of the sidecar's status.")
 model AiSidecarStatusResult {
   ...RelayResultWithCall<"+OK">;
 }

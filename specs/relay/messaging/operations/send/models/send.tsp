@@ -4,12 +4,13 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Messaging;
 
+@summary("Send parameters")
 model SendParams {
   @doc("The context that delivery and reply events for this message are sent to.")
   @example("office")
   context: string;
 
-  @doc("Your own labels to attach to the message, so you can search for it in the UI later.")
+  @doc("Your own tags to attach to the message, so you can find it later in your SignalWire Dashboard.")
   @example(#["order-98765", "priority"])
   tags?: string[];
 

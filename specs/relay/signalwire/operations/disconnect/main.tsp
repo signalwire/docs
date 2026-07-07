@@ -27,7 +27,7 @@ const signalwireDisconnect = "signalwire.disconnect";
 model DisconnectEvent is JsonRpcRequest<typeof signalwireDisconnect, DisconnectParams>;
 
 @doc("""
-  Delivers the server-initiated `signalwire.disconnect` request described above.
+  Delivers the server-initiated `signalwire.disconnect` request.
   This channel is receive-only: the SDK receives the disconnect and replies with
   an empty acknowledgement — it never sends a disconnect.
   """)

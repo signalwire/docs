@@ -26,7 +26,7 @@ model LiveTranslateRequest is JsonRpcRequest<typeof callingLiveTranslate, LiveTr
   or inject a message by setting the matching `action`.
   """)
 @channel(callingLiveTranslate)
-@summary("Start or stop live translation on a call")
+@summary("Start, stop, summarize, or inject into live translation on a call")
 @extension("x-fern-display-name", callingLiveTranslate)
 op liveTranslate(...LiveTranslateRequest):
   | LiveTranslateReply

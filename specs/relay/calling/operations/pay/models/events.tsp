@@ -67,7 +67,7 @@ model CallPayParams {
   @example("https://example.com/webhooks/relay")
   status_url?: url;
 
-  @doc("Constant \"POST\"; present when status_url is set.")
+  @doc("Always `\"POST\"`. Present when `status_url` is set.")
   @example("POST")
   status_url_method?: string;
 

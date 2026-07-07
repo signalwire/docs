@@ -6,7 +6,6 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
-@summary("Transcribe params")
 model TranscribeParams {
   ...CallAddress;
 
@@ -14,12 +13,11 @@ model TranscribeParams {
   @example("d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e")
   control_id: string;
 
-  @doc("An `http` or `https` URL to receive transcription status updates as the transcription starts, runs, and ends.")
+  @doc("An `http` or `https` URL where SignalWire POSTs the transcript text and transcription status updates as the transcription starts, runs, and ends.")
   @example("https://example.com/webhooks/relay")
   status_url?: url;
 }
 
-@summary("Transcribe stop params")
 model TranscribeStopParams {
   ...CallAddress;
 
