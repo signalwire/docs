@@ -28,4 +28,16 @@ model SendRequest is JsonRpcRequest<typeof messagingSend, SendParams>;
 @channel(messagingSend)
 @summary("Send an outbound message")
 @extension("x-fern-display-name", messagingSend)
-op send(...SendRequest): SendReply | StateEvent | ReceiveEvent;
+op send(...SendRequest): SendReply | StateEvent;
+
+@doc("""
+  Receive-only. Fires when someone sends a message to one of your numbers on a
+  context you're subscribed to. There is no request to make — subscribe to the
+  context (via the `contexts` you pass to `signalwire.connect`) and listen. The
+  payload is the full inbound message; it is not tied to any `messaging.send` of
+  your own.
+  """)
+@channel(messagingReceive)
+@summary("Receive inbound messages on a subscribed context")
+@extension("x-fern-display-name", messagingReceive)
+op receiveMessage(): ReceiveEvent;

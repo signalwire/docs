@@ -21,7 +21,13 @@ model CallUserEventParams {
 }
 
 const callingCallUserEvent = "calling.user_event";
-@doc("Delivers a custom event sent with `calling.user_event` on this call. The payload is whatever object the sender provided, plus the call address.")
+@doc("""
+  A custom event on the call. You receive one whenever a `calling.user_event` is
+  emitted on the call — by your own application, by another subscriber, or by a
+  SWML `user_event` method running server-side — so it can arrive without your
+  application emitting anything. The payload is whatever object the sender
+  provided, plus the call address.
+  """)
 @summary(callingCallUserEvent)
 @extension("x-fern-display-name", callingCallUserEvent)
 model CallUserEvent is SignalwireEvent<typeof callingCallUserEvent, CallUserEventParams>;
