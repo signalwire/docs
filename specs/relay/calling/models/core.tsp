@@ -5,8 +5,9 @@ using SignalWire.AsyncAPI;
 namespace Relay.Calling;
 
 @doc("Identifies a specific active call. Nearly every method and event includes it.")
+@summary("Call address")
 model CallAddress {
-  @doc("Identifier of the node handling the call. Pair it with `call_id` to address the call.")
+  @doc("Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.")
   @example("a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d")
   node_id: string;
 
@@ -16,9 +17,10 @@ model CallAddress {
 }
 
 @doc("""
-  `CallAddress` plus the correlation fields the platform adds to most call events.
+  `CallAddress` plus the correlation fields included on most call events.
   Used by event payloads, not requests.
   """)
+@summary("Call event address")
 model CallEventAddress {
   ...CallAddress;
 
@@ -39,16 +41,17 @@ model CallEventAddress {
   This base carries only the fields every result has. Methods that echo the call or
   the control handle use `RelayResultWithCall` or `RelayResult` instead.
   """)
+@summary("Calling result (base)")
 model RelayResultBase<Message extends valueof string = "OK"> {
   @doc("Result code as a string, e.g. `\"200\"` (success), `\"400\"`, `\"404\"`.")
   @example("200")
   code: string;
 
-  @doc("Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.")
+  @doc("Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.")
   @example(Message)
   message?: string;
 
-  @doc("Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped).")
+  @doc("Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.")
   data?: unknown[];
 }
 
@@ -56,6 +59,7 @@ model RelayResultBase<Message extends valueof string = "OK"> {
   A calling result that echoes the `call_id` from your request but no control handle.
   Used by methods that act on a call but do not start a keyed, stoppable action.
   """)
+@summary("Calling result with call")
 model RelayResultWithCall<Message extends valueof string = "OK"> {
   ...RelayResultBase<Message>;
 
@@ -69,6 +73,7 @@ model RelayResultWithCall<Message extends valueof string = "OK"> {
   `control_id` of the started action. Used by methods that begin a keyed, stoppable
   action (play, record, collect, detect, tap, stream, pay, fax, transcribe, …).
   """)
+@summary("Calling result")
 model RelayResult<Message extends valueof string = "OK"> {
   ...RelayResultWithCall<Message>;
 
@@ -78,10 +83,11 @@ model RelayResult<Message extends valueof string = "OK"> {
 }
 
 @doc("""
-  A custom SIP header. Custom `X-` headers are allowed; the reserved `X-SignalWire*`
-  and `X-CID*` names (and internal `SignalWire*` names) are rejected. A few standard
-  headers (`Privacy`, `P-Asserted-Identity`, `User-to-User`) are also permitted.
+  A custom SIP header. Custom `X-` headers are allowed, except the reserved
+  `X-SignalWire*` and `X-CID*` prefixes. A few standard headers (`Privacy`,
+  `P-Asserted-Identity`, `User-to-User`) are also permitted.
   """)
+@summary("SIP header")
 model SipHeader {
   @doc("Header name. Typically an `X-`-prefixed custom header; the reserved `X-SignalWire*` and `X-CID*` names are rejected.")
   @example("X-Custom-Key")
@@ -93,6 +99,7 @@ model SipHeader {
 }
 
 @doc("Lifecycle states of a Relay-controlled call (`calling.call.state`).")
+@summary("Call state")
 union CallState {
   "created",
   "ringing",
@@ -102,6 +109,7 @@ union CallState {
 }
 
 @doc("Subset of call states a device may be asked to report via `call_state_events`.")
+@summary("Call state event name")
 union CallStateEventName {
   "created",
   "ringing",
@@ -110,6 +118,7 @@ union CallStateEventName {
 }
 
 @doc("Reason an outbound/active call is ended (`calling.end`).")
+@summary("Call end reason")
 union CallEndReason {
   "hangup",
   "cancel",
@@ -120,6 +129,7 @@ union CallEndReason {
 }
 
 @doc("Text-to-speech voice gender.")
+@summary("TTS gender")
 union TtsGender {
   "male",
   "female",
@@ -131,6 +141,7 @@ union TtsGender {
   `AMR-WB` — requesting `OPUS`, `VP8`, or `H264` on a phone answer is rejected with
   a `"400"`.
   """)
+@summary("Answer codec")
 union AnswerCodec {
   "PCMU",
   "PCMA",
@@ -143,6 +154,7 @@ union AnswerCodec {
 }
 
 @doc("Codecs you can request for a SIP device when you dial or connect.")
+@summary("SIP codec")
 union SipCodec {
   "PCMU",
   "PCMA",
@@ -158,6 +170,7 @@ union SipCodec {
   Ringtone names (ITU-T country tone codes) usable by the `ringtone` ringback /
   play element.
   """)
+@summary("Ringtone name")
 union ToneName {
   "at", "au", "bg", "br", "be", "ch", "cl", "cn", "cz", "de", "dk", "ee", "es",
   "fi", "fr", "gr", "hu", "il", "in", "it", "lt", "jp", "mx", "my", "nl", "no",

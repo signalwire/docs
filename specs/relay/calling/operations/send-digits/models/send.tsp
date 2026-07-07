@@ -14,7 +14,7 @@ model SendDigitsParams {
   control_id: string;
 
   @doc("""
-    The string of DTMF tones to play, in order. Allowed characters are the digits
+    The string of DTMF (touch-tone) tones to play, in order. Allowed characters are the digits
     `0`-`9`, `*`, `#`, and `A`-`D` (case-insensitive), plus `w` for a short pause
     and `W` for a longer pause (repeat them for longer waits). The whole string is
     rejected if it contains any other character.

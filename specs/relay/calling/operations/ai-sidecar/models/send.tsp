@@ -7,11 +7,13 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
+@summary("AI sidecar params")
 model AiSidecarParams {
   ...CallAddress;
   ...SWML.Calling.AISidecarObject;
 }
 
+@summary("AI sidecar poke params")
 model AiSidecarPokeParams {
   ...CallAddress;
 
@@ -20,6 +22,7 @@ model AiSidecarPokeParams {
   text: string;
 }
 
+@summary("AI sidecar ask params")
 model AiSidecarAskParams {
   ...CallAddress;
 
@@ -28,10 +31,12 @@ model AiSidecarAskParams {
   text: string;
 }
 
+@summary("AI sidecar stop params")
 model AiSidecarStopParams {
   ...CallAddress;
 }
 
+@summary("AI sidecar status params")
 model AiSidecarStatusParams {
   ...CallAddress;
 }

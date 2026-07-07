@@ -8,7 +8,7 @@ using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
-@doc("Tells you exactly what happened in the conference, from start and end to each participant action.")
+@doc("The conference event that fired — conference start/end, a participant action, an announcement, a recording change, or a bot action.")
 union ConferenceStatus {
   "conference-end",
   "conference-start",
@@ -22,7 +22,7 @@ union ConferenceStatus {
   "participant-speech-start",
   "participant-speech-stop",
 
-  @doc("Per-participant voice-quality (QoS) report. Emitted only when the conference was joined with `emit_call_quality: true`. Carries QoS metrics not yet individually modeled here.")
+  @doc("Per-participant voice-quality (QoS) report. Emitted only when the conference was joined with `emit_call_quality: true`. Carries the participant's QoS metrics.")
   "participant-call-quality",
 
   "announcement-end",
@@ -50,8 +50,9 @@ union ConferenceReasonEnded {
   The details of a conference event. Read `status` first: it tells you what
   happened and therefore which of the optional fields below are filled in.
   """)
+@summary("Conference event")
 model ConferenceParams {
-  @doc("The UUID of the node. Present on participant and stream events; absent on `conference-start`/`conference-end`.")
+  @doc("Opaque identifier that, paired with `call_id`, addresses this call. Present on participant and stream events; absent on `conference-start`/`conference-end`. Treat it as opaque and echo back the value you received.")
   @example("a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d")
   node_id?: string;
 

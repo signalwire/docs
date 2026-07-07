@@ -6,7 +6,8 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
-@doc("`phone` device params.")
+@doc("Parameters for dialing or connecting a phone (PSTN) leg.")
+@summary("Phone device parameters")
 model PhoneDeviceParams {
   @doc("Origination number, E.164. When omitted, SignalWire fills in a caller ID.")
   @example("+15551230001")
@@ -41,7 +42,8 @@ model PhoneDeviceParams {
   confirm_timeout?: int32;
 }
 
-@doc("`sip` device params.")
+@doc("Parameters for dialing or connecting a SIP leg.")
+@summary("SIP device parameters")
 model SipDeviceParams {
   @doc("Origination SIP URI / address. When omitted, SignalWire fills in a caller ID.")
   @example("sip:alice@example.com")
@@ -105,7 +107,8 @@ model SipDeviceParams {
   confirm_timeout?: int32;
 }
 
-@doc("`webrtc` device params.")
+@doc("Parameters for dialing or connecting a WebRTC leg.")
+@summary("WebRTC device parameters")
 model WebrtcDeviceParams {
   @doc("Origination — E.164 or a registered endpoint URI. When omitted, SignalWire fills in a caller ID.")
   @example("+15551230001")
@@ -139,7 +142,7 @@ model WebrtcDeviceParams {
 
 @doc("`call` device params (connect only) — bridge to an existing call.")
 model CallRefDeviceParams {
-  @doc("Node of the existing call.")
+  @doc("Opaque identifier that, paired with `call_id`, addresses the existing call. Echo back the value you received; treat it as opaque.")
   @example("a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d")
   node_id: string;
 
@@ -150,7 +153,7 @@ model CallRefDeviceParams {
 
 @doc("`queue` device params (connect only) — pull a call from a queue.")
 model QueueDeviceParams {
-  @doc("Node of the queue.")
+  @doc("Opaque identifier that, paired with the queue, addresses it. Echo back the value you received; treat it as opaque.")
   @example("a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d")
   node_id: string;
 
@@ -178,8 +181,10 @@ model StreamDeviceParams {
   name?: string;
 
   @doc("""
-    Codec, optionally with rate/ptime modifiers (e.g. `PCMU@40i`,
-    `L16@24000h@40i`). One of `PCMU|PCMA|G722|L16`. Default `PCMU`.
+    Codec, optionally with rate/ptime modifiers — `@<ms>i` sets the packetization
+    interval (how many milliseconds of audio per packet), `@<hz>h` sets the sample
+    rate (e.g. `PCMU@40i`, `L16@24000h@40i`). One of `PCMU|PCMA|G722|L16`.
+    Default `PCMU`.
     """)
   @example("PCMU")
   codec?: string = "PCMU";
@@ -210,6 +215,7 @@ model DialDevice {
   type: "phone" | "sip" | "webrtc";
 }
 
+@doc("Dial a phone number over the PSTN.")
 model DialPhoneDevice extends DialDevice {
   @example("phone")
   type: "phone";
@@ -217,6 +223,7 @@ model DialPhoneDevice extends DialDevice {
   params: PhoneDeviceParams;
 }
 
+@doc("Dial a SIP endpoint.")
 model DialSipDevice extends DialDevice {
   @example("sip")
   type: "sip";
@@ -224,6 +231,7 @@ model DialSipDevice extends DialDevice {
   params: SipDeviceParams;
 }
 
+@doc("Dial a WebRTC endpoint.")
 model DialWebrtcDevice extends DialDevice {
   @example("webrtc")
   type: "webrtc";
@@ -237,6 +245,7 @@ model ConnectDevice {
   type: "phone" | "sip" | "webrtc" | "call" | "queue" | "stream";
 }
 
+@doc("Connect to an existing call by reference.")
 model ConnectCallDevice extends ConnectDevice {
   @example("call")
   type: "call";
@@ -244,6 +253,7 @@ model ConnectCallDevice extends ConnectDevice {
   params: CallRefDeviceParams;
 }
 
+@doc("Connect to a call pulled from a queue.")
 model ConnectQueueDevice extends ConnectDevice {
   @example("queue")
   type: "queue";
@@ -251,6 +261,7 @@ model ConnectQueueDevice extends ConnectDevice {
   params: QueueDeviceParams;
 }
 
+@doc("Connect to a phone number over the PSTN.")
 model ConnectPhoneDevice extends ConnectDevice {
   @example("phone")
   type: "phone";
@@ -258,6 +269,7 @@ model ConnectPhoneDevice extends ConnectDevice {
   params: PhoneDeviceParams;
 }
 
+@doc("Connect to a SIP endpoint.")
 model ConnectSipDevice extends ConnectDevice {
   @example("sip")
   type: "sip";
@@ -265,6 +277,7 @@ model ConnectSipDevice extends ConnectDevice {
   params: SipDeviceParams;
 }
 
+@doc("Connect to a WebRTC endpoint.")
 model ConnectWebrtcDevice extends ConnectDevice {
   @example("webrtc")
   type: "webrtc";
@@ -272,6 +285,7 @@ model ConnectWebrtcDevice extends ConnectDevice {
   params: WebrtcDeviceParams;
 }
 
+@doc("Connect the call to a bidirectional audio stream over WebSocket.")
 model ConnectStreamDevice extends ConnectDevice {
   @example("stream")
   type: "stream";
@@ -285,6 +299,7 @@ model Ringback {
   type: "audio" | "tts" | "silence" | "ringtone";
 }
 
+@doc("Play an audio file from a URL as ringback.")
 model RingbackAudio extends Ringback {
   @example("audio")
   type: "audio";
@@ -296,6 +311,7 @@ model RingbackAudio extends Ringback {
   };
 }
 
+@doc("Speak text with text-to-speech as ringback.")
 model RingbackTts extends Ringback {
   @example("tts")
   type: "tts";
@@ -319,6 +335,7 @@ model RingbackTts extends Ringback {
   };
 }
 
+@doc("Play silence for a fixed duration as ringback.")
 model RingbackSilence extends Ringback {
   @example("silence")
   type: "silence";
@@ -331,6 +348,7 @@ model RingbackSilence extends Ringback {
   };
 }
 
+@doc("Play a country-specific ringtone as ringback.")
 model RingbackRingtone extends Ringback {
   @example("ringtone")
   type: "ringtone";
@@ -353,6 +371,7 @@ model CallDevice {
   type: "phone" | "sip" | "webrtc";
 }
 
+@doc("A phone (PSTN) leg, as reported in call events.")
 model CallPhoneDevice extends CallDevice {
   @example("phone")
   type: "phone";
@@ -371,6 +390,7 @@ model CallPhoneDevice extends CallDevice {
   };
 }
 
+@doc("A SIP leg, as reported in call events.")
 model CallSipDevice extends CallDevice {
   @example("sip")
   type: "sip";
@@ -389,6 +409,7 @@ model CallSipDevice extends CallDevice {
   };
 }
 
+@doc("A WebRTC leg, as reported in call events.")
 model CallWebrtcDevice extends CallDevice {
   @example("webrtc")
   type: "webrtc";

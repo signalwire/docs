@@ -6,45 +6,46 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
-@doc("Tone the fax detector listens for (remote side only).")
+@doc("Tone the fax detector listens for. Only the remote fax machine's tone can be detected.")
 union DetectFaxTone {
   "CED",
   "CNG",
 }
 
-@doc("`machine` detector params (answering-machine / voicemail detection).")
+@doc("Configuration for the answering-machine (voicemail) detector.")
+@summary("Answering-machine detector settings")
 model DetectMachineParams {
-  @doc("How long to wait (sec > 0) for initial voice before giving up. Default `4.5`.")
+  @doc("How many seconds to wait for initial voice before giving up. Must be greater than 0. Default `4.5`.")
   @minValueExclusive(0)
   @example(5.0)
   initial_timeout?: float64;
 
-  @doc("How long to wait (sec > 0) for voice to finish. Default `1.0`.")
+  @doc("How many seconds to wait for voice to finish. Must be greater than 0. Default `1.0`.")
   @minValueExclusive(0)
   @example(1.0)
   end_silence_timeout?: float64;
 
   @doc("""
-    How long to wait (sec > 0) for voice to finish before firing the READY
-    event. Default is `end_silence_timeout`.
+    How many seconds to wait for voice to finish before firing the READY
+    event. Must be greater than 0. Defaults to `end_silence_timeout`.
     """)
   @minValueExclusive(0)
   @example(1.0)
   machine_ready_timeout?: float64;
 
-  @doc("How much voice (sec > 0) to decide MACHINE. Default `1.25`.")
+  @doc("How many seconds of continuous voice are required before the result is reported as MACHINE. Default `1.25`.")
   @minValueExclusive(0)
   @example(1.25)
   machine_voice_threshold?: float64;
 
-  @doc("How many words (count > 0) to count to decide MACHINE. Default `6`.")
+  @doc("How many words must be counted before the result is reported as MACHINE. Default `6`.")
   @minValueExclusive(0)
   @example(6)
   machine_words_threshold?: int32;
 
   @doc("""
-    If true, a NOT_READY event is fired if VAD detects speech after READY. This
-    lets the application restart message delivery to the answering machine.
+    If `true`, a NOT_READY event fires if voice activity is detected after READY.
+    This lets your application restart message delivery to the answering machine.
     Default `false`.
     """)
   @example(false)
@@ -58,26 +59,30 @@ model DetectMachineParams {
   detect_message_end?: boolean = true;
 }
 
-@doc("`fax` detector params.")
+@doc("Configuration for the fax-tone detector.")
+@summary("Fax-tone detector settings")
 model DetectFaxParams {
-  @doc("Tone to detect (remote side only). Default `CED`.")
+  @doc("Tone to detect. Only the remote fax machine's tone can be detected. Default `CED`.")
   @example("CED")
   tone?: DetectFaxTone;
 }
 
-@doc("`digit` detector params.")
+@doc("Configuration for the digit detector.")
+@summary("Digit detector settings")
 model DetectDigitParams {
   @doc("Digits to detect. Default `0123456789#*`.")
   @example("0123456789#*")
   digits?: string;
 }
 
-@doc("Detector to start. Discriminated on `type` (`machine`|`fax`|`digit`).")
+@doc("Detector to start. One of `machine`, `fax`, or `digit`.")
+@summary("Detector config")
 @discriminator("type")
 model DetectConfig {
   type: "digit" | "fax" | "machine";
 }
 
+@summary("Answering-machine detector")
 model DetectMachine extends DetectConfig {
   @example("machine")
   type: "machine";
@@ -85,6 +90,7 @@ model DetectMachine extends DetectConfig {
   params?: DetectMachineParams;
 }
 
+@summary("Fax-tone detector")
 model DetectFax extends DetectConfig {
   @example("fax")
   type: "fax";
@@ -92,6 +98,7 @@ model DetectFax extends DetectConfig {
   params?: DetectFaxParams;
 }
 
+@summary("Digit detector")
 model DetectDigit extends DetectConfig {
   @example("digit")
   type: "digit";

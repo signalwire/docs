@@ -65,7 +65,7 @@ model CallTapRtpDevice extends CallTapDevice {
     @example("PCMU")
     codec?: string;
 
-    @doc("Packetization time of the stream, in milliseconds. Absent when it matches the tapped audio.")
+    @doc("Packet interval, in milliseconds — how many milliseconds of audio each RTP packet carries. Absent when it matches the tapped audio.")
     @example(20)
     ptime?: int32;
   };

@@ -21,7 +21,8 @@ model PayRequest is JsonRpcRequest<typeof callingPay, PayParams>;
 
 @doc("""
   Collects a payment on an active call. The caller is prompted to enter their
-  card details on the keypad (DTMF), and the collected details are POSTed to
+  card details on the keypad using DTMF (touch-tone) key presses, and the
+  collected details are POSTed to
   the payment connector at `payment_connector_url` for processing. Use this to
   take card payments over the phone without handling raw card data yourself.
 
@@ -30,7 +31,7 @@ model PayRequest is JsonRpcRequest<typeof callingPay, PayParams>;
   events keyed on your `control_id`, and at `status_url` if you set one.
   """)
 @channel(callingPay)
-@summary("Collect a payment via the Pay IVR")
+@summary("Collect a card payment over the phone")
 @extension("x-fern-display-name", callingPay)
 @extension("x-fern-sdk-group-name", GroupPaymentsPay)
 op pay(...PayRequest): PayReply | CallPayEvent;
@@ -43,7 +44,7 @@ model PayStopRequest is JsonRpcRequest<typeof callingPayStop, PayStopParams>;
 @extension("x-fern-display-name", callingPayStopResponse)
 @reply model PayStopReply is JsonRpcResponse<PayStopResult>;
 
-@doc("Stop an active Pay IVR session.")
+@doc("Stop an active Pay flow (interactive voice response, or IVR) session.")
 @channel(callingPayStop)
 @summary("Stop an active pay")
 @extension("x-fern-display-name", callingPayStop)

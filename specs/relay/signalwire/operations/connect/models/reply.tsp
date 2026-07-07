@@ -25,6 +25,11 @@ model IceServer {
   iceTransportPolicy?: string;
 }
 
+@doc("""
+  The result of a successful `signalwire.connect`: the `protocol` to use on later
+  requests, your `identity` and `authorization`, and any ICE servers for media.
+  """)
+@summary("Connect result")
 model ConnectResult {
   @doc("The protocol identifier to use on your subsequent requests. The only field guaranteed on every successful connect result.")
   @example("signalwire_c1d2e3f4a5b6")

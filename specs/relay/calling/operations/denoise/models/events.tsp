@@ -17,7 +17,7 @@ model CallDenoiseParams {
 }
 
 const callingCallDenoise = "calling.call.denoise";
-@doc("Fires when background noise reduction is turned on or off for the call. Unlike most media events, this one carries no `control_id`.")
+@doc("Fires when background noise reduction is turned on or off for the call. This event does not include a `control_id`.")
 @summary(callingCallDenoise)
 @extension("x-fern-display-name", callingCallDenoise)
 model CallDenoiseEvent is SignalwireEvent<typeof callingCallDenoise, CallDenoiseParams>;

@@ -6,6 +6,7 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
+@summary("Disconnect result")
 model DisconnectResult {
   ...RelayResultBase<"Disconnecting call">;
 }

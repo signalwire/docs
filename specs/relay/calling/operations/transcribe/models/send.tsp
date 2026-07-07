@@ -6,6 +6,7 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
+@summary("Transcribe params")
 model TranscribeParams {
   ...CallAddress;
 
@@ -18,6 +19,7 @@ model TranscribeParams {
   status_url?: url;
 }
 
+@summary("Transcribe stop params")
 model TranscribeStopParams {
   ...CallAddress;
 

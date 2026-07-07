@@ -6,9 +6,10 @@ using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
+@summary("Translate utterance")
 @doc("An incremental translated (or source) text fragment.")
 model TranslateUtterance {
-  @doc("The language of this fragment, as an engine/BCP-47 code.")
+  @doc("The language of this fragment as a BCP-47 language code (e.g. `en`, `es-ES`).")
   @example("es")
   language: string;
 
@@ -23,6 +24,7 @@ model TranslateUtterance {
   (`output_utterance`) as the call proceeds. Streams to your `webhook` when you
   start `calling.live_translate`.
   """)
+@summary("Live translate transcript delta event")
 model TranslateTranscriptDeltaEventData {
   @doc("Present on source-language (input) fragments.")
   input_utterance?: TranslateUtterance;

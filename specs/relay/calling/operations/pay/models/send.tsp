@@ -8,8 +8,11 @@ using SignalWire.AsyncAPI;
 namespace Relay.Calling;
 
 @doc("""
-  How the Pay IVR collects payment details. Only `dtmf` is currently supported.
+  How the payment flow collects card details from the caller: `dtmf` reads them
+  from the caller's keypad. `voice` is reserved for spoken input and is not yet
+  available — use `dtmf` today.
   """)
+@summary("Payment input mode")
 union PayInput {
   "dtmf",
   "voice",
@@ -78,10 +81,12 @@ model PayPromptAction {
 }
 
 @doc("""
-  A custom prompt overriding the Pay IVR default for a given situation.
+  A custom prompt that overrides the default the Pay flow uses for a given
+  situation. The Pay flow is an interactive voice response (IVR) that prompts the
+  caller for their card details.
 
-  `card_type` and `error_type` are SPACE-DELIMITED token strings on the wire (not
-  arrays) — e.g. `error_type: "timeout invalid-card-number invalid-card-type"`.
+  `card_type` and `error_type` are space-delimited strings, not arrays — e.g.
+  `error_type: "timeout invalid-card-number invalid-card-type"`.
   """)
 model PayPrompt {
   @doc("The situation this prompt applies to.")
@@ -111,12 +116,11 @@ model PayPrompt {
   require_matching_inputs?: string;
 
   @doc("""
-    Space-delimited error-type tokens this prompt applies to. Documented tokens:
+    Space-delimited error-type tokens this prompt applies to. Accepted tokens:
     timeout, invalid-card-number, invalid-card-type, invalid-date,
     invalid-security-code, invalid-postal-code, session-in-progress,
-    card-declined. (The gateway parser additionally recognizes
-    invalid-bank-routing-number, invalid-bank-account-number, and
-    input-matching-failed.)
+    card-declined, invalid-bank-routing-number, invalid-bank-account-number,
+    and input-matching-failed.
     """)
   @example("timeout invalid-card-number invalid-card-type")
   error_type?: string;
@@ -157,29 +161,29 @@ model PayParams {
 
   @doc("""
     Seconds the Pay IVR waits for the next digit before validating the captured
-    digits, as a string of digits on the wire (e.g. `"6"`). Default `"5"`.
+    digits, passed as a string, e.g. `"6"`. Default `"5"`.
     """)
   @pattern("^[0-9]+$")
   @example("6")
   timeout?: string = "5";
 
   @doc("""
-    Number of times the Pay IVR retries when collecting card details, as a string
-    of digits on the wire (e.g. `"3"`). Default `"1"`.
+    Number of times the Pay IVR retries when collecting card details, passed as a
+    string, e.g. `"3"`. Default `"1"`.
     """)
   @pattern("^[0-9]+$")
   @example("3")
   max_attempts?: string = "1";
 
   @doc("""
-    Whether to prompt for the card security code, as a string boolean on the wire
+    Whether to prompt for the card security code, passed as a string boolean
     (`"true"` or `"false"`). Default `"true"`.
     """)
   @example("false")
   security_code?: string = "true";
 
   @doc("""
-    Whether to prompt for the billing postal code, as a string on the wire
+    Whether to prompt for the billing postal code, passed as a string
     (`"true"`, `"false"`, or a known postcode so the IVR skips the prompt).
     Default `"true"`.
     """)
@@ -187,8 +191,8 @@ model PayParams {
   postal_code?: string = "true";
 
   @doc("""
-    Minimum number of digits a caller must enter for the postal code, as a string
-    of digits on the wire (e.g. `"6"`). Default `"0"`.
+    Minimum number of digits a caller must enter for the postal code, passed as a
+    string, e.g. `"6"`. Default `"0"`.
     """)
   @pattern("^[0-9]+$")
   @example("6")
@@ -233,7 +237,7 @@ model PayParams {
   description?: string;
 
   @doc("""
-    SPACE-DELIMITED list of card types allowed in this payment (not an array) —
+    Space-delimited list of card types allowed in this payment, not an array —
     subset of `visa mastercard amex maestro discover jcb diners-club`. Default
     `"visa mastercard amex"`.
     """)

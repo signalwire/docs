@@ -52,11 +52,13 @@ union CallDetectMachineEvent {
   `machine`, or `digit`. Whatever the type, the `event` field also carries the
   generic `finished` value when the detector completes.
   """)
+@summary("Detect result")
 @discriminator("type")
 model CallDetectResult {
   type: "digit" | "fax" | "machine";
 }
 
+@summary("Fax detection result")
 model CallDetectFax extends CallDetectResult {
   @example("fax")
   type: "fax";
@@ -68,6 +70,7 @@ model CallDetectFax extends CallDetectResult {
   };
 }
 
+@summary("Answering-machine detection result")
 model CallDetectMachine extends CallDetectResult {
   @example("machine")
   type: "machine";
@@ -83,17 +86,19 @@ model CallDetectMachine extends CallDetectResult {
   };
 }
 
+@summary("Digit detection result")
 model CallDetectDigit extends CallDetectResult {
   @example("digit")
   type: "digit";
 
   params: {
-    @doc("The DTMF digit that was detected: one of `0`-`9`, `#`, or `*`. Carries the terminal `finished` value once the detector completes.")
+    @doc("The DTMF (touch-tone) digit that was detected: one of `0`-`9`, `#`, or `*`. Carries the terminal `finished` value once the detector completes.")
     @example("5")
     event: string;
   };
 }
 
+@summary("Detect event")
 model CallDetectParams {
   ...CallEventAddress;
 

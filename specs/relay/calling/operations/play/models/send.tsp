@@ -15,8 +15,7 @@ model PlayParams {
   control_id: string;
 
   @doc("""
-    Playback volume, -40dB to +40dB (`0` = original audio, `-40` = muted;
-    amplitude gain factor `10^(value/20)`).
+    Playback volume, -40dB to +40dB (`0` = original audio, `-40` = muted).
     """)
   @minValue(-40)
   @maxValue(40)
@@ -24,8 +23,8 @@ model PlayParams {
   volume?: float64;
 
   @doc("""
-    Which side of the call hears the media: `listen` (what the called party
-    hears), `speak`, or `both`. Default `listen`.
+    Which side of the call hears the media: `listen` (audio the called party
+    hears), `speak` (audio the called party sends), or `both`. Default `listen`.
     """)
   @example("listen")
   direction?: "listen" | "speak" | "both" = "listen";
@@ -90,8 +89,7 @@ model PlayVolumeParams {
   control_id: string;
 
   @doc("""
-    Playback volume, -40dB to +40dB (`0` = original audio, `-40` = muted;
-    amplitude gain factor `10^(value/20)`).
+    Playback volume, -40dB to +40dB (`0` = original audio, `-40` = muted).
     """)
   @minValue(-40)
   @maxValue(40)

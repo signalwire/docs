@@ -14,6 +14,7 @@ union TranscribeState {
   "finished",
 }
 
+@summary("Transcribe event")
 model CallTranscribeParams {
   ...CallEventAddress;
 

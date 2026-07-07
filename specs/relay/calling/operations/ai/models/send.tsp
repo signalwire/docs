@@ -11,6 +11,7 @@ namespace Relay.Calling;
 
 @@excludeFromEmit(SWMLVar);
 
+@summary("AI params")
 model AiParams {
   ...CallAddress;
 
@@ -24,6 +25,7 @@ model AiParams {
   ...SWML.Calling.AIObject;
 }
 
+@summary("AI stop params")
 model AiStopParams {
   ...CallAddress;
 

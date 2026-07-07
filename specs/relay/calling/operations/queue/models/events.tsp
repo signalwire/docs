@@ -8,7 +8,13 @@ using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
-@doc("The call's current standing in the queue: `entering` while it joins, `connecting`/`connected` as it is bridged out to an agent, `leaving` when it exits, and `failed`/`timeout`/`hangup` for the ways it can drop out.")
+@doc("""
+  What this queue event reports: `enqueue` when the call joins the queue, `leave`
+  when it exits, and `stats` for a periodic position/size update while it waits.
+  Other values may appear for future event types, so handle unrecognized strings
+  gracefully.
+  """)
+@summary("Queue event type")
 union CallQueueStatus {
   "enqueue",
   "leave",
@@ -16,6 +22,7 @@ union CallQueueStatus {
   string,
 }
 
+@summary("Queue event")
 model CallQueueParams {
   ...CallAddress;
 

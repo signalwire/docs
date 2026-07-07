@@ -6,6 +6,7 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
+@summary("AI message result")
 model AiMessageResult {
   ...RelayResultWithCall<"+OK">;
 }

@@ -29,6 +29,7 @@ union RecordEventDirection {
 }
 
 @doc("The audio settings the recording was captured with.")
+@summary("Recording audio settings")
 model RecordEventAudio {
   @doc("The file format of the recording (for example `mp3` or `wav`).")
   @example("mp3")
@@ -44,6 +45,7 @@ model RecordEventAudio {
 }
 
 @doc("Describes how the recording was made. The `audio` field is present when you recorded audio.")
+@summary("Recording specification")
 model RecordEventSpec {
   @doc("The audio settings used for this recording.")
   audio?: RecordEventAudio;
@@ -80,7 +82,7 @@ model CallRecordParams {
   @example(1712345678.842)
   start_time?: float64;
 
-  @doc("Unix epoch (seconds) of the true first recorded PCM frame; present when available — a more accurate anchor than start_time.")
+  @doc("Unix timestamp, in seconds, of the first captured audio. Present when available; more precise than `start_time`.")
   @example(1712345678.123)
   first_frame_time?: float64;
 

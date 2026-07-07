@@ -21,44 +21,54 @@ union CallCollectState {
   extra data, while `digit` and `speech` include a `params` object with the
   collected input.
   """)
+@summary("Collect result")
 @discriminator("type")
 model CallCollectResult {
   type: "digit" | "error" | "finished" | "no_input" | "no_match" | "speech" | "start_of_input";
 }
 
+@doc("The collect failed before producing input.")
+@summary("Collect error result")
 model CallCollectResultError extends CallCollectResult {
   @example("error")
   type: "error";
 }
 
+@doc("No input was received before the timeout.")
+@summary("Collect no-input result")
 model CallCollectResultNoInput extends CallCollectResult {
   @example("no_input")
   type: "no_input";
 }
 
+@doc("Input was received but did not match your `digits`/`speech` criteria.")
+@summary("Collect no-match result")
 model CallCollectResultNoMatch extends CallCollectResult {
   @example("no_match")
   type: "no_match";
 }
 
 @doc("Signals that the caller has started speaking. You only receive this when you collect with `calling.collect`.")
+@summary("Start-of-input result")
 model CallCollectResultStartOfInput extends CallCollectResult {
   @example("start_of_input")
   type: "start_of_input";
 }
 
 @doc("Signals that collection ended without producing input — for example the call hung up or the collect was stopped.")
+@summary("Collect finished result")
 model CallCollectResultFinished extends CallCollectResult {
   @example("finished")
   type: "finished";
 }
 
+@summary("Collected digit result")
 model CallCollectResultDigit extends CallCollectResult {
   @example("digit")
   type: "digit";
 
   params: {
-    @doc("The DTMF digits the caller pressed.")
+    @doc("The DTMF (touch-tone) digits the caller pressed.")
     @example("1234")
     digits: string;
 
@@ -68,6 +78,7 @@ model CallCollectResultDigit extends CallCollectResult {
   };
 }
 
+@summary("Collected speech result")
 model CallCollectResultSpeech extends CallCollectResult {
   @example("speech")
   type: "speech";
@@ -83,6 +94,7 @@ model CallCollectResultSpeech extends CallCollectResult {
   };
 }
 
+@summary("Collect event")
 model CallCollectParams {
   ...CallAddress;
 

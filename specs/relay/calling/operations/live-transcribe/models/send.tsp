@@ -46,9 +46,11 @@ union TranslationFilterPreset {
   "gen-z",
 }
 
+@summary("Stop action")
 @doc("A stop action takes no fields — pass an empty object.")
 model LiveActionStop {}
 
+@summary("Live transcribe start settings")
 @doc("Settings for starting live transcription. `lang` and `direction` are required.")
 model LiveTranscribeStart {
   @doc("The language to transcribe, e.g. `en-US`.")
@@ -111,6 +113,7 @@ model LiveTranscribeStart {
   verbose_utterances?: boolean;
 }
 
+@summary("Live translate start settings")
 @doc("Settings for starting live translation. `from_lang`, `to_lang` and `direction` are required.")
 model LiveTranslateStart {
   @doc("The language being spoken, e.g. `en-US`.")
@@ -199,6 +202,7 @@ model LiveTranslateStart {
   mode?: LiveTranslateMode = "classic";
 }
 
+@summary("Summarize settings")
 @doc("Settings for generating a summary of the live transcription or translation so far.")
 model LiveSummarize {
   @doc("An `http` or `https` URL to receive the summary.")
@@ -210,6 +214,7 @@ model LiveSummarize {
   prompt?: string;
 }
 
+@summary("Translate inject message")
 @doc("A message to insert into a live translation. It is translated and spoken into the call.")
 model LiveTranslateInject {
   @doc("The text to translate and speak into the call.")
@@ -225,6 +230,7 @@ model LiveTranslateInject {
   The live-transcribe action to perform. Set exactly one of `start`, `stop`, or
   `summarize`.
   """)
+@summary("Live transcribe action")
 model LiveTranscribeAction {
   @doc("Start live transcription.")
   start?: LiveTranscribeStart;
@@ -236,6 +242,7 @@ model LiveTranscribeAction {
   summarize?: LiveSummarize;
 }
 
+@summary("Live transcribe params")
 model LiveTranscribeParams {
   ...CallAddress;
 

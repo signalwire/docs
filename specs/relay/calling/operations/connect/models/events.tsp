@@ -10,8 +10,9 @@ using TypeSpec.OpenAPI;
 namespace Relay.Calling;
 
 @doc("The other call being connected to yours.")
+@summary("Connect peer")
 model ConnectPeer {
-  @doc("Identifier of the node hosting the peer call.")
+  @doc("Opaque identifier that, paired with `call_id`, scopes the peer call. Echo it back on follow-up commands that target it; treat it as opaque.")
   @example("a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d")
   node_id?: string;
 
@@ -27,7 +28,7 @@ model ConnectPeer {
   @example("q-1a2b3c4d")
   queue_id?: string;
 
-  @doc("The queue's friendly name.")
+  @doc("Human-readable name of the queue the peer was reached through.")
   @example("support")
   queue_name?: string;
 
@@ -35,6 +36,7 @@ model ConnectPeer {
   device?: CallDevice;
 }
 
+@summary("Connect event payload")
 model CallConnectParams {
   ...CallEventAddress;
 

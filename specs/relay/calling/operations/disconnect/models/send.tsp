@@ -6,6 +6,7 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
+@summary("Disconnect parameters")
 model DisconnectParams {
   ...CallAddress;
 }

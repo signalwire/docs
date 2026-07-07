@@ -6,6 +6,7 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
+@summary("User event parameters")
 model UserEventParams {
   ...CallAddress;
 

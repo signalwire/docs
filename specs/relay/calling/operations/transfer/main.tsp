@@ -17,9 +17,9 @@ model TransferRequest is JsonRpcRequest<typeof callingTransfer, TransferParams>;
 @extension("x-fern-display-name", callingTransferResponse)
 @reply model TransferReply is JsonRpcResponse<TransferResult>;
 
-@doc("Hands off control of an active call to another RELAY application or to a SWML script. Use this to move a call to a different flow, for example to route it to an IVR, queue, or a fresh script. Once transferred, the original application no longer controls the call.")
+@doc("Hands off control of an active call to another Relay application or to a SWML script. Use this to move a call to a different flow, for example to route it to an IVR (interactive voice response), queue, or a fresh script. Once transferred, the original application no longer controls the call.")
 @channel(callingTransfer)
-@summary("Transfer a call to a RELAY app or SWML script")
+@summary("Transfer a call to a Relay app or SWML script")
 @extension("x-fern-display-name", callingTransfer)
 @extension("x-fern-sdk-group-name", GroupControlTransfer)
 op transfer(...TransferRequest): TransferReply;

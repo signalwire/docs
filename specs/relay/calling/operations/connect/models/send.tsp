@@ -7,6 +7,7 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
+@summary("Connect parameters")
 model ConnectParams {
   ...CallAddress;
 
@@ -33,7 +34,7 @@ model ConnectParams {
   @example(30)
   timeout?: float64;
 
-  @doc("DTMF digits to send once the call is answered. Use `w` or `W` to insert pauses.")
+  @doc("DTMF (touch-tone) digits to send once the call is answered. Use `w` or `W` to insert pauses.")
   @example("1234#")
   send_digits?: string;
 

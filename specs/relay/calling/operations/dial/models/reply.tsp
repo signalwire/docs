@@ -6,6 +6,7 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
+@summary("Dial result")
 model DialResult {
   ...RelayResultBase<"Dialing">;
 

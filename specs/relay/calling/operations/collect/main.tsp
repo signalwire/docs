@@ -20,7 +20,7 @@ model CollectRequest is JsonRpcRequest<typeof callingCollect, CollectParams>;
 @reply model CollectReply is JsonRpcResponse<CollectResult>;
 
 @doc("""
-  Collects DTMF key presses, spoken input, or both from a caller on an active
+  Collects DTMF (touch-tone) key presses, spoken input, or both from a caller on an active
   call. Use it to gather menu selections, account numbers, or short voice
   responses. The immediate response only confirms that collection started;
   the collected input arrives asynchronously in `calling.call.collect` events

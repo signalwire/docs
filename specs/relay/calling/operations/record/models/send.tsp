@@ -55,7 +55,7 @@ model RecordAudio {
   @example(0)
   end_silence_timeout?: float64 = 0;
 
-  @doc("DTMF digits that stop the recording. Default `#`.")
+  @doc("DTMF (touch-tone) digits that stop the recording. Default `#`.")
   @example("#")
   terminators?: string = "#";
 

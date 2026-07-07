@@ -15,12 +15,14 @@ union FaxDirection {
 }
 
 @doc("Details of a fax event. The `type` field tells you which stage it describes.")
+@summary("Fax event")
 @discriminator("type")
 model CallFax {
   type: "finished" | "page";
 }
 
 @doc("Fires each time a single fax page is sent or received, so you can track progress mid-transmission.")
+@summary("Fax page event")
 model FaxPage extends CallFax {
   @example("page")
   type: "page";
@@ -37,6 +39,7 @@ model FaxPage extends CallFax {
 }
 
 @doc("Fires once the whole fax is done, with the final result and a link to the document.")
+@summary("Fax finished event")
 model FaxFinished extends CallFax {
   @example("finished")
   type: "finished";
@@ -69,7 +72,7 @@ model FaxFinished extends CallFax {
     @example(true)
     success?: boolean;
 
-    @doc("Numeric fax result code (for example, `1231`).")
+    @doc("Numeric fax result code. `0` means the fax succeeded; a non-zero code indicates why it failed. For example, `0`.")
     @example(0)
     result?: int32;
 
@@ -79,6 +82,7 @@ model FaxFinished extends CallFax {
   };
 }
 
+@summary("Fax event details")
 model CallFaxParams {
   ...CallEventAddress;
 

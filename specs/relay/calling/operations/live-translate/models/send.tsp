@@ -11,6 +11,7 @@ namespace Relay.Calling;
   The live-translate action to perform. Set exactly one of `start`, `stop`,
   `summarize`, or `inject`.
   """)
+@summary("Live translate action")
 model LiveTranslateAction {
   @doc("Start live translation.")
   start?: LiveTranslateStart;
@@ -25,6 +26,7 @@ model LiveTranslateAction {
   inject?: LiveTranslateInject;
 }
 
+@summary("Live translate params")
 model LiveTranslateParams {
   ...CallAddress;
 

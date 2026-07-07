@@ -9,7 +9,7 @@ using SignalWire.AsyncAPI;
 namespace Relay.Calling;
 
 @doc("""
-  Settings that control how the caller's DTMF key presses are collected for a
+  Settings that control how the caller's DTMF (touch-tone) key presses are collected for a
   `calling.play_and_collect`. Unlike the standalone `calling.collect`, this also
   accepts a `min` digit count.
   """)
@@ -60,8 +60,7 @@ model PlayAndCollectParams {
 
   @doc("""
     Playback volume in dB, from `-40` (muted) to `+40`, where `0` keeps the
-    original audio level. The value is applied as the standard amplitude gain
-    factor `10 ^ (value / 20)`.
+    original audio level.
     """)
   @minValue(-40)
   @maxValue(40)
@@ -96,8 +95,7 @@ model PlayAndCollectVolumeParams {
 
   @doc("""
     New playback volume in dB, from `-40` (muted) to `+40`, where `0` keeps the
-    original audio level. The value is applied as the standard amplitude gain
-    factor `10 ^ (value / 20)`.
+    original audio level.
     """)
   @minValue(-40)
   @maxValue(40)

@@ -25,10 +25,8 @@ model ConfigureRequest is JsonRpcRequest<typeof provisioningConfigure, Configure
   `external_endpoint`), and SignalWire returns its configuration. For a
   `freeswitch` target, the response includes a SIP profile rendered as XML.
 
-  On failure the response is a JSON-RPC `error` object
-  `{ code: <integer>, message }` rather than the success `result` shape. The
-  `code` is an integer (`-32001`, `-32602`, `-32003`, or `-32603`), distinct
-  from the string `result.code` used elsewhere.
+  If configuration fails, the response carries an error code and a message
+  describing the problem instead of a configuration.
   """)
 @channel(provisioningConfigure)
 @summary("Request SignalWire connector configuration")

@@ -8,6 +8,7 @@ using TypeSpec.OpenAPI;
 
 namespace Relay.Messaging;
 
+@summary("Delivery-state event data")
 model StateEventData {
   @doc("The ID of the message, matching the one returned by `messaging.send`.")
   @example("e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f")
@@ -65,6 +66,7 @@ const messagingState = "messaging.state";
 @extension("x-fern-display-name", messagingState)
 model StateEvent is MessagingEvent<typeof messagingState, StateEventData>;
 
+@summary("Inbound-message event data")
 model ReceiveEventData {
   @doc("The ID of the message.")
   @example("e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f")

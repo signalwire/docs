@@ -17,7 +17,7 @@ union CollectSpeechEngine {
   "Google.V2",
 }
 
-@doc("Settings that control how the caller's DTMF key presses are collected.")
+@doc("Settings that control how the caller's DTMF (touch-tone) key presses are collected.")
 model CollectDigits {
   @doc("Maximum number of digits to collect before collection finishes. Must be a positive integer.")
   @minValue(1)

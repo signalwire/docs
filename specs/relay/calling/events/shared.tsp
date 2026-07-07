@@ -10,8 +10,9 @@ using TypeSpec.OpenAPI;
 namespace Relay.Calling;
 
 @doc("The call that created this one, when it was spawned by another call.")
+@summary("Parent call reference")
 model CallParentRef {
-  @doc("Identifier of the node hosting the parent call.")
+  @doc("Opaque identifier that, paired with `call_id`, addresses the parent call. Echo back the value you received; treat it as opaque.")
   @example("a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d")
   node_id?: string;
 
@@ -25,8 +26,9 @@ model CallParentRef {
 }
 
 @doc("The other call this one is bridged to.")
+@summary("Peer call reference")
 model CallPeerRef {
-  @doc("Identifier of the node hosting the peer call.")
+  @doc("Opaque identifier that, paired with `call_id`, addresses the peer call. Echo back the value you received; treat it as opaque.")
   @example("a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d")
   node_id?: string;
 
@@ -36,12 +38,14 @@ model CallPeerRef {
 }
 
 @doc("Whether a call is inbound or outbound.")
+@summary("Call direction")
 union CallDirection {
   "inbound",
   "outbound",
 }
 
-@doc("Why a call ended. A superset of the `calling.end` reasons, with the extra values the platform reports when a call ends on its own.")
+@doc("Why a call ended. Includes the `calling.end` reasons plus values that occur when a call ends on its own (`abandoned`, `maxDuration`, `notFound`).")
+@summary("Call state end reason")
 union CallStateEndReason {
   "hangup",
   "cancel",
@@ -55,6 +59,7 @@ union CallStateEndReason {
 }
 
 @doc("Present only for SIP calls (`device.type == \"sip\"`). SIP addressing/header detail extracted from the inbound INVITE. Every sub-field is optional and appears only when the corresponding SIP header was present.")
+@summary("Call SIP data")
 model CallSipData {
   @doc("Request-URI user part.")
   @example("bob")
@@ -125,6 +130,8 @@ model CallSipData {
   sip_p_asserted_identity?: string;
 }
 
+@doc("Payload of the `calling.call.state` event: the call's address, state, timing, and leg detail.")
+@summary("Call state event payload")
 model CallStateParams {
   ...CallEventAddress;
 
@@ -161,11 +168,11 @@ model CallStateParams {
   @example("hangup")
   end_reason?: CallStateEndReason;
 
-  @doc("What ended the call. Present once the call has ended.")
+  @doc("Which side ended the call, e.g. `peer` (the other party). Present once the call has ended.")
   @example("peer")
   end_source?: string;
 
-  @doc("Present and set to `\"true\"` when this call won a `calling.dial` race. Emitted as the string `\"true\"`, not a boolean.")
+  @doc("Set to the string `\"true\"` on the call that won a `calling.dial` race. Absent otherwise. Note the value is the string `\"true\"`, not a JSON boolean.")
   @example("true")
   dial_winner?: "true";
 
@@ -183,6 +190,8 @@ const callingCallState = "calling.call.state";
 @extension("x-fern-display-name", callingCallState)
 model CallStateEvent is SignalwireEvent<typeof callingCallState, CallStateParams>;
 
+@doc("Payload of the `calling.call.receive` event: who is calling and on which context.")
+@summary("Call receive event payload")
 model CallReceiveParams {
   ...CallEventAddress;
 

@@ -17,6 +17,7 @@ union AiMessageRole {
   Conversation-reset configuration. Each field clears or replaces part of the
   session context.
   """)
+@summary("AI message reset")
 model AiMessageReset {
   @doc("Clear the entire conversation history.")
   @example(false)
@@ -29,8 +30,6 @@ model AiMessageReset {
   @doc("Replace (or clear) the system prompt context.")
   @example("You are a helpful assistant taking pizza orders.")
   system_prompt?: string;
-
-  // NOTE: reset.consolidate is supported by mod_openai but REJECTED by the relay_apis.c:1950 allowlist (is_reset = full_reset,user_prompt,system_prompt) before it reaches mod_openai — omitted from the Relay wire. Flag to engineering if it should be whitelisted.
 }
 
 @doc("""
@@ -40,6 +39,7 @@ model AiMessageReset {
   `message_text` and `global_data` in the same request are ignored — send those in
   a separate request.
   """)
+@summary("AI message params")
 model AiMessageParams {
   ...CallAddress;
 
@@ -55,9 +55,9 @@ model AiMessageParams {
   reset?: AiMessageReset;
 
   @doc("""
-    Updates the global data available to SWAIG functions. Merges into the existing
-    global data; set a key to `null` to remove it. Can be sent on its own to update
-    state without injecting a message.
+    Updates the global data available to your SWAIG (SignalWire AI Gateway)
+    functions. Merges into the existing global data; set a key to `null` to remove
+    it. Can be sent on its own to update state without injecting a message.
     """)
   global_data?: Record<unknown>;
 }

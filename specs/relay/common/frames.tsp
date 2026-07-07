@@ -4,7 +4,8 @@ using SignalWire.AsyncAPI;
 
 namespace Relay;
 
-@doc("A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.")
+@doc("A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.")
+@summary("JSON-RPC request")
 model JsonRpcRequest<Method extends string, Params> {
   @doc("JSON-RPC version. Always `2.0`.")
   jsonrpc: "2.0";
@@ -20,6 +21,7 @@ model JsonRpcRequest<Method extends string, Params> {
 }
 
 @doc("A JSON-RPC response frame correlated to a request by `id`. `Result` is the method result.")
+@summary("JSON-RPC response")
 model JsonRpcResponse<Result> {
   @doc("JSON-RPC version. Always `2.0`.")
   jsonrpc: "2.0";
@@ -32,9 +34,10 @@ model JsonRpcResponse<Result> {
 }
 
 @doc("""
-  A server-pushed `signalwire.event` frame. `EventType` is the wire event discriminator
+  A server-pushed `signalwire.event` frame. `EventType` identifies which event this is
   (e.g. `calling.call.play`); `Data` is the event-specific payload carried at `params.params`.
   """)
+@summary("Relay event frame")
 model SignalwireEvent<EventType extends string, Data> {
   @doc("JSON-RPC version. Always `2.0`.")
   jsonrpc: "2.0";
@@ -72,11 +75,12 @@ model SignalwireEvent<EventType extends string, Data> {
 }
 
 @doc("""
-  A server-pushed `signalwire.event` frame for Messaging. Same nesting as the Calling
-  carrier (`Data` at `params.params`), but the envelope is keyed by `context` (required)
-  instead of `event_channel`. `EventType` is the wire event discriminator (e.g.
+  A server-pushed `signalwire.event` frame for Messaging. Same nesting as a Calling
+  event (`Data` at `params.params`), but the envelope includes a required `context`
+  field instead of `event_channel`. `EventType` identifies which event this is (e.g.
   `messaging.state`); `Data` is the event-specific payload.
   """)
+@summary("Messaging event frame")
 model MessagingEvent<EventType extends string, Data> {
   @doc("JSON-RPC version. Always `2.0`.")
   jsonrpc: "2.0";
@@ -114,11 +118,12 @@ model MessagingEvent<EventType extends string, Data> {
 }
 
 @doc("""
-  A server-pushed `signalwire.event` frame for Tasking. The envelope is FLAT —
-  `context`, `message`, `timestamp`, `space_id`, and `project_id` are direct siblings
-  of `event_type` under `params`, with no nested `params.params` and no `event_channel`.
-  `EventType` is the wire event discriminator.
+  A server-pushed `signalwire.event` frame for Tasking. The envelope is flat: `context`,
+  `message`, `timestamp`, `space_id`, and `project_id` sit directly under `params`
+  (no nested `params.params`, no `event_channel`). `EventType` identifies which event
+  this is.
   """)
+@summary("Tasking event frame")
 model TaskingEvent<EventType extends string> {
   @doc("JSON-RPC version. Always `2.0`.")
   jsonrpc: "2.0";
@@ -156,11 +161,11 @@ model TaskingEvent<EventType extends string> {
 }
 
 @doc("""
-  A server-pushed `signalwire.event` frame for WebRTC/Verto. Carries `event_channel`,
-  and the `node_id` that sent the event sits at the envelope level (sibling of
-  `event_type`). `Data` is the Verto frame carried directly at `params.params`.
-  `EventType` is the wire event discriminator.
+  A server-pushed `signalwire.event` frame for WebRTC signaling. Carries `event_channel`
+  and the `node_id` that sent the event. `Data` is the event-specific payload carried
+  directly at `params.params`. `EventType` identifies which event this is.
   """)
+@summary("WebRTC event frame")
 model WebRTCEvent<EventType extends string, Data> {
   @doc("JSON-RPC version. Always `2.0`.")
   jsonrpc: "2.0";
@@ -201,8 +206,8 @@ model WebRTCEvent<EventType extends string, Data> {
     space_id?: string;
 
     @doc("""
-      The event-specific payload — the Verto frame being delivered, either a Verto
-      response or a conference/room event. Passed through as-is; see `verto_messages.md`.
+      The event-specific payload for this WebRTC signaling event — either a signaling
+      response or a conference/room event.
       """)
     params: Data;
   };

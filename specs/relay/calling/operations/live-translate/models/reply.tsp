@@ -6,6 +6,7 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
+@summary("Live translate result")
 model LiveTranslateResult {
   ...RelayResultWithCall<"+OK">;
 }

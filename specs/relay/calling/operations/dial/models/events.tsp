@@ -10,8 +10,9 @@ using TypeSpec.OpenAPI;
 namespace Relay.Calling;
 
 @doc("The call that answered, included once a `calling.dial` succeeds.")
+@summary("Dial winner call")
 model DialWinnerCall {
-  @doc("Identifier of the node hosting the answered call.")
+  @doc("Opaque identifier that, paired with `call_id`, scopes this call. Echo it back on follow-up commands that target the call; treat it as opaque.")
   @example("a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d")
   node_id?: string;
 
@@ -31,8 +32,9 @@ model DialWinnerCall {
   dial_winner?: "true";
 }
 
+@summary("Dial event payload")
 model CallDialParams {
-  @doc("Identifier of the node handling the dial.")
+  @doc("Opaque identifier that, paired with `call_id`, scopes this dial and its resulting call. Echo it back on follow-up commands; treat it as opaque.")
   @example("a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d")
   node_id: string;
 

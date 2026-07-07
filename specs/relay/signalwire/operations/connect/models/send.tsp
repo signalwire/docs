@@ -41,6 +41,11 @@ model ProjectTokenAuthentication {
   token: string;
 }
 
+@doc("""
+  The parameters you send with `signalwire.connect`: your protocol version,
+  credentials, and any contexts to subscribe to at connect time.
+  """)
+@summary("Connect parameters")
 model ConnectParams {
   @doc("The Relay protocol version your client speaks.")
   version: Version;
@@ -65,8 +70,8 @@ model ConnectParams {
 
   @doc("""
     Authorization state from an earlier `signalwire.authorization.state` event.
-    Pass it back when reconnecting to restore your permissions and state.
-    Format: `<encryptedAuthStateBase64>:<tagBase64>`.
+    Pass it back when reconnecting to restore your permissions and state. Treat it
+    as an opaque token — store the value you received and return it unchanged.
     """)
   @example("eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIn0..aBcDeF:Z9y8x7w6v5")
   authorization_state?: string;
@@ -83,7 +88,11 @@ model ConnectParams {
   @example(true)
   event_acks?: boolean;
 
-  @doc("DPoP proof JWT for Client-Bound SATs.")
+  @doc("""
+    Optional proof-of-possession token that cryptographically binds this connection
+    to your client. Only needed for advanced token-binding flows; leave it unset
+    otherwise.
+    """)
   @example("eyJ0eXAiOiJkcG9wK2p3dCIsImFsZyI6IkVTMjU2In0.eyJodG0iOiJQT1NUIn0.sig")
   dpop_token?: string;
 }

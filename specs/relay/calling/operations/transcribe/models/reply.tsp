@@ -6,6 +6,7 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
+@summary("Transcribe result")
 model TranscribeResult {
   ...RelayResult<"Transcribing">;
 
@@ -14,6 +15,7 @@ model TranscribeResult {
   url?: string;
 }
 
+@summary("Transcribe stop result")
 model TranscribeStopResult {
   ...RelayResult<"Stopping transcribe">;
 }

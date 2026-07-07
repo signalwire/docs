@@ -16,21 +16,22 @@ union TapDirection {
   "both",
 }
 
-@doc("Codec for the tapped audio. Case-insensitive on the wire; the uppercase form is canonical.")
+@doc("Codec for the tapped audio. Case-insensitive; the uppercase form shown here is canonical.")
 union TapCodec {
   "OPUS",
   "PCMA",
   "PCMU",
 }
 
-@doc("`audio` tap params.")
+@doc("Audio-tap settings.")
+@summary("Audio tap params")
 model TapAudioParams {
   @doc("Side of the call to tap.")
   @example("listen")
   direction: TapDirection;
 }
 
-@doc("Media to intercept. Discriminated on `type` (documented value `audio`).")
+@doc("The media to intercept. Only `audio` is currently supported.")
 @discriminator("type")
 model TapConfig {
   type: "audio";
@@ -43,13 +44,10 @@ model TapAudio extends TapConfig {
   params: TapAudioParams;
 }
 
-@doc("`rtp` device params (delivery target).")
+@doc("RTP delivery-target settings.")
+@summary("RTP delivery target")
 model TapRtpDeviceParams {
-  @doc("""
-    RTP IPv4 address. Must be an IP owned by the customer or expecting our
-    traffic; specifying a private IP or a SignalWire-owned public IP is
-    forbidden.
-    """)
+  @doc("RTP destination IPv4 address. Must be a public IP address you control; private addresses and SignalWire's own addresses are rejected.")
   @example("127.0.0.1")
   addr: string;
 
@@ -61,12 +59,13 @@ model TapRtpDeviceParams {
   @example("PCMU")
   codec?: TapCodec;
 
-  @doc("Packetization time in ms — matches the tapped audio if not set.")
+  @doc("Packet interval, in milliseconds — how many milliseconds of audio each RTP packet carries. Matches the tapped audio if not set.")
   @example(20)
   ptime?: int32;
 }
 
-@doc("`ws` device params (delivery target).")
+@doc("WebSocket delivery-target settings.")
+@summary("WebSocket delivery target")
 model TapWsDeviceParams {
   @doc("WebSocket URI.")
   @example("wss://example.com/tap")
@@ -77,11 +76,7 @@ model TapWsDeviceParams {
   codec?: TapCodec;
 }
 
-@doc("""
-  Device to receive the tapped media. Discriminated on `type` (`rtp`|`ws`;
-  future: `phone`|`webrtc`|`sip`). Echoed back fully-resolved as the result's
-  `source_device`.
-  """)
+@doc("Where to deliver the tapped media. Choose `rtp` or `ws`. The result echoes this back fully resolved as `source_device`.")
 @discriminator("type")
 model TapDevice {
   type: "rtp" | "ws";
@@ -108,10 +103,10 @@ model TapParams {
   @example("d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e")
   control_id: string;
 
-  @doc("Media to intercept (variant keyed on `tap.type`).")
+  @doc("Media to intercept.")
   tap: TapConfig;
 
-  @doc("Device to receive the tapped media (variant keyed on `device.type`).")
+  @doc("Device to receive the tapped media.")
   device: TapDevice;
 
   @doc("HTTP(s) URL to POST tap events to.")

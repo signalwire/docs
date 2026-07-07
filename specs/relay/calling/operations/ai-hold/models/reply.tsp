@@ -6,10 +6,12 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
+@summary("AI hold result")
 model AiHoldResult {
   ...RelayResultWithCall<"+OK">;
 }
 
+@summary("AI unhold result")
 model AiUnholdResult {
   ...RelayResultWithCall<"+OK">;
 }

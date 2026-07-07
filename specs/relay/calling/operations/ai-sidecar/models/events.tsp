@@ -6,7 +6,29 @@ using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
-@doc("The kind of AI sidecar callback.")
+@summary("AI sidecar callback type")
+@doc("""
+  The kind of AI sidecar callback. Each value signals a different moment in the
+  sidecar's observation of the call, and determines which type-specific fields the
+  event carries:
+
+  - `start` — the sidecar session has started.
+  - `turn` — a conversation turn was processed.
+  - `request` — a request was sent to the model.
+  - `thought` — a reasoning step from the sidecar.
+  - `insight` — an observation the sidecar surfaced about the conversation.
+  - `skip` — the sidecar had nothing to add on this pass and took no action.
+  - `tool_call` — the sidecar invoked a tool (function) call.
+  - `tool_result` — the result returned from a tool call.
+  - `action` — an action the sidecar performed.
+  - `global_data_change` — the session's global data was updated.
+  - `history_pruned` — older conversation history was trimmed to stay within limits.
+  - `error` — an error occurred.
+  - `ask_request` — a one-off question you sent via `calling.ai_sidecar.ask` was received.
+  - `ask_answer` — the answer to one of your `ask` questions (carries `ask_id`).
+  - `stop` — the sidecar session has stopped.
+  - `final` — the end-of-session summary.
+  """)
 union AiSidecarCallbackType {
   "start",
   "turn",
@@ -26,6 +48,7 @@ union AiSidecarCallbackType {
   "final",
 }
 
+@summary("AI sidecar event")
 model AiSidecarEventData {
   @doc("The callback type. Determines which type-specific fields are present.")
   @example("ask_answer")
@@ -35,7 +58,7 @@ model AiSidecarEventData {
   @example(1718000123000000)
   ts: int64;
 
-  @doc("Evaluation id — callbacks produced in the same evaluation share a `tick_id`.")
+  @doc("Groups callbacks that the sidecar produced together in one processing pass — callbacks from the same pass share a `tick_id`.")
   @example(42)
   tick_id: int64;
 

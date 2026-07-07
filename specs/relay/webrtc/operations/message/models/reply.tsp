@@ -4,22 +4,21 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.WebRTC;
 
-@doc("The reply to a Verto frame: the Verto outcome plus the node now hosting the call.")
+@doc("The reply to a Verto frame (the WebRTC signaling message format used for peer calls): the Verto outcome plus the node now hosting the call.")
+@summary("Verto reply")
 model MessageResult {
   @doc("""
-    Result code as a string. `"200"` means success. On failure this is an in-band
-    lowercase error slug (for example `not_allowed`, `invalid_params`,
-    `internal_error`, `response_timeout`) delivered inside an otherwise-normal
-    result — it is not a JSON-RPC error object, so branch on `code`, not on the
-    presence of an error.
+    Result code as a string. `"200"` means success. On failure this is a lowercase
+    error identifier such as `not_allowed`, `invalid_params`, `internal_error`, or
+    `response_timeout`. Always check `code` to tell success from failure.
     """)
   @example("200")
   code: string;
 
-  @doc("The Verto reply payload — for example the answer to a `verto.invite`.")
+  @doc("The Verto reply payload — for example the answer to a `verto.invite`. The shape depends on the Verto method.")
   result?: Record<unknown>;
 
-  @doc("A status message accompanying the result, present on error and copied replies.")
+  @doc("A human-readable status message. Present on errors and on some informational replies.")
   @example("Received")
   message?: string;
 

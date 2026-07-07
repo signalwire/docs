@@ -9,7 +9,7 @@ namespace Relay.Calling;
 model BindDigitParams {
   ...CallAddress;
 
-  @doc("The DTMF digit sequence the caller must press to trigger this binding, e.g. `\"*1\"`. Accepts the characters `0`-`9`, `#`, `*`, `A`-`D`, and `w`/`W`.")
+  @doc("The DTMF (touch-tone) digit sequence the caller must press to trigger this binding, e.g. `\"*1\"`. Accepts the characters `0`-`9`, `#`, `*`, `A`-`D`, and `w`/`W`.")
   @example("*1")
   digits: string;
 

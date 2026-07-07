@@ -6,6 +6,7 @@ using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
+@summary("Transcribe utterance")
 @doc("A single transcribed utterance from a live-transcription session.")
 model TranscribeUtterance {
   @doc("Who spoke: `remote-caller` (the far end) or `local-caller` (your side).")
@@ -16,7 +17,7 @@ model TranscribeUtterance {
   @example("Hello, I'd like to check my balance.")
   content: string;
 
-  @doc("The language of the utterance, as an engine/BCP-47 code.")
+  @doc("The language of the utterance as a BCP-47 language code (e.g. `en`, `es-ES`).")
   @example("en")
   lang: string;
 
@@ -30,6 +31,7 @@ model TranscribeUtterance {
   recognized utterance at a time. Streams to your `webhook` when you start
   `calling.live_transcribe`.
   """)
+@summary("Live transcribe utterance event")
 model TranscribeUtteranceEventData {
   @doc("Recognition confidence for this utterance, roughly 0.0-1.0.")
   @example(0.94)

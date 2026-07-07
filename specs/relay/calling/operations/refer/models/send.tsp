@@ -7,6 +7,7 @@ using SignalWire.AsyncAPI;
 namespace Relay.Calling;
 
 @doc("Where to send a SIP call when transferring it with `calling.refer`.")
+@summary("SIP transfer destination params")
 model ReferSipDeviceParams {
   @doc("SIP URI to transfer the call to. Must be a `sip:` or `sips:` URI, for example `sip:userb@example.com`.")
   @example("sip:userb@example.com")
@@ -30,19 +31,24 @@ model ReferSipDeviceParams {
 
 @doc("Where to transfer the call. Set `type` to `sip` and supply the SIP destination in `params`.")
 @discriminator("type")
+@summary("Transfer destination")
 model ReferDevice {
   @doc("The transfer destination type. Only `sip` is supported.")
   type: "sip";
 }
 
+@doc("A SIP transfer destination.")
+@summary("SIP transfer destination")
 model ReferSipDevice extends ReferDevice {
   @doc("Always `sip`.")
   @example("sip")
   type: "sip";
 
+  @doc("The SIP destination and any auth/headers for the transfer.")
   params: ReferSipDeviceParams;
 }
 
+@summary("Refer parameters")
 model ReferParams {
   ...CallAddress;
 

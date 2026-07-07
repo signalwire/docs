@@ -18,7 +18,7 @@ model BindDigitRequest is JsonRpcRequest<typeof callingBindDigit, BindDigitParam
 @extension("x-fern-display-name", callingBindDigitResponse)
 @reply model BindDigitReply is JsonRpcResponse<BindDigitResult>;
 
-@doc("Runs a call method automatically when the caller presses a specific DTMF digit sequence — for example, play a message when they press `*1`.")
+@doc("Runs a call method automatically when the caller presses a specific DTMF (touch-tone) digit sequence — for example, play a message when they press `*1`.")
 @channel(callingBindDigit)
 @summary("Trigger a call method when a DTMF sequence is pressed")
 @extension("x-fern-display-name", callingBindDigit)

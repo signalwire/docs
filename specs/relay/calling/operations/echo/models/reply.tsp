@@ -6,6 +6,7 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
+@summary("Echo result")
 model EchoResult {
   ...RelayResultWithCall<"Echoing">;
 }

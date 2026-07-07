@@ -12,6 +12,7 @@ model PlayMedia {
   type: "audio" | "tts" | "silence" | "ringtone";
 }
 
+@doc("Play an audio file from a URL.")
 model PlayMediaAudio extends PlayMedia {
   @example("audio")
   type: "audio";
@@ -23,6 +24,7 @@ model PlayMediaAudio extends PlayMedia {
   };
 }
 
+@doc("Speak text with text-to-speech.")
 model PlayMediaTts extends PlayMedia {
   @example("tts")
   type: "tts";
@@ -46,6 +48,7 @@ model PlayMediaTts extends PlayMedia {
   };
 }
 
+@doc("Play silence for a fixed duration.")
 model PlayMediaSilence extends PlayMedia {
   @example("silence")
   type: "silence";
@@ -58,6 +61,7 @@ model PlayMediaSilence extends PlayMedia {
   };
 }
 
+@doc("Play a country-specific ringtone.")
 model PlayMediaRingtone extends PlayMedia {
   @example("ringtone")
   type: "ringtone";

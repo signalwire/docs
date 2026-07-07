@@ -7,6 +7,7 @@ using SignalWire.AsyncAPI;
 namespace Relay.Calling;
 
 @doc("Result of `calling.pass`.")
+@summary("Pass result")
 model PassResult {
-  ...RelayResultWithCall<"Passing call to another consumer">;
+  ...RelayResultWithCall<"Passing call to another application">;
 }

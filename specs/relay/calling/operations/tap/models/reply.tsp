@@ -7,7 +7,8 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
-@doc("`params` of the fully-resolved delivery device echoed back in the tap result.")
+@doc("Fully-resolved delivery-device settings echoed back in the tap result.")
+@summary("Tap echo device params")
 model TapEchoDeviceParams {
   @doc("Resolved media IPv4 address.")
   @example("10.10.10.10")
@@ -21,7 +22,7 @@ model TapEchoDeviceParams {
   @example("PCMU")
   codec: string;
 
-  @doc("Packetization time in ms.")
+  @doc("Packet interval, in milliseconds — how many milliseconds of audio each RTP packet carries.")
   @example(20)
   ptime: int32;
 
@@ -36,6 +37,7 @@ model TapEchoDeviceParams {
   `params`; `type` reports which transport (`rtp` or `ws`). Note this differs from
   the request device shape — the `ws` echo carries `addr`/`port`, not `uri`.
   """)
+@summary("Tap echo device")
 model TapEchoDevice {
   @doc("Transport of the resolved delivery device.")
   @example("rtp")
@@ -45,6 +47,7 @@ model TapEchoDevice {
   params: TapEchoDeviceParams;
 }
 
+@summary("Tap result")
 model TapResult {
   ...RelayResult<"Tapping call">;
 
@@ -52,6 +55,7 @@ model TapResult {
   source_device?: TapEchoDevice;
 }
 
+@summary("Tap stop result")
 model TapStopResult {
   ...RelayResult<"Stopping tap">;
 }

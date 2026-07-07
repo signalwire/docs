@@ -4,6 +4,7 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Signalwire;
 
+@doc("The parameters you send with `signalwire.receive` to start receiving inbound events for one or more contexts.")
 model ReceiveParams {
   @doc("The contexts to start receiving inbound events for.")
   @example(#["office", "support"])
@@ -14,6 +15,7 @@ model ReceiveParams {
   context?: string;
 }
 
+@doc("The parameters you send with `signalwire.unreceive` to stop receiving inbound events for one or more contexts.")
 model UnreceiveParams {
   @doc("The contexts to stop receiving events for.")
   @example(#["office", "support"])

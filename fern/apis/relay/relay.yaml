@@ -450,7 +450,7 @@ channels:
   calling.pass:
     address: /
     title: calling.pass
-    description: Pass the call offer to another consumer
+    description: Pass the call offer to another application
     servers:
       - $ref: "#/servers/production"
     messages:
@@ -468,7 +468,7 @@ channels:
   calling.pay:
     address: /
     title: calling.pay
-    description: Collect a payment via the Pay IVR
+    description: Collect a card payment over the phone
     servers:
       - $ref: "#/servers/production"
     messages:
@@ -788,7 +788,7 @@ channels:
   calling.transfer:
     address: /
     title: calling.transfer
-    description: Transfer a call to a RELAY app or SWML script
+    description: Transfer a call to a Relay app or SWML script
     servers:
       - $ref: "#/servers/production"
     messages:
@@ -2050,7 +2050,7 @@ operations:
     channel:
       $ref: "#/channels/calling.pass"
     title: calling.pass
-    summary: Pass the call offer to another consumer
+    summary: Pass the call offer to another application
     messages:
       - $ref: "#/channels/calling.pass/messages/callingPassRequest"
     reply:
@@ -2076,7 +2076,7 @@ operations:
     channel:
       $ref: "#/channels/calling.pay"
     title: calling.pay
-    summary: Collect a payment via the Pay IVR
+    summary: Collect a card payment over the phone
     messages:
       - $ref: "#/channels/calling.pay/messages/callingPayRequest"
     reply:
@@ -2574,7 +2574,7 @@ operations:
     channel:
       $ref: "#/channels/calling.transfer"
     title: calling.transfer
-    summary: Transfer a call to a RELAY app or SWML script
+    summary: Transfer a call to a Relay app or SWML script
     messages:
       - $ref: "#/channels/calling.transfer/messages/callingTransferRequest"
     reply:
@@ -3621,7 +3621,7 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Signalwire.ConnectParams:
       type: object
       properties:
@@ -3653,8 +3653,8 @@ components:
           type: string
           description: |-
             Authorization state from an earlier `signalwire.authorization.state` event.
-            Pass it back when reconnecting to restore your permissions and state.
-            Format: `<encryptedAuthStateBase64>:<tagBase64>`.
+            Pass it back when reconnecting to restore your permissions and state. Treat it
+            as an opaque token — store the value you received and return it unchanged.
           examples:
             - eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIn0..aBcDeF:Z9y8x7w6v5
         contexts:
@@ -3675,12 +3675,18 @@ components:
             - true
         dpop_token:
           type: string
-          description: DPoP proof JWT for Client-Bound SATs.
+          description: |-
+            Optional proof-of-possession token that cryptographically binds this connection
+            to your client. Only needed for advanced token-binding flows; leave it unset
+            otherwise.
           examples:
             - eyJ0eXAiOiJkcG9wK2p3dCIsImFsZyI6IkVTMjU2In0.eyJodG0iOiJQT1NUIn0.sig
       required:
         - version
         - authentication
+      description: |-
+        The parameters you send with `signalwire.connect`: your protocol version,
+        credentials, and any contexts to subscribe to at connect time.
     Signalwire.Version:
       type: object
       properties:
@@ -3785,6 +3791,9 @@ components:
           description: ICE servers to use for media. Returned for WebRTC connections; omitted when the connection carries no media.
       required:
         - protocol
+      description: |-
+        The result of a successful `signalwire.connect`: the `protocol` to use on later
+        requests, your `identity` and `authorization`, and any ICE servers for media.
     Signalwire.IceServer:
       type: object
       properties:
@@ -3889,13 +3898,13 @@ components:
         authorization_state:
           type: string
           description: |-
-            Your current authorization state. Save it and pass it back as
-            `connect.authorization_state` when you reconnect.
-            Format: `<encryptedAuthStateBase64>:<tagBase64>`.
+            Your current authorization state — an opaque, colon-delimited string. Save it and
+            pass it back unchanged as `connect.authorization_state` when you reconnect.
           examples:
             - eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIn0..aBcDeF:Z9y8x7w6v5
       required:
         - authorization_state
+      description: The payload of a `signalwire.authorization.state` event, carrying your latest authorization state.
     Signalwire.DisconnectEvent:
       type: object
       properties:
@@ -3938,6 +3947,7 @@ components:
           description: When `true`, you should open a fresh connection after disconnecting.
           examples:
             - true
+      description: The parameters you send with `signalwire.disconnect`.
     Signalwire.ReceiveRequest:
       type: object
       properties:
@@ -3963,7 +3973,7 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Signalwire.ReceiveParams:
       type: object
       properties:
@@ -3980,6 +3990,7 @@ components:
           description: Deprecated — use `contexts` instead. A single context to subscribe to; merged into the contexts list.
           examples:
             - office
+      description: The parameters you send with `signalwire.receive` to start receiving inbound events for one or more contexts.
     Signalwire.ReceiveReply:
       type: object
       properties:
@@ -4081,7 +4092,7 @@ components:
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -4127,6 +4138,7 @@ components:
         - direction
         - context
         - device
+      description: "Payload of the `calling.call.receive` event: who is calling and on which context."
     Calling.CallState:
       type: string
       enum:
@@ -4185,6 +4197,7 @@ components:
           required:
             - type
             - params
+          description: A phone (PSTN) leg, as reported in call events.
     Calling.SipHeader:
       type: object
       properties:
@@ -4202,9 +4215,9 @@ components:
         - name
         - value
       description: |-
-        A custom SIP header. Custom `X-` headers are allowed; the reserved `X-SignalWire*`
-        and `X-CID*` names (and internal `SignalWire*` names) are rejected. A few standard
-        headers (`Privacy`, `P-Asserted-Identity`, `User-to-User`) are also permitted.
+        A custom SIP header. Custom `X-` headers are allowed, except the reserved
+        `X-SignalWire*` and `X-CID*` prefixes. A few standard headers (`Privacy`,
+        `P-Asserted-Identity`, `User-to-User`) are also permitted.
     Calling.CallSipDevice:
       allOf:
         - $ref: "#/components/schemas/Calling.CallDevice"
@@ -4237,6 +4250,7 @@ components:
           required:
             - type
             - params
+          description: A SIP leg, as reported in call events.
     Calling.CallWebrtcDevice:
       allOf:
         - $ref: "#/components/schemas/Calling.CallDevice"
@@ -4264,6 +4278,7 @@ components:
           required:
             - type
             - params
+          description: A WebRTC leg, as reported in call events.
     Calling.CallStateEvent:
       type: object
       properties:
@@ -4328,7 +4343,7 @@ components:
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -4396,14 +4411,14 @@ components:
             - $ref: "#/components/schemas/Calling.CallStateEndReason"
         end_source:
           type: string
-          description: What ended the call. Present once the call has ended.
+          description: Which side ended the call, e.g. `peer` (the other party). Present once the call has ended.
           examples:
             - peer
         dial_winner:
           type: string
           enum:
             - "true"
-          description: Present and set to `"true"` when this call won a `calling.dial` race. Emitted as the string `"true"`, not a boolean.
+          description: Set to the string `"true"` on the call that won a `calling.dial` race. Absent otherwise. Note the value is the string `"true"`, not a JSON boolean.
           examples:
             - "true"
         sip_data:
@@ -4420,12 +4435,13 @@ components:
         - node_id
         - call_id
         - call_state
+      description: "Payload of the `calling.call.state` event: the call's address, state, timing, and leg detail."
     Calling.CallParentRef:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node hosting the parent call.
+          description: Opaque identifier that, paired with `call_id`, addresses the parent call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -4444,7 +4460,7 @@ components:
       properties:
         node_id:
           type: string
-          description: Identifier of the node hosting the peer call.
+          description: Opaque identifier that, paired with `call_id`, addresses the peer call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -4584,7 +4600,7 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Signalwire.UnreceiveParams:
       type: object
       properties:
@@ -4599,6 +4615,7 @@ components:
               - support
       required:
         - contexts
+      description: The parameters you send with `signalwire.unreceive` to stop receiving inbound events for one or more contexts.
     Signalwire.UnreceiveReply:
       type: object
       properties:
@@ -4644,7 +4661,7 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.DialParams:
       type: object
       properties:
@@ -4712,6 +4729,7 @@ components:
           required:
             - type
             - params
+          description: Dial a phone number over the PSTN.
     Calling.PhoneDeviceParams:
       type: object
       properties:
@@ -4764,7 +4782,7 @@ components:
             - 30
       required:
         - to_number
-      description: "`phone` device params."
+      description: Parameters for dialing or connecting a phone (PSTN) leg.
     Calling.CallStateEventName:
       type: string
       enum:
@@ -4785,6 +4803,7 @@ components:
           required:
             - type
             - params
+          description: Dial a SIP endpoint.
     Calling.SipDeviceParams:
       type: object
       properties:
@@ -4884,7 +4903,7 @@ components:
             - 30
       required:
         - to
-      description: "`sip` device params."
+      description: Parameters for dialing or connecting a SIP leg.
     Calling.SipCodec:
       type: string
       enum:
@@ -4909,6 +4928,7 @@ components:
           required:
             - type
             - params
+          description: Dial a WebRTC endpoint.
     Calling.WebrtcDeviceParams:
       type: object
       properties:
@@ -4959,7 +4979,7 @@ components:
             - 30
       required:
         - to
-      description: "`webrtc` device params."
+      description: Parameters for dialing or connecting a WebRTC leg.
     Calling.DialReply:
       type: object
       properties:
@@ -4990,13 +5010,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - Dialing
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         message_data:
           type: array
           items:
@@ -5079,7 +5099,7 @@ components:
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the dial.
+          description: Opaque identifier that, paired with `call_id`, scopes this dial and its resulting call. Echo it back on follow-up commands; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         tag:
@@ -5119,7 +5139,7 @@ components:
       properties:
         node_id:
           type: string
-          description: Identifier of the node hosting the answered call.
+          description: Opaque identifier that, paired with `call_id`, scopes this call. Echo it back on follow-up commands that target the call; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -5169,13 +5189,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.AnswerParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -5248,13 +5268,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - Answering call
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
       required:
         - code
     Calling.EndRequest:
@@ -5282,13 +5302,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.EndParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -5345,13 +5365,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - Ending call
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
       required:
         - code
     Calling.ConnectRequest:
@@ -5379,13 +5399,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.ConnectParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -5428,7 +5448,7 @@ components:
             - 30
         send_digits:
           type: string
-          description: DTMF digits to send once the call is answered. Use `w` or `W` to insert pauses.
+          description: DTMF (touch-tone) digits to send once the call is answered. Use `w` or `W` to insert pauses.
           examples:
             - 1234#
         max_price_per_minute:
@@ -5486,6 +5506,7 @@ components:
           required:
             - type
             - params
+          description: Play an audio file from a URL as ringback.
     Calling.RingbackTts:
       allOf:
         - $ref: "#/components/schemas/Calling.Ringback"
@@ -5525,6 +5546,7 @@ components:
           required:
             - type
             - params
+          description: Speak text with text-to-speech as ringback.
     Calling.TtsGender:
       type: string
       enum:
@@ -5553,6 +5575,7 @@ components:
           required:
             - type
             - params
+          description: Play silence for a fixed duration as ringback.
     Calling.RingbackRingtone:
       allOf:
         - $ref: "#/components/schemas/Calling.Ringback"
@@ -5582,6 +5605,7 @@ components:
           required:
             - type
             - params
+          description: Play a country-specific ringtone as ringback.
     Calling.ToneName:
       type: string
       enum:
@@ -5663,12 +5687,13 @@ components:
           required:
             - type
             - params
+          description: Connect to an existing call by reference.
     Calling.CallRefDeviceParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Node of the existing call.
+          description: Opaque identifier that, paired with `call_id`, addresses the existing call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -5693,12 +5718,13 @@ components:
           required:
             - type
             - params
+          description: Connect to a call pulled from a queue.
     Calling.QueueDeviceParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Node of the queue.
+          description: Opaque identifier that, paired with the queue, addresses it. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         queue_name:
@@ -5733,6 +5759,7 @@ components:
           required:
             - type
             - params
+          description: Connect to a phone number over the PSTN.
     Calling.ConnectSipDevice:
       allOf:
         - $ref: "#/components/schemas/Calling.ConnectDevice"
@@ -5746,6 +5773,7 @@ components:
           required:
             - type
             - params
+          description: Connect to a SIP endpoint.
     Calling.ConnectWebrtcDevice:
       allOf:
         - $ref: "#/components/schemas/Calling.ConnectDevice"
@@ -5759,6 +5787,7 @@ components:
           required:
             - type
             - params
+          description: Connect to a WebRTC endpoint.
     Calling.ConnectStreamDevice:
       allOf:
         - $ref: "#/components/schemas/Calling.ConnectDevice"
@@ -5772,6 +5801,7 @@ components:
           required:
             - type
             - params
+          description: Connect the call to a bidirectional audio stream over WebSocket.
     Calling.StreamDeviceParams:
       type: object
       properties:
@@ -5789,8 +5819,10 @@ components:
         codec:
           type: string
           description: |-
-            Codec, optionally with rate/ptime modifiers (e.g. `PCMU@40i`,
-            `L16@24000h@40i`). One of `PCMU|PCMA|G722|L16`. Default `PCMU`.
+            Codec, optionally with rate/ptime modifiers — `@<ms>i` sets the packetization
+            interval (how many milliseconds of audio per packet), `@<hz>h` sets the sample
+            rate (e.g. `PCMU@40i`, `L16@24000h@40i`). One of `PCMU|PCMA|G722|L16`.
+            Default `PCMU`.
           default: PCMU
           examples:
             - PCMU
@@ -5857,17 +5889,29 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - Connecting call
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         message_data:
           type: array
-          items: {}
-          description: Per-destination detail returned by `calling.connect`, present on partial failure — one entry per attempted destination.
+          items:
+            type: object
+            properties:
+              from:
+                type: string
+                description: The origin used for this destination.
+              to:
+                type: string
+                description: The destination attempted.
+              errors:
+                type: array
+                items: {}
+                description: Errors encountered connecting this destination.
+          description: Per-destination results, present on partial failure — one entry per attempted destination, each with the destination and any `errors`.
       required:
         - code
     Calling.CallConnectEvent:
@@ -5934,7 +5978,7 @@ components:
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -5980,7 +6024,7 @@ components:
       properties:
         node_id:
           type: string
-          description: Identifier of the node hosting the peer call.
+          description: Opaque identifier that, paired with `call_id`, scopes the peer call. Echo it back on follow-up commands that target it; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -6000,7 +6044,7 @@ components:
             - q-1a2b3c4d
         queue_name:
           type: string
-          description: The queue's friendly name.
+          description: Human-readable name of the queue the peer was reached through.
           examples:
             - support
         device:
@@ -6033,13 +6077,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.DisconnectParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -6080,13 +6124,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - Disconnecting call
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
       required:
         - code
     Calling.CollectRequest:
@@ -6114,13 +6158,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.CollectParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -6214,7 +6258,7 @@ components:
             - 1
       required:
         - max
-      description: Settings that control how the caller's DTMF key presses are collected.
+      description: Settings that control how the caller's DTMF (touch-tone) key presses are collected.
     Calling.CollectSpeech:
       type: object
       properties:
@@ -6302,13 +6346,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - Collecting
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -6385,7 +6429,7 @@ components:
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -6457,6 +6501,7 @@ components:
               const: error
           required:
             - type
+          description: The collect failed before producing input.
     Calling.CallCollectResultNoInput:
       allOf:
         - $ref: "#/components/schemas/Calling.CallCollectResult"
@@ -6467,6 +6512,7 @@ components:
               const: no_input
           required:
             - type
+          description: No input was received before the timeout.
     Calling.CallCollectResultNoMatch:
       allOf:
         - $ref: "#/components/schemas/Calling.CallCollectResult"
@@ -6477,6 +6523,7 @@ components:
               const: no_match
           required:
             - type
+          description: Input was received but did not match your `digits`/`speech` criteria.
     Calling.CallCollectResultStartOfInput:
       allOf:
         - $ref: "#/components/schemas/Calling.CallCollectResult"
@@ -6512,7 +6559,7 @@ components:
               properties:
                 digits:
                   type: string
-                  description: The DTMF digits the caller pressed.
+                  description: The DTMF (touch-tone) digits the caller pressed.
                   examples:
                     - "1234"
                 terminator:
@@ -6577,13 +6624,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.CollectStopParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -6630,13 +6677,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - Stopping
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -6674,13 +6721,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.CollectStartInputTimersParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -6727,13 +6774,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - Starting input timers
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -6771,13 +6818,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.PlayAndCollectParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -6795,8 +6842,7 @@ components:
           format: double
           description: |-
             Playback volume in dB, from `-40` (muted) to `+40`, where `0` keeps the
-            original audio level. The value is applied as the standard amplitude gain
-            factor `10 ^ (value / 20)`.
+            original audio level.
           minimum: -40
           maximum: 40
           examples:
@@ -6858,6 +6904,7 @@ components:
           required:
             - type
             - params
+          description: Play an audio file from a URL.
     Calling.PlayMediaTts:
       allOf:
         - $ref: "#/components/schemas/Calling.PlayMedia"
@@ -6897,6 +6944,7 @@ components:
           required:
             - type
             - params
+          description: Speak text with text-to-speech.
     Calling.PlayMediaSilence:
       allOf:
         - $ref: "#/components/schemas/Calling.PlayMedia"
@@ -6920,6 +6968,7 @@ components:
           required:
             - type
             - params
+          description: Play silence for a fixed duration.
     Calling.PlayMediaRingtone:
       allOf:
         - $ref: "#/components/schemas/Calling.PlayMedia"
@@ -6949,6 +6998,7 @@ components:
           required:
             - type
             - params
+          description: Play a country-specific ringtone.
     Calling.PlayAndCollectCollect:
       type: object
       properties:
@@ -7004,7 +7054,7 @@ components:
       required:
         - max
       description: |-
-        Settings that control how the caller's DTMF key presses are collected for a
+        Settings that control how the caller's DTMF (touch-tone) key presses are collected for a
         `calling.play_and_collect`. Unlike the standalone `calling.collect`, this also
         accepts a `min` digit count.
     Calling.PlayAndCollectReply:
@@ -7037,13 +7087,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - Playing and collecting
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -7081,13 +7131,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.PlayAndCollectStopParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -7134,13 +7184,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - Stopping
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -7178,13 +7228,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.PlayAndCollectVolumeParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -7202,8 +7252,7 @@ components:
           format: double
           description: |-
             New playback volume in dB, from `-40` (muted) to `+40`, where `0` keeps the
-            original audio level. The value is applied as the standard amplitude gain
-            factor `10 ^ (value / 20)`.
+            original audio level.
           minimum: -40
           maximum: 40
           examples:
@@ -7243,13 +7292,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - Changed play and collect volume
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -7287,13 +7336,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.QueueEnterParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -7375,13 +7424,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - Entering Queue
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -7458,7 +7507,7 @@ components:
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -7570,13 +7619,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.QueueLeaveParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -7640,13 +7689,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - Leaving Queue
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -7684,13 +7733,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.RecordParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -7785,7 +7834,7 @@ components:
             - 0
         terminators:
           type: string
-          description: DTMF digits that stop the recording. Default `#`.
+          description: DTMF (touch-tone) digits that stop the recording. Default `#`.
           default: "#"
           examples:
             - "#"
@@ -7845,13 +7894,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - Recording
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -7934,7 +7983,7 @@ components:
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -7995,7 +8044,7 @@ components:
         first_frame_time:
           type: number
           format: double
-          description: Unix epoch (seconds) of the true first recorded PCM frame; present when available — a more accurate anchor than start_time.
+          description: Unix timestamp, in seconds, of the first captured audio. Present when available; more precise than `start_time`.
           examples:
             - 1712345678.123
         end_time:
@@ -8087,13 +8136,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.RecordPauseParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -8152,13 +8201,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - Pausing recording
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -8196,13 +8245,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.RecordResumeParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -8249,13 +8298,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - Resuming recording
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -8293,13 +8342,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.RecordStopParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -8346,13 +8395,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - Stopping recording
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -8390,13 +8439,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.ReferParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -8439,10 +8488,13 @@ components:
               type: string
               const: sip
             params:
-              $ref: "#/components/schemas/Calling.ReferSipDeviceParams"
+              description: The SIP destination and any auth/headers for the transfer.
+              allOf:
+                - $ref: "#/components/schemas/Calling.ReferSipDeviceParams"
           required:
             - type
             - params
+          description: A SIP transfer destination.
     Calling.ReferSipDeviceParams:
       type: object
       properties:
@@ -8504,13 +8556,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - Starting SIP REFER
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
       required:
         - code
       description: Result of `calling.refer`.
@@ -8578,7 +8630,7 @@ components:
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -8604,7 +8656,7 @@ components:
             - $ref: "#/components/schemas/Calling.ReferState"
         sip_refer_to:
           type: string
-          description: The SIP URI the call is being transferred to. Always present on the event.
+          description: The SIP URI (the SIP address of the endpoint, e.g. `sip:bob@example.com`) the call is being transferred to. Always present on the event.
           examples:
             - sip:bob@example.com
         sip_refer_response_code:
@@ -8615,7 +8667,8 @@ components:
         sip_notify_response_code:
           type: string
           description: |-
-            The SIP response code from the NOTIFY messages that follow the REFER, as a
+            The SIP response code from the NOTIFY messages (the follow-up SIP status
+            messages that report the transfer's final outcome) that follow the REFER, as a
             string (for example `"200"`). This tells you whether the transfer ultimately
             succeeded.
           examples:
@@ -8659,13 +8712,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.PassParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -8707,13 +8760,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
-            - Passing call to another consumer
+            - Passing call to another application
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -8747,13 +8800,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.PayParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -8797,7 +8850,7 @@ components:
           type: string
           description: |-
             Seconds the Pay IVR waits for the next digit before validating the captured
-            digits, as a string of digits on the wire (e.g. `"6"`). Default `"5"`.
+            digits, passed as a string, e.g. `"6"`. Default `"5"`.
           pattern: ^[0-9]+$
           default: "5"
           examples:
@@ -8805,8 +8858,8 @@ components:
         max_attempts:
           type: string
           description: |-
-            Number of times the Pay IVR retries when collecting card details, as a string
-            of digits on the wire (e.g. `"3"`). Default `"1"`.
+            Number of times the Pay IVR retries when collecting card details, passed as a
+            string, e.g. `"3"`. Default `"1"`.
           pattern: ^[0-9]+$
           default: "1"
           examples:
@@ -8814,7 +8867,7 @@ components:
         security_code:
           type: string
           description: |-
-            Whether to prompt for the card security code, as a string boolean on the wire
+            Whether to prompt for the card security code, passed as a string boolean
             (`"true"` or `"false"`). Default `"true"`.
           default: "true"
           examples:
@@ -8822,7 +8875,7 @@ components:
         postal_code:
           type: string
           description: |-
-            Whether to prompt for the billing postal code, as a string on the wire
+            Whether to prompt for the billing postal code, passed as a string
             (`"true"`, `"false"`, or a known postcode so the IVR skips the prompt).
             Default `"true"`.
           default: "true"
@@ -8831,8 +8884,8 @@ components:
         min_postal_code_length:
           type: string
           description: |-
-            Minimum number of digits a caller must enter for the postal code, as a string
-            of digits on the wire (e.g. `"6"`). Default `"0"`.
+            Minimum number of digits a caller must enter for the postal code, passed as a
+            string, e.g. `"6"`. Default `"0"`.
           pattern: ^[0-9]+$
           default: "0"
           examples:
@@ -8891,7 +8944,7 @@ components:
         valid_card_types:
           type: string
           description: |-
-            SPACE-DELIMITED list of card types allowed in this payment (not an array) —
+            Space-delimited list of card types allowed in this payment, not an array —
             subset of `visa mastercard amex maestro discover jcb diners-club`. Default
             `"visa mastercard amex"`.
           default: visa mastercard amex
@@ -8983,12 +9036,11 @@ components:
         error_type:
           type: string
           description: |-
-            Space-delimited error-type tokens this prompt applies to. Documented tokens:
+            Space-delimited error-type tokens this prompt applies to. Accepted tokens:
             timeout, invalid-card-number, invalid-card-type, invalid-date,
             invalid-security-code, invalid-postal-code, session-in-progress,
-            card-declined. (The gateway parser additionally recognizes
-            invalid-bank-routing-number, invalid-bank-account-number, and
-            input-matching-failed.)
+            card-declined, invalid-bank-routing-number, invalid-bank-account-number,
+            and input-matching-failed.
           examples:
             - timeout invalid-card-number invalid-card-type
         actions:
@@ -9007,10 +9059,12 @@ components:
       required:
         - for
       description: |-
-        A custom prompt overriding the Pay IVR default for a given situation.
+        A custom prompt that overrides the default the Pay flow uses for a given
+        situation. The Pay flow is an interactive voice response (IVR) that prompts the
+        caller for their card details.
 
-        `card_type` and `error_type` are SPACE-DELIMITED token strings on the wire (not
-        arrays) — e.g. `error_type: "timeout invalid-card-number invalid-card-type"`.
+        `card_type` and `error_type` are space-delimited strings, not arrays — e.g.
+        `error_type: "timeout invalid-card-number invalid-card-type"`.
     Calling.PayPromptFor:
       type: string
       enum:
@@ -9077,13 +9131,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - Processing payment
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -9155,7 +9209,7 @@ components:
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -9193,7 +9247,7 @@ components:
             - $ref: "#/components/schemas/Calling.PayErrorType"
         attempt:
           type: string
-          description: "Progress: the current attempt number (sent as a string)."
+          description: "Progress: the current attempt number, as a string."
           examples:
             - "1"
         security_code:
@@ -9347,13 +9401,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.PayStopParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -9400,13 +9454,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - Stopping payment
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -9444,13 +9498,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.PlayParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -9466,9 +9520,7 @@ components:
         volume:
           type: number
           format: double
-          description: |-
-            Playback volume, -40dB to +40dB (`0` = original audio, `-40` = muted;
-            amplitude gain factor `10^(value/20)`).
+          description: Playback volume, -40dB to +40dB (`0` = original audio, `-40` = muted).
           minimum: -40
           maximum: 40
           examples:
@@ -9480,8 +9532,8 @@ components:
             - speak
             - both
           description: |-
-            Which side of the call hears the media: `listen` (what the called party
-            hears), `speak`, or `both`. Default `listen`.
+            Which side of the call hears the media: `listen` (audio the called party
+            hears), `speak` (audio the called party sends), or `both`. Default `listen`.
           default: listen
           examples:
             - listen
@@ -9557,13 +9609,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - Playing
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -9640,7 +9692,7 @@ components:
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -9696,13 +9748,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.PlayPauseParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -9749,13 +9801,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - Paused play
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -9793,13 +9845,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.PlayResumeParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -9846,13 +9898,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - Resumed play
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -9890,13 +9942,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.PlayStopParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -9943,13 +9995,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - Stopping
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -9987,13 +10039,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.PlayVolumeParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -10009,9 +10061,7 @@ components:
         volume:
           type: number
           format: double
-          description: |-
-            Playback volume, -40dB to +40dB (`0` = original audio, `-40` = muted;
-            amplitude gain factor `10^(value/20)`).
+          description: Playback volume, -40dB to +40dB (`0` = original audio, `-40` = muted).
           minimum: -40
           maximum: 40
           examples:
@@ -10051,13 +10101,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - Changed play volume
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -10095,13 +10145,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.DetectParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -10145,7 +10195,7 @@ components:
             - machine
       required:
         - type
-      description: Detector to start. Discriminated on `type` (`machine`|`fax`|`digit`).
+      description: Detector to start. One of `machine`, `fax`, or `digit`.
       discriminator: type
     Calling.DetectMachine:
       allOf:
@@ -10165,14 +10215,14 @@ components:
         initial_timeout:
           type: number
           format: double
-          description: How long to wait (sec > 0) for initial voice before giving up. Default `4.5`.
+          description: How many seconds to wait for initial voice before giving up. Must be greater than 0. Default `4.5`.
           exclusiveMinimum: 0
           examples:
             - 5
         end_silence_timeout:
           type: number
           format: double
-          description: How long to wait (sec > 0) for voice to finish. Default `1.0`.
+          description: How many seconds to wait for voice to finish. Must be greater than 0. Default `1.0`.
           exclusiveMinimum: 0
           examples:
             - 1
@@ -10180,30 +10230,30 @@ components:
           type: number
           format: double
           description: |-
-            How long to wait (sec > 0) for voice to finish before firing the READY
-            event. Default is `end_silence_timeout`.
+            How many seconds to wait for voice to finish before firing the READY
+            event. Must be greater than 0. Defaults to `end_silence_timeout`.
           exclusiveMinimum: 0
           examples:
             - 1
         machine_voice_threshold:
           type: number
           format: double
-          description: How much voice (sec > 0) to decide MACHINE. Default `1.25`.
+          description: How many seconds of continuous voice are required before the result is reported as MACHINE. Default `1.25`.
           exclusiveMinimum: 0
           examples:
             - 1.25
         machine_words_threshold:
           type: integer
           format: int32
-          description: How many words (count > 0) to count to decide MACHINE. Default `6`.
+          description: How many words must be counted before the result is reported as MACHINE. Default `6`.
           exclusiveMinimum: 0
           examples:
             - 6
         detect_interruptions:
           type: boolean
           description: |-
-            If true, a NOT_READY event is fired if VAD detects speech after READY. This
-            lets the application restart message delivery to the answering machine.
+            If `true`, a NOT_READY event fires if voice activity is detected after READY.
+            This lets your application restart message delivery to the answering machine.
             Default `false`.
           default: false
           examples:
@@ -10216,7 +10266,7 @@ components:
           default: true
           examples:
             - true
-      description: "`machine` detector params (answering-machine / voicemail detection)."
+      description: Configuration for the answering-machine (voicemail) detector.
     Calling.DetectFax:
       allOf:
         - $ref: "#/components/schemas/Calling.DetectConfig"
@@ -10233,12 +10283,12 @@ components:
       type: object
       properties:
         tone:
-          description: Tone to detect (remote side only). Default `CED`.
+          description: Tone to detect. Only the remote fax machine's tone can be detected. Default `CED`.
           examples:
             - CED
           allOf:
             - $ref: "#/components/schemas/Calling.DetectFaxTone"
-      description: "`fax` detector params."
+      description: Configuration for the fax-tone detector.
     Calling.DetectFaxTone:
       type: string
       enum:
@@ -10264,7 +10314,7 @@ components:
           description: Digits to detect. Default `0123456789#*`.
           examples:
             - 0123456789#*
-      description: "`digit` detector params."
+      description: Configuration for the digit detector.
     Calling.DetectReply:
       type: object
       properties:
@@ -10295,13 +10345,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - Detecting
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -10378,7 +10428,7 @@ components:
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -10503,7 +10553,7 @@ components:
               properties:
                 event:
                   type: string
-                  description: "The DTMF digit that was detected: one of `0`-`9`, `#`, or `*`. Carries the terminal `finished` value once the detector completes."
+                  description: "The DTMF (touch-tone) digit that was detected: one of `0`-`9`, `#`, or `*`. Carries the terminal `finished` value once the detector completes."
                   examples:
                     - "5"
               required:
@@ -10536,13 +10586,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.DetectStopParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -10589,13 +10639,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - Stopping detect
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -10633,13 +10683,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.SendFaxParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -10713,13 +10763,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - Sending Fax
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -10796,7 +10846,7 @@ components:
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -10925,7 +10975,7 @@ components:
                 result:
                   type: integer
                   format: int32
-                  description: Numeric fax result code (for example, `1231`).
+                  description: Numeric fax result code. `0` means the fax succeeded; a non-zero code indicates why it failed. For example, `0`.
                   examples:
                     - 0
                 result_text:
@@ -10964,13 +11014,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.SendFaxStopParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -11017,13 +11067,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - Stopping fax
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -11061,13 +11111,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.ReceiveFaxParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -11120,13 +11170,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - Receiving Fax
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -11164,13 +11214,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.ReceiveFaxStopParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -11217,13 +11267,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - Stopping fax
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -11261,13 +11311,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.TapParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -11281,11 +11331,11 @@ components:
           examples:
             - d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e
         tap:
-          description: Media to intercept (variant keyed on `tap.type`).
+          description: Media to intercept.
           allOf:
             - $ref: "#/components/schemas/Calling.TapConfig"
         device:
-          description: Device to receive the tapped media (variant keyed on `device.type`).
+          description: Device to receive the tapped media.
           allOf:
             - $ref: "#/components/schemas/Calling.TapDevice"
         status_url:
@@ -11309,7 +11359,7 @@ components:
             - audio
       required:
         - type
-      description: Media to intercept. Discriminated on `type` (documented value `audio`).
+      description: The media to intercept. Only `audio` is currently supported.
       discriminator: type
     Calling.TapAudio:
       allOf:
@@ -11335,7 +11385,7 @@ components:
             - $ref: "#/components/schemas/Calling.TapDirection"
       required:
         - direction
-      description: "`audio` tap params."
+      description: Audio-tap settings.
     Calling.TapDirection:
       type: string
       enum:
@@ -11352,10 +11402,7 @@ components:
             - ws
       required:
         - type
-      description: |-
-        Device to receive the tapped media. Discriminated on `type` (`rtp`|`ws`;
-        future: `phone`|`webrtc`|`sip`). Echoed back fully-resolved as the result's
-        `source_device`.
+      description: Where to deliver the tapped media. Choose `rtp` or `ws`. The result echoes this back fully resolved as `source_device`.
       discriminator: type
     Calling.TapRtpDevice:
       allOf:
@@ -11375,10 +11422,7 @@ components:
       properties:
         addr:
           type: string
-          description: |-
-            RTP IPv4 address. Must be an IP owned by the customer or expecting our
-            traffic; specifying a private IP or a SignalWire-owned public IP is
-            forbidden.
+          description: RTP destination IPv4 address. Must be a public IP address you control; private addresses and SignalWire's own addresses are rejected.
           examples:
             - 127.0.0.1
         port:
@@ -11396,13 +11440,13 @@ components:
         ptime:
           type: integer
           format: int32
-          description: Packetization time in ms — matches the tapped audio if not set.
+          description: Packet interval, in milliseconds — how many milliseconds of audio each RTP packet carries. Matches the tapped audio if not set.
           examples:
             - 20
       required:
         - addr
         - port
-      description: "`rtp` device params (delivery target)."
+      description: RTP delivery-target settings.
     Calling.TapCodec:
       type: string
       enum:
@@ -11438,7 +11482,7 @@ components:
             - $ref: "#/components/schemas/Calling.TapCodec"
       required:
         - uri
-      description: "`ws` device params (delivery target)."
+      description: WebSocket delivery-target settings.
     Calling.TapReply:
       type: object
       properties:
@@ -11469,13 +11513,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - Tapping call
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -11537,7 +11581,7 @@ components:
         ptime:
           type: integer
           format: int32
-          description: Packetization time in ms.
+          description: Packet interval, in milliseconds — how many milliseconds of audio each RTP packet carries.
           examples:
             - 20
         rate:
@@ -11552,7 +11596,7 @@ components:
         - codec
         - ptime
         - rate
-      description: "`params` of the fully-resolved delivery device echoed back in the tap result."
+      description: Fully-resolved delivery-device settings echoed back in the tap result.
     Calling.CallTapEvent:
       type: object
       properties:
@@ -11617,7 +11661,7 @@ components:
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -11752,7 +11796,7 @@ components:
                 ptime:
                   type: integer
                   format: int32
-                  description: Packetization time of the stream, in milliseconds. Absent when it matches the tapped audio.
+                  description: Packet interval, in milliseconds — how many milliseconds of audio each RTP packet carries. Absent when it matches the tapped audio.
                   examples:
                     - 20
               required:
@@ -11814,13 +11858,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.TapStopParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -11867,13 +11911,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - Stopping tap
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -11911,13 +11955,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.StreamParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -11943,7 +11987,7 @@ components:
             - my_stream
         codec:
           type: string
-          description: Codec for the streamed audio. Default is the call's native codec.
+          description: Audio codec for the stream (e.g. `PCMU`, `OPUS`). Defaults to the call's native codec — leave unset unless your endpoint needs a specific one.
           examples:
             - PCMU
         track:
@@ -12023,13 +12067,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - Starting stream
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -12106,7 +12150,7 @@ components:
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -12182,13 +12226,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.StreamStopParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -12235,13 +12279,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - Stopping stream
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -12279,13 +12323,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.TransferParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -12300,9 +12344,11 @@ components:
               additionalProperties: {}
           description: |-
             Where to hand off the call. Pass an `https://` URL that returns a SWML
-            script, the name of another RELAY application prefixed with `context:`, or an
+            script, the name of another Relay application prefixed with `context:`, or an
             inline SWML script — either as a string or as a SWML object. The form is
-            detected from the value you provide.
+            detected from the value: an `https://` URL is fetched for SWML, a `context:`
+            prefix routes to a Relay application, and anything else is treated as inline
+            SWML.
           examples:
             - https://example.com/swml
       required:
@@ -12339,13 +12385,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - Transferring
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -12378,13 +12424,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.JoinConferenceParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -12604,13 +12650,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - Joining conference
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -12618,7 +12664,7 @@ components:
             - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
         conference_id:
           type: string
-          description: The UUID of the conference the call joined. Always propagated by the transform.
+          description: The UUID of the conference the call joined.
           examples:
             - d02c88a9-cf83-4a5a-9c8b-2f4e6b1a0f77
       required:
@@ -12687,7 +12733,7 @@ components:
       properties:
         node_id:
           type: string
-          description: The UUID of the node. Present on participant and stream events; absent on `conference-start`/`conference-end`.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Present on participant and stream events; absent on `conference-start`/`conference-end`. Treat it as opaque and echo back the value you received.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         conference_id:
@@ -12856,13 +12902,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.LeaveConferenceParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -12909,13 +12955,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - Leaving conference
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -12948,13 +12994,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.DenoiseParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -12995,13 +13041,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - Denoiser on
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -13067,13 +13113,13 @@ components:
         - id
         - method
         - params
-      description: Fires when background noise reduction is turned on or off for the call. Unlike most media events, this one carries no `control_id`.
+      description: Fires when background noise reduction is turned on or off for the call. This event does not include a `control_id`.
     Calling.CallDenoiseParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -13125,13 +13171,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.DenoiseStopParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -13172,13 +13218,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - Denoiser off
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -13211,13 +13257,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.SendDigitsParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -13233,7 +13279,7 @@ components:
         digits:
           type: string
           description: |-
-            The string of DTMF tones to play, in order. Allowed characters are the digits
+            The string of DTMF (touch-tone) tones to play, in order. Allowed characters are the digits
             `0`-`9`, `*`, `#`, and `A`-`D` (case-insensitive), plus `w` for a short pause
             and `W` for a longer pause (repeat them for longer waits). The whole string is
             rejected if it contains any other character.
@@ -13274,13 +13320,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - Sending
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -13357,7 +13403,7 @@ components:
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -13408,13 +13454,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.TranscribeParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -13467,13 +13513,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - Transcribing
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -13555,7 +13601,7 @@ components:
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -13658,13 +13704,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.TranscribeStopParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -13711,13 +13757,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - Stopping transcribe
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -13755,13 +13801,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.EchoParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -13780,6 +13826,8 @@ components:
           type: string
           format: uri
           description: An `http` or `https` URL to receive echo status updates.
+          examples:
+            - https://example.com/webhooks/relay
       required:
         - node_id
         - call_id
@@ -13813,13 +13861,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - Echoing
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -13891,7 +13939,7 @@ components:
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -13949,13 +13997,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.BindDigitParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -13965,7 +14013,7 @@ components:
             - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
         digits:
           type: string
-          description: The DTMF digit sequence the caller must press to trigger this binding, e.g. `"*1"`. Accepts the characters `0`-`9`, `#`, `*`, `A`-`D`, and `w`/`W`.
+          description: The DTMF (touch-tone) digit sequence the caller must press to trigger this binding, e.g. `"*1"`. Accepts the characters `0`-`9`, `#`, `*`, `A`-`D`, and `w`/`W`.
           examples:
             - "*1"
         bind_method:
@@ -14024,13 +14072,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - Digit binding created
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -14063,13 +14111,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.ClearDigitBindingsParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -14115,13 +14163,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - Digit bindings cleared
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -14154,13 +14202,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.LiveTranscribeParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -14356,13 +14404,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - +OK
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -14429,7 +14477,7 @@ components:
         - method
         - params
       description: |-
-        A server-pushed `signalwire.event` frame. `EventType` is the wire event discriminator
+        A server-pushed `signalwire.event` frame. `EventType` identifies which event this is
         (e.g. `calling.call.play`); `Data` is the event-specific payload carried at `params.params`.
     Calling.TranscribeUtteranceEventData:
       type: object
@@ -14465,7 +14513,7 @@ components:
             - Hello, I'd like to check my balance.
         lang:
           type: string
-          description: The language of the utterance, as an engine/BCP-47 code.
+          description: The language of the utterance as a BCP-47 language code (e.g. `en`, `es-ES`).
           examples:
             - en
         confidence:
@@ -14504,13 +14552,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.LiveTranslateParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -14754,13 +14802,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - +OK
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -14827,7 +14875,7 @@ components:
         - method
         - params
       description: |-
-        A server-pushed `signalwire.event` frame. `EventType` is the wire event discriminator
+        A server-pushed `signalwire.event` frame. `EventType` identifies which event this is
         (e.g. `calling.call.play`); `Data` is the event-specific payload carried at `params.params`.
     Calling.TranslateTranscriptDeltaEventData:
       type: object
@@ -14850,7 +14898,7 @@ components:
       properties:
         language:
           type: string
-          description: The language of this fragment, as an engine/BCP-47 code.
+          description: The language of this fragment as a BCP-47 language code (e.g. `en`, `es-ES`).
           examples:
             - es
         delta:
@@ -14887,13 +14935,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.JoinRoomParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -14946,13 +14994,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - Joining room
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -15024,7 +15072,7 @@ components:
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -15090,13 +15138,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.LeaveRoomParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -15137,13 +15185,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - Leaving room
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -15176,13 +15224,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.AiParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -23979,13 +24027,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - AI started
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -23998,6 +24046,7 @@ components:
             - d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e
       required:
         - code
+      description: Confirmation that the AI session started.
     Calling.CallAiEvent:
       type: object
       properties:
@@ -24057,14 +24106,14 @@ components:
         - method
         - params
       description: |-
-        A server-pushed `signalwire.event` frame. `EventType` is the wire event discriminator
+        A server-pushed `signalwire.event` frame. `EventType` identifies which event this is
         (e.g. `calling.call.play`); `Data` is the event-specific payload carried at `params.params`.
     Calling.CallAiEventData:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -24159,7 +24208,7 @@ components:
         - method
         - params
       description: |-
-        A server-pushed `signalwire.event` frame. `EventType` is the wire event discriminator
+        A server-pushed `signalwire.event` frame. `EventType` identifies which event this is
         (e.g. `calling.call.play`); `Data` is the event-specific payload carried at `params.params`.
     Calling.AiStartEventData:
       type: object
@@ -24224,7 +24273,7 @@ components:
         - method
         - params
       description: |-
-        A server-pushed `signalwire.event` frame. `EventType` is the wire event discriminator
+        A server-pushed `signalwire.event` frame. `EventType` identifies which event this is
         (e.g. `calling.call.play`); `Data` is the event-specific payload carried at `params.params`.
     Calling.AiUserSpeakingEventData:
       type: object
@@ -24289,14 +24338,14 @@ components:
         - method
         - params
       description: |-
-        A server-pushed `signalwire.event` frame. `EventType` is the wire event discriminator
+        A server-pushed `signalwire.event` frame. `EventType` identifies which event this is
         (e.g. `calling.call.play`); `Data` is the event-specific payload carried at `params.params`.
     Calling.AiCompletionEventData:
       type: object
       properties:
         text:
           type: string
-          description: The assistant's completed utterance for the turn, with internal markup prefixes stripped. Redacted when the app has `redact_prompt` set.
+          description: The assistant's completed utterance for the turn. Redacted when the app has `redact_prompt` set.
           examples:
             - Sure — I can help you place an order. Would you like pickup or delivery?
         type:
@@ -24369,14 +24418,14 @@ components:
         - method
         - params
       description: |-
-        A server-pushed `signalwire.event` frame. `EventType` is the wire event discriminator
+        A server-pushed `signalwire.event` frame. `EventType` identifies which event this is
         (e.g. `calling.call.play`); `Data` is the event-specific payload carried at `params.params`.
     Calling.AiResponseEventData:
       type: object
       properties:
         response:
           type: string
-          description: The full concatenated LLM response text for the turn. Redacted when the app has `redact_prompt` set.
+          description: The assistant's full response text for the turn. Redacted when the app has `redact_prompt` set.
           examples:
             - Sure — I can help you place an order. Would you like pickup or delivery?
       required:
@@ -24440,14 +24489,14 @@ components:
         - method
         - params
       description: |-
-        A server-pushed `signalwire.event` frame. `EventType` is the wire event discriminator
+        A server-pushed `signalwire.event` frame. `EventType` identifies which event this is
         (e.g. `calling.call.play`); `Data` is the event-specific payload carried at `params.params`.
     Calling.AiResponseUtteranceEventData:
       type: object
       properties:
         utterance:
           type: string
-          description: One spoken segment of the assistant's response, emitted as it streams, with internal markup prefixes stripped. Redacted when the app has `redact_prompt` set.
+          description: One spoken segment of the assistant's response, emitted as it streams. Redacted when the app has `redact_prompt` set.
           examples:
             - Would you like pickup or delivery?
       required:
@@ -24511,7 +24560,7 @@ components:
         - method
         - params
       description: |-
-        A server-pushed `signalwire.event` frame. `EventType` is the wire event discriminator
+        A server-pushed `signalwire.event` frame. `EventType` identifies which event this is
         (e.g. `calling.call.play`); `Data` is the event-specific payload carried at `params.params`.
     Calling.AiSpeechDetectEventData:
       type: object
@@ -24582,14 +24631,14 @@ components:
         - method
         - params
       description: |-
-        A server-pushed `signalwire.event` frame. `EventType` is the wire event discriminator
+        A server-pushed `signalwire.event` frame. `EventType` identifies which event this is
         (e.g. `calling.call.play`); `Data` is the event-specific payload carried at `params.params`.
     Calling.AiPartialResultEventData:
       type: object
       properties:
         text:
           type: string
-          description: The caller's interim (partial) ASR transcript.
+          description: The caller's interim (partial) speech-recognition transcript.
           examples:
             - I'd like to order a large
         barged:
@@ -24658,7 +24707,7 @@ components:
         - method
         - params
       description: |-
-        A server-pushed `signalwire.event` frame. `EventType` is the wire event discriminator
+        A server-pushed `signalwire.event` frame. `EventType` identifies which event this is
         (e.g. `calling.call.play`); `Data` is the event-specific payload carried at `params.params`.
     Calling.AiBeginSpeakingEventData:
       type: object
@@ -24723,7 +24772,7 @@ components:
         - method
         - params
       description: |-
-        A server-pushed `signalwire.event` frame. `EventType` is the wire event discriminator
+        A server-pushed `signalwire.event` frame. `EventType` identifies which event this is
         (e.g. `calling.call.play`); `Data` is the event-specific payload carried at `params.params`.
     Calling.AiWarningEventData:
       type: object
@@ -24802,14 +24851,17 @@ components:
         - method
         - params
       description: |-
-        A server-pushed `signalwire.event` frame. `EventType` is the wire event discriminator
+        A server-pushed `signalwire.event` frame. `EventType` identifies which event this is
         (e.g. `calling.call.play`); `Data` is the event-specific payload carried at `params.params`.
     Calling.AiTransparentBargeEventData:
       type: object
       properties:
         combined_text:
           type: string
-          description: The caller's merged turn text after a transparent barge. Present only when non-empty.
+          description: |-
+            The caller's merged turn text after a transparent barge — when the caller interrupts but the
+            assistant keeps listening and merges the interruption into the same turn. Present only when
+            non-empty.
           examples:
             - Actually, make that two large pepperoni pizzas.
     Calling.AiStopEvent:
@@ -24871,7 +24923,7 @@ components:
         - method
         - params
       description: |-
-        A server-pushed `signalwire.event` frame. `EventType` is the wire event discriminator
+        A server-pushed `signalwire.event` frame. `EventType` identifies which event this is
         (e.g. `calling.call.play`); `Data` is the event-specific payload carried at `params.params`.
     Calling.AiStopEventData:
       type: object
@@ -24891,13 +24943,13 @@ components:
         wallet_paused_sec:
           type: number
           format: double
-          description: Total time in seconds the wallet was paused during the session.
+          description: Total seconds that billing was paused during the session.
           examples:
             - 0
         billing:
           type: object
           additionalProperties: {}
-          description: "Billing detail for the session. An open object: keys under `this_visit`/`cumulative` are dynamic per-resource/SKU maps, so the shape is not a fixed schema."
+          description: Per-session billing detail. The breakdown under `this_visit` and `cumulative` varies by the resources used, so the exact keys are not fixed.
       required:
         - start_time
         - end_time
@@ -24961,7 +25013,7 @@ components:
         - method
         - params
       description: |-
-        A server-pushed `signalwire.event` frame. `EventType` is the wire event discriminator
+        A server-pushed `signalwire.event` frame. `EventType` identifies which event this is
         (e.g. `calling.call.play`); `Data` is the event-specific payload carried at `params.params`.
     Calling.AiSwaigEvent:
       type: object
@@ -25022,7 +25074,7 @@ components:
         - method
         - params
       description: |-
-        A server-pushed `signalwire.event` frame. `EventType` is the wire event discriminator
+        A server-pushed `signalwire.event` frame. `EventType` identifies which event this is
         (e.g. `calling.call.play`); `Data` is the event-specific payload carried at `params.params`.
     Calling.AiSwaigActionEvent:
       type: object
@@ -25083,7 +25135,7 @@ components:
         - method
         - params
       description: |-
-        A server-pushed `signalwire.event` frame. `EventType` is the wire event discriminator
+        A server-pushed `signalwire.event` frame. `EventType` identifies which event this is
         (e.g. `calling.call.play`); `Data` is the event-specific payload carried at `params.params`.
     Calling.AiStopRequest:
       type: object
@@ -25110,13 +25162,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.AiStopParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -25163,13 +25215,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - +OK
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -25182,6 +25234,7 @@ components:
             - d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e
       required:
         - code
+      description: Confirmation that the AI session was stopped.
     Calling.AiSidecarRequest:
       type: object
       properties:
@@ -25207,13 +25260,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.AiSidecarParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -25352,13 +25405,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - +OK
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -25425,7 +25478,7 @@ components:
         - method
         - params
       description: |-
-        A server-pushed `signalwire.event` frame. `EventType` is the wire event discriminator
+        A server-pushed `signalwire.event` frame. `EventType` identifies which event this is
         (e.g. `calling.call.play`); `Data` is the event-specific payload carried at `params.params`.
     Calling.AiSidecarEventData:
       type: object
@@ -25445,7 +25498,7 @@ components:
         tick_id:
           type: integer
           format: int64
-          description: Evaluation id — callbacks produced in the same evaluation share a `tick_id`.
+          description: Groups callbacks that the sidecar produced together in one processing pass — callbacks from the same pass share a `tick_id`.
           examples:
             - 42
         channel_data:
@@ -25511,13 +25564,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.AiSidecarPokeParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -25579,13 +25632,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.AiSidecarAskParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -25632,13 +25685,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - queued
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -25678,13 +25731,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.AiSidecarStopParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -25740,13 +25793,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.AiSidecarStatusParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -25787,13 +25840,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - +OK
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -25826,13 +25879,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.AmazonBedrockParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -26001,9 +26054,8 @@ components:
             - lupe
             - carlos
           description: |-
-            The voice the agent speaks with. Accepts an Amazon Nova Sonic voice name, which is mapped
-            internally to the underlying TTS voice. When omitted, the default voice (`tiffany`) is used.
-            On the Relay API this is set inside `prompt` rather than at the top level.
+            The voice the agent speaks with. Accepts an Amazon Nova Sonic voice name; when omitted, the
+            default voice (`tiffany`) is used.
           default: tiffany
           examples:
             - matthew
@@ -26080,9 +26132,8 @@ components:
             - lupe
             - carlos
           description: |-
-            The voice the agent speaks with. Accepts an Amazon Nova Sonic voice name, which is mapped
-            internally to the underlying TTS voice. When omitted, the default voice (`tiffany`) is used.
-            On the Relay API this is set inside `prompt` rather than at the top level.
+            The voice the agent speaks with. Accepts an Amazon Nova Sonic voice name; when omitted, the
+            default voice (`tiffany`) is used.
           default: tiffany
           examples:
             - matthew
@@ -26123,13 +26174,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - success
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -26162,13 +26213,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.AiMessageParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -26195,9 +26246,9 @@ components:
           type: object
           additionalProperties: {}
           description: |-
-            Updates the global data available to SWAIG functions. Merges into the existing
-            global data; set a key to `null` to remove it. Can be sent on its own to update
-            state without injecting a message.
+            Updates the global data available to your SWAIG (SignalWire AI Gateway)
+            functions. Merges into the existing global data; set a key to `null` to remove
+            it. Can be sent on its own to update state without injecting a message.
       required:
         - node_id
         - call_id
@@ -26264,13 +26315,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - +OK
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -26303,13 +26354,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.AiHoldParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -26364,13 +26415,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - +OK
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -26403,13 +26454,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.AiUnholdParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -26450,13 +26501,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
             - +OK
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -26489,13 +26540,13 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Calling.UserEventParams:
       type: object
       properties:
         node_id:
           type: string
-          description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         call_id:
@@ -26545,13 +26596,13 @@ components:
             - "200"
         message:
           type: string
-          description: Human-readable description of the result. On failure, explains what went wrong. Only `code` is guaranteed on the wire; `message` is omitted when the backend has none.
+          description: Human-readable description of the result. On failure, it explains what went wrong. Always check `code`; `message` may be omitted when there is nothing extra to report.
           examples:
-            - OK
+            - Sending user event
         data:
           type: array
           items: {}
-          description: "Present on partial failures: the array of per-device `user_errors` propagated by the backend, delivered as `data` itself (not wrapped)."
+          description: Present on partial failures. Contains the array of per-device `user_errors` explaining which devices failed and why.
         call_id:
           type: string
           description: The call this result is for, echoed from your request.
@@ -26559,6 +26610,7 @@ components:
             - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
       required:
         - code
+      description: Result of `calling.user_event`.
     Calling.CallUserEvent:
       type: object
       properties:
@@ -26609,7 +26661,7 @@ components:
               properties:
                 node_id:
                   type: string
-                  description: Identifier of the node handling the call. Pair it with `call_id` to address the call.
+                  description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
                   examples:
                     - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
                 call_id:
@@ -26666,7 +26718,7 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Messaging.SendParams:
       type: object
       properties:
@@ -26764,7 +26816,8 @@ components:
             user_errors:
               type: array
               items: {}
-          description: Present on failure; per-message user_errors from the messaging gateway.
+              description: Per-recipient error details, present only on partial or full failure.
+          description: "Present on failure: per-recipient error details. Each entry describes why the message was rejected for that recipient."
       required:
         - code
         - message
@@ -27145,7 +27198,7 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     Provisioning.ConfigureParams:
       type: object
       properties:
@@ -27204,23 +27257,11 @@ components:
     Provisioning.ConfigureExecuteResult:
       type: object
       properties:
-        requester_nodeid:
-          type: string
-          description: UUID of the node that requested the configuration.
-          examples:
-            - a1b2c3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
-        responder_nodeid:
-          type: string
-          description: UUID of the node that produced the configuration.
-          examples:
-            - f6e5d4c3-b2a1-0f9e-8d7c-6b5a4f3e2d1c
         result:
           description: The provisioning result payload.
           allOf:
             - $ref: "#/components/schemas/Provisioning.ConfigureResult"
       required:
-        - requester_nodeid
-        - responder_nodeid
         - result
       description: |-
         The result envelope for a provisioning request. The connector configuration is
@@ -27276,27 +27317,28 @@ components:
         - id
         - method
         - params
-      description: A JSON-RPC request frame. `Method` is the wire method constant; `Params` the method input.
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
     WebRTC.MessageParams:
       type: object
       properties:
         node_id:
           type: string
           description: |-
-            The node hosting your call. Once a call exists, set this to the `node_id`
-            you received in an earlier event or response so the frame reaches the right
-            place. Leave it absent on your first message, before a call has been
-            established — SignalWire picks the node.
+            Opaque identifier that scopes this call. Once a call exists, set this to the
+            `node_id` you received in an earlier event or response so the frame reaches
+            the right place. Leave it absent on your first message, before a call has been
+            established — SignalWire assigns one for you.
           examples:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         message:
           type: object
           additionalProperties: {}
           description: |-
-            The Verto frame to send (for example a `verto.invite` carrying
-            `dialogParams`/`sdp`/`layout`/`positions`). The frame is passed through
-            as-is; see `verto_messages.md` for the full list of Verto methods and their
-            `params`. The Verto call ID belongs inside this frame, at
+            The Verto frame (the WebRTC signaling message format used for peer calls) to
+            send — for example a `verto.invite` carrying
+            `dialogParams`/`sdp`/`layout`/`positions`. The frame is passed through
+            as-is; see SignalWire's Verto message reference for the full list of Verto
+            methods and their `params`. The Verto call ID belongs inside this frame, at
             `dialogParams.callID` — generate one when you create a call and reuse it on
             every frame for that call. There is no top-level `callID`.
         subscribe:
@@ -27341,20 +27383,18 @@ components:
         code:
           type: string
           description: |-
-            Result code as a string. `"200"` means success. On failure this is an in-band
-            lowercase error slug (for example `not_allowed`, `invalid_params`,
-            `internal_error`, `response_timeout`) delivered inside an otherwise-normal
-            result — it is not a JSON-RPC error object, so branch on `code`, not on the
-            presence of an error.
+            Result code as a string. `"200"` means success. On failure this is a lowercase
+            error identifier such as `not_allowed`, `invalid_params`, `internal_error`, or
+            `response_timeout`. Always check `code` to tell success from failure.
           examples:
             - "200"
         result:
           type: object
           additionalProperties: {}
-          description: The Verto reply payload — for example the answer to a `verto.invite`.
+          description: The Verto reply payload — for example the answer to a `verto.invite`. The shape depends on the Verto method.
         message:
           type: string
-          description: A status message accompanying the result, present on error and copied replies.
+          description: A human-readable status message. Present on errors and on some informational replies.
           examples:
             - Received
         node_id:
@@ -27364,7 +27404,7 @@ components:
             - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
       required:
         - code
-      description: "The reply to a Verto frame: the Verto outcome plus the node now hosting the call."
+      description: "The reply to a Verto frame (the WebRTC signaling message format used for peer calls): the Verto outcome plus the node now hosting the call."
     WebRTC.MessageEvent:
       type: object
       properties:
@@ -27422,8 +27462,8 @@ components:
               type: object
               additionalProperties: {}
               description: |-
-                The event-specific payload — the Verto frame being delivered, either a Verto
-                response or a conference/room event. Passed through as-is; see `verto_messages.md`.
+                The event-specific payload for this WebRTC signaling event — either a signaling
+                response or a conference/room event.
           required:
             - event_type
             - params
@@ -27434,13 +27474,14 @@ components:
         - method
         - params
       description: |-
-        Delivers a Verto frame from SignalWire back to your client. This fires when
-        SignalWire has a Verto response to one of your `message` requests, or when a
-        conference/room event arrives on a channel you subscribed to. Read the frame
-        in `params` to learn the outcome.
+        Delivers a Verto frame (the WebRTC signaling message format used for peer calls)
+        from SignalWire back to your client. This fires when SignalWire has a Verto
+        response to one of your `message` requests, or when a conference/room event
+        arrives on a channel you subscribed to. Read the frame in `params` to learn the
+        outcome.
 
-        The frame in `params` is passed through as-is; see `verto_messages.md` for
-        the full set of Verto methods and their `params`.
+        The frame in `params` is passed through as-is; see SignalWire's Verto message
+        reference for the full set of Verto methods and their `params`.
   messages:
     signalwireConnectRequest:
       name: signalwire.connect.request

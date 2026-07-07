@@ -6,6 +6,7 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
+@summary("AI hold params")
 model AiHoldParams {
   ...CallAddress;
 
@@ -23,8 +24,7 @@ model AiHoldParams {
   prompt?: string;
 }
 
+@summary("AI unhold params")
 model AiUnholdParams {
   ...CallAddress;
-
-  // NOTE: ai_unhold 'prompt' is supported by mod_openai but REJECTED by the relay_apis.c:1976 allowlist (call_ai_unhold omits prompt; the per-field check at :1981 is dead code) — omitted from the Relay wire. Likely a backend allowlist omission; flag to engineering.
 }

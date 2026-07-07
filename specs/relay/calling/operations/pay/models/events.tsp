@@ -9,7 +9,7 @@ using TypeSpec.OpenAPI;
 
 namespace Relay.Calling;
 
-@doc("Why the most recent collection attempt failed (single value on the event, unlike the space-delimited request form).")
+@doc("Why the most recent collection attempt failed.")
 union PayErrorType {
   "timeout",
   "invalid-card-number",
@@ -55,6 +55,7 @@ union PayCardType {
   masked. Fields are optional because which ones are present depends on whether
   this is a progress or final event.
   """)
+@summary("Pay event")
 model CallPayParams {
   ...CallAddress;
 
@@ -79,7 +80,7 @@ model CallPayParams {
   @example("invalid-card-number")
   error_type?: PayErrorType;
 
-  @doc("Progress: the current attempt number (sent as a string).")
+  @doc("Progress: the current attempt number, as a string.")
   @example("1")
   attempt?: string;
 

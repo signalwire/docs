@@ -14,6 +14,7 @@ namespace Relay.Calling;
   caller-defined, so only the address fields are fixed — every other field is one
   you chose (conventionally a `topic` naming the event).
   """)
+@summary("User event payload")
 model CallUserEventParams {
   ...CallEventAddress;
   ...Record<unknown>;

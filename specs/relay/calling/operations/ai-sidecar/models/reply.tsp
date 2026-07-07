@@ -6,10 +6,12 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
+@summary("AI sidecar result")
 model AiSidecarResult {
   ...RelayResultWithCall<"+OK">;
 }
 
+@summary("AI sidecar ask result")
 model AiSidecarAskResult {
   ...RelayResultWithCall<"queued">;
 
@@ -21,6 +23,7 @@ model AiSidecarAskResult {
   ask_id?: string;
 }
 
+@summary("AI sidecar status result")
 model AiSidecarStatusResult {
   ...RelayResultWithCall<"+OK">;
 }

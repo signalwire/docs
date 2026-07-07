@@ -6,6 +6,7 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
+@summary("Recording download details")
 model RecordResult {
   ...RelayResult<"Recording">;
 
@@ -14,14 +15,17 @@ model RecordResult {
   url?: url;
 }
 
+@summary("Record pause result")
 model RecordPauseResult {
   ...RelayResult<"Pausing recording">;
 }
 
+@summary("Record resume result")
 model RecordResumeResult {
   ...RelayResult<"Resuming recording">;
 }
 
+@summary("Record stop result")
 model RecordStopResult {
   ...RelayResult<"Stopping recording">;
 }

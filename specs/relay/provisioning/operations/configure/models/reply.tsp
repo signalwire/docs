@@ -19,6 +19,7 @@ model Configuration {
 }
 
 @doc("The provisioning result payload, carrying the rendered connector configuration.")
+@summary("Connector configuration payload")
 model ConfigureResult {
   @doc("The rendered connector configuration.")
   configuration: Configuration;
@@ -28,15 +29,8 @@ model ConfigureResult {
   The result envelope for a provisioning request. The connector configuration is
   carried in the nested `result`.
   """)
+@summary("Connector configuration response")
 model ConfigureExecuteResult {
-  @doc("UUID of the node that requested the configuration.")
-  @example("a1b2c3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d")
-  requester_nodeid: string;
-
-  @doc("UUID of the node that produced the configuration.")
-  @example("f6e5d4c3-b2a1-0f9e-8d7c-6b5a4f3e2d1c")
-  responder_nodeid: string;
-
   @doc("The provisioning result payload.")
   result: ConfigureResult;
 }

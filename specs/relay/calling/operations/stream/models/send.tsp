@@ -28,7 +28,7 @@ model StreamParams {
   @example("my_stream")
   name?: string;
 
-  @doc("Codec for the streamed audio. Default is the call's native codec.")
+  @doc("Audio codec for the stream (e.g. `PCMU`, `OPUS`). Defaults to the call's native codec — leave unset unless your endpoint needs a specific one.")
   @example("PCMU")
   codec?: string;
 

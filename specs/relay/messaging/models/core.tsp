@@ -9,6 +9,7 @@ namespace Relay.Messaging;
   succeeds; any other value (such as `"400"` or `"404"`) means it failed, and
   `message` explains why.
   """)
+@summary("Request result")
 model Result {
   @doc("Result code as a string. `\"200\"` means success; anything else is an error.")
   @example("200")
