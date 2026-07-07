@@ -259,6 +259,22 @@ model AIParams {
     | SWMLVar = "both";
 
   @doc("""
+    Cleans up the transcription of caller speech before each AI turn — converting spoken numbers to digits, formatting addresses and phone numbers, and fixing obvious mishearings — without changing the meaning.
+    Mutually exclusive with `enable_text_normalization`, which is on by default: set `enable_text_normalization` to `false` to use `auto_correct`, otherwise `auto_correct` is ignored.
+    When combined with `redact_prompt`, cleanup and redaction run in a single pass, avoiding an extra model round-trip per turn.
+    **Default:** `false`.
+    """)
+  @example(true)
+  auto_correct?: boolean | SWMLVar = false;
+
+  @doc("""
+    A plain-language description of content to redact from everything the platform records or transmits about the call — logs, events, webhook payloads, the call timeline, and the post-conversation `call_log` and `raw_call_log`. For example: `"credit card numbers, social security numbers, and full names"`.
+    A non-empty value enables redaction, and redacted content appears as `----`; omit the parameter to disable redaction. The caller still hears the content in full, and the AI model still receives the real text each turn — redaction protects what is recorded and transmitted, not what the model processes. Redaction is best-effort.
+    """)
+  @example("credit card numbers, social security numbers, and full names")
+  redact_prompt?: string;
+
+  @doc("""
     Enables visual input processing for the AI Agent.
     When set to `true`, the AI Agent will be able to utilize visual processing capabilities, while leveraging the `get_visual_input` function.
     """)
@@ -502,6 +518,10 @@ model AIParams {
   @doc("The model to use for the AI's thinking capabilities. Allowed values are `gpt-4o-mini`, `gpt-4.1-mini`, and `gpt-4.1-nano`.")
   @example("gpt-4.1-mini")
   thinking_model?: SupportedAIModels;
+
+  @doc("The model used for lightweight utility passes such as redaction (`redact_prompt`) and input cleanup (`auto_correct`). Allowed values are `gpt-4o-mini`, `gpt-4.1-mini`, and `gpt-4.1-nano`. Use a small, fast model — these passes run during the conversation turn. **Default:** the value of the `ai_model` parameter.")
+  @example("gpt-4o-mini")
+  utility_model?: SupportedAIModels;
 
   @doc("""
     When enabled, the AI will not respond to the user's input when the user is speaking over the agent.
