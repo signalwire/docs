@@ -35,6 +35,7 @@ import "./operations/amazon-bedrock/main.tsp";
 import "./operations/ai-message/main.tsp";
 import "./operations/ai-hold/main.tsp";
 import "./operations/user-event/main.tsp";
+import "./operations/call-events/main.tsp";
 import "./events/shared.tsp";
 
 using SignalWire.AsyncAPI;

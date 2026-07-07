@@ -82,10 +82,6 @@ channels:
         $ref: "#/components/messages/signalwireReceiveRequest"
       signalwireReceiveResponse:
         $ref: "#/components/messages/signalwireReceiveResponse"
-      callReceiveEvent:
-        $ref: "#/components/messages/callReceiveEvent"
-      callStateEvent:
-        $ref: "#/components/messages/callStateEvent"
     x-fern-display-name: signalwire.receive
     bindings:
       ws: {}
@@ -116,8 +112,6 @@ channels:
         $ref: "#/components/messages/callingDialResponse"
       callDialEvent:
         $ref: "#/components/messages/callDialEvent"
-      callStateEvent:
-        $ref: "#/components/messages/callStateEvent"
     x-fern-display-name: calling.dial
     bindings:
       ws: {}
@@ -162,8 +156,6 @@ channels:
         $ref: "#/components/messages/callingConnectResponse"
       callConnectEvent:
         $ref: "#/components/messages/callConnectEvent"
-      callStateEvent:
-        $ref: "#/components/messages/callStateEvent"
     x-fern-display-name: calling.connect
     bindings:
       ws: {}
@@ -1079,6 +1071,30 @@ channels:
     x-fern-display-name: calling.user_event
     bindings:
       ws: {}
+  calling.call.receive:
+    address: /
+    title: calling.call.receive
+    description: Receive inbound calls on a subscribed context
+    servers:
+      - $ref: "#/servers/production"
+    messages:
+      callReceiveEvent:
+        $ref: "#/components/messages/callReceiveEvent"
+    x-fern-display-name: calling.call.receive
+    bindings:
+      ws: {}
+  calling.call.state:
+    address: /
+    title: calling.call.state
+    description: Receive call-state changes
+    servers:
+      - $ref: "#/servers/production"
+    messages:
+      callStateEvent:
+        $ref: "#/components/messages/callStateEvent"
+    x-fern-display-name: calling.call.state
+    bindings:
+      ws: {}
   messaging.send:
     address: /
     title: messaging.send
@@ -1212,22 +1228,6 @@ operations:
       messages:
         - $ref: "#/channels/signalwire.receive/messages/signalwireReceiveResponse"
     x-fern-display-name: signalwire.receive
-  onSignalwireReceiveCallReceiveEvent:
-    action: receive
-    channel:
-      $ref: "#/channels/signalwire.receive"
-    title: calling.call.receive
-    messages:
-      - $ref: "#/channels/signalwire.receive/messages/callReceiveEvent"
-    x-fern-display-name: calling.call.receive
-  onSignalwireReceiveCallStateEvent:
-    action: receive
-    channel:
-      $ref: "#/channels/signalwire.receive"
-    title: calling.call.state
-    messages:
-      - $ref: "#/channels/signalwire.receive/messages/callStateEvent"
-    x-fern-display-name: calling.call.state
   onSignalwireReceiveResponse:
     action: receive
     channel:
@@ -1280,14 +1280,6 @@ operations:
     messages:
       - $ref: "#/channels/calling.dial/messages/callDialEvent"
     x-fern-display-name: calling.call.dial
-  onCallingDialCallStateEvent:
-    action: receive
-    channel:
-      $ref: "#/channels/calling.dial"
-    title: calling.call.state
-    messages:
-      - $ref: "#/channels/calling.dial/messages/callStateEvent"
-    x-fern-display-name: calling.call.state
   onCallingDialResponse:
     action: receive
     channel:
@@ -1362,14 +1354,6 @@ operations:
     messages:
       - $ref: "#/channels/calling.connect/messages/callConnectEvent"
     x-fern-display-name: calling.call.connect
-  onCallingConnectCallStateEvent:
-    action: receive
-    channel:
-      $ref: "#/channels/calling.connect"
-    title: calling.call.state
-    messages:
-      - $ref: "#/channels/calling.connect/messages/callStateEvent"
-    x-fern-display-name: calling.call.state
   onCallingConnectResponse:
     action: receive
     channel:
@@ -3020,6 +3004,22 @@ operations:
     messages:
       - $ref: "#/channels/calling.user_event/messages/callingUserEventResponse"
     x-fern-display-name: calling.user_event response
+  onCallingCallReceiveCallReceiveEvent:
+    action: receive
+    channel:
+      $ref: "#/channels/calling.call.receive"
+    title: calling.call.receive
+    messages:
+      - $ref: "#/channels/calling.call.receive/messages/callReceiveEvent"
+    x-fern-display-name: calling.call.receive
+  onCallingCallStateCallStateEvent:
+    action: receive
+    channel:
+      $ref: "#/channels/calling.call.state"
+    title: calling.call.state
+    messages:
+      - $ref: "#/channels/calling.call.state/messages/callStateEvent"
+    x-fern-display-name: calling.call.state
   messagingSend:
     action: send
     channel:
@@ -3552,553 +3552,6 @@ components:
         - code
         - message
       description: A `{code, message}` acknowledgement returned by receive and unreceive.
-    Calling.CallReceiveEvent:
-      type: object
-      properties:
-        jsonrpc:
-          type: string
-          enum:
-            - "2.0"
-          description: JSON-RPC version. Always `2.0`.
-        id:
-          type: string
-          description: Event id.
-        method:
-          type: string
-          enum:
-            - signalwire.event
-          description: Always `signalwire.event`.
-        params:
-          type: object
-          properties:
-            event_type:
-              type: string
-              enum:
-                - calling.call.receive
-              description: The event type — identifies which event this is.
-            event_channel:
-              type: string
-              description: The channel the event was delivered on.
-              examples:
-                - calling
-            timestamp:
-              type: number
-              format: double
-              description: When the event was emitted, as a Unix timestamp in seconds.
-              examples:
-                - 1712345678.842
-            project_id:
-              type: string
-              description: Your project ID.
-              examples:
-                - b1c2d3e4-f5a6-7b8c-9d0e-1f2a3b4c5d6e
-            space_id:
-              type: string
-              description: Your space ID.
-              examples:
-                - c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f
-            params:
-              description: The event-specific payload.
-              allOf:
-                - $ref: "#/components/schemas/Calling.CallReceiveParams"
-          required:
-            - event_type
-            - params
-          description: The event envelope.
-      required:
-        - jsonrpc
-        - id
-        - method
-        - params
-      description: Fires when a new call comes in that your application can answer and control. The payload tells you who is calling and on which context.
-    Calling.CallReceiveParams:
-      type: object
-      properties:
-        node_id:
-          type: string
-          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
-          examples:
-            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
-        call_id:
-          type: string
-          description: Unique identifier of the call.
-          examples:
-            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
-        segment_id:
-          type: string
-          description: Identifier of the call segment this event belongs to, for correlating events within the same segment of a call.
-          examples:
-            - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
-        tag:
-          type: string
-          description: The `tag` you set when placing the call, echoed back so you can match the event to your request.
-          examples:
-            - my-tag-1
-        call_state:
-          description: The current state of the inbound call.
-          examples:
-            - created
-          allOf:
-            - $ref: "#/components/schemas/Calling.CallState"
-        direction:
-          description: Whether the call is inbound or outbound. Always present on the receive event.
-          examples:
-            - inbound
-          allOf:
-            - $ref: "#/components/schemas/Calling.CallDirection"
-        context:
-          type: string
-          description: The context the call arrived on, such as `pbx`. Always present on the receive event. For this event the same value is also surfaced at the top level of the event envelope (alongside `event_type`), so you can read it from either place.
-          examples:
-            - pbx
-        device:
-          description: The device the call is coming in on, including the caller's number.
-          allOf:
-            - $ref: "#/components/schemas/Calling.CallDevice"
-      required:
-        - node_id
-        - call_id
-        - call_state
-        - direction
-        - context
-        - device
-      description: "Payload of the `calling.call.receive` event: who is calling and on which context."
-    Calling.CallState:
-      type: string
-      enum:
-        - created
-        - ringing
-        - answered
-        - ending
-        - ended
-    Calling.CallDirection:
-      type: string
-      enum:
-        - inbound
-        - outbound
-    Calling.CallDevice:
-      type: object
-      properties:
-        type:
-          type: string
-          enum:
-            - phone
-            - sip
-            - webrtc
-      required:
-        - type
-      description: The negotiated call leg reported in call events. Discriminated on `type`.
-      discriminator: type
-    Calling.CallPhoneDevice:
-      allOf:
-        - $ref: "#/components/schemas/Calling.CallDevice"
-        - type: object
-          properties:
-            type:
-              type: string
-              const: phone
-            params:
-              type: object
-              properties:
-                from_number:
-                  type: string
-                  description: Origination number, E.164.
-                  examples:
-                    - "+15551230001"
-                to_number:
-                  type: string
-                  description: Destination number, E.164.
-                  examples:
-                    - "+15551230002"
-                headers:
-                  type: array
-                  items:
-                    $ref: "#/components/schemas/Calling.SipHeader"
-                  description: Custom `X-` SIP headers carried on the leg, when present.
-              required:
-                - from_number
-                - to_number
-          required:
-            - type
-            - params
-          description: A phone (PSTN) leg, as reported in call events.
-    Calling.SipHeader:
-      type: object
-      properties:
-        name:
-          type: string
-          description: Header name. Typically an `X-`-prefixed custom header; the reserved `X-SignalWire*` and `X-CID*` names are rejected.
-          examples:
-            - X-Custom-Key
-        value:
-          type: string
-          description: Header value. Must not contain CR or LF characters.
-          examples:
-            - custom-value
-      required:
-        - name
-        - value
-      description: |-
-        A custom SIP header. Custom `X-` headers are allowed, except the reserved
-        `X-SignalWire*` and `X-CID*` prefixes. A few standard headers (`Privacy`,
-        `P-Asserted-Identity`, `User-to-User`) are also permitted.
-    Calling.CallSipDevice:
-      allOf:
-        - $ref: "#/components/schemas/Calling.CallDevice"
-        - type: object
-          properties:
-            type:
-              type: string
-              const: sip
-            params:
-              type: object
-              properties:
-                from:
-                  type: string
-                  description: Origination SIP address.
-                  examples:
-                    - sip:alice@example.com
-                to:
-                  type: string
-                  description: Destination SIP address.
-                  examples:
-                    - sip:bob@example.com
-                headers:
-                  type: array
-                  items:
-                    $ref: "#/components/schemas/Calling.SipHeader"
-                  description: Custom `X-` SIP headers.
-              required:
-                - from
-                - to
-          required:
-            - type
-            - params
-          description: A SIP leg, as reported in call events.
-    Calling.CallWebrtcDevice:
-      allOf:
-        - $ref: "#/components/schemas/Calling.CallDevice"
-        - type: object
-          properties:
-            type:
-              type: string
-              const: webrtc
-            params:
-              type: object
-              properties:
-                from:
-                  type: string
-                  description: Origination — the WebRTC endpoint the leg was placed from.
-                  examples:
-                    - agent-1
-                to:
-                  type: string
-                  description: Destination — the WebRTC endpoint the leg was placed to.
-                  examples:
-                    - agent-2
-              required:
-                - from
-                - to
-          required:
-            - type
-            - params
-          description: A WebRTC leg, as reported in call events.
-    Calling.CallStateEvent:
-      type: object
-      properties:
-        jsonrpc:
-          type: string
-          enum:
-            - "2.0"
-          description: JSON-RPC version. Always `2.0`.
-        id:
-          type: string
-          description: Event id.
-        method:
-          type: string
-          enum:
-            - signalwire.event
-          description: Always `signalwire.event`.
-        params:
-          type: object
-          properties:
-            event_type:
-              type: string
-              enum:
-                - calling.call.state
-              description: The event type — identifies which event this is.
-            event_channel:
-              type: string
-              description: The channel the event was delivered on.
-              examples:
-                - calling
-            timestamp:
-              type: number
-              format: double
-              description: When the event was emitted, as a Unix timestamp in seconds.
-              examples:
-                - 1712345678.842
-            project_id:
-              type: string
-              description: Your project ID.
-              examples:
-                - b1c2d3e4-f5a6-7b8c-9d0e-1f2a3b4c5d6e
-            space_id:
-              type: string
-              description: Your space ID.
-              examples:
-                - c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f
-            params:
-              description: The event-specific payload.
-              allOf:
-                - $ref: "#/components/schemas/Calling.CallStateParams"
-          required:
-            - event_type
-            - params
-          description: The event envelope.
-      required:
-        - jsonrpc
-        - id
-        - method
-        - params
-      description: Fires every time one of your calls changes state. Use the `call_state` field to track the call through its lifecycle, and `tag` to match the event back to the call you placed.
-    Calling.CallStateParams:
-      type: object
-      properties:
-        node_id:
-          type: string
-          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
-          examples:
-            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
-        call_id:
-          type: string
-          description: Unique identifier of the call.
-          examples:
-            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
-        segment_id:
-          type: string
-          description: Identifier of the call segment this event belongs to, for correlating events within the same segment of a call.
-          examples:
-            - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
-        tag:
-          type: string
-          description: The `tag` you set when placing the call, echoed back so you can match the event to your request.
-          examples:
-            - my-tag-1
-        device:
-          description: The device handling this call, once it has been determined.
-          allOf:
-            - $ref: "#/components/schemas/Calling.CallDevice"
-        parent:
-          description: Present when this call was created by another call, describing that originating call.
-          allOf:
-            - $ref: "#/components/schemas/Calling.CallParentRef"
-        peer:
-          description: Present when this call is bridged to another, describing the other call.
-          allOf:
-            - $ref: "#/components/schemas/Calling.CallPeerRef"
-        call_state:
-          description: The state the call has just moved into.
-          examples:
-            - ended
-          allOf:
-            - $ref: "#/components/schemas/Calling.CallState"
-        direction:
-          description: Whether the call is inbound or outbound.
-          examples:
-            - outbound
-          allOf:
-            - $ref: "#/components/schemas/Calling.CallDirection"
-        start_time:
-          type: integer
-          format: int64
-          description: When the call started, in epoch milliseconds.
-          examples:
-            - 1712345678123
-        answer_time:
-          type: integer
-          format: int64
-          description: When the call was answered, in epoch milliseconds.
-          examples:
-            - 1712345680456
-        end_time:
-          type: integer
-          format: int64
-          description: When the call ended, in epoch milliseconds.
-          examples:
-            - 1712345695789
-        end_reason:
-          description: Why the call ended. Present once the call has ended.
-          examples:
-            - hangup
-          allOf:
-            - $ref: "#/components/schemas/Calling.CallStateEndReason"
-        end_source:
-          type: string
-          description: Which side ended the call, e.g. `peer` (the other party). Present once the call has ended.
-          examples:
-            - peer
-        dial_winner:
-          type: string
-          enum:
-            - "true"
-          description: Set to the string `"true"` on the call that won a `calling.dial` race. Absent otherwise. Note the value is the string `"true"`, not a JSON boolean.
-          examples:
-            - "true"
-        sip_data:
-          description: SIP addressing/header detail. Present only for SIP calls (`device.type == "sip"`).
-          allOf:
-            - $ref: "#/components/schemas/Calling.CallSipData"
-        audio_in_mos:
-          type: number
-          format: double
-          description: Inbound-audio Mean Opinion Score (voice quality, ~1.0-5.0). Present when RTP quality stats are available.
-          examples:
-            - 4.4
-      required:
-        - node_id
-        - call_id
-        - call_state
-      description: "Payload of the `calling.call.state` event: the call's address, state, timing, and leg detail."
-    Calling.CallParentRef:
-      type: object
-      properties:
-        node_id:
-          type: string
-          description: Opaque identifier that, paired with `call_id`, addresses the parent call. Echo back the value you received; treat it as opaque.
-          examples:
-            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
-        call_id:
-          type: string
-          description: The parent call's `call_id`.
-          examples:
-            - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
-        device_type:
-          type: string
-          description: The parent's device type, such as `sip`.
-          examples:
-            - sip
-      description: The call that created this one, when it was spawned by another call.
-    Calling.CallPeerRef:
-      type: object
-      properties:
-        node_id:
-          type: string
-          description: Opaque identifier that, paired with `call_id`, addresses the peer call. Echo back the value you received; treat it as opaque.
-          examples:
-            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
-        call_id:
-          type: string
-          description: The peer call's `call_id`.
-          examples:
-            - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
-      description: The other call this one is bridged to.
-    Calling.CallStateEndReason:
-      type: string
-      enum:
-        - hangup
-        - cancel
-        - busy
-        - noAnswer
-        - decline
-        - error
-        - abandoned
-        - maxDuration
-        - notFound
-    Calling.CallSipData:
-      type: object
-      properties:
-        sip_req_user:
-          type: string
-          description: Request-URI user part.
-          examples:
-            - bob
-        sip_req_uri:
-          type: string
-          description: Request-URI user@host.
-          examples:
-            - bob@example.com
-        sip_req_host:
-          type: string
-          description: Request-URI host.
-          examples:
-            - example.com
-        sip_from_user:
-          type: string
-          description: From-header user part.
-          examples:
-            - alice
-        sip_from_uri:
-          type: string
-          description: From-header user@host.
-          examples:
-            - alice@example.com
-        sip_from_host:
-          type: string
-          description: From-header host.
-          examples:
-            - example.com
-        sip_to_user:
-          type: string
-          description: To-header user part.
-          examples:
-            - bob
-        sip_to_uri:
-          type: string
-          description: To-header user@host.
-          examples:
-            - bob@example.com
-        sip_to_host:
-          type: string
-          description: To-header host.
-          examples:
-            - example.com
-        sip_contact_user:
-          type: string
-          description: Contact-header user part.
-          examples:
-            - alice
-        sip_contact_port:
-          type: string
-          description: Contact-header port.
-          examples:
-            - "5060"
-        sip_contact_uri:
-          type: string
-          description: Contact-header user@host[:port].
-          examples:
-            - alice@203.0.113.10:5060
-        sip_contact_host:
-          type: string
-          description: Contact-header host.
-          examples:
-            - 203.0.113.10
-        sip_from_params:
-          type: object
-          additionalProperties:
-            type: string
-          description: Parsed From-URI parameters (`key=value` pairs).
-        sip_to_params:
-          type: object
-          additionalProperties:
-            type: string
-          description: Parsed To-URI parameters (`key=value` pairs).
-        sip_contact_params:
-          type: object
-          additionalProperties:
-            type: string
-          description: Parsed Contact-URI parameters (`key=value` pairs).
-        sip_req_params:
-          type: object
-          additionalProperties:
-            type: string
-          description: Parsed Request-URI parameters (`key=value` pairs).
-        sip_p_asserted_identity:
-          type: string
-          description: The `P-Asserted-Identity` header value, when present.
-          examples:
-            - '"Alice" <sip:alice@example.com>'
-      description: Present only for SIP calls (`device.type == "sip"`). SIP addressing/header detail extracted from the inbound INVITE. Every sub-field is optional and appears only when the corresponding SIP header was present.
     Signalwire.UnreceiveRequest:
       type: object
       properties:
@@ -4428,6 +3881,26 @@ components:
       required:
         - to
       description: Parameters for dialing or connecting a SIP leg.
+    Calling.SipHeader:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Header name. Typically an `X-`-prefixed custom header; the reserved `X-SignalWire*` and `X-CID*` names are rejected.
+          examples:
+            - X-Custom-Key
+        value:
+          type: string
+          description: Header value. Must not contain CR or LF characters.
+          examples:
+            - custom-value
+      required:
+        - name
+        - value
+      description: |-
+        A custom SIP header. Custom `X-` headers are allowed, except the reserved
+        `X-SignalWire*` and `X-CID*` prefixes. A few standard headers (`Privacy`,
+        `P-Asserted-Identity`, `User-to-User`) are also permitted.
     Calling.SipCodec:
       type: string
       enum:
@@ -4658,6 +4131,363 @@ components:
         - node_id
         - tag
         - dial_state
+    Calling.CallStateParams:
+      type: object
+      properties:
+        node_id:
+          type: string
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
+          examples:
+            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+        call_id:
+          type: string
+          description: Unique identifier of the call.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        segment_id:
+          type: string
+          description: Identifier of the call segment this event belongs to, for correlating events within the same segment of a call.
+          examples:
+            - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
+        tag:
+          type: string
+          description: The `tag` you set when placing the call, echoed back so you can match the event to your request.
+          examples:
+            - my-tag-1
+        device:
+          description: The device handling this call, once it has been determined.
+          allOf:
+            - $ref: "#/components/schemas/Calling.CallDevice"
+        parent:
+          description: Present when this call was created by another call, describing that originating call.
+          allOf:
+            - $ref: "#/components/schemas/Calling.CallParentRef"
+        peer:
+          description: Present when this call is bridged to another, describing the other call.
+          allOf:
+            - $ref: "#/components/schemas/Calling.CallPeerRef"
+        call_state:
+          description: The state the call has just moved into.
+          examples:
+            - ended
+          allOf:
+            - $ref: "#/components/schemas/Calling.CallState"
+        direction:
+          description: Whether the call is inbound or outbound.
+          examples:
+            - outbound
+          allOf:
+            - $ref: "#/components/schemas/Calling.CallDirection"
+        start_time:
+          type: integer
+          format: int64
+          description: When the call started, in epoch milliseconds.
+          examples:
+            - 1712345678123
+        answer_time:
+          type: integer
+          format: int64
+          description: When the call was answered, in epoch milliseconds.
+          examples:
+            - 1712345680456
+        end_time:
+          type: integer
+          format: int64
+          description: When the call ended, in epoch milliseconds.
+          examples:
+            - 1712345695789
+        end_reason:
+          description: Why the call ended. Present once the call has ended.
+          examples:
+            - hangup
+          allOf:
+            - $ref: "#/components/schemas/Calling.CallStateEndReason"
+        end_source:
+          type: string
+          description: Which side ended the call, e.g. `peer` (the other party). Present once the call has ended.
+          examples:
+            - peer
+        dial_winner:
+          type: string
+          enum:
+            - "true"
+          description: Set to the string `"true"` on the call that won a `calling.dial` race. Absent otherwise. Note the value is the string `"true"`, not a JSON boolean.
+          examples:
+            - "true"
+        sip_data:
+          description: SIP addressing/header detail. Present only for SIP calls (`device.type == "sip"`).
+          allOf:
+            - $ref: "#/components/schemas/Calling.CallSipData"
+        audio_in_mos:
+          type: number
+          format: double
+          description: Inbound-audio Mean Opinion Score (voice quality, ~1.0-5.0). Present when RTP quality stats are available.
+          examples:
+            - 4.4
+      required:
+        - node_id
+        - call_id
+        - call_state
+      description: "Payload of the `calling.call.state` event: the call's address, state, timing, and leg detail."
+    Calling.CallDevice:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - phone
+            - sip
+            - webrtc
+      required:
+        - type
+      description: The negotiated call leg reported in call events. Discriminated on `type`.
+      discriminator: type
+    Calling.CallPhoneDevice:
+      allOf:
+        - $ref: "#/components/schemas/Calling.CallDevice"
+        - type: object
+          properties:
+            type:
+              type: string
+              const: phone
+            params:
+              type: object
+              properties:
+                from_number:
+                  type: string
+                  description: Origination number, E.164.
+                  examples:
+                    - "+15551230001"
+                to_number:
+                  type: string
+                  description: Destination number, E.164.
+                  examples:
+                    - "+15551230002"
+                headers:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/Calling.SipHeader"
+                  description: Custom `X-` SIP headers carried on the leg, when present.
+              required:
+                - from_number
+                - to_number
+          required:
+            - type
+            - params
+          description: A phone (PSTN) leg, as reported in call events.
+    Calling.CallSipDevice:
+      allOf:
+        - $ref: "#/components/schemas/Calling.CallDevice"
+        - type: object
+          properties:
+            type:
+              type: string
+              const: sip
+            params:
+              type: object
+              properties:
+                from:
+                  type: string
+                  description: Origination SIP address.
+                  examples:
+                    - sip:alice@example.com
+                to:
+                  type: string
+                  description: Destination SIP address.
+                  examples:
+                    - sip:bob@example.com
+                headers:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/Calling.SipHeader"
+                  description: Custom `X-` SIP headers.
+              required:
+                - from
+                - to
+          required:
+            - type
+            - params
+          description: A SIP leg, as reported in call events.
+    Calling.CallWebrtcDevice:
+      allOf:
+        - $ref: "#/components/schemas/Calling.CallDevice"
+        - type: object
+          properties:
+            type:
+              type: string
+              const: webrtc
+            params:
+              type: object
+              properties:
+                from:
+                  type: string
+                  description: Origination — the WebRTC endpoint the leg was placed from.
+                  examples:
+                    - agent-1
+                to:
+                  type: string
+                  description: Destination — the WebRTC endpoint the leg was placed to.
+                  examples:
+                    - agent-2
+              required:
+                - from
+                - to
+          required:
+            - type
+            - params
+          description: A WebRTC leg, as reported in call events.
+    Calling.CallParentRef:
+      type: object
+      properties:
+        node_id:
+          type: string
+          description: Opaque identifier that, paired with `call_id`, addresses the parent call. Echo back the value you received; treat it as opaque.
+          examples:
+            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+        call_id:
+          type: string
+          description: The parent call's `call_id`.
+          examples:
+            - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
+        device_type:
+          type: string
+          description: The parent's device type, such as `sip`.
+          examples:
+            - sip
+      description: The call that created this one, when it was spawned by another call.
+    Calling.CallPeerRef:
+      type: object
+      properties:
+        node_id:
+          type: string
+          description: Opaque identifier that, paired with `call_id`, addresses the peer call. Echo back the value you received; treat it as opaque.
+          examples:
+            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+        call_id:
+          type: string
+          description: The peer call's `call_id`.
+          examples:
+            - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
+      description: The other call this one is bridged to.
+    Calling.CallState:
+      type: string
+      enum:
+        - created
+        - ringing
+        - answered
+        - ending
+        - ended
+    Calling.CallDirection:
+      type: string
+      enum:
+        - inbound
+        - outbound
+    Calling.CallStateEndReason:
+      type: string
+      enum:
+        - hangup
+        - cancel
+        - busy
+        - noAnswer
+        - decline
+        - error
+        - abandoned
+        - maxDuration
+        - notFound
+    Calling.CallSipData:
+      type: object
+      properties:
+        sip_req_user:
+          type: string
+          description: Request-URI user part.
+          examples:
+            - bob
+        sip_req_uri:
+          type: string
+          description: Request-URI user@host.
+          examples:
+            - bob@example.com
+        sip_req_host:
+          type: string
+          description: Request-URI host.
+          examples:
+            - example.com
+        sip_from_user:
+          type: string
+          description: From-header user part.
+          examples:
+            - alice
+        sip_from_uri:
+          type: string
+          description: From-header user@host.
+          examples:
+            - alice@example.com
+        sip_from_host:
+          type: string
+          description: From-header host.
+          examples:
+            - example.com
+        sip_to_user:
+          type: string
+          description: To-header user part.
+          examples:
+            - bob
+        sip_to_uri:
+          type: string
+          description: To-header user@host.
+          examples:
+            - bob@example.com
+        sip_to_host:
+          type: string
+          description: To-header host.
+          examples:
+            - example.com
+        sip_contact_user:
+          type: string
+          description: Contact-header user part.
+          examples:
+            - alice
+        sip_contact_port:
+          type: string
+          description: Contact-header port.
+          examples:
+            - "5060"
+        sip_contact_uri:
+          type: string
+          description: Contact-header user@host[:port].
+          examples:
+            - alice@203.0.113.10:5060
+        sip_contact_host:
+          type: string
+          description: Contact-header host.
+          examples:
+            - 203.0.113.10
+        sip_from_params:
+          type: object
+          additionalProperties:
+            type: string
+          description: Parsed From-URI parameters (`key=value` pairs).
+        sip_to_params:
+          type: object
+          additionalProperties:
+            type: string
+          description: Parsed To-URI parameters (`key=value` pairs).
+        sip_contact_params:
+          type: object
+          additionalProperties:
+            type: string
+          description: Parsed Contact-URI parameters (`key=value` pairs).
+        sip_req_params:
+          type: object
+          additionalProperties:
+            type: string
+          description: Parsed Request-URI parameters (`key=value` pairs).
+        sip_p_asserted_identity:
+          type: string
+          description: The `P-Asserted-Identity` header value, when present.
+          examples:
+            - '"Alice" <sip:alice@example.com>'
+      description: Present only for SIP calls (`device.type == "sip"`). SIP addressing/header detail extracted from the inbound INVITE. Every sub-field is optional and appears only when the corresponding SIP header was present.
     Calling.AnswerRequest:
       type: object
       properties:
@@ -26613,6 +26443,176 @@ components:
         SWML `user_event` method running server-side — so it can arrive without your
         application emitting anything. The payload is whatever object the sender
         provided, plus the call address.
+    Calling.CallReceiveEvent:
+      type: object
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - "2.0"
+          description: JSON-RPC version. Always `2.0`.
+        id:
+          type: string
+          description: Event id.
+        method:
+          type: string
+          enum:
+            - signalwire.event
+          description: Always `signalwire.event`.
+        params:
+          type: object
+          properties:
+            event_type:
+              type: string
+              enum:
+                - calling.call.receive
+              description: The event type — identifies which event this is.
+            event_channel:
+              type: string
+              description: The channel the event was delivered on.
+              examples:
+                - calling
+            timestamp:
+              type: number
+              format: double
+              description: When the event was emitted, as a Unix timestamp in seconds.
+              examples:
+                - 1712345678.842
+            project_id:
+              type: string
+              description: Your project ID.
+              examples:
+                - b1c2d3e4-f5a6-7b8c-9d0e-1f2a3b4c5d6e
+            space_id:
+              type: string
+              description: Your space ID.
+              examples:
+                - c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f
+            params:
+              description: The event-specific payload.
+              allOf:
+                - $ref: "#/components/schemas/Calling.CallReceiveParams"
+          required:
+            - event_type
+            - params
+          description: The event envelope.
+      required:
+        - jsonrpc
+        - id
+        - method
+        - params
+      description: Fires when a new call comes in that your application can answer and control. The payload tells you who is calling and on which context.
+    Calling.CallReceiveParams:
+      type: object
+      properties:
+        node_id:
+          type: string
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
+          examples:
+            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+        call_id:
+          type: string
+          description: Unique identifier of the call.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        segment_id:
+          type: string
+          description: Identifier of the call segment this event belongs to, for correlating events within the same segment of a call.
+          examples:
+            - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
+        tag:
+          type: string
+          description: The `tag` you set when placing the call, echoed back so you can match the event to your request.
+          examples:
+            - my-tag-1
+        call_state:
+          description: The current state of the inbound call.
+          examples:
+            - created
+          allOf:
+            - $ref: "#/components/schemas/Calling.CallState"
+        direction:
+          description: Whether the call is inbound or outbound. Always present on the receive event.
+          examples:
+            - inbound
+          allOf:
+            - $ref: "#/components/schemas/Calling.CallDirection"
+        context:
+          type: string
+          description: The context the call arrived on, such as `pbx`. Always present on the receive event. For this event the same value is also surfaced at the top level of the event envelope (alongside `event_type`), so you can read it from either place.
+          examples:
+            - pbx
+        device:
+          description: The device the call is coming in on, including the caller's number.
+          allOf:
+            - $ref: "#/components/schemas/Calling.CallDevice"
+      required:
+        - node_id
+        - call_id
+        - call_state
+        - direction
+        - context
+        - device
+      description: "Payload of the `calling.call.receive` event: who is calling and on which context."
+    Calling.CallStateEvent:
+      type: object
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - "2.0"
+          description: JSON-RPC version. Always `2.0`.
+        id:
+          type: string
+          description: Event id.
+        method:
+          type: string
+          enum:
+            - signalwire.event
+          description: Always `signalwire.event`.
+        params:
+          type: object
+          properties:
+            event_type:
+              type: string
+              enum:
+                - calling.call.state
+              description: The event type — identifies which event this is.
+            event_channel:
+              type: string
+              description: The channel the event was delivered on.
+              examples:
+                - calling
+            timestamp:
+              type: number
+              format: double
+              description: When the event was emitted, as a Unix timestamp in seconds.
+              examples:
+                - 1712345678.842
+            project_id:
+              type: string
+              description: Your project ID.
+              examples:
+                - b1c2d3e4-f5a6-7b8c-9d0e-1f2a3b4c5d6e
+            space_id:
+              type: string
+              description: Your space ID.
+              examples:
+                - c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f
+            params:
+              description: The event-specific payload.
+              allOf:
+                - $ref: "#/components/schemas/Calling.CallStateParams"
+          required:
+            - event_type
+            - params
+          description: The event envelope.
+      required:
+        - jsonrpc
+        - id
+        - method
+        - params
+      description: Fires every time one of your calls changes state. Use the `call_state` field to track the call through its lifecycle, and `tag` to match the event back to the call you placed.
     Messaging.SendRequest:
       type: object
       properties:
@@ -27436,18 +27436,6 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/Signalwire.ReceiveReply"
-    callReceiveEvent:
-      name: CallReceiveEvent
-      title: calling.call.receive
-      contentType: application/json
-      payload:
-        $ref: "#/components/schemas/Calling.CallReceiveEvent"
-    callStateEvent:
-      name: CallStateEvent
-      title: calling.call.state
-      contentType: application/json
-      payload:
-        $ref: "#/components/schemas/Calling.CallStateEvent"
     signalwireUnreceiveRequest:
       name: signalwire.unreceive.request
       title: signalwire.unreceive request
@@ -28718,6 +28706,18 @@ components:
       contentType: application/json
       payload:
         $ref: "#/components/schemas/Calling.CallUserEvent"
+    callReceiveEvent:
+      name: CallReceiveEvent
+      title: calling.call.receive
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/Calling.CallReceiveEvent"
+    callStateEvent:
+      name: CallStateEvent
+      title: calling.call.state
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/Calling.CallStateEvent"
     messagingSendRequest:
       name: messaging.send.request
       title: messaging.send request
