@@ -22,5 +22,4 @@ model AnswerRequest is JsonRpcRequest<typeof callingAnswer, AnswerParams>;
 @channel(callingAnswer)
 @summary("Answer an incoming call")
 @extension("x-fern-display-name", callingAnswer)
-@extension("x-fern-sdk-group-name", GroupSetupAnswer)
 op answer(...AnswerRequest): AnswerReply;

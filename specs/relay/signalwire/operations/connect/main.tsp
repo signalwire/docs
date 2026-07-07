@@ -10,7 +10,6 @@ using SignalWire.AsyncAPI;
 using TypeSpec.OpenAPI;
 
 namespace Relay.Signalwire;
-const GroupSignalwireConnect = #["signalwire", "connect"];
 
 const signalwireConnect = "signalwire.connect";
 const signalwireConnectResponse = "${signalwireConnect} response";
@@ -31,5 +30,4 @@ model ConnectRequest is JsonRpcRequest<typeof signalwireConnect, ConnectParams>;
 @channel(signalwireConnect)
 @summary("Authenticate and establish a Relay connection")
 @extension("x-fern-display-name", signalwireConnect)
-@extension("x-fern-sdk-group-name", GroupSignalwireConnect)
 op connect(...ConnectRequest): ConnectReply | AuthorizationStateEvent;

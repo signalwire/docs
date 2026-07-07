@@ -10,7 +10,6 @@ using SignalWire.AsyncAPI;
 using TypeSpec.OpenAPI;
 
 namespace Relay.WebRTC;
-const GroupWebrtcVerto = #["webrtc", "verto"];
 
 const webrtcVerto = "webrtc.verto";
 const webrtcVertoResponse = "${webrtcVerto} response";
@@ -37,5 +36,4 @@ model VertoRequest is JsonRpcRequest<typeof webrtcVerto, MessageParams>;
 @channel(webrtcVerto)
 @summary("Send a Verto frame")
 @extension("x-fern-display-name", webrtcVerto)
-@extension("x-fern-sdk-group-name", GroupWebrtcVerto)
 op verto(...VertoRequest): VertoReply | MessageEvent;

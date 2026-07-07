@@ -28,7 +28,6 @@ model AiRequest is JsonRpcRequest<typeof callingAi, AiParams>;
 @channel(callingAi)
 @summary("Start an AI agent on the call")
 @extension("x-fern-display-name", callingAi)
-@extension("x-fern-sdk-group-name", GroupAgentAi)
 op ai(...AiRequest):
   | AiReply
   | CallAiEvent
@@ -59,6 +58,5 @@ model AiStopRequest is JsonRpcRequest<typeof callingAiStop, AiStopParams>;
 @channel(callingAiStop)
 @summary("Stop an active AI agent session")
 @extension("x-fern-display-name", callingAiStop)
-@extension("x-fern-sdk-group-name", GroupAgentAiStop)
 op aiStop(...AiStopRequest): AiStopReply;
 

@@ -22,5 +22,4 @@ model PassRequest is JsonRpcRequest<typeof callingPass, PassParams>;
 @channel(callingPass)
 @summary("Pass the call offer to another application")
 @extension("x-fern-display-name", callingPass)
-@extension("x-fern-sdk-group-name", GroupControlPass)
 op pass(...PassRequest): PassReply;

@@ -1,5 +1,4 @@
 import "@signalwire/typespec-asyncapi";
-import "./groups.tsp";
 import "./models/core.tsp";
 import "./models/devices.tsp";
 import "./models/media.tsp";

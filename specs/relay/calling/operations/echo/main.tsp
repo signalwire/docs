@@ -27,5 +27,4 @@ model EchoRequest is JsonRpcRequest<typeof callingEcho, EchoParams>;
 @channel(callingEcho)
 @summary("Echo audio back to the caller")
 @extension("x-fern-display-name", callingEcho)
-@extension("x-fern-sdk-group-name", GroupAudioEcho)
 op echo(...EchoRequest): EchoReply | CallEchoEvent;

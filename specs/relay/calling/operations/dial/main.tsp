@@ -31,5 +31,4 @@ model DialRequest is JsonRpcRequest<typeof callingDial, DialParams>;
 @channel(callingDial)
 @summary("Dial outbound call(s); first to answer wins")
 @extension("x-fern-display-name", callingDial)
-@extension("x-fern-sdk-group-name", GroupSetupDial)
 op dial(...DialRequest): DialReply | CallDialEvent | CallStateEvent;

@@ -22,7 +22,6 @@ model AiHoldRequest is JsonRpcRequest<typeof callingAiHold, AiHoldParams>;
 @channel(callingAiHold)
 @summary("Put an AI agent session on hold")
 @extension("x-fern-display-name", callingAiHold)
-@extension("x-fern-sdk-group-name", GroupAgentAiHold)
 op aiHold(...AiHoldRequest): AiHoldReply;
 
 const callingAiUnhold = "calling.ai_unhold";
@@ -37,5 +36,4 @@ model AiUnholdRequest is JsonRpcRequest<typeof callingAiUnhold, AiUnholdParams>;
 @channel(callingAiUnhold)
 @summary("Resume an AI agent session from hold")
 @extension("x-fern-display-name", callingAiUnhold)
-@extension("x-fern-sdk-group-name", GroupAgentAiUnhold)
 op aiUnhold(...AiUnholdRequest): AiUnholdReply;

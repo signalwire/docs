@@ -29,7 +29,6 @@ model CollectRequest is JsonRpcRequest<typeof callingCollect, CollectParams>;
 @channel(callingCollect)
 @summary("Collect digits and/or speech from a call")
 @extension("x-fern-display-name", callingCollect)
-@extension("x-fern-sdk-group-name", GroupPromptCollect)
 op collect(...CollectRequest): CollectReply | CallCollectEvent;
 
 const callingCollectStop = "calling.collect.stop";
@@ -44,7 +43,6 @@ model CollectStopRequest is JsonRpcRequest<typeof callingCollectStop, CollectSto
 @channel(callingCollectStop)
 @summary("Stop an active collect")
 @extension("x-fern-display-name", callingCollectStop)
-@extension("x-fern-sdk-group-name", GroupPromptCollectStop)
 op collectStop(...CollectStopRequest): CollectStopReply;
 
 const callingCollectStartInputTimers = "calling.collect.start_input_timers";
@@ -63,5 +61,4 @@ model CollectStartInputTimersRequest is JsonRpcRequest<typeof callingCollectStar
 @channel(callingCollectStartInputTimers)
 @summary("Start the initial-timeout timer on a collect")
 @extension("x-fern-display-name", callingCollectStartInputTimers)
-@extension("x-fern-sdk-group-name", GroupPromptCollectStartInputTimers)
 op collectStartInputTimers(...CollectStartInputTimersRequest): CollectStartInputTimersReply;

@@ -22,7 +22,6 @@ model RecordCallRequest is JsonRpcRequest<typeof callingRecord, RecordParams>;
 @channel(callingRecord)
 @summary("Record a call")
 @extension("x-fern-display-name", callingRecord)
-@extension("x-fern-sdk-group-name", GroupRecordingRecord)
 op recordCall(...RecordCallRequest): RecordCallReply | CallRecordEvent;
 
 const callingRecordPause = "calling.record.pause";
@@ -36,7 +35,6 @@ model RecordPauseRequest is JsonRpcRequest<typeof callingRecordPause, RecordPaus
 @channel(callingRecordPause)
 @summary("Pause an active recording")
 @extension("x-fern-display-name", callingRecordPause)
-@extension("x-fern-sdk-group-name", GroupRecordingPause)
 op recordPause(...RecordPauseRequest): RecordPauseReply;
 
 const callingRecordResume = "calling.record.resume";
@@ -50,7 +48,6 @@ model RecordResumeRequest is JsonRpcRequest<typeof callingRecordResume, RecordRe
 @channel(callingRecordResume)
 @summary("Resume a paused recording")
 @extension("x-fern-display-name", callingRecordResume)
-@extension("x-fern-sdk-group-name", GroupRecordingResume)
 op recordResume(...RecordResumeRequest): RecordResumeReply;
 
 const callingRecordStop = "calling.record.stop";
@@ -64,5 +61,4 @@ model RecordStopRequest is JsonRpcRequest<typeof callingRecordStop, RecordStopPa
 @channel(callingRecordStop)
 @summary("Stop an active recording")
 @extension("x-fern-display-name", callingRecordStop)
-@extension("x-fern-sdk-group-name", GroupRecordingStop)
 op recordStop(...RecordStopRequest): RecordStopReply;

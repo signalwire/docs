@@ -23,7 +23,6 @@ model DenoiseRequest is JsonRpcRequest<typeof callingDenoise, DenoiseParams>;
 @channel(callingDenoise)
 @summary("Start call noise reduction")
 @extension("x-fern-display-name", callingDenoise)
-@extension("x-fern-sdk-group-name", GroupAudioDenoise)
 op denoise(...DenoiseRequest): DenoiseReply | CallDenoiseEvent;
 
 const callingDenoiseStop = "calling.denoise.stop";
@@ -38,5 +37,4 @@ model DenoiseStopRequest is JsonRpcRequest<typeof callingDenoiseStop, DenoiseSto
 @channel(callingDenoiseStop)
 @summary("Stop call noise reduction")
 @extension("x-fern-display-name", callingDenoiseStop)
-@extension("x-fern-sdk-group-name", GroupAudioDenoiseStop)
 op denoiseStop(...DenoiseStopRequest): DenoiseStopReply;

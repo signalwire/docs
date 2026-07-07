@@ -28,7 +28,6 @@ model StreamRequest is JsonRpcRequest<typeof callingStream, StreamParams>;
 @channel(callingStream)
 @summary("Stream call audio to a WebSocket endpoint")
 @extension("x-fern-display-name", callingStream)
-@extension("x-fern-sdk-group-name", GroupMediaStream)
 op stream(...StreamRequest): StreamReply | CallStreamEvent;
 
 const callingStreamStop = "calling.stream.stop";
@@ -42,5 +41,4 @@ model StreamStopRequest is JsonRpcRequest<typeof callingStreamStop, StreamStopPa
 @channel(callingStreamStop)
 @summary("Stop a call stream")
 @extension("x-fern-display-name", callingStreamStop)
-@extension("x-fern-sdk-group-name", GroupMediaStreamStop)
 op streamStop(...StreamStopRequest): StreamStopReply;

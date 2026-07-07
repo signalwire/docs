@@ -10,7 +10,6 @@ using SignalWire.AsyncAPI;
 using TypeSpec.OpenAPI;
 
 namespace Relay.Messaging;
-const GroupMessagingSend = #["messaging", "send"];
 
 const messagingSend = "messaging.send";
 const messagingSendResponse = "${messagingSend} response";
@@ -29,5 +28,4 @@ model SendRequest is JsonRpcRequest<typeof messagingSend, SendParams>;
 @channel(messagingSend)
 @summary("Send an outbound message")
 @extension("x-fern-display-name", messagingSend)
-@extension("x-fern-sdk-group-name", GroupMessagingSend)
 op send(...SendRequest): SendReply | StateEvent | ReceiveEvent;

@@ -10,8 +10,6 @@ using SignalWire.AsyncAPI;
 using TypeSpec.OpenAPI;
 
 namespace Relay.Signalwire;
-const GroupSignalwireReceive = #["signalwire", "receive"];
-const GroupSignalwireUnreceive = #["signalwire", "unreceive"];
 
 const signalwireReceive = "signalwire.receive";
 const signalwireReceiveResponse = "${signalwireReceive} response";
@@ -48,7 +46,6 @@ model UnreceiveRequest is JsonRpcRequest<typeof signalwireUnreceive, UnreceivePa
 @channel(signalwireReceive)
 @summary("Subscribe to inbound events on one or more contexts")
 @extension("x-fern-display-name", signalwireReceive)
-@extension("x-fern-sdk-group-name", GroupSignalwireReceive)
 op receive(...ReceiveRequest): ReceiveReply | Relay.Calling.CallReceiveEvent | Relay.Calling.CallStateEvent;
 
 @doc("""
@@ -62,5 +59,4 @@ op receive(...ReceiveRequest): ReceiveReply | Relay.Calling.CallReceiveEvent | R
 @channel(signalwireUnreceive)
 @summary("Unsubscribe from inbound events on one or more contexts")
 @extension("x-fern-display-name", signalwireUnreceive)
-@extension("x-fern-sdk-group-name", GroupSignalwireUnreceive)
 op unreceive(...UnreceiveRequest): UnreceiveReply;

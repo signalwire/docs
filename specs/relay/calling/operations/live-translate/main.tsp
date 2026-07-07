@@ -28,7 +28,6 @@ model LiveTranslateRequest is JsonRpcRequest<typeof callingLiveTranslate, LiveTr
 @channel(callingLiveTranslate)
 @summary("Start or stop live translation on a call")
 @extension("x-fern-display-name", callingLiveTranslate)
-@extension("x-fern-sdk-group-name", GroupTranscriptionLiveTranslate)
 op liveTranslate(...LiveTranslateRequest):
   | LiveTranslateReply
   | TranslateTranscriptDeltaEvent

@@ -22,7 +22,6 @@ model JoinRoomRequest is JsonRpcRequest<typeof callingJoinRoom, JoinRoomParams>;
 @channel(callingJoinRoom)
 @summary("Join a video/audio room")
 @extension("x-fern-display-name", callingJoinRoom)
-@extension("x-fern-sdk-group-name", GroupConferencingJoinRoom)
 op joinRoom(...JoinRoomRequest): JoinRoomReply | CallRoomEvent;
 
 const callingLeaveRoom = "calling.leave_room";
@@ -36,5 +35,4 @@ model LeaveRoomRequest is JsonRpcRequest<typeof callingLeaveRoom, LeaveRoomParam
 @channel(callingLeaveRoom)
 @summary("Leave the current room")
 @extension("x-fern-display-name", callingLeaveRoom)
-@extension("x-fern-sdk-group-name", GroupConferencingLeaveRoom)
 op leaveRoom(...LeaveRoomRequest): LeaveRoomReply | CallRoomEvent;

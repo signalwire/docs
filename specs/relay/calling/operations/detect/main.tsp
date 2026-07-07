@@ -29,7 +29,6 @@ model DetectRequest is JsonRpcRequest<typeof callingDetect, DetectParams>;
 @channel(callingDetect)
 @summary("Start a detector (machine/fax/digit)")
 @extension("x-fern-display-name", callingDetect)
-@extension("x-fern-sdk-group-name", GroupDetectionDetect)
 op detect(...DetectRequest): DetectReply | CallDetectEvent;
 
 const callingDetectStop = "calling.detect.stop";
@@ -44,5 +43,4 @@ model DetectStopRequest is JsonRpcRequest<typeof callingDetectStop, DetectStopPa
 @channel(callingDetectStop)
 @summary("Stop a detector")
 @extension("x-fern-display-name", callingDetectStop)
-@extension("x-fern-sdk-group-name", GroupDetectionStop)
 op detectStop(...DetectStopRequest): DetectStopReply;

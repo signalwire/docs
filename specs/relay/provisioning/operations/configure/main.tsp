@@ -9,7 +9,6 @@ using SignalWire.AsyncAPI;
 using TypeSpec.OpenAPI;
 
 namespace Relay.Provisioning;
-const GroupProvisioningConfigure = #["provisioning", "configure"];
 
 const provisioningConfigure = "provisioning.configure";
 const provisioningConfigureResponse = "${provisioningConfigure} response";
@@ -31,5 +30,4 @@ model ConfigureRequest is JsonRpcRequest<typeof provisioningConfigure, Configure
 @channel(provisioningConfigure)
 @summary("Request SignalWire connector configuration")
 @extension("x-fern-display-name", provisioningConfigure)
-@extension("x-fern-sdk-group-name", GroupProvisioningConfigure)
 op configure(...ConfigureRequest): ConfigureReply;

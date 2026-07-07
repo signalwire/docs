@@ -22,7 +22,6 @@ model BindDigitRequest is JsonRpcRequest<typeof callingBindDigit, BindDigitParam
 @channel(callingBindDigit)
 @summary("Trigger a call method when a DTMF sequence is pressed")
 @extension("x-fern-display-name", callingBindDigit)
-@extension("x-fern-sdk-group-name", GroupPromptBindDigit)
 op bindDigit(...BindDigitRequest): BindDigitReply;
 
 const callingClearDigitBindings = "calling.clear_digit_bindings";
@@ -37,5 +36,4 @@ model ClearDigitBindingsRequest is JsonRpcRequest<typeof callingClearDigitBindin
 @channel(callingClearDigitBindings)
 @summary("Clear digit bindings")
 @extension("x-fern-display-name", callingClearDigitBindings)
-@extension("x-fern-sdk-group-name", GroupPromptClearDigitBindings)
 op clearDigitBindings(...ClearDigitBindingsRequest): ClearDigitBindingsReply;

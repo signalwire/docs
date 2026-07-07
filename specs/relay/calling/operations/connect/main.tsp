@@ -31,5 +31,4 @@ model ConnectRequest is JsonRpcRequest<typeof callingConnect, ConnectParams>;
 @channel(callingConnect)
 @summary("Connect a device to an active call")
 @extension("x-fern-display-name", callingConnect)
-@extension("x-fern-sdk-group-name", GroupControlConnect)
 op connect(...ConnectRequest): ConnectReply | CallConnectEvent | CallStateEvent;

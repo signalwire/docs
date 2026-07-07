@@ -22,5 +22,4 @@ model UserEventRequest is JsonRpcRequest<typeof callingUserEvent, UserEventParam
 @channel(callingUserEvent)
 @summary("Send a custom user-defined event")
 @extension("x-fern-display-name", callingUserEvent)
-@extension("x-fern-sdk-group-name", GroupEventsUserEvent)
 op userEvent(...UserEventRequest): UserEventReply | CallUserEvent;
