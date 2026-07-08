@@ -6,9 +6,12 @@ description: Send text, media, interactive, and template WhatsApp messages throu
 max-toc-depth: 3
 ---
 
-All WhatsApp messages are sent through a single Messaging API endpoint. The `message_type` field
-determines the kind of content delivered, and the `from` number must be prefixed with `whatsapp:` to
-route over the WhatsApp channel.
+All WhatsApp messages are sent through the same endpoint as SMS and MMS —
+[`POST /api/messaging/messages`](/docs/apis/rest/messages/create-message). Two things route a
+message over WhatsApp instead of SMS/MMS:
+
+- The `from` number is a `whatsapp:`-prefixed [WhatsApp number](/docs/platform/messaging/whatsapp/onboarding) (e.g. `whatsapp:+15557654321`).
+- You set a `message_type` (for content messages) or a `template_id` (for template messages).
 
 <Info>
 WhatsApp on SignalWire is in **early-access alpha**. You must
@@ -16,60 +19,8 @@ WhatsApp on SignalWire is in **early-access alpha**. You must
 messages.
 </Info>
 
-## Authentication
-
-Every request uses HTTP Basic authentication with your SignalWire project credentials. Use your
-**Project ID** as the username and an **API key with the `numbers` scope** as the password.
-
-| | |
-|---|---|
-| **Base URL** | `https://{space}.signalwire.com` |
-| **Username** | `{project_id}` |
-| **Password** | `{api_key}` (with `numbers` scope) |
-
-Your Space name, Project ID, and API keys are available in your
-[SignalWire Dashboard](https://my.signalwire.com).
-
-## Send a message
-
-```
-POST /api/messaging/messages
-```
-
-<ParamField path="to" type="string" required>
-  Recipient phone number in E.164 format (e.g. `+15551234567`).
-</ParamField>
-
-<ParamField path="from" type="string" required>
-  Your WhatsApp business number, prefixed with `whatsapp:` (e.g. `whatsapp:+15557654321`). The prefix
-  is what routes the message over WhatsApp instead of SMS/MMS.
-</ParamField>
-
-<ParamField path="message_type" type="string" required>
-  The kind of content to send. See [Message types](#message-types) for all supported values. Not
-  required when sending a [template message](#send-a-template-message) by `template_id`.
-</ParamField>
-
-<ParamField path="body" type="string | object">
-  The message content. Its shape depends on `message_type` — a plain string for
-  `whatsapp_media_text`, or a structured object for media, interactive, and location messages. See the
-  [examples](#examples) below.
-</ParamField>
-
-<ParamField path="template_id" type="string">
-  The template to send, by SignalWire template ID or Meta template ID. Required when sending a
-  [template message](#send-a-template-message).
-</ParamField>
-
-<ParamField path="header_template_parameters" type="array | object">
-  Values for the placeholders in a template's header. Use an array for positional parameters or an
-  object for named parameters.
-</ParamField>
-
-<ParamField path="body_template_parameters" type="array | object">
-  Values for the placeholders in a template's body. Use an array for positional parameters or an object
-  for named parameters.
-</ParamField>
+For the full request schema — every field, every message type's `body` shape, and authentication —
+see the [Send a message](/docs/apis/rest/messages/create-message) API reference.
 
 ## Messaging rules
 
@@ -82,22 +33,25 @@ Meta enforces specific rules about when and how a business can send WhatsApp mes
 
 ## Message types
 
-| `message_type` | Description | Notes |
-|---|---|---|
-| `whatsapp_media_text` | Plain text message | Free-form within the 24-hour window |
-| `whatsapp_media_image` | Image with optional caption | Provide a public image URL |
-| `whatsapp_media_audio` | Audio clip | Provide a public audio URL |
-| `whatsapp_media_video` | Video with optional caption | Provide a public video URL |
-| `whatsapp_media_document` | PDF or other document | Optional filename and caption |
-| `whatsapp_media_sticker` | Animated or static sticker | Provide a `.webp` URL |
-| `whatsapp_media_contacts` | Share a contact card | Include name and phone fields |
-| `whatsapp_media_location` | Share a map pin | Latitude, longitude, label |
-| `whatsapp_media_reaction` | React to a message with an emoji | Requires the target message ID |
-| `whatsapp_interactive_cta` | Call-to-action buttons (up to 3) | Quick-reply style |
-| `whatsapp_interactive_reply_button` | Reply with a button tap | Up to 3 buttons |
-| `whatsapp_interactive_list` | Scrollable option list | Up to 10 items |
-| `whatsapp_interactive_location_request_message` | Request the customer's location | Customer taps to share |
-| `whatsapp_interactive_flow` | Send a WhatsApp Flow | {/* TODO(team): confirm description, body shape, and an example for Flows — not present in the pilot reference PDF. */} |
+Set `message_type` to one of the following for a content message. The shape of `body` depends on the
+type — see the [Send a message](/docs/apis/rest/messages/create-message) reference for each type's
+schema.
+
+| `message_type` | Description |
+|---|---|
+| `whatsapp_media_text` | Plain text message |
+| `whatsapp_media_image` | Image with optional caption |
+| `whatsapp_media_audio` | Audio clip |
+| `whatsapp_media_video` | Video with optional caption |
+| `whatsapp_media_document` | Document, with optional filename and caption |
+| `whatsapp_media_sticker` | Animated or static sticker |
+| `whatsapp_media_contacts` | Share one or more contact cards |
+| `whatsapp_media_location` | Share a map pin |
+| `whatsapp_media_reaction` | React to a message with an emoji |
+| `whatsapp_interactive_cta` | Call-to-action buttons |
+| `whatsapp_interactive_reply_button` | Reply buttons (up to 3) |
+| `whatsapp_interactive_list` | Scrollable option list (up to 10 items) |
+| `whatsapp_interactive_location_request_message` | Request the customer's location |
 
 ## Examples
 
@@ -109,20 +63,6 @@ Meta enforces specific rules about when and how a business can send WhatsApp mes
   "from": "whatsapp:+15557654321",
   "body": "Your appointment is confirmed for tomorrow at 2pm.",
   "message_type": "whatsapp_media_text"
-}
-```
-
-### Image
-
-```json
-{
-  "to": "+15551234567",
-  "from": "whatsapp:+15557654321",
-  "body": {
-    "link": "https://example.com/promo-banner.png",
-    "caption": "Check out our summer sale!"
-  },
-  "message_type": "whatsapp_media_image"
 }
 ```
 
@@ -149,27 +89,12 @@ Send a message with tappable options — ideal for simple menus or surveys.
 }
 ```
 
-### Location
+### Template message
 
-```json
-{
-  "to": "+15551234567",
-  "from": "whatsapp:+15557654321",
-  "body": {
-    "latitude": 41.8781,
-    "longitude": -87.6298,
-    "name": "SignalWire HQ",
-    "address": "Chicago, IL, USA"
-  },
-  "message_type": "whatsapp_media_location"
-}
-```
-
-## Send a template message
-
-Use a [template](/docs/platform/messaging/whatsapp/message-templates) when reaching out to a customer for the
-first time, or outside the 24-hour response window. Provide the `template_id` and fill in any
-placeholders. The template must be **approved** before it can be sent.
+Use a [template](/docs/platform/messaging/whatsapp/message-templates) when reaching out to a customer
+for the first time, or outside the 24-hour window. Provide the `template_id` and fill in any
+placeholders; the template must be **approved**. Use an array for positional parameters or an object
+for named parameters.
 
 <Tabs>
 <Tab title="Positional parameters">
@@ -196,17 +121,12 @@ placeholders. The template must be **approved** before it can be sent.
 </Tab>
 </Tabs>
 
-## Pricing
-
-- **Meta** charges for template messages only, with rates varying by region and message category
-  (marketing, utility, authentication).
-- **SignalWire** charges $0.005 per message for all message types.
-
-{/* TODO(team): confirm current pricing before publishing — figures taken from the pilot reference PDF. */}
-
 ## Next steps
 
 <CardGroup>
+<Card title="Send a message (API reference)" href="/docs/apis/rest/messages/create-message">
+  The full request schema for every message type.
+</Card>
 <Card title="Receive messages" href="/docs/platform/messaging/whatsapp/receive-messages">
   View inbound messages and delivery status.
 </Card>
