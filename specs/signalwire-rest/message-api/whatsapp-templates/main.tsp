@@ -51,7 +51,7 @@ namespace SignalWireAPI.Message.WhatsappTemplates {
       """)
     @post
     create(@body body: CreateWhatsAppTemplateRequest):
-      | WhatsAppTemplateResponse
+      | WhatsAppTemplateCreatedResponse
       | StatusCode400
       | StatusCode401
       | StatusCode422
@@ -82,9 +82,7 @@ namespace SignalWireAPI.Message.WhatsappTemplates {
       """)
     @delete
     delete(...WhatsAppTemplatePathID):
-      | {
-          @statusCode statusCode: 204;
-        }
+      | WhatsAppTemplateDeleteResponse
       | StatusCode401
       | StatusCode404
       | StatusCode500;
