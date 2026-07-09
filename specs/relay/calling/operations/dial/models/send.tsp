@@ -29,6 +29,10 @@ model DialParams {
   @example(30)
   timeout?: float64;
 
+  @doc("DTMF (touch-tone) digits to send once the call is answered. Use `w` or `W` to insert pauses.")
+  @example("1234#")
+  send_digits?: string;
+
   @doc("Highest price per minute you're willing to pay. Devices that would exceed this rate aren't dialed.")
   @example(0.05)
   max_price_per_minute?: float64;

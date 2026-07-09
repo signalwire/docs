@@ -175,5 +175,5 @@ union ToneName {
   "at", "au", "bg", "br", "be", "ch", "cl", "cn", "cz", "de", "dk", "ee", "es",
   "fi", "fr", "gr", "hu", "il", "in", "it", "lt", "jp", "mx", "my", "nl", "no",
   "nz", "ph", "pl", "pt", "ru", "se", "sg", "th", "uk", "us", "tw", "ve", "za",
-  "ca", "cy", "dz", "eg", "ko", "pk", "ro", "rs", "sa", "tr",
+  "ca", "cy", "dz", "eg", "ko", "pk", "ro", "rs", "sa", "tr", "bong",
 }

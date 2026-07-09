@@ -11,8 +11,8 @@ model RaisehandParams {
   @doc("The call leg making the request — your own first leg on your call stack.")
   self: Target;
 
-  @doc("The member to raise the hand of. Omit to act on yourself (`self`); set it to act on another member.")
-  target?: Target;
+  @doc("The member to raise the hand of — required. Set `target` equal to `self` to raise your own hand, or to another member's `{node_id, call_id, member_id}` to raise theirs.")
+  target: Target;
 }
 
 @doc("Parameters for `call.lowerhand`.")
@@ -21,6 +21,6 @@ model LowerhandParams {
   @doc("The call leg making the request — your own first leg on your call stack.")
   self: Target;
 
-  @doc("The member to lower the hand of. Omit to act on yourself (`self`); set it to act on another member.")
-  target?: Target;
+  @doc("The member to lower the hand of — required. Set `target` equal to `self` to lower your own hand, or to another member's `{node_id, call_id, member_id}` to lower theirs.")
+  target: Target;
 }

@@ -1,7 +1,9 @@
 import "@signalwire/typespec-asyncapi";
 
-// Server-only signalwire methods: context subscription (pre-4.0 flat surface).
-// `receive/main.tsp` transitively imports `../../models/core.tsp` for `Acknowledgement`.
+// Server connect (project + token auth) + server-only signalwire methods.
+import "./operations/connect/server.tsp";
+// Context subscription (pre-4.0 flat surface). `receive/main.tsp` transitively
+// imports `../../models/core.tsp` for `Acknowledgement`.
 import "./operations/receive/main.tsp";
 
 using SignalWire.AsyncAPI;

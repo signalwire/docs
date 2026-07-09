@@ -10,6 +10,9 @@ namespace Relay.Fabric;
 model MemberListParams {
   @doc("The call leg making the request — your own first leg on your call stack.")
   self: Target;
+
+  @doc("The call leg addressing the room whose members to list — required. Normally set `target` equal to `self`.")
+  target: Target;
 }
 
 @doc("Parameters for `call.member.remove`. Unlike the single-member methods, this takes a list of `targets` to remove in one request.")

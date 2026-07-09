@@ -10,9 +10,12 @@ model SendParams {
   @example("office")
   context: string;
 
-  @doc("Your own tags to attach to the message, so you can find it later in your SignalWire Dashboard.")
-  @example(#["order-98765", "priority"])
-  tags?: string[];
+  @doc("""
+    A single tag string stored with the message, useful for searching/filtering
+    in the dashboard. Echoed back in the `messaging.state` event.
+    """)
+  @example("order-98765")
+  tag?: string;
 
   @doc("""
     The region of the world to send the message from. If you leave this out,
@@ -42,4 +45,12 @@ model SendParams {
     """)
   @example(#["https://example.com/receipt.png"])
   media?: string[];
+
+  @doc("HTTPS URL that SignalWire POSTs per-message delivery-status updates to.")
+  @example("https://example.com/message-status")
+  status_callback_url?: url;
+
+  @doc("Force the message to be sent as MMS even when it has no media attached.")
+  @example(true)
+  send_as_mms?: boolean;
 }

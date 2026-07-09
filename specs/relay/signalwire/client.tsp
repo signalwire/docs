@@ -1,6 +1,8 @@
 import "@signalwire/typespec-asyncapi";
 
-// Client-only signalwire methods: token refresh (a browser/JWT concern).
+// Client connect (jwt_token / SAT auth) + client-only signalwire methods.
+import "./operations/connect/client.tsp";
+// Token refresh (a browser/JWT concern).
 import "./operations/reauthenticate/main.tsp";
 
 using SignalWire.AsyncAPI;

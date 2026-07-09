@@ -76,10 +76,6 @@ model ConferenceParams {
   @example("participant-join")
   status: ConferenceStatus;
 
-  @doc("Extra detail about the change. Present only when `status` is `participant-modify`.")
-  @example("muted")
-  status_detail?: string;
-
   @doc("The `call_id` of the participant this event is about. Present on participant events.")
   @example("c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c")
   call_id?: string;

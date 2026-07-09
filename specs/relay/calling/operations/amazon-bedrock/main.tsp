@@ -4,6 +4,7 @@ import "@typespec/openapi";
 
 import "./models/send.tsp";
 import "./models/reply.tsp";
+import "../ai/models/events.tsp";
 
 using SignalWire.AsyncAPI;
 using TypeSpec.OpenAPI;
@@ -22,4 +23,20 @@ model AmazonBedrockRequest is JsonRpcRequest<typeof callingAmazonBedrock, Amazon
 @channel(callingAmazonBedrock)
 @summary("Connect to an Amazon Bedrock AI agent")
 @extension("x-fern-display-name", callingAmazonBedrock)
-op amazonBedrock(...AmazonBedrockRequest): AmazonBedrockReply;
+op amazonBedrock(...AmazonBedrockRequest):
+  | AmazonBedrockReply
+  | CallAiEvent
+  | AiStartEvent
+  | AiUserSpeakingEvent
+  | AiCompletionEvent
+  | AiResponseEvent
+  | AiResponseUtteranceEvent
+  | AiSpeechDetectEvent
+  | AiPartialResultEvent
+  | AiBeginSpeakingEvent
+  | AiWarningEvent
+  | AiTransparentBargeEvent
+  | AiStopEvent
+  | AiPostPromptEvent
+  | AiSwaigEvent
+  | AiSwaigActionEvent;

@@ -152,17 +152,17 @@ model CallStateParams {
   @example("outbound")
   direction: CallDirection;
 
-  @doc("When the call started, in epoch milliseconds.")
+  @doc("When the call started, in epoch milliseconds. Always emitted; `0` until known.")
   @example(1712345678123)
-  start_time?: int64;
+  start_time: int64;
 
-  @doc("When the call was answered, in epoch milliseconds.")
+  @doc("When the call was answered, in epoch milliseconds. Always emitted; `0` until known.")
   @example(1712345680456)
-  answer_time?: int64;
+  answer_time: int64;
 
-  @doc("When the call ended, in epoch milliseconds.")
+  @doc("When the call ended, in epoch milliseconds. Always emitted; `0` until known.")
   @example(1712345695789)
-  end_time?: int64;
+  end_time: int64;
 
   @doc("Why the call ended. Present once the call has ended.")
   @example("hangup")

@@ -14,8 +14,8 @@ namespace Relay.Calling;
   accepts a `min` digit count.
   """)
 model PlayAndCollectDigits {
-  @doc("Minimum number of digits to collect before collection can finish. Must be a positive integer.")
-  @minValue(1)
+  @doc("Minimum number of digits to collect before collection can finish. Must be a non-negative integer.")
+  @minValue(0)
   @example(1)
   min?: int32;
 

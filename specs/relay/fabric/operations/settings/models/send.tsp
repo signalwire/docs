@@ -11,6 +11,9 @@ model VmutedHideSetParams {
   @doc("The call leg making the request — your own first leg on your call stack.")
   self: Target;
 
+  @doc("The call leg addressing the room to act on — required. Normally set `target` equal to `self`.")
+  target: Target;
+
   @doc("Whether to hide video-muted members from the layout.")
   @example(true)
   hide: boolean;
@@ -21,6 +24,9 @@ model VmutedHideSetParams {
 model LockParams {
   @doc("The call leg making the request — your own first leg on your call stack.")
   self: Target;
+
+  @doc("The call leg addressing the room to lock — required. Normally set `target` equal to `self`.")
+  target: Target;
 }
 
 @doc("Parameters for `call.unlock`.")
@@ -28,6 +34,9 @@ model LockParams {
 model UnlockParams {
   @doc("The call leg making the request — your own first leg on your call stack.")
   self: Target;
+
+  @doc("The call leg addressing the room to unlock — required. Normally set `target` equal to `self`.")
+  target: Target;
 }
 
 @doc("Parameters for `call.lowbitrate.set`.")
@@ -36,8 +45,8 @@ model LowbitrateSetParams {
   @doc("The call leg making the request — your own first leg on your call stack.")
   self: Target;
 
-  @doc("The member to set low-bitrate mode for. Omit to act on yourself (`self`).")
-  target?: Target;
+  @doc("The member to set low-bitrate mode for — required. Set `target` equal to `self` to act on yourself, or to another member's `{node_id, call_id, member_id}` to act on them.")
+  target: Target;
 
   @doc("Whether to enable low-bitrate mode for the member.")
   @example(true)
@@ -50,8 +59,8 @@ model DenoiseSetParams {
   @doc("The call leg making the request — your own first leg on your call stack.")
   self: Target;
 
-  @doc("The member to set denoise for. Omit to act on yourself (`self`).")
-  target?: Target;
+  @doc("The member to set denoise for — required. Set `target` equal to `self` to act on yourself, or to another member's `{node_id, call_id, member_id}` to act on them.")
+  target: Target;
 
   @doc("Whether to enable denoise for the member.")
   @example(true)
@@ -64,8 +73,8 @@ model AudioflagsSetParams {
   @doc("The call leg making the request — your own first leg on your call stack.")
   self: Target;
 
-  @doc("The member to set audio flags for. Omit to act on yourself (`self`).")
-  target?: Target;
+  @doc("The member to set audio flags for — required. Set `target` equal to `self` to act on yourself, or to another member's `{node_id, call_id, member_id}` to act on them.")
+  target: Target;
 
   @doc("Whether to enable echo cancellation.")
   @example(true)

@@ -75,11 +75,12 @@ model DetectDigitParams {
   digits?: string;
 }
 
-@doc("Detector to start. One of `machine`, `fax`, or `digit`.")
+@doc("Detector to start. One of `machine`, `fax`, or `digit`. Defaults to `machine` (answering-machine detection) when omitted.")
 @summary("Detector config")
 @discriminator("type")
 model DetectConfig {
-  type: "digit" | "fax" | "machine";
+  @doc("Which detector to run. Defaults to `machine` (answering-machine detection) when omitted.")
+  type?: "digit" | "fax" | "machine";
 }
 
 @summary("Answering-machine detector")

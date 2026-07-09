@@ -35,7 +35,7 @@ model ConnectResult {
   @example("signalwire_c1d2e3f4a5b6")
   protocol: string;
 
-  @doc("A unique identifier for this client, valid for the life of the connection. Omitted when the platform does not assign one.")
+  @doc("A unique identifier for this client, valid for the life of the connection. Present on a successful connect.")
   @example("a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d@node.example.signalwire.com")
   identity?: string;
 
@@ -43,10 +43,10 @@ model ConnectResult {
     The authorization granted to this connection — the permissions and scopes in
     effect. Treat it as opaque. To restore your session on reconnect, use the
     `authorization_state` from the `signalwire.authorization.state` event, not
-    this object. Omitted when there is none.
+    this object. Present on a successful connect.
     """)
   authorization?: Record<unknown>;
 
-  @doc("ICE servers to use for media. Returned for WebRTC connections; omitted when the connection carries no media.")
+  @doc("ICE servers to use for media. Returned on every successful connect — at least one STUN/TURN server is always included.")
   ice_servers?: IceServer[];
 }

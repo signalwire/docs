@@ -11,12 +11,12 @@ model MuteParams {
   @doc("The call leg making the request — your own first leg on your call stack.")
   self: Target;
 
-  @doc("The member to mute. Omit to mute yourself (`self`); set it to mute another member.")
-  target?: Target;
+  @doc("The member to mute — required. Set `target` equal to `self` to mute yourself, or to another member's `{node_id, call_id, member_id}` to mute them.")
+  target: Target;
 
   @doc("Which media channels to mute: `audio`, `video`, or both.")
   @example(#["audio"])
-  channels: string[];
+  channels: ("audio" | "video")[];
 }
 
 @doc("Parameters for `call.unmute`.")
@@ -25,12 +25,12 @@ model UnmuteParams {
   @doc("The call leg making the request — your own first leg on your call stack.")
   self: Target;
 
-  @doc("The member to unmute. Omit to unmute yourself (`self`); set it to unmute another member.")
-  target?: Target;
+  @doc("The member to unmute — required. Set `target` equal to `self` to unmute yourself, or to another member's `{node_id, call_id, member_id}` to unmute them.")
+  target: Target;
 
   @doc("Which media channels to unmute: `audio`, `video`, or both.")
   @example(#["audio"])
-  channels: string[];
+  channels: ("audio" | "video")[];
 }
 
 @doc("Parameters for `call.deaf`.")
@@ -39,8 +39,8 @@ model DeafParams {
   @doc("The call leg making the request — your own first leg on your call stack.")
   self: Target;
 
-  @doc("The member to stop audio for. Omit to act on yourself (`self`); set it to deafen another member.")
-  target?: Target;
+  @doc("The member to deafen — required. Set `target` equal to `self` to deafen yourself, or to another member's `{node_id, call_id, member_id}` to deafen them.")
+  target: Target;
 }
 
 @doc("Parameters for `call.undeaf`.")
@@ -49,6 +49,6 @@ model UndeafParams {
   @doc("The call leg making the request — your own first leg on your call stack.")
   self: Target;
 
-  @doc("The member to resume audio for. Omit to act on yourself (`self`); set it to undeafen another member.")
-  target?: Target;
+  @doc("The member to undeafen — required. Set `target` equal to `self` to undeafen yourself, or to another member's `{node_id, call_id, member_id}` to undeafen them.")
+  target: Target;
 }

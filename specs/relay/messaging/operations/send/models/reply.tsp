@@ -15,9 +15,7 @@ model SendResult {
   @example("e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f")
   message_id?: string;
 
-  @doc("Present on failure. Wraps the per-recipient error details.")
-  data?: {
-    @doc("One entry per recipient that was rejected, each explaining why. Present only on partial or full failure.")
-    user_errors?: unknown[];
-  };
+  @doc("Present on failure. A map of field name to the list of validation error messages for that field.")
+  @example(#{ url: #["is not a valid URL"] })
+  data?: Record<string[]>;
 }

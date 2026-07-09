@@ -12,10 +12,10 @@ namespace Relay.Fabric;
   
   Note: on a 1:1 (non-conference) call, `member.joined`/`member.left` carry a leaner
   variant of this object built by the call engine — it keys the member by `member_id`
-  instead of `id` and reports `echo_cancellation`/`auto_gain`/`noise_suppression`/
-  `denoise`/`lowbitrate` (all defaulting to `false`) instead of the volume/sensitivity
-  fields. If you consume member events on direct 1:1 calls, treat those fields as the
-  variant set.
+  instead of `id`, adds `node_id` (and, when present, `address_id` and `subscriber_id`),
+  and reports `echo_cancellation`/`auto_gain`/`noise_suppression`/`denoise`/`lowbitrate`
+  (all defaulting to `false`) instead of the volume/sensitivity fields. If you consume
+  member events on direct 1:1 calls, treat those fields as the variant set.
   """)
 @summary("Call Fabric member")
 model Member {
@@ -58,11 +58,11 @@ model Member {
   @doc("Whether the member is deafened (not hearing the conference audio).")
   deaf: boolean;
 
-  @doc("Input (microphone) volume, from -5 to 5.")
+  @doc("Input (microphone) volume, in decibels, from -50 to 50.")
   @example(0)
   input_volume: int32;
 
-  @doc("Output (speaker) volume, from -5 to 5.")
+  @doc("Output (speaker) volume, in decibels, from -50 to 50.")
   @example(0)
   output_volume: int32;
 
@@ -244,4 +244,91 @@ model CallRoomSession {
 
   @doc("The room's playbacks. Present (as an empty array) on `call.joined`, absent on `call.left`.")
   playbacks?: Record<unknown>[];
+}
+
+@doc("A Call Fabric room recording, as carried on the `recording.*` events and in a room session's `recordings` collection.")
+@summary("Recording")
+model RecordingInfo {
+  @doc("The recording ID.")
+  @example("c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c")
+  id: string;
+
+  @doc("The recording state, such as `recording`, `paused`, or `completed`.")
+  @example("recording")
+  state: string;
+
+  @doc("When the recording started, in epoch seconds.")
+  @example(1712345678)
+  started_at: float64;
+
+  @doc("Recording duration in seconds. Present once the recording has ended.")
+  @example(42.5)
+  duration?: float64;
+
+  @doc("When the recording ended, in epoch seconds. Present once the recording has ended.")
+  @example(1712345720)
+  ended_at?: float64;
+}
+
+@doc("A Call Fabric RTMP stream, as carried on the `stream.*` events and in a room session's `streams` collection.")
+@summary("Stream")
+model StreamInfo {
+  @doc("The stream ID.")
+  @example("c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c")
+  id: string;
+
+  @doc("The stream state, such as `streaming` or `completed`.")
+  @example("streaming")
+  state: string;
+
+  @doc("The RTMP destination URL the room is being streamed to. Omitted when the backend does not report it on the event.")
+  @example("rtmp://example.com/live/streamkey")
+  url?: string;
+
+  @doc("Stream duration in seconds. Present once the stream has ended.")
+  @example(42.5)
+  duration?: float64;
+
+  @doc("When the stream started, in epoch seconds.")
+  @example(1712345678)
+  started_at: float64;
+
+  @doc("When the stream ended, in epoch seconds. Present once the stream has ended.")
+  @example(1712345720)
+  ended_at?: float64;
+}
+
+@doc("A Call Fabric media playback, as carried on the `playback.*` events and in a room session's `playbacks` collection.")
+@summary("Playback")
+model PlaybackInfo {
+  @doc("The playback ID.")
+  @example("c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c")
+  id: string;
+
+  @doc("The URL of the media being played.")
+  @example("https://example.com/media/audio.mp3")
+  url: string;
+
+  @doc("Whether the playback supports seeking.")
+  seekable: boolean;
+
+  @doc("The current playback position, in milliseconds from the start.")
+  @example(0)
+  position: int32;
+
+  @doc("The playback state, such as `playing`, `paused`, or `completed`.")
+  @example("playing")
+  state: string;
+
+  @doc("The playback volume, from -50 to 50.")
+  @example(0)
+  volume: int32;
+
+  @doc("When the playback started, in epoch seconds.")
+  @example(1712345678)
+  started_at: float64;
+
+  @doc("When the playback ended, in epoch seconds. Present once the playback has ended.")
+  @example(1712345720)
+  ended_at?: float64;
 }

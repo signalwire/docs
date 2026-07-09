@@ -107,6 +107,14 @@ model CollectParams {
   @example(false)
   continuous?: boolean = false;
 
+  @doc("""
+    When `true`, keep the collect running across multiple prompts instead of
+    stopping on the first result, so subsequent input continues to be gathered.
+    Defaults to `false`.
+    """)
+  @example(false)
+  `continue`?: boolean = false;
+
   @doc("When `true`, fire a `start_of_input` event the moment the caller begins giving input. Defaults to `false`.")
   @example(true)
   send_start_of_input?: boolean = false;

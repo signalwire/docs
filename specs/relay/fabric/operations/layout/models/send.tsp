@@ -10,6 +10,9 @@ namespace Relay.Fabric;
 model LayoutListParams {
   @doc("The call leg making the request — your own first leg on your call stack.")
   self: Target;
+
+  @doc("The call leg addressing the room whose layouts to list — required. Normally set `target` equal to `self`.")
+  target: Target;
 }
 
 @doc("Parameters for `call.layout.set`.")
@@ -17,6 +20,9 @@ model LayoutListParams {
 model LayoutSetParams {
   @doc("The call leg making the request — your own first leg on your call stack.")
   self: Target;
+
+  @doc("The call leg addressing the room to set the layout on — required. Normally set `target` equal to `self`.")
+  target: Target;
 
   @doc("The layout to apply, by name.")
   @example("grid-responsive")

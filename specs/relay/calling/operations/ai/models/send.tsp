@@ -22,7 +22,15 @@ model AiParams {
   @example("d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e")
   control_id: string;
 
-  ...SWML.Calling.AIObject;
+  ...OmitProperties<SWML.Calling.AIObject, "prompt">;
+
+  @doc("""
+    Defines the AI agent's personality, goals, behaviors, and instructions for
+    handling conversations. Optional here: supply at least one of `agent` or
+    `prompt`. When you reference a pre-configured `agent`, its saved prompt is
+    used unless you override it here.
+    """)
+  prompt?: SWML.Calling.AIPrompt;
 }
 
 @summary("AI stop params")
