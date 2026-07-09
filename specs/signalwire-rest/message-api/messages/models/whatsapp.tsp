@@ -248,7 +248,7 @@ model WhatsAppReactionMessageRequest {
   body: WhatsAppReactionBody;
 }
 
-@doc("Send a call-to-action (button) interactive message.")
+@doc("Send a call-to-action URL interactive message. The `body.type` is `cta_url` and `action` carries the button's display text and URL.")
 model WhatsAppInteractiveCtaMessageRequest {
   ...WhatsAppSendBase;
   message_type: "whatsapp_interactive_cta";
@@ -262,7 +262,7 @@ model WhatsAppInteractiveListMessageRequest {
   body: WhatsAppInteractiveBody;
 }
 
-@doc("Send a reply-button interactive message (up to 3 buttons).")
+@doc("Send a reply-button interactive message (up to 3 buttons). The `body.type` is `button` and each entry in `action.buttons` is a `reply` button.")
 model WhatsAppInteractiveReplyButtonMessageRequest {
   ...WhatsAppSendBase;
   message_type: "whatsapp_interactive_reply_button";
