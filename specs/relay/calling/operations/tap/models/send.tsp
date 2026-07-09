@@ -48,7 +48,7 @@ model TapAudio extends TapConfig {
 @summary("RTP delivery target")
 model TapRtpDeviceParams {
   @doc("RTP destination IPv4 address. Must be a public IP address you control; private addresses and SignalWire's own addresses are rejected.")
-  @example("127.0.0.1")
+  @example("12.34.56.78")
   addr: string;
 
   @doc("RTP port.")

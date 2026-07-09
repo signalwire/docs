@@ -107,15 +107,15 @@ model SipDeviceParams {
   confirm_timeout?: int32;
 }
 
-@doc("Parameters for dialing or connecting a WebRTC leg.")
-@summary("WebRTC device parameters")
-model WebrtcDeviceParams {
-  @doc("Origination — E.164 or a registered endpoint URI. When omitted, SignalWire fills in a caller ID.")
+@doc("Parameters for dialing or connecting a Call Fabric resource-address leg.")
+@summary("Call Fabric device parameters")
+model FabricDeviceParams {
+  @doc("Origination — E.164 or a resource address. When omitted, SignalWire fills in a caller ID.")
   @example("+15551230001")
   from?: string;
 
-  @doc("Destination — a WebRTC endpoint URI / resource name.")
-  @example("agent-1")
+  @doc("Destination Call Fabric resource address, for example `/private/support`.")
+  @example("/private/support")
   to: string;
 
   @doc("Seconds to ring before giving up.")
@@ -215,7 +215,7 @@ model StreamDeviceParams {
 @doc("A device to dial (`calling.dial`). Discriminated on `type`.")
 @discriminator("type")
 model DialDevice {
-  type: "phone" | "sip" | "webrtc";
+  type: "phone" | "sip" | "fabric";
 }
 
 @doc("Dial a phone number over the PSTN.")
@@ -234,18 +234,18 @@ model DialSipDevice extends DialDevice {
   params: SipDeviceParams;
 }
 
-@doc("Dial a WebRTC endpoint.")
-model DialWebrtcDevice extends DialDevice {
-  @example("webrtc")
-  type: "webrtc";
+@doc("Dial a Call Fabric resource address.")
+model DialFabricDevice extends DialDevice {
+  @example("fabric")
+  type: "fabric";
 
-  params: WebrtcDeviceParams;
+  params: FabricDeviceParams;
 }
 
 @doc("A device to connect to an active call (`calling.connect`). Discriminated on `type`.")
 @discriminator("type")
 model ConnectDevice {
-  type: "phone" | "sip" | "webrtc" | "call" | "queue" | "stream";
+  type: "phone" | "sip" | "fabric" | "call" | "queue" | "stream";
 }
 
 @doc("Connect to an existing call by reference.")
@@ -280,12 +280,12 @@ model ConnectSipDevice extends ConnectDevice {
   params: SipDeviceParams;
 }
 
-@doc("Connect to a WebRTC endpoint.")
-model ConnectWebrtcDevice extends ConnectDevice {
-  @example("webrtc")
-  type: "webrtc";
+@doc("Connect to a Call Fabric resource address.")
+model ConnectFabricDevice extends ConnectDevice {
+  @example("fabric")
+  type: "fabric";
 
-  params: WebrtcDeviceParams;
+  params: FabricDeviceParams;
 }
 
 @doc("Connect the call to a bidirectional audio stream over WebSocket.")

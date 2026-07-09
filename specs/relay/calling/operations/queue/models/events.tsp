@@ -46,31 +46,31 @@ model CallQueueParams {
 
   @doc("Where this call currently sits in line, counting from the front.")
   @example(0)
-  position: float64;
+  position: int32;
 
   @doc("How many calls are currently waiting in the queue.")
   @example(2)
-  size: float64;
+  size: int32;
 
   @doc("The average time, in seconds, calls have been spending in this queue.")
   @example(45)
-  avg_time: float64;
+  avg_time: int32;
 
-  @doc("The time, as a Unix timestamp in seconds, when the call entered the queue.")
-  @example(1712345678.123)
-  enqueue_ts: float64;
+  @doc("The time, as a Unix timestamp in microseconds since the epoch, when the call entered the queue. `0` until the call is enqueued.")
+  @example(1712345678123456)
+  enqueue_ts: int64;
 
-  @doc("The time, as a Unix timestamp in seconds, when the call was pulled from the queue. `0` until the call is dequeued.")
-  @example(1712345723.456)
-  dequeue_ts: float64;
+  @doc("The time, as a Unix timestamp in microseconds since the epoch, when the call was pulled from the queue. `0` until the call is dequeued.")
+  @example(1712345723456789)
+  dequeue_ts: int64;
 
-  @doc("The time, as a Unix timestamp in seconds, when the call left the queue. `0` until the call leaves.")
-  @example(1712345730.789)
-  leave_ts: float64;
+  @doc("The time, as a Unix timestamp in microseconds since the epoch, when the call left the queue. `0` until the call leaves.")
+  @example(1712345730789012)
+  leave_ts: int64;
 
   @doc("The status callback URL, echoed back from `calling.queue.enter`. Empty when none was set.")
   @example("https://example.com/webhooks/relay")
-  status_url: url;
+  status_url: string;
 }
 
 const callingCallQueue = "calling.call.queue";

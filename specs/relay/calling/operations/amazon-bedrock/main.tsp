@@ -23,20 +23,18 @@ model AmazonBedrockRequest is JsonRpcRequest<typeof callingAmazonBedrock, Amazon
 @channel(callingAmazonBedrock)
 @summary("Connect to an Amazon Bedrock AI agent")
 @extension("x-fern-display-name", callingAmazonBedrock)
+// The Bedrock engine fires a narrower event set than the OpenAI/OART engine: no `calling.call.ai`
+// lifecycle event (that fires only in the `ai` method's completion path), and none of the
+// OpenAI/OART-only events (`response`, `user_speaking`, `warning`, `transparent_barge`,
+// `post_prompt`). Only the events below are reachable on the Bedrock path.
 op amazonBedrock(...AmazonBedrockRequest):
   | AmazonBedrockReply
-  | CallAiEvent
   | AiStartEvent
-  | AiUserSpeakingEvent
   | AiCompletionEvent
-  | AiResponseEvent
   | AiResponseUtteranceEvent
   | AiSpeechDetectEvent
   | AiPartialResultEvent
   | AiBeginSpeakingEvent
-  | AiWarningEvent
-  | AiTransparentBargeEvent
   | AiStopEvent
-  | AiPostPromptEvent
   | AiSwaigEvent
   | AiSwaigActionEvent;

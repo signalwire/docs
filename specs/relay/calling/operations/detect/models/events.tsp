@@ -80,7 +80,7 @@ model CallDetectMachine extends CallDetectResult {
     @example("MACHINE")
     event: CallDetectMachineEvent;
 
-    @doc("Whether a beep was detected, signaling it's your turn to leave a message.")
+    @doc("Present and `true` when a beep was detected, signaling it's your turn to leave a message. Absent otherwise.")
     @example(true)
     beep?: boolean;
   };

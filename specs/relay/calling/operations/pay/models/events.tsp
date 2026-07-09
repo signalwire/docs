@@ -72,7 +72,7 @@ model CallPayParams {
   status_url_method?: string;
 
   // --- Progress events ---
-  @doc("Progress: the field currently being collected, or a lifecycle marker (`payment-processing`, `payment-completed`, `payment-failed`, `payment-canceled`).")
+  @doc("Progress: the field currently being collected, or a lifecycle marker (`payment-processing`, `payment-completed`, `payment-failed`, `payment-canceled`). The `bank-routing-number` and `bank-account-number` values never fire, since bank-debit is not yet supported.")
   @example("payment-card-number")
   "for"?: PayPromptFor;
 
@@ -109,16 +109,16 @@ model CallPayParams {
   @example("card-declined")
   payment_error?: PayErrorType;
 
-  @doc("Final: additional error code for the failure, if any.")
-  @example("card_declined")
+  @doc("Final: additional error code for the failure, as a numeric-string code (`\"700\"`–`\"706\"`), if any.")
+  @example("700")
   payment_error_code?: string;
 
-  @doc("Final: the payment connector's own error code, if any.")
-  @example("card_declined")
+  @doc("Final: the payment connector's own error code, if any. Connector-defined, so the exact value depends on your payment provider.")
+  @example("generic_decline")
   payment_connector_error_code?: string;
 
-  @doc("Final: the payment connector's own error message, if any.")
-  @example("Your card was declined.")
+  @doc("Final: the payment connector's own error message, if any. Connector-defined.")
+  @example("The card was declined by the issuing bank.")
   payment_connector_error_message?: string;
 
   @doc("Final: masked security code.")

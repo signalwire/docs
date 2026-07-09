@@ -112,7 +112,7 @@ model TranslateConversationLogEventData {
   secondary_conversation_summary?: string;
 
   @doc("Role-keyed translation metadata for the session (source/target language settings and related detail).")
-  translate_data?: Record<unknown>;
+  translate_data: Record<unknown>;
 
   @doc("Call/session context for this delivery.")
   call_info: AiCallInfo;

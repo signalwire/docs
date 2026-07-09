@@ -116,7 +116,7 @@ model CallCollectParams {
   state?: CallCollectState;
 
   @doc("What the caller gave you. Check its `type` to handle digits, speech, or a no-input/no-match marker.")
-  result?: CallCollectResult;
+  result: CallCollectResult;
 
   @doc("""
     Relevant when you requested partial or continuous results: `true` once the

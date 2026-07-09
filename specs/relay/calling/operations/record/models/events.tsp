@@ -33,22 +33,22 @@ union RecordEventDirection {
 model RecordEventAudio {
   @doc("The file format of the recording (for example `mp3` or `wav`).")
   @example("mp3")
-  format?: string;
+  format: string;
 
   @doc("Whether the recording was captured in stereo.")
   @example(false)
-  stereo?: boolean;
+  stereo: boolean;
 
   @doc("Which side(s) of the conversation were captured.")
   @example("speak")
-  direction?: RecordEventDirection;
+  direction: RecordEventDirection;
 }
 
-@doc("Describes how the recording was made. The `audio` field is present when you recorded audio.")
+@doc("Describes how the recording was made, including the `audio` settings it was captured with.")
 @summary("Recording specification")
 model RecordEventSpec {
   @doc("The audio settings used for this recording.")
-  audio?: RecordEventAudio;
+  audio: RecordEventAudio;
 }
 
 model CallRecordParams {
@@ -76,7 +76,7 @@ model CallRecordParams {
 
   @doc("How large the recording file is, in bytes. Set once the state is `finished`.")
   @example(123456788)
-  size?: int32;
+  size?: int64;
 
   @doc("Unix timestamp for when the recording started, in seconds. Set once the state is `finished`.")
   @example(1712345678.842)
@@ -95,7 +95,7 @@ model CallRecordParams {
   pause_behavior?: "silence" | "skip";
 
   @doc("The settings this recording was captured with.")
-  record?: RecordEventSpec;
+  record: RecordEventSpec;
 }
 
 const callingCallRecord = "calling.call.record";

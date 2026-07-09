@@ -44,7 +44,7 @@ model CallTranscribeParams {
 
   @doc("Size of the recording in bytes. Present only when `state` is `finished`.")
   @example(123456)
-  size?: int32;
+  size?: int64;
 
   @doc("Unix timestamp for when the recording started. Present only when `state` is `finished`.")
   @example(1772717474.381)

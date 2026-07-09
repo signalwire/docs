@@ -8,7 +8,7 @@ namespace Relay.Calling;
 
 @summary("Pay started")
 model PayResult {
-  ...RelayResultWithCall<"Processing payment">;
+  ...RelayResult<"Processing payment">;
 }
 
 @summary("Pay stopped")

@@ -8,7 +8,7 @@ namespace Relay.Calling;
 
 @summary("Dial parameters")
 model DialParams {
-  @doc("Your label for this dial. Every resulting `calling.call.*` and `calling.call.dial` event carries this `tag`, so use it to match events back to this request.")
+  @doc("Your label for this dial. Every resulting `calling.call.*` and `calling.call.dial` event carries this `tag`, so use it to match events back to this request. Required: the dial acknowledgement returns no `call_id`, so this tag is your only handle for correlating the resulting call and its events.")
   @example("my-tag-1")
   tag: string;
 
@@ -34,6 +34,14 @@ model DialParams {
   send_digits?: string;
 
   @doc("Highest price per minute you're willing to pay. Devices that would exceed this rate aren't dialed.")
+  @minValue(0)
   @example(0.05)
   max_price_per_minute?: float64;
+
+  @doc("""
+    An inline SWML script or an `https://` URL that returns one, attached to the
+    dial. Provide it as a string or as a SWML object.
+    """)
+  @example("https://example.com/swml")
+  dest_swml?: string | Record<unknown>;
 }

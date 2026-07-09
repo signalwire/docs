@@ -25,9 +25,9 @@ model CallStreamParams {
   @example("streaming")
   state: StreamState;
 
-  @doc("The WebSocket URL the call audio is being streamed to.")
+  @doc("The WebSocket URL the call audio is being streamed to. Present when the stream was started with a URL.")
   @example("wss://example.com/media")
-  url: url;
+  url?: url;
 
   @doc("The friendly name you gave the stream, if you set one.")
   @example("my_stream")

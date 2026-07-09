@@ -33,8 +33,6 @@ union ConferenceStatus {
   "record-stop",
   "bot-join",
   "bot-leave",
-  "bot-speech-start",
-  "bot-speech-stop",
 }
 
 @doc("The reason the conference ended (`conference-end`).")
@@ -62,17 +60,21 @@ model ConferenceParams {
 
   @doc("The name of the conference.")
   @example("my_conference")
-  name?: string;
+  name: string;
 
   @doc("The region the conference is running in (`global`, `us`, `eu`, or `ch`).")
   @example("eu")
-  region?: string;
+  region: string;
 
   @doc("The number of members currently in the conference.")
   @example(3)
-  size?: int32;
+  size: int32;
 
-  @doc("What happened in the conference.")
+  @doc("""
+    What happened in the conference. Note: because of a known issue, bot
+    join/leave and announcement-start events currently arrive with no `status`
+    value set — handle a missing `status` gracefully.
+    """)
   @example("participant-join")
   status: ConferenceStatus;
 
@@ -127,6 +129,90 @@ model ConferenceParams {
   @doc("The URL of the announcement being played. Present on announcement events.")
   @example("https://example.com/announce.mp3")
   announce_url?: url;
+
+  @doc("Average round-trip time, in milliseconds. Present only on `participant-call-quality` events, and only when the measurement is available.")
+  @example("48")
+  rtt_avg?: string;
+
+  @doc("Minimum round-trip time, in milliseconds. Present only on `participant-call-quality` events, and only when the measurement is available.")
+  @example("32")
+  rtt_min?: string;
+
+  @doc("Maximum round-trip time, in milliseconds. Present only on `participant-call-quality` events, and only when the measurement is available.")
+  @example("120")
+  rtt_max?: string;
+
+  @doc("Minimum outbound jitter, in milliseconds. Present only on `participant-call-quality` events, and only when the measurement is available.")
+  @example("2")
+  out_jitter_min?: string;
+
+  @doc("Maximum outbound jitter, in milliseconds. Present only on `participant-call-quality` events, and only when the measurement is available.")
+  @example("18")
+  out_jitter_max?: string;
+
+  @doc("Average outbound jitter, in milliseconds. Present only on `participant-call-quality` events, and only when the measurement is available.")
+  @example("6")
+  out_jitter_avg?: string;
+
+  @doc("Number of outbound packets lost. Present only on `participant-call-quality` events, and only when the measurement is available.")
+  @example("3")
+  out_lost?: string;
+
+  @doc("Total inbound media bytes received. Present only on `participant-call-quality` events, and only when the measurement is available.")
+  @example("1048576")
+  in_media_bytes?: string;
+
+  @doc("Number of inbound media packets received. Present only on `participant-call-quality` events, and only when the measurement is available.")
+  @example("5000")
+  in_media_packet_count?: string;
+
+  @doc("Number of inbound packets skipped. Present only on `participant-call-quality` events, and only when the measurement is available.")
+  @example("12")
+  in_skip_packet_count?: string;
+
+  @doc("Number of inbound packets affected by jitter. Present only on `participant-call-quality` events, and only when the measurement is available.")
+  @example("40")
+  in_jitter_packet_count?: string;
+
+  @doc("Number of inbound DTMF packets received. Present only on `participant-call-quality` events, and only when the measurement is available.")
+  @example("4")
+  in_dtmf_packet_count?: string;
+
+  @doc("Number of inbound comfort-noise (CNG) packets received. Present only on `participant-call-quality` events, and only when the measurement is available.")
+  @example("2")
+  in_cng_packet_count?: string;
+
+  @doc("Number of inbound packets flushed. Present only on `participant-call-quality` events, and only when the measurement is available.")
+  @example("1")
+  in_flush_packet_count?: string;
+
+  @doc("Total count of inbound stream flaws detected. Present only on `participant-call-quality` events, and only when the measurement is available.")
+  @example("5")
+  in_flaws_total?: string;
+
+  @doc("Inbound stream quality as a percentage (0-100). Present only on `participant-call-quality` events, and only when the measurement is available.")
+  @example("98")
+  in_quality_percentage?: string;
+
+  @doc("Inbound Mean Opinion Score (MOS), a 1.0-5.0 estimate of perceived audio quality. Present only on `participant-call-quality` events, and only when the measurement is available.")
+  @example("4.4")
+  in_mos?: string;
+
+  @doc("Total outbound media bytes sent. Present only on `participant-call-quality` events, and only when the measurement is available.")
+  @example("1048576")
+  out_media_bytes?: string;
+
+  @doc("Number of outbound media packets sent. Present only on `participant-call-quality` events, and only when the measurement is available.")
+  @example("5000")
+  out_media_packet_count?: string;
+
+  @doc("Number of outbound DTMF packets sent. Present only on `participant-call-quality` events, and only when the measurement is available.")
+  @example("4")
+  out_dtmf_packet_count?: string;
+
+  @doc("Number of outbound comfort-noise (CNG) packets sent. Present only on `participant-call-quality` events, and only when the measurement is available.")
+  @example("2")
+  out_cng_packet_count?: string;
 }
 
 const callingConference = "calling.conference";

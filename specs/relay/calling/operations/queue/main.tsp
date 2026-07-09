@@ -39,4 +39,4 @@ model QueueLeaveReply is JsonRpcResponse<QueueLeaveResult>;
 @channel(callingQueueLeave)
 @summary("Remove the call from a queue")
 @extension("x-fern-display-name", callingQueueLeave)
-op queueLeave(...QueueLeaveRequest): QueueLeaveReply;
+op queueLeave(...QueueLeaveRequest): QueueLeaveReply | CallQueueEvent;

@@ -92,13 +92,9 @@ model LiveTranscribeStart {
 
   @doc("Voice-activity-detection threshold (0-1800). Default `400`.")
   @minValue(0)
+  @maxValue(1800)
   @example(400)
   vad_thresh?: int32 = 400;
-
-  @doc("Debug log level (0-2). Default `0`.")
-  @minValue(0)
-  @example(0)
-  debug_level?: int32 = 0;
 
   @doc("Speech engine to use. Default `deepgram`.")
   @example("deepgram")
@@ -132,11 +128,11 @@ model LiveTranslateStart {
   @example("https://example.com/webhooks/relay")
   webhook?: url;
 
-  @doc("The voice used to speak the source language.")
+  @doc("The voice used to speak the source language. Defaults to `josh`.")
   @example("en-US-Neural2-A")
   from_voice?: string;
 
-  @doc("The voice used to speak the translated language.")
+  @doc("The voice used to speak the translated language. Defaults to `josh`.")
   @example("es-ES-Neural2-A")
   to_voice?: string;
 
@@ -181,13 +177,9 @@ model LiveTranslateStart {
 
   @doc("Voice-activity-detection threshold (0-1800). Default `400`.")
   @minValue(0)
+  @maxValue(1800)
   @example(400)
   vad_thresh?: int32 = 400;
-
-  @doc("Debug log level (0-2). Default `0`.")
-  @minValue(0)
-  @example(0)
-  debug_level?: int32 = 0;
 
   @doc("Speech engine to use. Default `deepgram`.")
   @example("deepgram")

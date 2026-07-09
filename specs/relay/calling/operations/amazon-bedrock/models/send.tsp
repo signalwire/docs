@@ -7,30 +7,21 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
+// `voice_id` is intentionally unset via Relay. The backend reads it only from the top level of the
+// config, but the `call_amazon_bedrock` request whitelist rejects a top-level `voice_id` as an
+// unknown key, so there is no working placement — the agent always uses the default voice
+// (`tiffany`). Exposing it via Relay requires a backend change (whitelist the key and keep reading
+// it top-level); escalated by the lead.
 union AmazonBedrockRelayOmit {
   "voice_id",
   "prompt",
 }
 
 @summary("Amazon Bedrock text prompt")
-model RelayBedrockPromptText is SWML.Calling.BedrockPromptText {
-  @doc("""
-    The voice the agent speaks with. Accepts an Amazon Nova Sonic voice name; when omitted, the
-    default voice (`tiffany`) is used.
-    """)
-  @example("matthew")
-  voice_id?: "tiffany" | "matthew" | "amy" | "lupe" | "carlos" = "tiffany";
-}
+model RelayBedrockPromptText is SWML.Calling.BedrockPromptText {}
 
 @summary("Amazon Bedrock structured prompt")
-model RelayBedrockPromptPom is SWML.Calling.BedrockPromptPom {
-  @doc("""
-    The voice the agent speaks with. Accepts an Amazon Nova Sonic voice name; when omitted, the
-    default voice (`tiffany`) is used.
-    """)
-  @example("matthew")
-  voice_id?: "tiffany" | "matthew" | "amy" | "lupe" | "carlos" = "tiffany";
-}
+model RelayBedrockPromptPom is SWML.Calling.BedrockPromptPom {}
 
 union RelayBedrockPrompt {
   OmitProperties<RelayBedrockPromptText, SWML.Calling.OmittedPromptProps>,

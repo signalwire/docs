@@ -33,7 +33,7 @@ model CollectDigits {
     before giving up. Defaults to `5.0`.
     """)
   @minValueExclusive(0)
-  @example(1.0)
+  @example(5.0)
   digit_timeout?: float64 = 5.0;
 }
 

@@ -23,9 +23,29 @@ model TranscribeUtterance {
   @example("en")
   lang: string;
 
+  @doc("Unique identifier for this utterance, for correlation and de-duplication.")
+  @example("f0a9b8c7-d6e5-4a3b-8e2d-1f0a9b8c7d6e")
+  utterance_id: string;
+
+  @doc("When the utterance was produced, as a Unix timestamp in microseconds.")
+  @example(1712345678123456)
+  timestamp: int64;
+
   @doc("Recognition confidence for the utterance, roughly 0.0-1.0.")
   @example(0.94)
   confidence?: float64;
+
+  @doc("Number of tokens in the utterance.")
+  @example(7)
+  tokens?: int32;
+
+  @doc("Number of characters in the utterance text.")
+  @example(38)
+  char_count?: int32;
+
+  @doc("Number of words in the utterance text.")
+  @example(7)
+  word_count?: int32;
 }
 
 @doc("""

@@ -58,6 +58,14 @@ union CallStateEndReason {
   "notFound",
 }
 
+@doc("Which side (leg direction) ended the call: `inbound` or `outbound`, or `none` when not applicable. Mirrors the call's `direction`.")
+@summary("Call state end source")
+union CallStateEndSource {
+  "inbound",
+  "outbound",
+  "none",
+}
+
 @doc("Present only for SIP calls (`device.type == \"sip\"`). SIP addressing/header detail extracted from the inbound INVITE. Every sub-field is optional and appears only when the corresponding SIP header was present.")
 @summary("Call SIP data")
 model CallSipData {
@@ -135,7 +143,7 @@ model CallSipData {
 model CallStateParams {
   ...CallEventAddress;
 
-  @doc("The device handling this call, once it has been determined.")
+  @doc("The device handling this call. Always present, but may be an empty object until the device type is determined.")
   device?: CallDevice;
 
   @doc("Present when this call was created by another call, describing that originating call.")
@@ -168,9 +176,9 @@ model CallStateParams {
   @example("hangup")
   end_reason?: CallStateEndReason;
 
-  @doc("Which side ended the call, e.g. `peer` (the other party). Present once the call has ended.")
-  @example("peer")
-  end_source?: string;
+  @doc("Which side ended the call — `inbound` or `outbound` — or `none` when not applicable. Present once the call has ended.")
+  @example("outbound")
+  end_source?: CallStateEndSource;
 
   @doc("Set to the string `\"true\"` on the call that won a `calling.dial` race. Absent otherwise. Note the value is the string `\"true\"`, not a JSON boolean.")
   @example("true")
@@ -388,4 +396,7 @@ model AiChannelData {
 
   @doc("SWML variables set on the call.")
   SWMLVars?: Record<unknown>;
+
+  @doc("The SWML call object for this call.")
+  SWMLCall?: Record<unknown>;
 }

@@ -99,9 +99,9 @@ model AiSpeechDetectEvent
 model AiPartialResultEventData {
   ...CallEventAddress;
 
-  @doc("The caller's interim (partial) speech-recognition transcript.")
+  @doc("The caller's interim (partial) speech-recognition transcript. Absent on the Amazon Bedrock path, where this event fires with an empty body.")
   @example("I'd like to order a large")
-  text: string;
+  text?: string;
 
   @doc("Present and `true` only when this partial transcript triggered a barge-in of the assistant's speech.")
   @example(true)
@@ -202,9 +202,9 @@ model AiStopEventData {
   @example(1718000123000000)
   end_time: int64;
 
-  @doc("Total seconds that billing was paused during the session.")
+  @doc("Total seconds that billing was paused during the session. Emitted on the OpenAI path only; absent on the Amazon Bedrock path.")
   @example(0)
-  wallet_paused_sec: float64;
+  wallet_paused_sec?: float64;
 
   @doc("Per-session billing detail. The breakdown under `this_visit` and `cumulative` varies by the resources used, so the exact keys are not fixed.")
   billing?: Record<unknown>;
@@ -217,7 +217,7 @@ model AiStopEvent
   is SignalwireEvent<typeof callingAiStopEvent, AiStopEventData>;
 
 @summary("AI post-prompt event")
-@doc("End-of-call summary payload. Beyond the call address, the body is caller-defined with no fixed schema; only fires when the app has a `post_url` set.")
+@doc("End-of-call summary payload. Beyond the call address, the body is caller-defined with no fixed schema; only fires when the app has a `post_prompt_url` set.")
 model AiPostPromptEventData {
   ...CallEventAddress;
   ...Record<unknown>;

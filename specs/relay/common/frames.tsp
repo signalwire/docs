@@ -109,21 +109,21 @@ model SignalwireEvent<EventType extends string, Data> {
     @doc("The event type — identifies which event this is.")
     event_type: EventType;
 
-    @doc("The channel the event was delivered on.")
+    @doc("The channel the event was delivered on. Always present.")
     @example("calling")
-    event_channel?: string;
+    event_channel: string;
 
-    @doc("When the event was emitted, as a Unix timestamp in seconds.")
+    @doc("When the event was emitted, as a Unix timestamp in seconds. Always present.")
     @example(1712345678.842)
-    timestamp?: float64;
+    timestamp: float64;
 
-    @doc("Your project ID.")
+    @doc("Your project ID. Always present.")
     @example("b1c2d3e4-f5a6-7b8c-9d0e-1f2a3b4c5d6e")
-    project_id?: string;
+    project_id: string;
 
-    @doc("Your space ID.")
+    @doc("Your space ID. Always present.")
     @example("c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f")
-    space_id?: string;
+    space_id: string;
 
     @doc("The event-specific payload.")
     params: Data;
@@ -156,17 +156,17 @@ model MessagingEvent<EventType extends string, Data> {
     @example("office")
     context: string;
 
-    @doc("When the event was emitted, as a Unix timestamp in seconds.")
+    @doc("When the event was emitted, as a Unix timestamp in seconds. Always present.")
     @example(1712345678.842)
-    timestamp?: float64;
+    timestamp: float64;
 
-    @doc("Your project ID.")
+    @doc("Your project ID. Always present.")
     @example("b1c2d3e4-f5a6-7b8c-9d0e-1f2a3b4c5d6e")
-    project_id?: string;
+    project_id: string;
 
-    @doc("Your space ID.")
+    @doc("Your space ID. Always present.")
     @example("c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f")
-    space_id?: string;
+    space_id: string;
 
     @doc("The event-specific payload.")
     params: Data;

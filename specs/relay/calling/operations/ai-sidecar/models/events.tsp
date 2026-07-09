@@ -55,6 +55,11 @@ union AiSidecarCallbackType {
   The sidecar event, carried on the wire under `sidecar_event`. Beyond the common fields, each
   `type` adds its own type-specific fields — the optional fields below indicate which type they
   belong to.
+
+  This is a real-time debug/observability stream: it surfaces the sidecar's internal activity —
+  model reasoning, tool calls and their results, history pruning, and an end-of-session rollup.
+  Treat its exact shape as unstable: individual `type` variants may carry additional fields, and
+  the set of fields can change between releases.
   """)
 model AiSidecarEventBody {
   @doc("The callback type. Determines which type-specific fields are present.")
@@ -76,9 +81,13 @@ model AiSidecarEventBody {
   @example("a1b2c3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d")
   ask_id?: string;
 
-  @doc("The answer/summary text. Present on `type: ask_answer` (the reply to your `calling.ai_sidecar.ask`) and on the `final` summary event.")
+  @doc("The raw insight or answer text. Present on `type: insight` and on `type: ask_answer` (the reply to your `calling.ai_sidecar.ask`).")
   @example("The customer's account is past due by 14 days.")
   raw?: string;
+
+  @doc("The end-of-session summary text. Present on `type: final`.")
+  @example("Handled a billing dispute; the account is past due by 14 days and a callback was scheduled for Friday.")
+  summary?: string;
 
   @doc("The reasoning text. Present on `type: thought`.")
   text?: string;
@@ -86,11 +95,13 @@ model AiSidecarEventBody {
   @doc("The tool (function) name. Present on `type: tool_call` and `tool_result`.")
   name?: string;
 
-  @doc("The tool-call arguments. Present on `type: tool_call`.")
-  arguments?: Record<unknown>;
+  @doc("The tool-call arguments, delivered as a raw JSON string. Present on `type: tool_call`.")
+  @example("{\"order_id\": \"A123\"}")
+  arguments?: string;
 
-  @doc("The tool-call response. Present on `type: tool_result`.")
-  response?: Record<unknown>;
+  @doc("The tool-call response, delivered as a raw JSON string. Present on `type: tool_result`.")
+  @example("{\"status\": \"ok\"}")
+  response?: string;
 
   @doc("Why the sidecar took no action this pass. Present on `type: skip`.")
   reason?: string;
@@ -103,6 +114,9 @@ model AiSidecarEventBody {
 
   @doc("How many history entries were dropped. Present on `type: history_pruned`.")
   dropped_count?: int32;
+
+  @doc("How many history entries were kept after pruning. Present on `type: history_pruned`.")
+  kept_count?: int32;
 
   @doc("Token count before pruning. Present on `type: history_pruned`.")
   tokens_before?: int32;

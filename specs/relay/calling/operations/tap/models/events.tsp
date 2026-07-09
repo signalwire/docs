@@ -43,7 +43,6 @@ model CallTapAudio extends TapMedia {
 @doc("Describes where the tapped audio is being sent: `rtp` or `ws`.")
 @discriminator("type")
 model CallTapDevice {
-  @example("ws")
   type: "rtp" | "ws";
 }
 

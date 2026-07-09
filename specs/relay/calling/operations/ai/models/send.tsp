@@ -22,7 +22,17 @@ model AiParams {
   @example("d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e")
   control_id: string;
 
-  ...OmitProperties<SWML.Calling.AIObject, "prompt">;
+  ...OmitProperties<SWML.Calling.AIObject, "prompt" | "agent">;
+
+  @doc("""
+    The UUID of a pre-configured AI agent to run. When set, that agent's saved
+    configuration is applied to the session. Optional here: supply at least one
+    of `agent` or `prompt`. When you reference an `agent`, its saved prompt is
+    used unless you override it with `prompt` here.
+    """)
+  @format("uuid")
+  @example("13ecec00-1210-4de5-97e3-6a4f2f8fa2b0")
+  agent?: string;
 
   @doc("""
     Defines the AI agent's personality, goals, behaviors, and instructions for

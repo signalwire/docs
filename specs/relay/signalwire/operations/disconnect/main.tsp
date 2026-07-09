@@ -3,7 +3,6 @@ import "../../../common/frames.tsp";
 import "@typespec/openapi";
 
 import "./models/send.tsp";
-import "./models/reply.tsp";
 
 using SignalWire.AsyncAPI;
 using TypeSpec.OpenAPI;

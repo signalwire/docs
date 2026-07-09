@@ -62,7 +62,7 @@ model DetectMachineParams {
 @doc("Configuration for the fax-tone detector.")
 @summary("Fax-tone detector settings")
 model DetectFaxParams {
-  @doc("Tone to detect. Only the remote fax machine's tone can be detected. Default `CED`.")
+  @doc("Fax detector only. Tone to detect. Only the remote fax machine's tone can be detected. Default `CED`.")
   @example("CED")
   tone?: DetectFaxTone;
 }
@@ -70,41 +70,41 @@ model DetectFaxParams {
 @doc("Configuration for the digit detector.")
 @summary("Digit detector settings")
 model DetectDigitParams {
-  @doc("Digits to detect. Default `0123456789#*`.")
+  @doc("Digit detector only. Digits to detect. Default `0123456789#*`.")
   @example("0123456789#*")
   digits?: string;
 }
 
-@doc("Detector to start. One of `machine`, `fax`, or `digit`. Defaults to `machine` (answering-machine detection) when omitted.")
+@doc("""
+  Optional tuning for the detector selected by `type`. Every field is optional and a
+  sensible default applies when omitted. Which fields take effect depends on `type`:
+  the `*_timeout`, `machine_*`, and `detect_*` fields tune the **machine** detector,
+  `tone` applies to the **fax** detector, and `digits` applies to the **digit**
+  detector.
+  """)
+@summary("Detector settings")
+model DetectorParams {
+  ...DetectMachineParams;
+  ...DetectFaxParams;
+  ...DetectDigitParams;
+}
+
+@doc("""
+  The detector to start and its optional tuning. Set `type` to `machine`, `fax`, or
+  `digit`, then supply that detector's settings in `params`. `type` is optional — omit
+  it to default to `machine` (answering-machine detection).
+  """)
 @summary("Detector config")
-@discriminator("type")
 model DetectConfig {
-  @doc("Which detector to run. Defaults to `machine` (answering-machine detection) when omitted.")
-  type?: "digit" | "fax" | "machine";
-}
-
-@summary("Answering-machine detector")
-model DetectMachine extends DetectConfig {
+  @doc("""
+    Which detector to run: `machine` (answering machine / voicemail), `fax` (fax tone),
+    or `digit` (DTMF). Optional — defaults to `machine` when omitted.
+    """)
   @example("machine")
-  type: "machine";
+  type?: "machine" | "fax" | "digit" = "machine";
 
-  params?: DetectMachineParams;
-}
-
-@summary("Fax-tone detector")
-model DetectFax extends DetectConfig {
-  @example("fax")
-  type: "fax";
-
-  params?: DetectFaxParams;
-}
-
-@summary("Digit detector")
-model DetectDigit extends DetectConfig {
-  @example("digit")
-  type: "digit";
-
-  params?: DetectDigitParams;
+  @doc("Optional per-detector tuning. Which fields apply depends on `type`; every field is optional and defaults are used when omitted.")
+  params?: DetectorParams;
 }
 
 model DetectParams {

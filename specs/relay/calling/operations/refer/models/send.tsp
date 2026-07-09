@@ -25,7 +25,7 @@ model ReferSipDeviceParams {
   @example("bar")
   password?: string;
 
-  @doc("Custom SIP headers to add to the REFER.")
+  @doc("Reserved. Accepted for compatibility but currently ignored — no headers are added to the REFER.")
   headers?: SipHeader[];
 }
 

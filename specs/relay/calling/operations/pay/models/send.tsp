@@ -25,7 +25,7 @@ union PayMethod {
   "credit-card",
 }
 
-@doc("Bank account type, for bank-debit payment flows.")
+@doc("Bank account type, for bank-debit (ACH) payment flows. Bank-debit is not yet supported — only `credit-card` payments work today.")
 union PayBankAccountType {
   "consumer-checking",
   "consumer-savings",
@@ -155,7 +155,7 @@ model PayParams {
   @example("credit-card")
   payment_method?: PayMethod = "credit-card";
 
-  @doc("Bank account type, for bank-debit payment flows. Default `consumer-checking`.")
+  @doc("Bank account type, for bank-debit (ACH) payment flows. Default `consumer-checking`. Bank-debit is not yet supported — only `credit-card` payments work today.")
   @example("consumer-checking")
   bank_account_type?: PayBankAccountType = "consumer-checking";
 

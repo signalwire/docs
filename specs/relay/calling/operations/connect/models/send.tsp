@@ -26,6 +26,7 @@ model ConnectParams {
   devices: ConnectDevice[][];
 
   @doc("Maximum length of the connected call, in seconds. The call ends automatically once this is reached.")
+  @minValue(0)
   @example(3600)
   max_duration?: int32;
 
@@ -39,6 +40,7 @@ model ConnectParams {
   send_digits?: string;
 
   @doc("Highest price per minute you're willing to pay. Devices that would exceed this rate aren't called.")
+  @minValue(0)
   @example(0.05)
   max_price_per_minute?: float64;
 

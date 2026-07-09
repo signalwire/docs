@@ -26,9 +26,9 @@ model CallRoomParams {
   @example("joined")
   join_status: CallRoomJoinStatus;
 
-  @doc("The name of the room this call joined or left. Present when the room is known.")
+  @doc("The name of the room this call joined or left.")
   @example("my_room")
-  room_name?: string;
+  room_name: string;
 }
 
 const callingCallRoom = "calling.call.room";

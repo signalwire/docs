@@ -82,7 +82,7 @@ model ReceiveEventData {
 
   @doc("The direction of the message. Always `inbound` here.")
   @example("inbound")
-  direction: MessageDirection;
+  direction: "inbound";
 
   @doc("Reserved. Always an empty array in the current implementation.")
   @example(#[])
