@@ -26,7 +26,7 @@ model StateEventData {
   @example("order-98765")
   tag?: string;
 
-  @doc("Reserved. Always an empty array in the current implementation; use `tag` to label a message.")
+  @doc("Reserved and currently unused — always an empty array. Use `tag` to label a message.")
   @example(#[])
   tags?: string[];
 
@@ -84,7 +84,7 @@ model ReceiveEventData {
   @example("inbound")
   direction: "inbound";
 
-  @doc("Reserved. Always an empty array in the current implementation.")
+  @doc("Reserved and currently unused — always an empty array.")
   @example(#[])
   tags?: string[];
 

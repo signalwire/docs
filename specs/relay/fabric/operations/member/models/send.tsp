@@ -8,7 +8,7 @@ namespace Relay.Fabric;
 @doc("Parameters for `call.member.list`.")
 @summary("Member list parameters")
 model MemberListParams {
-  @doc("The call leg making the request — your own first leg on your call stack.")
+  @doc("The call leg you're operating from — your own leg on this call.")
   self: Target;
 
   @doc("The call leg addressing the room whose members to list — required. Normally set `target` equal to `self`.")
@@ -18,7 +18,7 @@ model MemberListParams {
 @doc("Parameters for `call.member.remove`. Unlike the single-member methods, this takes a list of `targets` to remove in one request.")
 @summary("Member remove parameters")
 model MemberRemoveParams {
-  @doc("The call leg making the request — your own first leg on your call stack.")
+  @doc("The call leg you're operating from — your own leg on this call.")
   self: Target;
 
   @doc("The call legs to remove.")
@@ -28,7 +28,7 @@ model MemberRemoveParams {
 @doc("Parameters for `call.member.position.set`. Takes a list of `target`/`position` pairs to reposition in one request.")
 @summary("Member position parameters")
 model MemberPositionSetParams {
-  @doc("The call leg making the request — your own first leg on your call stack.")
+  @doc("The call leg you're operating from — your own leg on this call.")
   self: Target;
 
   @doc("The members to reposition, each paired with the layout position to move it to.")

@@ -6,7 +6,7 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
-@doc("Tone the fax detector listens for. Only the remote fax machine's tone can be detected.")
+@doc("Which fax tone to listen for on the far end: `CED` (the answering fax's tone) or `CNG` (the calling fax's tone). Default `CED`.")
 union DetectFaxTone {
   "CED",
   "CNG",
@@ -62,7 +62,7 @@ model DetectMachineParams {
 @doc("Configuration for the fax-tone detector.")
 @summary("Fax-tone detector settings")
 model DetectFaxParams {
-  @doc("Fax detector only. Tone to detect. Only the remote fax machine's tone can be detected. Default `CED`.")
+  @doc("Fax detector only. Which fax tone to listen for on the far end. Default `CED`.")
   @example("CED")
   tone?: DetectFaxTone;
 }

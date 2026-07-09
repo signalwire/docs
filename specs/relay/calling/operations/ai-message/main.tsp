@@ -18,7 +18,7 @@ model AiMessageRequest is JsonRpcRequest<typeof callingAiMessage, AiMessageParam
 @extension("x-fern-display-name", callingAiMessageResponse)
 @reply model AiMessageReply is JsonRpcResponse<AiMessageResult>;
 
-@doc("(async-safe) Send (inject) a message into an active AI agent session.")
+@doc("Send (inject) a message into an active AI agent session.")
 @channel(callingAiMessage)
 @summary("Send a message to an active AI agent session")
 @extension("x-fern-display-name", callingAiMessage)

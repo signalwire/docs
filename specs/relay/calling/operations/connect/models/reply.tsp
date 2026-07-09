@@ -10,7 +10,7 @@ namespace Relay.Calling;
 model ConnectResult {
   ...RelayResultBase<"Connecting call">;
 
-  @doc("Per-destination results, present on partial failure — one entry per attempted destination, each with the destination and any `errors`.")
+  @doc("Per-destination results, present on partial failure — one entry per attempted destination, each with the destination and any `errors`. This is the per-destination breakdown; the top-level `data` array carries the same failures aggregated across devices.")
   message_data?: {
     @doc("The origin used for this destination.")
     from?: string;

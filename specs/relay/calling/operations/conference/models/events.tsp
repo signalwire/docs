@@ -70,11 +70,7 @@ model ConferenceParams {
   @example(3)
   size: int32;
 
-  @doc("""
-    What happened in the conference. Note: because of a known issue, bot
-    join/leave and announcement-start events currently arrive with no `status`
-    value set — handle a missing `status` gracefully.
-    """)
+  @doc("What happened in the conference — one of the values below.")
   @example("participant-join")
   status: ConferenceStatus;
 

@@ -20,6 +20,34 @@ model TranslateUtterance {
   delta: string;
 }
 
+@summary("Per-leg translation settings")
+@doc("The translation settings for one call leg, as echoed on the `calling.ai.translate.conversation_log` event.")
+model TranslateLegData {
+  @doc("The language spoken on this leg, as a language code (e.g. `en-US`).")
+  @example("en-US")
+  from_language: string;
+
+  @doc("The language this leg is translated into, as a language code (e.g. `es-ES`).")
+  @example("es-ES")
+  to_language: string;
+
+  @doc("The voice used to speak this leg's translated audio.")
+  @example("josh")
+  to_voice: string;
+
+  @doc("Which side of the call this entry describes — the same value as its key: `local-caller` (the inbound leg) or `remote-caller` (the outbound leg).")
+  @example("local-caller")
+  role: "local-caller" | "remote-caller";
+
+  @doc("This leg's position in the translation pair: `primary` or `secondary`.")
+  @example("primary")
+  position: "primary" | "secondary";
+
+  @doc("The tone/style filter applied to this leg's translation. Present only when a filter was configured.")
+  @example("professional")
+  translate_filter?: string;
+}
+
 @doc("""
   A live-translation delta delivered while the call is in progress. Carries the
   incremental source text (`input_utterance`) and/or the translated text
@@ -111,8 +139,8 @@ model TranslateConversationLogEventData {
   @doc("An AI-generated summary of the translated side. Present only when the session was started with AI summary enabled.")
   secondary_conversation_summary?: string;
 
-  @doc("Role-keyed translation metadata for the session (source/target language settings and related detail).")
-  translate_data: Record<unknown>;
+  @doc("Per-leg translation settings, keyed by leg role (`local-caller` = the inbound leg, `remote-caller` = the outbound leg).")
+  translate_data: Record<TranslateLegData>;
 
   @doc("Call/session context for this delivery.")
   call_info: AiCallInfo;

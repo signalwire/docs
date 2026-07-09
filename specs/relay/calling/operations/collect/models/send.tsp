@@ -101,16 +101,17 @@ model CollectParams {
   partial_results?: boolean = false;
 
   @doc("""
-    When `true`, keep listening for speech and digits until you stop the collect
-    yourself, instead of finishing after the first complete input. Defaults to `false`.
+    Keep the collect running and return a result as each complete input (speech
+    or digits) is recognized, instead of ending after the first. Enables
+    continuous collection. Defaults to `false`.
     """)
   @example(false)
   continuous?: boolean = false;
 
+  #deprecated "Use `continuous` instead."
   @doc("""
-    When `true`, keep the collect running across multiple prompts instead of
-    stopping on the first result, so subsequent input continues to be gathered.
-    Defaults to `false`.
+    Deprecated alias of `continuous` — use `continuous` instead. If both are set,
+    `continuous` takes precedence. Defaults to `false`.
     """)
   @example(false)
   `continue`?: boolean = false;

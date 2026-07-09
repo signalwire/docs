@@ -22,9 +22,8 @@ using SignalWire.AsyncAPI;
   layout, member management, and more) and register a subscriber's presence with
   `subscriber.online` / `subscriber.offline`.
   
-  Call Fabric addresses call legs explicitly with a `{node_id, call_id, member_id}`
-  target rather than the server-resolved `node_id` used by the `calling` service, and it
-  is a **4.0+** surface: a connection must authenticate at protocol major 4 (typically
+  Call Fabric addresses each call leg explicitly with a `{node_id, call_id, member_id}`
+  target, and it is a **4.0+** surface: a connection must authenticate at protocol major 4 (typically
   with a Subscriber Access Token) to use it. React to what happens with the `call.state`
   and member events.
   """)

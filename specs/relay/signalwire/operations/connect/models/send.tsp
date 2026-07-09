@@ -4,13 +4,13 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Signalwire;
 
-@doc("The Relay protocol version your client speaks. Current Relay realtime SDKs send `4.0.0`. The platform accepts major up to `4` with a `minor` of `0`; a connection reporting a major above `4`, or any non-zero `minor`, is rejected.")
+@doc("The Relay protocol version your client speaks. Current Relay realtime SDKs send `4.0.0`. The service accepts major up to `4` with a `minor` of `0`; a connection reporting a major above `4`, or any non-zero `minor`, is rejected.")
 model Version {
-  @doc("Major version. Current Relay realtime SDKs send `4`; the platform accepts up to major `4`.")
+  @doc("Major version. Current Relay realtime SDKs send `4`; the service accepts up to major `4`.")
   @example(4)
   major: int32;
 
-  @doc("Minor version. Must be `0` — the platform rejects any non-zero minor.")
+  @doc("Minor version. Must be `0` — the service rejects any non-zero minor.")
   @example(0)
   minor: int32;
 
@@ -49,8 +49,8 @@ model ConnectParamsBase {
   @doc("The Relay protocol version your client speaks.")
   version: Version;
 
-  @doc("A label identifying your SDK and application, for example `somesdk-1.2.3`.")
-  @example("somesdk-1.2.3")
+  @doc("A label identifying your SDK and application, for example `my-voice-app/1.0.0`.")
+  @example("my-voice-app/1.0.0")
   agent?: string;
 
   @doc("""
@@ -64,7 +64,7 @@ model ConnectParamsBase {
     Authorization state from an earlier `signalwire.authorization.state` event.
     Pass it back when reconnecting to restore your permissions and state. Treat it
     as an opaque token — store the value you received and return it unchanged. When
-    you set this, you must also set `protocol`; the platform rejects an
+    you set this, you must also set `protocol`; the service rejects an
     `authorization_state` sent without a `protocol`.
     """)
   @example("eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIn0..aBcDeF:Z9y8x7w6v5")

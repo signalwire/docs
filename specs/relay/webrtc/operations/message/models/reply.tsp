@@ -6,7 +6,7 @@ namespace Relay.WebRTC;
 
 @doc("The reply to your Verto frame: the Verto outcome plus the node now hosting the call.")
 @summary("Verto reply")
-model MessageResult {
+model VertoResult {
   @doc("""
     Result code as a string. `"200"` means success. On failure this is a lowercase
     error identifier such as `not_allowed`, `invalid_params`, `internal_error`, or

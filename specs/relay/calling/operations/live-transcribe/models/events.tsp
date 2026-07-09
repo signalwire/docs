@@ -57,7 +57,7 @@ model TranscribeUtterance {
 model TranscribeUtteranceEventData {
   ...CallEventAddress;
 
-  @doc("Recognition confidence for this utterance, roughly 0.0-1.0.")
+  @doc("Recognition confidence for this utterance, roughly 0.0-1.0. Mirrors `utterance.confidence`; provided at the top level for convenience.")
   @example(0.94)
   confidence?: float64;
 

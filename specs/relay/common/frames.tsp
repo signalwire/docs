@@ -24,7 +24,7 @@ model JsonRpcRequest<Method extends string, Params> {
   A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
   `result` (the method result). If the request fails at the protocol level — an
   incompatible version, failed authentication, insufficient scope, invalid params, or the
-  gateway being at capacity — the frame carries `error` instead of `result`. (Ordinary
+  service being at capacity — the frame carries `error` instead of `result`. (Ordinary
   backend/application failures are reported the other way: a normal `result` whose own
   `code` is a non-`200` value, not a JSON-RPC `error`.)
   """)
@@ -51,7 +51,7 @@ model JsonRpcResponse<Result> {
   - `-32002` — authentication failed (bad or expired token)
   - `-32003` — not allowed (the connection lacks the scope/permission for this request)
   - `-32004` — not available
-  - `-32005` — capacity exceeded (the gateway is at capacity; retry later)
+  - `-32005` — capacity exceeded (SignalWire is temporarily at capacity; retry later)
   - `-32600` — invalid request (malformed JSON-RPC frame)
   - `-32601` — method not found
   - `-32602` — invalid params (a required parameter is missing or malformed)
@@ -76,7 +76,7 @@ union JsonRpcErrorCode {
 @doc("""
   A JSON-RPC 2.0 error object, delivered on the `error` field of a `JsonRpcResponse` when
   a request fails at the protocol level (bad version, authentication, scope, params, or
-  gateway capacity). It replaces `result` — a frame carries one or the other, never both.
+  service capacity). It replaces `result` — a frame carries one or the other, never both.
   """)
 @summary("JSON-RPC error")
 model JsonRpcError {
@@ -268,12 +268,12 @@ model WebRTCEvent<EventType extends string, Data> {
 @doc("""
   A server-pushed `signalwire.event` frame for Call Fabric Conversation events
   (`conversation.message`, `conversation.message.updated`, `conversation.joined`,
-  `conversation.broadcast`). These are produced by the Conversation service rather than
-  the calling engine, so the envelope differs from the standard `SignalwireEvent`: the
-  service delivers `timestamp` as a **string**-encoded epoch value (not a numeric
-  `float64`), and the three non-broadcast events carry an envelope-level `is_author` flag
-  (supplied via `EnvelopeExtra`). `event_channel` is the subscriber's Conversation stream.
-  `Data` is the event-specific payload at `params.params`.
+  `conversation.broadcast`). These Call Fabric Conversation events use a different envelope
+  from the standard `SignalwireEvent`: `timestamp` is delivered as a **string**-encoded
+  epoch value (not a numeric `float64`), and the three non-broadcast events carry an
+  envelope-level `is_author` flag (supplied via `EnvelopeExtra`). Empty (nothing added) on
+  broadcast. `event_channel` is the subscriber's Conversation stream. `Data` is the
+  event-specific payload at `params.params`.
   """)
 @summary("Conversation event frame")
 model ConversationEvent<

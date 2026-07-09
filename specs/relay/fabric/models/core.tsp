@@ -19,14 +19,13 @@ model FabricResult<Message extends valueof string = "OK"> {
   @example(Message)
   message?: string;
 
-  @doc("Present on partial failures — the per-member `user_errors` describing which members the operation could not be applied to and why.")
+  @doc("Present on partial failures: an array of per-member error entries describing which members the operation could not be applied to and why.")
   data?: unknown[];
 }
 
 @doc("""
   Addresses a call leg in a Call Fabric session. Call Fabric identifies legs explicitly
-  with `{node_id, call_id, member_id}` — the v4 replacement for the server-resolved
-  `node_id` used elsewhere in Relay. Capture these from your `call.state` and member
+  with `{node_id, call_id, member_id}`. Capture these from your `call.state` and member
   events and echo them back on later requests.
   """)
 @summary("Call Fabric target")

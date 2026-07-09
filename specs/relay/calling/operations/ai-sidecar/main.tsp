@@ -42,7 +42,7 @@ model AiSidecarPokeRequest
 model AiSidecarPokeReply is JsonRpcResponse<AiSidecarResult>;
 
 @doc("""
-  (async-safe) Send a message to the sidecar and prompt it to respond right away,
+  Send a message to the sidecar and prompt it to respond right away,
   without waiting for the next customer turn.
   """)
 @channel(callingAiSidecarPoke)
@@ -61,7 +61,7 @@ model AiSidecarAskRequest
 model AiSidecarAskReply is JsonRpcResponse<AiSidecarAskResult>;
 
 @doc("""
-  (async-safe) Ask the sidecar a one-off question without affecting the live
+  Ask the sidecar a one-off question without affecting the live
   conversation. Returns an `ask_id` immediately; the answer is delivered later as a
   `calling.ai.sidecar` event (`type: ask_answer`) with the matching `ask_id`.
   """)
@@ -80,7 +80,7 @@ model AiSidecarStopRequest
 @reply
 model AiSidecarStopReply is JsonRpcResponse<AiSidecarResult>;
 
-@doc("(async-safe) Stop and detach the AI sidecar from the call.")
+@doc("Stop and detach the AI sidecar from the call.")
 @channel(callingAiSidecarStop)
 @summary("Stop and detach the AI sidecar")
 @extension("x-fern-display-name", callingAiSidecarStop)
@@ -96,7 +96,7 @@ model AiSidecarStatusRequest
 @reply
 model AiSidecarStatusReply is JsonRpcResponse<AiSidecarStatusResult>;
 
-@doc("(async-safe) Get a snapshot of the sidecar's activity counters.")
+@doc("Get a snapshot of the sidecar's activity counters.")
 @channel(callingAiSidecarStatus)
 @summary("Get a snapshot of the sidecar's activity counters")
 @extension("x-fern-display-name", callingAiSidecarStatus)

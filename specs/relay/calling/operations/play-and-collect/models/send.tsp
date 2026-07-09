@@ -59,8 +59,7 @@ model PlayAndCollectParams {
   control_id: string;
 
   @doc("""
-    Playback volume in dB, from `-40` (muted) to `+40`, where `0` keeps the
-    original audio level.
+    Playback volume in dB, from `-40` (muted) to `+40`; `0` keeps the original audio level.
     """)
   @minValue(-40)
   @maxValue(40)
@@ -73,7 +72,7 @@ model PlayAndCollectParams {
   @doc("What to listen for from the caller while the media plays.")
   collect: PlayAndCollectCollect;
 
-  @doc("HTTP(s) URL that play-and-collect status events are POSTed to.")
+  @doc("HTTPS URL that status events are POSTed to.")
   @example("https://example.com/webhooks/relay")
   status_url?: url;
 }
@@ -94,8 +93,7 @@ model PlayAndCollectVolumeParams {
   control_id: string;
 
   @doc("""
-    New playback volume in dB, from `-40` (muted) to `+40`, where `0` keeps the
-    original audio level.
+    Playback volume in dB, from `-40` (muted) to `+40`; `0` keeps the original audio level.
     """)
   @minValue(-40)
   @maxValue(40)

@@ -33,7 +33,7 @@ union CallDetectMachineEvent {
 
   @doc("""
     The machine is ready for you to leave your message. This is a final result
-    when `detect_interruptions=false` or `beep=true`.
+    when `detect_interruptions` is `false`, or once a beep has been detected.
     """)
   "READY",
 

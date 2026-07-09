@@ -99,7 +99,7 @@ model AiSpeechDetectEvent
 model AiPartialResultEventData {
   ...CallEventAddress;
 
-  @doc("The caller's interim (partial) speech-recognition transcript. Absent on the Amazon Bedrock path, where this event fires with an empty body.")
+  @doc("The caller's interim (partial) speech-recognition transcript. Absent when you use `calling.amazon_bedrock`, where this event fires with an empty body.")
   @example("I'd like to order a large")
   text?: string;
 
@@ -202,7 +202,7 @@ model AiStopEventData {
   @example(1718000123000000)
   end_time: int64;
 
-  @doc("Total seconds that billing was paused during the session. Emitted on the OpenAI path only; absent on the Amazon Bedrock path.")
+  @doc("Total seconds that billing was paused during the session. Emitted only when you start the agent with `calling.ai`; absent when you use `calling.amazon_bedrock`.")
   @example(0)
   wallet_paused_sec?: float64;
 

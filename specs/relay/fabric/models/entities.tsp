@@ -7,11 +7,10 @@ namespace Relay.Fabric;
 @doc("""
   A member of a Call Fabric conference — one participant's state. Carried on the
   `member.updated`, `member.joined`, and `member.left` events and returned by
-  `call.member.list`. Fields are sourced from the conference backend (matching the
-  Video API's `Member`).
-  
+  `call.member.list`. Fields match the Video API's `Member`.
+
   Note: on a 1:1 (non-conference) call, `member.joined`/`member.left` carry a leaner
-  variant of this object built by the call engine — it keys the member by `member_id`
+  variant of this object — it keys the member by `member_id`
   instead of `id`, adds `node_id` (and, when present, `address_id` and `subscriber_id`),
   and reports `echo_cancellation`/`auto_gain`/`noise_suppression`/`denoise`/`lowbitrate`
   (all defaulting to `false`) instead of the volume/sensitivity fields. If you consume
@@ -210,8 +209,8 @@ model RoomSession {
 }
 
 @doc("""
-  The room-session summary embedded in `call.joined` and `call.left`. This is a leaner,
-  call-engine-built shape than the conference `RoomSession` on `room.updated`. On
+  The room-session summary embedded in `call.joined` and `call.left`. This is a leaner
+  shape than the conference `RoomSession` on `room.updated`. On
   `call.left` the collection fields (`members`/`recordings`/`streams`/`playbacks`) are
   absent entirely.
   """)
@@ -257,7 +256,7 @@ model RecordingInfo {
   @example("recording")
   state: string;
 
-  @doc("When the recording started, in epoch seconds.")
+  @doc("When the recording started, as a Unix timestamp in seconds.")
   @example(1712345678)
   started_at: float64;
 
@@ -265,7 +264,7 @@ model RecordingInfo {
   @example(42.5)
   duration?: float64;
 
-  @doc("When the recording ended, in epoch seconds. Present once the recording has ended.")
+  @doc("When the recording ended, as a Unix timestamp in seconds. Present once the recording has ended.")
   @example(1712345720)
   ended_at?: float64;
 }
@@ -281,7 +280,7 @@ model StreamInfo {
   @example("streaming")
   state: string;
 
-  @doc("The RTMP destination URL the room is being streamed to. Omitted when the backend does not report it on the event.")
+  @doc("The RTMP destination URL the room is being streamed to. Omitted when it is not reported on the event.")
   @example("rtmp://example.com/live/streamkey")
   url?: string;
 
@@ -289,11 +288,11 @@ model StreamInfo {
   @example(42.5)
   duration?: float64;
 
-  @doc("When the stream started, in epoch seconds.")
+  @doc("When the stream started, as a Unix timestamp in seconds.")
   @example(1712345678)
   started_at: float64;
 
-  @doc("When the stream ended, in epoch seconds. Present once the stream has ended.")
+  @doc("When the stream ended, as a Unix timestamp in seconds. Present once the stream has ended.")
   @example(1712345720)
   ended_at?: float64;
 }
@@ -324,11 +323,11 @@ model PlaybackInfo {
   @example(0)
   volume: int32;
 
-  @doc("When the playback started, in epoch seconds.")
+  @doc("When the playback started, as a Unix timestamp in seconds.")
   @example(1712345678)
   started_at: float64;
 
-  @doc("When the playback ended, in epoch seconds. Present once the playback has ended.")
+  @doc("When the playback ended, as a Unix timestamp in seconds. Present once the playback has ended.")
   @example(1712345720)
   ended_at?: float64;
 }

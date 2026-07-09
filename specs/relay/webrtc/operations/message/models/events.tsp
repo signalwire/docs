@@ -15,9 +15,11 @@ const webrtcMessage = "webrtc.message";
   conference/room event on a channel you subscribed to — so it can arrive without
   you sending anything.
 
-  The frame in `params` is passed through as-is; see SignalWire's Verto message
-  reference for the full set of Verto methods and their `params`.
+  The Verto frame arrives at `params.params`, passed through as-is (the surrounding
+  `params` object is the event envelope: `node_id`, `event_channel`, timestamps).
+  Each frame is a Verto-protocol signaling message whose contents depend on the
+  Verto method it carries.
   """)
-@summary(webrtcMessage)
+@summary("Inbound Verto frame")
 @extension("x-fern-display-name", webrtcMessage)
 model MessageEvent is WebRTCEvent<typeof webrtcMessage, Record<unknown>>;

@@ -17,7 +17,7 @@ model SendFaxParams {
   @example("https://example.com/my_doc_to_fax.pdf")
   document: url;
 
-  @doc("Identity to display on the receiving fax. Defaults to your SignalWire phone number (DID).")
+  @doc("Identity to display on the receiving fax. Defaults to your SignalWire phone number.")
   @example("+15551230001")
   identity?: string;
 

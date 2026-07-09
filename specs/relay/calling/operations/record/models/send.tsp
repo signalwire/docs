@@ -61,7 +61,7 @@ model RecordAudio {
 
   @doc("""
     Input sensitivity: `0` = hear nothing, `100` = hear everything. Default
-    `44`.
+    `44.0`.
     """)
   @minValue(0)
   @maxValue(100)
@@ -90,7 +90,7 @@ model RecordParams {
   @doc("What to record. Currently audio is the only option — set its parameters under `audio`.")
   record: RecordSpec;
 
-  @doc("HTTPS URL that recording status events are POSTed to.")
+  @doc("HTTPS URL that status events are POSTed to.")
   @example("https://example.com/webhooks/relay")
   status_url?: url;
 }

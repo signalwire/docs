@@ -37,7 +37,7 @@ model LiveTranslateParams {
     """)
   action: LiveTranslateAction | "stop" | "summarize";
 
-  @doc("An `http` or `https` URL to receive translation status updates.")
+  @doc("Reserved and currently unused — live translation results are delivered to `webhook` (or over the Relay connection when no `webhook` is set).")
   @example("https://example.com/webhooks/relay")
   status_url?: url;
 }

@@ -14,10 +14,10 @@ namespace Relay.WebRTC;
 const webrtcVerto = "webrtc.verto";
 const webrtcVertoResponse = "${webrtcVerto} response";
 
-model VertoRequest is JsonRpcRequest<typeof webrtcVerto, MessageParams>;
+model VertoRequest is JsonRpcRequest<typeof webrtcVerto, VertoParams>;
 
 @extension("x-fern-display-name", webrtcVertoResponse)
-@reply model VertoReply is JsonRpcResponse<MessageResult>;
+@reply model VertoReply is JsonRpcResponse<VertoResult>;
 
 @doc("""
   Send a Verto frame to SignalWire over the Relay connection — this is how you
@@ -48,8 +48,10 @@ op verto(...VertoRequest): VertoReply;
   frames SignalWire initiates on its own — an incoming `verto.invite`, a
   `verto.bye` when the far end hangs up, `verto.media`/`verto.display` updates, and
   conference/room events on channels you subscribed to — so they arrive without you
-  sending anything. The frame is passed through in `params` as-is; see SignalWire's
-  Verto message reference for the full set of Verto methods.
+  sending anything. The Verto frame arrives at `params.params`, passed through
+  as-is (the surrounding `params` object is the event envelope: `node_id`,
+  `event_channel`, timestamps). Each frame is a Verto-protocol signaling message
+  whose contents depend on the Verto method it carries.
   """)
 @channel(webrtcMessage)
 @summary("Receive inbound Verto frames")

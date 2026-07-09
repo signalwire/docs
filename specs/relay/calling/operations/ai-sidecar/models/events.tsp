@@ -124,13 +124,13 @@ model AiSidecarEventBody {
   @doc("Token count after pruning. Present on `type: history_pruned`.")
   tokens_after?: int32;
 
-  @doc("The current iteration. Present on `ask`/`insight`/`final` callbacks.")
+  @doc("The current iteration. Present on the `ask_request`, `ask_answer`, `insight`, and `final` callbacks.")
   iter?: int32;
 
-  @doc("The total iterations. Present on `ask`/`insight`/`final` callbacks.")
+  @doc("The total iterations. Present on the `ask_request`, `ask_answer`, `insight`, and `final` callbacks.")
   total_iters?: int32;
 
-  @doc("What triggered this callback. Present on `ask`/`insight`/`final` callbacks.")
+  @doc("What triggered this callback. Present on the `ask_request`, `ask_answer`, `insight`, and `final` callbacks.")
   triggered_by?: string;
 }
 

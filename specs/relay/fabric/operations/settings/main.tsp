@@ -18,7 +18,7 @@ model VmutedHideSetResult { ...FabricResult<"Updated">; }
 @reply
 model VmutedHideSetReply is JsonRpcResponse<VmutedHideSetResult>;
 
-@doc("Sets whether video-muted members are hidden from the room layout. A `call.updated` event follows.")
+@doc("Sets whether video-muted members are hidden from the room layout. A `room.updated` event follows.")
 @channel(callVmutedHideSet)
 @summary("Hide or show video-muted members")
 @extension("x-fern-display-name", callVmutedHideSet)
@@ -32,7 +32,7 @@ model LockResult { ...FabricResult<"Locked">; }
 @reply
 model LockReply is JsonRpcResponse<LockResult>;
 
-@doc("Locks the room to new participants. A `call.updated` event follows.")
+@doc("Locks the room to new participants. A `room.updated` event follows.")
 @channel(callLock)
 @summary("Lock the room")
 @extension("x-fern-display-name", callLock)
@@ -46,7 +46,7 @@ model UnlockResult { ...FabricResult<"Unlocked">; }
 @reply
 model UnlockReply is JsonRpcResponse<UnlockResult>;
 
-@doc("Unlocks the room, reversing `call.lock`. A `call.updated` event follows.")
+@doc("Unlocks the room, reversing `call.lock`. A `room.updated` event follows.")
 @channel(callUnlock)
 @summary("Unlock the room")
 @extension("x-fern-display-name", callUnlock)
@@ -76,7 +76,7 @@ model DenoiseSetResult { ...FabricResult<"Updated">; }
 @reply
 model DenoiseSetReply is JsonRpcResponse<DenoiseSetResult>;
 
-@doc("Enables or disables denoise for a member. Target yourself with `self` or another member with `target`. A `member.updated` event follows.")
+@doc("Enables or disables noise reduction (denoise) for a member. Target yourself with `self` or another member with `target`. A `member.updated` event follows.")
 @channel(callDenoiseSet)
 @summary("Set a member's denoise")
 @extension("x-fern-display-name", callDenoiseSet)

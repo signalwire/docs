@@ -14,7 +14,7 @@ union TapState {
   "finished",
 }
 
-@doc("Which side of the call audio is being tapped: the caller speaking, what they hear, or both.")
+@doc("Which side of the tapped party's audio to capture: `listen` = the audio the tapped party hears; `speak` = the audio the tapped party says (the default); `both` = both directions.")
 union CallTapDirection {
   "speak",
   "listen",
@@ -23,13 +23,13 @@ union CallTapDirection {
 
 @doc("Describes the media being tapped. Currently always `audio`.")
 @discriminator("type")
-model TapMedia {
+model CallTapMedia {
   @example("audio")
   type: "audio";
 }
 
 @doc("An audio tap.")
-model CallTapAudio extends TapMedia {
+model CallTapAudio extends CallTapMedia {
   @example("audio")
   type: "audio";
 
@@ -98,7 +98,7 @@ model CallTapParams {
   state: TapState;
 
   @doc("What media is being tapped.")
-  tap: TapMedia;
+  tap: CallTapMedia;
 
   @doc("Where the tapped audio is being sent.")
   device: CallTapDevice;

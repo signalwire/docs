@@ -997,7 +997,7 @@ operations:
     action: receive
     channel:
       $ref: "#/channels/webrtc.message"
-    title: webrtc.message
+    title: Inbound Verto frame
     messages:
       - $ref: "#/channels/webrtc.message/messages/messageEvent"
     x-fern-display-name: webrtc.message
@@ -2018,7 +2018,7 @@ components:
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
         incompatible version, failed authentication, insufficient scope, invalid params, or the
-        gateway being at capacity — the frame carries `error` instead of `result`. (Ordinary
+        service being at capacity — the frame carries `error` instead of `result`. (Ordinary
         backend/application failures are reported the other way: a normal `result` whose own
         `code` is a non-`200` value, not a JSON-RPC `error`.)
     Signalwire.PingResult:
@@ -2056,7 +2056,7 @@ components:
       description: |-
         A JSON-RPC 2.0 error object, delivered on the `error` field of a `JsonRpcResponse` when
         a request fails at the protocol level (bad version, authentication, scope, params, or
-        gateway capacity). It replaces `result` — a frame carries one or the other, never both.
+        service capacity). It replaces `result` — a frame carries one or the other, never both.
     JsonRpcErrorCode:
       oneOf:
         - type: integer
@@ -2161,9 +2161,9 @@ components:
             - $ref: "#/components/schemas/Signalwire.Version"
         agent:
           type: string
-          description: A label identifying your SDK and application, for example `somesdk-1.2.3`.
+          description: A label identifying your SDK and application, for example `my-voice-app/1.0.0`.
           examples:
-            - somesdk-1.2.3
+            - my-voice-app/1.0.0
         protocol:
           type: string
           description: |-
@@ -2177,7 +2177,7 @@ components:
             Authorization state from an earlier `signalwire.authorization.state` event.
             Pass it back when reconnecting to restore your permissions and state. Treat it
             as an opaque token — store the value you received and return it unchanged. When
-            you set this, you must also set `protocol`; the platform rejects an
+            you set this, you must also set `protocol`; the service rejects an
             `authorization_state` sent without a `protocol`.
           examples:
             - eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIn0..aBcDeF:Z9y8x7w6v5
@@ -2232,13 +2232,13 @@ components:
         major:
           type: integer
           format: int32
-          description: Major version. Current Relay realtime SDKs send `4`; the platform accepts up to major `4`.
+          description: Major version. Current Relay realtime SDKs send `4`; the service accepts up to major `4`.
           examples:
             - 4
         minor:
           type: integer
           format: int32
-          description: Minor version. Must be `0` — the platform rejects any non-zero minor.
+          description: Minor version. Must be `0` — the service rejects any non-zero minor.
           examples:
             - 0
         revision:
@@ -2251,7 +2251,7 @@ components:
         - major
         - minor
         - revision
-      description: The Relay protocol version your client speaks. Current Relay realtime SDKs send `4.0.0`. The platform accepts major up to `4` with a `minor` of `0`; a connection reporting a major above `4`, or any non-zero `minor`, is rejected.
+      description: The Relay protocol version your client speaks. Current Relay realtime SDKs send `4.0.0`. The service accepts major up to `4` with a `minor` of `0`; a connection reporting a major above `4`, or any non-zero `minor`, is rejected.
     Signalwire.ConnectReply:
       type: object
       properties:
@@ -2278,7 +2278,7 @@ components:
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
         incompatible version, failed authentication, insufficient scope, invalid params, or the
-        gateway being at capacity — the frame carries `error` instead of `result`. (Ordinary
+        service being at capacity — the frame carries `error` instead of `result`. (Ordinary
         backend/application failures are reported the other way: a normal `result` whose own
         `code` is a non-`200` value, not a JSON-RPC `error`.)
     Signalwire.ConnectResult:
@@ -2442,7 +2442,7 @@ components:
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
         incompatible version, failed authentication, insufficient scope, invalid params, or the
-        gateway being at capacity — the frame carries `error` instead of `result`. (Ordinary
+        service being at capacity — the frame carries `error` instead of `result`. (Ordinary
         backend/application failures are reported the other way: a normal `result` whose own
         `code` is a non-`200` value, not a JSON-RPC `error`.)
     Signalwire.ReauthenticateResult:
@@ -2480,14 +2480,14 @@ components:
         params:
           description: The method's input parameters.
           allOf:
-            - $ref: "#/components/schemas/WebRTC.MessageParams"
+            - $ref: "#/components/schemas/WebRTC.VertoParams"
       required:
         - jsonrpc
         - id
         - method
         - params
       description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
-    WebRTC.MessageParams:
+    WebRTC.VertoParams:
       type: object
       properties:
         node_id:
@@ -2504,12 +2504,35 @@ components:
           additionalProperties: {}
           description: |-
             The Verto frame (the WebRTC signaling message format used for peer calls) to
-            send — for example a `verto.invite` carrying
-            `dialogParams`/`sdp`/`layout`/`positions`. The frame is passed through
-            as-is; see SignalWire's Verto message reference for the full list of Verto
-            methods and their `params`. The Verto call ID belongs inside this frame, at
+            send — a JSON-RPC 2.0 object `{ jsonrpc, id, method, params }`. For a
+            `verto.invite`, `params` carries your `sdp` (the Session Description Protocol
+            offer) and a `dialogParams` object; `layout` and `positions` apply only when
+            inviting into a conference. Each frame is a Verto-protocol signaling message
+            whose `params` depend on the Verto method it carries, and SignalWire passes it
+            through as-is. The Verto call ID belongs inside this frame, at
             `dialogParams.callID` — generate one when you create a call and reuse it on
             every frame for that call. There is no top-level `callID`.
+          examples:
+            - jsonrpc: "2.0"
+              id: 6c413717-7595-4c86-9586-506bcc3abd7a
+              method: verto.invite
+              params:
+                sdp: "v=0\r
+
+                  o=- 4363463200085990471 2 IN IP4 127.0.0.1\r
+
+                  s=-\r
+
+                  t=0 0\r
+
+                  ... (your WebRTC SDP offer) ..."
+                dialogParams:
+                  callID: 2689709c-5c02-4db3-9df9-81cdd9005209
+                  destination_number: "1003"
+                  caller_id_name: SW JS client
+                  caller_id_number: user@example.com
+                  audio: true
+                  video: true
         subscribe:
           type: array
           items:
@@ -2541,7 +2564,7 @@ components:
         result:
           description: The method result. Present when the request succeeded.
           allOf:
-            - $ref: "#/components/schemas/WebRTC.MessageResult"
+            - $ref: "#/components/schemas/WebRTC.VertoResult"
         error:
           description: Present instead of `result` when the request failed at the protocol level.
           allOf:
@@ -2553,10 +2576,10 @@ components:
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
         incompatible version, failed authentication, insufficient scope, invalid params, or the
-        gateway being at capacity — the frame carries `error` instead of `result`. (Ordinary
+        service being at capacity — the frame carries `error` instead of `result`. (Ordinary
         backend/application failures are reported the other way: a normal `result` whose own
         `code` is a non-`200` value, not a JSON-RPC `error`.)
-    WebRTC.MessageResult:
+    WebRTC.VertoResult:
       type: object
       properties:
         code:
@@ -2659,8 +2682,10 @@ components:
         conference/room event on a channel you subscribed to — so it can arrive without
         you sending anything.
 
-        The frame in `params` is passed through as-is; see SignalWire's Verto message
-        reference for the full set of Verto methods and their `params`.
+        The Verto frame arrives at `params.params`, passed through as-is (the surrounding
+        `params` object is the event envelope: `node_id`, `event_channel`, timestamps).
+        Each frame is a Verto-protocol signaling message whose contents depend on the
+        Verto method it carries.
     Fabric.MuteRequest:
       type: object
       properties:
@@ -2691,7 +2716,7 @@ components:
       type: object
       properties:
         self:
-          description: The call leg making the request — your own first leg on your call stack.
+          description: The call leg you're operating from — your own leg on this call.
           allOf:
             - $ref: "#/components/schemas/Fabric.Target"
         target:
@@ -2737,8 +2762,7 @@ components:
         - member_id
       description: |-
         Addresses a call leg in a Call Fabric session. Call Fabric identifies legs explicitly
-        with `{node_id, call_id, member_id}` — the v4 replacement for the server-resolved
-        `node_id` used elsewhere in Relay. Capture these from your `call.state` and member
+        with `{node_id, call_id, member_id}`. Capture these from your `call.state` and member
         events and echo them back on later requests.
     Fabric.MuteReply:
       type: object
@@ -2766,7 +2790,7 @@ components:
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
         incompatible version, failed authentication, insufficient scope, invalid params, or the
-        gateway being at capacity — the frame carries `error` instead of `result`. (Ordinary
+        service being at capacity — the frame carries `error` instead of `result`. (Ordinary
         backend/application failures are reported the other way: a normal `result` whose own
         `code` is a non-`200` value, not a JSON-RPC `error`.)
     Fabric.MuteResult:
@@ -2785,7 +2809,7 @@ components:
         data:
           type: array
           items: {}
-          description: Present on partial failures — the per-member `user_errors` describing which members the operation could not be applied to and why.
+          description: "Present on partial failures: an array of per-member error entries describing which members the operation could not be applied to and why."
       required:
         - code
     Fabric.UnmuteRequest:
@@ -2818,7 +2842,7 @@ components:
       type: object
       properties:
         self:
-          description: The call leg making the request — your own first leg on your call stack.
+          description: The call leg you're operating from — your own leg on this call.
           allOf:
             - $ref: "#/components/schemas/Fabric.Target"
         target:
@@ -2866,7 +2890,7 @@ components:
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
         incompatible version, failed authentication, insufficient scope, invalid params, or the
-        gateway being at capacity — the frame carries `error` instead of `result`. (Ordinary
+        service being at capacity — the frame carries `error` instead of `result`. (Ordinary
         backend/application failures are reported the other way: a normal `result` whose own
         `code` is a non-`200` value, not a JSON-RPC `error`.)
     Fabric.UnmuteResult:
@@ -2885,7 +2909,7 @@ components:
         data:
           type: array
           items: {}
-          description: Present on partial failures — the per-member `user_errors` describing which members the operation could not be applied to and why.
+          description: "Present on partial failures: an array of per-member error entries describing which members the operation could not be applied to and why."
       required:
         - code
     Fabric.DeafRequest:
@@ -2918,7 +2942,7 @@ components:
       type: object
       properties:
         self:
-          description: The call leg making the request — your own first leg on your call stack.
+          description: The call leg you're operating from — your own leg on this call.
           allOf:
             - $ref: "#/components/schemas/Fabric.Target"
         target:
@@ -2955,7 +2979,7 @@ components:
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
         incompatible version, failed authentication, insufficient scope, invalid params, or the
-        gateway being at capacity — the frame carries `error` instead of `result`. (Ordinary
+        service being at capacity — the frame carries `error` instead of `result`. (Ordinary
         backend/application failures are reported the other way: a normal `result` whose own
         `code` is a non-`200` value, not a JSON-RPC `error`.)
     Fabric.DeafResult:
@@ -2974,7 +2998,7 @@ components:
         data:
           type: array
           items: {}
-          description: Present on partial failures — the per-member `user_errors` describing which members the operation could not be applied to and why.
+          description: "Present on partial failures: an array of per-member error entries describing which members the operation could not be applied to and why."
       required:
         - code
     Fabric.UndeafRequest:
@@ -3007,7 +3031,7 @@ components:
       type: object
       properties:
         self:
-          description: The call leg making the request — your own first leg on your call stack.
+          description: The call leg you're operating from — your own leg on this call.
           allOf:
             - $ref: "#/components/schemas/Fabric.Target"
         target:
@@ -3044,7 +3068,7 @@ components:
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
         incompatible version, failed authentication, insufficient scope, invalid params, or the
-        gateway being at capacity — the frame carries `error` instead of `result`. (Ordinary
+        service being at capacity — the frame carries `error` instead of `result`. (Ordinary
         backend/application failures are reported the other way: a normal `result` whose own
         `code` is a non-`200` value, not a JSON-RPC `error`.)
     Fabric.UndeafResult:
@@ -3063,7 +3087,7 @@ components:
         data:
           type: array
           items: {}
-          description: Present on partial failures — the per-member `user_errors` describing which members the operation could not be applied to and why.
+          description: "Present on partial failures: an array of per-member error entries describing which members the operation could not be applied to and why."
       required:
         - code
     Fabric.RaisehandRequest:
@@ -3096,7 +3120,7 @@ components:
       type: object
       properties:
         self:
-          description: The call leg making the request — your own first leg on your call stack.
+          description: The call leg you're operating from — your own leg on this call.
           allOf:
             - $ref: "#/components/schemas/Fabric.Target"
         target:
@@ -3133,7 +3157,7 @@ components:
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
         incompatible version, failed authentication, insufficient scope, invalid params, or the
-        gateway being at capacity — the frame carries `error` instead of `result`. (Ordinary
+        service being at capacity — the frame carries `error` instead of `result`. (Ordinary
         backend/application failures are reported the other way: a normal `result` whose own
         `code` is a non-`200` value, not a JSON-RPC `error`.)
     Fabric.RaisehandResult:
@@ -3152,7 +3176,7 @@ components:
         data:
           type: array
           items: {}
-          description: Present on partial failures — the per-member `user_errors` describing which members the operation could not be applied to and why.
+          description: "Present on partial failures: an array of per-member error entries describing which members the operation could not be applied to and why."
       required:
         - code
     Fabric.LowerhandRequest:
@@ -3185,7 +3209,7 @@ components:
       type: object
       properties:
         self:
-          description: The call leg making the request — your own first leg on your call stack.
+          description: The call leg you're operating from — your own leg on this call.
           allOf:
             - $ref: "#/components/schemas/Fabric.Target"
         target:
@@ -3222,7 +3246,7 @@ components:
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
         incompatible version, failed authentication, insufficient scope, invalid params, or the
-        gateway being at capacity — the frame carries `error` instead of `result`. (Ordinary
+        service being at capacity — the frame carries `error` instead of `result`. (Ordinary
         backend/application failures are reported the other way: a normal `result` whose own
         `code` is a non-`200` value, not a JSON-RPC `error`.)
     Fabric.LowerhandResult:
@@ -3241,7 +3265,7 @@ components:
         data:
           type: array
           items: {}
-          description: Present on partial failures — the per-member `user_errors` describing which members the operation could not be applied to and why.
+          description: "Present on partial failures: an array of per-member error entries describing which members the operation could not be applied to and why."
       required:
         - code
     Fabric.EndRequest:
@@ -3274,7 +3298,7 @@ components:
       type: object
       properties:
         self:
-          description: The call leg making the request — your own first leg on your call stack.
+          description: The call leg you're operating from — your own leg on this call.
           allOf:
             - $ref: "#/components/schemas/Fabric.Target"
         target:
@@ -3311,7 +3335,7 @@ components:
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
         incompatible version, failed authentication, insufficient scope, invalid params, or the
-        gateway being at capacity — the frame carries `error` instead of `result`. (Ordinary
+        service being at capacity — the frame carries `error` instead of `result`. (Ordinary
         backend/application failures are reported the other way: a normal `result` whose own
         `code` is a non-`200` value, not a JSON-RPC `error`.)
     Fabric.EndResult:
@@ -3330,7 +3354,7 @@ components:
         data:
           type: array
           items: {}
-          description: Present on partial failures — the per-member `user_errors` describing which members the operation could not be applied to and why.
+          description: "Present on partial failures: an array of per-member error entries describing which members the operation could not be applied to and why."
       required:
         - code
     Fabric.HangupRequest:
@@ -3363,7 +3387,7 @@ components:
       type: object
       properties:
         self:
-          description: The call leg to hang up — your own first leg on your call stack.
+          description: The call leg to hang up — your own leg on this call.
           allOf:
             - $ref: "#/components/schemas/Fabric.Target"
       required:
@@ -3395,7 +3419,7 @@ components:
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
         incompatible version, failed authentication, insufficient scope, invalid params, or the
-        gateway being at capacity — the frame carries `error` instead of `result`. (Ordinary
+        service being at capacity — the frame carries `error` instead of `result`. (Ordinary
         backend/application failures are reported the other way: a normal `result` whose own
         `code` is a non-`200` value, not a JSON-RPC `error`.)
     Fabric.HangupResult:
@@ -3414,7 +3438,7 @@ components:
         data:
           type: array
           items: {}
-          description: Present on partial failures — the per-member `user_errors` describing which members the operation could not be applied to and why.
+          description: "Present on partial failures: an array of per-member error entries describing which members the operation could not be applied to and why."
       required:
         - code
     Fabric.LayoutListRequest:
@@ -3447,7 +3471,7 @@ components:
       type: object
       properties:
         self:
-          description: The call leg making the request — your own first leg on your call stack.
+          description: The call leg you're operating from — your own leg on this call.
           allOf:
             - $ref: "#/components/schemas/Fabric.Target"
         target:
@@ -3484,7 +3508,7 @@ components:
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
         incompatible version, failed authentication, insufficient scope, invalid params, or the
-        gateway being at capacity — the frame carries `error` instead of `result`. (Ordinary
+        service being at capacity — the frame carries `error` instead of `result`. (Ordinary
         backend/application failures are reported the other way: a normal `result` whose own
         `code` is a non-`200` value, not a JSON-RPC `error`.)
     Fabric.FabricLayoutListResult:
@@ -3503,7 +3527,7 @@ components:
         data:
           type: array
           items: {}
-          description: Present on partial failures — the per-member `user_errors` describing which members the operation could not be applied to and why.
+          description: "Present on partial failures: an array of per-member error entries describing which members the operation could not be applied to and why."
         layouts:
           type: array
           items:
@@ -3546,7 +3570,7 @@ components:
       type: object
       properties:
         self:
-          description: The call leg making the request — your own first leg on your call stack.
+          description: The call leg you're operating from — your own leg on this call.
           allOf:
             - $ref: "#/components/schemas/Fabric.Target"
         target:
@@ -3589,7 +3613,7 @@ components:
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
         incompatible version, failed authentication, insufficient scope, invalid params, or the
-        gateway being at capacity — the frame carries `error` instead of `result`. (Ordinary
+        service being at capacity — the frame carries `error` instead of `result`. (Ordinary
         backend/application failures are reported the other way: a normal `result` whose own
         `code` is a non-`200` value, not a JSON-RPC `error`.)
     Fabric.LayoutSetResult:
@@ -3608,7 +3632,7 @@ components:
         data:
           type: array
           items: {}
-          description: Present on partial failures — the per-member `user_errors` describing which members the operation could not be applied to and why.
+          description: "Present on partial failures: an array of per-member error entries describing which members the operation could not be applied to and why."
       required:
         - code
     Fabric.MemberListRequest:
@@ -3641,7 +3665,7 @@ components:
       type: object
       properties:
         self:
-          description: The call leg making the request — your own first leg on your call stack.
+          description: The call leg you're operating from — your own leg on this call.
           allOf:
             - $ref: "#/components/schemas/Fabric.Target"
         target:
@@ -3678,7 +3702,7 @@ components:
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
         incompatible version, failed authentication, insufficient scope, invalid params, or the
-        gateway being at capacity — the frame carries `error` instead of `result`. (Ordinary
+        service being at capacity — the frame carries `error` instead of `result`. (Ordinary
         backend/application failures are reported the other way: a normal `result` whose own
         `code` is a non-`200` value, not a JSON-RPC `error`.)
     Fabric.FabricMemberListResult:
@@ -3697,7 +3721,7 @@ components:
         data:
           type: array
           items: {}
-          description: Present on partial failures — the per-member `user_errors` describing which members the operation could not be applied to and why.
+          description: "Present on partial failures: an array of per-member error entries describing which members the operation could not be applied to and why."
         members:
           type: array
           items:
@@ -3801,11 +3825,10 @@ components:
       description: |-
         A member of a Call Fabric conference — one participant's state. Carried on the
         `member.updated`, `member.joined`, and `member.left` events and returned by
-        `call.member.list`. Fields are sourced from the conference backend (matching the
-        Video API's `Member`).
+        `call.member.list`. Fields match the Video API's `Member`.
 
         Note: on a 1:1 (non-conference) call, `member.joined`/`member.left` carry a leaner
-        variant of this object built by the call engine — it keys the member by `member_id`
+        variant of this object — it keys the member by `member_id`
         instead of `id`, adds `node_id` (and, when present, `address_id` and `subscriber_id`),
         and reports `echo_cancellation`/`auto_gain`/`noise_suppression`/`denoise`/`lowbitrate`
         (all defaulting to `false`) instead of the volume/sensitivity fields. If you consume
@@ -3840,7 +3863,7 @@ components:
       type: object
       properties:
         self:
-          description: The call leg making the request — your own first leg on your call stack.
+          description: The call leg you're operating from — your own leg on this call.
           allOf:
             - $ref: "#/components/schemas/Fabric.Target"
         targets:
@@ -3878,7 +3901,7 @@ components:
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
         incompatible version, failed authentication, insufficient scope, invalid params, or the
-        gateway being at capacity — the frame carries `error` instead of `result`. (Ordinary
+        service being at capacity — the frame carries `error` instead of `result`. (Ordinary
         backend/application failures are reported the other way: a normal `result` whose own
         `code` is a non-`200` value, not a JSON-RPC `error`.)
     Fabric.MemberRemoveResult:
@@ -3897,7 +3920,7 @@ components:
         data:
           type: array
           items: {}
-          description: Present on partial failures — the per-member `user_errors` describing which members the operation could not be applied to and why.
+          description: "Present on partial failures: an array of per-member error entries describing which members the operation could not be applied to and why."
       required:
         - code
     Fabric.MemberPositionSetRequest:
@@ -3930,7 +3953,7 @@ components:
       type: object
       properties:
         self:
-          description: The call leg making the request — your own first leg on your call stack.
+          description: The call leg you're operating from — your own leg on this call.
           allOf:
             - $ref: "#/components/schemas/Fabric.Target"
         targets:
@@ -3984,7 +4007,7 @@ components:
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
         incompatible version, failed authentication, insufficient scope, invalid params, or the
-        gateway being at capacity — the frame carries `error` instead of `result`. (Ordinary
+        service being at capacity — the frame carries `error` instead of `result`. (Ordinary
         backend/application failures are reported the other way: a normal `result` whose own
         `code` is a non-`200` value, not a JSON-RPC `error`.)
     Fabric.MemberPositionSetResult:
@@ -4003,7 +4026,7 @@ components:
         data:
           type: array
           items: {}
-          description: Present on partial failures — the per-member `user_errors` describing which members the operation could not be applied to and why.
+          description: "Present on partial failures: an array of per-member error entries describing which members the operation could not be applied to and why."
       required:
         - code
     Fabric.MicrophoneVolumeSetRequest:
@@ -4036,7 +4059,7 @@ components:
       type: object
       properties:
         self:
-          description: The call leg making the request — your own first leg on your call stack.
+          description: The call leg you're operating from — your own leg on this call.
           allOf:
             - $ref: "#/components/schemas/Fabric.Target"
         target:
@@ -4080,7 +4103,7 @@ components:
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
         incompatible version, failed authentication, insufficient scope, invalid params, or the
-        gateway being at capacity — the frame carries `error` instead of `result`. (Ordinary
+        service being at capacity — the frame carries `error` instead of `result`. (Ordinary
         backend/application failures are reported the other way: a normal `result` whose own
         `code` is a non-`200` value, not a JSON-RPC `error`.)
     Fabric.MicrophoneVolumeSetResult:
@@ -4099,7 +4122,7 @@ components:
         data:
           type: array
           items: {}
-          description: Present on partial failures — the per-member `user_errors` describing which members the operation could not be applied to and why.
+          description: "Present on partial failures: an array of per-member error entries describing which members the operation could not be applied to and why."
       required:
         - code
     Fabric.MicrophoneSensitivitySetRequest:
@@ -4132,7 +4155,7 @@ components:
       type: object
       properties:
         self:
-          description: The call leg making the request — your own first leg on your call stack.
+          description: The call leg you're operating from — your own leg on this call.
           allOf:
             - $ref: "#/components/schemas/Fabric.Target"
         target:
@@ -4176,7 +4199,7 @@ components:
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
         incompatible version, failed authentication, insufficient scope, invalid params, or the
-        gateway being at capacity — the frame carries `error` instead of `result`. (Ordinary
+        service being at capacity — the frame carries `error` instead of `result`. (Ordinary
         backend/application failures are reported the other way: a normal `result` whose own
         `code` is a non-`200` value, not a JSON-RPC `error`.)
     Fabric.MicrophoneSensitivitySetResult:
@@ -4195,7 +4218,7 @@ components:
         data:
           type: array
           items: {}
-          description: Present on partial failures — the per-member `user_errors` describing which members the operation could not be applied to and why.
+          description: "Present on partial failures: an array of per-member error entries describing which members the operation could not be applied to and why."
       required:
         - code
     Fabric.SpeakerVolumeSetRequest:
@@ -4228,7 +4251,7 @@ components:
       type: object
       properties:
         self:
-          description: The call leg making the request — your own first leg on your call stack.
+          description: The call leg you're operating from — your own leg on this call.
           allOf:
             - $ref: "#/components/schemas/Fabric.Target"
         target:
@@ -4272,7 +4295,7 @@ components:
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
         incompatible version, failed authentication, insufficient scope, invalid params, or the
-        gateway being at capacity — the frame carries `error` instead of `result`. (Ordinary
+        service being at capacity — the frame carries `error` instead of `result`. (Ordinary
         backend/application failures are reported the other way: a normal `result` whose own
         `code` is a non-`200` value, not a JSON-RPC `error`.)
     Fabric.SpeakerVolumeSetResult:
@@ -4291,7 +4314,7 @@ components:
         data:
           type: array
           items: {}
-          description: Present on partial failures — the per-member `user_errors` describing which members the operation could not be applied to and why.
+          description: "Present on partial failures: an array of per-member error entries describing which members the operation could not be applied to and why."
       required:
         - code
     Fabric.DigitSendRequest:
@@ -4324,7 +4347,7 @@ components:
       type: object
       properties:
         self:
-          description: The call leg sending the digits — your own first leg on your call stack.
+          description: The call leg sending the digits — your own leg on this call.
           allOf:
             - $ref: "#/components/schemas/Fabric.Target"
         digits:
@@ -4362,7 +4385,7 @@ components:
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
         incompatible version, failed authentication, insufficient scope, invalid params, or the
-        gateway being at capacity — the frame carries `error` instead of `result`. (Ordinary
+        service being at capacity — the frame carries `error` instead of `result`. (Ordinary
         backend/application failures are reported the other way: a normal `result` whose own
         `code` is a non-`200` value, not a JSON-RPC `error`.)
     Fabric.DigitSendResult:
@@ -4381,7 +4404,7 @@ components:
         data:
           type: array
           items: {}
-          description: Present on partial failures — the per-member `user_errors` describing which members the operation could not be applied to and why.
+          description: "Present on partial failures: an array of per-member error entries describing which members the operation could not be applied to and why."
       required:
         - code
     Fabric.VmutedHideSetRequest:
@@ -4414,7 +4437,7 @@ components:
       type: object
       properties:
         self:
-          description: The call leg making the request — your own first leg on your call stack.
+          description: The call leg you're operating from — your own leg on this call.
           allOf:
             - $ref: "#/components/schemas/Fabric.Target"
         target:
@@ -4457,7 +4480,7 @@ components:
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
         incompatible version, failed authentication, insufficient scope, invalid params, or the
-        gateway being at capacity — the frame carries `error` instead of `result`. (Ordinary
+        service being at capacity — the frame carries `error` instead of `result`. (Ordinary
         backend/application failures are reported the other way: a normal `result` whose own
         `code` is a non-`200` value, not a JSON-RPC `error`.)
     Fabric.VmutedHideSetResult:
@@ -4476,7 +4499,7 @@ components:
         data:
           type: array
           items: {}
-          description: Present on partial failures — the per-member `user_errors` describing which members the operation could not be applied to and why.
+          description: "Present on partial failures: an array of per-member error entries describing which members the operation could not be applied to and why."
       required:
         - code
     Fabric.LockRequest:
@@ -4509,7 +4532,7 @@ components:
       type: object
       properties:
         self:
-          description: The call leg making the request — your own first leg on your call stack.
+          description: The call leg you're operating from — your own leg on this call.
           allOf:
             - $ref: "#/components/schemas/Fabric.Target"
         target:
@@ -4546,7 +4569,7 @@ components:
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
         incompatible version, failed authentication, insufficient scope, invalid params, or the
-        gateway being at capacity — the frame carries `error` instead of `result`. (Ordinary
+        service being at capacity — the frame carries `error` instead of `result`. (Ordinary
         backend/application failures are reported the other way: a normal `result` whose own
         `code` is a non-`200` value, not a JSON-RPC `error`.)
     Fabric.LockResult:
@@ -4565,7 +4588,7 @@ components:
         data:
           type: array
           items: {}
-          description: Present on partial failures — the per-member `user_errors` describing which members the operation could not be applied to and why.
+          description: "Present on partial failures: an array of per-member error entries describing which members the operation could not be applied to and why."
       required:
         - code
     Fabric.UnlockRequest:
@@ -4598,7 +4621,7 @@ components:
       type: object
       properties:
         self:
-          description: The call leg making the request — your own first leg on your call stack.
+          description: The call leg you're operating from — your own leg on this call.
           allOf:
             - $ref: "#/components/schemas/Fabric.Target"
         target:
@@ -4635,7 +4658,7 @@ components:
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
         incompatible version, failed authentication, insufficient scope, invalid params, or the
-        gateway being at capacity — the frame carries `error` instead of `result`. (Ordinary
+        service being at capacity — the frame carries `error` instead of `result`. (Ordinary
         backend/application failures are reported the other way: a normal `result` whose own
         `code` is a non-`200` value, not a JSON-RPC `error`.)
     Fabric.UnlockResult:
@@ -4654,7 +4677,7 @@ components:
         data:
           type: array
           items: {}
-          description: Present on partial failures — the per-member `user_errors` describing which members the operation could not be applied to and why.
+          description: "Present on partial failures: an array of per-member error entries describing which members the operation could not be applied to and why."
       required:
         - code
     Fabric.LowbitrateSetRequest:
@@ -4687,7 +4710,7 @@ components:
       type: object
       properties:
         self:
-          description: The call leg making the request — your own first leg on your call stack.
+          description: The call leg you're operating from — your own leg on this call.
           allOf:
             - $ref: "#/components/schemas/Fabric.Target"
         target:
@@ -4730,7 +4753,7 @@ components:
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
         incompatible version, failed authentication, insufficient scope, invalid params, or the
-        gateway being at capacity — the frame carries `error` instead of `result`. (Ordinary
+        service being at capacity — the frame carries `error` instead of `result`. (Ordinary
         backend/application failures are reported the other way: a normal `result` whose own
         `code` is a non-`200` value, not a JSON-RPC `error`.)
     Fabric.LowbitrateSetResult:
@@ -4749,7 +4772,7 @@ components:
         data:
           type: array
           items: {}
-          description: Present on partial failures — the per-member `user_errors` describing which members the operation could not be applied to and why.
+          description: "Present on partial failures: an array of per-member error entries describing which members the operation could not be applied to and why."
       required:
         - code
     Fabric.DenoiseSetRequest:
@@ -4782,7 +4805,7 @@ components:
       type: object
       properties:
         self:
-          description: The call leg making the request — your own first leg on your call stack.
+          description: The call leg you're operating from — your own leg on this call.
           allOf:
             - $ref: "#/components/schemas/Fabric.Target"
         target:
@@ -4825,7 +4848,7 @@ components:
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
         incompatible version, failed authentication, insufficient scope, invalid params, or the
-        gateway being at capacity — the frame carries `error` instead of `result`. (Ordinary
+        service being at capacity — the frame carries `error` instead of `result`. (Ordinary
         backend/application failures are reported the other way: a normal `result` whose own
         `code` is a non-`200` value, not a JSON-RPC `error`.)
     Fabric.DenoiseSetResult:
@@ -4844,7 +4867,7 @@ components:
         data:
           type: array
           items: {}
-          description: Present on partial failures — the per-member `user_errors` describing which members the operation could not be applied to and why.
+          description: "Present on partial failures: an array of per-member error entries describing which members the operation could not be applied to and why."
       required:
         - code
     Fabric.AudioflagsSetRequest:
@@ -4877,7 +4900,7 @@ components:
       type: object
       properties:
         self:
-          description: The call leg making the request — your own first leg on your call stack.
+          description: The call leg you're operating from — your own leg on this call.
           allOf:
             - $ref: "#/components/schemas/Fabric.Target"
         target:
@@ -4929,7 +4952,7 @@ components:
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
         incompatible version, failed authentication, insufficient scope, invalid params, or the
-        gateway being at capacity — the frame carries `error` instead of `result`. (Ordinary
+        service being at capacity — the frame carries `error` instead of `result`. (Ordinary
         backend/application failures are reported the other way: a normal `result` whose own
         `code` is a non-`200` value, not a JSON-RPC `error`.)
     Fabric.AudioflagsSetResult:
@@ -4948,7 +4971,7 @@ components:
         data:
           type: array
           items: {}
-          description: Present on partial failures — the per-member `user_errors` describing which members the operation could not be applied to and why.
+          description: "Present on partial failures: an array of per-member error entries describing which members the operation could not be applied to and why."
       required:
         - code
     Fabric.SubscriberOnlineRequest:
@@ -5007,7 +5030,7 @@ components:
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
         incompatible version, failed authentication, insufficient scope, invalid params, or the
-        gateway being at capacity — the frame carries `error` instead of `result`. (Ordinary
+        service being at capacity — the frame carries `error` instead of `result`. (Ordinary
         backend/application failures are reported the other way: a normal `result` whose own
         `code` is a non-`200` value, not a JSON-RPC `error`.)
     Fabric.SubscriberOnlineResult:
@@ -5026,7 +5049,7 @@ components:
         data:
           type: array
           items: {}
-          description: Present on partial failures — the per-member `user_errors` describing which members the operation could not be applied to and why.
+          description: "Present on partial failures: an array of per-member error entries describing which members the operation could not be applied to and why."
       required:
         - code
     Fabric.SubscriberOfflineRequest:
@@ -5085,7 +5108,7 @@ components:
         A JSON-RPC response frame correlated to a request by `id`. On success the frame carries
         `result` (the method result). If the request fails at the protocol level — an
         incompatible version, failed authentication, insufficient scope, invalid params, or the
-        gateway being at capacity — the frame carries `error` instead of `result`. (Ordinary
+        service being at capacity — the frame carries `error` instead of `result`. (Ordinary
         backend/application failures are reported the other way: a normal `result` whose own
         `code` is a non-`200` value, not a JSON-RPC `error`.)
     Fabric.SubscriberOfflineResult:
@@ -5104,7 +5127,7 @@ components:
         data:
           type: array
           items: {}
-          description: Present on partial failures — the per-member `user_errors` describing which members the operation could not be applied to and why.
+          description: "Present on partial failures: an array of per-member error entries describing which members the operation could not be applied to and why."
       required:
         - code
     Fabric.CallStateEvent:
@@ -5213,19 +5236,19 @@ components:
         start_time:
           type: integer
           format: int64
-          description: When the call started, in epoch milliseconds.
+          description: When the call started, as a Unix timestamp in milliseconds.
           examples:
             - 1712345678123
         answer_time:
           type: integer
           format: int64
-          description: When the call was answered, in epoch milliseconds. Present once the call has been answered.
+          description: When the call was answered, as a Unix timestamp in milliseconds. Present once the call has been answered.
           examples:
             - 1712345680456
         end_time:
           type: integer
           format: int64
-          description: When the call ended, in epoch milliseconds. Present once the call has ended.
+          description: When the call ended, as a Unix timestamp in milliseconds. Present once the call has ended.
           examples:
             - 1712345695789
         end_reason:
@@ -5416,7 +5439,7 @@ components:
           description: The capabilities granted to you on this call — the operations you are permitted to perform.
         origin_call_id:
           type: string
-          description: The call ID this call originated from. Present when it resolves.
+          description: The call ID this call originated from. Present when this call has an originating call.
       required:
         - room_session
         - room_id
@@ -5477,8 +5500,8 @@ components:
         - layout_name
         - meta
       description: |-
-        The room-session summary embedded in `call.joined` and `call.left`. This is a leaner,
-        call-engine-built shape than the conference `RoomSession` on `room.updated`. On
+        The room-session summary embedded in `call.joined` and `call.left`. This is a leaner
+        shape than the conference `RoomSession` on `room.updated`. On
         `call.left` the collection fields (`members`/`recordings`/`streams`/`playbacks`) are
         absent entirely.
     Fabric.CallLeftEvent:
@@ -5568,7 +5591,7 @@ components:
           description: The node your call leg lived on.
         origin_call_id:
           type: string
-          description: The call ID this call originated from. Present when it resolves.
+          description: The call ID this call originated from. Present when this call has an originating call.
         reason:
           type: string
           description: Why you left the call, when a reason is supplied.
@@ -5663,7 +5686,7 @@ components:
           description: The node the member's call leg lives on.
         origin_call_id:
           type: string
-          description: The call ID this member originated from. Present when it resolves.
+          description: The call ID this member originated from. Present when this member has an originating call.
       required:
         - member
         - room_id
@@ -5751,7 +5774,7 @@ components:
           description: The node the member's call leg lived on.
         origin_call_id:
           type: string
-          description: The call ID this member originated from. Present when it resolves.
+          description: The call ID this member originated from. Present when this member has an originating call.
         reason:
           type: string
           description: Why the member left, when a reason is supplied.
@@ -6654,19 +6677,19 @@ components:
         start_time:
           type: number
           format: double
-          description: Unix timestamp for when the recording started, in seconds. Set once the state is `finished`.
+          description: When the recording started, as a Unix timestamp in seconds. Set once the state is `finished`.
           examples:
             - 1712345678.842
         first_frame_time:
           type: number
           format: double
-          description: Unix timestamp, in seconds, of the first captured audio. Present when available; more precise than `start_time`.
+          description: The first captured audio, as a Unix timestamp in seconds. Present when available; more precise than `start_time`.
           examples:
             - 1712345678.123
         end_time:
           type: number
           format: double
-          description: Unix timestamp for when the recording ended, in seconds. Set once the state is `finished`.
+          description: When the recording ended, as a Unix timestamp in seconds. Set once the state is `finished`.
           examples:
             - 1712345698.842
         pause_behavior:
@@ -8144,7 +8167,7 @@ components:
         started_at:
           type: number
           format: double
-          description: When the recording started, in epoch seconds.
+          description: When the recording started, as a Unix timestamp in seconds.
           examples:
             - 1712345678
         duration:
@@ -8156,7 +8179,7 @@ components:
         ended_at:
           type: number
           format: double
-          description: When the recording ended, in epoch seconds. Present once the recording has ended.
+          description: When the recording ended, as a Unix timestamp in seconds. Present once the recording has ended.
           examples:
             - 1712345720
       required:
@@ -8407,13 +8430,13 @@ components:
         started_at:
           type: number
           format: double
-          description: When the playback started, in epoch seconds.
+          description: When the playback started, as a Unix timestamp in seconds.
           examples:
             - 1712345678
         ended_at:
           type: number
           format: double
-          description: When the playback ended, in epoch seconds. Present once the playback has ended.
+          description: When the playback ended, as a Unix timestamp in seconds. Present once the playback has ended.
           examples:
             - 1712345720
       required:
@@ -8647,7 +8670,7 @@ components:
             - streaming
         url:
           type: string
-          description: The RTMP destination URL the room is being streamed to. Omitted when the backend does not report it on the event.
+          description: The RTMP destination URL the room is being streamed to. Omitted when it is not reported on the event.
           examples:
             - rtmp://example.com/live/streamkey
         duration:
@@ -8659,13 +8682,13 @@ components:
         started_at:
           type: number
           format: double
-          description: When the stream started, in epoch seconds.
+          description: When the stream started, as a Unix timestamp in seconds.
           examples:
             - 1712345678
         ended_at:
           type: number
           format: double
-          description: When the stream ended, in epoch seconds. Present once the stream has ended.
+          description: When the stream ended, as a Unix timestamp in seconds. Present once the stream has ended.
           examples:
             - 1712345720
       required:
@@ -8814,7 +8837,7 @@ components:
                   description: Identifier of the conversation group.
                 from_fabric_address_id:
                   type: string
-                  description: The Fabric address the message was sent from.
+                  description: The Resource address the message was sent from.
                 hidden:
                   type: boolean
                   description: Whether the message is hidden.
@@ -8913,7 +8936,7 @@ components:
                   description: Identifier of the conversation group.
                 from_fabric_address_id:
                   type: string
-                  description: The Fabric address the message was sent from.
+                  description: The Resource address the message was sent from.
                 hidden:
                   type: boolean
                   description: Whether the message is hidden.
@@ -8994,12 +9017,12 @@ components:
       properties:
         fabric_subscriber_id:
           type: string
-          description: The Fabric subscriber that joined the conversation.
+          description: The subscriber that joined the conversation.
           examples:
             - b1c2d3e4-f5a6-7b8c-9d0e-1f2a3b4c5d6e
         from_fabric_address_id:
           type: string
-          description: The Fabric address the subscriber joined from.
+          description: The Resource address the subscriber joined from.
           examples:
             - c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f
         group_id:
@@ -9153,7 +9176,7 @@ components:
         $ref: "#/components/schemas/WebRTC.VertoReply"
     messageEvent:
       name: MessageEvent
-      title: webrtc.message
+      title: Inbound Verto frame
       contentType: application/json
       payload:
         $ref: "#/components/schemas/WebRTC.MessageEvent"

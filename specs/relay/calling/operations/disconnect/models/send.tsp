@@ -10,7 +10,7 @@ namespace Relay.Calling;
 model DisconnectParams {
   ...CallAddress;
 
-  @doc("Opaque reason for the disconnect, forwarded downstream. Treated as a free-form string.")
+  @doc("Free-form label describing why you are disconnecting the legs. SignalWire records it but does not interpret it.")
   @example("agent_ended")
   reason?: string;
 }

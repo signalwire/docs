@@ -4,7 +4,7 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Provisioning;
 
-@doc("The connector type. Currently only `freeswitch` is supported.")
+@doc("The connector type. Currently only `freeswitch` is supported; additional connector types may be added in the future.")
 union ConnectorTarget {
   string,
 

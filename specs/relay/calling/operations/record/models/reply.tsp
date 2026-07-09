@@ -6,11 +6,11 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
-@summary("Recording download details")
+@summary("Record result")
 model RecordResult {
   ...RelayResult<"Recording">;
 
-  @doc("URL of the finished recording.")
+  @doc("URL of the recording, when available on the immediate result (the finished URL is normally delivered on the `calling.call.record` event).")
   @example("https://example.com/recordings/c2a1e9f4.mp3")
   url?: url;
 }

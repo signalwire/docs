@@ -10,12 +10,12 @@ namespace Relay.Calling;
 model PlayParams {
   ...CallAddress;
 
-  @doc("Identifier used to control this active play (pause/resume/stop/volume).")
+  @doc("Your own identifier for this play. Use it to pause, resume, stop, or change the volume, and it is echoed on the `calling.call.play` events so you can correlate them.")
   @example("d4b2e1a0-7c9f-4a3b-8e2d-1f0a9b8c7d6e")
   control_id: string;
 
   @doc("""
-    Playback volume, -40dB to +40dB (`0` = original audio, `-40` = muted).
+    Playback volume in dB, from `-40` (muted) to `+40`; `0` keeps the original audio level.
     """)
   @minValue(-40)
   @maxValue(40)
@@ -23,14 +23,14 @@ model PlayParams {
   volume?: float64;
 
   @doc("""
-    Which audio channel the media is played into: `listen` (the audio the remote
-    party hears), `speak` (the audio the remote party sends), or `both`. Default
-    `listen`.
+    Which side of the call's audio the media is injected into: `listen` (played to the
+    remote party, so they hear it), `speak` (mixed into the remote party's own audio
+    channel), or `both`. Default `listen`.
     """)
   @example("listen")
   direction?: "listen" | "speak" | "both" = "listen";
 
-  @doc("HTTP(s) URL that play status events are POSTed to.")
+  @doc("HTTPS URL that status events are POSTed to.")
   @example("https://example.com/webhooks/relay")
   status_url?: url;
 
@@ -90,7 +90,7 @@ model PlayVolumeParams {
   control_id: string;
 
   @doc("""
-    Playback volume, -40dB to +40dB (`0` = original audio, `-40` = muted).
+    Playback volume in dB, from `-40` (muted) to `+40`; `0` keeps the original audio level.
     """)
   @minValue(-40)
   @maxValue(40)

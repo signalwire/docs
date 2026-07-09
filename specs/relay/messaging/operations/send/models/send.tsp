@@ -6,7 +6,7 @@ namespace Relay.Messaging;
 
 @doc("The kind of WhatsApp message to send, for WhatsApp media and interactive messages.")
 union WhatsAppMessageType {
-  @doc("A WhatsApp text message.")
+  @doc("A WhatsApp message whose body is plain text (the text variant of a media message).")
   "whatsapp_media_text",
 
   @doc("A WhatsApp contacts card.")
@@ -117,6 +117,7 @@ model SendParams {
     parameter name for a named template, an array of values for a positional
     template, or a media/document URL string for a media header.
     """)
+  @example("https://example.com/header-image.png")
   header_template_parameters?: Record<unknown> | unknown[] | string;
 
   @doc("""
@@ -124,11 +125,13 @@ model SendParams {
     alongside `template_id`. An object keyed by parameter name for a named
     template, or an array of values for a positional template.
     """)
+  @example(#["Alex", "ORD-98765"])
   body_template_parameters?: Record<unknown> | unknown[] | string;
 
   @doc("""
     Values for your WhatsApp template's **button** variables, supplied alongside
     `template_id`. The shape follows the template's button definition.
     """)
+  @example(#["SUMMER25"])
   button_template_parameters?: Record<unknown> | unknown[] | string;
 }

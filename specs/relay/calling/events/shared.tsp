@@ -187,7 +187,7 @@ model CallStateParams {
   @doc("SIP addressing/header detail. Present only for SIP calls (`device.type == \"sip\"`).")
   sip_data?: CallSipData;
 
-  @doc("Inbound-audio Mean Opinion Score (voice quality, ~1.0-5.0). Present when RTP quality stats are available.")
+  @doc("Inbound-audio Mean Opinion Score (voice quality, ~1.0-5.0). Present when media (RTP) quality stats are available.")
   @example(4.4)
   audio_in_mos?: float64;
 }
@@ -228,10 +228,10 @@ model CallReceiveEvent
   is SignalwireEvent<typeof callingCallReceive, CallReceiveParams>;
 
 @doc("""
-  Payload of the `calling.error` event. This is an error-reporting escape hatch for the
-  AI runtime, so its shape is not fixed. Beyond the call address and the `error` /
-  `fatal` fields below, additional fields vary by the error source (webhook failures,
-  SWAIG tool errors, model fallbacks, speech/TTS errors, and so on).
+  Payload of the `calling.error` event. This is a general-purpose error report for the
+  AI features running on a call, so its shape is not fixed. Beyond the call address and
+  the `error` / `fatal` fields below, additional fields vary by the error source (webhook
+  failures, SWAIG tool errors, model fallbacks, speech/TTS errors, and so on).
   """)
 @summary("Call error event payload")
 model CallErrorParams {
@@ -252,9 +252,9 @@ model CallErrorParams {
 
 const callingError = "calling.error";
 @doc("""
-  Fires when the AI runtime on a call hits an error — from an AI agent (`calling.ai`),
-  `calling.amazon_bedrock`, or live transcription/translation. It reports problems such
-  as a failed SWAIG webhook, a model or tool error, or a speech-engine failure. The
+  Fires when an error occurs in the AI features running on a call (`calling.ai`,
+  `calling.amazon_bedrock`, or live transcription/translation). It reports problems such
+  as a failed SWAIG webhook, a model or tool error, or a speech-processing failure. The
   payload always identifies the call; `error` and `fatal` describe the problem, and
   additional fields vary by the error source.
   """)
@@ -265,7 +265,7 @@ model CallErrorEvent is SignalwireEvent<typeof callingError, CallErrorParams>;
 @doc("""
   One turn in a conversation log. Shared by the summary and conversation-log events of
   `calling.live_transcribe` and `calling.live_translate`. This is a slimmer record than a
-  per-utterance result — it carries the turn's text and speaker, not the low-level ASR metadata.
+  per-utterance result — it carries the turn's text and speaker, not the low-level speech-recognition metadata.
   """)
 @summary("Conversation log entry")
 model ConversationLogEntry {
@@ -394,9 +394,9 @@ model AiChannelData {
   @doc("The caller's number.")
   caller_id_number?: string;
 
-  @doc("SWML variables set on the call.")
+  @doc("Custom variables set on the call during its SWML execution, as name/value pairs.")
   SWMLVars?: Record<unknown>;
 
-  @doc("The SWML call object for this call.")
+  @doc("The SWML `call` object for this call — the call metadata (direction, from/to, headers, timing) available to your SWML document. See the SWML reference for its fields.")
   SWMLCall?: Record<unknown>;
 }

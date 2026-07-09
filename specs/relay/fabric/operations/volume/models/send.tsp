@@ -8,7 +8,7 @@ namespace Relay.Fabric;
 @doc("Parameters for `call.microphone.volume.set`.")
 @summary("Microphone volume parameters")
 model MicrophoneVolumeSetParams {
-  @doc("The call leg making the request — your own first leg on your call stack.")
+  @doc("The call leg you're operating from — your own leg on this call.")
   self: Target;
 
   @doc("The member whose microphone volume to set — required. Set `target` equal to `self` to act on yourself, or to another member's `{node_id, call_id, member_id}` to act on them.")
@@ -22,7 +22,7 @@ model MicrophoneVolumeSetParams {
 @doc("Parameters for `call.microphone.sensitivity.set`.")
 @summary("Microphone sensitivity parameters")
 model MicrophoneSensitivitySetParams {
-  @doc("The call leg making the request — your own first leg on your call stack.")
+  @doc("The call leg you're operating from — your own leg on this call.")
   self: Target;
 
   @doc("The member whose microphone sensitivity to set — required. Set `target` equal to `self` to act on yourself, or to another member's `{node_id, call_id, member_id}` to act on them.")
@@ -36,7 +36,7 @@ model MicrophoneSensitivitySetParams {
 @doc("Parameters for `call.speaker.volume.set`.")
 @summary("Speaker volume parameters")
 model SpeakerVolumeSetParams {
-  @doc("The call leg making the request — your own first leg on your call stack.")
+  @doc("The call leg you're operating from — your own leg on this call.")
   self: Target;
 
   @doc("The member whose speaker volume to set — required. Set `target` equal to `self` to act on yourself, or to another member's `{node_id, call_id, member_id}` to act on them.")

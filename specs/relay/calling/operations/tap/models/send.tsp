@@ -6,10 +6,7 @@ using SignalWire.AsyncAPI;
 
 namespace Relay.Calling;
 
-@doc("""
-  Which side of the call to tap. `listen` = what the remote party hears; `speak`
-  = what the remote party says; `both` = both sides.
-  """)
+@doc("Which side of the tapped party's audio to capture: `listen` = the audio the tapped party hears; `speak` = the audio the tapped party says (the default); `both` = both directions.")
 union TapDirection {
   "listen",
   "speak",

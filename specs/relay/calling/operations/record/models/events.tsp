@@ -18,10 +18,10 @@ union CallRecordState {
 
 @doc("Which side of the conversation was recorded.")
 union RecordEventDirection {
-  @doc("Only what the party hears.")
+  @doc("Only what the remote party hears.")
   "listen",
 
-  @doc("Only what the party says.")
+  @doc("Only what the remote party says.")
   "speak",
 
   @doc("Both sides of the conversation.")

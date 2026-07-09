@@ -61,7 +61,7 @@ model LiveTranscribeStart {
   @example(#["remote-caller"])
   direction: TranscribeDirection[];
 
-  @doc("An `http` or `https` URL to receive the transcription as it is produced.")
+  @doc("An `http` or `https` URL that receives the transcription results as they are produced. When unset, results are delivered over the Relay connection.")
   @example("https://example.com/webhooks/relay")
   webhook?: url;
 
@@ -90,7 +90,7 @@ model LiveTranscribeStart {
   @example(500)
   vad_silence_ms?: int32;
 
-  @doc("Voice-activity-detection threshold (0-1800). Default `400`.")
+  @doc("Voice-activity-detection energy threshold (0–1800; default `400`). It sets the audio-energy floor for detecting speech: higher values are less sensitive (they require louder input); lower values are more sensitive.")
   @minValue(0)
   @maxValue(1800)
   @example(400)
@@ -124,7 +124,7 @@ model LiveTranslateStart {
   @example(#["remote-caller"])
   direction: TranslateDirection[];
 
-  @doc("An `http` or `https` URL to receive the translation as it is produced.")
+  @doc("An `http` or `https` URL that receives the translation results as they are produced. When unset, results are delivered over the Relay connection.")
   @example("https://example.com/webhooks/relay")
   webhook?: url;
 
@@ -175,7 +175,7 @@ model LiveTranslateStart {
   @example(500)
   vad_silence_ms?: int32;
 
-  @doc("Voice-activity-detection threshold (0-1800). Default `400`.")
+  @doc("Voice-activity-detection energy threshold (0–1800; default `400`). It sets the audio-energy floor for detecting speech: higher values are less sensitive (they require louder input); lower values are more sensitive.")
   @minValue(0)
   @maxValue(1800)
   @example(400)

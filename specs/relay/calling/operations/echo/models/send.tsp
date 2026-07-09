@@ -10,7 +10,8 @@ model EchoParams {
   ...CallAddress;
 
   @doc("How long to keep echoing, in seconds. Effective range 5–120; values outside this range are clamped. Default 60.")
-  @minValue(0)
+  @minValue(5)
+  @maxValue(120)
   @example(30)
   timeout?: float64;
 

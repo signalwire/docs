@@ -78,15 +78,15 @@ model CallStateParams {
   @example("outbound")
   direction: string;
 
-  @doc("When the call started, in epoch milliseconds.")
+  @doc("When the call started, as a Unix timestamp in milliseconds.")
   @example(1712345678123)
   start_time?: int64;
 
-  @doc("When the call was answered, in epoch milliseconds. Present once the call has been answered.")
+  @doc("When the call was answered, as a Unix timestamp in milliseconds. Present once the call has been answered.")
   @example(1712345680456)
   answer_time?: int64;
 
-  @doc("When the call ended, in epoch milliseconds. Present once the call has ended.")
+  @doc("When the call ended, as a Unix timestamp in milliseconds. Present once the call has ended.")
   @example(1712345695789)
   end_time?: int64;
 
@@ -151,7 +151,7 @@ model CallJoinedParams {
   @doc("The capabilities granted to you on this call — the operations you are permitted to perform.")
   capabilities: string[];
 
-  @doc("The call ID this call originated from. Present when it resolves.")
+  @doc("The call ID this call originated from. Present when this call has an originating call.")
   origin_call_id?: string;
 }
 
@@ -183,7 +183,7 @@ model CallLeftParams {
   @doc("The node your call leg lived on.")
   node_id: string;
 
-  @doc("The call ID this call originated from. Present when it resolves.")
+  @doc("The call ID this call originated from. Present when this call has an originating call.")
   origin_call_id?: string;
 
   @doc("Why you left the call, when a reason is supplied.")
@@ -212,7 +212,7 @@ model MemberJoinedParams {
   @doc("The node the member's call leg lives on.")
   node_id: string;
 
-  @doc("The call ID this member originated from. Present when it resolves.")
+  @doc("The call ID this member originated from. Present when this member has an originating call.")
   origin_call_id?: string;
 }
 
@@ -238,7 +238,7 @@ model MemberLeftParams {
   @doc("The node the member's call leg lived on.")
   node_id: string;
 
-  @doc("The call ID this member originated from. Present when it resolves.")
+  @doc("The call ID this member originated from. Present when this member has an originating call.")
   origin_call_id?: string;
 
   @doc("Why the member left, when a reason is supplied.")
@@ -532,15 +532,15 @@ model CallRecordParams {
   @example(123456788)
   size?: int32;
 
-  @doc("Unix timestamp for when the recording started, in seconds. Set once the state is `finished`.")
+  @doc("When the recording started, as a Unix timestamp in seconds. Set once the state is `finished`.")
   @example(1712345678.842)
   start_time?: float64;
 
-  @doc("Unix timestamp, in seconds, of the first captured audio. Present when available; more precise than `start_time`.")
+  @doc("The first captured audio, as a Unix timestamp in seconds. Present when available; more precise than `start_time`.")
   @example(1712345678.123)
   first_frame_time?: float64;
 
-  @doc("Unix timestamp for when the recording ended, in seconds. Set once the state is `finished`.")
+  @doc("When the recording ended, as a Unix timestamp in seconds. Set once the state is `finished`.")
   @example(1712345698.842)
   end_time?: float64;
 
@@ -1217,8 +1217,8 @@ model ConversationAuthorFlag {
   The merged payload of a `conversation.message` / `conversation.message.updated` event.
   The server merges the sender's message with the conversation's stream metadata into a
   single open object, so additional keys may be present. The fields below are the stable
-  ones the Call Fabric browser SDK surfaces; all are optional because the backend forwards
-  whatever the sender and metadata supply.
+  ones the Call Fabric browser SDK surfaces; all are optional because additional keys may
+  be merged in from the sender and stream metadata.
   """)
 @summary("Conversation message payload")
 model ConversationMessagePayload {
@@ -1255,7 +1255,7 @@ model ConversationMessagePayload {
   @doc("Identifier of the conversation group.")
   group_id?: string;
 
-  @doc("The Fabric address the message was sent from.")
+  @doc("The Resource address the message was sent from.")
   from_fabric_address_id?: string;
 
   @doc("Whether the message is hidden.")
@@ -1309,11 +1309,11 @@ model ConversationBroadcastEvent
 @doc("Payload of the `conversation.joined` event: the subscriber and conversation joined.")
 @summary("Call Fabric conversation joined payload")
 model ConversationJoinedParams {
-  @doc("The Fabric subscriber that joined the conversation.")
+  @doc("The subscriber that joined the conversation.")
   @example("b1c2d3e4-f5a6-7b8c-9d0e-1f2a3b4c5d6e")
   fabric_subscriber_id: string;
 
-  @doc("The Fabric address the subscriber joined from.")
+  @doc("The Resource address the subscriber joined from.")
   @example("c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f")
   from_fabric_address_id: string;
 

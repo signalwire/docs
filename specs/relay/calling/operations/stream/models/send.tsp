@@ -33,9 +33,9 @@ model StreamParams {
   codec?: string;
 
   @doc("""
-    Which audio track to stream. `inbound_track` (what the caller says),
-    `outbound_track` (what the caller hears), or `both_tracks`. Default
-    `inbound_track`.
+    Which audio track to stream. `inbound_track` (the audio the party on the
+    call says), `outbound_track` (the audio the party on the call hears), or
+    `both_tracks`. Default `inbound_track`.
     """)
   @example("inbound_track")
   track?: StreamTrack = "inbound_track";
