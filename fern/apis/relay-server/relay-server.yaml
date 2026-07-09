@@ -1,29 +1,23 @@
 asyncapi: 3.0.0
 info:
-  title: SignalWire Relay
+  title: SignalWire Relay — Server
   version: 1.0.0
   description: |-
-    SignalWire Relay gives you a single WebSocket connection to
-    `relay.signalwire.com`. Open it with `signalwire.connect`, then use any service —
-    calling, messaging, tasking, provisioning, and webrtc — over that one connection.
-    Each service is grouped as its own channel.
+    SignalWire Relay gives your backend a single WebSocket connection to
+    `relay.signalwire.com`. Open it with `signalwire.connect`, then control calls, send
+    messages, run AI agents, and handle tasks over that one connection — `calling`,
+    `messaging`, `tasking`, and `provisioning` are each grouped as their own channel.
 
     ## Authentication
 
     You authenticate with your **first message**, not the WebSocket handshake — there is
     no HTTP `Authorization` header. Once the socket opens, send `signalwire.connect` with
-    your credentials in `params.authentication`. You choose one of two styles, once, for
-    the whole connection:
+    your **`project` + `token`** in `params.authentication`. What you can then *do* over
+    the connection is governed by the scopes granted to your credentials. Every later
+    request reuses the authenticated connection.
 
-    - **`jwt_token`** — a server-generated token, for browser and client SDKs (never
-    expose a project API token in the browser).
-    - **`project` + `token`** — your Project ID and API token, for backend SDKs that hold
-    your SignalWire credentials directly.
-
-    Either style opens the same connection; what you can then *do* over it is governed by
-    the scopes granted to your credentials, not by which style you used. Every later
-    request reuses the authenticated connection, and a `signalwire.authorization.state`
-    event comes back that lets you reconnect quickly.
+    Building a browser or mobile client instead? See the **Client** reference for the
+    Call Fabric (`call.*`, `subscriber.*`) and WebRTC (`webrtc.*`) surface.
 defaultContentType: application/json
 servers:
   production:
@@ -69,6 +63,22 @@ channels:
       disconnectEvent:
         $ref: "#/components/messages/disconnectEvent"
     x-fern-display-name: signalwire.disconnect
+    bindings:
+      ws: {}
+  signalwire.ping:
+    address: /
+    title: signalwire.ping
+    description: Keep the connection alive with a ping
+    servers:
+      - $ref: "#/servers/production"
+    messages:
+      signalwirePingRequest:
+        $ref: "#/components/messages/signalwirePingRequest"
+      signalwirePingResponse:
+        $ref: "#/components/messages/signalwirePingResponse"
+      serverPingRequest:
+        $ref: "#/components/messages/serverPingRequest"
+    x-fern-display-name: signalwire.ping
     bindings:
       ws: {}
   signalwire.receive:
@@ -1095,6 +1105,18 @@ channels:
     x-fern-display-name: calling.call.state
     bindings:
       ws: {}
+  calling.error:
+    address: /
+    title: calling.error
+    description: Receive AI-runtime errors on a call
+    servers:
+      - $ref: "#/servers/production"
+    messages:
+      callErrorEvent:
+        $ref: "#/components/messages/callErrorEvent"
+    x-fern-display-name: calling.error
+    bindings:
+      ws: {}
   messaging.send:
     address: /
     title: messaging.send
@@ -1149,32 +1171,6 @@ channels:
     x-fern-display-name: provisioning.configure
     bindings:
       ws: {}
-  webrtc.verto:
-    address: /
-    title: webrtc.verto
-    description: Send a Verto frame
-    servers:
-      - $ref: "#/servers/production"
-    messages:
-      webrtcVertoRequest:
-        $ref: "#/components/messages/webrtcVertoRequest"
-      webrtcVertoResponse:
-        $ref: "#/components/messages/webrtcVertoResponse"
-    x-fern-display-name: webrtc.verto
-    bindings:
-      ws: {}
-  webrtc.message:
-    address: /
-    title: webrtc.message
-    description: Receive inbound Verto frames
-    servers:
-      - $ref: "#/servers/production"
-    messages:
-      messageEvent:
-        $ref: "#/components/messages/messageEvent"
-    x-fern-display-name: webrtc.message
-    bindings:
-      ws: {}
 operations:
   signalwireConnect:
     action: send
@@ -1214,6 +1210,36 @@ operations:
     messages:
       - $ref: "#/channels/signalwire.disconnect/messages/disconnectEvent"
     x-fern-display-name: signalwire.disconnect
+  signalwirePing:
+    action: send
+    channel:
+      $ref: "#/channels/signalwire.ping"
+    title: signalwire.ping
+    summary: Keep the connection alive with a ping
+    messages:
+      - $ref: "#/channels/signalwire.ping/messages/signalwirePingRequest"
+    reply:
+      channel:
+        $ref: "#/channels/signalwire.ping"
+      messages:
+        - $ref: "#/channels/signalwire.ping/messages/signalwirePingResponse"
+    x-fern-display-name: signalwire.ping
+  onSignalwirePingServerPingRequest:
+    action: receive
+    channel:
+      $ref: "#/channels/signalwire.ping"
+    title: Service keepalive ping
+    messages:
+      - $ref: "#/channels/signalwire.ping/messages/serverPingRequest"
+    x-fern-display-name: signalwire.ping
+  onSignalwirePingResponse:
+    action: receive
+    channel:
+      $ref: "#/channels/signalwire.ping"
+    title: signalwire.ping response
+    messages:
+      - $ref: "#/channels/signalwire.ping/messages/signalwirePingResponse"
+    x-fern-display-name: signalwire.ping response
   signalwireReceive:
     action: send
     channel:
@@ -3020,6 +3046,14 @@ operations:
     messages:
       - $ref: "#/channels/calling.call.state/messages/callStateEvent"
     x-fern-display-name: calling.call.state
+  onCallingErrorCallErrorEvent:
+    action: receive
+    channel:
+      $ref: "#/channels/calling.error"
+    title: calling.error
+    messages:
+      - $ref: "#/channels/calling.error/messages/callErrorEvent"
+    x-fern-display-name: calling.error
   messagingSend:
     action: send
     channel:
@@ -3088,36 +3122,6 @@ operations:
     messages:
       - $ref: "#/channels/provisioning.configure/messages/provisioningConfigureResponse"
     x-fern-display-name: provisioning.configure response
-  webrtcVerto:
-    action: send
-    channel:
-      $ref: "#/channels/webrtc.verto"
-    title: webrtc.verto
-    summary: Send a Verto frame
-    messages:
-      - $ref: "#/channels/webrtc.verto/messages/webrtcVertoRequest"
-    reply:
-      channel:
-        $ref: "#/channels/webrtc.verto"
-      messages:
-        - $ref: "#/channels/webrtc.verto/messages/webrtcVertoResponse"
-    x-fern-display-name: webrtc.verto
-  onWebrtcVertoResponse:
-    action: receive
-    channel:
-      $ref: "#/channels/webrtc.verto"
-    title: webrtc.verto response
-    messages:
-      - $ref: "#/channels/webrtc.verto/messages/webrtcVertoResponse"
-    x-fern-display-name: webrtc.verto response
-  onWebrtcMessageMessageEvent:
-    action: receive
-    channel:
-      $ref: "#/channels/webrtc.message"
-    title: webrtc.message
-    messages:
-      - $ref: "#/channels/webrtc.message/messages/messageEvent"
-    x-fern-display-name: webrtc.message
 components:
   schemas:
     Signalwire.ConnectRequest:
@@ -3470,10 +3474,121 @@ components:
       properties:
         restart:
           type: boolean
-          description: When `true`, you should open a fresh connection after disconnecting.
+          description: Whether you should open a fresh connection after disconnecting. Always present.
           examples:
             - true
+      required:
+        - restart
       description: The parameters delivered with the `signalwire.disconnect` request the service sends you.
+    Signalwire.PingRequest:
+      type: object
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - "2.0"
+          description: JSON-RPC version. Always `2.0`.
+        id:
+          type: string
+          description: Request id, echoed on the correlated response.
+        method:
+          type: string
+          enum:
+            - signalwire.ping
+          description: The name of the JSON-RPC method being invoked.
+        params:
+          description: The method's input parameters.
+          allOf:
+            - $ref: "#/components/schemas/Signalwire.PingParams"
+      required:
+        - jsonrpc
+        - id
+        - method
+        - params
+      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
+    Signalwire.PingParams:
+      type: object
+      properties:
+        timestamp:
+          type: number
+          format: double
+          description: When the ping was sent, as a Unix timestamp in seconds. Echoed back unchanged in the reply.
+          examples:
+            - 1712345678.842
+        payload:
+          type: string
+          description: An opaque value echoed back unchanged in the reply. Use it to correlate a ping with its response.
+          examples:
+            - b1c2d3e4-f5a6-7b8c-9d0e-1f2a3b4c5d6e
+      description: |-
+        The parameters carried by a `signalwire.ping`, in either direction. Both fields
+        are optional and are echoed back unchanged in the reply, so you can use them to
+        measure round-trip latency or correlate a ping with its response.
+    Signalwire.PingReply:
+      type: object
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - "2.0"
+          description: JSON-RPC version. Always `2.0`.
+        id:
+          type: string
+          description: The id of the request this responds to.
+        result:
+          description: The method result.
+          allOf:
+            - $ref: "#/components/schemas/Signalwire.PingResult"
+      required:
+        - jsonrpc
+        - id
+        - result
+      description: A JSON-RPC response frame correlated to a request by `id`. `Result` is the method result.
+    Signalwire.PingResult:
+      type: object
+      properties:
+        timestamp:
+          type: number
+          format: double
+          description: The `timestamp` from the ping, echoed back unchanged.
+          examples:
+            - 1712345678.842
+        payload:
+          type: string
+          description: The `payload` from the ping, echoed back unchanged.
+          examples:
+            - b1c2d3e4-f5a6-7b8c-9d0e-1f2a3b4c5d6e
+      description: "The result of a `signalwire.ping`: the `timestamp` and `payload` from the ping, echoed back unchanged."
+    Signalwire.ServerPingRequest:
+      type: object
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - "2.0"
+          description: JSON-RPC version. Always `2.0`.
+        id:
+          type: string
+          description: Request id, echoed on the correlated response.
+        method:
+          type: string
+          enum:
+            - signalwire.ping
+          description: The name of the JSON-RPC method being invoked.
+        params:
+          description: The method's input parameters.
+          allOf:
+            - $ref: "#/components/schemas/Signalwire.PingParams"
+      required:
+        - jsonrpc
+        - id
+        - method
+        - params
+      description: |-
+        A keepalive `signalwire.ping` the service pushes to you. Reply with a
+        `signalwire.ping` result, echoing back the `timestamp` and `payload` you
+        received. If you do not answer, the service closes your connection. SDKs answer
+        this for you; a direct Relay client must handle it itself.
     Signalwire.ReceiveRequest:
       type: object
       properties:
@@ -4116,7 +4231,7 @@ components:
           examples:
             - answered
         call:
-          description: The call that answered, as a full call-state payload (the same shape as a `calling.call.state` event). Present only when `dial_state` is `answered`; the winning leg is marked by `dial_winner`.
+          description: The call that answered, as a call-state payload — largely the same shape as a `calling.call.state` event, but without the `start_time`/`answer_time`/`end_time`/`audio_in_mos` fields that only the state event itself adds. Present only when `dial_state` is `answered`; the winning leg is marked by `dial_winner`.
           allOf:
             - $ref: "#/components/schemas/Calling.CallStateParams"
         reason:
@@ -4230,6 +4345,7 @@ components:
         - node_id
         - call_id
         - call_state
+        - direction
       description: "Payload of the `calling.call.state` event: the call's address, state, timing, and leg detail."
     Calling.CallDevice:
       type: object
@@ -5340,7 +5456,7 @@ components:
           type: string
           description: Why the connect failed. Present when `connect_state` is `failed`.
           examples:
-            - NO_ANSWER
+            - noAnswer
       required:
         - node_id
         - call_id
@@ -5890,11 +6006,12 @@ components:
                     - "1234"
                 terminator:
                   type: string
-                  description: The digit that ended collection, if the caller pressed your terminator key.
+                  description: The digit that ended collection. Set to your terminator key when the caller pressed it, empty otherwise.
                   examples:
                     - "#"
               required:
                 - digits
+                - terminator
           required:
             - type
             - params
@@ -5918,11 +6035,12 @@ components:
                 confidence:
                   type: number
                   format: double
-                  description: How confident the recognizer is in the result (for example `83.2`).
+                  description: How confident the recognizer is in the result (for example `83.2`). `0` when not scored.
                   examples:
                     - 83.2
               required:
                 - text
+                - confidence
           required:
             - type
             - params
@@ -6891,25 +7009,35 @@ components:
         dequeue_ts:
           type: number
           format: double
-          description: The time, as a Unix timestamp in seconds, when the call was pulled from the queue.
+          description: The time, as a Unix timestamp in seconds, when the call was pulled from the queue. `0` until the call is dequeued.
           examples:
             - 1712345723.456
         leave_ts:
           type: number
           format: double
-          description: The time, as a Unix timestamp in seconds, when the call left the queue.
+          description: The time, as a Unix timestamp in seconds, when the call left the queue. `0` until the call leaves.
           examples:
             - 1712345730.789
         status_url:
           type: string
           format: uri
-          description: The status callback URL, echoed back from `calling.queue.enter` when one was set.
+          description: The status callback URL, echoed back from `calling.queue.enter`. Empty when none was set.
           examples:
             - https://example.com/webhooks/relay
       required:
         - node_id
         - call_id
         - control_id
+        - status
+        - id
+        - name
+        - position
+        - size
+        - avg_time
+        - enqueue_ts
+        - dequeue_ts
+        - leave_ts
+        - status_url
     Calling.CallQueueStatus:
       oneOf:
         - type: string
@@ -10274,23 +10402,22 @@ components:
                     - $ref: "#/components/schemas/Calling.FaxDirection"
                 identity:
                   type: string
-                  description: Your side's fax identity, typically an E.164 phone number.
+                  description: Your side's fax identity, typically an E.164 phone number. Empty when unavailable.
                   examples:
                     - "+15551230001"
                 remote_identity:
                   type: string
-                  description: The other party's fax identity, typically an E.164 phone number.
+                  description: The other party's fax identity, typically an E.164 phone number. Empty when unavailable.
                   examples:
                     - "+15551230002"
                 document:
                   type: string
-                  format: uri
-                  description: Link to the transmitted fax document.
+                  description: Link to the transmitted fax document. Empty when there is no document.
                   examples:
                     - https://example.com/my_doc_to_fax.pdf
                 format:
                   type: string
-                  description: Document format of the transmitted fax. Currently always `pdf`.
+                  description: Document format of the transmitted fax. Currently `pdf`; empty on a failed fax.
                 pages:
                   type: integer
                   format: int32
@@ -10310,11 +10437,19 @@ components:
                     - 0
                 result_text:
                   type: string
-                  description: Human-readable explanation of the fax result.
+                  description: Human-readable explanation of the fax result. Empty when there is nothing to report.
                   examples:
                     - OK
               required:
                 - direction
+                - identity
+                - remote_identity
+                - document
+                - format
+                - pages
+                - success
+                - result
+                - result_text
           required:
             - type
             - params
@@ -13810,6 +13945,26 @@ components:
     Calling.TranscribeUtteranceEventData:
       type: object
       properties:
+        node_id:
+          type: string
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
+          examples:
+            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+        call_id:
+          type: string
+          description: Unique identifier of the call.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        segment_id:
+          type: string
+          description: Identifier of the call segment this event belongs to, for correlating events within the same segment of a call.
+          examples:
+            - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
+        tag:
+          type: string
+          description: The `tag` you set when placing the call, echoed back so you can match the event to your request.
+          examples:
+            - my-tag-1
         confidence:
           type: number
           format: double
@@ -13820,8 +13975,20 @@ components:
           description: The recognized utterance.
           allOf:
             - $ref: "#/components/schemas/Calling.TranscribeUtterance"
+        call_info:
+          description: Call/session context for this delivery.
+          allOf:
+            - $ref: "#/components/schemas/Calling.AiCallInfo"
+        channel_data:
+          description: Extended call/channel context for this delivery.
+          allOf:
+            - $ref: "#/components/schemas/Calling.AiChannelData"
       required:
+        - node_id
+        - call_id
         - utterance
+        - call_info
+        - channel_data
       description: |-
         A live-transcription result delivered while the call is still in progress — one
         recognized utterance at a time. Streams to your `webhook` when you start
@@ -13855,6 +14022,79 @@ components:
         - content
         - lang
       description: A single transcribed utterance from a live-transcription session.
+    Calling.AiCallInfo:
+      type: object
+      properties:
+        project_id:
+          type: string
+          description: Your project ID.
+        space_id:
+          type: string
+          description: Your space ID.
+        content_type:
+          type: string
+          description: The content type of the delivery.
+        content_disposition:
+          type: string
+          description: The content disposition of the delivery.
+        conversation_type:
+          type: string
+          description: The kind of conversation this delivery describes.
+        call_id:
+          type: string
+          description: The call ID.
+      required:
+        - content_type
+        - content_disposition
+        - conversation_type
+        - call_id
+      description: |-
+        Call/session context attached to AI transcribe, translate, and sidecar webhook deliveries, as a
+        sibling of the documented event fields. Added on every delivery.
+    Calling.AiChannelData:
+      type: object
+      properties:
+        project_id:
+          type: string
+          description: Your project ID.
+        space_id:
+          type: string
+          description: Your space ID.
+        content_type:
+          type: string
+          description: The content type of the delivery.
+        content_disposition:
+          type: string
+          description: The content disposition of the delivery.
+        call_id:
+          type: string
+          description: The call ID.
+        call_start_date:
+          type: string
+          description: When the call started.
+        call_answer_date:
+          type: string
+          description: When the call was answered.
+        call_end_date:
+          type: string
+          description: When the call ended.
+        caller_id_name:
+          type: string
+          description: The caller's name.
+        caller_id_number:
+          type: string
+          description: The caller's number.
+        SWMLVars:
+          type: object
+          additionalProperties: {}
+          description: SWML variables set on the call.
+      required:
+        - content_type
+        - content_disposition
+        - call_id
+      description: |-
+        Extended call/channel context attached to AI transcribe and translate deliveries — a superset of
+        `AiCallInfo` with call timing and caller-ID detail.
     Calling.TranscribeLiveSummarizeEvent:
       type: object
       properties:
@@ -13917,6 +14157,26 @@ components:
     Calling.TranscribeLiveSummarizeEventData:
       type: object
       properties:
+        node_id:
+          type: string
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
+          examples:
+            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+        call_id:
+          type: string
+          description: Unique identifier of the call.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        segment_id:
+          type: string
+          description: Identifier of the call segment this event belongs to, for correlating events within the same segment of a call.
+          examples:
+            - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
+        tag:
+          type: string
+          description: The `tag` you set when placing the call, echoed back so you can match the event to your request.
+          examples:
+            - my-tag-1
         conversation_log:
           type: array
           items:
@@ -13927,9 +14187,21 @@ components:
           description: An AI-generated summary of the conversation so far.
           examples:
             - The caller asked to check their balance and confirmed their identity.
+        call_info:
+          description: Call/session context for this delivery.
+          allOf:
+            - $ref: "#/components/schemas/Calling.AiCallInfo"
+        channel_data:
+          description: Extended call/channel context for this delivery.
+          allOf:
+            - $ref: "#/components/schemas/Calling.AiChannelData"
       required:
+        - node_id
+        - call_id
         - conversation_log
         - conversation_summary
+        - call_info
+        - channel_data
       description: |-
         An on-demand summary of a `calling.live_transcribe` session so far, produced when you send
         the `summarize` action (or when an attached AI sidecar closes; see `calling.ai_sidecar`).
@@ -14036,6 +14308,26 @@ components:
     Calling.TranscribeConversationLogEventData:
       type: object
       properties:
+        node_id:
+          type: string
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
+          examples:
+            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+        call_id:
+          type: string
+          description: Unique identifier of the call.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        segment_id:
+          type: string
+          description: Identifier of the call segment this event belongs to, for correlating events within the same segment of a call.
+          examples:
+            - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
+        tag:
+          type: string
+          description: The `tag` you set when placing the call, echoed back so you can match the event to your request.
+          examples:
+            - my-tag-1
         conversation_log:
           type: array
           items:
@@ -14050,9 +14342,21 @@ components:
           description: Aggregate metrics for the session.
           allOf:
             - $ref: "#/components/schemas/Calling.TranscriptionMetrics"
+        call_info:
+          description: Call/session context for this delivery.
+          allOf:
+            - $ref: "#/components/schemas/Calling.AiCallInfo"
+        channel_data:
+          description: Extended call/channel context for this delivery.
+          allOf:
+            - $ref: "#/components/schemas/Calling.AiChannelData"
       required:
+        - node_id
+        - call_id
         - conversation_log
         - metrics
+        - call_info
+        - channel_data
       description: |-
         The full conversation log for a `calling.live_transcribe` session, delivered once when the
         session ends. Distinct from `calling.call.transcribe` (the event of the non-live
@@ -14457,6 +14761,26 @@ components:
     Calling.TranslateTranscriptDeltaEventData:
       type: object
       properties:
+        node_id:
+          type: string
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
+          examples:
+            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+        call_id:
+          type: string
+          description: Unique identifier of the call.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        segment_id:
+          type: string
+          description: Identifier of the call segment this event belongs to, for correlating events within the same segment of a call.
+          examples:
+            - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
+        tag:
+          type: string
+          description: The `tag` you set when placing the call, echoed back so you can match the event to your request.
+          examples:
+            - my-tag-1
         input_utterance:
           description: Present on source-language (input) fragments.
           allOf:
@@ -14465,6 +14789,19 @@ components:
           description: Present on translated (output) fragments.
           allOf:
             - $ref: "#/components/schemas/Calling.TranslateUtterance"
+        call_info:
+          description: Call/session context for this delivery.
+          allOf:
+            - $ref: "#/components/schemas/Calling.AiCallInfo"
+        channel_data:
+          description: Extended call/channel context for this delivery.
+          allOf:
+            - $ref: "#/components/schemas/Calling.AiChannelData"
+      required:
+        - node_id
+        - call_id
+        - call_info
+        - channel_data
       description: |-
         A live-translation delta delivered while the call is in progress. Carries the
         incremental source text (`input_utterance`) and/or the translated text
@@ -14550,6 +14887,26 @@ components:
     Calling.TranslateLiveSummaryEventData:
       type: object
       properties:
+        node_id:
+          type: string
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
+          examples:
+            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+        call_id:
+          type: string
+          description: Unique identifier of the call.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        segment_id:
+          type: string
+          description: Identifier of the call segment this event belongs to, for correlating events within the same segment of a call.
+          examples:
+            - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
+        tag:
+          type: string
+          description: The `tag` you set when placing the call, echoed back so you can match the event to your request.
+          examples:
+            - my-tag-1
         primary_conversation_summary:
           type: string
           description: "The source-language side: raw transcript text in realtime mode, or an AI-generated summary in on-demand `summarize` mode."
@@ -14566,6 +14923,19 @@ components:
           items:
             $ref: "#/components/schemas/Calling.ConversationLogEntry"
           description: The translated conversation, one entry per turn. Present only in on-demand `summarize` mode.
+        call_info:
+          description: Call/session context for this delivery.
+          allOf:
+            - $ref: "#/components/schemas/Calling.AiCallInfo"
+        channel_data:
+          description: Extended call/channel context for this delivery.
+          allOf:
+            - $ref: "#/components/schemas/Calling.AiChannelData"
+      required:
+        - node_id
+        - call_id
+        - call_info
+        - channel_data
       description: |-
         A summary of a `calling.live_translate` session, covering both the source-language (`primary`)
         and translated (`secondary`) sides. This event carries two shapes depending on how it was
@@ -14634,6 +15004,26 @@ components:
     Calling.TranslateConversationLogEventData:
       type: object
       properties:
+        node_id:
+          type: string
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
+          examples:
+            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+        call_id:
+          type: string
+          description: Unique identifier of the call.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        segment_id:
+          type: string
+          description: Identifier of the call segment this event belongs to, for correlating events within the same segment of a call.
+          examples:
+            - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
+        tag:
+          type: string
+          description: The `tag` you set when placing the call, echoed back so you can match the event to your request.
+          examples:
+            - my-tag-1
         primary_conversation_log:
           type: array
           items:
@@ -14654,9 +15044,21 @@ components:
           type: object
           additionalProperties: {}
           description: Role-keyed translation metadata for the session (source/target language settings and related detail).
+        call_info:
+          description: Call/session context for this delivery.
+          allOf:
+            - $ref: "#/components/schemas/Calling.AiCallInfo"
+        channel_data:
+          description: Extended call/channel context for this delivery.
+          allOf:
+            - $ref: "#/components/schemas/Calling.AiChannelData"
       required:
+        - node_id
+        - call_id
         - primary_conversation_log
         - secondary_conversation_log
+        - call_info
+        - channel_data
       description: The complete conversation log for a `calling.live_translate` session, delivered once the session ends, with both the source-language and translated sides.
     Calling.JoinRoomRequest:
       type: object
@@ -23961,8 +24363,31 @@ components:
         (e.g. `calling.call.play`); `Data` is the event-specific payload carried at `params.params`.
     Calling.AiStartEventData:
       type: object
-      properties: {}
-      description: "Signal-only event: the AI session has started. The body is empty."
+      properties:
+        node_id:
+          type: string
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
+          examples:
+            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+        call_id:
+          type: string
+          description: Unique identifier of the call.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        segment_id:
+          type: string
+          description: Identifier of the call segment this event belongs to, for correlating events within the same segment of a call.
+          examples:
+            - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
+        tag:
+          type: string
+          description: The `tag` you set when placing the call, echoed back so you can match the event to your request.
+          examples:
+            - my-tag-1
+      required:
+        - node_id
+        - call_id
+      description: "Signal-only event: the AI session has started. Carries only the call address."
     Calling.AiUserSpeakingEvent:
       type: object
       properties:
@@ -24026,8 +24451,31 @@ components:
         (e.g. `calling.call.play`); `Data` is the event-specific payload carried at `params.params`.
     Calling.AiUserSpeakingEventData:
       type: object
-      properties: {}
-      description: "Signal-only event: the caller has started speaking (barge-in). The body is empty."
+      properties:
+        node_id:
+          type: string
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
+          examples:
+            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+        call_id:
+          type: string
+          description: Unique identifier of the call.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        segment_id:
+          type: string
+          description: Identifier of the call segment this event belongs to, for correlating events within the same segment of a call.
+          examples:
+            - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
+        tag:
+          type: string
+          description: The `tag` you set when placing the call, echoed back so you can match the event to your request.
+          examples:
+            - my-tag-1
+      required:
+        - node_id
+        - call_id
+      description: "Signal-only event: the caller has started speaking (barge-in). Carries only the call address."
     Calling.AiCompletionEvent:
       type: object
       properties:
@@ -24092,6 +24540,26 @@ components:
     Calling.AiCompletionEventData:
       type: object
       properties:
+        node_id:
+          type: string
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
+          examples:
+            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+        call_id:
+          type: string
+          description: Unique identifier of the call.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        segment_id:
+          type: string
+          description: Identifier of the call segment this event belongs to, for correlating events within the same segment of a call.
+          examples:
+            - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
+        tag:
+          type: string
+          description: The `tag` you set when placing the call, echoed back so you can match the event to your request.
+          examples:
+            - my-tag-1
         text:
           type: string
           description: The assistant's completed utterance for the turn. Redacted when the app has `redact_prompt` set.
@@ -24106,6 +24574,8 @@ components:
           examples:
             - normal
       required:
+        - node_id
+        - call_id
         - text
         - type
     Calling.AiResponseEvent:
@@ -24172,12 +24642,34 @@ components:
     Calling.AiResponseEventData:
       type: object
       properties:
+        node_id:
+          type: string
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
+          examples:
+            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+        call_id:
+          type: string
+          description: Unique identifier of the call.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        segment_id:
+          type: string
+          description: Identifier of the call segment this event belongs to, for correlating events within the same segment of a call.
+          examples:
+            - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
+        tag:
+          type: string
+          description: The `tag` you set when placing the call, echoed back so you can match the event to your request.
+          examples:
+            - my-tag-1
         response:
           type: string
           description: The assistant's full response text for the turn. Redacted when the app has `redact_prompt` set.
           examples:
             - Sure — I can help you place an order. Would you like pickup or delivery?
       required:
+        - node_id
+        - call_id
         - response
     Calling.AiResponseUtteranceEvent:
       type: object
@@ -24243,12 +24735,34 @@ components:
     Calling.AiResponseUtteranceEventData:
       type: object
       properties:
+        node_id:
+          type: string
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
+          examples:
+            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+        call_id:
+          type: string
+          description: Unique identifier of the call.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        segment_id:
+          type: string
+          description: Identifier of the call segment this event belongs to, for correlating events within the same segment of a call.
+          examples:
+            - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
+        tag:
+          type: string
+          description: The `tag` you set when placing the call, echoed back so you can match the event to your request.
+          examples:
+            - my-tag-1
         utterance:
           type: string
           description: One spoken segment of the assistant's response, emitted as it streams. Redacted when the app has `redact_prompt` set.
           examples:
             - Would you like pickup or delivery?
       required:
+        - node_id
+        - call_id
         - utterance
     Calling.AiSpeechDetectEvent:
       type: object
@@ -24314,12 +24828,34 @@ components:
     Calling.AiSpeechDetectEventData:
       type: object
       properties:
+        node_id:
+          type: string
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
+          examples:
+            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+        call_id:
+          type: string
+          description: Unique identifier of the call.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        segment_id:
+          type: string
+          description: Identifier of the call segment this event belongs to, for correlating events within the same segment of a call.
+          examples:
+            - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
+        tag:
+          type: string
+          description: The `tag` you set when placing the call, echoed back so you can match the event to your request.
+          examples:
+            - my-tag-1
         text:
           type: string
           description: The caller's final recognized transcript for the turn.
           examples:
             - I'd like to order a large pepperoni pizza for delivery.
       required:
+        - node_id
+        - call_id
         - text
     Calling.AiPartialResultEvent:
       type: object
@@ -24385,6 +24921,26 @@ components:
     Calling.AiPartialResultEventData:
       type: object
       properties:
+        node_id:
+          type: string
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
+          examples:
+            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+        call_id:
+          type: string
+          description: Unique identifier of the call.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        segment_id:
+          type: string
+          description: Identifier of the call segment this event belongs to, for correlating events within the same segment of a call.
+          examples:
+            - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
+        tag:
+          type: string
+          description: The `tag` you set when placing the call, echoed back so you can match the event to your request.
+          examples:
+            - my-tag-1
         text:
           type: string
           description: The caller's interim (partial) speech-recognition transcript.
@@ -24396,6 +24952,8 @@ components:
           examples:
             - true
       required:
+        - node_id
+        - call_id
         - text
     Calling.AiBeginSpeakingEvent:
       type: object
@@ -24460,8 +25018,31 @@ components:
         (e.g. `calling.call.play`); `Data` is the event-specific payload carried at `params.params`.
     Calling.AiBeginSpeakingEventData:
       type: object
-      properties: {}
-      description: "Signal-only event: the assistant has started speaking. The body is empty."
+      properties:
+        node_id:
+          type: string
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
+          examples:
+            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+        call_id:
+          type: string
+          description: Unique identifier of the call.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        segment_id:
+          type: string
+          description: Identifier of the call segment this event belongs to, for correlating events within the same segment of a call.
+          examples:
+            - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
+        tag:
+          type: string
+          description: The `tag` you set when placing the call, echoed back so you can match the event to your request.
+          examples:
+            - my-tag-1
+      required:
+        - node_id
+        - call_id
+      description: "Signal-only event: the assistant has started speaking. Carries only the call address."
     Calling.AiWarningEvent:
       type: object
       properties:
@@ -24526,6 +25107,26 @@ components:
     Calling.AiWarningEventData:
       type: object
       properties:
+        node_id:
+          type: string
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
+          examples:
+            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+        call_id:
+          type: string
+          description: Unique identifier of the call.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        segment_id:
+          type: string
+          description: Identifier of the call segment this event belongs to, for correlating events within the same segment of a call.
+          examples:
+            - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
+        tag:
+          type: string
+          description: The `tag` you set when placing the call, echoed back so you can match the event to your request.
+          examples:
+            - my-tag-1
         error:
           type: string
           description: Human-readable warning message, e.g. an oversized system prompt.
@@ -24539,6 +25140,8 @@ components:
           examples:
             - 78000
       required:
+        - node_id
+        - call_id
         - error
         - tokens
     Calling.AiTransparentBargeEvent:
@@ -24605,6 +25208,26 @@ components:
     Calling.AiTransparentBargeEventData:
       type: object
       properties:
+        node_id:
+          type: string
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
+          examples:
+            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+        call_id:
+          type: string
+          description: Unique identifier of the call.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        segment_id:
+          type: string
+          description: Identifier of the call segment this event belongs to, for correlating events within the same segment of a call.
+          examples:
+            - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
+        tag:
+          type: string
+          description: The `tag` you set when placing the call, echoed back so you can match the event to your request.
+          examples:
+            - my-tag-1
         combined_text:
           type: string
           description: |-
@@ -24613,6 +25236,9 @@ components:
             non-empty.
           examples:
             - Actually, make that two large pepperoni pizzas.
+      required:
+        - node_id
+        - call_id
     Calling.AiStopEvent:
       type: object
       properties:
@@ -24677,6 +25303,26 @@ components:
     Calling.AiStopEventData:
       type: object
       properties:
+        node_id:
+          type: string
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
+          examples:
+            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+        call_id:
+          type: string
+          description: Unique identifier of the call.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        segment_id:
+          type: string
+          description: Identifier of the call segment this event belongs to, for correlating events within the same segment of a call.
+          examples:
+            - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
+        tag:
+          type: string
+          description: The `tag` you set when placing the call, echoed back so you can match the event to your request.
+          examples:
+            - my-tag-1
         start_time:
           type: integer
           format: int64
@@ -24700,6 +25346,8 @@ components:
           additionalProperties: {}
           description: Per-session billing detail. The breakdown under `this_visit` and `cumulative` varies by the resources used, so the exact keys are not fixed.
       required:
+        - node_id
+        - call_id
         - start_time
         - end_time
         - wallet_paused_sec
@@ -24750,7 +25398,30 @@ components:
                 - c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f
             params:
               type: object
-              properties: {}
+              properties:
+                node_id:
+                  type: string
+                  description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
+                  examples:
+                    - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+                call_id:
+                  type: string
+                  description: Unique identifier of the call.
+                  examples:
+                    - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+                segment_id:
+                  type: string
+                  description: Identifier of the call segment this event belongs to, for correlating events within the same segment of a call.
+                  examples:
+                    - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
+                tag:
+                  type: string
+                  description: The `tag` you set when placing the call, echoed back so you can match the event to your request.
+                  examples:
+                    - my-tag-1
+              required:
+                - node_id
+                - call_id
               description: The event-specific payload.
           required:
             - event_type
@@ -24811,7 +25482,30 @@ components:
                 - c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f
             params:
               type: object
-              properties: {}
+              properties:
+                node_id:
+                  type: string
+                  description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
+                  examples:
+                    - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+                call_id:
+                  type: string
+                  description: Unique identifier of the call.
+                  examples:
+                    - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+                segment_id:
+                  type: string
+                  description: Identifier of the call segment this event belongs to, for correlating events within the same segment of a call.
+                  examples:
+                    - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
+                tag:
+                  type: string
+                  description: The `tag` you set when placing the call, echoed back so you can match the event to your request.
+                  examples:
+                    - my-tag-1
+              required:
+                - node_id
+                - call_id
               description: The event-specific payload.
           required:
             - event_type
@@ -24872,7 +25566,30 @@ components:
                 - c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f
             params:
               type: object
-              properties: {}
+              properties:
+                node_id:
+                  type: string
+                  description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
+                  examples:
+                    - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+                call_id:
+                  type: string
+                  description: Unique identifier of the call.
+                  examples:
+                    - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+                segment_id:
+                  type: string
+                  description: Identifier of the call segment this event belongs to, for correlating events within the same segment of a call.
+                  examples:
+                    - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
+                tag:
+                  type: string
+                  description: The `tag` you set when placing the call, echoed back so you can match the event to your request.
+                  examples:
+                    - my-tag-1
+              required:
+                - node_id
+                - call_id
               description: The event-specific payload.
           required:
             - event_type
@@ -25233,6 +25950,42 @@ components:
     Calling.AiSidecarEventData:
       type: object
       properties:
+        node_id:
+          type: string
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
+          examples:
+            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+        call_id:
+          type: string
+          description: Unique identifier of the call.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        segment_id:
+          type: string
+          description: Identifier of the call segment this event belongs to, for correlating events within the same segment of a call.
+          examples:
+            - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
+        tag:
+          type: string
+          description: The `tag` you set when placing the call, echoed back so you can match the event to your request.
+          examples:
+            - my-tag-1
+        call_info:
+          description: Call/session context for this delivery.
+          allOf:
+            - $ref: "#/components/schemas/Calling.AiCallInfo"
+        sidecar_event:
+          description: The sidecar event. Its `type` field determines which type-specific fields it carries.
+          allOf:
+            - $ref: "#/components/schemas/Calling.AiSidecarEventBody"
+      required:
+        - node_id
+        - call_id
+        - call_info
+        - sidecar_event
+    Calling.AiSidecarEventBody:
+      type: object
+      properties:
         type:
           description: The callback type. Determines which type-specific fields are present.
           examples:
@@ -25262,14 +26015,64 @@ components:
             - a1b2c3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
         raw:
           type: string
-          description: "The answer text. Present on `type: ask_answer` (the reply to your `calling.ai_sidecar.ask`) and on the `final` summary event."
+          description: "The answer/summary text. Present on `type: ask_answer` (the reply to your `calling.ai_sidecar.ask`) and on the `final` summary event."
           examples:
             - The customer's account is past due by 14 days.
+        text:
+          type: string
+          description: "The reasoning text. Present on `type: thought`."
+        name:
+          type: string
+          description: "The tool (function) name. Present on `type: tool_call` and `tool_result`."
+        arguments:
+          type: object
+          additionalProperties: {}
+          description: "The tool-call arguments. Present on `type: tool_call`."
+        response:
+          type: object
+          additionalProperties: {}
+          description: "The tool-call response. Present on `type: tool_result`."
+        reason:
+          type: string
+          description: "Why the sidecar took no action this pass. Present on `type: skip`."
+        error_reason:
+          type: string
+          description: "A machine-readable error reason. Present on `type: error`."
+        detail:
+          type: string
+          description: "Human-readable error detail. Present on `type: error`."
+        dropped_count:
+          type: integer
+          format: int32
+          description: "How many history entries were dropped. Present on `type: history_pruned`."
+        tokens_before:
+          type: integer
+          format: int32
+          description: "Token count before pruning. Present on `type: history_pruned`."
+        tokens_after:
+          type: integer
+          format: int32
+          description: "Token count after pruning. Present on `type: history_pruned`."
+        iter:
+          type: integer
+          format: int32
+          description: The current iteration. Present on `ask`/`insight`/`final` callbacks.
+        total_iters:
+          type: integer
+          format: int32
+          description: The total iterations. Present on `ask`/`insight`/`final` callbacks.
+        triggered_by:
+          type: string
+          description: What triggered this callback. Present on `ask`/`insight`/`final` callbacks.
       required:
         - type
         - ts
         - tick_id
         - channel_data
+      description: |-
+        The sidecar event, carried on the wire under `sidecar_event`. Beyond the common fields, each
+        `type` adds its own type-specific fields — the optional fields below indicate which type they
+        belong to.
     Calling.AiSidecarCallbackType:
       type: string
       enum:
@@ -26622,6 +27425,114 @@ components:
         - method
         - params
       description: Fires every time one of your calls changes state. Use the `call_state` field to track the call through its lifecycle, and `tag` to match the event back to the call you placed.
+    Calling.CallErrorEvent:
+      type: object
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - "2.0"
+          description: JSON-RPC version. Always `2.0`.
+        id:
+          type: string
+          description: Event id.
+        method:
+          type: string
+          enum:
+            - signalwire.event
+          description: Always `signalwire.event`.
+        params:
+          type: object
+          properties:
+            event_type:
+              type: string
+              enum:
+                - calling.error
+              description: The event type — identifies which event this is.
+            event_channel:
+              type: string
+              description: The channel the event was delivered on.
+              examples:
+                - calling
+            timestamp:
+              type: number
+              format: double
+              description: When the event was emitted, as a Unix timestamp in seconds.
+              examples:
+                - 1712345678.842
+            project_id:
+              type: string
+              description: Your project ID.
+              examples:
+                - b1c2d3e4-f5a6-7b8c-9d0e-1f2a3b4c5d6e
+            space_id:
+              type: string
+              description: Your space ID.
+              examples:
+                - c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f
+            params:
+              description: The event-specific payload.
+              allOf:
+                - $ref: "#/components/schemas/Calling.CallErrorParams"
+          required:
+            - event_type
+            - params
+          description: The event envelope.
+      required:
+        - jsonrpc
+        - id
+        - method
+        - params
+      description: |-
+        Fires when the AI runtime on a call hits an error — from an AI agent (`calling.ai`),
+        `calling.amazon_bedrock`, or live transcription/translation. It reports problems such
+        as a failed SWAIG webhook, a model or tool error, or a speech-engine failure. The
+        payload always identifies the call; `error` and `fatal` describe the problem, and
+        additional fields vary by the error source.
+    Calling.CallErrorParams:
+      type: object
+      properties:
+        node_id:
+          type: string
+          description: Opaque identifier that, paired with `call_id`, addresses this call. Echo back the value you received; treat it as opaque.
+          examples:
+            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+        call_id:
+          type: string
+          description: Unique identifier of the call.
+          examples:
+            - c2a1e9f4-6b3d-4e7a-8f1c-2d3e4f5a6b7c
+        segment_id:
+          type: string
+          description: Identifier of the call segment this event belongs to, for correlating events within the same segment of a call.
+          examples:
+            - e5c3f2b1-8d0a-4b4c-9f3e-2a1b0c9d8e7f
+        tag:
+          type: string
+          description: The `tag` you set when placing the call, echoed back so you can match the event to your request.
+          examples:
+            - my-tag-1
+        error:
+          type: string
+          description: |-
+            A description of what went wrong — usually a human-readable string. A few error
+            sources instead place a structured object here. Absent on the error types that
+            describe the failure with other fields.
+          examples:
+            - SWAIG function call failed
+        fatal:
+          type: boolean
+          description: Whether the error was fatal to the operation in progress — for example, one that ended the AI session. Absent when not reported.
+          examples:
+            - true
+      required:
+        - node_id
+        - call_id
+      description: |-
+        Payload of the `calling.error` event. This is an error-reporting escape hatch for the
+        AI runtime, so its shape is not fixed. Beyond the call address and the `error` /
+        `fatal` fields below, additional fields vary by the error source (webhook failures,
+        SWAIG tool errors, model fallbacks, speech/TTS errors, and so on).
     Messaging.SendRequest:
       type: object
       properties:
@@ -26834,14 +27745,18 @@ components:
             - outbound
           allOf:
             - $ref: "#/components/schemas/Messaging.MessageDirection"
+        tag:
+          type: string
+          description: Your label for the message, echoed back so you can correlate this state update with the message you sent.
+          examples:
+            - order-98765
         tags:
           type: array
           items:
             type: string
-          description: Any tags attached to the message.
+          description: Reserved. Always an empty array in the current implementation; use `tag` to label a message.
           examples:
-            - - order-98765
-              - priority
+            - []
         from_number:
           type: string
           description: The sender's phone number, in E.164 format.
@@ -26990,9 +27905,9 @@ components:
           type: array
           items:
             type: string
-          description: Any tags attached to the message.
+          description: Reserved. Always an empty array in the current implementation.
           examples:
-            - - support
+            - []
         from_number:
           type: string
           description: The sender's phone number, in E.164 format.
@@ -27209,198 +28124,6 @@ components:
       description: |-
         The runtime configuration returned for your connector. For a `freeswitch`
         target, this contains the SIP profile your connector should run with.
-    WebRTC.VertoRequest:
-      type: object
-      properties:
-        jsonrpc:
-          type: string
-          enum:
-            - "2.0"
-          description: JSON-RPC version. Always `2.0`.
-        id:
-          type: string
-          description: Request id, echoed on the correlated response.
-        method:
-          type: string
-          enum:
-            - webrtc.verto
-          description: The name of the JSON-RPC method being invoked.
-        params:
-          description: The method's input parameters.
-          allOf:
-            - $ref: "#/components/schemas/WebRTC.MessageParams"
-      required:
-        - jsonrpc
-        - id
-        - method
-        - params
-      description: A JSON-RPC request frame. `Method` is the method name; `Params` is the method's input.
-    WebRTC.MessageParams:
-      type: object
-      properties:
-        node_id:
-          type: string
-          description: |-
-            The node currently hosting your call. Once a call exists, set this to the
-            `node_id` you received in an earlier event or response so the frame reaches
-            the right node. Leave it absent on your first message, before a call has been
-            established — SignalWire assigns one for you.
-          examples:
-            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
-        message:
-          type: object
-          additionalProperties: {}
-          description: |-
-            The Verto frame (the WebRTC signaling message format used for peer calls) to
-            send — for example a `verto.invite` carrying
-            `dialogParams`/`sdp`/`layout`/`positions`. The frame is passed through
-            as-is; see SignalWire's Verto message reference for the full list of Verto
-            methods and their `params`. The Verto call ID belongs inside this frame, at
-            `dialogParams.callID` — generate one when you create a call and reuse it on
-            every frame for that call. There is no top-level `callID`.
-        subscribe:
-          type: array
-          items:
-            type: string
-          description: |-
-            Event channels to subscribe to alongside this request — useful when you
-            join a conference and want its event feed. Values are conference/room event
-            channels such as `member.joined`, `member.left`, `room.ended`,
-            `room.updated`, `layout.changed`, and `member.updated` (illustrative, not
-            exhaustive).
-          examples:
-            - - member.joined
-              - member.left
-              - room.ended
-      required:
-        - message
-      description: "The parameters for a `webrtc.verto` request: the Verto frame to send, the `node_id` that scopes it to your call, and any event channels to subscribe to."
-    WebRTC.VertoReply:
-      type: object
-      properties:
-        jsonrpc:
-          type: string
-          enum:
-            - "2.0"
-          description: JSON-RPC version. Always `2.0`.
-        id:
-          type: string
-          description: The id of the request this responds to.
-        result:
-          description: The method result.
-          allOf:
-            - $ref: "#/components/schemas/WebRTC.MessageResult"
-      required:
-        - jsonrpc
-        - id
-        - result
-      description: A JSON-RPC response frame correlated to a request by `id`. `Result` is the method result.
-    WebRTC.MessageResult:
-      type: object
-      properties:
-        code:
-          type: string
-          description: |-
-            Result code as a string. `"200"` means success. On failure this is a lowercase
-            error identifier such as `not_allowed`, `invalid_params`, `internal_error`, or
-            `response_timeout`. Always check `code` to tell success from failure.
-          examples:
-            - "200"
-        result:
-          type: object
-          additionalProperties: {}
-          description: The Verto reply payload — for example the answer to a `verto.invite`. The shape depends on the Verto method.
-        message:
-          type: string
-          description: A human-readable status message. Present on errors and on some informational replies.
-          examples:
-            - Received
-        node_id:
-          type: string
-          description: The node now hosting the call. Capture it and send it on later frames for this call.
-          examples:
-            - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
-      required:
-        - code
-      description: "The reply to your Verto frame: the Verto outcome plus the node now hosting the call."
-    WebRTC.MessageEvent:
-      type: object
-      properties:
-        jsonrpc:
-          type: string
-          enum:
-            - "2.0"
-          description: JSON-RPC version. Always `2.0`.
-        id:
-          type: string
-          description: Event id.
-        method:
-          type: string
-          enum:
-            - signalwire.event
-          description: Always `signalwire.event`.
-        params:
-          type: object
-          properties:
-            event_type:
-              type: string
-              enum:
-                - webrtc.message
-              description: The event type — identifies which event this is.
-            node_id:
-              type: string
-              description: |-
-                The node that sent this event. Capture it once your call starts and reuse
-                it as the `node_id` on your subsequent `message` requests so they reach the
-                same node.
-              examples:
-                - a3f1c2d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d
-            event_channel:
-              type: string
-              description: The channel the event was delivered on.
-              examples:
-                - webrtc
-            timestamp:
-              type: number
-              format: double
-              description: When the event was emitted, as a Unix timestamp in seconds.
-              examples:
-                - 1712345678.842
-            project_id:
-              type: string
-              description: Your project ID.
-              examples:
-                - b1c2d3e4-f5a6-7b8c-9d0e-1f2a3b4c5d6e
-            space_id:
-              type: string
-              description: Your space ID.
-              examples:
-                - c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f
-            params:
-              type: object
-              additionalProperties: {}
-              description: |-
-                The event-specific payload for this WebRTC signaling event — either a signaling
-                response or a conference/room event.
-          required:
-            - event_type
-            - params
-          description: The event envelope.
-      required:
-        - jsonrpc
-        - id
-        - method
-        - params
-      description: |-
-        Delivers a Verto frame from SignalWire to your client. This fires when SignalWire
-        has a Verto response to one of your `webrtc.verto` frames, but also when
-        SignalWire initiates signaling on its own — an incoming `verto.invite`, a
-        `verto.bye` when the far end hangs up, `verto.media`/`verto.display` updates, or a
-        conference/room event on a channel you subscribed to — so it can arrive without
-        you sending anything.
-
-        The frame in `params` is passed through as-is; see SignalWire's Verto message
-        reference for the full set of Verto methods and their `params`.
   messages:
     signalwireConnectRequest:
       name: signalwire.connect.request
@@ -27430,6 +28153,28 @@ components:
       contentType: application/json
       payload:
         $ref: "#/components/schemas/Signalwire.DisconnectEvent"
+    signalwirePingRequest:
+      name: signalwire.ping.request
+      title: signalwire.ping request
+      contentType: application/json
+      correlationId:
+        location: $message.payload#/id
+      payload:
+        $ref: "#/components/schemas/Signalwire.PingRequest"
+    signalwirePingResponse:
+      name: signalwire.ping.response
+      title: signalwire.ping response
+      contentType: application/json
+      correlationId:
+        location: $message.payload#/id
+      payload:
+        $ref: "#/components/schemas/Signalwire.PingReply"
+    serverPingRequest:
+      name: ServerPingRequest
+      title: Service keepalive ping
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/Signalwire.ServerPingRequest"
     signalwireReceiveRequest:
       name: signalwire.receive.request
       title: signalwire.receive request
@@ -28728,6 +29473,12 @@ components:
       contentType: application/json
       payload:
         $ref: "#/components/schemas/Calling.CallStateEvent"
+    callErrorEvent:
+      name: CallErrorEvent
+      title: calling.error
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/Calling.CallErrorEvent"
     messagingSendRequest:
       name: messaging.send.request
       title: messaging.send request
@@ -28778,25 +29529,3 @@ components:
         location: $message.payload#/id
       payload:
         $ref: "#/components/schemas/Provisioning.ConfigureReply"
-    webrtcVertoRequest:
-      name: webrtc.verto.request
-      title: webrtc.verto request
-      contentType: application/json
-      correlationId:
-        location: $message.payload#/id
-      payload:
-        $ref: "#/components/schemas/WebRTC.VertoRequest"
-    webrtcVertoResponse:
-      name: webrtc.verto.response
-      title: webrtc.verto response
-      contentType: application/json
-      correlationId:
-        location: $message.payload#/id
-      payload:
-        $ref: "#/components/schemas/WebRTC.VertoReply"
-    messageEvent:
-      name: MessageEvent
-      title: webrtc.message
-      contentType: application/json
-      payload:
-        $ref: "#/components/schemas/WebRTC.MessageEvent"

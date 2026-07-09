@@ -17,7 +17,8 @@ const callingCollectResponse = "${callingCollect} response";
 model CollectRequest is JsonRpcRequest<typeof callingCollect, CollectParams>;
 
 @extension("x-fern-display-name", callingCollectResponse)
-@reply model CollectReply is JsonRpcResponse<CollectResult>;
+@reply
+model CollectReply is JsonRpcResponse<CollectResult>;
 
 @doc("""
   Collects DTMF (touch-tone) key presses, spoken input, or both from a caller on an active
@@ -34,10 +35,12 @@ op collect(...CollectRequest): CollectReply | CallCollectEvent;
 const callingCollectStop = "calling.collect.stop";
 const callingCollectStopResponse = "${callingCollectStop} response";
 
-model CollectStopRequest is JsonRpcRequest<typeof callingCollectStop, CollectStopParams>;
+model CollectStopRequest
+  is JsonRpcRequest<typeof callingCollectStop, CollectStopParams>;
 
 @extension("x-fern-display-name", callingCollectStopResponse)
-@reply model CollectStopReply is JsonRpcResponse<CollectStopResult>;
+@reply
+model CollectStopReply is JsonRpcResponse<CollectStopResult>;
 
 @doc("Stops a running collect before it finishes on its own, for example when you no longer need the caller's input.")
 @channel(callingCollectStop)
@@ -48,10 +51,16 @@ op collectStop(...CollectStopRequest): CollectStopReply;
 const callingCollectStartInputTimers = "calling.collect.start_input_timers";
 const callingCollectStartInputTimersResponse = "${callingCollectStartInputTimers} response";
 
-model CollectStartInputTimersRequest is JsonRpcRequest<typeof callingCollectStartInputTimers, CollectStartInputTimersParams>;
+model CollectStartInputTimersRequest
+  is JsonRpcRequest<
+    typeof callingCollectStartInputTimers,
+    CollectStartInputTimersParams
+  >;
 
 @extension("x-fern-display-name", callingCollectStartInputTimersResponse)
-@reply model CollectStartInputTimersReply is JsonRpcResponse<CollectStartInputTimersResult>;
+@reply
+model CollectStartInputTimersReply
+  is JsonRpcResponse<CollectStartInputTimersResult>;
 
 @doc("""
   Starts the `initial_timeout` countdown on a collect that was started with
@@ -61,4 +70,6 @@ model CollectStartInputTimersRequest is JsonRpcRequest<typeof callingCollectStar
 @channel(callingCollectStartInputTimers)
 @summary("Start the initial-timeout timer on a collect")
 @extension("x-fern-display-name", callingCollectStartInputTimers)
-op collectStartInputTimers(...CollectStartInputTimersRequest): CollectStartInputTimersReply;
+op collectStartInputTimers(
+  ...CollectStartInputTimersRequest,
+): CollectStartInputTimersReply;

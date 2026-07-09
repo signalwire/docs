@@ -17,7 +17,8 @@ const messagingSendResponse = "${messagingSend} response";
 model SendRequest is JsonRpcRequest<typeof messagingSend, SendParams>;
 
 @extension("x-fern-display-name", messagingSendResponse)
-@reply model SendReply is JsonRpcResponse<SendResult>;
+@reply
+model SendReply is JsonRpcResponse<SendResult>;
 
 @doc("""
   Send an SMS or MMS to a phone number. Include `body`, `media`, or both. A

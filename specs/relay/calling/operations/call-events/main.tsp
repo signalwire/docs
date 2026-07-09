@@ -30,3 +30,14 @@ op receiveCall(): CallReceiveEvent;
 @summary("Receive call-state changes")
 @extension("x-fern-display-name", callingCallState)
 op callState(): CallStateEvent;
+
+@doc("""
+  Receive-only. Fires when the AI runtime on one of your calls reports an error — from
+  an AI agent (`calling.ai`), `calling.amazon_bedrock`, or live
+  transcription/translation. Subscribe to it to detect and react to failures during
+  agent execution; the payload identifies the call and describes what went wrong.
+  """)
+@channel(callingError)
+@summary("Receive AI-runtime errors on a call")
+@extension("x-fern-display-name", callingError)
+op callError(): CallErrorEvent;

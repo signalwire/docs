@@ -18,13 +18,14 @@ const signalwireDisconnect = "signalwire.disconnect";
   single `restart` flag. Flush anything pending and reply with an empty result
   `{}` to acknowledge; that reply should be the last thing you send before the
   connection closes. If `restart` is `true`, reconnect afterward.
-
+  
   You receive this message; you do not send it (that is why this channel has no
   send operation).
   """)
 @summary("Service is about to disconnect the client")
 @extension("x-fern-display-name", signalwireDisconnect)
-model DisconnectEvent is JsonRpcRequest<typeof signalwireDisconnect, DisconnectParams>;
+model DisconnectEvent
+  is JsonRpcRequest<typeof signalwireDisconnect, DisconnectParams>;
 
 @doc("""
   Delivers the server-initiated `signalwire.disconnect` request.

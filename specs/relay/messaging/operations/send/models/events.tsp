@@ -22,8 +22,12 @@ model StateEventData {
   @example("outbound")
   direction: MessageDirection;
 
-  @doc("Any tags attached to the message.")
-  @example(#["order-98765", "priority"])
+  @doc("Your label for the message, echoed back so you can correlate this state update with the message you sent.")
+  @example("order-98765")
+  tag?: string;
+
+  @doc("Reserved. Always an empty array in the current implementation; use `tag` to label a message.")
+  @example(#[])
   tags?: string[];
 
   @doc("The sender's phone number, in E.164 format.")
@@ -80,8 +84,8 @@ model ReceiveEventData {
   @example("inbound")
   direction: MessageDirection;
 
-  @doc("Any tags attached to the message.")
-  @example(#["support"])
+  @doc("Reserved. Always an empty array in the current implementation.")
+  @example(#[])
   tags?: string[];
 
   @doc("The sender's phone number, in E.164 format.")

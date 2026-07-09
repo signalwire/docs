@@ -48,7 +48,7 @@ model CallConnectParams {
   connect_state: "disconnected" | "connecting" | "connected" | "failed";
 
   @doc("Why the connect failed. Present when `connect_state` is `failed`.")
-  @example("NO_ANSWER")
+  @example("noAnswer")
   failed_reason?: string;
 }
 

@@ -49,36 +49,36 @@ model FaxFinished extends CallFax {
     @example("send")
     direction: FaxDirection;
 
-    @doc("Your side's fax identity, typically an E.164 phone number.")
+    @doc("Your side's fax identity, typically an E.164 phone number. Empty when unavailable.")
     @example("+15551230001")
-    identity?: string;
+    identity: string;
 
-    @doc("The other party's fax identity, typically an E.164 phone number.")
+    @doc("The other party's fax identity, typically an E.164 phone number. Empty when unavailable.")
     @example("+15551230002")
-    remote_identity?: string;
+    remote_identity: string;
 
-    @doc("Link to the transmitted fax document.")
+    @doc("Link to the transmitted fax document. Empty when there is no document.")
     @example("https://example.com/my_doc_to_fax.pdf")
-    document?: url;
+    document: string;
 
-    @doc("Document format of the transmitted fax. Currently always `pdf`.")
-    format?: string;
+    @doc("Document format of the transmitted fax. Currently `pdf`; empty on a failed fax.")
+    format: string;
 
     @doc("Total number of pages sent or received.")
     @example(1)
-    pages?: int32;
+    pages: int32;
 
     @doc("`true` if the fax completed successfully, `false` if it failed.")
     @example(true)
-    success?: boolean;
+    success: boolean;
 
     @doc("Numeric fax result code. `0` means the fax succeeded; a non-zero code indicates why it failed.")
     @example(0)
-    result?: int32;
+    result: int32;
 
-    @doc("Human-readable explanation of the fax result.")
+    @doc("Human-readable explanation of the fax result. Empty when there is nothing to report.")
     @example("OK")
-    result_text?: string;
+    result_text: string;
   };
 }
 

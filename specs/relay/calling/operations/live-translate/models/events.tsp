@@ -1,5 +1,6 @@
 import "@signalwire/typespec-asyncapi";
 import "../../../../common/frames.tsp";
+import "../../../models/core.tsp";
 import "../../../events/shared.tsp";
 import "@typespec/openapi";
 
@@ -28,18 +29,30 @@ model TranslateUtterance {
   """)
 @summary("Live translate transcript delta event")
 model TranslateTranscriptDeltaEventData {
+  ...CallEventAddress;
+
   @doc("Present on source-language (input) fragments.")
   input_utterance?: TranslateUtterance;
 
   @doc("Present on translated (output) fragments.")
   output_utterance?: TranslateUtterance;
+
+  @doc("Call/session context for this delivery.")
+  call_info: AiCallInfo;
+
+  @doc("Extended call/channel context for this delivery.")
+  channel_data: AiChannelData;
 }
 
 const callingAiTranslateTranscriptDelta = "calling.ai.translate.transcript_delta";
 @doc("Streams an incremental translation delta during a `calling.live_translate` session.")
 @summary(callingAiTranslateTranscriptDelta)
 @extension("x-fern-display-name", callingAiTranslateTranscriptDelta)
-model TranslateTranscriptDeltaEvent is SignalwireEvent<typeof callingAiTranslateTranscriptDelta, TranslateTranscriptDeltaEventData>;
+model TranslateTranscriptDeltaEvent
+  is SignalwireEvent<
+    typeof callingAiTranslateTranscriptDelta,
+    TranslateTranscriptDeltaEventData
+  >;
 
 @doc("""
   A summary of a `calling.live_translate` session, covering both the source-language (`primary`)
@@ -50,6 +63,8 @@ model TranslateTranscriptDeltaEvent is SignalwireEvent<typeof callingAiTranslate
   """)
 @summary("Live translate summary event")
 model TranslateLiveSummaryEventData {
+  ...CallEventAddress;
+
   @doc("The source-language side: raw transcript text in realtime mode, or an AI-generated summary in on-demand `summarize` mode.")
   primary_conversation_summary?: string;
 
@@ -61,17 +76,29 @@ model TranslateLiveSummaryEventData {
 
   @doc("The translated conversation, one entry per turn. Present only in on-demand `summarize` mode.")
   secondary_conversation_log?: ConversationLogEntry[];
+
+  @doc("Call/session context for this delivery.")
+  call_info: AiCallInfo;
+
+  @doc("Extended call/channel context for this delivery.")
+  channel_data: AiChannelData;
 }
 
 const callingAiTranslateLiveSummary = "calling.ai.translate.live_summary";
 @doc("A summary of a `calling.live_translate` session, covering both the source and translated sides.")
 @summary(callingAiTranslateLiveSummary)
 @extension("x-fern-display-name", callingAiTranslateLiveSummary)
-model TranslateLiveSummaryEvent is SignalwireEvent<typeof callingAiTranslateLiveSummary, TranslateLiveSummaryEventData>;
+model TranslateLiveSummaryEvent
+  is SignalwireEvent<
+    typeof callingAiTranslateLiveSummary,
+    TranslateLiveSummaryEventData
+  >;
 
 @doc("The complete conversation log for a `calling.live_translate` session, delivered once the session ends, with both the source-language and translated sides.")
 @summary("Live translate conversation log event")
 model TranslateConversationLogEventData {
+  ...CallEventAddress;
+
   @doc("The source-language conversation, one entry per turn.")
   primary_conversation_log: ConversationLogEntry[];
 
@@ -86,10 +113,20 @@ model TranslateConversationLogEventData {
 
   @doc("Role-keyed translation metadata for the session (source/target language settings and related detail).")
   translate_data?: Record<unknown>;
+
+  @doc("Call/session context for this delivery.")
+  call_info: AiCallInfo;
+
+  @doc("Extended call/channel context for this delivery.")
+  channel_data: AiChannelData;
 }
 
 const callingAiTranslateConversationLog = "calling.ai.translate.conversation_log";
 @doc("The complete conversation log for a `calling.live_translate` session — both the source-language and translated sides — emitted once the session ends.")
 @summary(callingAiTranslateConversationLog)
 @extension("x-fern-display-name", callingAiTranslateConversationLog)
-model TranslateConversationLogEvent is SignalwireEvent<typeof callingAiTranslateConversationLog, TranslateConversationLogEventData>;
+model TranslateConversationLogEvent
+  is SignalwireEvent<
+    typeof callingAiTranslateConversationLog,
+    TranslateConversationLogEventData
+  >;

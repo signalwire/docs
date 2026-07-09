@@ -14,10 +14,12 @@ namespace Relay.Calling;
 const callingLiveTranslate = "calling.live_translate";
 const callingLiveTranslateResponse = "${callingLiveTranslate} response";
 
-model LiveTranslateRequest is JsonRpcRequest<typeof callingLiveTranslate, LiveTranslateParams>;
+model LiveTranslateRequest
+  is JsonRpcRequest<typeof callingLiveTranslate, LiveTranslateParams>;
 
 @extension("x-fern-display-name", callingLiveTranslateResponse)
-@reply model LiveTranslateReply is JsonRpcResponse<LiveTranslateResult>;
+@reply
+model LiveTranslateReply is JsonRpcResponse<LiveTranslateResult>;
 
 @doc("""
   Translates speech on a call into another language in real time and speaks it back,

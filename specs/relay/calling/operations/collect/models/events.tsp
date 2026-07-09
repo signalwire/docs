@@ -24,7 +24,14 @@ union CallCollectState {
 @summary("Collect result")
 @discriminator("type")
 model CallCollectResult {
-  type: "digit" | "error" | "finished" | "no_input" | "no_match" | "speech" | "start_of_input";
+  type:
+    | "digit"
+    | "error"
+    | "finished"
+    | "no_input"
+    | "no_match"
+    | "speech"
+    | "start_of_input";
 }
 
 @doc("The collect failed before producing input.")
@@ -73,9 +80,9 @@ model CallCollectResultDigit extends CallCollectResult {
     @example("1234")
     digits: string;
 
-    @doc("The digit that ended collection, if the caller pressed your terminator key.")
+    @doc("The digit that ended collection. Set to your terminator key when the caller pressed it, empty otherwise.")
     @example("#")
-    terminator?: string;
+    terminator: string;
   };
 }
 
@@ -90,9 +97,9 @@ model CallCollectResultSpeech extends CallCollectResult {
     @example("I would like to speak to sales")
     text: string;
 
-    @doc("How confident the recognizer is in the result (for example `83.2`).")
+    @doc("How confident the recognizer is in the result (for example `83.2`). `0` when not scored.")
     @example(83.2)
-    confidence?: float64;
+    confidence: float64;
   };
 }
 
@@ -124,4 +131,5 @@ const callingCallCollect = "calling.call.collect";
 @doc("Fires as you collect input from a caller — DTMF digits or speech — reporting partial and final results so you can react to what they said or pressed.")
 @summary(callingCallCollect)
 @extension("x-fern-display-name", callingCallCollect)
-model CallCollectEvent is SignalwireEvent<typeof callingCallCollect, CallCollectParams>;
+model CallCollectEvent
+  is SignalwireEvent<typeof callingCallCollect, CallCollectParams>;

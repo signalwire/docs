@@ -17,7 +17,8 @@ const callingSendFaxResponse = "${callingSendFax} response";
 model SendFaxRequest is JsonRpcRequest<typeof callingSendFax, SendFaxParams>;
 
 @extension("x-fern-display-name", callingSendFaxResponse)
-@reply model SendFaxReply is JsonRpcResponse<SendFaxResult>;
+@reply
+model SendFaxReply is JsonRpcResponse<SendFaxResult>;
 
 @doc("""
   Send a PDF document as a fax over an active call. The call must be a single
@@ -33,10 +34,12 @@ op sendFax(...SendFaxRequest): SendFaxReply | CallFaxEvent;
 const callingSendFaxStop = "calling.send_fax.stop";
 const callingSendFaxStopResponse = "${callingSendFaxStop} response";
 
-model SendFaxStopRequest is JsonRpcRequest<typeof callingSendFaxStop, SendFaxStopParams>;
+model SendFaxStopRequest
+  is JsonRpcRequest<typeof callingSendFaxStop, SendFaxStopParams>;
 
 @extension("x-fern-display-name", callingSendFaxStopResponse)
-@reply model SendFaxStopReply is JsonRpcResponse<SendFaxStopResult>;
+@reply
+model SendFaxStopReply is JsonRpcResponse<SendFaxStopResult>;
 
 @doc("Stop an in-progress fax send. Targets the fax identified by the `control_id` from `calling.send_fax`.")
 @channel(callingSendFaxStop)
@@ -47,10 +50,12 @@ op sendFaxStop(...SendFaxStopRequest): SendFaxStopReply;
 const callingReceiveFax = "calling.receive_fax";
 const callingReceiveFaxResponse = "${callingReceiveFax} response";
 
-model ReceiveFaxRequest is JsonRpcRequest<typeof callingReceiveFax, ReceiveFaxParams>;
+model ReceiveFaxRequest
+  is JsonRpcRequest<typeof callingReceiveFax, ReceiveFaxParams>;
 
 @extension("x-fern-display-name", callingReceiveFaxResponse)
-@reply model ReceiveFaxReply is JsonRpcResponse<ReceiveFaxResult>;
+@reply
+model ReceiveFaxReply is JsonRpcResponse<ReceiveFaxResult>;
 
 @doc("""
   Receive an incoming fax on an active call and save it as a PDF. The call must
@@ -66,10 +71,12 @@ op receiveFax(...ReceiveFaxRequest): ReceiveFaxReply | CallFaxEvent;
 const callingReceiveFaxStop = "calling.receive_fax.stop";
 const callingReceiveFaxStopResponse = "${callingReceiveFaxStop} response";
 
-model ReceiveFaxStopRequest is JsonRpcRequest<typeof callingReceiveFaxStop, ReceiveFaxStopParams>;
+model ReceiveFaxStopRequest
+  is JsonRpcRequest<typeof callingReceiveFaxStop, ReceiveFaxStopParams>;
 
 @extension("x-fern-display-name", callingReceiveFaxStopResponse)
-@reply model ReceiveFaxStopReply is JsonRpcResponse<ReceiveFaxStopResult>;
+@reply
+model ReceiveFaxStopReply is JsonRpcResponse<ReceiveFaxStopResult>;
 
 @doc("Stop an in-progress fax receive. Targets the fax identified by the `control_id` from `calling.receive_fax`.")
 @channel(callingReceiveFaxStop)

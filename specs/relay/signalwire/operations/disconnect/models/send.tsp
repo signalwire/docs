@@ -6,7 +6,7 @@ namespace Relay.Signalwire;
 
 @doc("The parameters delivered with the `signalwire.disconnect` request the service sends you.")
 model DisconnectParams {
-  @doc("When `true`, you should open a fresh connection after disconnecting.")
+  @doc("Whether you should open a fresh connection after disconnecting. Always present.")
   @example(true)
-  restart?: boolean;
+  restart: boolean;
 }

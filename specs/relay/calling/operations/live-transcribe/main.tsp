@@ -14,10 +14,12 @@ namespace Relay.Calling;
 const callingLiveTranscribe = "calling.live_transcribe";
 const callingLiveTranscribeResponse = "${callingLiveTranscribe} response";
 
-model LiveTranscribeRequest is JsonRpcRequest<typeof callingLiveTranscribe, LiveTranscribeParams>;
+model LiveTranscribeRequest
+  is JsonRpcRequest<typeof callingLiveTranscribe, LiveTranscribeParams>;
 
 @extension("x-fern-display-name", callingLiveTranscribeResponse)
-@reply model LiveTranscribeReply is JsonRpcResponse<LiveTranscribeResult>;
+@reply
+model LiveTranscribeReply is JsonRpcResponse<LiveTranscribeResult>;
 
 @doc("""
   Transcribes a call to text in real time, optionally on both legs at once. Unlike

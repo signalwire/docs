@@ -11,7 +11,7 @@ using SignalWire.AsyncAPI;
   `messaging.state` events to track delivery and `messaging.receive` events to
   handle replies. Messages are grouped by a **context** you choose, so you can
   route events for different parts of your app to different handlers.
-
+  
   Use this from your server. Browser clients send messages through the REST API
   instead.
   """)

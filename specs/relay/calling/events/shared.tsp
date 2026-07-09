@@ -150,7 +150,7 @@ model CallStateParams {
 
   @doc("Whether the call is inbound or outbound.")
   @example("outbound")
-  direction?: CallDirection;
+  direction: CallDirection;
 
   @doc("When the call started, in epoch milliseconds.")
   @example(1712345678123)
@@ -188,7 +188,8 @@ const callingCallState = "calling.call.state";
 @doc("Fires every time one of your calls changes state. Use the `call_state` field to track the call through its lifecycle, and `tag` to match the event back to the call you placed.")
 @summary(callingCallState)
 @extension("x-fern-display-name", callingCallState)
-model CallStateEvent is SignalwireEvent<typeof callingCallState, CallStateParams>;
+model CallStateEvent
+  is SignalwireEvent<typeof callingCallState, CallStateParams>;
 
 @doc("Payload of the `calling.call.receive` event: who is calling and on which context.")
 @summary("Call receive event payload")
@@ -215,7 +216,43 @@ const callingCallReceive = "calling.call.receive";
 @doc("Fires when a new call comes in that your application can answer and control. The payload tells you who is calling and on which context.")
 @summary(callingCallReceive)
 @extension("x-fern-display-name", callingCallReceive)
-model CallReceiveEvent is SignalwireEvent<typeof callingCallReceive, CallReceiveParams>;
+model CallReceiveEvent
+  is SignalwireEvent<typeof callingCallReceive, CallReceiveParams>;
+
+@doc("""
+  Payload of the `calling.error` event. This is an error-reporting escape hatch for the
+  AI runtime, so its shape is not fixed. Beyond the call address and the `error` /
+  `fatal` fields below, additional fields vary by the error source (webhook failures,
+  SWAIG tool errors, model fallbacks, speech/TTS errors, and so on).
+  """)
+@summary("Call error event payload")
+model CallErrorParams {
+  ...CallEventAddress;
+
+  @doc("""
+    A description of what went wrong — usually a human-readable string. A few error
+    sources instead place a structured object here. Absent on the error types that
+    describe the failure with other fields.
+    """)
+  @example("SWAIG function call failed")
+  error?: string;
+
+  @doc("Whether the error was fatal to the operation in progress — for example, one that ended the AI session. Absent when not reported.")
+  @example(true)
+  fatal?: boolean;
+}
+
+const callingError = "calling.error";
+@doc("""
+  Fires when the AI runtime on a call hits an error — from an AI agent (`calling.ai`),
+  `calling.amazon_bedrock`, or live transcription/translation. It reports problems such
+  as a failed SWAIG webhook, a model or tool error, or a speech-engine failure. The
+  payload always identifies the call; `error` and `fatal` describe the problem, and
+  additional fields vary by the error source.
+  """)
+@summary(callingError)
+@extension("x-fern-display-name", callingError)
+model CallErrorEvent is SignalwireEvent<typeof callingError, CallErrorParams>;
 
 @doc("""
   One turn in a conversation log. Shared by the summary and conversation-log events of
@@ -286,4 +323,69 @@ model TranscriptionMetrics {
 
   @doc("Average recognition confidence across your side's turns, roughly 0.0-1.0.")
   local_caller_avg_confidence?: float64;
+}
+
+@doc("""
+  Call/session context attached to AI transcribe, translate, and sidecar webhook deliveries, as a
+  sibling of the documented event fields. Added on every delivery.
+  """)
+@summary("AI call info")
+model AiCallInfo {
+  @doc("Your project ID.")
+  project_id?: string;
+
+  @doc("Your space ID.")
+  space_id?: string;
+
+  @doc("The content type of the delivery.")
+  content_type: string;
+
+  @doc("The content disposition of the delivery.")
+  content_disposition: string;
+
+  @doc("The kind of conversation this delivery describes.")
+  conversation_type: string;
+
+  @doc("The call ID.")
+  call_id: string;
+}
+
+@doc("""
+  Extended call/channel context attached to AI transcribe and translate deliveries — a superset of
+  `AiCallInfo` with call timing and caller-ID detail.
+  """)
+@summary("AI channel data")
+model AiChannelData {
+  @doc("Your project ID.")
+  project_id?: string;
+
+  @doc("Your space ID.")
+  space_id?: string;
+
+  @doc("The content type of the delivery.")
+  content_type: string;
+
+  @doc("The content disposition of the delivery.")
+  content_disposition: string;
+
+  @doc("The call ID.")
+  call_id: string;
+
+  @doc("When the call started.")
+  call_start_date?: string;
+
+  @doc("When the call was answered.")
+  call_answer_date?: string;
+
+  @doc("When the call ended.")
+  call_end_date?: string;
+
+  @doc("The caller's name.")
+  caller_id_name?: string;
+
+  @doc("The caller's number.")
+  caller_id_number?: string;
+
+  @doc("SWML variables set on the call.")
+  SWMLVars?: Record<unknown>;
 }

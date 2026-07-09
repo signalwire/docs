@@ -1,0 +1,74 @@
+---
+title: Events and subscriptions
+slug: /relay/events
+description: How Relay pushes events to your connection, and how to subscribe to inbound events with contexts.
+max-toc-depth: 3
+---
+
+Relay is event-driven. Once your connection is open, SignalWire pushes events to it as things happen — a call changes state, a recording finishes, a new message or call arrives — so you react to them instead of polling. This page covers the two kinds of events you receive and how to subscribe to the ones that need it.
+
+## Two kinds of events
+
+Every event reaches you the same way — pushed over the open socket — but they fall into two groups, and only one of them needs a subscription.
+
+**Command-lifecycle events** report progress on a command *you* started. When you begin an action like `calling.play` or `calling.record`, its later state changes (`playing`, `finished`, and so on) come back as events keyed to the `control_id` you set on the request. These flow to you automatically — there's nothing to subscribe to.
+
+**Inbound events** happen without you asking — an inbound call, an incoming message, a task handed to your client. SignalWire can't know which connection should handle them, so you first **subscribe to a context** (below). The clearest example is `calling.call.receive`, which only reaches clients subscribed to the inbound call's context.
+
+<Note>
+Every event is documented on its own receive-only channel in the API reference under this tab — `calling.call.state`, `calling.call.receive`, `messaging.receive`, and the rest.
+</Note>
+
+## Subscribe to inbound events with contexts
+
+A **context** is a label you attach to a resource — a phone number, for example — so its inbound events route to the right place. A number configured with the `support` context sends its inbound calls to whichever connections have subscribed to `support`.
+
+Subscribe by passing `contexts` in your `signalwire.connect` message, at connect time:
+
+```json
+{
+  "version": { "major": 4, "minor": 0, "revision": 0 },
+  "authentication": { "jwt_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...." },
+  "contexts": ["support", "sales"]
+}
+```
+
+From then on, inbound events for those contexts arrive on your connection. See [Authentication](/docs/apis/relay/authentication) for the full connect message.
+
+<Note>
+**Legacy subscriptions.** Before protocol 4.0, you subscribed and unsubscribed *after* connecting, with the `signalwire.receive` and `signalwire.unreceive` methods. On 4.0 connections those are rejected — pass `contexts` to `signalwire.connect` instead.
+</Note>
+
+## What an event looks like
+
+Each event carries an `event_type` that names it and a `params` payload whose fields depend on the event:
+
+```json
+{
+  "event_type": "calling.call.state",
+  "params": {
+    "call_id": "c1a2b3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
+    "call_state": "answered"
+  }
+}
+```
+
+The exact `params` for each event live on that event's page in the API reference. If you use an SDK, you don't parse this shape by hand — the SDK delivers each event as a typed object or a callback.
+
+## Correlate events to your requests
+
+Events echo the identifiers you set, so you can tie each one back to the request or call it belongs to:
+
+- **`control_id`** — the identifier you set when you started a command (`calling.play`, `calling.record`, `calling.detect`, and so on). Its lifecycle events carry the same `control_id`.
+- **`tag`** — your label on a call; call events such as `calling.call.state` carry it so you can match them to the call you placed.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Connection lifecycle" icon="arrows-rotate" href="/docs/apis/relay/connection-lifecycle">
+    Keep the connection healthy, and handle a server-initiated disconnect.
+  </Card>
+  <Card title="Overview" icon="tower-broadcast" href="/docs/apis/relay">
+    How a Relay connection works end to end, and what each service does.
+  </Card>
+</CardGroup>

@@ -30,6 +30,8 @@ model CallAiEvent is SignalwireEvent<typeof callingCallAi, CallAiEventData>;
 
 @summary("AI completion event")
 model AiCompletionEventData {
+  ...CallEventAddress;
+
   @doc("The assistant's completed utterance for the turn. Redacted when the app has `redact_prompt` set.")
   @example("Sure — I can help you place an order. Would you like pickup or delivery?")
   text: string;
@@ -42,10 +44,13 @@ model AiCompletionEventData {
 const callingAiCompletion = "calling.ai.completion";
 @summary(callingAiCompletion)
 @extension("x-fern-display-name", callingAiCompletion)
-model AiCompletionEvent is SignalwireEvent<typeof callingAiCompletion, AiCompletionEventData>;
+model AiCompletionEvent
+  is SignalwireEvent<typeof callingAiCompletion, AiCompletionEventData>;
 
 @summary("AI response event")
 model AiResponseEventData {
+  ...CallEventAddress;
+
   @doc("The assistant's full response text for the turn. Redacted when the app has `redact_prompt` set.")
   @example("Sure — I can help you place an order. Would you like pickup or delivery?")
   response: string;
@@ -54,10 +59,13 @@ model AiResponseEventData {
 const callingAiResponseEvent = "calling.ai.response";
 @summary(callingAiResponseEvent)
 @extension("x-fern-display-name", callingAiResponseEvent)
-model AiResponseEvent is SignalwireEvent<typeof callingAiResponseEvent, AiResponseEventData>;
+model AiResponseEvent
+  is SignalwireEvent<typeof callingAiResponseEvent, AiResponseEventData>;
 
 @summary("AI response utterance event")
 model AiResponseUtteranceEventData {
+  ...CallEventAddress;
+
   @doc("One spoken segment of the assistant's response, emitted as it streams. Redacted when the app has `redact_prompt` set.")
   @example("Would you like pickup or delivery?")
   utterance: string;
@@ -66,10 +74,16 @@ model AiResponseUtteranceEventData {
 const callingAiResponseUtterance = "calling.ai.response_utterance";
 @summary(callingAiResponseUtterance)
 @extension("x-fern-display-name", callingAiResponseUtterance)
-model AiResponseUtteranceEvent is SignalwireEvent<typeof callingAiResponseUtterance, AiResponseUtteranceEventData>;
+model AiResponseUtteranceEvent
+  is SignalwireEvent<
+    typeof callingAiResponseUtterance,
+    AiResponseUtteranceEventData
+  >;
 
 @summary("AI speech detect event")
 model AiSpeechDetectEventData {
+  ...CallEventAddress;
+
   @doc("The caller's final recognized transcript for the turn.")
   @example("I'd like to order a large pepperoni pizza for delivery.")
   text: string;
@@ -78,10 +92,13 @@ model AiSpeechDetectEventData {
 const callingAiSpeechDetect = "calling.ai.speech_detect";
 @summary(callingAiSpeechDetect)
 @extension("x-fern-display-name", callingAiSpeechDetect)
-model AiSpeechDetectEvent is SignalwireEvent<typeof callingAiSpeechDetect, AiSpeechDetectEventData>;
+model AiSpeechDetectEvent
+  is SignalwireEvent<typeof callingAiSpeechDetect, AiSpeechDetectEventData>;
 
 @summary("AI partial result event")
 model AiPartialResultEventData {
+  ...CallEventAddress;
+
   @doc("The caller's interim (partial) speech-recognition transcript.")
   @example("I'd like to order a large")
   text: string;
@@ -94,20 +111,26 @@ model AiPartialResultEventData {
 const callingAiPartialResult = "calling.ai.partial_result";
 @summary(callingAiPartialResult)
 @extension("x-fern-display-name", callingAiPartialResult)
-model AiPartialResultEvent is SignalwireEvent<typeof callingAiPartialResult, AiPartialResultEventData>;
+model AiPartialResultEvent
+  is SignalwireEvent<typeof callingAiPartialResult, AiPartialResultEventData>;
 
 @summary("AI begin speaking event")
-@doc("Signal-only event: the assistant has started speaking. The body is empty.")
-model AiBeginSpeakingEventData {}
+@doc("Signal-only event: the assistant has started speaking. Carries only the call address.")
+model AiBeginSpeakingEventData {
+  ...CallEventAddress;
+}
 
 const callingAiBeginSpeaking = "calling.ai.begin_speaking";
 @summary(callingAiBeginSpeaking)
 @extension("x-fern-display-name", callingAiBeginSpeaking)
-model AiBeginSpeakingEvent is SignalwireEvent<typeof callingAiBeginSpeaking, AiBeginSpeakingEventData>;
+model AiBeginSpeakingEvent
+  is SignalwireEvent<typeof callingAiBeginSpeaking, AiBeginSpeakingEventData>;
 
 @summary("AI start event")
-@doc("Signal-only event: the AI session has started. The body is empty.")
-model AiStartEventData {}
+@doc("Signal-only event: the AI session has started. Carries only the call address.")
+model AiStartEventData {
+  ...CallEventAddress;
+}
 
 const callingAiStart = "calling.ai.start";
 @summary(callingAiStart)
@@ -115,16 +138,21 @@ const callingAiStart = "calling.ai.start";
 model AiStartEvent is SignalwireEvent<typeof callingAiStart, AiStartEventData>;
 
 @summary("AI user speaking event")
-@doc("Signal-only event: the caller has started speaking (barge-in). The body is empty.")
-model AiUserSpeakingEventData {}
+@doc("Signal-only event: the caller has started speaking (barge-in). Carries only the call address.")
+model AiUserSpeakingEventData {
+  ...CallEventAddress;
+}
 
 const callingAiUserSpeaking = "calling.ai.user_speaking";
 @summary(callingAiUserSpeaking)
 @extension("x-fern-display-name", callingAiUserSpeaking)
-model AiUserSpeakingEvent is SignalwireEvent<typeof callingAiUserSpeaking, AiUserSpeakingEventData>;
+model AiUserSpeakingEvent
+  is SignalwireEvent<typeof callingAiUserSpeaking, AiUserSpeakingEventData>;
 
 @summary("AI warning event")
 model AiWarningEventData {
+  ...CallEventAddress;
+
   @doc("Human-readable warning message, e.g. an oversized system prompt.")
   @example("Excessive System Prompt.\n")
   error: string;
@@ -137,10 +165,13 @@ model AiWarningEventData {
 const callingAiWarning = "calling.ai.warning";
 @summary(callingAiWarning)
 @extension("x-fern-display-name", callingAiWarning)
-model AiWarningEvent is SignalwireEvent<typeof callingAiWarning, AiWarningEventData>;
+model AiWarningEvent
+  is SignalwireEvent<typeof callingAiWarning, AiWarningEventData>;
 
 @summary("AI transparent barge event")
 model AiTransparentBargeEventData {
+  ...CallEventAddress;
+
   @doc("""
     The caller's merged turn text after a transparent barge — when the caller interrupts but the
     assistant keeps listening and merges the interruption into the same turn. Present only when
@@ -153,10 +184,16 @@ model AiTransparentBargeEventData {
 const callingAiTransparentBarge = "calling.ai.transparent_barge";
 @summary(callingAiTransparentBarge)
 @extension("x-fern-display-name", callingAiTransparentBarge)
-model AiTransparentBargeEvent is SignalwireEvent<typeof callingAiTransparentBarge, AiTransparentBargeEventData>;
+model AiTransparentBargeEvent
+  is SignalwireEvent<
+    typeof callingAiTransparentBarge,
+    AiTransparentBargeEventData
+  >;
 
 @summary("AI stop event")
 model AiStopEventData {
+  ...CallEventAddress;
+
   @doc("When the AI session started, as a Unix timestamp in microseconds.")
   @example(1718000000000000)
   start_time: int64;
@@ -176,20 +213,28 @@ model AiStopEventData {
 const callingAiStopEvent = "calling.ai.stop";
 @summary(callingAiStopEvent)
 @extension("x-fern-display-name", callingAiStopEvent)
-model AiStopEvent is SignalwireEvent<typeof callingAiStopEvent, AiStopEventData>;
+model AiStopEvent
+  is SignalwireEvent<typeof callingAiStopEvent, AiStopEventData>;
 
 @summary("AI post-prompt event")
-@doc("End-of-call summary payload. The body is caller-defined with no fixed schema; only fires when the app has a `post_url` set.")
-model AiPostPromptEventData is Record<unknown>;
+@doc("End-of-call summary payload. Beyond the call address, the body is caller-defined with no fixed schema; only fires when the app has a `post_url` set.")
+model AiPostPromptEventData {
+  ...CallEventAddress;
+  ...Record<unknown>;
+}
 
 const callingAiPostPrompt = "calling.ai.post_prompt";
 @summary(callingAiPostPrompt)
 @extension("x-fern-display-name", callingAiPostPrompt)
-model AiPostPromptEvent is SignalwireEvent<typeof callingAiPostPrompt, AiPostPromptEventData>;
+model AiPostPromptEvent
+  is SignalwireEvent<typeof callingAiPostPrompt, AiPostPromptEventData>;
 
 @summary("AI SWAIG event")
-@doc("Log of a SWAIG (SignalWire AI Gateway) function call. The body is caller-defined with no fixed schema.")
-model AiSwaigEventData is Record<unknown>;
+@doc("Log of a SWAIG (SignalWire AI Gateway) function call. Beyond the call address, the body is caller-defined with no fixed schema.")
+model AiSwaigEventData {
+  ...CallEventAddress;
+  ...Record<unknown>;
+}
 
 const callingAiSwaig = "calling.ai.swaig";
 @summary(callingAiSwaig)
@@ -197,10 +242,14 @@ const callingAiSwaig = "calling.ai.swaig";
 model AiSwaigEvent is SignalwireEvent<typeof callingAiSwaig, AiSwaigEventData>;
 
 @summary("AI SWAIG action event")
-@doc("A single SWAIG action item, forwarded verbatim. The body is caller-defined with no fixed schema.")
-model AiSwaigActionEventData is Record<unknown>;
+@doc("A single SWAIG action item, forwarded verbatim. Beyond the call address, the body is caller-defined with no fixed schema.")
+model AiSwaigActionEventData {
+  ...CallEventAddress;
+  ...Record<unknown>;
+}
 
 const callingAiSwaigAction = "calling.ai.swaig_action";
 @summary(callingAiSwaigAction)
 @extension("x-fern-display-name", callingAiSwaigAction)
-model AiSwaigActionEvent is SignalwireEvent<typeof callingAiSwaigAction, AiSwaigActionEventData>;
+model AiSwaigActionEvent
+  is SignalwireEvent<typeof callingAiSwaigAction, AiSwaigActionEventData>;

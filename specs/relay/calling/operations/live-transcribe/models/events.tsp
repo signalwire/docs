@@ -1,5 +1,6 @@
 import "@signalwire/typespec-asyncapi";
 import "../../../../common/frames.tsp";
+import "../../../models/core.tsp";
 import "../../../events/shared.tsp";
 import "@typespec/openapi";
 
@@ -34,19 +35,31 @@ model TranscribeUtterance {
   """)
 @summary("Live transcribe utterance event")
 model TranscribeUtteranceEventData {
+  ...CallEventAddress;
+
   @doc("Recognition confidence for this utterance, roughly 0.0-1.0.")
   @example(0.94)
   confidence?: float64;
 
   @doc("The recognized utterance.")
   utterance: TranscribeUtterance;
+
+  @doc("Call/session context for this delivery.")
+  call_info: AiCallInfo;
+
+  @doc("Extended call/channel context for this delivery.")
+  channel_data: AiChannelData;
 }
 
 const callingAiTranscribeUtterance = "calling.ai.transcribe.utterance";
 @doc("Streams a single recognized utterance during a `calling.live_transcribe` session.")
 @summary(callingAiTranscribeUtterance)
 @extension("x-fern-display-name", callingAiTranscribeUtterance)
-model TranscribeUtteranceEvent is SignalwireEvent<typeof callingAiTranscribeUtterance, TranscribeUtteranceEventData>;
+model TranscribeUtteranceEvent
+  is SignalwireEvent<
+    typeof callingAiTranscribeUtterance,
+    TranscribeUtteranceEventData
+  >;
 
 @doc("""
   An on-demand summary of a `calling.live_transcribe` session so far, produced when you send
@@ -55,19 +68,31 @@ model TranscribeUtteranceEvent is SignalwireEvent<typeof callingAiTranscribeUtte
   """)
 @summary("Live transcribe summarize event")
 model TranscribeLiveSummarizeEventData {
+  ...CallEventAddress;
+
   @doc("The conversation so far, one entry per turn.")
   conversation_log: ConversationLogEntry[];
 
   @doc("An AI-generated summary of the conversation so far.")
   @example("The caller asked to check their balance and confirmed their identity.")
   conversation_summary: string;
+
+  @doc("Call/session context for this delivery.")
+  call_info: AiCallInfo;
+
+  @doc("Extended call/channel context for this delivery.")
+  channel_data: AiChannelData;
 }
 
 const callingAiTranscribeLiveSummarize = "calling.ai.transcribe.live_summarize";
 @doc("A summary of the transcription so far, emitted for `calling.live_transcribe` when you request the `summarize` action.")
 @summary(callingAiTranscribeLiveSummarize)
 @extension("x-fern-display-name", callingAiTranscribeLiveSummarize)
-model TranscribeLiveSummarizeEvent is SignalwireEvent<typeof callingAiTranscribeLiveSummarize, TranscribeLiveSummarizeEventData>;
+model TranscribeLiveSummarizeEvent
+  is SignalwireEvent<
+    typeof callingAiTranscribeLiveSummarize,
+    TranscribeLiveSummarizeEventData
+  >;
 
 @doc("""
   The full conversation log for a `calling.live_transcribe` session, delivered once when the
@@ -76,6 +101,8 @@ model TranscribeLiveSummarizeEvent is SignalwireEvent<typeof callingAiTranscribe
   """)
 @summary("Live transcribe conversation log event")
 model TranscribeConversationLogEventData {
+  ...CallEventAddress;
+
   @doc("The full conversation, one entry per turn.")
   conversation_log: ConversationLogEntry[];
 
@@ -85,10 +112,20 @@ model TranscribeConversationLogEventData {
 
   @doc("Aggregate metrics for the session.")
   metrics: TranscriptionMetrics;
+
+  @doc("Call/session context for this delivery.")
+  call_info: AiCallInfo;
+
+  @doc("Extended call/channel context for this delivery.")
+  channel_data: AiChannelData;
 }
 
 const callingAiTranscribeConversationLog = "calling.ai.transcribe.conversation_log";
 @doc("The complete conversation log and metrics for a `calling.live_transcribe` session, emitted once the session ends.")
 @summary(callingAiTranscribeConversationLog)
 @extension("x-fern-display-name", callingAiTranscribeConversationLog)
-model TranscribeConversationLogEvent is SignalwireEvent<typeof callingAiTranscribeConversationLog, TranscribeConversationLogEventData>;
+model TranscribeConversationLogEvent
+  is SignalwireEvent<
+    typeof callingAiTranscribeConversationLog,
+    TranscribeConversationLogEventData
+  >;

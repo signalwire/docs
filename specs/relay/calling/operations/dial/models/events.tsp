@@ -24,7 +24,7 @@ model CallDialParams {
   @example("answered")
   dial_state: "dialing" | "answered" | "failed";
 
-  @doc("The call that answered, as a full call-state payload (the same shape as a `calling.call.state` event). Present only when `dial_state` is `answered`; the winning leg is marked by `dial_winner`.")
+  @doc("The call that answered, as a call-state payload — largely the same shape as a `calling.call.state` event, but without the `start_time`/`answer_time`/`end_time`/`audio_in_mos` fields that only the state event itself adds. Present only when `dial_state` is `answered`; the winning leg is marked by `dial_winner`.")
   call?: CallStateParams;
 
   @doc("Why the dial failed. Present when `dial_state` is `failed`.")

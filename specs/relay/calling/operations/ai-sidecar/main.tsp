@@ -14,10 +14,12 @@ namespace Relay.Calling;
 const callingAiSidecar = "calling.ai_sidecar";
 const callingAiSidecarResponse = "${callingAiSidecar} response";
 
-model AiSidecarRequest is JsonRpcRequest<typeof callingAiSidecar, AiSidecarParams>;
+model AiSidecarRequest
+  is JsonRpcRequest<typeof callingAiSidecar, AiSidecarParams>;
 
 @extension("x-fern-display-name", callingAiSidecarResponse)
-@reply model AiSidecarReply is JsonRpcResponse<AiSidecarResult>;
+@reply
+model AiSidecarReply is JsonRpcResponse<AiSidecarResult>;
 
 @doc("""
   Attach a real-time AI observer (sidecar) to an answered call, or — when
@@ -32,10 +34,12 @@ op aiSidecar(...AiSidecarRequest): AiSidecarReply | AiSidecarEvent;
 const callingAiSidecarPoke = "calling.ai_sidecar.poke";
 const callingAiSidecarPokeResponse = "${callingAiSidecarPoke} response";
 
-model AiSidecarPokeRequest is JsonRpcRequest<typeof callingAiSidecarPoke, AiSidecarPokeParams>;
+model AiSidecarPokeRequest
+  is JsonRpcRequest<typeof callingAiSidecarPoke, AiSidecarPokeParams>;
 
 @extension("x-fern-display-name", callingAiSidecarPokeResponse)
-@reply model AiSidecarPokeReply is JsonRpcResponse<AiSidecarResult>;
+@reply
+model AiSidecarPokeReply is JsonRpcResponse<AiSidecarResult>;
 
 @doc("""
   (async-safe) Send a message to the sidecar and prompt it to respond right away,
@@ -49,10 +53,12 @@ op aiSidecarPoke(...AiSidecarPokeRequest): AiSidecarPokeReply;
 const callingAiSidecarAsk = "calling.ai_sidecar.ask";
 const callingAiSidecarAskResponse = "${callingAiSidecarAsk} response";
 
-model AiSidecarAskRequest is JsonRpcRequest<typeof callingAiSidecarAsk, AiSidecarAskParams>;
+model AiSidecarAskRequest
+  is JsonRpcRequest<typeof callingAiSidecarAsk, AiSidecarAskParams>;
 
 @extension("x-fern-display-name", callingAiSidecarAskResponse)
-@reply model AiSidecarAskReply is JsonRpcResponse<AiSidecarAskResult>;
+@reply
+model AiSidecarAskReply is JsonRpcResponse<AiSidecarAskResult>;
 
 @doc("""
   (async-safe) Ask the sidecar a one-off question without affecting the live
@@ -67,10 +73,12 @@ op aiSidecarAsk(...AiSidecarAskRequest): AiSidecarAskReply;
 const callingAiSidecarStop = "calling.ai_sidecar.stop";
 const callingAiSidecarStopResponse = "${callingAiSidecarStop} response";
 
-model AiSidecarStopRequest is JsonRpcRequest<typeof callingAiSidecarStop, AiSidecarStopParams>;
+model AiSidecarStopRequest
+  is JsonRpcRequest<typeof callingAiSidecarStop, AiSidecarStopParams>;
 
 @extension("x-fern-display-name", callingAiSidecarStopResponse)
-@reply model AiSidecarStopReply is JsonRpcResponse<AiSidecarResult>;
+@reply
+model AiSidecarStopReply is JsonRpcResponse<AiSidecarResult>;
 
 @doc("(async-safe) Stop and detach the AI sidecar from the call.")
 @channel(callingAiSidecarStop)
@@ -81,10 +89,12 @@ op aiSidecarStop(...AiSidecarStopRequest): AiSidecarStopReply;
 const callingAiSidecarStatus = "calling.ai_sidecar.status";
 const callingAiSidecarStatusResponse = "${callingAiSidecarStatus} response";
 
-model AiSidecarStatusRequest is JsonRpcRequest<typeof callingAiSidecarStatus, AiSidecarStatusParams>;
+model AiSidecarStatusRequest
+  is JsonRpcRequest<typeof callingAiSidecarStatus, AiSidecarStatusParams>;
 
 @extension("x-fern-display-name", callingAiSidecarStatusResponse)
-@reply model AiSidecarStatusReply is JsonRpcResponse<AiSidecarStatusResult>;
+@reply
+model AiSidecarStatusReply is JsonRpcResponse<AiSidecarStatusResult>;
 
 @doc("(async-safe) Get a snapshot of the sidecar's activity counters.")
 @channel(callingAiSidecarStatus)
