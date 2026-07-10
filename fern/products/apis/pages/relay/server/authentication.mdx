@@ -1,0 +1,103 @@
+---
+title: Authentication
+slug: /relay/server/authentication
+description: Authenticate a backend Relay connection by sending signalwire.connect with your project ID and API token as the first WebSocket message.
+max-toc-depth: 3
+---
+
+A WebSocket handshake has no `Authorization` header, so Relay authenticates differently from the REST API: you open the socket first, then **log in with your first message**. That message is `signalwire.connect`, and it carries your credentials.
+
+Send anything else before you connect and the request is rejected. Once `signalwire.connect` succeeds, the connection is authenticated for its entire lifetime — every later command reuses it.
+
+## The connect message
+
+`signalwire.connect` takes two required parameters — the protocol `version` your client speaks and an `authentication` object — plus a few optional ones:
+
+```json
+{
+  "version": { "major": 4, "minor": 0, "revision": 0 },
+  "authentication": {
+    "...": "see below"
+  }
+}
+```
+
+## Project and token
+
+Code that runs on your own server can hold your SignalWire credentials directly. Authenticate with your **Project ID** and an **API token**, available in the [SignalWire Dashboard](/docs/platform/your-signalwire-api-space):
+
+```json
+{
+  "version": { "major": 4, "minor": 0, "revision": 0 },
+  "authentication": {
+    "project": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "token": "PT9a8b7c6d5e4f3a2b1c..."
+  }
+}
+```
+
+<Warning>
+Keep your API token on the server. Never ship it to a browser or mobile app — anyone who opens the page can read it and use it against your account. Client apps authenticate with a short-lived JWT instead; see the [Client reference](/docs/apis/relay/client/authentication).
+</Warning>
+
+## What you get back
+
+A successful `signalwire.connect` returns your connection details:
+
+```json
+{
+  "identity": "c1a2b3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
+  "authorization": { },
+  "protocol": "signalwire_........"
+}
+```
+
+| Field | Description |
+|---|---|
+| `identity` | A unique identifier for this client, valid for the life of the connection. |
+| `authorization` | The permissions and scopes granted to this connection. Treat it as opaque. To reconnect, pass back the `authorization_state` from the `signalwire.authorization.state` event (below) — not this object. |
+| `protocol` | The protocol identifier to use on your subsequent requests. |
+| `ice_servers` | STUN/TURN servers for media, included on every successful connect. A backend app that isn't handling WebRTC media can ignore them. |
+
+## Reconnecting
+
+Right after a successful connect — and periodically afterward — you receive a `signalwire.authorization.state` event:
+
+```json
+{
+  "authorization_state": "<opaqueAuthState>"
+}
+```
+
+Save the latest `authorization_state`. If the socket drops, you can reconnect quickly by sending `signalwire.connect` again with the saved state and the `protocol` you were given:
+
+```json
+{
+  "version": { "major": 4, "minor": 0, "revision": 0 },
+  "authentication": {
+    "project": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "token": "PT9a8b7c6d5e4f3a2b1c..."
+  },
+  "protocol": "signalwire_........",
+  "authorization_state": "<opaqueAuthState>"
+}
+```
+
+<Tip>
+Pass `contexts` in your connect message to start receiving inbound events for those contexts as soon as you connect, rather than subscribing in a separate step. See [Events and subscriptions](/docs/apis/relay/server/events).
+</Tip>
+
+## Using an SDK
+
+The [Server SDKs](/docs/server-sdks) build and send the `signalwire.connect` message for you — you provide your project and token when you create the client, and the SDK handles the handshake, the `protocol` and `authorization_state` bookkeeping, and reconnection.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Overview" icon="tower-broadcast" href="/docs/apis/relay/server">
+    How a Relay connection works end to end, and what each service does.
+  </Card>
+  <Card title="Errors" icon="circle-exclamation" href="/docs/apis/relay/server/errors">
+    Read the result on every response to tell success from failure.
+  </Card>
+</CardGroup>

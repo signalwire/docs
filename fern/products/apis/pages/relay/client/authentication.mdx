@@ -1,11 +1,11 @@
 ---
 title: Authentication
-slug: /relay/authentication
-description: Authenticate a Relay connection by sending signalwire.connect as your first WebSocket message.
+slug: /relay/client/authentication
+description: Authenticate a browser or mobile Relay connection by sending signalwire.connect with a short-lived JWT as the first WebSocket message.
 max-toc-depth: 3
 ---
 
-A WebSocket handshake has no `Authorization` header, so Relay authenticates differently from the REST API: you open the socket first, then **log in with your first message**. That message is `signalwire.connect`, and it carries your credentials.
+A WebSocket handshake has no `Authorization` header, so Relay authenticates differently from the REST API: you open the socket first, then **log in with your first message**. That message is `signalwire.connect`, and it carries your credential.
 
 Send anything else before you connect and the request is rejected. Once `signalwire.connect` succeeds, the connection is authenticated for its entire lifetime — every later command reuses it.
 
@@ -22,29 +22,13 @@ Send anything else before you connect and the request is rejected. Once `signalw
 }
 ```
 
-The shape of `authentication` depends on where your code runs.
-
-## Backend apps: project and token
-
-Code that runs on your own server can hold your SignalWire credentials directly. Authenticate with your **Project ID** and an **API token**, available in the [SignalWire Dashboard](/docs/platform/your-signalwire-api-space):
-
-```json
-{
-  "version": { "major": 4, "minor": 0, "revision": 0 },
-  "authentication": {
-    "project": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-    "token": "PT9a8b7c6d5e4f3a2b1c..."
-  }
-}
-```
-
-## Browser and client apps: JWT
+## Authenticate with a JWT
 
 <Warning>
-Never ship a project API token to a browser or mobile app. Anyone who opens your page can read it and use it against your account.
+Never ship a project API token to a browser or mobile app. Anyone who opens your page can read it and use it against your account. Client apps authenticate with a short-lived token instead.
 </Warning>
 
-Client apps authenticate with a short-lived **JWT** instead. Your backend generates the token (using its own credentials) and hands it to the client, which sends it as `jwt_token`:
+Your backend generates a short-lived **JWT** (using its own SignalWire credentials) and hands it to the client, which sends it as `jwt_token`:
 
 ```json
 {
@@ -55,7 +39,11 @@ Client apps authenticate with a short-lived **JWT** instead. Your backend genera
 }
 ```
 
-A backend app may also authenticate with a `jwt_token` if you prefer not to hold long-lived credentials in the process.
+For Call Fabric, the token you generate is a **Subscriber Access Token** — a JWT scoped to a single subscriber (the signed-in end user). Either way, the client only ever holds a short-lived token, never your account credentials.
+
+<Tip>
+Advanced: if your token is client-bound (DPoP), also send a `dpop_token` in the connect message to cryptographically bind the connection to your client. Leave it unset for standard JWT/SAT authentication.
+</Tip>
 
 ## What you get back
 
@@ -74,7 +62,11 @@ A successful `signalwire.connect` returns your connection details:
 | `identity` | A unique identifier for this client, valid for the life of the connection. |
 | `authorization` | The permissions and scopes granted to this connection. Treat it as opaque. To reconnect, pass back the `authorization_state` from the `signalwire.authorization.state` event (below) — not this object. |
 | `protocol` | The protocol identifier to use on your subsequent requests. |
-| `ice_servers` | STUN/TURN servers for media, returned only for connections that carry WebRTC media. |
+| `ice_servers` | STUN/TURN servers for negotiating WebRTC media. At least one is always included on a successful connect. |
+
+## Refreshing your token
+
+Because the JWT is short-lived, refresh it before it expires without dropping the connection: send `signalwire.reauthenticate` with a fresh token. See [Connection lifecycle](/docs/apis/relay/client/connection-lifecycle).
 
 ## Reconnecting
 
@@ -99,21 +91,17 @@ Save the latest `authorization_state`. If the socket drops, you can reconnect qu
 }
 ```
 
-<Tip>
-Pass `contexts` in your connect message to start receiving inbound events for those contexts as soon as you connect, rather than subscribing in a separate step.
-</Tip>
-
 ## Using an SDK
 
-The [SignalWire SDKs](/docs/server-sdks) build and send the `signalwire.connect` message for you — you provide your credentials (or a JWT) when you create the client, and the SDK handles the handshake, the `protocol` and `authorization_state` bookkeeping, and reconnection. For the browser, see the [Browser SDK authentication guide](/docs/browser-sdk/v4/guides/authentication).
+The [Browser SDK](/docs/browser-sdk/v4/guides/overview) builds and sends the `signalwire.connect` message for you — you provide the token when you create the client, and the SDK handles the handshake, the `protocol` and `authorization_state` bookkeeping, token refresh, and reconnection. See the [Browser SDK authentication guide](/docs/browser-sdk/v4/guides/authentication).
 
 ## Next steps
 
 <CardGroup cols={2}>
-  <Card title="Overview" icon="tower-broadcast" href="/docs/apis/relay">
+  <Card title="Overview" icon="tower-broadcast" href="/docs/apis/relay/client">
     How a Relay connection works end to end, and what each service does.
   </Card>
-  <Card title="Errors" icon="circle-exclamation" href="/docs/apis/relay/errors">
+  <Card title="Errors" icon="circle-exclamation" href="/docs/apis/relay/client/errors">
     Read the result on every response to tell success from failure.
   </Card>
 </CardGroup>

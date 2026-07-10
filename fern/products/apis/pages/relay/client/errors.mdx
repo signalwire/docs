@@ -1,0 +1,82 @@
+---
+title: Errors
+slug: /relay/client/errors
+description: Every Relay response carries a code and message your client checks for success or failure.
+max-toc-depth: 3
+---
+
+Relay doesn't fail with HTTP status codes — there's no HTTP response on a WebSocket. Instead, **every command you send comes back with a result you check**: a `code` and a `message`. Failures are reported through that result, not raised as a separate kind of error, so you handle success and failure the same way — by reading the `code`.
+
+## The result shape
+
+A typical result looks like this:
+
+```json
+{
+  "code": "200",
+  "message": "OK",
+  "call_id": "c1a2b3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d"
+}
+```
+
+| Field | Description |
+|---|---|
+| `code` | The result code, as a **string**. `"200"` means success; any other value means the request failed. |
+| `message` | A human-readable description of the result. On failure, it explains what went wrong. The exact text varies by command. |
+| `call_id` | The call this result is for, echoed from your request. Present when the command acts on a call. |
+
+## Checking for success
+
+The one thing to check is `code`, and remember it's a **string**, not a number:
+
+- `"200"` — the request succeeded.
+- Anything else — the request failed, and `message` explains why.
+
+```javascript
+if (result.code !== "200") {
+  console.error(`Request failed: ${result.message}`);
+}
+```
+
+The codes mirror familiar HTTP status conventions, so a `"4xx"` value means the request was rejected and a `"5xx"` value means something went wrong on SignalWire's side.
+
+## Common codes
+
+| Code | Meaning |
+|---|---|
+| `"200"` | **Success.** The command was accepted. |
+| `"400"` | **Bad request.** A parameter was missing or invalid. Fix the request before retrying. |
+| `"402"` | **Payment required.** Your account isn't permitted to perform this action. |
+| `"404"` | **Not found.** The call or member the request targeted doesn't exist — often because the call has already ended. |
+| `"409"` | **Conflict.** The request clashes with the call's current state. |
+
+## Examples
+
+A failed request returns the same shape, with a non-`"200"` code and a message explaining the cause:
+
+```json
+{
+  "code": "404",
+  "message": "Call not found",
+  "call_id": "c1a2b3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d"
+}
+```
+
+<Note>
+Authentication failures follow the same pattern: if `signalwire.connect` can't validate your token, it returns a failing result with a message describing why. See [Authentication](/docs/apis/relay/client/authentication).
+</Note>
+
+## Using an SDK
+
+The [Browser SDK](/docs/browser-sdk/v4/guides/overview) surfaces this result for you — successful commands resolve with a result you can inspect, and failures are raised in JavaScript's idiomatic style instead of leaving you to compare code strings by hand. The `code` and `message` are still there when you need the underlying detail.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Overview" icon="tower-broadcast" href="/docs/apis/relay/client">
+    How a Relay connection works end to end, and what each service does.
+  </Card>
+  <Card title="Authentication" icon="key" href="/docs/apis/relay/client/authentication">
+    Open the socket and log in with your first message.
+  </Card>
+</CardGroup>
