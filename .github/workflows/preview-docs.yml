@@ -24,8 +24,20 @@ jobs:
         id: generate-docs
         env:
           FERN_TOKEN: ${{ secrets.FERN_TOKEN }}
+          # Stable preview id, unique per PR, so each update overwrites the
+          # same named preview instead of spinning up a fresh URL every run.
+          # Repo-qualified (e.g. docs-429) since Fern scopes preview ids to the
+          # org, not the repo — this keeps ids from colliding if another repo in
+          # the org copies this workflow and PR numbers happen to overlap.
+          PREVIEW_ID: ${{ github.event.repository.name }}-${{ github.event.pull_request.number }}
         run: |
-          yarn build 2>&1 | tee /tmp/build.log
+          yarn build:specs 2>&1 | tee /tmp/build.log
+          if [ ${PIPESTATUS[0]} -ne 0 ]; then
+            exit 1
+          fi
+
+          # --id gives a stable URL (https://fern-preview-<id>.docs.buildwithfern.com/learn).
+          fern generate --docs --preview --id "$PREVIEW_ID" 2>&1 | tee -a /tmp/build.log
           if [ ${PIPESTATUS[0]} -ne 0 ]; then
             exit 1
           fi
