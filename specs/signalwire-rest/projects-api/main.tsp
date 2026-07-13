@@ -32,7 +32,7 @@ namespace SignalWireAPI.Projects {
     @get
     list(
       ...ListProjectsQuery,
-    ): ProjectListResponse | StatusCode401 | StatusCode403;
+    ): ProjectListResponse | StatusCode401 | StatusCode500;
 
     @operationId("create_subproject")
     @summary("Create a subproject")
@@ -55,8 +55,8 @@ namespace SignalWireAPI.Projects {
           @body body: ProjectWithSigningKey;
         }
       | StatusCode401
-      | StatusCode403
-      | CreateProjectStatusCode422;
+      | CreateProjectStatusCode422
+      | StatusCode500;
 
     @operationId("get_project")
     @summary("Retrieve a project")
@@ -69,10 +69,10 @@ namespace SignalWireAPI.Projects {
       """)
     @get
     read(...ProjectPathID):
-      | ProjectResponse
+      | Project
       | StatusCode401
-      | StatusCode403
-      | StatusCode404;
+      | StatusCode404
+      | StatusCode500;
 
     @operationId("update_project")
     @summary("Update a project")
@@ -85,12 +85,12 @@ namespace SignalWireAPI.Projects {
     update(...ProjectPathID, @body body: UpdateProjectRequest):
       | {
           @statusCode statusCode: 200;
-          @body body: ProjectResponse;
+          @body body: Project;
         }
       | StatusCode401
-      | StatusCode403
       | StatusCode404
-      | UpdateProjectStatusCode422;
+      | UpdateProjectStatusCode422
+      | StatusCode500;
 
     @operationId("delete_subproject")
     @summary("Delete a subproject")
@@ -112,9 +112,9 @@ namespace SignalWireAPI.Projects {
           @statusCode statusCode: 204;
         }
       | StatusCode401
-      | StatusCode403
       | StatusCode404
-      | DeleteProjectStatusCode422;
+      | DeleteProjectStatusCode422
+      | StatusCode500;
 
     @operationId("rotate_signing_key")
     @summary("Rotate a project's signing key")
@@ -134,7 +134,7 @@ namespace SignalWireAPI.Projects {
           @body body: ProjectWithSigningKey;
         }
       | StatusCode401
-      | StatusCode403
-      | StatusCode404;
+      | StatusCode404
+      | StatusCode500;
   }
 }

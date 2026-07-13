@@ -51,7 +51,7 @@ model DeleteProjectStatusCode422 is StatusCode422;
       code: "invalid_parameter",
       message: "Name must be present",
       attribute: "name",
-      url: "https://signalwire.com/docs/apis/error-codes",
+      url: "https://signalwire.com/docs/apis/error-codes#invalid_parameter",
     }
   ],
 })

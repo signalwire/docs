@@ -13,8 +13,3 @@ model ProjectListResponse {
   @doc("The projects on this page.")
   data: Project[];
 }
-
-@doc("A single project.")
-model ProjectResponse {
-  ...Project;
-}
