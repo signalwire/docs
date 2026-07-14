@@ -1,15 +1,11 @@
 import "@signalwire/typespec-asyncapi";
-import "@signalwire/typespec-emit-filter";
 import "../../../../../swml/calling";
 
 import "../../../models/core.tsp";
 
 using SignalWire.AsyncAPI;
-using SignalWire.EmitFilter;
 
 namespace Relay.Calling;
-
-@@excludeFromEmit(SWMLVar);
 
 @summary("AI params")
 model AiParams {
