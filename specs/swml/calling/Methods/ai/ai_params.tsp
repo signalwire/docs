@@ -260,7 +260,7 @@ model AIParams {
 
   @doc("""
     Cleans up the transcription of the caller's speech before the AI reads it — converting spoken numbers to digits, formatting addresses and phone numbers, and fixing obvious mishearings — without changing the meaning.
-    Cannot be used together with `enable_text_normalization`, which is on by default: set `enable_text_normalization` to `false` to use `auto_correct`; otherwise `auto_correct` has no effect.
+    Cannot be used together with `enable_text_normalization`, which is on by default: set `enable_text_normalization` to `"off"` to use `auto_correct`; otherwise `auto_correct` has no effect.
     When used alongside `redact_prompt`, cleanup and redaction happen together in a single step, which keeps responses fast.
     **Default:** `false`.
     """)
@@ -515,11 +515,11 @@ model AIParams {
   @example(true)
   swaig_post_swml_vars?: boolean | string[] | SWMLVar;
 
-  @doc("The model to use for the AI's thinking capabilities. Allowed values are `gpt-4o-mini`, `gpt-4.1-mini`, and `gpt-4.1-nano`.")
+  @doc("The model to use for the AI's thinking capabilities — for example `gpt-4o-mini`, `gpt-4.1-mini`, or `gpt-4.1-nano`. A value that is not a recognized model is ignored, and the agent's main model is used instead.")
   @example("gpt-4.1-mini")
   thinking_model?: SupportedAIModels;
 
-  @doc("The AI model used for lightweight background tasks such as redaction (`redact_prompt`) and transcription cleanup (`auto_correct`). Allowed values are `gpt-4o-mini`, `gpt-4.1-mini`, and `gpt-4.1-nano`. Choose a small, fast model — these tasks run while the caller is waiting for a response. **Default:** the value of the `ai_model` parameter.")
+  @doc("The AI model used for lightweight background tasks such as redaction (`redact_prompt`) and transcription cleanup (`auto_correct`). Choose a small, fast model, such as `gpt-4o-mini`, `gpt-4.1-mini`, or `gpt-4.1-nano` — these tasks run while the caller is waiting for a response. A value that is not a recognized model is ignored, and the agent's main model is used instead. **Default:** the value of the `ai_model` parameter.")
   @example("gpt-4o-mini")
   utility_model?: SupportedAIModels;
 
