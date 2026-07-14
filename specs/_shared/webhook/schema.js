@@ -35,6 +35,20 @@ import {
 } from "@typespec/compiler";
 import { getExtensions, getExternalDocs, isReadonlyProperty } from "@typespec/openapi";
 import { getOneOf } from "@typespec/openapi3";
+import { isSelfExcluded } from "@signalwire/typespec-emit-filter";
+
+// Honor the bare `@excludeFromEmit` form (self-exclusion) the same way the
+// filter-honoring emitters do: a union arm of (or array of) an excluded type
+// is dropped, a property typed as one disappears. Webhook schemas are built
+// in $onValidate — before any emitter runs — so this walker must apply the
+// filter itself.
+function isDroppedType(program, type) {
+  if (isSelfExcluded(program, type)) return true;
+  if (type.kind === "Model" && isArrayModelType(program, type) && type.indexer?.value) {
+    return isDroppedType(program, type.indexer.value);
+  }
+  return false;
+}
 
 // ── Stdlib scalar mapping ─────────────────────────────────────────────
 //
@@ -275,6 +289,7 @@ function modelToSchema(program, model, seen, options) {
   const required = [];
 
   for (const [, prop] of model.properties) {
+    if (isDroppedType(program, prop.type)) continue;
     const wireName = resolveEncodedName(program, prop, "application/json") ?? prop.name;
     const propSchema = typeToSchema(program, prop.type, seen, options);
 
@@ -338,7 +353,10 @@ function typeToSchema(program, type, seen, options) {
       return nullSchema(options.version);
 
     case "Union": {
-      const variants = [...type.variants.values()];
+      const variants = [...type.variants.values()].filter(
+        (v) => !isDroppedType(program, v.type),
+      );
+      if (variants.length === 1) return typeToSchema(program, variants[0].type, seen, options);
       const nullVariant = variants.find(
         (v) => v.type.kind === "Intrinsic" && v.type.name === "null",
       );
