@@ -21,17 +21,58 @@ max-toc-depth: 3
 [utility-model]: /docs/swml/reference/calling/ai/params#paramsutility_model
 [text-normalization]: /docs/swml/reference/calling/ai/params#text-normalization-values
 [prompt-engineering]: /docs/platform/ai/prompt-engineering
-[best-practices]: /docs/platform/ai/best-practices
 [hipaa]: /docs/platform/compliance/hipaa
 
 AI agents routinely handle sensitive information — payment details, social security numbers,
 account credentials, names and addresses. Content redaction masks that information in
 everything SignalWire records or transmits about the call: logs, events, webhook payloads,
-the call timeline, and the post-conversation call log. The conversation itself is untouched —
-the caller hears the agent normally, and the agent understands the caller perfectly.
+the call timeline, and the post-conversation call log.
 
-Turn it on with a single parameter, [`redact_prompt`][redact-prompt], in the `ai` method's
-`params` block:
+The conversation itself is untouched. The caller hears the agent normally, and the agent
+understands the caller perfectly — only the records change.
+
+```mermaid
+%%{init: {
+    'theme': 'mc',
+    'themeVariables': {
+        'fontFamily': 'Inter',
+        'fontSize': '14px',
+        'nodeBorder': '2px',
+        'nodeTextColor': '#000000'
+    },
+    'flowchart': {
+        'wrappingWidth': 200
+    }
+}}%%
+flowchart TD
+    classDef live fill:#f0fff0,stroke:#27ae60,stroke-width:2px,color:#000000,fontFamily:Inter
+    classDef masked fill:#f0f8ff,stroke:#666,stroke-width:2px,color:#000000,fontFamily:Inter
+    classDef note fill:#ffffd0,stroke:#666,stroke-width:1px,color:#666,font-style:italic,fontFamily:Inter
+
+    C["Caller: 'My card number is 4242 4242 4242 4242'"]:::live
+    A["AI agent — receives the real number and replies normally"]:::live
+    T["Caller hears: 'Thanks, your card has been updated.'"]:::live
+    R["Logs · events · webhooks · timeline · call log
+    'My card number is ----'"]:::masked
+
+    C --> A
+    A --> T
+    A -.-> R
+
+    N1["The live conversation
+    stays real"]:::note
+    N2["Every record
+    is masked"]:::note
+    N1 -.-> A
+    N2 -.-> R
+
+    linkStyle default stroke:#666666,stroke-width:2px,color:#666666
+```
+
+## Enable redaction
+
+Turn redaction on with a single parameter, [`redact_prompt`][redact-prompt], in the `ai`
+method's `params` block:
 
 <CodeBlocks>
 <CodeBlock title="YAML">
@@ -83,7 +124,7 @@ requirement is to keep sensitive data from reaching the AI model itself, redacti
 do that.
 </Warning>
 
-## How redaction works
+## How it works
 
 Redaction covers both sides of the conversation. Your `redact_prompt` description guides the
 agent to treat matching content as sensitive whenever it speaks — the first time it says it,
@@ -91,32 +132,45 @@ when it repeats it back, when it confirms it. What the caller says is masked sep
 before it is stored or delivered. In both cases the real words still flow through the live
 conversation; only the records change.
 
-With redaction on, sensitive content appears as `----` in:
+With redaction on, here is what each surface shows:
 
-- AI events and webhook payloads, including SWAIG function calls and the debug webhook
-- The call timeline and stored conversation transcript
-- The post-conversation `call_log` and `raw_call_log`
+| Surface | What appears |
+|---|---|
+| Audio the caller hears | The real content, spoken in full |
+| Text the AI model receives | The real content, every turn |
+| AI events and webhook payloads (including SWAIG and debug webhooks) | Masked — `----` |
+| Call timeline and stored conversation transcript | Masked — `----` |
+| Post-conversation `call_log` and `raw_call_log` | Masked — `----` |
 
 Redaction is performed by AI, not by a fixed pattern-matcher. It errs on the side of masking
 too much rather than too little, but it can occasionally miss — treat it as a strong safeguard
 for your logs and integrations rather than an absolute guarantee.
 
-## Keeping it fast
+## Keep it fast
 
-Redaction runs as a lightweight background task while the caller is waiting for a response,
-so two parameters help keep that work quick:
+Redaction runs as a lightweight background task while the caller is waiting for a response.
+Two companion parameters keep that work quick.
 
-- [`utility_model`][utility-model] selects the model used for background tasks like redaction
-  and transcription cleanup. It defaults to the agent's main model, so set it to a small, fast
-  model instead: `gpt-4o-mini`, `gpt-4.1-mini`, or `gpt-4.1-nano`.
-- [`auto_correct`][auto-correct] cleans up the transcription of the caller's speech —
-  converting spoken numbers to digits, formatting addresses and phone numbers, and fixing
-  obvious mishearings. When used alongside `redact_prompt`, cleanup and redaction happen
-  together in a single step instead of two. Note that `auto_correct` only takes effect when
-  [`enable_text_normalization`][text-normalization] — which is on by default — is set to
-  `false`.
+[`utility_model`][utility-model] selects the model used for background tasks like redaction
+and transcription cleanup. It defaults to the agent's main model, which is usually larger and
+slower than these tasks need.
 
-A complete configuration with both:
+<Tip>
+Set `utility_model` to a small, fast model — `gpt-4o-mini`, `gpt-4.1-mini`, or
+`gpt-4.1-nano` — so background passes don't add noticeable latency to the agent's responses.
+</Tip>
+
+[`auto_correct`][auto-correct] cleans up the transcription of the caller's speech —
+converting spoken numbers to digits, formatting addresses and phone numbers, and fixing
+obvious mishearings. When used alongside `redact_prompt`, cleanup and redaction happen
+together in a single step instead of two.
+
+<Note>
+`auto_correct` only takes effect when [`enable_text_normalization`][text-normalization] —
+which is on by default — is set to `false`. The example below includes both settings.
+</Note>
+
+A complete configuration:
 
 <CodeBlocks>
 <CodeBlock title="YAML">
@@ -162,16 +216,31 @@ sections:
 </CodeBlock>
 </CodeBlocks>
 
-## Verifying redaction
+## Verify redaction
 
-Place a test call, read out a fake card number, and have the agent repeat it back. Then check
-the surfaces you consume — the call's timeline and logs in your Dashboard, and any webhook
-payloads your application receives. The sensitive values should read `----`.
+<Steps>
 
-If real values still appear, confirm that `redact_prompt` is set to a non-empty string and
-actually reached the agent. If one specific category keeps slipping through, name it
-explicitly in the description — for example, "including partial card numbers read back one
-digit at a time".
+#### Place a test call
+
+Call your agent and read out a fake card number — for example, `4242 4242 4242 4242` — and
+ask the agent to repeat it back to confirm.
+
+#### Check the call records
+
+Open the call in your Dashboard and review the timeline and logs. Everywhere the number was
+said — by you or by the agent — should read `----`.
+
+#### Check your webhook payloads
+
+If your application receives SWAIG function calls, debug webhooks, or the post-conversation
+call log, confirm the sensitive values arrive masked there too.
+
+#### Sharpen the description if something leaks
+
+If one category keeps slipping through, name it explicitly in `redact_prompt` — for example,
+"including partial card numbers read back one digit at a time".
+
+</Steps>
 
 ## Limitations
 
@@ -187,7 +256,14 @@ digit at a time".
 
 ## Next steps
 
-- **[`ai.params` reference][ai-params]** — full details for [`redact_prompt`][redact-prompt],
-  [`auto_correct`][auto-correct], and [`utility_model`][utility-model].
-- **[Prompt engineering][prompt-engineering]** — write prompts that keep your agent reliable.
-- **[HIPAA compliance][hipaa]** — building agents that handle protected health information.
+<CardGroup cols={3}>
+  <Card title="ai.params reference" href="/docs/swml/reference/calling/ai/params">
+    Full details for `redact_prompt`, `auto_correct`, and `utility_model`.
+  </Card>
+  <Card title="Prompt engineering" href="/docs/platform/ai/prompt-engineering">
+    Write prompts that keep your agent reliable in real conversations.
+  </Card>
+  <Card title="HIPAA compliance" href="/docs/platform/compliance/hipaa">
+    Build agents that handle protected health information.
+  </Card>
+</CardGroup>
