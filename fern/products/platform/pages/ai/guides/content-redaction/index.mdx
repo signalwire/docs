@@ -1,0 +1,193 @@
+---
+title: Redacting sensitive content
+sidebar-title: Content redaction
+slug: /ai/content-redaction
+author: Devon White
+x-custom:
+  tags:
+    - product:ai
+    - product:voice
+    - sdk:swml
+description: |
+  Mask credit card numbers, PII, and other sensitive content from your
+  AI agent's logs, events, webhooks, and call records — without changing
+  the conversation itself.
+max-toc-depth: 3
+---
+
+[ai-params]: /docs/swml/reference/calling/ai/params
+[redact-prompt]: /docs/swml/reference/calling/ai/params#paramsredact_prompt
+[auto-correct]: /docs/swml/reference/calling/ai/params#paramsauto_correct
+[utility-model]: /docs/swml/reference/calling/ai/params#paramsutility_model
+[text-normalization]: /docs/swml/reference/calling/ai/params#text-normalization-values
+[prompt-engineering]: /docs/platform/ai/prompt-engineering
+[best-practices]: /docs/platform/ai/best-practices
+[hipaa]: /docs/platform/compliance/hipaa
+
+AI agents routinely handle sensitive information — payment details, social security numbers,
+account credentials, names and addresses. Content redaction masks that information in
+everything SignalWire records or transmits about the call: logs, events, webhook payloads,
+the call timeline, and the post-conversation call log. The conversation itself is untouched —
+the caller hears the agent normally, and the agent understands the caller perfectly.
+
+Turn it on with a single parameter, [`redact_prompt`][redact-prompt], in the `ai` method's
+`params` block:
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - answer: {}
+    - ai:
+        prompt:
+          text: You are a payments support agent. Help callers update their billing details.
+        params:
+          redact_prompt: credit card numbers, CVVs, social security numbers, and full names
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      { "answer": {} },
+      {
+        "ai": {
+          "prompt": {
+            "text": "You are a payments support agent. Help callers update their billing details."
+          },
+          "params": {
+            "redact_prompt": "credit card numbers, CVVs, social security numbers, and full names"
+          }
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+The value of `redact_prompt` does two jobs: it switches redaction on, and it describes — in
+plain language — what counts as sensitive. Anything matching that description is replaced with
+`----` wherever the call is recorded or transmitted.
+
+<Warning>
+Redaction protects what the platform **records and transmits** — not what the AI processes.
+The agent still receives the caller's real words on every turn (that's what keeps the
+conversation working), and the caller always hears the agent's responses in full. If your
+requirement is to keep sensitive data from reaching the AI model itself, redaction does not
+do that.
+</Warning>
+
+## How redaction works
+
+Redaction covers both sides of the conversation. Your `redact_prompt` description guides the
+agent to treat matching content as sensitive whenever it speaks — the first time it says it,
+when it repeats it back, when it confirms it. What the caller says is masked separately,
+before it is stored or delivered. In both cases the real words still flow through the live
+conversation; only the records change.
+
+With redaction on, sensitive content appears as `----` in:
+
+- AI events and webhook payloads, including SWAIG function calls and the debug webhook
+- The call timeline and stored conversation transcript
+- The post-conversation `call_log` and `raw_call_log`
+
+Redaction is performed by AI, not by a fixed pattern-matcher. It errs on the side of masking
+too much rather than too little, but it can occasionally miss — treat it as a strong safeguard
+for your logs and integrations rather than an absolute guarantee.
+
+## Keeping it fast
+
+Redaction runs as a lightweight background task while the caller is waiting for a response,
+so two parameters help keep that work quick:
+
+- [`utility_model`][utility-model] selects the model used for background tasks like redaction
+  and transcription cleanup. It defaults to the agent's main model, so set it to a small, fast
+  model instead: `gpt-4o-mini`, `gpt-4.1-mini`, or `gpt-4.1-nano`.
+- [`auto_correct`][auto-correct] cleans up the transcription of the caller's speech —
+  converting spoken numbers to digits, formatting addresses and phone numbers, and fixing
+  obvious mishearings. When used alongside `redact_prompt`, cleanup and redaction happen
+  together in a single step instead of two. Note that `auto_correct` only takes effect when
+  [`enable_text_normalization`][text-normalization] — which is on by default — is set to
+  `false`.
+
+A complete configuration with both:
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - answer: {}
+    - ai:
+        prompt:
+          text: You are a payments support agent. Help callers update their billing details.
+        params:
+          redact_prompt: credit card numbers, CVVs, social security numbers, and full names
+          utility_model: gpt-4o-mini
+          auto_correct: true
+          enable_text_normalization: false
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      { "answer": {} },
+      {
+        "ai": {
+          "prompt": {
+            "text": "You are a payments support agent. Help callers update their billing details."
+          },
+          "params": {
+            "redact_prompt": "credit card numbers, CVVs, social security numbers, and full names",
+            "utility_model": "gpt-4o-mini",
+            "auto_correct": true,
+            "enable_text_normalization": false
+          }
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+## Verifying redaction
+
+Place a test call, read out a fake card number, and have the agent repeat it back. Then check
+the surfaces you consume — the call's timeline and logs in your Dashboard, and any webhook
+payloads your application receives. The sensitive values should read `----`.
+
+If real values still appear, confirm that `redact_prompt` is set to a non-empty string and
+actually reached the agent. If one specific category keeps slipping through, name it
+explicitly in the description — for example, "including partial card numbers read back one
+digit at a time".
+
+## Limitations
+
+- **It is not model-input privacy.** The AI model receives the real text every turn.
+  Redaction keeps sensitive data out of your logs, webhooks, and call records — keeping it
+  away from the model is a different requirement that redaction does not satisfy.
+- **It is best-effort.** Redaction is AI-driven and biased toward over-masking, but a value
+  can occasionally slip through. Sharpen the `redact_prompt` description if a category leaks.
+- **It adds a small amount of background work per turn.** Point `utility_model` at a small,
+  fast model, and enable `auto_correct` to fold cleanup and redaction into one step.
+- **It applies to text records, not audio.** The caller hears everything in full, and if you
+  record calls, the recording still contains the real spoken audio.
+
+## Next steps
+
+- **[`ai.params` reference][ai-params]** — full details for [`redact_prompt`][redact-prompt],
+  [`auto_correct`][auto-correct], and [`utility_model`][utility-model].
+- **[Prompt engineering][prompt-engineering]** — write prompts that keep your agent reliable.
+- **[HIPAA compliance][hipaa]** — building agents that handle protected health information.
