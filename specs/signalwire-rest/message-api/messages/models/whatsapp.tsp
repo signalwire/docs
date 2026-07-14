@@ -74,7 +74,7 @@ model WhatsAppAudioBody {
 
 @doc("Body for a sticker message. Provide either `link` or `id` (not both). Captions are not supported.")
 model WhatsAppStickerBody {
-  @doc("A public HTTP/HTTPS URL to a `.webp` sticker.")
+  @doc("A public HTTP/HTTPS URL to the sticker file. Meta requires `.webp` format.")
   @example("https://example.com/sticker.webp")
   link?: url;
 
@@ -190,7 +190,7 @@ model WhatsAppTextMessageRequest {
   body: string;
 }
 
-@doc("Send an image message.")
+@doc("Send an image message, with an optional caption.")
 model WhatsAppImageMessageRequest {
   ...WhatsAppSendBase;
   message_type: "whatsapp_media_image";
@@ -204,21 +204,21 @@ model WhatsAppAudioMessageRequest {
   body: WhatsAppAudioBody;
 }
 
-@doc("Send a video message.")
+@doc("Send a video message, with an optional caption.")
 model WhatsAppVideoMessageRequest {
   ...WhatsAppSendBase;
   message_type: "whatsapp_media_video";
   body: WhatsAppVideoBody;
 }
 
-@doc("Send a document message.")
+@doc("Send a document message, with an optional filename and caption.")
 model WhatsAppDocumentMessageRequest {
   ...WhatsAppSendBase;
   message_type: "whatsapp_media_document";
   body: WhatsAppDocumentBody;
 }
 
-@doc("Send a sticker message.")
+@doc("Send a sticker message. Captions are not supported.")
 model WhatsAppStickerMessageRequest {
   ...WhatsAppSendBase;
   message_type: "whatsapp_media_sticker";
