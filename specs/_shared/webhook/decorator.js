@@ -226,7 +226,11 @@ function ensureTag(program, namespace, tagName, tagMetadata) {
 // version "3.0.0", seal-object-schemas false.
 
 function getOpenAPI3Options(program) {
-  const raw = program?.compilerOptions?.options?.["@typespec/openapi3"] ?? {};
+  // The OpenAPI document may be emitted by stock @typespec/openapi3 or by the
+  // @signalwire/typespec-openapi3 wrapper (which delegates to it and takes the
+  // same options) — read whichever is configured.
+  const all = program?.compilerOptions?.options ?? {};
+  const raw = all["@signalwire/typespec-openapi3"] ?? all["@typespec/openapi3"] ?? {};
 
   let version = "3.0.0";
   const versions = raw["openapi-versions"];
