@@ -1,0 +1,51 @@
+import "@signalwire/typespec-asyncapi";
+import "../../../../common/frames.tsp";
+import "@typespec/openapi";
+
+import "../../../models/core.tsp";
+
+using TypeSpec.OpenAPI;
+
+namespace Relay.Calling;
+
+@doc("How a transfer (SIP REFER) is progressing.")
+union ReferState {
+  "inProgress",
+  "cancel",
+  "busy",
+  "noAnswer",
+  "error",
+  "success",
+}
+
+@summary("Refer event payload")
+model CallReferParams {
+  ...CallEventAddress;
+
+  @doc("Where the transfer currently stands.")
+  @example("success")
+  state: ReferState;
+
+  @doc("The SIP URI (the SIP address of the endpoint, e.g. `sip:bob@example.com`) the call is being transferred to. Always present on the event.")
+  @example("sip:bob@example.com")
+  sip_refer_to: string;
+
+  @doc("The SIP response code the far end returned to the REFER request, as a string (for example `\"202\"`).")
+  @example("202")
+  sip_refer_response_code?: string;
+
+  @doc("""
+    The SIP response code from the NOTIFY messages (the follow-up SIP status
+    messages that report the transfer's final outcome) that follow the REFER, as a
+    string (for example `"200"`). This tells you whether the transfer ultimately
+    succeeded.
+    """)
+  @example("200")
+  sip_notify_response_code?: string;
+}
+
+const callingCallRefer = "calling.call.refer";
+@doc("Fires each time a transferred call (SIP REFER) changes state, so you can follow the handoff from start to success or failure.")
+@summary(callingCallRefer)
+@extension("x-fern-display-name", callingCallRefer)
+model CallReferEvent is SignalwireEvent<typeof callingCallRefer, CallReferParams>;

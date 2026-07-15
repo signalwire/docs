@@ -1,0 +1,267 @@
+asyncapi: 3.0.0
+info:
+  title: Relay Kitchen Sink
+  version: 1.0.0
+defaultContentType: application/json
+servers:
+  production:
+    host: relay.signalwire.com
+    protocol: wss
+    pathname: /api/relay/wss
+    security:
+      - $ref: "#/components/securitySchemes/httpBearer"
+    bindings:
+      ws: {}
+channels:
+  calling.dial:
+    address: /
+    title: calling.dial
+    description: Dial outbound call(s); first to answer wins
+    servers:
+      - $ref: "#/servers/production"
+    messages:
+      callingDialRequest:
+        $ref: "#/components/messages/callingDialRequest"
+      callingDialResponse:
+        $ref: "#/components/messages/callingDialResponse"
+      callStateEvent:
+        $ref: "#/components/messages/callStateEvent"
+    bindings:
+      ws: {}
+operations:
+  callingDial:
+    action: send
+    channel:
+      $ref: "#/channels/calling.dial"
+    title: calling.dial
+    summary: Dial outbound call(s); first to answer wins
+    messages:
+      - $ref: "#/channels/calling.dial/messages/callingDialRequest"
+    reply:
+      channel:
+        $ref: "#/channels/calling.dial"
+      messages:
+        - $ref: "#/channels/calling.dial/messages/callingDialResponse"
+  onCallingDialCallStateEvent:
+    action: receive
+    channel:
+      $ref: "#/channels/calling.dial"
+    title: calling.call.state
+    messages:
+      - $ref: "#/channels/calling.dial/messages/callStateEvent"
+  onCallingDialResponse:
+    action: receive
+    channel:
+      $ref: "#/channels/calling.dial"
+    title: calling.dial response
+    messages:
+      - $ref: "#/channels/calling.dial/messages/callingDialResponse"
+components:
+  schemas:
+    Relay.Calling.DialRequest:
+      type: object
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - "2.0"
+        id:
+          type: string
+        method:
+          type: string
+          enum:
+            - calling.dial
+        params:
+          $ref: "#/components/schemas/Relay.Calling.DialParams"
+      required:
+        - jsonrpc
+        - id
+        - method
+        - params
+    Relay.Calling.DialParams:
+      type: object
+      properties:
+        tag:
+          type: string
+          description: Identifier added to all call and dial events.
+        region:
+          type: string
+        devices:
+          type: array
+          items:
+            type: array
+            items:
+              $ref: "#/components/schemas/Relay.Calling.Device"
+      required:
+        - tag
+        - devices
+    Relay.Calling.Device:
+      type: object
+      properties:
+        type:
+          type: string
+      required:
+        - type
+      discriminator: type
+    Relay.Calling.PhoneDevice:
+      allOf:
+        - $ref: "#/components/schemas/Relay.Calling.Device"
+        - type: object
+          properties:
+            type:
+              type: string
+              const: phone
+            params:
+              type: object
+              properties:
+                from_number:
+                  type: string
+                to_number:
+                  type: string
+                timeout:
+                  type: integer
+                  format: int32
+                  minimum: 0
+                  default: 30
+              required:
+                - from_number
+                - to_number
+          required:
+            - type
+            - params
+    Relay.Calling.SipDevice:
+      allOf:
+        - $ref: "#/components/schemas/Relay.Calling.Device"
+        - type: object
+          properties:
+            type:
+              type: string
+              const: sip
+            params:
+              type: object
+              properties:
+                from:
+                  type: string
+                to:
+                  type: string
+              required:
+                - from
+                - to
+          required:
+            - type
+            - params
+    Relay.Calling.DialReply:
+      type: object
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - "2.0"
+        id:
+          type: string
+        result:
+          $ref: "#/components/schemas/Relay.Calling.DialResult"
+      required:
+        - jsonrpc
+        - id
+        - result
+    Relay.Calling.DialResult:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        call_id:
+          type: string
+        node_id:
+          type: string
+      required:
+        - code
+        - message
+    Relay.Calling.CallStateEvent:
+      type: object
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - "2.0"
+        id:
+          type: string
+        method:
+          type: string
+          enum:
+            - signalwire.event
+        params:
+          type: object
+          properties:
+            event_type:
+              type: string
+              enum:
+                - calling.call.state
+            event_channel:
+              type: string
+            timestamp:
+              type: number
+              format: double
+            project_id:
+              type: string
+            space_id:
+              type: string
+            params:
+              $ref: "#/components/schemas/Relay.Calling.CallStateParams"
+          required:
+            - event_type
+            - params
+      required:
+        - jsonrpc
+        - id
+        - method
+        - params
+    Relay.Calling.CallStateParams:
+      type: object
+      properties:
+        node_id:
+          type: string
+        call_id:
+          type: string
+        call_state:
+          type: string
+          enum:
+            - created
+            - ringing
+            - answered
+            - ending
+            - ended
+      required:
+        - node_id
+        - call_id
+        - call_state
+  messages:
+    callingDialRequest:
+      name: calling.dial.request
+      title: calling.dial request
+      contentType: application/json
+      correlationId:
+        location: $message.payload#/id
+      payload:
+        $ref: "#/components/schemas/Relay.Calling.DialRequest"
+    callingDialResponse:
+      name: calling.dial.response
+      title: calling.dial response
+      contentType: application/json
+      correlationId:
+        location: $message.payload#/id
+      payload:
+        $ref: "#/components/schemas/Relay.Calling.DialReply"
+    callStateEvent:
+      name: CallStateEvent
+      title: calling.call.state
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/Relay.Calling.CallStateEvent"
+  securitySchemes:
+    httpBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

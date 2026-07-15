@@ -13,6 +13,14 @@ namespace SWML.Calling;
 @summary("AI Object")
 model AIObject {
   @doc("""
+    The UUID of a pre-configured AI agent to run. When set, that agent's saved
+    configuration is applied to the session. `prompt` is still required.
+    """)
+  @format("uuid")
+  @example("13ecec00-1210-4de5-97e3-6a4f2f8fa2b0")
+  agent?: string;
+
+  @doc("""
     A key-value object for storing data that persists throughout the AI session.
     Can be set initially in the SWML script or modified during the conversation using the set_global_data action.
     The global_data object is accessible everywhere in the AI session: prompts, AI parameters,
@@ -37,6 +45,12 @@ model AIObject {
   @doc("The URL to which to send status callbacks and reports. Authentication can also be set in the url in the format of `username:password@url`.")
   @example("username:password@https://example.com")
   post_prompt_url?: url;
+
+  @doc("Basic-auth username for `post_prompt_url`. Alternatively, embed credentials inline in the URL as `username:password@url`.")
+  post_prompt_auth_user?: string;
+
+  @doc("Basic-auth password for `post_prompt_url`. Alternatively, embed credentials inline in the URL as `username:password@url`.")
+  post_prompt_auth_password?: string;
 
   @doc("An array of JSON objects to clarify the AI's pronunciation of words or expressions.")
   pronounce?: Pronounce[];
