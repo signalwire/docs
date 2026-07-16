@@ -1,5 +1,12 @@
 import "../../../_shared/types/main.tsp";
+import "@signalwire/typespec-emit-filter";
 
+using SignalWire.EmitFilter;
+
+// Markup-only substitution token: valid inside a SWML document, never on any
+// other wire. Self-excluded so filter-honoring emitters drop it everywhere it
+// appears; stock emitters (SWML JSON schema, REST OpenAPI) are unaffected.
+@excludeFromEmit
 @doc("""
   A SWML variable reference for dynamic value substitution at runtime.
   

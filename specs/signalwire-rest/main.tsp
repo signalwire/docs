@@ -12,6 +12,7 @@ import "./video-api";
 import "./fabric-api";
 import "./relay-rest";
 import "./project-api";
+import "./projects-api";
 import "./datasphere-api";
 import "./pubsub-api";
 import "./logs-api";
@@ -116,6 +117,8 @@ using TypeSpec.OpenAPI;
 @tagMetadata(SHORT_CODES_TAG, SHORT_CODES_TAG_METADATA)
 // Project API
 @tagMetadata(PROJECT_TOKENS_TAG, PROJECT_TOKENS_TAG_METADATA)
+// Projects Management API
+@tagMetadata(PROJECTS_TAG, PROJECTS_TAG_METADATA)
 // Datasphere API
 @tagMetadata(DOCUMENTS_TAG, DOCUMENTS_TAG_METADATA)
 @tagMetadata(CHUNKS_TAG, CHUNKS_TAG_METADATA)
