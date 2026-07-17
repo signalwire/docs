@@ -31,6 +31,11 @@ tags:
     externalDocs:
       url: https://signalwire.com/docs/apis
       description: Developer documentation on SignalWire REST APIs
+  - name: Projects
+    description: Manage projects and subprojects under the authenticated root project.
+    externalDocs:
+      url: https://signalwire.com/docs/apis
+      description: Developer documentation on SignalWire REST APIs
   - name: Project Tokens
     description: Manage API tokens for authentication.
     externalDocs:
@@ -6435,6 +6440,293 @@ paths:
                 $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
       tags:
         - Project Tokens
+  /api/projects:
+    get:
+      operationId: list_projects
+      summary: List projects
+      description: |-
+        Lists the authenticated root project and its subprojects.
+
+        All endpoints operate only within the caller's project tree — the authenticated root
+        project and the subprojects beneath it.
+
+        #### Permissions
+
+        The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Management_.
+
+        [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
+      parameters:
+        - $ref: '#/components/parameters/Projects.ListProjectsQuery.name'
+        - $ref: '#/components/parameters/Projects.ListProjectsQuery.page_size'
+        - $ref: '#/components/parameters/Projects.ListProjectsQuery.page_token'
+        - $ref: '#/components/parameters/Projects.ListProjectsQuery.page_number'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Projects.ProjectListResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '500':
+          description: An internal server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - Projects
+    post:
+      operationId: create_subproject
+      summary: Create a subproject
+      description: |-
+        Creates a subproject under the authenticated root project.
+
+        Creating a project is only allowed when authenticated as a top-level (root) project.
+        A subproject cannot itself contain subprojects, so attempting to create one while
+        authenticated as a subproject fails with `422 nested_subprojects_not_allowed`.
+
+        The response includes the `signing_key`. This is the only time it is returned — it
+        cannot be retrieved through the API afterward, so capture it from this response.
+
+        #### Permissions
+
+        The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Management_.
+
+        [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
+      parameters: []
+      responses:
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Projects.ProjectWithSigningKey'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '422':
+          description: |-
+            The request could not be processed. When creating a project while authenticated as a
+            subproject, the response includes the `nested_subprojects_not_allowed` code. A blank or
+            overly long `name` returns a standard validation error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Projects.CreateProjectStatusCode422'
+        '500':
+          description: An internal server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - Projects
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Projects.CreateProjectRequest'
+  /api/projects/{id}:
+    get:
+      operationId: get_project
+      summary: Retrieve a project
+      description: |-
+        Retrieves a single project or subproject.
+
+        A project ID outside the caller's project tree returns `404 Not Found`.
+
+        #### Permissions
+
+        The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Management_.
+
+        [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
+      parameters:
+        - $ref: '#/components/parameters/Projects.ProjectPathID'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Projects.Project'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode404'
+        '500':
+          description: An internal server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - Projects
+    patch:
+      operationId: update_project
+      summary: Update a project
+      description: |-
+        Updates a project's name and settings.
+
+        #### Permissions
+
+        The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Management_.
+
+        [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
+      parameters:
+        - $ref: '#/components/parameters/Projects.ProjectPathID'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Projects.Project'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode404'
+        '422':
+          description: The request failed validation, for example a blank or overly long `name`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Projects.UpdateProjectStatusCode422'
+        '500':
+          description: An internal server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - Projects
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Projects.UpdateProjectRequest'
+    delete:
+      operationId: delete_subproject
+      summary: Delete a subproject
+      description: |-
+        Deletes a subproject.
+
+        Only subprojects can be deleted through this API. Deleting the root/parent project
+        returns `422 only_subprojects_can_be_deleted`. A project must have no phone numbers
+        before it can be deleted; otherwise the request returns `422 phone_numbers_must_be_removed`.
+
+        On a successful delete, the subproject's registry brands and campaigns are migrated up
+        to the parent project.
+
+        #### Permissions
+
+        The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Management_.
+
+        [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
+      parameters:
+        - $ref: '#/components/parameters/Projects.ProjectPathID'
+      responses:
+        '204':
+          description: 'There is no content to send for this request, but the headers may be useful. '
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode404'
+        '422':
+          description: |-
+            The request could not be processed. Deleting a root/parent project returns
+            `only_subprojects_can_be_deleted`, and deleting a project that still has phone numbers
+            assigned returns `phone_numbers_must_be_removed`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Projects.DeleteProjectStatusCode422'
+        '500':
+          description: An internal server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - Projects
+  /api/projects/{id}/signing-key/rotate:
+    post:
+      operationId: rotate_signing_key
+      summary: Rotate a project's signing key
+      description: |-
+        Rotates the project's signing key and returns the project with the new `signing_key`.
+
+        The previous key may take about 1–2 minutes to stop working. As with create, the
+        `signing_key` is only returned on this response and cannot be retrieved afterward.
+
+        #### Permissions
+
+        The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Management_.
+
+        [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
+      parameters:
+        - $ref: '#/components/parameters/Projects.ProjectPathID'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Projects.ProjectWithSigningKey'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode404'
+        '500':
+          description: An internal server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - Projects
   /api/pubsub/tokens:
     post:
       operationId: create_token
@@ -12434,6 +12726,52 @@ components:
       in: path
       required: true
       description: The unique identifier of the Resource.
+      schema:
+        $ref: '#/components/schemas/uuid'
+    Projects.ListProjectsQuery.name:
+      name: name
+      in: query
+      required: false
+      description: Filter projects by name.
+      schema:
+        type: string
+      explode: false
+    Projects.ListProjectsQuery.page_number:
+      name: page_number
+      in: query
+      required: false
+      description: The page index, used together with `page_token`.
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+        default: 0
+      explode: false
+    Projects.ListProjectsQuery.page_size:
+      name: page_size
+      in: query
+      required: false
+      description: The number of results per page.
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 1000
+        default: 50
+      explode: false
+    Projects.ListProjectsQuery.page_token:
+      name: page_token
+      in: query
+      required: false
+      description: Cursor token for paging, taken from the `links` in a previous response.
+      schema:
+        type: string
+      explode: false
+    Projects.ProjectPathID:
+      name: id
+      in: path
+      required: true
+      description: The unique identifier of the project or subproject.
       schema:
         $ref: '#/components/schemas/uuid'
     QueueIdPath:
@@ -28131,6 +28469,362 @@ components:
       unevaluatedProperties:
         not: {}
       description: Request body for updating an API Token.
+    Projects.CreateProjectRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          maxLength: 250
+          description: The name of the subproject.
+          examples:
+            - Acme Staging
+        protect_recordings:
+          type: boolean
+          description: When enabled, recordings created within the project require authentication to access.
+          examples:
+            - true
+        protect_message_media:
+          type: boolean
+          description: When enabled, message media created within the project requires authentication to access.
+          examples:
+            - false
+        protect_fax_media:
+          type: boolean
+          description: When enabled, fax media created within the project requires authentication to access.
+          examples:
+            - false
+        force_https_requests:
+          type: boolean
+          description: When enabled, requests made to the project's webhooks and callbacks must use HTTPS.
+          examples:
+            - true
+      unevaluatedProperties:
+        not: {}
+      description: Request body for creating a subproject.
+    Projects.CreateProjectStatusCode422:
+      type: object
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Types.StatusCodes.RestApiErrorItem'
+          description: List of validation errors.
+      unevaluatedProperties:
+        not: {}
+      description: |-
+        The request could not be processed. When creating a project while authenticated as a
+        subproject, the response includes the `nested_subprojects_not_allowed` code. A blank or
+        overly long `name` returns a standard validation error.
+      examples:
+        - statusCode: 422
+          errors:
+            - type: validation_error
+              code: nested_subprojects_not_allowed
+              message: Subprojects can only be created under a top-level project.
+              attribute: null
+              url: https://signalwire.com/docs/apis/error-codes#nested_subprojects_not_allowed
+    Projects.DeleteProjectStatusCode422:
+      type: object
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Types.StatusCodes.RestApiErrorItem'
+          description: List of validation errors.
+      unevaluatedProperties:
+        not: {}
+      description: |-
+        The request could not be processed. Deleting a root/parent project returns
+        `only_subprojects_can_be_deleted`, and deleting a project that still has phone numbers
+        assigned returns `phone_numbers_must_be_removed`.
+      examples:
+        - statusCode: 422
+          errors:
+            - type: validation_error
+              code: phone_numbers_must_be_removed
+              message: All phone numbers must be removed from the project before it can be deleted.
+              attribute: null
+              url: https://signalwire.com/docs/apis/error-codes#phone_numbers_must_be_removed
+    Projects.Project:
+      type: object
+      required:
+        - id
+        - name
+        - parent_project_id
+        - subproject
+        - region_preference
+        - protect_recordings
+        - protect_message_media
+        - protect_fax_media
+        - force_https_requests
+        - created_at
+        - updated_at
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: The unique identifier of the project.
+          examples:
+            - 8f14e45f-ceea-467d-9c2b-7a1d3a9b2c34
+        name:
+          type: string
+          description: The name of the project.
+          examples:
+            - Acme Staging
+        parent_project_id:
+          anyOf:
+            - $ref: '#/components/schemas/uuid'
+            - type: 'null'
+          description: The unique identifier of the root project. `null` when this project is itself a root project.
+          examples:
+            - b3877739-5c7e-4d4f-9d1a-2f0c8c2f1a11
+        subproject:
+          type: boolean
+          description: '`true` when this project is a subproject.'
+          examples:
+            - true
+        region_preference:
+          type: string
+          description: The effective region preference for the project. Returned in all responses; it is not currently settable through this API.
+          examples:
+            - us-west
+        protect_recordings:
+          type: boolean
+          description: When enabled, recordings created within the project require authentication to access.
+          examples:
+            - false
+        protect_message_media:
+          type: boolean
+          description: When enabled, message media created within the project requires authentication to access.
+          examples:
+            - false
+        protect_fax_media:
+          type: boolean
+          description: When enabled, fax media created within the project requires authentication to access.
+          examples:
+            - false
+        force_https_requests:
+          type: boolean
+          description: When enabled, requests made to the project's webhooks and callbacks must use HTTPS.
+          examples:
+            - true
+        created_at:
+          type: string
+          format: date-time
+          description: The date and time when the project was created.
+          examples:
+            - '2024-05-06T12:20:00Z'
+        updated_at:
+          type: string
+          format: date-time
+          description: The date and time when the project was last updated.
+          examples:
+            - '2024-05-06T12:20:00Z'
+      unevaluatedProperties:
+        not: {}
+      description: A project or subproject within the caller's project tree.
+      title: Project
+    Projects.ProjectListResponse:
+      type: object
+      required:
+        - links
+        - data
+      properties:
+        links:
+          allOf:
+            - $ref: '#/components/schemas/Projects.ProjectPaginationLinks'
+          description: Pagination links for the list of projects.
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Projects.Project'
+          description: The projects on this page.
+      unevaluatedProperties:
+        not: {}
+      description: A page of projects.
+    Projects.ProjectPaginationLinks:
+      type: object
+      required:
+        - self
+        - first
+      properties:
+        self:
+          type: string
+          format: uri
+          description: The link to the current page.
+          examples:
+            - https://example-space.signalwire.com/api/projects?page_size=50
+        first:
+          type: string
+          format: uri
+          description: The link to the first page.
+          examples:
+            - https://example-space.signalwire.com/api/projects?page_size=50
+        next:
+          type: string
+          format: uri
+          description: The link to the next page. Only present when more results exist.
+          examples:
+            - https://example-space.signalwire.com/api/projects?page_size=50&page_number=1&page_token=PA8f14e45f
+        prev:
+          type: string
+          format: uri
+          description: The link to the previous page. Only present when a previous page exists.
+          examples:
+            - https://example-space.signalwire.com/api/projects?page_size=50&page_number=0&page_token=PA8f14e45f
+      unevaluatedProperties:
+        not: {}
+      description: Pagination links for a list of projects.
+    Projects.ProjectWithSigningKey:
+      type: object
+      required:
+        - id
+        - name
+        - parent_project_id
+        - subproject
+        - region_preference
+        - protect_recordings
+        - protect_message_media
+        - protect_fax_media
+        - force_https_requests
+        - created_at
+        - updated_at
+        - signing_key
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: The unique identifier of the project.
+          examples:
+            - 8f14e45f-ceea-467d-9c2b-7a1d3a9b2c34
+        name:
+          type: string
+          description: The name of the project.
+          examples:
+            - Acme Staging
+        parent_project_id:
+          anyOf:
+            - $ref: '#/components/schemas/uuid'
+            - type: 'null'
+          description: The unique identifier of the root project. `null` when this project is itself a root project.
+          examples:
+            - b3877739-5c7e-4d4f-9d1a-2f0c8c2f1a11
+        subproject:
+          type: boolean
+          description: '`true` when this project is a subproject.'
+          examples:
+            - true
+        region_preference:
+          type: string
+          description: The effective region preference for the project. Returned in all responses; it is not currently settable through this API.
+          examples:
+            - us-west
+        protect_recordings:
+          type: boolean
+          description: When enabled, recordings created within the project require authentication to access.
+          examples:
+            - false
+        protect_message_media:
+          type: boolean
+          description: When enabled, message media created within the project requires authentication to access.
+          examples:
+            - false
+        protect_fax_media:
+          type: boolean
+          description: When enabled, fax media created within the project requires authentication to access.
+          examples:
+            - false
+        force_https_requests:
+          type: boolean
+          description: When enabled, requests made to the project's webhooks and callbacks must use HTTPS.
+          examples:
+            - true
+        created_at:
+          type: string
+          format: date-time
+          description: The date and time when the project was created.
+          examples:
+            - '2024-05-06T12:20:00Z'
+        updated_at:
+          type: string
+          format: date-time
+          description: The date and time when the project was last updated.
+          examples:
+            - '2024-05-06T12:20:00Z'
+        signing_key:
+          type: string
+          description: |-
+            The project's signing key. Only returned on create and signing-key rotation responses;
+            it cannot be retrieved through the API afterward.
+          examples:
+            - PSK_4d8c2b1a9f3e7c6d5b4a3e2f1d0c9b8a
+      unevaluatedProperties:
+        not: {}
+      description: |-
+        A project, including its `signing_key`.
+
+        The `signing_key` is only returned when creating a subproject or rotating a project's
+        signing key. It is not retrievable afterward, so capture it from the response.
+      title: Project with signing key
+    Projects.UpdateProjectRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 250
+          description: The name of the project.
+          examples:
+            - Acme Staging (EU)
+        protect_recordings:
+          type: boolean
+          description: When enabled, recordings created within the project require authentication to access.
+          examples:
+            - true
+        protect_message_media:
+          type: boolean
+          description: When enabled, message media created within the project requires authentication to access.
+          examples:
+            - true
+        protect_fax_media:
+          type: boolean
+          description: When enabled, fax media created within the project requires authentication to access.
+          examples:
+            - false
+        force_https_requests:
+          type: boolean
+          description: When enabled, requests made to the project's webhooks and callbacks must use HTTPS.
+          examples:
+            - true
+      unevaluatedProperties:
+        not: {}
+      description: Request body for updating a project's name and settings.
+    Projects.UpdateProjectStatusCode422:
+      type: object
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Types.StatusCodes.RestApiErrorItem'
+          description: List of validation errors.
+      unevaluatedProperties:
+        not: {}
+      description: The request failed validation, for example a blank or overly long `name`.
+      examples:
+        - statusCode: 422
+          errors:
+            - type: validation_error
+              code: invalid_parameter
+              message: Name must be present
+              attribute: name
+              url: https://signalwire.com/docs/apis/error-codes#invalid_parameter
     PstnRecording:
       type: object
       required:
