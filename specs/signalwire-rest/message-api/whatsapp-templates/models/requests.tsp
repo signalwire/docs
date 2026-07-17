@@ -38,23 +38,31 @@ model CreateWhatsAppTemplateRequest {
   @example(WhatsAppTemplateParameterFormat.positional)
   parameter_format: WhatsAppTemplateParameterFormat;
 
-  @doc("""
-    The template's components. Must include a `BODY` component. Each component is an object whose fields depend on its `type`:
-
-    ```json
-    [
-      { "type": "HEADER", "format": "TEXT", "text": "Order Update for {{1}}",
-        "example": { "header_text": ["Jane Smith"] } },
-      { "type": "BODY", "text": "Your order {{1}} is currently {{2}}.",
-        "example": { "body_text": [["ORD-9821", "out for delivery"]] } },
-      { "type": "FOOTER", "text": "Thank you for shopping with us." },
-      { "type": "BUTTONS", "buttons": [
-        { "type": "QUICK_REPLY", "text": "Track Order" },
-        { "type": "URL", "text": "Contact Support", "url": "https://example.com/support" }
-      ] }
-    ]
-    ```
-    """)
+  @doc("The template's components. Must include a `BODY` component. Each component is an object whose fields depend on its `type` — see the request example.")
+  @example(#[
+    #{
+      type: "HEADER",
+      format: "TEXT",
+      text: "Order Update for {{1}}",
+      example: #{ header_text: #["Jane Smith"] },
+    },
+    #{
+      type: "BODY",
+      text: "Your order {{1}} is currently {{2}}.",
+      example: #{ body_text: #[#["ORD-9821", "out for delivery"]] },
+    },
+    #{
+      type: "FOOTER",
+      text: "Thank you for shopping with us.",
+    },
+    #{
+      type: "BUTTONS",
+      buttons: #[
+        #{ type: "QUICK_REPLY", text: "Track Order" },
+        #{ type: "URL", text: "Contact Support", url: "https://example.com/support" },
+      ],
+    },
+  ])
   components: WhatsAppTemplateComponent[];
 }
 
