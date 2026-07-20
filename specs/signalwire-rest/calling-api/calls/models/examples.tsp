@@ -403,25 +403,6 @@ const streamStopCallExample = #{
   },
 };
 
-// Conference examples
-const joinConferenceCallExample = #{
-  request: #{
-    command: "calling.join_conference",
-    id: callId,
-    params: #{
-      name: "team_meeting",
-      beep: "onEnter",
-      start_on_enter: true,
-      stream: #{
-        url: "wss://example.com/conference-audio",
-        codec: "PCMU",
-        realtime: true,
-        status_url: "https://example.com/stream-status",
-      },
-    },
-  },
-};
-
 // Denoise examples
 const denoiseCallExample = #{
   request: #{ command: "calling.denoise", id: callId, params: #{} },

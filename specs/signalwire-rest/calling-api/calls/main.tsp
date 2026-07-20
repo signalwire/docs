@@ -31,7 +31,7 @@ namespace SignalWireAPI.Calling.Calls {
     @doc("""
       Unified JSON-RPC style endpoint for executing call methods through command-based dispatch.
       Send a request with the appropriate `command` field to invoke the desired call operation.
-      All async-safe RELAY methods can be sent through this endpoint without a WebSocket connection.
+      Only the commands listed below are supported. Most operate on an already-active call; `dial` creates a new one. All commands are sent over HTTP (no persistent WebSocket connection required) and return immediately; operations that continue asynchronously deliver their results to your `status_url` webhooks.
       
       ## Supported Commands
       
@@ -45,7 +45,6 @@ namespace SignalWireAPI.Calling.Calls {
       | `calling.end` | Terminate an active call immediately |
       | `calling.transfer` | Transfer a call to a new destination (SIP URI, phone number, or inline SWML) |
       | `calling.disconnect` | Disconnect bridged calls without hanging up either leg |
-      | `calling.join_conference` | Join the call to an ad-hoc audio conference, optionally attaching a WebSocket stream |
       | `calling.play` | Play audio, TTS, silence, or ringtone to a call |
       | `calling.play.pause` | Pause active playback |
       | `calling.play.resume` | Resume paused playback |
@@ -196,13 +195,6 @@ namespace SignalWireAPI.Calling.Calls {
       #{
         title: "calling.transcribe",
         description: "Start background transcription on an active call",
-      }
-    )
-    @opExample(
-      #{ parameters: joinConferenceCallExample },
-      #{
-        title: "calling.join_conference",
-        description: "Join a conference and attach a bidirectional WebSocket stream",
       }
     )
     @opExample(
