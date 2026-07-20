@@ -13,6 +13,7 @@ import "./freeswitch-connectors";
 import "./cxml-applications";
 import "./relay-applications";
 import "./resources";
+import "./sip-addresses";
 import "./sip-endpoints";
 import "./sip_gateways";
 import "./subscribers";
