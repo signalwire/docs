@@ -34,12 +34,11 @@ The single highest-leverage design decision is what you *don't* put in the promp
 Language models are excellent at conversation: tone, comprehension, extracting details from natural speech.
 They are unreliable at arithmetic, current facts, and rule-following under pressure.
 A prompt is a suggestion; code is a constraint.
-Give each side the work it's good at:
-
-- **In the prompt**: who the agent is, how it speaks, what it's there to accomplish,
-  and when to reach for its functions.
-- **In your code, behind [SWAIG functions][tool-calling]** (SignalWire's tool calling): prices,
-  inventory, calculations, policy, and anything else with a right answer.
+Give each side the work it's good at.
+The prompt covers who the agent is, how it speaks, what it's there to accomplish,
+and when to reach for its functions.
+Your code, behind [SWAIG functions][tool-calling] (SignalWire's tool calling), covers prices,
+inventory, calculations, policy, and anything else with a right answer.
 
 <Tip>
 A useful rule of thumb: if the answer must be exact tomorrow, it can't live in the prompt.
@@ -48,14 +47,13 @@ A useful rule of thumb: if the answer must be exact tomorrow, it can't live in t
 ### Keep business data out of the prompt
 
 It's tempting to paste the catalog, the price list, or the policy manual into the prompt.
-Resist it:
-
-- **Freshness.** The prompt is fixed when the call starts, but your data keeps changing.
-  A function call reads the current value at the moment the caller asks.
-- **Consistency.** Data in the prompt is *recalled* by the model, approximately.
-  Data from a function call is *returned* by your code, exactly.
-- **Authority.** The model has no way to tell your pasted policy apart from anything else it has read.
-  Your backend is the system of record.
+Resist it.
+The prompt is fixed when the call starts, but your data keeps changing;
+a function call reads the current value at the moment the caller asks.
+Data in the prompt is *recalled* by the model, approximately,
+while data from a function call is *returned* by your code, exactly.
+And the model has no way to tell your pasted policy apart from anything else it has read.
+Your backend is the system of record.
 
 Move that data behind SWAIG functions: a lookup backed by your webhook or the Server SDK,
 or a serverless [DataMap][swml-datamap] for straightforward API calls and pattern-matched responses.
@@ -68,15 +66,14 @@ or a serverless [DataMap][swml-datamap] for straightforward API calls and patter
 
 With business logic out of the way, the prompt's job is focused: define the agent's identity,
 its conversational duties, and its boundaries.
+Outline those necessities clearly, then stop.
+Overloading the AI with instructions muddles its behavior rather than tightening it,
+and since the prompt is part of every conversational turn, a brief prompt is also cheaper to run.
+See [avoiding over-prompting][prompt-eng-best-practices] for techniques.
 
-- **Keep it brief.** Overloading the AI with instructions muddles its behavior rather than tightening it.
-  Brief prompts are also cheaper to run, since the prompt is part of every conversational turn.
-  See [avoiding over-prompting][prompt-eng-best-practices] for techniques.
-- **Stick to necessities.** Clearly outline the AI's identity and primary responsibilities
-  so it understands its role and scope.
-- **Structure with [Markdown](https://www.markdownguide.org/basic-syntax/).**
-  Headings and lists keep the prompt organized and legible,
-  narrowing how the AI interprets each section.
+Structure the prompt with [Markdown](https://www.markdownguide.org/basic-syntax/):
+headings and lists keep it organized and legible,
+narrowing how the AI interprets each section.
 
 <CodeBlocks>
 <CodeBlock title="SWML">
@@ -156,31 +153,29 @@ The [`prompt` object][ai-prompt-reference] accepts parameters that shape the AI'
 ## Design for real-time voice
 
 Voice AI adds a dimension that text chat doesn't have: time.
-Two concepts matter when tuning how your agent converses:
+Two concepts matter when tuning how your agent converses.
+**End-pointing** (end-of-utterance detection) is the AI's ability to detect when the caller has finished speaking,
+and **turnaround** (turn-taking) is the time it takes the AI to process input and begin its response.
 
-- **End-pointing** (end-of-utterance detection): the AI's ability to detect when the caller has finished speaking.
-- **Turnaround** (turn-taking): the time it takes the AI to process input and begin its response.
-
-Neither can be instant:
-
-- Natural language processing takes time. The AI analyzes syntax, semantics, and context, even if only for a fraction of a second.
-- Real conversation is full of pauses, overlaps, and changes of direction that make "finished speaking" ambiguous.
-- Generating a coherent, contextually appropriate response is computational work.
+Neither can be instant.
+Natural language processing takes time: the AI analyzes syntax, semantics, and context,
+even if only for a fraction of a second.
+Real conversation is full of pauses, overlaps, and changes of direction that make "finished speaking" ambiguous.
+And generating a coherent, contextually appropriate response is computational work.
 
 <Note>
 No system delivers truly instantaneous end-pointing and turnaround.
 Judge latency on live calls with your own configuration rather than on recorded demos.
 </Note>
 
-Rather than chasing zero, make the wait feel natural:
-
-- **Filler phrases** give the AI something to say while a function call is running.
-  Configure them [per-function](/docs/swml/reference/calling/ai/swaig/functions) and
-  [agent-wide](/docs/swml/reference/calling/ai/languages).
-- **Background audio** such as typing or office ambience provides immediate, familiar feedback
-  while processing happens. Set it with [`params.background_file`](/docs/swml/reference/calling/ai/params).
-- **Keep function handlers fast.** Your webhook's latency is part of the conversation;
-  move slow work out of band and respond promptly.
+Rather than chasing zero, make the wait feel natural.
+Filler phrases give the AI something to say while a function call is running;
+configure them [per-function](/docs/swml/reference/calling/ai/swaig/functions) and
+[agent-wide](/docs/swml/reference/calling/ai/languages).
+Background audio, such as typing or office ambience, provides immediate and familiar feedback
+while processing happens; set it with [`params.background_file`](/docs/swml/reference/calling/ai/params).
+And keep your function handlers fast: your webhook's latency is part of the conversation,
+so move slow work out of band and respond promptly.
 
 ## Help speech recognition with hints
 
@@ -232,16 +227,21 @@ See [`hints`][ai-reference] in the SWML reference, or [speech recognition hints]
 
 ## Test, monitor, and iterate
 
-- **Test with real users before deploying.** Scripted test calls follow the script;
-  customers won't. Beta callers surface the gaps.
-- **Review real calls.** Define a `post_prompt` and set a [`post_prompt_url`][ai-reference] to receive
-  a report after each call (summary, conversation log, and every function call), and read the
-  transcripts where the agent hesitated or chose the wrong function. That's where the next fix comes from.
-- **Monitor usage metrics.** Token consumption, interaction times, and call outcomes
-  reveal both cost and quality trends.
-- **Review and update regularly.** Your business changes; revisit the agent's prompt and functions periodically.
-- **Track platform updates.** SignalWire's AI capabilities evolve.
-  Check the documentation and release notes for new parameters, voices, and features your agent can use.
+Test with real users before deploying.
+Scripted test calls follow the script; customers won't, and beta callers surface the gaps.
+
+Once callers arrive, review real calls.
+Define a `post_prompt` and set a [`post_prompt_url`][ai-reference] to receive a report after
+each call (summary, conversation log, and every function call), and read the transcripts
+where the agent hesitated or chose the wrong function.
+That's where the next fix comes from.
+Usage metrics fill in the aggregate picture:
+token consumption, interaction times, and call outcomes reveal both cost and quality trends.
+
+An agent is never finished.
+Your business changes, so revisit the prompt and functions periodically,
+and check the documentation and release notes for new parameters, voices,
+and features your agent can use as SignalWire's AI capabilities evolve.
 
 ## Stay compliant with regulations
 
@@ -251,9 +251,9 @@ The FCC has ruled that calls using AI-generated voices fall under the
 
 This does **not** make AI agents illegal. It means they must be used responsibly and transparently:
 
-- **Transparency**: clearly state that the caller is interacting with an AI agent.
-- **Opt-out mechanism**: provide a simple, immediate way to leave the AI interaction.
-- **User consent**: for outbound use especially, ensure recipients have consented to interact with an AI.
+- Clearly state that the caller is interacting with an AI agent.
+- Provide a simple, immediate way for the caller to leave the AI interaction.
+- For outbound use especially, ensure recipients have consented to interact with an AI.
 
 ## Putting it together
 
@@ -418,14 +418,6 @@ and the post-call report shows you every lookup it made.
 
 <Card title="Prompt engineering" href="/docs/platform/ai/prompt-engineering" icon="regular pen-nib">
   Structure, technique, and refinement for the conversational layer.
-</Card>
-
-<Card title="SWAIG guide" href="/docs/swml/guides/swaig" icon="regular code">
-  The request/response contract for functions in SWML.
-</Card>
-
-<Card title="Build AI agents with the SDK" href="/docs/server-sdks/guides/build-ai-agents" icon="regular robot">
-  Progressive Server SDK examples, from simple to advanced.
 </Card>
 
 </CardGroup>
