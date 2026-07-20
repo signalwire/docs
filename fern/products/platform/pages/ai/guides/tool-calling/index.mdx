@@ -1,7 +1,7 @@
 ---
 title: Tool calling
 slug: /ai/tool-calling
-description: Connect your AI agent to your backend with tool calls, so your code — not the prompt — owns business logic, live data, and decisions.
+description: Connect your AI agent to your backend with tool calls, so that your code owns business logic, live data, and decisions.
 subtitle: The AI runs the conversation. Your code runs the business.
 max-toc-depth: 3
 ---
@@ -22,29 +22,28 @@ max-toc-depth: 3
 [context-switch]: /docs/swml/guides/context-switch
 [faq-bot]: /docs/server-sdks/guides/faq-bot
 
-Ask a language model what a ride across town costs, and it will answer with a confident, plausible, invented number.
+Ask a language model what a ride across town costs and it will answer with a confident, plausible, invented number.
 Put that model on your phone line, and its invented number becomes your price.
 
-The most common voice AI failure in production isn't a bad model — it's architecture.
-Teams stuff the menu, the prices, the policies, and the workflow into one giant prompt and hope the AI follows it.
-That approach ("prompt and pray") survives a scripted demo. It doesn't survive real customers.
+The most common production failure in voice AI isn't a bad model. It's architecture:
+the menu, the prices, and the policies all stuffed into one long prompt.
+That approach (sometimes called "prompt and pray") usually survives the demo and breaks on real callers.
 
-SignalWire agents are built around a different model.
-The AI agent is the **front end** of the call: it speaks, listens, understands what the caller wants, and collects details.
-Your backend stays what it already is — the source of truth — and the agent reaches it through **tool calling**,
+SignalWire agents are designed around a different division of labor.
+The AI agent is the **front end** of the call: it speaks, listens, works out what the caller wants, and collects details.
+Your backend remains the source of truth, and the agent reaches it through **tool calling**,
 also known as *function calling*.
-On SignalWire, tool calls flow through **SWAIG**, the SignalWire AI Gateway.
+On SignalWire, tool calls are delivered by **SWAIG**, the SignalWire AI Gateway.
 
 ## The agent is the front end
 
 Think about how a website works.
-The front end renders the interface and captures what the user wants, but it never computes the cart total —
-the backend does, because the backend can be tested, versioned, and trusted.
-A voice AI agent deserves the same architecture: the conversation is the interface, and your code is still the application.
+The front end renders the interface and captures what the user wants, but it never computes the cart total.
+The backend does that, because the backend can be tested, versioned, and trusted.
+A voice agent deserves the same architecture: the conversation is the interface, and your code is still the application.
 
-A prompt is a suggestion. Code is a constraint.
-An instruction like "never give discounts" holds *most* of the time — and "most of the time" is not a standard
-you can put in front of customers.
+A prompt is a suggestion, and code is a constraint.
+An instruction like "never give discounts" is followed most of the time; pricing rules need to hold every time.
 Anything that must be exact, current, or enforced belongs behind a tool call:
 
 | The prompt owns | Your code owns |
@@ -115,31 +114,41 @@ and can refuse "a pizza" without a single rule being written into the prompt.
 
 </Tabs>
 
-The prompt still matters — a well-written prompt is what makes the conversation natural,
+The prompt still matters: a well-written prompt is what makes the conversation natural,
 and [prompt engineering][prompt-engineering] is a real craft.
-Tool calling is what decides *which kind of work* the prompt should be doing.
+Tool calling decides which kind of work the prompt should be doing.
 
 ## How a tool call works
 
 A tool is a named capability you hand to the agent: a **name**, a **description**,
 and a JSON Schema describing its **parameters**.
-If you've used tool calling with OpenAI or Anthropic APIs, this is the same concept —
-your existing intuition transfers directly.
+If you have used tool calling with OpenAI or Anthropic APIs, this is the same concept,
+and your existing intuition transfers directly.
 
-The description does double duty: it's how the AI decides *when* to call the tool.
-"Look up order status by order number" tells the agent both what the tool does and what it needs first.
-Writing good tool descriptions is prompt engineering by another name.
+<Tip>
+Tool descriptions are prompt engineering.
+"Look up order status by order number" tells the agent what the tool does *and* what it needs before calling it.
+When an agent picks the wrong tool or calls it too early, the description is usually the first thing to fix.
+</Tip>
 
-A tool call round-trips like this:
+A tool call round-trips between the caller, the agent, and your server:
 
-1. The caller says something ("Where's my order? It's one-two-three-four-five.").
-2. The AI decides a tool applies and extracts the arguments from the conversation.
-3. The SignalWire platform sends an HTTP POST to the endpoint you configured for that function.
-4. Your code runs — a database query, an API call, a calculation.
-5. Your endpoint returns a `response` (text for the AI to work from) and, optionally, `action` objects.
-6. The AI weaves the response into what it says next, and the platform executes any actions.
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Caller
+    participant Agent as AI agent
+    participant Backend as Your backend
 
-The request your server receives looks like this (trimmed to the essentials):
+    Caller->>Agent: "Where's my order? Number 12345."
+    Note over Agent: Chooses check_order and extracts<br/>order_number from the conversation
+    Agent->>Backend: HTTP POST with the function name<br/>and parsed arguments
+    Note over Backend: Your code runs: database<br/>query, API call, calculation
+    Backend-->>Agent: response text, plus optional actions
+    Agent-->>Caller: "Order 12345 shipped Monday<br/>and arrives Thursday."
+```
+
+The request your server receives looks like this, trimmed to the essentials:
 
 ```json
 {
@@ -161,24 +170,26 @@ And a minimal reply:
 }
 ```
 
-Notice that `response` is written *to the AI*, not to the caller —
-it can carry data, and it can carry instructions about what to do next.
+<Note>
+The `response` is written to the AI, not to the caller.
+It can carry data, and it can carry instructions about what the agent should do next.
 The full payloads are documented in the [SWAIG guide][swaig-guide] and the
 [`SWAIG.functions` reference][swaig-functions].
+</Note>
 
 You have three ways to host the code behind a tool:
 
-- **Your own webhook** — any HTTP endpoint, in any language, set with `web_hook_url`.
-- **The Agents SDK** — define the tool and its handler in one class, and the SDK serves the endpoint for you.
+- **Your own webhook**: any HTTP endpoint, in any language, set with `web_hook_url`.
+- **The Agents SDK**: define the tool and its handler in one class, and the SDK serves the endpoint for you.
   See [SWAIG functions in the Agents SDK][sdk-functions].
-- **DataMap** — for straightforward REST calls, describe the request and response mapping declaratively and
-  SignalWire executes it server-side with no infrastructure of yours at all.
+- **DataMap**: for straightforward REST calls, describe the request and response mapping declaratively and
+  SignalWire executes it server-side, with no infrastructure of yours at all.
   See DataMap in the [Agents SDK][sdk-datamap] or in [SWML][swml-datamap].
 
 ## Build it: an order-status agent
 
 Here is a complete agent whose knowledge of orders lives entirely in code.
-The prompt never claims to know order status — it only knows there's a tool for that.
+The prompt never claims to know order status; it only knows there is a tool for that.
 
 <Tabs>
 
@@ -270,49 +281,53 @@ sections:
 
 </Tabs>
 
-The `orders` dictionary stands in for your real backend — a database, an internal API, a fulfillment system.
+The `orders` dictionary stands in for your real backend: a database, an internal API, a fulfillment system.
 Swap it out and nothing else changes.
-And when a caller asks about an order that doesn't exist, the agent says so,
-because your code said so. An AI that can answer "I don't know, let me get you to someone who does"
-is worth more than one that always has an answer.
+When a caller asks about an order that doesn't exist, the agent says so: your code returned
+"Order not found", and the AI has nothing to invent.
+
+To hear it on a real call, run the Python file and point a phone number at your agent
+(the [Agents SDK quickstart](/docs/server-sdks/guides/quickstart) walks through it),
+or paste the SWML into your Dashboard as shown in the [AI overview](/docs/platform/ai).
 
 ## Tools steer the call, not just the answer
 
 A tool result isn't limited to text.
-Alongside `response`, your code can return **actions** — instructions the platform executes on the live call:
+Alongside `response`, your code can return **actions**, which are instructions the platform executes on the live call:
 
 - **Transfer the call** to a human, a queue, or another agent.
-- **Send an SMS** — a confirmation, a link, a receipt.
+- **Send an SMS**, such as a confirmation, a link, or a receipt.
 - **Play audio or execute SWML** mid-conversation.
 - **Update call state** (`global_data`) that later tools and the prompt can use.
 - **Move the conversation** to a different step or context, changing which tools are exposed.
 
 This is the part teams miss when they treat the AI as the application:
-the decision-making can stay in your code even when the *delivery* is conversational.
-Your backend notices the customer qualifies for the combo upgrade, and its tool result tells the AI to offer it.
-The AI supplies the charm; your code supplies the judgment.
+the decision-making stays in your code even when the delivery is conversational.
+Your backend notices the customer qualifies for the combo upgrade,
+and its tool result tells the AI to offer it.
 
 See [`FunctionResult` actions][result-actions] in the Agents SDK, and the SWML guides on
 [switching context][context-switch] and [toggling functions][toggle-functions].
 
 ## Patterns for reliable tools
 
-Five habits separate agents that demo well from agents that hold up in production.
+Five habits keep tools dependable once real callers arrive.
 
 ### Validate in code, recover in conversation
 
-Every argument the AI fills in is extracted from spoken, imperfect audio — treat it as user input, not as truth.
+Every argument the AI fills in is extracted from spoken, imperfect audio.
+Treat it as user input, not as truth.
 Normalize and verify it in your handler: geocode the address, check the account number's format,
 ask "Portland, Oregon or Portland, Maine?" when it matters.
-When validation fails, return a `response` that tells the AI how to recover
-("No match for that address — ask the caller to repeat it street first").
+When validation fails, return a `response` that tells the AI how to recover,
+such as "No match for that address. Ask the caller to repeat it, street first."
 The conversation stays graceful because your code planned for the failure.
 
 ### Store validated state, then use zero-argument tools
 
 Once your code has verified something, don't make the AI carry it.
-Write it to `global_data` — call-scoped state that lives with the session — and let downstream tools
-take **no arguments at all**, reading the validated state instead:
+Write it to `global_data`, the call-scoped state that lives with the session,
+and let downstream tools take **no arguments at all**, reading the validated state instead:
 
 ```python
 def validate_address(self, args, raw_data):
@@ -325,7 +340,7 @@ def validate_address(self, args, raw_data):
         f"Address confirmed: {match}. Ask when they'd like to be picked up."
     ).update_global_data({"pickup_address": match})
 
-# get_quote takes no arguments: it reads state your code already verified
+# In __init__: get_quote takes no arguments, reading state your code already verified
 self.define_tool(
     name="get_quote",
     description="Quote the fare. Only call after the pickup address is confirmed.",
@@ -346,32 +361,31 @@ See [state management][state-management] for the full `global_data` lifecycle.
 
 ### Expose only the tools each step needs
 
-An agent with every tool available at every moment will eventually call one at the wrong time —
+An agent with every tool available at every moment will eventually call one at the wrong time:
 booking before quoting, charging before confirming.
 Structure multi-stage conversations into steps, and scope which functions are active in each one.
-The AI can't call `book_ride` before `get_quote` if `book_ride` doesn't exist yet from where it's standing.
+The AI can't call `book_ride` before `get_quote` if `book_ride` doesn't exist yet.
 See [contexts and workflows][contexts-workflows] in the Agents SDK,
 or [toggling functions][toggle-functions] in SWML.
 
 ### Cover the wait
 
-Real lookups take real time, and silence on a phone call reads as broken.
+Most lookups take a noticeable moment, and callers hear silence as a dropped call.
 Give every tool that leaves the conversation a filler phrase ("Let me pull that up...")
 or hold audio, so the caller hears a working agent instead of dead air.
-Fillers play asynchronously — when your endpoint is fast, the caller may never hear them at all.
+Fillers play asynchronously; when your endpoint is fast, the caller may never hear them at all.
 Configure per-function `fillers` (as in the examples above) and agent-wide
 [`function_fillers`][ai-languages].
 
 ### Review what actually happened
 
 You can't fix a conversation you can't see.
-Set a [`post_prompt_url`][ai-reference] and the platform delivers a post-call report —
-summary, full conversation log, and every tool call with its timing —
-after each call ends.
+Define a `post_prompt` and set a [`post_prompt_url`][ai-reference], and the platform delivers a report
+after each call ends: the summary, the full conversation log, and every tool call with its timing.
 Read real transcripts, find the turns where the AI hesitated or picked the wrong tool,
 and iterate on your tool descriptions the way you'd iterate on any interface copy.
 The open-source [post prompt viewer](https://github.com/signalwire/post_prompt_viewer)
-inspects these reports — transcript, telemetry, and latency in one place.
+inspects these reports, with the transcript, telemetry, and latency in one place.
 In the Agents SDK, see [post-prompt data][state-management].
 
 ## Common use cases
@@ -387,21 +401,21 @@ The order-status agent above is the template; see
 
 ### Booking and payment
 
-Collect details across steps, validating each into `global_data`;
-finish with zero-argument confirm-and-book tools that read only verified state.
-Take card details outside the AI entirely — a payment action hands the caller to a secure collection flow
+Collect details across steps, validating each into `global_data`.
+Finish with zero-argument confirm-and-book tools that read only verified state.
+Take card details outside the AI entirely: a payment action hands the caller to a secure collection flow
 and returns when it's done. See [`FunctionResult` actions][result-actions].
 
 ### Catalog and menu ordering
 
-The AI never sees the catalog.
-It gets `add_item`, `remove_item`, and `finalize_order`; your code resolves each request against
+The catalog never enters the prompt.
+The agent gets `add_item`, `remove_item`, and `finalize_order`; your code resolves each request against
 the real menu, rejects what doesn't exist, computes totals, and decides when to offer an upsell.
 Scope the tools per step with [contexts and workflows][contexts-workflows].
 
 ### Grounded Q&A
 
-Don't let the model answer from its training data — that's how agents invent policy.
+Don't let the model answer from its own training data, which is how agents end up inventing policy.
 Back a `search_knowledge` tool with your curated content, and instruct the agent to answer
 only from what the tool returns.
 For a ready-made version, see the [FAQ bot prefab][faq-bot].
