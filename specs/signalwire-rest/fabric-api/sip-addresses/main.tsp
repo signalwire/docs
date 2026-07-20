@@ -22,6 +22,9 @@ namespace SignalWireAPI.Fabric.SipAddresses {
     settings, IP authentication, and a resource that answers the calls it receives. Use this API to
     list, create, update, and delete SIP addresses without the dashboard.
 
+    This API only sees SIP addresses that belong to your project. An ID from another project, or an
+    ID that belongs to a different kind of address (for example, a video room), returns a 404.
+
     <Note>
     This is the public REST management API for standalone SIP addresses. It's separate from
     [Assign domain application handler](/docs/apis/rest/domain-applications/assign-domain-application-handler),

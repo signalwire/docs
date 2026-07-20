@@ -33,7 +33,7 @@ model SipAddress {
   @example("support-line")
   display_name: string;
 
-  @doc("The Domain this address is grouped under — for example, `public` for your account's default Domain.")
+  @doc("The Domain this address is grouped under — for example, `public` for your project's default Domain.")
   @example("public")
   context: string;
 

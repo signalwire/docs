@@ -9,11 +9,12 @@ model SipAddressCreateRequest {
   @pattern("^[a-z0-9]+(-[a-z0-9]+)*$")
   name: string;
 
-  @doc("SIP username used to reach this address (no spaces). Defaults to `*`, which accepts any username.")
+  @doc("SIP username used to reach this address (no spaces). Defaults to `*`, which accepts any username. Together with the address's Domain, must be unique across your SignalWire account.")
   @example("agent")
+  @pattern("^\\S+$")
   user?: string = "*";
 
-  @doc("ID of the Domain this address should be grouped under. Defaults to your project's default Domain.")
+  @doc("ID of the Domain this address should be grouped under. Must exist in your project. Defaults to your project's default Domain.")
   @example("9c8b7a6d-5e4f-3a2b-1c0d-9e8f7a6b5c4d")
   context_id?: uuid;
 
@@ -62,11 +63,12 @@ model SipAddressUpdateRequest {
   @pattern("^[a-z0-9]+(-[a-z0-9]+)*$")
   name?: string;
 
-  @doc("SIP username used to reach this address (no spaces).")
+  @doc("SIP username used to reach this address (no spaces). Together with the address's Domain, must be unique across your SignalWire account.")
   @example("agent")
+  @pattern("^\\S+$")
   user?: string;
 
-  @doc("ID of the Domain this address should be grouped under. Defaults to the address's current Domain when omitted.")
+  @doc("ID of the Domain this address should be grouped under. Must exist in your project. Defaults to the address's current Domain when omitted.")
   @example("9c8b7a6d-5e4f-3a2b-1c0d-9e8f7a6b5c4d")
   context_id?: uuid;
 
