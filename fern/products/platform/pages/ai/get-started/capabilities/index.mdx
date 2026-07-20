@@ -45,6 +45,47 @@ all visually. Start with the [no-code agent guide](/docs/platform/ai/no-code-age
 
 ---
 
+## AI in the media path
+
+Every conversational turn passes through four stages before the caller hears a reply:
+detecting that the caller has finished speaking (end-pointing), transcribing the audio,
+generating the response, and synthesizing the reply as speech.
+
+A common way to assemble voice AI is to connect a separate service for each stage.
+The audio then crosses a network boundary at every stage, on every turn:
+
+```mermaid
+flowchart LR
+    A([Caller stops<br/>speaking]) --> B[Telephony<br/>provider]
+    B --> C[Speech-to-text<br/>service]
+    C --> D[Language<br/>model]
+    D --> E[Text-to-speech<br/>service]
+    E --> F[Telephony<br/>provider]
+    F --> G([Caller hears<br/>the reply])
+```
+
+Each arrow is a network hop, each hop adds delay on every turn, and any hop can spike.
+
+SignalWire runs all four stages inside the engine that carries the call's audio,
+so no network boundary sits between the AI and the call:
+
+```mermaid
+flowchart LR
+    A([Caller stops<br/>speaking]) --> SW
+    subgraph SW["SignalWire · one engine carries the call"]
+        direction LR
+        B[End-pointing] --> C[Speech-to-text] --> D[Language<br/>model] --> E[Text-to-speech]
+    end
+    SW --> F([Caller hears<br/>the reply])
+    D -.->|"tool calls over HTTP"| Y[Your backend]
+```
+
+The result is response time that stays low and, just as important, consistent from turn to turn.
+The one network hop that remains is the one you control:
+tool calls to your backend, covered in the [tool calling guide](/docs/platform/ai/tool-calling).
+
+---
+
 ## Core capabilities
 
 ### Voice technology
