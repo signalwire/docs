@@ -22,8 +22,10 @@ max-toc-depth: 3
 [ai-prompt-reference]: /docs/swml/reference/calling/ai/prompt
 [sdk-hints]: /docs/server-sdks/guides/hints
 
-A reliable AI agent splits the work: the prompt runs the conversation, and your code runs the business.
-The practices below follow from that split.
+Building an agent that holds up in production takes more than a good prompt.
+This guide collects the practices that matter across the whole design: how work divides between
+the prompt and your code, how to write for a real-time voice medium, how to help speech recognition,
+and how to test, observe, and stay compliant once callers arrive.
 
 ## Split the work between the prompt and your code
 
@@ -43,6 +45,21 @@ Give each side the work it's good at:
 A useful rule of thumb: if the answer must be exact tomorrow, it can't live in the prompt.
 </Tip>
 
+### Keep business data out of the prompt
+
+It's tempting to paste the catalog, the price list, or the policy manual into the prompt.
+Resist it:
+
+- **Freshness.** The prompt is fixed when the call starts, but your data keeps changing.
+  A tool call reads the current value at the moment the caller asks.
+- **Consistency.** Data in the prompt is *recalled* by the model, approximately.
+  Data from a tool call is *returned* by your code, exactly.
+- **Authority.** The model has no way to tell your pasted policy apart from anything else it has read.
+  Your backend is the system of record.
+
+Move that data behind tool calls: a lookup function backed by your webhook or the Agents SDK,
+or a serverless [DataMap][swml-datamap] for straightforward API calls and pattern-matched responses.
+
 <Card title="Tool calling" href="/docs/platform/ai/tool-calling" icon="regular webhook">
   How AI agents call your backend — the mental model, a complete example, and patterns for reliable tools.
 </Card>
@@ -54,37 +71,73 @@ its conversational duties, and its boundaries.
 
 - **Keep it brief.** Overloading the AI with instructions muddles its behavior;
   excessive constraints degrade performance rather than tightening it.
+  Brief prompts are also cheaper to run, since the prompt is part of every conversational turn.
   See [avoiding over-prompting][prompt-eng-best-practices] for techniques.
 - **Stick to necessities.** Clearly outline the AI's identity and primary responsibilities
   so it understands its role and scope.
-- **Structure with Markdown.** Headings and lists keep the prompt organized and legible,
+- **Structure with [Markdown](https://www.markdownguide.org/basic-syntax/).**
+  Headings and lists keep the prompt organized and legible,
   narrowing how the AI interprets each section.
 
+<CodeBlocks>
+<CodeBlock title="SWML">
 ```yaml
+version: 1.0.0
 sections:
   main:
     - ai:
         prompt:
           text: |
-            Your name is David. You are a virtual assistant for a tree-planting nonprofit.
+            Your name is Sam. You are the phone assistant for Hartwell Hardware.
 
             ## Personality and duties
-            You have a friendly and eco-conscious personality.
-            Help callers with questions about tree planting, using the functions
-            available to you to look up specific information.
+            You are friendly and practical. Help callers check whether an item
+            is in stock and what it costs, using the functions available to you.
 
             ## Greeting rules
-            Greet the caller, thank them for their interest in tree planting, and
-            introduce yourself as David. Prefix the greeting with 'good morning',
+            Greet the caller, introduce yourself as Sam, and ask what item
+            they're looking for. Prefix the greeting with 'good morning',
             'good afternoon', or 'good evening' depending on the time of day.
           temperature: 0.89
           top_p: 0.64
-          confidence: 0.5
 ```
+</CodeBlock>
+<CodeBlock title="Python SDK">
+```python
+from signalwire import AgentBase
 
-Notice what this prompt *doesn't* contain: no encyclopedia of tree facts, no lists of species per region.
-That information lives in the backend behind the agent's functions,
+agent = AgentBase(name="hartwell-hardware")
+
+agent.prompt_add_section(
+    "Role",
+    "Your name is Sam. You are the phone assistant for Hartwell Hardware."
+)
+agent.prompt_add_section(
+    "Personality and duties",
+    "You are friendly and practical. Help callers check whether an item "
+    "is in stock and what it costs, using the functions available to you."
+)
+agent.prompt_add_section(
+    "Greeting rules",
+    "Greet the caller, introduce yourself as Sam, and ask what item "
+    "they're looking for. Prefix the greeting with 'good morning', "
+    "'good afternoon', or 'good evening' depending on the time of day."
+)
+agent.set_params({"temperature": 0.89, "top_p": 0.64})
+
+if __name__ == "__main__":
+    agent.run()
+```
+</CodeBlock>
+</CodeBlocks>
+
+Notice what this prompt *doesn't* contain: no product catalog, no prices, no stock counts.
+That information lives in the store's inventory system behind the agent's functions,
 so the prompt stays short and the answers stay accurate.
+
+Some context does belong in the prompt, such as stable facts like business hours or the agent's scope.
+Place dynamic or per-call values (like data interpolated into the prompt at request time)
+at the **bottom** of the prompt, so the stable part stays identical from turn to turn and from call to call.
 
 For the full craft of prompt writing, including structure, examples, and iterative refinement,
 see the [prompt engineering guide][prompt-engineering].
@@ -100,25 +153,6 @@ The [`prompt` object][ai-prompt-reference] accepts parameters that shape the AI'
   A lower value shortens the pause after the caller speaks, but may cause false positives.
 - **Presence penalty (`presence_penalty`)**: positive values make the AI more likely to introduce new topics.
 - **Frequency penalty (`frequency_penalty`)**: positive values discourage repetition.
-
-## Keep business data out of the prompt
-
-It's tempting to paste the catalog, the price list, or the policy manual into the prompt.
-Resist it, for reasons beyond prompt length:
-
-- **Freshness.** The prompt is fixed when the call starts, but your data keeps changing.
-  A tool call reads the current value at the moment the caller asks.
-- **Consistency.** Data in the prompt is *recalled* by the model, approximately.
-  Data from a tool call is *returned* by your code, exactly.
-- **Authority.** The model has no way to tell your pasted policy apart from anything else it has read.
-  Your backend is the system of record.
-
-Move that data behind [tool calls][tool-calling]: a lookup function backed by your webhook or the Agents SDK,
-or a serverless [DataMap][swml-datamap] for straightforward API calls.
-
-Some context does belong in the prompt, such as stable facts like business hours or the agent's scope.
-Place dynamic or per-call values (like data interpolated into the prompt at request time)
-at the **bottom** of the prompt, so the stable part stays identical from turn to turn and from call to call.
 
 ## Design for real-time voice
 
@@ -152,20 +186,48 @@ Rather than chasing zero, make the wait feel natural:
 ## Help speech recognition with hints
 
 Hints boost recognition accuracy for the words that matter in your domain,
-so "sapling" doesn't arrive as "sampling."
+so "caulk" doesn't arrive as "chalk."
 
 Introduce the vocabulary your agent should expect, such as product names, jargon, and place names:
 
+<CodeBlocks>
+<CodeBlock title="SWML">
 ```yaml
-hints:
-  - wildlife
-  - carbon
-  - sapling
-  - soil
-  - watering
-  - benefits
-  - environment
+version: 1.0.0
+sections:
+  main:
+    - ai:
+        prompt:
+          text: |
+            Your name is Sam. You are the phone assistant for Hartwell Hardware.
+            Help callers check whether items are in stock.
+        hints:
+          - caulk
+          - torx
+          - galvanized
+          - PVC
+          - primer
+          - spackle
 ```
+</CodeBlock>
+<CodeBlock title="Python SDK">
+```python
+from signalwire import AgentBase
+
+agent = AgentBase(name="hartwell-hardware")
+
+agent.prompt_add_section(
+    "Role",
+    "Your name is Sam. You are the phone assistant for Hartwell Hardware. "
+    "Help callers check whether items are in stock."
+)
+agent.add_hints(["caulk", "torx", "galvanized", "PVC", "primer", "spackle"])
+
+if __name__ == "__main__":
+    agent.run()
+```
+</CodeBlock>
+</CodeBlocks>
 
 See [`hints`][ai-reference] in the SWML reference, or [speech recognition hints][sdk-hints] in the Agents SDK.
 
@@ -178,8 +240,9 @@ See [`hints`][ai-reference] in the SWML reference, or [speech recognition hints]
   transcripts where the agent hesitated or chose the wrong tool. That's where the next fix comes from.
 - **Monitor usage metrics.** Token consumption, interaction times, and call outcomes
   reveal both cost and quality trends.
-- **Review and update regularly.** Models, platform features, and your business all change;
-  revisit the agent's prompt and tools periodically.
+- **Review and update regularly.** Your business changes; revisit the agent's prompt and tools periodically.
+- **Track platform updates.** SignalWire's AI capabilities evolve.
+  Check the documentation and release notes for new parameters, voices, and features your agent can use.
 
 ## Stay compliant with regulations
 
@@ -192,6 +255,159 @@ This does **not** make AI agents illegal. It means they must be used responsibly
 - **Transparency**: clearly state that the caller is interacting with an AI agent.
 - **Opt-out mechanism**: provide a simple, immediate way to leave the AI interaction.
 - **User consent**: for outbound use especially, ensure recipients have consented to interact with an AI.
+
+## Putting it together
+
+Here is Sam as a complete script, with each practice in place:
+a lean prompt, stock and prices served by the store's inventory system instead of pasted text,
+a filler phrase to cover the lookup, hints for domain vocabulary, and a post-call
+report for review.
+
+<CodeBlocks>
+<CodeBlock title="SWML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - ai:
+        prompt:
+          text: |
+            Your name is Sam. You are the phone assistant for Hartwell Hardware.
+
+            ## Personality and duties
+            You are friendly and practical. Help callers check whether an item
+            is in stock and what it costs. Look items up with check_stock, and
+            only quote prices and quantities that check_stock returned.
+
+            ## Greeting rules
+            Greet the caller, introduce yourself as Sam, and ask what item
+            they're looking for.
+          temperature: 0.89
+          top_p: 0.64
+        SWAIG:
+          functions:
+            - function: check_stock
+              description: Look up an item in the store inventory system for current stock and price
+              parameters:
+                type: object
+                properties:
+                  item:
+                    type: string
+                    description: The item the caller asked about, in their own words
+                required:
+                  - item
+              fillers:
+                en-US:
+                  - Let me check the shelf for you...
+              web_hook_url: https://example.com/inventory
+        hints:
+          - caulk
+          - torx
+          - galvanized
+          - PVC
+          - primer
+          - spackle
+        post_prompt:
+          text: Summarize the call and provide the summary in JSON format.
+        post_prompt_url: https://example.com/post-prompt
+```
+</CodeBlock>
+<CodeBlock title="Python SDK">
+```python
+from signalwire import AgentBase, FunctionResult
+
+# Stand-in for your inventory system: a database query, an internal API call
+INVENTORY = {
+    "galvanized wood screws": {"sku": 4471, "stock": 14, "price": 8.49},
+    "pvc primer": {"sku": 2205, "stock": 9, "price": 6.99},
+    "caulk gun": {"sku": 3118, "stock": 5, "price": 12.99},
+}
+
+class HardwareAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="hartwell-hardware")
+        self.add_language("English", "en-US", "rime.spore")
+
+        self.prompt_add_section(
+            "Role",
+            "Your name is Sam. You are the phone assistant for Hartwell Hardware."
+        )
+        self.prompt_add_section(
+            "Personality and duties",
+            "You are friendly and practical. Help callers check whether an item "
+            "is in stock and what it costs. Look items up with check_stock, and "
+            "only quote prices and quantities that check_stock returned."
+        )
+        self.prompt_add_section(
+            "Greeting rules",
+            "Greet the caller, introduce yourself as Sam, and ask what item "
+            "they're looking for."
+        )
+        self.set_params({"temperature": 0.89, "top_p": 0.64})
+
+        self.add_hints(["caulk", "torx", "galvanized", "PVC", "primer", "spackle"])
+        self.set_post_prompt("Summarize the call and provide the summary in JSON format.")
+
+        self.define_tool(
+            name="check_stock",
+            description="Look up an item in the store inventory system for current stock and price",
+            parameters={
+                "type": "object",
+                "properties": {
+                    "item": {
+                        "type": "string",
+                        "description": "The item the caller asked about, in their own words"
+                    }
+                },
+                "required": ["item"]
+            },
+            handler=self.check_stock,
+            fillers={"en-US": ["Let me check the shelf for you..."]}
+        )
+
+    def check_stock(self, args, raw_data):
+        item = args.get("item", "").lower().strip()
+        match = INVENTORY.get(item)
+        if not match:
+            return FunctionResult(
+                f"No item matching '{item}'. Ask the caller to describe it differently."
+            )
+        return FunctionResult(
+            f"Item {match['sku']}, {item}: {match['stock']} in stock "
+            f"at ${match['price']:.2f}. Offer to set one aside at the front desk."
+        )
+
+if __name__ == "__main__":
+    agent = HardwareAgent()
+    agent.run()
+```
+</CodeBlock>
+</CodeBlocks>
+
+When a caller asks about wood screws, the platform sends an HTTP POST to your function's endpoint
+(the `web_hook_url` in SWML, or the endpoint the Python SDK serves for you):
+
+```json
+{
+  "function": "check_stock",
+  "argument": {
+    "parsed": [{ "item": "galvanized wood screws" }]
+  }
+}
+```
+
+Your server queries the inventory database (the same one the registers use) and replies:
+
+```json
+{
+  "response": "Item 4471, galvanized wood screws: 14 in stock at $8.49. Offer to set one aside at the front desk."
+}
+```
+
+Sam relays the answer in its own voice, and offers to hold a box.
+Every number in that sentence came out of the inventory system during the call.
+When the price changes tomorrow, the agent is already right,
+and the post-call report shows you every lookup it made.
 
 ## Next steps
 

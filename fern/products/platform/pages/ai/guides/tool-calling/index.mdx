@@ -53,66 +53,144 @@ Anything that must be exact, current, or enforced belongs behind a tool call:
 | Extracting details (names, dates, addresses) | Calculations and discounts |
 | Deciding when to reach for a tool | Lookups and side effects (booking, texting, transferring) |
 
-Here is the difference in practice, using a drive-thru agent:
+Here is the difference in practice, using a drive-thru agent.
 
-<Tabs>
+### The prompt-stuffed version
 
-<Tab title="Prompt-stuffed">
-
+<CodeBlocks>
+<CodeBlock title="SWML">
 ```yaml
-- ai:
-    prompt:
-      text: |
-        You are the drive-thru assistant for Taco Palace.
+version: 1.0.0
+sections:
+  main:
+    - ai:
+        prompt:
+          text: |
+            You are the drive-thru assistant for Taco Palace.
 
-        ## Menu
-        Beef taco: $3.50. Chicken taco: $3.75. Veggie taco: $3.25.
-        Chips and salsa: $2.99. Small soda: $2.19. Large soda: $2.79.
-        The taco combo (two tacos, chips and salsa, and a drink) is $9.99.
+            ## Menu
+            Beef taco: $3.50. Chicken taco: $3.75. Veggie taco: $3.25.
+            Chips and salsa: $2.99. Small soda: $2.19. Large soda: $2.79.
+            The taco combo (two tacos, chips and salsa, and a drink) is $9.99.
 
-        ## Rules
-        Add up the order total yourself and read it to the customer.
-        Never invent menu items. Never give discounts.
+            ## Rules
+            Add up the order total yourself and read it to the customer.
+            Never invent menu items. Never give discounts.
 ```
+</CodeBlock>
+<CodeBlock title="Python SDK">
+```python
+from signalwire import AgentBase
+
+agent = AgentBase(name="taco-palace")
+
+agent.prompt_add_section(
+    "Role",
+    "You are the drive-thru assistant for Taco Palace."
+)
+agent.prompt_add_section(
+    "Menu",
+    "Beef taco: $3.50. Chicken taco: $3.75. Veggie taco: $3.25. "
+    "Chips and salsa: $2.99. Small soda: $2.19. Large soda: $2.79. "
+    "The taco combo (two tacos, chips and salsa, and a drink) is $9.99."
+)
+agent.prompt_add_section(
+    "Rules",
+    "Add up the order total yourself and read it to the customer. "
+    "Never invent menu items. Never give discounts."
+)
+
+if __name__ == "__main__":
+    agent.run()
+```
+</CodeBlock>
+</CodeBlocks>
 
 Every line of that menu is a liability.
 Prices go stale the day they change, the model is doing arithmetic on a phone call,
 and each "never" is a rule the model is merely encouraged to follow.
 
-</Tab>
+### The tool-backed version
 
-<Tab title="Tool-backed">
-
+<CodeBlocks>
+<CodeBlock title="SWML">
 ```yaml
-- ai:
-    prompt:
-      text: |
-        You are the drive-thru assistant for Taco Palace.
-        Take the customer's order using the functions available to you.
-        Confirm each item as you add it, and read back the total at the end.
-    SWAIG:
-      defaults:
-        web_hook_url: https://example.com/orders
-      functions:
-        - function: add_item
-          description: Add an item to the order when the customer asks for one
-          parameters:
-            type: object
-            properties:
-              item:
-                type: string
-                description: The menu item the customer asked for, in their own words
-        - function: finalize_order
-          description: Total the order and send it to the kitchen
+version: 1.0.0
+sections:
+  main:
+    - ai:
+        prompt:
+          text: |
+            You are the drive-thru assistant for Taco Palace.
+            Take the customer's order using the functions available to you.
+            Confirm each item as you add it, and read back the total at the end.
+        SWAIG:
+          defaults:
+            web_hook_url: https://example.com/orders
+          functions:
+            - function: add_item
+              description: Add an item to the order when the customer asks for one
+              parameters:
+                type: object
+                properties:
+                  item:
+                    type: string
+                    description: The menu item the customer asked for, in their own words
+            - function: finalize_order
+              description: Total the order and send it to the kitchen
 ```
+</CodeBlock>
+<CodeBlock title="Python SDK">
+```python
+from signalwire import AgentBase, FunctionResult
+
+MENU = {
+    "beef taco": 3.50,
+    "chicken taco": 3.75,
+    "veggie taco": 3.25,
+    "chips and salsa": 2.99,
+    "small soda": 2.19,
+    "large soda": 2.79,
+}
+
+agent = AgentBase(name="taco-palace")
+
+agent.prompt_add_section(
+    "Role",
+    "You are the drive-thru assistant for Taco Palace. "
+    "Take the customer's order using the functions available to you. "
+    "Confirm each item as you add it, and read back the total at the end."
+)
+
+@agent.tool(description="Add an item to the order when the customer asks for one")
+def add_item(item: str, raw_data=None) -> FunctionResult:
+    price = MENU.get(item.lower().strip())
+    if price is None:
+        return FunctionResult(f"'{item}' is not on the menu. Let the customer know.")
+    order = raw_data.get("global_data", {}).get("order", []) + [[item, price]]
+    total = sum(entry[1] for entry in order)
+    return FunctionResult(
+        f"Added {item} at ${price:.2f}. Running total: ${total:.2f}."
+    ).update_global_data({"order": order})
+
+@agent.tool(description="Total the order and send it to the kitchen")
+def finalize_order(raw_data=None) -> FunctionResult:
+    order = raw_data.get("global_data", {}).get("order", [])
+    total = sum(entry[1] for entry in order)
+    return FunctionResult(
+        f"Order sent to the kitchen: {len(order)} items, ${total:.2f} total. "
+        "Read the total back and tell the customer to pull forward."
+    )
+
+if __name__ == "__main__":
+    agent.run()
+```
+</CodeBlock>
+</CodeBlocks>
 
 The AI never sees the menu.
 Your code looks up each item, owns every price, computes the total,
 and can refuse "a pizza" without a single rule being written into the prompt.
-
-</Tab>
-
-</Tabs>
 
 The prompt still matters: a well-written prompt is what makes the conversation natural,
 and [prompt engineering][prompt-engineering] is a real craft.
@@ -191,10 +269,36 @@ You have three ways to host the code behind a tool:
 Here is a complete agent whose knowledge of orders lives entirely in code.
 The prompt never claims to know order status; it only knows there is a tool for that.
 
-<Tabs>
-
-<Tab title="Agents SDK">
-
+<CodeBlocks>
+<CodeBlock title="SWML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - ai:
+        prompt:
+          text: |
+            You are an order status assistant. Help customers check their orders.
+            Ask for the order number, then look it up with check_order.
+        SWAIG:
+          functions:
+            - function: check_order
+              description: Look up order status by order number
+              parameters:
+                type: object
+                properties:
+                  order_number:
+                    type: string
+                    description: The order number to look up
+                required:
+                  - order_number
+              fillers:
+                en-US:
+                  - Let me pull that up...
+              web_hook_url: https://example.com/check-order
+```
+</CodeBlock>
+<CodeBlock title="Python SDK">
 ```python
 from signalwire import AgentBase, FunctionResult
 
@@ -241,45 +345,14 @@ if __name__ == "__main__":
     agent = OrderAgent()
     agent.run()
 ```
+</CodeBlock>
+</CodeBlocks>
 
-[SWAIG functions in the Agents SDK][sdk-functions] | [SWAIG request handling][sdk-swaig]
-
-</Tab>
-
-<Tab title="SWML">
-
-```yaml
-version: 1.0.0
-sections:
-  main:
-    - ai:
-        prompt:
-          text: |
-            You are an order status assistant. Help customers check their orders.
-            Ask for the order number, then look it up with check_order.
-        SWAIG:
-          functions:
-            - function: check_order
-              description: Look up order status by order number
-              parameters:
-                type: object
-                properties:
-                  order_number:
-                    type: string
-                    description: The order number to look up
-                required:
-                  - order_number
-              fillers:
-                en-US:
-                  - Let me pull that up...
-              web_hook_url: https://example.com/check-order
-```
-
-[SWAIG guide][swaig-guide] | [`SWAIG.functions` reference][swaig-functions]
-
-</Tab>
-
-</Tabs>
+In SWML, `web_hook_url` names the server you run; in the Python SDK, the class *is* the server,
+and the SDK hosts the endpoint for you.
+For the SDK side, see [SWAIG functions in the Agents SDK][sdk-functions] and
+[SWAIG request handling][sdk-swaig].
+For SWML, see the [SWAIG guide][swaig-guide] and the [`SWAIG.functions` reference][swaig-functions].
 
 The `orders` dictionary stands in for your real backend: a database, an internal API, a fulfillment system.
 Swap it out and nothing else changes.
@@ -330,28 +403,75 @@ Write it to `global_data`, the call-scoped state that lives with the session,
 and let downstream tools take **no arguments at all**, reading the validated state instead:
 
 ```python
-def validate_address(self, args, raw_data):
-    match = geocode(args.get("address"))  # your validator, your rules
-    if not match:
-        return FunctionResult(
-            "No match for that address. Ask the caller to repeat it."
+from signalwire import AgentBase, FunctionResult
+
+def geocode(address):
+    # Stand-in for a real geocoding service: your validator, your rules
+    known = {
+        "123 main street": "123 Main St, Springfield",
+        "456 oak avenue": "456 Oak Ave, Springfield",
+    }
+    return known.get(address.lower().strip())
+
+def price_ride(address):
+    # Stand-in for your pricing engine, not the model's guess
+    return 18.50
+
+class TaxiAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="taxi-agent")
+        self.add_language("English", "en-US", "rime.spore")
+
+        self.prompt_add_section(
+            "Role",
+            "You book taxi pickups. Ask for the pickup address and validate it "
+            "with validate_address, then quote the fare with get_quote."
         )
-    return FunctionResult(
-        f"Address confirmed: {match}. Ask when they'd like to be picked up."
-    ).update_global_data({"pickup_address": match})
 
-# In __init__: get_quote takes no arguments, reading state your code already verified
-self.define_tool(
-    name="get_quote",
-    description="Quote the fare. Only call after the pickup address is confirmed.",
-    parameters={"type": "object", "properties": {}},
-    handler=self.get_quote
-)
+        self.define_tool(
+            name="validate_address",
+            description="Validate the pickup address the caller gave",
+            parameters={
+                "type": "object",
+                "properties": {
+                    "address": {
+                        "type": "string",
+                        "description": "The pickup address, as the caller said it"
+                    }
+                },
+                "required": ["address"]
+            },
+            handler=self.validate_address
+        )
 
-def get_quote(self, args, raw_data):
-    address = raw_data.get("global_data", {}).get("pickup_address")
-    fare = price_ride(address)  # your pricing engine, not the model's guess
-    return FunctionResult(f"The fare is ${fare:.2f}. Ask if they'd like to book it.")
+        # get_quote takes no arguments: it reads state your code already verified
+        self.define_tool(
+            name="get_quote",
+            description="Quote the fare. Only call after the pickup address is confirmed.",
+            parameters={"type": "object", "properties": {}},
+            handler=self.get_quote
+        )
+
+    def validate_address(self, args, raw_data):
+        match = geocode(args.get("address", ""))
+        if not match:
+            return FunctionResult(
+                "No match for that address. Ask the caller to repeat it."
+            )
+        return FunctionResult(
+            f"Address confirmed: {match}. Ask when they'd like to be picked up."
+        ).update_global_data({"pickup_address": match})
+
+    def get_quote(self, args, raw_data):
+        address = raw_data.get("global_data", {}).get("pickup_address")
+        if not address:
+            return FunctionResult("No confirmed address yet. Ask for the pickup address first.")
+        fare = price_ride(address)
+        return FunctionResult(f"The fare is ${fare:.2f}. Ask if they'd like to book it.")
+
+if __name__ == "__main__":
+    agent = TaxiAgent()
+    agent.run()
 ```
 
 A tool with no arguments has no arguments to get wrong.
