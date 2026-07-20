@@ -17,13 +17,15 @@ namespace SignalWireAPI.Fabric.SipAddresses {
   @tag(SIP_ADDRESSES_TAG)
   @friendlyName("SIP Addresses")
   @doc("""
-    SIP Addresses API category. A SIP address is the customer-facing name for a Call Fabric domain application,
-    giving full API parity with the SIP address create/edit/delete flows in the dashboard.
+    SIP Addresses API category. A SIP address gives you a SIP URI that other SIP devices, PBXs, or
+    softphones can register to or dial — with its own username, codec, cipher, and encryption
+    settings, IP authentication, and a resource that answers the calls it receives. Use this API to
+    list, create, update, and delete SIP addresses without the dashboard.
 
     <Note>
-    This is the public REST management API for standalone SIP addresses. It is distinct from
+    This is the public REST management API for standalone SIP addresses. It's separate from
     [Assign domain application handler](/docs/apis/rest/domain-applications/assign-domain-application-handler),
-    which attaches an existing domain application to an existing resource.
+    which attaches an already-created Domain Application to a resource.
     </Note>
     """)
   interface SipAddresses {
@@ -60,7 +62,7 @@ namespace SignalWireAPI.Fabric.SipAddresses {
     @operationId("create_sip_address")
     @summary("Create SIP address")
     @doc("""
-      Creates a SIP address and its underlying SIP configuration.
+      Creates a SIP address, along with its username, encryption, codec, cipher, and IP authentication settings.
 
       ${tokenPermissions<"_Calling_, _Fax_, _Messaging_, or _Video_">}
       """)
@@ -97,7 +99,8 @@ namespace SignalWireAPI.Fabric.SipAddresses {
     @operationId("delete_sip_address")
     @summary("Delete SIP address")
     @doc("""
-      Deletes a SIP address by ID and tears down its domain application.
+      Deletes a SIP address by ID, along with its SIP configuration. Calls and registrations to this
+      address will stop working immediately.
 
       ${tokenPermissions<"_Calling_, _Fax_, _Messaging_, or _Video_">}
       """)

@@ -3,17 +3,17 @@ import "../../../_globally_shared/enums.tsp";
 import "../enums.tsp";
 
 model SipAddressCreateRequest {
-  @doc("URL-safe name for the SIP address (lowercase, hyphen-separated, no spaces/special characters — must equal its own parameterized form). Must be unique within the project.")
+  @doc("URL-safe name for the SIP address — lowercase letters, numbers, and hyphens only (no spaces or other special characters). Must be unique within the project and is used to build the address's SIP URI.")
   @example("sales-line")
   @maxLength(50)
   @pattern("^[a-z0-9]+(-[a-z0-9]+)*$")
   name: string;
 
-  @doc("SIP username in SIP userinfo format (no spaces). Defaults to `*` (wildcard).")
+  @doc("SIP username used to reach this address (no spaces). Defaults to `*`, which accepts any username.")
   @example("agent")
   user?: string = "*";
 
-  @doc("ID of the domain/context the address lives under. Defaults to the project's public root context.")
+  @doc("ID of the Domain this address should be grouped under. Defaults to your project's default Domain.")
   @example("9c8b7a6d-5e4f-3a2b-1c0d-9e8f7a6b5c4d")
   context_id?: uuid;
 
@@ -56,17 +56,17 @@ model SipAddressCreateRequest {
 }
 
 model SipAddressUpdateRequest {
-  @doc("URL-safe name for the SIP address (lowercase, hyphen-separated, no spaces/special characters — must equal its own parameterized form). Must be unique within the project. Defaults to the current value when omitted.")
+  @doc("URL-safe name for the SIP address — lowercase letters, numbers, and hyphens only (no spaces or other special characters). Must be unique within the project. Defaults to the current value when omitted.")
   @example("renamed-line")
   @maxLength(50)
   @pattern("^[a-z0-9]+(-[a-z0-9]+)*$")
   name?: string;
 
-  @doc("SIP username in SIP userinfo format (no spaces).")
+  @doc("SIP username used to reach this address (no spaces).")
   @example("agent")
   user?: string;
 
-  @doc("ID of the domain/context the address lives under. Defaults to the current context when omitted.")
+  @doc("ID of the Domain this address should be grouped under. Defaults to the address's current Domain when omitted.")
   @example("9c8b7a6d-5e4f-3a2b-1c0d-9e8f7a6b5c4d")
   context_id?: uuid;
 

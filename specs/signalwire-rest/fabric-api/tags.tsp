@@ -133,7 +133,7 @@ const FABRIC_SIP_ENDPOINTS_TAG_METADATA = #{
 const SIP_ADDRESSES_TAG = "SIP Addresses";
 
 const SIP_ADDRESSES_TAG_METADATA = #{
-  description: "Endpoints related to creating & managing SIP Addresses — the SIP configuration (user, domain/context, codecs, ciphers, encryption, IP authentication, registration password) for a Call Fabric resource.",
+  description: "Endpoints related to creating & managing SIP Addresses — the SIP configuration (username, Domain, codecs, ciphers, encryption, IP authentication, registration password) for the resource that handles calls to it.",
   externalDocs: #{
     url: "https://signalwire.com/docs/apis",
     description: "Developer documentation on SIP Addresses, Fabric API endpoints",

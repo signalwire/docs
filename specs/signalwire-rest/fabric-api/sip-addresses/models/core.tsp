@@ -13,19 +13,19 @@ model SipAddressPathID {
 }
 
 model SipAddress {
-  @doc("SIP address (Fabric address) identifier.")
+  @doc("Unique identifier for the SIP address.")
   @example("b3f1c0a2-0f6e-4a9d-9b2a-1c2d3e4f5a6b")
   id: uuid;
 
-  @doc("The type of Fabric address. Always `sip_address`.")
+  @doc("The object type. Always `sip_address`.")
   @example("sip_address")
   type: "sip_address";
 
-  @doc("ID of the Fabric resource the address belongs to.")
+  @doc("ID of the resource this address belongs to.")
   @example("8a7b6c5d-4e3f-2a1b-0c9d-8e7f6a5b4c3d")
   resource_id: uuid;
 
-  @doc("URL-safe name of the SIP address.")
+  @doc("URL-safe name for the SIP address. Used to build its SIP URI.")
   @example("support-line")
   name: string;
 
@@ -33,7 +33,7 @@ model SipAddress {
   @example("support-line")
   display_name: string;
 
-  @doc("The domain/context segment the SIP address lives under.")
+  @doc("The Domain this address is grouped under — for example, `public` for your account's default Domain.")
   @example("public")
   context: string;
 
@@ -41,7 +41,7 @@ model SipAddress {
   @example("sip:my-space-support-line@sip.signalwire.com")
   uri: string;
 
-  @doc("SIP username. `*` means wildcard.")
+  @doc("SIP username used to reach this address. `*` accepts any username.")
   @example("*")
   user: string;
 
