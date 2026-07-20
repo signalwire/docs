@@ -31,7 +31,7 @@ namespace SignalWireAPI.Calling.Calls {
     @doc("""
       Unified JSON-RPC style endpoint for executing call methods through command-based dispatch.
       Send a request with the appropriate `command` field to invoke the desired call operation.
-      Only the commands listed below are supported. Each one operates on an already-active call over HTTP (no persistent WebSocket connection required) and returns immediately, while the operation continues asynchronously and its results are delivered to your `status_url` webhooks.
+      Only the commands listed below are supported. Most operate on an already-active call; `dial` creates a new one. All commands are sent over HTTP (no persistent WebSocket connection required) and return immediately; operations that continue asynchronously deliver their results to your `status_url` webhooks.
       
       ## Supported Commands
       

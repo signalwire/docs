@@ -1935,7 +1935,7 @@ model CallUserEventRequest {
 @discriminated(#{ discriminatorPropertyName: "command", envelope: "none" })
 @doc("""
   Call request union for JSON-RPC style method dispatch. Use the `command` field to specify which call method to invoke.
-  Only the commands listed here are supported. Each one operates on an already-active call and returns immediately, while the operation continues asynchronously and its results are delivered to your `status_url` webhooks.
+  Only the commands listed here are supported. Most operate on an already-active call; `dial` creates a new one. Commands return immediately; operations that continue asynchronously deliver their results to your `status_url` webhooks.
   """)
 union CallRequest {
   dial: CallCreateRequest,
