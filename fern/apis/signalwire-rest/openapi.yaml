@@ -31,6 +31,11 @@ tags:
     externalDocs:
       url: https://signalwire.com/docs/apis
       description: Developer documentation on SignalWire REST APIs
+  - name: Projects
+    description: Manage projects and subprojects under the authenticated root project.
+    externalDocs:
+      url: https://signalwire.com/docs/apis
+      description: Developer documentation on SignalWire REST APIs
   - name: Project Tokens
     description: Manage API tokens for authentication.
     externalDocs:
@@ -171,6 +176,11 @@ tags:
     externalDocs:
       url: https://signalwire.com/docs/apis
       description: Developer documentation on SIP Gateway, Fabric API endpoints
+  - name: SIP Addresses
+    description: Endpoints related to creating & managing SIP Addresses — the SIP configuration (username, Domain, codecs, ciphers, encryption, IP authentication, registration password) for the resource that handles calls to it.
+    externalDocs:
+      url: https://signalwire.com/docs/apis
+      description: Developer documentation on SIP Addresses, Fabric API endpoints
   - name: SIP Credentials
     description: Manage SIP credentials for authenticating SIP endpoints.
     externalDocs:
@@ -286,6 +296,21 @@ tags:
     externalDocs:
       url: https://signalwire.com/docs/apis
       description: Developer documentation on Fax API endpoints
+  - name: WhatsApp Templates
+    description: Create and manage the Meta-approved templates required to start WhatsApp conversations.
+    externalDocs:
+      url: https://signalwire.com/docs/apis
+      description: Developer documentation on Message API endpoints
+  - name: WhatsApp Numbers
+    description: List and retrieve the WhatsApp numbers connected to your Space.
+    externalDocs:
+      url: https://signalwire.com/docs/apis
+      description: Developer documentation on Message API endpoints
+  - name: WhatsApp Businesses
+    description: List the WhatsApp Business Accounts connected to your Space.
+    externalDocs:
+      url: https://signalwire.com/docs/apis
+      description: Developer documentation on Message API endpoints
   - name: Message Logs
     description: Endpoints related to accessing message logs
     externalDocs:
@@ -314,7 +339,7 @@ paths:
       description: |-
         Unified JSON-RPC style endpoint for executing call methods through command-based dispatch.
         Send a request with the appropriate `command` field to invoke the desired call operation.
-        All async-safe RELAY methods can be sent through this endpoint without a WebSocket connection.
+        Only the commands listed below are supported. Most operate on an already-active call; `dial` creates a new one. All commands are sent over HTTP (no persistent WebSocket connection required) and return immediately; operations that continue asynchronously deliver their results to your `status_url` webhooks.
 
         ## Supported Commands
 
@@ -328,7 +353,6 @@ paths:
         | `calling.end` | Terminate an active call immediately |
         | `calling.transfer` | Transfer a call to a new destination (SIP URI, phone number, or inline SWML) |
         | `calling.disconnect` | Disconnect bridged calls without hanging up either leg |
-        | `calling.join_conference` | Join the call to an ad-hoc audio conference, optionally attaching a WebSocket stream |
         | `calling.play` | Play audio, TTS, silence, or ringtone to a call |
         | `calling.play.pause` | Pause active playback |
         | `calling.play.resume` | Resume paused playback |
@@ -698,21 +722,6 @@ paths:
                   id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
                   params:
                     control_id: tap-control-1
-              calling.join_conference:
-                summary: calling.join_conference
-                description: Join a conference and attach a bidirectional WebSocket stream
-                value:
-                  command: calling.join_conference
-                  id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-                  params:
-                    name: team_meeting
-                    beep: onEnter
-                    start_on_enter: true
-                    stream:
-                      url: wss://example.com/conference-audio
-                      codec: PCMU
-                      realtime: true
-                      status_url: https://example.com/stream-status
               calling.transcribe:
                 summary: calling.transcribe
                 description: Start background transcription on an active call
@@ -5746,6 +5755,237 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ResourceSipEndpointAssignRequest'
+  /api/fabric/sip_addresses:
+    get:
+      operationId: list_sip_addresses
+      summary: List SIP addresses
+      description: |-
+        Returns a paginated list of SIP addresses in the authenticated project.
+
+        #### Permissions
+
+        The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Calling_, _Fax_, _Messaging_, or _Video_.
+
+        [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
+      parameters:
+        - $ref: '#/components/parameters/SipAddressListQuery.page_size'
+        - $ref: '#/components/parameters/SipAddressListQuery.page_number'
+        - $ref: '#/components/parameters/SipAddressListQuery.page_token'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SipAddressListResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode404'
+        '422':
+          description: The request contains invalid parameters. See errors for details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SipAddressListStatusCode422'
+        '500':
+          description: An internal server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - SIP Addresses
+    post:
+      operationId: create_sip_address
+      summary: Create SIP address
+      description: |-
+        Creates a SIP address, along with its username, encryption, codec, cipher, and IP authentication settings.
+
+        #### Permissions
+
+        The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Calling_, _Fax_, _Messaging_, or _Video_.
+
+        [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
+      parameters: []
+      responses:
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SipAddress'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '422':
+          description: The request contains invalid parameters. See errors for details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SipAddressCreateStatusCode422'
+        '500':
+          description: An internal server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - SIP Addresses
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SipAddressCreateRequest'
+  /api/fabric/sip_addresses/{id}:
+    get:
+      operationId: get_sip_address
+      summary: Get SIP address
+      description: |-
+        Returns a SIP address by ID.
+
+        #### Permissions
+
+        The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Calling_, _Fax_, _Messaging_, or _Video_.
+
+        [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
+      parameters:
+        - $ref: '#/components/parameters/SipAddressPathID'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SipAddress'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode404'
+        '500':
+          description: An internal server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - SIP Addresses
+    patch:
+      operationId: update_sip_address
+      summary: Update SIP address
+      description: |-
+        Updates a SIP address by ID. Partial update: any field omitted from the body keeps its current value.
+        `calling_handler_resource_id` cannot be changed via this endpoint.
+
+        #### Permissions
+
+        The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Calling_, _Fax_, _Messaging_, or _Video_.
+
+        [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
+      parameters:
+        - $ref: '#/components/parameters/SipAddressPathID'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SipAddress'
+        '400':
+          description: The request is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode400'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode404'
+        '422':
+          description: The request contains invalid parameters. See errors for details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SipAddressUpdateStatusCode422'
+        '500':
+          description: An internal server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - SIP Addresses
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SipAddressUpdateRequest'
+    delete:
+      operationId: delete_sip_address
+      summary: Delete SIP address
+      description: |-
+        Deletes a SIP address by ID, along with its SIP configuration. Calls and registrations to this
+        address will stop working immediately.
+
+        #### Permissions
+
+        The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Calling_, _Fax_, _Messaging_, or _Video_.
+
+        [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
+      parameters:
+        - $ref: '#/components/parameters/SipAddressPathID'
+      responses:
+        '204':
+          description: 'There is no content to send for this request, but the headers may be useful. '
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode404'
+        '500':
+          description: An internal server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - SIP Addresses
   /api/fabric/subscriber/invites:
     post:
       operationId: create_subscriber_invite_token
@@ -6168,7 +6408,10 @@ paths:
       operationId: create_message
       summary: Send a message
       description: |-
-        Create and queue an outbound SMS or MMS message for delivery. The system determines whether the message is SMS or MMS based on the presence of `media` or the `send_as_mms` flag. The `from` number must be a purchased SignalWire phone number on the authenticated project.
+        Create and queue an outbound message for delivery. The channel is determined by the `from` number:
+
+        - **SMS/MMS** when `from` is a purchased SignalWire phone number or shortcode. The message is MMS when `media` is present or `send_as_mms` is set, otherwise SMS.
+        - **WhatsApp** when `from` is a `whatsapp:`-prefixed [WhatsApp number](/docs/platform/messaging/whatsapp/send-messages). Set `message_type` for a content message, or `template_id` for an [approved template](/docs/platform/messaging/whatsapp/message-templates). Free-form WhatsApp content is only allowed within the 24-hour customer service window.
 
         #### Permissions
 
@@ -6214,7 +6457,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Message.CreateMessageRequest'
+              $ref: '#/components/schemas/Message.SendMessageRequest'
   /api/messaging/messages/{message_id}:
     patch:
       operationId: update_message
@@ -6278,6 +6521,347 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Message.UpdateMessageRequest'
+  /api/messaging/whatsapp/businesses:
+    get:
+      operationId: list_whatsapp_businesses
+      summary: List WhatsApp Business Accounts
+      description: |-
+        Returns the WhatsApp Business Accounts (WABAs) connected to your SignalWire Space. Each account can have its own set of phone numbers and message templates. Use a `whatsapp_business_id` from this list when creating or filtering [message templates](/docs/platform/messaging/whatsapp/message-templates).
+
+        #### Permissions
+
+        The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Numbers_.
+
+        [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WhatsAppBusinessListResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '500':
+          description: An internal server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - WhatsApp Businesses
+  /api/messaging/whatsapp/numbers:
+    get:
+      operationId: list_whatsapp_numbers
+      summary: List WhatsApp numbers
+      description: |-
+        Returns the WhatsApp numbers connected to your Space. Each record includes its association with a WhatsApp Business Account, voice-capability flags, and the resource IDs used for routing calls or messages. Use `phone_number` (prefixed with `whatsapp:`) as the `from` address when [sending messages](/docs/platform/messaging/whatsapp/send-messages).
+
+        #### Permissions
+
+        The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Numbers_.
+
+        [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WhatsAppNumberListResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '500':
+          description: An internal server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - WhatsApp Numbers
+  /api/messaging/whatsapp/numbers/{id}:
+    get:
+      operationId: retrieve_whatsapp_number
+      summary: Get a WhatsApp number
+      description: |-
+        Retrieves the details of a single WhatsApp number.
+
+        #### Permissions
+
+        The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Numbers_.
+
+        [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
+      parameters:
+        - $ref: '#/components/parameters/WhatsAppNumberPathID'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WhatsAppNumberResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode404'
+        '500':
+          description: An internal server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - WhatsApp Numbers
+  /api/messaging/whatsapp/templates:
+    get:
+      operationId: list_whatsapp_templates
+      summary: List message templates
+      description: |-
+        Returns the message templates for your Space, optionally filtered by WhatsApp Business Account or approval status. A template must have `template_status` of `approved` before it can be used to send messages.
+
+        #### Permissions
+
+        The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Numbers_.
+
+        [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
+      parameters:
+        - $ref: '#/components/parameters/ListWhatsAppTemplatesQuery.whatsapp_business_id'
+        - $ref: '#/components/parameters/ListWhatsAppTemplatesQuery.status'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WhatsAppTemplateListResponse'
+        '400':
+          description: The request is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode400'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '500':
+          description: An internal server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - WhatsApp Templates
+    post:
+      operationId: create_whatsapp_template
+      summary: Create a message template
+      description: |-
+        Creates a message template and submits it to Meta for review. Approval typically takes from a few minutes to a few hours; poll the template's `template_status` until it becomes `approved`.
+
+        #### Permissions
+
+        The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Numbers_.
+
+        [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
+      parameters: []
+      responses:
+        '201':
+          description: Response returned when a template is successfully created and submitted to Meta.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WhatsAppTemplate'
+        '400':
+          description: The request is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode400'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '422':
+          description: The request contains invalid parameters. See errors for details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode422'
+        '500':
+          description: An internal server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - WhatsApp Templates
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWhatsAppTemplateRequest'
+  /api/messaging/whatsapp/templates/{id}:
+    get:
+      operationId: retrieve_whatsapp_template
+      summary: Get a message template
+      description: |-
+        Retrieves a single message template by SignalWire ID or Meta template ID.
+
+        #### Permissions
+
+        The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Numbers_.
+
+        [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
+      parameters:
+        - $ref: '#/components/parameters/WhatsAppTemplatePathID'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WhatsAppTemplateResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode404'
+        '500':
+          description: An internal server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - WhatsApp Templates
+    patch:
+      operationId: update_whatsapp_template
+      summary: Update a message template
+      description: |-
+        Updates a template's `category` or `components`. A template can only be updated while it is **not yet approved** — once approved, delete and recreate it to make changes.
+
+        #### Permissions
+
+        The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Numbers_.
+
+        [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
+      parameters:
+        - $ref: '#/components/parameters/WhatsAppTemplatePathID'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WhatsAppTemplateResponse'
+        '400':
+          description: The request is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode400'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode404'
+        '422':
+          description: The request contains invalid parameters. See errors for details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode422'
+        '500':
+          description: An internal server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - WhatsApp Templates
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWhatsAppTemplateRequest'
+    delete:
+      operationId: delete_whatsapp_template
+      summary: Delete a message template
+      description: |-
+        Deletes a message template.
+
+        #### Permissions
+
+        The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Numbers_.
+
+        [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
+      parameters:
+        - $ref: '#/components/parameters/WhatsAppTemplatePathID'
+      responses:
+        '200':
+          description: Response returned when a template has been deleted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WhatsAppTemplateDeleteResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode404'
+        '500':
+          description: An internal server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - WhatsApp Templates
   /api/project/tokens:
     post:
       operationId: create_token
@@ -6435,6 +7019,293 @@ paths:
                 $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
       tags:
         - Project Tokens
+  /api/projects:
+    get:
+      operationId: list_projects
+      summary: List projects
+      description: |-
+        Lists the authenticated root project and its subprojects.
+
+        All endpoints operate only within the caller's project tree — the authenticated root
+        project and the subprojects beneath it.
+
+        #### Permissions
+
+        The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Management_.
+
+        [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
+      parameters:
+        - $ref: '#/components/parameters/Projects.ListProjectsQuery.name'
+        - $ref: '#/components/parameters/Projects.ListProjectsQuery.page_size'
+        - $ref: '#/components/parameters/Projects.ListProjectsQuery.page_token'
+        - $ref: '#/components/parameters/Projects.ListProjectsQuery.page_number'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Projects.ProjectListResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '500':
+          description: An internal server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - Projects
+    post:
+      operationId: create_subproject
+      summary: Create a subproject
+      description: |-
+        Creates a subproject under the authenticated root project.
+
+        Creating a project is only allowed when authenticated as a top-level (root) project.
+        A subproject cannot itself contain subprojects, so attempting to create one while
+        authenticated as a subproject fails with `422 nested_subprojects_not_allowed`.
+
+        The response includes the `signing_key`. This is the only time it is returned — it
+        cannot be retrieved through the API afterward, so capture it from this response.
+
+        #### Permissions
+
+        The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Management_.
+
+        [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
+      parameters: []
+      responses:
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Projects.ProjectWithSigningKey'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '422':
+          description: |-
+            The request could not be processed. When creating a project while authenticated as a
+            subproject, the response includes the `nested_subprojects_not_allowed` code. A blank or
+            overly long `name` returns a standard validation error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Projects.CreateProjectStatusCode422'
+        '500':
+          description: An internal server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - Projects
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Projects.CreateProjectRequest'
+  /api/projects/{id}:
+    get:
+      operationId: get_project
+      summary: Retrieve a project
+      description: |-
+        Retrieves a single project or subproject.
+
+        A project ID outside the caller's project tree returns `404 Not Found`.
+
+        #### Permissions
+
+        The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Management_.
+
+        [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
+      parameters:
+        - $ref: '#/components/parameters/Projects.ProjectPathID'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Projects.Project'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode404'
+        '500':
+          description: An internal server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - Projects
+    patch:
+      operationId: update_project
+      summary: Update a project
+      description: |-
+        Updates a project's name and settings.
+
+        #### Permissions
+
+        The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Management_.
+
+        [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
+      parameters:
+        - $ref: '#/components/parameters/Projects.ProjectPathID'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Projects.Project'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode404'
+        '422':
+          description: The request failed validation, for example a blank or overly long `name`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Projects.UpdateProjectStatusCode422'
+        '500':
+          description: An internal server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - Projects
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Projects.UpdateProjectRequest'
+    delete:
+      operationId: delete_subproject
+      summary: Delete a subproject
+      description: |-
+        Deletes a subproject.
+
+        Only subprojects can be deleted through this API. Deleting the root/parent project
+        returns `422 only_subprojects_can_be_deleted`. A project must have no phone numbers
+        before it can be deleted; otherwise the request returns `422 phone_numbers_must_be_removed`.
+
+        On a successful delete, the subproject's registry brands and campaigns are migrated up
+        to the parent project.
+
+        #### Permissions
+
+        The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Management_.
+
+        [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
+      parameters:
+        - $ref: '#/components/parameters/Projects.ProjectPathID'
+      responses:
+        '204':
+          description: 'There is no content to send for this request, but the headers may be useful. '
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode404'
+        '422':
+          description: |-
+            The request could not be processed. Deleting a root/parent project returns
+            `only_subprojects_can_be_deleted`, and deleting a project that still has phone numbers
+            assigned returns `phone_numbers_must_be_removed`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Projects.DeleteProjectStatusCode422'
+        '500':
+          description: An internal server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - Projects
+  /api/projects/{id}/signing-key/rotate:
+    post:
+      operationId: rotate_signing_key
+      summary: Rotate a project's signing key
+      description: |-
+        Rotates the project's signing key and returns the project with the new `signing_key`.
+
+        The previous key may take about 1–2 minutes to stop working. As with create, the
+        `signing_key` is only returned on this response and cannot be retrieved afterward.
+
+        #### Permissions
+
+        The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Management_.
+
+        [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
+      parameters:
+        - $ref: '#/components/parameters/Projects.ProjectPathID'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Projects.ProjectWithSigningKey'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode404'
+        '500':
+          description: An internal server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - Projects
   /api/pubsub/tokens:
     post:
       operationId: create_token
@@ -12246,6 +13117,22 @@ components:
       schema:
         type: string
       explode: false
+    ListWhatsAppTemplatesQuery.status:
+      name: status
+      in: query
+      required: false
+      description: Filter by approval status.
+      schema:
+        $ref: '#/components/schemas/WhatsAppTemplateStatus'
+      explode: false
+    ListWhatsAppTemplatesQuery.whatsapp_business_id:
+      name: whatsapp_business_id
+      in: query
+      required: false
+      description: Filter to templates belonging to a specific WhatsApp Business Account.
+      schema:
+        $ref: '#/components/schemas/uuid'
+      explode: false
     Logs.ConferenceLogListRequest.created_after:
       name: created_after
       in: query
@@ -12436,6 +13323,52 @@ components:
       description: The unique identifier of the Resource.
       schema:
         $ref: '#/components/schemas/uuid'
+    Projects.ListProjectsQuery.name:
+      name: name
+      in: query
+      required: false
+      description: Filter projects by name.
+      schema:
+        type: string
+      explode: false
+    Projects.ListProjectsQuery.page_number:
+      name: page_number
+      in: query
+      required: false
+      description: The page index, used together with `page_token`.
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+        default: 0
+      explode: false
+    Projects.ListProjectsQuery.page_size:
+      name: page_size
+      in: query
+      required: false
+      description: The number of results per page.
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 1000
+        default: 50
+      explode: false
+    Projects.ListProjectsQuery.page_token:
+      name: page_token
+      in: query
+      required: false
+      description: Cursor token for paging, taken from the `links` in a previous response.
+      schema:
+        type: string
+      explode: false
+    Projects.ProjectPathID:
+      name: id
+      in: path
+      required: true
+      description: The unique identifier of the project or subproject.
+      schema:
+        $ref: '#/components/schemas/uuid'
     QueueIdPath:
       name: queue_id
       in: path
@@ -12532,6 +13465,44 @@ components:
       in: path
       required: true
       description: Unique ID of the short code.
+      schema:
+        $ref: '#/components/schemas/uuid'
+    SipAddressListQuery.page_number:
+      name: page_number
+      in: query
+      required: false
+      description: The page index, used together with `page_token`.
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+        default: 0
+      explode: false
+    SipAddressListQuery.page_size:
+      name: page_size
+      in: query
+      required: false
+      description: The number of results per page.
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 1000
+        default: 50
+      explode: false
+    SipAddressListQuery.page_token:
+      name: page_token
+      in: query
+      required: false
+      description: Opaque cursor token from a previous response's `links.next` or `links.prev`. Begins with `PA` or `PB`.
+      schema:
+        type: string
+      explode: false
+    SipAddressPathID:
+      name: id
+      in: path
+      required: true
+      description: Unique ID of a SIP Address.
       schema:
         $ref: '#/components/schemas/uuid'
     SipEndpointAddressPathID:
@@ -13098,6 +14069,20 @@ components:
       description: Unique ID of the log. This is the segment_id you can find in Relay call details in your Dashboard UI or in return objects when using the SDK.
       schema:
         $ref: '#/components/schemas/uuid'
+    WhatsAppNumberPathID:
+      name: id
+      in: path
+      required: true
+      description: The SignalWire identifier of the WhatsApp number.
+      schema:
+        $ref: '#/components/schemas/uuid'
+    WhatsAppTemplatePathID:
+      name: id
+      in: path
+      required: true
+      description: The template ID — either the SignalWire ID (a UUID) or the Meta template ID (a numeric string). Both are accepted.
+      schema:
+        type: string
   schemas:
     AIAddressPaginationResponse:
       type: object
@@ -16788,185 +17773,6 @@ components:
       unevaluatedProperties:
         not: {}
       title: calling.ai_hold
-    Calling.CallJoinConferenceRequest:
-      type: object
-      required:
-        - id
-        - command
-        - params
-      properties:
-        id:
-          allOf:
-            - $ref: '#/components/schemas/uuid'
-          description: The unique identifying ID of a existing call.
-          examples:
-            - 3fa85f64-5717-4562-b3fc-2c963f66afa6
-        command:
-          type: string
-          enum:
-            - calling.join_conference
-          description: The `calling.join_conference` command joins the call to an ad-hoc audio conference.
-          examples:
-            - calling.join_conference
-        params:
-          type: object
-          properties:
-            name:
-              type: string
-              description: Name of the conference. All calls joining the same name are placed in the same conference.
-              examples:
-                - team_meeting
-            muted:
-              type: boolean
-              description: Whether to join the conference in a muted state.
-              examples:
-                - false
-            beep:
-              type: string
-              enum:
-                - 'true'
-                - 'false'
-                - onEnter
-                - onExit
-              description: Sets the behavior of the beep sound when joining or leaving the conference.
-              examples:
-                - onEnter
-            start_on_enter:
-              type: boolean
-              description: Start the conference when this participant joins, without waiting for other participants.
-              examples:
-                - true
-            end_on_exit:
-              type: boolean
-              description: End the conference when this participant leaves, without waiting for other participants.
-              examples:
-                - false
-            wait_url:
-              type: string
-              format: uri
-              description: HTTP or HTTPS URL to fetch audio to play while waiting for the conference to start. Default hold music is played if not set.
-              examples:
-                - https://example.com/hold-music.mp3
-            max_participants:
-              type: integer
-              description: The maximum number of participants allowed in the conference.
-              examples:
-                - 50
-            record:
-              type: string
-              enum:
-                - do-not-record
-                - record-from-start
-              description: Enables or disables recording of the conference.
-              examples:
-                - record-from-start
-            region:
-              type: string
-              enum:
-                - global
-                - us
-                - eu
-                - ch
-              description: The geographical region where the conference is hosted.
-              examples:
-                - us
-            trim:
-              type: string
-              enum:
-                - trim-silence
-                - do-not-trim
-              description: Whether to trim silence from the start of the conference recording.
-              examples:
-                - trim-silence
-            acl:
-              type: string
-              enum:
-                - private
-                - public-read
-              description: Access control level for the conference.
-              examples:
-                - private
-            coach:
-              type: string
-              description: Call SID of a call currently connected to an in-progress conference. The coach can hear but not be heard (coaching mode).
-              examples:
-                - b3877ee3-6f3c-4985-8066-6d24e3f65e12
-            status_callback_event:
-              type: string
-              description: |-
-                Space-separated list of one or more events to send to the status callback URL.
-                Possible values: `start`, `end`, `join`, `leave`, `mute`, `hold`, `modify`, `speaker`, `announcement`.
-              examples:
-                - join leave
-            status_callback_event_type:
-              type: string
-              enum:
-                - cxml
-                - laml
-                - relay
-              description: Content type for status callback requests.
-              examples:
-                - relay
-            status_callback:
-              type: string
-              format: uri
-              description: HTTP or HTTPS URL to which status events will be sent.
-              examples:
-                - https://example.com/conference-status
-            status_callback_method:
-              type: string
-              enum:
-                - GET
-                - POST
-              description: The HTTP method to use when sending status events to the status callback URL.
-              examples:
-                - POST
-            recording_status_callback_event:
-              type: string
-              description: |-
-                Space-separated list of one or more events to send to the recording status callback URL.
-                Possible values: `in-progress`, `completed`, `absent`.
-              examples:
-                - completed
-            recording_status_callback_event_type:
-              type: string
-              enum:
-                - cxml
-                - laml
-                - relay
-              description: Content type for recording status callback requests.
-              examples:
-                - relay
-            recording_status_callback:
-              type: string
-              format: uri
-              description: HTTP or HTTPS URL to which recording status events will be sent.
-              examples:
-                - https://example.com/recording-status
-            recording_status_callback_method:
-              type: string
-              enum:
-                - GET
-                - POST
-              description: The HTTP method to use when sending recording status events to the recording status callback URL.
-              examples:
-                - POST
-            stream:
-              allOf:
-                - $ref: '#/components/schemas/Calling.ConferenceStreamParams'
-              description: Attach a bidirectional WebSocket stream to the conference audio.
-          required:
-            - name
-          unevaluatedProperties:
-            not: {}
-          description: An object of parameters that will be utilized by the active command.
-      unevaluatedProperties:
-        not: {}
-      description: |-
-        Join an ad-hoc audio conference. The conference is created automatically if it
-        does not already exist; multiple calls join the same conference by `name`.
-        Optionally attach a bidirectional WebSocket `stream` to the conference audio.
-      title: calling.join_conference
     Calling.CallLeg:
       type: object
       required:
@@ -17724,7 +18530,6 @@ components:
         - $ref: '#/components/schemas/Calling.CallTranscribeStopRequest'
         - $ref: '#/components/schemas/Calling.CallStreamRequest'
         - $ref: '#/components/schemas/Calling.CallStreamStopRequest'
-        - $ref: '#/components/schemas/Calling.CallJoinConferenceRequest'
         - $ref: '#/components/schemas/Calling.CallDenoiseRequest'
         - $ref: '#/components/schemas/Calling.CallDenoiseStopRequest'
         - $ref: '#/components/schemas/Calling.CallLiveTranscribeRequest'
@@ -17770,7 +18575,6 @@ components:
           calling.transcribe.stop: '#/components/schemas/Calling.CallTranscribeStopRequest'
           calling.stream: '#/components/schemas/Calling.CallStreamRequest'
           calling.stream.stop: '#/components/schemas/Calling.CallStreamStopRequest'
-          calling.join_conference: '#/components/schemas/Calling.CallJoinConferenceRequest'
           calling.denoise: '#/components/schemas/Calling.CallDenoiseRequest'
           calling.denoise.stop: '#/components/schemas/Calling.CallDenoiseStopRequest'
           calling.live_transcribe: '#/components/schemas/Calling.CallLiveTranscribeRequest'
@@ -17782,7 +18586,7 @@ components:
           calling.user_event: '#/components/schemas/Calling.CallUserEventRequest'
       description: |-
         Call request union for JSON-RPC style method dispatch. Use the `command` field to specify which call method to invoke.
-        All async-safe RELAY methods can be sent through this endpoint without a WebSocket connection.
+        Only the commands listed here are supported. Most operate on an already-active call; `dial` creates a new one. Commands return immediately; operations that continue asynchronously deliver their results to your `status_url` webhooks.
     Calling.CallResponse:
       anyOf:
         - $ref: '#/components/schemas/Calling.CallLeg'
@@ -18507,59 +19311,6 @@ components:
       unevaluatedProperties:
         not: {}
       description: Parameters for collecting speech input.
-    Calling.ConferenceStreamParams:
-      type: object
-      required:
-        - url
-      properties:
-        url:
-          type: string
-          format: uri
-          description: Secure WebSocket URL to stream conference audio to. Must start with `wss://` (TLS is required; plain `ws://` is rejected).
-          examples:
-            - wss://example.com/conference-audio
-        name:
-          type: string
-          description: Optional human-readable name to identify the stream at the endpoint.
-          examples:
-            - conference-audio
-        codec:
-          type: string
-          description: Audio codec to request. Freeform; endpoint-specific. Common values include `PCMU`, `PCMA`, `G722`, `L16`.
-          examples:
-            - PCMU
-        realtime:
-          type: boolean
-          description: When `true`, enables bidirectional audio so your endpoint can stream audio back into the conference (not just receive it).
-          examples:
-            - true
-        authorization_bearer_token:
-          type: string
-          description: 'Bearer token included as `Authorization: Bearer <token>` when establishing the WebSocket connection.'
-          examples:
-            - my-secret-token
-        custom_parameters:
-          type: object
-          unevaluatedProperties: {}
-          description: Arbitrary JSON object passed through to the WebSocket endpoint as connection metadata.
-          examples:
-            - session_id: abc123
-        status_url:
-          type: string
-          format: uri
-          description: HTTP or HTTPS URL that receives stream lifecycle webhooks.
-          examples:
-            - https://example.com/stream_callback
-        status_url_method:
-          allOf:
-            - $ref: '#/components/schemas/Calling.StreamStatusUrlMethod'
-          description: HTTP method used for the `status_url` webhook.
-          examples:
-            - POST
-          default: POST
-      unevaluatedProperties:
-        not: {}
-      description: Stream configuration for attaching a WebSocket stream to a conference.
     Calling.DetectConfig:
       type: object
       required:
@@ -22012,6 +22763,76 @@ components:
       unevaluatedProperties:
         not: {}
       description: Request body for creating a verified caller ID.
+    CreateWhatsAppTemplateRequest:
+      type: object
+      required:
+        - whatsapp_business_id
+        - name
+        - language
+        - category
+        - parameter_format
+        - components
+      properties:
+        whatsapp_business_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: The WhatsApp Business Account the template belongs to. List your accounts at `GET /api/messaging/whatsapp/businesses`.
+          examples:
+            - 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        name:
+          type: string
+          maxLength: 512
+          pattern: ^[a-z0-9_]*$
+          description: The template name. Maximum 512 characters; lowercase letters, numbers, and underscores only.
+          examples:
+            - order_update
+        language:
+          type: string
+          description: The template language code.
+          examples:
+            - en_US
+        category:
+          allOf:
+            - $ref: '#/components/schemas/WhatsAppTemplateCategory'
+          description: The template category.
+          examples:
+            - utility
+        parameter_format:
+          allOf:
+            - $ref: '#/components/schemas/WhatsAppTemplateParameterFormat'
+          description: How the template's variable placeholders are referenced.
+          examples:
+            - positional
+        components:
+          type: array
+          items:
+            $ref: '#/components/schemas/WhatsAppTemplateComponent'
+          description: The template's components. Must include a `BODY` component. Each component is an object whose fields depend on its `type` — see the request example.
+          examples:
+            - - type: HEADER
+                format: TEXT
+                text: Order Update for {{1}}
+                example:
+                  header_text:
+                    - Jane Smith
+              - type: BODY
+                text: Your order {{1}} is currently {{2}}.
+                example:
+                  body_text:
+                    - - ORD-9821
+                      - out for delivery
+              - type: FOOTER
+                text: Thank you for shopping with us.
+              - type: BUTTONS
+                buttons:
+                  - type: QUICK_REPLY
+                    text: Track Order
+                  - type: URL
+                    text: Contact Support
+                    url: https://example.com/support
+      unevaluatedProperties:
+        not: {}
+      description: Request body for creating a message template.
     CxmlApplication:
       type: object
       required:
@@ -26323,6 +27144,7 @@ components:
       enum:
         - sms
         - mms
+        - whatsapp
       description: The kind of message.
     Message.MessageLog:
       type: object
@@ -26641,6 +27463,17 @@ components:
               message: Cannot redact a message that is in progress.
               attribute: base
               url: https://developer.signalwire.com/rest/overview/error-codes/#cannot_redact_in_progress_message
+    Message.SendMessageRequest:
+      anyOf:
+        - $ref: '#/components/schemas/Message.CreateMessageRequest'
+        - $ref: '#/components/schemas/Message.WhatsAppContentMessageRequest'
+        - $ref: '#/components/schemas/Message.WhatsAppTemplateMessageRequest'
+      description: |-
+        Request body for `POST /api/messaging/messages`. The channel is determined by the `from` number:
+
+        - An SMS/MMS request when `from` is a purchased phone number or shortcode.
+        - A WhatsApp **content** message when `from` is a `whatsapp:`-prefixed number and `message_type` is set.
+        - A WhatsApp **template** message when `from` is a `whatsapp:`-prefixed number and `template_id` is set.
     Message.UpdateMessageRequest:
       type: object
       required:
@@ -26654,6 +27487,845 @@ components:
       unevaluatedProperties:
         not: {}
       description: Request body for redacting the body of a previously sent message. Only `body` may be updated, and it must be an empty string.
+    Message.WhatsAppAudioBody:
+      type: object
+      properties:
+        link:
+          type: string
+          format: uri
+          description: A public HTTP/HTTPS URL to the audio file.
+          examples:
+            - https://example.com/voice-note.mp3
+        id:
+          type: string
+          description: The ID of media previously uploaded to WhatsApp. Mutually exclusive with `link`.
+      unevaluatedProperties:
+        not: {}
+      description: Body for an audio message. Provide either `link` or `id` (not both). Captions are not supported.
+    Message.WhatsAppAudioMessageRequest:
+      type: object
+      required:
+        - to
+        - from
+        - message_type
+        - body
+      properties:
+        to:
+          type: string
+          description: Recipient phone number in E.164 format.
+          examples:
+            - '+15551234567'
+        from:
+          type: string
+          description: Your WhatsApp business number, prefixed with `whatsapp:`. The prefix is what routes the message over WhatsApp instead of SMS/MMS.
+          examples:
+            - whatsapp:+15557654321
+        status_callback:
+          type: string
+          format: uri
+          description: A valid URL to receive message status callback events at each state change.
+          examples:
+            - https://example.com/webhooks/message-status
+        custom_variables:
+          type: object
+          unevaluatedProperties:
+            type: string
+          maxProperties: 20
+          description: Your own key/value string pairs to attach to the message. Delivered as `custom_variables` in status callbacks when `status_callback` is set.
+        message_type:
+          type: string
+          enum:
+            - whatsapp_media_audio
+        body:
+          $ref: '#/components/schemas/Message.WhatsAppAudioBody'
+      unevaluatedProperties:
+        not: {}
+      description: Send an audio message.
+    Message.WhatsAppContact:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          allOf:
+            - $ref: '#/components/schemas/Message.WhatsAppContactName'
+          description: The contact's name. `formatted_name` is required.
+      unevaluatedProperties: {}
+      description: A shared contact card. Additional fields (phones, emails, org, etc.) follow the WhatsApp contacts message format.
+    Message.WhatsAppContactName:
+      type: object
+      required:
+        - formatted_name
+      properties:
+        formatted_name:
+          type: string
+          description: The contact's full formatted name. Required.
+          examples:
+            - Jane Smith
+      unevaluatedProperties: {}
+      description: The name fields of a shared contact.
+    Message.WhatsAppContactsMessageRequest:
+      type: object
+      required:
+        - to
+        - from
+        - message_type
+        - body
+      properties:
+        to:
+          type: string
+          description: Recipient phone number in E.164 format.
+          examples:
+            - '+15551234567'
+        from:
+          type: string
+          description: Your WhatsApp business number, prefixed with `whatsapp:`. The prefix is what routes the message over WhatsApp instead of SMS/MMS.
+          examples:
+            - whatsapp:+15557654321
+        status_callback:
+          type: string
+          format: uri
+          description: A valid URL to receive message status callback events at each state change.
+          examples:
+            - https://example.com/webhooks/message-status
+        custom_variables:
+          type: object
+          unevaluatedProperties:
+            type: string
+          maxProperties: 20
+          description: Your own key/value string pairs to attach to the message. Delivered as `custom_variables` in status callbacks when `status_callback` is set.
+        message_type:
+          type: string
+          enum:
+            - whatsapp_media_contacts
+        body:
+          type: array
+          items:
+            $ref: '#/components/schemas/Message.WhatsAppContact'
+          description: One or more contacts to share.
+      unevaluatedProperties:
+        not: {}
+      description: Share one or more contact cards.
+    Message.WhatsAppContentMessageRequest:
+      type: object
+      oneOf:
+        - $ref: '#/components/schemas/Message.WhatsAppTextMessageRequest'
+        - $ref: '#/components/schemas/Message.WhatsAppImageMessageRequest'
+        - $ref: '#/components/schemas/Message.WhatsAppAudioMessageRequest'
+        - $ref: '#/components/schemas/Message.WhatsAppVideoMessageRequest'
+        - $ref: '#/components/schemas/Message.WhatsAppDocumentMessageRequest'
+        - $ref: '#/components/schemas/Message.WhatsAppStickerMessageRequest'
+        - $ref: '#/components/schemas/Message.WhatsAppLocationMessageRequest'
+        - $ref: '#/components/schemas/Message.WhatsAppContactsMessageRequest'
+        - $ref: '#/components/schemas/Message.WhatsAppReactionMessageRequest'
+        - $ref: '#/components/schemas/Message.WhatsAppInteractiveCtaMessageRequest'
+        - $ref: '#/components/schemas/Message.WhatsAppInteractiveListMessageRequest'
+        - $ref: '#/components/schemas/Message.WhatsAppInteractiveReplyButtonMessageRequest'
+        - $ref: '#/components/schemas/Message.WhatsAppInteractiveLocationRequestMessageRequest'
+      discriminator:
+        propertyName: message_type
+        mapping:
+          whatsapp_media_text: '#/components/schemas/Message.WhatsAppTextMessageRequest'
+          whatsapp_media_image: '#/components/schemas/Message.WhatsAppImageMessageRequest'
+          whatsapp_media_audio: '#/components/schemas/Message.WhatsAppAudioMessageRequest'
+          whatsapp_media_video: '#/components/schemas/Message.WhatsAppVideoMessageRequest'
+          whatsapp_media_document: '#/components/schemas/Message.WhatsAppDocumentMessageRequest'
+          whatsapp_media_sticker: '#/components/schemas/Message.WhatsAppStickerMessageRequest'
+          whatsapp_media_location: '#/components/schemas/Message.WhatsAppLocationMessageRequest'
+          whatsapp_media_contacts: '#/components/schemas/Message.WhatsAppContactsMessageRequest'
+          whatsapp_media_reaction: '#/components/schemas/Message.WhatsAppReactionMessageRequest'
+          whatsapp_interactive_cta: '#/components/schemas/Message.WhatsAppInteractiveCtaMessageRequest'
+          whatsapp_interactive_list: '#/components/schemas/Message.WhatsAppInteractiveListMessageRequest'
+          whatsapp_interactive_reply_button: '#/components/schemas/Message.WhatsAppInteractiveReplyButtonMessageRequest'
+          whatsapp_interactive_location_request_message: '#/components/schemas/Message.WhatsAppInteractiveLocationRequestMessageRequest'
+      description: A WhatsApp content message. The `message_type` field determines the shape of `body`.
+    Message.WhatsAppDocumentBody:
+      type: object
+      properties:
+        link:
+          type: string
+          format: uri
+          description: A public HTTP/HTTPS URL to the document.
+          examples:
+            - https://example.com/invoice.pdf
+        id:
+          type: string
+          description: The ID of media previously uploaded to WhatsApp. Mutually exclusive with `link`.
+        caption:
+          type: string
+          description: Optional caption shown with the document.
+        filename:
+          type: string
+          maxLength: 240
+          description: Optional filename shown to the recipient. Maximum 240 characters.
+          examples:
+            - invoice.pdf
+      unevaluatedProperties:
+        not: {}
+      description: Body for a document message. Provide either `link` or `id` (not both).
+    Message.WhatsAppDocumentMessageRequest:
+      type: object
+      required:
+        - to
+        - from
+        - message_type
+        - body
+      properties:
+        to:
+          type: string
+          description: Recipient phone number in E.164 format.
+          examples:
+            - '+15551234567'
+        from:
+          type: string
+          description: Your WhatsApp business number, prefixed with `whatsapp:`. The prefix is what routes the message over WhatsApp instead of SMS/MMS.
+          examples:
+            - whatsapp:+15557654321
+        status_callback:
+          type: string
+          format: uri
+          description: A valid URL to receive message status callback events at each state change.
+          examples:
+            - https://example.com/webhooks/message-status
+        custom_variables:
+          type: object
+          unevaluatedProperties:
+            type: string
+          maxProperties: 20
+          description: Your own key/value string pairs to attach to the message. Delivered as `custom_variables` in status callbacks when `status_callback` is set.
+        message_type:
+          type: string
+          enum:
+            - whatsapp_media_document
+        body:
+          $ref: '#/components/schemas/Message.WhatsAppDocumentBody'
+      unevaluatedProperties:
+        not: {}
+      description: Send a document message, with an optional filename and caption.
+    Message.WhatsAppImageBody:
+      type: object
+      properties:
+        link:
+          type: string
+          format: uri
+          description: A public HTTP/HTTPS URL to the image.
+          examples:
+            - https://example.com/promo-banner.png
+        id:
+          type: string
+          description: The ID of media previously uploaded to WhatsApp. Mutually exclusive with `link`.
+        caption:
+          type: string
+          description: Optional caption shown with the image.
+          examples:
+            - Check out our summer sale!
+      unevaluatedProperties:
+        not: {}
+      description: Body for an image message. Provide either `link` or `id` (not both).
+    Message.WhatsAppImageMessageRequest:
+      type: object
+      required:
+        - to
+        - from
+        - message_type
+        - body
+      properties:
+        to:
+          type: string
+          description: Recipient phone number in E.164 format.
+          examples:
+            - '+15551234567'
+        from:
+          type: string
+          description: Your WhatsApp business number, prefixed with `whatsapp:`. The prefix is what routes the message over WhatsApp instead of SMS/MMS.
+          examples:
+            - whatsapp:+15557654321
+        status_callback:
+          type: string
+          format: uri
+          description: A valid URL to receive message status callback events at each state change.
+          examples:
+            - https://example.com/webhooks/message-status
+        custom_variables:
+          type: object
+          unevaluatedProperties:
+            type: string
+          maxProperties: 20
+          description: Your own key/value string pairs to attach to the message. Delivered as `custom_variables` in status callbacks when `status_callback` is set.
+        message_type:
+          type: string
+          enum:
+            - whatsapp_media_image
+        body:
+          $ref: '#/components/schemas/Message.WhatsAppImageBody'
+      unevaluatedProperties:
+        not: {}
+      description: Send an image message, with an optional caption.
+    Message.WhatsAppInteractiveBody:
+      type: object
+      required:
+        - type
+        - action
+      properties:
+        type:
+          type: string
+          description: The interactive type, e.g. `button`, `list`, `cta_url`, `location_request_message`, or `flow`.
+          examples:
+            - button
+        action:
+          type: object
+          unevaluatedProperties: {}
+          description: The interactive action. Its contents depend on `type` (for example, a `buttons` array, list `sections`, or Flow parameters).
+        header:
+          type: object
+          unevaluatedProperties: {}
+          description: Optional header object.
+        body:
+          type: object
+          unevaluatedProperties: {}
+          description: 'Optional body object, e.g. `{ "text": "How can we help?" }`.'
+        footer:
+          type: object
+          unevaluatedProperties: {}
+          description: Optional footer object.
+      unevaluatedProperties:
+        not: {}
+      description: Body for an interactive message. `type` and `action` are required; `header`, `body`, and `footer` are optional. The shape of `action` depends on the interactive type — buttons, list sections, a call-to-action URL, a location request, or a Flow — and follows the WhatsApp interactive message format.
+    Message.WhatsAppInteractiveCtaMessageRequest:
+      type: object
+      required:
+        - to
+        - from
+        - message_type
+        - body
+      properties:
+        to:
+          type: string
+          description: Recipient phone number in E.164 format.
+          examples:
+            - '+15551234567'
+        from:
+          type: string
+          description: Your WhatsApp business number, prefixed with `whatsapp:`. The prefix is what routes the message over WhatsApp instead of SMS/MMS.
+          examples:
+            - whatsapp:+15557654321
+        status_callback:
+          type: string
+          format: uri
+          description: A valid URL to receive message status callback events at each state change.
+          examples:
+            - https://example.com/webhooks/message-status
+        custom_variables:
+          type: object
+          unevaluatedProperties:
+            type: string
+          maxProperties: 20
+          description: Your own key/value string pairs to attach to the message. Delivered as `custom_variables` in status callbacks when `status_callback` is set.
+        message_type:
+          type: string
+          enum:
+            - whatsapp_interactive_cta
+        body:
+          $ref: '#/components/schemas/Message.WhatsAppInteractiveBody'
+      unevaluatedProperties:
+        not: {}
+      description: Send a call-to-action URL interactive message. The `body.type` is `cta_url` and `action` carries the button's display text and URL.
+    Message.WhatsAppInteractiveListMessageRequest:
+      type: object
+      required:
+        - to
+        - from
+        - message_type
+        - body
+      properties:
+        to:
+          type: string
+          description: Recipient phone number in E.164 format.
+          examples:
+            - '+15551234567'
+        from:
+          type: string
+          description: Your WhatsApp business number, prefixed with `whatsapp:`. The prefix is what routes the message over WhatsApp instead of SMS/MMS.
+          examples:
+            - whatsapp:+15557654321
+        status_callback:
+          type: string
+          format: uri
+          description: A valid URL to receive message status callback events at each state change.
+          examples:
+            - https://example.com/webhooks/message-status
+        custom_variables:
+          type: object
+          unevaluatedProperties:
+            type: string
+          maxProperties: 20
+          description: Your own key/value string pairs to attach to the message. Delivered as `custom_variables` in status callbacks when `status_callback` is set.
+        message_type:
+          type: string
+          enum:
+            - whatsapp_interactive_list
+        body:
+          $ref: '#/components/schemas/Message.WhatsAppInteractiveBody'
+      unevaluatedProperties:
+        not: {}
+      description: Send a list interactive message (up to 10 items).
+    Message.WhatsAppInteractiveLocationRequestMessageRequest:
+      type: object
+      required:
+        - to
+        - from
+        - message_type
+        - body
+      properties:
+        to:
+          type: string
+          description: Recipient phone number in E.164 format.
+          examples:
+            - '+15551234567'
+        from:
+          type: string
+          description: Your WhatsApp business number, prefixed with `whatsapp:`. The prefix is what routes the message over WhatsApp instead of SMS/MMS.
+          examples:
+            - whatsapp:+15557654321
+        status_callback:
+          type: string
+          format: uri
+          description: A valid URL to receive message status callback events at each state change.
+          examples:
+            - https://example.com/webhooks/message-status
+        custom_variables:
+          type: object
+          unevaluatedProperties:
+            type: string
+          maxProperties: 20
+          description: Your own key/value string pairs to attach to the message. Delivered as `custom_variables` in status callbacks when `status_callback` is set.
+        message_type:
+          type: string
+          enum:
+            - whatsapp_interactive_location_request_message
+        body:
+          $ref: '#/components/schemas/Message.WhatsAppInteractiveBody'
+      unevaluatedProperties:
+        not: {}
+      description: Request the customer's location.
+    Message.WhatsAppInteractiveReplyButtonMessageRequest:
+      type: object
+      required:
+        - to
+        - from
+        - message_type
+        - body
+      properties:
+        to:
+          type: string
+          description: Recipient phone number in E.164 format.
+          examples:
+            - '+15551234567'
+        from:
+          type: string
+          description: Your WhatsApp business number, prefixed with `whatsapp:`. The prefix is what routes the message over WhatsApp instead of SMS/MMS.
+          examples:
+            - whatsapp:+15557654321
+        status_callback:
+          type: string
+          format: uri
+          description: A valid URL to receive message status callback events at each state change.
+          examples:
+            - https://example.com/webhooks/message-status
+        custom_variables:
+          type: object
+          unevaluatedProperties:
+            type: string
+          maxProperties: 20
+          description: Your own key/value string pairs to attach to the message. Delivered as `custom_variables` in status callbacks when `status_callback` is set.
+        message_type:
+          type: string
+          enum:
+            - whatsapp_interactive_reply_button
+        body:
+          $ref: '#/components/schemas/Message.WhatsAppInteractiveBody'
+      unevaluatedProperties:
+        not: {}
+      description: Send a reply-button interactive message (up to 3 buttons). The `body.type` is `button` and each entry in `action.buttons` is a `reply` button.
+    Message.WhatsAppLocationBody:
+      type: object
+      required:
+        - latitude
+        - longitude
+        - name
+        - address
+      properties:
+        latitude:
+          type: number
+          format: double
+          minimum: -90
+          maximum: 90
+          description: Latitude, between -90 and 90.
+          examples:
+            - 41.8781
+        longitude:
+          type: number
+          format: double
+          minimum: -180
+          maximum: 180
+          description: Longitude, between -180 and 180.
+          examples:
+            - -87.6298
+        name:
+          type: string
+          description: The name of the location.
+          examples:
+            - SignalWire HQ
+        address:
+          type: string
+          description: The address of the location.
+          examples:
+            - Chicago, IL, USA
+      unevaluatedProperties:
+        not: {}
+      description: Body for a location message. All fields are required.
+    Message.WhatsAppLocationMessageRequest:
+      type: object
+      required:
+        - to
+        - from
+        - message_type
+        - body
+      properties:
+        to:
+          type: string
+          description: Recipient phone number in E.164 format.
+          examples:
+            - '+15551234567'
+        from:
+          type: string
+          description: Your WhatsApp business number, prefixed with `whatsapp:`. The prefix is what routes the message over WhatsApp instead of SMS/MMS.
+          examples:
+            - whatsapp:+15557654321
+        status_callback:
+          type: string
+          format: uri
+          description: A valid URL to receive message status callback events at each state change.
+          examples:
+            - https://example.com/webhooks/message-status
+        custom_variables:
+          type: object
+          unevaluatedProperties:
+            type: string
+          maxProperties: 20
+          description: Your own key/value string pairs to attach to the message. Delivered as `custom_variables` in status callbacks when `status_callback` is set.
+        message_type:
+          type: string
+          enum:
+            - whatsapp_media_location
+        body:
+          $ref: '#/components/schemas/Message.WhatsAppLocationBody'
+      unevaluatedProperties:
+        not: {}
+      description: Share a location.
+    Message.WhatsAppReactionBody:
+      type: object
+      required:
+        - message_id
+        - emoji
+      properties:
+        message_id:
+          type: string
+          description: The ID of the message being reacted to.
+          examples:
+            - wamid.HBgLMTU1NTEyMzQ1NjcVAgARGBI...
+        emoji:
+          type: string
+          description: The emoji to react with.
+          examples:
+            - 👍
+      unevaluatedProperties:
+        not: {}
+      description: Body for a reaction message.
+    Message.WhatsAppReactionMessageRequest:
+      type: object
+      required:
+        - to
+        - from
+        - message_type
+        - body
+      properties:
+        to:
+          type: string
+          description: Recipient phone number in E.164 format.
+          examples:
+            - '+15551234567'
+        from:
+          type: string
+          description: Your WhatsApp business number, prefixed with `whatsapp:`. The prefix is what routes the message over WhatsApp instead of SMS/MMS.
+          examples:
+            - whatsapp:+15557654321
+        status_callback:
+          type: string
+          format: uri
+          description: A valid URL to receive message status callback events at each state change.
+          examples:
+            - https://example.com/webhooks/message-status
+        custom_variables:
+          type: object
+          unevaluatedProperties:
+            type: string
+          maxProperties: 20
+          description: Your own key/value string pairs to attach to the message. Delivered as `custom_variables` in status callbacks when `status_callback` is set.
+        message_type:
+          type: string
+          enum:
+            - whatsapp_media_reaction
+        body:
+          $ref: '#/components/schemas/Message.WhatsAppReactionBody'
+      unevaluatedProperties:
+        not: {}
+      description: React to a message with an emoji.
+    Message.WhatsAppSendBase:
+      type: object
+      required:
+        - to
+        - from
+      properties:
+        to:
+          type: string
+          description: Recipient phone number in E.164 format.
+          examples:
+            - '+15551234567'
+        from:
+          type: string
+          description: Your WhatsApp business number, prefixed with `whatsapp:`. The prefix is what routes the message over WhatsApp instead of SMS/MMS.
+          examples:
+            - whatsapp:+15557654321
+        status_callback:
+          type: string
+          format: uri
+          description: A valid URL to receive message status callback events at each state change.
+          examples:
+            - https://example.com/webhooks/message-status
+        custom_variables:
+          type: object
+          unevaluatedProperties:
+            type: string
+          maxProperties: 20
+          description: Your own key/value string pairs to attach to the message. Delivered as `custom_variables` in status callbacks when `status_callback` is set.
+      unevaluatedProperties:
+        not: {}
+      description: Fields common to every WhatsApp send request.
+    Message.WhatsAppStickerBody:
+      type: object
+      properties:
+        link:
+          type: string
+          format: uri
+          description: A public HTTP/HTTPS URL to the sticker file. Meta requires `.webp` format.
+          examples:
+            - https://example.com/sticker.webp
+        id:
+          type: string
+          description: The ID of media previously uploaded to WhatsApp. Mutually exclusive with `link`.
+      unevaluatedProperties:
+        not: {}
+      description: Body for a sticker message. Provide either `link` or `id` (not both). Captions are not supported.
+    Message.WhatsAppStickerMessageRequest:
+      type: object
+      required:
+        - to
+        - from
+        - message_type
+        - body
+      properties:
+        to:
+          type: string
+          description: Recipient phone number in E.164 format.
+          examples:
+            - '+15551234567'
+        from:
+          type: string
+          description: Your WhatsApp business number, prefixed with `whatsapp:`. The prefix is what routes the message over WhatsApp instead of SMS/MMS.
+          examples:
+            - whatsapp:+15557654321
+        status_callback:
+          type: string
+          format: uri
+          description: A valid URL to receive message status callback events at each state change.
+          examples:
+            - https://example.com/webhooks/message-status
+        custom_variables:
+          type: object
+          unevaluatedProperties:
+            type: string
+          maxProperties: 20
+          description: Your own key/value string pairs to attach to the message. Delivered as `custom_variables` in status callbacks when `status_callback` is set.
+        message_type:
+          type: string
+          enum:
+            - whatsapp_media_sticker
+        body:
+          $ref: '#/components/schemas/Message.WhatsAppStickerBody'
+      unevaluatedProperties:
+        not: {}
+      description: Send a sticker message. Captions are not supported.
+    Message.WhatsAppTemplateMessageRequest:
+      type: object
+      required:
+        - to
+        - from
+        - template_id
+      properties:
+        to:
+          type: string
+          description: Recipient phone number in E.164 format.
+          examples:
+            - '+15551234567'
+        from:
+          type: string
+          description: Your WhatsApp business number, prefixed with `whatsapp:`. The prefix is what routes the message over WhatsApp instead of SMS/MMS.
+          examples:
+            - whatsapp:+15557654321
+        status_callback:
+          type: string
+          format: uri
+          description: A valid URL to receive message status callback events at each state change.
+          examples:
+            - https://example.com/webhooks/message-status
+        custom_variables:
+          type: object
+          unevaluatedProperties:
+            type: string
+          maxProperties: 20
+          description: Your own key/value string pairs to attach to the message. Delivered as `custom_variables` in status callbacks when `status_callback` is set.
+        template_id:
+          type: string
+          description: The template to send, by SignalWire template ID or Meta template ID. The template must be `approved`.
+          examples:
+            - 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        header_template_parameters:
+          anyOf:
+            - type: array
+              items:
+                type: string
+            - type: object
+              unevaluatedProperties:
+                type: string
+            - type: string
+          description: Values for the placeholders in the template header. An array for positional parameters, an object for named parameters, or a media URL string for a document/media header.
+        body_template_parameters:
+          anyOf:
+            - type: array
+              items:
+                type: string
+            - type: object
+              unevaluatedProperties:
+                type: string
+          description: Values for the placeholders in the template body. An array for positional parameters or an object for named parameters.
+        button_template_parameters:
+          type: array
+          items:
+            type: string
+          description: Values for URL-button placeholders. Positional only (an array); named parameters are not supported for buttons.
+      unevaluatedProperties:
+        not: {}
+      description: Send an approved WhatsApp template. Use this to reach a customer for the first time or outside the 24-hour window. Do not include `body` or `message_type`.
+    Message.WhatsAppTextMessageRequest:
+      type: object
+      required:
+        - to
+        - from
+        - message_type
+        - body
+      properties:
+        to:
+          type: string
+          description: Recipient phone number in E.164 format.
+          examples:
+            - '+15551234567'
+        from:
+          type: string
+          description: Your WhatsApp business number, prefixed with `whatsapp:`. The prefix is what routes the message over WhatsApp instead of SMS/MMS.
+          examples:
+            - whatsapp:+15557654321
+        status_callback:
+          type: string
+          format: uri
+          description: A valid URL to receive message status callback events at each state change.
+          examples:
+            - https://example.com/webhooks/message-status
+        custom_variables:
+          type: object
+          unevaluatedProperties:
+            type: string
+          maxProperties: 20
+          description: Your own key/value string pairs to attach to the message. Delivered as `custom_variables` in status callbacks when `status_callback` is set.
+        message_type:
+          type: string
+          enum:
+            - whatsapp_media_text
+        body:
+          type: string
+          description: The message text.
+          examples:
+            - Your appointment is confirmed for tomorrow at 2pm.
+      unevaluatedProperties:
+        not: {}
+      description: Send a plain text WhatsApp message. Allowed only within the 24-hour customer service window.
+    Message.WhatsAppVideoBody:
+      type: object
+      properties:
+        link:
+          type: string
+          format: uri
+          description: A public HTTP/HTTPS URL to the video.
+          examples:
+            - https://example.com/clip.mp4
+        id:
+          type: string
+          description: The ID of media previously uploaded to WhatsApp. Mutually exclusive with `link`.
+        caption:
+          type: string
+          description: Optional caption shown with the video.
+      unevaluatedProperties:
+        not: {}
+      description: Body for a video message. Provide either `link` or `id` (not both).
+    Message.WhatsAppVideoMessageRequest:
+      type: object
+      required:
+        - to
+        - from
+        - message_type
+        - body
+      properties:
+        to:
+          type: string
+          description: Recipient phone number in E.164 format.
+          examples:
+            - '+15551234567'
+        from:
+          type: string
+          description: Your WhatsApp business number, prefixed with `whatsapp:`. The prefix is what routes the message over WhatsApp instead of SMS/MMS.
+          examples:
+            - whatsapp:+15557654321
+        status_callback:
+          type: string
+          format: uri
+          description: A valid URL to receive message status callback events at each state change.
+          examples:
+            - https://example.com/webhooks/message-status
+        custom_variables:
+          type: object
+          unevaluatedProperties:
+            type: string
+          maxProperties: 20
+          description: Your own key/value string pairs to attach to the message. Delivered as `custom_variables` in status callbacks when `status_callback` is set.
+        message_type:
+          type: string
+          enum:
+            - whatsapp_media_video
+        body:
+          $ref: '#/components/schemas/Message.WhatsAppVideoBody'
+      unevaluatedProperties:
+        not: {}
+      description: Send a video message, with an optional caption.
     MessagingChannel:
       type: object
       required:
@@ -28131,6 +29803,362 @@ components:
       unevaluatedProperties:
         not: {}
       description: Request body for updating an API Token.
+    Projects.CreateProjectRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          maxLength: 250
+          description: The name of the subproject.
+          examples:
+            - Acme Staging
+        protect_recordings:
+          type: boolean
+          description: When enabled, recordings created within the project require authentication to access.
+          examples:
+            - true
+        protect_message_media:
+          type: boolean
+          description: When enabled, message media created within the project requires authentication to access.
+          examples:
+            - false
+        protect_fax_media:
+          type: boolean
+          description: When enabled, fax media created within the project requires authentication to access.
+          examples:
+            - false
+        force_https_requests:
+          type: boolean
+          description: When enabled, requests made to the project's webhooks and callbacks must use HTTPS.
+          examples:
+            - true
+      unevaluatedProperties:
+        not: {}
+      description: Request body for creating a subproject.
+    Projects.CreateProjectStatusCode422:
+      type: object
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Types.StatusCodes.RestApiErrorItem'
+          description: List of validation errors.
+      unevaluatedProperties:
+        not: {}
+      description: |-
+        The request could not be processed. When creating a project while authenticated as a
+        subproject, the response includes the `nested_subprojects_not_allowed` code. A blank or
+        overly long `name` returns a standard validation error.
+      examples:
+        - statusCode: 422
+          errors:
+            - type: validation_error
+              code: nested_subprojects_not_allowed
+              message: Subprojects can only be created under a top-level project.
+              attribute: null
+              url: https://signalwire.com/docs/apis/error-codes#nested_subprojects_not_allowed
+    Projects.DeleteProjectStatusCode422:
+      type: object
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Types.StatusCodes.RestApiErrorItem'
+          description: List of validation errors.
+      unevaluatedProperties:
+        not: {}
+      description: |-
+        The request could not be processed. Deleting a root/parent project returns
+        `only_subprojects_can_be_deleted`, and deleting a project that still has phone numbers
+        assigned returns `phone_numbers_must_be_removed`.
+      examples:
+        - statusCode: 422
+          errors:
+            - type: validation_error
+              code: phone_numbers_must_be_removed
+              message: All phone numbers must be removed from the project before it can be deleted.
+              attribute: null
+              url: https://signalwire.com/docs/apis/error-codes#phone_numbers_must_be_removed
+    Projects.Project:
+      type: object
+      required:
+        - id
+        - name
+        - parent_project_id
+        - subproject
+        - region_preference
+        - protect_recordings
+        - protect_message_media
+        - protect_fax_media
+        - force_https_requests
+        - created_at
+        - updated_at
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: The unique identifier of the project.
+          examples:
+            - 8f14e45f-ceea-467d-9c2b-7a1d3a9b2c34
+        name:
+          type: string
+          description: The name of the project.
+          examples:
+            - Acme Staging
+        parent_project_id:
+          anyOf:
+            - $ref: '#/components/schemas/uuid'
+            - type: 'null'
+          description: The unique identifier of the root project. `null` when this project is itself a root project.
+          examples:
+            - b3877739-5c7e-4d4f-9d1a-2f0c8c2f1a11
+        subproject:
+          type: boolean
+          description: '`true` when this project is a subproject.'
+          examples:
+            - true
+        region_preference:
+          type: string
+          description: The effective region preference for the project. Returned in all responses; it is not currently settable through this API.
+          examples:
+            - us-west
+        protect_recordings:
+          type: boolean
+          description: When enabled, recordings created within the project require authentication to access.
+          examples:
+            - false
+        protect_message_media:
+          type: boolean
+          description: When enabled, message media created within the project requires authentication to access.
+          examples:
+            - false
+        protect_fax_media:
+          type: boolean
+          description: When enabled, fax media created within the project requires authentication to access.
+          examples:
+            - false
+        force_https_requests:
+          type: boolean
+          description: When enabled, requests made to the project's webhooks and callbacks must use HTTPS.
+          examples:
+            - true
+        created_at:
+          type: string
+          format: date-time
+          description: The date and time when the project was created.
+          examples:
+            - '2024-05-06T12:20:00Z'
+        updated_at:
+          type: string
+          format: date-time
+          description: The date and time when the project was last updated.
+          examples:
+            - '2024-05-06T12:20:00Z'
+      unevaluatedProperties:
+        not: {}
+      description: A project or subproject within the caller's project tree.
+      title: Project
+    Projects.ProjectListResponse:
+      type: object
+      required:
+        - links
+        - data
+      properties:
+        links:
+          allOf:
+            - $ref: '#/components/schemas/Projects.ProjectPaginationLinks'
+          description: Pagination links for the list of projects.
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Projects.Project'
+          description: The projects on this page.
+      unevaluatedProperties:
+        not: {}
+      description: A page of projects.
+    Projects.ProjectPaginationLinks:
+      type: object
+      required:
+        - self
+        - first
+      properties:
+        self:
+          type: string
+          format: uri
+          description: The link to the current page.
+          examples:
+            - https://example-space.signalwire.com/api/projects?page_size=50
+        first:
+          type: string
+          format: uri
+          description: The link to the first page.
+          examples:
+            - https://example-space.signalwire.com/api/projects?page_size=50
+        next:
+          type: string
+          format: uri
+          description: The link to the next page. Only present when more results exist.
+          examples:
+            - https://example-space.signalwire.com/api/projects?page_size=50&page_number=1&page_token=PA8f14e45f
+        prev:
+          type: string
+          format: uri
+          description: The link to the previous page. Only present when a previous page exists.
+          examples:
+            - https://example-space.signalwire.com/api/projects?page_size=50&page_number=0&page_token=PA8f14e45f
+      unevaluatedProperties:
+        not: {}
+      description: Pagination links for a list of projects.
+    Projects.ProjectWithSigningKey:
+      type: object
+      required:
+        - id
+        - name
+        - parent_project_id
+        - subproject
+        - region_preference
+        - protect_recordings
+        - protect_message_media
+        - protect_fax_media
+        - force_https_requests
+        - created_at
+        - updated_at
+        - signing_key
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: The unique identifier of the project.
+          examples:
+            - 8f14e45f-ceea-467d-9c2b-7a1d3a9b2c34
+        name:
+          type: string
+          description: The name of the project.
+          examples:
+            - Acme Staging
+        parent_project_id:
+          anyOf:
+            - $ref: '#/components/schemas/uuid'
+            - type: 'null'
+          description: The unique identifier of the root project. `null` when this project is itself a root project.
+          examples:
+            - b3877739-5c7e-4d4f-9d1a-2f0c8c2f1a11
+        subproject:
+          type: boolean
+          description: '`true` when this project is a subproject.'
+          examples:
+            - true
+        region_preference:
+          type: string
+          description: The effective region preference for the project. Returned in all responses; it is not currently settable through this API.
+          examples:
+            - us-west
+        protect_recordings:
+          type: boolean
+          description: When enabled, recordings created within the project require authentication to access.
+          examples:
+            - false
+        protect_message_media:
+          type: boolean
+          description: When enabled, message media created within the project requires authentication to access.
+          examples:
+            - false
+        protect_fax_media:
+          type: boolean
+          description: When enabled, fax media created within the project requires authentication to access.
+          examples:
+            - false
+        force_https_requests:
+          type: boolean
+          description: When enabled, requests made to the project's webhooks and callbacks must use HTTPS.
+          examples:
+            - true
+        created_at:
+          type: string
+          format: date-time
+          description: The date and time when the project was created.
+          examples:
+            - '2024-05-06T12:20:00Z'
+        updated_at:
+          type: string
+          format: date-time
+          description: The date and time when the project was last updated.
+          examples:
+            - '2024-05-06T12:20:00Z'
+        signing_key:
+          type: string
+          description: |-
+            The project's signing key. Only returned on create and signing-key rotation responses;
+            it cannot be retrieved through the API afterward.
+          examples:
+            - PSK_4d8c2b1a9f3e7c6d5b4a3e2f1d0c9b8a
+      unevaluatedProperties:
+        not: {}
+      description: |-
+        A project, including its `signing_key`.
+
+        The `signing_key` is only returned when creating a subproject or rotating a project's
+        signing key. It is not retrievable afterward, so capture it from the response.
+      title: Project with signing key
+    Projects.UpdateProjectRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 250
+          description: The name of the project.
+          examples:
+            - Acme Staging (EU)
+        protect_recordings:
+          type: boolean
+          description: When enabled, recordings created within the project require authentication to access.
+          examples:
+            - true
+        protect_message_media:
+          type: boolean
+          description: When enabled, message media created within the project requires authentication to access.
+          examples:
+            - true
+        protect_fax_media:
+          type: boolean
+          description: When enabled, fax media created within the project requires authentication to access.
+          examples:
+            - false
+        force_https_requests:
+          type: boolean
+          description: When enabled, requests made to the project's webhooks and callbacks must use HTTPS.
+          examples:
+            - true
+      unevaluatedProperties:
+        not: {}
+      description: Request body for updating a project's name and settings.
+    Projects.UpdateProjectStatusCode422:
+      type: object
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Types.StatusCodes.RestApiErrorItem'
+          description: List of validation errors.
+      unevaluatedProperties:
+        not: {}
+      description: The request failed validation, for example a blank or overly long `name`.
+      examples:
+        - statusCode: 422
+          errors:
+            - type: validation_error
+              code: invalid_parameter
+              message: Name must be present
+              attribute: name
+              url: https://signalwire.com/docs/apis/error-codes#invalid_parameter
     PstnRecording:
       type: object
       required:
@@ -30463,10 +32491,10 @@ components:
             - 1024
         openai_asr_engine:
           type: string
-          description: The ASR (Automatic Speech Recognition) engine to use. Common values include `nova-2` and `nova-3`.
+          description: The ASR (Automatic Speech Recognition) engine to use. Common values include `deepgram:nova-2` and `deepgram:nova-3`.
           examples:
-            - nova-3
-          default: gcloud_speech_v2_async
+            - deepgram:nova-3
+          default: deepgram:nova-3
         outbound_attention_timeout:
           type: integer
           minimum: 10000
@@ -41276,6 +43304,412 @@ components:
         - vanity
         - random
       description: Short code type.
+    SipAddress:
+      type: object
+      required:
+        - id
+        - type
+        - resource_id
+        - name
+        - display_name
+        - context
+        - uri
+        - user
+        - encryption
+        - codecs
+        - ciphers
+        - ip_auth_enabled
+        - ip_auth
+        - calling_handler_resource_id
+        - created_at
+        - updated_at
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Unique identifier for the SIP address.
+          examples:
+            - b3f1c0a2-0f6e-4a9d-9b2a-1c2d3e4f5a6b
+        type:
+          type: string
+          enum:
+            - sip_address
+          description: The object type. Always `sip_address`.
+          examples:
+            - sip_address
+        resource_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: ID of the resource this address belongs to.
+          examples:
+            - 8a7b6c5d-4e3f-2a1b-0c9d-8e7f6a5b4c3d
+        name:
+          type: string
+          description: URL-safe name for the SIP address. Used to build its SIP URI.
+          examples:
+            - support-line
+        display_name:
+          type: string
+          description: Human-friendly label for the SIP address. Defaults to `name`.
+          examples:
+            - support-line
+        context:
+          type: string
+          description: The Domain this address is grouped under — for example, `public` for your project's default Domain.
+          examples:
+            - public
+        uri:
+          type: string
+          description: Full SIP URI for this address.
+          examples:
+            - sip:my-space-support-line@sip.signalwire.com
+        user:
+          type: string
+          description: SIP username used to reach this address. `*` accepts any username.
+          examples:
+            - '*'
+        encryption:
+          allOf:
+            - $ref: '#/components/schemas/SipAddressEncryption'
+          description: SRTP encryption requirement for calls to this address.
+          examples:
+            - optional
+        codecs:
+          type: array
+          items:
+            $ref: '#/components/schemas/SipAddressCodec'
+          description: Enabled codecs for calls to this address.
+          examples:
+            - - PCMU
+              - PCMA
+        ciphers:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ciphers'
+          description: Enabled SRTP ciphers for calls to this address.
+          examples:
+            - - AEAD_AES_256_GCM_8
+              - AES_256_CM_HMAC_SHA1_80
+              - AES_CM_128_HMAC_SHA1_80
+              - AES_256_CM_HMAC_SHA1_32
+              - AES_CM_128_HMAC_SHA1_32
+        ip_auth_enabled:
+          type: boolean
+          description: Whether IP authentication is enforced for this address.
+          examples:
+            - false
+        ip_auth:
+          type: array
+          items:
+            type: string
+          description: Whitelisted IP/CIDR entries used when `ip_auth_enabled` is `true`.
+          examples:
+            - []
+        calling_handler_resource_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: ID of the resource that handles inbound calls to this address.
+          examples:
+            - 1f2e3d4c-5b6a-7980-a1b2-c3d4e5f60718
+        created_at:
+          type: string
+          format: date-time
+          description: Date and time when the SIP address was created.
+          examples:
+            - '2024-05-06T12:20:00Z'
+        updated_at:
+          type: string
+          format: date-time
+          description: Date and time when the SIP address was last updated.
+          examples:
+            - '2024-05-06T12:20:00Z'
+      unevaluatedProperties:
+        not: {}
+    SipAddressCodec:
+      type: string
+      enum:
+        - OPUS
+        - G722
+        - PCMU
+        - PCMA
+        - G729
+        - VP8
+        - H264
+    SipAddressCreateRequest:
+      type: object
+      required:
+        - name
+        - calling_handler_resource_id
+      properties:
+        name:
+          type: string
+          maxLength: 50
+          pattern: ^[a-z0-9]+(-[a-z0-9]+)*$
+          description: URL-safe name for the SIP address — lowercase letters, numbers, and hyphens only (no spaces or other special characters). Must be unique within the project and is used to build the address's SIP URI.
+          examples:
+            - sales-line
+        user:
+          type: string
+          pattern: ^\S+$
+          description: SIP username used to reach this address (no spaces). Defaults to `*`, which accepts any username. Together with the address's Domain, must be unique across your SignalWire account.
+          examples:
+            - agent
+          default: '*'
+        context_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: ID of the Domain this address should be grouped under. Must exist in your project. Defaults to your project's default Domain.
+          examples:
+            - 9c8b7a6d-5e4f-3a2b-1c0d-9e8f7a6b5c4d
+        calling_handler_resource_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: ID of the resource that handles inbound calls to this address. Must reference a resource in the caller's project.
+          examples:
+            - 1f2e3d4c-5b6a-7980-a1b2-c3d4e5f60718
+        ip_auth_enabled:
+          type: boolean
+          description: Whether to enforce IP authentication for this address.
+          examples:
+            - true
+          default: false
+        ip_auth:
+          type: array
+          items:
+            type: string
+          maxItems: 256
+          description: Whitelisted IP/CIDR entries. Required (at least one) when `ip_auth_enabled` is `true`. Maximum 256 entries.
+          examples:
+            - - 10.0.0.0/24
+          default: []
+        codecs:
+          type: array
+          items:
+            $ref: '#/components/schemas/SipAddressCodec'
+          minItems: 1
+          description: Non-empty subset of enabled codecs.
+          examples:
+            - - OPUS
+          default:
+            - PCMU
+            - PCMA
+        ciphers:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ciphers'
+          minItems: 1
+          description: Non-empty subset of enabled SRTP ciphers.
+          examples:
+            - - AES_256_CM_HMAC_SHA1_80
+          default:
+            - AEAD_AES_256_GCM_8
+            - AES_256_CM_HMAC_SHA1_80
+            - AES_CM_128_HMAC_SHA1_80
+            - AES_256_CM_HMAC_SHA1_32
+            - AES_CM_128_HMAC_SHA1_32
+        encryption:
+          allOf:
+            - $ref: '#/components/schemas/SipAddressEncryption'
+          description: SRTP encryption requirement for calls to this address.
+          examples:
+            - required
+          default: optional
+        password:
+          type: string
+          description: Write-only SIP registration password. Never returned in any response.
+          examples:
+            - sup3r-s3cret
+      unevaluatedProperties:
+        not: {}
+    SipAddressCreateStatusCode422:
+      type: object
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Types.StatusCodes.RestApiErrorItem'
+          description: List of validation errors.
+      unevaluatedProperties:
+        not: {}
+      description: The request contains invalid parameters. See errors for details.
+      examples:
+        - statusCode: 422
+          errors:
+            - type: validation_error
+              code: missing_required_parameter
+              message: Name is required
+              attribute: name
+              url: https://signalwire.com/docs/apis/error-codes#missing_required_parameter
+    SipAddressEncryption:
+      type: string
+      enum:
+        - required
+        - optional
+        - forbidden
+    SipAddressListResponse:
+      type: object
+      required:
+        - links
+        - items_count
+        - data
+      properties:
+        links:
+          allOf:
+            - $ref: '#/components/schemas/SipAddressPaginationResponse'
+          description: Pagination links for the response.
+        items_count:
+          type: integer
+          format: int32
+          description: The number of SIP addresses in this page of results.
+          examples:
+            - 1
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/SipAddress'
+          description: An array of SIP address objects.
+      unevaluatedProperties:
+        not: {}
+    SipAddressListStatusCode422:
+      type: object
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Types.StatusCodes.RestApiErrorItem'
+          description: List of validation errors.
+      unevaluatedProperties:
+        not: {}
+      description: The request contains invalid parameters. See errors for details.
+      examples:
+        - statusCode: 422
+          errors:
+            - type: validation_error
+              code: page_token_is_invalid
+              message: Page token is invalid
+              attribute: null
+              url: https://signalwire.com/docs/apis/error-codes#page_token_is_invalid
+    SipAddressPaginationResponse:
+      type: object
+      required:
+        - self
+        - first
+      properties:
+        self:
+          type: string
+          format: uri
+          description: Link to the current page of results.
+          examples:
+            - https://example.signalwire.com/api/fabric/sip_addresses?page_number=0&page_size=50
+        first:
+          type: string
+          format: uri
+          description: Link to the first page of results.
+          examples:
+            - https://example.signalwire.com/api/fabric/sip_addresses?page_number=0&page_size=50
+        next:
+          type: string
+          format: uri
+          description: Link to the next page of results.
+          examples:
+            - https://example.signalwire.com/api/fabric/sip_addresses?page_number=1&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca
+        prev:
+          type: string
+          format: uri
+          description: Link to the previous page of results.
+          examples:
+            - https://example.signalwire.com/api/fabric/sip_addresses?page_number=0&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca
+      unevaluatedProperties:
+        not: {}
+    SipAddressUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 50
+          pattern: ^[a-z0-9]+(-[a-z0-9]+)*$
+          description: URL-safe name for the SIP address — lowercase letters, numbers, and hyphens only (no spaces or other special characters). Must be unique within the project. Defaults to the current value when omitted.
+          examples:
+            - renamed-line
+        user:
+          type: string
+          pattern: ^\S+$
+          description: SIP username used to reach this address (no spaces). Together with the address's Domain, must be unique across your SignalWire account.
+          examples:
+            - agent
+        context_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: ID of the Domain this address should be grouped under. Must exist in your project. Defaults to the address's current Domain when omitted.
+          examples:
+            - 9c8b7a6d-5e4f-3a2b-1c0d-9e8f7a6b5c4d
+        ip_auth_enabled:
+          type: boolean
+          description: Whether to enforce IP authentication for this address.
+          examples:
+            - true
+        ip_auth:
+          type: array
+          items:
+            type: string
+          maxItems: 256
+          description: Whitelisted IP/CIDR entries. Required (at least one) when `ip_auth_enabled` is `true`. Maximum 256 entries.
+          examples:
+            - - 10.0.0.0/24
+        codecs:
+          type: array
+          items:
+            $ref: '#/components/schemas/SipAddressCodec'
+          minItems: 1
+          description: Non-empty subset of enabled codecs.
+          examples:
+            - - OPUS
+        ciphers:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ciphers'
+          minItems: 1
+          description: Non-empty subset of enabled SRTP ciphers.
+          examples:
+            - - AES_256_CM_HMAC_SHA1_80
+        encryption:
+          allOf:
+            - $ref: '#/components/schemas/SipAddressEncryption'
+          description: SRTP encryption requirement for calls to this address.
+          examples:
+            - required
+        password:
+          type: string
+          description: Write-only SIP registration password. Never returned in any response.
+          examples:
+            - sup3r-s3cret
+      unevaluatedProperties:
+        not: {}
+    SipAddressUpdateStatusCode422:
+      type: object
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Types.StatusCodes.RestApiErrorItem'
+          description: List of validation errors.
+      unevaluatedProperties:
+        not: {}
+      description: The request contains invalid parameters. See errors for details.
+      examples:
+        - statusCode: 422
+          errors:
+            - type: validation_error
+              code: invalid_parameter
+              message: 'Encryption must be one of: required, optional, forbidden'
+              attribute: encryption
+              url: https://signalwire.com/docs/apis/error-codes#invalid_parameter
     SipEndpoint:
       type: object
       required:
@@ -44062,6 +46496,23 @@ components:
       unevaluatedProperties:
         not: {}
       description: Request body for updating a verified caller ID.
+    UpdateWhatsAppTemplateRequest:
+      type: object
+      properties:
+        category:
+          allOf:
+            - $ref: '#/components/schemas/WhatsAppTemplateCategory'
+          description: The updated template category. Required if `components` is omitted.
+          examples:
+            - marketing
+        components:
+          type: array
+          items:
+            $ref: '#/components/schemas/WhatsAppTemplateComponent'
+          description: The updated components. Required if `category` is omitted.
+      unevaluatedProperties:
+        not: {}
+      description: Request body for updating a template. Provide `category`, `components`, or both. A template can only be updated while it is not yet approved.
     UsedForType:
       type: string
       enum:
@@ -47816,6 +50267,489 @@ components:
       unevaluatedProperties:
         not: {}
       description: Recording from a WebRTC call leg.
+    WhatsAppBusiness:
+      type: object
+      required:
+        - whatsapp_business_id
+        - business_name
+        - business_portfolio_id
+        - waba_id
+        - created_at
+        - updated_at
+      properties:
+        whatsapp_business_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: The SignalWire identifier for the WhatsApp Business Account. Use this value as `whatsapp_business_id` when creating or listing templates.
+          examples:
+            - 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        business_name:
+          anyOf:
+            - type: string
+            - type: 'null'
+          description: The business name as registered with Meta.
+          examples:
+            - Acme, Inc.
+        business_portfolio_id:
+          anyOf:
+            - type: string
+            - type: 'null'
+          description: The Meta business portfolio ID associated with the account.
+          examples:
+            - '1234567890'
+        waba_id:
+          type: string
+          description: The WhatsApp Business Account ID (WABA ID) assigned by Meta.
+          examples:
+            - '109876543210987'
+        created_at:
+          type: string
+          description: The date and time when the record was created.
+          examples:
+            - '2024-01-15T10:30:00Z'
+        updated_at:
+          type: string
+          description: The date and time when the record was last updated.
+          examples:
+            - '2024-01-15T10:30:00Z'
+      unevaluatedProperties:
+        not: {}
+      description: A WhatsApp Business Account (WABA) connected to your SignalWire Space. Each business account can have its own set of phone numbers and message templates.
+    WhatsAppBusinessListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/WhatsAppBusiness'
+          description: List of WhatsApp Business Accounts connected to the Space.
+      unevaluatedProperties:
+        not: {}
+      description: Response containing a list of WhatsApp Business Accounts.
+    WhatsAppNumber:
+      type: object
+      required:
+        - id
+        - business_phone_number_id
+        - phone_number
+        - calling_handler_resource_id
+        - messaging_handler_resource_id
+        - business_name
+        - waba_id
+        - whatsapp_business_id
+        - voice_enabled
+        - voice_capable
+        - created_at
+        - updated_at
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: The SignalWire identifier of the WhatsApp number.
+          examples:
+            - 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        business_phone_number_id:
+          type: string
+          description: The Meta phone number ID for this WhatsApp number.
+          examples:
+            - '102290129340398'
+        phone_number:
+          type: string
+          description: The WhatsApp number, prefixed with `whatsapp:`. Use this value as the `from` address when sending messages.
+          examples:
+            - whatsapp:+15557654321
+        calling_handler_resource_id:
+          anyOf:
+            - $ref: '#/components/schemas/uuid'
+            - type: 'null'
+          description: The ID of the resource (Call Flow, AI Agent, SWML script, etc.) that handles inbound calls to this number. Null if no calling handler is configured.
+          examples:
+            - 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        messaging_handler_resource_id:
+          anyOf:
+            - $ref: '#/components/schemas/uuid'
+            - type: 'null'
+          description: The ID of the resource that handles inbound messages to this number. Null if no messaging handler is configured.
+          examples:
+            - 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        business_name:
+          anyOf:
+            - type: string
+            - type: 'null'
+          description: The business name as registered with Meta.
+          examples:
+            - Acme, Inc.
+        waba_id:
+          type: string
+          description: The WhatsApp Business Account ID (WABA ID) assigned by Meta.
+          examples:
+            - '109876543210987'
+        whatsapp_business_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: The SignalWire identifier of the WhatsApp Business Account this number belongs to.
+          examples:
+            - 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        voice_enabled:
+          type: boolean
+          description: Whether SIP calling is enabled for this number.
+          examples:
+            - false
+        voice_capable:
+          type: boolean
+          description: Whether this number can place and receive calls — true when a calling handler is configured and voice is enabled.
+          examples:
+            - false
+        created_at:
+          type: string
+          description: The date and time when the record was created.
+          examples:
+            - '2024-01-15T10:30:00Z'
+        updated_at:
+          type: string
+          description: The date and time when the record was last updated.
+          examples:
+            - '2024-01-15T10:30:00Z'
+      unevaluatedProperties:
+        not: {}
+      description: A WhatsApp phone number connected to your Space. Numbers are linked during the Meta embedded signup flow and used as the `from` address when sending messages.
+    WhatsAppNumberListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/WhatsAppNumber'
+          description: List of WhatsApp numbers available to the Space.
+      unevaluatedProperties:
+        not: {}
+      description: Response containing a list of WhatsApp numbers.
+    WhatsAppNumberResponse:
+      type: object
+      required:
+        - id
+        - business_phone_number_id
+        - phone_number
+        - calling_handler_resource_id
+        - messaging_handler_resource_id
+        - business_name
+        - waba_id
+        - whatsapp_business_id
+        - voice_enabled
+        - voice_capable
+        - created_at
+        - updated_at
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: The SignalWire identifier of the WhatsApp number.
+          examples:
+            - 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        business_phone_number_id:
+          type: string
+          description: The Meta phone number ID for this WhatsApp number.
+          examples:
+            - '102290129340398'
+        phone_number:
+          type: string
+          description: The WhatsApp number, prefixed with `whatsapp:`. Use this value as the `from` address when sending messages.
+          examples:
+            - whatsapp:+15557654321
+        calling_handler_resource_id:
+          anyOf:
+            - $ref: '#/components/schemas/uuid'
+            - type: 'null'
+          description: The ID of the resource (Call Flow, AI Agent, SWML script, etc.) that handles inbound calls to this number. Null if no calling handler is configured.
+          examples:
+            - 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        messaging_handler_resource_id:
+          anyOf:
+            - $ref: '#/components/schemas/uuid'
+            - type: 'null'
+          description: The ID of the resource that handles inbound messages to this number. Null if no messaging handler is configured.
+          examples:
+            - 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        business_name:
+          anyOf:
+            - type: string
+            - type: 'null'
+          description: The business name as registered with Meta.
+          examples:
+            - Acme, Inc.
+        waba_id:
+          type: string
+          description: The WhatsApp Business Account ID (WABA ID) assigned by Meta.
+          examples:
+            - '109876543210987'
+        whatsapp_business_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: The SignalWire identifier of the WhatsApp Business Account this number belongs to.
+          examples:
+            - 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        voice_enabled:
+          type: boolean
+          description: Whether SIP calling is enabled for this number.
+          examples:
+            - false
+        voice_capable:
+          type: boolean
+          description: Whether this number can place and receive calls — true when a calling handler is configured and voice is enabled.
+          examples:
+            - false
+        created_at:
+          type: string
+          description: The date and time when the record was created.
+          examples:
+            - '2024-01-15T10:30:00Z'
+        updated_at:
+          type: string
+          description: The date and time when the record was last updated.
+          examples:
+            - '2024-01-15T10:30:00Z'
+      unevaluatedProperties:
+        not: {}
+      description: Response containing a single WhatsApp number.
+    WhatsAppTemplate:
+      type: object
+      required:
+        - id
+        - name
+        - category
+        - components
+        - language
+        - parameter_format
+        - template_id
+        - template_status
+        - whatsapp_business_id
+        - created_at
+        - updated_at
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: The SignalWire identifier of the template.
+          examples:
+            - 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        name:
+          type: string
+          description: The template name. Lowercase letters, numbers, and underscores only.
+          examples:
+            - order_update
+        category:
+          allOf:
+            - $ref: '#/components/schemas/WhatsAppTemplateCategory'
+          description: The template category.
+          examples:
+            - utility
+        components:
+          type: array
+          items:
+            $ref: '#/components/schemas/WhatsAppTemplateComponent'
+          description: The template's components (header, body, footer, buttons).
+        language:
+          type: string
+          description: The template language code.
+          examples:
+            - en_US
+        parameter_format:
+          allOf:
+            - $ref: '#/components/schemas/WhatsAppTemplateParameterFormat'
+          description: How the template's variable placeholders are referenced.
+          examples:
+            - positional
+        template_id:
+          type: string
+          description: Meta's identifier for the template.
+          examples:
+            - '1164792772433648'
+        template_status:
+          allOf:
+            - $ref: '#/components/schemas/WhatsAppTemplateStatus'
+          description: The Meta approval status of the template.
+          examples:
+            - approved
+        whatsapp_business_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: The SignalWire identifier of the WhatsApp Business Account the template belongs to.
+          examples:
+            - 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        created_at:
+          type: string
+          description: The date and time when the template was created.
+          examples:
+            - '2024-01-15T10:30:00Z'
+        updated_at:
+          type: string
+          description: The date and time when the template was last updated.
+          examples:
+            - '2024-01-15T10:30:00Z'
+        discarded_at:
+          type: string
+          description: The date and time when the template was discarded, if applicable.
+          examples:
+            - '2024-01-15T10:30:00Z'
+      unevaluatedProperties:
+        not: {}
+      description: A WhatsApp message template.
+    WhatsAppTemplateCategory:
+      type: string
+      enum:
+        - utility
+        - marketing
+        - authentication
+      description: The category of a WhatsApp message template.
+    WhatsAppTemplateComponent:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          description: 'The component type: `HEADER`, `BODY`, `FOOTER`, or `BUTTONS`.'
+          examples:
+            - BODY
+      unevaluatedProperties: {}
+      description: A template component. The `type` is one of `HEADER`, `BODY`, `FOOTER`, or `BUTTONS`. Additional fields depend on the component type — for example, a `BODY` carries `text`, while `BUTTONS` carries a `buttons` array. See the create example for the full shape.
+    WhatsAppTemplateDeleteResponse:
+      type: object
+      required:
+        - success
+        - errors
+      properties:
+        success:
+          type: boolean
+          description: Whether the template was deleted successfully at Meta.
+        errors:
+          description: Empty array when the deletion succeeds; otherwise the error details returned by Meta.
+      unevaluatedProperties:
+        not: {}
+      description: Response returned when a template has been deleted.
+    WhatsAppTemplateListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/WhatsAppTemplate'
+          description: List of message templates.
+      unevaluatedProperties:
+        not: {}
+      description: Response containing a list of message templates.
+    WhatsAppTemplateParameterFormat:
+      type: string
+      enum:
+        - named
+        - positional
+      description: How a template's variable placeholders are referenced.
+    WhatsAppTemplateResponse:
+      type: object
+      required:
+        - id
+        - name
+        - category
+        - components
+        - language
+        - parameter_format
+        - template_id
+        - template_status
+        - whatsapp_business_id
+        - created_at
+        - updated_at
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: The SignalWire identifier of the template.
+          examples:
+            - 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        name:
+          type: string
+          description: The template name. Lowercase letters, numbers, and underscores only.
+          examples:
+            - order_update
+        category:
+          allOf:
+            - $ref: '#/components/schemas/WhatsAppTemplateCategory'
+          description: The template category.
+          examples:
+            - utility
+        components:
+          type: array
+          items:
+            $ref: '#/components/schemas/WhatsAppTemplateComponent'
+          description: The template's components (header, body, footer, buttons).
+        language:
+          type: string
+          description: The template language code.
+          examples:
+            - en_US
+        parameter_format:
+          allOf:
+            - $ref: '#/components/schemas/WhatsAppTemplateParameterFormat'
+          description: How the template's variable placeholders are referenced.
+          examples:
+            - positional
+        template_id:
+          type: string
+          description: Meta's identifier for the template.
+          examples:
+            - '1164792772433648'
+        template_status:
+          allOf:
+            - $ref: '#/components/schemas/WhatsAppTemplateStatus'
+          description: The Meta approval status of the template.
+          examples:
+            - approved
+        whatsapp_business_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: The SignalWire identifier of the WhatsApp Business Account the template belongs to.
+          examples:
+            - 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        created_at:
+          type: string
+          description: The date and time when the template was created.
+          examples:
+            - '2024-01-15T10:30:00Z'
+        updated_at:
+          type: string
+          description: The date and time when the template was last updated.
+          examples:
+            - '2024-01-15T10:30:00Z'
+        discarded_at:
+          type: string
+          description: The date and time when the template was discarded, if applicable.
+          examples:
+            - '2024-01-15T10:30:00Z'
+      unevaluatedProperties:
+        not: {}
+      description: Response containing a single message template.
+    WhatsAppTemplateStatus:
+      type: string
+      enum:
+        - approved
+        - archived
+        - deleted
+        - disabled
+        - flagged
+        - in_appeal
+        - limit_exceeded
+        - locked
+        - paused
+        - pending
+        - reinstated
+        - pending_deletion
+        - rejected
+      description: The Meta approval status of a template. A template must be `approved` before it can be used to send messages.
     jwt:
       type: string
       format: jwt
