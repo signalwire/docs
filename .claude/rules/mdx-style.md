@@ -31,6 +31,7 @@ One page, one type. Smells: a tutorial or how-to that keeps stopping to explain 
 - State facts plainly: "is", not "serves as"/"stands as". No significance inflation ("plays a crucial role"), no marketing adjectives (powerful, seamless, robust), no empty "not just X, but Y". [W][G][SW]
 - No "simply/easily/just" and no "please" in instructions. [G]
 - Em-dashes are a house device — but not several per paragraph. [MS][SW] Aphorisms land at 2–3 per page, max. [SW] (judgment)
+- No emoji — not in headings, tab/card titles, or prose. Say good/bad in words. [SW]
 - Terminology: "Server SDKs" (never "Agents SDK"); tokens are *created*/*issued* (never *minted*); "resource addresses" (never "Fabric addresses"); expand every acronym at first use. [SW]
 
 ## Grounding [SW]
