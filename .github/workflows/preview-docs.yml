@@ -2,6 +2,11 @@ name: preview-docs
 
 on: pull_request
 
+# One preview build per PR at a time. Stop existing runs when newer pushes retrigger the workflow.
+concurrency:
+  group: preview-docs-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
   preview:
     runs-on: ubuntu-latest
@@ -24,18 +29,20 @@ jobs:
         id: generate-docs
         env:
           FERN_TOKEN: ${{ secrets.FERN_TOKEN }}
+          # Stable, per-PR preview id. Includes repo because Fern scopes preview IDs by org - prevents collisions if another repo later copies this workflow.
+          PREVIEW_ID: ${{ github.event.repository.name }}-${{ github.event.pull_request.number }}
         run: |
-          yarn build 2>&1 | tee /tmp/build.log
-          if [ ${PIPESTATUS[0]} -ne 0 ]; then
-            exit 1
-          fi
+          set -eo pipefail
+          yarn build:specs 2>&1 | tee /tmp/build.log
+          yarn fern generate --docs --preview --id "$PREVIEW_ID" --force 2>&1 | tee -a /tmp/build.log
 
-          URL=$(grep -oP 'Published docs to \Khttps://[^\s]+' /tmp/build.log | head -1)
+          # Because the script runs under set -e with pipefail, it would abort if grep finds no match and exits non-zero, so || true absorbs that and lets the empty-URL check below handle it.
+          URL=$(grep -oP 'Published docs to \Khttps://[^\s]+' /tmp/build.log | head -1 || true)
           if [ -z "$URL" ]; then
             echo "::error::Could not extract preview URL from build output"
             exit 1
           fi
-          echo "preview_url=$URL" >> $GITHUB_OUTPUT
+          echo "preview_url=$URL" >> "$GITHUB_OUTPUT"
 
       - name: Post preview comment
         uses: actions/github-script@v7

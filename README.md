@@ -102,16 +102,7 @@ Available under the Creative Commons **CC BY-NC-SA 4.0** license. See [LICENSE](
 
 ## Contribute
 
-Whether you're fixing a typo, reporting missing information, or submitting new content -- all contributions are welcome.
-
-1. [Fork the repository](https://docs.github.com/en/get-started/quickstart/fork-a-repo).
-2. Follow the [Usage](#usage) instructions to set up local development.
-3. Make your changes and [submit a pull request](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request).
-
-> [!IMPORTANT]
-> Contributions to the API reference or SWML schema require additional workflows.
-> Spec source lives in `specs/` as [TypeSpec](https://typespec.io/docs) (`.tsp`) and compiles to OpenAPI / JSON Schema in `fern/apis/` and `specs/swml/**/tsp-output/`.
-> See the [TypeSpec documentation](https://typespec.io/docs) for guidance on editing spec files.
+Whether you're fixing a typo, reporting missing information, or submitting new content -- all contributions are welcome. See **[CONTRIBUTING.md](CONTRIBUTING.md)** for the contribution workflow, content conventions, and the checks your pull request needs to pass.
 
 ### API specifications
 
