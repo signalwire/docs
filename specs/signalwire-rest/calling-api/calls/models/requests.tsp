@@ -1649,160 +1649,6 @@ model CallStreamStopRequest {
 }
 
 // ============================================
-// Conference Command
-// ============================================
-
-/**
- * Bidirectional WebSocket stream to attach to a conference. Conference audio is
- * streamed to a `wss://` URL, enabling real-time audio processing, transcription,
- * or AI agents that listen to the conference. Reuses the same stream schema as the
- * `stream` device type in `connect`.
- */
-@doc("Stream configuration for attaching a WebSocket stream to a conference.")
-model ConferenceStreamParams {
-  @doc("Secure WebSocket URL to stream conference audio to. Must start with `wss://` (TLS is required; plain `ws://` is rejected).")
-  @example("wss://example.com/conference-audio")
-  @format("uri")
-  url: string;
-
-  @doc("Optional human-readable name to identify the stream at the endpoint.")
-  @example("conference-audio")
-  name?: string;
-
-  @doc("Audio codec to request. Freeform; endpoint-specific. Common values include `PCMU`, `PCMA`, `G722`, `L16`.")
-  @example("PCMU")
-  codec?: string;
-
-  @doc("When `true`, enables bidirectional audio so your endpoint can stream audio back into the conference (not just receive it).")
-  @example(true)
-  realtime?: boolean;
-
-  @doc("Bearer token included as `Authorization: Bearer <token>` when establishing the WebSocket connection.")
-  @example("my-secret-token")
-  authorization_bearer_token?: string;
-
-  @doc("Arbitrary JSON object passed through to the WebSocket endpoint as connection metadata.")
-  @example(#{ session_id: "abc123" })
-  custom_parameters?: TypeSpec.Record<unknown>;
-
-  @doc("HTTP or HTTPS URL that receives stream lifecycle webhooks.")
-  @example("https://example.com/stream_callback")
-  status_url?: url;
-
-  @doc("HTTP method used for the `status_url` webhook.")
-  @example(StreamStatusUrlMethod.POST)
-  status_url_method?: StreamStatusUrlMethod = StreamStatusUrlMethod.POST;
-}
-
-/**
- * Join an ad-hoc audio conference. The conference is created automatically if it
- * does not already exist; multiple calls join the same conference by `name`.
- * Optionally attach a bidirectional WebSocket `stream` to the conference audio.
- */
-@summary("calling.join_conference")
-model CallJoinConferenceRequest {
-  @doc(uuidDescription)
-  @example(CallIdExample)
-  id: uuid;
-
-  @doc("The `calling.join_conference` command joins the call to an ad-hoc audio conference.")
-  @example("calling.join_conference")
-  command: "calling.join_conference";
-
-  @doc(paramsDescription)
-  params: {
-    @doc("Name of the conference. All calls joining the same name are placed in the same conference.")
-    @example("team_meeting")
-    name: string;
-
-    @doc("Whether to join the conference in a muted state.")
-    @example(false)
-    muted?: boolean;
-
-    @doc("Sets the behavior of the beep sound when joining or leaving the conference.")
-    @example("onEnter")
-    beep?: "true" | "false" | "onEnter" | "onExit";
-
-    @doc("Start the conference when this participant joins, without waiting for other participants.")
-    @example(true)
-    start_on_enter?: boolean;
-
-    @doc("End the conference when this participant leaves, without waiting for other participants.")
-    @example(false)
-    end_on_exit?: boolean;
-
-    @doc("HTTP or HTTPS URL to fetch audio to play while waiting for the conference to start. Default hold music is played if not set.")
-    @example("https://example.com/hold-music.mp3")
-    wait_url?: url;
-
-    @doc("The maximum number of participants allowed in the conference.")
-    @example(50)
-    max_participants?: integer;
-
-    @doc("Enables or disables recording of the conference.")
-    @example("record-from-start")
-    record?: "do-not-record" | "record-from-start";
-
-    @doc("The geographical region where the conference is hosted.")
-    @example("us")
-    region?: "global" | "us" | "eu" | "ch";
-
-    @doc("Whether to trim silence from the start of the conference recording.")
-    @example("trim-silence")
-    trim?: "trim-silence" | "do-not-trim";
-
-    @doc("Access control level for the conference.")
-    @example("private")
-    acl?: "private" | "public-read";
-
-    @doc("Call SID of a call currently connected to an in-progress conference. The coach can hear but not be heard (coaching mode).")
-    @example("b3877ee3-6f3c-4985-8066-6d24e3f65e12")
-    coach?: string;
-
-    @doc("""
-      Space-separated list of one or more events to send to the status callback URL.
-      Possible values: `start`, `end`, `join`, `leave`, `mute`, `hold`, `modify`, `speaker`, `announcement`.
-      """)
-    @example("join leave")
-    status_callback_event?: string;
-
-    @doc("Content type for status callback requests.")
-    @example("relay")
-    status_callback_event_type?: "cxml" | "laml" | "relay";
-
-    @doc("HTTP or HTTPS URL to which status events will be sent.")
-    @example("https://example.com/conference-status")
-    status_callback?: url;
-
-    @doc("The HTTP method to use when sending status events to the status callback URL.")
-    @example("POST")
-    status_callback_method?: "GET" | "POST";
-
-    @doc("""
-      Space-separated list of one or more events to send to the recording status callback URL.
-      Possible values: `in-progress`, `completed`, `absent`.
-      """)
-    @example("completed")
-    recording_status_callback_event?: string;
-
-    @doc("Content type for recording status callback requests.")
-    @example("relay")
-    recording_status_callback_event_type?: "cxml" | "laml" | "relay";
-
-    @doc("HTTP or HTTPS URL to which recording status events will be sent.")
-    @example("https://example.com/recording-status")
-    recording_status_callback?: url;
-
-    @doc("The HTTP method to use when sending recording status events to the recording status callback URL.")
-    @example("POST")
-    recording_status_callback_method?: "GET" | "POST";
-
-    @doc("Attach a bidirectional WebSocket stream to the conference audio.")
-    stream?: ConferenceStreamParams;
-  };
-}
-
-// ============================================
 // Denoise Commands
 // ============================================
 
@@ -2097,7 +1943,7 @@ model CallUserEventRequest {
 @discriminated(#{ discriminatorPropertyName: "command", envelope: "none" })
 @doc("""
   Call request union for JSON-RPC style method dispatch. Use the `command` field to specify which call method to invoke.
-  All async-safe RELAY methods can be sent through this endpoint without a WebSocket connection.
+  Only the commands listed here are supported. Most operate on an already-active call; `dial` creates a new one. Commands return immediately; operations that continue asynchronously deliver their results to your `status_url` webhooks.
   """)
 union CallRequest {
   dial: CallCreateRequest,
@@ -2133,7 +1979,6 @@ union CallRequest {
   `calling.transcribe.stop`: CallTranscribeStopRequest,
   `calling.stream`: CallStreamRequest,
   `calling.stream.stop`: CallStreamStopRequest,
-  `calling.join_conference`: CallJoinConferenceRequest,
   `calling.denoise`: CallDenoiseRequest,
   `calling.denoise.stop`: CallDenoiseStopRequest,
   `calling.live_transcribe`: CallLiveTranscribeRequest,
