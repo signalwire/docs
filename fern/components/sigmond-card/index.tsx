@@ -1,15 +1,12 @@
 import { useEffect, useRef } from "react";
 
-// Sigmond call driver. The card is authored as native MDX (so its <img> is a real fern/asset — Fern
-// only rewrites asset URLs on img rendered as direct MDX content, not inside a custom component). This
+// Sigmond call driver 
 // renders a hidden widget host, lazy-loads the address-widget UMD, mounts <signalwire-address>, and
 // opens the call when the MDX launcher ([data-sigmond-launcher]) is clicked.
 
 const WIDGET_UMD_URL =
   "https://cdn.signalwire.com/npm/@signalwire/address-widget@dev/dist/address-widget.umd.js";
 
-// Public, call-scoped SAT for /public/sigmond (the same one the Dashboard ships inline; not a project
-// secret). SATs expire — refresh here or pass a fresh `token` if the call stops connecting.
 const DEFAULT_TOKEN =
   "eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIiwidHlwIjoiU0FUIiwiY2giOiJwdWMuc2lnbmFsd2lyZS5jb20ifQ..IKPXZDR3ZYlpnUuw.yU8NBgPFQN1LH0Ws-Rs2ca-vAbUEP7Gvr0upOf-hDaTUfp-Aa5TALLMkJdUli8UX0ina34hng0G2XPLh7NZ2VZ5cphdd8AUCDKWkJ5HCI8538aNxPWcUWG25B-eELha7yEIrHZlO5BIxuyGVPskf0BIPGgiFSlctotyGB-VyYwSp_Uf6kdcwTCiEgra9LcyUMpNZyz5xH3p93xDU9bvzunFj50qIbfmQ2S0tDgEdduQWlTIfqUjRT6ePuwLGDBZYCCz9JtCQM0S2Fs7ZwvdSOzLFLqThkWnH3mSnkgKtkSTTXpnKUplPBJQaNRn0P4rJiwkk61BGyCJQ8Y8XYNeUHa-m1pRERQNweohQNBA0Ph3ie3vZLFJFjOeWuuztK8JSnfu4m9fxlkiA6icaHYuUm7KTSQ6n7oV5a2dkbLs7s51GRi7di0mm6Xw3jr2Zw1EGS8NgIrAU2HTv7stMAjpvDneYDfPaysCrmhCwu_TJgpG7PARiA4glKv9IuPeF5xpnymM5p0V2KL4HSEz-MJwziOwPpQRED_Brd2DiE0cz.CEYQUqZhcs5wKCtJQqUAMQ";
 
