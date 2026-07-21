@@ -106,7 +106,7 @@ if __name__ == "__main__":
 </CodeBlock>
 </CodeBlocks>
 
-Every line of that menu is a liability.
+That menu makes the prompt fragile.
 Prices go stale the day they change, the model is doing arithmetic on a phone call,
 and each "never" is a rule the model is merely encouraged to follow.
 
@@ -136,6 +136,8 @@ sections:
                   item:
                     type: string
                     description: The menu item the customer asked for, in their own words
+                required:
+                  - item
             - function: finalize_order
               description: Total the order and send it to the kitchen
 ```
@@ -162,8 +164,13 @@ agent.prompt_add_section(
     "Confirm each item as you add it, and read back the total at the end."
 )
 
-@agent.tool(description="Add an item to the order when the customer asks for one")
+@agent.tool()
 def add_item(item: str, raw_data=None) -> FunctionResult:
+    """Add an item to the order when the customer asks for one.
+
+    Args:
+        item: The menu item the customer asked for, in their own words
+    """
     price = MENU.get(item.lower().strip())
     if price is None:
         return FunctionResult(f"'{item}' is not on the menu. Let the customer know.")
@@ -173,8 +180,9 @@ def add_item(item: str, raw_data=None) -> FunctionResult:
         f"Added {item} at ${price:.2f}. Running total: ${total:.2f}."
     ).update_global_data({"order": order})
 
-@agent.tool(description="Total the order and send it to the kitchen")
+@agent.tool()
 def finalize_order(raw_data=None) -> FunctionResult:
+    """Total the order and send it to the kitchen."""
     order = raw_data.get("global_data", {}).get("order", [])
     total = sum(entry[1] for entry in order)
     return FunctionResult(
@@ -191,6 +199,8 @@ if __name__ == "__main__":
 The AI never sees the menu.
 Your code looks up each item, owns every price, computes the total,
 and can refuse "a pizza" without a single rule being written into the prompt.
+In the SDK version, the Python function itself is the definition:
+the docstring becomes the description the AI reads, and the type hints become the parameter schema.
 
 The prompt still matters: a well-written prompt is what makes the conversation natural,
 and [prompt engineering][prompt-engineering] is a real craft.
