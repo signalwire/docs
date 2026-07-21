@@ -80,6 +80,9 @@ so the committed OpenAPI/JSON Schema files under `fern/apis/**` and `specs/swml/
 > Change the `.tsp` source in `specs/`, then rebuild with `yarn build:specs` and commit both the source and the regenerated output.
 > See [API specifications](README.md#api-specifications) in the README for the full spec workflow.
 
+> [!NOTE]
+> The OpenAPI emitters (`@signalwire/*` under `specs/emitters/`) are local workspace packages that must be built before the specs compile. `yarn build:specs` handles this for you — prefer it over running an internal sub-step like `build:signalwire-rest` directly. If a build fails with `Couldn't resolve import "@signalwire/..."` or `missing-implementation: Extern declaration...`, the emitter symlinks are missing — run `yarn install`, then rebuild.
+
 ## Checks your PR has to pass
 
 CI runs on every pull request.

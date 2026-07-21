@@ -1,0 +1,122 @@
+---
+title: Send WhatsApp messages
+slug: /messaging/whatsapp/send-messages
+sidebar-title: Send messages
+description: Send text, media, interactive, and template WhatsApp messages through the SignalWire Messaging API.
+max-toc-depth: 3
+---
+
+All WhatsApp messages are sent through the same endpoint as SMS and MMS,
+[`POST /api/messaging/messages`](/docs/apis/rest/messages/create-message). Two things route a
+message over WhatsApp instead of SMS/MMS:
+
+- The `from` number is a `whatsapp:`-prefixed [WhatsApp number](/docs/platform/messaging/whatsapp/onboarding) (e.g. `whatsapp:+15557654321`).
+- You set a `message_type` (for content messages) or a `template_id` (for template messages).
+
+<Info>
+WhatsApp on SignalWire is in **early-access alpha**. You must
+[connect a WhatsApp business number](/docs/platform/messaging/whatsapp/onboarding) before you can send
+messages.
+</Info>
+
+For the full request schema (every field, every message type's `body` shape, and authentication),
+see the [Send a message](/docs/apis/rest/messages/create-message) API reference.
+
+## Messaging rules
+
+Meta enforces specific rules about when and how a business can send WhatsApp messages:
+
+| Scenario | What you can send |
+|---|---|
+| **No prior customer message** | Approved [templates](/docs/platform/messaging/whatsapp/message-templates) only. You cannot start a free-form conversation until the customer has responded. |
+| **Customer messaged first** | Any message type (text, media, interactive, or template) within a **24-hour window** from the customer's last inbound message. |
+
+## Message types
+
+Set `message_type` to one of the following for a content message. Each value determines the shape of
+`body`, shown below.
+
+<Schema type="Message.WhatsAppContentMessageRequest" api="signalwire-rest" showDescription />
+
+## Examples
+
+### Plain text
+
+```json
+{
+  "to": "+15551234567",
+  "from": "whatsapp:+15557654321",
+  "body": "Your appointment is confirmed for tomorrow at 2pm.",
+  "message_type": "whatsapp_media_text"
+}
+```
+
+### Interactive reply buttons
+
+Send a message with tappable reply buttons, ideal for simple menus or surveys. The `body.type` is
+`button` and each entry in `action.buttons` is a `reply` button (up to 3).
+
+```json
+{
+  "to": "+15551234567",
+  "from": "whatsapp:+15557654321",
+  "body": {
+    "type": "button",
+    "body": { "text": "How can we help?" },
+    "action": {
+      "buttons": [
+        { "type": "reply", "reply": { "id": "sales",   "title": "Talk to Sales" } },
+        { "type": "reply", "reply": { "id": "support", "title": "Get Support" } },
+        { "type": "reply", "reply": { "id": "exit",    "title": "No thanks" } }
+      ]
+    }
+  },
+  "message_type": "whatsapp_interactive_reply_button"
+}
+```
+
+### Template message
+
+Use a [template](/docs/platform/messaging/whatsapp/message-templates) when reaching out to a customer
+for the first time, or outside the 24-hour window. Provide the `template_id` and fill in any
+placeholders; the template must be **approved**. Use an array for positional parameters or an object
+for named parameters.
+
+<Tabs>
+<Tab title="Positional parameters">
+```json
+{
+  "to": "+15551234567",
+  "from": "whatsapp:+15557654321",
+  "template_id": "{template_id}",
+  "header_template_parameters": ["Jane Smith"],
+  "body_template_parameters": ["ORD-9821", "out for delivery"]
+}
+```
+</Tab>
+<Tab title="Named parameters">
+```json
+{
+  "to": "+15551234567",
+  "from": "whatsapp:+15557654321",
+  "template_id": "{template_id}",
+  "header_template_parameters": { "name": "Jane" },
+  "body_template_parameters": { "order": "ORD-9821", "name": "Jane" }
+}
+```
+</Tab>
+</Tabs>
+
+## Next steps
+
+<CardGroup>
+<Card title="Send a message (API reference)" href="/docs/apis/rest/messages/create-message">
+  The full request schema for every message type.
+</Card>
+<Card title="Receive messages" href="/docs/platform/messaging/whatsapp/receive-messages">
+  View inbound messages and delivery status.
+</Card>
+<Card title="Message templates" href="/docs/platform/messaging/whatsapp/message-templates">
+  Create and manage Meta-approved templates.
+</Card>
+</CardGroup>
