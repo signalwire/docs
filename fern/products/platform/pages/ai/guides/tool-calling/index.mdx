@@ -6,6 +6,7 @@ subtitle: The AI runs the conversation. Your code runs the business.
 max-toc-depth: 3
 ---
 
+[best-practices]: /docs/platform/ai/best-practices
 [prompt-engineering]: /docs/platform/ai/prompt-engineering
 [swaig-guide]: /docs/swml/guides/swaig
 [swaig-functions]: /docs/swml/reference/calling/ai/swaig/functions
@@ -24,14 +25,12 @@ max-toc-depth: 3
 Ask a language model what a ride across town costs and it will answer with a confident, plausible, invented number.
 Put that model on your phone line, and its invented number becomes your price.
 
-The typical production failure in voice AI isn't a bad model. It's architecture:
-the menu, the prices, and the policies all stuffed into one long prompt.
-That approach (sometimes called "prompt and pray") usually survives the demo and breaks on real callers.
-
-SignalWire agents are designed around a different division of labor.
-The AI agent is the **front end** of the call: it speaks, listens, works out what the caller wants, and collects details.
-Your backend remains the source of truth, and the agent reaches it through **tool calling**,
-also known as *function calling*.
+A production agent needs two things the model alone can't provide.
+It needs facts that are true right now, for this caller: the order's status, the open slots, the actual fare.
+And it needs to act on the world: book the pickup, send the text, transfer the call.
+**Tool calling**, also known as *function calling*, is how the agent gets both.
+The AI agent is the **front end** of the call, speaking, listening, and working out what the caller wants,
+while your backend stays the source of truth and does the real work.
 On SignalWire, tool calls are delivered by **SWAIG**, the SignalWire AI Gateway,
 and the tools you give an agent are called **SWAIG functions**.
 
@@ -42,8 +41,8 @@ The front end renders the interface and captures what the user wants, but it nev
 The backend does that, because the backend can be tested, versioned, and trusted.
 A voice agent deserves the same architecture: the conversation is the interface, and your code is still the application.
 
-A prompt is a suggestion, and code is a constraint.
-An instruction like "never give discounts" is followed most of the time; pricing rules need to hold every time.
+A prompt is a suggestion, and code is a constraint:
+"never give discounts" holds most of the time, while a pricing rule in your handler holds every time.
 Anything that must be exact, current, or enforced belongs behind a SWAIG function:
 
 | The prompt owns | Your code owns |
@@ -53,158 +52,11 @@ Anything that must be exact, current, or enforced belongs behind a SWAIG functio
 | Extracting details (names, dates, addresses) | Calculations and discounts |
 | Deciding when to reach for a function | Lookups and side effects (booking, texting, transferring) |
 
-Here is the difference in practice, using a drive-thru agent.
-
-### The prompt-stuffed version
-
-<CodeBlocks>
-<CodeBlock title="SWML">
-```yaml
-version: 1.0.0
-sections:
-  main:
-    - ai:
-        prompt:
-          text: |
-            You are the drive-thru assistant for Taco Palace.
-
-            ## Menu
-            Beef taco: $3.50. Chicken taco: $3.75. Veggie taco: $3.25.
-            Chips and salsa: $2.99. Small soda: $2.19. Large soda: $2.79.
-            The taco combo (two tacos, chips and salsa, and a drink) is $9.99.
-
-            ## Rules
-            Add up the order total yourself and read it to the customer.
-            Never invent menu items. Never give discounts.
-```
-</CodeBlock>
-<CodeBlock title="Server SDK (Python)">
-```python
-from signalwire import AgentBase
-
-agent = AgentBase(name="taco-palace")
-
-agent.prompt_add_section(
-    "Role",
-    "You are the drive-thru assistant for Taco Palace."
-)
-agent.prompt_add_section(
-    "Menu",
-    "Beef taco: $3.50. Chicken taco: $3.75. Veggie taco: $3.25. "
-    "Chips and salsa: $2.99. Small soda: $2.19. Large soda: $2.79. "
-    "The taco combo (two tacos, chips and salsa, and a drink) is $9.99."
-)
-agent.prompt_add_section(
-    "Rules",
-    "Add up the order total yourself and read it to the customer. "
-    "Never invent menu items. Never give discounts."
-)
-
-if __name__ == "__main__":
-    agent.run()
-```
-</CodeBlock>
-</CodeBlocks>
-
-That menu makes the prompt fragile.
-Prices go stale the day they change, the model is doing arithmetic on a phone call,
-and each "never" is a rule the model is merely encouraged to follow.
-
-### The SWAIG-backed version
-
-<CodeBlocks>
-<CodeBlock title="SWML">
-```yaml
-version: 1.0.0
-sections:
-  main:
-    - ai:
-        prompt:
-          text: |
-            You are the drive-thru assistant for Taco Palace.
-            Take the customer's order using the functions available to you.
-            Confirm each item as you add it, and read back the total at the end.
-        SWAIG:
-          defaults:
-            web_hook_url: https://example.com/orders
-          functions:
-            - function: add_item
-              description: Add an item to the order when the customer asks for one
-              parameters:
-                type: object
-                properties:
-                  item:
-                    type: string
-                    description: The menu item the customer asked for, in their own words
-                required:
-                  - item
-            - function: finalize_order
-              description: Total the order and send it to the kitchen
-```
-</CodeBlock>
-<CodeBlock title="Server SDK (Python)">
-```python
-from signalwire import AgentBase, FunctionResult
-
-MENU = {
-    "beef taco": 3.50,
-    "chicken taco": 3.75,
-    "veggie taco": 3.25,
-    "chips and salsa": 2.99,
-    "small soda": 2.19,
-    "large soda": 2.79,
-}
-
-agent = AgentBase(name="taco-palace")
-
-agent.prompt_add_section(
-    "Role",
-    "You are the drive-thru assistant for Taco Palace. "
-    "Take the customer's order using the functions available to you. "
-    "Confirm each item as you add it, and read back the total at the end."
-)
-
-@agent.tool()
-def add_item(item: str, raw_data=None) -> FunctionResult:
-    """Add an item to the order when the customer asks for one.
-
-    Args:
-        item: The menu item the customer asked for, in their own words
-    """
-    price = MENU.get(item.lower().strip())
-    if price is None:
-        return FunctionResult(f"'{item}' is not on the menu. Let the customer know.")
-    order = raw_data.get("global_data", {}).get("order", []) + [[item, price]]
-    total = sum(entry[1] for entry in order)
-    return FunctionResult(
-        f"Added {item} at ${price:.2f}. Running total: ${total:.2f}."
-    ).update_global_data({"order": order})
-
-@agent.tool()
-def finalize_order(raw_data=None) -> FunctionResult:
-    """Total the order and send it to the kitchen."""
-    order = raw_data.get("global_data", {}).get("order", [])
-    total = sum(entry[1] for entry in order)
-    return FunctionResult(
-        f"Order sent to the kitchen: {len(order)} items, ${total:.2f} total. "
-        "Read the total back and tell the customer to pull forward."
-    )
-
-if __name__ == "__main__":
-    agent.run()
-```
-</CodeBlock>
-</CodeBlocks>
-
-The AI never sees the menu.
-Your code looks up each item, owns every price, computes the total,
-and can refuse "a pizza" without a single rule being written into the prompt.
-In the SDK version, the Python function itself is the definition:
-the docstring becomes the description the AI reads, and the type hints become the parameter schema.
-
-The prompt still matters: a well-written prompt is what makes the conversation natural,
-and [prompt engineering][prompt-engineering] is a real craft.
-Tool calling decides which kind of work the prompt should be doing.
+This split also keeps the prompt itself lean — pasted menus, prices, and policies are the classic
+way prompts bloat, go stale, and get ignored. That prompt-side discipline is covered in
+[best practices][best-practices] and [prompt engineering][prompt-engineering];
+this guide covers the functions themselves: how they work, how to build one, and how to keep
+them reliable on real calls.
 
 ## How a SWAIG function works
 
@@ -277,8 +129,9 @@ You have three ways to host the code behind a SWAIG function:
 
 ## Build it: an order-status agent
 
-Here is a complete agent whose knowledge of orders lives entirely in code.
-The prompt never claims to know order status; it only knows there is a function for that.
+Order status is the plainest case for a SWAIG function: the answer lives in your fulfillment system,
+changes by the hour, and is different for every caller, so no prompt could contain it.
+Here is a complete agent that fetches it instead.
 
 <CodeBlocks>
 <CodeBlock title="SWML">
@@ -395,7 +248,7 @@ Alongside `response`, your code can return **actions**, which are instructions t
 
 This is the part teams miss when they treat the AI as the application:
 the decision-making stays in your code even when the delivery is conversational.
-Your backend notices the customer qualifies for the combo upgrade,
+Your backend notices the caller qualifies for a promotion,
 and its function result tells the AI to offer it.
 
 See [`FunctionResult` actions][result-actions] in the Server SDK, and the SWML guides on
@@ -520,8 +373,9 @@ Configure per-function `fillers` (as in the examples above) and agent-wide
 
 Define a `post_prompt` and set a [`post_prompt_url`][ai-reference], and the platform delivers a report
 after each call ends: the summary, the full conversation log, and every function call with its timing.
-Read real transcripts, find the turns where the AI hesitated or picked the wrong function,
-and iterate on your function descriptions the way you'd iterate on any interface copy.
+In those reports, study the turns around each function call: a mis-picked function or a guessed
+argument usually traces back to its description, and descriptions can be iterated on like any
+interface copy.
 The open-source [post prompt viewer](https://github.com/signalwire/post_prompt_viewer)
 inspects these reports, with the transcript, telemetry, and latency in one place.
 In the Server SDK, see [post-prompt data][state-management].
