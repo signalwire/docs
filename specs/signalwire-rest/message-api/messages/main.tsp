@@ -7,6 +7,7 @@ import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "./models/errors.tsp";
 import "./models/webhooks.tsp";
+import "./models/whatsapp.tsp";
 import "../../../_shared/alias/token-permissions.tsp";
 import "../../../_shared/webhook/decorator.tsp";
 
@@ -23,12 +24,15 @@ namespace SignalWireAPI.Message.Messages {
     @operationId("create_message")
     @summary("Send a message")
     @doc("""
-      Create and queue an outbound SMS or MMS message for delivery. The system determines whether the message is SMS or MMS based on the presence of `media` or the `send_as_mms` flag. The `from` number must be a purchased SignalWire phone number on the authenticated project.
-      
+      Create and queue an outbound message for delivery. The channel is determined by the `from` number:
+
+      - **SMS/MMS** when `from` is a purchased SignalWire phone number or shortcode. The message is MMS when `media` is present or `send_as_mms` is set, otherwise SMS.
+      - **WhatsApp** when `from` is a `whatsapp:`-prefixed [WhatsApp number](/docs/platform/messaging/whatsapp/send-messages). Set `message_type` for a content message, or `template_id` for an [approved template](/docs/platform/messaging/whatsapp/message-templates). Free-form WhatsApp content is only allowed within the 24-hour customer service window.
+
       ${tokenPermissions<"_Messaging_">}
       """)
     @post
-    create(...CreateMessageRequest):
+    create(@body body: SendMessageRequest):
       | CreateMessageResponse
       | StatusCode400
       | StatusCode401
