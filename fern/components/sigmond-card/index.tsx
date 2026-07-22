@@ -60,24 +60,18 @@ export function SigmondWidget({ token = DEFAULT_TOKEN }: SigmondWidgetProps) {
     let alive = true;
     const teardown: Array<() => void> = [];
 
-    // Claim launchers synchronously so a second driver / effect re-run can't double-wire them.
+    // Claim launchers synchronously so a second driver / effect re-run can't double-wire them. Cards
+    // render disabled (--loading is baked into their markup); we only remove it once wired.
     const launchers = Array.from(
       document.querySelectorAll<HTMLElement>("[data-sigmond-launcher]"),
     ).filter((el) => !el.dataset.sigmondWired);
     launchers.forEach((el) => {
       el.dataset.sigmondWired = "true";
-      setLoading(el, true);
     });
-
-    const unclaim = () =>
-      launchers.forEach((el) => {
-        delete el.dataset.sigmondWired;
-        setLoading(el, false);
-      });
 
     loadWidgetGlobal()
       .then((global) => {
-        if (!alive) return unclaim();
+        if (!alive) return;
         for (const el of launchers) {
           const host = document.createElement("div");
           host.className = "sigmond-widget-host";
@@ -111,6 +105,7 @@ export function SigmondWidget({ token = DEFAULT_TOKEN }: SigmondWidgetProps) {
             el.removeEventListener("click", open);
             el.removeEventListener("keydown", onKey);
             delete el.dataset.sigmondWired;
+            setLoading(el, true);
             host.remove();
             if (window.SignalWireAddressWidget?.unmount) {
               void window.SignalWireAddressWidget.unmount(widget);
@@ -119,14 +114,14 @@ export function SigmondWidget({ token = DEFAULT_TOKEN }: SigmondWidgetProps) {
         }
       })
       .catch((e) => {
+        // Leave cards in their baked-in disabled state; release the claim so a later mount can retry.
         console.error("SigmondWidget:", e);
-        if (alive) unclaim();
+        if (alive) launchers.forEach((el) => delete el.dataset.sigmondWired);
       });
 
     return () => {
       alive = false;
-      if (teardown.length) teardown.forEach((fn) => fn());
-      else unclaim();
+      teardown.forEach((fn) => fn());
     };
   }, [token]);
 
