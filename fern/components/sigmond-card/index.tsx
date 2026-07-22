@@ -1,6 +1,5 @@
 import { useEffect } from "react";
 
-
 const WIDGET_UMD_URL =
   "https://cdn.signalwire.com/npm/@signalwire/address-widget@dev/dist/address-widget.umd.js";
 
@@ -50,79 +49,77 @@ export interface SigmondWidgetProps {
   token?: string;
 }
 
-const setLoading = (el: HTMLElement, on: boolean) => {
-  el.classList.toggle("sigmond-card--loading", on);
-  el.setAttribute("aria-busy", String(on));
-};
-
 export function SigmondWidget({ token = DEFAULT_TOKEN }: SigmondWidgetProps) {
   useEffect(() => {
-    let alive = true;
     const teardown: Array<() => void> = [];
 
-    // Claim launchers synchronously so a second driver / effect re-run can't double-wire them. Cards
-    // render disabled (--loading is baked into their markup); we only remove it once wired.
+    void loadWidgetGlobal().catch(() => {});
+
     const launchers = Array.from(
       document.querySelectorAll<HTMLElement>("[data-sigmond-launcher]"),
     ).filter((el) => !el.dataset.sigmondWired);
-    launchers.forEach((el) => {
+
+    for (const el of launchers) {
       el.dataset.sigmondWired = "true";
-    });
+      let widget: WidgetInstance | null = null;
+      let busy = false;
 
-    loadWidgetGlobal()
-      .then((global) => {
-        if (!alive) return;
-        for (const el of launchers) {
-          const host = document.createElement("div");
-          host.className = "sigmond-widget-host";
-          host.setAttribute("aria-hidden", "true");
-          document.body.appendChild(host);
-
-          const widget = global.mount(host, {
-            token,
-            destination: el.dataset.destination || DEFAULT_DESTINATION,
-            label: el.dataset.label || DEFAULT_LABEL,
-            poster: el.dataset.poster || DEFAULT_POSTER,
-            layout: "stacked",
-            video: true,
-            audio: true,
-            autoGainControl: false,
-            inputVolume: 125,
-          });
-
-          const open = () => void widget.open();
-          const onKey = (e: KeyboardEvent) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              open();
-            }
-          };
-          el.addEventListener("click", open);
-          el.addEventListener("keydown", onKey);
-          setLoading(el, false);
-
-          teardown.push(() => {
-            el.removeEventListener("click", open);
-            el.removeEventListener("keydown", onKey);
-            delete el.dataset.sigmondWired;
-            setLoading(el, true);
-            host.remove();
-            if (window.SignalWireAddressWidget?.unmount) {
-              void window.SignalWireAddressWidget.unmount(widget);
-            }
-          });
+      const open = async () => {
+        if (busy) return;
+        busy = true;
+        el.classList.add("sigmond-card--opening");
+        try {
+          const global = await loadWidgetGlobal();
+          if (!widget) {
+            const host = document.createElement("div");
+            host.className = "sigmond-widget-host";
+            host.setAttribute("aria-hidden", "true");
+            document.body.appendChild(host);
+            widget = global.mount(host, {
+              token,
+              destination: el.dataset.destination || DEFAULT_DESTINATION,
+              label: el.dataset.label || DEFAULT_LABEL,
+              poster: el.dataset.poster || DEFAULT_POSTER,
+              layout: "stacked",
+              video: true,
+              audio: true,
+              autoGainControl: false,
+              inputVolume: 125,
+            });
+            const mounted = widget;
+            teardown.push(() => {
+              host.remove();
+              if (window.SignalWireAddressWidget?.unmount) {
+                void window.SignalWireAddressWidget.unmount(mounted);
+              }
+            });
+          }
+          void widget.open();
+        } catch (e) {
+          console.error("SigmondWidget:", e);
+        } finally {
+          busy = false;
+          el.classList.remove("sigmond-card--opening");
         }
-      })
-      .catch((e) => {
-        // Leave cards in their baked-in disabled state; release the claim so a later mount can retry.
-        console.error("SigmondWidget:", e);
-        if (alive) launchers.forEach((el) => delete el.dataset.sigmondWired);
-      });
+      };
 
-    return () => {
-      alive = false;
-      teardown.forEach((fn) => fn());
-    };
+      const onClick = () => void open();
+      const onKey = (e: KeyboardEvent) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          void open();
+        }
+      };
+      el.addEventListener("click", onClick);
+      el.addEventListener("keydown", onKey);
+      teardown.push(() => {
+        el.removeEventListener("click", onClick);
+        el.removeEventListener("keydown", onKey);
+        delete el.dataset.sigmondWired;
+      });
+    }
+
+    return () => teardown.forEach((fn) => fn());
   }, [token]);
 
   return null;
