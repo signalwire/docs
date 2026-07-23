@@ -15,9 +15,11 @@ const dialCallExample = #{
     command: "dial",
     params: #{
       from: "+15551234567",
-      to: "+15559876543",
+      to: "sip:alice@sip.example.com",
       url: "https://example.com/swml",
       caller_id: "+15551234567",
+      username: "alice",
+      password: "s3cr3t",
       status_url: "https://example.com/status_callback",
       status_events: #["answered", "ended"],
       codecs: #[OutboundCallCodec.PCMU, OutboundCallCodec.PCMA],
@@ -400,25 +402,6 @@ const streamStopCallExample = #{
     command: "calling.stream.stop",
     id: callId,
     params: #{ control_id: "stream-control-1" },
-  },
-};
-
-// Conference examples
-const joinConferenceCallExample = #{
-  request: #{
-    command: "calling.join_conference",
-    id: callId,
-    params: #{
-      name: "team_meeting",
-      beep: "onEnter",
-      start_on_enter: true,
-      stream: #{
-        url: "wss://example.com/conference-audio",
-        codec: "PCMU",
-        realtime: true,
-        status_url: "https://example.com/stream-status",
-      },
-    },
   },
 };
 
