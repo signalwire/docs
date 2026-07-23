@@ -6,6 +6,7 @@ import "../_shared/auth.tsp";
 import "../_shared/types/main.tsp";
 import "./tags.tsp";
 import "./accounts/main.tsp";
+import "./addresses/main.tsp";
 import "./applications/main.tsp";
 import "./available-phone-numbers/main.tsp";
 import "./calls/main.tsp";
@@ -24,6 +25,8 @@ using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 
 @tagMetadata(ACCOUNTS_TAG, ACCOUNTS_TAG_METADATA)
+@tagMetadata(ADDRESSES_TAG, ADDRESSES_TAG_METADATA)
+@tagMetadata(DEPENDENT_PHONE_NUMBERS_TAG, DEPENDENT_PHONE_NUMBERS_TAG_METADATA)
 @tagMetadata(APPLICATIONS_TAG, APPLICATIONS_TAG_METADATA)
 @tagMetadata(AVAILABLE_PHONE_NUMBERS_TAG, AVAILABLE_PHONE_NUMBERS_TAG_METADATA)
 @tagMetadata(CALLS_TAG, CALLS_TAG_METADATA)

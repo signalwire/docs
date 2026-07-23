@@ -7,6 +7,24 @@ const ACCOUNTS_TAG_METADATA = #{
   },
 };
 
+const ADDRESSES_TAG = "Addresses";
+const ADDRESSES_TAG_METADATA = #{
+  description: "Manage registered emergency (E911) addresses.",
+  externalDocs: #{
+    url: "https://signalwire.com/docs/compatibility-api/rest",
+    description: "Developer documentation on the Compatibility REST API",
+  },
+};
+
+const DEPENDENT_PHONE_NUMBERS_TAG = "Dependent Phone Numbers";
+const DEPENDENT_PHONE_NUMBERS_TAG_METADATA = #{
+  description: "List the phone numbers that depend on an emergency (E911) address.",
+  externalDocs: #{
+    url: "https://signalwire.com/docs/compatibility-api/rest",
+    description: "Developer documentation on the Compatibility REST API",
+  },
+};
+
 const APPLICATIONS_TAG = "Applications";
 const APPLICATIONS_TAG_METADATA = #{
   description: "Manage cXML applications for handling voice and messaging.",
