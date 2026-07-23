@@ -80,7 +80,7 @@ model UpdateIncomingPhoneNumberRequest {
   @example("b3877c40-da60-4998-90ad-b792e98472ac")
   AccountSid?: uuid;
 
-  @doc("The unique identifier of the address associated with E911 for this phone number. Not supported for toll-free numbers or certain providers.")
+  @doc("The unique identifier of an emergency (E911) address to associate with this phone number. Associating an address triggers asynchronous provisioning at the carrier; track progress with `emergency_address_status`. Pass an empty value to remove the current association. Not supported for toll-free numbers or certain providers.")
   @example("b3877c40-da60-4998-90ad-b792e98472ad")
   EmergencyAddressSid?: uuid;
 

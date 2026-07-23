@@ -28,6 +28,15 @@ enum EmergencyStatus {
   Inactive: "Inactive",
 }
 
+@doc("The registration status of the associated E911 address at the carrier.")
+enum EmergencyAddressStatus {
+  Registered: "registered",
+  Unregistered: "unregistered",
+  PendingRegistration: "pending-registration",
+  RegistrationFailure: "registration-failure",
+  PendingUnregistration: "pending-unregistration",
+}
+
 @doc("Phone number origin.")
 enum PhoneNumberOrigin {
   SignalWire: "signalwire",
@@ -97,9 +106,13 @@ model IncomingPhoneNumber {
   @example(null)
   emergency_address_sid: string | null;
 
-  @doc("Whether the phone route has an active E911 address associated. 'Active' or 'Inactive'.")
-  @example("Inactive")
-  emergency_status: string;
+  @doc("Whether emergency (E911) calling is enabled for this phone number, indicated by an associated emergency address. Read-only: enable it by associating an `EmergencyAddressSid`, not by setting this field directly.")
+  @example(EmergencyStatus.Inactive)
+  emergency_status: EmergencyStatus;
+
+  @doc("The registration status of the associated E911 address at the carrier. Reflects the asynchronous provisioning lifecycle after an `EmergencyAddressSid` is associated or cleared; `unregistered` when no address is associated.")
+  @example(EmergencyAddressStatus.Unregistered)
+  emergency_address_status: EmergencyAddressStatus;
 
   @doc("A formatted version of the number.")
   @example("(310) 338-6745")
