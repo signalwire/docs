@@ -64,10 +64,14 @@ Almost all content lives under `fern/`:
 Page structure, required frontmatter, navigation, components, 
 and the strict MDX v3 syntax rules are all documented in the repo's authoring guides:
 
-- [`.claude/rules/documentation-style.md`](.claude/rules/documentation-style.md) — how to structure and format a page.
+- [`.claude/rules/mdx-style.md`](.claude/rules/mdx-style.md) — page types (Diátaxis) and writing voice.
+- [`.claude/rules/mdx-mechanics.md`](.claude/rules/mdx-mechanics.md) — frontmatter, structure, links, the LLM view, and MDX rules that break the build.
+- [`.claude/rules/mdx-components.md`](.claude/rules/mdx-components.md) — the component catalog (house set, custom components, what not to use).
+- [`.claude/rules/mdx-reference-pages.md`](.claude/rules/mdx-reference-pages.md) — reference-page patterns (`ParamField`, section names, examples).
 - [`.claude/rules/docs-conventions.md`](.claude/rules/docs-conventions.md) — which docs are hand-authored vs. generated.
 
 These are the single source of truth (and double as the guardrails your AI editor loads automatically), so follow them rather than any summary here.
+The research and rationale behind them lives in [`.claude/docs/mdx-style-reference.md`](.claude/docs/mdx-style-reference.md).
 
 ### Edit the source, not the output
 

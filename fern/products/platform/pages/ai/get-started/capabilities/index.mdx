@@ -2,18 +2,90 @@
 id: ec1d338d-9a57-4256-bb95-fd50df79a14a
 title: AI platform
 slug: /ai/capabilities
-description: Learn about the capabilities of SignalWire's AI platform, including natural language processing, voice technology, business applications, advanced features, multi-channel intelligence, real-time analytics, and security.
+description: How SignalWire's AI platform works, from the ways to build agents and AI in the media path to conversation intelligence, analytics, integrations, and compliance.
+max-toc-depth: 3
 ---
 
-## Introduction
+SignalWire's AI platform is a single system for building and deploying conversational AI.
+It orchestrates voice, video, and messaging on one platform, with native integrations for the major LLM,
+Text-to-Speech, and Speech-to-Text providers.
+Functions execute serverlessly during live conversations, in parallel and asynchronously where needed,
+and a global edge network with points of presence in every major region keeps latency low.
+Security, compliance, logging, and analytics are part of the platform rather than add-ons.
 
-SignalWire's AI platform is a unified system for building and deploying conversational AI solutions.
-The platform delivers a comprehensive suite of capabilities that work together seamlessly. 
-At its core, it provides a single platform for orchestrating voice, video, and messaging channels, complemented by native integrations
-with leading LLM, Text-to-Speech, and Speech-to-Text providers. The system is built on serverless functions that execute with minimal
-latency during live conversations, supported by a multi-threaded architecture for parallel, asynchronous function execution. 
-With a global edge network featuring points of presence in every major region and enterprise-grade security, compliance, logging and analytics,
-the platform ensures reliable and secure operations worldwide.
+---
+
+## Ways to build AI agents
+
+An AI agent is a resource on the SignalWire platform.
+However you create it, the result is the same kind of agent: addressable from phone numbers, SIP,
+and your applications, running on the same realtime infrastructure.
+Pick the interface by how much control you need.
+
+<CardGroup cols={3}>
+<Card
+  title="SWML"
+  href="/docs/swml/reference/calling/ai"
+  icon="regular code"
+>
+  Define the agent declaratively in readable JSON or YAML, deployed serverlessly from your Dashboard or served from your own server.
+</Card>
+<Card
+  title="Server SDKs"
+  href="/docs/server-sdks/guides/build-ai-agents"
+  icon="regular server"
+>
+  Build the agent in code in the language of your choice: the SDK generates the SWML, hosts your SWAIG functions, and serves the agent as a web service.
+</Card>
+<Card
+  title="AI Agents UI"
+  href="/docs/platform/ai/no-code-agents"
+  icon="regular robot"
+>
+  Create and manage agents visually in the Dashboard: write the prompt, pick a voice, add functions, and assign a phone number. No code required.
+</Card>
+</CardGroup>
+
+---
+
+## AI in the media path
+
+Every conversational turn passes through four stages before the caller hears a reply:
+detecting that the caller has finished speaking (end-pointing), transcribing the audio,
+generating the response, and synthesizing the reply as speech.
+
+A common way to assemble voice AI is to connect a separate service for each stage.
+The audio then crosses a network boundary at every stage, on every turn:
+
+```mermaid
+flowchart LR
+    A([Caller stops<br/>speaking]) --> B[Telephony<br/>provider]
+    B --> C[Speech-to-text<br/>service]
+    C --> D[Language<br/>model]
+    D --> E[Text-to-speech<br/>service]
+    E --> F[Telephony<br/>provider]
+    F --> G([Caller hears<br/>the reply])
+```
+
+Each arrow is a network hop, each hop adds delay on every turn, and any hop can spike.
+
+SignalWire runs all four stages inside the engine that carries the call's audio,
+so no network boundary sits between the AI and the call:
+
+```mermaid
+flowchart LR
+    A([Caller stops<br/>speaking]) --> SW
+    subgraph SW["SignalWire · one engine carries the call"]
+        direction LR
+        B[End-pointing] --> C[Speech-to-text] --> D[Language<br/>model] --> E[Text-to-speech]
+    end
+    SW --> F([Caller hears<br/>the reply])
+    D -.->|"tool calls over HTTP"| Y[Your backend]
+```
+
+The result is response time that stays low and, just as important, consistent from turn to turn.
+The one network hop that remains is the one you control:
+tool calls to your backend, covered in the [tool calling guide](/docs/platform/ai/tool-calling).
 
 ---
 
@@ -21,24 +93,24 @@ the platform ensures reliable and secure operations worldwide.
 
 ### Voice technology
 
-SignalWire's voice technology provides comprehensive control over how your AI agents sound and understand speech. 
-The platform enables you to select from multiple Text-to-Speech providers and fine-tune voice parameters to perfectly match your brand identity.
+Voice technology controls how your AI agents sound and understand speech.
+Select from multiple Text-to-Speech providers and tune voice parameters to match your brand.
 Natural speech <Tooltip tip="A user can define what words or phrases to say during pauses in the conversation. These pauses can occur from function calls or speech down time.">fillers</Tooltip>
-maintain smooth conversation flow during processing pauses, while real-time audio processing handles noise filtering and accent variations
-with precision.
+keep the conversation moving during processing pauses, while real-time audio processing handles noise
+filtering and accent variation.
 
 ### Conversation intelligence
 
-SignalWire AI revolutionizes how agents handle complex conversations. Unlike traditional IVR systems that follow rigid
-decision trees, our AI agents operate with natural fluidity. They excel at maintaining their assigned role while juggling multiple
-conversation threads, seamlessly interfacing with backend systems without breaking natural dialogue flow. 
-Perhaps most importantly, they can handle unexpected topic changes without losing context, ensuring a more human-like interaction.
+Unlike traditional IVR systems that follow rigid decision trees, SignalWire AI agents converse naturally.
+They hold their assigned role while juggling multiple conversation threads, reach backend systems without
+breaking the dialogue, and handle unexpected topic changes without losing context.
 
-The below diagrams illustrate how a customer might schedule a medical appointment using a conventional IVR ("interactive voice response", left), compared to using a SignalWire AI Agent (right).
+The diagrams below compare how a customer might schedule a medical appointment with a conventional IVR
+("interactive voice response") and with a SignalWire AI Agent.
 
 
 <Tabs>
-<Tab title="Traditional IVR Flow">
+<Tab title="Traditional IVR flow">
 
 ```mermaid
 sequenceDiagram
@@ -78,7 +150,7 @@ sequenceDiagram
 ```
 
 </Tab>
-<Tab title="AI IVR Flow">
+<Tab title="AI IVR flow">
 
 ```mermaid
 sequenceDiagram
@@ -113,32 +185,27 @@ flows like:
 
 "I'd like to schedule an appointment" → "What time works for you?" → "Actually, before we do that, what's your cancellation policy?"
 
-The AI handles these context switches seamlessly while maintaining the original intent to schedule an appointment.
+The AI handles these context switches while keeping the original intent to schedule an appointment.
 
 ### Dynamic context switching
 
-One powerful way to structure conversations is through <Tooltip tip="Contexts are specialized topics or roles that an AI agent can handle. Each context has its own specialized prompt, fresh conversation memory, and its own steps to follow through the conversation.">
-contexts</Tooltip>. Instead of transferring callers between departments like a traditional system, your AI agent can switch context internally
-to handle different topics & requests within the same conversation.
+One way to structure conversations is through <Tooltip tip="Contexts are specialized topics or roles that an AI agent can handle. Each context has its own specialized prompt, fresh conversation memory, and its own steps to follow through the conversation.">
+contexts</Tooltip>. Instead of transferring callers between departments like a traditional system, your AI agent switches context internally
+to handle different topics and requests within the same conversation.
 
-Each context operates as an independent entity with its own specialized prompt, fresh conversation memory, 
-and focused expertise in areas such as technical support, billing, or sales. This independence is maintained through strict information
-boundaries that ensure clear separation between different roles.
+Each context is independent, with its own specialized prompt and fresh conversation memory,
+focused on an area such as technical support, billing, or sales.
+Information boundaries keep the roles separate: each task is routed to the right context,
+transitions stay conversational, and information doesn't bleed between roles — which matters
+for compliance and for sensitive operations.
 
-This sophisticated approach enables several key benefits. The system can intelligently route each task to the most appropriate specialized context
-while controlling information flow between contexts. It maintains natural conversation flow during role transitions and implements
-robust security boundaries for sensitive operations. The result is a system that delivers specialized knowledge within appropriate contexts,
-prevents information bleed between different roles, and maintains clear compliance and security boundaries while delivering purpose-built
-responses for each domain.
-
-For example, when a customer moves from technical support to billing questions, the AI swaps context to focus solely on financial
-matters, leaving technical details in the previous context. This isolation maintains security while ensuring each
-interaction benefits from specialized expertise.
+For example, when a customer moves from technical support to billing questions, the AI swaps context to
+focus on financial matters, leaving technical details in the previous context.
 
 Below is an example of a context switch in a customer support scenario for both a traditional IVR and a SignalWire AI Agent.
 
 <Tabs>
-<Tab title="Traditional Support Flow">
+<Tab title="Traditional support flow">
 
 ```mermaid
 sequenceDiagram
@@ -163,7 +230,7 @@ sequenceDiagram
 ```
 
 </Tab>
-<Tab title="SignalWire AI Flow">
+<Tab title="SignalWire AI flow">
 
 ```mermaid
 sequenceDiagram
@@ -189,10 +256,11 @@ sequenceDiagram
 
 ### Real-time analytics and monitoring
 
-The platform provides comprehensive analytics to understand and optimize your AI agents' performance. 
-It continuously captures vital metrics including conversation flow and role adherence, speech recognition accuracy, response timing and latency,
-voice quality metrics, and integration performance. This wealth of data flows through a robust webhook system that enables
-real-time conversation monitoring, performance metric tracking, human supervision when needed, and ongoing agent behavior optimization.
+The platform captures the metrics you need to understand and improve your agents:
+conversation flow and role adherence, speech recognition accuracy, response timing and latency,
+voice quality, and integration performance.
+The data arrives over webhooks, so you can monitor conversations in real time, track performance,
+and bring in human supervision when a call needs it.
 
 Here's how this works in a customer support scenario:
 
@@ -245,16 +313,11 @@ Here's an example of the data you receive during an AI interaction:
 
 #### Management tools
 
-The real-time data enables powerful management capabilities across three key areas:
-
-- **Live Monitoring and Supervision:**
-The platform provides comprehensive real-time monitoring of high-value interactions, with intelligent alerting for critical situations and seamless intervention capabilities when human assistance is required.
-
-- **Performance Optimization:**
-Continuous performance improvement is achieved through AI behavior adjustments based on metrics, dynamic routing rule updates, and refined response pattern optimization.
-
-- **Quality Assurance:**
-The system maintains high service standards by quickly identifying and resolving issues, ensuring compliance requirements are met, and maintaining consistent service quality metrics.
+This data supports live supervision, tuning, and quality assurance.
+Monitor high-value interactions as they happen, with alerts for critical situations and the ability
+to intervene when a caller needs a human.
+The same metrics drive improvement over time: adjust agent behavior, update routing rules, refine
+response patterns, and verify that compliance requirements and service standards are being met.
 
 
 ---
@@ -263,7 +326,7 @@ The system maintains high service standards by quickly identifying and resolving
 
 ### External service integration
 
-SignalWire AI connects with your business systems through its function framework. When your agent needs to perform an action - like checking inventory or booking an appointment - it can call functions that interact with your databases and services while keeping the conversation natural.
+SignalWire AI connects with your business systems through its function framework. When your agent needs to perform an action - like checking inventory or booking an appointment - it can call functions that interact with your databases and services while keeping the conversation natural. The [tool calling guide](/docs/platform/ai/tool-calling) covers the complete model, with a worked example and patterns for production.
 
 Here's an example of scheduling a meeting:
 
@@ -324,9 +387,9 @@ This lets you automate complex processes without exposing the technical details 
 
 ### SignalWire's RAG stack integration - Datasphere
 
-[Datasphere](/docs/apis/rest/documents/list-documents) serves as SignalWire's built-in knowledge integration system, providing AI agents with seamless access to your organization's information.
-The system excels at finding and utilizing relevant information during conversations, ensuring responses remain accurate and current by drawing from your latest documentation. 
-Every answer is backed by official documentation, providing confidence and reliability in every interaction.
+[Datasphere](/docs/apis/rest/documents/list-documents) is SignalWire's built-in knowledge integration system.
+It gives AI agents access to your organization's information during conversations,
+drawing on your latest documentation so answers stay accurate and current.
 
 Here's an example of how it works in practice:
 
@@ -353,24 +416,11 @@ sequenceDiagram
     AI->>Customer: Details prenatal visit coverage within maternity benefits
 ```
 
-The system offers several key advantages:
-
-- **Always Current:** Your agents automatically use the latest information as you update your documentation
-
-- **Smart Information Use:** 
-  - Combines conversation context with document searches
-  - References specific sources
-  - Maintains natural dialogue while using detailed info
-
-- **Flexible Organization:**
-  - Tag documents for easy finding
-  - Choose how to break up information
-  - Search using natural language
-
-- **High Accuracy:**
-  - Grounds responses in your actual documents
-  - Provides sources for information
-  - Keeps responses consistent
+Because agents query Datasphere at conversation time, they use the latest version of your documentation
+as soon as you update it.
+Searches combine the conversation's context with natural-language queries over your documents,
+and responses stay grounded in what those documents actually say, with sources to back them.
+You control how documents are tagged and chunked, so retrieval fits the way your information is organized.
 
 
 ---
@@ -379,14 +429,21 @@ The system offers several key advantages:
 
 ### Customer service
 
-SignalWire AI transforms the customer service experience by creating intelligent agents that deliver comprehensive support capabilities. These agents are designed to handle complex, multi-step inquiries while maintaining contextual awareness throughout the conversation. They seamlessly integrate with your knowledge base to provide accurate, consistent answers and can connect to your backend systems for real-time problem resolution. When situations require human expertise, the system smoothly facilitates transfers to human agents, ensuring no context is lost in the process.
+Support agents handle complex, multi-step inquiries while keeping the conversation's context.
+They answer from your knowledge base, reach your backend systems to resolve problems during the call,
+and transfer to a human agent — with context intact — when a situation calls for one.
 
 ### Process automation
 
-The platform excels at automating multi-step processes while maintaining natural, fluid interactions. In appointment scheduling scenarios, for example, the AI demonstrates sophisticated capabilities in understanding complex time and date requests, managing multiple calendar systems simultaneously, and handling schedule conflicts with grace. The system proactively sends confirmations and can accommodate changes when needed, all while maintaining a natural conversation flow that feels effortless to the user.
+Agents automate multi-step processes conversationally.
+In appointment scheduling, for example, an agent interprets time and date requests, works across
+calendar systems, resolves schedule conflicts, sends confirmations, and accommodates changes.
 
 ---
 
 ## Security and compliance
 
-SignalWire's AI platform incorporates a comprehensive security framework that includes encrypted communications, sophisticated PII detection and protection mechanisms, and dedicated compliance tools for HIPAA and GDPR requirements. The system maintains detailed audit logging capabilities and granular access controls and permissions, enabling you to automate sensitive communications while maintaining strict regulatory compliance.
+The platform encrypts communications, detects and protects PII, and provides compliance tooling for
+HIPAA and GDPR requirements.
+Audit logging and granular access controls let you automate sensitive communications while staying
+within regulatory bounds.
