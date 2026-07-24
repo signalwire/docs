@@ -53,6 +53,12 @@ export function SigmondWidget({ token = DEFAULT_TOKEN }: SigmondWidgetProps) {
   useEffect(() => {
     const teardown: Array<() => void> = [];
 
+    if (!document.head.querySelector("link[data-signalwire-address-fonts]")) {
+      const marker = document.createElement("link");
+      marker.setAttribute("data-signalwire-address-fonts", "host");
+      document.head.appendChild(marker);
+    }
+
     void loadWidgetGlobal().catch(() => {});
 
     const launchers = Array.from(
@@ -85,6 +91,7 @@ export function SigmondWidget({ token = DEFAULT_TOKEN }: SigmondWidgetProps) {
               audio: true,
               autoGainControl: false,
               inputVolume: 125,
+              disableAutoFonts: true,
             });
             const mounted = widget;
             teardown.push(() => {
