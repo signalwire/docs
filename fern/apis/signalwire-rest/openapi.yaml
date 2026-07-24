@@ -7410,6 +7410,8 @@ paths:
       description: |-
         To create a new Address, make a POST request to the Address resource.
 
+        When `emergency_enabled=true` and the address is in the US (`country` = `US`), the address is validated against the carrier. A valid or auto-corrected address is stored (`validated: true`). An address the carrier cannot validate — or a correctable address when `auto_correct_address=false` — is rejected with a `422` whose body includes an `errors` array and a `candidates` array of suggested addresses (each with `street_number`, `street_name`, `city`, `state`, `postal_code`). Non-US addresses and requests without `emergency_enabled` are stored without carrier validation.
+
         #### Permissions
 
         The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Numbers_.
@@ -7497,6 +7499,60 @@ paths:
                 $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
       tags:
         - E911 Addresses
+    put:
+      operationId: update_address
+      summary: Update E911 address
+      description: |-
+        Updates an Address that has been previously created.
+
+        When `emergency_enabled=true` and the address is in the US (`country` = `US`), the address is validated against the carrier. A valid or auto-corrected address is stored (`validated: true`). An address the carrier cannot validate — or a correctable address when `auto_correct_address=false` — is rejected with a `422` whose body includes an `errors` array and a `candidates` array of suggested addresses (each with `street_number`, `street_name`, `city`, `state`, `postal_code`). Non-US addresses and requests without `emergency_enabled` are stored without carrier validation.
+
+        #### Permissions
+
+        The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Numbers_.
+
+        [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
+      parameters:
+        - $ref: '#/components/parameters/AddressPathID'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddressResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode404'
+        '422':
+          description: The request failed validation. See errors for details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.ValidationError'
+        '500':
+          description: An internal server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - E911 Addresses
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAddressRequest'
     delete:
       operationId: delete_address
       summary: Delete E911 address
@@ -8976,6 +9032,105 @@ paths:
       responses:
         '204':
           description: 'There is no content to send for this request, but the headers may be useful. '
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode404'
+        '422':
+          description: The request failed validation. See errors for details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.ValidationError'
+        '500':
+          description: An internal server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - Phone Numbers
+  /api/relay/rest/phone_numbers/{id}/e911_address:
+    post:
+      operationId: assign_e911_address
+      summary: Assign an E911 address to a phone number
+      description: |-
+        Assigns a validated E911 address to the phone number and begins provisioning at the carrier. The number's `e911_status` becomes `pending`; it moves to `active` asynchronously once the carrier confirms. The address is re-validated at the carrier and must be valid.
+
+        #### Permissions
+
+        The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Numbers_.
+
+        [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
+      parameters:
+        - $ref: '#/components/parameters/PhoneNumberPathID'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhoneNumberResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode404'
+        '422':
+          description: The request failed validation. See errors for details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.ValidationError'
+        '500':
+          description: An internal server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - Phone Numbers
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignE911AddressRequest'
+    delete:
+      operationId: remove_e911_address
+      summary: Remove the E911 address from a phone number
+      description: |-
+        Removes the E911 address from the phone number and begins deprovisioning at the carrier. Only allowed while the number is `active`. The `e911_status` becomes `pending_removal`; the address remains associated until the carrier confirms removal.
+
+        #### Permissions
+
+        The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Numbers_.
+
+        [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
+      parameters:
+        - $ref: '#/components/parameters/PhoneNumberPathID'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhoneNumberResponse'
         '401':
           description: Access is unauthorized.
           content:
@@ -14535,6 +14690,9 @@ components:
         - state
         - postal_code
         - zip_code
+        - emergency_enabled
+        - validated
+        - validated_at
       properties:
         id:
           allOf:
@@ -14606,6 +14764,23 @@ components:
           description: The postal code of the street address. Alias for postal_code for backwards compatibility.
           examples:
             - '91905'
+        emergency_enabled:
+          type: boolean
+          description: Whether E911 emergency calling is enabled for this address (carrier-validated when created/updated with `emergency_enabled=true` for a US address).
+          examples:
+            - false
+        validated:
+          type: boolean
+          description: Whether the address was validated by the carrier (true when the carrier returned a valid or auto-corrected match).
+          examples:
+            - false
+        validated_at:
+          anyOf:
+            - type: string
+            - type: 'null'
+          description: The RFC 3339 / ISO 8601 timestamp of the last successful carrier validation, or null if never validated.
+          examples:
+            - null
       unevaluatedProperties:
         not: {}
       description: Address model representing a physical address for regulatory compliance.
@@ -14648,6 +14823,9 @@ components:
         - state
         - postal_code
         - zip_code
+        - emergency_enabled
+        - validated
+        - validated_at
       properties:
         id:
           allOf:
@@ -14719,6 +14897,23 @@ components:
           description: The postal code of the street address. Alias for postal_code for backwards compatibility.
           examples:
             - '91905'
+        emergency_enabled:
+          type: boolean
+          description: Whether E911 emergency calling is enabled for this address (carrier-validated when created/updated with `emergency_enabled=true` for a US address).
+          examples:
+            - false
+        validated:
+          type: boolean
+          description: Whether the address was validated by the carrier (true when the carrier returned a valid or auto-corrected match).
+          examples:
+            - false
+        validated_at:
+          anyOf:
+            - type: string
+            - type: 'null'
+          description: The RFC 3339 / ISO 8601 timestamp of the last successful carrier validation, or null if never validated.
+          examples:
+            - null
       unevaluatedProperties:
         not: {}
       description: Response containing a single address.
@@ -14736,6 +14931,20 @@ components:
         - Trailer
         - Unit
       description: Address type for sub-addresses.
+    AssignE911AddressRequest:
+      type: object
+      required:
+        - e911_address_id
+      properties:
+        e911_address_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: The ID of a validated E911 address in the same project to assign to this phone number.
+          examples:
+            - 3fa85f64-5717-4562-b3fc-2c963f66afa6
+      unevaluatedProperties:
+        not: {}
+      description: Request body for assigning an E911 address to a phone number.
     AssignedNumber:
       type: object
       required:
@@ -22077,6 +22286,16 @@ components:
           description: The postal code of the street address.
           examples:
             - '91905'
+        emergency_enabled:
+          type: boolean
+          description: When `true` and the address is in the US, the address is validated against the carrier before it is stored. Defaults to `false` (stored without carrier validation).
+          examples:
+            - true
+        auto_correct_address:
+          type: boolean
+          description: When the carrier suggests a corrected version of the address, `true` (the default) stores the corrected address; `false` rejects the request with the suggestion returned as candidates.
+          examples:
+            - true
       unevaluatedProperties:
         not: {}
       description: Request body for creating an address.
@@ -28879,6 +29098,7 @@ components:
         - capabilities
         - number_type
         - e911_address_id
+        - e911_status
         - created_at
         - updated_at
         - next_billed_at
@@ -28948,6 +29168,13 @@ components:
             - $ref: '#/components/schemas/uuid'
             - type: 'null'
           description: The E911 address ID associated with this phone number.
+        e911_status:
+          anyOf:
+            - type: string
+            - type: 'null'
+          description: 'The E911 provisioning status for this phone number: `pending`, `active`, `failed`, `pending_removal`, or `unregistered`. `null` when no E911 address is associated. Reflects the carrier-confirmed state, never the billing flag.'
+          examples:
+            - null
         created_at:
           type: string
           format: date-time
@@ -29324,6 +29551,7 @@ components:
         - capabilities
         - number_type
         - e911_address_id
+        - e911_status
         - created_at
         - updated_at
         - next_billed_at
@@ -29393,6 +29621,13 @@ components:
             - $ref: '#/components/schemas/uuid'
             - type: 'null'
           description: The E911 address ID associated with this phone number.
+        e911_status:
+          anyOf:
+            - type: string
+            - type: 'null'
+          description: 'The E911 provisioning status for this phone number: `pending`, `active`, `failed`, `pending_removal`, or `unregistered`. `null` when no E911 address is associated. Reflects the carrier-confirmed state, never the billing flag.'
+          examples:
+            - null
         created_at:
           type: string
           format: date-time
@@ -45955,6 +46190,95 @@ components:
       unevaluatedProperties:
         not: {}
       description: The request failed validation. See errors for details.
+    UpdateAddressRequest:
+      type: object
+      required:
+        - label
+        - country
+        - first_name
+        - last_name
+        - street_number
+        - street_name
+        - city
+        - state
+        - postal_code
+      properties:
+        label:
+          type: string
+          maxLength: 250
+          description: A friendly name given to the address to help distinguish and search for different addresses within your project.
+          examples:
+            - My Address
+        country:
+          type: string
+          description: The ISO 3166 Alpha 2 country code.
+          examples:
+            - US
+        first_name:
+          type: string
+          maxLength: 250
+          description: First name of the occupant associated with this address.
+          examples:
+            - Emmett
+        last_name:
+          type: string
+          maxLength: 250
+          description: Last name of the occupant associated with this address.
+          examples:
+            - Brown
+        street_number:
+          type: string
+          maxLength: 250
+          description: The number portion of the street address.
+          examples:
+            - '1640'
+        street_name:
+          type: string
+          maxLength: 250
+          description: The name portion of the street address.
+          examples:
+            - Riverside Drive
+        address_type:
+          allOf:
+            - $ref: '#/components/schemas/AddressType'
+          description: 'If the address is divided into multiple sub-addresses, this identifies how the address is divided. Possible values are: Apartment, Basement, Building, Department, Floor, Office, Penthouse, Suite, Trailer, Unit.'
+          examples:
+            - Apartment
+        address_number:
+          type: string
+          description: If the address is divided into multiple sub-addresses, this identifies the particular sub-address.
+          examples:
+            - '42'
+        city:
+          type: string
+          maxLength: 250
+          description: The city portion of the street address.
+          examples:
+            - Alexandria
+        state:
+          type: string
+          description: The state/province/region of the street address. In the USA and Canada, use the two-letter abbreviated form.
+          examples:
+            - CA
+        postal_code:
+          type: string
+          maxLength: 250
+          description: The postal code of the street address.
+          examples:
+            - '91905'
+        emergency_enabled:
+          type: boolean
+          description: When `true` and the address is in the US, the address is validated against the carrier before it is stored. Defaults to `false` (stored without carrier validation).
+          examples:
+            - true
+        auto_correct_address:
+          type: boolean
+          description: When the carrier suggests a corrected version of the address, `true` (the default) stores the corrected address; `false` rejects the request with the suggestion returned as candidates.
+          examples:
+            - true
+      unevaluatedProperties:
+        not: {}
+      description: Request body for updating an address.
     UpdateCampaignRequest:
       type: object
       properties:

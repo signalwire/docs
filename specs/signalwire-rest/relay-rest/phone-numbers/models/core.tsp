@@ -111,6 +111,10 @@ model PhoneNumber {
   @doc("The E911 address ID associated with this phone number.")
   e911_address_id: uuid | null;
 
+  @doc("The E911 provisioning status for this phone number: `pending`, `active`, `failed`, `pending_removal`, or `unregistered`. `null` when no E911 address is associated. Reflects the carrier-confirmed state, never the billing flag.")
+  @example(null)
+  e911_status: string | null;
+
   @doc("The date the number was added to your project.")
   created_at: utcDateTime;
 
