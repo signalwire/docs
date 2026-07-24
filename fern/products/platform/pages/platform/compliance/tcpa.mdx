@@ -5,19 +5,32 @@ description: Guidelines for building TCPA-compliant outbound voice AI applicatio
 max-toc-depth: 3
 ---
 
-The Telephone Consumer Protection Act (TCPA) governs how businesses may place calls and send messages to consumers. As of an [FCC ruling on February 8, 2024](https://www.fcc.gov/document/fcc-makes-ai-generated-voices-robocalls-illegal), AI-generated voices are treated as an "artificial or prerecorded voice" under the statute, which places real-time conversational agents, cloned voices, and LLM-driven dialers within the existing restrictions of [47 U.S.C. § 227(b)](https://www.law.cornell.edu/uscode/text/47/227). TCPA obligations — consent, disclosure, calling hours, and revocation — are deterministic and auditable. The proper way to meet them is to enforce each obligation in code rather than relying on the language model to honor instructions in its prompt.
+The Telephone Consumer Protection Act (TCPA) governs how businesses may place calls and send messages to consumers.
+As of an [FCC ruling on February 8, 2024](https://www.fcc.gov/document/fcc-makes-ai-generated-voices-robocalls-illegal), AI-generated voices are treated as an "artificial or prerecorded voice" under the statute, which places real-time conversational agents, cloned voices, and LLM-driven dialers within the existing restrictions of [47 U.S.C. § 227(b)](https://www.law.cornell.edu/uscode/text/47/227).
+TCPA obligations — consent, disclosure, calling hours, and revocation — are deterministic and auditable.
+The proper way to meet them is to enforce each obligation in code rather than relying on the language model to honor instructions in its prompt.
 
-**Compliance is a state machine, not a system prompt.** Each obligation is a gate with a definite answer: Is consent on file? Are we operating inside calling hours? Has the customer opted out? Each must be checked and recorded the same way on every call. A prompt can only *ask* the model to behave; a state machine *guarantees* the behavior and leaves a record. Treat the law's requirements as code your agent runs inside of, not as instructions you hope it follows.
+**Compliance is a state machine, not a system prompt.**
+Each obligation is a gate with a definite answer: Is consent on file? Are we operating inside calling hours? Has the customer opted out?
+Each must be checked and recorded the same way on every call.
+A prompt can only *ask* the model to behave; a state machine *guarantees* the behavior and leaves a record.
+Treat the law's requirements as code your agent runs inside of, not as instructions you hope it follows.
 
 <Warning>
-This guide provides technical guidance for implementing controls relevant to TCPA compliance. It is not legal advice. TCPA obligations vary by jurisdiction, by call type, and by the consent standard that applies to each number, and they change frequently. Consult qualified telecom counsel before operationalizing any outbound program. Compliance is a shared responsibility between SignalWire, your organization, and your implementation choices.
+This guide provides technical guidance for implementing controls relevant to TCPA compliance.
+It is not legal advice.
+TCPA obligations vary by jurisdiction, by call type, and by the consent standard that applies to each number, and they change frequently.
+Consult qualified telecom counsel before operationalizing any outbound program.
+Compliance is a shared responsibility between SignalWire, your organization, and your implementation choices.
 </Warning>
 
 ## Overview
 
-The TCPA applies to the entity on whose behalf a call is placed, regardless of which downstream vendor, lead generator, or agent actually dials. A single non-compliant call carries statutory damages of $500, trebled to $1,500 for willful or knowing violations, with no aggregate cap — so liability scales with call volume and with class size.
+The TCPA applies to the entity on whose behalf a call is placed, regardless of which downstream vendor, lead generator, or agent actually dials.
+A single non-compliant call carries statutory damages of $500, tripled to $1,500 for willful or knowing violations, with no aggregate cap — so liability scales with call volume and with class size.
 
-A voice AI program has to be able to produce, on demand, the record proving it had the right to place a specific call, to a specific number, at a specific time. A language model cannot reliably produce that record by being instructed to in its prompt: asked the same thing across thousands of calls, a probabilistic system will occasionally do something else, and a rare deviation that is a minor defect in most software is a per-call statutory violation here.
+A voice AI program has to be able to produce, on demand, the record proving it had the right to place a specific call, to a specific number, at a specific time.
+A language model cannot reliably produce that record by being instructed to in its prompt: asked the same thing across thousands of calls, a probabilistic system will occasionally do something else, and a rare deviation that is a minor defect in most software is a per-call statutory violation here.
 
 Thus **programmatic enforcement** is the only reliable approach, with the model handling the conversation and the code handling the compliance.
 
@@ -31,7 +44,8 @@ Thus **programmatic enforcement** is the only reliable approach, with the model 
 
 ### TCPA obligations, expressed as gates
 
-Each TCPA obligation is best modeled as a gate a call must pass before it is allowed to connect. Each gate is either enforced in code or it is an unverified assumption.
+Each TCPA obligation is best modeled as a gate a call must pass before it is allowed to connect.
+Each gate is either enforced in code or it is an unverified assumption.
 
 | Gate | Obligation | Where it is enforced |
 |------|------------|----------------------|
@@ -43,20 +57,28 @@ Each TCPA obligation is best modeled as a gate a call must pass before it is all
 
 ## Consent
 
-Consent and Do Not Call disputes are the major drivers of the current wave of TCPA litigation, which [surged roughly 95% in 2025](https://natlawreview.com/article/midyear-litigation-report-tcpa-class-actions-staggering-952-2024-previously-highest). Two federal standards apply, and your system must know which one attaches to each number.
+Consent and Do Not Call disputes are the major drivers of the current wave of TCPA litigation, which [surged roughly 95% in 2025](https://natlawreview.com/article/midyear-litigation-report-tcpa-class-actions-staggering-952-2024-previously-highest).
+Two federal standards apply, and your system must know which one attaches to each number.
 
 | Standard | Abbreviation | Applies to | Requirements |
 |----------|--------------|------------|--------------|
 | Prior Express Written Consent | PEWC | AI marketing calls to wireless numbers | A signed disclosure (electronic signatures count) that names your business, identifies the number authorized, states that consent is not a condition of purchase, and increasingly references the AI voice |
 | Prior Express Consent | PEC | Genuinely informational calls — reminders, delivery and fraud alerts, prescription notices | A consumer who provides a number in a transaction grants PEC for related contact |
 
-The FCC reads the **purpose** of a call, rather than its opening line. A call whose purpose includes selling something is a marketing call — and therefore requires PEWC — even when nothing is ultimately sold. A number captured under PEC for one purpose does not extend to PEWC for unrelated marketing later; reusing a transactionally-captured number for a marketing campaign is a common way enterprise programs cross the line.
+The FCC reads the **purpose** of a call, rather than its opening line.
+A call whose purpose includes selling something is a marketing call — and therefore requires PEWC — even when nothing is ultimately sold.
+A number captured under PEC for one purpose does not extend to PEWC for unrelated marketing later; reusing a transactionally-captured number for a marketing campaign is a common way enterprise programs cross the line.
 
 <Note>
-**Bradford v. Sovereign Pest Control.** On February 25, 2026, the Fifth Circuit held that the statute's text requires only "prior express consent," not the written kind, applying the Supreme Court's *Loper Bright* decision to find that the FCC overstepped in 2012. In Texas, Louisiana, and Mississippi, a cleanly logged oral "yes" is now a defense. In the other 47 states the written rule still governs, and stricter state law is not displaced — Florida, for example, requires AI-specific written consent regardless of any federal reading. ([Analysis](https://www.consumerfinancialserviceslawmonitor.com/2026/02/fifth-circuit-holds-tcpa-does-not-require-prior-express-written-consent-for-telemarketing-calls/).)
+**Bradford v. Sovereign Pest Control.**
+On February 25, 2026, the Fifth Circuit held that the statute's text requires only "prior express consent," not the written kind, applying the Supreme Court's *Loper Bright* decision to find that the FCC overstepped in 2012.
+In Texas, Louisiana, and Mississippi, a cleanly logged oral "yes" is now a defense.
+In the other 47 states the written rule still governs, and stricter state law is not displaced — Florida, for example, requires AI-specific written consent regardless of any federal reading.
+([Analysis](https://www.consumerfinancialserviceslawmonitor.com/2026/02/fifth-circuit-holds-tcpa-does-not-require-prior-express-written-consent-for-telemarketing-calls/).)
 </Note>
 
-For a multi-state program the operating instruction is still the same: capture written consent, and let the system determine which standard governs each number based on where the called party lives. The consent standard is a function of the called party's jurisdiction, so it must be evaluated **per number, per call type, per state, before every dial** — not applied as a single global rule.
+For a multi-state program the operating instruction is still the same: capture written consent, and let the system determine which standard governs each number based on where the called party lives.
+The consent standard is a function of the called party's jurisdiction, so it must be evaluated **per number, per call type, per state, before every dial** — not applied as a single global rule.
 
 ### What a consent record must contain
 
@@ -72,7 +94,8 @@ This is the record the pre-dial consent check reads, and the identifier the audi
 
 ## AI disclosure
 
-The TCPA has required artificial-voice calls to identify the caller and provide a callback contact since 1991. A growing layer of state law adds AI-specific disclosure duties on top, and these are not waiting on further FCC action.
+The TCPA has required artificial-voice calls to identify the caller and provide a callback contact since 1991.
+A growing layer of state law adds AI-specific disclosure duties on top, and these are not waiting on further FCC action.
 
 | Jurisdiction | Requirement |
 |--------------|-------------|
@@ -83,11 +106,14 @@ The TCPA has required artificial-voice calls to identify the caller and provide 
 | Colorado, Illinois, Utah | Transparency variants |
 | EU AI Act | Parallel disclosure duties for any call reaching an EU resident, regardless of where the call originates |
 
-A single, clear disclosure in the opening turn satisfies most of these at once. Reported outcomes indicate that an upfront disclosure tends to raise completion and satisfaction rather than lower them, because callers react more poorly to discovering a deception mid-call than to being told plainly at the start.
+A single, clear disclosure in the opening turn satisfies most of these at once.
+Reported outcomes indicate that an upfront disclosure tends to raise completion and satisfaction rather than lower them, because callers react more poorly to discovering a deception mid-call than to being told plainly at the start.
 
 ### Enforcing disclosure as an unskippable first state
 
-Do not rely on the prompt to include the disclosure. Deliver it as a [`static_greeting`](/docs/swml/reference/calling/ai/params#paramsstatic_greeting) with `static_greeting_no_barge` set to `true`, which plays the full message before the caller can interrupt and before the model takes any turn. The disclosure is then identical on every call and is captured in the transcript.
+Do not rely on the prompt to include the disclosure.
+Deliver it as a [`static_greeting`](/docs/swml/reference/calling/ai/params#paramsstatic_greeting) with `static_greeting_no_barge` set to `true`, which plays the full message before the caller can interrupt and before the model takes any turn.
+The disclosure is then identical on every call and is captured in the transcript.
 
 <Tabs>
 
@@ -182,23 +208,31 @@ sections:
 
 ## Calling hours and call frequency
 
-Federal law confines telemarketing calls to **8:00 a.m. through 9:00 p.m. in the called party's local time**. For a multi-state campaign, this requires computing local time per number from the called party's time zone — not from wherever your dialer is hosted. Several states narrow the window further, and many treat three or more calls in a short span to a number that never engages as evidence of willful conduct, which trebles damages.
+Federal law confines telemarketing calls to **8:00 a.m. through 9:00 p.m. in the called party's local time**.
+For a multi-state campaign, this requires computing local time per number from the called party's time zone — not from wherever your dialer is hosted.
+Several states narrow the window further, and many treat three or more calls in a short span to a number that never engages as evidence of willful conduct, which triples damages.
 
-These are arithmetic and policy decisions, and they belong in your origination service as a pre-dial check — not in the model's running sense of what time it probably is. Compute the called party's local time and apply the strictest applicable window and frequency cap before requesting the call.
+These are arithmetic and policy decisions, and they belong in your origination service as a pre-dial check — not in the model's running sense of what time it probably is.
+Compute the called party's local time and apply the strictest applicable window and frequency cap before requesting the call.
 
 ## Revocation and opt-outs
 
-Consumers may revoke consent through any reasonable means. Opt-out keywords still work, but so does any plain-language statement carrying the intent, because the FCC ended keyword-only opt-out systems. Three rules bind every program:
+Consumers may revoke consent through any reasonable means.
+Opt-out keywords still work, but so does any plain-language statement carrying the intent, because the FCC ended keyword-only opt-out systems.
+Three rules bind every program:
 
 - **Honor opt-outs within 10 business days, across every channel.** A revocation on a voice call also silences SMS, email, and retargeting from the same caller.
 - **Permit one confirmation message and no more,** and keep marketing out of it.
 - **Prepare for the revoke-all rule** under [47 CFR § 64.1200(a)(10)](https://docs.fcc.gov/public/attachments/DA-26-12A1.pdf), which would treat a single opt-out as opting out of all unrelated communications from the same caller. After two delays it is currently set to take effect January 31, 2027; a pending Further Notice signals the FCC may narrow it first, so build for the principle without hard-coding the final text.
 
-A conversational agent has a genuine advantage over an SMS keyword filter here: it can recognize "take me off your list" where a filter scanning for `STOP` hears nothing. That advantage is worth nothing unless the agent classifies the revocation as a structured event, writes it to suppression in real time, and propagates it across systems before the next dial. Understanding the opt-out is only the trigger; the recorded suppression event is the compliance.
+A conversational agent has a genuine advantage over an SMS keyword filter here: it can recognize "take me off your list" where a filter scanning for `STOP` hears nothing.
+That advantage is worth nothing unless the agent classifies the revocation as a structured event, writes it to suppression in real time, and propagates it across systems before the next dial.
+Understanding the opt-out is only the trigger; the recorded suppression event is the compliance.
 
 ### Capturing an opt-out as a structured event
 
-Detect opt-out intent with a [SWAIG function](/docs/swml/reference/calling/ai/swaig/functions) (see the [Server SDK guide](/docs/server-sdks/guides/defining-functions)) whose handler writes the revocation to your suppression store before returning. Mark it `secure` and serve its `web_hook_url` over authenticated HTTPS, as with any function that mutates state.
+Detect opt-out intent with a [SWAIG function](/docs/swml/reference/calling/ai/swaig/functions) (see the [Server SDK guide](/docs/server-sdks/guides/defining-functions)) whose handler writes the revocation to your suppression store before returning.
+Mark it `secure` and serve its `web_hook_url` over authenticated HTTPS, as with any function that mutates state.
 
 <Tabs>
 
@@ -289,7 +323,8 @@ Two cases frame the current enforcement environment:
 
 ## Implementing TCPA controls on SignalWire
 
-A defensible outbound system is a governed state machine: the model is confined to the conversation, and code holds every boundary the law cares about. The table maps each obligation to where it is enforced in a SignalWire-based program.
+A defensible outbound system is a governed state machine: the model is confined to the conversation, and code holds every boundary the law cares about.
+The table maps each obligation to where it is enforced in a SignalWire-based program.
 
 | Obligation | Control |
 |------------|---------|
@@ -302,7 +337,8 @@ A defensible outbound system is a governed state machine: the model is confined 
 
 ### Gate the dial on consent
 
-Consent must be verified **before** you request origination, because once SignalWire places the call the dial has already occurred. Check consent and suppression in your dialer, then originate the call — for example with [`calling.dial`](/docs/server-sdks/reference/python/rest/calling/dial), pointing `url` at your agent's SWML — only when every check passes.
+Consent must be verified **before** you request origination, because once SignalWire places the call the dial has already occurred.
+Check consent and suppression in your dialer, then originate the call — for example with [`calling.dial`](/docs/server-sdks/reference/python/rest/calling/dial), pointing `url` at your agent's SWML — only when every check passes.
 
 ```python
 from signalwire.rest import RestClient
@@ -342,11 +378,13 @@ def place_call(number, call_type):
 
 ### Record the audit artifact
 
-Enable [`record_call`](/docs/swml/reference/calling/record-call) and a [`post_prompt`](/docs/swml/reference/calling/ai) summary so each call produces a transcript and a structured summary alongside the consent citation logged at dial time. Store recordings encrypted at rest with access logs, retained a minimum of four years (the TCPA statute of limitations), and longer where an FDCPA or HIPAA overlap imposes its own retention period.
+Enable [`record_call`](/docs/swml/reference/calling/record-call) and a [`post_prompt`](/docs/swml/reference/calling/ai) summary so each call produces a transcript and a structured summary alongside the consent citation logged at dial time.
+Store recordings encrypted at rest with access logs, retained a minimum of four years (the TCPA statute of limitations), and longer where an FDCPA or HIPAA overlap imposes its own retention period.
 
 ## Evaluating a platform or vendor
 
-Because liability follows the entity on whose behalf calls are placed, vendor selection is part of your compliance posture. Useful questions to put in writing before pricing and latency enter the conversation:
+Because liability follows the entity on whose behalf calls are placed, vendor selection is part of your compliance posture.
+Useful questions to put in writing before pricing and latency enter the conversation:
 
 - Can consent be verified as a pre-dial check that gates the dial, or is it only logged after the call already happened?
 - When a revocation is captured on a call, what propagates, to which systems, and on what latency?
@@ -366,7 +404,10 @@ Because liability follows the entity on whose behalf calls are placed, vendor se
 
 A voice AI program is defensible when its compliance controls are enforced and recorded in code on every call — consent gating, real-time suppression, a guaranteed disclosure state, calling-hour arithmetic, and structured opt-out propagation — independent of what the model says on any given turn.
 
-SignalWire provides the building blocks for the in-call portion of that system: an unskippable AI disclosure via `static_greeting_no_barge`, SWAIG functions for structured opt-out capture, and recording and post-prompt transcription for the audit trail. Your responsibility is to gate origination on consent, suppression, and timing before the dial; to propagate revocations across every channel; and to retain the records that prove each call was authorized. A practical sequence is to audit your consent records first, then suppression, then disclosure — and to pilot the AI layer only once those controls hold. Always consult qualified telecom counsel to ensure your specific implementation meets all applicable requirements.
+SignalWire provides the building blocks for the in-call portion of that system: an unskippable AI disclosure via `static_greeting_no_barge`, SWAIG functions for structured opt-out capture, and recording and post-prompt transcription for the audit trail.
+Your responsibility is to gate origination on consent, suppression, and timing before the dial; to propagate revocations across every channel; and to retain the records that prove each call was authorized.
+A practical sequence is to audit your consent records first, then suppression, then disclosure — and to pilot the AI layer only once those controls hold.
+Always consult qualified telecom counsel to ensure your specific implementation meets all applicable requirements.
 
 ## Resources
 
