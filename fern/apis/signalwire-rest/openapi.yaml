@@ -7410,7 +7410,7 @@ paths:
       description: |-
         To create a new Address, make a POST request to the Address resource.
 
-        When `emergency_enabled=true` and the address is in the US (`country` = `US`), the address is validated against the carrier. A valid or auto-corrected address is stored (`validated: true`). An address the carrier cannot validate — or a correctable address when `auto_correct_address=false` — is rejected with a `422` whose body includes an `errors` array and a `candidates` array of suggested addresses (each with `street_number`, `street_name`, `city`, `state`, `postal_code`). Non-US addresses and requests without `emergency_enabled` are stored without carrier validation.
+        When `emergency_enabled=true` and the address is in the US (`country` = `US`), the address is validated against the carrier. A valid or auto-corrected address is stored (`validated: true`). An address the carrier cannot validate — or a correctable address when `auto_correct_address=false` — is rejected with a `422` whose body includes an `errors` array and a `candidates` array of suggested addresses (each with `street_number`, `street_name`, `city`, `state`, `postal_code`). Carrier validation applies to US addresses only: a non-US address is stored normally, with `emergency_enabled` returned as `false`. Requests without `emergency_enabled` are stored without carrier validation.
 
         #### Permissions
 
@@ -7419,8 +7419,8 @@ paths:
         [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
       parameters: []
       responses:
-        '201':
-          description: The request has succeeded and a new resource has been created as a result.
+        '200':
+          description: The request has succeeded.
           content:
             application/json:
               schema:
@@ -7432,11 +7432,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
         '422':
-          description: The request failed validation. See errors for details.
+          description: |-
+            The request failed validation. See `errors` for details. When carrier validation rejected the address
+            and the carrier returned alternatives, a `candidates` array is included alongside `errors`; the key is
+            omitted when the carrier returned none.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Types.StatusCodes.ValidationError'
+                $ref: '#/components/schemas/AddressValidationError'
         '500':
           description: An internal server error occurred.
           content:
@@ -7505,7 +7508,7 @@ paths:
       description: |-
         Updates an Address that has been previously created.
 
-        When `emergency_enabled=true` and the address is in the US (`country` = `US`), the address is validated against the carrier. A valid or auto-corrected address is stored (`validated: true`). An address the carrier cannot validate — or a correctable address when `auto_correct_address=false` — is rejected with a `422` whose body includes an `errors` array and a `candidates` array of suggested addresses (each with `street_number`, `street_name`, `city`, `state`, `postal_code`). Non-US addresses and requests without `emergency_enabled` are stored without carrier validation.
+        When `emergency_enabled=true` and the address is in the US (`country` = `US`), the address is validated against the carrier. A valid or auto-corrected address is stored (`validated: true`). An address the carrier cannot validate — or a correctable address when `auto_correct_address=false` — is rejected with a `422` whose body includes an `errors` array and a `candidates` array of suggested addresses (each with `street_number`, `street_name`, `city`, `state`, `postal_code`). Carrier validation applies to US addresses only: a non-US address is stored normally, with `emergency_enabled` returned as `false`. Requests without `emergency_enabled` are stored without carrier validation.
 
         #### Permissions
 
@@ -7534,11 +7537,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/Types.StatusCodes.StatusCode404'
         '422':
-          description: The request failed validation. See errors for details.
+          description: |-
+            The request failed validation. See `errors` for details. When carrier validation rejected the address
+            and the carrier returned alternatives, a `candidates` array is included alongside `errors`; the key is
+            omitted when the carrier returned none.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Types.StatusCodes.ValidationError'
+                $ref: '#/components/schemas/AddressValidationError'
         '500':
           description: An internal server error occurred.
           content:
@@ -14786,6 +14792,53 @@ components:
       unevaluatedProperties:
         not: {}
       description: Address model representing a physical address for regulatory compliance.
+    AddressCandidate:
+      type: object
+      required:
+        - street_number
+        - street_name
+        - city
+        - state
+        - postal_code
+      properties:
+        street_number:
+          anyOf:
+            - type: string
+            - type: 'null'
+          description: The number portion of the suggested street address.
+          examples:
+            - '1640'
+        street_name:
+          anyOf:
+            - type: string
+            - type: 'null'
+          description: The name portion of the suggested street address.
+          examples:
+            - Riverside Drive
+        city:
+          anyOf:
+            - type: string
+            - type: 'null'
+          description: The city portion of the suggested street address.
+          examples:
+            - Alexandria
+        state:
+          anyOf:
+            - type: string
+            - type: 'null'
+          description: The state of the suggested street address.
+          examples:
+            - CA
+        postal_code:
+          anyOf:
+            - type: string
+            - type: 'null'
+          description: The postal code of the suggested street address.
+          examples:
+            - '91905'
+      unevaluatedProperties:
+        not: {}
+      description: A carrier-suggested alternative to the submitted address.
     AddressChannel:
       anyOf:
         - $ref: '#/components/schemas/AudioChannel'
@@ -14933,6 +14986,27 @@ components:
         - Trailer
         - Unit
       description: Address type for sub-addresses.
+    AddressValidationError:
+      type: object
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Types.StatusCodes.SpaceApiErrorItem'
+          description: List of validation errors.
+        candidates:
+          type: array
+          items:
+            $ref: '#/components/schemas/AddressCandidate'
+          description: Alternative addresses suggested by the carrier. Omitted when the carrier returned no alternatives.
+      unevaluatedProperties:
+        not: {}
+      description: |-
+        The request failed validation. See `errors` for details. When carrier validation rejected the address
+        and the carrier returned alternatives, a `candidates` array is included alongside `errors`; the key is
+        omitted when the carrier returned none.
     AssignE911AddressRequest:
       type: object
       required:
@@ -22290,14 +22364,20 @@ components:
             - '91905'
         emergency_enabled:
           type: boolean
-          description: When `true` and the address is in the US, the address is validated against the carrier before it is stored. Defaults to `false` (stored without carrier validation).
+          description: |-
+            Applies to US addresses only. When `true` and `country` is `US`, the address is validated against
+            the carrier before it is stored. For any other `country` the flag is ignored and the response
+            returns `emergency_enabled: false`. Defaults to `false`, which stores the address without carrier
+            validation.
           examples:
             - true
+          default: false
         auto_correct_address:
           type: boolean
           description: When the carrier suggests a corrected version of the address, `true` (the default) stores the corrected address; `false` rejects the request with the suggestion returned as candidates.
           examples:
             - true
+          default: true
       unevaluatedProperties:
         not: {}
       description: Request body for creating an address.
@@ -29172,11 +29252,16 @@ components:
           description: The E911 address ID associated with this phone number.
         e911_status:
           anyOf:
-            - type: string
+            - $ref: '#/components/schemas/PhoneNumberE911Status'
             - type: 'null'
-          description: 'The E911 provisioning status for this phone number: `pending`, `active`, `failed`, `pending_removal`, or `unregistered`. `null` when no E911 address is associated. Reflects the carrier-confirmed state, never the billing flag.'
+          description: |-
+            The E911 provisioning status for this phone number. `null` when the number has never had an E911
+            address assigned. Once an address is assigned the value is `pending` while the carrier processes
+            the order, then `active` once the carrier confirms the registration, or `failed` if the carrier
+            does not confirm it. Removing the address sets `pending_removal`, and the value becomes
+            `unregistered` once the carrier confirms the removal.
           examples:
-            - null
+            - active
         created_at:
           type: string
           format: date-time
@@ -29447,6 +29532,15 @@ components:
         - mms
         - fax
       description: Phone number capability.
+    PhoneNumberE911Status:
+      type: string
+      enum:
+        - pending
+        - active
+        - failed
+        - pending_removal
+        - unregistered
+      description: E911 provisioning status of a phone number.
     PhoneNumberListResponse:
       type: object
       required:
@@ -29625,11 +29719,16 @@ components:
           description: The E911 address ID associated with this phone number.
         e911_status:
           anyOf:
-            - type: string
+            - $ref: '#/components/schemas/PhoneNumberE911Status'
             - type: 'null'
-          description: 'The E911 provisioning status for this phone number: `pending`, `active`, `failed`, `pending_removal`, or `unregistered`. `null` when no E911 address is associated. Reflects the carrier-confirmed state, never the billing flag.'
+          description: |-
+            The E911 provisioning status for this phone number. `null` when the number has never had an E911
+            address assigned. Once an address is assigned the value is `pending` while the carrier processes
+            the order, then `active` once the carrier confirms the registration, or `failed` if the carrier
+            does not confirm it. Removing the address sets `pending_removal`, and the value becomes
+            `unregistered` once the carrier confirms the removal.
           examples:
-            - null
+            - active
         created_at:
           type: string
           format: date-time
@@ -46270,14 +46369,20 @@ components:
             - '91905'
         emergency_enabled:
           type: boolean
-          description: When `true` and the address is in the US, the address is validated against the carrier before it is stored. Defaults to `false` (stored without carrier validation).
+          description: |-
+            Applies to US addresses only. When `true` and `country` is `US`, the address is validated against
+            the carrier before it is stored. For any other `country` the flag is ignored and the response
+            returns `emergency_enabled: false`. Defaults to `false`, which stores the address without carrier
+            validation.
           examples:
             - true
+          default: false
         auto_correct_address:
           type: boolean
           description: When the carrier suggests a corrected version of the address, `true` (the default) stores the corrected address; `false` rejects the request with the suggestion returned as candidates.
           examples:
             - true
+          default: true
       unevaluatedProperties:
         not: {}
       description: Request body for updating an address.

@@ -55,13 +55,18 @@ model CreateAddressRequest {
   @maxLength(250)
   postal_code: string;
 
-  @doc("When `true` and the address is in the US, the address is validated against the carrier before it is stored. Defaults to `false` (stored without carrier validation).")
+  @doc("""
+    Applies to US addresses only. When `true` and `country` is `US`, the address is validated against
+    the carrier before it is stored. For any other `country` the flag is ignored and the response
+    returns `emergency_enabled: false`. Defaults to `false`, which stores the address without carrier
+    validation.
+    """)
   @example(true)
-  emergency_enabled?: boolean;
+  emergency_enabled?: boolean = false;
 
   @doc("When the carrier suggests a corrected version of the address, `true` (the default) stores the corrected address; `false` rejects the request with the suggestion returned as candidates.")
   @example(true)
-  auto_correct_address?: boolean;
+  auto_correct_address?: boolean = true;
 }
 
 @doc("Request body for updating an address.")
@@ -117,11 +122,16 @@ model UpdateAddressRequest {
   @maxLength(250)
   postal_code: string;
 
-  @doc("When `true` and the address is in the US, the address is validated against the carrier before it is stored. Defaults to `false` (stored without carrier validation).")
+  @doc("""
+    Applies to US addresses only. When `true` and `country` is `US`, the address is validated against
+    the carrier before it is stored. For any other `country` the flag is ignored and the response
+    returns `emergency_enabled: false`. Defaults to `false`, which stores the address without carrier
+    validation.
+    """)
   @example(true)
-  emergency_enabled?: boolean;
+  emergency_enabled?: boolean = false;
 
   @doc("When the carrier suggests a corrected version of the address, `true` (the default) stores the corrected address; `false` rejects the request with the suggestion returned as candidates.")
   @example(true)
-  auto_correct_address?: boolean;
+  auto_correct_address?: boolean = true;
 }
