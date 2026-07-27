@@ -4,7 +4,7 @@ using TypeSpec.Http;
 
 @doc("Request body for creating an address.")
 model CreateAddressRequest {
-  @doc("A friendly name given to the address to help distinguish and search for different addresses within your project.")
+  @doc("A friendly name given to the address to help distinguish and search for different addresses within your project. When the address is assigned to a phone number for E911, this label is also sent to the carrier as the caller name. The emergency network limits that field to 32 characters, so longer labels are truncated to the first 32 characters before being sent. Truncation affects only the name shown to the dispatcher, never the address used to route the call.")
   @example("My Address")
   @maxLength(250)
   label: string;
@@ -66,7 +66,7 @@ model CreateAddressRequest {
 
 @doc("Request body for updating an address.")
 model UpdateAddressRequest {
-  @doc("A friendly name given to the address to help distinguish and search for different addresses within your project.")
+  @doc("A friendly name given to the address to help distinguish and search for different addresses within your project. When the address is assigned to a phone number for E911, this label is also sent to the carrier as the caller name. The emergency network limits that field to 32 characters, so longer labels are truncated to the first 32 characters before being sent. Truncation affects only the name shown to the dispatcher, never the address used to route the call.")
   @example("My Address")
   @maxLength(250)
   label: string;

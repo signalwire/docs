@@ -104,6 +104,8 @@ namespace SignalWireAPI.RelayRest.PhoneNumbers {
     @doc("""
       Assigns a validated E911 address to the phone number and begins provisioning at the carrier. The number's `e911_status` becomes `pending`; it moves to `active` asynchronously once the carrier confirms. The address is re-validated at the carrier and must be valid.
 
+      The address `label` is sent to the carrier as the caller name presented to the dispatcher. The emergency network limits that field to 32 characters, so a longer label is truncated to the first 32 characters. Truncation never affects the street address used to route the call, and does not cause the assignment to fail.
+
       ${tokenPermissions<"_Numbers_">}
       """)
     @route("/{id}/e911_address")
