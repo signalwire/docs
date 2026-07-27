@@ -15,9 +15,11 @@ const dialCallExample = #{
     command: "dial",
     params: #{
       from: "+15551234567",
-      to: "+15559876543",
+      to: "sip:alice@sip.example.com",
       url: "https://example.com/swml",
       caller_id: "+15551234567",
+      username: "alice",
+      password: "s3cr3t",
       status_url: "https://example.com/status_callback",
       status_events: #["answered", "ended"],
       codecs: #[OutboundCallCodec.PCMU, OutboundCallCodec.PCMA],

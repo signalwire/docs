@@ -259,6 +259,22 @@ model AIParams {
     | SWMLVar = "both";
 
   @doc("""
+    Cleans up the transcription of the caller's speech before the AI reads it — converting spoken numbers to digits, formatting addresses and phone numbers, and fixing obvious mishearings — without changing the meaning.
+    Cannot be used together with `enable_text_normalization`, which is on by default: set `enable_text_normalization` to `"off"` to use `auto_correct`; otherwise `auto_correct` has no effect.
+    When used alongside `redact_prompt`, cleanup and redaction happen together in a single step, which keeps responses fast.
+    **Default:** `false`.
+    """)
+  @example(true)
+  auto_correct?: boolean | SWMLVar = false;
+
+  @doc("""
+    A plain-language description of sensitive content to redact from everything the platform records or transmits about the call — logs, events, webhook payloads, the call timeline, and the post-conversation `call_log` and `raw_call_log`. For example: `"credit card numbers, social security numbers, and full names"`. Redacted content is replaced with `----`. Set this parameter to enable redaction; omit it to leave redaction off.
+    The caller still hears the content in full, and the AI still receives the real text — redaction protects what is recorded and transmitted, not what the AI processes. Redaction can occasionally miss content, so treat it as a safeguard for your logs and integrations rather than an absolute guarantee.
+    """)
+  @example("credit card numbers, social security numbers, and full names")
+  redact_prompt?: string;
+
+  @doc("""
     Enables visual input processing for the AI Agent.
     When set to `true`, the AI Agent will be able to utilize visual processing capabilities, while leveraging the `get_visual_input` function.
     """)
@@ -499,9 +515,13 @@ model AIParams {
   @example(true)
   swaig_post_swml_vars?: boolean | string[] | SWMLVar;
 
-  @doc("The model to use for the AI's thinking capabilities. Allowed values are `gpt-4o-mini`, `gpt-4.1-mini`, and `gpt-4.1-nano`.")
+  @doc("The model to use for the AI's thinking capabilities — for example `gpt-4o-mini`, `gpt-4.1-mini`, or `gpt-4.1-nano`. A value that is not a recognized model is ignored, and the agent's main model is used instead.")
   @example("gpt-4.1-mini")
   thinking_model?: SupportedAIModels;
+
+  @doc("The AI model used for lightweight background tasks such as redaction (`redact_prompt`) and transcription cleanup (`auto_correct`). Choose a small, fast model, such as `gpt-4o-mini`, `gpt-4.1-mini`, or `gpt-4.1-nano` — these tasks run while the caller is waiting for a response. A value that is not a recognized model is ignored, and the agent's main model is used instead. **Default:** the value of the `ai_model` parameter.")
+  @example("gpt-4o-mini")
+  utility_model?: SupportedAIModels;
 
   @doc("""
     When enabled, the AI will not respond to the user's input when the user is speaking over the agent.

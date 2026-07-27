@@ -417,6 +417,14 @@ model CallCreateParamsBase {
   @example("sip:from-sip@example-112233445567.sip.signalwire.com")
   to?: string;
 
+  @doc("SIP authentication username, forwarded to the destination when `to` is a SIP URI. Ignored for PSTN and WebRTC/Verto destinations. Write-only — never returned in the call response.")
+  @example("alice")
+  username?: string;
+
+  @doc("SIP authentication password, forwarded to the destination when `to` is a SIP URI. Ignored for PSTN and WebRTC/Verto destinations. Write-only — never returned in the call response.")
+  @example("s3cr3t")
+  password?: string;
+
   @doc("Inline SWML document (JSON or YAML string), or an `http(s)://` URL that returns one, executed at the destination end. Useful for directing the call to a RelayBin / external SWML handler. When present, `to` may be omitted.")
   @example("https://example.com/destination.swml.json")
   to_script?: string | SWMLObject;
