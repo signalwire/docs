@@ -77,4 +77,16 @@ model Address {
   @doc("The postal code of the street address. Alias for postal_code for backwards compatibility.")
   @example("91905")
   zip_code: string;
+
+  @doc("Whether E911 emergency calling is enabled for this address (carrier-validated when created/updated with `emergency_enabled=true` for a US address).")
+  @example(false)
+  emergency_enabled: boolean;
+
+  @doc("Whether the address was validated by the carrier (true when the carrier returned a valid or auto-corrected match).")
+  @example(false)
+  validated: boolean;
+
+  @doc("The RFC 3339 / ISO 8601 timestamp of the last successful carrier validation, or null if never validated.")
+  @example(null)
+  validated_at: string | null;
 }
