@@ -52,18 +52,15 @@ SignalWire infers the form from the value of `dest`; there is no separate type p
 beginning with `http://` or `https://` is a URL, a value that parses as a JSON object is an inline
 document, and anything else is a section name.
 
-What the destination can read depends on which form it is:
-
-| `dest` form | What the destination can read |
-|---|---|
-| Section in the current document | Everything the caller can read, including the runtime variables set so far, with `params` replaced by this step's `params` |
-| URL | `message` and this step's `params` |
-| Inline document | `message` and this step's `params` |
+Whichever form you use, the destination reads the inbound `message`, the runtime variables the
+document has accumulated so far, and this step's `params`, which replace the caller's `params`
+rather than merging with them. When the step itself runs inside a destination called by `execute`
+or `transfer`, a URL or inline destination sees the variables accumulated before that call but not
+the ones set inside it, so pass those in `params`.
 
 A URL or inline destination runs as a separate document, including the inline form where nothing is
-fetched. It does not inherit the caller's runtime variables, so `params` is the only way to pass a
-computed value into one. What comes back afterwards is the same for all three forms, and is covered
-under [Variables](#variables).
+fetched. What comes back afterwards is the same for all three forms, and is covered under
+[Variables](#variables).
 
 When `dest` is a URL, SignalWire sends the
 [inbound message webhook payload](/docs/apis/rest/swml-webhook/webhooks/inbound-message-webhook) to
@@ -176,8 +173,8 @@ sections:
 ### Execute a document fetched from your server
 
 The document your server returns runs as a subroutine, then `main` picks up at the next step.
-Because the fetched document cannot read the caller's runtime variables, pass anything it needs in
-`params`.
+`params` is expanded before the request goes out, so it can carry a computed value into the fetched
+document.
 
 <CodeBlocks>
 <CodeBlock title="YAML">

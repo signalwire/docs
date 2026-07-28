@@ -66,18 +66,16 @@ SignalWire infers the form from the value of `dest`; there is no separate type p
 beginning with `http://` or `https://` is a URL, a value that parses as a JSON object is an inline
 document, and anything else is a section name.
 
-What the destination can read depends on which form it is:
-
-| `dest` form | What the destination can read |
-|---|---|
-| Section in the current document | Everything the caller can read, including the runtime variables set so far, with `params` replaced by this step's `params` |
-| URL | `message` and this step's `params` |
-| Inline document | `message` and this step's `params` |
+Whichever form you use, the destination reads the inbound `message`, the runtime variables the
+document has accumulated so far, and this step's `params`, which replace the caller's `params`
+rather than merging with them. When the step itself runs inside a destination called by `execute`
+or `transfer`, a URL or inline destination sees the variables accumulated before that call but not
+the ones set inside it, so pass those in `params`.
 
 A URL or inline destination runs as a separate document, including the inline form where nothing is
-fetched. It does not inherit the caller's runtime variables, so `params` is the only way to pass a
-computed value into one. For a URL destination those variables are still sent outward in the
-request body as `vars`, which your server can read and fold into the document it returns.
+fetched, and a document that defines its own `sections` uses those from then on. For a URL
+destination the accumulated variables are also sent outward in the request body as `vars`, which
+your server can read and fold into the document it returns.
 
 Nothing comes back to the caller from any form of `transfer`. Use `execute` when you need a value
 returned.
@@ -104,9 +102,10 @@ to it using `method`:
 
 - `message` — the original inbound message that triggered this SWML document.
 - `params` — the values supplied to this `transfer` step.
-- `vars` — the runtime variables the current document has accumulated (`request_result`,
-  `reply_result`, `request_response`, `request_response_code`, `request_response_body`,
-  `reply_message_id`). Present on transfer-driven fetches; absent on the initial inbound fetch.
+- `vars` — the runtime variables the current document has accumulated: `request_result`,
+  `request_response`, `request_response_code`, `request_response_body`, `reply_result`,
+  `reply_message_id`, and `return_value` once an earlier `execute` has set one. Present on
+  transfer-driven fetches; absent on the initial inbound fetch.
 
 SignalWire waits up to 5 seconds for the response and does not retry.
 

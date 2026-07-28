@@ -54,9 +54,13 @@ model Transfer {
     `transfer` are skipped, including steps in calling sections. A transfer that cannot be
     resolved ends the run rather than falling through to the next step.
 
-    A section destination keeps the runtime variables accumulated so far. A URL or inline
-    destination is a separate document: it sees only the `message` variables and the `params`
-    you pass.
+    Whichever form you use, the destination reads the inbound `message`, the runtime variables
+    the document has accumulated so far, and this step's `params`, which replace the caller's
+    `params` rather than merging with them. When the step itself runs inside a destination called
+    by `execute` or `transfer`, a URL or inline destination sees the variables accumulated before
+    that call but not the ones set inside it, so pass those in `params`. A URL or inline
+    destination is a separate document, and one that defines its own `sections` uses those from
+    then on.
 
     Accepts either an object, or a string used directly as `dest`. `%{...}` placeholders are
     not expanded in the string form — use the object form for a computed destination.

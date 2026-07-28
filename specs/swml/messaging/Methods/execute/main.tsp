@@ -35,9 +35,12 @@ model Execute {
     reaching the end. `return_value` and the propagated `reply_*` and `request_*` variables
     come back with it.
 
-    A section destination runs against the caller's own variables, with `params` replacing any
-    inherited `params`. A URL or inline destination is a separate document: it sees only the
-    `message` variables and the `params` you pass, and it cannot reach the caller's sections.
+    Whichever form you use, the destination reads the inbound `message`, the runtime variables
+    the document has accumulated so far, and this step's `params`, which replace the caller's
+    `params` rather than merging with them. When the step itself runs inside a destination called
+    by `execute` or `transfer`, a URL or inline destination sees the variables accumulated before
+    that call but not the ones set inside it, so pass those in `params`. A URL or inline
+    destination is a separate document and cannot reach the caller's sections.
 
     Accepts either an object, or a string used directly as `dest`. `%{...}` placeholders are
     not expanded in the string form — use the object form for a computed destination.

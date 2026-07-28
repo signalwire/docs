@@ -26,8 +26,9 @@ model ExecuteTarget {
     Specifies what to execute. The value can be one of:
     - `<section_name>` - section in the current document to execute
     - A URL (http or https) that returns a SWML document - Sends HTTP POST
-    - An inline SWML document, as a JSON or YAML string. It may be a full document with
-      `version` and `sections`, or just an array of instructions.
+    - An inline SWML document, as a JSON or YAML string. A JSON string may be either a full
+      document with `version` and `sections` or a bare array of instructions; a YAML string
+      must be a full document.
     """)
   @example("https://example.com/swml-handler")
   dest: string;

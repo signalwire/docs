@@ -49,7 +49,8 @@ event.
 </ParamField>
 
 <ParamField path="relay_script_section_code_missing" type="string" toc={true}>
-  A section is defined but contains no executable steps.
+  A section defined in object form has no `code` key. A section written directly as an array of
+  steps does not need one.
 </ParamField>
 
 <ParamField path="relay_script_section_parameter_undefined" type="string" toc={true}>
@@ -66,8 +67,9 @@ event.
 </ParamField>
 
 <ParamField path="relay_script_element_invalid_value" type="string" toc={true}>
-  A document element has an invalid value (for example, an enum-valued field set to an unrecognized
-  string).
+  A step's `label` is present but its value is an empty string. A `label` that is not a string
+  reports `relay_script_element_wrong_type`, and an out-of-range value on a method parameter
+  reports `relay_script_method_parameter_invalid_value`.
 </ParamField>
 
 <ParamField path="relay_script_element_duplicated" type="string" toc={true}>
@@ -136,13 +138,16 @@ event.
 
 ## Messaging errors
 
-Errors emitted when an inbound message's SWML document fails to fetch, parse, or execute. Each
-inbound message is marked `failed` with the listed `error_code` and a corresponding
-`error_message`, visible in the [Messaging logs](/docs/apis/rest/message-logs/list-message-logs).
+Errors emitted when an inbound message's SWML document fails to fetch, parse, or execute. The
+`error_code` and a corresponding `error_message` are recorded on the inbound message and are
+visible in the [Messaging logs](/docs/apis/rest/message-logs/list-message-logs). Every code below
+marks the message `failed`, with the exception of `message_filtered`, which flags the message and
+lets processing continue.
 
 ### Document fetch / route
 
-These codes cover accepting the inbound message and fetching the handler assigned to its number.
+These codes cover accepting the inbound message, screening it, and fetching the handler assigned
+to its number.
 The granular fetch codes below, along with `json_or_yaml_required`, are reachable only from that
 initial fetch. A document fetch that fails partway through a run, from a `transfer` or an `execute`
 step, always reports that method's own fetch code regardless of the underlying cause.
@@ -157,20 +162,27 @@ step, always reports that method's own fetch code regardless of the underlying c
 </ParamField>
 
 <ParamField path="message_filtered" type="string" toc={true}>
-  Message filtered (e.g. spam detection or carrier-level filtering).
+  The inbound message was flagged as spam. The message is not marked `failed` and your SWML
+  document still runs, but the message body is withheld from the message logs and from API
+  responses.
 </ParamField>
 
 <ParamField path="swml_invalid_message_handler" type="string" toc={true}>
-  The handler assigned to the inbound number is not a SWML script — for example, a LaML bin
-  assigned to a SWML handler slot.
+  The handler assigned to the inbound number is a Call Flow or an AI Agent rather than a SWML
+  script.
 </ParamField>
 
 <ParamField path="http_retrieval_error" type="string" toc={true}>
-  The attempt to retrieve the SWML document timed out or failed.
+  The request for the SWML document never completed. The connection failed, or the request timed
+  out before a response arrived. An endpoint that answers with a non-2xx status reports
+  `url_failed_to_parse` instead.
 </ParamField>
 
 <ParamField path="url_failed_to_parse" type="string" toc={true}>
-  The configured SWML URL could not be parsed.
+  The endpoint answered with a non-2xx status, the configured URL is not well-formed, or the
+  response was sent with a JSON content type but a body that is not valid JSON. A non-2xx status
+  is the most common cause in practice, so check what your endpoint returns before auditing the
+  URL itself.
 </ParamField>
 
 ### Document parse
