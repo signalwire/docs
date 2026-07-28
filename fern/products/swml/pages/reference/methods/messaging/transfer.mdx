@@ -66,16 +66,19 @@ SignalWire infers the form from the value of `dest`; there is no separate type p
 beginning with `http://` or `https://` is a URL, a value that parses as a JSON object is an inline
 document, and anything else is a section name.
 
-Whichever form you use, the destination reads the inbound `message`, the runtime variables the
-document has accumulated so far, and this step's `params`, which replace the caller's `params`
-rather than merging with them. When the step itself runs inside a destination called by `execute`
-or `transfer`, a URL or inline destination sees the variables accumulated before that call but not
-the ones set inside it, so pass those in `params`.
+Every destination reads the inbound `message` and this step's `params`, which replace the caller's
+`params` rather than merging with them. A section destination also reads everything the caller can,
+including every runtime variable set so far. A URL or inline destination reads the runtime
+variables of the top-level flow, the ones your `main` steps set, which is the same thing whenever
+the step itself sits in `main`. Once the step is nested the two differ: variables set inside a
+section or document that `execute` or `transfer` entered do not reach a URL or inline destination
+until control returns to the top level, so pass those in `params`.
 
 A URL or inline destination runs as a separate document, including the inline form where nothing is
 fetched, and a document that defines its own `sections` uses those from then on. For a URL
-destination the accumulated variables are also sent outward in the request body as `vars`, which
-your server can read and fold into the document it returns.
+destination the caller's variables are also sent outward in the request body as `vars`, including
+any the fetched document cannot read itself, so your server can fold them into the document it
+returns.
 
 Nothing comes back to the caller from any form of `transfer`. Use `execute` when you need a value
 returned.

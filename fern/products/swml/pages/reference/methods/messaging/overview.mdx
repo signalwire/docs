@@ -125,9 +125,10 @@ document fetches made once the script is already running.
 </ParamField>
 
 <ParamField path="vars" type="object" toc={true}>
-  The runtime variables the document has accumulated so far, sent as a top-level payload field on
-  document fetches made once the script is already running. Absent on the initial inbound fetch,
-  because no method has run yet.
+  The caller's runtime variables, sent as a top-level payload field on document fetches made once
+  the script is already running. Absent on the initial inbound fetch, because no method has run
+  yet. This carries the variables of the step that made the fetch, so it can include values the
+  fetched document cannot read itself.
 
   This is a payload field, not a variable scope. Inside a document the same values are read
   without a `vars.` prefix, as [Runtime variables](#runtime-variables) below describes.
@@ -136,15 +137,16 @@ document fetches made once the script is already running.
 ### Runtime variables [#runtime-variables]
 
 Methods write these to the top level of the document's variable context as the script runs, so a
-later step reads them directly: `%{reply_result}`, not `%{vars.reply_result}`. Methods may also
-write additional keys; see each method's reference page for what it sets.
+later step reads them directly: `%{reply_result}`, not `%{vars.reply_result}`. These are the only
+runtime variables a document can set; each method's reference page says which of them it writes.
 
-A destination reached through [`execute`](/docs/swml/reference/messaging/execute) or
-[`transfer`](/docs/swml/reference/messaging/transfer) reads the variables the document has
-accumulated so far, whether that destination is a section, a URL, or an inline document. When the
-step itself runs inside a destination called by `execute` or `transfer`, a URL or inline-document
-destination sees the variables accumulated before that call but not the ones set inside it, so pass
-those in `params`.
+A section destination reads everything the calling section can, including every runtime variable
+set so far. A URL or inline-document destination reads the runtime variables of the top-level flow,
+the ones your `main` steps set, which is the same thing whenever the step itself sits in `main`.
+Once the step is nested the two differ: variables set inside a section or document that
+[`execute`](/docs/swml/reference/messaging/execute) or
+[`transfer`](/docs/swml/reference/messaging/transfer) entered do not reach a URL or inline-document
+destination until control returns to the top level, so pass those in `params`.
 
 <ParamField path="reply_result" type="string" toc={true}>
   Result of the most recent [`reply`](/docs/swml/reference/messaging/reply) step. Set after
@@ -175,6 +177,13 @@ those in `params`.
 <ParamField path="request_response_body" type="string" toc={true}>
   Raw response body from the most recent `request`. Set after the step completes. Truncated
   to 64 KB.
+</ParamField>
+
+<ParamField path="return_value" type="any" toc={true}>
+  The value passed to [`return`](/docs/swml/reference/messaging/return) by the most recent
+  [`execute`](/docs/swml/reference/messaging/execute) destination. A bare `return`, or
+  `return: null`, still sets it, to an empty value. Left untouched when the destination ran to
+  completion without any `return`.
 </ParamField>
 
 See [Variables](/docs/swml/reference/variables) for variable-expansion syntax, deployment-mode

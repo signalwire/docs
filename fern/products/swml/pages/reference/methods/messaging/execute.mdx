@@ -52,11 +52,13 @@ SignalWire infers the form from the value of `dest`; there is no separate type p
 beginning with `http://` or `https://` is a URL, a value that parses as a JSON object is an inline
 document, and anything else is a section name.
 
-Whichever form you use, the destination reads the inbound `message`, the runtime variables the
-document has accumulated so far, and this step's `params`, which replace the caller's `params`
-rather than merging with them. When the step itself runs inside a destination called by `execute`
-or `transfer`, a URL or inline destination sees the variables accumulated before that call but not
-the ones set inside it, so pass those in `params`.
+Every destination reads the inbound `message` and this step's `params`, which replace the caller's
+`params` rather than merging with them. A section destination also reads everything the caller can,
+including every runtime variable set so far. A URL or inline destination reads the runtime
+variables of the top-level flow, the ones your `main` steps set, which is the same thing whenever
+the step itself sits in `main`. Once the step is nested the two differ: variables set inside a
+section or document that `execute` or `transfer` entered do not reach a URL or inline destination
+until control returns to the top level, so pass those in `params`.
 
 A URL or inline destination runs as a separate document, including the inline form where nothing is
 fetched. What comes back afterwards is the same for all three forms, and is covered under
@@ -64,9 +66,10 @@ fetched. What comes back afterwards is the same for all three forms, and is cove
 
 When `dest` is a URL, SignalWire sends the
 [inbound message webhook payload](/docs/apis/rest/swml-webhook/webhooks/inbound-message-webhook) to
-it with a `POST`: the inbound `message`, this step's `params`, and the runtime variables the
-document has accumulated so far as `vars`. Your server can read `vars` and fold those values into
-the document it returns. SignalWire waits up to 5 seconds for the response and does not retry. See
+it with a `POST`: the inbound `message`, this step's `params`, and the caller's runtime variables as
+`vars`, including any the fetched document cannot read itself. Your server can read `vars` and fold
+those values into the document it returns. SignalWire waits up to 5 seconds for the response and
+does not retry. See
 the [messaging webhook payload](/docs/swml/reference/messaging#webhook-payload) for the full field
 reference.
 

@@ -35,12 +35,16 @@ model Execute {
     reaching the end. `return_value` and the propagated `reply_*` and `request_*` variables
     come back with it.
 
-    Whichever form you use, the destination reads the inbound `message`, the runtime variables
-    the document has accumulated so far, and this step's `params`, which replace the caller's
-    `params` rather than merging with them. When the step itself runs inside a destination called
-    by `execute` or `transfer`, a URL or inline destination sees the variables accumulated before
-    that call but not the ones set inside it, so pass those in `params`. A URL or inline
-    destination is a separate document and cannot reach the caller's sections.
+    Every destination reads the inbound `message` and this step's `params`, which replace the
+    caller's `params` rather than merging with them. A section destination also reads everything
+    the caller can, including every runtime variable set so far. A URL or inline destination
+    reads the runtime variables of the top-level flow, the ones your `main` steps set, which is
+    the same thing whenever the step itself sits in `main`. Once the step is nested the two
+    differ: variables set inside a section or document that `execute` or `transfer` entered do
+    not reach a URL or inline destination until control returns to the top level, so pass those
+    in `params`.
+
+    A URL or inline destination is a separate document and cannot reach the caller's sections.
 
     Accepts either an object, or a string used directly as `dest`. `%{...}` placeholders are
     not expanded in the string form — use the object form for a computed destination.
