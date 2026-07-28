@@ -2,12 +2,18 @@
 id: 0f948677-5818-4ce4-9727-40516a8c1278
 title: transfer
 slug: /reference/calling/transfer
-description: Transfer the execution of the script to a different `SWML section`, `URL`, or `RELAY application`.
+description: Transfer the execution of the script to a different SWML section or URL.
 max-toc-depth: 3
 ---
 
-Transfer the execution of the script to a different `SWML section`, `URL`, or `RELAY application`. Once
-the transfer is complete, the script will continue executing SWML from the new location.
+Transfer the execution of the script to a different SWML section or URL. Execution continues in the new location.
+
+As a shorthand, `transfer` accepts a bare string used as `dest`. Use the object form to set any other property.
+
+<Note>
+`transfer` is a tail call: any instructions after it in the current section are skipped, and execution never comes back.
+To run a section or document as a subroutine and return, use [`execute`](/docs/swml/reference/calling/execute).
+</Note>
 
 ## **Properties**
 
@@ -19,14 +25,15 @@ the transfer is complete, the script will continue executing SWML from the new l
 
 <ParamField path="transfer.dest" type="string" required={true} toc={true}>
   Specifies where to transfer to. The value can be one of:
-  - `"<section_name>"` - section in the SWML document to jump to
-  - A URL (http or https) - URL to fetch next document from. Sends HTTP POST. Authentication can also be set in the url in the format of `username:password@url`.
-  - An inline SWML document (as a JSON string) - SWML document provided directly as a JSON string
+  - `"<section_name>"` - section in the current SWML document to jump to
+  - A URL (http or https) - URL to fetch the next document from. Sends HTTP POST. Authentication can also be set in the url in the format of `username:password@url`.
+
+  Unlike [`execute`](/docs/swml/reference/calling/execute), `transfer` does not accept an inline SWML document.
 </ParamField>
 
 
 <ParamField path="transfer.params" type="object" toc={true}>
-  Named parameters to send to a section, URL, or application.
+  Named parameters to send to the section or URL. When `dest` is a URL, `params` is sent with the request, along with the SWML variables and the [`call`](/docs/swml/reference/calling#webhook-payload) object.
 </ParamField>
 
 
@@ -35,19 +42,6 @@ the transfer is complete, the script will continue executing SWML from the new l
 </ParamField>
 
 </Indent>
-
-## **Valid Destination Values**
-
-The destination string can be one of:
-
-- `"section_name"` - section in the current document to execute.
-(For example: `execute: main`)
-- `"relay:<relay application>"` - relay application to notify (currently not implemented)
-- `"https://example.com/sub-swml.yaml"` - URL pointing to the document to execute.
-An HTTP POST request will be sent to the URL. Authentication can also be set in the url in the format of `username:password@url`.
-The `params` object is passed, along with the variables and the [`call`](/docs/swml/reference/calling#call) object.
-
----
 
 ## **Examples**
 
@@ -83,6 +77,8 @@ sections:
 
 ### Basic transfer to a section
 
+Execution continues in `subsection` and does not return to `main`.
+
 <CodeBlocks>
 <CodeBlock title="YAML">
 ```yaml
@@ -93,8 +89,6 @@ sections:
         url: 'say:Transferring you to another section'
     - transfer:
         dest: subsection
-    - play:
-        url: 'say:Back!'
   subsection:
     - play:
         url: 'say:inside a subsection'
@@ -115,11 +109,6 @@ sections:
         "transfer": {
           "dest": "subsection"
         }
-      },
-      {
-        "play": {
-          "url": "say:Back!"
-        }
       }
     ],
     "subsection": [
@@ -135,7 +124,9 @@ sections:
 </CodeBlock>
 </CodeBlocks>
 
-### Named parameter with sub-parameters
+### Transfer using the shorthand form
+
+A bare string is used as `dest`, so this is equivalent to the first example.
 
 <CodeBlocks>
 <CodeBlock title="YAML">
@@ -143,10 +134,7 @@ sections:
 version: 1.0.0
 sections:
   main:
-    - transfer:
-        - dest: "https://example.com/next"
-        - params:
-            - foo: "bar"
+    - transfer: "https://example.com/next"
 ```
 </CodeBlock>
 <CodeBlock title="JSON">
@@ -155,20 +143,7 @@ sections:
   "version": "1.0.0",
   "sections": {
     "main": [
-      {
-        "transfer": [
-          {
-            "dest": "https://example.com/next"
-          },
-          {
-            "params": [
-              {
-                "foo": "bar"
-              }
-            ]
-          }
-        ]
-      }
+      { "transfer": "https://example.com/next" }
     ]
   }
 }
@@ -345,6 +320,6 @@ The server will be sent the payload in the following format:
 }
 ```
 
-The `call` object is described in detail in the [introduction](/docs/swml/reference/calling/transfer).
+The `call` object is described in detail in the [Calling overview](/docs/swml/reference/calling#webhook-payload).
 All variables created within the SWML document are passed inside `vars`,
 and the `params` object contains the parameters defined in the `params` parameter of `transfer`.

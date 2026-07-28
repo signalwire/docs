@@ -242,34 +242,15 @@
             "type": "object",
             "properties": {
                 "execute": {
-                    "type": "object",
-                    "properties": {
-                        "dest": {
-                            "type": "string",
-                            "examples": [
-                                "greet"
-                            ],
-                            "description": "Name of the section to execute. Must reference a section in the current document."
+                    "anyOf": [
+                        {
+                            "type": "string"
                         },
-                        "params": {
-                            "type": "object",
-                            "properties": {},
-                            "unevaluatedProperties": {},
-                            "examples": [
-                                {
-                                    "name": "%{message.from}"
-                                }
-                            ],
-                            "description": "Parameters accessible as `params.*` in the called section. Replaces (does not merge with) any outer `params` from the caller."
+                        {
+                            "$ref": "#/$defs/ExecuteTarget"
                         }
-                    },
-                    "required": [
-                        "dest"
                     ],
-                    "unevaluatedProperties": {
-                        "not": {}
-                    },
-                    "description": "Call a named section as a subroutine. Execution continues in the called section,\nthen returns to the caller when the section completes — either via `return` or by\nreaching the end of the section. The destination must be the name of a section\ndefined in the current document; URLs and inline documents are not accepted in the\nmessaging context.",
+                    "description": "Call a section, a URL, or an inline document as a subroutine. Execution continues in the\ndestination, then returns to the caller when it completes — either via `return` or by\nreaching the end. `return_value` and the propagated `reply_*` and `request_*` variables\ncome back with it.\n\nA section destination runs against the caller's own variables, with `params` replacing any\ninherited `params`. A URL or inline destination is a separate document: it sees only the\n`message` variables and the `params` you pass, and it cannot reach the caller's sections.\n\nAccepts either an object, or a string used directly as `dest`. `%{...}` placeholders are\nnot expanded in the string form — use the object form for a computed destination.",
                     "title": "execute"
                 }
             },
@@ -285,64 +266,15 @@
             "type": "object",
             "properties": {
                 "transfer": {
-                    "type": "object",
-                    "properties": {
-                        "dest": {
-                            "type": "string",
-                            "format": "uri",
-                            "examples": [
-                                "https://example.com/handler"
-                            ],
-                            "description": "URL (`http` or `https`) to fetch the new SWML document from. Authentication can\nbe embedded in the URL as `username:password@url`."
+                    "anyOf": [
+                        {
+                            "type": "string"
                         },
-                        "method": {
-                            "anyOf": [
-                                {
-                                    "type": "string",
-                                    "const": "GET"
-                                },
-                                {
-                                    "type": "string",
-                                    "const": "POST"
-                                },
-                                {
-                                    "type": "string",
-                                    "const": "PUT"
-                                },
-                                {
-                                    "type": "string",
-                                    "const": "PATCH"
-                                },
-                                {
-                                    "type": "string",
-                                    "const": "DELETE"
-                                }
-                            ],
-                            "default": "POST",
-                            "examples": [
-                                "POST"
-                            ],
-                            "description": "HTTP method for the fetch request."
-                        },
-                        "params": {
-                            "type": "object",
-                            "properties": {},
-                            "unevaluatedProperties": {},
-                            "examples": [
-                                {
-                                    "reason": "escalation"
-                                }
-                            ],
-                            "description": "Parameters to include in the request body of the fetch. Available as `params.*` in the transferred document."
+                        {
+                            "$ref": "#/$defs/TransferTarget"
                         }
-                    },
-                    "required": [
-                        "dest"
                     ],
-                    "unevaluatedProperties": {
-                        "not": {}
-                    },
-                    "description": "Fetch and execute a new SWML document from a URL. SignalWire POSTs the\n[inbound message webhook payload](/docs/apis/rest/swml-webhook/webhooks/inbound-message-webhook)\nto `dest`: `message` describes the original inbound message, `params` carries\nthe values supplied here, and `vars` carries the propagated runtime variables\n(`request_result`, `reply_result`, etc.) accumulated by the current document.\n\nThis is a tail call — it replaces the current document and does not return.\nSteps after `transfer` are skipped, including steps in calling sections. In the\nmessaging context, `transfer.dest` must be a URL — section names and inline\ndocuments are not accepted.",
+                    "description": "Hand execution to another SWML destination: a section in the current document, a URL that\nreturns a SWML document, or an inline SWML document.\n\nThis is a tail call — it replaces the current document and does not return. Steps after\n`transfer` are skipped, including steps in calling sections. A transfer that cannot be\nresolved ends the run rather than falling through to the next step.\n\nA section destination keeps the runtime variables accumulated so far. A URL or inline\ndestination is a separate document: it sees only the `message` variables and the `params`\nyou pass.\n\nAccepts either an object, or a string used directly as `dest`. `%{...}` placeholders are\nnot expanded in the string form — use the object form for a computed destination.",
                     "title": "transfer"
                 }
             },
@@ -672,6 +604,95 @@
             },
             "description": "Branch the reply on a variable value. The matched `case` (or `default`) supplies the\nreply contents in one of two forms:\n\n- **String** — sent back to the original sender as the SMS body. The simplest form,\n  good for choosing between canned text responses.\n- **Reply object** — a full `{ body, media, to, from, status_url }` block, so the\n  matched branch can attach media, override the destination, or set a per-branch\n  status callback. Any `%{…}` placeholders inside the object are expanded before\n  the reply is sent.\n\nWhen you use an inline `switch`, do not set `body`, `media`, `to`, `from`, or\n`status_url` directly on the same `reply` — put them inside each `case` value\n(or `default`) instead.",
             "title": "Reply with inline switch"
+        },
+        "ExecuteTarget": {
+            "type": "object",
+            "properties": {
+                "dest": {
+                    "type": "string",
+                    "examples": [
+                        "greet"
+                    ],
+                    "description": "What to execute. The value can be one of:\n- A section name — a section defined in the current document.\n- A URL (`http` or `https`) that returns a SWML document. SignalWire always sends an HTTP\n  POST; there is no `method` parameter on `execute`.\n- An inline SWML document, supplied as a JSON string. It may be a full document with\n  `sections`, or a bare `reply` or `receive` document.\n\nA value that is not an `http`/`https` URL and does not parse as a JSON object is treated\nas a section name. A malformed inline document — a syntax error, a JSON array, or a value\nwritten as a native object rather than a string — therefore fails with\n`swml_section_not_found`, not `swml_execute_document_invalid`."
+                },
+                "params": {
+                    "type": "object",
+                    "properties": {},
+                    "unevaluatedProperties": {},
+                    "examples": [
+                        {
+                            "name": "%{message.from}"
+                        }
+                    ],
+                    "description": "Parameters accessible as `params.*` in the destination. Replaces (does not merge with) any outer `params` from the caller."
+                }
+            },
+            "required": [
+                "dest"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "title": "ExecuteTarget object"
+        },
+        "TransferTarget": {
+            "type": "object",
+            "properties": {
+                "dest": {
+                    "type": "string",
+                    "examples": [
+                        "https://example.com/handler"
+                    ],
+                    "description": "Where to transfer to. The value can be one of:\n- A section name — a section defined in the current document.\n- A URL (`http` or `https`) that returns a SWML document. SignalWire sends the\n  [inbound message webhook payload](/docs/apis/rest/swml-webhook/webhooks/inbound-message-webhook)\n  as the request body: `message` describes the original inbound message, `params` carries\n  the values supplied here, and `vars` carries the runtime variables (`request_result`,\n  `reply_result`, etc.) accumulated by the current document. Credentials embedded in the\n  URL as `username:password@url` are sent as HTTP basic authentication; this relies on how\n  the HTTP client handles credentials in a URL, so re-check it after a major platform\n  update if you depend on it.\n- An inline SWML document, supplied as a JSON string. It may be a full document with\n  `sections`, or a bare `reply` or `receive` document.\n\nA value that is not an `http`/`https` URL and does not parse as a JSON object is treated\nas a section name. A malformed inline document — a syntax error, a JSON array, or a value\nwritten as a native object rather than a string — therefore fails with\n`swml_section_not_found`, not a fetch or parse error."
+                },
+                "method": {
+                    "anyOf": [
+                        {
+                            "type": "string",
+                            "const": "GET"
+                        },
+                        {
+                            "type": "string",
+                            "const": "POST"
+                        },
+                        {
+                            "type": "string",
+                            "const": "PUT"
+                        },
+                        {
+                            "type": "string",
+                            "const": "PATCH"
+                        },
+                        {
+                            "type": "string",
+                            "const": "DELETE"
+                        }
+                    ],
+                    "default": "POST",
+                    "examples": [
+                        "POST"
+                    ],
+                    "description": "HTTP method for the fetch request. Applies only when `dest` is a URL; it is ignored for\nsection and inline-document destinations. One of `GET`, `POST`, `PUT`, `PATCH`, or\n`DELETE` — any other value causes the fetch to fail with `swml_transfer_fetch_failed`."
+                },
+                "params": {
+                    "type": "object",
+                    "properties": {},
+                    "unevaluatedProperties": {},
+                    "examples": [
+                        {
+                            "reason": "escalation"
+                        }
+                    ],
+                    "description": "Parameters made available as `params.*` in the destination. Replaces (does not merge with)\nthe caller's `params`. For a URL destination they are also sent in the request body."
+                }
+            },
+            "required": [
+                "dest"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "title": "TransferTarget object"
         },
         "SwitchTransform": {
             "type": "string",

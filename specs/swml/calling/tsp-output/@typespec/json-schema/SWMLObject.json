@@ -360,7 +360,7 @@
             "properties": {
                 "enter_queue": {
                     "$ref": "#/$defs/EnterQueueObject",
-                    "description": "Place the current call in a named queue where it will wait to be connected to an available agent or resource.\nWhile waiting, callers will hear music or custom audio.\nWhen an agent connects to the queue (using the connect method), the caller and agent are bridged together.\nAfter the bridge completes, execution continues with the SWML script specified in transfer_after_bridge.",
+                    "description": "Place the current call in a named queue where it will wait to be connected to an available agent or resource.\nWhile waiting, callers will hear music or custom audio.\nWhen an agent connects to the queue (using the connect method), the caller and agent are bridged together.\nAfter the bridge completes, execution continues with the SWML specified in `execute_after_queue`,\nor the call hangs up if that parameter is not set.",
                     "title": "enter_queue"
                 }
             },
@@ -376,70 +376,15 @@
             "type": "object",
             "properties": {
                 "execute": {
-                    "type": "object",
-                    "properties": {
-                        "dest": {
-                            "type": "string",
-                            "examples": [
-                                "https://example.com/swml-handler"
-                            ],
-                            "description": "Specifies what to execute. The value can be one of:\n- `<section_name>` - section in the current document to execute\n- A URL (http or https) that returns a SWML document - Sends HTTP POST\n- An inline SWML document (as a JSON string)"
+                    "anyOf": [
+                        {
+                            "type": "string"
                         },
-                        "params": {
-                            "type": "object",
-                            "properties": {},
-                            "unevaluatedProperties": {},
-                            "examples": [
-                                {
-                                    "caller_id": "+15551234567",
-                                    "language": "en-US"
-                                }
-                            ],
-                            "description": "Named parameters to send to section or URL"
-                        },
-                        "meta": {
-                            "type": "object",
-                            "properties": {},
-                            "unevaluatedProperties": {},
-                            "examples": [
-                                {
-                                    "request_id": "req_abc123",
-                                    "source": "ivr"
-                                }
-                            ],
-                            "description": "User-defined metadata, ignored by SignalWire"
-                        },
-                        "on_return": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/$defs/SWMLMethod"
-                            },
-                            "description": "The list of SWML instructions to be executed when the executed section or URL returns"
-                        },
-                        "result": {
-                            "anyOf": [
-                                {
-                                    "$ref": "#/$defs/ExecuteSwitch"
-                                },
-                                {
-                                    "type": "array",
-                                    "items": {
-                                        "$ref": "#/$defs/CondParams"
-                                    },
-                                    "description": "Execute a sequence of instructions depending on the value of a JavaScript condition.",
-                                    "title": "cond"
-                                }
-                            ],
-                            "description": "Action to take based on the result of the call. This will run once the peer leg of the call has ended.\nWill use the switch method when the return_value is an object, and will use the cond method when the return_value is an array."
+                        {
+                            "$ref": "#/$defs/ExecuteTarget"
                         }
-                    },
-                    "required": [
-                        "dest"
                     ],
-                    "unevaluatedProperties": {
-                        "not": {}
-                    },
-                    "description": "Execute a specified section or URL as a subroutine, and upon completion, return to the current document.\nUse the return statement to pass any return values or objects back to the current document."
+                    "description": "Execute a specified section, URL, or inline document as a subroutine, and upon completion, return to the current document.\nUse the return statement to pass any return values or objects back to the current document.\n\nAccepts either an object, or a string used directly as `dest`."
                 }
             },
             "required": [
@@ -454,47 +399,15 @@
             "type": "object",
             "properties": {
                 "goto": {
-                    "type": "object",
-                    "properties": {
-                        "label": {
-                            "type": "string",
-                            "examples": [
-                                "greeting"
-                            ],
-                            "description": "Mark any point of the SWML section with a label so that goto can jump to it."
+                    "anyOf": [
+                        {
+                            "type": "string"
                         },
-                        "when": {
-                            "type": "string",
-                            "examples": [
-                                "vars.retry_count < 3"
-                            ],
-                            "description": "A JavaScript condition that determines whether to perform the jump. If the condition evaluates to true, the jump is executed. If omitted, the jump is unconditional."
-                        },
-                        "max": {
-                            "anyOf": [
-                                {
-                                    "type": "integer"
-                                },
-                                {
-                                    "$ref": "#/$defs/SWMLVar"
-                                }
-                            ],
-                            "default": 100,
-                            "examples": [
-                                3
-                            ],
-                            "minimum": 1,
-                            "maximum": 100,
-                            "description": "The maximum number of times to perform the jump. Must be a number between 1 and 100. Default `100`."
+                        {
+                            "$ref": "#/$defs/GotoTarget"
                         }
-                    },
-                    "required": [
-                        "label"
                     ],
-                    "unevaluatedProperties": {
-                        "not": {}
-                    },
-                    "description": "Jump to a label within the current section, optionally based on a condition.\nThe goto method will only navigate to a label within the same section."
+                    "description": "Jump to a label within the current section, optionally based on a condition.\nThe goto method will only navigate to a label within the same section.\n\nJumps count against the same per-call budget as `transfer` — 32 combined, or 8 without\ncaller interaction. Exceeding it ends the call with\n[`relay_script_too_many_transfers`](/docs/swml/reference/errors).\n\nAccepts either an object, or a string used directly as `label`."
                 }
             },
             "required": [
@@ -2105,47 +2018,15 @@
             "type": "object",
             "properties": {
                 "transfer": {
-                    "type": "object",
-                    "properties": {
-                        "dest": {
-                            "type": "string",
-                            "examples": [
-                                "https://example.com/transfer-handler"
-                            ],
-                            "description": "Specifies where to transfer to. The value can be one of:\n- <section_name> - section in the SWML document to jump to\n- A URL (http or https) - URL to fetch next document from. Sends HTTP POST.\n  Authentication can also be set in the URL in the format of username:password@url.\n- An inline SWML document (as a JSON string)"
+                    "anyOf": [
+                        {
+                            "type": "string"
                         },
-                        "params": {
-                            "type": "object",
-                            "properties": {},
-                            "unevaluatedProperties": {},
-                            "examples": [
-                                {
-                                    "department": "sales",
-                                    "priority": "high"
-                                }
-                            ],
-                            "description": "Named parameters to send to transfer destination.\nAccepts an object mapping variable names to values.\nDefault is not set."
-                        },
-                        "meta": {
-                            "type": "object",
-                            "properties": {},
-                            "unevaluatedProperties": {},
-                            "examples": [
-                                {
-                                    "transfer_reason": "escalation",
-                                    "original_agent": "agent_001"
-                                }
-                            ],
-                            "description": "User data, ignored by SignalWire.\nAccepts an object mapping variable names to values.\nDefault is not set."
+                        {
+                            "$ref": "#/$defs/TransferTarget"
                         }
-                    },
-                    "required": [
-                        "dest"
                     ],
-                    "unevaluatedProperties": {
-                        "not": {}
-                    },
-                    "description": "Transfer the execution of the script to a different SWML section, URL, or Relay application.\nOnce the transfer is complete, the script will continue executing SWML from the new location.",
+                    "description": "Transfer the execution of the script to a different SWML section or URL.\nExecution continues in the new location and does not return — instructions after\n`transfer` in the current section are skipped. Use `execute` to run a section or\ndocument as a subroutine and come back.\n\nAccepts either an object, or a string used directly as `dest`.",
                     "title": "transfer"
                 }
             },
@@ -3079,7 +2960,7 @@
                     ],
                     "description": "Webhook URL to send call status change notifications to. Authentication can also be set in the URL in the format of `username:password@url`."
                 },
-                "transfer_after_bridge": {
+                "execute_after_queue": {
                     "anyOf": [
                         {
                             "type": "string"
@@ -3091,7 +2972,7 @@
                     "examples": [
                         "https://example.com/after-bridge.swml"
                     ],
-                    "description": "SWML to execute after the bridge completes. This defines what should happen after the call is connected and the bridge ends.\nCan be either:\n- A URL (http or https) that returns a SWML document\n- An inline SWML document (as a JSON string)\n\n**Note:** This parameter is REQUIRED when connecting to a queue (when `to` starts with \"queue:\")"
+                    "description": "SWML to execute after the bridge completes. This defines what should happen after the call is connected and the bridge ends.\nCan be either:\n- A URL (http or https) that returns a SWML document\n- An inline SWML document (as a JSON string)\n\nApplies only when connecting to a single queue destination — that is, when `to` starts with\n`queue:`. It has no effect for any other destination type, or in the `serial`, `parallel`, and\n`serial_parallel` forms. If omitted, the call hangs up once the bridge ends."
                 },
                 "call_state_events": {
                     "type": "array",
@@ -3394,7 +3275,7 @@
                     ],
                     "description": "Webhook URL to send call status change notifications to. Authentication can also be set in the URL in the format of `username:password@url`."
                 },
-                "transfer_after_bridge": {
+                "execute_after_queue": {
                     "anyOf": [
                         {
                             "type": "string"
@@ -3406,7 +3287,7 @@
                     "examples": [
                         "https://example.com/after-bridge.swml"
                     ],
-                    "description": "SWML to execute after the bridge completes. This defines what should happen after the call is connected and the bridge ends.\nCan be either:\n- A URL (http or https) that returns a SWML document\n- An inline SWML document (as a JSON string)\n\n**Note:** This parameter is REQUIRED when connecting to a queue (when `to` starts with \"queue:\")"
+                    "description": "SWML to execute after the bridge completes. This defines what should happen after the call is connected and the bridge ends.\nCan be either:\n- A URL (http or https) that returns a SWML document\n- An inline SWML document (as a JSON string)\n\nApplies only when connecting to a single queue destination — that is, when `to` starts with\n`queue:`. It has no effect for any other destination type, or in the `serial`, `parallel`, and\n`serial_parallel` forms. If omitted, the call hangs up once the bridge ends."
                 },
                 "call_state_events": {
                     "type": "array",
@@ -3638,7 +3519,7 @@
                     ],
                     "description": "Webhook URL to send call status change notifications to. Authentication can also be set in the URL in the format of `username:password@url`."
                 },
-                "transfer_after_bridge": {
+                "execute_after_queue": {
                     "anyOf": [
                         {
                             "type": "string"
@@ -3650,7 +3531,7 @@
                     "examples": [
                         "https://example.com/after-bridge.swml"
                     ],
-                    "description": "SWML to execute after the bridge completes. This defines what should happen after the call is connected and the bridge ends.\nCan be either:\n- A URL (http or https) that returns a SWML document\n- An inline SWML document (as a JSON string)\n\n**Note:** This parameter is REQUIRED when connecting to a queue (when `to` starts with \"queue:\")"
+                    "description": "SWML to execute after the bridge completes. This defines what should happen after the call is connected and the bridge ends.\nCan be either:\n- A URL (http or https) that returns a SWML document\n- An inline SWML document (as a JSON string)\n\nApplies only when connecting to a single queue destination — that is, when `to` starts with\n`queue:`. It has no effect for any other destination type, or in the `serial`, `parallel`, and\n`serial_parallel` forms. If omitted, the call hangs up once the bridge ends."
                 },
                 "call_state_events": {
                     "type": "array",
@@ -3882,7 +3763,7 @@
                     ],
                     "description": "Webhook URL to send call status change notifications to. Authentication can also be set in the URL in the format of `username:password@url`."
                 },
-                "transfer_after_bridge": {
+                "execute_after_queue": {
                     "anyOf": [
                         {
                             "type": "string"
@@ -3894,7 +3775,7 @@
                     "examples": [
                         "https://example.com/after-bridge.swml"
                     ],
-                    "description": "SWML to execute after the bridge completes. This defines what should happen after the call is connected and the bridge ends.\nCan be either:\n- A URL (http or https) that returns a SWML document\n- An inline SWML document (as a JSON string)\n\n**Note:** This parameter is REQUIRED when connecting to a queue (when `to` starts with \"queue:\")"
+                    "description": "SWML to execute after the bridge completes. This defines what should happen after the call is connected and the bridge ends.\nCan be either:\n- A URL (http or https) that returns a SWML document\n- An inline SWML document (as a JSON string)\n\nApplies only when connecting to a single queue destination — that is, when `to` starts with\n`queue:`. It has no effect for any other destination type, or in the `serial`, `parallel`, and\n`serial_parallel` forms. If omitted, the call hangs up once the bridge ends."
                 },
                 "call_state_events": {
                     "type": "array",
@@ -3944,7 +3825,7 @@
                     ],
                     "description": "Name of the queue to enter. If a queue with this name does not exist, it will be automatically created."
                 },
-                "transfer_after_bridge": {
+                "execute_after_queue": {
                     "anyOf": [
                         {
                             "type": "string"
@@ -3956,7 +3837,7 @@
                     "examples": [
                         "https://example.com/post-call-survey"
                     ],
-                    "description": "SWML to execute after the bridge completes. This defines what should happen after the call is connected to an agent and the bridge ends.\nCan be either:\n- A URL (http or https) that returns a SWML document\n- An inline SWML document (as a JSON string)"
+                    "description": "SWML to execute after the bridge completes. This defines what should happen after the call is connected to an agent and the bridge ends.\nCan be either:\n- A URL (http or https) that returns a SWML document\n- An inline SWML document (as a JSON string)\n\nIf omitted, the call hangs up when the queue interaction ends."
                 },
                 "status_url": {
                     "type": "string",
@@ -3999,50 +3880,121 @@
                 }
             },
             "required": [
-                "queue_name",
-                "transfer_after_bridge"
+                "queue_name"
             ],
             "unevaluatedProperties": {
                 "not": {}
             },
             "title": "EnterQueueObject object"
         },
-        "ExecuteSwitch": {
+        "ExecuteTarget": {
             "type": "object",
             "properties": {
-                "variable": {
+                "dest": {
                     "type": "string",
                     "examples": [
-                        "return_value"
+                        "https://example.com/swml-handler"
                     ],
-                    "description": "Name of the variable whose value needs to be compared. If not provided, it will check the `return_value` variable.\nCan be one of the listed set of variables, or a string to represent a custom variable."
+                    "description": "Specifies what to execute. The value can be one of:\n- `<section_name>` - section in the current document to execute\n- A URL (http or https) that returns a SWML document - Sends HTTP POST\n- An inline SWML document, as a JSON or YAML string. It may be a full document with\n  `version` and `sections`, or just an array of instructions."
                 },
-                "case": {
+                "params": {
                     "type": "object",
                     "properties": {},
-                    "unevaluatedProperties": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/$defs/SWMLMethod"
+                    "unevaluatedProperties": {},
+                    "examples": [
+                        {
+                            "caller_id": "+15551234567",
+                            "language": "en-US"
                         }
-                    },
-                    "description": "Object of values mapped to array of instructions to execute"
+                    ],
+                    "description": "Named parameters to send to section or URL"
                 },
-                "default": {
+                "meta": {
+                    "type": "object",
+                    "properties": {},
+                    "unevaluatedProperties": {},
+                    "examples": [
+                        {
+                            "request_id": "req_abc123",
+                            "source": "ivr"
+                        }
+                    ],
+                    "description": "User-defined metadata, ignored by SignalWire"
+                },
+                "on_return": {
                     "type": "array",
                     "items": {
                         "$ref": "#/$defs/SWMLMethod"
                     },
-                    "description": "Array of instructions to execute if no cases match"
+                    "description": "The list of SWML instructions to be executed when the executed section or URL returns"
+                },
+                "result": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/ExecuteSwitch"
+                        },
+                        {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/$defs/CondParams"
+                            },
+                            "description": "Execute a sequence of instructions depending on the value of a JavaScript condition.",
+                            "title": "cond"
+                        }
+                    ],
+                    "description": "Action to take based on the result of the call. This will run once the peer leg of the call has ended.\nThe form of this block selects how it runs: an array of instructions runs as a `cond`, and an\nobject runs as a `switch` matched against `return_value`."
                 }
             },
             "required": [
-                "case"
+                "dest"
             ],
             "unevaluatedProperties": {
                 "not": {}
             },
-            "title": "ExecuteSwitch object"
+            "title": "ExecuteTarget object"
+        },
+        "GotoTarget": {
+            "type": "object",
+            "properties": {
+                "label": {
+                    "type": "string",
+                    "examples": [
+                        "greeting"
+                    ],
+                    "description": "Mark any point of the SWML section with a label so that goto can jump to it."
+                },
+                "when": {
+                    "type": "string",
+                    "examples": [
+                        "vars.retry_count < 3"
+                    ],
+                    "description": "A JavaScript condition that determines whether to perform the jump. If the condition evaluates to true, the jump is executed. If omitted, the jump is unconditional."
+                },
+                "max": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "default": 100,
+                    "examples": [
+                        3
+                    ],
+                    "minimum": 1,
+                    "maximum": 100,
+                    "description": "The maximum number of times to perform the jump. Must be a number between 1 and 100. Default `100`."
+                }
+            },
+            "required": [
+                "label"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "title": "GotoTarget object"
         },
         "TranscribeAction": {
             "oneOf": [
@@ -4762,6 +4714,49 @@
             "unevaluatedProperties": {
                 "type": "string"
             }
+        },
+        "TransferTarget": {
+            "type": "object",
+            "properties": {
+                "dest": {
+                    "type": "string",
+                    "examples": [
+                        "https://example.com/transfer-handler"
+                    ],
+                    "description": "Specifies where to transfer to. The value can be one of:\n- <section_name> - section in the SWML document to jump to\n- A URL (http or https) - URL to fetch next document from. Sends HTTP POST.\n  Authentication can also be set in the URL in the format of username:password@url.\n\nUnlike `execute`, `transfer` does not accept an inline SWML document."
+                },
+                "params": {
+                    "type": "object",
+                    "properties": {},
+                    "unevaluatedProperties": {},
+                    "examples": [
+                        {
+                            "department": "sales",
+                            "priority": "high"
+                        }
+                    ],
+                    "description": "Named parameters to send to transfer destination.\nAccepts an object mapping variable names to values.\nDefault is not set."
+                },
+                "meta": {
+                    "type": "object",
+                    "properties": {},
+                    "unevaluatedProperties": {},
+                    "examples": [
+                        {
+                            "transfer_reason": "escalation",
+                            "original_agent": "agent_001"
+                        }
+                    ],
+                    "description": "User data, ignored by SignalWire.\nAccepts an object mapping variable names to values.\nDefault is not set."
+                }
+            },
+            "required": [
+                "dest"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "title": "TransferTarget object"
         },
         "PayParameters": {
             "type": "object",
@@ -7392,6 +7387,43 @@
             },
             "description": "Per-destination model used inside `serial`, `parallel`, and `serial_parallel` arrays.\n\nContains only the properties that apply to an individual destination:\naddressing, caller-ID overrides, SIP auth, per-leg timeouts/confirmations,\nand stream-specific settings.",
             "title": "ConnectDestination object"
+        },
+        "ExecuteSwitch": {
+            "type": "object",
+            "properties": {
+                "variable": {
+                    "type": "string",
+                    "examples": [
+                        "return_value"
+                    ],
+                    "description": "Name of the variable whose value needs to be compared. If not provided, it will check the `return_value` variable.\nCan be one of the listed set of variables, or a string to represent a custom variable."
+                },
+                "case": {
+                    "type": "object",
+                    "properties": {},
+                    "unevaluatedProperties": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/$defs/SWMLMethod"
+                        }
+                    },
+                    "description": "Object of values mapped to array of instructions to execute"
+                },
+                "default": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/SWMLMethod"
+                    },
+                    "description": "Array of instructions to execute if no cases match"
+                }
+            },
+            "required": [
+                "case"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "title": "ExecuteSwitch object"
         },
         "TranscribeStartAction": {
             "type": "object",
