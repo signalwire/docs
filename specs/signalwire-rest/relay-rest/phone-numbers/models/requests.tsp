@@ -112,6 +112,13 @@ model UpdatePhoneNumberRequest {
   message_relay_application?: string;
 }
 
+@doc("Request body for assigning an E911 address to a phone number.")
+model AssignE911AddressRequest {
+  @doc("The ID of a validated E911 address in the same project to assign to this phone number.")
+  @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
+  e911_address_id: uuid;
+}
+
 @doc("Request body for importing a phone number.")
 model ImportPhoneNumberRequest {
   @doc("The phone number to import in E.164 format. Number must be between 5 and 30 characters with no special characters besides a leading +.")
