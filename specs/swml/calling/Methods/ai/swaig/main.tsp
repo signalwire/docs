@@ -5,6 +5,7 @@ import "./includes.tsp";
 import "./functions";
 import "./internal_filler.tsp";
 import "./mcp_servers.tsp";
+import "./webhook.tsp";
 
 using TypeSpec.JsonSchema;
 
