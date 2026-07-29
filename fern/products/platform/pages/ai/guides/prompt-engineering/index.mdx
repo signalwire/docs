@@ -30,8 +30,9 @@ In addition to its primary (or "Main") prompt, each SignalWire AI Agent has addi
 and the [Post-Prompt][post-prompt].
 
 Think of prompt engineering like giving detailed instructions to a new team member: for them to succeed,
-you need to be clear about what you want them to do, how to do it, and what boundaries to respect. 
-A good prompt tells the AI exactly how to handle user questions, what tone to use, what information to focus on, and what topics to avoid.
+you need to be clear about what you want them to do, how to do it, and what counts as done. 
+A good prompt tells the AI how to handle user questions, what tone to use, and what information to focus on,
+while the rules that have to hold on every call are enforced in your code rather than asked for in words.
 
 <Info>
 You can use all these prompt engineering techniques with either [SWML][swml-docs] or the AI agent resource.
@@ -67,8 +68,35 @@ Every conversation happens within a context that shapes understanding. Your AI n
 ### Response guidelines
 Response guidelines shape how your AI communicates. Defining whether you want "friendly, simple language with clear steps" or "professional but approachable, getting straight to the point" keeps the conversation natural and aligned with your brand voice.
 
-### Boundaries
-Boundaries protect both users and your business. Stating clearly what the AI shouldn't do — "Don't ask for passwords," "Don't promise specific delivery times," "Don't compare us to competitors unless asked" — prevents problems while keeping the flexibility a natural conversation needs.
+### Guardrails
+
+The instinct is to list everything the agent must never do. Resist it.
+A prompt full of don'ts is one of the most common ways an agent becomes unpredictable:
+each rule competes for the model's attention, rules phrased as prohibitions are followed
+less reliably than the same rule phrased as an instruction, and a rule that only lives in
+the prompt holds most of the time rather than every time.
+
+Reach for guardrails in this order, and stop as soon as the behavior is covered.
+
+1. **State what success looks like.** An agent that knows its objective infers most of its
+   own limits. "Take the order, confirm it back to the caller, and hand off anything you
+   can't complete" already rules out competitor talk and freelance discounts, without a
+   single "don't".
+2. **Enforce hard rules in code.** Prices, discounts, eligibility, and anything that must be
+   exact or current belong behind a [tool call](/docs/platform/ai/tool-calling), where your
+   handler validates the caller's input and decides the outcome. A pricing rule in code holds
+   on every call; "never give discounts" in a prompt holds on most of them.
+3. **Remove the possibility.** Scope which functions exist at each stage with
+   [context steps][context-steps]: the agent can't book before it quotes if the booking
+   function isn't available yet.
+4. **Put global rules in the conscience.** Tone, persona, safety, and compliance rules that
+   apply to the whole call belong in the [conscience][conscience], which is reinforced
+   throughout the conversation, including after function calls, rather than stated once in
+   the middle of a long main prompt.
+5. **Then, sparingly, write a don't.** A short list of genuine non-negotiables that can't be
+   enforced structurally still earns its place. Keep it specific, and phrase it as the
+   behavior you want wherever you can: "If asked when an order will arrive, say the store
+   confirms a delivery window at checkout" steers better than "Don't promise delivery times".
 
 ### Example structure
 
@@ -103,12 +131,10 @@ You are a friendly pizza restaurant assistant responsible for taking orders and 
 - Suggest popular topping combinations when asked
 - Guide customers through options step-by-step
 
-## Boundaries
-- Don't accept orders outside operating hours which is 11am-10pm
-- Don't promise delivery times
-- Don't modify set specialty pizza recipes
-- Don't offer discounts or special prices
-- Don't discuss internal operations or competitors
+## Guardrails
+- Quote sizes, toppings, and prices only from get_menu, and totals only from place_order
+- Discounts, substitutions, and specialty recipe changes are decided by place_order; relay its answer
+- If asked when an order will arrive, say the store confirms a delivery window at checkout
 ```
 
 <Info>
@@ -116,6 +142,10 @@ This example embeds the menu in the prompt to teach structure.
 In production, menu items, prices, and order-taking belong in your backend, reached through
 [tool calls](/docs/platform/ai/tool-calling).
 Keep the prompt's knowledge base for stable facts like hours and policies.
+
+The same split does the work of the don'ts this prompt no longer needs.
+`place_order` rejects an order placed after closing and prices the order itself,
+so the agent can't take a late order or invent a discount even if a caller talks it into trying.
 </Info>
 
 ### Visual representation of prompt impact
@@ -149,13 +179,13 @@ flowchart TD
     R2 --> Q2["I'd like a large pizza"]
     Q2 --> R3["Great! For toppings, our most popular are pepperoni, mushrooms & extra cheese"]
     R3 --> Q3["Any discounts available?"]
-    Q3 --> R4["We don't offer discounts, but I can help find menu options that work for you. What toppings would you like?"]
+    Q3 --> R4["Let me check... no discounts apply to this order today. What toppings would you like?"]
 
     %% Add notes showing prompt influence with line breaks
     Note1["Role + guidelines:<br/>Friendly welcome"]:::note
     Note2["Task + knowledge:<br/>Size options"]:::note
     Note3["Guidelines:<br/>Suggesting popular items"]:::note
-    Note4["Boundaries:<br/>Polite redirection"]:::note
+    Note4["Guardrails:<br/>Pricing owned by code"]:::note
 
     %% Connect notes to conversation with dotted lines
     Note1 -.-> R1
@@ -176,7 +206,7 @@ This diagram demonstrates how:
 - The **knowledge base** informs accurate responses about menu options and policies
 - The **task structure** ensures a logical order flow from size selection to toppings
 - **Response guidelines** maintain consistent, helpful interaction throughout
-- **Boundaries** keep the conversation within appropriate service parameters
+- **Guardrails** keep pricing decisions in the code that owns them, and the redirection polite
 
 ## From draft to production
 
