@@ -113,8 +113,6 @@ And a minimal reply:
 <Note>
 The `response` is written to the AI, not to the caller.
 It can carry data, and it can carry instructions about what the agent should do next.
-The full payloads are documented in the [SWAIG guide][swaig-guide] and the
-[`SWAIG.functions` reference][swaig-functions].
 </Note>
 
 You have three ways to host the code behind a SWAIG function:
@@ -126,6 +124,51 @@ You have three ways to host the code behind a SWAIG function:
 - **DataMap**: for straightforward REST calls, describe the request and response mapping declaratively and
   SignalWire executes it server-side, with no infrastructure of yours at all.
   See DataMap in the [Server SDK][sdk-datamap] or in [SWML][swml-datamap].
+
+## The protocol: JSON over HTTP
+
+SWAIG is not a library or a connection you keep open. It is a JSON document POSTed over HTTP,
+and a JSON document returned in the reply. One request per function call.
+
+SignalWire sends the request to the function's `web_hook_url`; if that URL carries credentials in
+`username:password@host` form, they are sent as HTTP basic authentication. The request body is a
+single JSON object that names the function, carries the arguments the agent extracted, and includes
+the call's context; it identifies itself with `"content_type": "text/swaig"` and a `version`.
+Your reply is a single JSON object with `response` — the text the agent reads — and, optionally,
+`action`, a list of SWML-compatible objects that change what the call does next.
+
+That contract is the whole protocol. Anything that can POST JSON and return JSON can serve a SWAIG
+function, which is why the Server SDK and DataMap are conveniences rather than requirements: both
+speak this same exchange, one from your process and one from ours.
+
+<AccordionGroup>
+
+<Accordion title="Complete request fields">
+
+Every field SignalWire sends to a SWAIG function's `web_hook_url`:
+
+<Markdown src="/snippets/swml/_swaig-request-fields.mdx" />
+
+</Accordion>
+
+<Accordion title="Complete reply fields">
+
+What your server returns:
+
+<Markdown src="/snippets/swml/_swaig-response-fields.mdx" />
+
+The objects accepted in `action`:
+
+<Indent>
+<Markdown src="/snippets/swml/_actions.mdx" />
+</Indent>
+
+</Accordion>
+
+</AccordionGroup>
+
+The same fields appear in the [`SWAIG.functions` reference][swaig-functions] alongside the SWML
+configuration that declares them, and the [SWAIG guide][swaig-guide] walks a single call end to end.
 
 ## Build it: an order-status agent
 
