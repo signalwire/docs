@@ -302,9 +302,8 @@ model SwaigSignatureRequestPayload {
   action: string;
 
   @doc("""
-    The function names the `includes` entry asked for. Advisory: every definition you return is
-    registered, whether or not it is named here, so you can answer with your full set. Sometimes
-    empty.
+    The function names the `includes` entry asked for. This list can be empty, and it does not limit
+    your reply: every definition you return is registered, whether or not it is named here.
     """)
   @example(#["get_weather"])
   functions: string[];
@@ -314,10 +313,10 @@ model SwaigSignatureRequestPayload {
   meta_data?: Record<unknown>;
 
   @doc("""
-    The token scoping `meta_data`. Sent by the Dashboard check, where it is always `swaig-cli`;
-    absent from the request sent during a call.
+    The token scoping `meta_data`. Present on the check your endpoint can receive outside of a call,
+    where it is a fixed value with nothing to interpret, and absent during a call.
     """)
-  @example("swaig-cli")
+  @example("my-token")
   meta_data_token?: string;
 
   @doc("The content type of the request body. Always `text/swaig`.")
