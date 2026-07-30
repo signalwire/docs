@@ -31,8 +31,8 @@ and the [Post-Prompt][post-prompt].
 
 Think of prompt engineering like giving detailed instructions to a new team member: for them to succeed,
 you need to be clear about what you want them to do, how to do it, and what counts as done. 
-A good prompt tells the AI how to handle user questions, what tone to use, and what information to focus on,
-while the rules that have to hold on every call are enforced in your code rather than asked for in words.
+A good prompt tells the AI how to handle user questions, what tone to use, and what information to focus on.
+The rules that have to hold on every call belong in your code, where they are enforced instead of requested.
 
 <Info>
 You can use all these prompt engineering techniques with either [SWML][swml-docs] or the AI agent resource.
@@ -69,34 +69,10 @@ Every conversation happens within a context that shapes understanding. Your AI n
 Response guidelines shape how your AI communicates. Defining whether you want "friendly, simple language with clear steps" or "professional but approachable, getting straight to the point" keeps the conversation natural and aligned with your brand voice.
 
 ### Guardrails
-
-The instinct is to list everything the agent must never do. Resist it.
-A prompt full of don'ts is one of the most common ways an agent becomes unpredictable:
-each rule competes for the model's attention, rules phrased as prohibitions are followed
-less reliably than the same rule phrased as an instruction, and a rule that only lives in
-the prompt holds most of the time rather than every time.
-
-Reach for guardrails in this order, and stop as soon as the behavior is covered.
-
-1. **State what success looks like.** An agent that knows its objective infers most of its
-   own limits. "Take the order, confirm it back to the caller, and hand off anything you
-   can't complete" already rules out competitor talk and freelance discounts, without a
-   single "don't".
-2. **Enforce hard rules in code.** Prices, discounts, eligibility, and anything that must be
-   exact or current belong behind a [tool call](/docs/platform/ai/tool-calling), where your
-   handler validates the caller's input and decides the outcome. A pricing rule in code holds
-   on every call; "never give discounts" in a prompt holds on most of them.
-3. **Remove the possibility.** Scope which functions exist at each stage with
-   [context steps][context-steps]: the agent can't book before it quotes if the booking
-   function isn't available yet.
-4. **Put global rules in the conscience.** Tone, persona, safety, and compliance rules that
-   apply to the whole call belong in the [conscience][conscience], which is reinforced
-   throughout the conversation, including after function calls, rather than stated once in
-   the middle of a long main prompt.
-5. **Then, sparingly, write a don't.** A short list of genuine non-negotiables that can't be
-   enforced structurally still earns its place. Keep it specific, and phrase it as the
-   behavior you want wherever you can: "If asked when an order will arrive, say the store
-   confirms a delivery window at checkout" steers better than "Don't promise delivery times".
+Guardrails are the rules that keep the agent in bounds: what it won't promise, what it won't decide on
+its own, what it hands off. Most of them work better outside the prompt than in it, so the prompt
+carries only the few that can't live anywhere else.
+[Where guardrails belong](#where-guardrails-belong) covers the order to reach for them in.
 
 ### Example structure
 
@@ -139,13 +115,12 @@ You are a friendly pizza restaurant assistant responsible for taking orders and 
 
 <Info>
 This example keeps the menu's shape in the prompt to teach structure, and leaves the priced parts of
-an order to `place_order`, a [tool call](/docs/platform/ai/tool-calling) the agent makes to your
-backend. In production the menu itself belongs there too; the prompt's knowledge base is for stable
-facts like hours, delivery radius, and dietary options.
+an order to `place_order`, a SWAIG function the agent calls on your backend through a
+[tool call](/docs/platform/ai/tool-calling). In production the menu itself belongs there too; the
+prompt's knowledge base is for stable facts like hours, delivery radius, and dietary options.
 
-That split does the work of the don'ts this prompt no longer needs.
-`place_order` prices the order and rejects one placed after closing,
-so the agent can't invent a discount or take a late order even if a caller talks it into trying.
+That split replaces the don'ts this prompt used to carry. `place_order` prices the order and rejects
+one placed after closing, so a caller can't talk the agent into a discount or a late order.
 </Info>
 
 ### Visual representation of prompt impact
@@ -191,7 +166,34 @@ This diagram demonstrates how:
 - The **knowledge base** informs accurate responses about menu options and policies
 - The **task structure** ensures a logical order flow from size selection to toppings
 - **Response guidelines** maintain consistent, helpful interaction throughout
-- **Guardrails** keep pricing decisions in the code that owns them, and the redirection polite
+- **Guardrails** leave the pricing decision to the code that owns it, and keep the redirection polite
+
+## Where guardrails belong
+
+A prompt full of don'ts is one of the most common ways an agent becomes unpredictable.
+Every rule you add competes with the others for the model's attention, and a prohibition is followed
+less reliably than the same rule written as an instruction.
+Work through the options below in order, and stop as soon as the behavior is covered.
+
+1. **State what success looks like.** An agent that knows its objective works out most of its
+   own limits. "Take the order, confirm it back to the caller, and hand off anything you
+   can't complete" already rules out competitor talk and freelance discounts, without a
+   single "don't".
+2. **Enforce hard rules in code.** Prices, discounts, eligibility, and anything that must be
+   exact or current belong behind a [tool call](/docs/platform/ai/tool-calling), where your
+   handler validates the caller's input and decides the outcome. Your handler enforces a pricing
+   rule on every call; the prompt only asks.
+3. **Remove the possibility.** Scope which functions exist at each stage with
+   [context steps][context-steps]: the agent can't book before it quotes if the booking
+   function isn't available yet.
+4. **Put global rules in the conscience.** Tone, persona, safety, and compliance rules that
+   apply to the whole call belong in the [conscience][conscience]. It is reinforced throughout
+   the conversation, including after function calls, so the rule doesn't fade the way one line
+   in the middle of a long main prompt does.
+5. **Then, sparingly, write a don't.** A short list of genuine non-negotiables that can't be
+   enforced structurally still earns its place. Keep it specific, and phrase it as the
+   behavior you want wherever you can: "If asked when an order will arrive, say the store
+   confirms a delivery window at checkout" steers better than "Don't promise delivery times".
 
 ## From draft to production
 

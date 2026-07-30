@@ -281,6 +281,66 @@ model AISidecarSwaigToolWebhookPayload {
   };
 }
 
+@summary("SWAIG function signature request")
+@doc("""
+  Sent once per [`SWAIG.includes`](/docs/swml/reference/calling/ai/swaig/includes) entry when an AI
+  agent loads, to discover the functions your server hosts. Every way of building an agent sends it —
+  SWML you write yourself, SWML a Server SDK generates, or an agent you configure in your Dashboard —
+  because they all resolve `includes` the same way. Return a JSON array of function definitions, each
+  shaped like an entry in
+  [`SWAIG.functions`](/docs/swml/reference/calling/ai/swaig/functions#properties) — `function`,
+  `description`, and `parameters`. Functions the agent can call are the ones you return here.
+
+  This is not the payload a function call sends. It goes to the `includes` entry's `url`, using
+  `auth_user` and `auth_password` when set. Your endpoint can also receive it outside of a call, as a
+  check that it answers, so answer it the same way. When your project has a signing key, the request
+  carries an `X-SignalWire-Signature` header you can verify.
+  """)
+model SwaigSignatureRequestPayload {
+  @doc("What the request is asking of you. Always `get_signature`.")
+  @example("get_signature")
+  action: string;
+
+  @doc("""
+    The function names the `includes` entry asked for. Advisory: every definition you return is
+    registered, whether or not it is named here, so you can answer with your full set. Sometimes
+    empty.
+    """)
+  @example(#["get_weather"])
+  functions: string[];
+
+  @doc("The `meta_data` you set on the `includes` entry. Omitted when you set none.")
+  @example(#{ store_id: "sf-01" })
+  meta_data?: Record<unknown>;
+
+  @doc("""
+    The token scoping `meta_data`. Sent by the Dashboard check, where it is always `swaig-cli`;
+    absent from the request sent during a call.
+    """)
+  @example("swaig-cli")
+  meta_data_token?: string;
+
+  @doc("The content type of the request body. Always `text/swaig`.")
+  @example("text/swaig")
+  content_type: string;
+
+  @doc("How the body is delivered. Always `function signature request`.")
+  @example("function signature request")
+  content_disposition: string;
+
+  @doc("The SWAIG protocol version.")
+  @example("2.0")
+  version: string;
+
+  @doc("Your project ID, when available.")
+  @example("4d0d6f16-5881-4fcc-92a4-02c51a91954d")
+  project_id?: string;
+
+  @doc("Your Space ID, when available.")
+  @example("451ed9ff-e568-4222-8af9-4f9ab7428d09")
+  space_id?: string;
+}
+
 @summary("AI SWAIG tool webhook")
 @doc("""
   Sent to a tool's `web_hook_url` (or the SWAIG `defaults.web_hook_url`) when an
@@ -303,15 +363,26 @@ model AiSwaigToolWebhookPayload {
     @example("{\"city\":\"San Francisco\"}")
     raw: string;
 
-    @doc("The raw argument string after any variable substitution.")
-    @example("{\"city\":\"San Francisco\"}")
-    substituted: string;
+    @doc("""
+      Any text that surrounded the JSON, with the JSON itself removed. Omitted when the whole
+      argument was JSON, which is the usual case.
+      """)
+    @example("")
+    substituted?: string;
   };
 
   @doc("The function's parameter definition, as you declared it in `parameters`.")
+  @example(#{
+    type: "object",
+    properties: #{ city: #{ type: "string", description: "Name of the city" } },
+    required: #["city"],
+  })
   argument_desc: Record<unknown>;
 
-  @doc("The description you gave the function.")
+  @doc("""
+    The description you gave the function in
+    [`SWAIG.functions`](/docs/swml/reference/calling/ai/swaig/functions#properties).
+    """)
   @example("Look up the current weather for a city.")
   description: string;
 
@@ -331,6 +402,7 @@ model AiSwaigToolWebhookPayload {
   app_name: string;
 
   @doc("The AI session's current `global_data`, when it has any.")
+  @example(#{ customer_tier: "premium", pickup_address: "123 Main St, Springfield" })
   global_data?: Record<unknown>;
 
   @doc("""
@@ -338,10 +410,11 @@ model AiSwaigToolWebhookPayload {
     value derived from the function's `web_hook_url` and credentials when you did not set one.
     """)
   @example("my-token")
-  meta_data_token?: string;
+  meta_data_token: string;
 
   @doc("Metadata scoped to `meta_data_token`. An empty object when the function has none yet.")
-  meta_data?: Record<unknown>;
+  @example(#{ order_number: "12345" })
+  meta_data: Record<unknown>;
 
   @doc("The caller's name, when available.")
   @example("Jane Doe")
@@ -376,9 +449,11 @@ model AiSwaigToolWebhookPayload {
   content_disposition: string;
 
   @doc("Your project ID, when available.")
+  @example("4d0d6f16-5881-4fcc-92a4-02c51a91954d")
   project_id?: string;
 
   @doc("Your Space ID, when available.")
+  @example("451ed9ff-e568-4222-8af9-4f9ab7428d09")
   space_id?: string;
 
   @doc("`true` when the AI session has hit an unrecoverable error. Included only in that case.")
@@ -447,6 +522,7 @@ model BedrockSwaigToolWebhookPayload {
   caller_id: string;
 
   @doc("The agent's current `global_data`. An empty object when you seeded none.")
+  @example(#{ customer_tier: "premium", pickup_address: "123 Main St, Springfield" })
   global_data: Record<unknown>;
 
   @doc("The content type of the request body. Always `text/json`.")
@@ -469,9 +545,11 @@ model BedrockSwaigToolWebhookPayload {
   action: string;
 
   @doc("Your project ID, when available.")
+  @example("4d0d6f16-5881-4fcc-92a4-02c51a91954d")
   project_id?: string;
 
   @doc("Your Space ID, when available.")
+  @example("451ed9ff-e568-4222-8af9-4f9ab7428d09")
   space_id?: string;
 
   @doc("The conversation ID, when the agent was configured with one.")
@@ -514,8 +592,9 @@ model BedrockSwaigToolWebhookPayload {
     MD5 of the function's name when you did not set one.
     """)
   @example("d742c5d1d969d9fdbbd9bd1c52499f2d")
-  meta_data_token?: string;
+  meta_data_token: string;
 
   @doc("Metadata scoped to `meta_data_token`. An empty object when the function has none yet.")
-  meta_data?: Record<unknown>;
+  @example(#{ order_number: "12345" })
+  meta_data: Record<unknown>;
 }

@@ -23,6 +23,7 @@ using Types.StatusCodes;
   CALLS_TAG
 )
 @webhook("aiSwaigToolWebhook", AiSwaigToolWebhookPayload, CALLS_TAG)
+@webhook("swaigSignatureRequest", SwaigSignatureRequestPayload, CALLS_TAG)
 @webhook(
   "bedrockSwaigToolWebhook",
   BedrockSwaigToolWebhookPayload,
