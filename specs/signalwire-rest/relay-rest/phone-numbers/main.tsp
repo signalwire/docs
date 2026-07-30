@@ -99,6 +99,40 @@ namespace SignalWireAPI.RelayRest.PhoneNumbers {
       | ValidationError
       | StatusCode500;
 
+    @operationId("assign_e911_address")
+    @summary("Assign an E911 address to a phone number")
+    @doc("""
+      Assigns a validated E911 address to the phone number and begins provisioning at the carrier. The number's `e911_status` becomes `pending`; it moves to `active` asynchronously once the carrier confirms. The address is re-validated at the carrier and must be valid.
+
+      The address `label` is sent to the carrier as the caller name presented to the dispatcher. The emergency network limits that field to 32 characters, so a longer label is truncated to the first 32 characters. Truncation never affects the street address used to route the call, and does not cause the assignment to fail.
+
+      ${tokenPermissions<"_Numbers_">}
+      """)
+    @route("/{id}/e911_address")
+    @post
+    assignE911Address(...PhoneNumberPathID, @body body: AssignE911AddressRequest):
+      | PhoneNumberResponse
+      | StatusCode401
+      | StatusCode404
+      | ValidationError
+      | StatusCode500;
+
+    @operationId("remove_e911_address")
+    @summary("Remove the E911 address from a phone number")
+    @doc("""
+      Removes the E911 address from the phone number and begins deprovisioning at the carrier. Only allowed while the number is `active`. The `e911_status` becomes `pending_removal`; the address remains associated until the carrier confirms removal.
+
+      ${tokenPermissions<"_Numbers_">}
+      """)
+    @route("/{id}/e911_address")
+    @delete
+    removeE911Address(...PhoneNumberPathID):
+      | PhoneNumberResponse
+      | StatusCode401
+      | StatusCode404
+      | ValidationError
+      | StatusCode500;
+
     @operationId("search_available_phone_numbers")
     @summary("Search phone numbers")
     @doc("""

@@ -33,17 +33,16 @@ namespace SignalWireAPI.RelayRest.Addresses {
     @summary("Create E911 address")
     @doc("""
       To create a new Address, make a POST request to the Address resource.
-      
+
+      When `emergency_enabled=true` and the address is in the US (`country` = `US`), the address is validated against the carrier. A valid or auto-corrected address is stored (`validated: true`). An address the carrier cannot validate — or a correctable address when `auto_correct_address=false` — is rejected with a `422` whose body includes an `errors` array and a `candidates` array of suggested addresses (each with `street_number`, `street_name`, `city`, `state`, `postal_code`). Carrier validation applies to US addresses only: a non-US address is stored normally, with `emergency_enabled` returned as `false`. Requests without `emergency_enabled` are stored without carrier validation.
+
       ${tokenPermissions<"_Numbers_">}
       """)
     @post
     create(@body body: CreateAddressRequest):
-      | {
-          @statusCode statusCode: 201;
-          @body address: AddressResponse;
-        }
+      | AddressResponse
       | StatusCode401
-      | ValidationError
+      | AddressValidationError
       | StatusCode500;
 
     @operationId("get_address")
@@ -51,7 +50,7 @@ namespace SignalWireAPI.RelayRest.Addresses {
     @doc("""
       Retrieves the details of an Address that has been previously created.
       Use the unique ID that was returned from your previous request to identify the specific instance.
-      
+
       ${tokenPermissions<"_Numbers_">}
       """)
     read(...AddressPathID):
@@ -59,6 +58,23 @@ namespace SignalWireAPI.RelayRest.Addresses {
       | StatusCode401
       | StatusCode404
       | ValidationError
+      | StatusCode500;
+
+    @operationId("update_address")
+    @summary("Update E911 address")
+    @doc("""
+      Updates an Address that has been previously created.
+
+      When `emergency_enabled=true` and the address is in the US (`country` = `US`), the address is validated against the carrier. A valid or auto-corrected address is stored (`validated: true`). An address the carrier cannot validate — or a correctable address when `auto_correct_address=false` — is rejected with a `422` whose body includes an `errors` array and a `candidates` array of suggested addresses (each with `street_number`, `street_name`, `city`, `state`, `postal_code`). Carrier validation applies to US addresses only: a non-US address is stored normally, with `emergency_enabled` returned as `false`. Requests without `emergency_enabled` are stored without carrier validation.
+
+      ${tokenPermissions<"_Numbers_">}
+      """)
+    @put
+    update(...AddressPathID, @body body: UpdateAddressRequest):
+      | AddressResponse
+      | StatusCode401
+      | StatusCode404
+      | AddressValidationError
       | StatusCode500;
 
     @operationId("delete_address")
