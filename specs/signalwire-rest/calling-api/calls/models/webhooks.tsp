@@ -333,11 +333,14 @@ model AiSwaigToolWebhookPayload {
   @doc("The AI session's current `global_data`, when it has any.")
   global_data?: Record<unknown>;
 
-  @doc("The token that scopes `meta_data`, when the function defines one.")
+  @doc("""
+    The token that scopes `meta_data`. This is the `meta_data_token` you set on the function, or a
+    value derived from the function's `web_hook_url` and credentials when you did not set one.
+    """)
   @example("my-token")
   meta_data_token?: string;
 
-  @doc("Metadata scoped to `meta_data_token`, when the function defines a token.")
+  @doc("Metadata scoped to `meta_data_token`. An empty object when the function has none yet.")
   meta_data?: Record<unknown>;
 
   @doc("The caller's name, when available.")
@@ -395,4 +398,124 @@ model AiSwaigToolWebhookPayload {
 
   @doc("The full, unredacted conversation so far. Included when you enable `swaig_post_conversation`.")
   raw_call_log?: Record<unknown>[];
+}
+
+@summary("Amazon Bedrock SWAIG tool webhook")
+@doc("""
+  Sent to a tool's `web_hook_url` (or the SWAIG `defaults.web_hook_url`) when an
+  [`amazon_bedrock`](/docs/swml/reference/calling/amazon-bedrock) agent calls one of your functions.
+  Your endpoint runs the function and returns a JSON object with a `response` string (the result the
+  agent reads next) and, optionally, an `action` — a single object or an array — telling the agent
+  what to do.
+
+  Bedrock agents send a different payload from [`ai`](/docs/swml/reference/calling/ai) agents. Notably
+  `content_type` is `text/json` rather than `text/swaig`, `argument` carries no `substituted` value,
+  there is no `version`, `description`, or `argument_desc`, and the call's timing and caller fields
+  are named differently. Write your handler against this payload, not the
+  [AI SWAIG tool webhook](#tag/calls/webhook/aiSwaigToolWebhook).
+  """)
+model BedrockSwaigToolWebhookPayload {
+  @doc("The name of the function the agent is calling.")
+  @example("get_weather")
+  function: string;
+
+  @doc("The arguments the agent passed to your function.")
+  argument: {
+    @doc("The arguments parsed into objects. Usually a single-element array.")
+    @example(#[#{ city: "San Francisco" }])
+    parsed: Record<unknown>[];
+
+    @doc("The raw argument string, exactly as the agent produced it.")
+    @example("{\"city\":\"San Francisco\"}")
+    raw: string;
+  };
+
+  @doc("The ID of the call.")
+  @example("2e1e66e5-5d07-413d-9668-55542992eec0")
+  call_id: string;
+
+  @doc("The ID of the AI session on the call. Matches `call_id` for Bedrock agents.")
+  @example("2e1e66e5-5d07-413d-9668-55542992eec0")
+  ai_session_id: string;
+
+  @doc("The name of your Bedrock application. Defaults to `bedrock`.")
+  @example("bedrock")
+  app_name: string;
+
+  @doc("The caller's number. An empty string when the call has none.")
+  @example("+15555550100")
+  caller_id: string;
+
+  @doc("The agent's current `global_data`. An empty object when you seeded none.")
+  global_data: Record<unknown>;
+
+  @doc("The content type of the request body. Always `text/json`.")
+  @example("text/json")
+  content_type: string;
+
+  @doc("How the body is delivered. Always `agent.function` for a function call.")
+  @example("agent.function")
+  content_disposition: string;
+
+  @doc("The kind of conversation the agent is running. Always `voice`.")
+  @example("voice")
+  conversation_type: string;
+
+  @doc("""
+    What the request is asking of you. Always `fetch_conversation` for a function call; the
+    end-of-call conversation report sends `post_conversation` instead.
+    """)
+  @example("fetch_conversation")
+  action: string;
+
+  @doc("Your project ID, when available.")
+  project_id?: string;
+
+  @doc("Your Space ID, when available.")
+  space_id?: string;
+
+  @doc("The conversation ID, when the agent was configured with one.")
+  conversation_id?: string;
+
+  @doc("The caller's name, when available.")
+  @example("Jane Doe")
+  caller_id_name?: string;
+
+  @doc("The caller's number, when available.")
+  @example("+15555550100")
+  caller_id_number?: string;
+
+  @doc("When the call was created, as a Unix timestamp in microseconds.")
+  call_start_date?: int64;
+
+  @doc("When the call was answered, as a Unix timestamp in microseconds. `0` when it never was.")
+  call_answer_date?: int64;
+
+  @doc("When the call ended, as a Unix timestamp in microseconds. `0` while the call is still up.")
+  call_end_date?: int64;
+
+  @doc("When the agent started, as a Unix timestamp in microseconds.")
+  ai_start_date?: int64;
+
+  @doc("When the agent stopped, as a Unix timestamp in microseconds. Omitted while it is still running.")
+  ai_end_date?: int64;
+
+  @doc("Per-response performance metrics for the session so far. Included once the agent has any.")
+  times?: Record<unknown>[];
+
+  @doc("SWML variables for the call. Included when the call carries SWML state.")
+  SWMLVars?: Record<unknown>;
+
+  @doc("SWML call state. Included when the call carries SWML state.")
+  SWMLCall?: Record<unknown>;
+
+  @doc("""
+    The token that scopes `meta_data`. This is the `meta_data_token` you set on the function, or an
+    MD5 of the function's name when you did not set one.
+    """)
+  @example("d742c5d1d969d9fdbbd9bd1c52499f2d")
+  meta_data_token?: string;
+
+  @doc("Metadata scoped to `meta_data_token`. An empty object when the function has none yet.")
+  meta_data?: Record<unknown>;
 }

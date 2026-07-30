@@ -16766,13 +16766,15 @@ components:
           description: The AI session's current `global_data`, when it has any.
         meta_data_token:
           type: string
-          description: The token that scopes `meta_data`, when the function defines one.
+          description: |-
+            The token that scopes `meta_data`. This is the `meta_data_token` you set on the function, or a
+            value derived from the function's `web_hook_url` and credentials when you did not set one.
           examples:
             - my-token
         meta_data:
           type: object
           unevaluatedProperties: {}
-          description: Metadata scoped to `meta_data_token`, when the function defines a token.
+          description: Metadata scoped to `meta_data_token`. An empty object when the function has none yet.
         caller_id_name:
           type: string
           description: The caller's name, when available.
@@ -16853,6 +16855,173 @@ components:
         function and returns a JSON object with a `response` string (the result the AI reads next) and,
         optionally, an `action` — a single object or an array — telling the agent what to do.
       title: AI SWAIG tool webhook
+    Calling.BedrockSwaigToolWebhookPayload:
+      type: object
+      required:
+        - function
+        - argument
+        - call_id
+        - ai_session_id
+        - app_name
+        - caller_id
+        - global_data
+        - content_type
+        - content_disposition
+        - conversation_type
+        - action
+      properties:
+        function:
+          type: string
+          description: The name of the function the agent is calling.
+          examples:
+            - get_weather
+        argument:
+          type: object
+          properties:
+            parsed:
+              type: array
+              items:
+                type: object
+                unevaluatedProperties: {}
+              description: The arguments parsed into objects. Usually a single-element array.
+              examples:
+                - - city: San Francisco
+            raw:
+              type: string
+              description: The raw argument string, exactly as the agent produced it.
+              examples:
+                - '{"city":"San Francisco"}'
+          required:
+            - parsed
+            - raw
+          unevaluatedProperties:
+            not: {}
+          description: The arguments the agent passed to your function.
+        call_id:
+          type: string
+          description: The ID of the call.
+          examples:
+            - 2e1e66e5-5d07-413d-9668-55542992eec0
+        ai_session_id:
+          type: string
+          description: The ID of the AI session on the call. Matches `call_id` for Bedrock agents.
+          examples:
+            - 2e1e66e5-5d07-413d-9668-55542992eec0
+        app_name:
+          type: string
+          description: The name of your Bedrock application. Defaults to `bedrock`.
+          examples:
+            - bedrock
+        caller_id:
+          type: string
+          description: The caller's number. An empty string when the call has none.
+          examples:
+            - '+15555550100'
+        global_data:
+          type: object
+          unevaluatedProperties: {}
+          description: The agent's current `global_data`. An empty object when you seeded none.
+        content_type:
+          type: string
+          description: The content type of the request body. Always `text/json`.
+          examples:
+            - text/json
+        content_disposition:
+          type: string
+          description: How the body is delivered. Always `agent.function` for a function call.
+          examples:
+            - agent.function
+        conversation_type:
+          type: string
+          description: The kind of conversation the agent is running. Always `voice`.
+          examples:
+            - voice
+        action:
+          type: string
+          description: |-
+            What the request is asking of you. Always `fetch_conversation` for a function call; the
+            end-of-call conversation report sends `post_conversation` instead.
+          examples:
+            - fetch_conversation
+        project_id:
+          type: string
+          description: Your project ID, when available.
+        space_id:
+          type: string
+          description: Your Space ID, when available.
+        conversation_id:
+          type: string
+          description: The conversation ID, when the agent was configured with one.
+        caller_id_name:
+          type: string
+          description: The caller's name, when available.
+          examples:
+            - Jane Doe
+        caller_id_number:
+          type: string
+          description: The caller's number, when available.
+          examples:
+            - '+15555550100'
+        call_start_date:
+          type: integer
+          format: int64
+          description: When the call was created, as a Unix timestamp in microseconds.
+        call_answer_date:
+          type: integer
+          format: int64
+          description: When the call was answered, as a Unix timestamp in microseconds. `0` when it never was.
+        call_end_date:
+          type: integer
+          format: int64
+          description: When the call ended, as a Unix timestamp in microseconds. `0` while the call is still up.
+        ai_start_date:
+          type: integer
+          format: int64
+          description: When the agent started, as a Unix timestamp in microseconds.
+        ai_end_date:
+          type: integer
+          format: int64
+          description: When the agent stopped, as a Unix timestamp in microseconds. Omitted while it is still running.
+        times:
+          type: array
+          items:
+            type: object
+            unevaluatedProperties: {}
+          description: Per-response performance metrics for the session so far. Included once the agent has any.
+        SWMLVars:
+          type: object
+          unevaluatedProperties: {}
+          description: SWML variables for the call. Included when the call carries SWML state.
+        SWMLCall:
+          type: object
+          unevaluatedProperties: {}
+          description: SWML call state. Included when the call carries SWML state.
+        meta_data_token:
+          type: string
+          description: |-
+            The token that scopes `meta_data`. This is the `meta_data_token` you set on the function, or an
+            MD5 of the function's name when you did not set one.
+          examples:
+            - d742c5d1d969d9fdbbd9bd1c52499f2d
+        meta_data:
+          type: object
+          unevaluatedProperties: {}
+          description: Metadata scoped to `meta_data_token`. An empty object when the function has none yet.
+      unevaluatedProperties:
+        not: {}
+      description: |-
+        Sent to a tool's `web_hook_url` (or the SWAIG `defaults.web_hook_url`) when an
+        [`amazon_bedrock`](/docs/swml/reference/calling/amazon-bedrock) agent calls one of your functions.
+        Your endpoint runs the function and returns a JSON object with a `response` string (the result the
+        agent reads next) and, optionally, an `action` — a single object or an array — telling the agent
+        what to do.
+
+        Bedrock agents send a different payload from [`ai`](/docs/swml/reference/calling/ai) agents. Notably
+        `content_type` is `text/json` rather than `text/swaig`, `argument` carries no `substituted` value,
+        there is no `version`, `description`, or `argument_desc`, and the call's timing and caller fields
+        are named differently. Write your handler against this payload, not the
+        [AI SWAIG tool webhook](#tag/calls/webhook/aiSwaigToolWebhook).
+      title: Amazon Bedrock SWAIG tool webhook
     Calling.CallAIMessageRequest:
       type: object
       required:
@@ -51262,6 +51431,190 @@ servers:
         default: '{Your_Space_Name}'
         description: Your SignalWire Space name
 webhooks:
+  bedrockSwaigToolWebhook:
+    post:
+      operationId: bedrock_swaig_tool_webhook
+      summary: Amazon Bedrock SWAIG tool webhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                function:
+                  type: string
+                  description: The name of the function the agent is calling.
+                  example: get_weather
+                argument:
+                  type: object
+                  properties:
+                    parsed:
+                      type: array
+                      items:
+                        type: object
+                        properties: {}
+                        unevaluatedProperties: {}
+                      description: The arguments parsed into objects. Usually a single-element array.
+                      example:
+                        - city: San Francisco
+                    raw:
+                      type: string
+                      description: The raw argument string, exactly as the agent produced it.
+                      example: '{"city":"San Francisco"}'
+                  required:
+                    - parsed
+                    - raw
+                  unevaluatedProperties:
+                    not: {}
+                  description: The arguments the agent passed to your function.
+                call_id:
+                  type: string
+                  description: The ID of the call.
+                  example: 2e1e66e5-5d07-413d-9668-55542992eec0
+                ai_session_id:
+                  type: string
+                  description: The ID of the AI session on the call. Matches `call_id` for Bedrock agents.
+                  example: 2e1e66e5-5d07-413d-9668-55542992eec0
+                app_name:
+                  type: string
+                  description: The name of your Bedrock application. Defaults to `bedrock`.
+                  example: bedrock
+                caller_id:
+                  type: string
+                  description: The caller's number. An empty string when the call has none.
+                  example: '+15555550100'
+                global_data:
+                  type: object
+                  properties: {}
+                  unevaluatedProperties: {}
+                  description: The agent's current `global_data`. An empty object when you seeded none.
+                content_type:
+                  type: string
+                  description: The content type of the request body. Always `text/json`.
+                  example: text/json
+                content_disposition:
+                  type: string
+                  description: How the body is delivered. Always `agent.function` for a function call.
+                  example: agent.function
+                conversation_type:
+                  type: string
+                  description: The kind of conversation the agent is running. Always `voice`.
+                  example: voice
+                action:
+                  type: string
+                  description: |-
+                    What the request is asking of you. Always `fetch_conversation` for a function call; the
+                    end-of-call conversation report sends `post_conversation` instead.
+                  example: fetch_conversation
+                project_id:
+                  type: string
+                  description: Your project ID, when available.
+                space_id:
+                  type: string
+                  description: Your Space ID, when available.
+                conversation_id:
+                  type: string
+                  description: The conversation ID, when the agent was configured with one.
+                caller_id_name:
+                  type: string
+                  description: The caller's name, when available.
+                  example: Jane Doe
+                caller_id_number:
+                  type: string
+                  description: The caller's number, when available.
+                  example: '+15555550100'
+                call_start_date:
+                  type: integer
+                  format: int64
+                  description: When the call was created, as a Unix timestamp in microseconds.
+                call_answer_date:
+                  type: integer
+                  format: int64
+                  description: When the call was answered, as a Unix timestamp in microseconds. `0` when it never was.
+                call_end_date:
+                  type: integer
+                  format: int64
+                  description: When the call ended, as a Unix timestamp in microseconds. `0` while the call is still up.
+                ai_start_date:
+                  type: integer
+                  format: int64
+                  description: When the agent started, as a Unix timestamp in microseconds.
+                ai_end_date:
+                  type: integer
+                  format: int64
+                  description: When the agent stopped, as a Unix timestamp in microseconds. Omitted while it is still running.
+                times:
+                  type: array
+                  items:
+                    type: object
+                    properties: {}
+                    unevaluatedProperties: {}
+                  description: Per-response performance metrics for the session so far. Included once the agent has any.
+                SWMLVars:
+                  type: object
+                  properties: {}
+                  unevaluatedProperties: {}
+                  description: SWML variables for the call. Included when the call carries SWML state.
+                SWMLCall:
+                  type: object
+                  properties: {}
+                  unevaluatedProperties: {}
+                  description: SWML call state. Included when the call carries SWML state.
+                meta_data_token:
+                  type: string
+                  description: |-
+                    The token that scopes `meta_data`. This is the `meta_data_token` you set on the function, or an
+                    MD5 of the function's name when you did not set one.
+                  example: d742c5d1d969d9fdbbd9bd1c52499f2d
+                meta_data:
+                  type: object
+                  properties: {}
+                  unevaluatedProperties: {}
+                  description: Metadata scoped to `meta_data_token`. An empty object when the function has none yet.
+              required:
+                - function
+                - argument
+                - call_id
+                - ai_session_id
+                - app_name
+                - caller_id
+                - global_data
+                - content_type
+                - content_disposition
+                - conversation_type
+                - action
+              unevaluatedProperties:
+                not: {}
+              description: |-
+                Sent to a tool's `web_hook_url` (or the SWAIG `defaults.web_hook_url`) when an
+                [`amazon_bedrock`](/docs/swml/reference/calling/amazon-bedrock) agent calls one of your functions.
+                Your endpoint runs the function and returns a JSON object with a `response` string (the result the
+                agent reads next) and, optionally, an `action` — a single object or an array — telling the agent
+                what to do.
+
+                Bedrock agents send a different payload from [`ai`](/docs/swml/reference/calling/ai) agents. Notably
+                `content_type` is `text/json` rather than `text/swaig`, `argument` carries no `substituted` value,
+                there is no `version`, `description`, or `argument_desc`, and the call's timing and caller fields
+                are named differently. Write your handler against this payload, not the
+                [AI SWAIG tool webhook](#tag/calls/webhook/aiSwaigToolWebhook).
+      responses:
+        '200':
+          description: Webhook received
+      description: |-
+        Sent to a tool's `web_hook_url` (or the SWAIG `defaults.web_hook_url`) when an
+        [`amazon_bedrock`](/docs/swml/reference/calling/amazon-bedrock) agent calls one of your functions.
+        Your endpoint runs the function and returns a JSON object with a `response` string (the result the
+        agent reads next) and, optionally, an `action` — a single object or an array — telling the agent
+        what to do.
+
+        Bedrock agents send a different payload from [`ai`](/docs/swml/reference/calling/ai) agents. Notably
+        `content_type` is `text/json` rather than `text/swaig`, `argument` carries no `substituted` value,
+        there is no `version`, `description`, or `argument_desc`, and the call's timing and caller fields
+        are named differently. Write your handler against this payload, not the
+        [AI SWAIG tool webhook](#tag/calls/webhook/aiSwaigToolWebhook).
+      tags:
+        - Calls
   aiSwaigToolWebhook:
     post:
       operationId: ai_swaig_tool_webhook
@@ -51335,13 +51688,15 @@ webhooks:
                   description: The AI session's current `global_data`, when it has any.
                 meta_data_token:
                   type: string
-                  description: The token that scopes `meta_data`, when the function defines one.
+                  description: |-
+                    The token that scopes `meta_data`. This is the `meta_data_token` you set on the function, or a
+                    value derived from the function's `web_hook_url` and credentials when you did not set one.
                   example: my-token
                 meta_data:
                   type: object
                   properties: {}
                   unevaluatedProperties: {}
-                  description: Metadata scoped to `meta_data_token`, when the function defines a token.
+                  description: Metadata scoped to `meta_data_token`. An empty object when the function has none yet.
                 caller_id_name:
                   type: string
                   description: The caller's name, when available.

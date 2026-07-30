@@ -1,0 +1,89 @@
+## Webhook response
+
+When a SWAIG function is executed, the function expects the user to respond with a JSON object that contains a `response` key and an optional `action` key.
+This request response is used to provide the LLM with a new prompt response via the `response` key and to execute SWML-compatible objects that will perform
+new dialplan actions via the `action` key.
+
+<Markdown src="/snippets/swml/_swaig-response-fields.mdx" />
+
+<Indent>
+<Markdown src="/snippets/swml/_bedrock-swaig-actions.mdx" />
+</Indent>
+
+<Note>
+Bedrock agents accept a smaller set of actions than [`ai`](/docs/swml/reference/calling/ai) agents.
+The six above are the whole list: there is no `say`, `stop`, `hangup`, `hold`, `toggle_functions`,
+`context_switch`, `change_context`, `change_step`, `user_input`, `playback_bg`, or `stop_playback_bg`.
+An unrecognized key in `action` is ignored rather than reported as an error, so a payload written for
+an `ai` agent fails quietly here.
+</Note>
+
+### Webhook response example
+
+```json
+{
+  "response": "It's 82°F and sunny in Tulsa, with 38% humidity and a 2.2 mph wind.",
+  "action": [
+    {
+      "set_meta_data": {
+        "temperature": 82.0,
+        "humidity": 38,
+        "wind_speed": 2.2,
+        "weather": "Sunny"
+      }
+    }
+  ]
+}
+```
+
+## Callback Request for web_hook_url
+
+SignalWire will make a request to the `web_hook_url` of a SWAIG function with the following parameters:
+
+<Markdown src="/snippets/swml/_bedrock-swaig-request-fields.mdx" />
+
+<Note>
+This payload differs from the one an [`ai`](/docs/swml/reference/calling/ai) agent sends. `content_type`
+is `text/json` rather than `text/swaig`, `argument` carries no `substituted` value, and there is no
+`version`, `description`, or `argument_desc`. The caller's number arrives as `caller_id` (and as
+`caller_id_number` when the call has a caller profile) rather than `caller_id_num`.
+Write your handler against this list, not the `ai` one.
+</Note>
+
+### Webhook request example
+
+Below is a json example of the callback request that is sent to the `web_hook_url`:
+
+```json
+{
+  "content_type": "text/json",
+  "content_disposition": "agent.function",
+  "conversation_type": "voice",
+  "action": "fetch_conversation",
+  "app_name": "bedrock",
+  "project_id": "46e10b6d-e5d6-421f-b6b3-e2e22b8934ed",
+  "space_id": "5bb2200d-3662-4f4d-8a8b-d7806946711c",
+  "call_id": "6e0f2f68-f600-4228-ab27-3dfba2b75da7",
+  "ai_session_id": "6e0f2f68-f600-4228-ab27-3dfba2b75da7",
+  "caller_id": "+15555550100",
+  "caller_id_name": "Jane Doe",
+  "caller_id_number": "+15555550100",
+  "call_start_date": 1785336174025339,
+  "call_answer_date": 1785336176118420,
+  "call_end_date": 0,
+  "ai_start_date": 1785336176240115,
+  "function": "get_weather",
+  "argument": {
+    "parsed": [
+      {
+        "city": "Tulsa",
+        "state": "Oklahoma"
+      }
+    ],
+    "raw": "{\"city\":\"Tulsa\",\"state\":\"Oklahoma\"}"
+  },
+  "global_data": {},
+  "meta_data_token": "d742c5d1d969d9fdbbd9bd1c52499f2d",
+  "meta_data": {}
+}
+```
