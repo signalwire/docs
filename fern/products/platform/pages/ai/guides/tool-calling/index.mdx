@@ -23,6 +23,7 @@ max-toc-depth: 3
 [context-switch]: /docs/swml/guides/context-switch
 [swaig-webhook]: /docs/apis/rest/calls/webhooks/ai-swaig-tool-webhook
 [swaig-includes]: /docs/swml/reference/calling/ai/swaig/includes
+[sdk-includes]: /docs/server-sdks/reference/python/agents/agent-base/add-function-include
 [signature-webhook]: /docs/apis/rest/calls/webhooks/swaig-signature-request
 
 A language model asked what a ride across town costs will give you a number, and it will sound right.
@@ -144,43 +145,124 @@ ways to host yours:
   SignalWire executes it server-side, with no infrastructure of yours at all.
   See DataMap in the [Server SDK][sdk-datamap] or in [SWML][swml-datamap].
 
-### Declaring functions inline or remotely
+## Declaring your functions
 
-Wherever the code lives, the agent still needs each function's name, description, and parameters. You
-can write that declaration into the agent, or you can have SignalWire fetch it from your server.
+Wherever the code lives, the agent needs each function's name, description, and parameters before it
+can call anything. There are two ways to hand it that declaration: write it into the agent, or point
+the agent at a URL and let SignalWire fetch it while the agent loads.
 
-Declaring **inline** is what the examples on this page do: each function is spelled out in
-[`SWAIG.functions`][swaig-functions], or defined with the Server SDK's `define_tool`. The agent knows
-the signature the moment the document loads, and the whole contract is visible where the agent is
-configured.
+### Declaring inline
 
-Declaring **remotely** moves the signature to your server. A [`SWAIG.includes`][swaig-includes] entry
-names a URL and the functions you want from it:
+An inline declaration lives with the rest of the agent's configuration, so SignalWire has every
+signature the moment the agent loads and asks your server nothing. In SWML, each function is an entry
+in [`SWAIG.functions`][swaig-functions]. With the Server SDK, each is a `define_tool` call, which
+declares the function and registers the handler that runs it in one step.
 
+Declare inline when the functions belong to one application. The whole contract is readable where the
+agent is configured, and there is no second endpoint to keep available.
+
+<CodeBlocks>
+<CodeBlock title="SWML">
+```yaml
+SWAIG:
+  functions:
+    - function: check_inventory
+      description: Check the warehouse system for an item's stock level
+      parameters:
+        type: object
+        properties:
+          sku:
+            type: string
+            description: The item's SKU
+        required:
+          - sku
+      web_hook_url: https://example.com/check-inventory
+```
+</CodeBlock>
+<CodeBlock title="Server SDK (Python)">
+```python
+self.define_tool(
+    name="check_inventory",
+    description="Check the warehouse system for an item's stock level",
+    parameters={
+        "type": "object",
+        "properties": {
+            "sku": {"type": "string", "description": "The item's SKU"}
+        },
+        "required": ["sku"]
+    },
+    handler=self.check_inventory
+)
+```
+</CodeBlock>
+</CodeBlocks>
+
+The [order-status agent](#an-order-status-agent) below is a complete, runnable version of this in both
+forms.
+
+### Declaring remotely
+
+A remote declaration leaves the agent holding only a URL. A [`SWAIG.includes`][swaig-includes] entry
+names that URL and the functions you want from it, and while the agent loads, SignalWire POSTs a
+[signature request][signature-webhook] there. Your server answers with the full definitions, so the
+agent learns the signatures from the same server that implements them.
+
+Declare remotely when a toolset outlives any single agent. The definitions sit next to the code that
+runs them, you can add a parameter without editing any SWML, and one server can supply the same tools
+to every agent that includes it.
+
+<CodeBlocks>
+<CodeBlock title="SWML">
 ```yaml
 SWAIG:
   includes:
     - url: https://example.com/swaig
-      functions: ["get_weather"]
+      functions: ["check_inventory"]
       meta_data:
         store_id: sf-01
 ```
+</CodeBlock>
+<CodeBlock title="Server SDK (Python)">
+```python
+self.add_function_include(
+    url="https://example.com/swaig",
+    functions=["check_inventory"],
+    meta_data={"store_id": "sf-01"}
+)
+```
+</CodeBlock>
+</CodeBlocks>
 
-While the document loads, SignalWire POSTs a [signature request][signature-webhook] to that URL, and
-your server answers with the full definitions — `function`, `description`, `parameters`, and the
-`web_hook_url` each one should be called on. All three of `function`, `description`, and a
-`web_hook_url` are needed for a definition to register; one that omits any of them is skipped
-silently. A shared `web_hook_url` can go in a `defaults` object returned alongside the functions, and
-a definition that carries a `data_map` needs no URL at all.
+Your server replies to the signature request with an array of definitions — the same fields an inline
+declaration carries, plus the `web_hook_url` each function should be called on:
 
-From there the two paths are the same. A remote function is called with the same request, returns the
-same `response` and `action`, and can steer the call the same way; nothing downstream of the
-declaration can tell them apart.
+```json
+[
+  {
+    "function": "check_inventory",
+    "description": "Check the warehouse system for an item's stock level",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "sku": { "type": "string", "description": "The item's SKU" }
+      },
+      "required": ["sku"]
+    },
+    "web_hook_url": "https://example.com/check-inventory"
+  }
+]
+```
 
-Reach for remote functions when the definitions belong next to the code that implements them — you
-can add a parameter without editing any SWML, and one server can supply the same toolset to every
-agent that includes it. Inline is simpler when a single app owns its functions, and it keeps the
-contract readable in the document.
+A definition registers only when it has all three of `function`, `description`, and a `web_hook_url`;
+one that omits any of them is skipped without an error, so check that a function you expected is
+actually being offered. A shared `web_hook_url` can go in a `defaults` object returned alongside the
+functions, and a definition that carries a `data_map` needs no URL at all.
+For every field an entry accepts, see [`SWAIG.includes`][swaig-includes] in SWML and
+[`add_function_include`][sdk-includes] in the Server SDK.
+
+From there the two paths converge. A remotely declared function receives the same request, returns the
+same `response` and `action`, and steers the call the same way; nothing downstream of the declaration
+can tell them apart.
 
 ## An order-status agent
 
