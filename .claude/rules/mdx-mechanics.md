@@ -2,6 +2,8 @@
 paths:
   - "fern/**/*.mdx"
   - "fern/**/*.md"
+  - "fern/**/*.yml"
+  - "fern/**/*.yaml"
 ---
 
 # MDX mechanics — Fern
@@ -57,6 +59,7 @@ Every page is also served as plain Markdown (append `.md` to its URL to preview)
 ## Checks
 
 - After MDX edits: `yarn fern-md-check`. If you touched any nav yml: `yarn fern-check`.
+- The MDX check only validates pages the nav references — it runs over the whole site and takes no file argument. Wire a new page into its `<product>.yml` before checking, or nothing validates it, CI included.
 - Hand-verify `#anchor` fragments in links you touched — no CI check covers them (lychee skips fragments).
 - Never run `yarn start:dev` (dev server) — ask the user to preview, and hand them the changed page URLs.
 - Propose commits via diff; don't commit unasked.

@@ -34,11 +34,18 @@ One page, one type. Smells: a tutorial or how-to that keeps stopping to explain 
 - No emoji — not in headings, tab/card titles, or prose. Say good/bad in words. [SW]
 - Terminology: "Server SDKs" (never "Agents SDK"); tokens are *created*/*issued* (never *minted*); "resource addresses" (never "Fabric addresses"); expand every acronym at first use. [SW]
 
+## Accessibility and inclusive language [G][MS]
+
+- Link text names its destination and stands alone out of context — readers using screen readers scan link-to-link. Never "click here", "this page", "read more", or a bare URL as the label.
+- Don't identify anything by sight alone. Name the control by its label, not its position or color ("the green button on the right").
+- Bias-free wording: no ableist idioms (crazy, insane, blind to, dumb), no military or political metaphors, and no culture-bound idioms that won't survive translation. Describe people, not conditions.
+
 ## Grounding [SW]
 
 - Every fact traces to specs, source, the dashboard, or a ticket. Can't verify? Write `[NEEDS SOURCE: what's missing]` — never guess. Never invent params, endpoints, components, or behavior.
 - Customer-facing only: no internal implementation detail (backend endpoints, transports, engine-side params). Placeholder data only — no real names, emails, or domains.
 - Examples do real work: tool call → your server → system of record → response. No knowledge-trivia bots.
+- Examples run as written: real imports, every required parameter, and only placeholders the reader can obviously fill. Verify each against the spec or SDK source — and against an actual run when the page ships a whole flow.
 - Don't cite other vendors' docs as authority; never disparage anyone's product.
 
 ## Modes

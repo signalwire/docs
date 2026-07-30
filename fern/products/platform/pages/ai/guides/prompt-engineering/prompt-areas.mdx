@@ -27,36 +27,43 @@ The main prompt is your AI agent's core identity and instruction set. It defines
 - The agent's role and personality
 - General conversational style
 - Core knowledge areas
-- Global behavioral boundaries
+- The objective that tells the agent when it's done
+
+Rules that must hold on every call are a poor fit here.
+Put safety, compliance, and brand rules in the [conscience](#conscience), which is reinforced
+throughout the call, and put anything exact or enforceable behind a
+[tool call](/docs/platform/ai/tool-calling).
+See [where guardrails belong](/docs/platform/ai/prompt-engineering#where-guardrails-belong) for the
+full order to reach for them in.
 
 ### Good vs bad main prompts
 
 <Tabs>
 <Tab title="Clear, structured main prompt">
-A well-structured prompt that clearly defines the agent's role, guidelines, boundaries, and response structure.
+A well-structured prompt that clearly defines the agent's role, guidelines, and response structure.
 
 ```markdown
-# Technical Support Agent
+# Technical support agent
 
 You are a SignalWire technical support specialist. Your role is to help customers with API integration and platform usage.
 
-## Core Guidelines
-- Verify customer identity before discussing account details
+## Core guidelines
+- Verify customer identity with verify_account before discussing account details
 - Use clear, technical explanations matched to user expertise
 - Provide code examples when relevant
-- Document all reported issues
+- Log every reported issue with create_ticket before ending the call
+- Hand billing questions to the finance team with transfer_call
 
-## Boundaries
-- Never share internal system details
-- Don't make promises about future features
-- Escalate billing questions to finance team
-
-## Response Structure
+## Response structure
 1. Acknowledge the issue
 2. Ask clarifying questions if needed
 3. Provide step-by-step solutions
 4. Verify resolution
 ```
+
+Each guideline names an outcome, and the ones that matter are backed by a function.
+`verify_account` decides whether the caller is verified, so nothing depends on the prompt
+remembering to check.
 </Tab>
 <Tab title="Vague, unstructured main prompt">
 A poorly structured prompt lacking clear guidelines and specificity.
@@ -87,9 +94,14 @@ Don't:
 Context step prompts let you:
 
 - Customize behavior for specific conversation stages
-- Define goals and boundaries for each interaction phase
+- Define the goal of each interaction phase
 - Control transitions between different stages of a workflow
 - Maintain contextual awareness during multi-step processes
+
+Steps also constrain the agent structurally rather than by instruction.
+`valid_steps` and `valid_contexts` decide where the conversation can go next, and the functions you
+expose in a step decide what the agent can do there at all.
+An agent can't confirm a booking before it quotes one if the booking function isn't reachable yet.
 
 ### Good vs bad context steps
 
@@ -253,6 +265,11 @@ Conscience prompts provide:
 - Brand protection mechanisms
 - User safety and privacy guarantees
 - Legal and regulatory guardrails
+
+This is where the rules go that would otherwise pile up in the main prompt as a list of don'ts.
+A rule stated once in a long main prompt competes with everything around it, while the same rule in
+the conscience is reinforced throughout the call, including after each function call.
+Keep the list short, and reserve it for the rules your code can't enforce on its own.
 
 ### Good vs bad conscience prompts
 

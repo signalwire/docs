@@ -3,10 +3,12 @@ import "./functions.tsp";
 
 namespace SWML.Calling;
 
+// Bedrock has its own SWAIG parser rather than sharing the `ai` verb's, and reads
+// only `functions` and `defaults.web_hook_url`. `native_functions`, `includes`,
+// `internal_fillers`, and `mcp_servers` are parsed on the `ai` path only, so they
+// must not be picked in here — bedrock ignores them without raising an error.
 union PickedBedrockSWAIG {
   "defaults",
-  "native_functions",
-  "includes",
 }
 
 model BedrockSWAIG {

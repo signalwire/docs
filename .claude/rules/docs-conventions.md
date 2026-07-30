@@ -2,6 +2,8 @@
 paths:
   - "fern/**/*.mdx"
   - "fern/**/*.md"
+  - "fern/**/*.yml"
+  - "fern/**/*.yaml"
 ---
 
 # Doc types — what you may edit
@@ -14,7 +16,7 @@ paths:
 | Guides, tutorials, concepts | `fern/products/*/pages/**` | Yes |
 | Snippets/partials | `fern/snippets/**` | Yes — re-check every page that includes them |
 
-Generated artifacts — `fern/apis/**` and `specs/**/tsp-output/**` — are never hand-edited; the next build overwrites them.
+Generated artifacts — `specs/**/tsp-output/**` and the OpenAPI files it emits (`fern/apis/signalwire-rest/openapi.yaml`, `fern/apis/compatibility/openapi.yaml`) — are never hand-edited; the next build overwrites them. Not all of `fern/apis/` is generated: `calling-rpc/openrpc.yaml` has no generator and is hand-maintained (currently commented out of `fern/products/apis/apis.yml`). TypeSpec conventions live in `spec-conventions`.
 
 ## Applying audit findings
 

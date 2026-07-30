@@ -64,9 +64,68 @@ An array of JSON objects to define functions that can be executed during the int
 </ParamField>
 
 
-<Markdown src="/snippets/swml/_web-hook-url.mdx" />
+</Indent>
+
+## Tool webhook
+
+When the agent calls one of your SWAIG functions, the platform sends an HTTP `POST` to that function's
+`web_hook_url` (or the SWAIG `defaults.web_hook_url`). Your endpoint runs the function and returns a JSON
+object with a `response` string (the result the agent reads next) and, optionally, an `action` — a single
+object or an array — telling the agent what to do.
+
+### Request
+
+<Schema type="Calling.BedrockSwaigToolWebhookPayload" api="signalwire-rest" showDescription />
+
+<Note>
+This payload differs from the one an [`ai`](/docs/swml/reference/calling/ai) agent sends. `content_type`
+is `text/json` rather than `text/swaig`, `argument` carries no `substituted` value, and there is no
+`version`, `description`, or `argument_desc`. The caller's number arrives as `caller_id` (and as
+`caller_id_number` when the call has a caller profile) rather than `caller_id_num`.
+Write your handler against this list, not the `ai` one.
+</Note>
+
+<WebhookPayloadSnippet webhook="bedrockSwaigToolWebhook" />
+
+See the [Amazon Bedrock SWAIG tool webhook](/docs/apis/rest/calls/webhooks/bedrock-swaig-tool-webhook)
+webhook page for the full field reference.
+
+### Reply
+
+Return a JSON object with a `response` key and an optional `action` key. The `response` is the text
+the agent reads next, and `action` carries SWML-compatible objects that change what the call does next.
+
+<Markdown src="/snippets/swml/_swaig-response-fields.mdx" />
+
+<Indent>
+
+<Markdown src="/snippets/swml/_bedrock-swaig-actions.mdx" />
 
 </Indent>
+
+<Note>
+Bedrock agents accept a smaller set of actions than [`ai`](/docs/swml/reference/calling/ai) agents.
+The six above are the whole list: there is no `say`, `stop`, `hangup`, `hold`, `toggle_functions`,
+`context_switch`, `change_context`, `change_step`, `user_input`, `playback_bg`, or `stop_playback_bg`.
+An unrecognized key in `action` is ignored rather than reported as an error, so a payload written for
+an `ai` agent fails quietly here.
+</Note>
+
+```json
+{
+  "response": "It's 82°F and sunny in Tulsa, with 38% humidity and a 2.2 mph wind.",
+  "action": [
+    {
+      "set_meta_data": {
+        "temperature": 82.0,
+        "humidity": 38,
+        "wind_speed": 2.2,
+        "weather": "Sunny"
+      }
+    }
+  ]
+}
+```
 
 ## **Reserved Functions**
 
@@ -155,22 +214,12 @@ sections:
           text: |
             You are a helpful assistant that can provide information to users about a destination.
             At the start of the conversation, always ask the user for their name.
-            You can use the appropriate function to get the phone number, address,
-            or weather information.
+            You can use the appropriate function to get weather information.
         post_prompt:
           text: "Summarize the conversation."
         SWAIG:
-          includes:
-            - functions:
-                - get_phone_number
-                - get_address
-              url: https://example.com/functions
-              user: me
-              pass: secret
           defaults:
             web_hook_url: https://example.com/my-webhook
-            web_hook_auth_user: me
-            web_hook_auth_pass: secret
           functions:
             - function: get_weather
               description: To determine what the current weather is in a provided location.
@@ -200,27 +249,14 @@ sections:
         "amazon_bedrock": {
           "post_prompt_url": "https://example.com/my-api",
           "prompt": {
-            "text": "You are a helpful assistant that can provide information to users about a destination.\nAt the start of the conversation, always ask the user for their name.\nYou can use the appropriate function to get the phone number, address,\nor weather information.\n"
+            "text": "You are a helpful assistant that can provide information to users about a destination.\nAt the start of the conversation, always ask the user for their name.\nYou can use the appropriate function to get weather information.\n"
           },
           "post_prompt": {
             "text": "Summarize the conversation."
           },
           "SWAIG": {
-            "includes": [
-              {
-                "functions": [
-                  "get_phone_number",
-                  "get_address"
-                ],
-                "url": "https://example.com/functions",
-                "user": "me",
-                "pass": "secret"
-              }
-            ],
             "defaults": {
-              "web_hook_url": "https://example.com/my-webhook",
-              "web_hook_auth_user": "me",
-              "web_hook_auth_pass": "secret"
+              "web_hook_url": "https://example.com/my-webhook"
             },
             "functions": [
               {
