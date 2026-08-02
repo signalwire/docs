@@ -9,7 +9,7 @@ max-toc-depth: 3
 [tool-calling]: /docs/platform/ai/tool-calling
 [tool-calling-review]: /docs/platform/ai/tool-calling#read-the-post-prompt-report
 [prompt-engineering]: /docs/platform/ai/prompt-engineering
-[prompt-eng-best-practices]: /docs/platform/ai/prompt-engineering/best-practices
+[avoid-overprompting]: /docs/platform/ai/prompt-engineering/best-practices#avoid-overprompting
 [swml-datamap]: /docs/swml/guides/data-map
 [ai-reference]: /docs/swml/reference/calling/ai
 [ai-prompt-reference]: /docs/swml/reference/calling/ai/prompt
@@ -19,6 +19,9 @@ Building an agent that holds up in production takes more than a good prompt.
 This guide collects the practices that matter across the whole design: how work divides between
 the prompt and your code, how to write for a real-time voice medium, how to help speech recognition,
 and how to test, observe, and stay compliant once callers arrive.
+
+The examples build one agent, the dispatcher for a taxi company called Bayview Taxi, a practice at a
+time. The last section assembles it into a script you can run.
 
 ## Split the work between the prompt and your code
 
@@ -31,6 +34,8 @@ The prompt covers who the agent is, how it speaks, what it's there to accomplish
 and when to reach for its functions.
 Your code, behind [SWAIG functions][tool-calling] (SignalWire's tool calling), covers prices,
 inventory, calculations, policy, and anything else with a right answer.
+Split that way, the agent only ever holds the exact information it needs, verified by your systems,
+at the moment it needs it.
 
 <Tip>
 Values and conditions change; the prompt doesn't. Anything that can go stale should be fetched
@@ -39,7 +44,7 @@ by your code at call time and fed to the agent, not written statically into the 
 
 ### Keep business data out of the prompt
 
-It's tempting to paste the catalog, the price list, or the policy manual into the prompt
+It's tempting to paste the fare table, the service-area map, or the policy manual into the prompt
 and hope the model honors it all — "prompt and pray."
 Resist it.
 The prompt is fixed when the call starts, but your data keeps changing;
@@ -63,7 +68,7 @@ its conversational duties, and where it defers to your code.
 Outline those necessities clearly, then stop.
 Overloading the AI with instructions muddles its behavior rather than tightening it,
 and since the prompt is part of every conversational turn, a brief prompt is also cheaper to run.
-See [avoiding over-prompting][prompt-eng-best-practices] for techniques.
+See [avoiding over-prompting][avoid-overprompting] for techniques.
 
 Structure the prompt with [Markdown](https://www.markdownguide.org/basic-syntax/):
 headings and lists keep it organized and legible,
@@ -78,42 +83,39 @@ sections:
     - ai:
         prompt:
           text: |
-            Your name is Sam. You are the phone assistant for Hartwell Hardware.
+            Your name is Ada. You are the dispatcher for Bayview Taxi.
 
             ## Personality and duties
-            You are friendly and practical. Help callers check whether an item
-            is in stock and what it costs, using the functions available to you.
+            You are calm and efficient. Help callers get a fare quote and book
+            a pickup, using the functions available to you.
 
             ## Greeting rules
-            Greet the caller, introduce yourself as Sam, and ask what item
-            they're looking for. Prefix the greeting with 'good morning',
-            'good afternoon', or 'good evening' depending on the time of day.
-          temperature: 0.89
-          top_p: 0.64
+            Greet the caller, introduce yourself as Ada, and ask where they
+            are and where they're going.
+          temperature: 0.7
 ```
 </CodeBlock>
 <CodeBlock title="Server SDK (Python)">
 ```python
 from signalwire import AgentBase
 
-agent = AgentBase(name="hartwell-hardware")
+agent = AgentBase(name="bayview-taxi")
 
 agent.prompt_add_section(
     "Role",
-    "Your name is Sam. You are the phone assistant for Hartwell Hardware."
+    "Your name is Ada. You are the dispatcher for Bayview Taxi."
 )
 agent.prompt_add_section(
     "Personality and duties",
-    "You are friendly and practical. Help callers check whether an item "
-    "is in stock and what it costs, using the functions available to you."
+    "You are calm and efficient. Help callers get a fare quote and book "
+    "a pickup, using the functions available to you."
 )
 agent.prompt_add_section(
     "Greeting rules",
-    "Greet the caller, introduce yourself as Sam, and ask what item "
-    "they're looking for. Prefix the greeting with 'good morning', "
-    "'good afternoon', or 'good evening' depending on the time of day."
+    "Greet the caller, introduce yourself as Ada, and ask where they "
+    "are and where they're going."
 )
-agent.set_params({"temperature": 0.89, "top_p": 0.64})
+agent.set_params({"temperature": 0.7})
 
 if __name__ == "__main__":
     agent.run()
@@ -121,15 +123,27 @@ if __name__ == "__main__":
 </CodeBlock>
 </CodeBlocks>
 
-Notice what this prompt *doesn't* contain: no product catalog, no prices, no stock counts.
-That information lives in the store's inventory system behind the agent's functions,
+Notice what this prompt *doesn't* contain: no fare table, no service-area boundary, no driver roster.
+That information lives in the dispatch system behind the agent's functions,
 so the prompt stays short and the answers stay accurate.
 
-Some context does belong in the prompt: stable facts like business hours, or the agent's scope.
+Some context does belong in the prompt.
+Put in it what no system of record can answer: who the agent is, the scope of what it handles,
+the tone it takes, how it should treat a caller who is upset, and the point at which it hands off
+to a person.
+There is nothing to look up for any of those, and leaving them out is what produces a bland,
+directionless agent.
+
+Business hours are the trap.
+They read like a stable fact and they aren't: holidays move them, a weather closure moves them,
+and a short-staffed Saturday moves them.
+A prompt written last quarter will state the old hours with complete confidence.
+If a caller could be told the wrong thing because the world changed, it belongs behind a function.
+
 Per-call context, such as the caller's name or account tier, can be interpolated into the prompt
 at request time; place it at the **bottom** so the stable part stays identical from turn to turn
 and from call to call.
-Interpolation is for context the conversation starts from — a live answer, like a price or an
+Interpolation is for context the conversation starts from. A live answer, like a price or an
 order's status, still comes from a function at the moment the caller asks.
 
 For the full craft of prompt writing, including structure, examples, and iterative refinement,
@@ -139,13 +153,20 @@ see the [prompt engineering guide][prompt-engineering].
 
 The [`prompt` object][ai-prompt-reference] accepts parameters that shape the AI's responses:
 
-- **Temperature (`temperature`)**: influences the randomness of the AI's output.
-  Values closer to 0 make responses more deterministic and focused; higher values introduce variety.
-- **Top P (`top_p`)**: also controls diversity. A lower value narrows the range of potential responses.
-- **Confidence (`confidence`)**: the threshold for speech-detection events.
-  A lower value shortens the pause after the caller speaks, but may cause false positives.
-- **Presence penalty (`presence_penalty`)**: positive values make the AI more likely to introduce new topics.
-- **Frequency penalty (`frequency_penalty`)**: positive values discourage repetition.
+- **`temperature`** (`0.0`–`1.5`): how random the output is. Closer to `0` makes it less random.
+- **`top_p`** (`0.0`–`1.0`): an alternative way to set randomness, again less random closer to `0`.
+  It does the same job as `temperature`, so tune one or the other rather than both.
+- **`confidence`** (`0.0`–`1.0`): the threshold for firing a speech-detect event at the end of the
+  caller's utterance. Lowering it shortens the pause after the caller speaks, at the cost of
+  false positives.
+- **`presence_penalty`** (`-2.0`–`2.0`): aversion to staying on topic. Positive values make the model
+  more likely to raise new topics.
+- **`frequency_penalty`** (`-2.0`–`2.0`): aversion to repetition. Positive values make the model less
+  likely to repeat the same line verbatim.
+- **`max_tokens`** (`0`–`4096`): a ceiling on how long a single generated reply can be.
+
+Effective defaults vary by model, so treat these as adjustments from whatever the model you selected
+starts at. Change one at a time and listen to a real call between changes.
 
 ## Design for real-time voice
 
@@ -174,16 +195,18 @@ Filler phrases give the AI something to say while a function call is running;
 configure them [per-function](/docs/swml/reference/calling/ai/swaig/functions) and
 [agent-wide](/docs/swml/reference/calling/ai/languages).
 Background audio, such as typing or office ambience, provides immediate and familiar feedback
-while processing happens; set it with [`params.background_file`](/docs/swml/reference/calling/ai/params).
+while processing happens; set it with
+[`params.background_file`](/docs/swml/reference/calling/ai/params#paramsbackground_file).
 And keep your function handlers fast: your webhook's latency is part of the conversation,
 so move slow work out of band and respond promptly.
 
 ## Help speech recognition with hints
 
 Hints boost recognition accuracy for the words that matter in your domain,
-so "caulk" doesn't arrive as "chalk."
+so "Gough Street" doesn't arrive as "Goff Street."
 
-Introduce the vocabulary your agent should expect, such as product names, jargon, and place names:
+Street names, neighborhoods, and local landmarks are exactly the vocabulary a general speech model
+handles worst and a dispatcher hears most, which makes them the first thing to introduce:
 
 <CodeBlocks>
 <CodeBlock title="SWML">
@@ -194,29 +217,29 @@ sections:
     - ai:
         prompt:
           text: |
-            Your name is Sam. You are the phone assistant for Hartwell Hardware.
-            Help callers check whether items are in stock.
+            Your name is Ada. You are the dispatcher for Bayview Taxi.
+            Help callers get a fare quote and book a pickup.
         hints:
-          - caulk
-          - torx
-          - galvanized
-          - PVC
-          - primer
-          - spackle
+          - Gough Street
+          - Divisadero
+          - Presidio
+          - Embarcadero
+          - Bayview
+          - SFO
 ```
 </CodeBlock>
 <CodeBlock title="Server SDK (Python)">
 ```python
 from signalwire import AgentBase
 
-agent = AgentBase(name="hartwell-hardware")
+agent = AgentBase(name="bayview-taxi")
 
 agent.prompt_add_section(
     "Role",
-    "Your name is Sam. You are the phone assistant for Hartwell Hardware. "
-    "Help callers check whether items are in stock."
+    "Your name is Ada. You are the dispatcher for Bayview Taxi. "
+    "Help callers get a fare quote and book a pickup."
 )
-agent.add_hints(["caulk", "torx", "galvanized", "PVC", "primer", "spackle"])
+agent.add_hints(["Gough Street", "Divisadero", "Presidio", "Embarcadero", "Bayview", "SFO"])
 
 if __name__ == "__main__":
     agent.run()
@@ -264,6 +287,87 @@ SignalWire to dial, because once the call is placed it has already happened.
 Then let the agent catch an opt-out mid-conversation with a [SWAIG function][tool-calling]
 whose handler writes to your do-not-call list before it answers the caller.
 
+Both halves of that, together:
+
+<CodeBlocks>
+<CodeBlock title="SWML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - ai:
+        params:
+          static_greeting: >-
+            Hello, this is an automated assistant calling from Bayview Taxi
+            about your pickup. This call uses an artificial voice.
+          static_greeting_no_barge: true
+        prompt:
+          text: |
+            You are calling to tell the caller their driver is on the way.
+            If the caller asks not to be contacted again, in any wording,
+            call opt_out immediately before saying anything else.
+        SWAIG:
+          functions:
+            - function: opt_out
+              description: Record that the caller does not want to be contacted again
+              parameters:
+                type: object
+                properties: {}
+              web_hook_url: https://example.com/opt-out
+```
+</CodeBlock>
+<CodeBlock title="Server SDK (Python)">
+```python
+from signalwire import AgentBase, FunctionResult
+
+class OutboundAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="outbound-agent")
+
+        self.set_params({
+            "static_greeting": (
+                "Hello, this is an automated assistant calling from Bayview "
+                "Taxi about your pickup. This call uses an artificial voice."
+            ),
+            "static_greeting_no_barge": True,
+        })
+
+        self.prompt_add_section(
+            "Role",
+            "You are calling to tell the caller their driver is on the way."
+        )
+        self.prompt_add_section(
+            "Opt-out",
+            "If the caller asks not to be contacted again, in any wording, "
+            "call opt_out immediately before saying anything else."
+        )
+
+        self.define_tool(
+            name="opt_out",
+            description="Record that the caller does not want to be contacted again",
+            parameters={"type": "object", "properties": {}},
+            handler=self.opt_out
+        )
+
+    def opt_out(self, args, raw_data):
+        number = raw_data.get("caller_id_num")
+        add_to_do_not_call_list(number)  # your system of record
+        return FunctionResult(
+            "Confirm the request was recorded, apologize for the interruption, "
+            "and end the call."
+        ).hangup()
+
+if __name__ == "__main__":
+    agent = OutboundAgent()
+    agent.run()
+```
+</CodeBlock>
+</CodeBlocks>
+
+The prompt asks the agent to call `opt_out`, and the handler is what makes the opt-out real.
+The number lands on your do-not-call list before the agent says a word about it, so the record
+exists even if the caller hangs up on the confirmation.
+
 <Warning>
 This is technical guidance, not legal advice.
 Requirements vary by jurisdiction and by call type, and they change often.
@@ -286,9 +390,9 @@ Both compliance guides walk through these controls in detail:
 
 ## Putting it together
 
-Here is Sam as a complete script, with each practice in place:
-a lean prompt, stock and prices served by the store's inventory system instead of pasted text,
-a filler phrase to cover the lookup, hints for domain vocabulary, and a post-call
+Here is Ada as a complete script, with each practice in place:
+a lean prompt, fares served by the dispatch system instead of pasted text,
+a filler phrase to cover the lookup, hints for local street names, and a post-call
 report for review.
 
 <CodeBlocks>
@@ -300,41 +404,44 @@ sections:
     - ai:
         prompt:
           text: |
-            Your name is Sam. You are the phone assistant for Hartwell Hardware.
+            Your name is Ada. You are the dispatcher for Bayview Taxi.
 
             ## Personality and duties
-            You are friendly and practical. Help callers check whether an item
-            is in stock and what it costs. Look items up with check_stock, and
-            only quote prices and quantities that check_stock returned.
+            You are calm and efficient. Help callers get a fare quote and book
+            a pickup. Price trips with get_quote, and only quote fares and
+            pickup times that get_quote returned.
 
             ## Greeting rules
-            Greet the caller, introduce yourself as Sam, and ask what item
-            they're looking for.
-          temperature: 0.89
-          top_p: 0.64
+            Greet the caller, introduce yourself as Ada, and ask where they
+            are and where they're going.
+          temperature: 0.7
         SWAIG:
           functions:
-            - function: check_stock
-              description: Look up an item in the store inventory system for current stock and price
+            - function: get_quote
+              description: Quote the fare between a pickup address and a destination
               parameters:
                 type: object
                 properties:
-                  item:
+                  pickup:
                     type: string
-                    description: The item the caller asked about, in their own words
+                    description: The pickup address, as the caller said it
+                  destination:
+                    type: string
+                    description: Where the caller is going
                 required:
-                  - item
+                  - pickup
+                  - destination
               fillers:
                 en-US:
-                  - Let me check the shelf for you...
-              web_hook_url: https://example.com/inventory
+                  - Let me work that out...
+              web_hook_url: https://example.com/get-quote
         hints:
-          - caulk
-          - torx
-          - galvanized
-          - PVC
-          - primer
-          - spackle
+          - Gough Street
+          - Divisadero
+          - Presidio
+          - Embarcadero
+          - Bayview
+          - SFO
         post_prompt:
           text: Summarize the call and provide the summary in JSON format.
         post_prompt_url: https://example.com/post-prompt
@@ -344,97 +451,106 @@ sections:
 ```python
 from signalwire import AgentBase, FunctionResult
 
-# Stand-in for your inventory system: a database query, an internal API call
-INVENTORY = {
-    "galvanized wood screws": {"sku": 4471, "stock": 14, "price": 8.49},
-    "pvc primer": {"sku": 2205, "stock": 9, "price": 6.99},
-    "caulk gun": {"sku": 3118, "stock": 5, "price": 12.99},
+# Stand-in for your dispatch system: a distance API, a rate table, a driver roster
+RATES = {"base": 4.50, "per_mile": 2.75}
+DISTANCES = {
+    ("123 gough street", "sfo"): 12.4,
+    ("123 gough street", "embarcadero"): 2.1,
 }
 
-class HardwareAgent(AgentBase):
+class DispatchAgent(AgentBase):
     def __init__(self):
-        super().__init__(name="hartwell-hardware")
+        super().__init__(name="bayview-taxi")
         self.add_language("English", "en-US", "rime.spore")
 
         self.prompt_add_section(
             "Role",
-            "Your name is Sam. You are the phone assistant for Hartwell Hardware."
+            "Your name is Ada. You are the dispatcher for Bayview Taxi."
         )
         self.prompt_add_section(
             "Personality and duties",
-            "You are friendly and practical. Help callers check whether an item "
-            "is in stock and what it costs. Look items up with check_stock, and "
-            "only quote prices and quantities that check_stock returned."
+            "You are calm and efficient. Help callers get a fare quote and book "
+            "a pickup. Price trips with get_quote, and only quote fares and "
+            "pickup times that get_quote returned."
         )
         self.prompt_add_section(
             "Greeting rules",
-            "Greet the caller, introduce yourself as Sam, and ask what item "
-            "they're looking for."
+            "Greet the caller, introduce yourself as Ada, and ask where they "
+            "are and where they're going."
         )
-        self.set_params({"temperature": 0.89, "top_p": 0.64})
+        self.set_params({"temperature": 0.7})
 
-        self.add_hints(["caulk", "torx", "galvanized", "PVC", "primer", "spackle"])
+        self.add_hints(["Gough Street", "Divisadero", "Presidio",
+                        "Embarcadero", "Bayview", "SFO"])
         self.set_post_prompt("Summarize the call and provide the summary in JSON format.")
 
         self.define_tool(
-            name="check_stock",
-            description="Look up an item in the store inventory system for current stock and price",
+            name="get_quote",
+            description="Quote the fare between a pickup address and a destination",
             parameters={
                 "type": "object",
                 "properties": {
-                    "item": {
+                    "pickup": {
                         "type": "string",
-                        "description": "The item the caller asked about, in their own words"
+                        "description": "The pickup address, as the caller said it"
+                    },
+                    "destination": {
+                        "type": "string",
+                        "description": "Where the caller is going"
                     }
                 },
-                "required": ["item"]
+                "required": ["pickup", "destination"]
             },
-            handler=self.check_stock,
-            fillers={"en-US": ["Let me check the shelf for you..."]}
+            handler=self.get_quote,
+            fillers={"en-US": ["Let me work that out..."]}
         )
 
-    def check_stock(self, args, raw_data):
-        item = args.get("item", "").lower().strip()
-        match = INVENTORY.get(item)
-        if not match:
+    def get_quote(self, args, raw_data):
+        pickup = args.get("pickup", "").lower().strip()
+        destination = args.get("destination", "").lower().strip()
+
+        miles = DISTANCES.get((pickup, destination))
+        if miles is None:
             return FunctionResult(
-                f"No item matching '{item}'. Ask the caller to describe it differently."
+                "That trip isn't in the service area. Apologize and say we can't take it."
             )
+
+        fare = RATES["base"] + miles * RATES["per_mile"]
         return FunctionResult(
-            f"Item {match['sku']}, {item}: {match['stock']} in stock "
-            f"at ${match['price']:.2f}. Offer to set one aside at the front desk."
+            f"The fare from {pickup} to {destination} is ${fare:.2f} for {miles} miles. "
+            "Offer to send a driver now."
         )
 
 if __name__ == "__main__":
-    agent = HardwareAgent()
+    agent = DispatchAgent()
     agent.run()
 ```
 </CodeBlock>
 </CodeBlocks>
 
-When a caller asks about wood screws, the platform sends an HTTP POST to your function's endpoint
-(the `web_hook_url` in SWML, or the endpoint the Server SDK serves for you):
+When a caller asks what it costs to get to the airport, the platform sends an HTTP POST to your
+function's endpoint (the `web_hook_url` in SWML, or the endpoint the Server SDK serves for you):
 
 ```json
 {
-  "function": "check_stock",
+  "function": "get_quote",
   "argument": {
-    "parsed": [{ "item": "galvanized wood screws" }]
+    "parsed": [{ "pickup": "123 Gough Street", "destination": "SFO" }]
   }
 }
 ```
 
-Your server queries the inventory database (the same one the registers use) and replies:
+Your server prices the trip against the same rate table the meters use and replies:
 
 ```json
 {
-  "response": "Item 4471, galvanized wood screws: 14 in stock at $8.49. Offer to set one aside at the front desk."
+  "response": "The fare from 123 Gough Street to SFO is $38.60 for 12.4 miles. Offer to send a driver now."
 }
 ```
 
-Sam relays the answer in its own voice and offers to hold a box.
-Every number in that sentence came out of the inventory system during the call.
-When the price changes tomorrow, the agent is already right,
+Ada relays the answer in its own voice and offers to dispatch a car.
+Every number in that sentence came out of the dispatch system during the call.
+When the rate changes tomorrow, the agent is already right,
 and the post-call report shows you every lookup it made.
 
 ## Next steps

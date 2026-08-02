@@ -8,7 +8,6 @@ description: Learn the fundamentals of prompt engineering and how it can help yo
 max-toc-depth: 3
 ---
 
-[swml-docs]: /docs/swml
 [context-steps]: /docs/platform/ai/prompt-engineering/where-to-apply#context-steps
 [swaig]: /docs/platform/ai/prompt-engineering/where-to-apply#swaig-functions
 [conscience]: /docs/platform/ai/prompt-engineering/where-to-apply#conscience
@@ -34,10 +33,6 @@ you need to be clear about what you want them to do, how to do it, and what coun
 A good prompt tells the AI how to handle user questions, what tone to use, and what information to focus on.
 The rules that have to hold on every call belong in your code, where they are enforced instead of requested.
 
-<Info>
-You can use all these prompt engineering techniques with either [SWML][swml-docs] or the AI agent resource.
-</Info>
-
 ## What makes a prompt work
 
 How you write your prompts determines your AI's performance: a well-prompted agent stays
@@ -60,7 +55,7 @@ and prompts that don't.
 A solid prompt is like a well-organized recipe - it has all the right ingredients in the right order. Here's how to structure your prompts for SignalWire AI agents:
 
 ### Role definition
-Begin by establishing who your AI is supposed to be. This identity is the foundation of the prompt, setting the tone and expertise level for all interactions. When you tell your AI "You're a telecom support specialist with five years under your belt," you're giving it a clear persona to embody throughout the conversation.
+Begin by establishing who your AI is supposed to be. This identity is the foundation of the prompt, setting the tone and expertise level for all interactions. When you tell your AI "You are a well-tenured taxi dispatcher," you're giving it a clear persona to embody throughout the conversation.
 
 ### Context
 Every conversation happens within a context that shapes understanding. Your AI needs background information to perform well: details about user demographics and technical knowledge, system capabilities and limitations, or relevant history that might influence the interaction. This context keeps the AI from making inappropriate assumptions.
@@ -76,51 +71,53 @@ carries only the few that can't live anywhere else.
 
 ### Example structure
 
-Here's a real-world example of a well-structured prompt for a pizza ordering AI:
+Here's a well-structured prompt for Bayview Taxi's dispatcher, the agent the rest of these guides build on:
 
 ```markdown
 ## Role
-You are a friendly pizza restaurant assistant responsible for taking orders and providing information about our menu. You have extensive knowledge of our pizzas, toppings, and policies.
+You are Ada, the dispatcher for Bayview Taxi. You quote fares and book pickups.
 
 ## Knowledge base
-- Menu Items: All pizza sizes (small, medium, large), available toppings, speciality pizzas
-- Operating Hours: Monday-Sunday 11am-10pm
-- Policies: Delivery radius (5 miles), minimum order for delivery ($15), modification limits
-- Dietary Information: Vegetarian options, gluten-free crust availability
+- Vehicle types: standard, van, wheelchair accessible
+- Payment: card over the phone, or cash to the driver
+- A booking needs a pickup address, a destination, and a pickup time
+
+## Tools
+- get_quote: prices a trip and returns the fare and the distance. Call it once you have both addresses, and every time either one changes.
+- book_ride: dispatches a driver and returns the pickup time and vehicle. Call it only after the caller has accepted a quote.
 
 ## Task structure
-1. Greet customer warmly and establish if ordering or asking questions
-2. For orders:
-   - Get pizza size (small/medium/large)
-   - Collect topping preferences
-   - Confirm order details
-   - Handle delivery/pickup choice
-3. For inquiries:
-   - Answer menu questions
-   - Provide policy information
-   - Address dietary concerns
+1. Greet the caller and ask where they are and where they're going
+2. To quote a trip:
+   - Collect the pickup address and the destination
+   - Confirm both back to the caller before pricing
+   - Call get_quote and read the fare it returns
+3. To book:
+   - Ask which vehicle type they need
+   - Call book_ride, then read back the pickup time and vehicle
 
 ## Response guidelines
-- Use friendly, conversational tone
-- Confirm understanding of customer requests
-- Read prices and totals back exactly as place_order returns them
-- Suggest popular topping combinations when asked
-- Guide customers through options step-by-step
+- Use a calm, efficient tone; callers are often in a hurry
+- Confirm addresses back before acting on them
+- Read fares and pickup times exactly as the functions return them
+- Offer the nearest alternative when a caller asks for something unavailable
 
 ## Guardrails
-- Prices, totals, and discounts come from place_order; relay its answer rather than working them out
-- Substitutions and specialty recipe changes are decided by place_order too
-- If asked when an order will arrive, say the store confirms a delivery window at checkout
+- Fares, surcharges, and distances come from get_quote; relay its answer rather than working them out
+- Availability and pickup times are decided by book_ride
+- If asked how long a trip will take, give the estimate book_ride returned and say traffic can change it
 ```
 
 <Info>
-This example keeps the menu's shape in the prompt to teach structure, and leaves the priced parts of
-an order to `place_order`, a SWAIG function the agent calls on your backend through a
-[tool call](/docs/platform/ai/tool-calling). In production the menu itself belongs there too; the
-prompt's knowledge base is for stable facts like hours, delivery radius, and dietary options.
+The prompt holds the shape of a booking — the vehicle types, the ways to pay, what a booking needs —
+and nothing whose answer can change. Fares move with distance, time of day, and surge, so they come
+from `get_quote`. Pickup times depend on which driver is free, so they come from `book_ride`. Both are
+SWAIG functions the agent calls on your backend through a
+[tool call](/docs/platform/ai/tool-calling).
 
-That split replaces the don'ts this prompt used to carry. `place_order` prices the order and rejects
-one placed after closing, so a caller can't talk the agent into a discount or a late order.
+That split is also what replaces a list of prohibitions. `get_quote` prices the trip and `book_ride`
+refuses a pickup no driver can make, so a caller can't talk the agent into a cheaper fare or a car that
+isn't there, and the prompt never has to forbid either.
 </Info>
 
 ### Visual representation of prompt impact
@@ -129,8 +126,8 @@ The following diagram illustrates the above prompt in a real conversation and ho
 
 <llms-ignore>
 
-<Frame caption="Each turn traces back to the part of the prompt that shaped it — except the price, which comes from code">
-  <img src="/assets/images/img/prompt-impact-flow-themed.svg" alt="A pizza ordering call, turn by turn: the role and response guidelines shape the greeting, the task structure and knowledge base drive the size question, the response guidelines suggest popular toppings, and the guardrails leave pricing to the place_order function." />
+<Frame caption="Each turn traces back to the part of the prompt that shaped it — except the fare, which comes from code">
+  <img src="/assets/images/img/prompt-impact-flow-themed.svg" alt="A taxi booking call, turn by turn: the role and response guidelines shape the greeting, the task structure and knowledge base drive the pickup-address question, the response guidelines set expectations about the trip, and the guardrails leave the fare to the get_quote function." />
 </Frame>
 
 </llms-ignore>
@@ -140,18 +137,18 @@ The following diagram illustrates the above prompt in a real conversation and ho
 ```mermaid
 flowchart TD
     Start([Inbound call])
-    Start --> R1["Welcome to Joe's Pizza! How may I help you today?"]
-    R1 --> Q1["I'd like to order a pizza"]
-    Q1 --> R2["What size would you like? Small, medium, or large?"]
-    R2 --> Q2["I'd like a large pizza"]
-    Q2 --> R3["Great! Our most popular toppings are pepperoni, mushrooms, and extra cheese."]
-    R3 --> Q3["Any discounts available?"]
-    Q3 --> R4["Our system applies any discounts when I place the order. What toppings would you like?"]
+    Start --> R1["Bayview Taxi, this is Ada. Where can we pick you up?"]
+    R1 --> Q1["I need a ride to the airport"]
+    Q1 --> R2["Happy to help. What address are you starting from?"]
+    R2 --> Q2["123 Gough Street"]
+    Q2 --> R3["Got it. Airport runs from Gough usually take about twenty five minutes at this hour."]
+    R3 --> Q3["What's it going to cost?"]
+    Q3 --> R4["Let me price that with dispatch and I'll have an exact fare for you in just a moment."]
 
     Note1["Role + response guidelines:<br/>a warm greeting in the brand's voice"]
-    Note2["Task structure + knowledge base:<br/>size first, then toppings"]
-    Note3["Response guidelines:<br/>suggest popular combinations"]
-    Note4["Guardrails:<br/>pricing comes back from place_order"]
+    Note2["Task structure + knowledge base:<br/>pickup address first, then the fare"]
+    Note3["Response guidelines:<br/>set expectations before quoting"]
+    Note4["Guardrails:<br/>fares come back from get_quote"]
 
     Note1 -.-> R1
     Note2 -.-> R2
@@ -162,23 +159,23 @@ flowchart TD
 </llms-only>
 
 This diagram demonstrates how:
-- The **role** shapes the AI's friendly greeting and professional demeanor
-- The **knowledge base** informs accurate responses about menu options and policies
-- The **task structure** ensures a logical order flow from size selection to toppings
+- The **role** shapes the AI's calm, professional greeting
+- The **knowledge base** informs accurate responses about vehicle types and how a booking works
+- The **task structure** collects both addresses before anything is priced
 - **Response guidelines** maintain consistent, helpful interaction throughout
-- **Guardrails** leave the pricing decision to the code that owns it, and keep the redirection polite
+- **Guardrails** leave the fare to the code that owns it, and keep the redirection polite
 
 ## Where guardrails belong
 
-A prompt full of don'ts is one of the most common ways an agent becomes unpredictable.
+A prompt full of prohibitions is one of the most common ways an agent becomes unpredictable.
 Every rule you add competes with the others for the model's attention, and a prohibition is followed
 less reliably than the same rule written as an instruction.
 Work through the options below in order, and stop as soon as the behavior is covered.
 
 1. **State what success looks like.** An agent that knows its objective works out most of its
-   own limits. "Take the order, confirm it back to the caller, and hand off anything you
+   own limits. "Quote the trip, book it once the caller accepts, and hand off anything you
    can't complete" already rules out competitor talk and freelance discounts, without a
-   single "don't".
+   single prohibition.
 2. **Enforce hard rules in code.** Prices, discounts, eligibility, and anything that must be
    exact or current belong behind a [tool call](/docs/platform/ai/tool-calling), where your
    handler validates the caller's input and decides the outcome. Your handler enforces a pricing
@@ -192,8 +189,8 @@ Work through the options below in order, and stop as soon as the behavior is cov
    in the middle of a long main prompt does.
 5. **Then, sparingly, write a don't.** A short list of genuine non-negotiables that can't be
    enforced structurally still earns its place. Keep it specific, and phrase it as the
-   behavior you want wherever you can: "If asked when an order will arrive, say the store
-   confirms a delivery window at checkout" steers better than "Don't promise delivery times".
+   behavior you want wherever you can: "If asked how long the trip will take, give the estimate
+   book_ride returned and say traffic can change it" steers better than "Don't promise arrival times".
 
 ## From draft to production
 

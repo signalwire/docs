@@ -26,22 +26,33 @@ max-toc-depth: 3
 [sdk-includes]: /docs/server-sdks/reference/python/agents/agent-base/add-function-include
 [signature-webhook]: /docs/apis/rest/calls/webhooks/swaig-signature-request
 
-A language model asked what a ride across town costs will give you a number, and it will sound right.
-It won't be your price.
+Ask a language model what a ride across town costs, with nothing else to go on, and it will give you
+a number. The number will sound right. That doesn't make it the fare you charge.
 
 An agent on a real phone line needs two things a model can't supply on its own.
-It needs facts that are current for this caller, like the order's status or the fare.
-It also needs to act: book the pickup, send the receipt, transfer the call.
+It needs facts that are current for this caller, like the fare to their address or whether a driver
+is free. It also needs to act: book the pickup, text the receipt, transfer the call.
 Tool calling, also called function calling, gives it both.
 The agent runs the conversation while your backend stays the source of truth.
 On SignalWire, tool calls travel over **SWAIG**, the SignalWire AI Gateway,
 and the tools you define are **SWAIG functions**.
 
+This guide follows one agent the whole way through: a dispatcher for a taxi company that quotes fares
+and books pickups.
+
 ## The agent is the front end
 
-A web front end renders the interface and captures what the user wants.
-It doesn't compute the cart total — the backend does, because the backend can be tested and versioned.
-Build a voice agent the same way: the conversation is the interface, and your code is still the application.
+Think about what you would ask of a new person on your dispatch desk.
+You would want them to listen well, get the caller to the point, and stay pleasant with someone who
+is running late.
+You would not ask them to memorize the fare table, or which drivers are free this afternoon, or how
+the airport surcharge is calculated.
+You would point them at the dispatch system and expect them to look it up, every time, because that
+is where the answer actually lives.
+
+An AI agent earns its keep the same way.
+Let it run the conversation, and leave prices, availability, and formulas in the code that owns them.
+Tool calling is how you point the agent at that code and tell it when to go looking.
 
 A prompt is a suggestion, and code is a constraint:
 "never give discounts" holds most of the time, while a pricing rule in your handler holds every time.
@@ -54,25 +65,23 @@ Anything that must be exact, current, or enforced belongs behind a SWAIG functio
 | Extracting details (names, dates, addresses) | Calculations and discounts |
 | Deciding when to reach for a function | Lookups and side effects (booking, texting, transferring) |
 
-The split also keeps menus, prices, and policies out of the prompt, where they go stale and get
+The split also keeps rate tables, prices, and policies out of the prompt, where they go stale and get
 ignored. [Best practices][best-practices] and [prompt engineering][prompt-engineering] cover the
 prompt side. This guide covers the functions: how they work, how to build one, and how to keep them
 reliable on real calls.
 
 ## How a SWAIG function works
 
-A SWAIG function is a named capability you hand to the agent: a **name**, a **description**,
-and a JSON Schema describing its **parameters**.
-If you have used tool calling with another LLM API, the concept is the same.
+A SWAIG function is a named capability you hand to the agent: a **name**, a **description**, and a
+JSON Schema describing its **parameters**. Each call is one HTTP POST carrying a JSON body, answered
+by one JSON reply. Nothing stays open between calls, and nothing has to be installed on your server.
 
 <Tip>
 SWAIG function descriptions are prompt engineering.
-"Look up order status by order number" tells the agent what the function does *and* what it needs before calling it.
+"Quote the fare from the caller's pickup address to their destination" tells the agent what the function does *and* what it needs before calling it.
 When an agent picks the wrong function or calls it too early, the description is usually the first thing to fix.
 </Tip>
 
-Each call is one HTTP POST carrying a JSON body, answered by one JSON reply.
-Nothing stays open between calls, and nothing has to be installed on your server.
 The round trip goes from the caller, through the agent, to your server and back:
 
 ```mermaid
@@ -82,46 +91,33 @@ sequenceDiagram
     participant Agent as AI agent
     participant Backend as Your backend
 
-    Caller->>Agent: "Where's my order? Number 12345."
-    Note over Agent: Chooses check_order and extracts<br/>order_number from the conversation
+    Caller->>Agent: "How much to get to the airport<br/>from 123 Gough Street?"
+    Note over Agent: Chooses get_quote and extracts<br/>the two addresses from the conversation
     Agent->>Backend: HTTP POST with the function name<br/>and parsed arguments
-    Note over Backend: Your code runs: database<br/>query, API call, calculation
+    Note over Backend: Your code runs: geocode, distance<br/>lookup, pricing engine
     Backend-->>Agent: response text, plus optional actions
-    Agent-->>Caller: "Order 12345 shipped Monday<br/>and arrives Thursday."
+    Agent-->>Caller: "That's $38.60,<br/>and I can have someone there in ten minutes."
 ```
 
 ### The request and the reply
 
 SignalWire POSTs the request to the function's `web_hook_url`.
-What your server receives looks like this, trimmed to the essentials:
+Every request names the function, carries the arguments the agent extracted, and identifies itself
+with `"content_type": "text/swaig"`; the fields around those describe the call and the session it
+belongs to. If `web_hook_url` carries credentials in `username:password@host` form, they arrive as
+HTTP basic authentication.
 
-```json
-{
-  "function": "check_order",
-  "argument": {
-    "parsed": [{ "order_number": "12345" }],
-    "raw": "{\"order_number\":\"12345\"}"
-  },
-  "caller_id_num": "+15552340987",
-  "ai_session_id": "c960da54-3f09-4de6-8c84-49c1fcca704c"
-}
-```
+<WebhookPayloadSnippet webhook="aiSwaigToolWebhook" />
 
-If `web_hook_url` carries credentials in `username:password@host` form, they arrive as HTTP basic
-authentication. Every request names the function, carries the arguments the agent extracted, and
-identifies itself with `"content_type": "text/swaig"`; the fields around those describe the call and
-the session it belongs to.
-
-The complete field list lives in the API reference as the [AI SWAIG tool webhook][swaig-webhook],
-which you can read as a schema or download with the rest of the OpenAPI document to generate types
-and validate requests in your tests. The [`SWAIG.functions` reference][swaig-functions] documents the
-same fields next to the configuration that declares them.
+The [AI SWAIG tool webhook][swaig-webhook] documents every field, and the
+[`SWAIG.functions` reference][swaig-functions] documents the same fields next to the configuration
+that declares them.
 
 A minimal reply:
 
 ```json
 {
-  "response": "Order 12345 shipped Monday and arrives Thursday. Offer to text the tracking link."
+  "response": "The fare to the airport is $38.60. Offer to book a pickup now."
 }
 ```
 
@@ -134,10 +130,13 @@ see [steering the call](#steering-the-call).
 
 ### Where the code lives
 
-Any endpoint that can accept JSON and return JSON can serve a SWAIG function, which leaves you three
-ways to host yours:
+Any endpoint that can host HTTP, accept JSON, and return JSON can serve a SWAIG function, which leaves
+you three ways to host yours:
 
-- **Your own webhook**: any HTTP endpoint, in any language, set with `web_hook_url`.
+- **Your own webhook**: a route you write and host, reachable over HTTPS from the public internet —
+  a Flask view, an Express handler, a serverless function behind its own URL. It reads the POST body,
+  runs whatever your business does, and returns the JSON reply. You name it in `web_hook_url`, and
+  nothing SignalWire-specific has to be installed for it to work.
 - **The Server SDK**: define the function and its handler in one class built on the SDK's Agents
   namespace (`AgentBase`), and the SDK serves the endpoint for you.
   See [SWAIG functions in the Server SDK][sdk-functions].
@@ -166,39 +165,49 @@ agent is configured, and there is no second endpoint to keep available.
 ```yaml
 SWAIG:
   functions:
-    - function: check_inventory
-      description: Check the warehouse system for an item's stock level
+    - function: get_quote
+      description: Quote the fare between a pickup address and a destination
       parameters:
         type: object
         properties:
-          sku:
+          pickup:
             type: string
-            description: The item's SKU
+            description: The pickup address, as the caller said it
+          destination:
+            type: string
+            description: Where the caller is going
         required:
-          - sku
-      web_hook_url: https://example.com/check-inventory
+          - pickup
+          - destination
+      web_hook_url: https://example.com/get-quote
 ```
 </CodeBlock>
 <CodeBlock title="Server SDK (Python)">
 ```python
 self.define_tool(
-    name="check_inventory",
-    description="Check the warehouse system for an item's stock level",
+    name="get_quote",
+    description="Quote the fare between a pickup address and a destination",
     parameters={
         "type": "object",
         "properties": {
-            "sku": {"type": "string", "description": "The item's SKU"}
+            "pickup": {
+                "type": "string",
+                "description": "The pickup address, as the caller said it"
+            },
+            "destination": {
+                "type": "string",
+                "description": "Where the caller is going"
+            }
         },
-        "required": ["sku"]
+        "required": ["pickup", "destination"]
     },
-    handler=self.check_inventory
+    handler=self.get_quote
 )
 ```
 </CodeBlock>
 </CodeBlocks>
 
-The [order-status agent](#an-order-status-agent) below is a complete, runnable version of this in both
-forms.
+The [dispatch agent](#a-dispatch-agent) below is a complete, runnable version of this in both forms.
 
 ### Declaring remotely
 
@@ -207,9 +216,16 @@ names that URL and the functions you want from it, and while the agent loads, Si
 [signature request][signature-webhook] there. Your server answers with the full definitions, so the
 agent learns the signatures from the same server that implements them.
 
-Declare remotely when a toolset outlives any single agent. The definitions sit next to the code that
-runs them, you can add a parameter without editing any SWML, and one server can supply the same tools
-to every agent that includes it.
+The point is that the asking happens up front rather than mid-call. The agent finishes loading knowing
+exactly what it can do, the same as if you had written the definitions in by hand — the list just
+arrived from somewhere else.
+
+That matters once one toolset serves more than one agent. Say the taxi company runs three: a main
+line, a corporate-accounts line, and an after-hours line, all of which quote and book. Declared
+inline, the same definitions are pasted into three configurations, and adding a `passenger_count`
+parameter means editing all three and redeploying each. Declared remotely, each agent names the
+dispatch server's URL, the parameter is added once where the handler already lives, and every agent
+picks it up the next time it loads.
 
 <CodeBlocks>
 <CodeBlock title="SWML">
@@ -217,17 +233,17 @@ to every agent that includes it.
 SWAIG:
   includes:
     - url: https://example.com/swaig
-      functions: ["check_inventory"]
+      functions: ["get_quote", "book_ride"]
       meta_data:
-        store_id: sf-01
+        fleet_id: sf-01
 ```
 </CodeBlock>
 <CodeBlock title="Server SDK (Python)">
 ```python
 self.add_function_include(
     url="https://example.com/swaig",
-    functions=["check_inventory"],
-    meta_data={"store_id": "sf-01"}
+    functions=["get_quote", "book_ride"],
+    meta_data={"fleet_id": "sf-01"}
 )
 ```
 </CodeBlock>
@@ -239,16 +255,17 @@ declaration carries, plus the `web_hook_url` each function should be called on:
 ```json
 [
   {
-    "function": "check_inventory",
-    "description": "Check the warehouse system for an item's stock level",
+    "function": "get_quote",
+    "description": "Quote the fare between a pickup address and a destination",
     "parameters": {
       "type": "object",
       "properties": {
-        "sku": { "type": "string", "description": "The item's SKU" }
+        "pickup": { "type": "string", "description": "The pickup address, as the caller said it" },
+        "destination": { "type": "string", "description": "Where the caller is going" }
       },
-      "required": ["sku"]
+      "required": ["pickup", "destination"]
     },
-    "web_hook_url": "https://example.com/check-inventory"
+    "web_hook_url": "https://example.com/get-quote"
   }
 ]
 ```
@@ -264,10 +281,10 @@ From there the two paths converge. A remotely declared function receives the sam
 same `response` and `action`, and steers the call the same way; nothing downstream of the declaration
 can tell them apart.
 
-## An order-status agent
+## A dispatch agent
 
-Order status is the plainest case for a SWAIG function. The answer lives in your fulfillment system
-and differs for every caller, so no prompt could hold it.
+A fare quote is the plainest case for a SWAIG function. It depends on two addresses, the current rate
+card, and how busy the fleet is, so no prompt could hold it.
 Here is a complete agent that fetches it instead.
 
 <CodeBlocks>
@@ -279,71 +296,85 @@ sections:
     - ai:
         prompt:
           text: |
-            You are an order status assistant. Help customers check their orders.
-            Ask for the order number, then look it up with check_order.
+            You are Ada, the dispatcher for Bayview Taxi. Help callers get a fare quote.
+            Ask where they are and where they're going, then quote it with get_quote.
+            Only quote a fare that get_quote returned.
         SWAIG:
           functions:
-            - function: check_order
-              description: Look up order status by order number
+            - function: get_quote
+              description: Quote the fare between a pickup address and a destination
               parameters:
                 type: object
                 properties:
-                  order_number:
+                  pickup:
                     type: string
-                    description: The order number to look up
+                    description: The pickup address, as the caller said it
+                  destination:
+                    type: string
+                    description: Where the caller is going
                 required:
-                  - order_number
+                  - pickup
+                  - destination
               fillers:
                 en-US:
-                  - Let me pull that up...
-              web_hook_url: https://example.com/check-order
+                  - Let me work that out...
+              web_hook_url: https://example.com/get-quote
 ```
 </CodeBlock>
 <CodeBlock title="Server SDK (Python)">
 ```python
 from signalwire import AgentBase, FunctionResult
 
-class OrderAgent(AgentBase):
+class DispatchAgent(AgentBase):
     def __init__(self):
-        super().__init__(name="order-agent")
+        super().__init__(name="dispatch-agent")
         self.add_language("English", "en-US", "rime.spore")
 
         self.prompt_add_section(
             "Role",
-            "You are an order status assistant. Help customers check their orders."
+            "You are Ada, the dispatcher for Bayview Taxi. Help callers get a fare quote. "
+            "Only quote a fare that get_quote returned."
         )
 
         self.define_tool(
-            name="check_order",
-            description="Look up order status by order number",
+            name="get_quote",
+            description="Quote the fare between a pickup address and a destination",
             parameters={
                 "type": "object",
                 "properties": {
-                    "order_number": {
+                    "pickup": {
                         "type": "string",
-                        "description": "The order number to look up"
+                        "description": "The pickup address, as the caller said it"
+                    },
+                    "destination": {
+                        "type": "string",
+                        "description": "Where the caller is going"
                     }
                 },
-                "required": ["order_number"]
+                "required": ["pickup", "destination"]
             },
-            handler=self.check_order,
-            fillers={"en-US": ["Let me pull that up..."]}
+            handler=self.get_quote,
+            fillers={"en-US": ["Let me work that out..."]}
         )
 
-    def check_order(self, args, raw_data):
-        order_number = args.get("order_number")
+    def get_quote(self, args, raw_data):
+        pickup = args.get("pickup")
+        destination = args.get("destination")
 
-        # Your business logic here - database lookup, API call, etc.
-        orders = {
-            "12345": "Shipped Monday, arriving Thursday",
-            "67890": "Processing, ships tomorrow"
-        }
+        # Your business logic here - geocoding, distance lookup, pricing engine
+        fare = price_ride(pickup, destination)
+        if fare is None:
+            return FunctionResult(
+                "That trip is outside the service area. Apologize and say we can't take it."
+            )
 
-        status = orders.get(order_number, "Order not found")
-        return FunctionResult(f"Order {order_number}: {status}")
+        return FunctionResult(
+            f"The fare from {pickup} to {destination} is ${fare:.2f}. "
+            "Ask whether they'd like a pickup now."
+        )
 
 if __name__ == "__main__":
-    agent = OrderAgent()
+    agent = DispatchAgent()
     agent.run()
 ```
 </CodeBlock>
@@ -355,17 +386,16 @@ For the SDK side, see [SWAIG functions in the Server SDK][sdk-functions] and
 [SWAIG request handling][sdk-swaig].
 For SWML, see the [SWAIG guide][swaig-guide] and the [`SWAIG.functions` reference][swaig-functions].
 
-The `orders` dictionary stands in for your real backend: a database, an internal API, a fulfillment system.
+`price_ride` stands in for your real pricing engine: a distance API, a rate table, a surge multiplier.
 Swap it out and nothing else changes.
-When a caller asks about an order that doesn't exist, the agent says so, because that is what your
-code returned.
+When a trip falls outside the service area, the agent says so, because that is what your code returned.
 
 You can exercise the function before any call.
 The SDK's [`swaig-test` CLI](/docs/server-sdks/reference/python/agents/cli/swaig-test) loads the agent file,
-executes `check_order` with arguments you supply, and prints the exact response the agent would receive:
+executes `get_quote` with arguments you supply, and prints the exact response the agent would receive:
 
 ```bash
-swaig-test order_agent.py --exec check_order --order_number 12345
+swaig-test dispatch_agent.py --exec get_quote --pickup "123 Gough St" --destination "SFO"
 ```
 
 To hear it on a real call, run the Python file and point a phone number at your agent
@@ -384,8 +414,8 @@ live call:
 - **Move the conversation** to a different step or context, changing which functions are exposed.
 
 Your backend decides, and the function result tells the agent what to do about it.
-When your code notices the caller qualifies for a promotion, it can return the offer text for the
-agent to read and an action that texts them the details.
+When your code books the ride, it can return the pickup time for the agent to read out and an action
+that texts the caller the driver's name and plate.
 
 Every object `action` accepts is documented in the [`SWAIG.functions` reference][swaig-functions].
 For the code side, see [`FunctionResult` actions][result-actions] in the Server SDK, and the SWML
@@ -407,7 +437,9 @@ such as "No match for that address. Ask the caller to repeat it, street first."
 
 Once your code has verified something, don't make the AI carry it.
 Write it to `global_data`, the call-scoped state that lives with the session,
-and let downstream functions take **no arguments at all**, reading the validated state instead:
+and let downstream functions take **no arguments at all**, reading the validated state instead.
+
+Here is the dispatch agent again, with the addresses checked before anything is priced:
 
 ```python
 from signalwire import AgentBase, FunctionResult
@@ -415,75 +447,89 @@ from signalwire import AgentBase, FunctionResult
 def geocode(address):
     # Stand-in for a real geocoding service
     known = {
-        "123 main street": "123 Main St, Springfield",
-        "456 oak avenue": "456 Oak Ave, Springfield",
+        "123 gough street": "123 Gough St, San Francisco",
+        "456 divisadero": "456 Divisadero St, San Francisco",
+        "the airport": "San Francisco International Airport",
     }
     return known.get(address.lower().strip())
 
-def price_ride(address):
+def price_ride(pickup, destination):
     # Stand-in for your pricing engine
-    return 18.50
+    return 38.60
 
-class TaxiAgent(AgentBase):
+class DispatchAgent(AgentBase):
     def __init__(self):
-        super().__init__(name="taxi-agent")
+        super().__init__(name="dispatch-agent")
         self.add_language("English", "en-US", "rime.spore")
 
         self.prompt_add_section(
             "Role",
-            "You book taxi pickups. Ask for the pickup address and validate it "
-            "with validate_address, then quote the fare with get_quote."
+            "You are Ada, the dispatcher for Bayview Taxi. Ask where the caller is and "
+            "where they're going, confirm both with validate_trip, then quote the "
+            "fare with get_quote."
         )
 
         self.define_tool(
-            name="validate_address",
-            description="Validate the pickup address the caller gave",
+            name="validate_trip",
+            description="Confirm the pickup address and destination the caller gave",
             parameters={
                 "type": "object",
                 "properties": {
-                    "address": {
+                    "pickup": {
                         "type": "string",
                         "description": "The pickup address, as the caller said it"
+                    },
+                    "destination": {
+                        "type": "string",
+                        "description": "Where the caller is going, as they said it"
                     }
                 },
-                "required": ["address"]
+                "required": ["pickup", "destination"]
             },
-            handler=self.validate_address
+            handler=self.validate_trip
         )
 
         # get_quote takes no arguments: it reads state your code already verified
         self.define_tool(
             name="get_quote",
-            description="Quote the fare. Only call after the pickup address is confirmed.",
+            description="Quote the fare. Only call after validate_trip has confirmed both addresses.",
             parameters={"type": "object", "properties": {}},
             handler=self.get_quote
         )
 
-    def validate_address(self, args, raw_data):
-        match = geocode(args.get("address", ""))
-        if not match:
+    def validate_trip(self, args, raw_data):
+        pickup = geocode(args.get("pickup", ""))
+        destination = geocode(args.get("destination", ""))
+
+        if not pickup:
             return FunctionResult(
-                "No match for that address. Ask the caller to repeat it."
+                "No match for the pickup address. Ask the caller to repeat it, street first."
             )
+        if not destination:
+            return FunctionResult(
+                "No match for the destination. Ask the caller to say it another way."
+            )
+
         return FunctionResult(
-            f"Address confirmed: {match}. Ask when they'd like to be picked up."
-        ).update_global_data({"pickup_address": match})
+            f"Trip confirmed: {pickup} to {destination}. Offer to quote the fare."
+        ).update_global_data({"pickup": pickup, "destination": destination})
 
     def get_quote(self, args, raw_data):
-        address = raw_data.get("global_data", {}).get("pickup_address")
-        if not address:
-            return FunctionResult("No confirmed address yet. Ask for the pickup address first.")
-        fare = price_ride(address)
+        state = raw_data.get("global_data", {})
+        pickup, destination = state.get("pickup"), state.get("destination")
+        if not (pickup and destination):
+            return FunctionResult("No confirmed trip yet. Ask for both addresses first.")
+        fare = price_ride(pickup, destination)
         return FunctionResult(f"The fare is ${fare:.2f}. Ask if they'd like to book it.")
 
 if __name__ == "__main__":
-    agent = TaxiAgent()
+    agent = DispatchAgent()
     agent.run()
 ```
 
 A function with no arguments has no arguments to get wrong.
-The quote is computed from data your code validated, so a creative caller can't talk the agent
-into a different address or a better price.
+The quote is computed from addresses your code validated, so a creative caller can't talk the agent
+into a different pickup or a better price.
 See [state management][state-management] for the full `global_data` lifecycle.
 
 ### Scope functions to each step
@@ -491,14 +537,14 @@ See [state management][state-management] for the full `global_data` lifecycle.
 An agent with every function available at every moment will eventually call one at the wrong time,
 booking before it quotes or charging before it confirms.
 Structure multi-stage conversations into steps, and scope which functions are active in each one.
-The AI can't call `book_ride` before `get_quote` if `book_ride` doesn't exist yet.
-See [contexts and workflows][contexts-workflows] in the Server SDK,
-or [toggling functions][toggle-functions] in SWML.
+The dispatcher can't call `book_ride` before `get_quote` if `book_ride` doesn't exist yet.
+For more on scoping functions to a step, see [contexts and workflows][contexts-workflows] in the
+Server SDK, or [toggling functions][toggle-functions] in SWML.
 
 ### Cover the wait
 
 Most lookups take a noticeable moment, and callers hear silence as a dropped call.
-Give every function that leaves the conversation a filler phrase ("Let me pull that up...")
+Give every function that leaves the conversation a filler phrase ("Let me work that out...")
 or hold audio, so the caller hears a working agent instead of dead air.
 Fillers play asynchronously; when your endpoint is fast, the caller may never hear them at all.
 Configure per-function `fillers` (as in the examples above) and agent-wide

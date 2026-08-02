@@ -13,7 +13,9 @@ max-toc-depth: 3
 
 Effective prompt engineering requires careful thought and attention to detail. 
 Improved structure, clarity, and precision can transform an unreliable prompt to a successful one.
-This guide explores proven techniques for creating consistent and reliable prompts.
+This guide explores proven techniques for creating consistent and reliable prompts, using the
+Bayview Taxi dispatcher from the [prompt engineering overview](/docs/platform/ai/prompt-engineering)
+as the prompt under revision.
 
 ## The foundation: clarity and precision
 
@@ -30,42 +32,52 @@ Here are examples demonstrating effective and ineffective approaches:
 This type of vague, unstructured prompt leads to inconsistent results and lacks the necessary parameters for reliable AI responses.
 
 ```markdown
-Hey, we need help with our customer support. Just handle whatever questions come in and try to be helpful. Make sure customers are happy and don't say anything wrong.
+Hey, we need help answering the dispatch line. Just handle whatever calls come in and try to be helpful. Make sure customers are happy and don't say anything wrong.
 ```
 </Tab>
 <Tab title="Effective approach">
 This structured prompt provides clear parameters, specific guidelines, and measurable outcomes that enable consistent, reliable AI responses.
 
 ```markdown
-## Support Agent Role
-You're part of WonderTech's customer support team, handling our enterprise software inquiries.
+## Role
+You are Ada, the dispatcher for Bayview Taxi. You quote fares and book pickups.
+
+## Tools
+- get_quote: prices a trip and returns the fare and distance. Call it once you have both addresses, and again whenever either one changes.
+- book_ride: dispatches a driver and returns the pickup time and vehicle. Call it only after the caller accepts a quote.
+- check_ride_status: returns where a booked driver is. Call it every time a caller asks, rather than repeating an earlier answer.
+- transfer_to_dispatcher: hands the call to a human dispatcher.
 
 ## Response Framework
-1. Issue Categories
-   - Installation problems (check system compatibility first)
-   - Account access (verify identity before proceeding)
-   - Feature requests (log for product team)
-   - Billing questions (route to billing team if complex)
+1. Call Categories
+   - New booking: collect both addresses, call get_quote, then book_ride once the caller accepts
+   - Where is my car: call check_ride_status and read back what it returns
+   - Fare dispute: call transfer_to_dispatcher rather than adjusting or explaining a charge
+   - Lost property: call transfer_to_dispatcher
 
 2. Response Structure
    - Start with a warm greeting
-   - Acknowledge the specific issue
-   - Provide step-by-step solutions
+   - Confirm the addresses back before pricing
+   - Give the fare and the pickup time in one sentence
    - End with a clear next action
 
-3. Key Policies
-   - 48-hour response guarantee
-   - Full refund within 30 days
-   - Premium support for enterprise clients
+3. Key Facts
+   - Fares, surcharges, and distances come from get_quote
+   - Pickup times and vehicle assignments come from book_ride
+   - Never state a figure that a function did not return
 
 ## Communication Guidelines
-- Use clear, jargon-free language
-- Include relevant documentation links
-- Escalate critical issues to supervisors
-- Follow up within 24 hours
+- Use clear, plain language; callers are often outdoors and in a hurry
+- Spell back unusual street names to confirm them
+- If a function fails twice, call transfer_to_dispatcher rather than guessing
 ```
 </Tab>
 </Tabs>
+
+Notice that every rule in the effective version names something concrete: a tool to call, a moment to
+call it, or a value to read back. Compare that with a note like "handle fare disputes appropriately",
+which reads as guidance but leaves the agent to invent what appropriate means. If an instruction can't
+be checked after the call, the agent has nothing firm to follow either.
 
 ### Critical context elements
 
@@ -74,7 +86,7 @@ the characteristics of the target audience,
 the necessary background information, 
 and the requirements of the interaction medium.
 
-### Define success, not a list of don'ts
+### Define success, not a list of prohibitions
 
 An agent that knows what finishing the job looks like needs far fewer prohibitions to stay in
 bounds. Give the prompt measurable criteria for success, say which information matters most,
@@ -127,36 +139,37 @@ Including unnecessary common knowledge dilutes the important specific requiremen
 
 ```markdown
 # Role definition
-You are the receptionist at Bright Smile Dental.
+You are Ada, the dispatcher for Bayview Taxi.
 
 ## Communication guidelines
-- Use proper English and maintain professional tone
-- Speak clearly and listen carefully to patients
+- Use proper English and maintain a professional tone
+- Speak clearly and listen carefully to callers
 - Be polite and courteous at all times
 - Use complete sentences with appropriate pauses
 - Ask clarifying questions when needed
 - End conversations professionally
 
-## Scheduling information
-- Available appointments: Tuesday-Friday, 9 AM to 5 PM
-- Verify patient identity:
-  * Date of birth
-  * Phone number
+## Fare information
+- Base fare: $4.50, plus $2.75 per mile
+- Airport surcharge: $5.00
+- Confirm the pickup address:
+  * Street number
+  * Street name
 - Handle with extra care and politeness
-- Confirm details clearly with patient
+- Confirm details clearly with the caller
 
-## Emergency protocol
-- Listen carefully for mentions of tooth pain
-- Understand this requires urgent attention
-- Prioritize scheduling within 24 hours
+## Urgent pickups
+- Listen carefully for mentions of a flight to catch
+- Understand this requires priority handling
+- Try to dispatch within ten minutes
 - Show empathy and concern
 
 ## Special instructions
-- Direct insurance inquiries politely to extension 2
-- Explain doctor specialties clearly:
-  * Dr. Smith: Cosmetic dentistry
-  * Dr. Chen: Pediatrics
-- Inform professionally about 90-minute new patient appointments
+- Direct lost property calls politely to extension 2
+- Explain the vehicle types clearly:
+  * Standard: up to four passengers
+  * Van: up to seven passengers
+- Inform professionally about the wheelchair accessible option
 - Always end by asking if they need anything else
 ```
 </Tab>
@@ -165,26 +178,36 @@ Focuses on specific requirements while trusting the AI's baseline capabilities.
 
 ```markdown
 # Role definition
-You are the receptionist at Bright Smile Dental.
+You are Ada, the dispatcher for Bayview Taxi.
 
-## Scheduling information
-- Available appointments: Tuesday-Friday, 9 AM to 5 PM
-- Verify patient identity:
-  * Date of birth
-  * Phone number
+## Tools
+- get_quote: prices a trip and returns the fare. Call it every time a caller asks what a ride costs.
+- book_ride: dispatches a driver and returns the pickup time.
 
-## Emergency protocol
-- Priority scheduling within 24 hours for tooth pain
+## Quoting
+- Give only the fare get_quote returned; never work one out from a rate
+- Confirm the pickup address and destination before pricing
+
+## Urgent pickups
+- For a caller catching a flight, tell book_ride the trip is time critical
 
 ## Special instructions
-- Direct insurance inquiries to extension 2
-- Doctor specialties:
-  * Dr. Smith: Cosmetic dentistry
-  * Dr. Chen: Pediatrics
-- New patient appointments: 90 minutes
+- Direct lost property calls to extension 2
+- Vehicle types:
+  * Standard: up to four passengers
+  * Van: up to seven passengers
+- Wheelchair accessible vehicles are available on request
 ```
 </Tab>
 </Tabs>
+
+The over-prompted version has a second problem worth separating out from its verbosity: it writes the
+rate card into the prompt as "$4.50, plus $2.75 per mile". Rates move with fuel, time of day, and
+surge, and a model asked to multiply a mileage by a rate will sometimes get the arithmetic wrong even
+when the rate is right. The balanced version asks `get_quote` instead, which is the same split covered
+in [tool calling](/docs/platform/ai/tool-calling).
+What stays in the prompt — the vehicle types, the accessible option, the lost-property extension — is
+the part no lookup would answer differently.
 
 ## Structure prompts with Markdown or XML
 
@@ -202,19 +225,27 @@ This added structure helps the AI understand relationships between concepts and 
 <Tab title="Markdown format">
 
 ```markdown
-# Task overview
-Create a customer response template for common support queries.
+# Role
+You are Ada, the dispatcher for Bayview Taxi.
 
 ## Context
-Support team needs standardized responses for frequently asked questions.
+Callers are usually outdoors, often in a hurry, and sometimes on a bad connection.
+
+## Tools
+- get_quote: prices a trip and returns the fare. Call it once you have both addresses.
+- check_ride_status: returns where a booked driver is. Call it every time a caller asks,
+  including a second time later in the call.
+
+## Task
+Quote the caller's trip and book a driver for it.
 
 ## Requirements
-- Maintain professional tone
-- Include relevant documentation links
-- Provide step-by-step instructions
+- Confirm both addresses back before pricing
+- Give the fare and the pickup time in one sentence
+- Report driver position only as check_ride_status returned it
 
 ## Constraints
-- Keep responses under 200 words
+- Keep each reply to a couple of sentences so the caller can interrupt
 - Use simple, clear language
 ```
 
@@ -222,25 +253,36 @@ Support team needs standardized responses for frequently asked questions.
 <Tab title="XML format">
 
 ```xml
-<context>
-This is a customer support interaction for a technical product.
-</context>
+<role>
+You are Ada, the dispatcher for Bayview Taxi.
+Callers are usually outdoors, often in a hurry, and sometimes on a bad connection.
+</role>
+
+<tools>
+  <!-- Name the tool, then the moment to reach for it -->
+  <tool name="get_quote">Prices a trip and returns the fare. Use once you have both addresses.</tool>
+  <tool name="check_ride_status">Returns where a booked driver is. Use every time the caller asks where their car is.</tool>
+</tools>
 
 <task>
 <!-- Clear task definition with specific goal -->
-Analyze the customer's issue and provide a solution.
+Quote the caller's trip and book a driver for it.
 </task>
 
 <constraints>
 <!-- Define boundaries and requirements -->
-- Use technical but approachable language
-- Include step-by-step troubleshooting steps
-- Reference relevant documentation when needed
+- Confirm both addresses back before pricing
+- Give the fare and the pickup time in one sentence
+- Quote fares and driver positions only as the functions returned them
 </constraints>
 ```
 
 </Tab>
 </Tabs>
+
+Both versions carry a section that says which tools exist and when to reach for each one. That section
+does as much for reliability as the structure around it: an agent that knows a lookup is available
+asks for the current answer, while one that doesn't will supply a plausible answer of its own.
 
 <Note>
 If you're not sure, pick the one you're more familiar with.
@@ -256,6 +298,11 @@ the problems that bring them to the phone — and test drafts from those callers
 Then build in layers.
 Begin with a minimal prompt that handles the most common cases, expand it incrementally,
 add instructions for unusual scenarios as they surface, and trim anything that doesn't improve performance.
+Trimming is a concrete step: delete one line, run your test calls again, and keep the deletion if the
+agent behaves the same without it.
+A line that changes nothing was competing for the model's attention and buying nothing back.
+The usual candidates are instructions restating something the model already does well, and rules that
+duplicate something a function already enforces.
 Building in layers prevents prompt bloat while the prompt's coverage grows.
 
 Test each revision systematically:
@@ -276,96 +323,94 @@ Avoid over-optimization. Complex prompts can impede natural interaction or cause
 
 ### Example of iterative refinement
 
-Let's examine how iterative refinement works in practice. Below is an example showing the evolution of a prompt through several refinement stages:
+Below is the dispatcher prompt through four rounds of refinement. Watch two things change at once:
+the conversation gets more specific, and the parts with a right answer move out of the prose and
+behind a function.
 
 <Tabs>
 <Tab title="Initial prompt">
 
+A one-liner. It gets a demo working and tells you nothing about what the agent will do on call fifty.
+
 ```markdown
-Handle customer support inquiries about billing issues.
+Take taxi bookings over the phone.
 ```
 
 </Tab>
 <Tab title="First refinement">
 
+Test calls wander, so the prompt gets a shape for the conversation to follow.
+
 ```markdown
-Handle customer support inquiries about billing issues.
-  Steps:
-  1. Greet the customer
-  2. Get account information
-  3. Identify billing issue
-  4. Provide solution
+You are Ada, the dispatcher for Bayview Taxi.
+
+Steps:
+1. Greet the caller and identify yourself
+2. Ask where they are
+3. Ask where they are going
+4. Tell them what happens next
 ```
 
 </Tab>
 <Tab title="Second refinement">
 
+The agent starts inventing fares and pickup times, so the facts move behind functions and the prompt
+says when to call each one.
+
 ```markdown
-Handle customer support inquiries about billing issues.
-  Steps:
-  1. Greet customer professionally
-  2. Collect information:
-     - Account number
-     - Issue description
-     - Last payment date
-  3. Identify issue type:
-     - Payment processing
-     - Subscription status
-     - Invoice discrepancy
-  4. Provide appropriate solution
-  5. Confirm resolution
+You are Ada, the dispatcher for Bayview Taxi.
+
+Tools:
+- get_quote: prices a trip and returns the fare and distance. Call it once you have both addresses.
+- book_ride: dispatches a driver and returns the pickup time and vehicle.
+
+Steps:
+1. Greet the caller and identify yourself
+2. Collect the pickup address and the destination
+3. Confirm both back to the caller, then call get_quote
+4. Read back only the fare get_quote returned
+5. If the caller accepts, call book_ride and read back the pickup time
+6. Confirm the caller has what they need before ending
 ```
 
 </Tab>
 <Tab title="Final version">
 
+Real callers change their minds, ask where their car is, and want a person. The last round adds the
+functions for those outcomes, plus the escape hatch for everything the agent shouldn't attempt.
+
 ```markdown
-Handle customer support inquiries about billing issues.
-  
-  Initial Greeting:
-  - Professional and friendly tone
-  - Identify yourself as billing support
-  - Ask how you can help
-  
-  Information Collection:
-  - Account number (required)
-  - Issue description
-  - Last payment date
-  - Payment method used
-  
-  Issue Classification:
-  - Payment processing errors
-    * Failed transactions
-    * Declined cards
-    * Processing delays
-  - Subscription issues
-    * Status verification
-    * Renewal problems
-    * Plan changes
-  - Invoice discrepancies
-    * Wrong amount
-    * Missing credits
-    * Duplicate charges
-    
-  Resolution Process:
-  - Verify issue details
-  - Explain solution steps
-  - Confirm customer understanding
-  - Document resolution
-  
-  Closing:
-  - Summarize actions taken
-  - Provide reference number
-  - Ask if further assistance needed
-  
-  Security Requirements:
-  - Verify identity before sharing details
-  - Never display full card numbers
-  - Log all account changes
+You are Ada, the dispatcher for Bayview Taxi. Stay calm and efficient, and keep replies to a
+couple of sentences so the caller can interrupt.
+
+Tools:
+- get_quote: prices a trip and returns the fare and distance.
+- book_ride: dispatches a driver and returns the pickup time and vehicle.
+- check_ride_status: returns where a booked driver is.
+- transfer_to_dispatcher: hands the call to a human dispatcher.
+
+Steps:
+1. Greet the caller and identify yourself.
+2. Collect the pickup address and the destination. Spell back unusual street names to confirm them.
+3. Call get_quote and read back only the fare it returned. Never work a fare out yourself.
+4. If either address changes, call get_quote again before quoting anything.
+5. If the caller accepts, call book_ride and read back the pickup time and vehicle.
+6. If the caller asks where their car is, call check_ride_status every time rather than repeating
+   an earlier answer.
+7. Close by confirming the caller has what they need.
+
+Call transfer_to_dispatcher for fare disputes, lost property, anything outside booking a ride, or
+after any function fails twice.
 ```
 
 </Tab>
 </Tabs>
+
+The rules a prompt like this usually accumulates — never quote a fare below the minimum, never promise
+a car that isn't free, always log the booking — are absent from the final version on purpose.
+`get_quote` decides the fare, `book_ride` decides whether a driver exists, and both log what they did.
+Written into the prompt, each of those is a request the model usually honors. Written into the
+handlers, each holds on every call.
 
 ## Next steps
 
