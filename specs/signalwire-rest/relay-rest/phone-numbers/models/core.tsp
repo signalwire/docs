@@ -21,6 +21,15 @@ enum PhoneNumberType {
   longcode: "longcode",
 }
 
+@doc("E911 provisioning status of a phone number.")
+enum PhoneNumberE911Status {
+  pending: "pending",
+  active: "active",
+  failed: "failed",
+  pending_removal: "pending_removal",
+  unregistered: "unregistered",
+}
+
 @doc("Phone number capability.")
 enum PhoneNumberCapability {
   voice: "voice",
@@ -110,6 +119,16 @@ model PhoneNumber {
 
   @doc("The E911 address ID associated with this phone number.")
   e911_address_id: uuid | null;
+
+  @doc("""
+    The E911 provisioning status for this phone number. `null` when the number has never had an E911
+    address assigned. Once an address is assigned the value is `pending` while the carrier processes
+    the order, then `active` once the carrier confirms the registration, or `failed` if the carrier
+    does not confirm it. Removing the address sets `pending_removal`, and the value becomes
+    `unregistered` once the carrier confirms the removal.
+    """)
+  @example(PhoneNumberE911Status.active)
+  e911_status: PhoneNumberE911Status | null;
 
   @doc("The date the number was added to your project.")
   created_at: utcDateTime;

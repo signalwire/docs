@@ -1,4 +1,5 @@
 import "./core.tsp";
+import "../../../types";
 
 using TypeSpec.Http;
 
@@ -50,4 +51,40 @@ model AddressListResponse {
 @doc("Response containing a single address.")
 model AddressResponse {
   ...Address;
+}
+
+@doc("A carrier-suggested alternative to the submitted address.")
+model AddressCandidate {
+  @doc("The number portion of the suggested street address.")
+  @example("1640")
+  street_number: string | null;
+
+  @doc("The name portion of the suggested street address.")
+  @example("Riverside Drive")
+  street_name: string | null;
+
+  @doc("The city portion of the suggested street address.")
+  @example("Alexandria")
+  city: string | null;
+
+  @doc("The state of the suggested street address.")
+  @example("CA")
+  state: string | null;
+
+  @doc("The postal code of the suggested street address.")
+  @example("91905")
+  postal_code: string | null;
+}
+
+@doc("""
+  The request failed validation. See `errors` for details. When carrier validation rejected the address
+  and the carrier returned alternatives, a `candidates` array is included alongside `errors`; the key is
+  omitted when the carrier returned none.
+  """)
+@error
+model AddressValidationError {
+  ...Types.StatusCodes.ValidationError;
+
+  @doc("Alternative addresses suggested by the carrier. Omitted when the carrier returned no alternatives.")
+  candidates?: AddressCandidate[];
 }
