@@ -1,0 +1,235 @@
+---
+title: Verify SWML request signatures
+subtitle: Confirm that a request for a SWML document really came from SignalWire.
+slug: /guides/webhook-security
+description: Verify the HMAC signature SignalWire sends with every request for a SWML document, so your server can reject forged requests.
+max-toc-depth: 3
+---
+
+When you serve SWML from your own web server, anyone who learns your endpoint URL can POST to it
+and read back the SWML document you return. Since a SWML document can contain phone numbers, SIP
+credentials, and prompts, that endpoint should not answer to just anyone.
+
+To let you check the caller, SignalWire signs every request for a SWML document with an HMAC
+signature derived from your project's signing key. Verifying that signature proves the request came
+from SignalWire and that neither the URL nor the body was altered in transit.
+
+<Warning title="This step is not optional!">
+For production applications it is extremely important to verify the signature, so that requests
+from a malicious third party are rejected instead of being served a SWML document.
+</Warning>
+
+## Which requests are signed
+
+Every POST SignalWire makes to fetch a SWML document from a URL you control is signed. That
+includes:
+
+- The initial fetch, when a Resource or phone number is configured with an **External URL** rather
+  than a hosted script.
+- Every subsequent fetch caused by [`execute`](/docs/swml/reference/calling/execute) or
+  [`transfer`](/docs/swml/reference/calling/transfer) pointing at an external URL.
+
+Two headers are sent on each of those requests:
+
+| Header | Algorithm |
+| :--- | :--- |
+| `X-Signalwire-Signature` | HMAC-SHA1, hex encoded |
+| `X-Signalwire-SHA256-Signature` | HMAC-SHA256, hex encoded |
+
+Both are computed over the same string: the request URL concatenated directly with the raw request
+body, with no separator.
+
+```text
+signature = hex( HMAC( signing_key, url + raw_body ) )
+```
+
+The `url` is the full URL SignalWire requested, including any query string. If you embedded basic
+auth credentials in the URL, they are stripped before signing. The `raw_body` is the JSON payload
+exactly as sent — the object containing `call`, `vars`, `envs`, and, when the document was reached
+through `execute` or `transfer`, `params`.
+
+<Note>
+Verify against the URL you configured in the Dashboard, not the URL your framework reconstructs
+from the incoming request. Proxies, load balancers, and tunnels such as ngrok routinely rewrite the
+host or scheme, which changes the string being hashed and makes a valid signature look invalid.
+</Note>
+
+## Get your signing key
+
+Your signing key is on the [API Credentials](https://my.signalwire.com?page=credentials) page of
+your Dashboard. Click **Show** to reveal it. Each project has its own key, so use the key belonging
+to the project that serves the call.
+
+<Frame caption="The Signing Key on the API Credentials page">
+
+![The API Credentials page in a SignalWire Space showing the signing key](/assets/images/dashboard/credentials/api-credentials-with-signing-key.webp)
+
+</Frame>
+
+You can rotate the key with the reset button on the same page. A new key takes about a minute to
+become active, and the page shows it to you before you confirm the reset so you can copy it into
+your application first.
+
+Treat the signing key like a password: keep it in an environment variable or a secret manager, not
+in the source you deploy.
+
+## Verify the signature in Node
+
+The `validateRequest` helper in `@signalwire/web-api` implements the check for you:
+
+```bash
+npm install @signalwire/web-api
+```
+
+`validateRequest` needs the **raw** request body, so capture it before your JSON parser consumes
+it. Re-serializing the parsed object is not reliable — key order and whitespace change, and the
+hash changes with them.
+
+```javascript title="index.js"
+const express = require("express");
+const { validateRequest } = require("@signalwire/web-api");
+
+const app = express();
+
+// Keep the raw body around for signature verification.
+app.use(
+  express.json({
+    verify: (req, _res, buf) => {
+      req.rawBody = buf.toString();
+    },
+  })
+);
+
+// The public-facing URL you configured in the Dashboard.
+const WEBHOOK_URL = "https://example.ngrok.io/start";
+
+app.post("/start", (req, res) => {
+  const valid = validateRequest(
+    process.env.SIGNALWIRE_SIGNING_KEY,
+    req.headers["x-signalwire-signature"],
+    WEBHOOK_URL,
+    req.rawBody
+  );
+
+  if (!valid) {
+    return res.status(403).send("Invalid signature");
+  }
+
+  res.send(`
+    sections:
+      main:
+        - play:
+            url: 'say:Hello from SignalWire!'
+    `);
+});
+
+app.listen(3000);
+```
+
+## Verify the signature in any language
+
+The scheme is a plain hex HMAC, so you can implement it directly wherever a helper is not
+available. Compare digests with a constant-time comparison rather than string equality.
+
+<CodeBlocks>
+<CodeBlock title="Python">
+```python
+import hmac
+import hashlib
+import os
+
+from flask import Flask, request, Response
+
+app = Flask(__name__)
+
+# The public-facing URL you configured in the Dashboard.
+WEBHOOK_URL = "https://example.ngrok.io/start"
+
+
+def signature_is_valid(url, raw_body, header):
+    expected = hmac.new(
+        os.environ["SIGNALWIRE_SIGNING_KEY"].encode(),
+        (url + raw_body).encode(),
+        hashlib.sha1,
+    ).hexdigest()
+
+    return hmac.compare_digest(expected, header or "")
+
+
+@app.route("/start", methods=["POST"])
+def start():
+    raw_body = request.get_data(as_text=True)
+    header = request.headers.get("X-Signalwire-Signature")
+
+    if not signature_is_valid(WEBHOOK_URL, raw_body, header):
+        return Response("Invalid signature", status=403)
+
+    return Response(
+        """
+        sections:
+          main:
+            - play:
+                url: 'say:Hello from SignalWire!'
+        """,
+        mimetype="text/plain",
+    )
+```
+</CodeBlock>
+<CodeBlock title="Ruby">
+```ruby
+require "openssl"
+require "sinatra"
+
+# The public-facing URL you configured in the Dashboard.
+WEBHOOK_URL = "https://example.ngrok.io/start"
+
+def signature_is_valid?(url, raw_body, header)
+  expected = OpenSSL::HMAC.hexdigest(
+    "SHA1",
+    ENV.fetch("SIGNALWIRE_SIGNING_KEY"),
+    url + raw_body
+  )
+
+  OpenSSL.secure_compare(expected, header.to_s)
+end
+
+post "/start" do
+  raw_body = request.body.read
+
+  unless signature_is_valid?(WEBHOOK_URL, raw_body, env["HTTP_X_SIGNALWIRE_SIGNATURE"])
+    halt 403, "Invalid signature"
+  end
+
+  <<~SWML
+    sections:
+      main:
+        - play:
+            url: 'say:Hello from SignalWire!'
+  SWML
+end
+```
+</CodeBlock>
+</CodeBlocks>
+
+To verify the SHA-256 header instead, hash the same `url + raw_body` string with SHA-256 and
+compare it against `X-Signalwire-SHA256-Signature`.
+
+## Troubleshoot a failing signature
+
+A signature that never validates almost always comes down to one of these:
+
+- **The URL does not match.** Scheme, host, port, path, and query string all feed the hash. Use the
+  exact URL configured in the Dashboard, including the query string if you configured one.
+- **The body was re-serialized.** Hash the bytes you received, not `JSON.stringify` of the parsed
+  object.
+- **The wrong project's key.** Signing keys are per project.
+- **The key was just rotated.** A new key needs about a minute to become active.
+- **Basic auth in the URL.** Credentials embedded in the URL are stripped before signing, so hash
+  the URL without them.
+
+## Next steps
+
+- **[Handle incoming calls from code](/docs/swml/guides/remote-server)** — set up the external SWML
+  endpoint this guide protects.
+- **[Webhooks](/docs/platform/webhooks)** — how webhooks and status callbacks work across the
+  platform.
