@@ -10,7 +10,7 @@ const DEFAULT_DESTINATION = "/public/sigmond";
 const DEFAULT_LABEL = "Talk with Sigmond";
 const DEFAULT_POSTER = "https://mcdn.signalwire.com/images/sigmond_still.png";
 
-type WidgetInstance = { open: () => Promise<void>; close: () => Promise<void> };
+type WidgetInstance = { open: () => Promise<void>; close: () => Promise<void>; theme?: string };
 type WidgetGlobal = {
   mount: (target: Element | string, options: Record<string, unknown>) => WidgetInstance;
   unmount?: (widget: WidgetInstance) => Promise<void>;
@@ -76,6 +76,7 @@ export function SigmondWidget({ token = DEFAULT_TOKEN }: SigmondWidgetProps) {
         el.classList.add("sigmond-card--opening");
         try {
           const global = await loadWidgetGlobal();
+          const theme = document.documentElement.classList.contains("dark") ? "dark" : "light";
           if (!widget) {
             const host = document.createElement("div");
             host.className = "sigmond-widget-host";
@@ -86,6 +87,7 @@ export function SigmondWidget({ token = DEFAULT_TOKEN }: SigmondWidgetProps) {
               destination: el.dataset.destination || DEFAULT_DESTINATION,
               label: el.dataset.label || DEFAULT_LABEL,
               poster: el.dataset.poster || DEFAULT_POSTER,
+              theme,
               layout: "stacked",
               video: true,
               audio: true,
@@ -101,6 +103,7 @@ export function SigmondWidget({ token = DEFAULT_TOKEN }: SigmondWidgetProps) {
               }
             });
           }
+          widget.theme = theme;
           void widget.open();
         } catch (e) {
           console.error("SigmondWidget:", e);
