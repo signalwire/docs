@@ -11,6 +11,8 @@ import "../../../_shared/webhook/decorator.tsp";
 
   By default, the webhook fires only when the call is `completed` or `failed`, making it well-suited
   for tracking inbound call success rate, call quality, and total call volume in a call center context.
+
+  Status callbacks are advisory, best-effort notifications — delivery can be delayed or fail silently, so don't gate time-critical actions on receiving one. See [Status callback reliability](/docs/platform/webhooks#status-callback-reliability).
   """)
 model InboundCallStatusCallbackPayload {
   @doc("A unique identifier for the call. May be used to later retrieve this call from the REST API.")
