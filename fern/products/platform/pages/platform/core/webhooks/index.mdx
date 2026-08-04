@@ -86,7 +86,7 @@ Click **Edit Settings**. Under **Inbound Call Settings** (or **Inbound Message S
 ## Status callbacks to keep track of events
 
 Status callbacks are asynchronous HTTP requests SignalWire sends to your server as a call, 
-message, or recording moves through its lifecycle, so your application can react to each state change as it happens.
+message, or recording moves through its lifecycle, keeping your application informed of each state change.
 
 ```mermaid
 flowchart LR
@@ -116,6 +116,36 @@ SignalWire only marks a message **Delivered** once it receives a Delivery Receip
 A status of **Sent** means the message left SignalWire successfully. 
 MMS messages do not support DLRs, so they only ever show **Sent**.
 </Info>
+
+### Status callbacks are advisory [#status-callback-reliability]
+
+Status callbacks are best-effort notifications, not a reliable realtime signal.
+They are delivered asynchronously over HTTP, so a callback can arrive late, arrive after a retry,
+or not arrive at all — if your server is unreachable when SignalWire sends the request, the
+callback is simply lost, and nothing notifies your application that it was missed.
+Because a missed callback is invisible to the receiver, never gate time-critical or
+business-critical actions (billing, compliance steps, call teardown, failover) solely on
+receiving one.
+
+For critical paths, use a mechanism whose failure modes are visible to your application:
+
+- **[RELAY over WebSocket](/docs/server-sdks/reference/python/relay)** (also for
+  [TypeScript](/docs/server-sdks/reference/typescript/relay)) — events arrive over a persistent
+  connection, so your client knows immediately when it is disconnected and can fail safe.
+  See the RELAY events reference for
+  [Python](/docs/server-sdks/reference/python/relay/events) and
+  [TypeScript](/docs/server-sdks/reference/typescript/relay/events).
+- **REST polling and reconciliation** — treat a callback as a hint: confirm the state with a
+  `GET` before acting, and run a periodic sweep to catch missed callbacks. Use
+  [Retrieve a call](/docs/compatibility-api/rest/calls/retrieve-a-call) and
+  [Retrieve a message](/docs/compatibility-api/rest/messages/retrieve-message) on the
+  Compatibility API, or [voice logs](/docs/apis/rest/voice-logs/get-voice-log) and
+  [message logs](/docs/apis/rest/message-logs/get-message-log) on the SignalWire REST API.
+- **In-call flow logic** — act on results inside the call flow instead of out-of-band. SWML's
+  [`connect`](/docs/swml/reference/calling/connect#variables) sets result variables
+  (`connect_result`) you can branch on, and cXML's
+  [`<Dial>` `action` URL](/docs/compatibility-api/cxml/reference/voice/dial#dial_action)
+  receives the dial outcome as part of document execution.
 
 <CardGroup cols={2}>
 <Card
