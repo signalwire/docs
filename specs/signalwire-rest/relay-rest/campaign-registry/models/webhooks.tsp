@@ -39,6 +39,8 @@ import "../../../../_shared/webhook/decorator.tsp";
   | `pending` → `failed` | `number_assignment_failed` | The number was not assigned to the campaign. |
   | `failed` → `pending` | `number_assignment_pending` | A failed assignment is being retried. |
   | `pending` → `completed` | `number_assignment_activated` | The number has been successfully assigned to the campaign. |
+
+  Status callbacks are advisory, best-effort notifications — delivery can be delayed or fail silently, so don't gate time-critical actions on receiving one. See [Status callback reliability](/docs/platform/webhooks#status-callback-reliability).
   """)
 model TenDlcStatusCallbackPayload {
   @doc("The unique ID of the project this object is associated with.")
