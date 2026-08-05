@@ -21,14 +21,15 @@ model LanguagesBase {
 
   @doc("""
     Voice to use for the language. String format: `<engine id>.<voice id>`.
-    Select engine from `gcloud`, `polly`, `elevenlabs`, `cartesia`, `deepgram`, `rime`, `inworld`, or `minimax`.
+    Select engine from `gcloud`, `polly`, `amazon`, `azure`, `openai`, `elevenlabs`, `cartesia`, `deepgram`, `rime`,
+    `inworld`, `minimax`, `groq-tts`, `mistral`, `grok`, `smallest`, `fish`, or `speechify`.
     For example, `gcloud.fr-FR-Neural2-B`.
     """)
   @example("gcloud.fr-FR-Neural2-B")
   voice: string;
 
-  @doc("The model to use for the specified TTS engine. For example, 'arcana'.")
-  @example("arcana")
+  @doc("The model to use for the specified TTS engine. For example, 'coda'.")
+  @example("coda")
   `model`?: string;
 
   @doc("""
