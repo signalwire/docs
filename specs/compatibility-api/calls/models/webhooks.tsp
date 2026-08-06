@@ -13,6 +13,8 @@ import "../../../_shared/webhook/decorator.tsp";
 
   Use `StatusCallbackEvent` to receive every call progress event — not just the final status —
   along with current call state and all parameters below.
+
+  Status callbacks are advisory, best-effort notifications — delivery can be delayed or fail silently, so don't gate time-critical actions on receiving one. See [Status callback reliability](/docs/platform/webhooks#status-callback-reliability).
   """)
 model VoiceStatusCallbackPayload {
   @doc("The unique ID of the project this call is associated with.")
@@ -190,6 +192,8 @@ model VoiceStatusCallbackPayload {
   | `in-progress` | The recording has begun. |
   | `completed` | The file is available for access. |
   | `absent` | The recording was too short or the call was silent — no audio was detected. |
+
+  Status callbacks are advisory, best-effort notifications — delivery can be delayed or fail silently, so don't gate time-critical actions on receiving one. See [Status callback reliability](/docs/platform/webhooks#status-callback-reliability).
   """)
 model RecordingStatusCallbackPayload {
   @doc("The unique ID of the project this call is associated with.")

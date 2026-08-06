@@ -10,6 +10,8 @@ import "../../../_shared/webhook/decorator.tsp";
 
   Your app can use these parameters to handle the transcription — for example, uploading the text to
   your CRM, sending it via email, or forwarding the body via SignalWire SMS.
+
+  Status callbacks are advisory, best-effort notifications — delivery can be delayed or fail silently, so don't gate time-critical actions on receiving one. See [Status callback reliability](/docs/platform/webhooks#status-callback-reliability).
   """)
 model TranscriptionStatusCallbackPayload {
   @doc("The unique, 34-character ID of the transcription.")
