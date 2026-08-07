@@ -8,6 +8,8 @@ namespace SignalWireAPI.Calling;
   Sent to your `status_url` when the call's transcription is ready.
   `calling.transcript.completed` includes the transcribed text;
   `calling.transcript.failed` means the call could not be transcribed.
+
+  Status callbacks are advisory, best-effort notifications — delivery can be delayed or fail silently, so don't gate time-critical actions on receiving one. See [Status callback reliability](/docs/platform/webhooks#status-callback-reliability).
   """)
 model TranscribeStatusCallbackPayload {
   @doc("Whether the transcription completed or failed.")
@@ -51,6 +53,8 @@ model TranscribeStatusCallbackPayload {
   Sent to your `status_url` when a background audio stream started with
   `calling.stream` changes state. `params.state` is `streaming` when the stream
   starts and `finished` when it ends.
+
+  Status callbacks are advisory, best-effort notifications — delivery can be delayed or fail silently, so don't gate time-critical actions on receiving one. See [Status callback reliability](/docs/platform/webhooks#status-callback-reliability).
   """)
 model StreamStatusCallbackPayload {
   @doc("The type of event. Always `calling.call.stream` for stream status callbacks.")
@@ -167,7 +171,7 @@ enum AISidecarCallbackType {
 @summary("AI sidecar callback")
 @doc("""
   Sent to the sidecar's `url` as an HTTP `POST` whenever you set one. The same event is always
-  published in real time on the SignalWire RELAY event channel (`calling.ai.sidecar`), so the
+  published in real time on the SignalWire Relay event channel (`calling.ai.sidecar`), so the
   webhook is optional. Each event is wrapped under `sidecar_event` — read that before checking its
   `type` and fields.
   

@@ -19,7 +19,7 @@ namespace SignalWireAPI.Fabric.RelayApplications {
   @friendlyName("Relay Applications")
   interface RelayApplications {
     @operationId("list_relay_applications")
-    @summary("List RELAY applications")
+    @summary("List Relay applications")
     @doc("""
       A list of Relay Applications
       
@@ -32,7 +32,7 @@ namespace SignalWireAPI.Fabric.RelayApplications {
       | StatusCode500;
 
     @operationId("get_relay_application")
-    @summary("Get RELAY application")
+    @summary("Get Relay application")
     @doc("""
       Returns a Relay Application by ID
       
@@ -48,7 +48,7 @@ namespace SignalWireAPI.Fabric.RelayApplications {
       | StatusCode500;
 
     @operationId("create_relay_application")
-    @summary("Create RELAY application")
+    @summary("Create Relay application")
     @doc("""
       Creates a Relay Application
       
@@ -66,7 +66,7 @@ namespace SignalWireAPI.Fabric.RelayApplications {
       | StatusCode500;
 
     @operationId("update_relay_application")
-    @summary("Update RELAY application")
+    @summary("Update Relay application")
     @doc("""
       Updates a Relay Application by ID
       
@@ -87,7 +87,7 @@ namespace SignalWireAPI.Fabric.RelayApplications {
       | StatusCode500;
 
     @operationId("delete_relay_application")
-    @summary("Delete RELAY application")
+    @summary("Delete Relay application")
     @doc("""
       Deletes a Relay Application by ID
       
