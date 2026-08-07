@@ -171,7 +171,7 @@ enum AISidecarCallbackType {
 @summary("AI sidecar callback")
 @doc("""
   Sent to the sidecar's `url` as an HTTP `POST` whenever you set one. The same event is always
-  published in real time on the SignalWire RELAY event channel (`calling.ai.sidecar`), so the
+  published in real time on the SignalWire Relay event channel (`calling.ai.sidecar`), so the
   webhook is optional. Each event is wrapped under `sidecar_event` — read that before checking its
   `type` and fields.
   
