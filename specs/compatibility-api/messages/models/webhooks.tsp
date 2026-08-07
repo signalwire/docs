@@ -26,6 +26,8 @@ import "../../../_shared/webhook/decorator.tsp";
   left SignalWire and reached the downstream peer. Some carriers send delayed DLRs; others send none
   at all. MMS messages never receive DLRs, so they will only ever reach `sent` status.
   </Note>
+
+  Status callbacks are advisory, best-effort notifications — delivery can be delayed or fail silently, so don't gate time-critical actions on receiving one. See [Status callback reliability](/docs/platform/webhooks#status-callback-reliability).
   """)
 model SmsStatusCallbackPayload {
   @doc("""
