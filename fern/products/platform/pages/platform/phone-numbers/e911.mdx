@@ -2,53 +2,108 @@
 id: 5286e8ea-58ec-472a-8645-ade919b8449b
 title: E911
 slug: /e911
-x-custom:
-  ported_from_readme: true
+description: Register an emergency address and enable E911 service for your SignalWire phone numbers.
+max-toc-depth: 3
 ---
 
-### What is E911?
+**E911, or Enhanced 911,** is a support system for wireless and VoIP phone users who dial 911,
+the standard number for requesting help in an emergency across supported countries.
+Because a VoIP number isn't tied to a physical line,
+you register a street address for the number ahead of time.
+When someone dials 911 from that number,
+the call is routed to the dispatch center serving the registered address,
+and that address is displayed to the dispatcher.
 
-**E911, or Enhanced 911,** is a support system for wireless and VoIP phone users who dial 911, the standard number for requesting help in an emergency across supported countries. 
-Since wireless users are often mobile, this enhancement helps the 911 service by allowing the location of the user to be reported to the call receiver.
+E911 on SignalWire is self-service:
+create an emergency address, assign it to a phone number,
+and the number is provisioned for emergency calling.
+You can manage everything from the [Dashboard](#set-up-e911-in-the-dashboard)
+or the [REST API](#set-up-e911-with-the-rest-api).
 
-**SignalWire Addresses** allows for a collection of addresses in your SignalWire Space so that they can be utilized for uses like E911 or phone number locality requirements for certain countries around the world.
+<Warning title="911 calls from unregistered numbers">
 
-<Warning title="E911 requires a support request">
-By default, SignalWire phone numbers purchased through the Dashboard don’t support E911.
-To enable E911 services, contact the SignalWire Support Team by creating a support ticket in your Dashboard.
+Calling 911 from a number with no E911 address still connects,
+but it is answered by a national relay center
+that must ask for your location before transferring you to local responders
+— delaying response.
+Each of these calls also incurs a $100 fee.
+Register an address before an emergency,
+and always dial 933, not 911, to [test your configuration](#test-your-e911-configuration)
+— 933 test calls are exempt from the fee.
+
 </Warning>
 
-### Testing E911
+## How it works
 
-There is a proper way to test E911 for your SignalWire number. 
-It's best to arrange a test call to 911 services and verify the E911 information pops up on their screen correctly. 
-You can call your local 911 center non-emergency number, and notify them you're testing a VOIP system for the correct display of location information. 
-You should be able to get the non-emergency phone number from local law enforcement or an internet search. All 911 centers have a non-emergency number for testing purposes.
+Emergency addresses live in your project as a reusable collection,
+so one address can serve many of the project's phone numbers.
+E911 is available for US addresses only.
+When you create a US address with emergency service enabled,
+it is validated against the carrier's emergency database,
+and small errors are corrected automatically.
 
-<Info>
+Assigning a validated address to a phone number starts provisioning at the carrier.
+Provisioning is asynchronous:
+the number's E911 status starts as `pending` and becomes `active` once the carrier confirms,
+typically within a few minutes.
+The address's label is presented to the dispatcher as the caller name,
+so use a label that identifies the caller or location clearly.
+While a number has an E911 address assigned,
+it can't be transferred to another project.
 
-["How do I place a "test" call to make sure 911 works for me?"](https://www.911.gov/frequently_asked_questions.html)
+## Set up E911 with the REST API
 
-"Test calls confirm that your local 911 service can receive your 911 call and has the correct location information. 
-Test calls can be scheduled by contacting your local 911 call center via its non-emergency phone number. 
-To contact the local 911 center responsible for answering calls from your location, go 
-[here](https://www.nasna911.org/contact-911) and click on the state in which you are located. 
-The person responsible for operating the state’s 911 system will be identified, and they should know who you should talk to at your local 911 call center, to schedule a day and time for test calls."
+First, create an address with `emergency_enabled` set to `true`:
+
+<EndpointRequestSnippet endpoint="POST /api/relay/rest/addresses" />
+
+If the carrier can't validate the address,
+the request fails with a `422` response listing the problems
+and, when available, suggested corrections in a `candidates` array.
+
+Next, assign the address to a phone number:
+
+<EndpointRequestSnippet endpoint="POST /api/relay/rest/phone_numbers/{id}/e911_address" />
+
+The phone number's `e911_status` field tracks provisioning;
+the number is ready for emergency calling once it reads `active`.
+Status changes don't send webhooks,
+so poll the number to watch for the transition.
+To disable E911 on the number,
+send a `DELETE` request to the same endpoint.
+
+For full request and response details,
+see the [E911 Addresses](/docs/apis/rest/e-911-addresses/list-addresses) reference for address operations,
+and [Assign an E911 address](/docs/apis/rest/phone-numbers/assign-e-911-address)
+and [Remove an E911 address](/docs/apis/rest/phone-numbers/remove-e-911-address)
+under the Phone Numbers reference.
+
+<Info title="Compatibility API">
+
+If you manage numbers with the Compatibility API,
+you can attach an existing emergency address by setting `EmergencyAddressSid`
+when [updating an incoming phone number](/docs/compatibility-api/rest/incoming-phone-numbers/update-incoming-phone-number).
 
 </Info>
 
-As stated before, SignalWire phone numbers purchased through the Dashboard don’t support E911. 
-If you'd like to have E911 services enabled, please contact the SignalWire Support Team. 
-Once E911 is enabled for the number by working with the SignalWire support team, you can follow these steps to set up E911 and make a test call:
+## Set up E911 in the Dashboard
 
-1. Complete the Set of Instructions from the Previous Section.
-2. Wait about 30 minutes for SignalWire to properly set up E911 on your line.
-3. Do a test call to 933 first, and listen to your E911 info playback. 
-_If you hear the automated information, you're ready to do a real test. 
-If you hear an error tone, wait a little longer, then try again._
-4. Call your local police department's non-emergency number. 
-Let them know you're making a VoIP test call to verify location information.
-5. Once you've notified your local emergency center of an incoming test call, make the real call to 911 and verify your address displays correctly with the answering personnel.
+Open the **Phone Numbers** section of your Dashboard
+and select the **E911** tab to create and manage emergency addresses.
+To assign an address,
+open a phone number's detail page and set its emergency address there.
+The same validation and provisioning process applies,
+and the number's E911 status is shown alongside the assignment.
 
-Provided all the information displays correctly, your verification process for E911 services is complete. 
-The carriers validate the address. If it passes, you're good to go.
+## Test your E911 configuration
+
+Once the number's E911 status is `active`,
+dial 933 from it.
+933 is the emergency network's test line:
+it reads back the address on file for the number
+so you can confirm your registration is correct,
+and calling it never incurs the unregistered-call fee.
+If 933 doesn't read back the address you registered,
+check the number's E911 status:
+provisioning may still be `pending`,
+or the number may not have an address assigned at all.
