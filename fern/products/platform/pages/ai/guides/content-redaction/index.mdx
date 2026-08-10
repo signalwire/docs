@@ -224,11 +224,10 @@ whole exercise. Report the verdict, not the input.
 Sometimes the caller needs to hear a value read back. There are two ways to do that, and they differ
 in what the model ends up knowing.
 
-A **`say` action** hands text to the agent's own voice. The agent speaks it verbatim, and because you
-wrote it rather than the model, it is not fed back into the model's context on later turns. It does
-land in the call's conversation record, and [redaction](#redact-conversation-records) will not mask it
-there: redaction rewrites what the caller said and what the model generated, not text your handler
-supplied. Anything sensitive in a `say` action shows up in your records exactly as you wrote it.
+A **`say` action** hands text to the agent's own voice, and the agent speaks it verbatim. It lands in
+the call's conversation record, and [redaction](#redact-conversation-records) will not mask it there:
+redaction rewrites what the caller said and what the model generated, not text your handler supplied.
+Anything sensitive in a `say` action shows up in your records exactly as you wrote it.
 
 A **`SWML` action** playing `say:` text uses a separate text-to-speech pass outside the AI session
 entirely. Nothing about it reaches the model, and nothing is added to the conversation unless you set
@@ -349,10 +348,14 @@ Some conversations leave you no choice about the model hearing the value. A call
 number aloud before the agent can offer the keypad. A health intake line has to take a date of birth in
 conversation. An agent has to confirm a value it was told earlier.
 
-For those, content redaction masks what the caller says and what the agent generates in everything
-SignalWire records or transmits about the call: logs, events, webhook payloads, the call timeline, and
-the post-conversation call log. The conversation itself is untouched. The caller hears the agent
-normally and the agent understands the caller perfectly. Only the records change.
+For those, content redaction masks what the caller says and what the agent generates across the call's
+records: the completed conversation turns in AI events and webhook payloads, the conversation turns on
+the call timeline and in the stored transcript, and the post-conversation call log. The conversation
+itself is untouched. The caller hears the agent normally and the agent understands the caller
+perfectly. Only the records change.
+
+Coverage is broad rather than absolute. [What gets masked](#what-gets-masked) sets out the surfaces
+redaction reaches and the ones it leaves alone.
 
 <llms-ignore>
 
@@ -460,20 +463,31 @@ instead. Redaction is the fallback for when you can't.
 
 Redaction covers both sides of the conversation. Your `redact_prompt` description guides the
 agent to treat matching content as sensitive whenever it speaks: the first time it says it,
-when it repeats it back, and when it confirms it. What the caller says is masked separately,
-before it is stored or delivered. Text your handler supplies is neither of those, so a
-[`say` action](#speak-a-value)'s text is recorded as you wrote it.
+when it repeats it back, and when it confirms it. What the caller says is masked separately, once the
+turn is complete and before that turn is stored or delivered. Text your handler supplies is neither
+of those, so a [`say` action](#speak-a-value)'s text is recorded as you wrote it.
 
 | Surface | What appears |
 |---|---|
 | Audio the caller hears | The real content, spoken in full |
 | Text the model receives | The real content, every turn |
-| Conversation text in AI events and webhook payloads | Masked as `----` |
-| Call timeline and stored conversation transcript | Masked as `----` |
+| Completed conversation turns in AI events and webhook payloads | Masked as `----` |
+| Interim events sent while the caller is still speaking, including partial transcripts and transparent barge-in | The real content |
+| Conversation turns on the call timeline and in the stored transcript | Masked as `----` |
+| Timeline entries recording a text transformation, such as transcription cleanup, text normalization, or pronunciation | The real content |
 | Post-conversation `call_log` and `raw_call_log` | Masked as `----` |
 | Arguments your SWAIG functions receive | The real content |
 
-That last row is deliberate. Your handler is the code that has to act on the value, so the arguments
+The unmasked rows are worth planning around. Interim events fire while a turn is still in progress,
+before there is a finished turn to mask, so an application that receives them sees the caller's raw
+words. Where no unmasked text may leave the platform, keep those events out of your own systems and
+turn [`transparent_barge`](/docs/swml/reference/calling/ai/params#paramstransparent_barge) off.
+
+Timeline entries that record a transformation carry both the text before and the text after, so a
+transcription-cleanup or pronunciation entry can hold the original alongside the masked version. They
+sit beside the conversation turns rather than replacing them; the turns themselves are still masked.
+
+The SWAIG row is deliberate. Your handler is the code that has to act on the value, so the arguments
 the agent extracted arrive intact. What is masked in a SWAIG payload is the conversation text carried
 alongside them. Treat your own handler as a place where sensitive data lands, and log accordingly.
 
@@ -482,16 +496,17 @@ read back one digit at a time. It errs on the side of masking too much rather th
 
 ### Keep it fast
 
-Redaction runs as a lightweight background task while the caller is waiting for a response.
+Redaction runs inline on the turn, not on a thread of its own. Masking a turn is a separate model
+call that has to finish before the turn does, so its latency lands in the pause the caller hears.
 Two companion parameters keep that work quick.
 
-[`utility_model`][utility-model] selects the model used for background tasks like redaction
-and transcription cleanup. It defaults to the agent's main model, which is usually larger and
-slower than these tasks need.
+[`utility_model`][utility-model] selects the model used for supporting passes like redaction and
+transcription cleanup. It defaults to the agent's main model, which is usually larger and slower
+than these passes need.
 
 <Tip>
-Set `utility_model` to a small, fast model, such as `gpt-4o-mini`, `gpt-4.1-mini`, or
-`gpt-4.1-nano`, so background passes don't add noticeable latency to the agent's responses.
+Set `utility_model` to a small, fast model so redaction doesn't add noticeable latency to the
+agent's responses. The [`utility_model` reference][utility-model] names the values it accepts.
 </Tip>
 
 [`auto_correct`][auto-correct] cleans up the transcription of the caller's speech, converting
@@ -556,13 +571,15 @@ sections:
 
 ### Place a test call
 
-Call your agent and read out a fake card number, such as `4242 4242 4242 4242`, then ask the
-agent to repeat it back to confirm.
+Call your agent and read out a fake card number, such as `4242 4242 4242 4242`, then let the
+conversation run on for a few more turns.
 
 ### Check the call records
 
-Open the call in your Dashboard and review the timeline and logs. Everywhere the number was
-said, by you or by the agent, should read `----`.
+Open the call in your Dashboard and review the timeline and logs. The conversation turns where the
+number was said, by you or by the agent, should read `----`. Timeline entries that record a text
+transformation can still show the original text, as
+[What gets masked](#what-gets-masked) describes.
 
 ### Check your webhook payloads
 
