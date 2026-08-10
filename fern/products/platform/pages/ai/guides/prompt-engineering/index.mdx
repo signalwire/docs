@@ -4,7 +4,7 @@ title: Prompt engineering
 sidebar-title: Prompt engineering
 subtitle: The craft of writing effective prompts for SignalWire AI agents
 slug: /ai/prompt-engineering
-description: Learn the fundamentals of prompt engineering and how it can help you create responsive and reliable AI agents for your SignalWire applications.
+description: How to write, structure, and refine the prompts that drive a SignalWire AI agent, and which rules to keep out of the prompt entirely.
 max-toc-depth: 3
 ---
 
@@ -12,21 +12,17 @@ max-toc-depth: 3
 [swaig]: /docs/platform/ai/prompt-engineering/where-to-apply#swaig-functions
 [conscience]: /docs/platform/ai/prompt-engineering/where-to-apply#conscience
 [post-prompt]: /docs/platform/ai/prompt-engineering/where-to-apply#post-prompt
+[prompt-surfaces]: /docs/platform/ai/prompt-engineering/where-to-apply
+[tool-calling]: /docs/platform/ai/tool-calling
 
-SignalWire AI Agents combine 
-<Tooltip tip="ASR, or 'Automatic Speech Recognition', is also known as 'Speech-to-Text' (STT).">ASR</Tooltip>, 
-conversational intelligence, 
-[tool calling](/docs/platform/ai/tool-calling),
-<Tooltip tip="'Retrieval Augmented Generation' systems, like SignalWire's Datasphere, empower AI Agents with structured data to improve quality and reliability.">integrated RAG</Tooltip>, and 
-<Tooltip tip="'Text-to-Speech' models speak text in a variety of languages and voices.">TTS</Tooltip>,
-all in one system integrated with and optimized for telecommunications.
+A prompt is the instruction set an AI agent works from: who it is, what it's there to accomplish,
+and how to handle the conversation in front of it. You write it in plain language, and the model
+reads it literally.
 
-[Prompts](/docs/platform/ai/prompt-engineering/where-to-apply) are used to design and configure an AI Agent. 
-In addition to its primary (or "Main") prompt, each SignalWire AI Agent has additional areas that accept prompts, like 
-[Context Steps][context-steps], 
-[SWAIG Functions][swaig], 
-[Conscience][conscience],
-and the [Post-Prompt][post-prompt].
+An agent takes prompts in more than one place. The main prompt carries its identity and its task,
+while [context steps][context-steps], [SignalWire AI Gateway (SWAIG) functions][swaig], the
+[conscience][conscience], and the [post-prompt][post-prompt] each accept prompts of their own.
+[Prompt surfaces][prompt-surfaces] covers all five.
 
 Think of prompt engineering like giving detailed instructions to a new team member: for them to succeed,
 you need to be clear about what you want them to do, how to do it, and what counts as done. 
@@ -43,12 +39,20 @@ They use clear, specific language, because the AI takes instructions literally.
 They organize information with headings and consistent formatting, so the AI can tell how
 the pieces fit together.
 They leave room for real conversations, which rarely follow a script.
-And they stay lean: excessive instructions muddle behavior rather than tightening it,
-and business data belongs behind a [tool call](/docs/platform/ai/tool-calling) rather than
-in the prompt.
-The [prompt writing techniques](/docs/platform/ai/prompt-engineering/best-practices) guide
-covers each of these traits in depth, with worked examples of prompts that follow them
-and prompts that don't.
+And they stay lean.
+
+### Avoid overprompting
+
+A model arrives knowing grammar, phone manners, and how to structure a sentence, so lines spent on
+any of that dilute the instructions only you can supply: your domain's vocabulary, the constraints
+of your use case, the shape an answer has to arrive in.
+
+Business data is where overprompting does the most damage. A prompt carrying the whole rate card,
+the full menu, and every policy tends to survive the demo and break on real callers. The moment a
+figure changes the prompt is wrong, and a model asked to multiply a mileage by a rate sometimes gets
+the arithmetic wrong even when the rate is right. That data belongs behind a
+[tool call][tool-calling]. What stays in the prompt is the part no lookup would answer
+differently: the vehicle types, the accessible option, the lost-property extension.
 
 ## Building your prompt structure
 
@@ -110,25 +114,19 @@ You are Ada, the dispatcher for Bayview Taxi. You quote fares and book pickups.
 
 <Info>
 The prompt holds the shape of a booking — the vehicle types, the ways to pay, what a booking needs —
-and nothing whose answer can change. Fares move with distance, time of day, and surge, so they come
-from `get_quote`. Pickup times depend on which driver is free, so they come from `book_ride`. Both are
-SWAIG functions the agent calls on your backend through a
-[tool call](/docs/platform/ai/tool-calling).
-
-That split is also what replaces a list of prohibitions. `get_quote` prices the trip and `book_ride`
-refuses a pickup no driver can make, so a caller can't talk the agent into a cheaper fare or a car that
-isn't there, and the prompt never has to forbid either.
+and nothing whose answer can change. Fares move with distance and time of day, so they come from
+`get_quote`; pickup times depend on which driver is free, so they come from `book_ride`. Both reach
+your backend through a [tool call][tool-calling].
 </Info>
 
-### Visual representation of prompt impact
+### How the prompt shapes a call
 
-The following diagram illustrates the above prompt in a real conversation and how it influences the AI's responses:
+Each turn in the call below traces back to the part of the prompt that shaped it — except the fare,
+which comes from `get_quote` rather than from anything the prompt says.
 
 <llms-ignore>
 
-<Frame caption="Each turn traces back to the part of the prompt that shaped it — except the fare, which comes from code">
-  <img src="/assets/images/img/prompt-impact-flow-themed.svg" alt="A taxi booking call, turn by turn: the role and response guidelines shape the greeting, the task structure and knowledge base drive the pickup-address question, the response guidelines set expectations about the trip, and the guardrails leave the fare to the get_quote function." />
-</Frame>
+<img src="/assets/images/img/prompt-impact-flow-themed.svg" alt="A taxi booking call, turn by turn: the role and response guidelines shape the greeting, the task structure and knowledge base drive the pickup-address question, the response guidelines set expectations about the trip, and the guardrails leave the fare to the get_quote function." />
 
 </llms-ignore>
 
@@ -158,12 +156,10 @@ flowchart TD
 
 </llms-only>
 
-This diagram demonstrates how:
-- The **role** shapes the AI's calm, professional greeting
-- The **knowledge base** informs accurate responses about vehicle types and how a booking works
-- The **task structure** collects both addresses before anything is priced
-- **Response guidelines** maintain consistent, helpful interaction throughout
-- **Guardrails** leave the fare to the code that owns it, and keep the redirection polite
+The **role** shapes the calm, professional greeting, and the **knowledge base** supplies accurate
+answers about vehicle types and what a booking needs. The **task structure** collects both addresses
+before anything is priced, **response guidelines** keep each turn consistent, and the **guardrails**
+leave the fare to the code that owns it.
 
 ## Where guardrails belong
 
@@ -177,7 +173,7 @@ Work through the options below in order, and stop as soon as the behavior is cov
    can't complete" already rules out competitor talk and freelance discounts, without a
    single prohibition.
 2. **Enforce hard rules in code.** Prices, discounts, eligibility, and anything that must be
-   exact or current belong behind a [tool call](/docs/platform/ai/tool-calling), where your
+   exact or current belong behind a [tool call][tool-calling], where your
    handler validates the caller's input and decides the outcome. Your handler enforces a pricing
    rule on every call; the prompt only asks.
 3. **Remove the possibility.** Scope which functions exist at each stage with
@@ -192,28 +188,132 @@ Work through the options below in order, and stop as soon as the behavior is cov
    behavior you want wherever you can: "If asked how long the trip will take, give the estimate
    book_ride returned and say traffic can change it" steers better than "Don't promise arrival times".
 
-## From draft to production
+## Iterative refinement process
 
-A first prompt is a draft.
-Expect to test it against real conversations, watch where the agent hesitates or drifts,
-and refine it in small steps.
-The [iterative refinement process](/docs/platform/ai/prompt-engineering/best-practices#iterative-refinement-process)
-walks through that workflow, from objectives and audience research to systematic testing.
+A first prompt is a draft. A production prompt is grown: you test it against real conversations,
+watch where the agent hesitates or drifts, and change one thing at a time.
+
+Start from clear objectives — the agent's purpose, its scope, and what counts as a finished call —
+and from what you know about the people who will call. Their vocabulary, how much of your
+terminology they share, and the problems that put them on the phone all shape what the prompt has
+to cover.
+
+Then build in layers. Begin with a prompt that handles the most common call, expand it as unusual
+cases surface, and trim anything that doesn't change behavior. Trimming is a concrete step: delete
+one line, run your test calls again, and keep the deletion if the agent behaves the same without it.
+A line that changes nothing was competing for the model's attention and buying nothing back. The
+usual candidates are instructions restating something the model already does well, and rules that
+duplicate something a function already enforces.
+
+Test each revision the same way every time. Run the standard requests and confirm the responses
+still hold, then try to talk the agent out of its rules and check that the ones surviving are the
+ones your code enforces. Push at the edges of what the agent knows, and compare two versions against
+real callers where your traffic supports it. Keep the prompt under version control alongside its test
+cases and a note of what each revision changed, so a regression points back at the line that caused it.
+
+### Four rounds on the dispatcher prompt
+
+Each round below starts from something the previous prompt got wrong on a real call. Two things
+change as it goes: the conversation gets more specific, and every fact with a right answer moves out
+of the prose and behind a function.
+
+<Tabs>
+<Tab title="Draft">
+
+One line. It gets a demo working and tells you nothing about what the agent will do on call fifty.
+
+```markdown
+Take taxi bookings over the phone.
+```
+
+</Tab>
+<Tab title="After the calls wandered">
+
+Test calls ended without a destination, or with the caller waiting on an agent that had moved on.
+The prompt gets a shape for the conversation to follow.
+
+```markdown
+You are Ada, the dispatcher for Bayview Taxi.
+
+Steps:
+1. Greet the caller and identify yourself
+2. Ask where they are
+3. Ask where they are going
+4. Tell them what happens next
+```
+
+</Tab>
+<Tab title="After a made-up fare">
+
+Asked what a ride would cost, the agent said "about eighteen dollars" — a figure nothing in the
+system had produced. The facts move behind functions, and the prompt says when to call each one.
+
+```markdown
+You are Ada, the dispatcher for Bayview Taxi.
+
+Tools:
+- get_quote: prices a trip and returns the fare and distance. Call it once you have both addresses.
+- book_ride: dispatches a driver and returns the pickup time and vehicle.
+
+Steps:
+1. Greet the caller and identify yourself
+2. Collect the pickup address and the destination
+3. Confirm both back to the caller, then call get_quote
+4. Read back only the fare get_quote returned
+5. If the caller accepts, call book_ride and read back the pickup time
+6. Confirm the caller has what they need before ending
+```
+
+</Tab>
+<Tab title="After callers went off script">
+
+Callers changed the destination mid-quote, rang back to ask where their car was, and wanted a person
+for a fare dispute. The last round adds a function for each of those outcomes, plus one escape hatch
+for everything the agent shouldn't attempt.
+
+```markdown
+You are Ada, the dispatcher for Bayview Taxi. Stay calm and efficient, and keep replies to a
+couple of sentences so the caller can interrupt.
+
+Tools:
+- get_quote: prices a trip and returns the fare and distance.
+- book_ride: dispatches a driver and returns the pickup time and vehicle.
+- check_ride_status: returns where a booked driver is.
+- transfer_to_dispatcher: hands the call to a human dispatcher.
+
+Steps:
+1. Greet the caller and identify yourself.
+2. Collect the pickup address and the destination. Spell back unusual street names to confirm them.
+3. Call get_quote and read back only the fare it returned. Never work a fare out yourself.
+4. If either address changes, call get_quote again before quoting anything.
+5. If the caller accepts, call book_ride and read back the pickup time and vehicle.
+6. If the caller asks where their car is, call check_ride_status every time rather than repeating
+   an earlier answer.
+7. Close by confirming the caller has what they need.
+
+Call transfer_to_dispatcher for fare disputes, lost property, anything outside booking a ride, or
+after any function fails twice.
+```
+
+</Tab>
+</Tabs>
+
+The rules a prompt like this usually accumulates — never quote a fare below the minimum, never
+promise a car that isn't free, always log the booking — are absent from the final version on purpose.
+`get_quote` decides the fare, `book_ride` decides whether a driver exists, and both log what they did.
+Written into the prompt, each of those is a request the model usually honors; written into the
+handlers, each holds on every call.
 
 ## Next steps
 
-<CardGroup cols={3}>
+<CardGroup cols={2}>
 
-<Card title="Prompt writing techniques" href="/docs/platform/ai/prompt-engineering/best-practices" icon="regular pen-nib">
-  Core techniques for clear, reliable prompts.
-</Card>
-
-<Card title="Where to apply prompt engineering" href="/docs/platform/ai/prompt-engineering/where-to-apply" icon="regular layer-group">
-  The five surfaces that accept prompts.
+<Card title="Prompt surfaces" href="/docs/platform/ai/prompt-engineering/where-to-apply" icon="regular layer-group">
+  The five surfaces that accept prompts, from the main prompt to function descriptions.
 </Card>
 
 <Card title="Tool calling" href="/docs/platform/ai/tool-calling" icon="regular webhook">
-  The other half of a reliable agent.
+  The other half of a reliable agent: move the facts and the rules into your code.
 </Card>
 
 </CardGroup>
