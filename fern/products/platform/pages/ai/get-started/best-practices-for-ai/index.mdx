@@ -26,17 +26,49 @@ time. The last section assembles it into a script you can run.
 
 ## Split the work between the prompt and your code
 
-The single highest-leverage design decision is what you *don't* put in the prompt.
+The design decision that matters most is what you *don't* put in the prompt.
 
-Language models are excellent at conversation: tone, comprehension, extracting details from natural speech.
-They are unreliable at arithmetic, current facts, and rule-following under pressure.
-Give each side the work it's good at.
-The prompt covers who the agent is, how it speaks, what it's there to accomplish,
-and when to reach for its functions.
-Your code, behind [SWAIG functions][tool-calling] (SignalWire's tool calling), covers prices,
-inventory, calculations, policy, and anything else with a right answer.
-Split that way, the agent only ever holds the exact information it needs, verified by your systems,
-at the moment it needs it.
+A language model is good at conversation. It reads tone, keeps up with a caller who changes
+direction halfway through a sentence, and pulls a pickup address out of "yeah, I'm at Gough and
+Fell, the blue building on the corner."
+
+It is unreliable at anything with one correct answer. Arithmetic drifts, a fact written into the
+prompt goes stale the moment your data changes, and a rule stated in the prompt is a rule the model
+may or may not honor on turn nine of a difficult call.
+
+So give each side the work it's suited to. The prompt covers who the agent is, how it speaks, what
+it's there to accomplish, and when to reach for its functions. Your code, reached through
+[SWAIG functions][tool-calling] (SignalWire AI Gateway, the platform's tool calling), covers prices,
+inventory, calculations, policy, and anything else with a right answer. The agent then holds only
+the information it needs, verified by your systems, at the moment it needs it.
+
+<llms-ignore>
+
+  <img src="/assets/images/img/prompt-code-split-themed.svg" alt="What belongs in the prompt and what belongs in your code. The prompt, fixed when the call starts, carries identity and tone, scope and duties, and the list of tools the agent can call. Your code, current at call time, carries knowledge and data, retrieval results, and business logic. The agent makes a function call to your code, and your code returns the exact value from your system of record." />
+
+</llms-ignore>
+
+<llms-only>
+
+```mermaid
+flowchart LR
+    subgraph P["The prompt · fixed at call start"]
+        P1["Identity and tone<br/>who the agent is · how it speaks"]
+        P2["Scope and duties<br/>what it handles · when to hand off"]
+        P3["The tools it can call<br/>names, descriptions, when to use each"]
+    end
+
+    subgraph C["Your code · current at call time"]
+        C1["Knowledge and data<br/>prices · schedules · inventory"]
+        C2["Retrieval results<br/>documents and records you look up"]
+        C3["Business logic<br/>rules · calculations · decisions"]
+    end
+
+    P3 -->|function call| C3
+    C3 -->|"exact value, from your system of record"| P3
+```
+
+</llms-only>
 
 <Tip>
 Values and conditions change; the prompt doesn't. Anything that can go stale should be fetched
@@ -46,7 +78,8 @@ by your code at call time and fed to the agent, not written statically into the 
 ### Keep business data out of the prompt
 
 It's tempting to paste the fare table, the service-area map, or the policy manual into the prompt
-and hope the model honors it all — "prompt and pray."
+and hope the model honors all of it.
+Prompt and pray.
 Resist it.
 The prompt is fixed when the call starts, but your data keeps changing;
 a function call reads the current value at the moment the caller asks.
@@ -76,26 +109,6 @@ headings and lists keep it organized and legible,
 narrowing how the AI interprets each section.
 
 <CodeBlocks>
-<CodeBlock title="SWML">
-```yaml
-version: 1.0.0
-sections:
-  main:
-    - ai:
-        prompt:
-          text: |
-            Your name is Ada. You are the dispatcher for Bayview Taxi.
-
-            ## Personality and duties
-            You are calm and efficient. Help callers get a fare quote and book
-            a pickup, using the functions available to you.
-
-            ## Greeting rules
-            Greet the caller, introduce yourself as Ada, and ask where they
-            are and where they're going.
-          temperature: 0.7
-```
-</CodeBlock>
 <CodeBlock title="Server SDK (Python)">
 ```python
 from signalwire import AgentBase
@@ -122,11 +135,46 @@ if __name__ == "__main__":
     agent.run()
 ```
 </CodeBlock>
+<CodeBlock title="SWML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - ai:
+        prompt:
+          text: |
+            Your name is Ada. You are the dispatcher for Bayview Taxi.
+
+            ## Personality and duties
+            You are calm and efficient. Help callers get a fare quote and book
+            a pickup, using the functions available to you.
+
+            ## Greeting rules
+            Greet the caller, introduce yourself as Ada, and ask where they
+            are and where they're going.
+          temperature: 0.7
+```
+</CodeBlock>
 </CodeBlocks>
 
 Notice what this prompt *doesn't* contain: no fare table, no service-area boundary, no driver roster.
 That information lives in the dispatch system behind the agent's functions,
 so the prompt stays short and the answers stay accurate.
+
+The function it calls for a fare is a handler of your own. In outline:
+
+```text title="get_quote, in outline"
+on get_quote(pickup, destination):
+    miles = distance_service.lookup(pickup, destination)
+    if miles is none:
+        return "that trip is outside the service area"
+    rate  = rate_table.current()          # today's rates, not last quarter's
+    fare  = rate.base + miles * rate.per_mile
+    return "the fare is " + fare + " for " + miles + " miles"
+```
+
+[Putting it together](#putting-it-together), at the end of this page, has that handler as running
+code.
 
 Some context does belong in the prompt.
 Put in it what no system of record can answer: who the agent is, the scope of what it handles,
@@ -150,56 +198,46 @@ order's status, still comes from a function at the moment the caller asks.
 For the full craft of prompt writing, including structure, examples, and iterative refinement,
 see the [prompt engineering guide][prompt-engineering].
 
-### Tune the model parameters
+### Adjust the model parameters when the defaults aren't working
 
-The [`prompt` object][ai-prompt-reference] accepts parameters that shape the AI's responses:
+The platform's defaults are set to work across most agents, so the parameters on the
+[`prompt` object][ai-prompt-reference] are repairs rather than a step in building one.
+Reach for them when something specific is wrong with the way your agent talks: it wanders off
+topic, it repeats a line, or it leaves a long pause after the caller stops speaking.
 
-- **`temperature`** (`0.0`–`1.5`): how random the output is. Closer to `0` makes it less random.
-- **`top_p`** (`0.0`–`1.0`): an alternative way to set randomness, again less random closer to `0`.
-  It does the same job as `temperature`, so tune one or the other rather than both.
-- **`confidence`** (`0.0`–`1.0`): the threshold for firing a speech-detect event at the end of the
-  caller's utterance. Lowering it shortens the pause after the caller speaks, at the cost of
-  false positives.
-- **`presence_penalty`** (`-2.0`–`2.0`): aversion to staying on topic. Positive values make the model
-  more likely to raise new topics.
-- **`frequency_penalty`** (`-2.0`–`2.0`): aversion to repetition. Positive values make the model less
-  likely to repeat the same line verbatim.
-- **`max_tokens`** (`0`–`4096`): a ceiling on how long a single generated reply can be.
+| Parameter | Range | What it does |
+| --- | --- | --- |
+| `temperature` | `0.0`–`1.5` | How random the output is. Closer to `0` is less random. |
+| `top_p` | `0.0`–`1.0` | Another way to set randomness, again less random closer to `0`. It does the same job as `temperature`, so change one or the other, not both. |
+| `confidence` | `0.0`–`1.0` | The threshold for firing a speech-detect event at the end of the caller's utterance. Lowering it shortens the pause after the caller speaks, at the cost of false positives. |
+| `presence_penalty` | `-2.0`–`2.0` | Aversion to staying on topic. Positive values make the model more likely to raise new topics. |
+| `frequency_penalty` | `-2.0`–`2.0` | Aversion to repetition. Positive values make the model less likely to repeat the same line verbatim. |
+| `max_tokens` | `0`–`4096` | A ceiling on how long a single generated reply can be. |
 
-Effective defaults vary by model, so treat these as adjustments from whatever the model you selected
-starts at. Change one at a time and listen to a real call between changes.
+The [`prompt` reference][ai-prompt-reference] lists the default each one starts at.
+Change one at a time and listen to a real call between changes.
 
 ## Design for real-time voice
 
-Voice AI adds a dimension that text chat doesn't have: time.
-Two concepts matter when tuning how your agent converses.
-**End-pointing** (end-of-utterance detection) is the AI's ability to detect when the caller has finished speaking,
-and **turnaround** (turn-taking) is the time it takes the AI to process input and begin its response.
-
-Neither can be instant.
-Natural language processing takes time: the AI analyzes syntax, semantics, and context,
-even if only for a fraction of a second.
-Real conversation is full of pauses, overlaps, and changes of direction that make "finished speaking" ambiguous.
-And generating a coherent, contextually appropriate response is computational work.
-
-<Note>
-No system delivers truly instantaneous end-pointing and turnaround.
-Judge latency on live calls with your own configuration rather than on recorded demos,
-and measure the interval the caller experiences: from the moment they stop talking
-to the moment they hear the reply begin.
-Consistency matters as much as the average; a steady conversation feels better
-than a fast one with occasional stalls.
-</Note>
-
-Rather than chasing zero, make the wait feel natural.
+Voice adds a dimension that text chat doesn't have: the caller hears every pause.
+Three controls shape how those pauses feel.
 Filler phrases give the AI something to say while a function call is running;
 configure them [per-function](/docs/swml/reference/calling/ai/swaig/functions) and
 [agent-wide](/docs/swml/reference/calling/ai/languages).
-Background audio, such as typing or office ambience, provides immediate and familiar feedback
+Background audio, such as typing or office ambience, gives the caller familiar feedback
 while processing happens; set it with
 [`params.background_file`](/docs/swml/reference/calling/ai/params#paramsbackground_file).
-And keep your function handlers fast: your webhook's latency is part of the conversation,
-so move slow work out of band and respond promptly.
+And your function handlers are part of the conversation's timing, so move slow work out of band
+and respond promptly.
+
+Underneath those sit two moments you can also configure.
+**End-pointing** (end-of-utterance detection) is how the AI decides the caller has finished
+speaking, adjustable through `confidence` in the [`prompt` object][ai-prompt-reference] and
+[`params.end_of_speech_timeout`](/docs/swml/reference/calling/ai/params#paramsend_of_speech_timeout).
+**Turnaround** is the interval between that decision and the start of the reply.
+Judge both on live calls with your own configuration, measuring the interval the caller experiences:
+from the moment they stop talking to the moment they hear the reply begin.
+Consistency matters as much as the average.
 
 ## Help speech recognition with hints
 
@@ -210,6 +248,23 @@ Street names, neighborhoods, and local landmarks are exactly the vocabulary a ge
 handles worst and a dispatcher hears most, which makes them the first thing to introduce:
 
 <CodeBlocks>
+<CodeBlock title="Server SDK (Python)">
+```python
+from signalwire import AgentBase
+
+agent = AgentBase(name="bayview-taxi")
+
+agent.prompt_add_section(
+    "Role",
+    "Your name is Ada. You are the dispatcher for Bayview Taxi. "
+    "Help callers get a fare quote and book a pickup."
+)
+agent.add_hints(["Gough Street", "Divisadero", "Presidio", "Embarcadero", "Bayview", "SFO"])
+
+if __name__ == "__main__":
+    agent.run()
+```
+</CodeBlock>
 <CodeBlock title="SWML">
 ```yaml
 version: 1.0.0
@@ -227,23 +282,6 @@ sections:
           - Embarcadero
           - Bayview
           - SFO
-```
-</CodeBlock>
-<CodeBlock title="Server SDK (Python)">
-```python
-from signalwire import AgentBase
-
-agent = AgentBase(name="bayview-taxi")
-
-agent.prompt_add_section(
-    "Role",
-    "Your name is Ada. You are the dispatcher for Bayview Taxi. "
-    "Help callers get a fare quote and book a pickup."
-)
-agent.add_hints(["Gough Street", "Divisadero", "Presidio", "Embarcadero", "Bayview", "SFO"])
-
-if __name__ == "__main__":
-    agent.run()
 ```
 </CodeBlock>
 </CodeBlocks>
@@ -291,32 +329,6 @@ whose handler writes to your do-not-call list before it answers the caller.
 Both halves of that, together:
 
 <CodeBlocks>
-<CodeBlock title="SWML">
-```yaml
-version: 1.0.0
-sections:
-  main:
-    - ai:
-        params:
-          static_greeting: >-
-            Hello, this is an automated assistant calling from Bayview Taxi
-            about your pickup. This call uses an artificial voice.
-          static_greeting_no_barge: true
-        prompt:
-          text: |
-            You are calling to tell the caller their driver is on the way.
-            If the caller asks not to be contacted again, in any wording,
-            call opt_out immediately before saying anything else.
-        SWAIG:
-          functions:
-            - function: opt_out
-              description: Record that the caller does not want to be contacted again
-              parameters:
-                type: object
-                properties: {}
-              web_hook_url: https://example.com/opt-out
-```
-</CodeBlock>
 <CodeBlock title="Server SDK (Python)">
 ```python
 from signalwire import AgentBase, FunctionResult
@@ -363,6 +375,32 @@ if __name__ == "__main__":
     agent.run()
 ```
 </CodeBlock>
+<CodeBlock title="SWML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - ai:
+        params:
+          static_greeting: >-
+            Hello, this is an automated assistant calling from Bayview Taxi
+            about your pickup. This call uses an artificial voice.
+          static_greeting_no_barge: true
+        prompt:
+          text: |
+            You are calling to tell the caller their driver is on the way.
+            If the caller asks not to be contacted again, in any wording,
+            call opt_out immediately before saying anything else.
+        SWAIG:
+          functions:
+            - function: opt_out
+              description: Record that the caller does not want to be contacted again
+              parameters:
+                type: object
+                properties: {}
+              web_hook_url: https://example.com/opt-out
+```
+</CodeBlock>
 </CodeBlocks>
 
 The prompt asks the agent to call `opt_out`, and the handler is what makes the opt-out real.
@@ -392,62 +430,15 @@ Both compliance guides walk through these controls in detail:
 ## Putting it together
 
 Here is Ada as a complete script, with each practice in place:
-a lean prompt, fares served by the dispatch system instead of pasted text,
-a filler phrase to cover the lookup, hints for local street names, and a post-call
-report for review.
+a static greeting that identifies the call as automated, a lean prompt, fares served by the
+dispatch system instead of pasted text, a filler phrase and background audio to cover the lookup,
+hints for local street names, and a post-call report for review.
+
+Ada answers inbound calls, so the consent check and the do-not-call lookup from
+[Stay compliant with regulations](#stay-compliant-with-regulations) aren't here: those run in your
+own code before an outbound call is placed, and the `opt_out` function belongs with them.
 
 <CodeBlocks>
-<CodeBlock title="SWML">
-```yaml
-version: 1.0.0
-sections:
-  main:
-    - ai:
-        prompt:
-          text: |
-            Your name is Ada. You are the dispatcher for Bayview Taxi.
-
-            ## Personality and duties
-            You are calm and efficient. Help callers get a fare quote and book
-            a pickup. Price trips with get_quote, and only quote fares and
-            pickup times that get_quote returned.
-
-            ## Greeting rules
-            Greet the caller, introduce yourself as Ada, and ask where they
-            are and where they're going.
-          temperature: 0.7
-        SWAIG:
-          functions:
-            - function: get_quote
-              description: Quote the fare between a pickup address and a destination
-              parameters:
-                type: object
-                properties:
-                  pickup:
-                    type: string
-                    description: The pickup address, as the caller said it
-                  destination:
-                    type: string
-                    description: Where the caller is going
-                required:
-                  - pickup
-                  - destination
-              fillers:
-                en-US:
-                  - Let me work that out...
-              web_hook_url: https://example.com/get-quote
-        hints:
-          - Gough Street
-          - Divisadero
-          - Presidio
-          - Embarcadero
-          - Bayview
-          - SFO
-        post_prompt:
-          text: Summarize the call and provide the summary in JSON format.
-        post_prompt_url: https://example.com/post-prompt
-```
-</CodeBlock>
 <CodeBlock title="Server SDK (Python)">
 ```python
 from signalwire import AgentBase, FunctionResult
@@ -476,10 +467,18 @@ class DispatchAgent(AgentBase):
         )
         self.prompt_add_section(
             "Greeting rules",
-            "Greet the caller, introduce yourself as Ada, and ask where they "
-            "are and where they're going."
+            "The greeting has already played, so don't introduce yourself again. "
+            "Open by asking where the caller is and where they're going."
         )
-        self.set_params({"temperature": 0.7})
+        self.set_params({
+            "temperature": 0.7,
+            "static_greeting": (
+                "Thanks for calling Bayview Taxi. You're speaking with Ada, an "
+                "automated assistant using an artificial voice."
+            ),
+            "static_greeting_no_barge": True,
+            "background_file": "https://example.com/audio/office-ambience.mp3",
+        })
 
         self.add_hints(["Gough Street", "Divisadero", "Presidio",
                         "Embarcadero", "Bayview", "SFO"])
@@ -525,6 +524,67 @@ class DispatchAgent(AgentBase):
 if __name__ == "__main__":
     agent = DispatchAgent()
     agent.run()
+```
+</CodeBlock>
+<CodeBlock title="SWML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - ai:
+        params:
+          static_greeting: >-
+            Thanks for calling Bayview Taxi. You're speaking with Ada, an
+            automated assistant using an artificial voice.
+          static_greeting_no_barge: true
+          background_file: https://example.com/audio/office-ambience.mp3
+        prompt:
+          text: |
+            Your name is Ada. You are the dispatcher for Bayview Taxi.
+
+            ## Personality and duties
+            You are calm and efficient. Help callers get a fare quote and book
+            a pickup. Price trips with get_quote, and only quote fares and
+            pickup times that get_quote returned.
+
+            ## Greeting rules
+            The greeting has already played, so don't introduce yourself again.
+            Open by asking where the caller is and where they're going.
+          temperature: 0.7
+        languages:
+          - name: English
+            code: en-US
+            voice: rime.spore
+        SWAIG:
+          functions:
+            - function: get_quote
+              description: Quote the fare between a pickup address and a destination
+              parameters:
+                type: object
+                properties:
+                  pickup:
+                    type: string
+                    description: The pickup address, as the caller said it
+                  destination:
+                    type: string
+                    description: Where the caller is going
+                required:
+                  - pickup
+                  - destination
+              fillers:
+                en-US:
+                  - Let me work that out...
+              web_hook_url: https://example.com/get-quote
+        hints:
+          - Gough Street
+          - Divisadero
+          - Presidio
+          - Embarcadero
+          - Bayview
+          - SFO
+        post_prompt:
+          text: Summarize the call and provide the summary in JSON format.
+        post_prompt_url: https://example.com/post-prompt
 ```
 </CodeBlock>
 </CodeBlocks>
