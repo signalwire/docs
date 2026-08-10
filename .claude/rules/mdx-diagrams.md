@@ -33,7 +33,9 @@ the OS preference, which is what the toggle defaults to anyway.
   `<style>` block, and keep the mode-dependent values as custom properties on
   one wrapper class (see `.swflow-theme`).
 - Brand values in use: `--sw-fuchsia: #F72A72`, `--sw-purple: #601BE6`.
-  Light ink `#070c2d`, chip `#044EF4`. Dark ink `#f0f0f4`, chip `#40E0D0`.
+  Light ink `#070c2d`, chip `#044EF4`, on-chip `#ffffff`. Dark ink `#f0f0f4`,
+  chip `#40E0D0`, on-chip `#0e0e18`. Caller icon matches ink in light mode,
+  matches the chip color in dark mode.
 
 ## Filename
 
@@ -50,6 +52,8 @@ Guard every animation with
 
 - Plain `<img>` with meaningful alt text. **No `<Frame>`** — its border artifact
   shows in both themes and is worse in dark mode.
+- Needs a caption? Put it as a sentence in the prose above the image, not a
+  `<Frame caption>`.
 - Wrap the `<img>` in `<llms-ignore>` and pair it with an `<llms-only>` mermaid
   block carrying the same information. An SVG reaches agents only as a link.
 
