@@ -29,12 +29,13 @@ position: 2
 
 Ask a language model what a ride across town costs, with nothing else to go on, and it will give you
 a number. The number will sound right. That doesn't make it the fare you charge.
+A model without tools has no way to tell the difference: it will invent an answer rather than admit
+it doesn't know.
 
-An agent on a real phone line needs two things a model can't supply on its own.
-It needs facts that are current for this caller, like the fare to their address or whether a driver
-is free. It also needs to act: book the pickup, text the receipt, transfer the call.
-Tool calling, also called function calling, gives it both.
-The agent runs the conversation while your backend stays the source of truth.
+Tool calling, also called function calling, closes that gap. A tool can look up or check something,
+such as the fare to an address or whether a driver is free, and a tool can do something, such as
+book the pickup, text the receipt, or transfer the call. Either way, the result goes back to the
+agent as context it can act on and talk about.
 On SignalWire, tool calls travel over **SWAIG**, the SignalWire AI Gateway,
 and the tools you define are **SWAIG functions**.
 
@@ -74,8 +75,9 @@ reliable on real calls.
 ## How a SWAIG function works
 
 A SWAIG function is a named capability you hand to the agent: a **name**, a **description**, and a
-JSON Schema describing its **parameters**. Each call is one HTTP POST carrying a JSON body, answered
-by one JSON reply. Nothing stays open between calls, and nothing has to be installed on your server.
+JSON Schema describing its **parameters**. Each SWAIG request is one HTTP POST carrying a JSON body,
+answered by one JSON reply. Nothing stays open between requests, and nothing has to be installed on
+your server.
 
 <Tip>
 SWAIG function descriptions are prompt engineering.
@@ -132,7 +134,7 @@ see [steering the call](#steering-the-call).
 ### Where the code lives
 
 Any endpoint that can host HTTP, accept JSON, and return JSON can serve a SWAIG function, which leaves
-you three ways to host yours:
+you two ways to host yours:
 
 - **Your own webhook**: a route you write and host, reachable over HTTPS from the public internet —
   a Flask view, an Express handler, a serverless function behind its own URL. It reads the POST body,
@@ -141,9 +143,10 @@ you three ways to host yours:
 - **The Server SDK**: define the function and its handler in one class built on the SDK's Agents
   namespace (`AgentBase`), and the SDK serves the endpoint for you.
   See [SWAIG functions in the Server SDK][sdk-functions].
-- **DataMap**: for straightforward REST calls, describe the request and response mapping declaratively and
-  SignalWire executes it server-side, with no infrastructure of yours at all.
-  See DataMap in the [Server SDK][sdk-datamap] or in [SWML][swml-datamap].
+
+If the function is a straightforward REST call, DataMap describes the request and response mapping
+declaratively and SignalWire executes it server-side, with no server of yours at all.
+See DataMap in the [Server SDK][sdk-datamap] or in [SWML][swml-datamap].
 
 ## Declaring your functions
 
@@ -162,27 +165,6 @@ Declare inline when the functions belong to one application. The whole contract 
 agent is configured, and there is no second endpoint to keep available.
 
 <CodeBlocks>
-<CodeBlock title="SWML">
-```yaml
-SWAIG:
-  functions:
-    - function: get_quote
-      description: Quote the fare between a pickup address and a destination
-      parameters:
-        type: object
-        properties:
-          pickup:
-            type: string
-            description: The pickup address, as the caller said it
-          destination:
-            type: string
-            description: Where the caller is going
-        required:
-          - pickup
-          - destination
-      web_hook_url: https://example.com/get-quote
-```
-</CodeBlock>
 <CodeBlock title="Server SDK (Python)">
 ```python
 self.define_tool(
@@ -206,9 +188,31 @@ self.define_tool(
 )
 ```
 </CodeBlock>
+<CodeBlock title="SWML">
+```yaml
+SWAIG:
+  functions:
+    - function: get_quote
+      description: Quote the fare between a pickup address and a destination
+      parameters:
+        type: object
+        properties:
+          pickup:
+            type: string
+            description: The pickup address, as the caller said it
+          destination:
+            type: string
+            description: Where the caller is going
+        required:
+          - pickup
+          - destination
+      web_hook_url: https://example.com/get-quote
+```
+</CodeBlock>
 </CodeBlocks>
 
-The [dispatch agent](#a-dispatch-agent) below is a complete, runnable version of this in both forms.
+The [dispatch agent](#a-dispatch-agent) at the end of this guide is a complete, runnable version of
+this in both forms.
 
 ### Declaring remotely
 
@@ -229,6 +233,15 @@ dispatch server's URL, the parameter is added once where the handler already liv
 picks it up the next time it loads.
 
 <CodeBlocks>
+<CodeBlock title="Server SDK (Python)">
+```python
+self.add_function_include(
+    url="https://example.com/swaig",
+    functions=["get_quote", "book_ride"],
+    meta_data={"fleet_id": "sf-01"}
+)
+```
+</CodeBlock>
 <CodeBlock title="SWML">
 ```yaml
 SWAIG:
@@ -237,15 +250,6 @@ SWAIG:
       functions: ["get_quote", "book_ride"]
       meta_data:
         fleet_id: sf-01
-```
-</CodeBlock>
-<CodeBlock title="Server SDK (Python)">
-```python
-self.add_function_include(
-    url="https://example.com/swaig",
-    functions=["get_quote", "book_ride"],
-    meta_data={"fleet_id": "sf-01"}
-)
 ```
 </CodeBlock>
 </CodeBlocks>
@@ -281,127 +285,6 @@ For every field an entry accepts, see [`SWAIG.includes`][swaig-includes] in SWML
 From there the two paths converge. A remotely declared function receives the same request, returns the
 same `response` and `action`, and steers the call the same way; nothing downstream of the declaration
 can tell them apart.
-
-## A dispatch agent
-
-A fare quote is the plainest case for a SWAIG function. It depends on two addresses, the current rate
-card, and how busy the fleet is, so no prompt could hold it.
-Here is a complete agent that fetches it instead.
-
-<CodeBlocks>
-<CodeBlock title="SWML">
-```yaml
-version: 1.0.0
-sections:
-  main:
-    - ai:
-        prompt:
-          text: |
-            You are Ada, the dispatcher for Bayview Taxi. Help callers get a fare quote.
-            Ask where they are and where they're going, then quote it with get_quote.
-            Only quote a fare that get_quote returned.
-        SWAIG:
-          functions:
-            - function: get_quote
-              description: Quote the fare between a pickup address and a destination
-              parameters:
-                type: object
-                properties:
-                  pickup:
-                    type: string
-                    description: The pickup address, as the caller said it
-                  destination:
-                    type: string
-                    description: Where the caller is going
-                required:
-                  - pickup
-                  - destination
-              fillers:
-                en-US:
-                  - Let me work that out...
-              web_hook_url: https://example.com/get-quote
-```
-</CodeBlock>
-<CodeBlock title="Server SDK (Python)">
-```python
-from signalwire import AgentBase, FunctionResult
-
-class DispatchAgent(AgentBase):
-    def __init__(self):
-        super().__init__(name="dispatch-agent")
-        self.add_language("English", "en-US", "rime.spore")
-
-        self.prompt_add_section(
-            "Role",
-            "You are Ada, the dispatcher for Bayview Taxi. Help callers get a fare quote. "
-            "Only quote a fare that get_quote returned."
-        )
-
-        self.define_tool(
-            name="get_quote",
-            description="Quote the fare between a pickup address and a destination",
-            parameters={
-                "type": "object",
-                "properties": {
-                    "pickup": {
-                        "type": "string",
-                        "description": "The pickup address, as the caller said it"
-                    },
-                    "destination": {
-                        "type": "string",
-                        "description": "Where the caller is going"
-                    }
-                },
-                "required": ["pickup", "destination"]
-            },
-            handler=self.get_quote,
-            fillers={"en-US": ["Let me work that out..."]}
-        )
-
-    def get_quote(self, args, raw_data):
-        pickup = args.get("pickup")
-        destination = args.get("destination")
-
-        # Your business logic here - geocoding, distance lookup, pricing engine
-        fare = price_ride(pickup, destination)
-        if fare is None:
-            return FunctionResult(
-                "That trip is outside the service area. Apologize and say we can't take it."
-            )
-
-        return FunctionResult(
-            f"The fare from {pickup} to {destination} is ${fare:.2f}. "
-            "Ask whether they'd like a pickup now."
-        )
-
-if __name__ == "__main__":
-    agent = DispatchAgent()
-    agent.run()
-```
-</CodeBlock>
-</CodeBlocks>
-
-In SWML, `web_hook_url` names the server you run; with the Server SDK, the class *is* the server,
-and the SDK hosts the endpoint for you.
-For the SDK side, see [SWAIG functions in the Server SDK][sdk-functions] and
-[SWAIG request handling][sdk-swaig].
-For SWML, see the [SWAIG guide][swaig-guide] and the [`SWAIG.functions` reference][swaig-functions].
-
-`price_ride` stands in for your real pricing engine: a distance API, a rate table, a surge multiplier.
-Swap it out and nothing else changes.
-When a trip falls outside the service area, the agent says so, because that is what your code returned.
-
-You can exercise the function before any call.
-The SDK's [`swaig-test` CLI](/docs/server-sdks/reference/python/agents/cli/swaig-test) loads the agent file,
-executes `get_quote` with arguments you supply, and prints the exact response the agent would receive:
-
-```bash
-swaig-test dispatch_agent.py --exec get_quote --pickup "123 Gough St" --destination "SFO"
-```
-
-To hear it on a real call, run the Python file and point a phone number at your agent
-(the [Server SDK quickstart](/docs/server-sdks/guides/quickstart) walks through it),
-or paste the SWML into your Dashboard as shown in the [AI overview](/docs/platform/ai).
 
 ## Steering the call
 
@@ -560,6 +443,127 @@ back to the function's description, which you can revise like any other interfac
 The open-source [post prompt viewer](https://github.com/signalwire/post_prompt_viewer)
 inspects these reports, with the transcript, telemetry, and latency in one place.
 In the Server SDK, see [post-prompt data][state-management].
+
+## A dispatch agent
+
+A fare quote is the plainest case for a SWAIG function. It depends on two addresses, the current rate
+card, and how busy the fleet is, so no prompt could hold it.
+Here is a complete agent that fetches it instead, declared inline as covered above.
+
+<CodeBlocks>
+<CodeBlock title="Server SDK (Python)">
+```python
+from signalwire import AgentBase, FunctionResult
+
+class DispatchAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="dispatch-agent")
+        self.add_language("English", "en-US", "rime.spore")
+
+        self.prompt_add_section(
+            "Role",
+            "You are Ada, the dispatcher for Bayview Taxi. Help callers get a fare quote. "
+            "Only quote a fare that get_quote returned."
+        )
+
+        self.define_tool(
+            name="get_quote",
+            description="Quote the fare between a pickup address and a destination",
+            parameters={
+                "type": "object",
+                "properties": {
+                    "pickup": {
+                        "type": "string",
+                        "description": "The pickup address, as the caller said it"
+                    },
+                    "destination": {
+                        "type": "string",
+                        "description": "Where the caller is going"
+                    }
+                },
+                "required": ["pickup", "destination"]
+            },
+            handler=self.get_quote,
+            fillers={"en-US": ["Let me work that out..."]}
+        )
+
+    def get_quote(self, args, raw_data):
+        pickup = args.get("pickup")
+        destination = args.get("destination")
+
+        # Your business logic here - geocoding, distance lookup, pricing engine
+        fare = price_ride(pickup, destination)
+        if fare is None:
+            return FunctionResult(
+                "That trip is outside the service area. Apologize and say we can't take it."
+            )
+
+        return FunctionResult(
+            f"The fare from {pickup} to {destination} is ${fare:.2f}. "
+            "Ask whether they'd like a pickup now."
+        )
+
+if __name__ == "__main__":
+    agent = DispatchAgent()
+    agent.run()
+```
+</CodeBlock>
+<CodeBlock title="SWML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - ai:
+        prompt:
+          text: |
+            You are Ada, the dispatcher for Bayview Taxi. Help callers get a fare quote.
+            Ask where they are and where they're going, then quote it with get_quote.
+            Only quote a fare that get_quote returned.
+        SWAIG:
+          functions:
+            - function: get_quote
+              description: Quote the fare between a pickup address and a destination
+              parameters:
+                type: object
+                properties:
+                  pickup:
+                    type: string
+                    description: The pickup address, as the caller said it
+                  destination:
+                    type: string
+                    description: Where the caller is going
+                required:
+                  - pickup
+                  - destination
+              fillers:
+                en-US:
+                  - Let me work that out...
+              web_hook_url: https://example.com/get-quote
+```
+</CodeBlock>
+</CodeBlocks>
+
+In SWML, `web_hook_url` names the server you run; with the Server SDK, the class *is* the server,
+and the SDK hosts the endpoint for you.
+For the SDK side, see [SWAIG functions in the Server SDK][sdk-functions] and
+[SWAIG request handling][sdk-swaig].
+For SWML, see the [SWAIG guide][swaig-guide] and the [`SWAIG.functions` reference][swaig-functions].
+
+`price_ride` stands in for your real pricing engine: a distance API, a rate table, a surge multiplier.
+Swap it out and nothing else changes.
+When a trip falls outside the service area, the agent says so, because that is what your code returned.
+
+You can exercise the function before any call.
+The SDK's [`swaig-test` CLI](/docs/server-sdks/reference/python/agents/cli/swaig-test) loads the agent file,
+executes `get_quote` with arguments you supply, and prints the exact response the agent would receive:
+
+```bash
+swaig-test dispatch_agent.py --exec get_quote --pickup "123 Gough St" --destination "SFO"
+```
+
+To hear it on a real call, run the Python file and point a phone number at your agent
+(the [Server SDK quickstart](/docs/server-sdks/guides/quickstart) walks through it),
+or paste the SWML into your Dashboard as shown in the [AI overview](/docs/platform/ai).
 
 ## Next steps
 
