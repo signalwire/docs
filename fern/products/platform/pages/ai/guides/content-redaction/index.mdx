@@ -1,6 +1,6 @@
 ---
 title: Handling sensitive content
-sidebar-title: Sensitive content
+sidebar-title: Handling sensitive content
 slug: /ai/content-redaction
 description: |
   Keep card numbers, account numbers, and other sensitive values out of your
@@ -37,15 +37,22 @@ It doesn't need the caller's full account number; it needs to know whether the a
 
 | What you need | Where to do it | Does the model see the value? |
 |---|---|---|
-| Take a card payment | The [`pay`](#take-a-payment-without-the-agent) method | No |
-| Collect digits, such as an account number or PIN | A [`prompt`](#collect-digits-without-the-agent) inside a `SWML` action | No, unless you put them in the reply |
-| Read a value back to the caller | A [`SWML` action](#speak-a-value-without-the-agent) with its own text-to-speech | No |
-| Carry a verified value between functions | [`meta_data`](#remember-a-value-without-the-agent) | No |
-| Reason about the value in conversation | The conversation, plus [redaction](#when-it-has-to-reach-the-model) | Yes |
+| Take a card payment | The [`pay`](#take-a-payment) method | No |
+| Collect digits, such as an account number or PIN | A [`prompt`](#collect-digits) inside a `SWML` action | No, unless you put them in the reply |
+| Read a value back to the caller | A [`SWML` action](#speak-a-value) with its own text-to-speech | No |
+| Carry a verified value between functions | [`meta_data`](#remember-a-value) | No |
+| Reason about the value in conversation | The conversation, plus [redaction](#redact-conversation-records) | Yes |
 
 Only the last row is a redaction problem. The rest are design choices.
 
-## Take a payment without the agent
+## Perform actions outside the agent's context
+
+The first four rows all work the same way. A SWAIG function returns an action, the platform carries out
+that action on the call, and the sensitive value moves between the caller, a SWML method, and your
+server without passing through the model. What the agent gets back is whatever outcome you choose to
+report.
+
+### Take a payment
 
 The [`pay`][pay-reference] method collects card details over DTMF, validates them, and hands them to
 your payment connector. The digits are keypad tones, so they are never spoken, never transcribed, and
@@ -53,6 +60,27 @@ never enter the conversation. Your agent triggers it from a SWAIG function and l
 choose to tell it afterward.
 
 <CodeBlocks>
+<CodeBlock title="Server SDK (Python)">
+```python
+def charge_fare(self, args, raw_data):
+    fare = raw_data.get("global_data", {}).get("fare")
+
+    return (
+        FunctionResult("Starting the payment now.")
+        .pay(
+            payment_connector_url="https://example.com/payment",
+            charge_amount=f"{fare:.2f}",
+            description="Bayview Taxi fare",
+            security_code=True,
+            postal_code=True,
+            ai_response=(
+                "The payment result was ${pay_result}. Tell the caller the outcome "
+                "and, if it succeeded, confirm the pickup."
+            ),
+        )
+    )
+```
+</CodeBlock>
 <CodeBlock title="SWML">
 ```json
 {
@@ -85,27 +113,6 @@ choose to tell it afterward.
 }
 ```
 </CodeBlock>
-<CodeBlock title="Server SDK (Python)">
-```python
-def charge_fare(self, args, raw_data):
-    fare = raw_data.get("global_data", {}).get("fare")
-
-    return (
-        FunctionResult("Starting the payment now.")
-        .pay(
-            payment_connector_url="https://example.com/payment",
-            charge_amount=f"{fare:.2f}",
-            description="Bayview Taxi fare",
-            security_code=True,
-            postal_code=True,
-            ai_response=(
-                "The payment result was ${pay_result}. Tell the caller the outcome "
-                "and, if it succeeded, confirm the pickup."
-            ),
-        )
-    )
-```
-</CodeBlock>
 </CodeBlocks>
 
 The `ai_response` variable is the whole control surface here. When the payment finishes, whatever you
@@ -120,13 +127,49 @@ agent not to discuss the collection itself. Override it when you want the agent 
 specific about what happens next.
 </Tip>
 
-## Collect digits without the agent
+### Collect digits
 
 The same pattern works for anything a caller can type: an account number, a PIN, a policy number, the
 last four digits of a card. The [`prompt`][prompt-method] method plays a message and collects DTMF
 digits into `prompt_value`, and [`request`][request-method] posts them to your server.
 
 <CodeBlocks>
+<CodeBlock title="Server SDK (Python)">
+```python
+def verify_account(self, args, raw_data):
+    swml = {
+        "version": "1.0.0",
+        "sections": {
+            "main": [
+                {
+                    "prompt": {
+                        "play": "say:Please enter your six digit account number, then press pound.",
+                        "max_digits": 6,
+                        "terminators": "#",
+                    }
+                },
+                {
+                    "request": {
+                        "url": "https://example.com/verify-account",
+                        "method": "POST",
+                        "headers": {"Content-Type": "application/json"},
+                        "body": {"account_number": "${prompt_value}"},
+                        "save_variables": True,
+                    }
+                },
+                {
+                    "set": {
+                        "ai_response": "Account verification came back ${status}. "
+                                       "Tell the caller and continue."
+                    }
+                },
+            ]
+        },
+    }
+
+    return FunctionResult("Let me verify the account.").execute_swml(swml)
+```
+</CodeBlock>
 <CodeBlock title="SWML">
 ```json
 {
@@ -166,42 +209,6 @@ digits into `prompt_value`, and [`request`][request-method] posts them to your s
 }
 ```
 </CodeBlock>
-<CodeBlock title="Server SDK (Python)">
-```python
-def verify_account(self, args, raw_data):
-    swml = {
-        "version": "1.0.0",
-        "sections": {
-            "main": [
-                {
-                    "prompt": {
-                        "play": "say:Please enter your six digit account number, then press pound.",
-                        "max_digits": 6,
-                        "terminators": "#",
-                    }
-                },
-                {
-                    "request": {
-                        "url": "https://example.com/verify-account",
-                        "method": "POST",
-                        "headers": {"Content-Type": "application/json"},
-                        "body": {"account_number": "${prompt_value}"},
-                        "save_variables": True,
-                    }
-                },
-                {
-                    "set": {
-                        "ai_response": "Account verification came back ${status}. "
-                                       "Tell the caller and continue."
-                    }
-                },
-            ]
-        },
-    }
-
-    return FunctionResult("Let me verify the account.").execute_swml(swml)
-```
-</CodeBlock>
 </CodeBlocks>
 
 `save_variables` turns the JSON your server replies with into SWML variables, which is where `${status}`
@@ -213,48 +220,23 @@ comes from. The digits reach your server and your server alone.
 whole exercise. Report the verdict, not the input.
 </Warning>
 
-## Speak a value without the agent
+### Speak a value
 
 Sometimes the caller needs to hear a value read back. There are two ways to do that, and they differ
 in what the model ends up knowing.
 
 A **`say` action** hands text to the agent's own voice. The agent speaks it verbatim, and because you
-wrote it rather than the model, it is not added to the model's context on later turns. It does appear
-in the call's conversation record, so redaction still applies to it.
+wrote it rather than the model, it is not fed back into the model's context on later turns. It does
+land in the call's conversation record, and [redaction](#redact-conversation-records) will not mask it
+there: redaction rewrites what the caller said and what the model generated, not text your handler
+supplied. Anything sensitive in a `say` action shows up in your records exactly as you wrote it.
 
 A **`SWML` action** playing `say:` text uses a separate text-to-speech pass outside the AI session
 entirely. Nothing about it reaches the model, and nothing is added to the conversation unless you set
-`ai_response`. Reach for this one when the value must not appear in the model's context at all.
+`ai_response`. Reach for this one when the value must stay out of both the model's context and the
+conversation record.
 
 <CodeBlocks>
-<CodeBlock title="SWML">
-```json
-{
-  "response": "Reading the card back now.",
-  "action": [
-    {
-      "SWML": {
-        "version": "1.0.0",
-        "sections": {
-          "main": [
-            {
-              "play": {
-                "url": "say:The card ending in 4 2 4 2 has been charged thirty eight dollars and sixty cents."
-              }
-            },
-            {
-              "set": {
-                "ai_response": "The caller has been told their card was charged. Confirm the pickup time."
-              }
-            }
-          ]
-        }
-      }
-    }
-  ]
-}
-```
-</CodeBlock>
 <CodeBlock title="Server SDK (Python)">
 ```python
 def confirm_charge(self, args, raw_data):
@@ -283,19 +265,50 @@ def confirm_charge(self, args, raw_data):
     return FunctionResult("Reading the card back now.").execute_swml(swml)
 ```
 </CodeBlock>
+<CodeBlock title="SWML">
+```json
+{
+  "response": "Reading the card back now.",
+  "action": [
+    {
+      "SWML": {
+        "version": "1.0.0",
+        "sections": {
+          "main": [
+            {
+              "play": {
+                "url": "say:The card ending in 4 2 4 2 has been charged thirty eight dollars and sixty cents."
+              }
+            },
+            {
+              "set": {
+                "ai_response": "The caller has been told their card was charged. Confirm the pickup time."
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
+```
+</CodeBlock>
 </CodeBlocks>
 
-## Remember a value without the agent
+### Remember a value
 
 An agent that has to hold a value across several turns is an agent that has the value in its context.
 Store it beside the conversation instead, and let your handlers read it back.
 
 Two stores are available, and the difference between them matters here.
 
-[`meta_data`][set-meta-data] is scoped to a `meta_data_token` and delivered to the functions that
-share it. It is never interpolated into the prompt, so nothing you put there can reach the model. This
-is the right place for a payment token, a verified account ID, or anything else your handlers need and
-the conversation does not.
+[`meta_data`][set-meta-data] is a keyed store rather than one shared bag. Each function carries a
+`meta_data_token`, and every function carrying the same token reads and writes the same store, while a
+function with a different token sees nothing of it. Leave the token off and SignalWire scopes the store
+to that function's `web_hook_url`, so functions behind the same handler URL share one store by default.
+Nothing in `meta_data` is interpolated into the prompt, so nothing you put there reaches the model.
+This is the right place for a payment token, a verified account ID, or anything else your handlers need
+and the conversation does not.
 
 `global_data` is call-scoped state that your handlers also receive, but it is additionally made
 available to the prompt for interpolation. A value in `global_data` reaches the model if, and only if,
@@ -303,6 +316,16 @@ your prompt references it by name. That makes it a good fit for things the agent
 about, such as the caller's first name or the fare it just quoted, and a poor fit for a card number.
 
 <CodeBlocks>
+<CodeBlock title="Server SDK (Python)">
+```python
+def record_payment(self, args, raw_data):
+    return (
+        FunctionResult("The payment is confirmed. Offer to text the receipt.")
+        .set_metadata({"payment_token": "tok_9f42", "card_last_four": "4242"})
+        .update_global_data({"fare_paid": True})
+    )
+```
+</CodeBlock>
 <CodeBlock title="SWML">
 ```json
 {
@@ -314,16 +337,6 @@ about, such as the caller's first name or the fare it just quoted, and a poor fi
 }
 ```
 </CodeBlock>
-<CodeBlock title="Server SDK (Python)">
-```python
-def record_payment(self, args, raw_data):
-    return (
-        FunctionResult("The payment is confirmed. Offer to text the receipt.")
-        .set_metadata({"payment_token": "tok_9f42", "card_last_four": "4242"})
-        .update_global_data({"fare_paid": True})
-    )
-```
-</CodeBlock>
 </CodeBlocks>
 
 A later function reads the token out of `raw_data["meta_data"]` and takes no arguments of its own,
@@ -331,16 +344,24 @@ which means there is no argument for the agent to get wrong or a caller to talk 
 [Tool calling][tool-calling] covers that pattern in full, and
 [state management][state-management] covers the lifecycle of both stores.
 
-## When it has to reach the model
+## Redact conversation records
 
-Some conversations don't give you the option. A caller reads their card number aloud before the agent
-can offer the keypad. A health intake line has to take a date of birth in conversation. An agent has
-to confirm a value it was told earlier.
+Some conversations leave you no choice about the model hearing the value. A caller reads their card
+number aloud before the agent can offer the keypad. A health intake line has to take a date of birth in
+conversation. An agent has to confirm a value it was told earlier.
 
 For those, content redaction masks the sensitive content in everything SignalWire records or transmits
 about the call: logs, events, webhook payloads, the call timeline, and the post-conversation call log.
 The conversation itself is untouched. The caller hears the agent normally and the agent understands
 the caller perfectly. Only the records change.
+
+<llms-ignore>
+
+  <img src="/assets/images/img/redaction-flow-themed.svg" alt="What redaction changes: the caller speaks a real card number, the AI agent receives the real value and replies normally, the caller hears the reply in full, and every record of the call shows the number masked as four dashes." />
+
+</llms-ignore>
+
+<llms-only>
 
 ```mermaid
 %%{init: {
@@ -379,6 +400,8 @@ flowchart TD
 
     linkStyle default stroke:#666666,stroke-width:2px,color:#666666
 ```
+
+</llms-only>
 
 ### Enable redaction
 
@@ -439,7 +462,8 @@ instead. Redaction is the fallback for when you can't.
 Redaction covers both sides of the conversation. Your `redact_prompt` description guides the
 agent to treat matching content as sensitive whenever it speaks: the first time it says it,
 when it repeats it back, and when it confirms it. What the caller says is masked separately,
-before it is stored or delivered.
+before it is stored or delivered. Text your handler supplies is neither of those, so a
+[`say` action](#speak-a-value)'s text is recorded as you wrote it.
 
 | Surface | What appears |
 |---|---|
