@@ -168,8 +168,8 @@ agent is configured, and there is no second endpoint to keep available.
 <CodeBlock title="Server SDK (Python)">
 ```python
 self.define_tool(
-    name="get_quote",
-    description="Quote the fare between a pickup address and a destination",
+    name="validate_trip",
+    description="Confirm the pickup address and destination the caller gave",
     parameters={
         "type": "object",
         "properties": {
@@ -179,12 +179,12 @@ self.define_tool(
             },
             "destination": {
                 "type": "string",
-                "description": "Where the caller is going"
+                "description": "Where the caller is going, as they said it"
             }
         },
         "required": ["pickup", "destination"]
     },
-    handler=self.get_quote
+    handler=self.validate_trip
 )
 ```
 </CodeBlock>
@@ -192,8 +192,8 @@ self.define_tool(
 ```yaml
 SWAIG:
   functions:
-    - function: get_quote
-      description: Quote the fare between a pickup address and a destination
+    - function: validate_trip
+      description: Confirm the pickup address and destination the caller gave
       parameters:
         type: object
         properties:
@@ -202,11 +202,11 @@ SWAIG:
             description: The pickup address, as the caller said it
           destination:
             type: string
-            description: Where the caller is going
+            description: Where the caller is going, as they said it
         required:
           - pickup
           - destination
-      web_hook_url: https://example.com/get-quote
+      web_hook_url: https://example.com/validate-trip
 ```
 </CodeBlock>
 </CodeBlocks>
@@ -237,7 +237,7 @@ picks it up the next time it loads.
 ```python
 self.add_function_include(
     url="https://example.com/swaig",
-    functions=["get_quote", "book_ride"],
+    functions=["validate_trip", "book_ride"],
     meta_data={"fleet_id": "sf-01"}
 )
 ```
@@ -247,7 +247,7 @@ self.add_function_include(
 SWAIG:
   includes:
     - url: https://example.com/swaig
-      functions: ["get_quote", "book_ride"]
+      functions: ["validate_trip", "book_ride"]
       meta_data:
         fleet_id: sf-01
 ```
@@ -260,17 +260,17 @@ declaration carries, plus the `web_hook_url` each function should be called on:
 ```json
 [
   {
-    "function": "get_quote",
-    "description": "Quote the fare between a pickup address and a destination",
+    "function": "validate_trip",
+    "description": "Confirm the pickup address and destination the caller gave",
     "parameters": {
       "type": "object",
       "properties": {
         "pickup": { "type": "string", "description": "The pickup address, as the caller said it" },
-        "destination": { "type": "string", "description": "Where the caller is going" }
+        "destination": { "type": "string", "description": "Where the caller is going, as they said it" }
       },
       "required": ["pickup", "destination"]
     },
-    "web_hook_url": "https://example.com/get-quote"
+    "web_hook_url": "https://example.com/validate-trip"
   }
 ]
 ```
@@ -328,6 +328,9 @@ addresses as the caller said them, geocodes both, and writes the results to `glo
 `get_quote` declares no parameters at all and prices the trip from what is already there:
 
 ```python
+class DispatchAgent(AgentBase):
+    # geocode() and price_ride() are the stand-ins defined with the complete agent below
+
     def validate_trip(self, args, raw_data):
         pickup = geocode(args.get("pickup", ""))
         destination = geocode(args.get("destination", ""))

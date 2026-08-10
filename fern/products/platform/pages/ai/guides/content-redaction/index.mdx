@@ -348,18 +348,18 @@ Some conversations leave you no choice about the model hearing the value. A call
 number aloud before the agent can offer the keypad. A health intake line has to take a date of birth in
 conversation. An agent has to confirm a value it was told earlier.
 
-For those, content redaction masks what the caller says and what the agent generates across the call's
-records: the completed conversation turns in AI events and webhook payloads, the conversation turns on
-the call timeline and in the stored transcript, and the post-conversation call log. The conversation
-itself is untouched. The caller hears the agent normally and the agent understands the caller
-perfectly. Only the records change.
+For those, content redaction rewrites the conversation text — what the caller says and what the agent
+generates — in the completed turns that reach AI events, webhook payloads, and the post-conversation
+call log. The conversation itself is untouched. The caller hears the agent normally and the agent
+understands the caller perfectly. Only the recorded text changes.
 
-Coverage is broad rather than absolute. [What gets masked](#what-gets-masked) sets out the surfaces
-redaction reaches and the ones it leaves alone.
+Recorded text is the limit of it: redaction reaches the text of a turn and not the structured fields
+the platform records beside that turn. Coverage is narrower than every record of the call, and
+[what gets masked](#what-gets-masked) sets out every surface, masked and unmasked.
 
 <llms-ignore>
 
-  <img src="/assets/images/img/redaction-flow-themed.svg" alt="What redaction changes: the caller speaks a real card number, the AI agent receives the real value and replies normally, the caller hears the reply in full, and every record of the call shows the number masked as four dashes." />
+  <img src="/assets/images/img/redaction-flow-themed.svg" alt="What redaction changes: the caller speaks a real card number, the AI agent receives the real value and replies normally, the caller hears the reply in full, and the recorded conversation text shows the number masked as four dashes while the structured fields recorded beside that turn still hold the real value." />
 
 </llms-ignore>
 
@@ -381,24 +381,31 @@ redaction reaches and the ones it leaves alone.
 flowchart TD
     classDef live fill:#f0fff0,stroke:#27ae60,stroke-width:2px,color:#000000,fontFamily:Inter
     classDef masked fill:#f0f8ff,stroke:#666,stroke-width:2px,color:#000000,fontFamily:Inter
+    classDef unmasked fill:#fff4f0,stroke:#c0392b,stroke-width:2px,color:#000000,fontFamily:Inter
     classDef note fill:#ffffd0,stroke:#666,stroke-width:1px,color:#666,font-style:italic,fontFamily:Inter
 
     C["Caller: 'My card number is 4242 4242 4242 4242'"]:::live
     A["AI agent receives the real number and replies normally"]:::live
     T["Caller hears: 'Thanks, your card has been updated.'"]:::live
-    R["Logs · events · webhooks · timeline · call log
+    R["Conversation text in events, webhooks, and the call log
     'My card number is ----'"]:::masked
+    M["Structured fields recorded beside the same turn
+    entity type 'card', entity value '4242424242424242'"]:::unmasked
 
     C --> A
     A --> T
     A -.-> R
+    A -.-> M
 
     N1["The live conversation
     stays real"]:::note
-    N2["Every record
+    N2["Conversation text
     is masked"]:::note
+    N3["The fields beside it
+    are not"]:::note
     N1 -.-> A
     N2 -.-> R
+    N3 -.-> M
 
     linkStyle default stroke:#666666,stroke-width:2px,color:#666666
 ```
@@ -449,11 +456,13 @@ sections:
 </CodeBlocks>
 
 The value of `redact_prompt` does two jobs: it switches redaction on, and it describes in plain
-language what counts as sensitive. Anything matching that description is replaced with `----`
-wherever the call is recorded or transmitted.
+language what counts as sensitive. Matching text is replaced with `----` in the conversation turns the
+platform records and delivers, and only there — [what gets masked](#what-gets-masked) has the full
+list of surfaces.
 
 <Warning>
-Redaction protects what the platform **records and transmits**, not what the model processes.
+Redaction rewrites the conversation text the platform **records and transmits**, not what the model
+processes.
 The agent still receives the caller's real words on every turn, which is what keeps the conversation
 working. If your requirement is to keep a value away from the model, use one of the patterns above
 instead. Redaction is the fallback for when you can't.
@@ -471,28 +480,39 @@ of those, so a [`say` action](#speak-a-value)'s text is recorded as you wrote it
 |---|---|
 | Audio the caller hears | The real content, spoken in full |
 | Text the model receives | The real content, every turn |
-| Completed conversation turns in AI events and webhook payloads | Masked as `----` |
+| Conversation text in completed-turn AI events and webhook payloads | Masked as `----` |
+| Conversation text in the post-conversation `call_log` and `raw_call_log` | Masked as `----` |
+| Structured fields recorded beside a turn, such as a recognized `entity` or a tool result's `original_result` | The real content |
+| Turn entries on the call timeline | Those same structured fields, unmasked |
 | Interim events sent while the caller is still speaking, including partial transcripts and transparent barge-in | The real content |
-| Conversation turns on the call timeline and in the stored transcript | Masked as `----` |
 | Timeline entries recording a text transformation, such as transcription cleanup, text normalization, or pronunciation | The real content |
-| Post-conversation `call_log` and `raw_call_log` | Masked as `----` |
 | Arguments your SWAIG functions receive | The real content |
 
-The unmasked rows are worth planning around. Interim events fire while a turn is still in progress,
-before there is a finished turn to mask, so an application that receives them sees the caller's raw
-words. Where no unmasked text may leave the platform, keep those events out of your own systems and
-turn [`transparent_barge`](/docs/swml/reference/calling/ai/params#paramstransparent_barge) off.
+The structured-field row is the one to design around. Alongside each turn's text, the platform records
+what it worked out about that turn, and none of that is rewritten. A turn where the caller read out a
+phone number, a card number, or a social security number can carry an `entity` field holding that
+value in canonical form, and a tool result that was shortened before the model saw it carries the full
+original in `original_result`. Both travel with the turn into your webhook payloads and the call log.
+Turn entries on the call timeline are built from these fields alone and carry no conversation text at
+all, so masking the text leaves them unchanged.
+
+Interim events fire while a turn is still in progress, before there is a finished turn to mask, so an
+application that receives them sees the caller's raw words. Where no unmasked text may leave the
+platform, keep those events out of your own systems and turn
+[`transparent_barge`](/docs/swml/reference/calling/ai/params#paramstransparent_barge) off.
 
 Timeline entries that record a transformation carry both the text before and the text after, so a
-transcription-cleanup or pronunciation entry can hold the original alongside the masked version. They
-sit beside the conversation turns rather than replacing them; the turns themselves are still masked.
+transcription-cleanup, normalization, or pronunciation entry can hold the original alongside the
+masked version.
 
 The SWAIG row is deliberate. Your handler is the code that has to act on the value, so the arguments
 the agent extracted arrive intact. What is masked in a SWAIG payload is the conversation text carried
 alongside them. Treat your own handler as a place where sensitive data lands, and log accordingly.
 
 Redaction is performed by AI, not by a fixed pattern-matcher, which is why it catches a card number
-read back one digit at a time. It errs on the side of masking too much rather than too little.
+read back one digit at a time. Within the conversation text it errs on the side of masking too much
+rather than too little. It is not a control for keeping a value out of every record: where that is the
+requirement, keep the value out of the conversation using one of the patterns above.
 
 ### Keep it fast
 
