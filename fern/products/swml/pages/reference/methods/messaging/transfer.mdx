@@ -2,16 +2,23 @@
 id: a86b1e82-0cdd-4c54-8b35-932839347bcb
 title: transfer
 slug: /reference/messaging/transfer
-description: Tail-call to a new SWML document fetched from a URL.
+description: Tail-call to a section, a URL, or an inline SWML document.
 max-toc-depth: 3
 ---
 
-Fetch and execute a new SWML document from a URL. This is a **tail call** — it replaces the current
-document and does not return. Steps after `transfer`, including steps in calling sections, are
+Hand off the rest of the inbound message to another SWML destination: a section of the current
+document, a URL that returns a SWML document, or an inline SWML document. This is a **tail call**,
+so execution never comes back. Steps after `transfer`, including steps in calling sections, are
 skipped.
 
-In the messaging context, `transfer.dest` must be a URL — it does not accept a section name or an
-inline document.
+To call a destination and then pick up where you left off, use
+[`execute`](/docs/swml/reference/messaging/execute) instead.
+
+<Warning>
+A failed `transfer` is still a tail call. When the destination cannot be resolved, because the
+section does not exist, the fetch failed, or the document is invalid, execution stops and the
+inbound message is marked `failed`. The steps after `transfer` do not run as a fallback.
+</Warning>
 
 ## **Properties**
 
@@ -22,36 +29,103 @@ inline document.
 <Indent>
 
 <ParamField path="transfer.dest" type="string" required={true} toc={true}>
-  URL (`http` or `https`) to fetch the new SWML document from. Authentication can be set in the URL in
-  the format `username:password@url`.
+  Where to transfer to. One of:
+
+  - the name of a section in the current document
+  - a URL (`http` or `https`) that returns a SWML document
+  - an inline SWML document, supplied as a JSON string
+
+  Anything that is not an `http` or `https` URL and does not parse as a JSON object is treated as
+  a section name. For a URL, authentication can be set in the URL in the format
+  `username:password@url`.
 </ParamField>
 
 
 <ParamField path="transfer.method" type="string" default="POST" toc={true}>
-  HTTP method for the fetch request. One of `GET`, `POST`, `PUT`, `PATCH`, or `DELETE`.
+  HTTP method for the fetch request. Applies only when `dest` is a URL, and is ignored for section
+  and inline-document destinations. One of `GET`, `POST`, `PUT`, `PATCH`, or `DELETE`. Other values
+  are not rejected up front, but a method the platform cannot send fails the transfer with
+  `swml_transfer_fetch_failed`.
 </ParamField>
 
 
 <ParamField path="transfer.params" type="object" toc={true}>
-  Parameters to include in the request body of the fetch. Available as `params.*` in the transferred
-  document.
+  Values made available as `params.*` in the destination. Replaces, and never merges with, the
+  caller's `params`. When `dest` is a URL, they are also sent in the request body.
 </ParamField>
 
 </Indent>
 
-## **Webhook payload sent to `dest`**
+`transfer` also accepts a bare string in place of the object, so `- transfer: support` is shorthand
+for a `transfer` whose only property is `dest`. The shorthand does not expand `%{...}` placeholders,
+so a destination built from a variable needs the object form.
 
-When `transfer` fetches an external document, SignalWire `POST`s the
+## **Destination forms**
+
+SignalWire infers the form from the value of `dest`; there is no separate type property. A value
+beginning with `http://` or `https://` is a URL, a value that parses as a JSON object is an inline
+document, and anything else is a section name.
+
+Every destination reads the inbound `message` and this step's `params`, which replace the caller's
+`params` rather than merging with them. A section destination also reads everything the caller can,
+including every runtime variable set so far. A URL or inline destination reads the runtime
+variables of the top-level flow, the ones your `main` steps set, which is the same thing whenever
+the step itself sits in `main`. Once the step is nested the two differ: variables set inside a
+section or document that `execute` or `transfer` entered do not reach a URL or inline destination
+until control returns to the top level, so pass those in `params`.
+
+A URL or inline destination runs as a separate document, including the inline form where nothing is
+fetched, and a document that defines its own `sections` uses those from then on. For a URL
+destination the caller's variables are also sent outward in the request body as `vars`, including
+any the fetched document cannot read itself, so your server can fold them into the document it
+returns.
+
+Nothing comes back to the caller from any form of `transfer`. Use `execute` when you need a value
+returned.
+
+### Inline documents
+
+An inline document must be a JSON **string**, not an object or mapping written directly in your
+SWML. Its content has to parse as a JSON object holding exactly one of `reply`, `sections`, or
+`receive`. A full `sections.main` is not required, so `{"reply": "Thanks!"}` is a valid inline
+document. A bare array of steps is not accepted, and inline documents are JSON only, not YAML.
+
+### When a destination is malformed
+
+Because a section name is the fallback, a malformed `dest` never reports a fetch or parse error. A
+scheme typo such as `htp://example.com`, a JSON syntax error, a JSON array, an object passed where
+a string was expected, and a document nested more deeply than the JSON parser accepts all fall
+through to a section lookup and fail with `swml_section_not_found`.
+
+## **Webhook payload sent to a URL destination**
+
+When `dest` is a URL, SignalWire sends the
 [inbound message webhook payload](/docs/apis/rest/swml-webhook/webhooks/inbound-message-webhook)
-to `dest`:
+to it using `method`:
 
 - `message` — the original inbound message that triggered this SWML document.
 - `params` — the values supplied to this `transfer` step.
-- `vars` — runtime variables propagated from the current document (`request_result`,
-  `reply_result`, `request_response`, `request_response_code`, `request_response_body`,
-  `reply_message_id`). Present on transfer-driven fetches; absent on the initial inbound fetch.
+- `vars` — the runtime variables the current document has accumulated: `request_result`,
+  `request_response`, `request_response_code`, `request_response_body`, `reply_result`,
+  `reply_message_id`, and `return_value` once an earlier `execute` has set one. Present on
+  transfer-driven fetches; absent on the initial inbound fetch.
+
+SignalWire waits up to 5 seconds for the response and does not retry.
 
 <WebhookPayloadSnippet webhook="inboundMessageWebhook" />
+
+## **Errors**
+
+A failed `transfer` marks the inbound message `failed` with one of these codes. See
+[Errors](/docs/swml/reference/errors) for the full list.
+
+- `swml_transfer_failed` — `dest` was missing or empty.
+- `swml_section_not_found` — `dest` was read as a section name and no such section exists in the
+  current document.
+- `swml_transfer_fetch_failed` — the URL could not be fetched, whether from a non-2xx response, a
+  timeout, an unparseable URL, an unsupported HTTP method, or a body that is neither JSON nor YAML.
+- `swml_transfer_document_invalid` — the fetched or inline document is not a valid messaging
+  document.
 
 ## **Examples**
 
@@ -81,6 +155,104 @@ sections:
           "params": {
             "reason": "escalation"
           }
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### Transfer to a section of the same document
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - switch:
+        variable: message.body
+        transform: lowercase_trim
+        case:
+          stop:
+            - transfer:
+                dest: opt_out
+        default:
+          - reply:
+              body: "Thanks for your message!"
+  opt_out:
+    - reply:
+        body: "You've been unsubscribed. Reply START to opt back in."
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "switch": {
+          "variable": "message.body",
+          "transform": "lowercase_trim",
+          "case": {
+            "stop": [
+              {
+                "transfer": {
+                  "dest": "opt_out"
+                }
+              }
+            ]
+          },
+          "default": [
+            {
+              "reply": {
+                "body": "Thanks for your message!"
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "opt_out": [
+      {
+        "reply": {
+          "body": "You've been unsubscribed. Reply START to opt back in."
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### Transfer to an inline document
+
+The inline document is a JSON string, so in YAML it goes in single quotes and in JSON its own
+quotes are escaped.
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - transfer:
+        dest: '{"reply":{"body":"Our office is closed. We will text you back at 9am."}}'
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "transfer": {
+          "dest": "{\"reply\":{\"body\":\"Our office is closed. We will text you back at 9am.\"}}"
         }
       }
     ]
@@ -164,5 +336,3 @@ sections:
 ```
 </CodeBlock>
 </CodeBlocks>
-
-

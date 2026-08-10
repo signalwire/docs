@@ -2,16 +2,17 @@
 id: 2e40525b-df0a-4ce3-8c7b-6139df1c6d66
 title: execute
 slug: /reference/messaging/execute
-description: Call a named section as a subroutine and return when it completes.
+description: Call a section, a URL, or an inline SWML document as a subroutine.
 max-toc-depth: 3
 ---
 
-Call a named section as a subroutine. Execution continues in the called section, then returns to the
-caller when the section completes (via [`return`](/docs/swml/reference/messaging/return) or by
-reaching the end of the section).
+Call another SWML destination as a subroutine: a section of the current document, a URL that
+returns a SWML document, or an inline SWML document. Execution continues in the destination and
+comes back to the caller when it finishes, either through
+[`return`](/docs/swml/reference/messaging/return) or by reaching the end.
 
-The destination must be the **name of a section** defined in the current document — `execute` does not
-accept URLs or inline documents in the messaging context.
+To hand the message off without coming back, use
+[`transfer`](/docs/swml/reference/messaging/transfer).
 
 ## **Properties**
 
@@ -22,30 +23,104 @@ accept URLs or inline documents in the messaging context.
 <Indent>
 
 <ParamField path="execute.dest" type="string" required={true} toc={true}>
-  Name of the section to execute. Must reference a section defined in the current document.
+  What to execute. One of:
+
+  - the name of a section in the current document
+  - a URL (`http` or `https`) that returns a SWML document
+  - an inline SWML document, supplied as a JSON string
+
+  Anything that is not an `http` or `https` URL and does not parse as a JSON object is treated as
+  a section name. A URL destination is always fetched with a `POST`: unlike
+  [`transfer`](/docs/swml/reference/messaging/transfer), `execute` has no `method` property.
 </ParamField>
 
 
 <ParamField path="execute.params" type="object" toc={true}>
-  Parameters accessible as `params.*` in the called section. Replaces (does not merge with) any outer
-  `params` from the caller.
+  Parameters accessible as `params.*` in the destination. Replaces, and never merges with, any
+  outer `params` from the caller. When `dest` is a URL, they are also sent in the request body.
 </ParamField>
 
 </Indent>
 
+`execute` also accepts a bare string in place of the object, so `- execute: greet` is shorthand for
+an `execute` whose only property is `dest`. The shorthand does not expand `%{...}` placeholders, so
+a destination built from a variable needs the object form.
+
+## **Destination forms**
+
+SignalWire infers the form from the value of `dest`; there is no separate type property. A value
+beginning with `http://` or `https://` is a URL, a value that parses as a JSON object is an inline
+document, and anything else is a section name.
+
+Every destination reads the inbound `message` and this step's `params`, which replace the caller's
+`params` rather than merging with them. A section destination also reads everything the caller can,
+including every runtime variable set so far. A URL or inline destination reads the runtime
+variables of the top-level flow, the ones your `main` steps set, which is the same thing whenever
+the step itself sits in `main`. Once the step is nested the two differ: variables set inside a
+section or document that `execute` or `transfer` entered do not reach a URL or inline destination
+until control returns to the top level, so pass those in `params`.
+
+A URL or inline destination runs as a separate document, including the inline form where nothing is
+fetched. What comes back afterwards is the same for all three forms, and is covered under
+[Variables](#variables).
+
+When `dest` is a URL, SignalWire sends the
+[inbound message webhook payload](/docs/apis/rest/swml-webhook/webhooks/inbound-message-webhook) to
+it with a `POST`: the inbound `message`, this step's `params`, and the caller's runtime variables as
+`vars`, including any the fetched document cannot read itself. Your server can read `vars` and fold
+those values into the document it returns. SignalWire waits up to 5 seconds for the response and
+does not retry. See
+the [messaging webhook payload](/docs/swml/reference/messaging#webhook-payload) for the full field
+reference.
+
+A URL or inline destination that defines its own `sections` uses those sections for the duration of
+the `execute` step. It cannot reach a section that exists only in the caller, and the caller's
+sections are back in place once it returns.
+
+### Inline documents
+
+An inline document must be a JSON **string**, not an object or mapping written directly in your
+SWML. Its content has to parse as a JSON object holding exactly one of `reply`, `sections`, or
+`receive`. A full `sections.main` is not required, so `{"reply": "Thanks!"}` is a valid inline
+document. A bare array of steps is not accepted, and inline documents are JSON only, not YAML.
+
+### When a destination is malformed
+
+Because a section name is the fallback, a malformed `dest` never reports a fetch or parse error. A
+scheme typo such as `htp://example.com`, a JSON syntax error, a JSON array, an object passed where
+a string was expected, and a document nested more deeply than the JSON parser accepts all fall
+through to a section lookup and fail with `swml_section_not_found` rather than
+`swml_execute_document_invalid`. An empty `dest` fails the same way.
+
 ## **Variables**
 
-After the called section completes, `execute` exposes the following variable in the caller's
-context. Variables that the subroutine itself set via [`reply`](/docs/swml/reference/messaging/reply)
+After the destination completes, `execute` exposes the following variable in the caller's
+context. Variables that the destination itself set via [`reply`](/docs/swml/reference/messaging/reply)
 or [`request`](/docs/swml/reference/messaging/request) — `reply_result`, `reply_message_id`,
 `request_result`, `request_response`, `request_response_code`, `request_response_body` — are
-also propagated back to the caller automatically; see those methods for details.
+also propagated back to the caller automatically; see those methods for details. Nothing else
+crosses back: any other variable the destination set stays with it.
 
 <ParamField path="return_value" type="any" toc={true}>
-  The value supplied to [`return`](/docs/swml/reference/messaging/return) inside the called
-  section. Set only when the subroutine called `return` with an argument. Absent when the
-  subroutine ran to completion without `return`.
+  The value supplied to [`return`](/docs/swml/reference/messaging/return) inside the destination.
+  A bare `return`, or `return: null`, still sets it, to an empty value. It is left untouched only
+  when the destination ran to completion without any `return`, in which case a value from an
+  earlier `execute` remains visible.
 </ParamField>
+
+## **Errors**
+
+A failed `execute` marks the inbound message `failed` with one of these codes. See
+[Errors](/docs/swml/reference/errors) for the full list.
+
+- `swml_section_not_found` — `dest` was read as a section name and no such section exists in the
+  document that is currently in scope.
+- `swml_execute_fetch_failed` — the URL could not be fetched, whether from a non-2xx response, a
+  timeout, an unparseable URL, or a body that is neither JSON nor YAML.
+- `swml_execute_document_invalid` — the fetched or inline document is not a valid messaging
+  document.
+- `swml_goto_label_not_found` — the destination left a [`goto`](/docs/swml/reference/messaging/goto)
+  whose label it could not find. The caller does not resume.
 
 ## **Examples**
 
@@ -90,6 +165,89 @@ sections:
     "greet": [
       {
         "return": "Hello, %{params.name}!"
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### Execute a document fetched from your server
+
+The document your server returns runs as a subroutine, then `main` picks up at the next step.
+`params` is expanded before the request goes out, so it can carry a computed value into the fetched
+document.
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - execute:
+        dest: "https://example.com/account-lookup"
+        params:
+          caller: "%{message.from}"
+    - reply:
+        body: "%{return_value}"
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "execute": {
+          "dest": "https://example.com/account-lookup",
+          "params": {
+            "caller": "%{message.from}"
+          }
+        }
+      },
+      {
+        "reply": {
+          "body": "%{return_value}"
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### Execute an inline document
+
+The inline document is a JSON string, so in YAML it goes in single quotes and in JSON its own
+quotes are escaped.
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - execute: '{"sections":{"main":[{"return":"Thanks for reaching out!"}]}}'
+    - reply:
+        body: "%{return_value}"
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "execute": "{\"sections\":{\"main\":[{\"return\":\"Thanks for reaching out!\"}]}}"
+      },
+      {
+        "reply": {
+          "body": "%{return_value}"
+        }
       }
     ]
   }
@@ -208,4 +366,3 @@ sections:
 ```
 </CodeBlock>
 </CodeBlocks>
-

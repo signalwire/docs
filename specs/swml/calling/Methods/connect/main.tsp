@@ -155,10 +155,12 @@ model ConnectDeviceBase {
     - A URL (http or https) that returns a SWML document
     - An inline SWML document (as a JSON string)
 
-    **Note:** This parameter is REQUIRED when connecting to a queue (when `to` starts with "queue:")
+    Applies only when connecting to a single queue destination — that is, when `to` starts with
+    `queue:`. It has no effect for any other destination type, or in the `serial`, `parallel`, and
+    `serial_parallel` forms. If omitted, the call hangs up once the bridge ends.
     """)
   @example("https://example.com/after-bridge.swml")
-  transfer_after_bridge?: string | SWMLVar;
+  execute_after_queue?: string | SWMLVar;
 
   @doc("""
     An array of call state event names to be notified about.

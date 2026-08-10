@@ -24,14 +24,16 @@ message describing the offending method, parameter, or condition. You can read t
 `script_error` variable on the call session or from the payload of the `calling.script.warning`
 event.
 
+### Document level
+
 <ParamField path="relay_script_parse_error" type="string" toc={true}>
-  The fetched document could not be parsed as valid JSON or YAML, or the `dest` URL of a `transfer`
-  was malformed.
+  The fetched document could not be parsed as valid JSON or YAML, or the `dest` of a `transfer` or
+  `execute` was malformed.
 </ParamField>
 
 <ParamField path="relay_script_parse_internal_error" type="string" toc={true}>
-  An internal parsing error occurred while reading the document. Verify the document is valid
-  YAML or JSON and retry.
+  The YAML parser failed internally while reading the document. A document that fails to parse as
+  JSON reports `relay_script_parse_error` instead.
 </ParamField>
 
 <ParamField path="relay_script_version_invalid" type="string" toc={true}>
@@ -47,11 +49,12 @@ event.
 </ParamField>
 
 <ParamField path="relay_script_section_code_missing" type="string" toc={true}>
-  A section is defined but contains no executable steps.
+  A section defined in object form has no `code` key. A section written directly as an array of
+  steps does not need one.
 </ParamField>
 
 <ParamField path="relay_script_section_parameter_undefined" type="string" toc={true}>
-  An `execute` step references a section that does not exist in the document.
+  A section defined in object form contains a key other than `code` or `meta`.
 </ParamField>
 
 <ParamField path="relay_script_element_undefined" type="string" toc={true}>
@@ -64,13 +67,16 @@ event.
 </ParamField>
 
 <ParamField path="relay_script_element_invalid_value" type="string" toc={true}>
-  A document element has an invalid value (for example, an enum-valued field set to an unrecognized
-  string).
+  A step's `label` is present but its value is an empty string. A `label` that is not a string
+  reports `relay_script_element_wrong_type`, and an out-of-range value on a method parameter
+  reports `relay_script_method_parameter_invalid_value`.
 </ParamField>
 
 <ParamField path="relay_script_element_duplicated" type="string" toc={true}>
   A document element that may appear at most once was provided multiple times.
 </ParamField>
+
+### Method level
 
 <ParamField path="relay_script_method_missing_name" type="string" toc={true}>
   A step in a section does not have a method name (the step entry is malformed).
@@ -108,48 +114,75 @@ event.
   cause.
 </ParamField>
 
+### Runtime
+
 <ParamField path="relay_script_js_eval_error" type="string" toc={true}>
   A JavaScript expression in a `cond`, `switch`, `eval`, or `when` clause raised an error.
 </ParamField>
 
 <ParamField path="relay_script_nested_too_deep" type="string" toc={true}>
-  A document or one of its sections is nested beyond the maximum depth.
+  A section or a nested method block exceeds the maximum nesting depth of 32. A chain of documents
+  nested too deeply reports `relay_script_internal_error` instead.
 </ParamField>
 
 <ParamField path="relay_script_too_many_transfers" type="string" toc={true}>
-  The chain of `transfer` and `goto` steps exceeded the platform maximum (32 transfers per call).
+  The chain of `transfer` and `goto` steps exceeded a platform maximum: 32 in total, or 8 without
+  caller interaction. The call is disconnected.
 </ParamField>
 
 <ParamField path="relay_script_internal_error" type="string" toc={true}>
-  An internal server error occurred during script execution.
+  An internal server error occurred during script execution. This also covers a chain of documents
+  reached through `execute` or `transfer` that is nested beyond the platform limit, in which case
+  the call is disconnected.
 </ParamField>
 
 ## Messaging errors
 
-Errors emitted when an inbound message's SWML document fails to fetch, parse, or execute. Each
-inbound message is marked `failed` with the listed `error_code` and a corresponding
-`error_message`, visible in the [Messaging logs](/docs/apis/rest/message-logs/list-message-logs).
+Errors emitted when an inbound message's SWML document fails to fetch, parse, or execute. The
+`error_code` and a corresponding `error_message` are recorded on the inbound message and are
+visible in the [Messaging logs](/docs/apis/rest/message-logs/list-message-logs). Every code below
+marks the message `failed`, with the exception of `message_filtered`, which flags the message and
+lets processing continue.
 
 ### Document fetch / route
 
-<ParamField path="unrouteable_message" type="string" toc={true}>
-  Unrouteable message received — no SWML handler is assigned to the inbound number.
+These codes cover accepting the inbound message, screening it, and fetching the handler assigned
+to its number.
+The granular fetch codes below, along with `json_or_yaml_required`, are reachable only from that
+initial fetch. A document fetch that fails partway through a run, from a `transfer` or an `execute`
+step, always reports that method's own fetch code regardless of the underlying cause.
+
+<ParamField path="unrouteable_message_received" type="string" toc={true}>
+  No inbound route exists for the destination number, so the message could not be accepted.
 </ParamField>
 
-<ParamField path="insufficient_balance" type="string" toc={true}>
-  Insufficient account balance to receive the message.
+<ParamField path="insufficient_balance_to_receive_message" type="string" toc={true}>
+  Insufficient account balance to receive the message. The message is marked `failed` and the SWML
+  document is never fetched.
 </ParamField>
 
 <ParamField path="message_filtered" type="string" toc={true}>
-  Message filtered (e.g. spam detection or carrier-level filtering).
+  The inbound message was flagged as spam. The message is not marked `failed` and your SWML
+  document still runs, but the message body is withheld from the message logs and from API
+  responses.
+</ParamField>
+
+<ParamField path="swml_invalid_message_handler" type="string" toc={true}>
+  The handler assigned to the inbound number is a Call Flow or an AI Agent rather than a SWML
+  script.
 </ParamField>
 
 <ParamField path="http_retrieval_error" type="string" toc={true}>
-  The attempt to retrieve the SWML document timed out or failed.
+  The request for the SWML document never completed. The connection failed, or the request timed
+  out before a response arrived. An endpoint that answers with a non-2xx status reports
+  `url_failed_to_parse` instead.
 </ParamField>
 
 <ParamField path="url_failed_to_parse" type="string" toc={true}>
-  The configured SWML URL could not be parsed.
+  The endpoint answered with a non-2xx status, the configured URL is not well-formed, or the
+  response was sent with a JSON content type but a body that is not valid JSON. A non-2xx status
+  is the most common cause in practice, so check what your endpoint returns before auditing the
+  URL itself.
 </ParamField>
 
 ### Document parse
@@ -189,7 +222,7 @@ inbound message is marked `failed` with the listed `error_code` and a correspond
 </ParamField>
 
 <ParamField path="swml_reply_invalid_from_number" type="string" toc={true}>
-  The reply `from` number is not a valid PhoneRoute or ShortCode in this project.
+  The reply `from` number is not a number assigned to this project.
 </ParamField>
 
 <ParamField path="swml_reply_invalid_to_number" type="string" toc={true}>
@@ -222,7 +255,18 @@ inbound message is marked `failed` with the listed `error_code` and a correspond
 ### `execute` method
 
 <ParamField path="swml_section_not_found" type="string" toc={true}>
-  The section named by `execute.dest` is not defined in the current document.
+  The section named by `execute.dest` or `transfer.dest` is not defined in the document currently
+  in scope. A `dest` that is neither a URL nor a parseable inline document is read as a section
+  name, so a malformed destination reports this code rather than a fetch or parse error.
+</ParamField>
+
+<ParamField path="swml_execute_fetch_failed" type="string" toc={true}>
+  Failed to fetch the executed SWML document from the destination URL. Covers a non-2xx response, a
+  timeout, an unparseable URL, or a body that is neither JSON nor YAML.
+</ParamField>
+
+<ParamField path="swml_execute_document_invalid" type="string" toc={true}>
+  The executed SWML document is not a valid messaging document.
 </ParamField>
 
 ### `transfer` method
@@ -232,12 +276,17 @@ inbound message is marked `failed` with the listed `error_code` and a correspond
 </ParamField>
 
 <ParamField path="swml_transfer_fetch_failed" type="string" toc={true}>
-  Failed to fetch the transferred SWML document from the destination URL.
+  Failed to fetch the transferred SWML document from the destination URL. Covers a non-2xx
+  response, a timeout, an unparseable URL, an unsupported HTTP method, or a body that is neither
+  JSON nor YAML.
 </ParamField>
 
 <ParamField path="swml_transfer_document_invalid" type="string" toc={true}>
   The transferred SWML document is not a valid messaging document.
 </ParamField>
+
+`transfer` to a section name that is not defined also reports
+[`swml_section_not_found`](#swml_section_not_found).
 
 ### `goto` method
 
@@ -249,4 +298,11 @@ inbound message is marked `failed` with the listed `error_code` and a correspond
 
 <ParamField path="swml_request_url_required" type="string" toc={true}>
   `request.url` is required and was missing or empty.
+</ParamField>
+
+### General
+
+<ParamField path="swml_unknown_error" type="string" toc={true}>
+  An unexpected error occurred while executing the document. Contact support with the message ID if
+  this repeats.
 </ParamField>
