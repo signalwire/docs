@@ -1,16 +1,43 @@
 ---
 slug: /ai
-title: Conversational AI
+title: System-directed AI
 sidebar-title: Overview
 position: 0
-subtitle: Agents that talk to your customers, driven by your code
-description: Conversational AI agents that run on the platform carrying the conversation, with business logic governed by your code rather than by a prompt.
+subtitle: Build conversational agents driven by your systems, not a prompt
+description: System-directed AI agents that run on the platform carrying the conversation, answering from your systems and acting only through functions you wrote.
 max-toc-depth: 3
 ---
 
-Someone dials your number and an agent answers. It listens, asks for what it needs, checks your
-systems, and speaks the answer back. SignalWire runs that agent inside the same network that carries
-the call, and your code decides what it is allowed to do.
+A caller dials your number and an agent answers. It listens, asks for what it needs, checks your
+systems, and speaks the answer back.
+
+An AI agent is a resource you create on the SignalWire platform and assign a phone number to.
+Understanding the caller, deciding what to say, and speaking the reply all come with the platform.
+What you supply is the prompt that shapes how the agent talks, and the functions that connect it to
+your systems.
+
+Left to answer on its own, a language model will state a price, a delivery date, or an account balance
+that sounds right whether or not it is true. A system-directed agent works differently. The model
+conducts the conversation, but your code decides what it can say and do.
+
+Anything that has to be exact, current, or enforced comes from your systems, reached through functions
+you define. The agent calls one when the conversation needs a fact or an action. Your code runs and
+returns the result for the agent to use.
+
+## How it works
+
+Your agent is part of the SignalWire platform, reachable from the phone network, SIP (Session Initiation
+Protocol), a browser, or a mobile app. Recognizing speech, generating the reply, and speaking it back
+all happen in the same system that carries the call's audio.
+
+Your systems are the one part that isn't on the platform. SWAIG, the SignalWire AI Gateway, bridges
+them. When the agent calls a function you defined, SWAIG posts it to your endpoint over HTTP and hands
+your JSON reply back to the conversation. Your handler can be a route in any language, hosted anywhere.
+
+Say the agent dispatches for a taxi company. Asked what a ride to the airport costs, the agent calls
+your function instead of guessing, and your code runs your real pricing and returns the fare. Booking a
+ride, texting a receipt, or transferring to a person takes the same round trip. Your code can also say
+no, so a handler returning "no driver until four" stops the agent from promising a car at two.
 
 <llms-ignore>
 
@@ -44,30 +71,48 @@ flowchart LR
 
 </llms-only>
 
-## What this is, and what it isn't
+## The platform runs the conversation
 
-Outside telecom, "voice AI" usually means speech synthesis: a service that turns text into audio,
-which you then have to get onto a phone call yourself. SignalWire carries the call. An agent lives on
-the same platform as your phone numbers, your SIP (Session Initiation Protocol) trunks, and your
-browser sessions, so there is no separate telephony vendor to wire up and no audio to shuttle between
-providers.
+Speech recognition, the model, and speech synthesis all come with the platform. Your phone numbers,
+SIP trunks, and sessions from a browser or mobile app all reach the same agent, so you don't wire a
+telephony vendor to a separate AI vendor, and the call's audio never leaves the platform to be
+processed somewhere else.
 
-What the agent says is one half of the design. What it is allowed to do is the other half, and that
-half belongs in your code. [Prompt engineering](/docs/platform/ai/prompt-engineering) shapes the
-conversation; your backend prices the trip, checks the calendar, and books the seat. An agent whose
-rules live only in a prompt is an agent you have to
-supervise, because the model is the only thing enforcing them. Move the rules into code and you get
-something you can leave running unattended, at whatever volume your phone numbers see.
+The agent knows when a caller has finished speaking rather than waiting out a timer, and it takes
+several facts from one sentence. A caller who says "a van from 123 Gough Street to the airport, as
+soon as you can" has supplied the vehicle, both addresses, and the timing in a single turn. A question
+raised mid-booking gets answered, and the booking picks up where it left off. You pick the voice from
+more than a dozen [text-to-speech providers](/docs/platform/voice/tts), and an agent working in
+several languages can use a different voice for each.
 
-So think of the agent as the front end of the call. Its prompt and voice handle the conversation:
-understanding the caller, collecting details, and speaking naturally in whichever of the
-[voices and languages](/docs/platform/voice/tts) you pick for it — the platform carries voices from
-more than a dozen text-to-speech providers, and an agent handling several languages can use a
-different voice for each. Your backend stays the backend,
-owning prices, lookups, bookings, and rules. Connecting the two is SWAIG, the SignalWire AI Gateway,
-which delivers the agent's tool calls to your backend over HTTP.
+## Your code decides what it can do
 
-## AI in the media path
+Prompt instructions hold most of the time, but code holds every time. Anything that has to be exact,
+current, or enforced belongs in a handler rather than in the prompt, and these are the controls that
+put it there:
+
+- [**Tool calling**](/docs/platform/ai/tool-calling) keeps prices, availability, and bookings in your
+  handlers rather than in the model.
+- [**Call transfer**](/docs/server-sdks/guides/call-transfer) hands the call to a person, a queue, or
+  another agent, with your code deciding what goes along with it.
+- [**Datasphere**](/docs/server-sdks/guides/builtin-skills#datasphere) answers from documents you
+  upload and nothing else, so there is no wider corpus for the agent to reach into.
+- **Contexts** give each job on a call its own prompt and its own memory, so an agent moving from
+  booking a ride to disputing a charge leaves the trip details behind. Configure them in
+  [SWML](/docs/swml/reference/calling/ai/prompt) or with the
+  [Server SDKs](/docs/server-sdks/guides/contexts-workflows).
+- [**Content redaction**](/docs/platform/ai/content-redaction) keeps card numbers and account numbers
+  out of your records, and the [compliance guides](/docs/platform/compliance) cover TCPA and HIPAA.
+
+You can watch all of it as it happens. Each exchange between the agent and the caller posts to a URL
+you set, carrying the transcript along with token counts, per-turn latency, and the language in use.
+[Conversation analytics](/docs/platform/ai/analytics) covers that payload and the live monitoring and
+tuning it supports.
+
+Use [prompt engineering](/docs/platform/ai/prompt-engineering) to shape how the agent speaks, and
+your code for everything it is allowed to do.
+
+## One central engine
 
 Every conversational turn passes through four stages before the caller hears a reply:
 detecting that the caller has finished speaking (end-pointing), transcribing the audio,
@@ -102,45 +147,22 @@ flowchart LR
     D -.->|"tool call over HTTP"| Y[Your backend]
 ```
 
-Response time stays low, and it stays consistent from turn to turn.
-The one network hop left is the one you control: tool calls to your backend, covered in the
-[tool calling guide](/docs/platform/ai/tool-calling).
-Your server's own response time is still real, and the agent can cover that wait rather than leave
-the caller in silence. Filler phrases are set per language in the
-[`ai.languages` reference](/docs/swml/reference/calling/ai/languages) and per function in the
-[SWAIG functions reference](/docs/swml/reference/calling/ai/swaig/functions), and background audio
-comes from [`params.background_file`](/docs/swml/reference/calling/ai/params#paramsbackground_file).
+Response time stays low, and it stays consistent from turn to turn. SignalWire's
+[performance analysis](https://signalwire.com/c/performance-analysis) publishes measured turn latency
+for the platform.
 
-## What it can do, and what it beats
-
-An agent takes several facts from one sentence. A caller who says "I need a van from 123 Gough Street
-to the airport, as soon as you can" has supplied the vehicle type, both addresses, and the timing in a
-single turn, so the agent can go straight to quoting a fare. A phone menu, or interactive voice
-response (IVR), walks the caller down a fixed tree to reach the same point, one question per turn,
-with no key for anything the tree didn't anticipate.
-
-Callers also interrupt themselves. A question about the cancellation policy arriving halfway through a
-booking costs the caller nothing: the agent answers it, then offers back the same van it had already
-found. The caller never restates why they called.
-
-That flexibility isn't a trade against accuracy, because the facts don't come from the model. The fare
-and the pickup time come back from your dispatch system through a
-[tool call](/docs/platform/ai/tool-calling), so the caller hears the price your systems hold rather
-than a plausible number.
-
-For conversations that span genuinely different jobs, contexts keep those jobs apart. Each context
-carries its own prompt and its own conversation memory, so an agent that moves from booking a ride to
-disputing a charge changes role without carrying the trip details into the billing conversation. That
-information boundary is what lets a single agent cover jobs whose compliance rules differ. Contexts
-are configured in SignalWire Markup Language (SWML) through the
-[AI prompt reference](/docs/swml/reference/calling/ai/prompt), and in the Server SDKs through the
-[contexts and workflows guide](/docs/server-sdks/guides/contexts-workflows).
+The only network hop left is the tool call out to your code, and that is a hop you control. Enforcing
+a fact in code means fetching it while the caller waits, so your server's own response time is real. The agent
+can cover that wait with a filler phrase or background audio rather than leave the caller in silence.
+[Tool calling](/docs/platform/ai/tool-calling) covers the round trip, and
+[best practices](/docs/platform/ai/best-practices) covers filler phrases and background audio.
 
 ## Ways to build
 
-An agent is a resource on the SignalWire platform however you create it: addressable from phone
-numbers, from SIP, and from your applications, running on the same realtime infrastructure. The Server
-SDKs generate SWML, so the choice between them is one of authoring rather than of capability.
+However you create it, an agent is a resource on the SignalWire platform. It is addressable from
+phone numbers, from SIP, and from your applications, and it runs on the same realtime infrastructure.
+The Server SDKs generate SWML, so the choice between them is one of authoring rather than of
+capability.
 
 <CardGroup cols={2}>
 
@@ -156,23 +178,6 @@ SDKs generate SWML, so the choice between them is one of authoring rather than o
 
 You can also build an agent without writing code. In your SignalWire Space, an AI Agent is one of the
 [resources](/docs/platform/resources) you can add from the Dashboard and assign a phone number to.
-
-## Reaching your systems
-
-An agent reaches your systems through tool calls. It recognizes that a request needs data or an
-action, calls a function you defined, and folds the result back into what it says next. That function
-runs on your server, in your language, against your database, and it is the single network hop in the
-loop described in [AI in the media path](#ai-in-the-media-path).
-
-For questions your documents answer rather than your API, [Datasphere](/docs/server-sdks/guides/builtin-skills#datasphere)
-holds the documents and the agent searches them during the conversation, so a revised policy takes
-effect as soon as you upload it. An agent can only reach what you put there: there is no wider corpus
-behind it, and you decide what it is allowed to look up.
-
-Data flows back the other way too. Each exchange between the agent and the caller can post to a URL
-you set as it happens, carrying the transcript along with token counts, per-turn latency, and the
-language in use. [Conversation analytics](/docs/platform/ai/analytics) covers that payload and the
-live monitoring and tuning it supports.
 
 ## Worked examples
 
@@ -193,10 +198,10 @@ tool definitions, state, and multi-agent designs. They are the place to go for c
 
 ## Security and compliance
 
-The platform encrypts communications, and content redaction masks sensitive values — payment details,
-account numbers, health information — in the transcripts, logs, and post-call reports a conversation
-leaves behind. Audit logging and granular access controls record who reached what, so you can automate
-sensitive communications and still account for them afterward.
+The platform encrypts communications, and content redaction masks sensitive values in the transcripts,
+logs, and post-call reports a conversation leaves behind. Those values include payment details, account
+numbers, and health information. Audit logging and granular access controls record who reached what, so
+you can automate sensitive communications and still account for them afterward.
 
 Which rules apply depends on why you're calling and what you're handling. The
 [compliance guides](/docs/platform/compliance) work through the regulated cases, and each one
@@ -233,7 +238,7 @@ identifies the controls that belong in your code rather than in a prompt.
 </Card>
 
 <Card title="Best practices" href="/docs/platform/ai/best-practices" icon="regular clipboard-check">
-  What it takes to hold up in production: latency, speech recognition, testing, and iteration.
+  The latency, speech recognition, testing, and iteration it takes to hold up in production.
 </Card>
 
 <Card title="Conversation analytics" href="/docs/platform/ai/analytics" icon="regular chart-line">

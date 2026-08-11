@@ -31,7 +31,7 @@ One page, one type. Smells: a tutorial or how-to that keeps stopping to explain 
 - No paragraph-closing summary sentences or significance tails ("…, highlighting the importance of…"). No "Additionally/Furthermore/Moreover" openers; no "In conclusion/Overall" closers. [W][AS]
 - State facts plainly: "is", not "serves as"/"stands as". No significance inflation ("plays a crucial role"), no marketing adjectives (powerful, seamless, robust), no empty "not just X, but Y". [W][G][SW]
 - No "simply/easily/just" and no "please" in instructions. [G]
-- Em-dashes are a house device — but not several per paragraph. [MS][SW] Aphorisms land at 2–3 per page, max. [SW] (judgment)
+- Em-dashes are a house device, not a default connector: one earns its place on a genuine break in thought or an appositive commas would muddle. Where a comma reads the same, write the comma. Never several per paragraph. [MS][SW] Aphorisms land at 2–3 per page, max. [SW] (judgment)
 - No emoji — not in headings, tab/card titles, or prose. Say good/bad in words. [SW]
 - Terminology: "Server SDKs" (never "Agents SDK"); tokens are *created*/*issued* (never *minted*); "resource addresses" (never "Fabric addresses"); expand every acronym at first use. [SW]
 
