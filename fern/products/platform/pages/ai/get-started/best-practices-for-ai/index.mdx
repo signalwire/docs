@@ -39,8 +39,7 @@ may or may not honor on turn nine of a difficult call.
 So give each side the work it's suited to. The prompt covers who the agent is, how it speaks, what
 it's there to accomplish, and when to reach for its functions. Your code, reached through
 [SWAIG functions][tool-calling] (SignalWire AI Gateway, the platform's tool calling), covers prices,
-inventory, calculations, policy, and anything else with a right answer. The agent then holds only
-the information it needs, verified by your systems, at the moment it needs it.
+inventory, calculations, policy, and anything else with a right answer.
 
 <llms-ignore>
 
@@ -72,21 +71,18 @@ flowchart LR
 
 </llms-only>
 
-<Tip>
-Values and conditions change; the prompt doesn't. Anything that can go stale should be fetched
-by your code at call time and fed to the agent, not written statically into the prompt.
-</Tip>
-
 ### Keep business data out of the prompt
 
 It's tempting to paste the fare table, the service-area map, or the policy manual into the prompt
 and hope the model honors all of it: prompt and pray.
 Resist it.
-The prompt is fixed when the call starts, but your data keeps changing;
-a function call reads the current value at the moment the caller asks.
+The prompt is fixed when the call starts, but your data keeps changing,
+and a function call reads the current value at the moment the caller asks.
+
+Staleness isn't the only problem.
 Data in the prompt is *recalled* by the model, approximately,
 while data from a function call is *returned* by your code, exactly.
-And the model has no way to tell your pasted policy apart from anything else it has read.
+The model also has no way to tell your pasted policy apart from anything else it has read.
 Your backend is the system of record.
 
 Move that data behind SWAIG functions: a lookup backed by your webhook or the Server SDK,
@@ -179,11 +175,9 @@ Some context does belong in the prompt.
 Put in it what no system of record can answer: who the agent is, the scope of what it handles,
 the tone it takes, how it should treat a caller who is upset, and the point at which it hands off
 to a person.
-There is nothing to look up for any of those, and leaving them out is what produces a bland,
-directionless agent.
+Leaving them out is what produces a bland, directionless agent.
 
-Business hours are the trap.
-They read like a stable fact and they aren't: holidays move them, a weather closure moves them,
+Business hours look like a stable fact and aren't: holidays move them, a weather closure moves them,
 and a short-staffed Saturday moves them.
 A prompt written last quarter will state the old hours with complete confidence.
 If a caller could be told the wrong thing because the world changed, it belongs behind a function.
@@ -199,8 +193,8 @@ see the [prompt engineering guide][prompt-engineering].
 
 ### Adjust the model parameters when the defaults aren't working
 
-The platform's defaults are set to work across most agents, so the parameters on the
-[`prompt` object][ai-prompt-reference] are repairs rather than a step in building one.
+The platform's defaults are set to work across most agents, so building one rarely means touching
+the parameters on the [`prompt` object][ai-prompt-reference].
 Reach for them when something specific is wrong with the way your agent talks: it wanders off
 topic, it repeats a line, or it leaves a long pause after the caller stops speaking.
 
@@ -219,24 +213,24 @@ Change one at a time and listen to a real call between changes.
 ## Design for real-time voice
 
 Voice adds a dimension that text chat doesn't have: the caller hears every pause.
-Three controls shape how those pauses feel.
+Two controls shape how those pauses feel.
 Filler phrases give the AI something to say while a function call is running;
 configure them [per-function](/docs/swml/reference/calling/ai/swaig/functions) and
 [agent-wide](/docs/swml/reference/calling/ai/languages).
 Background audio, such as typing or office ambience, gives the caller familiar feedback
 while processing happens; set it with
 [`params.background_file`](/docs/swml/reference/calling/ai/params#paramsbackground_file).
-And your function handlers are part of the conversation's timing, so move slow work out of band
-and respond promptly.
 
 Underneath those sit two moments you can also configure.
 **End-pointing** (end-of-utterance detection) is how the AI decides the caller has finished
 speaking, adjustable through `confidence` in the [`prompt` object][ai-prompt-reference] and
 [`params.end_of_speech_timeout`](/docs/swml/reference/calling/ai/params#paramsend_of_speech_timeout).
 **Turnaround** is the interval between that decision and the start of the reply.
+
 Judge both on live calls with your own configuration, measuring the interval the caller experiences:
 from the moment they stop talking to the moment they hear the reply begin.
 Consistency matters as much as the average.
+Your function handlers are part of that interval, so move slow work out of band and respond promptly.
 
 ## Help speech recognition with hints
 
@@ -298,10 +292,9 @@ setting them up and reading them is covered in the
 [tool calling guide][tool-calling-review].
 Read the transcripts where the agent hesitated or chose the wrong function.
 That's where the next fix comes from.
+
 Usage metrics fill in the aggregate picture:
 token consumption, interaction times, and call outcomes reveal both cost and quality trends.
-
-An agent is never finished.
 Your business changes, so revisit the prompt and functions periodically,
 and check the documentation and release notes for new parameters, voices,
 and features your agent can use as SignalWire's AI capabilities evolve.
@@ -312,6 +305,7 @@ In [February 2024](https://www.fcc.gov/document/fcc-makes-ai-generated-voices-ro
 the FCC ruled that an AI-generated voice counts as an artificial voice under the
 Telephone Consumer Protection Act (TCPA).
 Your agent is subject to the same rules as any other automated call.
+
 The person on the other end has to have consented to it, the call has to identify itself as AI,
 and a request to stop has to be honored.
 Which of those rules apply, and how strictly, depends on why you're calling
@@ -320,6 +314,7 @@ and where the called party lives.
 Each rule has a yes-or-no answer, which makes it work for your code rather than the prompt.
 Put the AI disclosure in a [`static_greeting`](/docs/swml/reference/calling/ai/params#paramsstatic_greeting)
 with `static_greeting_no_barge`, so it plays in full before the agent's first turn.
+
 Verify consent, check your do-not-call list, and confirm the local hour before you ask
 SignalWire to dial, because once the call is placed it has already happened.
 Then let the agent catch an opt-out mid-conversation with a [SWAIG function][tool-calling]

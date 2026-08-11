@@ -25,6 +25,7 @@ One page, one type. Smells: a tutorial or how-to that keeps stopping to explain 
 - Sentence-case headings, no end punctuation ("Next steps", never "Next Steps"). [G][MS][SW]
 - Open with a concrete hook — the problem or the outcome — never "In this guide, you will learn…". Close guides with `## Next steps` cards that deepen *this* topic only. [SW]
 - Vary sentence length and openers: split sentences past ~30 words, and don't start consecutive sentences the same way. [AS][MS]
+- One paragraph, one job: a paragraph carrying several distinct claims gets split so each has a single role. Not a word count — don't break a single sustained argument, and don't leave a run of one-sentence paragraphs. [SW]
 - Cut filler ("in order to", "it is important to note that", "due to the fact that") and reflexive hedging — state what the source supports, plainly, or don't state it. [AS][G]
 - Prose is the default; bullets only for true enumerations, kept parallel in form — never bold-label bullets as a paragraph substitute. [W][AS][SW]
 - No paragraph-closing summary sentences or significance tails ("…, highlighting the importance of…"). No "Additionally/Furthermore/Moreover" openers; no "In conclusion/Overall" closers. [W][AS]
