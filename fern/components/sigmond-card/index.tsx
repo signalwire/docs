@@ -10,6 +10,16 @@ const DEFAULT_DESTINATION = "/public/sigmond";
 const DEFAULT_LABEL = "Talk with Sigmond";
 const DEFAULT_POSTER = "https://mcdn.signalwire.com/images/sigmond_still.png";
 
+function pageSlug(): string {
+  if (typeof window === "undefined") return "";
+  const segments = (window.location.pathname || "/").split("/").filter(Boolean);
+  if (segments.length === 0) return "home";
+  return segments
+    .map((s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, ""))
+    .filter(Boolean)
+    .join("__");
+}
+
 type WidgetInstance = { open: () => Promise<void>; close: () => Promise<void>; theme?: string };
 type WidgetGlobal = {
   mount: (target: Element | string, options: Record<string, unknown>) => WidgetInstance;
@@ -93,7 +103,7 @@ export function SigmondWidget({ token = DEFAULT_TOKEN }: SigmondWidgetProps) {
               audio: true,
               autoGainControl: false,
               inputVolume: 125,
-              disableAutoFonts: true,
+              userVariables: { page_slug: pageSlug() },
             });
             const mounted = widget;
             teardown.push(() => {
