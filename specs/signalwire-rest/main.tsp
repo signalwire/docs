@@ -3,6 +3,7 @@ import "@typespec/openapi";
 import "./_globally_shared/const.tsp";
 import "../_shared/auth.tsp";
 import "./types";
+import "./ai-api";
 import "./calling-api";
 import "./voice-api";
 import "./message-api";
@@ -38,6 +39,8 @@ using TypeSpec.OpenAPI;
   }
 )
 @useAuth(SignalWireBasicAuth)
+// AI API
+@tagMetadata(AI_CHAT_TAG, AI_CHAT_TAG_METADATA)
 // Calling API
 @tagMetadata(CALLS_TAG, CALLS_TAG_METADATA)
 // Voice API

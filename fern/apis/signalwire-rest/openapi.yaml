@@ -331,7 +331,174 @@ tags:
     externalDocs:
       url: https://signalwire.com/docs/apis
       description: Developer documentation on Calling API Call endpoints
+  - name: AI Chat
+    description: Endpoints related to holding a text conversation with an AI agent
+    externalDocs:
+      url: https://signalwire.com/docs/apis
+      description: Developer documentation on the AI Chat API endpoint
 paths:
+  /api/ai/chat:
+    post:
+      operationId: chat_methods
+      summary: Send AI chat methods
+      description: |-
+        Hold a text conversation with an AI agent. One endpoint dispatches six methods through a
+        JSON-RPC 2.0 body: send the method name in `method` and its arguments in `params`.
+
+        The agent is a document you serve — SWML describing the prompt, the tools, and the behavior —
+        and `config_url` is where you serve it. A conversation is a series of turns addressed by an
+        `id` you choose; a turn is one user message and the agent's reply, including any tool calls
+        made along the way. One request is one turn.
+
+        ## Methods
+
+        | Method | Description |
+        |---|---|
+        | `create_conversation` | Create a conversation, or reset an existing one |
+        | `chat` | Send a message and receive the agent's reply |
+        | `end_conversation` | End the conversation and trigger post-processing |
+        | `delete` | Remove the conversation, with no post-processing |
+        | `chat_log` | Read the conversation back |
+        | `summarize` | Generate a summary on demand |
+
+        ## Identity is transport-level
+
+        Your project and token travel in HTTP Basic auth — username `project_id`, password
+        `api_token` — and never in the body. `project_id`, `token`, and `space_id` are not valid
+        `params` keys, and a request carrying them is rejected. If you are porting from an older
+        integration that put them in `params`, that is the change.
+
+        ## Errors arrive under HTTP 200
+
+        JSON-RPC carries failures in the body, and the service commits `200` before a turn's outcome
+        is known. **Check for an `error` key, not the status code.** A `200` with `{"error": {...}}`
+        is a failed call.
+
+        | Code | Meaning |
+        |---|---|
+        | `-32001` | No such conversation for your project |
+        | `-32002` | Your `config_url` could not be fetched |
+        | `-32003` | The model provider failed |
+        | `-32004` | Storage failure |
+        | `-32005` | Too many `summarize` calls on this conversation |
+        | `-32006` | Too many messages on this conversation |
+        | `-32007` | A turn is already running on this conversation |
+        | `-32008` | Your SWML failed validation |
+        | `-32009` | Missing or rejected credentials |
+        | `-32600` | Malformed JSON-RPC envelope |
+        | `-32601` | Unknown method |
+        | `-32602` | Missing or invalid params |
+        | `-32603` | Unexpected failure |
+        | `-32700` | The body was not valid JSON |
+
+        ## One turn at a time
+
+        A conversation runs one turn at a time. A second concurrent request on the same conversation
+        returns `-32007`, and that is the contract rather than a transient failure — retrying
+        immediately fails again. Wait for the first turn to return. Different conversations are
+        independent and run in parallel.
+
+        ## A slow response may begin with whitespace
+
+        A slow turn is padded with keepalive whitespace so that intermediaries do not sever the
+        connection mid-answer. This is valid JSON and standard parsers handle it. Two things it does
+        break: code that inspects the first byte, and code that assumes the whole body arrives in one
+        read. Read to completion, then parse.
+
+        #### Permissions
+
+        The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Chat_.
+
+        [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AI.ChatResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '502':
+          description: SignalWire could not reach the AI chat service. This is not a JSON-RPC error and carries no code.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AI.ChatServiceUnavailableError'
+      tags:
+        - AI Chat
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AI.ChatRequest'
+            examples:
+              delete:
+                summary: delete
+                description: Remove the conversation without post-processing
+                value:
+                  jsonrpc: '2.0'
+                  id: req-4
+                  method: delete
+                  params:
+                    id: conv-123
+              end_conversation:
+                summary: end_conversation
+                description: End the conversation and trigger post-processing
+                value:
+                  jsonrpc: '2.0'
+                  id: req-3
+                  method: end_conversation
+                  params:
+                    id: conv-123
+              summarize:
+                summary: summarize
+                description: Summarize the conversation on demand
+                value:
+                  jsonrpc: '2.0'
+                  id: req-6
+                  method: summarize
+                  params:
+                    id: conv-123
+                    summary_prompt: List the order numbers discussed and whether each was resolved.
+              chat_log:
+                summary: chat_log
+                description: Read the conversation back
+                value:
+                  jsonrpc: '2.0'
+                  id: req-5
+                  method: chat_log
+                  params:
+                    id: conv-123
+              chat:
+                summary: chat
+                description: Send a message and receive the agent's reply
+                value:
+                  jsonrpc: '2.0'
+                  id: req-2
+                  method: chat
+                  params:
+                    id: conv-123
+                    message: Where is order A-771?
+              create_conversation:
+                summary: create_conversation
+                description: Create a conversation against your agent's SWML
+                value:
+                  jsonrpc: '2.0'
+                  id: req-1
+                  method: create_conversation
+                  params:
+                    id: conv-123
+                    config_url: https://your-agent.example.com/swml
+                    conversation_timeout: 1800
+                    user_meta_data:
+                      customer_tier: premium
   /api/calling/calls:
     post:
       operationId: call-commands
@@ -14249,6 +14416,837 @@ components:
       schema:
         type: string
   schemas:
+    AI.ChatConversationCreatedResponse:
+      type: object
+      required:
+        - jsonrpc
+        - id
+        - result
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - '2.0'
+          description: The JSON-RPC version. Always `2.0`.
+          examples:
+            - '2.0'
+        id:
+          type: string
+          description: The `id` from your request.
+          examples:
+            - req-1
+        result:
+          type: object
+          properties:
+            status:
+              type: string
+              enum:
+                - created
+                - reinitialized
+                - exists
+              description: |-
+                What happened. `created` for a new conversation, `reinitialized` when `reinit` reset an
+                existing one, and `exists` when one was already there and was left alone.
+              examples:
+                - created
+            id:
+              type: string
+              description: The conversation id.
+              examples:
+                - conv-123
+            initial_message:
+              type: string
+              description: |-
+                The agent's opening line, when the agent greets first. Generating it is a turn, and a turn
+                bills — a page that creates a conversation on load pays for one whether or not the visitor
+                types anything.
+              examples:
+                - Hi! How can I help?
+          required:
+            - status
+            - id
+          unevaluatedProperties:
+            not: {}
+          description: The conversation that now exists.
+      unevaluatedProperties:
+        not: {}
+      title: create_conversation result
+    AI.ChatConversationDeletedResponse:
+      type: object
+      required:
+        - jsonrpc
+        - id
+        - result
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - '2.0'
+          description: The JSON-RPC version. Always `2.0`.
+          examples:
+            - '2.0'
+        id:
+          type: string
+          description: The `id` from your request.
+          examples:
+            - req-1
+        result:
+          type: object
+          properties:
+            status:
+              type: string
+              enum:
+                - deleted
+                - not_found
+              description: '`deleted` when the conversation was removed, `not_found` when no conversation had that id.'
+              examples:
+                - deleted
+            id:
+              type: string
+              description: The conversation id.
+              examples:
+                - conv-123
+          required:
+            - status
+            - id
+          unevaluatedProperties:
+            not: {}
+          description: The outcome of deleting the conversation.
+      unevaluatedProperties:
+        not: {}
+      title: delete result
+    AI.ChatConversationEndedResponse:
+      type: object
+      required:
+        - jsonrpc
+        - id
+        - result
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - '2.0'
+          description: The JSON-RPC version. Always `2.0`.
+          examples:
+            - '2.0'
+        id:
+          type: string
+          description: The `id` from your request.
+          examples:
+            - req-1
+        result:
+          type: object
+          properties:
+            status:
+              type: string
+              enum:
+                - ended
+                - not_found
+              description: '`ended` when the conversation was ended, `not_found` when no conversation had that id.'
+              examples:
+                - ended
+            id:
+              type: string
+              description: The conversation id.
+              examples:
+                - conv-123
+          required:
+            - status
+            - id
+          unevaluatedProperties:
+            not: {}
+          description: The outcome of ending the conversation.
+      unevaluatedProperties:
+        not: {}
+      title: end_conversation result
+    AI.ChatCreateConversationRequest:
+      type: object
+      required:
+        - jsonrpc
+        - id
+        - method
+        - params
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - '2.0'
+          description: The JSON-RPC version. Always `2.0`.
+          examples:
+            - '2.0'
+        id:
+          type: string
+          description: Your identifier for this request, echoed back on the response so you can match the two.
+          examples:
+            - req-1
+        method:
+          type: string
+          enum:
+            - create_conversation
+          description: Creates a conversation, or resets an existing one when `reinit` is set.
+          examples:
+            - create_conversation
+        params:
+          type: object
+          properties:
+            id:
+              type: string
+              description: The conversation this method acts on. You choose the value when you create the conversation, and it is scoped to your project.
+              examples:
+                - conv-123
+            config_url:
+              type: string
+              format: uri
+              description: |-
+                The URL serving your agent's SWML. SignalWire fetches it server-to-server, so it must be
+                reachable from the public internet — a `localhost` or private address creates the conversation
+                and then sends every tool call nowhere.
+              examples:
+                - https://your-agent.example.com/swml
+            user_message:
+              type: string
+              description: An opening message from the user, sent as part of creating the conversation.
+              examples:
+                - I need help with an order
+            conversation_timeout:
+              type: integer
+              format: int32
+              description: 'Seconds a conversation may sit idle before it ends. A conversation that ends is not resumable: the next message on the same `id` silently opens a new one with none of the history.'
+              examples:
+                - 1800
+              default: 3600
+            user_meta_data:
+              type: object
+              unevaluatedProperties: {}
+              description: Arbitrary data about the user, echoed back on the webhooks this conversation produces.
+              examples:
+                - customer_tier: premium
+            reinit:
+              type: boolean
+              description: Reset an existing conversation instead of returning it as-is. Clears the message history.
+              examples:
+                - true
+              default: false
+          required:
+            - id
+            - config_url
+          unevaluatedProperties:
+            not: {}
+          description: The parameters for `create_conversation`.
+      unevaluatedProperties:
+        not: {}
+      title: create_conversation
+    AI.ChatDeleteRequest:
+      type: object
+      required:
+        - jsonrpc
+        - id
+        - method
+        - params
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - '2.0'
+          description: The JSON-RPC version. Always `2.0`.
+          examples:
+            - '2.0'
+        id:
+          type: string
+          description: Your identifier for this request, echoed back on the response so you can match the two.
+          examples:
+            - req-1
+        method:
+          type: string
+          enum:
+            - delete
+          description: Removes the conversation and its messages. Nothing is post-processed and no webhook fires.
+          examples:
+            - delete
+        params:
+          type: object
+          properties:
+            id:
+              type: string
+              description: The conversation this method acts on. You choose the value when you create the conversation, and it is scoped to your project.
+              examples:
+                - conv-123
+          required:
+            - id
+          unevaluatedProperties:
+            not: {}
+          description: The parameters for `delete`.
+      unevaluatedProperties:
+        not: {}
+      title: delete
+    AI.ChatEndConversationRequest:
+      type: object
+      required:
+        - jsonrpc
+        - id
+        - method
+        - params
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - '2.0'
+          description: The JSON-RPC version. Always `2.0`.
+          examples:
+            - '2.0'
+        id:
+          type: string
+          description: Your identifier for this request, echoed back on the response so you can match the two.
+          examples:
+            - req-1
+        method:
+          type: string
+          enum:
+            - end_conversation
+          description: |-
+            Ends the conversation and starts post-processing: the summary, and a request to your
+            `post_prompt_url` when your SWML sets one.
+          examples:
+            - end_conversation
+        params:
+          type: object
+          properties:
+            id:
+              type: string
+              description: The conversation this method acts on. You choose the value when you create the conversation, and it is scoped to your project.
+              examples:
+                - conv-123
+          required:
+            - id
+          unevaluatedProperties:
+            not: {}
+          description: The parameters for `end_conversation`.
+      unevaluatedProperties:
+        not: {}
+      title: end_conversation
+    AI.ChatError:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+          description: The error code. See the error codes table on this endpoint for what each one means.
+          examples:
+            - -32001
+        message:
+          type: string
+          description: A short description of the failure.
+          examples:
+            - Conversation not found
+      unevaluatedProperties:
+        not: {}
+      description: What went wrong. The `message` is deliberately coarse and does not describe internals; when diagnosing, the detail you need is usually in your own agent's logs or in the SWML you served.
+    AI.ChatErrorResponse:
+      type: object
+      required:
+        - jsonrpc
+        - id
+        - error
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - '2.0'
+          description: The JSON-RPC version. Always `2.0`.
+          examples:
+            - '2.0'
+        id:
+          type: string
+          description: The `id` from your request.
+          examples:
+            - req-1
+        error:
+          allOf:
+            - $ref: '#/components/schemas/AI.ChatError'
+          description: The error that ended this call.
+      unevaluatedProperties:
+        not: {}
+      description: |-
+        A failed method. This arrives under **HTTP 200**, like a successful one — check for an `error`
+        key rather than reading the status code.
+      title: Error
+    AI.ChatLogMessage:
+      type: object
+      required:
+        - role
+      properties:
+        role:
+          type: string
+          description: |-
+            Who produced the entry. Alongside `user` and `assistant` you will see `system` — your own
+            prompt — and `system-log` internal markers. Filter to `user` and `assistant` before displaying
+            a transcript, or you publish your prompt to your users.
+          examples:
+            - assistant
+        content:
+          type: string
+          description: The text of the entry.
+          examples:
+            - Order A-771 shipped on Tuesday.
+        timestamp:
+          type: integer
+          format: int64
+          description: When the entry was recorded, in microseconds since the epoch.
+          examples:
+            - 1786387416502774
+      unevaluatedProperties:
+        not: {}
+      description: One entry in the conversation.
+    AI.ChatLogRequest:
+      type: object
+      required:
+        - jsonrpc
+        - id
+        - method
+        - params
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - '2.0'
+          description: The JSON-RPC version. Always `2.0`.
+          examples:
+            - '2.0'
+        id:
+          type: string
+          description: Your identifier for this request, echoed back on the response so you can match the two.
+          examples:
+            - req-1
+        method:
+          type: string
+          enum:
+            - chat_log
+          description: Reads the conversation back. Changes nothing.
+          examples:
+            - chat_log
+        params:
+          type: object
+          properties:
+            id:
+              type: string
+              description: The conversation this method acts on. You choose the value when you create the conversation, and it is scoped to your project.
+              examples:
+                - conv-123
+          required:
+            - id
+          unevaluatedProperties:
+            not: {}
+          description: The parameters for `chat_log`.
+      unevaluatedProperties:
+        not: {}
+      title: chat_log
+    AI.ChatReplyResponse:
+      type: object
+      required:
+        - jsonrpc
+        - id
+        - result
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - '2.0'
+          description: The JSON-RPC version. Always `2.0`.
+          examples:
+            - '2.0'
+        id:
+          type: string
+          description: The `id` from your request.
+          examples:
+            - req-1
+        result:
+          type: object
+          properties:
+            response:
+              type: string
+              description: The agent's reply. When this call created the conversation, this is the agent's opening message.
+              examples:
+                - Order A-771 shipped on Tuesday and is out for delivery today.
+            user_event:
+              type: object
+              unevaluatedProperties: {}
+              description: |-
+                An event one of your tools raised for your application to act on, present only when the turn
+                produced one. The contents under `event` are whatever your tool sent, so the shape is yours;
+                the convention is a `type` key your client can switch on.
+              examples:
+                - event:
+                    type: order_located
+                    order_id: A-771
+                    eta: '2026-08-14'
+          required:
+            - response
+          unevaluatedProperties:
+            not: {}
+          description: The agent's turn.
+      unevaluatedProperties:
+        not: {}
+      title: chat result
+    AI.ChatRequest:
+      type: object
+      oneOf:
+        - $ref: '#/components/schemas/AI.ChatCreateConversationRequest'
+        - $ref: '#/components/schemas/AI.ChatSendMessageRequest'
+        - $ref: '#/components/schemas/AI.ChatEndConversationRequest'
+        - $ref: '#/components/schemas/AI.ChatDeleteRequest'
+        - $ref: '#/components/schemas/AI.ChatLogRequest'
+        - $ref: '#/components/schemas/AI.ChatSummarizeRequest'
+      discriminator:
+        propertyName: method
+        mapping:
+          create_conversation: '#/components/schemas/AI.ChatCreateConversationRequest'
+          chat: '#/components/schemas/AI.ChatSendMessageRequest'
+          end_conversation: '#/components/schemas/AI.ChatEndConversationRequest'
+          delete: '#/components/schemas/AI.ChatDeleteRequest'
+          chat_log: '#/components/schemas/AI.ChatLogRequest'
+          summarize: '#/components/schemas/AI.ChatSummarizeRequest'
+      description: |-
+        A JSON-RPC request. The `method` field selects which of the six methods runs, and `params` carries
+        that method's arguments.
+
+        Identity never appears in the body. Your project and token go in HTTP Basic auth, and
+        `project_id`, `token`, and `space_id` are not valid `params` keys — a request carrying them is
+        rejected.
+    AI.ChatResponse:
+      anyOf:
+        - $ref: '#/components/schemas/AI.ChatConversationCreatedResponse'
+        - $ref: '#/components/schemas/AI.ChatReplyResponse'
+        - $ref: '#/components/schemas/AI.ChatConversationEndedResponse'
+        - $ref: '#/components/schemas/AI.ChatConversationDeletedResponse'
+        - $ref: '#/components/schemas/AI.ChatTranscriptResponse'
+        - $ref: '#/components/schemas/AI.ChatSummaryResponse'
+        - $ref: '#/components/schemas/AI.ChatErrorResponse'
+      description: |-
+        A JSON-RPC response. Which result you get follows from the method you sent; a response echoes no
+        `method` of its own.
+
+        Both success and failure arrive under HTTP 200, so check for an `error` key rather than reading
+        the status code.
+    AI.ChatSendMessageRequest:
+      type: object
+      required:
+        - jsonrpc
+        - id
+        - method
+        - params
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - '2.0'
+          description: The JSON-RPC version. Always `2.0`.
+          examples:
+            - '2.0'
+        id:
+          type: string
+          description: Your identifier for this request, echoed back on the response so you can match the two.
+          examples:
+            - req-1
+        method:
+          type: string
+          enum:
+            - chat
+          description: |-
+            Sends a message and returns the agent's reply. One request is one full turn, including any tool
+            calls the agent makes along the way, so expect this to take seconds rather than milliseconds.
+          examples:
+            - chat
+        params:
+          type: object
+          properties:
+            id:
+              type: string
+              description: The conversation this method acts on. You choose the value when you create the conversation, and it is scoped to your project.
+              examples:
+                - conv-123
+            message:
+              type: string
+              description: The message to send.
+              examples:
+                - Where is order A-771?
+            role:
+              type: string
+              enum:
+                - user
+                - system
+              description: |-
+                Who the message is from. A `system` message steers the agent without appearing as something
+                the user said.
+              examples:
+                - user
+              default: user
+            config_url:
+              type: string
+              format: uri
+              description: |-
+                Creates the conversation if it does not exist yet, using this SWML. Sending it here means one
+                call instead of two, at the cost of never receiving `initial_message` — the agent does not
+                speak first.
+              examples:
+                - https://your-agent.example.com/swml
+            conversation_timeout:
+              type: integer
+              format: int32
+              description: Applies only when this call creates the conversation.
+              examples:
+                - 1800
+              default: 3600
+            user_meta_data:
+              type: object
+              unevaluatedProperties: {}
+              description: Arbitrary data about the user, echoed back on the webhooks this conversation produces.
+              examples:
+                - customer_tier: premium
+            reinit:
+              type: boolean
+              description: Applies only when this call creates the conversation.
+              examples:
+                - true
+              default: false
+          required:
+            - id
+            - message
+          unevaluatedProperties:
+            not: {}
+          description: The parameters for `chat`.
+      unevaluatedProperties:
+        not: {}
+      title: chat
+    AI.ChatServiceUnavailableError:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: A short description of the failure.
+          examples:
+            - AI chat service is unavailable
+      unevaluatedProperties:
+        not: {}
+      description: SignalWire could not reach the AI chat service. This is not a JSON-RPC error and carries no code.
+    AI.ChatSummarizeRequest:
+      type: object
+      required:
+        - jsonrpc
+        - id
+        - method
+        - params
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - '2.0'
+          description: The JSON-RPC version. Always `2.0`.
+          examples:
+            - '2.0'
+        id:
+          type: string
+          description: Your identifier for this request, echoed back on the response so you can match the two.
+          examples:
+            - req-1
+        method:
+          type: string
+          enum:
+            - summarize
+          description: |-
+            Generates a summary of the conversation on demand. Limited to one call per minute per
+            conversation; over that returns `-32005`.
+          examples:
+            - summarize
+        params:
+          type: object
+          properties:
+            id:
+              type: string
+              description: The conversation this method acts on. You choose the value when you create the conversation, and it is scoped to your project.
+              examples:
+                - conv-123
+            summary_prompt:
+              type: string
+              description: How to summarize. Overrides the `post_prompt` text in your SWML for this call only.
+              examples:
+                - List the order numbers discussed and whether each was resolved.
+            temperature:
+              type: number
+              format: float
+              description: Sampling temperature for the summary.
+              examples:
+                - 0.3
+              default: 0.3
+            top_p:
+              type: number
+              format: float
+              description: Nucleus sampling cutoff for the summary.
+              examples:
+                - 0.3
+              default: 0.3
+            frequency_penalty:
+              type: number
+              format: float
+              description: Penalty applied to tokens by how often they have already appeared.
+              examples:
+                - 1
+              default: 1
+            presence_penalty:
+              type: number
+              format: float
+              description: Penalty applied to tokens that have appeared at all.
+              examples:
+                - 1
+              default: 1
+            max_tokens:
+              type: integer
+              format: int32
+              description: Longest summary to generate, in tokens.
+              examples:
+                - 512
+              default: 512
+          required:
+            - id
+          unevaluatedProperties:
+            not: {}
+          description: |-
+            The parameters for `summarize`. The sampling list is closed — any key not listed here is
+            rejected.
+      unevaluatedProperties:
+        not: {}
+      title: summarize
+    AI.ChatSummaryResponse:
+      type: object
+      required:
+        - jsonrpc
+        - id
+        - result
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - '2.0'
+          description: The JSON-RPC version. Always `2.0`.
+          examples:
+            - '2.0'
+        id:
+          type: string
+          description: The `id` from your request.
+          examples:
+            - req-1
+        result:
+          type: object
+          properties:
+            summary:
+              type: string
+              description: The generated summary.
+              examples:
+                - Customer asked about order A-771, confirmed the delivery date, and ended satisfied.
+            error:
+              type: string
+              description: Why no summary was produced.
+              examples:
+                - Summary generation failed
+          unevaluatedProperties:
+            not: {}
+          description: The outcome of summarizing.
+      unevaluatedProperties:
+        not: {}
+      description: |-
+        The summary, or the reason one could not be produced. Exactly one of `summary` and `error` is
+        present.
+
+        Note that this `error` rides the success envelope and describes a failure to generate rather than
+        a failed request, so it is not a JSON-RPC error and carries no code.
+      title: summarize result
+    AI.ChatTranscriptResponse:
+      type: object
+      required:
+        - jsonrpc
+        - id
+        - result
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - '2.0'
+          description: The JSON-RPC version. Always `2.0`.
+          examples:
+            - '2.0'
+        id:
+          type: string
+          description: The `id` from your request.
+          examples:
+            - req-1
+        result:
+          type: object
+          properties:
+            chat_log:
+              type: array
+              items:
+                $ref: '#/components/schemas/AI.ChatLogMessage'
+              description: Every message in the conversation, including your system prompt and internal markers.
+            call_timeline:
+              type: array
+              items:
+                type: object
+                unevaluatedProperties: {}
+              description: |-
+                A flat stream of structured events for the conversation — session start and end, context
+                switches, and tool calls — with microsecond timestamps.
+          required:
+            - chat_log
+          unevaluatedProperties:
+            not: {}
+          description: The conversation as the service holds it.
+      unevaluatedProperties:
+        not: {}
+      title: chat_log result
+    AI.JsonRpcRequestEnvelope:
+      type: object
+      required:
+        - jsonrpc
+        - id
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - '2.0'
+          description: The JSON-RPC version. Always `2.0`.
+          examples:
+            - '2.0'
+        id:
+          type: string
+          description: Your identifier for this request, echoed back on the response so you can match the two.
+          examples:
+            - req-1
+      unevaluatedProperties:
+        not: {}
+    AI.JsonRpcResponseEnvelope:
+      type: object
+      required:
+        - jsonrpc
+        - id
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - '2.0'
+          description: The JSON-RPC version. Always `2.0`.
+          examples:
+            - '2.0'
+        id:
+          type: string
+          description: The `id` from your request.
+          examples:
+            - req-1
+      unevaluatedProperties:
+        not: {}
     AIAddressPaginationResponse:
       type: object
       required:

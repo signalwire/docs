@@ -1,0 +1,309 @@
+---
+title: Chat
+slug: /ai/chat
+description: Build a chat application against a SignalWire AI agent, from your own server or from a browser, using the same agent and tools a voice call would use.
+subtitle: Reach an AI agent over HTTP instead of a phone call
+max-toc-depth: 3
+---
+
+[api-scopes]: /docs/platform/your-signalwire-api-space
+[chat-endpoint]: /docs/apis/rest/ai-chat/chat-methods
+[chat-gateway]: /docs/server-sdks/reference/python/ai-chat/chat-gateway
+[chat-client]: /docs/server-sdks/reference/python/ai-chat/ai-chat-client
+[swaig-webhook]: /docs/apis/rest/calls/webhooks/ai-swaig-tool-webhook
+[tool-calling]: /docs/platform/ai/tool-calling
+[post-prompt]: /docs/swml/reference/calling/ai
+
+The agent that answers your phone number can answer a text message box instead. Same SWML, same
+prompt, same tools — reached over HTTP, one request per turn, with no call to place and no audio to
+carry.
+
+How you connect comes down to one question: **can the code holding your API token be read by a
+stranger?**
+
+| | Direct | Through a gateway |
+|---|---|---|
+| Your code runs | on your server | in a browser, or any untrusted client |
+| Holds the API token | yes | no — your gateway does |
+| Talks to | `POST /api/ai/chat` | your own gateway URL |
+| Protocol | JSON-RPC 2.0 | a small POST shape |
+
+A browser cannot use the direct path. Anything a page can read, a visitor can read, and an API token
+in a page is a published API token. The gateway exists for that.
+
+## Before you start
+
+You need two things beyond an agent:
+
+- **An API token with the `chat` scope.** The endpoint rejects a token without it. Scopes are set
+  per token in your Space — see [API scopes][api-scopes].
+- **A `config_url` reachable from the public internet.** This is the URL serving your agent's SWML.
+  SignalWire fetches it server-to-server, so `localhost` and private addresses do not work. This is
+  the most common first-day failure, and it fails late: the conversation is created, and then every
+  tool call goes nowhere.
+
+## How a conversation works
+
+**Your agent** is a document you serve — SWML describing the prompt, the tools, and the behavior.
+`config_url` is where you serve it.
+
+**A conversation** is a series of turns, addressed by an `id` you choose. Ids are scoped to your
+project, so you pick them and only you can reach them.
+
+**A turn** is one user message and the agent's reply, including any tool calls made along the way.
+One request, one turn, one response.
+
+## From your server
+
+Six methods travel over one endpoint, selected by the `method` field of a JSON-RPC body. Your
+project and token go in HTTP Basic auth and never in the body.
+
+<EndpointRequestSnippet endpoint="POST /api/ai/chat" />
+
+The [AI chat endpoint reference][chat-endpoint] documents all six methods, their parameters, and the
+error codes. In Python, the SDK covers the same ground with typed methods:
+
+```bash
+pip install signalwire-sdk
+```
+
+```python title="chat_with_agent.py"
+import asyncio
+
+from signalwire.ai_chat import AIChatClient, ChatInProgressError
+
+CONFIG_URL = "https://your-agent.example.com/swml"
+
+
+async def main():
+    # Credentials fall back to SIGNALWIRE_PROJECT_ID, SIGNALWIRE_API_TOKEN,
+    # and SIGNALWIRE_SPACE, so a configured environment needs no arguments.
+    async with AIChatClient(space="your-space") as client:
+        info = await client.create_conversation("conv-123", config_url=CONFIG_URL)
+        print("agent:", info.initial_message)
+
+        reply = await client.chat("conv-123", "Where is order A-771?")
+        print("agent:", reply.text)
+
+        if reply.user_event:
+            handle(reply.user_event)  # the agent asked your app to do something
+
+        await client.end("conv-123")
+
+
+asyncio.run(main())
+```
+
+Failures raise typed exceptions — `ConversationNotFoundError`, `ChatInProgressError`,
+`RateLimitError`, `AuthenticationError`, `SummaryError` — so the HTTP-200 detail below is handled for
+you. [`AIChatClient`][chat-client] documents every method and return type.
+
+## From a browser
+
+You run a **gateway**: [`ChatGateway`][chat-gateway], mounted inside a web application you already
+host. It holds the API token, the project, and the `config_url`. The page holds a URL and a
+publishable key.
+
+```mermaid
+flowchart LR
+    Browser["Browser<br/>gateway URL + publishable key"]
+    Gateway["Your app<br/>ChatGateway"]
+    SW["SignalWire<br/>POST /api/ai/chat"]
+
+    Browser -->|"publishable key"| Gateway
+    Gateway -->|"project + API token"| SW
+    SW -->|"the agent's turn"| Gateway
+    Gateway -->|"relayed, unbuffered"| Browser
+```
+
+A key lifted from your page reaches one agent and can do nothing else. It cannot name a different
+`config_url`, cannot read arbitrary conversations, and you can revoke it by redeploying with a new
+one.
+
+```python title="gateway.py"
+from fastapi import FastAPI
+from signalwire.ai_chat import ChatGateway
+
+app = FastAPI()
+
+gateway = ChatGateway(
+    config_url="https://your-agent.example.com/swml",  # never leaves the server
+    key="pk_your_publishable_key",                     # safe in the page
+    allowed_origins=["https://yoursite.example.com"],
+    conversation_timeout=1800,
+)
+
+app.include_router(gateway.router(), prefix="/chat")
+```
+
+The browser gets four methods over one POST: `start` opens a conversation so the agent greets first,
+`chat` sends a message, `log` replays the conversation, and `end` closes it. The key travels as a
+bearer token.
+
+```js title="chat.js"
+// The router mounts POST "/", so with prefix="/chat" the path is "/chat/".
+const r = await fetch("/chat/", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: "Bearer pk_your_publishable_key",
+  },
+  body: JSON.stringify({ method: "start" }),
+});
+
+// Keep this. It IS the conversation.
+const handle = r.headers.get("X-Chat-Handle");
+sessionStorage.setItem("chatHandle", handle);
+
+const { greeting, timeout } = await r.json();
+```
+
+### The handle is the conversation
+
+There is no conversation id on this path. The gateway signs a **handle** carrying the id and an
+expiry, returns it in the `X-Chat-Handle` response header, and you send it back on every later call.
+You cannot forge one, and you cannot point one at somebody else's conversation.
+
+`sessionStorage` scopes it to a browser tab: reload and the conversation resumes, a second tab starts
+its own, closing the tab ends it.
+
+```js title="chat.js"
+const handle = sessionStorage.getItem("chatHandle");
+
+const r = await fetch("/chat/", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: "Bearer pk_your_publishable_key",
+  },
+  body: JSON.stringify({ method: "log", handle }),
+});
+
+if (r.status === 403) {
+  sessionStorage.removeItem("chatHandle");   // expired; start a new conversation
+} else {
+  const { messages, timeout, last_activity } = await r.json();
+  redraw(messages);
+}
+```
+
+**An expired handle is normal, not an error.** Handles have a finite lifetime, so every long-lived
+conversation eventually reaches it. Treat a `403` on `log` as "start a new conversation" rather than
+something to show the visitor.
+
+`log` returns user and assistant turns only. Your system prompt and the tool traffic never leave your
+gateway, so a handle cannot be used to read your prompt. Each message carries `role`, `content`, and
+`timestamp`, and the response also carries `timeout` and `last_activity` — enough to warn a visitor
+that their next message will start a new conversation.
+
+### What a leaked key costs you
+
+A publishable key is public by definition, so design for it being taken. It cannot read anything.
+What it can do is talk, and talking bills. That makes the caps the real control rather than a
+nicety: `max_new_conversations` bounds how many conversations can exist, and `max_turns` bounds how
+long each one runs. The first matters most, because a leaked key does not hammer one conversation —
+it opens thousands of one-turn ones, and every one of those bills its opening turn.
+
+The origin allowlist stops a key pasted into someone else's page, because a browser sends its origin
+and the gateway refuses it. It does not stop `curl`, which omits the header. Treat it as leak
+containment, not access control.
+
+[`ChatGateway`][chat-gateway] documents the caps, the defaults, and the settings that matter once you
+run more than one replica.
+
+## What will bite you
+
+Both paths share these.
+
+### Errors arrive under HTTP 200
+
+JSON-RPC carries failures in the body, and the service commits `200` before a turn's outcome is
+known. Check for an `error` key, not the status code. A `200` with `{"error": {...}}` is a failed
+call.
+
+### Response bodies may begin with whitespace
+
+A slow turn is padded with keepalive whitespace so that intermediaries do not sever the connection
+mid-answer. This is valid JSON and standard parsers handle it. Two things it does break: code that
+inspects the first byte, and code that assumes the whole body arrives in one read. Read to
+completion, then parse.
+
+If you put your own proxy in front of a gateway, make sure it does not buffer the body either —
+buffering absorbs the padding and recreates the timeout the padding exists to prevent.
+
+### One turn at a time, per conversation
+
+A conversation accepts one turn at a time. A second concurrent request returns `-32007`. That is the
+contract, not a transient failure, so retrying immediately fails again — wait for the first turn to
+return. Different conversations are independent and run in parallel.
+
+### An idle conversation ends quietly
+
+A conversation left idle past its `conversation_timeout` (3600 seconds by default, settable per
+conversation) is ended for you. Ending is not instantaneous; expect it within about a minute of the
+limit being crossed.
+
+The consequence is quiet and worth handling: your next message silently opens a *different*
+conversation. The transcript above it still looks continuous, but the agent remembers none of it. If
+you keep a conversation open across a visitor's absence, track the idle time and tell them.
+
+### Timestamp units differ
+
+The `chat_log` messages, `call_timeline`, and the `post_prompt` payload use epoch **microseconds**.
+The gateway's `log` uses epoch **seconds**, converted for you.
+
+A thousand-fold mistake here is silent rather than loud: a conversation reads as fresh forever, or as
+ancient. Convert at the boundary, and assert the magnitude.
+
+### Creating a conversation costs a turn
+
+The agent's greeting is generated by the model and bills like any other turn. A page that creates a
+conversation on load pays for one visit whether or not the visitor types anything. Create the
+conversation when the visitor opens the chat, not when the page loads.
+
+### The transcript includes your prompt
+
+`chat_log` returns the conversation as the service holds it, including `system` and `system-log`
+entries — your own prompt and internal markers, not just dialogue. Filter to `user` and `assistant`
+before displaying it, or you publish your prompt to your users. The gateway's `log` does this for
+you.
+
+## Webhooks you receive
+
+A chat conversation delivers the same webhooks a voice AI session does, with values that identify it
+as chat: `conversation_type` is `chat`, and `call_id` carries the conversation id.
+
+**Tool calls** reach the `web_hook_url` on your SWAIG functions, exactly as they do on a call.
+[Tool calling][tool-calling] covers the round trip and the reply shape, and the
+[AI SWAIG tool webhook][swaig-webhook] documents the payload.
+
+**A summary** reaches your [`post_prompt_url`][post-prompt] after the conversation ends, when your
+SWML sets one. Not instantly — expect seconds. Two traps in that payload:
+
+- `post_prompt_data` is `{"raw": "<string>"}`, not parsed JSON. Even when your post-prompt asks for
+  JSON, what arrives is the model's text, commonly a fenced markdown block inside that string. Strip
+  the fence and parse it yourself, and handle the model not complying.
+- `call_log` has the same caveat as `chat_log`: it includes your system prompt and internal markers.
+  Filter to `user` and `assistant` before showing it to anyone.
+
+## Next steps
+
+<CardGroup cols={2}>
+
+<Card title="AI chat endpoint" href="/docs/apis/rest/ai-chat/chat-methods" icon="regular rectangle-api">
+  Every method, parameter, return field, and error code on the wire.
+</Card>
+
+<Card title="Python ai_chat module" href="/docs/server-sdks/reference/python/ai-chat" icon="brands python">
+  `AIChatClient` and `ChatGateway`, with every argument and default.
+</Card>
+
+<Card title="Tool calling" href="/docs/platform/ai/tool-calling" icon="regular webhook">
+  Connect the agent to your systems, the same way a voice agent does.
+</Card>
+
+<Card title="Prompt engineering" href="/docs/platform/ai/prompt-engineering" icon="regular pen-ruler">
+  Shape how the agent converses before you change any code.
+</Card>
+
+</CardGroup>
