@@ -1271,9 +1271,13 @@ model AiDebugWebhookPayload is Record<unknown> {
     @example(1)
     to_index: integer;
 
-    @doc("What caused the move. Omitted when nothing recorded it.")
-    @example("next_step")
-    trigger?: string;
+    @doc("""
+      What caused the move. `ai_function` when the agent called `next_step`, `webhook_action` when a
+      tool's response asked for it, `gather_complete` when a gather finished, and `auto_advance` when
+      the step's own advance condition was met.
+      """)
+    @example("ai_function")
+    trigger?: "ai_function" | "webhook_action" | "gather_complete" | "auto_advance";
   };
 
   @doc("The agent moved to a different context.")
@@ -1286,9 +1290,12 @@ model AiDebugWebhookPayload is Record<unknown> {
     @example("default")
     from_context?: string;
 
-    @doc("What caused the move. Omitted when nothing recorded it.")
-    @example("change_context")
-    trigger?: string;
+    @doc("""
+      What caused the move. `ai_function` when the agent called `change_context`, `webhook_action`
+      when a tool's response asked for it.
+      """)
+    @example("ai_function")
+    trigger?: "ai_function" | "webhook_action";
 
     @doc("Whether the new context starts without the previous conversation.")
     @example(false)
@@ -1350,11 +1357,11 @@ model AiDebugWebhookPayload is Record<unknown> {
     @example(0)
     question_index: integer;
 
-    @doc("Which attempt produced the answer, starting at 1.")
-    @example(1)
+    @doc("Which attempt produced the answer, counting from 0.")
+    @example(0)
     attempt: integer;
 
-    @doc("Whether the caller confirmed the answer.")
+    @doc("Whether the question required the caller to confirm the answer back before it was accepted.")
     @example(true)
     confirmed: boolean;
   };
@@ -1371,13 +1378,16 @@ model AiDebugWebhookPayload is Record<unknown> {
     @example(0)
     question_index: integer;
 
-    @doc("Which attempt was rejected, starting at 1.")
-    @example(2)
+    @doc("Which attempt was rejected, counting from 0.")
+    @example(0)
     attempt: integer;
 
-    @doc("Why it was rejected. Omitted when nothing recorded it.")
-    @example("no_match")
-    reason?: string;
+    @doc("""
+      Why it was rejected. `missing_answer` when no answer came back, `confirmation_required` when the
+      answer arrived without the confirmation the question demands.
+      """)
+    @example("missing_answer")
+    reason?: "missing_answer" | "confirmation_required";
   };
 
   @doc("A `gather` finished.")
