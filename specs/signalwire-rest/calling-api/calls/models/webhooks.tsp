@@ -1182,9 +1182,8 @@ model AiDebugWebhookPayload is Record<unknown> {
   };
 
   @doc("""
-    A [`data_map`](/docs/swml/reference/calling/ai/swaig/functions/data-map) webhook was evaluated.
-    Carries the webhook definition as you wrote it. Arrives alongside `input`, and alongside `output`
-    and `match` when the call produced a reply, or `error` when the definition was unusable.
+    The webhook definition as you wrote it. Arrives alongside `input`, and alongside `output` and
+    `match` when the call produced a reply, or `error` when the definition was unusable.
     """)
   webhook?: Record<unknown>;
 
