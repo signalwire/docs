@@ -473,6 +473,80 @@ model CallCreateParamsBase {
   @example("1234#")
   send_digits?: string;
 
+  @doc("""
+    Detect whether a person or an answering machine picked up, and deliver the result to `machine_detection_status_callback`.
+    Detection is mutually exclusive with `send_digits` — sending digits interferes with listening to the greeting, so setting `send_digits` disables detection for the call.
+    - `Enable`: report the result as soon as the call is classified as a human or a machine.
+    - `DetectMessageEnd`: wait for the machine's greeting to finish before reporting, so you can start speaking after the beep.
+    - `none`: no detection. Same as omitting the parameter.
+    """)
+  @example("Enable")
+  machine_detection?: "Enable" | "DetectMessageEnd" | "none";
+
+  @doc("How long to keep listening, in seconds, before giving up and reporting an unresolved result. Applies only when `machine_detection` is enabled.")
+  @example(30)
+  @minValue(1)
+  @maxValue(120)
+  machine_detection_timeout?: int32 = 30;
+
+  @doc("How long a continuous stretch of speech must run, in milliseconds, before the greeting is judged to be a machine rather than a person. Applies only when `machine_detection` is enabled.")
+  @example(2400)
+  @minValue(1000)
+  @maxValue(6000)
+  machine_detection_speech_threshold?: int32 = 2400;
+
+  @doc("How much silence after speech, in milliseconds, marks the end of the greeting. Applies only when `machine_detection` is enabled.")
+  @example(1200)
+  @minValue(500)
+  @maxValue(5000)
+  machine_detection_speech_end_threshold?: int32 = 1200;
+
+  @doc("How long to wait for any speech at all, in milliseconds, before giving up. Applies only when `machine_detection` is enabled.")
+  @example(5000)
+  @minValue(2000)
+  @maxValue(10000)
+  machine_detection_silence_timeout?: int32 = 5000;
+
+  @doc("HTTP or HTTPS URL that receives the answering-machine detection result once detection resolves. Applies only when `machine_detection` is enabled. Without it the result is recorded on the call but is not delivered to you.")
+  @example("https://example.com/amd_callback")
+  machine_detection_status_callback?: url;
+
+  @doc("Record the call. Recording starts when the call is answered and runs until the call ends.")
+  @example(true)
+  record?: boolean = false;
+
+  @doc("""
+    How the recorded audio is laid out. Applies only when `record` is `true`.
+    - `mono`: both directions mixed into a single channel.
+    - `dual`: each direction on its own channel.
+    """)
+  @example("dual")
+  recording_channels?: "mono" | "dual" = "mono";
+
+  @doc("""
+    Which side of the conversation to record. Applies only when `record` is `true`.
+    - `inbound`: audio received from the far end.
+    - `outbound`: audio sent to the far end.
+    - `both`: both directions.
+    """)
+  @example("both")
+  recording_track?: "inbound" | "outbound" | "both" = "both";
+
+  @doc("HTTP or HTTPS URL that receives a webhook when the recording reaches one of the states listed in `recording_status_callback_events`. Applies only when `record` is `true`.")
+  @example("https://example.com/recording_callback")
+  recording_status_callback?: url;
+
+  @doc("""
+    Recording states that trigger a webhook to `recording_status_callback`. Ignored when `recording_status_callback` is not set.
+    - `in-progress`: recording started, or resumed after being paused.
+    - `completed`: recording finished and the audio is available.
+    - `absent`: recording ended without capturing any audio.
+    """)
+  @example(#["in-progress", "completed"])
+  recording_status_callback_events?: ("in-progress" | "completed" | "absent")[] = #[
+    "completed"
+  ];
+
   @doc("Preferred FreeSWITCH region(s) for call routing. Must be drawn from the project's available regions. Accepts a single region or a priority-ordered array.")
   @example(#["us-east-1", "us-west-2"])
   region?: string | string[];
