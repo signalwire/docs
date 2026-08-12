@@ -168,44 +168,50 @@ enum AISidecarCallbackType {
   final,
 }
 
+@doc("""
+  Identifies the call an AI callback came from. `project_id` and `space_id` are included when
+  available.
+  """)
+model AICallInfo {
+  @doc("Your project ID.")
+  @example("4d0d6f16-5881-4fcc-92a4-02c51a91954d")
+  project_id?: uuid;
+
+  @doc("Your Space ID.")
+  @example("451ed9ff-e568-4222-8af9-4f9ab7428d09")
+  space_id?: uuid;
+
+  @doc("ID of the call.")
+  @example("2e1e66e5-5d07-413d-9668-55542992eec0")
+  call_id: uuid;
+
+  @doc("The content type of the POST body. Always `text/json`.")
+  @example("text/json")
+  content_type: string;
+
+  @doc("How the body is delivered. Always `post_data`.")
+  @example("post_data")
+  content_disposition: string;
+
+  @doc("The conversation type. Always `voice`.")
+  @example("voice")
+  conversation_type: string;
+}
+
 @summary("AI sidecar callback")
 @doc("""
   Sent to the sidecar's `url` as an HTTP `POST` whenever you set one. The same event is always
   published in real time on the SignalWire Relay event channel (`calling.ai.sidecar`), so the
   webhook is optional. Each event is wrapped under `sidecar_event` — read that before checking its
   `type` and fields.
-  
+
   This payload covers the envelope shared by every callback. For the fields specific to each `type`
   (such as `insight.raw`, `turn.transcript_delta`, or `final.summary`), see the
   [SWML ai_sidecar reference](/docs/swml/reference/calling/ai-sidecar#callback-types).
   """)
 model AISidecarCallbackPayload {
   @doc("Envelope describing the call. `project_id` and `space_id` are included when available.")
-  call_info: {
-    @doc("Your project ID.")
-    @example("4d0d6f16-5881-4fcc-92a4-02c51a91954d")
-    project_id?: uuid;
-
-    @doc("Your Space ID.")
-    @example("451ed9ff-e568-4222-8af9-4f9ab7428d09")
-    space_id?: uuid;
-
-    @doc("ID of the call the sidecar is attached to.")
-    @example("2e1e66e5-5d07-413d-9668-55542992eec0")
-    call_id: uuid;
-
-    @doc("The content type of the POST body. Always `text/json`.")
-    @example("text/json")
-    content_type: string;
-
-    @doc("How the body is delivered. Always `post_data`.")
-    @example("post_data")
-    content_disposition: string;
-
-    @doc("The conversation type. Always `voice`.")
-    @example("voice")
-    conversation_type: string;
-  };
+  call_info: AICallInfo;
 
   @doc("The sidecar callback. Carries the common fields below plus type-specific fields.")
   sidecar_event: {
@@ -600,4 +606,691 @@ model BedrockSwaigToolWebhookPayload {
   @doc("Metadata scoped to `meta_data_token`. An empty object when the function has none yet.")
   @example(#{ order_number: "12345" })
   meta_data: Record<unknown>;
+}
+
+@doc("""
+  The answer an AI agent gave to your
+  [`post_prompt`](/docs/swml/reference/calling/ai), in three forms.
+  """)
+model AIPostPromptData {
+  @doc("""
+    Every JSON object found in the answer, parsed. An empty array when the agent answered in prose.
+    Ask the post-prompt for named JSON keys when you want to count outcomes.
+    """)
+  @example(#[#{ intent: "book_ride", resolved: true }])
+  parsed: Record<unknown>[];
+
+  @doc("The answer exactly as the agent produced it.")
+  @example("{\"intent\":\"book_ride\",\"resolved\":true}")
+  raw: string;
+
+  @doc("""
+    The answer with the JSON removed, leaving only the surrounding prose. Omitted when the answer was
+    JSON and nothing followed it.
+    """)
+  @example("Caller booked a ride to the airport.")
+  substituted?: string;
+}
+
+@summary("AI post-prompt callback")
+@doc("""
+  Sent to your [`ai.post_prompt_url`](/docs/swml/reference/calling/ai) when the AI session ends. It
+  carries the agent's answer to your [`post_prompt`](/docs/swml/reference/calling/ai)
+  alongside the full record of the call: the conversation, the tool calls, the timings, and the
+  token counts. This is the one report you get per call, so store the body verbatim and extract only
+  the fields you query. Nothing you return in the response is read.
+
+  Read `action` first. It is `post_conversation` on the end-of-call report described here. The same
+  URL also receives `fetch_conversation` when the agent starts with a stored conversation
+  ([`save_conversation`](/docs/swml/reference/calling/ai/params#paramssave_conversation) with a
+  `conversation_id`), asking your endpoint to return that conversation; that request carries the
+  call and session fields but none of the summary fields. Answer it with the stored
+  `conversation_summary`.
+
+  The conversation appears three times. `call_log` is the filtered view, with interrupted segments
+  consolidated. `raw_call_log` is unfiltered and append-only, and is the only place barge-in detail
+  survives. `call_timeline` is a flat stream of typed events aligned to `raw_call_log`.
+
+  [`amazon_bedrock`](/docs/swml/reference/calling/amazon-bedrock) agents send a different report.
+  Write your handler against the
+  [Bedrock post-prompt callback](#tag/calls/webhook/bedrockPostPromptCallback) instead.
+  """)
+model AiPostPromptCallbackPayload {
+  @doc("Your project ID, when available.")
+  @example("4d0d6f16-5881-4fcc-92a4-02c51a91954d")
+  project_id?: string;
+
+  @doc("Your Space ID, when available.")
+  @example("451ed9ff-e568-4222-8af9-4f9ab7428d09")
+  space_id?: string;
+
+  @doc("The content type of the request body. Always `text/json`.")
+  @example("text/json")
+  content_type: string;
+
+  @doc("""
+    How the body is delivered. `agent.summary` on the end-of-call report, `agent.load_conversation`
+    on a request for a stored conversation.
+    """)
+  @example("agent.summary")
+  content_disposition: string;
+
+  @doc("The kind of conversation the agent ran. Always `voice`.")
+  @example("voice")
+  conversation_type: string;
+
+  @doc("The ID of the call.")
+  @example("2e1e66e5-5d07-413d-9668-55542992eec0")
+  call_id: string;
+
+  @doc("The name of your AI application.")
+  @example("ai")
+  app_name: string;
+
+  @doc("The ID of the AI session on the call.")
+  @example("a0d4e6e5-5d07-413d-9668-55542992eec0")
+  ai_session_id: string;
+
+  @doc("""
+    A stable fingerprint of the model the agent ran. Two calls that used the same model share it, so
+    you can group reports by model without recording the model name. Omitted when the session had no
+    model.
+    """)
+  @example("d742c5d1d969d9fdbbd9bd1c52499f2d")
+  ai_id_tag?: string;
+
+  @doc("The conversation ID, when the agent was configured with one.")
+  @example("support-thread-4821")
+  conversation_id?: string;
+
+  @doc("""
+    What the request is asking of you. `post_conversation` is the end-of-call report;
+    `fetch_conversation` asks your endpoint to return a stored conversation.
+    """)
+  @example("post_conversation")
+  action: "post_conversation" | "fetch_conversation";
+
+  @doc("""
+    The conversation, filtered: interrupted segments are consolidated and evicted entries dropped.
+    Each entry carries a `role` of `system`, `user`, `assistant`, or `tool`, its `content`, and
+    per-turn timing. Included when `action` is `post_conversation`.
+    """)
+  @example(#[
+    #{ role: "system", content: "You dispatch taxis." },
+    #{ role: "user", content: "I need a ride to the airport." }
+  ])
+  call_log?: Record<unknown>[];
+
+  @doc("""
+    The conversation, unfiltered and append-only. Interruption detail appears here and nowhere else.
+    Included when `action` is `post_conversation`.
+    """)
+  raw_call_log?: Record<unknown>[];
+
+  @doc("""
+    A flat stream of typed events aligned to `raw_call_log`, for replaying the call in order. Each
+    entry carries a `ts`, a `type` such as `user_input`, `ai_response`, or `tool_result`, and the
+    fields for that type. Included when the session produced any.
+    """)
+  call_timeline?: Record<unknown>[];
+
+  @doc("""
+    Conversations from before each context switch, oldest first, one array of messages per switch.
+    Included only when the agent switched context during the call.
+    """)
+  previous_contexts?: Record<unknown>[][];
+
+  @doc("""
+    Always `true` when present, meaning the session ended because it hit its configured time limit
+    rather than finishing on its own. Omitted otherwise.
+    """)
+  @example(true)
+  hard_timeout?: boolean;
+
+  @doc("When the call was created, as a Unix timestamp in microseconds.")
+  @example(1694541295773508)
+  call_start_date?: int64;
+
+  @doc("When the call was answered, as a Unix timestamp in microseconds. `0` when it never was.")
+  @example(1694541296799504)
+  call_answer_date?: int64;
+
+  @doc("When the call ended, as a Unix timestamp in microseconds.")
+  @example(1694541335435503)
+  call_end_date?: int64;
+
+  @doc("When the AI session started, as a Unix timestamp in microseconds.")
+  @example(1694541297950440)
+  ai_start_date?: int64;
+
+  @doc("Who or what ended the call. Included when the session recorded it.")
+  @example("assistant")
+  call_ended_by?: string;
+
+  @doc("""
+    When the AI session ended, as a Unix timestamp in microseconds. Omitted when the session was
+    still running.
+    """)
+  @example(1694541335425164)
+  ai_end_date?: int64;
+
+  @doc("The caller's name, when available.")
+  @example("Jane Doe")
+  caller_id_name?: string;
+
+  @doc("The caller's number, when available.")
+  @example("+15555550100")
+  caller_id_number?: string;
+
+  @doc("""
+    Per-response performance metrics, one entry per generated reply, carrying `response`,
+    `response_word_count`, `answer_time`, `token_time`, `tokens`, `avg_tps`, and `tps`. Included once
+    the session has any.
+    """)
+  times?: Record<unknown>[];
+
+  @doc("SWML variables for the call. Included when the call carries SWML state.")
+  SWMLVars?: Record<unknown>;
+
+  @doc("SWML call state. Included when the call carries SWML state.")
+  SWMLCall?: Record<unknown>;
+
+  @doc("""
+    The agent's answer to your `post_prompt`. Included when `action` is `post_conversation`.
+    """)
+  post_prompt_data?: AIPostPromptData;
+
+  @doc("""
+    The session's final `global_data`. An empty object when you seeded none. Included when `action`
+    is `post_conversation`.
+    """)
+  @example(#{ customer_tier: "premium", pickup_address: "123 Main St, Springfield" })
+  global_data?: Record<unknown>;
+
+  @doc("""
+    Every tool call the agent made, in order. Each entry carries `command_name`, `command_arg`,
+    `epoch_time` in seconds, and, for a tool that reached your server, the `url`, the `post_data`
+    that was sent, and the `post_response` that came back. Included when `action` is
+    `post_conversation`.
+    """)
+  swaig_log?: Record<unknown>[];
+
+  @doc("""
+    The number of billable minutes, rounded up to at least one. Included when you enable
+    [`enable_accounting`](/docs/swml/reference/calling/ai/params#paramsenable_accounting).
+    """)
+  @example(3)
+  total_minutes?: integer;
+
+  @doc("Input tokens the session consumed. Included when you enable `enable_accounting`.")
+  @example(5627)
+  total_input_tokens?: integer;
+
+  @doc("Output tokens the session produced. Included when you enable `enable_accounting`.")
+  @example(119)
+  total_output_tokens?: integer;
+
+  @doc("""
+    Input tokens counted against the model, which differs from `total_input_tokens` when the
+    conversation was trimmed. Included when you enable `enable_accounting`.
+    """)
+  @example(5627)
+  total_wire_input_tokens?: integer;
+
+  @doc("`total_wire_input_tokens` divided by `total_minutes`. Included when you enable `enable_accounting`.")
+  @example(1875.67)
+  total_wire_input_tokens_per_minute?: float;
+
+  @doc("""
+    Output tokens counted against the model. Included when you enable `enable_accounting`.
+    """)
+  @example(119)
+  total_wire_output_tokens?: integer;
+
+  @doc("`total_wire_output_tokens` divided by `total_minutes`. Included when you enable `enable_accounting`.")
+  @example(39.67)
+  total_wire_output_tokens_per_minute?: float;
+
+  @doc("Characters sent to text-to-speech. Included when you enable `enable_accounting`.")
+  @example(842)
+  total_tts_chars?: integer;
+
+  @doc("`total_tts_chars` divided by `total_minutes`. Included when you enable `enable_accounting`.")
+  @example(280.67)
+  total_tts_chars_per_min?: float;
+
+  @doc("Minutes of audio sent to speech recognition. Included when you enable `enable_accounting`.")
+  @example(2.41)
+  total_asr_minutes?: float;
+
+  @doc("`total_asr_minutes` divided by `total_minutes`. Included when you enable `enable_accounting`.")
+  @example(0.8)
+  total_asr_cost_factor?: float;
+
+  @doc("""
+    A plain-language summary of the conversation, for storing against `conversation_id` and handing
+    back on the next `fetch_conversation`. Included when you enable
+    [`save_conversation`](/docs/swml/reference/calling/ai/params#paramssave_conversation) and set
+    a `conversation_id`.
+    """)
+  @example("Caller booked a ride from 123 Main St to the airport for 6pm.")
+  conversation_summary?: string;
+}
+
+@summary("AI debug webhook")
+@doc("""
+  Sent to your
+  [`ai.params.debug_webhook_url`](/docs/swml/reference/calling/ai/params#paramsdebug_webhook_url)
+  as events happen during the call, rather than once at the end. Use it when something has to happen
+  mid-call, such as paging a supervisor or flagging a handoff. For after-the-fact analysis, use the
+  [AI post-prompt callback](#tag/calls/webhook/aiPostPromptCallback) instead.
+
+  Every request carries `call_info` plus exactly one more key, and **that key's name is the event**.
+  There is no `type` field to switch on: read the key that is not `call_info`. A key whose event
+  carried no data is sent as `null`.
+
+  Setting the URL is what turns the stream on.
+  [`debug_webhook_level`](/docs/swml/reference/calling/ai/params#paramsdebug_webhook_level) only
+  adds to it: at `2` the stream also carries `conversation_add`, `llm_request`, and `llm_response`,
+  which together are far higher volume than everything else combined.
+
+  The events below are documented in full. The stream also carries, under the same envelope:
+  `startup_hook`, `hangup_hook`, `function_loop`, `process_action`, `step_change`, `context_change`,
+  `context_switch_data`, `barge`, `speech_detect`, `filler`, `hold`, `attention_timeout`, `warning`,
+  `voice_error`, `text_normalize`, `tool_distill`, `inner_dialog`, `llm_error`, `consolidation`,
+  `summarize_start`, `sidecar_event`, the `gather_start` / `gather_question` / `gather_answer` /
+  `gather_reject` / `gather_complete` set, the `webhook` / `input` / `output` / `match` /
+  `webhook_reply` / `webhook_log` / `expression` / `error` / `error_keys` set from tool execution,
+  and `oart_user_transcript` / `oart_assistant_transcript` / `oart_response_done` on speech-to-speech
+  sessions. Handle unknown keys by ignoring them: the set grows.
+  """)
+model AiDebugWebhookPayload is Record<unknown> {
+  @doc("Identifies the call the event came from.")
+  call_info: AICallInfo;
+
+  @doc("The AI session started. Sent once per session.")
+  session_start?: {
+    @doc("The model the agent is running. Omitted when the session has no model.")
+    @example("gpt-4.1-mini")
+    `model`?: string;
+
+    @doc("The text-to-speech engine. Omitted when no voice is configured.")
+    @example("elevenlabs")
+    tts_engine?: string;
+
+    @doc("The text-to-speech voice. Omitted when no voice is configured.")
+    @example("rachel")
+    tts_voice?: string;
+
+    @doc("The language code the session started in. Omitted when no voice is configured.")
+    @example("en-US")
+    language?: string;
+  };
+
+  @doc("The AI session ended. Sent once per session.")
+  session_end?: {
+    @doc("Why the session ended. `hard_timeout` when it hit its configured time limit, `normal` otherwise.")
+    @example("normal")
+    reason: "normal" | "hard_timeout";
+
+    @doc("Who or what ended the call. `system` when nothing recorded it.")
+    @example("assistant")
+    ended_by: string;
+
+    @doc("A description of the error. Included only when the session ended on one.")
+    fatal_error_reason?: string;
+
+    @doc("How long the session ran, in milliseconds.")
+    @example(37651)
+    duration_ms: integer;
+
+    @doc("Input tokens the session consumed.")
+    @example(5627)
+    input_tokens: integer;
+
+    @doc("Output tokens the session produced.")
+    @example(119)
+    output_tokens: integer;
+  };
+
+  @doc("The agent finished speaking a reply.")
+  ai_completion?: {
+    @doc("`barged` when the caller interrupted the reply, `normal` when it played to the end.")
+    @example("normal")
+    type: "normal" | "barged";
+  };
+
+  @doc("The agent called one of your functions and the call returned.")
+  function_call?: {
+    @doc("The name of the function.")
+    @example("get_weather")
+    function: string;
+
+    @doc("How long the function took, in milliseconds.")
+    @example(412)
+    duration_ms: integer;
+
+    @doc("Whether the function ran inside the platform rather than on your server.")
+    @example(false)
+    native: boolean;
+
+    @doc("Where in the session the call happened. Included only for a call made while running the post-prompt.")
+    @example("post_prompt")
+    phase?: string;
+  };
+
+  @doc("""
+    A completed tool call, as one entry of the `swaig_log` the post-prompt callback reports at the
+    end. Carries `command_name`, `command_arg`, `epoch_time` in seconds, and, for a tool that reached
+    your server, `url`, `post_data`, and `post_response`.
+    """)
+  swaig_call?: Record<unknown>;
+
+  @doc("The post-prompt report was delivered.")
+  post_prompt?: {
+    @doc("The URL the report was sent to.")
+    @example("https://example.com/reports")
+    url: string;
+  };
+
+  @doc("""
+    A tool's webhook could not be reached or did not answer usefully, after every retry. Sent
+    whenever a tool call fails, so you can alert on tools breaking mid-call.
+    """)
+  webhook_fail?: AIDebugWebhookFail;
+
+  @doc("""
+    A message was added to the conversation, one per turn. Sent only at `debug_webhook_level` `2` and
+    above. This is the same message that later appears in the post-prompt callback's `call_log`.
+    """)
+  conversation_add?: AIDebugConversationAdd;
+
+  @doc("The agent is about to call the model. Sent only at `debug_webhook_level` `2` and above.")
+  llm_request?: {
+    @doc("The model being called.")
+    @example("gpt-4.1-mini")
+    `model`: string;
+
+    @doc("Tokens in the prompt.")
+    @example(412)
+    prompt_tokens: integer;
+
+    @doc("Tokens in the conversation so far.")
+    @example(5215)
+    conversation_tokens: integer;
+  };
+
+  @doc("The model answered. Sent only at `debug_webhook_level` `2` and above.")
+  llm_response?: {
+    @doc("The model that was called.")
+    @example("gpt-4.1-mini")
+    `model`: string;
+
+    @doc("Tokens in the answer.")
+    @example(53)
+    output_tokens: integer;
+
+    @doc("How long the call took, in milliseconds.")
+    @example(836)
+    duration_ms: integer;
+
+    @doc("Whether the model returned anything.")
+    @example(true)
+    success: boolean;
+
+    @doc("A description of the failure. Included only when the call failed.")
+    error?: string;
+  };
+}
+
+@doc("""
+  Reports a tool webhook that could not be reached or did not answer usefully. Carries whatever
+  detail the attempt produced, so unlisted keys can appear.
+  """)
+model AIDebugWebhookFail is Record<unknown> {
+  @doc("Identifies the call. The same values as the envelope's `call_info`.")
+  call_info: AICallInfo;
+
+  @doc("Always `webhook error`.")
+  @example("webhook error")
+  error: string;
+
+  @doc("The URL that was called.")
+  @example("https://example.com/tools/get_weather")
+  request_url: string;
+
+  @doc("How many attempts were made, including the first.")
+  @example(3)
+  attempts: integer;
+
+  @doc("The body that was sent, when there was one.")
+  request_payload?: Record<unknown>;
+
+  @doc("Always `true` when present, meaning the response body was not valid JSON.")
+  @example(true)
+  parse_error?: boolean;
+
+  @doc("The response body as received. Included only when `parse_error` is set.")
+  raw_response?: string;
+
+  @doc("The response body parsed as JSON. `null` when it could not be parsed.")
+  parsed_response: Record<unknown> | null;
+
+  @doc("Always `true` when present, meaning the request failed before a response was received.")
+  @example(true)
+  protocol_error?: boolean;
+
+  @doc("The transport error code. Included only when `protocol_error` is set.")
+  @example(28)
+  curl_code?: integer;
+
+  @doc("The HTTP status code. `0` when no response was received.")
+  @example(502)
+  http_code: integer;
+}
+
+@doc("""
+  One message as it is added to the conversation. The exact fields depend on which role produced it,
+  so unlisted keys can appear.
+  """)
+model AIDebugConversationAdd is Record<unknown> {
+  @doc("Who produced the message: `system`, `user`, `assistant`, or `tool`.")
+  @example("assistant")
+  role: string;
+
+  @doc("The message text. Redacted when you enable `redact_prompt`.")
+  @example("Your ride is booked for 6pm.")
+  content: string;
+
+  @doc("The language the message was in. Omitted on tool messages.")
+  @example("en-US")
+  lang?: string;
+
+  @doc("Tokens the message consumed. Omitted on tool messages.")
+  @example(53)
+  tokens?: integer;
+
+  @doc("When the message was added, as a Unix timestamp in microseconds.")
+  @example(1694541297950440)
+  timestamp?: int64;
+
+  @doc("Links a tool result back to the call that produced it. Present on tool messages.")
+  tool_call_id?: string;
+
+  @doc("""
+    Per-turn detail. On a caller turn this carries `confidence`, `content_type`, and the
+    speaking-to-final timings. Omitted on turns that have none.
+    """)
+  metadata?: Record<unknown>;
+}
+
+@summary("Amazon Bedrock post-prompt callback")
+@doc("""
+  Sent to your [`amazon_bedrock.post_prompt_url`](/docs/swml/reference/calling/amazon-bedrock) when
+  the agent's session ends, carrying its answer to your `post_prompt` alongside the record of the
+  call. Nothing you return in the response is read.
+
+  Bedrock agents send a different report from [`ai`](/docs/swml/reference/calling/ai) agents. There
+  is no `call_timeline`, `previous_contexts`, `hard_timeout`, `call_ended_by`, or `ai_id_tag`;
+  `raw_call_log` is a copy of `call_log` rather than a separate unfiltered view; `swaig_log` is
+  always empty; `conversation_summary` is always present; and the `total_*` fields arrive without
+  your having to enable accounting. `post_prompt_url` also takes no separate credentials here — put
+  them in the URL as `username:password@url`. Write your handler against this payload, not the
+  [AI post-prompt callback](#tag/calls/webhook/aiPostPromptCallback).
+  """)
+model BedrockPostPromptCallbackPayload {
+  @doc("Your project ID, when available.")
+  @example("4d0d6f16-5881-4fcc-92a4-02c51a91954d")
+  project_id?: string;
+
+  @doc("Your Space ID, when available.")
+  @example("451ed9ff-e568-4222-8af9-4f9ab7428d09")
+  space_id?: string;
+
+  @doc("The content type of the request body. Always `text/json`.")
+  @example("text/json")
+  content_type: string;
+
+  @doc("How the body is delivered. Always `agent.summary` for the end-of-call report.")
+  @example("agent.summary")
+  content_disposition: string;
+
+  @doc("The kind of conversation the agent ran. Always `voice`.")
+  @example("voice")
+  conversation_type: string;
+
+  @doc("The ID of the call.")
+  @example("2e1e66e5-5d07-413d-9668-55542992eec0")
+  call_id: string;
+
+  @doc("The name of your Bedrock application. Defaults to `bedrock`.")
+  @example("bedrock")
+  app_name: string;
+
+  @doc("The ID of the AI session on the call. Matches `call_id` for Bedrock agents.")
+  @example("2e1e66e5-5d07-413d-9668-55542992eec0")
+  ai_session_id: string;
+
+  @doc("The conversation ID, when the agent was configured with one.")
+  @example("support-thread-4821")
+  conversation_id?: string;
+
+  @doc("What the request is asking of you. Always `post_conversation` for the end-of-call report.")
+  @example("post_conversation")
+  action: string;
+
+  @doc("""
+    The conversation. Each entry carries a `role` of `system`, `user`, or `assistant` and its
+    `content`.
+    """)
+  @example(#[
+    #{ role: "system", content: "You dispatch taxis." },
+    #{ role: "user", content: "I need a ride to the airport." }
+  ])
+  call_log: Record<unknown>[];
+
+  @doc("A copy of `call_log`. Bedrock agents do not keep a separate unfiltered log.")
+  raw_call_log: Record<unknown>[];
+
+  @doc("When the call was created, as a Unix timestamp in microseconds.")
+  @example(1694541295773508)
+  call_start_date?: int64;
+
+  @doc("When the call was answered, as a Unix timestamp in microseconds. `0` when it never was.")
+  @example(1694541296799504)
+  call_answer_date?: int64;
+
+  @doc("When the call ended, as a Unix timestamp in microseconds. `0` while the call is still up.")
+  @example(1694541335435503)
+  call_end_date?: int64;
+
+  @doc("When the agent started, as a Unix timestamp in microseconds.")
+  @example(1694541297950440)
+  ai_start_date?: int64;
+
+  @doc("""
+    When the agent stopped, as a Unix timestamp in microseconds. Omitted while it is still running.
+    """)
+  @example(1694541335425164)
+  ai_end_date?: int64;
+
+  @doc("The caller's name, when available.")
+  @example("Jane Doe")
+  caller_id_name?: string;
+
+  @doc("The caller's number, when available.")
+  @example("+15555550100")
+  caller_id_number?: string;
+
+  @doc("""
+    Per-response performance metrics, one entry per generated reply. Included once the agent has any.
+    """)
+  times?: Record<unknown>[];
+
+  @doc("""
+    The number of billable minutes, rounded up to at least one. Included once the agent has stopped.
+    """)
+  @example(3.14)
+  total_minutes?: float;
+
+  @doc("Input tokens the session consumed. Included once the agent has stopped.")
+  @example(5627)
+  total_input_tokens?: integer;
+
+  @doc("Output tokens the session produced. Included once the agent has stopped.")
+  @example(119)
+  total_output_tokens?: integer;
+
+  @doc("A copy of `total_input_tokens`. Included once the agent has stopped.")
+  @example(5627)
+  total_wire_input_tokens?: integer;
+
+  @doc("`total_input_tokens` divided by `total_minutes`. Included once the agent has stopped.")
+  @example(1792.04)
+  total_wire_input_tokens_per_minute?: float;
+
+  @doc("A copy of `total_output_tokens`. Included once the agent has stopped.")
+  @example(119)
+  total_wire_output_tokens?: integer;
+
+  @doc("`total_output_tokens` divided by `total_minutes`. Included once the agent has stopped.")
+  @example(37.9)
+  total_wire_output_tokens_per_minute?: float;
+
+  @doc("Characters sent to text-to-speech. Included once the agent has stopped.")
+  @example(842)
+  total_tts_chars?: integer;
+
+  @doc("`total_tts_chars` divided by `total_minutes`. Included once the agent has stopped.")
+  @example(268.15)
+  total_tts_chars_per_min?: float;
+
+  @doc("Minutes of audio sent to speech recognition. Included once the agent has stopped.")
+  @example(2.41)
+  total_asr_minutes?: float;
+
+  @doc("Always `1`. Bedrock agents do not vary the factor. Included once the agent has stopped.")
+  @example(1)
+  total_asr_cost_factor?: float;
+
+  @doc("SWML variables for the call. Included when the call carries SWML state.")
+  SWMLVars?: Record<unknown>;
+
+  @doc("SWML call state. Included when the call carries SWML state.")
+  SWMLCall?: Record<unknown>;
+
+  @doc("The agent's answer to your `post_prompt`.")
+  post_prompt_data: AIPostPromptData;
+
+  @doc("The session's final `global_data`. An empty object when you seeded none.")
+  @example(#{ customer_tier: "premium" })
+  global_data: Record<unknown>;
+
+  @doc("Always an empty array. Bedrock agents do not report a tool-call log.")
+  @example(#[])
+  swaig_log: Record<unknown>[];
+
+  @doc("The agent's answer to your `post_prompt`, as plain text.")
+  @example("Caller booked a ride from 123 Main St to the airport for 6pm.")
+  conversation_summary: string;
 }

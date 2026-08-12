@@ -16474,6 +16474,197 @@ components:
         - voice
         - fax
       description: Call receive mode.
+    Calling.AICallInfo:
+      type: object
+      required:
+        - call_id
+        - content_type
+        - content_disposition
+        - conversation_type
+      properties:
+        project_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Your project ID.
+          examples:
+            - 4d0d6f16-5881-4fcc-92a4-02c51a91954d
+        space_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Your Space ID.
+          examples:
+            - 451ed9ff-e568-4222-8af9-4f9ab7428d09
+        call_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: ID of the call.
+          examples:
+            - 2e1e66e5-5d07-413d-9668-55542992eec0
+        content_type:
+          type: string
+          description: The content type of the POST body. Always `text/json`.
+          examples:
+            - text/json
+        content_disposition:
+          type: string
+          description: How the body is delivered. Always `post_data`.
+          examples:
+            - post_data
+        conversation_type:
+          type: string
+          description: The conversation type. Always `voice`.
+          examples:
+            - voice
+      unevaluatedProperties:
+        not: {}
+      description: |-
+        Identifies the call an AI callback came from. `project_id` and `space_id` are included when
+        available.
+    Calling.AIDebugConversationAdd:
+      type: object
+      required:
+        - role
+        - content
+      properties:
+        role:
+          type: string
+          description: 'Who produced the message: `system`, `user`, `assistant`, or `tool`.'
+          examples:
+            - assistant
+        content:
+          type: string
+          description: The message text. Redacted when you enable `redact_prompt`.
+          examples:
+            - Your ride is booked for 6pm.
+        lang:
+          type: string
+          description: The language the message was in. Omitted on tool messages.
+          examples:
+            - en-US
+        tokens:
+          type: integer
+          description: Tokens the message consumed. Omitted on tool messages.
+          examples:
+            - 53
+        timestamp:
+          type: integer
+          format: int64
+          description: When the message was added, as a Unix timestamp in microseconds.
+          examples:
+            - 1694541297950440
+        tool_call_id:
+          type: string
+          description: Links a tool result back to the call that produced it. Present on tool messages.
+        metadata:
+          type: object
+          unevaluatedProperties: {}
+          description: |-
+            Per-turn detail. On a caller turn this carries `confidence`, `content_type`, and the
+            speaking-to-final timings. Omitted on turns that have none.
+      unevaluatedProperties: {}
+      description: |-
+        One message as it is added to the conversation. The exact fields depend on which role produced it,
+        so unlisted keys can appear.
+    Calling.AIDebugWebhookFail:
+      type: object
+      required:
+        - call_info
+        - error
+        - request_url
+        - attempts
+        - parsed_response
+        - http_code
+      properties:
+        call_info:
+          allOf:
+            - $ref: '#/components/schemas/Calling.AICallInfo'
+          description: Identifies the call. The same values as the envelope's `call_info`.
+        error:
+          type: string
+          description: Always `webhook error`.
+          examples:
+            - webhook error
+        request_url:
+          type: string
+          description: The URL that was called.
+          examples:
+            - https://example.com/tools/get_weather
+        attempts:
+          type: integer
+          description: How many attempts were made, including the first.
+          examples:
+            - 3
+        request_payload:
+          type: object
+          unevaluatedProperties: {}
+          description: The body that was sent, when there was one.
+        parse_error:
+          type: boolean
+          description: Always `true` when present, meaning the response body was not valid JSON.
+          examples:
+            - true
+        raw_response:
+          type: string
+          description: The response body as received. Included only when `parse_error` is set.
+        parsed_response:
+          anyOf:
+            - type: object
+              unevaluatedProperties: {}
+            - type: 'null'
+          description: The response body parsed as JSON. `null` when it could not be parsed.
+        protocol_error:
+          type: boolean
+          description: Always `true` when present, meaning the request failed before a response was received.
+          examples:
+            - true
+        curl_code:
+          type: integer
+          description: The transport error code. Included only when `protocol_error` is set.
+          examples:
+            - 28
+        http_code:
+          type: integer
+          description: The HTTP status code. `0` when no response was received.
+          examples:
+            - 502
+      unevaluatedProperties: {}
+      description: |-
+        Reports a tool webhook that could not be reached or did not answer usefully. Carries whatever
+        detail the attempt produced, so unlisted keys can appear.
+    Calling.AIPostPromptData:
+      type: object
+      required:
+        - parsed
+        - raw
+      properties:
+        parsed:
+          type: array
+          items:
+            type: object
+            unevaluatedProperties: {}
+          description: |-
+            Every JSON object found in the answer, parsed. An empty array when the agent answered in prose.
+            Ask the post-prompt for named JSON keys when you want to count outcomes.
+          examples:
+            - - intent: book_ride
+                resolved: true
+        raw:
+          type: string
+          description: The answer exactly as the agent produced it.
+          examples:
+            - '{"intent":"book_ride","resolved":true}'
+        substituted:
+          type: string
+          description: |-
+            The answer with the JSON removed, leaving only the surrounding prose. Omitted when the answer was
+            JSON and nothing followed it.
+          examples:
+            - Caller booked a ride to the airport.
+      unevaluatedProperties:
+        not: {}
+      description: |-
+        The answer an AI agent gave to your
+        [`post_prompt`](/docs/swml/reference/calling/ai), in three forms.
     Calling.AISidecarCallbackPayload:
       type: object
       required:
@@ -16481,48 +16672,8 @@ components:
         - sidecar_event
       properties:
         call_info:
-          type: object
-          properties:
-            project_id:
-              allOf:
-                - $ref: '#/components/schemas/uuid'
-              description: Your project ID.
-              examples:
-                - 4d0d6f16-5881-4fcc-92a4-02c51a91954d
-            space_id:
-              allOf:
-                - $ref: '#/components/schemas/uuid'
-              description: Your Space ID.
-              examples:
-                - 451ed9ff-e568-4222-8af9-4f9ab7428d09
-            call_id:
-              allOf:
-                - $ref: '#/components/schemas/uuid'
-              description: ID of the call the sidecar is attached to.
-              examples:
-                - 2e1e66e5-5d07-413d-9668-55542992eec0
-            content_type:
-              type: string
-              description: The content type of the POST body. Always `text/json`.
-              examples:
-                - text/json
-            content_disposition:
-              type: string
-              description: How the body is delivered. Always `post_data`.
-              examples:
-                - post_data
-            conversation_type:
-              type: string
-              description: The conversation type. Always `voice`.
-              examples:
-                - voice
-          required:
-            - call_id
-            - content_type
-            - content_disposition
-            - conversation_type
-          unevaluatedProperties:
-            not: {}
+          allOf:
+            - $ref: '#/components/schemas/Calling.AICallInfo'
           description: Envelope describing the call. `project_id` and `space_id` are included when available.
         sidecar_event:
           type: object
@@ -16683,6 +16834,551 @@ components:
         The sidecar only listens to the call and never speaks on it, so a `say` action is reported back to
         you as a callback rather than being spoken aloud.
       title: AI sidecar SWAIG tool webhook
+    Calling.AiDebugWebhookPayload:
+      type: object
+      required:
+        - call_info
+      properties:
+        call_info:
+          allOf:
+            - $ref: '#/components/schemas/Calling.AICallInfo'
+          description: Identifies the call the event came from.
+        session_start:
+          type: object
+          properties:
+            model:
+              type: string
+              description: The model the agent is running. Omitted when the session has no model.
+              examples:
+                - gpt-4.1-mini
+            tts_engine:
+              type: string
+              description: The text-to-speech engine. Omitted when no voice is configured.
+              examples:
+                - elevenlabs
+            tts_voice:
+              type: string
+              description: The text-to-speech voice. Omitted when no voice is configured.
+              examples:
+                - rachel
+            language:
+              type: string
+              description: The language code the session started in. Omitted when no voice is configured.
+              examples:
+                - en-US
+          unevaluatedProperties:
+            not: {}
+          description: The AI session started. Sent once per session.
+        session_end:
+          type: object
+          properties:
+            reason:
+              type: string
+              enum:
+                - normal
+                - hard_timeout
+              description: Why the session ended. `hard_timeout` when it hit its configured time limit, `normal` otherwise.
+              examples:
+                - normal
+            ended_by:
+              type: string
+              description: Who or what ended the call. `system` when nothing recorded it.
+              examples:
+                - assistant
+            fatal_error_reason:
+              type: string
+              description: A description of the error. Included only when the session ended on one.
+            duration_ms:
+              type: integer
+              description: How long the session ran, in milliseconds.
+              examples:
+                - 37651
+            input_tokens:
+              type: integer
+              description: Input tokens the session consumed.
+              examples:
+                - 5627
+            output_tokens:
+              type: integer
+              description: Output tokens the session produced.
+              examples:
+                - 119
+          required:
+            - reason
+            - ended_by
+            - duration_ms
+            - input_tokens
+            - output_tokens
+          unevaluatedProperties:
+            not: {}
+          description: The AI session ended. Sent once per session.
+        ai_completion:
+          type: object
+          properties:
+            type:
+              type: string
+              enum:
+                - normal
+                - barged
+              description: '`barged` when the caller interrupted the reply, `normal` when it played to the end.'
+              examples:
+                - normal
+          required:
+            - type
+          unevaluatedProperties:
+            not: {}
+          description: The agent finished speaking a reply.
+        function_call:
+          type: object
+          properties:
+            function:
+              type: string
+              description: The name of the function.
+              examples:
+                - get_weather
+            duration_ms:
+              type: integer
+              description: How long the function took, in milliseconds.
+              examples:
+                - 412
+            native:
+              type: boolean
+              description: Whether the function ran inside the platform rather than on your server.
+              examples:
+                - false
+            phase:
+              type: string
+              description: Where in the session the call happened. Included only for a call made while running the post-prompt.
+              examples:
+                - post_prompt
+          required:
+            - function
+            - duration_ms
+            - native
+          unevaluatedProperties:
+            not: {}
+          description: The agent called one of your functions and the call returned.
+        swaig_call:
+          type: object
+          unevaluatedProperties: {}
+          description: |-
+            A completed tool call, as one entry of the `swaig_log` the post-prompt callback reports at the
+            end. Carries `command_name`, `command_arg`, `epoch_time` in seconds, and, for a tool that reached
+            your server, `url`, `post_data`, and `post_response`.
+        post_prompt:
+          type: object
+          properties:
+            url:
+              type: string
+              description: The URL the report was sent to.
+              examples:
+                - https://example.com/reports
+          required:
+            - url
+          unevaluatedProperties:
+            not: {}
+          description: The post-prompt report was delivered.
+        webhook_fail:
+          allOf:
+            - $ref: '#/components/schemas/Calling.AIDebugWebhookFail'
+          description: |-
+            A tool's webhook could not be reached or did not answer usefully, after every retry. Sent
+            whenever a tool call fails, so you can alert on tools breaking mid-call.
+        conversation_add:
+          allOf:
+            - $ref: '#/components/schemas/Calling.AIDebugConversationAdd'
+          description: |-
+            A message was added to the conversation, one per turn. Sent only at `debug_webhook_level` `2` and
+            above. This is the same message that later appears in the post-prompt callback's `call_log`.
+        llm_request:
+          type: object
+          properties:
+            model:
+              type: string
+              description: The model being called.
+              examples:
+                - gpt-4.1-mini
+            prompt_tokens:
+              type: integer
+              description: Tokens in the prompt.
+              examples:
+                - 412
+            conversation_tokens:
+              type: integer
+              description: Tokens in the conversation so far.
+              examples:
+                - 5215
+          required:
+            - model
+            - prompt_tokens
+            - conversation_tokens
+          unevaluatedProperties:
+            not: {}
+          description: The agent is about to call the model. Sent only at `debug_webhook_level` `2` and above.
+        llm_response:
+          type: object
+          properties:
+            model:
+              type: string
+              description: The model that was called.
+              examples:
+                - gpt-4.1-mini
+            output_tokens:
+              type: integer
+              description: Tokens in the answer.
+              examples:
+                - 53
+            duration_ms:
+              type: integer
+              description: How long the call took, in milliseconds.
+              examples:
+                - 836
+            success:
+              type: boolean
+              description: Whether the model returned anything.
+              examples:
+                - true
+            error:
+              type: string
+              description: A description of the failure. Included only when the call failed.
+          required:
+            - model
+            - output_tokens
+            - duration_ms
+            - success
+          unevaluatedProperties:
+            not: {}
+          description: The model answered. Sent only at `debug_webhook_level` `2` and above.
+      unevaluatedProperties: {}
+      description: |-
+        Sent to your
+        [`ai.params.debug_webhook_url`](/docs/swml/reference/calling/ai/params#paramsdebug_webhook_url)
+        as events happen during the call, rather than once at the end. Use it when something has to happen
+        mid-call, such as paging a supervisor or flagging a handoff. For after-the-fact analysis, use the
+        [AI post-prompt callback](#tag/calls/webhook/aiPostPromptCallback) instead.
+
+        Every request carries `call_info` plus exactly one more key, and **that key's name is the event**.
+        There is no `type` field to switch on: read the key that is not `call_info`. A key whose event
+        carried no data is sent as `null`.
+
+        Setting the URL is what turns the stream on.
+        [`debug_webhook_level`](/docs/swml/reference/calling/ai/params#paramsdebug_webhook_level) only
+        adds to it: at `2` the stream also carries `conversation_add`, `llm_request`, and `llm_response`,
+        which together are far higher volume than everything else combined.
+
+        The events below are documented in full. The stream also carries, under the same envelope:
+        `startup_hook`, `hangup_hook`, `function_loop`, `process_action`, `step_change`, `context_change`,
+        `context_switch_data`, `barge`, `speech_detect`, `filler`, `hold`, `attention_timeout`, `warning`,
+        `voice_error`, `text_normalize`, `tool_distill`, `inner_dialog`, `llm_error`, `consolidation`,
+        `summarize_start`, `sidecar_event`, the `gather_start` / `gather_question` / `gather_answer` /
+        `gather_reject` / `gather_complete` set, the `webhook` / `input` / `output` / `match` /
+        `webhook_reply` / `webhook_log` / `expression` / `error` / `error_keys` set from tool execution,
+        and `oart_user_transcript` / `oart_assistant_transcript` / `oart_response_done` on speech-to-speech
+        sessions. Handle unknown keys by ignoring them: the set grows.
+      title: AI debug webhook
+    Calling.AiPostPromptCallbackPayload:
+      type: object
+      required:
+        - content_type
+        - content_disposition
+        - conversation_type
+        - call_id
+        - app_name
+        - ai_session_id
+        - action
+      properties:
+        project_id:
+          type: string
+          description: Your project ID, when available.
+          examples:
+            - 4d0d6f16-5881-4fcc-92a4-02c51a91954d
+        space_id:
+          type: string
+          description: Your Space ID, when available.
+          examples:
+            - 451ed9ff-e568-4222-8af9-4f9ab7428d09
+        content_type:
+          type: string
+          description: The content type of the request body. Always `text/json`.
+          examples:
+            - text/json
+        content_disposition:
+          type: string
+          description: |-
+            How the body is delivered. `agent.summary` on the end-of-call report, `agent.load_conversation`
+            on a request for a stored conversation.
+          examples:
+            - agent.summary
+        conversation_type:
+          type: string
+          description: The kind of conversation the agent ran. Always `voice`.
+          examples:
+            - voice
+        call_id:
+          type: string
+          description: The ID of the call.
+          examples:
+            - 2e1e66e5-5d07-413d-9668-55542992eec0
+        app_name:
+          type: string
+          description: The name of your AI application.
+          examples:
+            - ai
+        ai_session_id:
+          type: string
+          description: The ID of the AI session on the call.
+          examples:
+            - a0d4e6e5-5d07-413d-9668-55542992eec0
+        ai_id_tag:
+          type: string
+          description: |-
+            A stable fingerprint of the model the agent ran. Two calls that used the same model share it, so
+            you can group reports by model without recording the model name. Omitted when the session had no
+            model.
+          examples:
+            - d742c5d1d969d9fdbbd9bd1c52499f2d
+        conversation_id:
+          type: string
+          description: The conversation ID, when the agent was configured with one.
+          examples:
+            - support-thread-4821
+        action:
+          type: string
+          enum:
+            - post_conversation
+            - fetch_conversation
+          description: |-
+            What the request is asking of you. `post_conversation` is the end-of-call report;
+            `fetch_conversation` asks your endpoint to return a stored conversation.
+          examples:
+            - post_conversation
+        call_log:
+          type: array
+          items:
+            type: object
+            unevaluatedProperties: {}
+          description: |-
+            The conversation, filtered: interrupted segments are consolidated and evicted entries dropped.
+            Each entry carries a `role` of `system`, `user`, `assistant`, or `tool`, its `content`, and
+            per-turn timing. Included when `action` is `post_conversation`.
+          examples:
+            - - role: system
+                content: You dispatch taxis.
+              - role: user
+                content: I need a ride to the airport.
+        raw_call_log:
+          type: array
+          items:
+            type: object
+            unevaluatedProperties: {}
+          description: |-
+            The conversation, unfiltered and append-only. Interruption detail appears here and nowhere else.
+            Included when `action` is `post_conversation`.
+        call_timeline:
+          type: array
+          items:
+            type: object
+            unevaluatedProperties: {}
+          description: |-
+            A flat stream of typed events aligned to `raw_call_log`, for replaying the call in order. Each
+            entry carries a `ts`, a `type` such as `user_input`, `ai_response`, or `tool_result`, and the
+            fields for that type. Included when the session produced any.
+        previous_contexts:
+          type: array
+          items:
+            type: array
+            items:
+              type: object
+              unevaluatedProperties: {}
+          description: |-
+            Conversations from before each context switch, oldest first, one array of messages per switch.
+            Included only when the agent switched context during the call.
+        hard_timeout:
+          type: boolean
+          description: |-
+            Always `true` when present, meaning the session ended because it hit its configured time limit
+            rather than finishing on its own. Omitted otherwise.
+          examples:
+            - true
+        call_start_date:
+          type: integer
+          format: int64
+          description: When the call was created, as a Unix timestamp in microseconds.
+          examples:
+            - 1694541295773508
+        call_answer_date:
+          type: integer
+          format: int64
+          description: When the call was answered, as a Unix timestamp in microseconds. `0` when it never was.
+          examples:
+            - 1694541296799504
+        call_end_date:
+          type: integer
+          format: int64
+          description: When the call ended, as a Unix timestamp in microseconds.
+          examples:
+            - 1694541335435503
+        ai_start_date:
+          type: integer
+          format: int64
+          description: When the AI session started, as a Unix timestamp in microseconds.
+          examples:
+            - 1694541297950440
+        call_ended_by:
+          type: string
+          description: Who or what ended the call. Included when the session recorded it.
+          examples:
+            - assistant
+        ai_end_date:
+          type: integer
+          format: int64
+          description: |-
+            When the AI session ended, as a Unix timestamp in microseconds. Omitted when the session was
+            still running.
+          examples:
+            - 1694541335425164
+        caller_id_name:
+          type: string
+          description: The caller's name, when available.
+          examples:
+            - Jane Doe
+        caller_id_number:
+          type: string
+          description: The caller's number, when available.
+          examples:
+            - '+15555550100'
+        times:
+          type: array
+          items:
+            type: object
+            unevaluatedProperties: {}
+          description: |-
+            Per-response performance metrics, one entry per generated reply, carrying `response`,
+            `response_word_count`, `answer_time`, `token_time`, `tokens`, `avg_tps`, and `tps`. Included once
+            the session has any.
+        SWMLVars:
+          type: object
+          unevaluatedProperties: {}
+          description: SWML variables for the call. Included when the call carries SWML state.
+        SWMLCall:
+          type: object
+          unevaluatedProperties: {}
+          description: SWML call state. Included when the call carries SWML state.
+        post_prompt_data:
+          allOf:
+            - $ref: '#/components/schemas/Calling.AIPostPromptData'
+          description: The agent's answer to your `post_prompt`. Included when `action` is `post_conversation`.
+        global_data:
+          type: object
+          unevaluatedProperties: {}
+          description: |-
+            The session's final `global_data`. An empty object when you seeded none. Included when `action`
+            is `post_conversation`.
+          examples:
+            - customer_tier: premium
+              pickup_address: 123 Main St, Springfield
+        swaig_log:
+          type: array
+          items:
+            type: object
+            unevaluatedProperties: {}
+          description: |-
+            Every tool call the agent made, in order. Each entry carries `command_name`, `command_arg`,
+            `epoch_time` in seconds, and, for a tool that reached your server, the `url`, the `post_data`
+            that was sent, and the `post_response` that came back. Included when `action` is
+            `post_conversation`.
+        total_minutes:
+          type: integer
+          description: |-
+            The number of billable minutes, rounded up to at least one. Included when you enable
+            [`enable_accounting`](/docs/swml/reference/calling/ai/params#paramsenable_accounting).
+          examples:
+            - 3
+        total_input_tokens:
+          type: integer
+          description: Input tokens the session consumed. Included when you enable `enable_accounting`.
+          examples:
+            - 5627
+        total_output_tokens:
+          type: integer
+          description: Output tokens the session produced. Included when you enable `enable_accounting`.
+          examples:
+            - 119
+        total_wire_input_tokens:
+          type: integer
+          description: |-
+            Input tokens counted against the model, which differs from `total_input_tokens` when the
+            conversation was trimmed. Included when you enable `enable_accounting`.
+          examples:
+            - 5627
+        total_wire_input_tokens_per_minute:
+          type: number
+          description: '`total_wire_input_tokens` divided by `total_minutes`. Included when you enable `enable_accounting`.'
+          examples:
+            - 1875.67
+        total_wire_output_tokens:
+          type: integer
+          description: Output tokens counted against the model. Included when you enable `enable_accounting`.
+          examples:
+            - 119
+        total_wire_output_tokens_per_minute:
+          type: number
+          description: '`total_wire_output_tokens` divided by `total_minutes`. Included when you enable `enable_accounting`.'
+          examples:
+            - 39.67
+        total_tts_chars:
+          type: integer
+          description: Characters sent to text-to-speech. Included when you enable `enable_accounting`.
+          examples:
+            - 842
+        total_tts_chars_per_min:
+          type: number
+          description: '`total_tts_chars` divided by `total_minutes`. Included when you enable `enable_accounting`.'
+          examples:
+            - 280.67
+        total_asr_minutes:
+          type: number
+          description: Minutes of audio sent to speech recognition. Included when you enable `enable_accounting`.
+          examples:
+            - 2.41
+        total_asr_cost_factor:
+          type: number
+          description: '`total_asr_minutes` divided by `total_minutes`. Included when you enable `enable_accounting`.'
+          examples:
+            - 0.8
+        conversation_summary:
+          type: string
+          description: |-
+            A plain-language summary of the conversation, for storing against `conversation_id` and handing
+            back on the next `fetch_conversation`. Included when you enable
+            [`save_conversation`](/docs/swml/reference/calling/ai/params#paramssave_conversation) and set
+            a `conversation_id`.
+          examples:
+            - Caller booked a ride from 123 Main St to the airport for 6pm.
+      unevaluatedProperties:
+        not: {}
+      description: |-
+        Sent to your [`ai.post_prompt_url`](/docs/swml/reference/calling/ai) when the AI session ends. It
+        carries the agent's answer to your [`post_prompt`](/docs/swml/reference/calling/ai)
+        alongside the full record of the call: the conversation, the tool calls, the timings, and the
+        token counts. This is the one report you get per call, so store the body verbatim and extract only
+        the fields you query. Nothing you return in the response is read.
+
+        Read `action` first. It is `post_conversation` on the end-of-call report described here. The same
+        URL also receives `fetch_conversation` when the agent starts with a stored conversation
+        ([`save_conversation`](/docs/swml/reference/calling/ai/params#paramssave_conversation) with a
+        `conversation_id`), asking your endpoint to return that conversation; that request carries the
+        call and session fields but none of the summary fields. Answer it with the stored
+        `conversation_summary`.
+
+        The conversation appears three times. `call_log` is the filtered view, with interrupted segments
+        consolidated. `raw_call_log` is unfiltered and append-only, and is the only place barge-in detail
+        survives. `call_timeline` is a flat stream of typed events aligned to `raw_call_log`.
+
+        [`amazon_bedrock`](/docs/swml/reference/calling/amazon-bedrock) agents send a different report.
+        Write your handler against the
+        [Bedrock post-prompt callback](#tag/calls/webhook/bedrockPostPromptCallback) instead.
+      title: AI post-prompt callback
     Calling.AiSwaigToolWebhookPayload:
       type: object
       required:
@@ -16877,6 +17573,239 @@ components:
         function and returns a JSON object with a `response` string (the result the AI reads next) and,
         optionally, an `action` — a single object or an array — telling the agent what to do.
       title: AI SWAIG tool webhook
+    Calling.BedrockPostPromptCallbackPayload:
+      type: object
+      required:
+        - content_type
+        - content_disposition
+        - conversation_type
+        - call_id
+        - app_name
+        - ai_session_id
+        - action
+        - call_log
+        - raw_call_log
+        - post_prompt_data
+        - global_data
+        - swaig_log
+        - conversation_summary
+      properties:
+        project_id:
+          type: string
+          description: Your project ID, when available.
+          examples:
+            - 4d0d6f16-5881-4fcc-92a4-02c51a91954d
+        space_id:
+          type: string
+          description: Your Space ID, when available.
+          examples:
+            - 451ed9ff-e568-4222-8af9-4f9ab7428d09
+        content_type:
+          type: string
+          description: The content type of the request body. Always `text/json`.
+          examples:
+            - text/json
+        content_disposition:
+          type: string
+          description: How the body is delivered. Always `agent.summary` for the end-of-call report.
+          examples:
+            - agent.summary
+        conversation_type:
+          type: string
+          description: The kind of conversation the agent ran. Always `voice`.
+          examples:
+            - voice
+        call_id:
+          type: string
+          description: The ID of the call.
+          examples:
+            - 2e1e66e5-5d07-413d-9668-55542992eec0
+        app_name:
+          type: string
+          description: The name of your Bedrock application. Defaults to `bedrock`.
+          examples:
+            - bedrock
+        ai_session_id:
+          type: string
+          description: The ID of the AI session on the call. Matches `call_id` for Bedrock agents.
+          examples:
+            - 2e1e66e5-5d07-413d-9668-55542992eec0
+        conversation_id:
+          type: string
+          description: The conversation ID, when the agent was configured with one.
+          examples:
+            - support-thread-4821
+        action:
+          type: string
+          description: What the request is asking of you. Always `post_conversation` for the end-of-call report.
+          examples:
+            - post_conversation
+        call_log:
+          type: array
+          items:
+            type: object
+            unevaluatedProperties: {}
+          description: |-
+            The conversation. Each entry carries a `role` of `system`, `user`, or `assistant` and its
+            `content`.
+          examples:
+            - - role: system
+                content: You dispatch taxis.
+              - role: user
+                content: I need a ride to the airport.
+        raw_call_log:
+          type: array
+          items:
+            type: object
+            unevaluatedProperties: {}
+          description: A copy of `call_log`. Bedrock agents do not keep a separate unfiltered log.
+        call_start_date:
+          type: integer
+          format: int64
+          description: When the call was created, as a Unix timestamp in microseconds.
+          examples:
+            - 1694541295773508
+        call_answer_date:
+          type: integer
+          format: int64
+          description: When the call was answered, as a Unix timestamp in microseconds. `0` when it never was.
+          examples:
+            - 1694541296799504
+        call_end_date:
+          type: integer
+          format: int64
+          description: When the call ended, as a Unix timestamp in microseconds. `0` while the call is still up.
+          examples:
+            - 1694541335435503
+        ai_start_date:
+          type: integer
+          format: int64
+          description: When the agent started, as a Unix timestamp in microseconds.
+          examples:
+            - 1694541297950440
+        ai_end_date:
+          type: integer
+          format: int64
+          description: When the agent stopped, as a Unix timestamp in microseconds. Omitted while it is still running.
+          examples:
+            - 1694541335425164
+        caller_id_name:
+          type: string
+          description: The caller's name, when available.
+          examples:
+            - Jane Doe
+        caller_id_number:
+          type: string
+          description: The caller's number, when available.
+          examples:
+            - '+15555550100'
+        times:
+          type: array
+          items:
+            type: object
+            unevaluatedProperties: {}
+          description: Per-response performance metrics, one entry per generated reply. Included once the agent has any.
+        total_minutes:
+          type: number
+          description: The number of billable minutes, rounded up to at least one. Included once the agent has stopped.
+          examples:
+            - 3.14
+        total_input_tokens:
+          type: integer
+          description: Input tokens the session consumed. Included once the agent has stopped.
+          examples:
+            - 5627
+        total_output_tokens:
+          type: integer
+          description: Output tokens the session produced. Included once the agent has stopped.
+          examples:
+            - 119
+        total_wire_input_tokens:
+          type: integer
+          description: A copy of `total_input_tokens`. Included once the agent has stopped.
+          examples:
+            - 5627
+        total_wire_input_tokens_per_minute:
+          type: number
+          description: '`total_input_tokens` divided by `total_minutes`. Included once the agent has stopped.'
+          examples:
+            - 1792.04
+        total_wire_output_tokens:
+          type: integer
+          description: A copy of `total_output_tokens`. Included once the agent has stopped.
+          examples:
+            - 119
+        total_wire_output_tokens_per_minute:
+          type: number
+          description: '`total_output_tokens` divided by `total_minutes`. Included once the agent has stopped.'
+          examples:
+            - 37.9
+        total_tts_chars:
+          type: integer
+          description: Characters sent to text-to-speech. Included once the agent has stopped.
+          examples:
+            - 842
+        total_tts_chars_per_min:
+          type: number
+          description: '`total_tts_chars` divided by `total_minutes`. Included once the agent has stopped.'
+          examples:
+            - 268.15
+        total_asr_minutes:
+          type: number
+          description: Minutes of audio sent to speech recognition. Included once the agent has stopped.
+          examples:
+            - 2.41
+        total_asr_cost_factor:
+          type: number
+          description: Always `1`. Bedrock agents do not vary the factor. Included once the agent has stopped.
+          examples:
+            - 1
+        SWMLVars:
+          type: object
+          unevaluatedProperties: {}
+          description: SWML variables for the call. Included when the call carries SWML state.
+        SWMLCall:
+          type: object
+          unevaluatedProperties: {}
+          description: SWML call state. Included when the call carries SWML state.
+        post_prompt_data:
+          allOf:
+            - $ref: '#/components/schemas/Calling.AIPostPromptData'
+          description: The agent's answer to your `post_prompt`.
+        global_data:
+          type: object
+          unevaluatedProperties: {}
+          description: The session's final `global_data`. An empty object when you seeded none.
+          examples:
+            - customer_tier: premium
+        swaig_log:
+          type: array
+          items:
+            type: object
+            unevaluatedProperties: {}
+          description: Always an empty array. Bedrock agents do not report a tool-call log.
+          examples:
+            - []
+        conversation_summary:
+          type: string
+          description: The agent's answer to your `post_prompt`, as plain text.
+          examples:
+            - Caller booked a ride from 123 Main St to the airport for 6pm.
+      unevaluatedProperties:
+        not: {}
+      description: |-
+        Sent to your [`amazon_bedrock.post_prompt_url`](/docs/swml/reference/calling/amazon-bedrock) when
+        the agent's session ends, carrying its answer to your `post_prompt` alongside the record of the
+        call. Nothing you return in the response is read.
+
+        Bedrock agents send a different report from [`ai`](/docs/swml/reference/calling/ai) agents. There
+        is no `call_timeline`, `previous_contexts`, `hard_timeout`, `call_ended_by`, or `ai_id_tag`;
+        `raw_call_log` is a copy of `call_log` rather than a separate unfiltered view; `swaig_log` is
+        always empty; `conversation_summary` is always present; and the `total_*` fields arrive without
+        your having to enable accounting. `post_prompt_url` also takes no separate credentials here — put
+        them in the URL as `username:password@url`. Write your handler against this payload, not the
+        [AI post-prompt callback](#tag/calls/webhook/aiPostPromptCallback).
+      title: Amazon Bedrock post-prompt callback
     Calling.BedrockSwaigToolWebhookPayload:
       type: object
       required:
@@ -51536,6 +52465,1023 @@ servers:
         default: '{Your_Space_Name}'
         description: Your SignalWire Space name
 webhooks:
+  bedrockPostPromptCallback:
+    post:
+      operationId: bedrock_post_prompt_callback
+      summary: Amazon Bedrock post-prompt callback
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                project_id:
+                  type: string
+                  description: Your project ID, when available.
+                  example: 4d0d6f16-5881-4fcc-92a4-02c51a91954d
+                space_id:
+                  type: string
+                  description: Your Space ID, when available.
+                  example: 451ed9ff-e568-4222-8af9-4f9ab7428d09
+                content_type:
+                  type: string
+                  description: The content type of the request body. Always `text/json`.
+                  example: text/json
+                content_disposition:
+                  type: string
+                  description: How the body is delivered. Always `agent.summary` for the end-of-call report.
+                  example: agent.summary
+                conversation_type:
+                  type: string
+                  description: The kind of conversation the agent ran. Always `voice`.
+                  example: voice
+                call_id:
+                  type: string
+                  description: The ID of the call.
+                  example: 2e1e66e5-5d07-413d-9668-55542992eec0
+                app_name:
+                  type: string
+                  description: The name of your Bedrock application. Defaults to `bedrock`.
+                  example: bedrock
+                ai_session_id:
+                  type: string
+                  description: The ID of the AI session on the call. Matches `call_id` for Bedrock agents.
+                  example: 2e1e66e5-5d07-413d-9668-55542992eec0
+                conversation_id:
+                  type: string
+                  description: The conversation ID, when the agent was configured with one.
+                  example: support-thread-4821
+                action:
+                  type: string
+                  description: What the request is asking of you. Always `post_conversation` for the end-of-call report.
+                  example: post_conversation
+                call_log:
+                  type: array
+                  items:
+                    type: object
+                    properties: {}
+                    unevaluatedProperties: {}
+                  description: |-
+                    The conversation. Each entry carries a `role` of `system`, `user`, or `assistant` and its
+                    `content`.
+                  example:
+                    - role: system
+                      content: You dispatch taxis.
+                    - role: user
+                      content: I need a ride to the airport.
+                raw_call_log:
+                  type: array
+                  items:
+                    type: object
+                    properties: {}
+                    unevaluatedProperties: {}
+                  description: A copy of `call_log`. Bedrock agents do not keep a separate unfiltered log.
+                call_start_date:
+                  type: integer
+                  format: int64
+                  description: When the call was created, as a Unix timestamp in microseconds.
+                  example: 1694541295773508
+                call_answer_date:
+                  type: integer
+                  format: int64
+                  description: When the call was answered, as a Unix timestamp in microseconds. `0` when it never was.
+                  example: 1694541296799504
+                call_end_date:
+                  type: integer
+                  format: int64
+                  description: When the call ended, as a Unix timestamp in microseconds. `0` while the call is still up.
+                  example: 1694541335435503
+                ai_start_date:
+                  type: integer
+                  format: int64
+                  description: When the agent started, as a Unix timestamp in microseconds.
+                  example: 1694541297950440
+                ai_end_date:
+                  type: integer
+                  format: int64
+                  description: When the agent stopped, as a Unix timestamp in microseconds. Omitted while it is still running.
+                  example: 1694541335425164
+                caller_id_name:
+                  type: string
+                  description: The caller's name, when available.
+                  example: Jane Doe
+                caller_id_number:
+                  type: string
+                  description: The caller's number, when available.
+                  example: '+15555550100'
+                times:
+                  type: array
+                  items:
+                    type: object
+                    properties: {}
+                    unevaluatedProperties: {}
+                  description: Per-response performance metrics, one entry per generated reply. Included once the agent has any.
+                total_minutes:
+                  type: number
+                  description: The number of billable minutes, rounded up to at least one. Included once the agent has stopped.
+                  example: 3.14
+                total_input_tokens:
+                  type: integer
+                  description: Input tokens the session consumed. Included once the agent has stopped.
+                  example: 5627
+                total_output_tokens:
+                  type: integer
+                  description: Output tokens the session produced. Included once the agent has stopped.
+                  example: 119
+                total_wire_input_tokens:
+                  type: integer
+                  description: A copy of `total_input_tokens`. Included once the agent has stopped.
+                  example: 5627
+                total_wire_input_tokens_per_minute:
+                  type: number
+                  description: '`total_input_tokens` divided by `total_minutes`. Included once the agent has stopped.'
+                  example: 1792.04
+                total_wire_output_tokens:
+                  type: integer
+                  description: A copy of `total_output_tokens`. Included once the agent has stopped.
+                  example: 119
+                total_wire_output_tokens_per_minute:
+                  type: number
+                  description: '`total_output_tokens` divided by `total_minutes`. Included once the agent has stopped.'
+                  example: 37.9
+                total_tts_chars:
+                  type: integer
+                  description: Characters sent to text-to-speech. Included once the agent has stopped.
+                  example: 842
+                total_tts_chars_per_min:
+                  type: number
+                  description: '`total_tts_chars` divided by `total_minutes`. Included once the agent has stopped.'
+                  example: 268.15
+                total_asr_minutes:
+                  type: number
+                  description: Minutes of audio sent to speech recognition. Included once the agent has stopped.
+                  example: 2.41
+                total_asr_cost_factor:
+                  type: number
+                  description: Always `1`. Bedrock agents do not vary the factor. Included once the agent has stopped.
+                  example: 1
+                SWMLVars:
+                  type: object
+                  properties: {}
+                  unevaluatedProperties: {}
+                  description: SWML variables for the call. Included when the call carries SWML state.
+                SWMLCall:
+                  type: object
+                  properties: {}
+                  unevaluatedProperties: {}
+                  description: SWML call state. Included when the call carries SWML state.
+                post_prompt_data:
+                  type: object
+                  properties:
+                    parsed:
+                      type: array
+                      items:
+                        type: object
+                        properties: {}
+                        unevaluatedProperties: {}
+                      description: |-
+                        Every JSON object found in the answer, parsed. An empty array when the agent answered in prose.
+                        Ask the post-prompt for named JSON keys when you want to count outcomes.
+                      example:
+                        - intent: book_ride
+                          resolved: true
+                    raw:
+                      type: string
+                      description: The answer exactly as the agent produced it.
+                      example: '{"intent":"book_ride","resolved":true}'
+                    substituted:
+                      type: string
+                      description: |-
+                        The answer with the JSON removed, leaving only the surrounding prose. Omitted when the answer was
+                        JSON and nothing followed it.
+                      example: Caller booked a ride to the airport.
+                  required:
+                    - parsed
+                    - raw
+                  unevaluatedProperties:
+                    not: {}
+                  description: The agent's answer to your `post_prompt`.
+                global_data:
+                  type: object
+                  properties: {}
+                  unevaluatedProperties: {}
+                  description: The session's final `global_data`. An empty object when you seeded none.
+                  example:
+                    customer_tier: premium
+                swaig_log:
+                  type: array
+                  items:
+                    type: object
+                    properties: {}
+                    unevaluatedProperties: {}
+                  description: Always an empty array. Bedrock agents do not report a tool-call log.
+                  example: []
+                conversation_summary:
+                  type: string
+                  description: The agent's answer to your `post_prompt`, as plain text.
+                  example: Caller booked a ride from 123 Main St to the airport for 6pm.
+              required:
+                - content_type
+                - content_disposition
+                - conversation_type
+                - call_id
+                - app_name
+                - ai_session_id
+                - action
+                - call_log
+                - raw_call_log
+                - post_prompt_data
+                - global_data
+                - swaig_log
+                - conversation_summary
+              unevaluatedProperties:
+                not: {}
+              description: |-
+                Sent to your [`amazon_bedrock.post_prompt_url`](/docs/swml/reference/calling/amazon-bedrock) when
+                the agent's session ends, carrying its answer to your `post_prompt` alongside the record of the
+                call. Nothing you return in the response is read.
+
+                Bedrock agents send a different report from [`ai`](/docs/swml/reference/calling/ai) agents. There
+                is no `call_timeline`, `previous_contexts`, `hard_timeout`, `call_ended_by`, or `ai_id_tag`;
+                `raw_call_log` is a copy of `call_log` rather than a separate unfiltered view; `swaig_log` is
+                always empty; `conversation_summary` is always present; and the `total_*` fields arrive without
+                your having to enable accounting. `post_prompt_url` also takes no separate credentials here — put
+                them in the URL as `username:password@url`. Write your handler against this payload, not the
+                [AI post-prompt callback](#tag/calls/webhook/aiPostPromptCallback).
+      responses:
+        '200':
+          description: Webhook received
+      description: |-
+        Sent to your [`amazon_bedrock.post_prompt_url`](/docs/swml/reference/calling/amazon-bedrock) when
+        the agent's session ends, carrying its answer to your `post_prompt` alongside the record of the
+        call. Nothing you return in the response is read.
+
+        Bedrock agents send a different report from [`ai`](/docs/swml/reference/calling/ai) agents. There
+        is no `call_timeline`, `previous_contexts`, `hard_timeout`, `call_ended_by`, or `ai_id_tag`;
+        `raw_call_log` is a copy of `call_log` rather than a separate unfiltered view; `swaig_log` is
+        always empty; `conversation_summary` is always present; and the `total_*` fields arrive without
+        your having to enable accounting. `post_prompt_url` also takes no separate credentials here — put
+        them in the URL as `username:password@url`. Write your handler against this payload, not the
+        [AI post-prompt callback](#tag/calls/webhook/aiPostPromptCallback).
+      tags:
+        - Calls
+  aiDebugWebhook:
+    post:
+      operationId: ai_debug_webhook
+      summary: AI debug webhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                call_info:
+                  type: object
+                  properties:
+                    project_id:
+                      type: string
+                      format: uuid
+                      description: Your project ID.
+                      example: 4d0d6f16-5881-4fcc-92a4-02c51a91954d
+                    space_id:
+                      type: string
+                      format: uuid
+                      description: Your Space ID.
+                      example: 451ed9ff-e568-4222-8af9-4f9ab7428d09
+                    call_id:
+                      type: string
+                      format: uuid
+                      description: ID of the call.
+                      example: 2e1e66e5-5d07-413d-9668-55542992eec0
+                    content_type:
+                      type: string
+                      description: The content type of the POST body. Always `text/json`.
+                      example: text/json
+                    content_disposition:
+                      type: string
+                      description: How the body is delivered. Always `post_data`.
+                      example: post_data
+                    conversation_type:
+                      type: string
+                      description: The conversation type. Always `voice`.
+                      example: voice
+                  required:
+                    - call_id
+                    - content_type
+                    - content_disposition
+                    - conversation_type
+                  unevaluatedProperties:
+                    not: {}
+                  description: Identifies the call the event came from.
+                session_start:
+                  type: object
+                  properties:
+                    model:
+                      type: string
+                      description: The model the agent is running. Omitted when the session has no model.
+                      example: gpt-4.1-mini
+                    tts_engine:
+                      type: string
+                      description: The text-to-speech engine. Omitted when no voice is configured.
+                      example: elevenlabs
+                    tts_voice:
+                      type: string
+                      description: The text-to-speech voice. Omitted when no voice is configured.
+                      example: rachel
+                    language:
+                      type: string
+                      description: The language code the session started in. Omitted when no voice is configured.
+                      example: en-US
+                  unevaluatedProperties:
+                    not: {}
+                  description: The AI session started. Sent once per session.
+                session_end:
+                  type: object
+                  properties:
+                    reason:
+                      type: string
+                      enum:
+                        - normal
+                        - hard_timeout
+                      description: Why the session ended. `hard_timeout` when it hit its configured time limit, `normal` otherwise.
+                      example: normal
+                    ended_by:
+                      type: string
+                      description: Who or what ended the call. `system` when nothing recorded it.
+                      example: assistant
+                    fatal_error_reason:
+                      type: string
+                      description: A description of the error. Included only when the session ended on one.
+                    duration_ms:
+                      type: integer
+                      description: How long the session ran, in milliseconds.
+                      example: 37651
+                    input_tokens:
+                      type: integer
+                      description: Input tokens the session consumed.
+                      example: 5627
+                    output_tokens:
+                      type: integer
+                      description: Output tokens the session produced.
+                      example: 119
+                  required:
+                    - reason
+                    - ended_by
+                    - duration_ms
+                    - input_tokens
+                    - output_tokens
+                  unevaluatedProperties:
+                    not: {}
+                  description: The AI session ended. Sent once per session.
+                ai_completion:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                      enum:
+                        - normal
+                        - barged
+                      description: '`barged` when the caller interrupted the reply, `normal` when it played to the end.'
+                      example: normal
+                  required:
+                    - type
+                  unevaluatedProperties:
+                    not: {}
+                  description: The agent finished speaking a reply.
+                function_call:
+                  type: object
+                  properties:
+                    function:
+                      type: string
+                      description: The name of the function.
+                      example: get_weather
+                    duration_ms:
+                      type: integer
+                      description: How long the function took, in milliseconds.
+                      example: 412
+                    native:
+                      type: boolean
+                      description: Whether the function ran inside the platform rather than on your server.
+                      example: false
+                    phase:
+                      type: string
+                      description: Where in the session the call happened. Included only for a call made while running the post-prompt.
+                      example: post_prompt
+                  required:
+                    - function
+                    - duration_ms
+                    - native
+                  unevaluatedProperties:
+                    not: {}
+                  description: The agent called one of your functions and the call returned.
+                swaig_call:
+                  type: object
+                  properties: {}
+                  unevaluatedProperties: {}
+                  description: |-
+                    A completed tool call, as one entry of the `swaig_log` the post-prompt callback reports at the
+                    end. Carries `command_name`, `command_arg`, `epoch_time` in seconds, and, for a tool that reached
+                    your server, `url`, `post_data`, and `post_response`.
+                post_prompt:
+                  type: object
+                  properties:
+                    url:
+                      type: string
+                      description: The URL the report was sent to.
+                      example: https://example.com/reports
+                  required:
+                    - url
+                  unevaluatedProperties:
+                    not: {}
+                  description: The post-prompt report was delivered.
+                webhook_fail:
+                  type: object
+                  properties:
+                    call_info:
+                      type: object
+                      properties:
+                        project_id:
+                          type: string
+                          format: uuid
+                          description: Your project ID.
+                          example: 4d0d6f16-5881-4fcc-92a4-02c51a91954d
+                        space_id:
+                          type: string
+                          format: uuid
+                          description: Your Space ID.
+                          example: 451ed9ff-e568-4222-8af9-4f9ab7428d09
+                        call_id:
+                          type: string
+                          format: uuid
+                          description: ID of the call.
+                          example: 2e1e66e5-5d07-413d-9668-55542992eec0
+                        content_type:
+                          type: string
+                          description: The content type of the POST body. Always `text/json`.
+                          example: text/json
+                        content_disposition:
+                          type: string
+                          description: How the body is delivered. Always `post_data`.
+                          example: post_data
+                        conversation_type:
+                          type: string
+                          description: The conversation type. Always `voice`.
+                          example: voice
+                      required:
+                        - call_id
+                        - content_type
+                        - content_disposition
+                        - conversation_type
+                      unevaluatedProperties:
+                        not: {}
+                      description: Identifies the call. The same values as the envelope's `call_info`.
+                    error:
+                      type: string
+                      description: Always `webhook error`.
+                      example: webhook error
+                    request_url:
+                      type: string
+                      description: The URL that was called.
+                      example: https://example.com/tools/get_weather
+                    attempts:
+                      type: integer
+                      description: How many attempts were made, including the first.
+                      example: 3
+                    request_payload:
+                      type: object
+                      properties: {}
+                      unevaluatedProperties: {}
+                      description: The body that was sent, when there was one.
+                    parse_error:
+                      type: boolean
+                      description: Always `true` when present, meaning the response body was not valid JSON.
+                      example: true
+                    raw_response:
+                      type: string
+                      description: The response body as received. Included only when `parse_error` is set.
+                    parsed_response:
+                      anyOf:
+                        - type: object
+                          properties: {}
+                          unevaluatedProperties: {}
+                        - type: 'null'
+                      description: The response body parsed as JSON. `null` when it could not be parsed.
+                    protocol_error:
+                      type: boolean
+                      description: Always `true` when present, meaning the request failed before a response was received.
+                      example: true
+                    curl_code:
+                      type: integer
+                      description: The transport error code. Included only when `protocol_error` is set.
+                      example: 28
+                    http_code:
+                      type: integer
+                      description: The HTTP status code. `0` when no response was received.
+                      example: 502
+                  required:
+                    - call_info
+                    - error
+                    - request_url
+                    - attempts
+                    - parsed_response
+                    - http_code
+                  unevaluatedProperties: {}
+                  description: |-
+                    A tool's webhook could not be reached or did not answer usefully, after every retry. Sent
+                    whenever a tool call fails, so you can alert on tools breaking mid-call.
+                conversation_add:
+                  type: object
+                  properties:
+                    role:
+                      type: string
+                      description: 'Who produced the message: `system`, `user`, `assistant`, or `tool`.'
+                      example: assistant
+                    content:
+                      type: string
+                      description: The message text. Redacted when you enable `redact_prompt`.
+                      example: Your ride is booked for 6pm.
+                    lang:
+                      type: string
+                      description: The language the message was in. Omitted on tool messages.
+                      example: en-US
+                    tokens:
+                      type: integer
+                      description: Tokens the message consumed. Omitted on tool messages.
+                      example: 53
+                    timestamp:
+                      type: integer
+                      format: int64
+                      description: When the message was added, as a Unix timestamp in microseconds.
+                      example: 1694541297950440
+                    tool_call_id:
+                      type: string
+                      description: Links a tool result back to the call that produced it. Present on tool messages.
+                    metadata:
+                      type: object
+                      properties: {}
+                      unevaluatedProperties: {}
+                      description: |-
+                        Per-turn detail. On a caller turn this carries `confidence`, `content_type`, and the
+                        speaking-to-final timings. Omitted on turns that have none.
+                  required:
+                    - role
+                    - content
+                  unevaluatedProperties: {}
+                  description: |-
+                    A message was added to the conversation, one per turn. Sent only at `debug_webhook_level` `2` and
+                    above. This is the same message that later appears in the post-prompt callback's `call_log`.
+                llm_request:
+                  type: object
+                  properties:
+                    model:
+                      type: string
+                      description: The model being called.
+                      example: gpt-4.1-mini
+                    prompt_tokens:
+                      type: integer
+                      description: Tokens in the prompt.
+                      example: 412
+                    conversation_tokens:
+                      type: integer
+                      description: Tokens in the conversation so far.
+                      example: 5215
+                  required:
+                    - model
+                    - prompt_tokens
+                    - conversation_tokens
+                  unevaluatedProperties:
+                    not: {}
+                  description: The agent is about to call the model. Sent only at `debug_webhook_level` `2` and above.
+                llm_response:
+                  type: object
+                  properties:
+                    model:
+                      type: string
+                      description: The model that was called.
+                      example: gpt-4.1-mini
+                    output_tokens:
+                      type: integer
+                      description: Tokens in the answer.
+                      example: 53
+                    duration_ms:
+                      type: integer
+                      description: How long the call took, in milliseconds.
+                      example: 836
+                    success:
+                      type: boolean
+                      description: Whether the model returned anything.
+                      example: true
+                    error:
+                      type: string
+                      description: A description of the failure. Included only when the call failed.
+                  required:
+                    - model
+                    - output_tokens
+                    - duration_ms
+                    - success
+                  unevaluatedProperties:
+                    not: {}
+                  description: The model answered. Sent only at `debug_webhook_level` `2` and above.
+              required:
+                - call_info
+              unevaluatedProperties: {}
+              description: |-
+                Sent to your
+                [`ai.params.debug_webhook_url`](/docs/swml/reference/calling/ai/params#paramsdebug_webhook_url)
+                as events happen during the call, rather than once at the end. Use it when something has to happen
+                mid-call, such as paging a supervisor or flagging a handoff. For after-the-fact analysis, use the
+                [AI post-prompt callback](#tag/calls/webhook/aiPostPromptCallback) instead.
+
+                Every request carries `call_info` plus exactly one more key, and **that key's name is the event**.
+                There is no `type` field to switch on: read the key that is not `call_info`. A key whose event
+                carried no data is sent as `null`.
+
+                Setting the URL is what turns the stream on.
+                [`debug_webhook_level`](/docs/swml/reference/calling/ai/params#paramsdebug_webhook_level) only
+                adds to it: at `2` the stream also carries `conversation_add`, `llm_request`, and `llm_response`,
+                which together are far higher volume than everything else combined.
+
+                The events below are documented in full. The stream also carries, under the same envelope:
+                `startup_hook`, `hangup_hook`, `function_loop`, `process_action`, `step_change`, `context_change`,
+                `context_switch_data`, `barge`, `speech_detect`, `filler`, `hold`, `attention_timeout`, `warning`,
+                `voice_error`, `text_normalize`, `tool_distill`, `inner_dialog`, `llm_error`, `consolidation`,
+                `summarize_start`, `sidecar_event`, the `gather_start` / `gather_question` / `gather_answer` /
+                `gather_reject` / `gather_complete` set, the `webhook` / `input` / `output` / `match` /
+                `webhook_reply` / `webhook_log` / `expression` / `error` / `error_keys` set from tool execution,
+                and `oart_user_transcript` / `oart_assistant_transcript` / `oart_response_done` on speech-to-speech
+                sessions. Handle unknown keys by ignoring them: the set grows.
+      responses:
+        '200':
+          description: Webhook received
+      description: |-
+        Sent to your
+        [`ai.params.debug_webhook_url`](/docs/swml/reference/calling/ai/params#paramsdebug_webhook_url)
+        as events happen during the call, rather than once at the end. Use it when something has to happen
+        mid-call, such as paging a supervisor or flagging a handoff. For after-the-fact analysis, use the
+        [AI post-prompt callback](#tag/calls/webhook/aiPostPromptCallback) instead.
+
+        Every request carries `call_info` plus exactly one more key, and **that key's name is the event**.
+        There is no `type` field to switch on: read the key that is not `call_info`. A key whose event
+        carried no data is sent as `null`.
+
+        Setting the URL is what turns the stream on.
+        [`debug_webhook_level`](/docs/swml/reference/calling/ai/params#paramsdebug_webhook_level) only
+        adds to it: at `2` the stream also carries `conversation_add`, `llm_request`, and `llm_response`,
+        which together are far higher volume than everything else combined.
+
+        The events below are documented in full. The stream also carries, under the same envelope:
+        `startup_hook`, `hangup_hook`, `function_loop`, `process_action`, `step_change`, `context_change`,
+        `context_switch_data`, `barge`, `speech_detect`, `filler`, `hold`, `attention_timeout`, `warning`,
+        `voice_error`, `text_normalize`, `tool_distill`, `inner_dialog`, `llm_error`, `consolidation`,
+        `summarize_start`, `sidecar_event`, the `gather_start` / `gather_question` / `gather_answer` /
+        `gather_reject` / `gather_complete` set, the `webhook` / `input` / `output` / `match` /
+        `webhook_reply` / `webhook_log` / `expression` / `error` / `error_keys` set from tool execution,
+        and `oart_user_transcript` / `oart_assistant_transcript` / `oart_response_done` on speech-to-speech
+        sessions. Handle unknown keys by ignoring them: the set grows.
+      tags:
+        - Calls
+  aiPostPromptCallback:
+    post:
+      operationId: ai_post_prompt_callback
+      summary: AI post-prompt callback
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                project_id:
+                  type: string
+                  description: Your project ID, when available.
+                  example: 4d0d6f16-5881-4fcc-92a4-02c51a91954d
+                space_id:
+                  type: string
+                  description: Your Space ID, when available.
+                  example: 451ed9ff-e568-4222-8af9-4f9ab7428d09
+                content_type:
+                  type: string
+                  description: The content type of the request body. Always `text/json`.
+                  example: text/json
+                content_disposition:
+                  type: string
+                  description: |-
+                    How the body is delivered. `agent.summary` on the end-of-call report, `agent.load_conversation`
+                    on a request for a stored conversation.
+                  example: agent.summary
+                conversation_type:
+                  type: string
+                  description: The kind of conversation the agent ran. Always `voice`.
+                  example: voice
+                call_id:
+                  type: string
+                  description: The ID of the call.
+                  example: 2e1e66e5-5d07-413d-9668-55542992eec0
+                app_name:
+                  type: string
+                  description: The name of your AI application.
+                  example: ai
+                ai_session_id:
+                  type: string
+                  description: The ID of the AI session on the call.
+                  example: a0d4e6e5-5d07-413d-9668-55542992eec0
+                ai_id_tag:
+                  type: string
+                  description: |-
+                    A stable fingerprint of the model the agent ran. Two calls that used the same model share it, so
+                    you can group reports by model without recording the model name. Omitted when the session had no
+                    model.
+                  example: d742c5d1d969d9fdbbd9bd1c52499f2d
+                conversation_id:
+                  type: string
+                  description: The conversation ID, when the agent was configured with one.
+                  example: support-thread-4821
+                action:
+                  type: string
+                  enum:
+                    - post_conversation
+                    - fetch_conversation
+                  description: |-
+                    What the request is asking of you. `post_conversation` is the end-of-call report;
+                    `fetch_conversation` asks your endpoint to return a stored conversation.
+                  example: post_conversation
+                call_log:
+                  type: array
+                  items:
+                    type: object
+                    properties: {}
+                    unevaluatedProperties: {}
+                  description: |-
+                    The conversation, filtered: interrupted segments are consolidated and evicted entries dropped.
+                    Each entry carries a `role` of `system`, `user`, `assistant`, or `tool`, its `content`, and
+                    per-turn timing. Included when `action` is `post_conversation`.
+                  example:
+                    - role: system
+                      content: You dispatch taxis.
+                    - role: user
+                      content: I need a ride to the airport.
+                raw_call_log:
+                  type: array
+                  items:
+                    type: object
+                    properties: {}
+                    unevaluatedProperties: {}
+                  description: |-
+                    The conversation, unfiltered and append-only. Interruption detail appears here and nowhere else.
+                    Included when `action` is `post_conversation`.
+                call_timeline:
+                  type: array
+                  items:
+                    type: object
+                    properties: {}
+                    unevaluatedProperties: {}
+                  description: |-
+                    A flat stream of typed events aligned to `raw_call_log`, for replaying the call in order. Each
+                    entry carries a `ts`, a `type` such as `user_input`, `ai_response`, or `tool_result`, and the
+                    fields for that type. Included when the session produced any.
+                previous_contexts:
+                  type: array
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties: {}
+                      unevaluatedProperties: {}
+                  description: |-
+                    Conversations from before each context switch, oldest first, one array of messages per switch.
+                    Included only when the agent switched context during the call.
+                hard_timeout:
+                  type: boolean
+                  description: |-
+                    Always `true` when present, meaning the session ended because it hit its configured time limit
+                    rather than finishing on its own. Omitted otherwise.
+                  example: true
+                call_start_date:
+                  type: integer
+                  format: int64
+                  description: When the call was created, as a Unix timestamp in microseconds.
+                  example: 1694541295773508
+                call_answer_date:
+                  type: integer
+                  format: int64
+                  description: When the call was answered, as a Unix timestamp in microseconds. `0` when it never was.
+                  example: 1694541296799504
+                call_end_date:
+                  type: integer
+                  format: int64
+                  description: When the call ended, as a Unix timestamp in microseconds.
+                  example: 1694541335435503
+                ai_start_date:
+                  type: integer
+                  format: int64
+                  description: When the AI session started, as a Unix timestamp in microseconds.
+                  example: 1694541297950440
+                call_ended_by:
+                  type: string
+                  description: Who or what ended the call. Included when the session recorded it.
+                  example: assistant
+                ai_end_date:
+                  type: integer
+                  format: int64
+                  description: |-
+                    When the AI session ended, as a Unix timestamp in microseconds. Omitted when the session was
+                    still running.
+                  example: 1694541335425164
+                caller_id_name:
+                  type: string
+                  description: The caller's name, when available.
+                  example: Jane Doe
+                caller_id_number:
+                  type: string
+                  description: The caller's number, when available.
+                  example: '+15555550100'
+                times:
+                  type: array
+                  items:
+                    type: object
+                    properties: {}
+                    unevaluatedProperties: {}
+                  description: |-
+                    Per-response performance metrics, one entry per generated reply, carrying `response`,
+                    `response_word_count`, `answer_time`, `token_time`, `tokens`, `avg_tps`, and `tps`. Included once
+                    the session has any.
+                SWMLVars:
+                  type: object
+                  properties: {}
+                  unevaluatedProperties: {}
+                  description: SWML variables for the call. Included when the call carries SWML state.
+                SWMLCall:
+                  type: object
+                  properties: {}
+                  unevaluatedProperties: {}
+                  description: SWML call state. Included when the call carries SWML state.
+                post_prompt_data:
+                  type: object
+                  properties:
+                    parsed:
+                      type: array
+                      items:
+                        type: object
+                        properties: {}
+                        unevaluatedProperties: {}
+                      description: |-
+                        Every JSON object found in the answer, parsed. An empty array when the agent answered in prose.
+                        Ask the post-prompt for named JSON keys when you want to count outcomes.
+                      example:
+                        - intent: book_ride
+                          resolved: true
+                    raw:
+                      type: string
+                      description: The answer exactly as the agent produced it.
+                      example: '{"intent":"book_ride","resolved":true}'
+                    substituted:
+                      type: string
+                      description: |-
+                        The answer with the JSON removed, leaving only the surrounding prose. Omitted when the answer was
+                        JSON and nothing followed it.
+                      example: Caller booked a ride to the airport.
+                  required:
+                    - parsed
+                    - raw
+                  unevaluatedProperties:
+                    not: {}
+                  description: The agent's answer to your `post_prompt`. Included when `action` is `post_conversation`.
+                global_data:
+                  type: object
+                  properties: {}
+                  unevaluatedProperties: {}
+                  description: |-
+                    The session's final `global_data`. An empty object when you seeded none. Included when `action`
+                    is `post_conversation`.
+                  example:
+                    customer_tier: premium
+                    pickup_address: 123 Main St, Springfield
+                swaig_log:
+                  type: array
+                  items:
+                    type: object
+                    properties: {}
+                    unevaluatedProperties: {}
+                  description: |-
+                    Every tool call the agent made, in order. Each entry carries `command_name`, `command_arg`,
+                    `epoch_time` in seconds, and, for a tool that reached your server, the `url`, the `post_data`
+                    that was sent, and the `post_response` that came back. Included when `action` is
+                    `post_conversation`.
+                total_minutes:
+                  type: integer
+                  description: |-
+                    The number of billable minutes, rounded up to at least one. Included when you enable
+                    [`enable_accounting`](/docs/swml/reference/calling/ai/params#paramsenable_accounting).
+                  example: 3
+                total_input_tokens:
+                  type: integer
+                  description: Input tokens the session consumed. Included when you enable `enable_accounting`.
+                  example: 5627
+                total_output_tokens:
+                  type: integer
+                  description: Output tokens the session produced. Included when you enable `enable_accounting`.
+                  example: 119
+                total_wire_input_tokens:
+                  type: integer
+                  description: |-
+                    Input tokens counted against the model, which differs from `total_input_tokens` when the
+                    conversation was trimmed. Included when you enable `enable_accounting`.
+                  example: 5627
+                total_wire_input_tokens_per_minute:
+                  type: number
+                  description: '`total_wire_input_tokens` divided by `total_minutes`. Included when you enable `enable_accounting`.'
+                  example: 1875.67
+                total_wire_output_tokens:
+                  type: integer
+                  description: Output tokens counted against the model. Included when you enable `enable_accounting`.
+                  example: 119
+                total_wire_output_tokens_per_minute:
+                  type: number
+                  description: '`total_wire_output_tokens` divided by `total_minutes`. Included when you enable `enable_accounting`.'
+                  example: 39.67
+                total_tts_chars:
+                  type: integer
+                  description: Characters sent to text-to-speech. Included when you enable `enable_accounting`.
+                  example: 842
+                total_tts_chars_per_min:
+                  type: number
+                  description: '`total_tts_chars` divided by `total_minutes`. Included when you enable `enable_accounting`.'
+                  example: 280.67
+                total_asr_minutes:
+                  type: number
+                  description: Minutes of audio sent to speech recognition. Included when you enable `enable_accounting`.
+                  example: 2.41
+                total_asr_cost_factor:
+                  type: number
+                  description: '`total_asr_minutes` divided by `total_minutes`. Included when you enable `enable_accounting`.'
+                  example: 0.8
+                conversation_summary:
+                  type: string
+                  description: |-
+                    A plain-language summary of the conversation, for storing against `conversation_id` and handing
+                    back on the next `fetch_conversation`. Included when you enable
+                    [`save_conversation`](/docs/swml/reference/calling/ai/params#paramssave_conversation) and set
+                    a `conversation_id`.
+                  example: Caller booked a ride from 123 Main St to the airport for 6pm.
+              required:
+                - content_type
+                - content_disposition
+                - conversation_type
+                - call_id
+                - app_name
+                - ai_session_id
+                - action
+              unevaluatedProperties:
+                not: {}
+              description: |-
+                Sent to your [`ai.post_prompt_url`](/docs/swml/reference/calling/ai) when the AI session ends. It
+                carries the agent's answer to your [`post_prompt`](/docs/swml/reference/calling/ai)
+                alongside the full record of the call: the conversation, the tool calls, the timings, and the
+                token counts. This is the one report you get per call, so store the body verbatim and extract only
+                the fields you query. Nothing you return in the response is read.
+
+                Read `action` first. It is `post_conversation` on the end-of-call report described here. The same
+                URL also receives `fetch_conversation` when the agent starts with a stored conversation
+                ([`save_conversation`](/docs/swml/reference/calling/ai/params#paramssave_conversation) with a
+                `conversation_id`), asking your endpoint to return that conversation; that request carries the
+                call and session fields but none of the summary fields. Answer it with the stored
+                `conversation_summary`.
+
+                The conversation appears three times. `call_log` is the filtered view, with interrupted segments
+                consolidated. `raw_call_log` is unfiltered and append-only, and is the only place barge-in detail
+                survives. `call_timeline` is a flat stream of typed events aligned to `raw_call_log`.
+
+                [`amazon_bedrock`](/docs/swml/reference/calling/amazon-bedrock) agents send a different report.
+                Write your handler against the
+                [Bedrock post-prompt callback](#tag/calls/webhook/bedrockPostPromptCallback) instead.
+      responses:
+        '200':
+          description: Webhook received
+      description: |-
+        Sent to your [`ai.post_prompt_url`](/docs/swml/reference/calling/ai) when the AI session ends. It
+        carries the agent's answer to your [`post_prompt`](/docs/swml/reference/calling/ai)
+        alongside the full record of the call: the conversation, the tool calls, the timings, and the
+        token counts. This is the one report you get per call, so store the body verbatim and extract only
+        the fields you query. Nothing you return in the response is read.
+
+        Read `action` first. It is `post_conversation` on the end-of-call report described here. The same
+        URL also receives `fetch_conversation` when the agent starts with a stored conversation
+        ([`save_conversation`](/docs/swml/reference/calling/ai/params#paramssave_conversation) with a
+        `conversation_id`), asking your endpoint to return that conversation; that request carries the
+        call and session fields but none of the summary fields. Answer it with the stored
+        `conversation_summary`.
+
+        The conversation appears three times. `call_log` is the filtered view, with interrupted segments
+        consolidated. `raw_call_log` is unfiltered and append-only, and is the only place barge-in detail
+        survives. `call_timeline` is a flat stream of typed events aligned to `raw_call_log`.
+
+        [`amazon_bedrock`](/docs/swml/reference/calling/amazon-bedrock) agents send a different report.
+        Write your handler against the
+        [Bedrock post-prompt callback](#tag/calls/webhook/bedrockPostPromptCallback) instead.
+      tags:
+        - Calls
   bedrockSwaigToolWebhook:
     post:
       operationId: bedrock_swaig_tool_webhook
@@ -52160,7 +54106,7 @@ webhooks:
                     call_id:
                       type: string
                       format: uuid
-                      description: ID of the call the sidecar is attached to.
+                      description: ID of the call.
                       example: 2e1e66e5-5d07-413d-9668-55542992eec0
                     content_type:
                       type: string
