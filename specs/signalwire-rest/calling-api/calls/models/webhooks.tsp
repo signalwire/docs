@@ -894,31 +894,22 @@ model AIDebugFlowLocation {
 
 @summary("AI debug webhook")
 @doc("""
-  Sent to your
-  [`ai.params.debug_webhook_url`](/docs/swml/reference/calling/ai/params#paramsdebug_webhook_url) as
-  things happen during the call, rather than once at the end. Use it when something has to happen
-  mid-call, such as paging a supervisor or flagging a handoff. For after-the-fact analysis, use the
+  A live feed of what the agent is doing, sent to your
+  [`ai.params.debug_webhook_url`](/docs/swml/reference/calling/ai/params#paramsdebug_webhook_url)
+  while the call is still running. Use it to act mid-call, such as paging a supervisor or flagging a
+  handoff. For analysis after the call, use the
   [AI post-prompt callback](#tag/calls/webhook/aiPostPromptCallback) instead.
 
-  Every request carries `call_info` alongside **one or more** event properties, and the property name
-  is the event: there is no `type` field to switch on. Most requests carry a single event, but some
-  carry several that describe one moment together — a `data_map` webhook evaluation sends `webhook`,
-  `input`, `output`, `error_keys`, and `match` in one body. So handle each event property you
-  recognize and ignore the rest, rather than reading "the key that is not `call_info`".
+  Each request carries `call_info` plus one or more event properties, where the property name is the
+  event. One moment can produce several: evaluating a `data_map` webhook sends `webhook`, `input`,
+  `output`, `error_keys`, and `match` together. Handle the properties you recognize and ignore the
+  rest, since the set grows over time. An event with no data arrives as `null`, so test whether the
+  property is present rather than what it holds.
 
-  An event that carried no data is sent as `null` rather than being left out, so check for the
-  property's presence, not its truthiness. New events are added over time, so ignore names you do not
-  recognize.
-
-  Setting the URL is what turns the stream on.
-  [`debug_webhook_level`](/docs/swml/reference/calling/ai/params#paramsdebug_webhook_level) only adds
-  to it: at `2` the stream also carries `conversation_add`, `llm_request`, and `llm_response`, which
-  together are higher volume than everything else combined.
-
-  Every event this URL receives is documented below. Running
-  [`live_translate`](/docs/swml/reference/calling/live-translate) or
-  [`live_transcribe`](/docs/swml/reference/calling/live-transcribe) on the same call does not add to
-  this stream — those methods post their own events to their own `webhook_url`.
+  Setting the URL enables the feed.
+  [`debug_webhook_level`](/docs/swml/reference/calling/ai/params#paramsdebug_webhook_level) only
+  widens it: at `2` it also carries `conversation_add`, `llm_request`, and `llm_response`, which fire
+  on every turn and every model call.
   """)
 model AiDebugWebhookPayload is Record<unknown> {
   @doc("Identifies the call the event came from.")
