@@ -897,14 +897,12 @@ model AIDebugFlowLocation {
   A live feed of what the agent is doing, sent to your
   [`ai.params.debug_webhook_url`](/docs/swml/reference/calling/ai/params#paramsdebug_webhook_url)
   while the call is still running. Use it to act mid-call, such as paging a supervisor or flagging a
-  handoff. For analysis after the call, use the
-  [AI post-prompt callback](#tag/calls/webhook/aiPostPromptCallback) instead.
+  handoff.
 
   Each request carries `call_info` plus one or more event properties, where the property name is the
   event. One moment can produce several: evaluating a `data_map` webhook sends `webhook`, `input`,
   `output`, `error_keys`, and `match` together. Handle the properties you recognize and ignore the
-  rest, since the set grows over time. An event with no data arrives as `null`, so test whether the
-  property is present rather than what it holds.
+  rest, since the set grows over time.
 
   Setting the URL enables the feed.
   [`debug_webhook_level`](/docs/swml/reference/calling/ai/params#paramsdebug_webhook_level) only
@@ -1234,7 +1232,7 @@ model AiDebugWebhookPayload is Record<unknown> {
 
   @doc("""
     The final reply a `data_map` webhook produced, after matching. An array reply is wrapped as
-    `{ \"array\": [...] }`.
+    `{ \"array\": [...] }`. `null` when the webhook produced no reply.
     """)
   webhook_reply?: Record<unknown> | null;
 
