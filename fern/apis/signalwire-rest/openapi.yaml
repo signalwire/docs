@@ -16871,27 +16871,58 @@ components:
           properties:
             model:
               type: string
-              description: The model the agent is running. Omitted when the session has no model.
+              description: The model the agent is running. `unknown` on a speech-to-speech session with no model set.
               examples:
                 - gpt-4.1-mini
             tts_engine:
               type: string
-              description: The text-to-speech engine. Omitted when no voice is configured.
+              description: The text-to-speech engine. Standard sessions only, and only when a voice is configured.
               examples:
                 - elevenlabs
             tts_voice:
               type: string
-              description: The text-to-speech voice. Omitted when no voice is configured.
+              description: The text-to-speech voice. Standard sessions only, and only when a voice is configured.
               examples:
                 - rachel
             language:
               type: string
-              description: The language code the session started in. Omitted when no voice is configured.
+              description: The language code the session started in. Standard sessions only, and only when a voice is configured.
               examples:
                 - en-US
+            mode:
+              type: string
+              description: Always `oart` when present, marking a speech-to-speech session. Absent on a standard session.
+              examples:
+                - oart
+            rate:
+              type: integer
+              description: The audio sample rate, in hertz. Speech-to-speech sessions only.
+              examples:
+                - 24000
+            audio_format:
+              type: string
+              description: The audio encoding. Speech-to-speech sessions only.
+              examples:
+                - pcm16
+            tool_model:
+              type: string
+              description: The separate model used for tool calls. Speech-to-speech sessions only, and only when one is configured.
+              examples:
+                - gpt-4.1-mini
+            local_vad:
+              type: boolean
+              description: |-
+                Always `true` when present, meaning voice activity detection runs on the media rather than at
+                the model. Speech-to-speech sessions only.
+              examples:
+                - true
           unevaluatedProperties:
             not: {}
-          description: The AI session started. Sent once per session.
+          description: |-
+            The AI session started. Sent once per session. The fields differ by session type: a standard
+            session reports the voice it will use, while a speech-to-speech session reports `mode` as `oart`
+            along with its audio settings and reports no voice at all. Every field is optional, so read
+            `mode` to tell which kind of session you have.
         session_end:
           type: object
           properties:
@@ -16900,12 +16931,19 @@ components:
               enum:
                 - normal
                 - hard_timeout
-              description: Why the session ended. `hard_timeout` when it hit its configured time limit, `normal` otherwise.
+                - end_call
+                - error
+              description: |-
+                Why the session ended. `normal` on an ordinary finish, `hard_timeout` when it hit its
+                configured time limit, and `end_call` or `error` on a speech-to-speech session that was hung up
+                or failed.
               examples:
                 - normal
             ended_by:
               type: string
-              description: Who or what ended the call. `system` when nothing recorded it.
+              description: |-
+                Who or what ended the call, `system` when nothing recorded it. Absent on a speech-to-speech
+                session.
               examples:
                 - assistant
             fatal_error_reason:
@@ -16928,7 +16966,6 @@ components:
                 - 119
           required:
             - reason
-            - ended_by
             - duration_ms
             - input_tokens
             - output_tokens
@@ -17091,6 +17128,8 @@ components:
                   description: The configured timeout, in milliseconds.
                   examples:
                     - 15000
+              required:
+                - timeout_ms
               unevaluatedProperties:
                 not: {}
             - type: 'null'
@@ -17100,26 +17139,27 @@ components:
           properties:
             event:
               type: string
-              description: Always `hold`.
+              enum:
+                - hold
+                - unhold
+              description: Which way the hold went.
               examples:
                 - hold
             timeout:
               type: integer
-              description: How long the hold lasts, in seconds.
+              description: How long the hold lasts, in seconds. Absent on `unhold`.
               examples:
                 - 30
             loop:
               type: boolean
-              description: Whether the hold repeats.
+              description: Whether the hold repeats. Absent on `unhold`.
               examples:
                 - false
           required:
             - event
-            - timeout
-            - loop
           unevaluatedProperties:
             not: {}
-          description: The agent was placed on hold.
+          description: The agent was placed on hold, or taken off it. `timeout` and `loop` come with `hold` only.
         function_call:
           type: object
           properties:
@@ -17135,9 +17175,18 @@ components:
                 - 412
             native:
               type: boolean
-              description: Whether the function ran inside the platform rather than on your server.
+              description: |-
+                Whether the function ran inside the platform rather than on your server. Absent on a
+                speech-to-speech shadow call, which reports `shadow` instead.
               examples:
                 - false
+            shadow:
+              type: boolean
+              description: |-
+                Always `true` when present, marking a call the agent made in the background while it kept
+                talking. Speech-to-speech sessions only.
+              examples:
+                - true
             phase:
               type: string
               description: Where in the session the call happened. Included only for a call made while running the post-prompt.
@@ -17146,7 +17195,6 @@ components:
           required:
             - function
             - duration_ms
-            - native
           unevaluatedProperties:
             not: {}
           description: The agent called one of your functions and the call returned.
@@ -17672,6 +17720,14 @@ components:
           properties:
             event:
               type: string
+              enum:
+                - token_exhaustion
+                - llm_fatal
+                - llm_max_retries
+                - reasoning_only_retry
+                - empty_response_nudge_retry
+                - empty_response_effort_bump_retry
+                - llm_retry
               description: Which failure this is.
               examples:
                 - llm_retry
@@ -17960,9 +18016,10 @@ components:
         to it: at `2` the stream also carries `conversation_add`, `llm_request`, and `llm_response`, which
         together are higher volume than everything else combined.
 
-        Running [`live_translate`](/docs/swml/reference/calling/live-translate) or
-        [`live_transcribe`](/docs/swml/reference/calling/live-transcribe) on the same call adds its own
-        events to this stream, which are not covered here.
+        Every event this URL receives is documented below. Running
+        [`live_translate`](/docs/swml/reference/calling/live-translate) or
+        [`live_transcribe`](/docs/swml/reference/calling/live-transcribe) on the same call does not add to
+        this stream — those methods post their own events to their own `webhook_url`.
       title: AI debug webhook
     Calling.AiPostPromptCallbackPayload:
       type: object
@@ -53668,23 +53725,49 @@ webhooks:
                   properties:
                     model:
                       type: string
-                      description: The model the agent is running. Omitted when the session has no model.
+                      description: The model the agent is running. `unknown` on a speech-to-speech session with no model set.
                       example: gpt-4.1-mini
                     tts_engine:
                       type: string
-                      description: The text-to-speech engine. Omitted when no voice is configured.
+                      description: The text-to-speech engine. Standard sessions only, and only when a voice is configured.
                       example: elevenlabs
                     tts_voice:
                       type: string
-                      description: The text-to-speech voice. Omitted when no voice is configured.
+                      description: The text-to-speech voice. Standard sessions only, and only when a voice is configured.
                       example: rachel
                     language:
                       type: string
-                      description: The language code the session started in. Omitted when no voice is configured.
+                      description: The language code the session started in. Standard sessions only, and only when a voice is configured.
                       example: en-US
+                    mode:
+                      type: string
+                      description: Always `oart` when present, marking a speech-to-speech session. Absent on a standard session.
+                      example: oart
+                    rate:
+                      type: integer
+                      description: The audio sample rate, in hertz. Speech-to-speech sessions only.
+                      example: 24000
+                    audio_format:
+                      type: string
+                      description: The audio encoding. Speech-to-speech sessions only.
+                      example: pcm16
+                    tool_model:
+                      type: string
+                      description: The separate model used for tool calls. Speech-to-speech sessions only, and only when one is configured.
+                      example: gpt-4.1-mini
+                    local_vad:
+                      type: boolean
+                      description: |-
+                        Always `true` when present, meaning voice activity detection runs on the media rather than at
+                        the model. Speech-to-speech sessions only.
+                      example: true
                   unevaluatedProperties:
                     not: {}
-                  description: The AI session started. Sent once per session.
+                  description: |-
+                    The AI session started. Sent once per session. The fields differ by session type: a standard
+                    session reports the voice it will use, while a speech-to-speech session reports `mode` as `oart`
+                    along with its audio settings and reports no voice at all. Every field is optional, so read
+                    `mode` to tell which kind of session you have.
                 session_end:
                   type: object
                   properties:
@@ -53693,11 +53776,18 @@ webhooks:
                       enum:
                         - normal
                         - hard_timeout
-                      description: Why the session ended. `hard_timeout` when it hit its configured time limit, `normal` otherwise.
+                        - end_call
+                        - error
+                      description: |-
+                        Why the session ended. `normal` on an ordinary finish, `hard_timeout` when it hit its
+                        configured time limit, and `end_call` or `error` on a speech-to-speech session that was hung up
+                        or failed.
                       example: normal
                     ended_by:
                       type: string
-                      description: Who or what ended the call. `system` when nothing recorded it.
+                      description: |-
+                        Who or what ended the call, `system` when nothing recorded it. Absent on a speech-to-speech
+                        session.
                       example: assistant
                     fatal_error_reason:
                       type: string
@@ -53716,7 +53806,6 @@ webhooks:
                       example: 119
                   required:
                     - reason
-                    - ended_by
                     - duration_ms
                     - input_tokens
                     - output_tokens
@@ -53861,6 +53950,8 @@ webhooks:
                           type: integer
                           description: The configured timeout, in milliseconds.
                           example: 15000
+                      required:
+                        - timeout_ms
                       unevaluatedProperties:
                         not: {}
                     - type: 'null'
@@ -53870,23 +53961,24 @@ webhooks:
                   properties:
                     event:
                       type: string
-                      description: Always `hold`.
+                      enum:
+                        - hold
+                        - unhold
+                      description: Which way the hold went.
                       example: hold
                     timeout:
                       type: integer
-                      description: How long the hold lasts, in seconds.
+                      description: How long the hold lasts, in seconds. Absent on `unhold`.
                       example: 30
                     loop:
                       type: boolean
-                      description: Whether the hold repeats.
+                      description: Whether the hold repeats. Absent on `unhold`.
                       example: false
                   required:
                     - event
-                    - timeout
-                    - loop
                   unevaluatedProperties:
                     not: {}
-                  description: The agent was placed on hold.
+                  description: The agent was placed on hold, or taken off it. `timeout` and `loop` come with `hold` only.
                 function_call:
                   type: object
                   properties:
@@ -53900,8 +53992,16 @@ webhooks:
                       example: 412
                     native:
                       type: boolean
-                      description: Whether the function ran inside the platform rather than on your server.
+                      description: |-
+                        Whether the function ran inside the platform rather than on your server. Absent on a
+                        speech-to-speech shadow call, which reports `shadow` instead.
                       example: false
+                    shadow:
+                      type: boolean
+                      description: |-
+                        Always `true` when present, marking a call the agent made in the background while it kept
+                        talking. Speech-to-speech sessions only.
+                      example: true
                     phase:
                       type: string
                       description: Where in the session the call happened. Included only for a call made while running the post-prompt.
@@ -53909,7 +54009,6 @@ webhooks:
                   required:
                     - function
                     - duration_ms
-                    - native
                   unevaluatedProperties:
                     not: {}
                   description: The agent called one of your functions and the call returned.
@@ -54513,6 +54612,14 @@ webhooks:
                   properties:
                     event:
                       type: string
+                      enum:
+                        - token_exhaustion
+                        - llm_fatal
+                        - llm_max_retries
+                        - reasoning_only_retry
+                        - empty_response_nudge_retry
+                        - empty_response_effort_bump_retry
+                        - llm_retry
                       description: Which failure this is.
                       example: llm_retry
                     model:
@@ -54772,9 +54879,10 @@ webhooks:
                 to it: at `2` the stream also carries `conversation_add`, `llm_request`, and `llm_response`, which
                 together are higher volume than everything else combined.
 
-                Running [`live_translate`](/docs/swml/reference/calling/live-translate) or
-                [`live_transcribe`](/docs/swml/reference/calling/live-transcribe) on the same call adds its own
-                events to this stream, which are not covered here.
+                Every event this URL receives is documented below. Running
+                [`live_translate`](/docs/swml/reference/calling/live-translate) or
+                [`live_transcribe`](/docs/swml/reference/calling/live-transcribe) on the same call does not add to
+                this stream — those methods post their own events to their own `webhook_url`.
       responses:
         '200':
           description: Webhook received
@@ -54800,9 +54908,10 @@ webhooks:
         to it: at `2` the stream also carries `conversation_add`, `llm_request`, and `llm_response`, which
         together are higher volume than everything else combined.
 
-        Running [`live_translate`](/docs/swml/reference/calling/live-translate) or
-        [`live_transcribe`](/docs/swml/reference/calling/live-transcribe) on the same call adds its own
-        events to this stream, which are not covered here.
+        Every event this URL receives is documented below. Running
+        [`live_translate`](/docs/swml/reference/calling/live-translate) or
+        [`live_transcribe`](/docs/swml/reference/calling/live-transcribe) on the same call does not add to
+        this stream — those methods post their own events to their own `webhook_url`.
       tags:
         - Calls
   aiPostPromptCallback:

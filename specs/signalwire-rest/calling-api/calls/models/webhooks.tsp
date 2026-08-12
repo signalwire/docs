@@ -915,42 +915,78 @@ model AIDebugFlowLocation {
   to it: at `2` the stream also carries `conversation_add`, `llm_request`, and `llm_response`, which
   together are higher volume than everything else combined.
 
-  Running [`live_translate`](/docs/swml/reference/calling/live-translate) or
-  [`live_transcribe`](/docs/swml/reference/calling/live-transcribe) on the same call adds its own
-  events to this stream, which are not covered here.
+  Every event this URL receives is documented below. Running
+  [`live_translate`](/docs/swml/reference/calling/live-translate) or
+  [`live_transcribe`](/docs/swml/reference/calling/live-transcribe) on the same call does not add to
+  this stream — those methods post their own events to their own `webhook_url`.
   """)
 model AiDebugWebhookPayload is Record<unknown> {
   @doc("Identifies the call the event came from.")
   call_info: AICallInfo;
 
-  @doc("The AI session started. Sent once per session.")
+  @doc("""
+    The AI session started. Sent once per session. The fields differ by session type: a standard
+    session reports the voice it will use, while a speech-to-speech session reports `mode` as `oart`
+    along with its audio settings and reports no voice at all. Every field is optional, so read
+    `mode` to tell which kind of session you have.
+    """)
   session_start?: {
-    @doc("The model the agent is running. Omitted when the session has no model.")
+    @doc("The model the agent is running. `unknown` on a speech-to-speech session with no model set.")
     @example("gpt-4.1-mini")
     `model`?: string;
 
-    @doc("The text-to-speech engine. Omitted when no voice is configured.")
+    @doc("The text-to-speech engine. Standard sessions only, and only when a voice is configured.")
     @example("elevenlabs")
     tts_engine?: string;
 
-    @doc("The text-to-speech voice. Omitted when no voice is configured.")
+    @doc("The text-to-speech voice. Standard sessions only, and only when a voice is configured.")
     @example("rachel")
     tts_voice?: string;
 
-    @doc("The language code the session started in. Omitted when no voice is configured.")
+    @doc("The language code the session started in. Standard sessions only, and only when a voice is configured.")
     @example("en-US")
     language?: string;
+
+    @doc("Always `oart` when present, marking a speech-to-speech session. Absent on a standard session.")
+    @example("oart")
+    mode?: string;
+
+    @doc("The audio sample rate, in hertz. Speech-to-speech sessions only.")
+    @example(24000)
+    rate?: integer;
+
+    @doc("The audio encoding. Speech-to-speech sessions only.")
+    @example("pcm16")
+    audio_format?: string;
+
+    @doc("The separate model used for tool calls. Speech-to-speech sessions only, and only when one is configured.")
+    @example("gpt-4.1-mini")
+    tool_model?: string;
+
+    @doc("""
+      Always `true` when present, meaning voice activity detection runs on the media rather than at
+      the model. Speech-to-speech sessions only.
+      """)
+    @example(true)
+    local_vad?: boolean;
   };
 
   @doc("The AI session ended. Sent once per session.")
   session_end?: {
-    @doc("Why the session ended. `hard_timeout` when it hit its configured time limit, `normal` otherwise.")
+    @doc("""
+      Why the session ended. `normal` on an ordinary finish, `hard_timeout` when it hit its
+      configured time limit, and `end_call` or `error` on a speech-to-speech session that was hung up
+      or failed.
+      """)
     @example("normal")
-    reason: "normal" | "hard_timeout";
+    reason: "normal" | "hard_timeout" | "end_call" | "error";
 
-    @doc("Who or what ended the call. `system` when nothing recorded it.")
+    @doc("""
+      Who or what ended the call, `system` when nothing recorded it. Absent on a speech-to-speech
+      session.
+      """)
     @example("assistant")
-    ended_by: string;
+    ended_by?: string;
 
     @doc("A description of the error. Included only when the session ended on one.")
     fatal_error_reason?: string;
@@ -1062,22 +1098,22 @@ model AiDebugWebhookPayload is Record<unknown> {
   attention_timeout?: {
     @doc("The configured timeout, in milliseconds.")
     @example(15000)
-    timeout_ms?: integer;
+    timeout_ms: integer;
   } | null;
 
-  @doc("The agent was placed on hold.")
+  @doc("The agent was placed on hold, or taken off it. `timeout` and `loop` come with `hold` only.")
   hold?: {
-    @doc("Always `hold`.")
+    @doc("Which way the hold went.")
     @example("hold")
-    event: string;
+    event: "hold" | "unhold";
 
-    @doc("How long the hold lasts, in seconds.")
+    @doc("How long the hold lasts, in seconds. Absent on `unhold`.")
     @example(30)
-    timeout: integer;
+    timeout?: integer;
 
-    @doc("Whether the hold repeats.")
+    @doc("Whether the hold repeats. Absent on `unhold`.")
     @example(false)
-    loop: boolean;
+    loop?: boolean;
   };
 
   @doc("The agent called one of your functions and the call returned.")
@@ -1090,9 +1126,19 @@ model AiDebugWebhookPayload is Record<unknown> {
     @example(412)
     duration_ms: integer;
 
-    @doc("Whether the function ran inside the platform rather than on your server.")
+    @doc("""
+      Whether the function ran inside the platform rather than on your server. Absent on a
+      speech-to-speech shadow call, which reports `shadow` instead.
+      """)
     @example(false)
-    native: boolean;
+    native?: boolean;
+
+    @doc("""
+      Always `true` when present, marking a call the agent made in the background while it kept
+      talking. Speech-to-speech sessions only.
+      """)
+    @example(true)
+    shadow?: boolean;
 
     @doc("Where in the session the call happened. Included only for a call made while running the post-prompt.")
     @example("post_prompt")
@@ -1403,7 +1449,14 @@ model AiDebugWebhookPayload is Record<unknown> {
   llm_error?: {
     @doc("Which failure this is.")
     @example("llm_retry")
-    event: string;
+    event:
+      | "token_exhaustion"
+      | "llm_fatal"
+      | "llm_max_retries"
+      | "reasoning_only_retry"
+      | "empty_response_nudge_retry"
+      | "empty_response_effort_bump_retry"
+      | "llm_retry";
 
     @doc("The model that was called. Omitted on `token_exhaustion`.")
     @example("gpt-4.1-mini")
