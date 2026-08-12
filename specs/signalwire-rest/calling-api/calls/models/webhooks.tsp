@@ -877,32 +877,47 @@ model AiPostPromptCallbackPayload {
   conversation_summary?: string;
 }
 
+@doc("Where in the agent's flow an event happened.")
+model AIDebugFlowLocation {
+  @doc("The context the agent was in. `default` when you define no contexts.")
+  @example("default")
+  context: string;
+
+  @doc("The step the agent was on. Included only when the context defines steps.")
+  @example("collect_address")
+  step?: string;
+
+  @doc("The step's index. Included only when the context defines steps.")
+  @example(2)
+  step_index?: integer;
+}
+
 @summary("AI debug webhook")
 @doc("""
   Sent to your
-  [`ai.params.debug_webhook_url`](/docs/swml/reference/calling/ai/params#paramsdebug_webhook_url)
-  as events happen during the call, rather than once at the end. Use it when something has to happen
+  [`ai.params.debug_webhook_url`](/docs/swml/reference/calling/ai/params#paramsdebug_webhook_url) as
+  things happen during the call, rather than once at the end. Use it when something has to happen
   mid-call, such as paging a supervisor or flagging a handoff. For after-the-fact analysis, use the
   [AI post-prompt callback](#tag/calls/webhook/aiPostPromptCallback) instead.
 
-  Every request carries `call_info` plus exactly one more key, and **that key's name is the event**.
-  There is no `type` field to switch on: read the key that is not `call_info`. A key whose event
-  carried no data is sent as `null`.
+  Every request carries `call_info` alongside **one or more** event properties, and the property name
+  is the event: there is no `type` field to switch on. Most requests carry a single event, but some
+  carry several that describe one moment together — a `data_map` webhook evaluation sends `webhook`,
+  `input`, `output`, `error_keys`, and `match` in one body. So handle each event property you
+  recognize and ignore the rest, rather than reading "the key that is not `call_info`".
+
+  An event that carried no data is sent as `null` rather than being left out, so check for the
+  property's presence, not its truthiness. New events are added over time, so ignore names you do not
+  recognize.
 
   Setting the URL is what turns the stream on.
-  [`debug_webhook_level`](/docs/swml/reference/calling/ai/params#paramsdebug_webhook_level) only
-  adds to it: at `2` the stream also carries `conversation_add`, `llm_request`, and `llm_response`,
-  which together are far higher volume than everything else combined.
+  [`debug_webhook_level`](/docs/swml/reference/calling/ai/params#paramsdebug_webhook_level) only adds
+  to it: at `2` the stream also carries `conversation_add`, `llm_request`, and `llm_response`, which
+  together are higher volume than everything else combined.
 
-  The events below are documented in full. The stream also carries, under the same envelope:
-  `startup_hook`, `hangup_hook`, `function_loop`, `process_action`, `step_change`, `context_change`,
-  `context_switch_data`, `barge`, `speech_detect`, `filler`, `hold`, `attention_timeout`, `warning`,
-  `voice_error`, `text_normalize`, `tool_distill`, `inner_dialog`, `llm_error`, `consolidation`,
-  `summarize_start`, `sidecar_event`, the `gather_start` / `gather_question` / `gather_answer` /
-  `gather_reject` / `gather_complete` set, the `webhook` / `input` / `output` / `match` /
-  `webhook_reply` / `webhook_log` / `expression` / `error` / `error_keys` set from tool execution,
-  and `oart_user_transcript` / `oart_assistant_transcript` / `oart_response_done` on speech-to-speech
-  sessions. Handle unknown keys by ignoring them: the set grows.
+  Running [`live_translate`](/docs/swml/reference/calling/live-translate) or
+  [`live_transcribe`](/docs/swml/reference/calling/live-transcribe) on the same call adds its own
+  events to this stream, which are not covered here.
   """)
 model AiDebugWebhookPayload is Record<unknown> {
   @doc("Identifies the call the event came from.")
@@ -953,11 +968,116 @@ model AiDebugWebhookPayload is Record<unknown> {
     output_tokens: integer;
   };
 
+  @doc("Your `startup_hook` function finished, whether or not it succeeded.")
+  startup_hook?: {
+    @doc("How long the hook took, in milliseconds.")
+    @example(214)
+    duration_ms: integer;
+
+    @doc("Whether the hook ran successfully.")
+    @example(true)
+    success: boolean;
+
+    @doc("Why the hook failed. Included only when `success` is `false`.")
+    @example("execution failed")
+    error?: string;
+  };
+
+  @doc("Your `hangup_hook` function finished, whether or not it succeeded.")
+  hangup_hook?: {
+    @doc("How long the hook took, in milliseconds.")
+    @example(186)
+    duration_ms: integer;
+
+    @doc("Whether the hook ran successfully.")
+    @example(true)
+    success: boolean;
+
+    @doc("Whether the session ended on an unrecoverable error. Included only when the hook succeeded.")
+    @example(false)
+    has_fatal_error?: boolean;
+
+    @doc("Why the hook failed. Included only when `success` is `false`.")
+    @example("execution failed")
+    error?: string;
+  };
+
+  @doc("Speech was recognized from the caller. Suppressed when you enable `redact_prompt`.")
+  speech_detect?: {
+    @doc("The recognized text.")
+    @example("I need a ride to the airport.")
+    text: string;
+
+    @doc("Which recognizer produced the text.")
+    @example("final")
+    source: string;
+  };
+
+  @doc("""
+    The caller interrupted the agent. The fields differ by session type: a standard session reports
+    `barge_type`, `barge_elapsed_ms`, and `interrupt_count`, while a speech-to-speech session reports
+    `audio_played_ms` and `barge_count`.
+    """)
+  barge?: {
+    @doc("`transparent` when the agent keeps what it already said, `normal` otherwise.")
+    @example("normal")
+    barge_type?: "transparent" | "normal";
+
+    @doc("How long the agent had been speaking when the caller cut in, in milliseconds.")
+    @example(1240)
+    barge_elapsed_ms?: integer;
+
+    @doc("How many times the caller has interrupted so far.")
+    @example(2)
+    interrupt_count?: integer;
+
+    @doc("How much of the reply had played when the caller cut in, in milliseconds. Speech-to-speech sessions only.")
+    @example(1240)
+    audio_played_ms?: integer;
+
+    @doc("How many times the caller has interrupted so far. Speech-to-speech sessions only.")
+    @example(2)
+    barge_count?: integer;
+  };
+
   @doc("The agent finished speaking a reply.")
   ai_completion?: {
     @doc("`barged` when the caller interrupted the reply, `normal` when it played to the end.")
     @example("normal")
     type: "normal" | "barged";
+  };
+
+  @doc("The agent played a filler phrase while it worked.")
+  filler?: {
+    @doc("The phrase that was spoken.")
+    @example("Let me check on that.")
+    text: string;
+
+    @doc("`function` while a tool runs, `thinking` while the model does.")
+    @example("function")
+    filler_type: "function" | "thinking";
+  };
+
+  @doc("The caller went quiet for longer than `attention_timeout`. Sent as `null` on speech-to-speech sessions.")
+  attention_timeout?: {
+    @doc("The configured timeout, in milliseconds.")
+    @example(15000)
+    timeout_ms?: integer;
+  } | null;
+
+  @doc("The agent was placed on hold.")
+  hold?: {
+    @doc("Always `hold`.")
+    @example("hold")
+    event: string;
+
+    @doc("How long the hold lasts, in seconds.")
+    @example(30)
+    timeout: integer;
+
+    @doc("Whether the hold repeats.")
+    @example(false)
+    loop: boolean;
   };
 
   @doc("The agent called one of your functions and the call returned.")
@@ -980,24 +1100,256 @@ model AiDebugWebhookPayload is Record<unknown> {
   };
 
   @doc("""
+    The agent called the same function repeatedly and was stopped. `consecutive` means it was called
+    several times in a row; `repeated` means it was called with the same arguments each time.
+    """)
+  function_loop?: {
+    @doc("The name of the function.")
+    @example("get_weather")
+    function: string;
+
+    @doc("Which loop guard tripped.")
+    @example("repeated")
+    type: "consecutive" | "repeated";
+
+    @doc("How many calls triggered the guard.")
+    @example(3)
+    count: integer;
+  };
+
+  @doc("""
     A completed tool call, as one entry of the `swaig_log` the post-prompt callback reports at the
     end. Carries `command_name`, `command_arg`, `epoch_time` in seconds, and, for a tool that reached
     your server, `url`, `post_data`, and `post_response`.
     """)
   swaig_call?: Record<unknown>;
 
-  @doc("The post-prompt report was delivered.")
-  post_prompt?: {
-    @doc("The URL the report was sent to.")
-    @example("https://example.com/reports")
-    url: string;
+  @doc("A tool returned a SWAIG action. Carries the action exactly as your endpoint returned it.")
+  process_action?: Record<unknown>;
+
+  @doc("A tool result was shortened before the agent read it.")
+  tool_distill?: {
+    @doc("The function whose result was shortened.")
+    @example("get_weather")
+    function: string;
+
+    @doc("Length of the original result, in characters.")
+    @example(8412)
+    raw_chars: integer;
+
+    @doc("Length of the shortened result, in characters.")
+    @example(612)
+    distilled_chars: integer;
+
+    @doc("The model that did the shortening. `default` when none was configured.")
+    @example("gpt-4.1-mini")
+    `model`: string;
   };
+
+  @doc("""
+    A [`data_map`](/docs/swml/reference/calling/ai/swaig/functions/data-map) webhook was evaluated.
+    Carries the webhook definition as you wrote it. Arrives alongside `input`, and alongside `output`
+    and `match` when the call produced a reply, or `error` when the definition was unusable.
+    """)
+  webhook?: Record<unknown>;
+
+  @doc("The body sent to a `data_map` webhook, or the input a `data_map` output template was expanded against.")
+  input?: Record<unknown>;
+
+  @doc("""
+    The reply a `data_map` webhook produced, or the output template that matched. `null` when nothing
+    matched.
+    """)
+  output?: Record<unknown> | null;
+
+  @doc("The `data_map` entry that matched. `null` when none did.")
+  match?: Record<unknown> | null;
+
+  @doc("The `error_keys` declared on the `data_map` webhook. `null` when it declares none.")
+  error_keys?: unknown[] | null;
+
+  @doc("A `data_map` webhook could not be evaluated.")
+  error?: {
+    @doc("What went wrong.")
+    @example("ai: webhook error")
+    error: string;
+
+    @doc("The detail behind it.")
+    @example("Webhook obj must have output or expressions")
+    errorText: string;
+  };
+
+  @doc("A `data_map` `expressions` entry was evaluated. Carries the entry as you wrote it, alongside `input` and `output`.")
+  expression?: Record<unknown>;
+
+  @doc("A `data_map` webhook request completed, with the request and response recorded.")
+  webhook_log?: {
+    @doc("The URL that was called, after variable expansion.")
+    @example("https://example.com/weather?city=Springfield")
+    request_url: string;
+
+    @doc("The body that was sent. Omitted on a request with no body.")
+    request_payload?: Record<unknown>;
+
+    @doc("The response, plus `http_code` and any `parse_error` or `protocol_error` flags.")
+    webhook_response: Record<unknown>;
+  };
+
+  @doc("""
+    The final reply a `data_map` webhook produced, after matching. An array reply is wrapped as
+    `{ \"array\": [...] }`.
+    """)
+  webhook_reply?: Record<unknown> | null;
 
   @doc("""
     A tool's webhook could not be reached or did not answer usefully, after every retry. Sent
     whenever a tool call fails, so you can alert on tools breaking mid-call.
     """)
   webhook_fail?: AIDebugWebhookFail;
+
+  @doc("The agent moved to a different step.")
+  step_change?: {
+    @doc("The step it left. Omitted on the first step.")
+    @example("greet")
+    from_step?: string;
+
+    @doc("The index of the step it left.")
+    @example(0)
+    from_index: integer;
+
+    @doc("The step it moved to.")
+    @example("collect_address")
+    to_step: string;
+
+    @doc("The index of the step it moved to.")
+    @example(1)
+    to_index: integer;
+
+    @doc("What caused the move. Omitted when nothing recorded it.")
+    @example("next_step")
+    trigger?: string;
+  };
+
+  @doc("The agent moved to a different context.")
+  context_change?: {
+    @doc("The context it moved to.")
+    @example("billing")
+    to_context: string;
+
+    @doc("The context it left. Omitted on the first context.")
+    @example("default")
+    from_context?: string;
+
+    @doc("What caused the move. Omitted when nothing recorded it.")
+    @example("change_context")
+    trigger?: string;
+
+    @doc("Whether the new context starts without the previous conversation.")
+    @example(false)
+    isolated: boolean;
+  };
+
+  @doc("The data a context switch was rendered against.")
+  context_switch_data?: {
+    @doc("The variables available to the new context's prompt.")
+    data_root: Record<unknown>;
+
+    @doc("The context definition as you wrote it.")
+    info: Record<unknown>;
+  };
+
+  @doc("A `gather` started collecting answers.")
+  gather_start?: {
+    ...AIDebugFlowLocation;
+
+    @doc("The key the collected answers are stored under. Omitted when none was set.")
+    @example("address")
+    output_key?: string;
+
+    @doc("How many questions the gather will ask.")
+    @example(3)
+    total_questions: integer;
+  };
+
+  @doc("A `gather` asked a question.")
+  gather_question?: {
+    ...AIDebugFlowLocation;
+
+    @doc("The key this question fills. Omitted when none was set.")
+    @example("street")
+    key?: string;
+
+    @doc("The question's position in the gather, starting at 0.")
+    @example(0)
+    question_index: integer;
+
+    @doc("The kind of answer expected. Omitted when unset.")
+    @example("string")
+    question_type?: string;
+
+    @doc("Whether the answer has to be confirmed before the gather moves on.")
+    @example(true)
+    requires_confirm: boolean;
+  };
+
+  @doc("A `gather` accepted an answer.")
+  gather_answer?: {
+    ...AIDebugFlowLocation;
+
+    @doc("The key the answer filled. Omitted when none was set.")
+    @example("street")
+    key?: string;
+
+    @doc("The question's position in the gather, starting at 0.")
+    @example(0)
+    question_index: integer;
+
+    @doc("Which attempt produced the answer, starting at 1.")
+    @example(1)
+    attempt: integer;
+
+    @doc("Whether the caller confirmed the answer.")
+    @example(true)
+    confirmed: boolean;
+  };
+
+  @doc("A `gather` rejected an answer and will ask again.")
+  gather_reject?: {
+    ...AIDebugFlowLocation;
+
+    @doc("The key the answer would have filled. Omitted when none was set.")
+    @example("street")
+    key?: string;
+
+    @doc("The question's position in the gather, starting at 0.")
+    @example(0)
+    question_index: integer;
+
+    @doc("Which attempt was rejected, starting at 1.")
+    @example(2)
+    attempt: integer;
+
+    @doc("Why it was rejected. Omitted when nothing recorded it.")
+    @example("no_match")
+    reason?: string;
+  };
+
+  @doc("A `gather` finished.")
+  gather_complete?: {
+    ...AIDebugFlowLocation;
+
+    @doc("The key the collected answers were stored under. Omitted when none was set.")
+    @example("address")
+    output_key?: string;
+
+    @doc("How many questions were answered.")
+    @example(3)
+    answered: integer;
+
+    @doc("What the gather did on completion. Omitted when nothing recorded it.")
+    @example("next_step")
+    completion_action?: string;
+  };
 
   @doc("""
     A message was added to the conversation, one per turn. Sent only at `debug_webhook_level` `2` and
@@ -1040,6 +1392,172 @@ model AiDebugWebhookPayload is Record<unknown> {
 
     @doc("A description of the failure. Included only when the call failed.")
     error?: string;
+  };
+
+  @doc("""
+    A model call failed or had to be retried. Read `event` for which: `token_exhaustion` and
+    `llm_fatal` end the session, `llm_max_retries` gives up after repeated failures, and
+    `llm_retry`, `reasoning_only_retry`, `empty_response_nudge_retry`, and
+    `empty_response_effort_bump_retry` recover silently.
+    """)
+  llm_error?: {
+    @doc("Which failure this is.")
+    @example("llm_retry")
+    event: string;
+
+    @doc("The model that was called. Omitted on `token_exhaustion`.")
+    @example("gpt-4.1-mini")
+    `model`?: string;
+
+    @doc("Tokens in the conversation. Included only on `token_exhaustion`.")
+    @example(128000)
+    token_count?: integer;
+
+    @doc("The token ceiling that was hit. Included only on `token_exhaustion`.")
+    @example(120000)
+    limit?: integer;
+
+    @doc("How many failures have accumulated. Included only on `llm_max_retries`.")
+    @example(4)
+    errors?: integer;
+
+    @doc("The effort level being retried at. Included only on `empty_response_effort_bump_retry`.")
+    @example("high")
+    reasoning_effort?: string;
+  };
+
+  @doc("The conversation passed its token ceiling and was summarized to make room.")
+  consolidation?: {
+    @doc("Always `consolidation`.")
+    @example("consolidation")
+    event: string;
+
+    @doc("Tokens in the conversation when it tripped.")
+    @example(121400)
+    token_count: integer;
+
+    @doc("The ceiling that was hit.")
+    @example(120000)
+    limit: integer;
+  };
+
+  @doc("The post-prompt summary is about to be generated.")
+  summarize_start?: {
+    @doc("How the summary is being produced.")
+    @example("function")
+    mode: string;
+
+    @doc("The model producing it. `default` when none was configured.")
+    @example("gpt-4.1-mini")
+    `model`: string;
+  };
+
+  @doc("The post-prompt report was delivered.")
+  post_prompt?: {
+    @doc("The URL the report was sent to.")
+    @example("https://example.com/reports")
+    url: string;
+  };
+
+  @doc("Text was rewritten between spoken and written form, for recognition or speech.")
+  text_normalize?: {
+    @doc("`tn` rewrites text for speaking, `itn` rewrites recognized speech for reading.")
+    @example("itn")
+    direction: "tn" | "itn";
+
+    @doc("The language the rewrite ran in.")
+    @example("en")
+    language: string;
+
+    @doc("The text before the rewrite.")
+    @example("twenty twenty six")
+    original: string;
+
+    @doc("The text after it.")
+    @example("2026")
+    normalized: string;
+  };
+
+  @doc("The configured voice could not be used and the agent fell back to another.")
+  voice_error?: {
+    @doc("`voice_config_error` when the voice was invalid, `voice_runtime_error` when it failed mid-call.")
+    @example("voice_config_error")
+    event: "voice_config_error" | "voice_runtime_error";
+
+    @doc("The engine that failed.")
+    @example("elevenlabs")
+    engine: string;
+
+    @doc("The voice that failed.")
+    @example("rachel")
+    voice: string;
+
+    @doc("The engine used instead.")
+    @example("gcloud")
+    fallback_engine: string;
+
+    @doc("The voice used instead.")
+    @example("en-US-Neural2-J")
+    fallback_voice: string;
+  };
+
+  @doc("Something about the configuration is likely to cause trouble.")
+  warning?: {
+    @doc("Which warning this is.")
+    @example("excessive_prompt_tokens")
+    event: string;
+
+    @doc("Tokens in the prompt that triggered it.")
+    @example(82000)
+    tokens: integer;
+  };
+
+  @doc("The caller's speech was transcribed. Speech-to-speech sessions only.")
+  oart_user_transcript?: {
+    @doc("The transcribed text.")
+    @example("I need a ride to the airport.")
+    text: string;
+  };
+
+  @doc("The agent's speech was transcribed. Speech-to-speech sessions only.")
+  oart_assistant_transcript?: {
+    @doc("The transcribed text.")
+    @example("Your ride is booked for 6pm.")
+    text: string;
+  };
+
+  @doc("The agent finished a reply, with its timings. Speech-to-speech sessions only.")
+  oart_response_done?: {
+    @doc("Time from the end of the caller's turn to the start of the reply, in milliseconds.")
+    @example(836)
+    latency: integer;
+
+    @doc("Time to the first word of the reply, in milliseconds.")
+    @example(934)
+    utterance_latency: integer;
+
+    @doc("Time to the first audio of the reply, in milliseconds.")
+    @example(1106)
+    audio_latency: integer;
+
+    @doc("Time to the first sound leaving the platform, in milliseconds.")
+    @example(1180)
+    acoustic_latency: integer;
+
+    @doc("How the reply finished. Omitted when nothing recorded it.")
+    @example("completed")
+    status?: string;
+  };
+
+  @doc("""
+    The agent's private reasoning, when you enable
+    [`enable_inner_dialog`](/docs/swml/reference/calling/ai/params#paramsenable_inner_dialog).
+    Speech-to-speech sessions only.
+    """)
+  inner_dialog?: {
+    @doc("The reasoning text. The caller never hears this.")
+    @example("The caller has not given a pickup address yet.")
+    text: string;
   };
 }
 

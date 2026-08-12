@@ -16565,6 +16565,29 @@ components:
       description: |-
         One message as it is added to the conversation. The exact fields depend on which role produced it,
         so unlisted keys can appear.
+    Calling.AIDebugFlowLocation:
+      type: object
+      required:
+        - context
+      properties:
+        context:
+          type: string
+          description: The context the agent was in. `default` when you define no contexts.
+          examples:
+            - default
+        step:
+          type: string
+          description: The step the agent was on. Included only when the context defines steps.
+          examples:
+            - collect_address
+        step_index:
+          type: integer
+          description: The step's index. Included only when the context defines steps.
+          examples:
+            - 2
+      unevaluatedProperties:
+        not: {}
+      description: Where in the agent's flow an event happened.
     Calling.AIDebugWebhookFail:
       type: object
       required:
@@ -16912,6 +16935,115 @@ components:
           unevaluatedProperties:
             not: {}
           description: The AI session ended. Sent once per session.
+        startup_hook:
+          type: object
+          properties:
+            duration_ms:
+              type: integer
+              description: How long the hook took, in milliseconds.
+              examples:
+                - 214
+            success:
+              type: boolean
+              description: Whether the hook ran successfully.
+              examples:
+                - true
+            error:
+              type: string
+              description: Why the hook failed. Included only when `success` is `false`.
+              examples:
+                - execution failed
+          required:
+            - duration_ms
+            - success
+          unevaluatedProperties:
+            not: {}
+          description: Your `startup_hook` function finished, whether or not it succeeded.
+        hangup_hook:
+          type: object
+          properties:
+            duration_ms:
+              type: integer
+              description: How long the hook took, in milliseconds.
+              examples:
+                - 186
+            success:
+              type: boolean
+              description: Whether the hook ran successfully.
+              examples:
+                - true
+            has_fatal_error:
+              type: boolean
+              description: Whether the session ended on an unrecoverable error. Included only when the hook succeeded.
+              examples:
+                - false
+            error:
+              type: string
+              description: Why the hook failed. Included only when `success` is `false`.
+              examples:
+                - execution failed
+          required:
+            - duration_ms
+            - success
+          unevaluatedProperties:
+            not: {}
+          description: Your `hangup_hook` function finished, whether or not it succeeded.
+        speech_detect:
+          type: object
+          properties:
+            text:
+              type: string
+              description: The recognized text.
+              examples:
+                - I need a ride to the airport.
+            source:
+              type: string
+              description: Which recognizer produced the text.
+              examples:
+                - final
+          required:
+            - text
+            - source
+          unevaluatedProperties:
+            not: {}
+          description: Speech was recognized from the caller. Suppressed when you enable `redact_prompt`.
+        barge:
+          type: object
+          properties:
+            barge_type:
+              type: string
+              enum:
+                - transparent
+                - normal
+              description: '`transparent` when the agent keeps what it already said, `normal` otherwise.'
+              examples:
+                - normal
+            barge_elapsed_ms:
+              type: integer
+              description: How long the agent had been speaking when the caller cut in, in milliseconds.
+              examples:
+                - 1240
+            interrupt_count:
+              type: integer
+              description: How many times the caller has interrupted so far.
+              examples:
+                - 2
+            audio_played_ms:
+              type: integer
+              description: How much of the reply had played when the caller cut in, in milliseconds. Speech-to-speech sessions only.
+              examples:
+                - 1240
+            barge_count:
+              type: integer
+              description: How many times the caller has interrupted so far. Speech-to-speech sessions only.
+              examples:
+                - 2
+          unevaluatedProperties:
+            not: {}
+          description: |-
+            The caller interrupted the agent. The fields differ by session type: a standard session reports
+            `barge_type`, `barge_elapsed_ms`, and `interrupt_count`, while a speech-to-speech session reports
+            `audio_played_ms` and `barge_count`.
         ai_completion:
           type: object
           properties:
@@ -16928,6 +17060,66 @@ components:
           unevaluatedProperties:
             not: {}
           description: The agent finished speaking a reply.
+        filler:
+          type: object
+          properties:
+            text:
+              type: string
+              description: The phrase that was spoken.
+              examples:
+                - Let me check on that.
+            filler_type:
+              type: string
+              enum:
+                - function
+                - thinking
+              description: '`function` while a tool runs, `thinking` while the model does.'
+              examples:
+                - function
+          required:
+            - text
+            - filler_type
+          unevaluatedProperties:
+            not: {}
+          description: The agent played a filler phrase while it worked.
+        attention_timeout:
+          anyOf:
+            - type: object
+              properties:
+                timeout_ms:
+                  type: integer
+                  description: The configured timeout, in milliseconds.
+                  examples:
+                    - 15000
+              unevaluatedProperties:
+                not: {}
+            - type: 'null'
+          description: The caller went quiet for longer than `attention_timeout`. Sent as `null` on speech-to-speech sessions.
+        hold:
+          type: object
+          properties:
+            event:
+              type: string
+              description: Always `hold`.
+              examples:
+                - hold
+            timeout:
+              type: integer
+              description: How long the hold lasts, in seconds.
+              examples:
+                - 30
+            loop:
+              type: boolean
+              description: Whether the hold repeats.
+              examples:
+                - false
+          required:
+            - event
+            - timeout
+            - loop
+          unevaluatedProperties:
+            not: {}
+          description: The agent was placed on hold.
         function_call:
           type: object
           properties:
@@ -16958,6 +17150,36 @@ components:
           unevaluatedProperties:
             not: {}
           description: The agent called one of your functions and the call returned.
+        function_loop:
+          type: object
+          properties:
+            function:
+              type: string
+              description: The name of the function.
+              examples:
+                - get_weather
+            type:
+              type: string
+              enum:
+                - consecutive
+                - repeated
+              description: Which loop guard tripped.
+              examples:
+                - repeated
+            count:
+              type: integer
+              description: How many calls triggered the guard.
+              examples:
+                - 3
+          required:
+            - function
+            - type
+            - count
+          unevaluatedProperties:
+            not: {}
+          description: |-
+            The agent called the same function repeatedly and was stopped. `consecutive` means it was called
+            several times in a row; `repeated` means it was called with the same arguments each time.
         swaig_call:
           type: object
           unevaluatedProperties: {}
@@ -16965,25 +17187,421 @@ components:
             A completed tool call, as one entry of the `swaig_log` the post-prompt callback reports at the
             end. Carries `command_name`, `command_arg`, `epoch_time` in seconds, and, for a tool that reached
             your server, `url`, `post_data`, and `post_response`.
-        post_prompt:
+        process_action:
+          type: object
+          unevaluatedProperties: {}
+          description: A tool returned a SWAIG action. Carries the action exactly as your endpoint returned it.
+        tool_distill:
           type: object
           properties:
-            url:
+            function:
               type: string
-              description: The URL the report was sent to.
+              description: The function whose result was shortened.
               examples:
-                - https://example.com/reports
+                - get_weather
+            raw_chars:
+              type: integer
+              description: Length of the original result, in characters.
+              examples:
+                - 8412
+            distilled_chars:
+              type: integer
+              description: Length of the shortened result, in characters.
+              examples:
+                - 612
+            model:
+              type: string
+              description: The model that did the shortening. `default` when none was configured.
+              examples:
+                - gpt-4.1-mini
           required:
-            - url
+            - function
+            - raw_chars
+            - distilled_chars
+            - model
           unevaluatedProperties:
             not: {}
-          description: The post-prompt report was delivered.
+          description: A tool result was shortened before the agent read it.
+        webhook:
+          type: object
+          unevaluatedProperties: {}
+          description: |-
+            A [`data_map`](/docs/swml/reference/calling/ai/swaig/functions/data-map) webhook was evaluated.
+            Carries the webhook definition as you wrote it. Arrives alongside `input`, and alongside `output`
+            and `match` when the call produced a reply, or `error` when the definition was unusable.
+        input:
+          type: object
+          unevaluatedProperties: {}
+          description: The body sent to a `data_map` webhook, or the input a `data_map` output template was expanded against.
+        output:
+          anyOf:
+            - type: object
+              unevaluatedProperties: {}
+            - type: 'null'
+          description: |-
+            The reply a `data_map` webhook produced, or the output template that matched. `null` when nothing
+            matched.
+        match:
+          anyOf:
+            - type: object
+              unevaluatedProperties: {}
+            - type: 'null'
+          description: The `data_map` entry that matched. `null` when none did.
+        error_keys:
+          anyOf:
+            - type: array
+              items: {}
+            - type: 'null'
+          description: The `error_keys` declared on the `data_map` webhook. `null` when it declares none.
+        error:
+          type: object
+          properties:
+            error:
+              type: string
+              description: What went wrong.
+              examples:
+                - 'ai: webhook error'
+            errorText:
+              type: string
+              description: The detail behind it.
+              examples:
+                - Webhook obj must have output or expressions
+          required:
+            - error
+            - errorText
+          unevaluatedProperties:
+            not: {}
+          description: A `data_map` webhook could not be evaluated.
+        expression:
+          type: object
+          unevaluatedProperties: {}
+          description: A `data_map` `expressions` entry was evaluated. Carries the entry as you wrote it, alongside `input` and `output`.
+        webhook_log:
+          type: object
+          properties:
+            request_url:
+              type: string
+              description: The URL that was called, after variable expansion.
+              examples:
+                - https://example.com/weather?city=Springfield
+            request_payload:
+              type: object
+              unevaluatedProperties: {}
+              description: The body that was sent. Omitted on a request with no body.
+            webhook_response:
+              type: object
+              unevaluatedProperties: {}
+              description: The response, plus `http_code` and any `parse_error` or `protocol_error` flags.
+          required:
+            - request_url
+            - webhook_response
+          unevaluatedProperties:
+            not: {}
+          description: A `data_map` webhook request completed, with the request and response recorded.
+        webhook_reply:
+          anyOf:
+            - type: object
+              unevaluatedProperties: {}
+            - type: 'null'
+          description: |-
+            The final reply a `data_map` webhook produced, after matching. An array reply is wrapped as
+            `{ "array": [...] }`.
         webhook_fail:
           allOf:
             - $ref: '#/components/schemas/Calling.AIDebugWebhookFail'
           description: |-
             A tool's webhook could not be reached or did not answer usefully, after every retry. Sent
             whenever a tool call fails, so you can alert on tools breaking mid-call.
+        step_change:
+          type: object
+          properties:
+            from_step:
+              type: string
+              description: The step it left. Omitted on the first step.
+              examples:
+                - greet
+            from_index:
+              type: integer
+              description: The index of the step it left.
+              examples:
+                - 0
+            to_step:
+              type: string
+              description: The step it moved to.
+              examples:
+                - collect_address
+            to_index:
+              type: integer
+              description: The index of the step it moved to.
+              examples:
+                - 1
+            trigger:
+              type: string
+              description: What caused the move. Omitted when nothing recorded it.
+              examples:
+                - next_step
+          required:
+            - from_index
+            - to_step
+            - to_index
+          unevaluatedProperties:
+            not: {}
+          description: The agent moved to a different step.
+        context_change:
+          type: object
+          properties:
+            to_context:
+              type: string
+              description: The context it moved to.
+              examples:
+                - billing
+            from_context:
+              type: string
+              description: The context it left. Omitted on the first context.
+              examples:
+                - default
+            trigger:
+              type: string
+              description: What caused the move. Omitted when nothing recorded it.
+              examples:
+                - change_context
+            isolated:
+              type: boolean
+              description: Whether the new context starts without the previous conversation.
+              examples:
+                - false
+          required:
+            - to_context
+            - isolated
+          unevaluatedProperties:
+            not: {}
+          description: The agent moved to a different context.
+        context_switch_data:
+          type: object
+          properties:
+            data_root:
+              type: object
+              unevaluatedProperties: {}
+              description: The variables available to the new context's prompt.
+            info:
+              type: object
+              unevaluatedProperties: {}
+              description: The context definition as you wrote it.
+          required:
+            - data_root
+            - info
+          unevaluatedProperties:
+            not: {}
+          description: The data a context switch was rendered against.
+        gather_start:
+          type: object
+          properties:
+            context:
+              type: string
+              description: The context the agent was in. `default` when you define no contexts.
+              examples:
+                - default
+            step:
+              type: string
+              description: The step the agent was on. Included only when the context defines steps.
+              examples:
+                - collect_address
+            step_index:
+              type: integer
+              description: The step's index. Included only when the context defines steps.
+              examples:
+                - 2
+            output_key:
+              type: string
+              description: The key the collected answers are stored under. Omitted when none was set.
+              examples:
+                - address
+            total_questions:
+              type: integer
+              description: How many questions the gather will ask.
+              examples:
+                - 3
+          required:
+            - context
+            - total_questions
+          unevaluatedProperties:
+            not: {}
+          description: A `gather` started collecting answers.
+        gather_question:
+          type: object
+          properties:
+            context:
+              type: string
+              description: The context the agent was in. `default` when you define no contexts.
+              examples:
+                - default
+            step:
+              type: string
+              description: The step the agent was on. Included only when the context defines steps.
+              examples:
+                - collect_address
+            step_index:
+              type: integer
+              description: The step's index. Included only when the context defines steps.
+              examples:
+                - 2
+            key:
+              type: string
+              description: The key this question fills. Omitted when none was set.
+              examples:
+                - street
+            question_index:
+              type: integer
+              description: The question's position in the gather, starting at 0.
+              examples:
+                - 0
+            question_type:
+              type: string
+              description: The kind of answer expected. Omitted when unset.
+              examples:
+                - string
+            requires_confirm:
+              type: boolean
+              description: Whether the answer has to be confirmed before the gather moves on.
+              examples:
+                - true
+          required:
+            - context
+            - question_index
+            - requires_confirm
+          unevaluatedProperties:
+            not: {}
+          description: A `gather` asked a question.
+        gather_answer:
+          type: object
+          properties:
+            context:
+              type: string
+              description: The context the agent was in. `default` when you define no contexts.
+              examples:
+                - default
+            step:
+              type: string
+              description: The step the agent was on. Included only when the context defines steps.
+              examples:
+                - collect_address
+            step_index:
+              type: integer
+              description: The step's index. Included only when the context defines steps.
+              examples:
+                - 2
+            key:
+              type: string
+              description: The key the answer filled. Omitted when none was set.
+              examples:
+                - street
+            question_index:
+              type: integer
+              description: The question's position in the gather, starting at 0.
+              examples:
+                - 0
+            attempt:
+              type: integer
+              description: Which attempt produced the answer, starting at 1.
+              examples:
+                - 1
+            confirmed:
+              type: boolean
+              description: Whether the caller confirmed the answer.
+              examples:
+                - true
+          required:
+            - context
+            - question_index
+            - attempt
+            - confirmed
+          unevaluatedProperties:
+            not: {}
+          description: A `gather` accepted an answer.
+        gather_reject:
+          type: object
+          properties:
+            context:
+              type: string
+              description: The context the agent was in. `default` when you define no contexts.
+              examples:
+                - default
+            step:
+              type: string
+              description: The step the agent was on. Included only when the context defines steps.
+              examples:
+                - collect_address
+            step_index:
+              type: integer
+              description: The step's index. Included only when the context defines steps.
+              examples:
+                - 2
+            key:
+              type: string
+              description: The key the answer would have filled. Omitted when none was set.
+              examples:
+                - street
+            question_index:
+              type: integer
+              description: The question's position in the gather, starting at 0.
+              examples:
+                - 0
+            attempt:
+              type: integer
+              description: Which attempt was rejected, starting at 1.
+              examples:
+                - 2
+            reason:
+              type: string
+              description: Why it was rejected. Omitted when nothing recorded it.
+              examples:
+                - no_match
+          required:
+            - context
+            - question_index
+            - attempt
+          unevaluatedProperties:
+            not: {}
+          description: A `gather` rejected an answer and will ask again.
+        gather_complete:
+          type: object
+          properties:
+            context:
+              type: string
+              description: The context the agent was in. `default` when you define no contexts.
+              examples:
+                - default
+            step:
+              type: string
+              description: The step the agent was on. Included only when the context defines steps.
+              examples:
+                - collect_address
+            step_index:
+              type: integer
+              description: The step's index. Included only when the context defines steps.
+              examples:
+                - 2
+            output_key:
+              type: string
+              description: The key the collected answers were stored under. Omitted when none was set.
+              examples:
+                - address
+            answered:
+              type: integer
+              description: How many questions were answered.
+              examples:
+                - 3
+            completion_action:
+              type: string
+              description: What the gather did on completion. Omitted when nothing recorded it.
+              examples:
+                - next_step
+          required:
+            - context
+            - answered
+          unevaluatedProperties:
+            not: {}
+          description: A `gather` finished.
         conversation_add:
           allOf:
             - $ref: '#/components/schemas/Calling.AIDebugConversationAdd'
@@ -17049,32 +17667,302 @@ components:
           unevaluatedProperties:
             not: {}
           description: The model answered. Sent only at `debug_webhook_level` `2` and above.
+        llm_error:
+          type: object
+          properties:
+            event:
+              type: string
+              description: Which failure this is.
+              examples:
+                - llm_retry
+            model:
+              type: string
+              description: The model that was called. Omitted on `token_exhaustion`.
+              examples:
+                - gpt-4.1-mini
+            token_count:
+              type: integer
+              description: Tokens in the conversation. Included only on `token_exhaustion`.
+              examples:
+                - 128000
+            limit:
+              type: integer
+              description: The token ceiling that was hit. Included only on `token_exhaustion`.
+              examples:
+                - 120000
+            errors:
+              type: integer
+              description: How many failures have accumulated. Included only on `llm_max_retries`.
+              examples:
+                - 4
+            reasoning_effort:
+              type: string
+              description: The effort level being retried at. Included only on `empty_response_effort_bump_retry`.
+              examples:
+                - high
+          required:
+            - event
+          unevaluatedProperties:
+            not: {}
+          description: |-
+            A model call failed or had to be retried. Read `event` for which: `token_exhaustion` and
+            `llm_fatal` end the session, `llm_max_retries` gives up after repeated failures, and
+            `llm_retry`, `reasoning_only_retry`, `empty_response_nudge_retry`, and
+            `empty_response_effort_bump_retry` recover silently.
+        consolidation:
+          type: object
+          properties:
+            event:
+              type: string
+              description: Always `consolidation`.
+              examples:
+                - consolidation
+            token_count:
+              type: integer
+              description: Tokens in the conversation when it tripped.
+              examples:
+                - 121400
+            limit:
+              type: integer
+              description: The ceiling that was hit.
+              examples:
+                - 120000
+          required:
+            - event
+            - token_count
+            - limit
+          unevaluatedProperties:
+            not: {}
+          description: The conversation passed its token ceiling and was summarized to make room.
+        summarize_start:
+          type: object
+          properties:
+            mode:
+              type: string
+              description: How the summary is being produced.
+              examples:
+                - function
+            model:
+              type: string
+              description: The model producing it. `default` when none was configured.
+              examples:
+                - gpt-4.1-mini
+          required:
+            - mode
+            - model
+          unevaluatedProperties:
+            not: {}
+          description: The post-prompt summary is about to be generated.
+        post_prompt:
+          type: object
+          properties:
+            url:
+              type: string
+              description: The URL the report was sent to.
+              examples:
+                - https://example.com/reports
+          required:
+            - url
+          unevaluatedProperties:
+            not: {}
+          description: The post-prompt report was delivered.
+        text_normalize:
+          type: object
+          properties:
+            direction:
+              type: string
+              enum:
+                - tn
+                - itn
+              description: '`tn` rewrites text for speaking, `itn` rewrites recognized speech for reading.'
+              examples:
+                - itn
+            language:
+              type: string
+              description: The language the rewrite ran in.
+              examples:
+                - en
+            original:
+              type: string
+              description: The text before the rewrite.
+              examples:
+                - twenty twenty six
+            normalized:
+              type: string
+              description: The text after it.
+              examples:
+                - '2026'
+          required:
+            - direction
+            - language
+            - original
+            - normalized
+          unevaluatedProperties:
+            not: {}
+          description: Text was rewritten between spoken and written form, for recognition or speech.
+        voice_error:
+          type: object
+          properties:
+            event:
+              type: string
+              enum:
+                - voice_config_error
+                - voice_runtime_error
+              description: '`voice_config_error` when the voice was invalid, `voice_runtime_error` when it failed mid-call.'
+              examples:
+                - voice_config_error
+            engine:
+              type: string
+              description: The engine that failed.
+              examples:
+                - elevenlabs
+            voice:
+              type: string
+              description: The voice that failed.
+              examples:
+                - rachel
+            fallback_engine:
+              type: string
+              description: The engine used instead.
+              examples:
+                - gcloud
+            fallback_voice:
+              type: string
+              description: The voice used instead.
+              examples:
+                - en-US-Neural2-J
+          required:
+            - event
+            - engine
+            - voice
+            - fallback_engine
+            - fallback_voice
+          unevaluatedProperties:
+            not: {}
+          description: The configured voice could not be used and the agent fell back to another.
+        warning:
+          type: object
+          properties:
+            event:
+              type: string
+              description: Which warning this is.
+              examples:
+                - excessive_prompt_tokens
+            tokens:
+              type: integer
+              description: Tokens in the prompt that triggered it.
+              examples:
+                - 82000
+          required:
+            - event
+            - tokens
+          unevaluatedProperties:
+            not: {}
+          description: Something about the configuration is likely to cause trouble.
+        oart_user_transcript:
+          type: object
+          properties:
+            text:
+              type: string
+              description: The transcribed text.
+              examples:
+                - I need a ride to the airport.
+          required:
+            - text
+          unevaluatedProperties:
+            not: {}
+          description: The caller's speech was transcribed. Speech-to-speech sessions only.
+        oart_assistant_transcript:
+          type: object
+          properties:
+            text:
+              type: string
+              description: The transcribed text.
+              examples:
+                - Your ride is booked for 6pm.
+          required:
+            - text
+          unevaluatedProperties:
+            not: {}
+          description: The agent's speech was transcribed. Speech-to-speech sessions only.
+        oart_response_done:
+          type: object
+          properties:
+            latency:
+              type: integer
+              description: Time from the end of the caller's turn to the start of the reply, in milliseconds.
+              examples:
+                - 836
+            utterance_latency:
+              type: integer
+              description: Time to the first word of the reply, in milliseconds.
+              examples:
+                - 934
+            audio_latency:
+              type: integer
+              description: Time to the first audio of the reply, in milliseconds.
+              examples:
+                - 1106
+            acoustic_latency:
+              type: integer
+              description: Time to the first sound leaving the platform, in milliseconds.
+              examples:
+                - 1180
+            status:
+              type: string
+              description: How the reply finished. Omitted when nothing recorded it.
+              examples:
+                - completed
+          required:
+            - latency
+            - utterance_latency
+            - audio_latency
+            - acoustic_latency
+          unevaluatedProperties:
+            not: {}
+          description: The agent finished a reply, with its timings. Speech-to-speech sessions only.
+        inner_dialog:
+          type: object
+          properties:
+            text:
+              type: string
+              description: The reasoning text. The caller never hears this.
+              examples:
+                - The caller has not given a pickup address yet.
+          required:
+            - text
+          unevaluatedProperties:
+            not: {}
+          description: |-
+            The agent's private reasoning, when you enable
+            [`enable_inner_dialog`](/docs/swml/reference/calling/ai/params#paramsenable_inner_dialog).
+            Speech-to-speech sessions only.
       unevaluatedProperties: {}
       description: |-
         Sent to your
-        [`ai.params.debug_webhook_url`](/docs/swml/reference/calling/ai/params#paramsdebug_webhook_url)
-        as events happen during the call, rather than once at the end. Use it when something has to happen
+        [`ai.params.debug_webhook_url`](/docs/swml/reference/calling/ai/params#paramsdebug_webhook_url) as
+        things happen during the call, rather than once at the end. Use it when something has to happen
         mid-call, such as paging a supervisor or flagging a handoff. For after-the-fact analysis, use the
         [AI post-prompt callback](#tag/calls/webhook/aiPostPromptCallback) instead.
 
-        Every request carries `call_info` plus exactly one more key, and **that key's name is the event**.
-        There is no `type` field to switch on: read the key that is not `call_info`. A key whose event
-        carried no data is sent as `null`.
+        Every request carries `call_info` alongside **one or more** event properties, and the property name
+        is the event: there is no `type` field to switch on. Most requests carry a single event, but some
+        carry several that describe one moment together — a `data_map` webhook evaluation sends `webhook`,
+        `input`, `output`, `error_keys`, and `match` in one body. So handle each event property you
+        recognize and ignore the rest, rather than reading "the key that is not `call_info`".
+
+        An event that carried no data is sent as `null` rather than being left out, so check for the
+        property's presence, not its truthiness. New events are added over time, so ignore names you do not
+        recognize.
 
         Setting the URL is what turns the stream on.
-        [`debug_webhook_level`](/docs/swml/reference/calling/ai/params#paramsdebug_webhook_level) only
-        adds to it: at `2` the stream also carries `conversation_add`, `llm_request`, and `llm_response`,
-        which together are far higher volume than everything else combined.
+        [`debug_webhook_level`](/docs/swml/reference/calling/ai/params#paramsdebug_webhook_level) only adds
+        to it: at `2` the stream also carries `conversation_add`, `llm_request`, and `llm_response`, which
+        together are higher volume than everything else combined.
 
-        The events below are documented in full. The stream also carries, under the same envelope:
-        `startup_hook`, `hangup_hook`, `function_loop`, `process_action`, `step_change`, `context_change`,
-        `context_switch_data`, `barge`, `speech_detect`, `filler`, `hold`, `attention_timeout`, `warning`,
-        `voice_error`, `text_normalize`, `tool_distill`, `inner_dialog`, `llm_error`, `consolidation`,
-        `summarize_start`, `sidecar_event`, the `gather_start` / `gather_question` / `gather_answer` /
-        `gather_reject` / `gather_complete` set, the `webhook` / `input` / `output` / `match` /
-        `webhook_reply` / `webhook_log` / `expression` / `error` / `error_keys` set from tool execution,
-        and `oart_user_transcript` / `oart_assistant_transcript` / `oart_response_done` on speech-to-speech
-        sessions. Handle unknown keys by ignoring them: the set grows.
+        Running [`live_translate`](/docs/swml/reference/calling/live-translate) or
+        [`live_transcribe`](/docs/swml/reference/calling/live-transcribe) on the same call adds its own
+        events to this stream, which are not covered here.
       title: AI debug webhook
     Calling.AiPostPromptCallbackPayload:
       type: object
@@ -52835,6 +53723,101 @@ webhooks:
                   unevaluatedProperties:
                     not: {}
                   description: The AI session ended. Sent once per session.
+                startup_hook:
+                  type: object
+                  properties:
+                    duration_ms:
+                      type: integer
+                      description: How long the hook took, in milliseconds.
+                      example: 214
+                    success:
+                      type: boolean
+                      description: Whether the hook ran successfully.
+                      example: true
+                    error:
+                      type: string
+                      description: Why the hook failed. Included only when `success` is `false`.
+                      example: execution failed
+                  required:
+                    - duration_ms
+                    - success
+                  unevaluatedProperties:
+                    not: {}
+                  description: Your `startup_hook` function finished, whether or not it succeeded.
+                hangup_hook:
+                  type: object
+                  properties:
+                    duration_ms:
+                      type: integer
+                      description: How long the hook took, in milliseconds.
+                      example: 186
+                    success:
+                      type: boolean
+                      description: Whether the hook ran successfully.
+                      example: true
+                    has_fatal_error:
+                      type: boolean
+                      description: Whether the session ended on an unrecoverable error. Included only when the hook succeeded.
+                      example: false
+                    error:
+                      type: string
+                      description: Why the hook failed. Included only when `success` is `false`.
+                      example: execution failed
+                  required:
+                    - duration_ms
+                    - success
+                  unevaluatedProperties:
+                    not: {}
+                  description: Your `hangup_hook` function finished, whether or not it succeeded.
+                speech_detect:
+                  type: object
+                  properties:
+                    text:
+                      type: string
+                      description: The recognized text.
+                      example: I need a ride to the airport.
+                    source:
+                      type: string
+                      description: Which recognizer produced the text.
+                      example: final
+                  required:
+                    - text
+                    - source
+                  unevaluatedProperties:
+                    not: {}
+                  description: Speech was recognized from the caller. Suppressed when you enable `redact_prompt`.
+                barge:
+                  type: object
+                  properties:
+                    barge_type:
+                      type: string
+                      enum:
+                        - transparent
+                        - normal
+                      description: '`transparent` when the agent keeps what it already said, `normal` otherwise.'
+                      example: normal
+                    barge_elapsed_ms:
+                      type: integer
+                      description: How long the agent had been speaking when the caller cut in, in milliseconds.
+                      example: 1240
+                    interrupt_count:
+                      type: integer
+                      description: How many times the caller has interrupted so far.
+                      example: 2
+                    audio_played_ms:
+                      type: integer
+                      description: How much of the reply had played when the caller cut in, in milliseconds. Speech-to-speech sessions only.
+                      example: 1240
+                    barge_count:
+                      type: integer
+                      description: How many times the caller has interrupted so far. Speech-to-speech sessions only.
+                      example: 2
+                  unevaluatedProperties:
+                    not: {}
+                  description: |-
+                    The caller interrupted the agent. The fields differ by session type: a standard session reports
+                    `barge_type`, `barge_elapsed_ms`, and `interrupt_count`, while a speech-to-speech session reports
+                    `audio_played_ms` and `barge_count`.
                 ai_completion:
                   type: object
                   properties:
@@ -52850,6 +53833,60 @@ webhooks:
                   unevaluatedProperties:
                     not: {}
                   description: The agent finished speaking a reply.
+                filler:
+                  type: object
+                  properties:
+                    text:
+                      type: string
+                      description: The phrase that was spoken.
+                      example: Let me check on that.
+                    filler_type:
+                      type: string
+                      enum:
+                        - function
+                        - thinking
+                      description: '`function` while a tool runs, `thinking` while the model does.'
+                      example: function
+                  required:
+                    - text
+                    - filler_type
+                  unevaluatedProperties:
+                    not: {}
+                  description: The agent played a filler phrase while it worked.
+                attention_timeout:
+                  anyOf:
+                    - type: object
+                      properties:
+                        timeout_ms:
+                          type: integer
+                          description: The configured timeout, in milliseconds.
+                          example: 15000
+                      unevaluatedProperties:
+                        not: {}
+                    - type: 'null'
+                  description: The caller went quiet for longer than `attention_timeout`. Sent as `null` on speech-to-speech sessions.
+                hold:
+                  type: object
+                  properties:
+                    event:
+                      type: string
+                      description: Always `hold`.
+                      example: hold
+                    timeout:
+                      type: integer
+                      description: How long the hold lasts, in seconds.
+                      example: 30
+                    loop:
+                      type: boolean
+                      description: Whether the hold repeats.
+                      example: false
+                  required:
+                    - event
+                    - timeout
+                    - loop
+                  unevaluatedProperties:
+                    not: {}
+                  description: The agent was placed on hold.
                 function_call:
                   type: object
                   properties:
@@ -52876,6 +53913,33 @@ webhooks:
                   unevaluatedProperties:
                     not: {}
                   description: The agent called one of your functions and the call returned.
+                function_loop:
+                  type: object
+                  properties:
+                    function:
+                      type: string
+                      description: The name of the function.
+                      example: get_weather
+                    type:
+                      type: string
+                      enum:
+                        - consecutive
+                        - repeated
+                      description: Which loop guard tripped.
+                      example: repeated
+                    count:
+                      type: integer
+                      description: How many calls triggered the guard.
+                      example: 3
+                  required:
+                    - function
+                    - type
+                    - count
+                  unevaluatedProperties:
+                    not: {}
+                  description: |-
+                    The agent called the same function repeatedly and was stopped. `consecutive` means it was called
+                    several times in a row; `repeated` means it was called with the same arguments each time.
                 swaig_call:
                   type: object
                   properties: {}
@@ -52884,18 +53948,127 @@ webhooks:
                     A completed tool call, as one entry of the `swaig_log` the post-prompt callback reports at the
                     end. Carries `command_name`, `command_arg`, `epoch_time` in seconds, and, for a tool that reached
                     your server, `url`, `post_data`, and `post_response`.
-                post_prompt:
+                process_action:
+                  type: object
+                  properties: {}
+                  unevaluatedProperties: {}
+                  description: A tool returned a SWAIG action. Carries the action exactly as your endpoint returned it.
+                tool_distill:
                   type: object
                   properties:
-                    url:
+                    function:
                       type: string
-                      description: The URL the report was sent to.
-                      example: https://example.com/reports
+                      description: The function whose result was shortened.
+                      example: get_weather
+                    raw_chars:
+                      type: integer
+                      description: Length of the original result, in characters.
+                      example: 8412
+                    distilled_chars:
+                      type: integer
+                      description: Length of the shortened result, in characters.
+                      example: 612
+                    model:
+                      type: string
+                      description: The model that did the shortening. `default` when none was configured.
+                      example: gpt-4.1-mini
                   required:
-                    - url
+                    - function
+                    - raw_chars
+                    - distilled_chars
+                    - model
                   unevaluatedProperties:
                     not: {}
-                  description: The post-prompt report was delivered.
+                  description: A tool result was shortened before the agent read it.
+                webhook:
+                  type: object
+                  properties: {}
+                  unevaluatedProperties: {}
+                  description: |-
+                    A [`data_map`](/docs/swml/reference/calling/ai/swaig/functions/data-map) webhook was evaluated.
+                    Carries the webhook definition as you wrote it. Arrives alongside `input`, and alongside `output`
+                    and `match` when the call produced a reply, or `error` when the definition was unusable.
+                input:
+                  type: object
+                  properties: {}
+                  unevaluatedProperties: {}
+                  description: The body sent to a `data_map` webhook, or the input a `data_map` output template was expanded against.
+                output:
+                  anyOf:
+                    - type: object
+                      properties: {}
+                      unevaluatedProperties: {}
+                    - type: 'null'
+                  description: |-
+                    The reply a `data_map` webhook produced, or the output template that matched. `null` when nothing
+                    matched.
+                match:
+                  anyOf:
+                    - type: object
+                      properties: {}
+                      unevaluatedProperties: {}
+                    - type: 'null'
+                  description: The `data_map` entry that matched. `null` when none did.
+                error_keys:
+                  anyOf:
+                    - type: array
+                      items: {}
+                    - type: 'null'
+                  description: The `error_keys` declared on the `data_map` webhook. `null` when it declares none.
+                error:
+                  type: object
+                  properties:
+                    error:
+                      type: string
+                      description: What went wrong.
+                      example: 'ai: webhook error'
+                    errorText:
+                      type: string
+                      description: The detail behind it.
+                      example: Webhook obj must have output or expressions
+                  required:
+                    - error
+                    - errorText
+                  unevaluatedProperties:
+                    not: {}
+                  description: A `data_map` webhook could not be evaluated.
+                expression:
+                  type: object
+                  properties: {}
+                  unevaluatedProperties: {}
+                  description: A `data_map` `expressions` entry was evaluated. Carries the entry as you wrote it, alongside `input` and `output`.
+                webhook_log:
+                  type: object
+                  properties:
+                    request_url:
+                      type: string
+                      description: The URL that was called, after variable expansion.
+                      example: https://example.com/weather?city=Springfield
+                    request_payload:
+                      type: object
+                      properties: {}
+                      unevaluatedProperties: {}
+                      description: The body that was sent. Omitted on a request with no body.
+                    webhook_response:
+                      type: object
+                      properties: {}
+                      unevaluatedProperties: {}
+                      description: The response, plus `http_code` and any `parse_error` or `protocol_error` flags.
+                  required:
+                    - request_url
+                    - webhook_response
+                  unevaluatedProperties:
+                    not: {}
+                  description: A `data_map` webhook request completed, with the request and response recorded.
+                webhook_reply:
+                  anyOf:
+                    - type: object
+                      properties: {}
+                      unevaluatedProperties: {}
+                    - type: 'null'
+                  description: |-
+                    The final reply a `data_map` webhook produced, after matching. An array reply is wrapped as
+                    `{ "array": [...] }`.
                 webhook_fail:
                   type: object
                   properties:
@@ -52991,6 +54164,257 @@ webhooks:
                   description: |-
                     A tool's webhook could not be reached or did not answer usefully, after every retry. Sent
                     whenever a tool call fails, so you can alert on tools breaking mid-call.
+                step_change:
+                  type: object
+                  properties:
+                    from_step:
+                      type: string
+                      description: The step it left. Omitted on the first step.
+                      example: greet
+                    from_index:
+                      type: integer
+                      description: The index of the step it left.
+                      example: 0
+                    to_step:
+                      type: string
+                      description: The step it moved to.
+                      example: collect_address
+                    to_index:
+                      type: integer
+                      description: The index of the step it moved to.
+                      example: 1
+                    trigger:
+                      type: string
+                      description: What caused the move. Omitted when nothing recorded it.
+                      example: next_step
+                  required:
+                    - from_index
+                    - to_step
+                    - to_index
+                  unevaluatedProperties:
+                    not: {}
+                  description: The agent moved to a different step.
+                context_change:
+                  type: object
+                  properties:
+                    to_context:
+                      type: string
+                      description: The context it moved to.
+                      example: billing
+                    from_context:
+                      type: string
+                      description: The context it left. Omitted on the first context.
+                      example: default
+                    trigger:
+                      type: string
+                      description: What caused the move. Omitted when nothing recorded it.
+                      example: change_context
+                    isolated:
+                      type: boolean
+                      description: Whether the new context starts without the previous conversation.
+                      example: false
+                  required:
+                    - to_context
+                    - isolated
+                  unevaluatedProperties:
+                    not: {}
+                  description: The agent moved to a different context.
+                context_switch_data:
+                  type: object
+                  properties:
+                    data_root:
+                      type: object
+                      properties: {}
+                      unevaluatedProperties: {}
+                      description: The variables available to the new context's prompt.
+                    info:
+                      type: object
+                      properties: {}
+                      unevaluatedProperties: {}
+                      description: The context definition as you wrote it.
+                  required:
+                    - data_root
+                    - info
+                  unevaluatedProperties:
+                    not: {}
+                  description: The data a context switch was rendered against.
+                gather_start:
+                  type: object
+                  properties:
+                    context:
+                      type: string
+                      description: The context the agent was in. `default` when you define no contexts.
+                      example: default
+                    step:
+                      type: string
+                      description: The step the agent was on. Included only when the context defines steps.
+                      example: collect_address
+                    step_index:
+                      type: integer
+                      description: The step's index. Included only when the context defines steps.
+                      example: 2
+                    output_key:
+                      type: string
+                      description: The key the collected answers are stored under. Omitted when none was set.
+                      example: address
+                    total_questions:
+                      type: integer
+                      description: How many questions the gather will ask.
+                      example: 3
+                  required:
+                    - context
+                    - total_questions
+                  unevaluatedProperties:
+                    not: {}
+                  description: A `gather` started collecting answers.
+                gather_question:
+                  type: object
+                  properties:
+                    context:
+                      type: string
+                      description: The context the agent was in. `default` when you define no contexts.
+                      example: default
+                    step:
+                      type: string
+                      description: The step the agent was on. Included only when the context defines steps.
+                      example: collect_address
+                    step_index:
+                      type: integer
+                      description: The step's index. Included only when the context defines steps.
+                      example: 2
+                    key:
+                      type: string
+                      description: The key this question fills. Omitted when none was set.
+                      example: street
+                    question_index:
+                      type: integer
+                      description: The question's position in the gather, starting at 0.
+                      example: 0
+                    question_type:
+                      type: string
+                      description: The kind of answer expected. Omitted when unset.
+                      example: string
+                    requires_confirm:
+                      type: boolean
+                      description: Whether the answer has to be confirmed before the gather moves on.
+                      example: true
+                  required:
+                    - context
+                    - question_index
+                    - requires_confirm
+                  unevaluatedProperties:
+                    not: {}
+                  description: A `gather` asked a question.
+                gather_answer:
+                  type: object
+                  properties:
+                    context:
+                      type: string
+                      description: The context the agent was in. `default` when you define no contexts.
+                      example: default
+                    step:
+                      type: string
+                      description: The step the agent was on. Included only when the context defines steps.
+                      example: collect_address
+                    step_index:
+                      type: integer
+                      description: The step's index. Included only when the context defines steps.
+                      example: 2
+                    key:
+                      type: string
+                      description: The key the answer filled. Omitted when none was set.
+                      example: street
+                    question_index:
+                      type: integer
+                      description: The question's position in the gather, starting at 0.
+                      example: 0
+                    attempt:
+                      type: integer
+                      description: Which attempt produced the answer, starting at 1.
+                      example: 1
+                    confirmed:
+                      type: boolean
+                      description: Whether the caller confirmed the answer.
+                      example: true
+                  required:
+                    - context
+                    - question_index
+                    - attempt
+                    - confirmed
+                  unevaluatedProperties:
+                    not: {}
+                  description: A `gather` accepted an answer.
+                gather_reject:
+                  type: object
+                  properties:
+                    context:
+                      type: string
+                      description: The context the agent was in. `default` when you define no contexts.
+                      example: default
+                    step:
+                      type: string
+                      description: The step the agent was on. Included only when the context defines steps.
+                      example: collect_address
+                    step_index:
+                      type: integer
+                      description: The step's index. Included only when the context defines steps.
+                      example: 2
+                    key:
+                      type: string
+                      description: The key the answer would have filled. Omitted when none was set.
+                      example: street
+                    question_index:
+                      type: integer
+                      description: The question's position in the gather, starting at 0.
+                      example: 0
+                    attempt:
+                      type: integer
+                      description: Which attempt was rejected, starting at 1.
+                      example: 2
+                    reason:
+                      type: string
+                      description: Why it was rejected. Omitted when nothing recorded it.
+                      example: no_match
+                  required:
+                    - context
+                    - question_index
+                    - attempt
+                  unevaluatedProperties:
+                    not: {}
+                  description: A `gather` rejected an answer and will ask again.
+                gather_complete:
+                  type: object
+                  properties:
+                    context:
+                      type: string
+                      description: The context the agent was in. `default` when you define no contexts.
+                      example: default
+                    step:
+                      type: string
+                      description: The step the agent was on. Included only when the context defines steps.
+                      example: collect_address
+                    step_index:
+                      type: integer
+                      description: The step's index. Included only when the context defines steps.
+                      example: 2
+                    output_key:
+                      type: string
+                      description: The key the collected answers were stored under. Omitted when none was set.
+                      example: address
+                    answered:
+                      type: integer
+                      description: How many questions were answered.
+                      example: 3
+                    completion_action:
+                      type: string
+                      description: What the gather did on completion. Omitted when nothing recorded it.
+                      example: next_step
+                  required:
+                    - context
+                    - answered
+                  unevaluatedProperties:
+                    not: {}
+                  description: A `gather` finished.
                 conversation_add:
                   type: object
                   properties:
@@ -53084,62 +54508,301 @@ webhooks:
                   unevaluatedProperties:
                     not: {}
                   description: The model answered. Sent only at `debug_webhook_level` `2` and above.
+                llm_error:
+                  type: object
+                  properties:
+                    event:
+                      type: string
+                      description: Which failure this is.
+                      example: llm_retry
+                    model:
+                      type: string
+                      description: The model that was called. Omitted on `token_exhaustion`.
+                      example: gpt-4.1-mini
+                    token_count:
+                      type: integer
+                      description: Tokens in the conversation. Included only on `token_exhaustion`.
+                      example: 128000
+                    limit:
+                      type: integer
+                      description: The token ceiling that was hit. Included only on `token_exhaustion`.
+                      example: 120000
+                    errors:
+                      type: integer
+                      description: How many failures have accumulated. Included only on `llm_max_retries`.
+                      example: 4
+                    reasoning_effort:
+                      type: string
+                      description: The effort level being retried at. Included only on `empty_response_effort_bump_retry`.
+                      example: high
+                  required:
+                    - event
+                  unevaluatedProperties:
+                    not: {}
+                  description: |-
+                    A model call failed or had to be retried. Read `event` for which: `token_exhaustion` and
+                    `llm_fatal` end the session, `llm_max_retries` gives up after repeated failures, and
+                    `llm_retry`, `reasoning_only_retry`, `empty_response_nudge_retry`, and
+                    `empty_response_effort_bump_retry` recover silently.
+                consolidation:
+                  type: object
+                  properties:
+                    event:
+                      type: string
+                      description: Always `consolidation`.
+                      example: consolidation
+                    token_count:
+                      type: integer
+                      description: Tokens in the conversation when it tripped.
+                      example: 121400
+                    limit:
+                      type: integer
+                      description: The ceiling that was hit.
+                      example: 120000
+                  required:
+                    - event
+                    - token_count
+                    - limit
+                  unevaluatedProperties:
+                    not: {}
+                  description: The conversation passed its token ceiling and was summarized to make room.
+                summarize_start:
+                  type: object
+                  properties:
+                    mode:
+                      type: string
+                      description: How the summary is being produced.
+                      example: function
+                    model:
+                      type: string
+                      description: The model producing it. `default` when none was configured.
+                      example: gpt-4.1-mini
+                  required:
+                    - mode
+                    - model
+                  unevaluatedProperties:
+                    not: {}
+                  description: The post-prompt summary is about to be generated.
+                post_prompt:
+                  type: object
+                  properties:
+                    url:
+                      type: string
+                      description: The URL the report was sent to.
+                      example: https://example.com/reports
+                  required:
+                    - url
+                  unevaluatedProperties:
+                    not: {}
+                  description: The post-prompt report was delivered.
+                text_normalize:
+                  type: object
+                  properties:
+                    direction:
+                      type: string
+                      enum:
+                        - tn
+                        - itn
+                      description: '`tn` rewrites text for speaking, `itn` rewrites recognized speech for reading.'
+                      example: itn
+                    language:
+                      type: string
+                      description: The language the rewrite ran in.
+                      example: en
+                    original:
+                      type: string
+                      description: The text before the rewrite.
+                      example: twenty twenty six
+                    normalized:
+                      type: string
+                      description: The text after it.
+                      example: '2026'
+                  required:
+                    - direction
+                    - language
+                    - original
+                    - normalized
+                  unevaluatedProperties:
+                    not: {}
+                  description: Text was rewritten between spoken and written form, for recognition or speech.
+                voice_error:
+                  type: object
+                  properties:
+                    event:
+                      type: string
+                      enum:
+                        - voice_config_error
+                        - voice_runtime_error
+                      description: '`voice_config_error` when the voice was invalid, `voice_runtime_error` when it failed mid-call.'
+                      example: voice_config_error
+                    engine:
+                      type: string
+                      description: The engine that failed.
+                      example: elevenlabs
+                    voice:
+                      type: string
+                      description: The voice that failed.
+                      example: rachel
+                    fallback_engine:
+                      type: string
+                      description: The engine used instead.
+                      example: gcloud
+                    fallback_voice:
+                      type: string
+                      description: The voice used instead.
+                      example: en-US-Neural2-J
+                  required:
+                    - event
+                    - engine
+                    - voice
+                    - fallback_engine
+                    - fallback_voice
+                  unevaluatedProperties:
+                    not: {}
+                  description: The configured voice could not be used and the agent fell back to another.
+                warning:
+                  type: object
+                  properties:
+                    event:
+                      type: string
+                      description: Which warning this is.
+                      example: excessive_prompt_tokens
+                    tokens:
+                      type: integer
+                      description: Tokens in the prompt that triggered it.
+                      example: 82000
+                  required:
+                    - event
+                    - tokens
+                  unevaluatedProperties:
+                    not: {}
+                  description: Something about the configuration is likely to cause trouble.
+                oart_user_transcript:
+                  type: object
+                  properties:
+                    text:
+                      type: string
+                      description: The transcribed text.
+                      example: I need a ride to the airport.
+                  required:
+                    - text
+                  unevaluatedProperties:
+                    not: {}
+                  description: The caller's speech was transcribed. Speech-to-speech sessions only.
+                oart_assistant_transcript:
+                  type: object
+                  properties:
+                    text:
+                      type: string
+                      description: The transcribed text.
+                      example: Your ride is booked for 6pm.
+                  required:
+                    - text
+                  unevaluatedProperties:
+                    not: {}
+                  description: The agent's speech was transcribed. Speech-to-speech sessions only.
+                oart_response_done:
+                  type: object
+                  properties:
+                    latency:
+                      type: integer
+                      description: Time from the end of the caller's turn to the start of the reply, in milliseconds.
+                      example: 836
+                    utterance_latency:
+                      type: integer
+                      description: Time to the first word of the reply, in milliseconds.
+                      example: 934
+                    audio_latency:
+                      type: integer
+                      description: Time to the first audio of the reply, in milliseconds.
+                      example: 1106
+                    acoustic_latency:
+                      type: integer
+                      description: Time to the first sound leaving the platform, in milliseconds.
+                      example: 1180
+                    status:
+                      type: string
+                      description: How the reply finished. Omitted when nothing recorded it.
+                      example: completed
+                  required:
+                    - latency
+                    - utterance_latency
+                    - audio_latency
+                    - acoustic_latency
+                  unevaluatedProperties:
+                    not: {}
+                  description: The agent finished a reply, with its timings. Speech-to-speech sessions only.
+                inner_dialog:
+                  type: object
+                  properties:
+                    text:
+                      type: string
+                      description: The reasoning text. The caller never hears this.
+                      example: The caller has not given a pickup address yet.
+                  required:
+                    - text
+                  unevaluatedProperties:
+                    not: {}
+                  description: |-
+                    The agent's private reasoning, when you enable
+                    [`enable_inner_dialog`](/docs/swml/reference/calling/ai/params#paramsenable_inner_dialog).
+                    Speech-to-speech sessions only.
               required:
                 - call_info
               unevaluatedProperties: {}
               description: |-
                 Sent to your
-                [`ai.params.debug_webhook_url`](/docs/swml/reference/calling/ai/params#paramsdebug_webhook_url)
-                as events happen during the call, rather than once at the end. Use it when something has to happen
+                [`ai.params.debug_webhook_url`](/docs/swml/reference/calling/ai/params#paramsdebug_webhook_url) as
+                things happen during the call, rather than once at the end. Use it when something has to happen
                 mid-call, such as paging a supervisor or flagging a handoff. For after-the-fact analysis, use the
                 [AI post-prompt callback](#tag/calls/webhook/aiPostPromptCallback) instead.
 
-                Every request carries `call_info` plus exactly one more key, and **that key's name is the event**.
-                There is no `type` field to switch on: read the key that is not `call_info`. A key whose event
-                carried no data is sent as `null`.
+                Every request carries `call_info` alongside **one or more** event properties, and the property name
+                is the event: there is no `type` field to switch on. Most requests carry a single event, but some
+                carry several that describe one moment together — a `data_map` webhook evaluation sends `webhook`,
+                `input`, `output`, `error_keys`, and `match` in one body. So handle each event property you
+                recognize and ignore the rest, rather than reading "the key that is not `call_info`".
+
+                An event that carried no data is sent as `null` rather than being left out, so check for the
+                property's presence, not its truthiness. New events are added over time, so ignore names you do not
+                recognize.
 
                 Setting the URL is what turns the stream on.
-                [`debug_webhook_level`](/docs/swml/reference/calling/ai/params#paramsdebug_webhook_level) only
-                adds to it: at `2` the stream also carries `conversation_add`, `llm_request`, and `llm_response`,
-                which together are far higher volume than everything else combined.
+                [`debug_webhook_level`](/docs/swml/reference/calling/ai/params#paramsdebug_webhook_level) only adds
+                to it: at `2` the stream also carries `conversation_add`, `llm_request`, and `llm_response`, which
+                together are higher volume than everything else combined.
 
-                The events below are documented in full. The stream also carries, under the same envelope:
-                `startup_hook`, `hangup_hook`, `function_loop`, `process_action`, `step_change`, `context_change`,
-                `context_switch_data`, `barge`, `speech_detect`, `filler`, `hold`, `attention_timeout`, `warning`,
-                `voice_error`, `text_normalize`, `tool_distill`, `inner_dialog`, `llm_error`, `consolidation`,
-                `summarize_start`, `sidecar_event`, the `gather_start` / `gather_question` / `gather_answer` /
-                `gather_reject` / `gather_complete` set, the `webhook` / `input` / `output` / `match` /
-                `webhook_reply` / `webhook_log` / `expression` / `error` / `error_keys` set from tool execution,
-                and `oart_user_transcript` / `oart_assistant_transcript` / `oart_response_done` on speech-to-speech
-                sessions. Handle unknown keys by ignoring them: the set grows.
+                Running [`live_translate`](/docs/swml/reference/calling/live-translate) or
+                [`live_transcribe`](/docs/swml/reference/calling/live-transcribe) on the same call adds its own
+                events to this stream, which are not covered here.
       responses:
         '200':
           description: Webhook received
       description: |-
         Sent to your
-        [`ai.params.debug_webhook_url`](/docs/swml/reference/calling/ai/params#paramsdebug_webhook_url)
-        as events happen during the call, rather than once at the end. Use it when something has to happen
+        [`ai.params.debug_webhook_url`](/docs/swml/reference/calling/ai/params#paramsdebug_webhook_url) as
+        things happen during the call, rather than once at the end. Use it when something has to happen
         mid-call, such as paging a supervisor or flagging a handoff. For after-the-fact analysis, use the
         [AI post-prompt callback](#tag/calls/webhook/aiPostPromptCallback) instead.
 
-        Every request carries `call_info` plus exactly one more key, and **that key's name is the event**.
-        There is no `type` field to switch on: read the key that is not `call_info`. A key whose event
-        carried no data is sent as `null`.
+        Every request carries `call_info` alongside **one or more** event properties, and the property name
+        is the event: there is no `type` field to switch on. Most requests carry a single event, but some
+        carry several that describe one moment together — a `data_map` webhook evaluation sends `webhook`,
+        `input`, `output`, `error_keys`, and `match` in one body. So handle each event property you
+        recognize and ignore the rest, rather than reading "the key that is not `call_info`".
+
+        An event that carried no data is sent as `null` rather than being left out, so check for the
+        property's presence, not its truthiness. New events are added over time, so ignore names you do not
+        recognize.
 
         Setting the URL is what turns the stream on.
-        [`debug_webhook_level`](/docs/swml/reference/calling/ai/params#paramsdebug_webhook_level) only
-        adds to it: at `2` the stream also carries `conversation_add`, `llm_request`, and `llm_response`,
-        which together are far higher volume than everything else combined.
+        [`debug_webhook_level`](/docs/swml/reference/calling/ai/params#paramsdebug_webhook_level) only adds
+        to it: at `2` the stream also carries `conversation_add`, `llm_request`, and `llm_response`, which
+        together are higher volume than everything else combined.
 
-        The events below are documented in full. The stream also carries, under the same envelope:
-        `startup_hook`, `hangup_hook`, `function_loop`, `process_action`, `step_change`, `context_change`,
-        `context_switch_data`, `barge`, `speech_detect`, `filler`, `hold`, `attention_timeout`, `warning`,
-        `voice_error`, `text_normalize`, `tool_distill`, `inner_dialog`, `llm_error`, `consolidation`,
-        `summarize_start`, `sidecar_event`, the `gather_start` / `gather_question` / `gather_answer` /
-        `gather_reject` / `gather_complete` set, the `webhook` / `input` / `output` / `match` /
-        `webhook_reply` / `webhook_log` / `expression` / `error` / `error_keys` set from tool execution,
-        and `oart_user_transcript` / `oart_assistant_transcript` / `oart_response_done` on speech-to-speech
-        sessions. Handle unknown keys by ignoring them: the set grows.
+        Running [`live_translate`](/docs/swml/reference/calling/live-translate) or
+        [`live_transcribe`](/docs/swml/reference/calling/live-transcribe) on the same call adds its own
+        events to this stream, which are not covered here.
       tags:
         - Calls
   aiPostPromptCallback:
