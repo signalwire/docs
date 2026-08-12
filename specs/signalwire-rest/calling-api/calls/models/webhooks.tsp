@@ -1187,22 +1187,21 @@ model AiDebugWebhookPayload is Record<unknown> {
     """)
   webhook?: Record<unknown>;
 
-  @doc("The body sent to a `data_map` webhook, or the input a `data_map` output template was expanded against.")
+  @doc("The body sent to the webhook, or the input an output template was expanded against.")
   input?: Record<unknown>;
 
   @doc("""
-    The reply a `data_map` webhook produced, or the output template that matched. `null` when nothing
-    matched.
+    The reply the webhook produced, or the output template that matched. `null` when nothing matched.
     """)
   output?: Record<unknown> | null;
 
-  @doc("The `data_map` entry that matched. `null` when none did.")
+  @doc("The entry that matched. `null` when none did.")
   match?: Record<unknown> | null;
 
-  @doc("The `error_keys` declared on the `data_map` webhook. `null` when it declares none.")
+  @doc("The `error_keys` declared on the webhook. `null` when it declares none.")
   error_keys?: unknown[] | null;
 
-  @doc("A `data_map` webhook could not be evaluated.")
+  @doc("The webhook could not be evaluated.")
   error?: {
     @doc("What went wrong.")
     @example("ai: webhook error")
@@ -1213,10 +1212,10 @@ model AiDebugWebhookPayload is Record<unknown> {
     errorText: string;
   };
 
-  @doc("A `data_map` `expressions` entry was evaluated. Carries the entry as you wrote it, alongside `input` and `output`.")
+  @doc("The `expressions` entry as you wrote it. Arrives alongside `input` and `output`.")
   expression?: Record<unknown>;
 
-  @doc("A `data_map` webhook request completed, with the request and response recorded.")
+  @doc("A webhook request completed, with the request and response recorded.")
   webhook_log?: {
     @doc("The URL that was called, after variable expansion.")
     @example("https://example.com/weather?city=Springfield")
@@ -1230,7 +1229,7 @@ model AiDebugWebhookPayload is Record<unknown> {
   };
 
   @doc("""
-    The final reply a `data_map` webhook produced, after matching. An array reply is wrapped as
+    The final reply the webhook produced, after matching. An array reply is wrapped as
     `{ \"array\": [...] }`. `null` when the webhook produced no reply.
     """)
   webhook_reply?: Record<unknown> | null;
