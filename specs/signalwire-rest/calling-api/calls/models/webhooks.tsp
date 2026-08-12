@@ -478,10 +478,10 @@ model AiSwaigToolWebhookPayload {
   SWMLCall?: Record<unknown>;
 
   @doc("The conversation so far, with sensitive values redacted. Included when you enable `swaig_post_conversation`.")
-  call_log?: Record<unknown>[];
+  call_log?: AICallLogEntry[];
 
   @doc("The full, unredacted conversation so far. Included when you enable `swaig_post_conversation`.")
-  raw_call_log?: Record<unknown>[];
+  raw_call_log?: AICallLogEntry[];
 }
 
 @summary("Amazon Bedrock SWAIG tool webhook")
@@ -588,7 +588,7 @@ model BedrockSwaigToolWebhookPayload {
   ai_end_date?: int64;
 
   @doc("Per-response performance metrics for the session so far. Included once the agent has any.")
-  times?: Record<unknown>[];
+  times?: AIResponseTiming[];
 
   @doc("SWML variables for the call. Included when the call carries SWML state.")
   SWMLVars?: Record<unknown>;
@@ -630,6 +630,126 @@ model AIPostPromptData {
     """)
   @example("Caller booked a ride to the airport.")
   substituted?: string;
+}
+
+@doc("One tool call the agent made, in the order it was made.")
+model AISwaigLogEntry {
+  @doc("The name of the function the agent called.")
+  @example("get_weather")
+  command_name: string;
+
+  @doc("The arguments it passed, as the raw string the model produced.")
+  @example("{\"city\":\"San Francisco\"}")
+  command_arg: string;
+
+  @doc("When the call was made, as a Unix timestamp in seconds.")
+  @example(1694541334)
+  epoch_time: integer;
+
+  @doc("Always `true` when present, meaning the function ran inside the platform rather than on your server.")
+  @example(true)
+  native?: boolean;
+
+  @doc("""
+    How many times the function may still be called, or `endless` when it has no limit. Present only
+    on a function you limited.
+    """)
+  @example(2)
+  active_count?: integer | string;
+
+  @doc("The URL the function was served from. Present when the call reached your server.")
+  @example("https://example.com/tools/get_weather")
+  url?: string;
+
+  @doc("The body sent to your server. Present when the call reached it.")
+  post_data?: Record<unknown>;
+
+  @doc("The response your server returned. Present when the call reached it and got a reply.")
+  post_response?: Record<unknown>;
+
+  @doc("A response that arrived after the agent had already moved on. Present only when that happened.")
+  delayed_post_response?: Record<unknown>;
+
+  @doc("The MCP server the tool was served from. Present only for an MCP-backed tool.")
+  mcp_url?: string;
+
+  @doc("The tool name on that MCP server. Present only for an MCP-backed tool.")
+  mcp_tool?: string;
+
+  @doc("What the MCP server returned. Present only for an MCP-backed tool.")
+  mcp_response?: string;
+
+  @doc("Always `true` when present, meaning the MCP call failed.")
+  @example(true)
+  mcp_error?: boolean;
+}
+
+@doc("Timing and token counts for one generated reply.")
+model AIResponseTiming {
+  @doc("The reply text. Redacted when you enable `redact_prompt`.")
+  @example("Your ride is booked for 6pm.")
+  response: string;
+
+  @doc("How many words the reply contained.")
+  @example(6)
+  response_word_count: integer;
+
+  @doc("How long the reply took to produce, in seconds.")
+  @example(1.42)
+  answer_time: float;
+
+  @doc("How long the first token took, in seconds.")
+  @example(0.31)
+  token_time: float;
+
+  @doc("How many tokens the reply used.")
+  @example(53)
+  tokens: integer;
+
+  @doc("Average tokens per second across the reply.")
+  @example(37.3)
+  avg_tps: float;
+
+  @doc("Tokens per second for this reply.")
+  @example(41.2)
+  tps: float;
+}
+
+@doc("""
+  One entry in the conversation. Beyond `role` and `content`, an entry carries whatever per-turn
+  detail applies to it, such as recognition confidence on a caller turn or timings on a reply.
+  """)
+model AICallLogEntry is Record<unknown> {
+  @doc("Who produced the entry: `system`, `user`, `assistant`, or `tool`.")
+  @example("assistant")
+  role: string;
+
+  @doc("The text of the entry.")
+  @example("Your ride is booked for 6pm.")
+  content: string;
+
+  @doc("When the entry was added, as a Unix timestamp in microseconds. Omitted on entries without one.")
+  @example(1694541297950440)
+  timestamp?: int64;
+
+  @doc("The tool calls the agent made on this turn. Present only on a turn that made any.")
+  tool_calls?: Record<unknown>[];
+}
+
+@doc("""
+  One event on the call, in order. Beyond `type`, an entry carries the fields belonging to that type.
+  """)
+model AICallTimelineEntry is Record<unknown> {
+  @doc("""
+    What happened. `user_input`, `ai_response`, and `tool_result` cover the conversation; `pronounce`
+    and `text_normalize` record text rewrites; anything else is the name of a logged action.
+    """)
+  @example("ai_response")
+  type: string;
+
+  @doc("When it happened, as a Unix timestamp in microseconds. Omitted when the source entry had no timestamp.")
+  @example(1694541297950440)
+  ts?: float;
 }
 
 @summary("AI post-prompt callback")
@@ -712,27 +832,25 @@ model AiPostPromptCallbackPayload {
 
   @doc("""
     The conversation, filtered: interrupted segments are consolidated and evicted entries dropped.
-    Each entry carries a `role` of `system`, `user`, `assistant`, or `tool`, its `content`, and
-    per-turn timing. Included when `action` is `post_conversation`.
+    Included when `action` is `post_conversation`.
     """)
   @example(#[
     #{ role: "system", content: "You dispatch taxis." },
     #{ role: "user", content: "I need a ride to the airport." }
   ])
-  call_log?: Record<unknown>[];
+  call_log?: AICallLogEntry[];
 
   @doc("""
     The conversation, unfiltered and append-only. Interruption detail appears here and nowhere else.
     Included when `action` is `post_conversation`.
     """)
-  raw_call_log?: Record<unknown>[];
+  raw_call_log?: AICallLogEntry[];
 
   @doc("""
-    A flat stream of typed events aligned to `raw_call_log`, for replaying the call in order. Each
-    entry carries a `ts`, a `type` such as `user_input`, `ai_response`, or `tool_result`, and the
-    fields for that type. Included when the session produced any.
+    A flat stream of typed events aligned to `raw_call_log`, for replaying the call in order.
+    Included when the session produced any.
     """)
-  call_timeline?: Record<unknown>[];
+  call_timeline?: AICallTimelineEntry[];
 
   @doc("""
     Conversations from before each context switch, oldest first, one array of messages per switch.
@@ -783,11 +901,10 @@ model AiPostPromptCallbackPayload {
   caller_id_number?: string;
 
   @doc("""
-    Per-response performance metrics, one entry per generated reply, carrying `response`,
-    `response_word_count`, `answer_time`, `token_time`, `tokens`, `avg_tps`, and `tps`. Included once
-    the session has any.
+    Per-response performance metrics, one entry per generated reply. Included once the session has
+    any.
     """)
-  times?: Record<unknown>[];
+  times?: AIResponseTiming[];
 
   @doc("SWML variables for the call. Included when the call carries SWML state.")
   SWMLVars?: Record<unknown>;
@@ -808,12 +925,9 @@ model AiPostPromptCallbackPayload {
   global_data?: Record<unknown>;
 
   @doc("""
-    Every tool call the agent made, in order. Each entry carries `command_name`, `command_arg`,
-    `epoch_time` in seconds, and, for a tool that reached your server, the `url`, the `post_data`
-    that was sent, and the `post_response` that came back. Included when `action` is
-    `post_conversation`.
+    Every tool call the agent made, in order. Included when `action` is `post_conversation`.
     """)
-  swaig_log?: Record<unknown>[];
+  swaig_log?: AISwaigLogEntry[];
 
   @doc("""
     The number of billable minutes, rounded up to at least one. Included when you enable
@@ -1153,11 +1267,9 @@ model AiDebugWebhookPayload is Record<unknown> {
   };
 
   @doc("""
-    A completed tool call, as one entry of the `swaig_log` the post-prompt callback reports at the
-    end. Carries `command_name`, `command_arg`, `epoch_time` in seconds, and, for a tool that reached
-    your server, `url`, `post_data`, and `post_response`.
+    A completed tool call, the same entry the post-prompt callback later reports in its `swaig_log`.
     """)
-  swaig_call?: Record<unknown>;
+  swaig_call?: AISwaigLogEntry;
 
   @doc("A tool returned a SWAIG action. Carries the action exactly as your endpoint returned it.")
   process_action?: Record<unknown>;
@@ -1754,10 +1866,10 @@ model BedrockPostPromptCallbackPayload {
     #{ role: "system", content: "You dispatch taxis." },
     #{ role: "user", content: "I need a ride to the airport." }
   ])
-  call_log: Record<unknown>[];
+  call_log: AICallLogEntry[];
 
   @doc("A copy of `call_log`. Bedrock agents do not keep a separate unfiltered log.")
-  raw_call_log: Record<unknown>[];
+  raw_call_log: AICallLogEntry[];
 
   @doc("When the call was created, as a Unix timestamp in microseconds.")
   @example(1694541295773508)
@@ -1792,7 +1904,7 @@ model BedrockPostPromptCallbackPayload {
   @doc("""
     Per-response performance metrics, one entry per generated reply. Included once the agent has any.
     """)
-  times?: Record<unknown>[];
+  times?: AIResponseTiming[];
 
   @doc("""
     The number of billable minutes, rounded up to at least one. Included once the agent has stopped.
@@ -1855,7 +1967,7 @@ model BedrockPostPromptCallbackPayload {
 
   @doc("Always an empty array. Bedrock agents do not report a tool-call log.")
   @example(#[])
-  swaig_log: Record<unknown>[];
+  swaig_log: AISwaigLogEntry[];
 
   @doc("The agent's answer to your `post_prompt`, as plain text.")
   @example("Caller booked a ride from 123 Main St to the airport for 6pm.")

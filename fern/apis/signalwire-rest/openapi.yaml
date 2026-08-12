@@ -16520,6 +16520,57 @@ components:
       description: |-
         Identifies the call an AI callback came from. `project_id` and `space_id` are included when
         available.
+    Calling.AICallLogEntry:
+      type: object
+      required:
+        - role
+        - content
+      properties:
+        role:
+          type: string
+          description: 'Who produced the entry: `system`, `user`, `assistant`, or `tool`.'
+          examples:
+            - assistant
+        content:
+          type: string
+          description: The text of the entry.
+          examples:
+            - Your ride is booked for 6pm.
+        timestamp:
+          type: integer
+          format: int64
+          description: When the entry was added, as a Unix timestamp in microseconds. Omitted on entries without one.
+          examples:
+            - 1694541297950440
+        tool_calls:
+          type: array
+          items:
+            type: object
+            unevaluatedProperties: {}
+          description: The tool calls the agent made on this turn. Present only on a turn that made any.
+      unevaluatedProperties: {}
+      description: |-
+        One entry in the conversation. Beyond `role` and `content`, an entry carries whatever per-turn
+        detail applies to it, such as recognition confidence on a caller turn or timings on a reply.
+    Calling.AICallTimelineEntry:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          description: |-
+            What happened. `user_input`, `ai_response`, and `tool_result` cover the conversation; `pronounce`
+            and `text_normalize` record text rewrites; anything else is the name of a logged action.
+          examples:
+            - ai_response
+        ts:
+          type: number
+          description: When it happened, as a Unix timestamp in microseconds. Omitted when the source entry had no timestamp.
+          examples:
+            - 1694541297950440
+      unevaluatedProperties: {}
+      description: One event on the call, in order. Beyond `type`, an entry carries the fields belonging to that type.
     Calling.AIDebugConversationAdd:
       type: object
       required:
@@ -16688,6 +16739,55 @@ components:
       description: |-
         The answer an AI agent gave to your
         [`post_prompt`](/docs/swml/reference/calling/ai), in three forms.
+    Calling.AIResponseTiming:
+      type: object
+      required:
+        - response
+        - response_word_count
+        - answer_time
+        - token_time
+        - tokens
+        - avg_tps
+        - tps
+      properties:
+        response:
+          type: string
+          description: The reply text. Redacted when you enable `redact_prompt`.
+          examples:
+            - Your ride is booked for 6pm.
+        response_word_count:
+          type: integer
+          description: How many words the reply contained.
+          examples:
+            - 6
+        answer_time:
+          type: number
+          description: How long the reply took to produce, in seconds.
+          examples:
+            - 1.42
+        token_time:
+          type: number
+          description: How long the first token took, in seconds.
+          examples:
+            - 0.31
+        tokens:
+          type: integer
+          description: How many tokens the reply used.
+          examples:
+            - 53
+        avg_tps:
+          type: number
+          description: Average tokens per second across the reply.
+          examples:
+            - 37.3
+        tps:
+          type: number
+          description: Tokens per second for this reply.
+          examples:
+            - 41.2
+      unevaluatedProperties:
+        not: {}
+      description: Timing and token counts for one generated reply.
     Calling.AISidecarCallbackPayload:
       type: object
       required:
@@ -16857,6 +16957,76 @@ components:
         The sidecar only listens to the call and never speaks on it, so a `say` action is reported back to
         you as a callback rather than being spoken aloud.
       title: AI sidecar SWAIG tool webhook
+    Calling.AISwaigLogEntry:
+      type: object
+      required:
+        - command_name
+        - command_arg
+        - epoch_time
+      properties:
+        command_name:
+          type: string
+          description: The name of the function the agent called.
+          examples:
+            - get_weather
+        command_arg:
+          type: string
+          description: The arguments it passed, as the raw string the model produced.
+          examples:
+            - '{"city":"San Francisco"}'
+        epoch_time:
+          type: integer
+          description: When the call was made, as a Unix timestamp in seconds.
+          examples:
+            - 1694541334
+        native:
+          type: boolean
+          description: Always `true` when present, meaning the function ran inside the platform rather than on your server.
+          examples:
+            - true
+        active_count:
+          anyOf:
+            - type: integer
+            - type: string
+          description: |-
+            How many times the function may still be called, or `endless` when it has no limit. Present only
+            on a function you limited.
+          examples:
+            - 2
+        url:
+          type: string
+          description: The URL the function was served from. Present when the call reached your server.
+          examples:
+            - https://example.com/tools/get_weather
+        post_data:
+          type: object
+          unevaluatedProperties: {}
+          description: The body sent to your server. Present when the call reached it.
+        post_response:
+          type: object
+          unevaluatedProperties: {}
+          description: The response your server returned. Present when the call reached it and got a reply.
+        delayed_post_response:
+          type: object
+          unevaluatedProperties: {}
+          description: A response that arrived after the agent had already moved on. Present only when that happened.
+        mcp_url:
+          type: string
+          description: The MCP server the tool was served from. Present only for an MCP-backed tool.
+        mcp_tool:
+          type: string
+          description: The tool name on that MCP server. Present only for an MCP-backed tool.
+        mcp_response:
+          type: string
+          description: What the MCP server returned. Present only for an MCP-backed tool.
+        mcp_error:
+          type: boolean
+          description: Always `true` when present, meaning the MCP call failed.
+          examples:
+            - true
+      unevaluatedProperties:
+        not: {}
+      description: One tool call the agent made, in the order it was made.
     Calling.AiDebugWebhookPayload:
       type: object
       required:
@@ -17229,12 +17399,9 @@ components:
             The agent called the same function repeatedly and was stopped. `consecutive` means it was called
             several times in a row; `repeated` means it was called with the same arguments each time.
         swaig_call:
-          type: object
-          unevaluatedProperties: {}
-          description: |-
-            A completed tool call, as one entry of the `swaig_log` the post-prompt callback reports at the
-            end. Carries `command_name`, `command_arg`, `epoch_time` in seconds, and, for a tool that reached
-            your server, `url`, `post_data`, and `post_response`.
+          allOf:
+            - $ref: '#/components/schemas/Calling.AISwaigLogEntry'
+          description: A completed tool call, the same entry the post-prompt callback later reports in its `swaig_log`.
         process_action:
           type: object
           unevaluatedProperties: {}
@@ -18103,12 +18270,10 @@ components:
         call_log:
           type: array
           items:
-            type: object
-            unevaluatedProperties: {}
+            $ref: '#/components/schemas/Calling.AICallLogEntry'
           description: |-
             The conversation, filtered: interrupted segments are consolidated and evicted entries dropped.
-            Each entry carries a `role` of `system`, `user`, `assistant`, or `tool`, its `content`, and
-            per-turn timing. Included when `action` is `post_conversation`.
+            Included when `action` is `post_conversation`.
           examples:
             - - role: system
                 content: You dispatch taxis.
@@ -18117,20 +18282,17 @@ components:
         raw_call_log:
           type: array
           items:
-            type: object
-            unevaluatedProperties: {}
+            $ref: '#/components/schemas/Calling.AICallLogEntry'
           description: |-
             The conversation, unfiltered and append-only. Interruption detail appears here and nowhere else.
             Included when `action` is `post_conversation`.
         call_timeline:
           type: array
           items:
-            type: object
-            unevaluatedProperties: {}
+            $ref: '#/components/schemas/Calling.AICallTimelineEntry'
           description: |-
-            A flat stream of typed events aligned to `raw_call_log`, for replaying the call in order. Each
-            entry carries a `ts`, a `type` such as `user_input`, `ai_response`, or `tool_result`, and the
-            fields for that type. Included when the session produced any.
+            A flat stream of typed events aligned to `raw_call_log`, for replaying the call in order.
+            Included when the session produced any.
         previous_contexts:
           type: array
           items:
@@ -18198,12 +18360,10 @@ components:
         times:
           type: array
           items:
-            type: object
-            unevaluatedProperties: {}
+            $ref: '#/components/schemas/Calling.AIResponseTiming'
           description: |-
-            Per-response performance metrics, one entry per generated reply, carrying `response`,
-            `response_word_count`, `answer_time`, `token_time`, `tokens`, `avg_tps`, and `tps`. Included once
-            the session has any.
+            Per-response performance metrics, one entry per generated reply. Included once the session has
+            any.
         SWMLVars:
           type: object
           unevaluatedProperties: {}
@@ -18228,13 +18388,8 @@ components:
         swaig_log:
           type: array
           items:
-            type: object
-            unevaluatedProperties: {}
-          description: |-
-            Every tool call the agent made, in order. Each entry carries `command_name`, `command_arg`,
-            `epoch_time` in seconds, and, for a tool that reached your server, the `url`, the `post_data`
-            that was sent, and the `post_response` that came back. Included when `action` is
-            `post_conversation`.
+            $ref: '#/components/schemas/Calling.AISwaigLogEntry'
+          description: Every tool call the agent made, in order. Included when `action` is `post_conversation`.
         total_minutes:
           type: integer
           description: |-
@@ -18504,14 +18659,12 @@ components:
         call_log:
           type: array
           items:
-            type: object
-            unevaluatedProperties: {}
+            $ref: '#/components/schemas/Calling.AICallLogEntry'
           description: The conversation so far, with sensitive values redacted. Included when you enable `swaig_post_conversation`.
         raw_call_log:
           type: array
           items:
-            type: object
-            unevaluatedProperties: {}
+            $ref: '#/components/schemas/Calling.AICallLogEntry'
           description: The full, unredacted conversation so far. Included when you enable `swaig_post_conversation`.
       unevaluatedProperties:
         not: {}
@@ -18591,8 +18744,7 @@ components:
         call_log:
           type: array
           items:
-            type: object
-            unevaluatedProperties: {}
+            $ref: '#/components/schemas/Calling.AICallLogEntry'
           description: |-
             The conversation. Each entry carries a `role` of `system`, `user`, or `assistant` and its
             `content`.
@@ -18604,8 +18756,7 @@ components:
         raw_call_log:
           type: array
           items:
-            type: object
-            unevaluatedProperties: {}
+            $ref: '#/components/schemas/Calling.AICallLogEntry'
           description: A copy of `call_log`. Bedrock agents do not keep a separate unfiltered log.
         call_start_date:
           type: integer
@@ -18650,8 +18801,7 @@ components:
         times:
           type: array
           items:
-            type: object
-            unevaluatedProperties: {}
+            $ref: '#/components/schemas/Calling.AIResponseTiming'
           description: Per-response performance metrics, one entry per generated reply. Included once the agent has any.
         total_minutes:
           type: number
@@ -18729,8 +18879,7 @@ components:
         swaig_log:
           type: array
           items:
-            type: object
-            unevaluatedProperties: {}
+            $ref: '#/components/schemas/Calling.AISwaigLogEntry'
           description: Always an empty array. Bedrock agents do not report a tool-call log.
           examples:
             - []
@@ -18893,8 +19042,7 @@ components:
         times:
           type: array
           items:
-            type: object
-            unevaluatedProperties: {}
+            $ref: '#/components/schemas/Calling.AIResponseTiming'
           description: Per-response performance metrics for the session so far. Included once the agent has any.
         SWMLVars:
           type: object
@@ -53468,8 +53616,34 @@ webhooks:
                   type: array
                   items:
                     type: object
-                    properties: {}
+                    properties:
+                      role:
+                        type: string
+                        description: 'Who produced the entry: `system`, `user`, `assistant`, or `tool`.'
+                        example: assistant
+                      content:
+                        type: string
+                        description: The text of the entry.
+                        example: Your ride is booked for 6pm.
+                      timestamp:
+                        type: integer
+                        format: int64
+                        description: When the entry was added, as a Unix timestamp in microseconds. Omitted on entries without one.
+                        example: 1694541297950440
+                      tool_calls:
+                        type: array
+                        items:
+                          type: object
+                          properties: {}
+                          unevaluatedProperties: {}
+                        description: The tool calls the agent made on this turn. Present only on a turn that made any.
+                    required:
+                      - role
+                      - content
                     unevaluatedProperties: {}
+                    description: |-
+                      One entry in the conversation. Beyond `role` and `content`, an entry carries whatever per-turn
+                      detail applies to it, such as recognition confidence on a caller turn or timings on a reply.
                   description: |-
                     The conversation. Each entry carries a `role` of `system`, `user`, or `assistant` and its
                     `content`.
@@ -53482,8 +53656,34 @@ webhooks:
                   type: array
                   items:
                     type: object
-                    properties: {}
+                    properties:
+                      role:
+                        type: string
+                        description: 'Who produced the entry: `system`, `user`, `assistant`, or `tool`.'
+                        example: assistant
+                      content:
+                        type: string
+                        description: The text of the entry.
+                        example: Your ride is booked for 6pm.
+                      timestamp:
+                        type: integer
+                        format: int64
+                        description: When the entry was added, as a Unix timestamp in microseconds. Omitted on entries without one.
+                        example: 1694541297950440
+                      tool_calls:
+                        type: array
+                        items:
+                          type: object
+                          properties: {}
+                          unevaluatedProperties: {}
+                        description: The tool calls the agent made on this turn. Present only on a turn that made any.
+                    required:
+                      - role
+                      - content
                     unevaluatedProperties: {}
+                    description: |-
+                      One entry in the conversation. Beyond `role` and `content`, an entry carries whatever per-turn
+                      detail applies to it, such as recognition confidence on a caller turn or timings on a reply.
                   description: A copy of `call_log`. Bedrock agents do not keep a separate unfiltered log.
                 call_start_date:
                   type: integer
@@ -53522,8 +53722,46 @@ webhooks:
                   type: array
                   items:
                     type: object
-                    properties: {}
-                    unevaluatedProperties: {}
+                    properties:
+                      response:
+                        type: string
+                        description: The reply text. Redacted when you enable `redact_prompt`.
+                        example: Your ride is booked for 6pm.
+                      response_word_count:
+                        type: integer
+                        description: How many words the reply contained.
+                        example: 6
+                      answer_time:
+                        type: number
+                        description: How long the reply took to produce, in seconds.
+                        example: 1.42
+                      token_time:
+                        type: number
+                        description: How long the first token took, in seconds.
+                        example: 0.31
+                      tokens:
+                        type: integer
+                        description: How many tokens the reply used.
+                        example: 53
+                      avg_tps:
+                        type: number
+                        description: Average tokens per second across the reply.
+                        example: 37.3
+                      tps:
+                        type: number
+                        description: Tokens per second for this reply.
+                        example: 41.2
+                    required:
+                      - response
+                      - response_word_count
+                      - answer_time
+                      - token_time
+                      - tokens
+                      - avg_tps
+                      - tps
+                    unevaluatedProperties:
+                      not: {}
+                    description: Timing and token counts for one generated reply.
                   description: Per-response performance metrics, one entry per generated reply. Included once the agent has any.
                 total_minutes:
                   type: number
@@ -53621,8 +53859,70 @@ webhooks:
                   type: array
                   items:
                     type: object
-                    properties: {}
-                    unevaluatedProperties: {}
+                    properties:
+                      command_name:
+                        type: string
+                        description: The name of the function the agent called.
+                        example: get_weather
+                      command_arg:
+                        type: string
+                        description: The arguments it passed, as the raw string the model produced.
+                        example: '{"city":"San Francisco"}'
+                      epoch_time:
+                        type: integer
+                        description: When the call was made, as a Unix timestamp in seconds.
+                        example: 1694541334
+                      native:
+                        type: boolean
+                        description: Always `true` when present, meaning the function ran inside the platform rather than on your server.
+                        example: true
+                      active_count:
+                        oneOf:
+                          - type: integer
+                          - type: string
+                        description: |-
+                          How many times the function may still be called, or `endless` when it has no limit. Present only
+                          on a function you limited.
+                        example: 2
+                      url:
+                        type: string
+                        description: The URL the function was served from. Present when the call reached your server.
+                        example: https://example.com/tools/get_weather
+                      post_data:
+                        type: object
+                        properties: {}
+                        unevaluatedProperties: {}
+                        description: The body sent to your server. Present when the call reached it.
+                      post_response:
+                        type: object
+                        properties: {}
+                        unevaluatedProperties: {}
+                        description: The response your server returned. Present when the call reached it and got a reply.
+                      delayed_post_response:
+                        type: object
+                        properties: {}
+                        unevaluatedProperties: {}
+                        description: A response that arrived after the agent had already moved on. Present only when that happened.
+                      mcp_url:
+                        type: string
+                        description: The MCP server the tool was served from. Present only for an MCP-backed tool.
+                      mcp_tool:
+                        type: string
+                        description: The tool name on that MCP server. Present only for an MCP-backed tool.
+                      mcp_response:
+                        type: string
+                        description: What the MCP server returned. Present only for an MCP-backed tool.
+                      mcp_error:
+                        type: boolean
+                        description: Always `true` when present, meaning the MCP call failed.
+                        example: true
+                    required:
+                      - command_name
+                      - command_arg
+                      - epoch_time
+                    unevaluatedProperties:
+                      not: {}
+                    description: One tool call the agent made, in the order it was made.
                   description: Always an empty array. Bedrock agents do not report a tool-call log.
                   example: []
                 conversation_summary:
@@ -54044,12 +54344,70 @@ webhooks:
                     several times in a row; `repeated` means it was called with the same arguments each time.
                 swaig_call:
                   type: object
-                  properties: {}
-                  unevaluatedProperties: {}
-                  description: |-
-                    A completed tool call, as one entry of the `swaig_log` the post-prompt callback reports at the
-                    end. Carries `command_name`, `command_arg`, `epoch_time` in seconds, and, for a tool that reached
-                    your server, `url`, `post_data`, and `post_response`.
+                  properties:
+                    command_name:
+                      type: string
+                      description: The name of the function the agent called.
+                      example: get_weather
+                    command_arg:
+                      type: string
+                      description: The arguments it passed, as the raw string the model produced.
+                      example: '{"city":"San Francisco"}'
+                    epoch_time:
+                      type: integer
+                      description: When the call was made, as a Unix timestamp in seconds.
+                      example: 1694541334
+                    native:
+                      type: boolean
+                      description: Always `true` when present, meaning the function ran inside the platform rather than on your server.
+                      example: true
+                    active_count:
+                      oneOf:
+                        - type: integer
+                        - type: string
+                      description: |-
+                        How many times the function may still be called, or `endless` when it has no limit. Present only
+                        on a function you limited.
+                      example: 2
+                    url:
+                      type: string
+                      description: The URL the function was served from. Present when the call reached your server.
+                      example: https://example.com/tools/get_weather
+                    post_data:
+                      type: object
+                      properties: {}
+                      unevaluatedProperties: {}
+                      description: The body sent to your server. Present when the call reached it.
+                    post_response:
+                      type: object
+                      properties: {}
+                      unevaluatedProperties: {}
+                      description: The response your server returned. Present when the call reached it and got a reply.
+                    delayed_post_response:
+                      type: object
+                      properties: {}
+                      unevaluatedProperties: {}
+                      description: A response that arrived after the agent had already moved on. Present only when that happened.
+                    mcp_url:
+                      type: string
+                      description: The MCP server the tool was served from. Present only for an MCP-backed tool.
+                    mcp_tool:
+                      type: string
+                      description: The tool name on that MCP server. Present only for an MCP-backed tool.
+                    mcp_response:
+                      type: string
+                      description: What the MCP server returned. Present only for an MCP-backed tool.
+                    mcp_error:
+                      type: boolean
+                      description: Always `true` when present, meaning the MCP call failed.
+                      example: true
+                  required:
+                    - command_name
+                    - command_arg
+                    - epoch_time
+                  unevaluatedProperties:
+                    not: {}
+                  description: A completed tool call, the same entry the post-prompt callback later reports in its `swaig_log`.
                 process_action:
                   type: object
                   properties: {}
@@ -54978,12 +55336,37 @@ webhooks:
                   type: array
                   items:
                     type: object
-                    properties: {}
+                    properties:
+                      role:
+                        type: string
+                        description: 'Who produced the entry: `system`, `user`, `assistant`, or `tool`.'
+                        example: assistant
+                      content:
+                        type: string
+                        description: The text of the entry.
+                        example: Your ride is booked for 6pm.
+                      timestamp:
+                        type: integer
+                        format: int64
+                        description: When the entry was added, as a Unix timestamp in microseconds. Omitted on entries without one.
+                        example: 1694541297950440
+                      tool_calls:
+                        type: array
+                        items:
+                          type: object
+                          properties: {}
+                          unevaluatedProperties: {}
+                        description: The tool calls the agent made on this turn. Present only on a turn that made any.
+                    required:
+                      - role
+                      - content
                     unevaluatedProperties: {}
+                    description: |-
+                      One entry in the conversation. Beyond `role` and `content`, an entry carries whatever per-turn
+                      detail applies to it, such as recognition confidence on a caller turn or timings on a reply.
                   description: |-
                     The conversation, filtered: interrupted segments are consolidated and evicted entries dropped.
-                    Each entry carries a `role` of `system`, `user`, `assistant`, or `tool`, its `content`, and
-                    per-turn timing. Included when `action` is `post_conversation`.
+                    Included when `action` is `post_conversation`.
                   example:
                     - role: system
                       content: You dispatch taxis.
@@ -54993,8 +55376,34 @@ webhooks:
                   type: array
                   items:
                     type: object
-                    properties: {}
+                    properties:
+                      role:
+                        type: string
+                        description: 'Who produced the entry: `system`, `user`, `assistant`, or `tool`.'
+                        example: assistant
+                      content:
+                        type: string
+                        description: The text of the entry.
+                        example: Your ride is booked for 6pm.
+                      timestamp:
+                        type: integer
+                        format: int64
+                        description: When the entry was added, as a Unix timestamp in microseconds. Omitted on entries without one.
+                        example: 1694541297950440
+                      tool_calls:
+                        type: array
+                        items:
+                          type: object
+                          properties: {}
+                          unevaluatedProperties: {}
+                        description: The tool calls the agent made on this turn. Present only on a turn that made any.
+                    required:
+                      - role
+                      - content
                     unevaluatedProperties: {}
+                    description: |-
+                      One entry in the conversation. Beyond `role` and `content`, an entry carries whatever per-turn
+                      detail applies to it, such as recognition confidence on a caller turn or timings on a reply.
                   description: |-
                     The conversation, unfiltered and append-only. Interruption detail appears here and nowhere else.
                     Included when `action` is `post_conversation`.
@@ -55002,12 +55411,24 @@ webhooks:
                   type: array
                   items:
                     type: object
-                    properties: {}
+                    properties:
+                      type:
+                        type: string
+                        description: |-
+                          What happened. `user_input`, `ai_response`, and `tool_result` cover the conversation; `pronounce`
+                          and `text_normalize` record text rewrites; anything else is the name of a logged action.
+                        example: ai_response
+                      ts:
+                        type: number
+                        description: When it happened, as a Unix timestamp in microseconds. Omitted when the source entry had no timestamp.
+                        example: 1694541297950440
+                    required:
+                      - type
                     unevaluatedProperties: {}
+                    description: One event on the call, in order. Beyond `type`, an entry carries the fields belonging to that type.
                   description: |-
-                    A flat stream of typed events aligned to `raw_call_log`, for replaying the call in order. Each
-                    entry carries a `ts`, a `type` such as `user_input`, `ai_response`, or `tool_result`, and the
-                    fields for that type. Included when the session produced any.
+                    A flat stream of typed events aligned to `raw_call_log`, for replaying the call in order.
+                    Included when the session produced any.
                 previous_contexts:
                   type: array
                   items:
@@ -55068,12 +55489,49 @@ webhooks:
                   type: array
                   items:
                     type: object
-                    properties: {}
-                    unevaluatedProperties: {}
+                    properties:
+                      response:
+                        type: string
+                        description: The reply text. Redacted when you enable `redact_prompt`.
+                        example: Your ride is booked for 6pm.
+                      response_word_count:
+                        type: integer
+                        description: How many words the reply contained.
+                        example: 6
+                      answer_time:
+                        type: number
+                        description: How long the reply took to produce, in seconds.
+                        example: 1.42
+                      token_time:
+                        type: number
+                        description: How long the first token took, in seconds.
+                        example: 0.31
+                      tokens:
+                        type: integer
+                        description: How many tokens the reply used.
+                        example: 53
+                      avg_tps:
+                        type: number
+                        description: Average tokens per second across the reply.
+                        example: 37.3
+                      tps:
+                        type: number
+                        description: Tokens per second for this reply.
+                        example: 41.2
+                    required:
+                      - response
+                      - response_word_count
+                      - answer_time
+                      - token_time
+                      - tokens
+                      - avg_tps
+                      - tps
+                    unevaluatedProperties:
+                      not: {}
+                    description: Timing and token counts for one generated reply.
                   description: |-
-                    Per-response performance metrics, one entry per generated reply, carrying `response`,
-                    `response_word_count`, `answer_time`, `token_time`, `tokens`, `avg_tps`, and `tps`. Included once
-                    the session has any.
+                    Per-response performance metrics, one entry per generated reply. Included once the session has
+                    any.
                 SWMLVars:
                   type: object
                   properties: {}
@@ -55129,13 +55587,71 @@ webhooks:
                   type: array
                   items:
                     type: object
-                    properties: {}
-                    unevaluatedProperties: {}
-                  description: |-
-                    Every tool call the agent made, in order. Each entry carries `command_name`, `command_arg`,
-                    `epoch_time` in seconds, and, for a tool that reached your server, the `url`, the `post_data`
-                    that was sent, and the `post_response` that came back. Included when `action` is
-                    `post_conversation`.
+                    properties:
+                      command_name:
+                        type: string
+                        description: The name of the function the agent called.
+                        example: get_weather
+                      command_arg:
+                        type: string
+                        description: The arguments it passed, as the raw string the model produced.
+                        example: '{"city":"San Francisco"}'
+                      epoch_time:
+                        type: integer
+                        description: When the call was made, as a Unix timestamp in seconds.
+                        example: 1694541334
+                      native:
+                        type: boolean
+                        description: Always `true` when present, meaning the function ran inside the platform rather than on your server.
+                        example: true
+                      active_count:
+                        oneOf:
+                          - type: integer
+                          - type: string
+                        description: |-
+                          How many times the function may still be called, or `endless` when it has no limit. Present only
+                          on a function you limited.
+                        example: 2
+                      url:
+                        type: string
+                        description: The URL the function was served from. Present when the call reached your server.
+                        example: https://example.com/tools/get_weather
+                      post_data:
+                        type: object
+                        properties: {}
+                        unevaluatedProperties: {}
+                        description: The body sent to your server. Present when the call reached it.
+                      post_response:
+                        type: object
+                        properties: {}
+                        unevaluatedProperties: {}
+                        description: The response your server returned. Present when the call reached it and got a reply.
+                      delayed_post_response:
+                        type: object
+                        properties: {}
+                        unevaluatedProperties: {}
+                        description: A response that arrived after the agent had already moved on. Present only when that happened.
+                      mcp_url:
+                        type: string
+                        description: The MCP server the tool was served from. Present only for an MCP-backed tool.
+                      mcp_tool:
+                        type: string
+                        description: The tool name on that MCP server. Present only for an MCP-backed tool.
+                      mcp_response:
+                        type: string
+                        description: What the MCP server returned. Present only for an MCP-backed tool.
+                      mcp_error:
+                        type: boolean
+                        description: Always `true` when present, meaning the MCP call failed.
+                        example: true
+                    required:
+                      - command_name
+                      - command_arg
+                      - epoch_time
+                    unevaluatedProperties:
+                      not: {}
+                    description: One tool call the agent made, in the order it was made.
+                  description: Every tool call the agent made, in order. Included when `action` is `post_conversation`.
                 total_minutes:
                   type: integer
                   description: |-
@@ -55371,8 +55887,46 @@ webhooks:
                   type: array
                   items:
                     type: object
-                    properties: {}
-                    unevaluatedProperties: {}
+                    properties:
+                      response:
+                        type: string
+                        description: The reply text. Redacted when you enable `redact_prompt`.
+                        example: Your ride is booked for 6pm.
+                      response_word_count:
+                        type: integer
+                        description: How many words the reply contained.
+                        example: 6
+                      answer_time:
+                        type: number
+                        description: How long the reply took to produce, in seconds.
+                        example: 1.42
+                      token_time:
+                        type: number
+                        description: How long the first token took, in seconds.
+                        example: 0.31
+                      tokens:
+                        type: integer
+                        description: How many tokens the reply used.
+                        example: 53
+                      avg_tps:
+                        type: number
+                        description: Average tokens per second across the reply.
+                        example: 37.3
+                      tps:
+                        type: number
+                        description: Tokens per second for this reply.
+                        example: 41.2
+                    required:
+                      - response
+                      - response_word_count
+                      - answer_time
+                      - token_time
+                      - tokens
+                      - avg_tps
+                      - tps
+                    unevaluatedProperties:
+                      not: {}
+                    description: Timing and token counts for one generated reply.
                   description: Per-response performance metrics for the session so far. Included once the agent has any.
                 SWMLVars:
                   type: object
@@ -55696,15 +56250,67 @@ webhooks:
                   type: array
                   items:
                     type: object
-                    properties: {}
+                    properties:
+                      role:
+                        type: string
+                        description: 'Who produced the entry: `system`, `user`, `assistant`, or `tool`.'
+                        example: assistant
+                      content:
+                        type: string
+                        description: The text of the entry.
+                        example: Your ride is booked for 6pm.
+                      timestamp:
+                        type: integer
+                        format: int64
+                        description: When the entry was added, as a Unix timestamp in microseconds. Omitted on entries without one.
+                        example: 1694541297950440
+                      tool_calls:
+                        type: array
+                        items:
+                          type: object
+                          properties: {}
+                          unevaluatedProperties: {}
+                        description: The tool calls the agent made on this turn. Present only on a turn that made any.
+                    required:
+                      - role
+                      - content
                     unevaluatedProperties: {}
+                    description: |-
+                      One entry in the conversation. Beyond `role` and `content`, an entry carries whatever per-turn
+                      detail applies to it, such as recognition confidence on a caller turn or timings on a reply.
                   description: The conversation so far, with sensitive values redacted. Included when you enable `swaig_post_conversation`.
                 raw_call_log:
                   type: array
                   items:
                     type: object
-                    properties: {}
+                    properties:
+                      role:
+                        type: string
+                        description: 'Who produced the entry: `system`, `user`, `assistant`, or `tool`.'
+                        example: assistant
+                      content:
+                        type: string
+                        description: The text of the entry.
+                        example: Your ride is booked for 6pm.
+                      timestamp:
+                        type: integer
+                        format: int64
+                        description: When the entry was added, as a Unix timestamp in microseconds. Omitted on entries without one.
+                        example: 1694541297950440
+                      tool_calls:
+                        type: array
+                        items:
+                          type: object
+                          properties: {}
+                          unevaluatedProperties: {}
+                        description: The tool calls the agent made on this turn. Present only on a turn that made any.
+                    required:
+                      - role
+                      - content
                     unevaluatedProperties: {}
+                    description: |-
+                      One entry in the conversation. Beyond `role` and `content`, an entry carries whatever per-turn
+                      detail applies to it, such as recognition confidence on a caller turn or timings on a reply.
                   description: The full, unredacted conversation so far. Included when you enable `swaig_post_conversation`.
               required:
                 - function
