@@ -60,17 +60,26 @@ model Multilingual {
   @example(#["en", "es", "fr"])
   allowed?: string[];
 
-  @doc("The ASR (Automatic Speech Recognition) engine used to detect the spoken language.")
+  @doc("""
+    The ASR (Automatic Speech Recognition) engine used to detect the spoken language.
+    This is separate from the TTS engine that speaks each voice.
+    If you leave it unset, the engine already configured for the agent is used, falling back to
+    `deepgram` when the agent has none.
+    """)
   @example("deepgram")
-  engine?: string = "deepgram";
+  engine?: string;
 
   @doc("The ASR model used to detect the spoken language. The model must support code-switching, or multilingual mode does not start.")
   @example("nova-3")
   `model`?: string = "nova-3";
 
-  @doc("The ASR provider used to detect the spoken language.")
+  @doc("""
+    The ASR provider used to detect the spoken language.
+    If you leave it unset, the provider already configured for the agent is used, falling back to
+    `deepgram` when the agent has none. Setting it here also applies it to the recognizer.
+    """)
   @example("deepgram")
-  provider?: string = "deepgram";
+  provider?: string;
 
   @doc("""
     The language the agent opens the conversation in, before the caller has said

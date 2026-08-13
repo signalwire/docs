@@ -386,10 +386,10 @@ model AIParams {
   interrupt_prompt?: string;
 
   @doc("""
-    Turns on the multi-language handling that goes with a `languages` array, so the agent
-    can move between the languages you listed.
-    This does not enable the `multilingual` object, which configures its own languages and
-    is switched on by being set.
+    Has no effect and can be omitted.
+    A `languages` array takes effect because it is set, not because of this flag, so setting this
+    to `false` does not disable one. The separate `multilingual` object is likewise switched on by
+    being set.
     """)
   @example(true)
   languages_enabled?: boolean | SWMLVar = false;
