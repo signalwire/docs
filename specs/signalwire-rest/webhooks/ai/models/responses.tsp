@@ -35,10 +35,20 @@ model SwaigToolResult {
   tool_prompt?: string;
 }
 
+// `amazon_bedrock` and `ai_sidecar` handlers answer with plain
+// `SWML.Calling.Output` — the same object a `data_map` produces — so there is no
+// model for them here. Only the `ai` surface reads more than that, and only the
+// difference is declared below.
+
 @summary("SWAIG tool webhook response")
 @doc("""
   What your endpoint returns after running a SWAIG function for an
   [`ai`](/docs/swml/reference/calling/ai) agent.
+  
+  This is [`SWAIG.data_map.output`](/docs/swml/reference/calling/ai/swaig/functions/data_map) with
+  two additions the `ai` surface reads and the others ignore: `response` may be an object that
+  separates data from steering, and `post_process` defers the actions. A handler that needs neither
+  can answer with a plain output object.
   
   Every field is optional. Returning `{}` is valid — the agent reads a default result and carries
   on — so a handler that only needs to steer the call can return `action` alone.
@@ -52,16 +62,16 @@ model SwaigToolResult {
   [`SWAIG.functions`](/docs/swml/reference/calling/ai/swaig/functions#properties) reference.
   """)
 model SwaigToolWebhookResponse {
+  // `response` is re-declared rather than spread from `SWML.Calling.Output`
+  // because it widens there: TypeSpec cannot re-type a spread property, and the
+  // object form is read by the `ai` surface alone.
   @doc("""
     The result the agent reads next. A plain string becomes the tool message as-is; the object form
     splits the data half from the steering half. Omit it to let the agent use a default result.
     """)
   response?: string | SwaigToolResult;
 
-  @doc("""
-    Instructions the platform executes on the live call. Accepts a single action object or an array
-    of them.
-    """)
+  @doc("An action to perform on the live call, or a list of them.")
   action?: SWML.Calling.Action | SWML.Calling.Action[];
 
   @doc("""
@@ -70,29 +80,6 @@ model SwaigToolWebhookResponse {
     """)
   @example(true)
   post_process?: boolean = false;
-}
-
-@summary("Basic SWAIG tool webhook response")
-@doc("""
-  What your endpoint returns after running a SWAIG function for an
-  [`amazon_bedrock`](/docs/swml/reference/calling/amazon-bedrock) or
-  [`ai_sidecar`](/docs/swml/reference/calling/ai_sidecar) agent.
-  
-  These surfaces accept a narrower reply than [`ai`](/docs/swml/reference/calling/ai) agents do:
-  `response` must be a plain string — the `tool_result`/`tool_prompt` object form is not read — and
-  `post_process` has no effect. Both fields are optional, and each surface substitutes its own
-  default result when `response` is absent.
-  """)
-model SwaigToolWebhookBasicResponse {
-  @doc("The result the agent reads next. Written to the agent's context, not spoken to the caller.")
-  @example("The fare to the airport is $38.60. Offer to book a pickup now.")
-  response?: string;
-
-  @doc("""
-    Instructions the platform executes on the live call. Accepts a single action object or an array
-    of them.
-    """)
-  action?: SWML.Calling.Action | SWML.Calling.Action[];
 }
 
 @summary("SWAIG function signature envelope")

@@ -38340,19 +38340,22 @@ components:
       title: oneOf Property
     SWML.Calling.Output:
       type: object
-      required:
-        - response
       properties:
         response:
           type: string
-          description: A static response text or message returned to the AI agent's context.
+          description: |-
+            A static response text or message returned to the AI agent's context. Optional — when it is
+            absent the agent reads a default result and carries on, so an output that only needs to steer
+            the call can set `action` alone.
           examples:
             - Order placed
         action:
-          type: array
-          items:
-            $ref: '#/components/schemas/SWML.Calling.Action'
-          description: A list of actions to be performed upon matching.
+          anyOf:
+            - $ref: '#/components/schemas/SWML.Calling.Action'
+            - type: array
+              items:
+                $ref: '#/components/schemas/SWML.Calling.Action'
+          description: An action to perform upon matching, or a list of them.
       unevaluatedProperties:
         not: {}
       title: Output object
@@ -52256,35 +52259,6 @@ components:
         when the two are genuinely different things — you know which half is data and which half is
         instruction; the agent does not.
       title: SWAIG tool result
-    Webhooks.AI.SwaigToolWebhookBasicResponse:
-      type: object
-      properties:
-        response:
-          type: string
-          description: The result the agent reads next. Written to the agent's context, not spoken to the caller.
-          examples:
-            - The fare to the airport is $38.60. Offer to book a pickup now.
-        action:
-          anyOf:
-            - $ref: '#/components/schemas/SWML.Calling.Action'
-            - type: array
-              items:
-                $ref: '#/components/schemas/SWML.Calling.Action'
-          description: |-
-            Instructions the platform executes on the live call. Accepts a single action object or an array
-            of them.
-      unevaluatedProperties:
-        not: {}
-      description: |-
-        What your endpoint returns after running a SWAIG function for an
-        [`amazon_bedrock`](/docs/swml/reference/calling/amazon-bedrock) or
-        [`ai_sidecar`](/docs/swml/reference/calling/ai_sidecar) agent.
-
-        These surfaces accept a narrower reply than [`ai`](/docs/swml/reference/calling/ai) agents do:
-        `response` must be a plain string — the `tool_result`/`tool_prompt` object form is not read — and
-        `post_process` has no effect. Both fields are optional, and each surface substitutes its own
-        default result when `response` is absent.
-      title: Basic SWAIG tool webhook response
     Webhooks.AI.SwaigToolWebhookResponse:
       type: object
       properties:
@@ -52301,9 +52275,7 @@ components:
             - type: array
               items:
                 $ref: '#/components/schemas/SWML.Calling.Action'
-          description: |-
-            Instructions the platform executes on the live call. Accepts a single action object or an array
-            of them.
+          description: An action to perform on the live call, or a list of them.
         post_process:
           type: boolean
           description: |-
@@ -52317,6 +52289,11 @@ components:
       description: |-
         What your endpoint returns after running a SWAIG function for an
         [`ai`](/docs/swml/reference/calling/ai) agent.
+
+        This is [`SWAIG.data_map.output`](/docs/swml/reference/calling/ai/swaig/functions/data_map) with
+        two additions the `ai` surface reads and the others ignore: `response` may be an object that
+        separates data from steering, and `post_process` defers the actions. A handler that needs neither
+        can answer with a plain output object.
 
         Every field is optional. Returning `{}` is valid — the agent reads a default result and carries
         on — so a handler that only needs to steer the call can return `action` alone.
@@ -53757,7 +53734,7 @@ webhooks:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Webhooks.AI.SwaigToolWebhookBasicResponse'
+                $ref: '#/components/schemas/SWML.Calling.Output'
       tags:
         - AI Webhooks
       requestBody:
@@ -53848,7 +53825,7 @@ webhooks:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Webhooks.AI.SwaigToolWebhookBasicResponse'
+                $ref: '#/components/schemas/SWML.Calling.Output'
       tags:
         - AI Webhooks
       requestBody:
