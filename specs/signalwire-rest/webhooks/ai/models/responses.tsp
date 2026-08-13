@@ -62,11 +62,8 @@ model SwaigToolResult {
   [`SWAIG.functions`](/docs/swml/reference/calling/ai/swaig/functions#properties) reference.
   """)
 model SwaigToolWebhookResponse {
-  // Only `response` diverges — it widens here, and TypeSpec cannot re-type a
-  // spread property — so omit that one and inherit the rest. `action` stays
-  // defined once in SWML, and anything added to `Output` later arrives here for
-  // free. The spread sits between the two declared properties to keep the
-  // emitted order response / action / post_process.
+  // `response` widens here, and a spread property cannot be re-typed — hence
+  // omit-then-redeclare. Spread sits mid-model to keep the emitted field order.
   @doc("""
     The result the agent reads next. A plain string becomes the tool message as-is; the object form
     splits the data half from the steering half. Omit it to let the agent use a default result.
