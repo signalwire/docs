@@ -385,7 +385,12 @@ model AIParams {
   @example("Inform user that you can't hear anything")
   interrupt_prompt?: string;
 
-  @doc("Allows multilingualism when `true`.")
+  @doc("""
+    Turns on the multi-language handling that goes with a `languages` array, so the agent
+    can move between the languages you listed.
+    This does not enable the `multilingual` object, which configures its own languages and
+    is switched on by being set.
+    """)
   @example(true)
   languages_enabled?: boolean | SWMLVar = false;
 

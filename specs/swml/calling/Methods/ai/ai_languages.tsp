@@ -20,10 +20,12 @@ model LanguagesBase {
   code: string;
 
   @doc("""
-    Voice to use for the language. String format: `<engine id>.<voice id>`.
+    Voice to use for the language. String format: `<engine id>.<voice id>`, with an optional
+    `:<model id>` suffix for engines that offer a choice of model.
     Select engine from `gcloud`, `polly`, `amazon`, `azure`, `openai`, `elevenlabs`, `cartesia`, `deepgram`, `rime`,
     `inworld`, `minimax`, `groq-tts`, `mistral`, `grok`, `smallest`, `fish`, or `speechify`.
-    For example, `gcloud.fr-FR-Neural2-B`.
+    For example, `gcloud.fr-FR-Neural2-B` or `elevenlabs.rachel:eleven_flash_v2_5`.
+    Always name the engine: a bare voice id resolves against a default engine that can change.
     """)
   @example("gcloud.fr-FR-Neural2-B")
   voice: string;
