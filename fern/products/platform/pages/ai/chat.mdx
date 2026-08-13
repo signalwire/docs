@@ -11,6 +11,7 @@ max-toc-depth: 3
 [chat-gateway]: /docs/server-sdks/reference/python/ai-chat/chat-gateway
 [chat-client]: /docs/server-sdks/reference/python/ai-chat/ai-chat-client
 [swaig-webhook]: /docs/apis/rest/webhooks/ai-swaig-tool-webhook
+[swaig-post-conversation]: /docs/swml/reference/calling/ai/params#paramsswaig_post_conversation
 [post-prompt-webhook]: /docs/apis/rest/webhooks/ai-post-prompt-callback
 [tool-calling]: /docs/platform/ai/tool-calling
 [post-prompt]: /docs/swml/reference/calling/ai
@@ -34,7 +35,11 @@ in a page is a published API token. The gateway exists for that.
 
 ## Before you start
 
-You need two things beyond an agent:
+You need an agent. Chat reaches the same agent a phone call would, so if you have not built one yet,
+[tool calling][tool-calling] builds Ada from an empty file, and everything it covers — the prompt,
+the tools, the results they return — applies here unchanged.
+
+Two things beyond that:
 
 - **An API token with the `chat` scope.** The endpoint rejects a token without it. Scopes are set
   per token in your Space — see [API scopes][api-scopes].
@@ -119,9 +124,11 @@ flowchart LR
     Gateway -->|"relayed, unbuffered"| Browser
 ```
 
-A key lifted from your page reaches one agent and can do nothing else. It cannot name a different
-`config_url`, cannot read arbitrary conversations, and you can revoke it by redeploying with a new
-one.
+A key lifted from your page reaches one agent and can do nothing else: it cannot name a different
+`config_url`, and it cannot read arbitrary conversations. Revoking one is a server-side change —
+construct the gateway with a new key and redeploy, and the old key stops working immediately. Your
+page needs the new key to keep working, so serve it rather than hard-coding it if you expect to
+rotate.
 
 ```python title="gateway.py"
 from fastapi import FastAPI
@@ -279,6 +286,27 @@ as chat: `conversation_type` is `chat`, and `call_id` carries the conversation i
 **Tool calls** reach the `web_hook_url` on your SWAIG functions, exactly as they do on a call.
 [Tool calling][tool-calling] covers the round trip and the reply shape, and the
 [AI SWAIG tool webhook][swaig-webhook] documents the payload.
+
+On chat, a tool's reply can also split what the model *learns* from what it should *say*, by sending
+an object where a call expects a string:
+
+```json title="Your endpoint's JSON reply"
+{
+  "response": {
+    "tool_result": "no driver until 16:00",
+    "tool_prompt": "Offer four o'clock or later. Do not promise anything sooner."
+  }
+}
+```
+
+`tool_result` becomes the tool's result and `tool_prompt` is delivered as a separate instruction,
+which is worth reaching for when an instruction buried inside a result would read as data. A voice
+call takes the string form only, so a tool shared between both channels should return a plain
+`response` string.
+
+Setting [`swaig_post_conversation`][swaig-post-conversation] in your SWML adds the transcript to
+every tool webhook, as the model currently sees it and in full. It is off by default because it puts
+the whole conversation in a body leaving your control.
 
 **A summary** reaches your [`post_prompt_url`][post-prompt] after the conversation ends, when your
 SWML sets one. Not instantly — expect seconds. The
