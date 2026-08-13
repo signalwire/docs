@@ -1,721 +1,568 @@
 ---
-id: e6af1926-c844-48ea-a33c-692d47245973
 title: Best practices for creating a SignalWire AI agent
 sidebar-title: Best practices
 slug: /ai/best-practices
-author: Devon White
-x-custom:
-  tags:
-    - getting-started
-    - favorite
-    - sdk:swml
-    - product:ai
-    - product:voice
-description: |
-  This guide offers a detailed overview of best 
-  practices to make sure your SignalWire Agent operates 
-  effectively.
+description: Best practices for designing SignalWire AI agents that are consistent, responsive, and production-ready.
+max-toc-depth: 3
 ---
 
-## **Overview**
+[tool-calling]: /docs/platform/ai/tool-calling
+[tool-calling-review]: /docs/platform/ai/tool-calling#read-the-post-prompt-report
+[prompt-engineering]: /docs/platform/ai/prompt-engineering
+[avoid-overprompting]: /docs/platform/ai/prompt-engineering/best-practices#avoid-overprompting
+[swml-datamap]: /docs/swml/guides/data-map
+[ai-reference]: /docs/swml/reference/calling/ai
+[ai-prompt-reference]: /docs/swml/reference/calling/ai/prompt
+[sdk-hints]: /docs/server-sdks/guides/hints
 
-When designing an AI Agent with SignalWire, it's crucial to achieve a harmonious balance between clarity,
-efficiency, and adaptability.
-The following guide offers a detailed overview of best practices
-to make sure your SignalWire Agent operates effectively and offers a user-friendly experience.
+Building an agent that holds up in production takes more than a good prompt.
+This guide collects the practices that matter across the whole design: how work divides between
+the prompt and your code, how to write for a real-time voice medium, how to help speech recognition,
+and how to test, observe, and stay compliant once callers arrive.
 
----
+The examples build one agent, the dispatcher for a taxi company called Bayview Taxi, a practice at a
+time. The last section assembles it into a script you can run.
 
-## **"End-Pointing" and "Turnaround"**
+## Split the work between the prompt and your code
 
-When using SignalWire products to design interaction between AI systems and humans, 
-you'll likely encounter the important concepts of **"end-pointing"** and **"turnaround."**
- - **End-pointing, or "end-of-utterance detection"**: this is the AI's ability to detect when a human speaker has finished speaking.
- - **Turnaround, or "turn-taking":** This refers to the time it takes for the AI to process the human's input and generate a response.
+The single highest-leverage design decision is what you *don't* put in the prompt.
 
-While it might seem ideal for AI to optimize for instant end-pointing and turnaround, this expectation is unrealistic for several reasons:
+Language models are excellent at conversation: tone, comprehension, extracting details from natural speech.
+They are unreliable at arithmetic, current facts, and rule-following under pressure.
+Give each side the work it's good at.
+The prompt covers who the agent is, how it speaks, what it's there to accomplish,
+and when to reach for its functions.
+Your code, behind [SWAIG functions][tool-calling] (SignalWire's tool calling), covers prices,
+inventory, calculations, policy, and anything else with a right answer.
+Split that way, the agent only ever holds the exact information it needs, verified by your systems,
+at the moment it needs it.
 
- - Natural language understanding and processing are complex tasks that require the AI to analyze syntax, semantics, and context of human speech. 
- This analysis takes time, even if only a fraction of a second.
- - Real-world communication is often filled with nuances, such as pauses, overlapping speech, and non-verbal cues.
- These features make it challenging for AI to confidently pinpoint the moment a speaker has finished. 
- - Generating coherent, contextually appropriate, and nuanced responses takes computational time.
+<Tip>
+Values and conditions change; the prompt doesn't. Anything that can go stale should be fetched
+by your code at call time and fed to the agent, not written statically into the prompt.
+</Tip>
 
-<Warning>
-A sharp increase in interest in AI products has led to a number of new products claiming to offer instantaneous end-pointing and turnaround.
-If an AI agent appears to respond perfectly and immediately in a recorded demo, it may be too good to be true.
-</Warning>
+### Keep business data out of the prompt
 
-SignalWire AI products include a number of tools designed to help you increase the apparent responsiveness of your AI agents. For example:
+It's tempting to paste the fare table, the service-area map, or the policy manual into the prompt
+and hope the model honors it all — "prompt and pray."
+Resist it.
+The prompt is fixed when the call starts, but your data keeps changing;
+a function call reads the current value at the moment the caller asks.
+Data in the prompt is *recalled* by the model, approximately,
+while data from a function call is *returned* by your code, exactly.
+And the model has no way to tell your pasted policy apart from anything else it has read.
+Your backend is the system of record.
 
- - **Filler words** provide text which the AI can say while processing is taking place.
- - [**Background audio**](/docs/swml/guides) such as typing noises or office noises can offer immediate feedback to the user.
+Move that data behind SWAIG functions: a lookup backed by your webhook or the Server SDK,
+or a serverless [DataMap][swml-datamap] for straightforward API calls and pattern-matched responses.
 
----
+<Card title="Tool calling" href="/docs/platform/ai/tool-calling" icon="regular webhook">
+  How AI agents call your backend — the mental model, a complete example, and patterns for reliable SWAIG functions.
+</Card>
 
-## **Crafting the Initial Prompt for the AI**
+## Write the prompt for conversation, not logic
 
-The initial prompt sets the tone and context for your AI Agent.
-It's essential to be concise, clear, and relevant.
+With business logic out of the way, the prompt's job is focused: define the agent's identity,
+its conversational duties, and where it defers to your code.
+Outline those necessities clearly, then stop.
+Overloading the AI with instructions muddles its behavior rather than tightening it,
+and since the prompt is part of every conversational turn, a brief prompt is also cheaper to run.
+See [avoiding over-prompting][avoid-overprompting] for techniques.
 
-- **Avoid Over-Prompting:** Overloading the AI with excessive information can muddle its understanding.
-  Instead, furnish it with a brief yet comprehensive overview that defines its role and boundaries.
-- **Stick to Necessities:** Clearly outline the AI's identity and primary responsibilities.
-  This guarantees the AI comprehends its mission and can respond appropriately.
-- **Use Markdown for Structuring the Prompt:** Structuring prompts in [Markdown](https://www.markdownguide.org/basic-syntax/)
-  is highly recommended.
-  It ensures content is organized and legible, both boosting readability and narrowing the AI's interpretation.
+Structure the prompt with [Markdown](https://www.markdownguide.org/basic-syntax/):
+headings and lists keep it organized and legible,
+narrowing how the AI interprets each section.
 
-### Delving into Prompt Configuration
-
-Understanding the prompt's configuration parameters is key to fine-tuning the AI's responses:
-
-- **Temperature (`temperature`):** Influences the randomness of the AI's output.
-  A value closer to 0 makes the AI's responses more deterministic and focused, while higher values introduce more variety.
-- **Top P (`top_p`):** Another parameter influencing randomness.
-  It dictates how diverse the AI's responses can be.
-  A lower value narrows down the potential responses.
-- **Confidence (`confidence`):** Determines the threshold for speech-detection events.
-  A lower value reduces the pause after user interaction but may lead to false positives.
-- **Presence Penalty (`presence_penalty`):** Dictates the AI's propensity to introduce new topics.
-  A positive value makes the AI more likely to diversify its responses.
-- **Frequency Penalty (`frequency_penalty`):** Influences the AI's tendency to repeat itself.
-  Positive values discourage repetition.
-
-
-<Tabs>
-<Tab title="YAML">
-
+<CodeBlocks>
+<CodeBlock title="SWML">
 ```yaml
+version: 1.0.0
 sections:
   main:
     - ai:
         prompt:
           text: |
-            Your name is David. You are a virtual assistant that is helping with tree planting
-            and their environmental benefits.
+            Your name is Ada. You are the dispatcher for Bayview Taxi.
 
-            ## Information on Tree Planting
-            Tree planting is a vital activity that significantly contributes to the environment.
-            Trees absorb CO2, prevent soil erosion, provide habitat for wildlife, and offer many
-            other benefits.
+            ## Personality and duties
+            You are calm and efficient. Help callers get a fare quote and book
+            a pickup, using the functions available to you.
 
-            ## David's Personality and Job Duties
-            Your duties are to help assist users with information related to tree planting.
-            You have a friendly and eco-conscious personality.
-
-            ## Greeting Rules
-            Greet the user and thank them for showing interest in tree planting. Introduce yourself as David.
-            Prefix the greeting with a 'good morning', 'good afternoon', or a 'good evening' depending on the time of day.
-
-          temperature: 0.89
-          top_p: 0.64
-          confidence: 0.5
+            ## Greeting rules
+            Greet the caller, introduce yourself as Ada, and ask where they
+            are and where they're going.
+          temperature: 0.7
 ```
+</CodeBlock>
+<CodeBlock title="Server SDK (Python)">
+```python
+from signalwire import AgentBase
 
-</Tab>
-<Tab title="JSON">
+agent = AgentBase(name="bayview-taxi")
 
-```json
-{
-  "sections": {
-    "main": [
-      {
-        "ai": {
-          "prompt": {
-            "text": "Your name is David. You are a virtual assistant that is helping with tree planting\nand their environmental benefits.\n\n## Information on Tree Planting\nTree planting is a vital activity that significantly contributes to the environment.\nTrees absorb CO2, prevent soil erosion, provide habitat for wildlife, and offer many\nother benefits.\n\n## David's Personality and Job Duties\nYour duties are to help assist users with information related to tree planting.\nYou have a friendly and eco-conscious personality.\n\n## Greeting Rules\nGreet the user and thank them for showing interest in tree planting. Introduce yourself as David.\nPrefix the greeting with a 'good morning', 'good afternoon', or a 'good evening' depending on the time of day.\n",
-            "temperature": 0.89,
-            "top_p": 0.64,
-            "confidence": 0.5
-          }
-        }
-      }
-    ]
-  }
-}
+agent.prompt_add_section(
+    "Role",
+    "Your name is Ada. You are the dispatcher for Bayview Taxi."
+)
+agent.prompt_add_section(
+    "Personality and duties",
+    "You are calm and efficient. Help callers get a fare quote and book "
+    "a pickup, using the functions available to you."
+)
+agent.prompt_add_section(
+    "Greeting rules",
+    "Greet the caller, introduce yourself as Ada, and ask where they "
+    "are and where they're going."
+)
+agent.set_params({"temperature": 0.7})
+
+if __name__ == "__main__":
+    agent.run()
 ```
+</CodeBlock>
+</CodeBlocks>
 
-</Tab>
-</Tabs>
+Notice what this prompt *doesn't* contain: no fare table, no service-area boundary, no driver roster.
+That information lives in the dispatch system behind the agent's functions,
+so the prompt stays short and the answers stay accurate.
 
----
+Some context does belong in the prompt.
+Put in it what no system of record can answer: who the agent is, the scope of what it handles,
+the tone it takes, how it should treat a caller who is upset, and the point at which it hands off
+to a person.
+There is nothing to look up for any of those, and leaving them out is what produces a bland,
+directionless agent.
 
-## Dynamic data
+Business hours are the trap.
+They read like a stable fact and they aren't: holidays move them, a weather closure moves them,
+and a short-staffed Saturday moves them.
+A prompt written last quarter will state the old hours with complete confidence.
+If a caller could be told the wrong thing because the world changed, it belongs behind a function.
 
-For best results, we recommend including dynamic data, 
-such as data returned by 
-[SWAIG functions](#functions),
-at the bottom of your prompt.
-This improves the speed and consistency of LLM results
-due to the way that responses are cached.
+Per-call context, such as the caller's name or account tier, can be interpolated into the prompt
+at request time; place it at the **bottom** so the stable part stays identical from turn to turn
+and from call to call.
+Interpolation is for context the conversation starts from. A live answer, like a price or an
+order's status, still comes from a function at the moment the caller asks.
 
-For more information, consult 
-[OpenAI's documentation](https://platform.openai.com/docs/guides/prompt-caching)
-on prompt caching.
+For the full craft of prompt writing, including structure, examples, and iterative refinement,
+see the [prompt engineering guide][prompt-engineering].
 
----
+### Tune the model parameters
 
-## Exploring Functions in SignalWire AI
+The [`prompt` object][ai-prompt-reference] accepts parameters that shape the AI's responses:
 
-SignalWire's AI Agent uses functions to neatly store and organize information.
-This way, the AI can easily handle diverse questions without needing long and complicated prompts.
+- **`temperature`** (`0.0`–`1.5`): how random the output is. Closer to `0` makes it less random.
+- **`top_p`** (`0.0`–`1.0`): an alternative way to set randomness, again less random closer to `0`.
+  It does the same job as `temperature`, so tune one or the other rather than both.
+- **`confidence`** (`0.0`–`1.0`): the threshold for firing a speech-detect event at the end of the
+  caller's utterance. Lowering it shortens the pause after the caller speaks, at the cost of
+  false positives.
+- **`presence_penalty`** (`-2.0`–`2.0`): aversion to staying on topic. Positive values make the model
+  more likely to raise new topics.
+- **`frequency_penalty`** (`-2.0`–`2.0`): aversion to repetition. Positive values make the model less
+  likely to repeat the same line verbatim.
+- **`max_tokens`** (`0`–`4096`): a ceiling on how long a single generated reply can be.
 
-### Employ `data_map` and `webhook_url` for Storing Prompts
+Effective defaults vary by model, so treat these as adjustments from whatever the model you selected
+starts at. Change one at a time and listen to a real call between changes.
 
-Utilizing `data_map` to store specific prompts or text segments is a practical approach.
-It allows you to retrieve them when necessary, promoting a fluid and logical flow of dialogue.
+## Design for real-time voice
 
-Moreover, SignalWire's AI Agent offers the flexibility to incorporate external logic via the `webhook_url`.
-By pointing the AI to your own webhook, you can harness backend logic to further customize
-and refine the AI's responses based on real-time data or specific conditions.
+Voice AI adds a dimension that text chat doesn't have: time.
+Two concepts matter when tuning how your agent converses.
+**End-pointing** (end-of-utterance detection) is the AI's ability to detect when the caller has finished speaking,
+and **turnaround** (turn-taking) is the time it takes the AI to process input and begin its response.
 
-<Tabs groupId="functions">
-<Tab title="YAML">
+Neither can be instant.
+Natural language processing takes time: the AI analyzes syntax, semantics, and context,
+even if only for a fraction of a second.
+Real conversation is full of pauses, overlaps, and changes of direction that make "finished speaking" ambiguous.
+And generating a coherent, contextually appropriate response is computational work.
 
+<Note>
+No system delivers truly instantaneous end-pointing and turnaround.
+Judge latency on live calls with your own configuration rather than on recorded demos,
+and measure the interval the caller experiences: from the moment they stop talking
+to the moment they hear the reply begin.
+Consistency matters as much as the average; a steady conversation feels better
+than a fast one with occasional stalls.
+</Note>
+
+Rather than chasing zero, make the wait feel natural.
+Filler phrases give the AI something to say while a function call is running;
+configure them [per-function](/docs/swml/reference/calling/ai/swaig/functions) and
+[agent-wide](/docs/swml/reference/calling/ai/languages).
+Background audio, such as typing or office ambience, provides immediate and familiar feedback
+while processing happens; set it with
+[`params.background_file`](/docs/swml/reference/calling/ai/params#paramsbackground_file).
+And keep your function handlers fast: your webhook's latency is part of the conversation,
+so move slow work out of band and respond promptly.
+
+## Help speech recognition with hints
+
+Hints boost recognition accuracy for the words that matter in your domain,
+so "Gough Street" doesn't arrive as "Goff Street."
+
+Street names, neighborhoods, and local landmarks are exactly the vocabulary a general speech model
+handles worst and a dispatcher hears most, which makes them the first thing to introduce:
+
+<CodeBlocks>
+<CodeBlock title="SWML">
 ```yaml
-SWAIG:
-  functions:
-    - function: tree_benefits
-      purpose: To share the benefits of planting trees.
-      argument:
-        type: object
-        properties:
-          benefit_type:
-            type: string
-            description: Specific benefit type of tree planting.
-      data_map:
-        expressions:
-          - string: %{lc:args.benefit_type}
-            pattern: carbon
-            output:
-              response: "Trees play a crucial role in absorbing carbon dioxide, thereby helping combat climate change."
-    - function: lookup_tree
-      web_hook_url: https://example.com/webhook_endpoint
-      purpose: To lookup a type of tree.
-      argument:
-        type: object
-        properties:
-          tree_type:
-            type: string
-            description: Type of tree
-```
-
-</Tab>
-<Tab title="JSON">
-
-```json
-{
-  "SWAIG": {
-    "functions": [
-      {
-        "function": "tree_benefits",
-        "purpose": "To share the benefits of planting trees.",
-        "argument": {
-          "type": "object",
-          "properties": {
-            "benefit_type": {
-              "type": "string",
-              "description": "Specific benefit type of tree planting."
-            }
-          }
-        },
-        "data_map": {
-          "expressions": [
-            {
-              "string": "%{lc:args.benefit_type}",
-              "pattern": "carbon",
-              "output": {
-                "response": "Trees play a crucial role in absorbing carbon dioxide, thereby helping combat climate change."
-              }
-            }
-          ]
-        }
-      },
-      {
-        "function": "lookup_tree",
-        "web_hook_url": "https://example.com/webhook_endpoint",
-        "purpose": "To lookup a type of tree.",
-        "argument": {
-          "type": "object",
-          "properties": {
-            "tree_type": {
-              "type": "string",
-              "description": "Type of tree"
-            }
-          }
-        }
-      }
-    ]
-  }
-}
-```
-
-</Tab>
-</Tabs>
-
-### Optimize Token Usage
-
-By invoking functions to offer specific guidelines when necessary, you utilize tokens more
-efficiently, ensuring both optimal AI performance and cost-effectiveness.
-
-### Elaboration on the Function's Efficacy
-
-- **Dynamic Response Generation:** The `tree_benefits` function is designed to provide tailored responses based on user queries.
-  This is evident from the way the `data_map` is structured.
-  Depending on whether a user asks about the benefits of trees in relation to "carbon", "soil", or "wildlife",
-  the AI will furnish a specific, relevant answer.
-- **Pattern Recognition:** By using the `pattern` keyword within the `data_map`,
-  the function can identify specific keywords or patterns in the user's inquiry.
-  This ensures that the AI's response is not just generic but directly corresponds to the user's query.
-- **Token Efficiency:** Instead of having a lengthy prompt containing all the possible benefits of trees,
-  the function offers a modular approach.
-  It only provides detailed information about a specific benefit when asked,
-  ensuring that tokens (which represent chunks of information the AI can process in a single go) are used judiciously.
-- **Scalability:** With the current structure, adding more benefits or details becomes straightforward.
-  For instance, if in the future there's a need to include benefits related to "air quality" or "shade",
-  it can be seamlessly integrated into the function without overhauling the existing setup.
-- **Enhanced User Engagement:** By furnishing precise, on-demand information,
-  the AI elevates user experience, ensuring interactions are concise and meaningful.
-
-In essence, the `tree_benefits` function exemplifies the power of modular design in AI prompts.
-It showcases how, by intelligently structuring functions, one can create an AI Agent that's both responsive and resource-efficient.
-
-### Utilizing Perl Compatible Regular Expressions (PCRE)
-
-The [PCRE](https://www.pcre.org) is a powerful library
-that provides a set of functions to match patterns using regular expressions.
-In the context of a SignalWire AI Agent, PCRE can be used
-to match specific patterns or keywords in a user's response
-and dictate the AI's subsequent actions.
-
-#### Benefits of Using PCRE in SignalWire AI
-
-- **Flexibility:** PCRE allows for complex pattern matching, enabling the AI to recognize a wide range of user inputs.
-- **Precision:** PCRE ensures that the AI's responses or actions are tailored to the user's specific queries or statements.
-- **Efficiency:** By using regular expressions, developers can write concise patterns
-  that capture a variety of user inputs, reducing the need for long lists of possible phrases or keywords.
-- **Scalability:** As the system grows or changes, patterns can easily be updated or expanded
-  to accommodate new functionalities without overhauling the entire system.
-
-#### Example: Using PCRE to Share Benefits of Planting Trees
-
-Consider the following SignalWire AI configuration that employs PCRE for sharing benefits of planting trees:
-
-<Tabs groupId="PCRE">
-<Tab title="YAML">
-
-```yaml
-SWAIG:
-  functions:
-    - function: tree_benefits
-      purpose: To share the benefits of planting trees.
-      argument:
-        type: object
-        properties:
-          benefit_type:
-            type: string
-            description: Specific benefit type of tree planting.
-      data_map:
-        expressions:
-          - string: %{lc:args.benefit_type}
-            pattern: /carbon/i
-            output:
-              response: "Trees play a crucial role in absorbing carbon dioxide, thereby helping combat climate change."
-          - string: %{lc:args.benefit_type}
-            pattern: /soil/i
-            output:
-              response: "Trees help prevent soil erosion and improve soil quality, making the land more fertile."
-          - string: %{lc:args.benefit_type}
-            pattern: /wildlife/i
-            output:
-              response: "Trees help wildlife flourish.Many animals also use trees for resting, nesting and for places from which to hunt or capture prey. When the trees mature, animals are able to enjoy delicious fruits and foraging opportunities."
-```
-
-</Tab>
-<Tab title="JSON">
-
-```json
-{
-  "SWAIG": {
-    "functions": [
-      {
-        "function": "tree_benefits",
-        "purpose": "To share the benefits of planting trees.",
-        "argument": {
-          "type": "object",
-          "properties": {
-            "benefit_type": {
-              "type": "string",
-              "description": "Specific benefit type of tree planting."
-            }
-          }
-        },
-        "data_map": {
-          "expressions": [
-            {
-              "string": "%{lc:args.benefit_type}",
-              "pattern": "/carbon/i",
-              "output": {
-                "response": "Trees play a crucial role in absorbing carbon dioxide, thereby helping combat climate change."
-              }
-            },
-            {
-              "string": "%{lc:args.benefit_type}",
-              "pattern": "/soil/i",
-              "output": {
-                "response": "Trees help prevent soil erosion and improve soil quality, making the land more fertile."
-              }
-            },
-            {
-              "string": "%{lc:args.benefit_type}",
-              "pattern": "/wildlife/i",
-              "output": {
-                "response": "Trees help wildlife flourish.Many animals also use trees for resting, nesting and for places from which to hunt or capture prey. When the trees mature, animals are able to enjoy delicious fruits and foraging opportunities."
-              }
-            }
-          ]
-        }
-      }
-    ]
-  }
-}
-```
-
-</Tab>
-</Tabs>
-
-##### Example Overview:
-
-- PCRE patterns like `/carbon/i`, `/soil/i`, and `/wildlife/i` are used to match specific benefit types provided as input.
-- Depending on the matched pattern, the AI provides a relevant response
-  about the benefits of tree planting related to carbon absorption, soil quality, or wildlife support.
-- The `/i` modifier in the patterns makes the regex match case-insensitive, adding flexibility to user input.
-
----
-
-## **Harnessing the Power of Hints**
-
-Hints serve as beacons, directing the AI's comprehension and making sure it stays relevant to the given context.
-
-- **Keyword Guidance:** Introducing specific keywords as hints can channel the AI's attention.
-  This ensures that the AI resonates with the intended theme.
-- **Example:** For a tree planting and environmental benefits AI,
-  hints like "sapling", "soil", "watering", "benefits", and "environment" are pivotal.
-
-<Tabs groupId="hints">
-<Tab title="YAML">
-
-```yaml
-hints:
-  - wildlife
-  - carbon
-  - sapling
-  - soil
-  - watering
-  - benefits
-  - environment
-```
-
-</Tab>
-<Tab title="JSON">
-
-```json
-{
-  "hints": [
-    "wildlife",
-    "carbon",
-    "sapling",
-    "soil",
-    "watering",
-    "benefits",
-    "environment"
-  ]
-}
-```
-
-</Tab>
-</Tabs>
-
----
-
-## **Staying In Regulation with FCC Guidelines**
-
-The Federal Communications Commission (FCC) has explicitly criminalized <u>**_unsolicited_**</u> robocalls
-that use voices made with artificial intelligence.
-The proposal would outlaw such robocalls under the [`Telephone Consumer Protection Act`](https://www.fcc.gov/sites/default/files/tcpa-rules.pdf), or `TCPA`,
-a 1991 law that regulates automated political and marketing calls made without the receivers’ consent.
-
-This means that any AI Agent that interacts with users must be transparent about its nature and purpose.
-This <u>**_does not_**</u> mean that AI Agents are illegal, but rather that they must be used responsibly and in compliance with the law.
-
-### Key Considerations for FCC Compliance
-
-- **Transparency:** Clearly state that the user is interacting with an AI Agent.
-- **Opt-Out Mechanism:** Provide a simple and straightforward method for users to opt out of the AI interaction.
-- **User Consent:** Ensure that users are aware of the AI's capabilities and have consented to interact with it.
-
----
-
-## **Other General Best Practices**
-
-- **Regularly Review and Update:** AI, like any other tool, benefits from regular reviews.
-  Periodically assess its performance and make necessary adjustments.
-- **Test with Real Users:** Before deploying, conduct beta testing with real users to gather feedback and identify areas of improvement.
-- **Stay Updated with SignalWire Changes:** AI and associated platforms evolve.
-  Stay updated with SignalWire's documentation and update your AI accordingly.
-- **Monitor Usage Metrics:** Keep an eye on token consumption, user interaction times, and other relevant metrics to optimize performance and manage costs.
-
----
-
-## **Tree Planting AI Example**
-
-This example illustrates a comprehensive AI virtual assistant configuration, named David,
-designed to guide users on tree planting and its myriad environmental advantages.
-By harnessing structured YAML configurations, the AI Agent functions effectively, ensuring users receive accurate and pertinent information.
-
-<Tabs groupId="example">
-<Tab title="YAML">
-
-```yaml
+version: 1.0.0
 sections:
   main:
     - ai:
         prompt:
           text: |
-            Your name is David. You are a virtual assistant that is helping with tree planting
-            and their environmental benefits.
+            Your name is Ada. You are the dispatcher for Bayview Taxi.
+            Help callers get a fare quote and book a pickup.
+        hints:
+          - Gough Street
+          - Divisadero
+          - Presidio
+          - Embarcadero
+          - Bayview
+          - SFO
+```
+</CodeBlock>
+<CodeBlock title="Server SDK (Python)">
+```python
+from signalwire import AgentBase
 
+agent = AgentBase(name="bayview-taxi")
 
-            ## Information on Tree Planting
-            Tree planting is a vital activity that significantly contributes to the environment.
-            Trees absorb CO2, prevent soil erosion, provide habitat for wildlife, and offer many
-            other benefits.
+agent.prompt_add_section(
+    "Role",
+    "Your name is Ada. You are the dispatcher for Bayview Taxi. "
+    "Help callers get a fare quote and book a pickup."
+)
+agent.add_hints(["Gough Street", "Divisadero", "Presidio", "Embarcadero", "Bayview", "SFO"])
 
-            ## David's Personality and Job Duties
-            Your duties are to help assist users with information related to tree planting.
-            You have a friendly and eco-conscious personality.
+if __name__ == "__main__":
+    agent.run()
+```
+</CodeBlock>
+</CodeBlocks>
 
-            ## Greeting Rules
-            Greet the user and thank them for showing interest in tree planting. Introduce yourself as David.
-            Prefix the greeting with a 'good morning', 'good afternoon', or a 'good evening' depending on the time of day.
-          temperature: 0.89
-          top_p: 0.64
-          confidence: 0.5
-        post_prompt:
-          text: '## Post Prompt Actions\n\nSummarize the call and provide the summary in a JSON format.'
-          temperature: 0
-          top_p: 1.0
-        post_prompt_url: https://example.site/webhook_url
+See [`hints`][ai-reference] in the SWML reference, or [speech recognition hints][sdk-hints] in the Server SDK.
+
+## Test, monitor, and iterate
+
+Test with real users before deploying.
+Scripted test calls follow the script; customers won't, and beta callers surface the gaps.
+
+Once callers arrive, review real calls.
+Post-call reports capture each conversation and everything the agent did during it;
+setting them up and reading them is covered in the
+[tool calling guide][tool-calling-review].
+Read the transcripts where the agent hesitated or chose the wrong function.
+That's where the next fix comes from.
+Usage metrics fill in the aggregate picture:
+token consumption, interaction times, and call outcomes reveal both cost and quality trends.
+
+An agent is never finished.
+Your business changes, so revisit the prompt and functions periodically,
+and check the documentation and release notes for new parameters, voices,
+and features your agent can use as SignalWire's AI capabilities evolve.
+
+## Stay compliant with regulations
+
+In [February 2024](https://www.fcc.gov/document/fcc-makes-ai-generated-voices-robocalls-illegal)
+the FCC ruled that an AI-generated voice counts as an artificial voice under the
+Telephone Consumer Protection Act (TCPA).
+Your agent is subject to the same rules as any other automated call.
+The person on the other end has to have consented to it, the call has to identify itself as AI,
+and a request to stop has to be honored.
+Which of those rules apply, and how strictly, depends on why you're calling
+and where the called party lives.
+
+Each rule has a yes-or-no answer, which makes it work for your code rather than the prompt.
+Put the AI disclosure in a [`static_greeting`](/docs/swml/reference/calling/ai/params#paramsstatic_greeting)
+with `static_greeting_no_barge`, so it plays in full before the agent's first turn.
+Verify consent, check your do-not-call list, and confirm the local hour before you ask
+SignalWire to dial, because once the call is placed it has already happened.
+Then let the agent catch an opt-out mid-conversation with a [SWAIG function][tool-calling]
+whose handler writes to your do-not-call list before it answers the caller.
+
+Both halves of that, together:
+
+<CodeBlocks>
+<CodeBlock title="SWML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - ai:
         params:
-          direction: inbound
-          swaig_allow_swml: true
+          static_greeting: >-
+            Hello, this is an automated assistant calling from Bayview Taxi
+            about your pickup. This call uses an artificial voice.
+          static_greeting_no_barge: true
+        prompt:
+          text: |
+            You are calling to tell the caller their driver is on the way.
+            If the caller asks not to be contacted again, in any wording,
+            call opt_out immediately before saying anything else.
         SWAIG:
           functions:
-            - function: tree_benefits
-              purpose: To share the benefits of planting trees.
-              argument:
+            - function: opt_out
+              description: Record that the caller does not want to be contacted again
+              parameters:
                 type: object
-                properties:
-                  benefit_type:
-                    type: string
-                    description: Specific benefit type of tree planting.
-              data_map:
-                expressions:
-                  - string: %{lc:args.benefit_type}
-                    pattern: /carbon/i
-                    output:
-                      response: "Trees play a crucial role in absorbing carbon dioxide, thereby helping combat climate change."
-                  - string: %{lc:args.benefit_type}
-                    pattern: /soil/i
-                    output:
-                      response: "Trees help prevent soil erosion and improve soil quality, making the land more fertile."
-                  - string: %{lc:args.benefit_type}
-                    pattern: /wildlife/i
-                    output:
-                      response: "Trees help wildlife flourish.Many animals also use trees for resting, nesting and for places from which to hunt or capture prey. When the trees mature, animals are able to enjoy delicious fruits and foraging opportunities."
-            - function: region_specific_trees
-              purpose: To recommend trees suitable for specific regions or climate zones.
-              argument:
-                type: object
-                properties:
-                  region:
-                    type: string
-                    description: The region or climate zone for tree recommendations.
-              data_map:
-                expressions:
-                  - string: %{lc:args.region}
-                    pattern: /tropical/i
-                    output:
-                      response: "For tropical regions, consider planting trees like Mango, Coconut, and Banana."
-                  - string: %{lc:args.region}
-                    pattern: /temperate/i
-                    output:
-                      response: "For temperate zones, Oak, Maple, and Birch trees are great choices."
-            - function: tree_planting_guide
-              purpose: To guide users on the tree planting process.
-              argument:
-                type: object
-                properties:
-                  step:
-                    type: string
-                    description: Specific step or aspect of tree planting.
-              data_map:
-                expressions:
-                  - string: %{lc:args.step}
-                    pattern: /digging/i
-                    output:
-                      response: "Dig a hole that is twice as wide as the tree’s root ball and just as deep. Place the tree in the hole and fill it with soil."
-                  - string: %{lc:args.step}
-                    pattern: /watering/i
-                    output:
-                      response: "Water the tree immediately after planting. Regularly water it, especially during dry periods."
-        hints:
-          - sapling
-          - soil
-          - watering
-          - benefits
-          - environment
+                properties: {}
+              web_hook_url: https://example.com/opt-out
 ```
+</CodeBlock>
+<CodeBlock title="Server SDK (Python)">
+```python
+from signalwire import AgentBase, FunctionResult
 
-</Tab>
-<Tab title="JSON">
+class OutboundAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="outbound-agent")
+
+        self.set_params({
+            "static_greeting": (
+                "Hello, this is an automated assistant calling from Bayview "
+                "Taxi about your pickup. This call uses an artificial voice."
+            ),
+            "static_greeting_no_barge": True,
+        })
+
+        self.prompt_add_section(
+            "Role",
+            "You are calling to tell the caller their driver is on the way."
+        )
+        self.prompt_add_section(
+            "Opt-out",
+            "If the caller asks not to be contacted again, in any wording, "
+            "call opt_out immediately before saying anything else."
+        )
+
+        self.define_tool(
+            name="opt_out",
+            description="Record that the caller does not want to be contacted again",
+            parameters={"type": "object", "properties": {}},
+            handler=self.opt_out
+        )
+
+    def opt_out(self, args, raw_data):
+        number = raw_data.get("caller_id_num")
+        add_to_do_not_call_list(number)  # your system of record
+        return FunctionResult(
+            "Confirm the request was recorded, apologize for the interruption, "
+            "and end the call."
+        ).hangup()
+
+if __name__ == "__main__":
+    agent = OutboundAgent()
+    agent.run()
+```
+</CodeBlock>
+</CodeBlocks>
+
+The prompt asks the agent to call `opt_out`, and the handler is what makes the opt-out real.
+The number lands on your do-not-call list before the agent says a word about it, so the record
+exists even if the caller hangs up on the confirmation.
+
+<Warning>
+This is technical guidance, not legal advice.
+Requirements vary by jurisdiction and by call type, and they change often.
+Consult qualified counsel before launching an outbound program.
+</Warning>
+
+Both compliance guides walk through these controls in detail:
+
+<CardGroup cols={2}>
+
+<Card title="TCPA" href="/docs/platform/compliance/tcpa" icon="regular phone">
+  Build TCPA-compliant outbound voice AI with consent gating, AI disclosure, calling-hour rules, and opt-out handling.
+</Card>
+
+<Card title="HIPAA" href="/docs/platform/compliance/hipaa" icon="regular shield-halved">
+  Build HIPAA-compliant voice AI that protects Protected Health Information (PHI) across the call lifecycle.
+</Card>
+
+</CardGroup>
+
+## Putting it together
+
+Here is Ada as a complete script, with each practice in place:
+a lean prompt, fares served by the dispatch system instead of pasted text,
+a filler phrase to cover the lookup, hints for local street names, and a post-call
+report for review.
+
+<CodeBlocks>
+<CodeBlock title="SWML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - ai:
+        prompt:
+          text: |
+            Your name is Ada. You are the dispatcher for Bayview Taxi.
+
+            ## Personality and duties
+            You are calm and efficient. Help callers get a fare quote and book
+            a pickup. Price trips with get_quote, and only quote fares and
+            pickup times that get_quote returned.
+
+            ## Greeting rules
+            Greet the caller, introduce yourself as Ada, and ask where they
+            are and where they're going.
+          temperature: 0.7
+        SWAIG:
+          functions:
+            - function: get_quote
+              description: Quote the fare between a pickup address and a destination
+              parameters:
+                type: object
+                properties:
+                  pickup:
+                    type: string
+                    description: The pickup address, as the caller said it
+                  destination:
+                    type: string
+                    description: Where the caller is going
+                required:
+                  - pickup
+                  - destination
+              fillers:
+                en-US:
+                  - Let me work that out...
+              web_hook_url: https://example.com/get-quote
+        hints:
+          - Gough Street
+          - Divisadero
+          - Presidio
+          - Embarcadero
+          - Bayview
+          - SFO
+        post_prompt:
+          text: Summarize the call and provide the summary in JSON format.
+        post_prompt_url: https://example.com/post-prompt
+```
+</CodeBlock>
+<CodeBlock title="Server SDK (Python)">
+```python
+from signalwire import AgentBase, FunctionResult
+
+# Stand-in for your dispatch system: a distance API, a rate table, a driver roster
+RATES = {"base": 4.50, "per_mile": 2.75}
+DISTANCES = {
+    ("123 gough street", "sfo"): 12.4,
+    ("123 gough street", "embarcadero"): 2.1,
+}
+
+class DispatchAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="bayview-taxi")
+        self.add_language("English", "en-US", "rime.spore")
+
+        self.prompt_add_section(
+            "Role",
+            "Your name is Ada. You are the dispatcher for Bayview Taxi."
+        )
+        self.prompt_add_section(
+            "Personality and duties",
+            "You are calm and efficient. Help callers get a fare quote and book "
+            "a pickup. Price trips with get_quote, and only quote fares and "
+            "pickup times that get_quote returned."
+        )
+        self.prompt_add_section(
+            "Greeting rules",
+            "Greet the caller, introduce yourself as Ada, and ask where they "
+            "are and where they're going."
+        )
+        self.set_params({"temperature": 0.7})
+
+        self.add_hints(["Gough Street", "Divisadero", "Presidio",
+                        "Embarcadero", "Bayview", "SFO"])
+        self.set_post_prompt("Summarize the call and provide the summary in JSON format.")
+
+        self.define_tool(
+            name="get_quote",
+            description="Quote the fare between a pickup address and a destination",
+            parameters={
+                "type": "object",
+                "properties": {
+                    "pickup": {
+                        "type": "string",
+                        "description": "The pickup address, as the caller said it"
+                    },
+                    "destination": {
+                        "type": "string",
+                        "description": "Where the caller is going"
+                    }
+                },
+                "required": ["pickup", "destination"]
+            },
+            handler=self.get_quote,
+            fillers={"en-US": ["Let me work that out..."]}
+        )
+
+    def get_quote(self, args, raw_data):
+        pickup = args.get("pickup", "").lower().strip()
+        destination = args.get("destination", "").lower().strip()
+
+        miles = DISTANCES.get((pickup, destination))
+        if miles is None:
+            return FunctionResult(
+                "That trip isn't in the service area. Apologize and say we can't take it."
+            )
+
+        fare = RATES["base"] + miles * RATES["per_mile"]
+        return FunctionResult(
+            f"The fare from {pickup} to {destination} is ${fare:.2f} for {miles} miles. "
+            "Offer to send a driver now."
+        )
+
+if __name__ == "__main__":
+    agent = DispatchAgent()
+    agent.run()
+```
+</CodeBlock>
+</CodeBlocks>
+
+When a caller asks what it costs to get to the airport, the platform sends an HTTP POST to your
+function's endpoint (the `web_hook_url` in SWML, or the endpoint the Server SDK serves for you):
 
 ```json
 {
-  "sections": {
-    "main": [
-      {
-        "ai": {
-          "prompt": {
-            "text": "Your name is David. You are a virtual assistant that is helping with tree planting\nand their environmental benefits.\n\n\n## Information on Tree Planting\nTree planting is a vital activity that significantly contributes to the environment.\nTrees absorb CO2, prevent soil erosion, provide habitat for wildlife, and offer many\nother benefits.\n\n## David's Personality and Job Duties\nYour duties are to help assist users with information related to tree planting.\nYou have a friendly and eco-conscious personality.\n\n## Greeting Rules\nGreet the user and thank them for showing interest in tree planting. Introduce yourself as David.\nPrefix the greeting with a 'good morning', 'good afternoon', or a 'good evening' depending on the time of day.\n",
-            "temperature": 0.89,
-            "top_p": 0.64,
-            "confidence": 0.5
-          },
-          "post_prompt": {
-            "text": "## Post Prompt Actions\\n\\nSummarize the call and provide the summary in a JSON format.",
-            "temperature": 0,
-            "top_p": 1
-          },
-          "post_prompt_url": "https://example.site/webhook_url",
-          "params": {
-            "direction": "inbound",
-            "swaig_allow_swml": true
-          },
-          "SWAIG": {
-            "functions": [
-              {
-                "function": "tree_benefits",
-                "purpose": "To share the benefits of planting trees.",
-                "argument": {
-                  "type": "object",
-                  "properties": {
-                    "benefit_type": {
-                      "type": "string",
-                      "description": "Specific benefit type of tree planting."
-                    }
-                  }
-                },
-                "data_map": {
-                  "expressions": [
-                    {
-                      "string": "%{lc:args.benefit_type}",
-                      "pattern": "/carbon/i",
-                      "output": {
-                        "response": "Trees play a crucial role in absorbing carbon dioxide, thereby helping combat climate change."
-                      }
-                    },
-                    {
-                      "string": "%{lc:args.benefit_type}",
-                      "pattern": "/soil/i",
-                      "output": {
-                        "response": "Trees help prevent soil erosion and improve soil quality, making the land more fertile."
-                      }
-                    },
-                    {
-                      "string": "%{lc:args.benefit_type}",
-                      "pattern": "/wildlife/i",
-                      "output": {
-                        "response": "Trees help wildlife flourish.Many animals also use trees for resting, nesting and for places from which to hunt or capture prey. When the trees mature, animals are able to enjoy delicious fruits and foraging opportunities."
-                      }
-                    }
-                  ]
-                }
-              },
-              {
-                "function": "region_specific_trees",
-                "purpose": "To recommend trees suitable for specific regions or climate zones.",
-                "argument": {
-                  "type": "object",
-                  "properties": {
-                    "region": {
-                      "type": "string",
-                      "description": "The region or climate zone for tree recommendations."
-                    }
-                  }
-                },
-                "data_map": {
-                  "expressions": [
-                    {
-                      "string": "%{lc:args.region}",
-                      "pattern": "/tropical/i",
-                      "output": {
-                        "response": "For tropical regions, consider planting trees like Mango, Coconut, and Banana."
-                      }
-                    },
-                    {
-                      "string": "%{lc:args.region}",
-                      "pattern": "/temperate/i",
-                      "output": {
-                        "response": "For temperate zones, Oak, Maple, and Birch trees are great choices."
-                      }
-                    }
-                  ]
-                }
-              },
-              {
-                "function": "tree_planting_guide",
-                "purpose": "To guide users on the tree planting process.",
-                "argument": {
-                  "type": "object",
-                  "properties": {
-                    "step": {
-                      "type": "string",
-                      "description": "Specific step or aspect of tree planting."
-                    }
-                  }
-                },
-                "data_map": {
-                  "expressions": [
-                    {
-                      "string": "%{lc:args.step}",
-                      "pattern": "/digging/i",
-                      "output": {
-                        "response": "Dig a hole that is twice as wide as the tree’s root ball and just as deep. Place the tree in the hole and fill it with soil."
-                      }
-                    },
-                    {
-                      "string": "%{lc:args.step}",
-                      "pattern": "/watering/i",
-                      "output": {
-                        "response": "Water the tree immediately after planting. Regularly water it, especially during dry periods."
-                      }
-                    }
-                  ]
-                }
-              }
-            ]
-          },
-          "hints": ["sapling", "soil", "watering", "benefits", "environment"]
-        }
-      }
-    ]
+  "function": "get_quote",
+  "argument": {
+    "parsed": [{ "pickup": "123 Gough Street", "destination": "SFO" }]
   }
 }
 ```
 
-</Tab>
-</Tabs>
+Your server prices the trip against the same rate table the meters use and replies:
 
-Creating an effective SignalWire AI Agent is a blend of clarity, strategic function utilization, and continuous assessment.
-By adhering to these best practices, you'll ensure that your AI Agent is both efficient and user-friendly.
+```json
+{
+  "response": "The fare from 123 Gough Street to SFO is $38.60 for 12.4 miles. Offer to send a driver now."
+}
+```
+
+Ada relays the answer in its own voice and offers to dispatch a car.
+Every number in that sentence came out of the dispatch system during the call.
+When the rate changes tomorrow, the agent is already right,
+and the post-call report shows you every lookup it made.
+
+## Next steps
+
+<CardGroup cols={2}>
+
+<Card title="Tool calling" href="/docs/platform/ai/tool-calling" icon="regular webhook">
+  Connect the agent to your backend — where the business logic belongs.
+</Card>
+
+<Card title="Prompt engineering" href="/docs/platform/ai/prompt-engineering" icon="regular pen-nib">
+  Structure, technique, and refinement for the conversational layer.
+</Card>
+
+</CardGroup>

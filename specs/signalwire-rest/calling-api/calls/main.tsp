@@ -23,6 +23,19 @@ using Types.StatusCodes;
   CALLS_TAG
 )
 @webhook("aiSwaigToolWebhook", AiSwaigToolWebhookPayload, CALLS_TAG)
+@webhook("swaigSignatureRequest", SwaigSignatureRequestPayload, CALLS_TAG)
+@webhook(
+  "bedrockSwaigToolWebhook",
+  BedrockSwaigToolWebhookPayload,
+  CALLS_TAG
+)
+@webhook("aiPostPromptCallback", AiPostPromptCallbackPayload, CALLS_TAG)
+@webhook("aiDebugWebhook", AiDebugWebhookPayload, CALLS_TAG)
+@webhook(
+  "bedrockPostPromptCallback",
+  BedrockPostPromptCallbackPayload,
+  CALLS_TAG
+)
 namespace SignalWireAPI.Calling.Calls {
   @tag(CALLS_TAG)
   @friendlyName("Calls")
