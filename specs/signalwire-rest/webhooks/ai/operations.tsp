@@ -115,7 +115,7 @@ op aiDebugWebhook(@body payload: AiDebugWebhookPayload): WebhookAck;
 @post
 op bedrockSwaigToolWebhook(
   @body payload: BedrockSwaigToolWebhookPayload,
-): SwaigToolWebhookResponse;
+): SwaigToolWebhookBasicResponse;
 
 @summary("Amazon Bedrock post-prompt callback")
 @doc("""
@@ -171,4 +171,4 @@ op aiSidecarCallback(@body payload: AISidecarCallbackPayload): WebhookAck;
 @post
 op aiSidecarSwaigToolWebhook(
   @body payload: AISidecarSwaigToolWebhookPayload,
-): SwaigToolWebhookResponse;
+): SwaigToolWebhookBasicResponse;

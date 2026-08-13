@@ -52147,6 +52147,29 @@ components:
             - order_number: '12345'
       unevaluatedProperties:
         not: {}
+    Webhooks.AI.SwaigSignatureEnvelope:
+      type: object
+      required:
+        - functions
+      properties:
+        functions:
+          type: array
+          items:
+            $ref: '#/components/schemas/SWML.Calling.UserSWAIGFunction'
+          description: The function definitions your server hosts.
+        defaults:
+          allOf:
+            - $ref: '#/components/schemas/SWML.Calling.SWAIGDefaults'
+          description: Defaults applied to every function in `functions`.
+      unevaluatedProperties:
+        not: {}
+      description: |-
+        The object form of a signature response, which additionally lets you set
+        [`SWAIG.defaults`](/docs/swml/reference/calling/ai/swaig/defaults) for the functions it carries.
+
+        Use this when the functions you are returning share a `web_hook_url`, auth, or other defaults —
+        it saves repeating them on every definition.
+      title: SWAIG function signature envelope
     Webhooks.AI.SwaigSignatureRequestPayload:
       type: object
       required:
@@ -52210,26 +52233,35 @@ components:
             - 451ed9ff-e568-4222-8af9-4f9ab7428d09
       unevaluatedProperties:
         not: {}
-    Webhooks.AI.SwaigSignatureResponse:
-      type: array
-      items:
-        $ref: '#/components/schemas/SWML.Calling.UserSWAIGFunction'
-      description: |-
-        The function definitions your server hosts, returned to the agent that asked for them.
-
-        Each entry is shaped like an entry in
-        [`SWAIG.functions`](/docs/swml/reference/calling/ai/swaig/functions#properties) — `function`,
-        `description`, and `parameters`. Every definition you return is registered, whether or not it was
-        named in the request's `functions` list.
-      title: SWAIG function signature response
-    Webhooks.AI.SwaigToolWebhookResponse:
+    Webhooks.AI.SwaigToolResult:
       type: object
-      required:
-        - response
+      properties:
+        tool_result:
+          type: string
+          description: The data half — becomes the tool message the agent reads.
+          examples:
+            - 'status: on hold'
+        tool_prompt:
+          type: string
+          description: The steering half — injected as a system message right after the tool message.
+          examples:
+            - Tell the caller their order is delayed and offer to text updates.
+      unevaluatedProperties:
+        not: {}
+      description: |-
+        Splits the reply into the data half and the steering half.
+
+        `tool_result` becomes the tool message the agent reads. `tool_prompt` is injected as a separate
+        system message immediately after it, to steer what the agent does with that data. Use the split
+        when the two are genuinely different things — you know which half is data and which half is
+        instruction; the agent does not.
+      title: SWAIG tool result
+    Webhooks.AI.SwaigToolWebhookBasicResponse:
+      type: object
       properties:
         response:
           type: string
-          description: The result the agent reads next. Written to the AI's context, not spoken to the caller.
+          description: The result the agent reads next. Written to the agent's context, not spoken to the caller.
           examples:
             - The fare to the airport is $38.60. Offer to book a pickup now.
         action:
@@ -52239,18 +52271,60 @@ components:
               items:
                 $ref: '#/components/schemas/SWML.Calling.Action'
           description: |-
-            Instructions the platform executes on the live call. Accepts a single action object or an array of
-            them.
+            Instructions the platform executes on the live call. Accepts a single action object or an array
+            of them.
       unevaluatedProperties:
         not: {}
       description: |-
-        What your endpoint returns after running a SWAIG function.
+        What your endpoint returns after running a SWAIG function for an
+        [`amazon_bedrock`](/docs/swml/reference/calling/amazon-bedrock) or
+        [`ai_sidecar`](/docs/swml/reference/calling/ai_sidecar) agent.
 
-        `response` is written to the AI, not spoken to the caller — it is the result the agent reads before
-        deciding what to say next. `action` is optional and steers the call itself: transfer it, send an
-        SMS, play audio, update `global_data`, or move to a different context or step. Both can appear
-        together; returning the pickup time in `response` and an SMS `action` alongside it is the ordinary
-        case.
+        These surfaces accept a narrower reply than [`ai`](/docs/swml/reference/calling/ai) agents do:
+        `response` must be a plain string — the `tool_result`/`tool_prompt` object form is not read — and
+        `post_process` has no effect. Both fields are optional, and each surface substitutes its own
+        default result when `response` is absent.
+      title: Basic SWAIG tool webhook response
+    Webhooks.AI.SwaigToolWebhookResponse:
+      type: object
+      properties:
+        response:
+          anyOf:
+            - type: string
+            - $ref: '#/components/schemas/Webhooks.AI.SwaigToolResult'
+          description: |-
+            The result the agent reads next. A plain string becomes the tool message as-is; the object form
+            splits the data half from the steering half. Omit it to let the agent use a default result.
+        action:
+          anyOf:
+            - $ref: '#/components/schemas/SWML.Calling.Action'
+            - type: array
+              items:
+                $ref: '#/components/schemas/SWML.Calling.Action'
+          description: |-
+            Instructions the platform executes on the live call. Accepts a single action object or an array
+            of them.
+        post_process:
+          type: boolean
+          description: |-
+            Hold the actions until after the agent has spoken its reply, rather than running them
+            immediately. **Default:** `false`.
+          examples:
+            - true
+          default: false
+      unevaluatedProperties:
+        not: {}
+      description: |-
+        What your endpoint returns after running a SWAIG function for an
+        [`ai`](/docs/swml/reference/calling/ai) agent.
+
+        Every field is optional. Returning `{}` is valid — the agent reads a default result and carries
+        on — so a handler that only needs to steer the call can return `action` alone.
+
+        `response` is written to the AI, not spoken to the caller: it is the result the agent reads
+        before deciding what to say next. `action` steers the call itself — transfer it, send an SMS,
+        play audio, update `global_data`, or move to a different context or step. Both can appear
+        together, and that is the ordinary case.
 
         Every object `action` accepts is documented in the
         [`SWAIG.functions`](/docs/swml/reference/calling/ai/swaig/functions#properties) reference.
@@ -53683,7 +53757,7 @@ webhooks:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Webhooks.AI.SwaigToolWebhookResponse'
+                $ref: '#/components/schemas/Webhooks.AI.SwaigToolWebhookBasicResponse'
       tags:
         - AI Webhooks
       requestBody:
@@ -53774,7 +53848,7 @@ webhooks:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Webhooks.AI.SwaigToolWebhookResponse'
+                $ref: '#/components/schemas/Webhooks.AI.SwaigToolWebhookBasicResponse'
       tags:
         - AI Webhooks
       requestBody:
@@ -53905,11 +53979,26 @@ webhooks:
       parameters: []
       responses:
         '200':
-          description: The request has succeeded.
+          description: |-
+            The function definitions your server hosts, returned to the agent that asked for them.
+
+            Three forms are accepted: an array of definitions (the usual one), a single definition on its own,
+            or an envelope object carrying `functions` alongside shared `defaults`. Each definition is shaped
+            like an entry in
+            [`SWAIG.functions`](/docs/swml/reference/calling/ai/swaig/functions#properties) — `function`,
+            `description`, and `parameters`.
+
+            Every definition you return is registered, whether or not it was named in the request's
+            `functions` list.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Webhooks.AI.SwaigSignatureResponse'
+                anyOf:
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/SWML.Calling.UserSWAIGFunction'
+                  - $ref: '#/components/schemas/SWML.Calling.UserSWAIGFunction'
+                  - $ref: '#/components/schemas/Webhooks.AI.SwaigSignatureEnvelope'
       tags:
         - AI Webhooks
       requestBody:
