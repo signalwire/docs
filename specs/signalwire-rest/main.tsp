@@ -17,6 +17,7 @@ import "./projects-api";
 import "./datasphere-api";
 import "./pubsub-api";
 import "./logs-api";
+import "./webhooks";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -133,4 +134,8 @@ using TypeSpec.OpenAPI;
 @tagMetadata(PUBSUB_TOKENS_TAG, PUBSUB_TOKENS_TAG_METADATA)
 // Logs API
 @tagMetadata(CONFERENCE_LOGS_TAG, CONFERENCE_LOGS_TAG_METADATA)
+// Webhooks
+@tagMetadata(AI_WEBHOOKS_TAG, AI_WEBHOOKS_TAG_METADATA)
+@tagMetadata(CALLING_WEBHOOKS_TAG, CALLING_WEBHOOKS_TAG_METADATA)
+@tagMetadata(MESSAGING_WEBHOOKS_TAG, MESSAGING_WEBHOOKS_TAG_METADATA)
 namespace SignalWireAPI;

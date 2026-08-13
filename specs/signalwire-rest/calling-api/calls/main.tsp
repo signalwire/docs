@@ -5,37 +5,13 @@ import "../../../_shared/alias/token-permissions.tsp";
 import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "./models/examples.tsp";
-import "./models/webhooks.tsp";
 import "../tags.tsp";
-import "../../../_shared/webhook/decorator.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/calls")
-@webhook("transcribeStatusCallback", TranscribeStatusCallbackPayload, CALLS_TAG)
-@webhook("streamStatusCallback", StreamStatusCallbackPayload, CALLS_TAG)
-@webhook("aiSidecarCallback", AISidecarCallbackPayload, CALLS_TAG)
-@webhook(
-  "aiSidecarSwaigToolWebhook",
-  AISidecarSwaigToolWebhookPayload,
-  CALLS_TAG
-)
-@webhook("aiSwaigToolWebhook", AiSwaigToolWebhookPayload, CALLS_TAG)
-@webhook("swaigSignatureRequest", SwaigSignatureRequestPayload, CALLS_TAG)
-@webhook(
-  "bedrockSwaigToolWebhook",
-  BedrockSwaigToolWebhookPayload,
-  CALLS_TAG
-)
-@webhook("aiPostPromptCallback", AiPostPromptCallbackPayload, CALLS_TAG)
-@webhook("aiDebugWebhook", AiDebugWebhookPayload, CALLS_TAG)
-@webhook(
-  "bedrockPostPromptCallback",
-  BedrockPostPromptCallbackPayload,
-  CALLS_TAG
-)
 namespace SignalWireAPI.Calling.Calls {
   @tag(CALLS_TAG)
   @friendlyName("Calls")
