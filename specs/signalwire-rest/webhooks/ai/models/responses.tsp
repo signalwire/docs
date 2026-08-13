@@ -62,17 +62,18 @@ model SwaigToolResult {
   [`SWAIG.functions`](/docs/swml/reference/calling/ai/swaig/functions#properties) reference.
   """)
 model SwaigToolWebhookResponse {
-  // `response` is re-declared rather than spread from `SWML.Calling.Output`
-  // because it widens there: TypeSpec cannot re-type a spread property, and the
-  // object form is read by the `ai` surface alone.
+  // Only `response` diverges — it widens here, and TypeSpec cannot re-type a
+  // spread property — so omit that one and inherit the rest. `action` stays
+  // defined once in SWML, and anything added to `Output` later arrives here for
+  // free. The spread sits between the two declared properties to keep the
+  // emitted order response / action / post_process.
   @doc("""
     The result the agent reads next. A plain string becomes the tool message as-is; the object form
     splits the data half from the steering half. Omit it to let the agent use a default result.
     """)
   response?: string | SwaigToolResult;
 
-  @doc("An action to perform on the live call, or a list of them.")
-  action?: SWML.Calling.Action | SWML.Calling.Action[];
+  ...OmitProperties<SWML.Calling.Output, "response">;
 
   @doc("""
     Hold the actions until after the agent has spoken its reply, rather than running them

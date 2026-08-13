@@ -19,6 +19,9 @@ model Output {
   @example("Order placed")
   response?: string;
 
-  @doc("An action to perform upon matching, or a list of them.")
+  // Worded for both pathways on purpose: `SwaigToolWebhookResponse` spreads this
+  // property, so "upon matching" (a `data_map` expression concept) would read
+  // wrong on a webhook reply.
+  @doc("An action for the platform to perform on the live call, or a list of them.")
   action?: Action | Action[];
 }
