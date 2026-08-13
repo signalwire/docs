@@ -45,7 +45,7 @@ model SwaigToolResult {
   What your endpoint returns after running a SWAIG function for an
   [`ai`](/docs/swml/reference/calling/ai) agent.
   
-  This is [`SWAIG.data_map.output`](/docs/swml/reference/calling/ai/swaig/functions/data_map) with
+  This is [`SWAIG.data_map.output`](/docs/swml/reference/calling/ai/swaig/functions/data-map) with
   two additions the `ai` surface reads and the others ignore: `response` may be an object that
   separates data from steering, and `post_process` defers the actions. A handler that needs neither
   can answer with a plain output object.
@@ -86,7 +86,7 @@ model SwaigToolWebhookResponse {
 @summary("SWAIG function signature envelope")
 @doc("""
   The object form of a signature response, which additionally lets you set
-  [`SWAIG.defaults`](/docs/swml/reference/calling/ai/swaig/defaults) for the functions it carries.
+  [`SWAIG.defaults`](/docs/swml/reference/calling/ai/swaig#swaigdefaults) for the functions it carries.
   
   Use this when the functions you are returning share a `web_hook_url`, auth, or other defaults —
   it saves repeating them on every definition.
