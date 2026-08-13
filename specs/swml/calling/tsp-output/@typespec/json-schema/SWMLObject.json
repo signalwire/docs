@@ -2655,7 +2655,11 @@
                     "items": {
                         "$ref": "#/$defs/Languages"
                     },
-                    "description": "An array of JSON objects defining supported languages in the conversation."
+                    "description": "An array of JSON objects defining supported languages in the conversation.\nMutually exclusive with `multilingual`: if both are set, `multilingual` is used and\nthis array is ignored."
+                },
+                "multilingual": {
+                    "$ref": "#/$defs/Multilingual",
+                    "description": "Configures a single agent to detect the caller's language and answer in it, switching\nas the caller switches. Use this instead of `languages` when one conversation may span\nseveral languages. Mutually exclusive with `languages`: if both are set, `multilingual`\nis used and `languages` is ignored."
                 },
                 "params": {
                     "$ref": "#/$defs/AIParams",
@@ -4903,6 +4907,134 @@
             ],
             "title": "languages"
         },
+        "Multilingual": {
+            "type": "object",
+            "properties": {
+                "languages": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/MultilingualLanguage"
+                    },
+                    "description": "An array of voices, one per language the agent speaks.\nAt least one entry must supply a `voice`, either an entry with `language` set to\n`default` or the first language listed. Without one, multilingual mode does not\nstart and the agent falls back to a single English voice."
+                },
+                "allowed": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "en",
+                            "es",
+                            "fr"
+                        ]
+                    ],
+                    "description": "Restricts detection to this set of language codes. Every code must be supported by\nthe ASR engine and model in use, or multilingual mode does not start.\nOmit to let the ASR engine detect any language it supports."
+                },
+                "engine": {
+                    "type": "string",
+                    "default": "deepgram",
+                    "examples": [
+                        "deepgram"
+                    ],
+                    "description": "The ASR (Automatic Speech Recognition) engine used to detect the spoken language."
+                },
+                "model": {
+                    "type": "string",
+                    "default": "nova-3",
+                    "examples": [
+                        "nova-3"
+                    ],
+                    "description": "The ASR model used to detect the spoken language. The model must support code-switching, or multilingual mode does not start."
+                },
+                "provider": {
+                    "type": "string",
+                    "default": "deepgram",
+                    "examples": [
+                        "deepgram"
+                    ],
+                    "description": "The ASR provider used to detect the spoken language."
+                },
+                "start_language": {
+                    "type": "string",
+                    "default": "en",
+                    "examples": [
+                        "en"
+                    ],
+                    "description": "The language the agent opens the conversation in, before the caller has said\nanything for the ASR engine to detect."
+                },
+                "min_switch_words": {
+                    "type": "integer",
+                    "default": 2,
+                    "examples": [
+                        2
+                    ],
+                    "minimum": 1,
+                    "description": "How many words a caller must say before the agent will switch languages.\nA single word is often the same in several languages — a name, `no`, `ok` — so a\none-word turn is an unreliable signal. Set to `1` to allow single-word switches."
+                },
+                "fillers": {
+                    "anyOf": [
+                        {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        {
+                            "$ref": "#/$defs/MultilingualFillers"
+                        }
+                    ],
+                    "examples": [
+                        [
+                            "umm",
+                            "hmm"
+                        ]
+                    ],
+                    "description": "Fillers used to break silence between turns.\nSupply an array to have the fillers translated into whichever language the caller\nis speaking, or an object keyed by language code to set them per language verbatim."
+                },
+                "function_fillers": {
+                    "anyOf": [
+                        {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        {
+                            "$ref": "#/$defs/MultilingualFillers"
+                        }
+                    ],
+                    "examples": [
+                        [
+                            "great",
+                            "ok"
+                        ]
+                    ],
+                    "description": "Fillers used while a SWAIG function runs.\nSupply an array to have the fillers translated into whichever language the caller\nis speaking, or an object keyed by language code to set them per language verbatim."
+                },
+                "turn_fillers": {
+                    "anyOf": [
+                        {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        {
+                            "$ref": "#/$defs/MultilingualFillers"
+                        }
+                    ],
+                    "description": "Fillers used to acknowledge the caller the moment they finish a turn.\nSupply an object keyed by language code, optionally with a `default` key for\nlanguages you have not listed. These fillers are never translated on the fly,\nbecause resolving them has to be fast enough to play immediately; an array is\naccepted and treated as the `default` set."
+                }
+            },
+            "required": [
+                "languages"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "title": "multilingual"
+        },
         "AIParams": {
             "type": "object",
             "properties": {
@@ -5716,7 +5848,7 @@
                     "examples": [
                         true
                     ],
-                    "description": "Allows multilingualism when `true`."
+                    "description": "Turns on the multi-language handling that goes with a `languages` array, so the agent\ncan move between the languages you listed.\nThis does not enable the `multilingual` object, which configures its own languages and\nis switched on by being set."
                 },
                 "local_tz": {
                     "type": "string",
@@ -7900,7 +8032,7 @@
                     "examples": [
                         "gcloud.fr-FR-Neural2-B"
                     ],
-                    "description": "Voice to use for the language. String format: `<engine id>.<voice id>`.\nSelect engine from `gcloud`, `polly`, `amazon`, `azure`, `openai`, `elevenlabs`, `cartesia`, `deepgram`, `rime`,\n`inworld`, `minimax`, `groq-tts`, `mistral`, `grok`, `smallest`, `fish`, or `speechify`.\nFor example, `gcloud.fr-FR-Neural2-B`."
+                    "description": "Voice to use for the language. String format: `<engine id>.<voice id>`, with an optional\n`:<model id>` suffix for engines that offer a choice of model.\nSelect engine from `gcloud`, `polly`, `amazon`, `azure`, `openai`, `elevenlabs`, `cartesia`, `deepgram`, `rime`,\n`inworld`, `minimax`, `groq-tts`, `mistral`, `grok`, `smallest`, `fish`, or `speechify`.\nFor example, `gcloud.fr-FR-Neural2-B` or `elevenlabs.rachel:eleven_flash_v2_5`.\nAlways name the engine: a bare voice id resolves against a default engine that can change."
                 },
                 "model": {
                     "type": "string",
@@ -7984,7 +8116,7 @@
                     "examples": [
                         "gcloud.fr-FR-Neural2-B"
                     ],
-                    "description": "Voice to use for the language. String format: `<engine id>.<voice id>`.\nSelect engine from `gcloud`, `polly`, `amazon`, `azure`, `openai`, `elevenlabs`, `cartesia`, `deepgram`, `rime`,\n`inworld`, `minimax`, `groq-tts`, `mistral`, `grok`, `smallest`, `fish`, or `speechify`.\nFor example, `gcloud.fr-FR-Neural2-B`."
+                    "description": "Voice to use for the language. String format: `<engine id>.<voice id>`, with an optional\n`:<model id>` suffix for engines that offer a choice of model.\nSelect engine from `gcloud`, `polly`, `amazon`, `azure`, `openai`, `elevenlabs`, `cartesia`, `deepgram`, `rime`,\n`inworld`, `minimax`, `groq-tts`, `mistral`, `grok`, `smallest`, `fish`, or `speechify`.\nFor example, `gcloud.fr-FR-Neural2-B` or `elevenlabs.rachel:eleven_flash_v2_5`.\nAlways name the engine: a bare voice id resolves against a default engine that can change."
                 },
                 "model": {
                     "type": "string",
@@ -8057,6 +8189,62 @@
                 "not": {}
             },
             "title": "Language with Speech and Function Fillers"
+        },
+        "MultilingualLanguage": {
+            "type": "object",
+            "properties": {
+                "language": {
+                    "type": "string",
+                    "examples": [
+                        "es"
+                    ],
+                    "description": "The language this voice applies to, as a code the ASR engine supports.\nUse `default` instead of a code to mark the catch-all entry, which speaks any\ndetected language that has no entry of its own."
+                },
+                "voice": {
+                    "type": "string",
+                    "examples": [
+                        "elevenlabs.rachel"
+                    ],
+                    "description": "Voice to use for this language. String format: `<engine id>.<voice id>` with an\noptional `:<model id>` suffix. Always name the engine: a bare voice id resolves\nagainst a default engine that can change.\nFor example, `elevenlabs.rachel` or `elevenlabs.rachel:eleven_flash_v2_5`."
+                },
+                "engine": {
+                    "type": "string",
+                    "examples": [
+                        "elevenlabs"
+                    ],
+                    "description": "The TTS engine for this voice. Set this only if the `voice` string does not already name an engine."
+                },
+                "model": {
+                    "type": "string",
+                    "examples": [
+                        "eleven_flash_v2_5"
+                    ],
+                    "description": "The model to use for the specified TTS engine. Set this only if the `voice` string does not already carry a `:<model id>` suffix."
+                },
+                "params": {
+                    "$ref": "#/$defs/LanguageParams",
+                    "description": "TTS engine-specific parameters for this voice."
+                }
+            },
+            "required": [
+                "language",
+                "voice"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "title": "MultilingualLanguage"
+        },
+        "MultilingualFillers": {
+            "type": "object",
+            "properties": {},
+            "unevaluatedProperties": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                }
+            },
+            "title": "MultilingualFillers"
         },
         "AttentionTimeout": {
             "type": "integer",

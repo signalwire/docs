@@ -14313,7 +14313,18 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SWML.Calling.Languages'
-          description: An array of JSON objects defining supported languages in the conversation.
+          description: |-
+            An array of JSON objects defining supported languages in the conversation.
+            Mutually exclusive with `multilingual`: if both are set, `multilingual` is used and
+            this array is ignored.
+        multilingual:
+          allOf:
+            - $ref: '#/components/schemas/SWML.Calling.Multilingual'
+          description: |-
+            Configures a single agent to detect the caller's language and answer in it, switching
+            as the caller switches. Use this instead of `languages` when one conversation may span
+            several languages. Mutually exclusive with `languages`: if both are set, `multilingual`
+            is used and `languages` is ignored.
         params:
           allOf:
             - $ref: '#/components/schemas/SWML.Calling.AIParams'
@@ -14408,7 +14419,18 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SWML.Calling.Languages'
-          description: An array of JSON objects defining supported languages in the conversation.
+          description: |-
+            An array of JSON objects defining supported languages in the conversation.
+            Mutually exclusive with `multilingual`: if both are set, `multilingual` is used and
+            this array is ignored.
+        multilingual:
+          allOf:
+            - $ref: '#/components/schemas/SWML.Calling.Multilingual'
+          description: |-
+            Configures a single agent to detect the caller's language and answer in it, switching
+            as the caller switches. Use this instead of `languages` when one conversation may span
+            several languages. Mutually exclusive with `languages`: if both are set, `multilingual`
+            is used and `languages` is ignored.
         params:
           allOf:
             - $ref: '#/components/schemas/SWML.Calling.AIParams'
@@ -14603,7 +14625,18 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SWML.Calling.Languages'
-          description: An array of JSON objects defining supported languages in the conversation.
+          description: |-
+            An array of JSON objects defining supported languages in the conversation.
+            Mutually exclusive with `multilingual`: if both are set, `multilingual` is used and
+            this array is ignored.
+        multilingual:
+          allOf:
+            - $ref: '#/components/schemas/SWML.Calling.MultilingualUpdate'
+          description: |-
+            Configures a single agent to detect the caller's language and answer in it, switching
+            as the caller switches. Use this instead of `languages` when one conversation may span
+            several languages. Mutually exclusive with `languages`: if both are set, `multilingual`
+            is used and `languages` is ignored.
         params:
           allOf:
             - $ref: '#/components/schemas/SWML.Calling.AIParams'
@@ -34676,7 +34709,18 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SWML.Calling.Languages'
-          description: An array of JSON objects defining supported languages in the conversation.
+          description: |-
+            An array of JSON objects defining supported languages in the conversation.
+            Mutually exclusive with `multilingual`: if both are set, `multilingual` is used and
+            this array is ignored.
+        multilingual:
+          allOf:
+            - $ref: '#/components/schemas/SWML.Calling.Multilingual'
+          description: |-
+            Configures a single agent to detect the caller's language and answer in it, switching
+            as the caller switches. Use this instead of `languages` when one conversation may span
+            several languages. Mutually exclusive with `languages`: if both are set, `multilingual`
+            is used and `languages` is ignored.
         params:
           allOf:
             - $ref: '#/components/schemas/SWML.Calling.AIParams'
@@ -35148,7 +35192,11 @@ components:
             - Inform user that you can't hear anything
         languages_enabled:
           type: boolean
-          description: Allows multilingualism when `true`.
+          description: |-
+            Turns on the multi-language handling that goes with a `languages` array, so the agent
+            can move between the languages you listed.
+            This does not enable the `multilingual` object, which configures its own languages and
+            is switched on by being set.
           examples:
             - true
           default: false
@@ -41431,10 +41479,12 @@ components:
         voice:
           type: string
           description: |-
-            Voice to use for the language. String format: `<engine id>.<voice id>`.
+            Voice to use for the language. String format: `<engine id>.<voice id>`, with an optional
+            `:<model id>` suffix for engines that offer a choice of model.
             Select engine from `gcloud`, `polly`, `amazon`, `azure`, `openai`, `elevenlabs`, `cartesia`, `deepgram`, `rime`,
             `inworld`, `minimax`, `groq-tts`, `mistral`, `grok`, `smallest`, `fish`, or `speechify`.
-            For example, `gcloud.fr-FR-Neural2-B`.
+            For example, `gcloud.fr-FR-Neural2-B` or `elevenlabs.rachel:eleven_flash_v2_5`.
+            Always name the engine: a bare voice id resolves against a default engine that can change.
           examples:
             - gcloud.fr-FR-Neural2-B
         model:
@@ -41518,10 +41568,12 @@ components:
         voice:
           type: string
           description: |-
-            Voice to use for the language. String format: `<engine id>.<voice id>`.
+            Voice to use for the language. String format: `<engine id>.<voice id>`, with an optional
+            `:<model id>` suffix for engines that offer a choice of model.
             Select engine from `gcloud`, `polly`, `amazon`, `azure`, `openai`, `elevenlabs`, `cartesia`, `deepgram`, `rime`,
             `inworld`, `minimax`, `groq-tts`, `mistral`, `grok`, `smallest`, `fish`, or `speechify`.
-            For example, `gcloud.fr-FR-Neural2-B`.
+            For example, `gcloud.fr-FR-Neural2-B` or `elevenlabs.rachel:eleven_flash_v2_5`.
+            Always name the engine: a bare voice id resolves against a default engine that can change.
           examples:
             - gcloud.fr-FR-Neural2-B
         model:
@@ -41647,6 +41699,257 @@ components:
       unevaluatedProperties:
         not: {}
       title: MCP server object
+    SWML.Calling.Multilingual:
+      type: object
+      required:
+        - languages
+      properties:
+        languages:
+          type: array
+          items:
+            $ref: '#/components/schemas/SWML.Calling.MultilingualLanguage'
+          description: |-
+            An array of voices, one per language the agent speaks.
+            At least one entry must supply a `voice`, either an entry with `language` set to
+            `default` or the first language listed. Without one, multilingual mode does not
+            start and the agent falls back to a single English voice.
+        allowed:
+          type: array
+          items:
+            type: string
+          description: |-
+            Restricts detection to this set of language codes. Every code must be supported by
+            the ASR engine and model in use, or multilingual mode does not start.
+            Omit to let the ASR engine detect any language it supports.
+          examples:
+            - - en
+              - es
+              - fr
+        engine:
+          type: string
+          description: The ASR (Automatic Speech Recognition) engine used to detect the spoken language.
+          examples:
+            - deepgram
+          default: deepgram
+        model:
+          type: string
+          description: The ASR model used to detect the spoken language. The model must support code-switching, or multilingual mode does not start.
+          examples:
+            - nova-3
+          default: nova-3
+        provider:
+          type: string
+          description: The ASR provider used to detect the spoken language.
+          examples:
+            - deepgram
+          default: deepgram
+        start_language:
+          type: string
+          description: |-
+            The language the agent opens the conversation in, before the caller has said
+            anything for the ASR engine to detect.
+          examples:
+            - en
+          default: en
+        min_switch_words:
+          type: integer
+          minimum: 1
+          description: |-
+            How many words a caller must say before the agent will switch languages.
+            A single word is often the same in several languages — a name, `no`, `ok` — so a
+            one-word turn is an unreliable signal. Set to `1` to allow single-word switches.
+          examples:
+            - 2
+          default: 2
+        fillers:
+          anyOf:
+            - type: array
+              items:
+                type: string
+            - $ref: '#/components/schemas/SWML.Calling.MultilingualFillers'
+          description: |-
+            Fillers used to break silence between turns.
+            Supply an array to have the fillers translated into whichever language the caller
+            is speaking, or an object keyed by language code to set them per language verbatim.
+          examples:
+            - - umm
+              - hmm
+        function_fillers:
+          anyOf:
+            - type: array
+              items:
+                type: string
+            - $ref: '#/components/schemas/SWML.Calling.MultilingualFillers'
+          description: |-
+            Fillers used while a SWAIG function runs.
+            Supply an array to have the fillers translated into whichever language the caller
+            is speaking, or an object keyed by language code to set them per language verbatim.
+          examples:
+            - - great
+              - ok
+        turn_fillers:
+          anyOf:
+            - type: array
+              items:
+                type: string
+            - $ref: '#/components/schemas/SWML.Calling.MultilingualFillers'
+          description: |-
+            Fillers used to acknowledge the caller the moment they finish a turn.
+            Supply an object keyed by language code, optionally with a `default` key for
+            languages you have not listed. These fillers are never translated on the fly,
+            because resolving them has to be fast enough to play immediately; an array is
+            accepted and treated as the `default` set.
+      unevaluatedProperties:
+        not: {}
+      title: multilingual
+    SWML.Calling.MultilingualFillers:
+      type: object
+      unevaluatedProperties:
+        type: array
+        items:
+          type: string
+      title: MultilingualFillers
+    SWML.Calling.MultilingualLanguage:
+      type: object
+      required:
+        - language
+        - voice
+      properties:
+        language:
+          type: string
+          description: |-
+            The language this voice applies to, as a code the ASR engine supports.
+            Use `default` instead of a code to mark the catch-all entry, which speaks any
+            detected language that has no entry of its own.
+          examples:
+            - es
+        voice:
+          type: string
+          description: |-
+            Voice to use for this language. String format: `<engine id>.<voice id>` with an
+            optional `:<model id>` suffix. Always name the engine: a bare voice id resolves
+            against a default engine that can change.
+            For example, `elevenlabs.rachel` or `elevenlabs.rachel:eleven_flash_v2_5`.
+          examples:
+            - elevenlabs.rachel
+        engine:
+          type: string
+          description: The TTS engine for this voice. Set this only if the `voice` string does not already name an engine.
+          examples:
+            - elevenlabs
+        model:
+          type: string
+          description: The model to use for the specified TTS engine. Set this only if the `voice` string does not already carry a `:<model id>` suffix.
+          examples:
+            - eleven_flash_v2_5
+        params:
+          allOf:
+            - $ref: '#/components/schemas/SWML.Calling.LanguageParams'
+          description: TTS engine-specific parameters for this voice.
+      unevaluatedProperties:
+        not: {}
+      title: MultilingualLanguage
+    SWML.Calling.MultilingualUpdate:
+      type: object
+      properties:
+        languages:
+          type: array
+          items:
+            $ref: '#/components/schemas/SWML.Calling.MultilingualLanguage'
+          description: |-
+            An array of voices, one per language the agent speaks.
+            At least one entry must supply a `voice`, either an entry with `language` set to
+            `default` or the first language listed. Without one, multilingual mode does not
+            start and the agent falls back to a single English voice.
+        allowed:
+          type: array
+          items:
+            type: string
+          description: |-
+            Restricts detection to this set of language codes. Every code must be supported by
+            the ASR engine and model in use, or multilingual mode does not start.
+            Omit to let the ASR engine detect any language it supports.
+          examples:
+            - - en
+              - es
+              - fr
+        engine:
+          type: string
+          description: The ASR (Automatic Speech Recognition) engine used to detect the spoken language.
+          examples:
+            - deepgram
+          default: deepgram
+        model:
+          type: string
+          description: The ASR model used to detect the spoken language. The model must support code-switching, or multilingual mode does not start.
+          examples:
+            - nova-3
+          default: nova-3
+        provider:
+          type: string
+          description: The ASR provider used to detect the spoken language.
+          examples:
+            - deepgram
+          default: deepgram
+        start_language:
+          type: string
+          description: |-
+            The language the agent opens the conversation in, before the caller has said
+            anything for the ASR engine to detect.
+          examples:
+            - en
+          default: en
+        min_switch_words:
+          type: integer
+          minimum: 1
+          description: |-
+            How many words a caller must say before the agent will switch languages.
+            A single word is often the same in several languages — a name, `no`, `ok` — so a
+            one-word turn is an unreliable signal. Set to `1` to allow single-word switches.
+          examples:
+            - 2
+          default: 2
+        fillers:
+          anyOf:
+            - type: array
+              items:
+                type: string
+            - $ref: '#/components/schemas/SWML.Calling.MultilingualFillers'
+          description: |-
+            Fillers used to break silence between turns.
+            Supply an array to have the fillers translated into whichever language the caller
+            is speaking, or an object keyed by language code to set them per language verbatim.
+          examples:
+            - - umm
+              - hmm
+        function_fillers:
+          anyOf:
+            - type: array
+              items:
+                type: string
+            - $ref: '#/components/schemas/SWML.Calling.MultilingualFillers'
+          description: |-
+            Fillers used while a SWAIG function runs.
+            Supply an array to have the fillers translated into whichever language the caller
+            is speaking, or an object keyed by language code to set them per language verbatim.
+          examples:
+            - - great
+              - ok
+        turn_fillers:
+          anyOf:
+            - type: array
+              items:
+                type: string
+            - $ref: '#/components/schemas/SWML.Calling.MultilingualFillers'
+          description: |-
+            Fillers used to acknowledge the caller the moment they finish a turn.
+            Supply an object keyed by language code, optionally with a `default` key for
+            languages you have not listed. These fillers are never translated on the fly,
+            because resolving them has to be fast enough to play immediately; an array is
+            accepted and treated as the `default` set.
+      unevaluatedProperties:
+        not: {}
+      title: multilingual
     SWML.Calling.NullProperty:
       type: object
       required:
