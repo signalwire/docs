@@ -1,31 +1,20 @@
-import "../../../_shared/webhook/decorator.tsp";
+import "@typespec/http";
+import "@typespec/openapi";
 import "../tags.tsp";
 import "./models/common.tsp";
 import "./models/swaig.tsp";
 import "./models/post-prompt.tsp";
 import "./models/debug.tsp";
 import "./models/sidecar.tsp";
+import "./models/responses.tsp";
+import "./operations.tsp";
 
+using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 
-@webhook("aiSwaigToolWebhook", AiSwaigToolWebhookPayload, AI_WEBHOOKS_TAG)
-@webhook("swaigSignatureRequest", SwaigSignatureRequestPayload, AI_WEBHOOKS_TAG)
-@webhook("aiPostPromptCallback", AiPostPromptCallbackPayload, AI_WEBHOOKS_TAG)
-@webhook("aiDebugWebhook", AiDebugWebhookPayload, AI_WEBHOOKS_TAG)
-@webhook(
-  "bedrockSwaigToolWebhook",
-  BedrockSwaigToolWebhookPayload,
-  AI_WEBHOOKS_TAG
-)
-@webhook(
-  "bedrockPostPromptCallback",
-  BedrockPostPromptCallbackPayload,
-  AI_WEBHOOKS_TAG
-)
-@webhook("aiSidecarCallback", AISidecarCallbackPayload, AI_WEBHOOKS_TAG)
-@webhook(
-  "aiSidecarSwaigToolWebhook",
-  AISidecarSwaigToolWebhookPayload,
-  AI_WEBHOOKS_TAG
-)
+// SignalWire is the caller here, not the callee — these operations describe
+// requests we send to the customer's endpoint, so the service's own auth scheme
+// does not apply to them.
+@tag(AI_WEBHOOKS_TAG)
+@useAuth(NoAuth)
 namespace SignalWireAPI.Webhooks.AI;

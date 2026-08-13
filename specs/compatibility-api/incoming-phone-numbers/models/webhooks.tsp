@@ -1,19 +1,4 @@
-import "../../../_shared/webhook/decorator.tsp";
 
-@summary("Incoming call status callback")
-@doc("""
-  Payload sent by SignalWire to your Inbound Call Status Callback URL for inbound calls to a phone number.
-
-  Configure `StatusCallback` at the phone number level via the dashboard
-  (**Phone Numbers** → select a number → **Phone Number Settings**) or programmatically via the
-  [create](/docs/compatibility-api/rest/incoming-phone-numbers/create-incoming-phone-number) or
-  [update](/docs/compatibility-api/rest/incoming-phone-numbers/update-incoming-phone-number) Incoming Phone Number API endpoints.
-
-  By default, the webhook fires only when the call is `completed` or `failed`, making it well-suited
-  for tracking inbound call success rate, call quality, and total call volume in a call center context.
-
-  Status callbacks are advisory, best-effort notifications — delivery can be delayed or fail silently, so don't gate time-critical actions on receiving one. See [Status callback reliability](/docs/platform/webhooks#status-callback-reliability).
-  """)
 model InboundCallStatusCallbackPayload {
   @doc("A unique identifier for the call. May be used to later retrieve this call from the REST API.")
   @example("b3877c40-da60-4998-90ad-b792e98472ca")
