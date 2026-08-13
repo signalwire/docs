@@ -33,7 +33,7 @@ namespace SignalWireAPI.Webhooks.AI;
 @post
 op aiSwaigToolWebhook(
   @body payload: AiSwaigToolWebhookPayload,
-): SwaigToolWebhookResponse;
+): SWML.Calling.Output;
 
 @summary("SWAIG function signature request")
 @doc("""
@@ -126,7 +126,7 @@ op aiDebugWebhook(@body payload: AiDebugWebhookPayload): WebhookAck;
 @post
 op bedrockSwaigToolWebhook(
   @body payload: BedrockSwaigToolWebhookPayload,
-): SWML.Calling.Output;
+): SWML.Calling.OutputBase;
 
 @summary("Amazon Bedrock post-prompt callback")
 @doc("""
@@ -182,4 +182,4 @@ op aiSidecarCallback(@body payload: AISidecarCallbackPayload): WebhookAck;
 @post
 op aiSidecarSwaigToolWebhook(
   @body payload: AISidecarSwaigToolWebhookPayload,
-): SWML.Calling.Output;
+): SWML.Calling.OutputBase;
