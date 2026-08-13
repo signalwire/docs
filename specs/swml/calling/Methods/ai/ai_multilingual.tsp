@@ -11,6 +11,17 @@ model MultilingualFillers {
   ...TypeSpec.Record<string[]>;
 }
 
+// A multilingual entry is flat: parse_multilingual reads only `language`, `voice`, `engine`,
+// `model`, and `params`. The last four are shared with `languages[]` and picked from
+// LanguagesBase so their descriptions live in one place. Anything added to LanguagesBase must
+// be picked in here deliberately, or it would appear in the schema while the engine ignores it.
+union PickedMultilingualLanguage {
+  "voice",
+  "engine",
+  "model",
+  "params",
+}
+
 @summary("MultilingualLanguage")
 model MultilingualLanguage {
   @doc("""
@@ -21,25 +32,7 @@ model MultilingualLanguage {
   @example("es")
   language: string;
 
-  @doc("""
-    Voice to use for this language. String format: `<engine id>.<voice id>` with an
-    optional `:<model id>` suffix. Always name the engine: a bare voice id resolves
-    against a default engine that can change.
-    For example, `elevenlabs.rachel` or `elevenlabs.rachel:eleven_flash_v2_5`.
-    """)
-  @example("elevenlabs.rachel")
-  voice: string;
-
-  @doc("The TTS engine for this voice. Set this only if the `voice` string does not already name an engine.")
-  @example("elevenlabs")
-  engine?: string;
-
-  @doc("The model to use for the specified TTS engine. Set this only if the `voice` string does not already carry a `:<model id>` suffix.")
-  @example("eleven_flash_v2_5")
-  `model`?: string;
-
-  @doc("TTS engine-specific parameters for this voice.")
-  params?: LanguageParams;
+  ...PickProperties<LanguagesBase, PickedMultilingualLanguage>;
 }
 
 @summary("multilingual")

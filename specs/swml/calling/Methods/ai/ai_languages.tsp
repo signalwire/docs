@@ -30,7 +30,10 @@ model LanguagesBase {
   @example("gcloud.fr-FR-Neural2-B")
   voice: string;
 
-  @doc("The model to use for the specified TTS engine. For example, 'coda'.")
+  @doc("""
+    The model to use for the specified TTS engine. For example, `coda`.
+    Set this only if the `voice` string does not already carry a `:<model id>` suffix.
+    """)
   @example("coda")
   `model`?: string;
 
@@ -51,8 +54,12 @@ model LanguagesBase {
   @example("auto")
   speed?: "auto";
 
+  // Deprecated so SWML voice IDs are written the same way as voice IDs elsewhere on the
+  // platform, cXML included: one `engine.voice` string rather than a separate engine field.
+  // The engine still reads this key, so it is a style deprecation, not a behavior change.
+  // `MultilingualLanguage` picks this property and inherits the deprecation with it.
   #deprecated "The `engine` property is deprecated. Please include the engine in the voice field."
-  @doc("The engine to use for the language. For example, 'elevenlabs'.")
+  @doc("The engine to use for the language. For example, `elevenlabs`.")
   @example("elevenlabs")
   engine?: string;
 
