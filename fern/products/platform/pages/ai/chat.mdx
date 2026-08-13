@@ -10,7 +10,8 @@ max-toc-depth: 3
 [chat-endpoint]: /docs/apis/rest/ai-chat/chat-methods
 [chat-gateway]: /docs/server-sdks/reference/python/ai-chat/chat-gateway
 [chat-client]: /docs/server-sdks/reference/python/ai-chat/ai-chat-client
-[swaig-webhook]: /docs/apis/rest/calls/webhooks/ai-swaig-tool-webhook
+[swaig-webhook]: /docs/apis/rest/webhooks/ai-swaig-tool-webhook
+[post-prompt-webhook]: /docs/apis/rest/webhooks/ai-post-prompt-callback
 [tool-calling]: /docs/platform/ai/tool-calling
 [post-prompt]: /docs/swml/reference/calling/ai
 
@@ -67,28 +68,30 @@ error codes. In Python, the SDK covers the same ground with typed methods:
 pip install signalwire-sdk
 ```
 
-```python title="chat_with_agent.py"
+```python title="chat_with_ada.py"
 import asyncio
 
-from signalwire.ai_chat import AIChatClient, ChatInProgressError
+from signalwire.ai_chat import AIChatClient
 
-CONFIG_URL = "https://your-agent.example.com/swml"
+CONFIG_URL = "https://bayview-taxi.example.com/swml"
 
 
 async def main():
     # Credentials fall back to SIGNALWIRE_PROJECT_ID, SIGNALWIRE_API_TOKEN,
     # and SIGNALWIRE_SPACE, so a configured environment needs no arguments.
     async with AIChatClient(space="your-space") as client:
-        info = await client.create_conversation("conv-123", config_url=CONFIG_URL)
-        print("agent:", info.initial_message)
+        info = await client.create_conversation("chat-8f21", config_url=CONFIG_URL)
+        print("Ada:", info.initial_message)
 
-        reply = await client.chat("conv-123", "Where is order A-771?")
-        print("agent:", reply.text)
+        reply = await client.chat(
+            "chat-8f21", "How much is a van from 123 Gough Street to the airport?"
+        )
+        print("Ada:", reply.text)
 
         if reply.user_event:
-            handle(reply.user_event)  # the agent asked your app to do something
+            handle(reply.user_event)  # Ada asked your app to do something
 
-        await client.end("conv-123")
+        await client.end("chat-8f21")
 
 
 asyncio.run(main())
@@ -127,9 +130,9 @@ from signalwire.ai_chat import ChatGateway
 app = FastAPI()
 
 gateway = ChatGateway(
-    config_url="https://your-agent.example.com/swml",  # never leaves the server
-    key="pk_your_publishable_key",                     # safe in the page
-    allowed_origins=["https://yoursite.example.com"],
+    config_url="https://bayview-taxi.example.com/swml",  # never leaves the server
+    key="pk_your_publishable_key",                       # safe in the page
+    allowed_origins=["https://bayviewtaxi.example.com"],
     conversation_timeout=1800,
 )
 
@@ -278,13 +281,41 @@ as chat: `conversation_type` is `chat`, and `call_id` carries the conversation i
 [AI SWAIG tool webhook][swaig-webhook] documents the payload.
 
 **A summary** reaches your [`post_prompt_url`][post-prompt] after the conversation ends, when your
-SWML sets one. Not instantly — expect seconds. Two traps in that payload:
+SWML sets one. Not instantly — expect seconds. The
+[AI post-prompt callback][post-prompt-webhook] documents the payload, which has two traps:
 
 - `post_prompt_data` is `{"raw": "<string>"}`, not parsed JSON. Even when your post-prompt asks for
   JSON, what arrives is the model's text, commonly a fenced markdown block inside that string. Strip
   the fence and parse it yourself, and handle the model not complying.
 - `call_log` has the same caveat as `chat_log`: it includes your system prompt and internal markers.
   Filter to `user` and `assistant` before showing it to anyone.
+
+## Confirm it works
+
+Run the server script above. A working setup prints two lines — Ada's greeting, then her answer to
+the fare question:
+
+```text
+Ada: Bayview Taxi, this is Ada. Where are you headed?
+Ada: A van from 123 Gough Street to the airport is $58. Want me to book it?
+```
+
+The second line is the one that proves the whole path: it means SignalWire fetched your SWML, ran a
+turn, and — if the answer carries a real fare rather than a vague one — called your tool and used
+what your code returned.
+
+When it goes wrong, the failure is almost always one of these:
+
+- **`-32002` on the first call.** Your `config_url` could not be fetched. Open it from outside your
+  network; a `localhost` or private address fails here even though it works in a browser on your
+  machine.
+- **`AuthenticationError`, or `-32009`.** The token is missing the `chat` scope. Check the token in
+  your Space rather than the code.
+- **Ada answers, but with an invented fare.** The conversation is working and the tool call is not.
+  The model answered from nothing, which means your SWAIG function was never called or returned an
+  error — check your own agent's logs, since the chat service reports nothing about your tool's
+  behavior.
+- **`-32008`.** Your SWML failed validation. The document is served but malformed.
 
 ## Next steps
 

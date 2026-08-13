@@ -106,7 +106,7 @@ model AiSwaigToolWebhookPayload {
   @example("Look up the current weather for a city.")
   description: string;
 
-  @doc("The ID of the call.")
+  @doc("The ID of the call. On a chat conversation this carries the conversation id instead.")
   @example("2e1e66e5-5d07-413d-9668-55542992eec0")
   call_id: string;
 
@@ -114,7 +114,11 @@ model AiSwaigToolWebhookPayload {
   @example("a0d4e6e5-5d07-413d-9668-55542992eec0")
   ai_session_id: string;
 
-  @doc("The conversation ID, when the AI session has one.")
+  @doc("""
+    The conversation ID, when the AI session has one. A text conversation held over the
+    [AI chat endpoint](/docs/apis/rest/ai-chat/chat-methods) always has one, and it matches
+    `call_id`.
+    """)
   conversation_id?: string;
 
   @doc("The name of your AI application.")
