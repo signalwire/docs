@@ -542,7 +542,10 @@ model BedrockSwaigToolWebhookPayload {
   @example("+15555550100")
   caller_id: string;
 
-  @doc("The agent's current `global_data`. An empty object when you seeded none.")
+  @doc("""
+    The agent's current `global_data`. Alongside anything you seeded, the session adds
+    `caller_id_name` and `caller_id_number` when the call carries them.
+    """)
   @example(#{ customer_tier: "premium", pickup_address: "123 Main St, Springfield" })
   global_data: Record<unknown>;
 
@@ -710,7 +713,12 @@ model AIResponseTiming {
   @example(1.42)
   answer_time: float;
 
-  @doc("How long the first token took, in seconds.")
+  @doc("""
+    How long the model spent generating, in seconds. For an [`ai`](/docs/swml/reference/calling/ai)
+    agent this is the span from the first token to the last; for an
+    [`amazon_bedrock`](/docs/swml/reference/calling/amazon-bedrock) agent it is `answer_time` less a
+    fixed startup estimate, so treat it as approximate there.
+    """)
   @example(0.31)
   token_time: float;
 
@@ -930,8 +938,9 @@ model AiPostPromptCallbackPayload {
   post_prompt_data?: AIPostPromptData;
 
   @doc("""
-    The session's final `global_data`. An empty object when you seeded none. Included when `action`
-    is `post_conversation`.
+    The session's final `global_data`. Alongside anything you seeded, the session adds
+    `caller_id_name` and `caller_id_number` when the call carries them. Included when `action` is
+    `post_conversation`.
     """)
   @example(#{ customer_tier: "premium", pickup_address: "123 Main St, Springfield" })
   global_data?: Record<unknown>;
@@ -1764,8 +1773,11 @@ model AIDebugWebhookFail is Record<unknown> {
   @doc("The response body as received. Included only when `parse_error` is set.")
   raw_response?: string;
 
-  @doc("The response body parsed as JSON. `null` when it could not be parsed.")
-  parsed_response: Record<unknown> | null;
+  @doc("""
+    The response body parsed as JSON. Omitted when the body could not be parsed, where `parse_error`
+    and `raw_response` carry the detail instead.
+    """)
+  parsed_response?: Record<unknown>;
 
   @doc("Always `true` when present, meaning the request failed before a response was received.")
   @example(true)
@@ -1919,7 +1931,8 @@ model BedrockPostPromptCallbackPayload {
   times?: AIResponseTiming[];
 
   @doc("""
-    The number of billable minutes, rounded up to at least one. Included once the agent has stopped.
+    The number of billable minutes, with a minimum of one. Fractional durations are kept as they are;
+    only a call under a minute is raised to `1`. Included once the agent has stopped.
     """)
   @example(3.14)
   total_minutes?: float;
