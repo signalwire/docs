@@ -52443,6 +52443,25 @@ components:
             - 451ed9ff-e568-4222-8af9-4f9ab7428d09
       unevaluatedProperties:
         not: {}
+    Webhooks.AI.SwaigSignatureResponse:
+      anyOf:
+        - type: array
+          items:
+            $ref: '#/components/schemas/SWML.Calling.UserSWAIGFunction'
+        - $ref: '#/components/schemas/SWML.Calling.UserSWAIGFunction'
+        - $ref: '#/components/schemas/Webhooks.AI.SwaigSignatureEnvelope'
+      description: |-
+        The function definitions your server hosts, returned to the agent that asked for them.
+
+        Three forms are accepted: an array of definitions (the usual one), a single definition on its own,
+        or an envelope object carrying `functions` alongside shared `defaults`. Each definition is shaped
+        like an entry in
+        [`SWAIG.functions`](/docs/swml/reference/calling/ai/swaig/functions#properties) — `function`,
+        `description`, and `parameters`.
+
+        Every definition you return is registered, whether or not it was named in the request's
+        `functions` list.
+      title: SWAIG function signature response
     Webhooks.Calling.InboundCallContext:
       type: object
       required:
@@ -53867,11 +53886,17 @@ webhooks:
       parameters: []
       responses:
         '200':
-          description: The request has succeeded.
+          description: The function result. Both fields are optional; `{}` is a valid reply.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/SWML.Calling.AISidecarOutput'
+              examples:
+                Plain result:
+                  summary: Plain result
+                  description: A sidecar function usually just returns text for the agent to read.
+                  value:
+                    response: Acme Corp is the closest competitor by price.
       tags:
         - AI Webhooks
       requestBody:
@@ -53894,11 +53919,20 @@ webhooks:
       parameters: []
       responses:
         '200':
-          description: The request has succeeded.
+          description: The function result. Every field is optional; `{}` is a valid reply.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/SWML.Calling.Output'
+              examples:
+                Result with an action:
+                  summary: Result with an action
+                  description: Return the fare for the agent to read out, and record it in call state.
+                  value:
+                    response: The fare to the airport is $38.60.
+                    action:
+                      - set_global_data:
+                          quoted_fare: '38.60'
       tags:
         - AI Webhooks
       requestBody:
@@ -53958,11 +53992,20 @@ webhooks:
       parameters: []
       responses:
         '200':
-          description: The request has succeeded.
+          description: The function result. Both fields are optional; `{}` is a valid reply.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/SWML.Calling.BedrockOutput'
+              examples:
+                Result with an action:
+                  summary: Result with an action
+                  description: '`response` must be a plain string here — the `tool_result`/`tool_prompt` object form is not read.'
+                  value:
+                    response: The fare to the airport is $38.60.
+                    action:
+                      - set_global_data:
+                          quoted_fare: '38.60'
       tags:
         - AI Webhooks
       requestBody:
@@ -53984,11 +54027,22 @@ webhooks:
       parameters: []
       responses:
         '200':
-          description: The request has succeeded.
+          description: The SWML document to execute for the call.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/SWML.Calling.SWMLObject'
+              examples:
+                Answer and speak:
+                  summary: Answer and speak
+                  description: Execution starts at `sections.main` and runs each method in order.
+                  value:
+                    version: 1.0.0
+                    sections:
+                      main:
+                        - answer: {}
+                        - play:
+                            url: say:Thanks for calling.
       tags:
         - Calling Webhooks
       requestBody:
@@ -54010,11 +54064,20 @@ webhooks:
       parameters: []
       responses:
         '200':
-          description: The request has succeeded.
+          description: The SWML document to execute for the inbound message.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/SWML.Messaging.SWMLObject'
+              examples:
+                Reply to the sender:
+                  summary: Reply to the sender
+                  description: Execution starts at `sections.main` and runs each method in order.
+                  value:
+                    version: 1.0.0
+                    sections:
+                      main:
+                        - reply: Thanks — we got your message.
       tags:
         - Messaging Webhooks
       requestBody:
@@ -54093,26 +54156,26 @@ webhooks:
       parameters: []
       responses:
         '200':
-          description: |-
-            The function definitions your server hosts, returned to the agent that asked for them.
-
-            Three forms are accepted: an array of definitions (the usual one), a single definition on its own,
-            or an envelope object carrying `functions` alongside shared `defaults`. Each definition is shaped
-            like an entry in
-            [`SWAIG.functions`](/docs/swml/reference/calling/ai/swaig/functions#properties) — `function`,
-            `description`, and `parameters`.
-
-            Every definition you return is registered, whether or not it was named in the request's
-            `functions` list.
+          description: The function definitions your server hosts.
           content:
             application/json:
               schema:
-                anyOf:
-                  - type: array
-                    items:
-                      $ref: '#/components/schemas/SWML.Calling.UserSWAIGFunction'
-                  - $ref: '#/components/schemas/SWML.Calling.UserSWAIGFunction'
-                  - $ref: '#/components/schemas/Webhooks.AI.SwaigSignatureEnvelope'
+                $ref: '#/components/schemas/Webhooks.AI.SwaigSignatureResponse'
+              examples:
+                One function:
+                  summary: One function
+                  description: The usual form — an array of definitions, each shaped like a `SWAIG.functions` entry.
+                  value:
+                    - function: get_weather
+                      description: Look up the current weather for a city.
+                      parameters:
+                        type: object
+                        properties:
+                          city:
+                            type: string
+                            description: The city to look up.
+                        required:
+                          - city
       tags:
         - AI Webhooks
       requestBody:

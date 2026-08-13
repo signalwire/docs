@@ -26,6 +26,19 @@ namespace SignalWireAPI.Webhooks.Messaging;
   """)
 @webhook
 @operationId("inbound_message_webhook")
+@returnsDoc("The SWML document to execute for the inbound message.")
+@opExample(
+  #{
+    returnType: #{
+      version: "1.0.0",
+      sections: #{ main: #[#{ reply: "Thanks — we got your message." }] },
+    },
+  },
+  #{
+    title: "Reply to the sender",
+    description: "Execution starts at `sections.main` and runs each method in order.",
+  }
+)
 @post
 op inboundMessageWebhook(
   @body payload: InboundMessageWebhookPayload,

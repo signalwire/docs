@@ -30,6 +30,19 @@ namespace SignalWireAPI.Webhooks.AI;
   """)
 @webhook
 @operationId("ai_swaig_tool_webhook")
+@returnsDoc("The function result. Every field is optional; `{}` is a valid reply.")
+@opExample(
+  #{
+    returnType: #{
+      response: "The fare to the airport is $38.60.",
+      action: #[#{ set_global_data: #{ quoted_fare: "38.60" } }],
+    },
+  },
+  #{
+    title: "Result with an action",
+    description: "Return the fare for the agent to read out, and record it in call state.",
+  }
+)
 @post
 op aiSwaigToolWebhook(
   @body payload: AiSwaigToolWebhookPayload,
@@ -52,10 +65,40 @@ op aiSwaigToolWebhook(
   """)
 @webhook
 @operationId("swaig_signature_request")
+@returnsDoc("The function definitions your server hosts.")
+@opExample(
+  #{
+    returnType: #{
+      statusCode: 200,
+      body: #[
+        #{
+          function: "get_weather",
+          description: "Look up the current weather for a city.",
+          parameters: #{
+            type: "object",
+            properties: #{
+              city: #{ type: "string", description: "The city to look up." },
+            },
+            required: #["city"],
+          },
+        }
+      ],
+    },
+  },
+  #{
+    title: "One function",
+    description: "The usual form — an array of definitions, each shaped like a `SWAIG.functions` entry.",
+  }
+)
 @post
-op swaigSignatureRequest(
-  @body payload: SwaigSignatureRequestPayload,
-): SwaigSignatureResponse;
+op swaigSignatureRequest(@body payload: SwaigSignatureRequestPayload): {
+  // Wrapped rather than returned bare: a union return type is read as a set of
+  // response variants, and @returnsDoc / @opExample bind to none of them. An
+  // explicit @body collapses it to one 200 carrying the anyOf.
+  @statusCode statusCode: 200;
+
+  @body body: SwaigSignatureResponse;
+};
 
 @summary("AI post-prompt callback")
 @doc("""
@@ -123,6 +166,19 @@ op aiDebugWebhook(@body payload: AiDebugWebhookPayload): WebhookAck;
   """)
 @webhook
 @operationId("bedrock_swaig_tool_webhook")
+@returnsDoc("The function result. Both fields are optional; `{}` is a valid reply.")
+@opExample(
+  #{
+    returnType: #{
+      response: "The fare to the airport is $38.60.",
+      action: #[#{ set_global_data: #{ quoted_fare: "38.60" } }],
+    },
+  },
+  #{
+    title: "Result with an action",
+    description: "`response` must be a plain string here — the `tool_result`/`tool_prompt` object form is not read.",
+  }
+)
 @post
 op bedrockSwaigToolWebhook(
   @body payload: BedrockSwaigToolWebhookPayload,
@@ -179,6 +235,16 @@ op aiSidecarCallback(@body payload: AISidecarCallbackPayload): WebhookAck;
   """)
 @webhook
 @operationId("ai_sidecar_swaig_tool_webhook")
+@returnsDoc("The function result. Both fields are optional; `{}` is a valid reply.")
+@opExample(
+  #{
+    returnType: #{ response: "Acme Corp is the closest competitor by price." },
+  },
+  #{
+    title: "Plain result",
+    description: "A sidecar function usually just returns text for the agent to read.",
+  }
+)
 @post
 op aiSidecarSwaigToolWebhook(
   @body payload: AISidecarSwaigToolWebhookPayload,
