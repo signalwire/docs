@@ -7,10 +7,35 @@ namespace SWML.Calling;
 
 // Bedrock runs its own data_map evaluator (`bedrock_process_data_map`), which
 // reads the result with a string-only accessor and always defers actions rather
-// than honouring `post_process`. So its outputs are `OutputBase`, not `Output`.
+// than honouring `post_process`. So its outputs are `BedrockOutput`, not the
+// canonical `Output`.
 //
-// Each model below re-points only the properties that carry an output and
-// inherits the rest, so anything added to the `ai` models arrives here for free.
+// The Pick list below is this surface's to maintain: when `Output` gains a
+// property, Bedrock keeps its current shape until someone confirms Bedrock reads
+// the new field and adds it here. That is the safe direction — an allowlist
+// cannot silently claim support that does not exist.
+//
+// The DataMap models re-point only the properties that carry an output and
+// inherit the rest, so structural changes on the `ai` side still arrive free.
+
+@summary("Bedrock output object")
+@doc("""
+  The result of a SWAIG function run by an
+  [`amazon_bedrock`](/docs/swml/reference/calling/amazon-bedrock) agent.
+  
+  Narrower than the canonical [`Output`](/docs/swml/reference/calling/ai/swaig/functions/data-map):
+  Bedrock reads `response` as a plain string, and defers actions until after the agent speaks
+  regardless of `post_process`, so neither the split-response object nor `post_process` applies here.
+  """)
+model BedrockOutput {
+  @doc("""
+    The result the agent reads next. When absent, the agent reads a default result and carries on.
+    """)
+  @example("Order placed")
+  response?: string;
+
+  ...PickProperties<Output, "action">;
+}
 
 @summary("Bedrock expression object")
 @doc("""
@@ -19,7 +44,7 @@ namespace SWML.Calling;
   """)
 model BedrockExpression {
   @doc("An object that contains a response and a list of actions to be performed upon a expression match.")
-  output: OutputBase;
+  output: BedrockOutput;
 
   ...OmitProperties<Expression, "output">;
 }
@@ -34,7 +59,7 @@ model BedrockWebhook {
   expressions?: BedrockExpression[];
 
   @doc("An object that contains a response and a list of actions to be performed on a successful call.")
-  output?: OutputBase;
+  output?: BedrockOutput;
 
   ...OmitProperties<Webhook, "expressions" | "output">;
 }
@@ -45,12 +70,12 @@ model BedrockWebhook {
   [`amazon_bedrock`](/docs/swml/reference/calling/amazon-bedrock) agent's SWAIG function.
   
   Structurally the same as the `ai` version — expressions, then webhooks, then output, evaluated in
-  that order — but every result is an `OutputBase`: Bedrock reads `response` as a plain string only,
-  and always defers actions rather than taking `post_process`.
+  that order — but every result is a `BedrockOutput`: Bedrock reads `response` as a plain string
+  only, and always defers actions rather than taking `post_process`.
   """)
 model BedrockDataMap {
   @doc("An object that contains a response and a list of actions to be performed upon a SWAIG function call.")
-  output?: OutputBase;
+  output?: BedrockOutput;
 
   @doc("An array of objects that have pattern matching logic to process the user's input data.")
   expressions?: BedrockExpression[];

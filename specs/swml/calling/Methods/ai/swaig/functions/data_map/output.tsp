@@ -7,12 +7,15 @@ namespace SWML.Calling;
 
 // The SWAIG function result. Not a `data_map` concept despite living here: the
 // platform expands a `data_map` output into exactly the object a `web_hook_url`
-// handler returns over HTTP, then runs both through the same parser. So these
-// models are also the contract a webhook endpoint answers with.
+// handler returns over HTTP, then runs both through the same parser. So this
+// model is also the contract a webhook endpoint answers with.
 //
-// The split is by agent surface, not by delivery. `ai` reads two things the
-// other surfaces do not, so `Output` carries them and `OutputBase` is what
-// `amazon_bedrock` and `ai_sidecar` actually read.
+// `Output` is the canonical result — the `ai` agent's, which is where SWAIG
+// features land first — and is declared plainly, with no derivation machinery.
+// Surfaces that read less derive from it and own the Pick list that says so;
+// see `BedrockOutput` and `AISidecarOutput`. Picking rather than omitting is
+// deliberate: an allowlist fails closed, so a property added here for `ai`
+// cannot silently appear on a surface that ignores it.
 
 @summary("SWAIG tool result")
 @doc("""
@@ -35,41 +38,19 @@ model SwaigToolResult {
   tool_prompt?: string;
 }
 
-@summary("Output object (base)")
-@doc("""
-  The SWAIG function result every agent surface understands.
-  
-  Both fields are optional. An empty object is valid — the agent reads a default result and carries
-  on — so a function that only needs to steer the call can set `action` alone.
-  """)
-model OutputBase {
-  @doc("""
-    A static response text or message returned to the AI agent's context. When it is absent the
-    agent reads a default result and carries on.
-    """)
-  @example("Order placed")
-  response?: string;
-
-  // Worded for both pathways on purpose: this property is shared with the
-  // webhook reply, so "upon matching" (a `data_map` expression concept) would
-  // read wrong there.
-  @doc("An action for the platform to perform on the live call, or a list of them.")
-  action?: Action | Action[];
-}
-
 @summary("Output object")
 @doc("""
-  The SWAIG function result for an [`ai`](/docs/swml/reference/calling/ai) agent.
+  The result of a SWAIG function, returned either as a `data_map` output or by your `web_hook_url`
+  endpoint — the platform reads both the same way.
   
-  This is the base result with two additions that only `ai` reads: `response` may be an object that
-  separates data from steering, and `post_process` holds the actions until after the agent has
-  spoken. [`amazon_bedrock`](/docs/swml/reference/calling/amazon-bedrock) and
-  [`ai_sidecar`](/docs/swml/reference/calling/ai-sidecar) agents ignore both — see
-  [`OutputBase`](/docs/swml/reference/calling/ai/swaig/functions/data-map) for what they read.
+  Every field is optional. An empty object is valid — the agent reads a default result and carries
+  on — so a function that only needs to steer the call can set `action` alone.
+  
+  [`amazon_bedrock`](/docs/swml/reference/calling/amazon-bedrock) and
+  [`ai_sidecar`](/docs/swml/reference/calling/ai-sidecar) agents read a narrower result: `response`
+  must be a plain string there, and `post_process` has no effect.
   """)
 model Output {
-  // `response` widens here, and a spread property cannot be re-typed — hence
-  // omit-then-redeclare. Spread sits mid-model to keep the emitted field order.
   @doc("""
     The result the agent reads next. A plain string becomes the tool message as-is; the object form
     splits the data half from the steering half. Omit it to let the agent use a default result.
@@ -77,7 +58,11 @@ model Output {
   @example("Order placed")
   response?: string | SwaigToolResult;
 
-  ...OmitProperties<OutputBase, "response">;
+  // Worded for both pathways on purpose: this property is shared with the
+  // webhook reply, so "upon matching" (a `data_map` expression concept) would
+  // read wrong there.
+  @doc("An action for the platform to perform on the live call, or a list of them.")
+  action?: Action | Action[];
 
   @doc("""
     Hold the actions until after the agent has spoken its reply, rather than running them

@@ -32892,6 +32892,30 @@ components:
       unevaluatedProperties:
         not: {}
       title: AISidecarObjectParam object
+    SWML.Calling.AISidecarOutput:
+      type: object
+      properties:
+        response:
+          type: string
+          description: The result the agent reads next. When absent, the agent reads a default result and carries on.
+          examples:
+            - Order placed
+        action:
+          anyOf:
+            - $ref: '#/components/schemas/SWML.Calling.Action'
+            - type: array
+              items:
+                $ref: '#/components/schemas/SWML.Calling.Action'
+          description: An action for the platform to perform on the live call, or a list of them.
+      unevaluatedProperties:
+        not: {}
+      description: |-
+        The result of a SWAIG function run by an
+        [`ai_sidecar`](/docs/swml/reference/calling/ai-sidecar) agent.
+
+        Narrower than the canonical [`Output`](/docs/swml/reference/calling/ai/swaig/functions/data-map):
+        a sidecar reads `response` as a plain string, and `post_process` does not apply.
+      title: AI sidecar output object
     SWML.Calling.AISidecarParamProperty:
       anyOf:
         - $ref: '#/components/schemas/SWML.Calling.AISidecarStringParam'
@@ -33418,7 +33442,7 @@ components:
       properties:
         output:
           allOf:
-            - $ref: '#/components/schemas/SWML.Calling.OutputBase'
+            - $ref: '#/components/schemas/SWML.Calling.BedrockOutput'
           description: An object that contains a response and a list of actions to be performed upon a SWAIG function call.
         expressions:
           type: array
@@ -33437,8 +33461,8 @@ components:
         [`amazon_bedrock`](/docs/swml/reference/calling/amazon-bedrock) agent's SWAIG function.
 
         Structurally the same as the `ai` version — expressions, then webhooks, then output, evaluated in
-        that order — but every result is an `OutputBase`: Bedrock reads `response` as a plain string only,
-        and always defers actions rather than taking `post_process`.
+        that order — but every result is a `BedrockOutput`: Bedrock reads `response` as a plain string
+        only, and always defers actions rather than taking `post_process`.
       title: Bedrock DataMap object
     SWML.Calling.BedrockExpression:
       type: object
@@ -33449,7 +33473,7 @@ components:
       properties:
         output:
           allOf:
-            - $ref: '#/components/schemas/SWML.Calling.OutputBase'
+            - $ref: '#/components/schemas/SWML.Calling.BedrockOutput'
           description: An object that contains a response and a list of actions to be performed upon a expression match.
         string:
           type: string
@@ -33467,6 +33491,31 @@ components:
         An [expression](/docs/swml/reference/calling/ai/swaig/functions/data-map) evaluated by an
         [`amazon_bedrock`](/docs/swml/reference/calling/amazon-bedrock) agent.
       title: Bedrock expression object
+    SWML.Calling.BedrockOutput:
+      type: object
+      properties:
+        response:
+          type: string
+          description: The result the agent reads next. When absent, the agent reads a default result and carries on.
+          examples:
+            - Order placed
+        action:
+          anyOf:
+            - $ref: '#/components/schemas/SWML.Calling.Action'
+            - type: array
+              items:
+                $ref: '#/components/schemas/SWML.Calling.Action'
+          description: An action for the platform to perform on the live call, or a list of them.
+      unevaluatedProperties:
+        not: {}
+      description: |-
+        The result of a SWAIG function run by an
+        [`amazon_bedrock`](/docs/swml/reference/calling/amazon-bedrock) agent.
+
+        Narrower than the canonical [`Output`](/docs/swml/reference/calling/ai/swaig/functions/data-map):
+        Bedrock reads `response` as a plain string, and defers actions until after the agent speaks
+        regardless of `post_process`, so neither the split-response object nor `post_process` applies here.
+      title: Bedrock output object
     SWML.Calling.BedrockParams:
       type: object
       properties:
@@ -34043,7 +34092,7 @@ components:
           description: An array of objects that have pattern matching logic to process the API response.
         output:
           allOf:
-            - $ref: '#/components/schemas/SWML.Calling.OutputBase'
+            - $ref: '#/components/schemas/SWML.Calling.BedrockOutput'
           description: An object that contains a response and a list of actions to be performed on a successful call.
         error_keys:
           anyOf:
@@ -38482,39 +38531,16 @@ components:
       unevaluatedProperties:
         not: {}
       description: |-
-        The SWAIG function result for an [`ai`](/docs/swml/reference/calling/ai) agent.
+        The result of a SWAIG function, returned either as a `data_map` output or by your `web_hook_url`
+        endpoint — the platform reads both the same way.
 
-        This is the base result with two additions that only `ai` reads: `response` may be an object that
-        separates data from steering, and `post_process` holds the actions until after the agent has
-        spoken. [`amazon_bedrock`](/docs/swml/reference/calling/amazon-bedrock) and
-        [`ai_sidecar`](/docs/swml/reference/calling/ai-sidecar) agents ignore both — see
-        [`OutputBase`](/docs/swml/reference/calling/ai/swaig/functions/data-map) for what they read.
-      title: Output object
-    SWML.Calling.OutputBase:
-      type: object
-      properties:
-        response:
-          type: string
-          description: |-
-            A static response text or message returned to the AI agent's context. When it is absent the
-            agent reads a default result and carries on.
-          examples:
-            - Order placed
-        action:
-          anyOf:
-            - $ref: '#/components/schemas/SWML.Calling.Action'
-            - type: array
-              items:
-                $ref: '#/components/schemas/SWML.Calling.Action'
-          description: An action for the platform to perform on the live call, or a list of them.
-      unevaluatedProperties:
-        not: {}
-      description: |-
-        The SWAIG function result every agent surface understands.
-
-        Both fields are optional. An empty object is valid — the agent reads a default result and carries
+        Every field is optional. An empty object is valid — the agent reads a default result and carries
         on — so a function that only needs to steer the call can set `action` alone.
-      title: Output object (base)
+
+        [`amazon_bedrock`](/docs/swml/reference/calling/amazon-bedrock) and
+        [`ai_sidecar`](/docs/swml/reference/calling/ai-sidecar) agents read a narrower result: `response`
+        must be a plain string there, and `post_process` has no effect.
+      title: Output object
     SWML.Calling.POM:
       anyOf:
         - $ref: '#/components/schemas/SWML.Calling.PomSectionBodyContent'
@@ -53845,7 +53871,7 @@ webhooks:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SWML.Calling.OutputBase'
+                $ref: '#/components/schemas/SWML.Calling.AISidecarOutput'
       tags:
         - AI Webhooks
       requestBody:
@@ -53936,7 +53962,7 @@ webhooks:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SWML.Calling.OutputBase'
+                $ref: '#/components/schemas/SWML.Calling.BedrockOutput'
       tags:
         - AI Webhooks
       requestBody:

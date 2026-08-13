@@ -1,6 +1,7 @@
 import "@typespec/json-schema";
 import "./defaults.tsp";
 import "./functions.tsp";
+import "./output.tsp";
 import "../../ai/swaig/mcp_servers.tsp";
 
 using TypeSpec.JsonSchema;
