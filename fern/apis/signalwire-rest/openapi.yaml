@@ -387,24 +387,8 @@ paths:
 
         JSON-RPC carries failures in the body, and the service commits `200` before a turn's outcome
         is known. **Check for an `error` key, not the status code.** A `200` with `{"error": {...}}`
-        is a failed call.
-
-        | Code | Meaning |
-        |---|---|
-        | `-32001` | No such conversation for your project |
-        | `-32002` | Your `config_url` could not be fetched |
-        | `-32003` | The model provider failed |
-        | `-32004` | Storage failure |
-        | `-32005` | Too many `summarize` calls on this conversation |
-        | `-32006` | Too many messages on this conversation |
-        | `-32007` | A turn is already running on this conversation |
-        | `-32008` | Your SWML failed validation |
-        | `-32009` | Missing or rejected credentials |
-        | `-32600` | Malformed JSON-RPC envelope |
-        | `-32601` | Unknown method |
-        | `-32602` | Missing or invalid params |
-        | `-32603` | Unexpected failure |
-        | `-32700` | The body was not valid JSON |
+        is a failed call. Every code the service returns, and what each one means, is listed on the
+        error response below.
 
         ## One turn at a time
 
@@ -14746,9 +14730,9 @@ components:
         - message
       properties:
         code:
-          type: integer
-          format: int32
-          description: The error code. See the error codes table on this endpoint for what each one means.
+          allOf:
+            - $ref: '#/components/schemas/AI.ChatErrorCode'
+          description: Which failure this was.
           examples:
             - -32001
         message:
@@ -14759,6 +14743,43 @@ components:
       unevaluatedProperties:
         not: {}
       description: What went wrong. The `message` is deliberately coarse and does not describe internals; when diagnosing, the detail you need is usually in your own agent's logs or in the SWML you served.
+    AI.ChatErrorCode:
+      type: number
+      enum:
+        - -32001
+        - -32002
+        - -32003
+        - -32004
+        - -32005
+        - -32006
+        - -32007
+        - -32008
+        - -32009
+        - -32600
+        - -32601
+        - -32602
+        - -32603
+        - -32700
+      description: |-
+        Why a method failed. `-32600` and below are the standard JSON-RPC codes; the rest are specific to
+        AI chat.
+
+        | Code | Meaning |
+        |---|---|
+        | `-32001` | No conversation with that id exists in your project |
+        | `-32002` | Your `config_url` could not be fetched |
+        | `-32003` | The model provider failed |
+        | `-32004` | Storage failure |
+        | `-32005` | Too many `summarize` calls on this conversation, which allows one per minute |
+        | `-32006` | Too many messages on this conversation |
+        | `-32007` | A turn is already running on this conversation |
+        | `-32008` | The SWML your `config_url` served failed validation |
+        | `-32009` | Credentials are missing, rejected, or lack the `chat` scope |
+        | `-32600` | The JSON-RPC envelope was malformed |
+        | `-32601` | No method by that name |
+        | `-32602` | A required param is missing, or one carries an invalid value |
+        | `-32603` | An unexpected failure |
+        | `-32700` | The request body was not valid JSON |
     AI.ChatErrorResponse:
       type: object
       required:
@@ -52504,9 +52525,12 @@ components:
             - agent.summary
         conversation_type:
           type: string
+          enum:
+            - voice
+            - chat
           description: |-
-            The kind of conversation the agent ran. `voice` for a call, `chat` for a text conversation held
-            over the [AI chat endpoint](/docs/apis/rest/ai-chat/chat-methods).
+            The kind of conversation the agent ran: a call, or a text conversation held over the
+            [AI chat endpoint](/docs/apis/rest/ai-chat/chat-methods).
           examples:
             - voice
         call_id:
@@ -52897,9 +52921,12 @@ components:
             - SWAIG Function
         conversation_type:
           type: string
+          enum:
+            - voice
+            - chat
           description: |-
-            The kind of conversation the agent is running. `voice` for a call, `chat` for a text conversation
-            held over the [AI chat endpoint](/docs/apis/rest/ai-chat/chat-methods).
+            The kind of conversation the agent is running: a call, or a text conversation held over the
+            [AI chat endpoint](/docs/apis/rest/ai-chat/chat-methods).
           examples:
             - voice
         project_id:

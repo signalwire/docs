@@ -48,24 +48,8 @@ namespace SignalWireAPI.AI.Chat {
 
       JSON-RPC carries failures in the body, and the service commits `200` before a turn's outcome
       is known. **Check for an `error` key, not the status code.** A `200` with `{"error": {...}}`
-      is a failed call.
-
-      | Code | Meaning |
-      |---|---|
-      | `-32001` | No such conversation for your project |
-      | `-32002` | Your `config_url` could not be fetched |
-      | `-32003` | The model provider failed |
-      | `-32004` | Storage failure |
-      | `-32005` | Too many `summarize` calls on this conversation |
-      | `-32006` | Too many messages on this conversation |
-      | `-32007` | A turn is already running on this conversation |
-      | `-32008` | Your SWML failed validation |
-      | `-32009` | Missing or rejected credentials |
-      | `-32600` | Malformed JSON-RPC envelope |
-      | `-32601` | Unknown method |
-      | `-32602` | Missing or invalid params |
-      | `-32603` | Unexpected failure |
-      | `-32700` | The body was not valid JSON |
+      is a failed call. Every code the service returns, and what each one means, is listed on the
+      error response below.
 
       ## One turn at a time
 
