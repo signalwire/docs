@@ -2,21 +2,6 @@ import "./common.tsp";
 
 namespace SignalWireAPI.Webhooks.AI;
 
-@summary("SWAIG function signature request")
-@doc("""
-  Sent once per [`SWAIG.includes`](/docs/swml/reference/calling/ai/swaig/includes) entry when an AI
-  agent loads, to discover the functions your server hosts. Every way of building an agent sends it —
-  SWML you write yourself, SWML a Server SDK generates, or an agent you configure in your Dashboard —
-  because they all resolve `includes` the same way. Return a JSON array of function definitions, each
-  shaped like an entry in
-  [`SWAIG.functions`](/docs/swml/reference/calling/ai/swaig/functions#properties) — `function`,
-  `description`, and `parameters`. Functions the agent can call are the ones you return here.
-  
-  This is not the payload a function call sends. It goes to the `includes` entry's `url`, using
-  `auth_user` and `auth_password` when set. Your endpoint can also receive it outside of a call, as a
-  check that it answers, so answer it the same way. When your project has a signing key, the request
-  carries an `X-SignalWire-Signature` header you can verify.
-  """)
 model SwaigSignatureRequestPayload {
   @doc("What the request is asking of you. Always `get_signature`.")
   @example("get_signature")
@@ -61,13 +46,6 @@ model SwaigSignatureRequestPayload {
   space_id?: string;
 }
 
-@summary("AI SWAIG tool webhook")
-@doc("""
-  Sent to a tool's `web_hook_url` (or the SWAIG `defaults.web_hook_url`) when an
-  [`ai`](/docs/swml/reference/calling/ai) agent calls one of your functions. Your endpoint runs the
-  function and returns a JSON object with a `response` string (the result the AI reads next) and,
-  optionally, an `action` — a single object or an array — telling the agent what to do.
-  """)
 model AiSwaigToolWebhookPayload {
   @doc("The name of the function the AI is calling.")
   @example("get_weather")
@@ -209,20 +187,6 @@ model AiSwaigToolWebhookPayload {
   raw_call_log?: AICallLogEntry[];
 }
 
-@summary("Amazon Bedrock SWAIG tool webhook")
-@doc("""
-  Sent to a tool's `web_hook_url` (or the SWAIG `defaults.web_hook_url`) when an
-  [`amazon_bedrock`](/docs/swml/reference/calling/amazon-bedrock) agent calls one of your functions.
-  Your endpoint runs the function and returns a JSON object with a `response` string (the result the
-  agent reads next) and, optionally, an `action` — a single object or an array — telling the agent
-  what to do.
-  
-  Bedrock agents send a different payload from [`ai`](/docs/swml/reference/calling/ai) agents. Notably
-  `content_type` is `text/json` rather than `text/swaig`, `argument` carries no `substituted` value,
-  there is no `version`, `description`, or `argument_desc`, and the call's timing and caller fields
-  are named differently. Write your handler against this payload, not the
-  [AI SWAIG tool webhook](#tag/calls/webhook/aiSwaigToolWebhook).
-  """)
 model BedrockSwaigToolWebhookPayload {
   @doc("The name of the function the agent is calling.")
   @example("get_weather")

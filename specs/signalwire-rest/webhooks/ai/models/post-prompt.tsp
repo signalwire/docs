@@ -42,29 +42,6 @@ model AICallTimelineEntry is Record<unknown> {
   ts?: float;
 }
 
-@summary("AI post-prompt callback")
-@doc("""
-  Sent to your [`ai.post_prompt_url`](/docs/swml/reference/calling/ai) when the AI session ends. It
-  carries the agent's answer to your [`post_prompt`](/docs/swml/reference/calling/ai)
-  alongside the full record of the call: the conversation, the tool calls, the timings, and the
-  token counts. This is the one report you get per call, so store the body verbatim and extract only
-  the fields you query. Nothing you return in the response is read.
-  
-  Read `action` first. It is `post_conversation` on the end-of-call report described here. The same
-  URL also receives `fetch_conversation` when the agent starts with a stored conversation
-  ([`save_conversation`](/docs/swml/reference/calling/ai/params#paramssave_conversation) with a
-  `conversation_id`), asking your endpoint to return that conversation; that request carries the
-  call and session fields but none of the summary fields. Answer it with the stored
-  `conversation_summary`.
-  
-  The conversation appears three times. `call_log` is the filtered view, with interrupted segments
-  consolidated. `raw_call_log` is unfiltered and append-only, and is the only place barge-in detail
-  survives. `call_timeline` is a flat stream of typed events aligned to `raw_call_log`.
-  
-  [`amazon_bedrock`](/docs/swml/reference/calling/amazon-bedrock) agents send a different report.
-  Write your handler against the
-  [Bedrock post-prompt callback](#tag/calls/webhook/bedrockPostPromptCallback) instead.
-  """)
 model AiPostPromptCallbackPayload {
   @doc("Your project ID, when available.")
   @example("4d0d6f16-5881-4fcc-92a4-02c51a91954d")
@@ -288,20 +265,6 @@ model AiPostPromptCallbackPayload {
   conversation_summary?: string;
 }
 
-@summary("Amazon Bedrock post-prompt callback")
-@doc("""
-  Sent to your [`amazon_bedrock.post_prompt_url`](/docs/swml/reference/calling/amazon-bedrock) when
-  the agent's session ends, carrying its answer to your `post_prompt` alongside the record of the
-  call. Nothing you return in the response is read.
-  
-  Bedrock agents send a different report from [`ai`](/docs/swml/reference/calling/ai) agents. There
-  is no `call_timeline`, `previous_contexts`, `hard_timeout`, `call_ended_by`, or `ai_id_tag`;
-  `raw_call_log` is a copy of `call_log` rather than a separate unfiltered view; `swaig_log` is
-  always empty; `conversation_summary` is always present; and the `total_*` fields arrive without
-  your having to enable accounting. `post_prompt_url` also takes no separate credentials here — put
-  them in the URL as `username:password@url`. Write your handler against this payload, not the
-  [AI post-prompt callback](#tag/calls/webhook/aiPostPromptCallback).
-  """)
 model BedrockPostPromptCallbackPayload {
   @doc("Your project ID, when available.")
   @example("4d0d6f16-5881-4fcc-92a4-02c51a91954d")

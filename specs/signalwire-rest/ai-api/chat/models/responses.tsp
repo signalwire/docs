@@ -2,6 +2,9 @@ import "@typespec/http";
 import "@typespec/openapi3";
 import "@typespec/json-schema";
 import "./core.tsp";
+// A conversation entry is one contract however it is fetched, so the transcript this endpoint
+// returns reuses the model the AI webhooks already publish rather than forking a second one.
+import "../../../webhooks/ai/models/common.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -110,34 +113,22 @@ model ChatConversationDeletedResponse {
 // chat_log
 // ============================================
 
-@doc("One entry in the conversation.")
-model ChatLogMessage {
-  @doc("""
-    Who produced the entry. Alongside `user` and `assistant` you will see `system` — your own
-    prompt — and `system-log` internal markers. Filter to `user` and `assistant` before displaying
-    a transcript, or you publish your prompt to your users.
-    """)
-  @example("assistant")
-  role: string;
-
-  @doc("The text of the entry.")
-  @example("Order A-771 shipped on Tuesday.")
-  content?: string;
-
-  @doc("When the entry was recorded, in microseconds since the epoch.")
-  @example(1786387416502774)
-  timestamp?: int64;
-}
-
 @summary("chat_log result")
 model ChatTranscriptResponse {
   ...JsonRpcResponseEnvelope;
 
   @doc("The conversation as the service holds it.")
   result: {
-    @doc("Every message in the conversation, including your system prompt and internal markers.")
-    chat_log: ChatLogMessage[];
+    @doc("""
+      Every entry in the conversation, in order. Alongside the dialogue this carries `system` — your
+      own prompt — and internal markers such as `system-log`, so filter to `user` and `assistant`
+      before displaying a transcript, or you publish your prompt to your users.
+      """)
+    chat_log: Webhooks.AI.AICallLogEntry[];
 
+    // Left open deliberately: a chat conversation's timeline entries are not verifiable from a
+    // public source, and the voice equivalent (Webhooks.AI.AICallTimelineEntry) names a `ts` field
+    // this pathway has not been confirmed to use.
     @doc("""
       A flat stream of structured events for the conversation — session start and end, context
       switches, and tool calls — with microsecond timestamps.

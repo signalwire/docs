@@ -10,7 +10,6 @@ import "../../_shared/alias/token-permissions.tsp";
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 
-@webhook("transcriptionStatusCallback", TranscriptionStatusCallbackPayload, "Recording Transcriptions")
 @route("/Accounts/{AccountSid}/Transcriptions")
 namespace CompatibilityAPI.Transcriptions {
   @tag(TRANSCRIPTIONS_TAG)
