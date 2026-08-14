@@ -5,7 +5,7 @@ model Transfer {
   @summary("transfer")
   @doc("""
     Fetch and execute a new SWML document from a URL. SignalWire POSTs the
-    [inbound message webhook payload](/docs/apis/rest/swml-webhook/webhooks/inbound-message-webhook)
+    [inbound message webhook payload](/docs/apis/rest/webhooks/inbound-message-webhook)
     to `dest`: `message` describes the original inbound message, `params` carries
     the values supplied here, and `vars` carries the propagated runtime variables
     (`request_result`, `reply_result`, etc.) accumulated by the current document.

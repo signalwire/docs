@@ -29,7 +29,7 @@ model CreateMessageRequest {
   @example(false)
   send_as_mms?: boolean = false;
 
-  @doc("A valid URL to receive message status callback events at each state change. See the [Message status callback](/docs/apis/rest/messages/webhooks/message-status-callback) webhook for the payload your URL will receive.")
+  @doc("A valid URL to receive message status callback events at each state change. See the [Message status callback](/docs/apis/rest/webhooks/message-status-callback) webhook for the payload your URL will receive.")
   @example("https://example.com/webhooks/message-status")
   status_callback?: url;
 
