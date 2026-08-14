@@ -2,14 +2,6 @@ import "../../../types";
 
 namespace SignalWireAPI.Webhooks.Calling;
 
-@summary("Transcript status callback")
-@doc("""
-  Sent to your `status_url` when the call's transcription is ready.
-  `calling.transcript.completed` includes the transcribed text;
-  `calling.transcript.failed` means the call could not be transcribed.
-  
-  Status callbacks are advisory, best-effort notifications — delivery can be delayed or fail silently, so don't gate time-critical actions on receiving one. See [Status callback reliability](/docs/platform/webhooks#status-callback-reliability).
-  """)
 model TranscribeStatusCallbackPayload {
   @doc("Whether the transcription completed or failed.")
   @example("calling.transcript.completed")
@@ -47,14 +39,6 @@ model TranscribeStatusCallbackPayload {
   };
 }
 
-@summary("Stream status callback")
-@doc("""
-  Sent to your `status_url` when a background audio stream started with
-  `calling.stream` changes state. `params.state` is `streaming` when the stream
-  starts and `finished` when it ends.
-  
-  Status callbacks are advisory, best-effort notifications — delivery can be delayed or fail silently, so don't gate time-critical actions on receiving one. See [Status callback reliability](/docs/platform/webhooks#status-callback-reliability).
-  """)
 model StreamStatusCallbackPayload {
   @doc("The type of event. Always `calling.call.stream` for stream status callbacks.")
   @example("calling.call.stream")
