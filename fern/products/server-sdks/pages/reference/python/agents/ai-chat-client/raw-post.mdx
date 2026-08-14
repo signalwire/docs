@@ -1,0 +1,55 @@
+---
+title: "raw_post"
+slug: /reference/python/agents/ai-chat-client/raw-post
+description: Stream one JSON-RPC response through with its body unread, for relaying proxies.
+max-toc-depth: 3
+---
+
+[ref-aichatclient]: /docs/server-sdks/reference/python/agents/ai-chat-client
+[chatgateway]: /docs/server-sdks/reference/python/agents/chat-gateway
+[error-codes]: /docs/apis/error-codes#ai-chat
+
+An async context manager that yields the response for one JSON-RPC call with its body unread. It
+exists for proxies that must stream the body through rather than buffer it, and
+[`ChatGateway`][chatgateway] uses it for exactly that.
+
+Prefer the typed methods unless you are genuinely relaying bytes.
+
+## **Parameters**
+
+<ParamField path="method" type="str" required={true} toc={true}>
+  The JSON-RPC method name.
+</ParamField>
+
+<ParamField path="params" type="dict[str, Any]" required={true} toc={true}>
+  The method's parameters. The client wraps them in the envelope and supplies the request `id`.
+</ParamField>
+
+## **Returns**
+
+`aiohttp.ClientResponse`, yielded by the context manager with its body unread.
+
+<Warning>
+  You own interpreting the result, including that a JSON-RPC error arrives under HTTP 200 — check for
+  an `error` key rather than the status, against the codes under [AI chat errors][error-codes].
+  Iterate `resp.content` and forward chunks as they arrive: a relay that awaits the whole body
+  absorbs the service's keepalive padding and recreates the very timeout that padding exists to
+  prevent.
+</Warning>
+
+## **Example**
+
+```python {10,12}
+import asyncio
+
+from signalwire.ai_chat import AIChatClient
+
+
+async def relay(conversation_id: str, message: str):
+    async with AIChatClient(space="your-space") as client:
+        params = {"id": conversation_id, "message": message}
+
+        async with client.raw_post("chat", params) as resp:
+            async for chunk in resp.content.iter_any():
+                yield chunk
+```

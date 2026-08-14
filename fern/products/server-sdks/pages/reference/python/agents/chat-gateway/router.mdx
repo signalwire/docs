@@ -1,0 +1,56 @@
+---
+title: "router"
+slug: /reference/python/agents/chat-gateway/router
+description: Build the APIRouter that exposes the gateway to a browser.
+max-toc-depth: 3
+---
+
+[ref-chatgateway]: /docs/server-sdks/reference/python/agents/chat-gateway
+
+Return an `APIRouter` exposing this gateway, ready to hand to `include_router`. It serves `POST /`
+for the four browser methods and `OPTIONS /` for the CORS preflight.
+
+A chat response is relayed **unbuffered**. The service pads a slow turn with keepalive whitespace so
+intermediaries do not sever the connection, and collecting the body here would swallow that padding
+and recreate the timeout inside your own stack. A newly minted handle rides back in the
+`X-Chat-Handle` header, which is why the widget receives it before the turn has finished.
+
+## **Parameters**
+
+None.
+
+## **Returns**
+
+`fastapi.APIRouter`.
+
+## **Example**
+
+Mount it on an app you already run:
+
+```python {11}
+from fastapi import FastAPI
+from signalwire.ai_chat import ChatGateway
+
+app = FastAPI()
+
+gateway = ChatGateway(
+    config_url="https://bayview-taxi.example.com/swml",
+    key="pk_your_publishable_key",
+)
+
+app.include_router(gateway.router(), prefix="/chat")
+```
+
+An agent already serves a FastAPI app, so it can host the gateway too:
+
+```python {4}
+agent = MyAgent()
+gateway = ChatGateway(config_url="https://bayview-taxi.example.com/swml")
+
+agent.get_app().include_router(gateway.router(), prefix="/chat")
+agent.run()
+```
+
+<Warning>
+  If you put your own proxy in front of the gateway, make sure it does not buffer either.
+</Warning>
