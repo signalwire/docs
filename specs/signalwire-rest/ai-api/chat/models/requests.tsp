@@ -225,9 +225,8 @@ model ChatSummarizeRequest {
   A JSON-RPC request. The `method` field selects which of the six methods runs, and `params` carries
   that method's arguments.
 
-  Identity never appears in the body. Your project and token go in HTTP Basic auth, and
-  `project_id`, `token`, and `space_id` are not valid `params` keys — a request carrying them is
-  rejected.
+  `params` carries payload only: `project_id`, `token`, and `space_id` are not valid keys there, and
+  a request carrying them is rejected.
   """)
 union ChatRequest {
   create_conversation: ChatCreateConversationRequest,

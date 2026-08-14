@@ -37,13 +37,6 @@ namespace SignalWireAPI.AI.Chat {
       | `chat_log` | Read the conversation back |
       | `summarize` | Generate a summary on demand |
 
-      ## Identity is transport-level
-
-      Your project and token travel in HTTP Basic auth — username `project_id`, password
-      `api_token` — and never in the body. `project_id`, `token`, and `space_id` are not valid
-      `params` keys, and a request carrying them is rejected. If you are porting from an older
-      integration that put them in `params`, that is the change.
-
       ## Errors arrive under HTTP 200
 
       JSON-RPC carries failures in the body, and the service commits `200` before a turn's outcome
