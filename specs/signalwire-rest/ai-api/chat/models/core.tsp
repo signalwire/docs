@@ -52,75 +52,26 @@ model JsonRpcResponseEnvelope {
   id: string;
 }
 
-// The per-member @doc entries below do not survive emit — OpenAPI has nowhere to put a
-// description per enum value, so the emitter drops them. A numeric code is meaningless without
-// its meaning, unlike a self-describing string enum, so the table repeats them here where they
-// render beside the values.
+// Member names carry the meaning for anyone reading this source; the emitter keeps only the values,
+// and what each one means is documented once on the error codes page rather than duplicated here.
 @doc("""
   Why a method failed. `-32600` and below are the standard JSON-RPC codes; the rest are specific to
-  AI chat.
-
-  | Code | Meaning |
-  |---|---|
-  | `-32001` | No conversation with that id exists in your project |
-  | `-32002` | Your `config_url` could not be fetched |
-  | `-32003` | The model provider failed |
-  | `-32004` | Storage failure |
-  | `-32005` | Too many `summarize` calls on this conversation, which allows one per minute |
-  | `-32006` | Too many messages on this conversation |
-  | `-32007` | A turn is already running on this conversation |
-  | `-32008` | The SWML your `config_url` served failed validation |
-  | `-32009` | Credentials are missing, rejected, or lack the `chat` scope |
-  | `-32600` | The JSON-RPC envelope was malformed |
-  | `-32601` | No method by that name |
-  | `-32602` | A required param is missing, or one carries an invalid value |
-  | `-32603` | An unexpected failure |
-  | `-32700` | The request body was not valid JSON |
+  AI chat. See [AI chat errors](/docs/apis/error-codes#ai-chat-errors) for what each code means.
   """)
 enum ChatErrorCode {
-  @doc("No conversation with that id exists in your project.")
   CONVERSATION_NOT_FOUND: -32001,
-
-  @doc("Your `config_url` could not be fetched.")
   CONFIG_FETCH_ERROR: -32002,
-
-  @doc("The model provider failed.")
   MODEL_PROVIDER_ERROR: -32003,
-
-  @doc("Storage failure.")
   DATABASE_ERROR: -32004,
-
-  @doc("Too many `summarize` calls on this conversation. The limit is one per minute.")
   RATE_LIMIT_EXCEEDED: -32005,
-
-  @doc("Too many messages on this conversation.")
   CHAT_RATE_LIMITED: -32006,
-
-  @doc("""
-    A turn is already running on this conversation. Wait for it to return rather than retrying, which
-    fails the same way.
-    """)
   CHAT_IN_PROGRESS: -32007,
-
-  @doc("The SWML your `config_url` served failed validation.")
   CONFIG_VALIDATION_ERROR: -32008,
-
-  @doc("Credentials are missing, rejected, or lack the `chat` scope.")
   AUTH_REQUIRED: -32009,
-
-  @doc("The JSON-RPC envelope was malformed.")
   INVALID_REQUEST: -32600,
-
-  @doc("No method by that name.")
   METHOD_NOT_FOUND: -32601,
-
-  @doc("A required param is missing, or one carries an invalid value.")
   INVALID_PARAMS: -32602,
-
-  @doc("An unexpected failure.")
   INTERNAL_ERROR: -32603,
-
-  @doc("The request body was not valid JSON.")
   PARSE_ERROR: -32700,
 }
 
