@@ -25,16 +25,19 @@ Every POST SignalWire makes to fetch a SWML document from a URL you control is s
 includes:
 
 - The initial fetch, when a Resource or phone number is configured with an **External URL** rather
-  than a hosted script.
+  than a hosted script, and the fetch from your fallback URL when the primary one fails.
 - Every subsequent fetch caused by [`execute`](/docs/swml/reference/calling/execute) or
   [`transfer`](/docs/swml/reference/calling/transfer) pointing at an external URL.
+- The same fetches on the messaging side, when a number handles inbound SMS and MMS with
+  [Messaging SWML](/docs/swml/reference/messaging).
 
-Two headers are sent on each of those requests:
+Requests during a call carry two headers. Requests for a messaging document carry the SHA-1 header
+alone, so verify that one if your endpoint serves both.
 
-| Header | Algorithm |
-| :--- | :--- |
-| `X-Signalwire-Signature` | HMAC-SHA1, hex encoded |
-| `X-Signalwire-SHA256-Signature` | HMAC-SHA256, hex encoded |
+| Header | Algorithm | Sent on |
+| :--- | :--- | :--- |
+| `X-Signalwire-Signature` | HMAC-SHA1, hex encoded | Every signed request |
+| `X-Signalwire-SHA256-Signature` | HMAC-SHA256, hex encoded | Call requests |
 
 Both are computed over the same string: the request URL concatenated directly with the raw request
 body, with no separator.
@@ -45,14 +48,31 @@ signature = hex( HMAC( signing_key, url + raw_body ) )
 
 The `url` is the full URL SignalWire requested, including any query string. If you embedded basic
 auth credentials in the URL, they are stripped before signing. The `raw_body` is the JSON payload
-exactly as sent — the object containing `call`, `vars`, `envs`, and, when the document was reached
-through `execute` or `transfer`, `params`.
+exactly as sent — the object containing `call` (or `message` for a messaging document), `vars`,
+`envs`, and, when the document was reached through `execute` or `transfer`, `params`.
 
 <Note>
 Verify against the URL you configured in the Dashboard, not the URL your framework reconstructs
 from the incoming request. Proxies, load balancers, and tunnels such as ngrok routinely rewrite the
 host or scheme, which changes the string being hashed and makes a valid signature look invalid.
 </Note>
+
+## Which requests are not signed
+
+Signatures cover requests for a SWML document. They do not cover everything a document can send to
+your server, so an endpoint that insists on a signature will reject traffic you meant to accept.
+
+The POST to a SWAIG function's `web_hook_url` is unsigned. Protect it with HTTP basic auth: embed
+the credentials in the URL as `username:password@url`, or set `web_hook_auth_user` and
+`web_hook_auth_password` in [`SWAIG.defaults`](/docs/swml/reference/calling/ai/swaig) or on the
+individual [SWAIG function](/docs/swml/reference/calling/ai/swaig/functions). Agents built with the
+Server SDKs authenticate differently again — basic auth on every request, plus per-function tokens
+for sensitive operations, covered in [Server SDK security](/docs/server-sdks/guides/security).
+
+The [`request`](/docs/swml/reference/calling/request) method is unsigned as well when a call runs
+it. Use basic auth in its URL, or send a shared secret in a custom `X-` header through the method's
+`headers` parameter. Its [messaging counterpart](/docs/swml/reference/messaging/request) does carry
+the SHA-1 header.
 
 ## Get your signing key
 
@@ -150,7 +170,7 @@ def signature_is_valid(url, raw_body, header):
     expected = hmac.new(
         os.environ["SIGNALWIRE_SIGNING_KEY"].encode(),
         (url + raw_body).encode(),
-        hashlib.sha1,
+        hashlib.sha1,  # hashlib.sha256 for X-Signalwire-SHA256-Signature
     ).hexdigest()
 
     return hmac.compare_digest(expected, header or "")
@@ -185,7 +205,7 @@ WEBHOOK_URL = "https://example.ngrok.io/start"
 
 def signature_is_valid?(url, raw_body, header)
   expected = OpenSSL::HMAC.hexdigest(
-    "SHA1",
+    "SHA1", # "SHA256" for X-Signalwire-SHA256-Signature
     ENV.fetch("SIGNALWIRE_SIGNING_KEY"),
     url + raw_body
   )
@@ -211,8 +231,27 @@ end
 </CodeBlock>
 </CodeBlocks>
 
-To verify the SHA-256 header instead, hash the same `url + raw_body` string with SHA-256 and
-compare it against `X-Signalwire-SHA256-Signature`.
+To verify the stronger header on a call request, hash the same `url + raw_body` string with SHA-256
+and compare it against `X-Signalwire-SHA256-Signature`.
+
+## Confirm your endpoint rejects forgeries
+
+With the server running and reachable at the URL you configured, POST to it yourself, without a
+signature:
+
+```bash
+curl -i -X POST https://example.ngrok.io/start \
+  -H "Content-Type: application/json" \
+  -d '{}'
+```
+
+The response is `403 Forbidden`, with `Invalid signature` as the body. Now place a call to the
+number pointed at that URL: this request carries a valid signature, passes the check, and the caller
+hears the prompt your document plays.
+
+If the real call is rejected too, the `WEBHOOK_URL` in your code doesn't match the URL SignalWire
+requested — an ngrok URL that changed when the tunnel restarted is the common cause. The next
+section covers the rest.
 
 ## Troubleshoot a failing signature
 
