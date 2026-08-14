@@ -3,14 +3,6 @@ import "../../../message-api/messages/models/core.tsp";
 
 namespace SignalWireAPI.Webhooks.Messaging;
 
-@summary("Message status callback")
-@doc("""
-  Payload sent by SignalWire to the `status_callback` URL each time a message transitions to a new state. The same payload shape is used for Relay SDK message callbacks, SWML `send_sms` status callbacks, and SWML messaging `reply.status_url` callbacks.
-  
-  Configure `status_callback` when [sending a message](/docs/apis/rest/messages/create-message).
-  
-  Status callbacks are advisory, best-effort notifications — delivery can be delayed or fail silently, so don't gate time-critical actions on receiving one. See [Status callback reliability](/docs/platform/webhooks#status-callback-reliability).
-  """)
 model MessageStatusCallbackPayload {
   @doc("The unique ID of the message segment.")
   @example("a1b2c3d4-e5f6-7890-abcd-ef1234567890")
@@ -57,48 +49,6 @@ model MessageStatusCallbackPayload {
   custom_variables?: TypeSpec.Record<string>;
 }
 
-@summary("10DLC status callback")
-@doc("""
-  Payload sent by SignalWire to your 10DLC Status Callback URL when the state of a 10DLC registration
-  object changes. Use this webhook to monitor the lifecycle of messaging brands, campaigns, number
-  assignment orders, and number assignments in real time.
-  
-  Configure `status_callback_url` when
-  [creating a brand](/docs/apis/rest/campaign-registry/brands/create-brand),
-  [creating a campaign](/docs/apis/rest/campaign-registry/campaigns/create-campaign), or
-  [creating a number assignment order](/docs/apis/rest/campaign-registry/phone-number-assignments/create-order).
-  
-  ### Brand event types
-  
-  | State transition | Event type | Description |
-  |------------------|------------|-------------|
-  | `pending` → `completed` | `brand_activated` | The brand has been successfully verified and activated. |
-  | `pending` → `unverified` | `brand_unverified` | Brand verification failed or additional information is required. |
-  | `unverified` → `completed` | `brand_activated` | The brand was previously unverified but is now active. |
-  
-  ### Campaign event types
-  
-  | State transition | Event type | Description |
-  |------------------|------------|-------------|
-  | `pending` → `active` | `campaign_activated` | The campaign has been approved and is now active. |
-  | `active` → `inactive` | `campaign_deactivated` | The campaign has been deactivated and can no longer send. |
-  
-  ### Number assignment order event types
-  
-  | State transition | Event type | Description |
-  |------------------|------------|-------------|
-  | `pending` → `processed` | `number_assignment_order_processed` | The order has been processed and numbers assigned. |
-  
-  ### Number assignment event types
-  
-  | State transition | Event type | Description |
-  |------------------|------------|-------------|
-  | `pending` → `failed` | `number_assignment_failed` | The number was not assigned to the campaign. |
-  | `failed` → `pending` | `number_assignment_pending` | A failed assignment is being retried. |
-  | `pending` → `completed` | `number_assignment_activated` | The number has been successfully assigned to the campaign. |
-  
-  Status callbacks are advisory, best-effort notifications — delivery can be delayed or fail silently, so don't gate time-critical actions on receiving one. See [Status callback reliability](/docs/platform/webhooks#status-callback-reliability).
-  """)
 model TenDlcStatusCallbackPayload {
   @doc("The unique ID of the project this object is associated with.")
   project_id: string;

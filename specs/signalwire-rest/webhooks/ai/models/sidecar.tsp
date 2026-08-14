@@ -97,17 +97,6 @@ model AISidecarEvent is Record<unknown> {
   channel_data: AISidecarChannelData;
 }
 
-@summary("AI sidecar callback")
-@doc("""
-  Sent to the sidecar's `url` as an HTTP `POST` whenever you set one. The same event is always
-  published in real time on the SignalWire Relay event channel (`calling.ai.sidecar`), so the
-  webhook is optional. Each event is wrapped under `sidecar_event` — read that before checking its
-  `type` and fields.
-  
-  This payload covers the envelope shared by every callback. For the fields specific to each `type`
-  (such as `insight.raw`, `turn.transcript_delta`, or `final.summary`), see the
-  [SWML ai_sidecar reference](/docs/swml/reference/calling/ai-sidecar#callback-types).
-  """)
 model AISidecarCallbackPayload {
   @doc("Envelope describing the call. `project_id` and `space_id` are included when available.")
   call_info: AICallInfo;
@@ -116,18 +105,6 @@ model AISidecarCallbackPayload {
   sidecar_event: AISidecarEvent;
 }
 
-@summary("AI sidecar SWAIG tool webhook")
-@doc("""
-  Sent to a sidecar tool's `web_hook_url` (or the SWAIG `defaults.web_hook_url`) when the sidecar
-  calls one of your functions. Your endpoint runs the function and returns a JSON object with a
-  `response` string (the result the model reads next) and, optionally, an `action` — a single object
-  or an array — telling the sidecar what to do. See
-  [Supported SWAIG actions](/docs/swml/reference/calling/ai-sidecar#supported-swaig-actions) for what
-  you can return.
-  
-  The sidecar only listens to the call and never speaks on it, so a `say` action is reported back to
-  you as a callback rather than being spoken aloud.
-  """)
 model AISidecarSwaigToolWebhookPayload {
   @doc("The name of the function the model is calling.")
   @example("lookup_competitor")
