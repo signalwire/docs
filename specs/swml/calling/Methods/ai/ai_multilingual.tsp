@@ -1,15 +1,11 @@
 import "@typespec/json-schema";
 import "../../../Shared/Types/main.tsp";
 import "./ai_languages.tsp";
+import "./_shared/fillers.tsp";
 
 using TypeSpec.JsonSchema;
 
 namespace SWML.Calling;
-
-@summary("MultilingualFillers")
-model MultilingualFillers {
-  ...TypeSpec.Record<string[]>;
-}
 
 // A multilingual entry is flat: parse_multilingual reads only `language`, `voice`, `engine`,
 // `model`, and `params`. The last four are shared with `languages[]` and picked from
@@ -94,24 +90,26 @@ model Multilingual {
     Fillers used to break silence between turns.
     Supply an array to have the fillers translated into whichever language the caller
     is speaking, or an object keyed by language code to set them per language verbatim.
+    An `auto` key inside the object is translated the same way an array is.
     """)
   @example(#["umm", "hmm"])
-  fillers?: string[] | MultilingualFillers;
+  fillers?: string[] | FunctionFillers;
 
   @doc("""
     Fillers used while a SWAIG function runs.
     Supply an array to have the fillers translated into whichever language the caller
     is speaking, or an object keyed by language code to set them per language verbatim.
+    An `auto` key inside the object is translated the same way an array is.
     """)
   @example(#["great", "ok"])
-  function_fillers?: string[] | MultilingualFillers;
+  function_fillers?: string[] | FunctionFillers;
 
   @doc("""
     Fillers used to acknowledge the caller the moment they finish a turn.
     Supply an object keyed by language code, optionally with a `default` key for
-    languages you have not listed. These fillers are never translated on the fly,
-    because resolving them has to be fast enough to play immediately; an array is
-    accepted and treated as the `default` set.
+    languages you have not listed. These fillers are never translated on the fly, so
+    the `auto` key does not apply here — resolving them has to be fast enough to play
+    immediately. An array is accepted and treated as the `default` set.
     """)
-  turn_fillers?: string[] | MultilingualFillers;
+  turn_fillers?: string[] | FunctionFillers;
 }
