@@ -17,23 +17,6 @@ model AIDebugFlowLocation {
   step_index?: integer;
 }
 
-@summary("AI debug webhook")
-@doc("""
-  A diagnostic feed for a call that is still in progress. Set `debug_webhook_url` on your agent and
-  every step it takes is posted to that URL as it happens: speech recognized, model called, tool
-  invoked, context switched, error hit. Use it to work out why a call went the way it did — which
-  tool the agent reached for, what came back, where a turn went wrong — or to react while the call is
-  still live, such as paging a supervisor.
-  
-  Each request carries `call_info` plus one or more event properties, where the property name is the
-  event. One moment can produce several: evaluating a `data_map` webhook sends `webhook`, `input`,
-  `output`, `error_keys`, and `match` together. Handle the properties you recognize and ignore the
-  rest, since the set grows over time.
-  
-  Setting the URL is what enables the feed. `debug_webhook_level` only widens it: at `2` it also
-  carries `conversation_add`, `llm_request`, and `llm_response`, which fire on every turn and every
-  model call.
-  """)
 model AiDebugWebhookPayload is Record<unknown> {
   @doc("Identifies the call the event came from.")
   call_info: AICallInfo;

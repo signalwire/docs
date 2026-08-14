@@ -66,12 +66,6 @@ model InboundMessageContext {
   timestamp: utcDateTime;
 }
 
-@summary("SWML inbound message webhook")
-@doc("""
-  Payload sent by SignalWire to a SWML messaging webhook URL when an inbound SMS or MMS message arrives on a phone number configured with a SWML message handler. The same payload shape is also used when the SWML messaging `transfer` method targets an external URL — in that case, `params` carries the values supplied to the `transfer` step and `vars` carries the propagated runtime variables from the originating document.
-  
-  The webhook URL is expected to respond with the SWML document to execute for the inbound message.
-  """)
 model InboundMessageWebhookPayload {
   @doc("The inbound message that triggered this fetch.")
   message: InboundMessageContext;

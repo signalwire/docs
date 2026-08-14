@@ -1,18 +1,4 @@
-import "../../../_shared/webhook/decorator.tsp";
 
-@summary("Transcription status callback")
-@doc("""
-  Payload sent by SignalWire to your Transcription Status Callback URL when the status of a transcription changes.
-
-  Configure this callback by enabling transcription on a recording via the
-  [Record](/docs/compatibility-api/cxml/reference/voice/record) verb (`transcribe=true`) and setting `transcribeCallback`
-  to your webhook URL.
-
-  Your app can use these parameters to handle the transcription — for example, uploading the text to
-  your CRM, sending it via email, or forwarding the body via SignalWire SMS.
-
-  Status callbacks are advisory, best-effort notifications — delivery can be delayed or fail silently, so don't gate time-critical actions on receiving one. See [Status callback reliability](/docs/platform/webhooks#status-callback-reliability).
-  """)
 model TranscriptionStatusCallbackPayload {
   @doc("The unique, 34-character ID of the transcription.")
   @example("b3877c40-da60-4998-90ad-b792e984tr01")
