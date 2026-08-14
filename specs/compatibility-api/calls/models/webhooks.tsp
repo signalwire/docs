@@ -1,21 +1,4 @@
-import "../../../_shared/webhook/decorator.tsp";
 
-@summary("Voice status callback")
-@doc("""
-  Payload sent by SignalWire to your Voice Status Callback URL when the status of a call changes.
-
-  Configure this callback using the `StatusCallback` and `StatusCallbackEvent` parameters when
-  [creating a call via the API](/docs/compatibility-api/rest/calls/create-a-call) or using
-  [Dial](/docs/compatibility-api/cxml/reference/voice/dial) with
-  [Number](/docs/compatibility-api/cxml/reference/voice/number),
-  [SIP](/docs/compatibility-api/cxml/reference/voice/sip), or
-  [Conference](/docs/compatibility-api/cxml/reference/voice/conference).
-
-  Use `StatusCallbackEvent` to receive every call progress event — not just the final status —
-  along with current call state and all parameters below.
-
-  Status callbacks are advisory, best-effort notifications — delivery can be delayed or fail silently, so don't gate time-critical actions on receiving one. See [Status callback reliability](/docs/platform/webhooks#status-callback-reliability).
-  """)
 model VoiceStatusCallbackPayload {
   @doc("The unique ID of the project this call is associated with.")
   @example("b3877c40-da60-4998-90ad-b792e98472af")
@@ -170,31 +153,6 @@ model VoiceStatusCallbackPayload {
   To: string;
 }
 
-@summary("Recording status callback")
-@doc("""
-  Payload sent by SignalWire to your `RecordingStatusCallback` URL when a recording status event occurs.
-
-  Recordings are not always available immediately — especially at high call volumes. This callback lets
-  your app react as soon as a recording is ready, whether that means uploading it to external storage,
-  sending it via email, or forwarding the URL via SMS.
-
-  Configure `RecordingStatusCallback` when
-  [creating a call via the API](/docs/compatibility-api/rest/calls/create-a-call) or when using
-  [Dial](/docs/compatibility-api/cxml/reference/voice/dial),
-  [Conference](/docs/compatibility-api/cxml/reference/voice/conference), or
-  [Record](/docs/compatibility-api/cxml/reference/voice/record).
-
-  Use `RecordingStatusCallbackEvent` to request callbacks for specific events. If omitted, only the
-  `completed` event is sent. Possible values: `in-progress`, `completed`, `absent`.
-
-  | Status | Description |
-  |--------|-------------|
-  | `in-progress` | The recording has begun. |
-  | `completed` | The file is available for access. |
-  | `absent` | The recording was too short or the call was silent — no audio was detected. |
-
-  Status callbacks are advisory, best-effort notifications — delivery can be delayed or fail silently, so don't gate time-critical actions on receiving one. See [Status callback reliability](/docs/platform/webhooks#status-callback-reliability).
-  """)
 model RecordingStatusCallbackPayload {
   @doc("The unique ID of the project this call is associated with.")
   @example("b3877c40-da60-4998-90ad-b792e98472af")

@@ -177,12 +177,6 @@ model InboundCallContext {
   space_id: uuid;
 }
 
-@summary("SWML inbound call webhook")
-@doc("""
-  Payload sent by SignalWire to a SWML calling webhook URL when SWML is fetched for a call. This includes inbound calls arriving on a phone number configured with a SWML calling handler, and outbound REST-initiated calls that point at a SWML URL. The same payload shape is also used when the SWML calling `transfer` or `execute` method targets an external URL — in those cases, the `params` object carries the values supplied to that step.
-  
-  The webhook URL is expected to respond with the SWML document to execute for the call.
-  """)
 model InboundCallWebhookPayload {
   @doc("The call that triggered this fetch.")
   call: InboundCallContext;
