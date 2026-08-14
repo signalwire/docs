@@ -35,7 +35,7 @@ model ChatConversationCreatedResponse {
 
     @doc("""
       The agent's opening line, when the agent greets first. Generating it is a turn, and a turn
-      bills — a page that creates a conversation on load pays for one whether or not the visitor
+      bills. A page that creates a conversation on load pays for one whether or not the visitor
       types anything.
       """)
     @example("Hi! How can I help?")
@@ -120,8 +120,8 @@ model ChatTranscriptResponse {
   @doc("The conversation as the service holds it.")
   result: {
     @doc("""
-      Every entry in the conversation, in order. Alongside the dialogue this carries `system` — your
-      own prompt — and internal markers such as `system-log`, so filter to `user` and `assistant`
+      Every entry in the conversation, in order. Alongside the dialogue this carries your own prompt
+      as `system`, plus internal markers such as `system-log`, so filter to `user` and `assistant`
       before displaying a transcript, or you publish your prompt to your users.
       """)
     chat_log: Webhooks.AI.AICallLogEntry[];
@@ -130,8 +130,8 @@ model ChatTranscriptResponse {
     // public source, and the voice equivalent (Webhooks.AI.AICallTimelineEntry) names a `ts` field
     // this pathway has not been confirmed to use.
     @doc("""
-      A flat stream of structured events for the conversation — session start and end, context
-      switches, and tool calls — with microsecond timestamps.
+      A flat stream of structured events for the conversation, with microsecond timestamps. Entries
+      cover session start and end, context switches, and tool calls.
       """)
     call_timeline?: Record<unknown>[];
   };

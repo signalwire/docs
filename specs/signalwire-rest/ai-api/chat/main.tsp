@@ -18,13 +18,12 @@ namespace SignalWireAPI.AI.Chat {
   interface AIChat {
     @summary("Send AI chat methods")
     @doc("""
-      Hold a text conversation with an AI agent. One endpoint dispatches six methods through a
-      JSON-RPC 2.0 body: send the method name in `method` and its arguments in `params`.
+      Hold a text conversation with an AI agent. All six methods travel over this endpoint in a
+      JSON-RPC 2.0 body. Put the method name in `method` and its arguments in `params`.
 
-      The agent is a document you serve — SWML describing the prompt, the tools, and the behavior —
-      and `config_url` is where you serve it. A conversation is a series of turns addressed by an
-      `id` you choose; a turn is one user message and the agent's reply, including any tool calls
-      made along the way. One request is one turn.
+      Your agent is an SWML document you serve, and `config_url` is where you serve it. A
+      conversation is a series of turns addressed by an `id` you choose. A turn is one user message
+      and the agent's reply, including any tool calls made along the way. One request runs one turn.
 
       ## Methods
 
@@ -41,22 +40,22 @@ namespace SignalWireAPI.AI.Chat {
 
       JSON-RPC carries failures in the body, and the service commits `200` before a turn's outcome
       is known. **Check for an `error` key, not the status code.** A `200` with `{"error": {...}}`
-      is a failed call. Every code, and what each one means, is documented under
+      is a failed call. Every code and its meaning is documented under
       [AI chat errors](/docs/apis/error-codes#ai-chat).
 
       ## One turn at a time
 
       A conversation runs one turn at a time. A second concurrent request on the same conversation
-      returns `-32007`, and that is the contract rather than a transient failure — retrying
+      returns `-32007`. That is the contract rather than a transient failure, so retrying
       immediately fails again. Wait for the first turn to return. Different conversations are
       independent and run in parallel.
 
       ## A slow response may begin with whitespace
 
-      A slow turn is padded with keepalive whitespace so that intermediaries do not sever the
-      connection mid-answer. This is valid JSON and standard parsers handle it. Two things it does
-      break: code that inspects the first byte, and code that assumes the whole body arrives in one
-      read. Read to completion, then parse.
+      A slow turn is padded with keepalive whitespace so intermediaries do not sever the connection
+      mid-answer. This is valid JSON and standard parsers handle it. It breaks code that inspects
+      the first byte, and code that assumes the whole body arrives in one read. Read to completion,
+      then parse.
 
       ${tokenPermissions<"_Chat_">}
       """)

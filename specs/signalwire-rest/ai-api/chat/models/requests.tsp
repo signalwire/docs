@@ -83,7 +83,7 @@ model ChatSendMessageRequest {
 
     @doc("""
       Creates the conversation if it does not exist yet, using this SWML. Sending it here means one
-      call instead of two, at the cost of never receiving `initial_message` — the agent does not
+      call instead of two, at the cost of never receiving `initial_message`, so the agent does not
       speak first.
       """)
     @example("https://your-agent.example.com/swml")
@@ -182,7 +182,7 @@ model ChatSummarizeRequest {
   method: "summarize";
 
   @doc("""
-    The parameters for `summarize`. The sampling list is closed — any key not listed here is
+    The parameters for `summarize`. The sampling list is closed. Any key not listed here is
     rejected.
     """)
   params: {

@@ -16,8 +16,8 @@ const conversationIdDescription = "The conversation this method acts on. You cho
 
 const configUrlDescription = """
   The URL serving your agent's SWML. SignalWire fetches it server-to-server, so it must be
-  reachable from the public internet — a `localhost` or private address creates the conversation
-  and then sends every tool call nowhere.
+  reachable from the public internet. A `localhost` or private address creates the conversation,
+  then sends every tool call nowhere.
   """;
 
 const conversationTimeoutDescription = "Seconds a conversation may sit idle before it ends. A conversation that ends is not resumable: the next message on the same `id` silently opens a new one with none of the history.";
@@ -88,8 +88,8 @@ model ChatError {
 
 @summary("Error")
 @doc("""
-  A failed method. This arrives under **HTTP 200**, like a successful one — check for an `error`
-  key rather than reading the status code.
+  A failed method. This arrives under **HTTP 200**, like a successful one. Check for an `error` key
+  rather than reading the status code.
   """)
 model ChatErrorResponse {
   ...JsonRpcResponseEnvelope;
