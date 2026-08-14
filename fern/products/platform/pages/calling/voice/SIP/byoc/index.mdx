@@ -24,29 +24,75 @@ This might be a good fit for you if:
 
 ## Inbound BYOC
 
-If you would like to do inbound BYOC (i.e. send your carrier traffic to SignalWire), you will need to create a domain application. Domain Apps allow you to send SIP traffic to a custom domain and use SignalWire APIs to manage the incoming request. You can do this under **SIP** -> **Domain Apps** -> **Create a Domain App**, or via the [Domain Apps API](/docs/apis/rest/domain-applications/create-domain-application).
+To send traffic from your own carrier into SignalWire, you need a SIP host your carrier can
+send INVITEs to, and a resource that handles the calls that arrive there.
 
-For detailed instructions on how to create a domain application, please follow the [SIP Domain Applications](/docs/platform/voice/sip/domain-applications) guide.
+That host comes from a **SIP Address**, which you create in your Dashboard under **My Resources**,
+or over the API. In the API and in some older parts of the Dashboard the same object is called a
+**domain application** — a SIP Address and a domain application are the same thing under two names,
+and both produce the same inbound host.
+
+### Your inbound SIP host
+
+Give your carrier this host:
+
+```
+{space_name}-{identifier}.dapp.signalwire.com
+```
+
+For the space `my-space` and the identifier `byo-test`, a carrier sends INVITEs to
+`sip:anything@my-space-byo-test.dapp.signalwire.com`. The user portion of the SIP URI is matched
+against the address's `user` field, which defaults to `*` and accepts any user.
 
 <Warning>
 
-It's VERY important to whitelist the IPs that you want to allow through - if you do not select this option, anyone who has the URL could send traffic to your custom domain app.
+The `.dapp.` subdomain is what routes inbound calls. It's a different host from
+`{space_name}.sip.signalwire.com`, which is where [SIP Credentials](/docs/platform/voice/sip/sip-credentials)
+register their devices. Both resolve in DNS, so a carrier pointed at the `.sip.` host reaches
+SignalWire and gets rejected rather than failing to connect.
 
 </Warning>
+
+### Create the SIP Address
+
+The `domain` returned when you create a domain application is a label, not a routable host on its
+own — append `.dapp.signalwire.com` to get the address your carrier needs.
+
+<EndpointRequestSnippet endpoint="POST /api/relay/rest/domain_applications" />
+
+<EndpointResponseSnippet endpoint="POST /api/relay/rest/domain_applications" />
+
+A `domain` of `your-space-test_id` in that response means your carrier sends SIP to
+`your-space-test_id.dapp.signalwire.com`.
+
+To create the same object as a SIP Address on a resource you've already built, use the
+[Create a SIP Address](/docs/apis/rest/sip-addresses/create-sip-address) endpoint instead. Its
+response carries the full routable `uri`, so nothing needs to be assembled by hand.
+
+<Warning>
+
+Restrict the IP addresses allowed to send traffic to your address. Set `ip_auth_enabled` to `true`
+and list your carrier's addresses in `ip_auth`, or anyone who knows the host can send calls to it.
+
+</Warning>
+
+### Troubleshooting inbound calls
+
+A SIP `404 Domain unavailable` response means SignalWire received your INVITE but couldn't match
+the host in its request URI to a SIP Address. Check that the host ends in `.dapp.signalwire.com`
+rather than `.sip.signalwire.com`, and that the label before it is your space name and identifier
+joined by a hyphen.
 
 ### Handling Inbound Calls
 
 #### Using SWML
 
-If you are using SWML to handle incoming calls, you will need to:
+To handle incoming calls with SWML:
 
-1. Go to the settings page for the newly created Domain App, by clicking on the app name in the Domain Apps list.
-2. Set the **HANDLE USING** field to **SWML Script**
-3. Set the **WHEN A CALL COMES IN** field to the URL of your SWML script
-4. Ensure the SWML script is set up to provide instructions on what actions to perform when a call comes in.
-
-
-To address both of the steps above, we will need to [create an SWML script](/docs/swml).
+1. [Create an SWML Script resource](/docs/swml) holding the instructions to run when a call arrives.
+2. Open that resource and go to its **Addresses & Phone Numbers** tab.
+3. Select **+ Add**, then **SIP Address**, and create the address.
+4. Give your carrier the resulting `.dapp.signalwire.com` host.
 
 ##### Example SWML Script
 
@@ -62,12 +108,12 @@ sections:
 
 #### Using Call-Flow Builder
 
-If you are using a Call Flow to handle incoming calls, you will need to:
+To handle incoming calls with a Call Flow:
 
-1. Go to the settings page for the newly created Domain App, by clicking on the app name in the Domain Apps list.
-2. Set the **HANDLE USING** field to **A Call Flow**
-3. Set the **WHEN A CALL COMES IN** field to the Call Flow you want to use from the dropdown list.
-4. Ensure the Call Flow is set up to provide instructions on what actions to perform when a call comes in.
+1. Build the flow in the [Call Flow Builder](/docs/call-flow-builder) and save it as a resource.
+2. Open that resource and go to its **Addresses & Phone Numbers** tab.
+3. Select **+ Add**, then **SIP Address**, and create the address.
+4. Give your carrier the resulting `.dapp.signalwire.com` host.
 
 
 ##### Example Call Flow
@@ -82,12 +128,12 @@ In the below example, we have a Call Flow that answers the call and plays a TTS 
 
 #### Using Relay
 
-To handle incoming calls using a Relay Application, you will need to:
+To handle incoming calls with a Relay Application:
 
-1. Go to the settings page for the newly created Domain App, by clicking on the app name in the Domain Apps list.
-2. Set the **HANDLE USING** field to **Relay Application**
-3. Set a topic (V4) or context (V3) in the **WHEN A CALL COMES IN** field. Let's use `office` as an example.
-4. Run code listening for calls on that `office` topic/context and then do something with them.
+1. Create a Relay Application resource set to the topic (V4) or context (V3) your code listens on. This example uses `office`.
+2. Open that resource and go to its **Addresses & Phone Numbers** tab.
+3. Select **+ Add**, then **SIP Address**, and create the address.
+4. Give your carrier the resulting `.dapp.signalwire.com` host, then run code listening for calls on the `office` topic.
 
 <Tabs>
 <Tab title="Relay V3">
