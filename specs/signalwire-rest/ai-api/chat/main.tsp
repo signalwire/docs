@@ -49,7 +49,7 @@ namespace SignalWireAPI.AI.Chat {
       JSON-RPC carries failures in the body, and the service commits `200` before a turn's outcome
       is known. **Check for an `error` key, not the status code.** A `200` with `{"error": {...}}`
       is a failed call. Every code, and what each one means, is documented under
-      [AI chat errors](/docs/apis/error-codes#ai-chat-errors).
+      [AI chat errors](/docs/apis/error-codes#ai-chat).
 
       ## One turn at a time
 
