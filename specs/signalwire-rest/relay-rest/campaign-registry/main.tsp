@@ -3,7 +3,6 @@ import "@typespec/openapi";
 import "./models/core.tsp";
 import "./models/requests.tsp";
 import "./models/responses.tsp";
-import "./models/webhooks.tsp";
 import "../../types";
 import "../tags.tsp";
 import "../../../_shared/alias/token-permissions.tsp";
@@ -12,7 +11,6 @@ using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
-@webhook("tenDlcStatusCallback", TenDlcStatusCallbackPayload, CAMPAIGN_REGISTRY_TAG)
 @route("/registry/beta")
 namespace SignalWireAPI.RelayRest.RegistryBeta {
   @route("/brands")

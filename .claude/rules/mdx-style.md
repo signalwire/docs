@@ -19,6 +19,8 @@ Pick by asking: is the reader **learning or working**, and do they need **action
 
 One page, one type. Smells: a tutorial or how-to that keeps stopping to explain (move the theory to an explanation page or one short aside, and link it); reference written as instructions; one page trying to be all four types (split it); a guide with no onward links.
 
+Tutorials and how-tos give the reader a way to confirm the result — a command to run, a call to place, an expected transcript or output. Pair the success signal with the likeliest failure and its cause ("If `dial()` rejects with `CallCreateError`, the token's scope doesn't reach the destination"), so a reader whose run went wrong diagnoses it on the page. Verification comes before `## Next steps`. A reader who can't check the result can't trust the guide. [SW]
+
 ## Voice
 
 - Second person, present tense, active voice. The platform acts ("SignalWire sends…"); no editorial "we". Contractions welcome. [G][MS][SW]
@@ -47,6 +49,7 @@ One page, one type. Smells: a tutorial or how-to that keeps stopping to explain 
 - Customer-facing only: no internal implementation detail (backend endpoints, transports, engine-side params). Placeholder data only — no real names, emails, or domains.
 - Examples do real work: tool call → your server → system of record → response. No knowledge-trivia bots.
 - Examples run as written: real imports, every required parameter, and only placeholders the reader can obviously fill. Verify each against the spec or SDK source — and against an actual run when the page ships a whole flow.
+- A cluster of guides shares one running example, so cross-links compound instead of restarting context. The AI guides use Bayview Taxi and its dispatcher Ada across `platform/pages/ai/overview.mdx` and `platform/pages/ai/guides/**`; adopt a cluster's existing cast when you add a page to it, and introduce a new one only for a new cluster. [SW]
 - Don't cite other vendors' docs as authority; never disparage anyone's product.
 
 ## Modes

@@ -15,7 +15,7 @@ model ReplyBase {
   @example("+15559876543")
   from?: string;
 
-  @doc("URL that receives delivery status callbacks for the outbound reply. The callback uses the [message status callback payload](/docs/apis/rest/messages/webhooks/message-status-callback).")
+  @doc("URL that receives delivery status callbacks for the outbound reply. The callback uses the [message status callback payload](/docs/apis/rest/webhooks/message-status-callback).")
   @example("https://example.com/reply-status")
   status_url?: url;
 }
