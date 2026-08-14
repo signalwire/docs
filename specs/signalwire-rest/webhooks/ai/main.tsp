@@ -6,7 +6,6 @@ import "./models/swaig.tsp";
 import "./models/post-prompt.tsp";
 import "./models/debug.tsp";
 import "./models/sidecar.tsp";
-import "./models/responses.tsp";
 import "@signalwire/typespec-webhook";
 import "../../../_shared/webhook-ack.tsp";
 
@@ -24,39 +23,44 @@ namespace SignalWireAPI.Webhooks.AI;
 @summary("AI SWAIG tool webhook")
 @doc("""
   Sent to a tool's `web_hook_url` (or the SWAIG `defaults.web_hook_url`) when an
-  [`ai`](/docs/swml/reference/calling/ai) agent calls one of your functions. Your endpoint runs the
-  function and returns a JSON object with a `response` string (the result the AI reads next) and,
-  optionally, an `action` — a single object or an array — telling the agent what to do.
+  [`ai`](/docs/swml/reference/calling/ai) agent calls one of your functions.
+  
+  Your endpoint runs the function and replies with an
+  [`Output`](/docs/swml/reference/calling/ai/swaig/functions/data-map) object — the same shape a
+  `data_map` produces, because the platform reads both the same way. Every field is optional, so
+  `{}` is a valid reply and a handler that only steers the call can return `action` alone:
+  
+  - `response` — the result the agent reads next, written to the AI rather than spoken to the
+    caller. A plain string becomes the tool message as-is; the object form
+    `{tool_result, tool_prompt}` splits the data half from the steering half. Omit it and the agent
+    reads a default result.
+  - `action` — a single action object or an array of them, executed on the live call.
+  - `post_process` — hold the actions until after the agent has spoken. **Default:** `false`.
   """)
 @webhook
 @operationId("ai_swaig_tool_webhook")
-@returnsDoc("The function result. Every field is optional; `{}` is a valid reply.")
-@opExample(
-  #{
-    returnType: #{
-      response: "The fare to the airport is $38.60.",
-      action: #[#{ set_global_data: #{ quoted_fare: "38.60" } }],
-    },
-  },
-  #{
-    title: "Result with an action",
-    description: "Return the fare for the agent to read out, and record it in call state.",
-  }
-)
 @post
-op aiSwaigToolWebhook(
-  @body payload: AiSwaigToolWebhookPayload,
-): SWML.Calling.Output;
+op aiSwaigToolWebhook(@body payload: AiSwaigToolWebhookPayload): WebhookAck;
 
 @summary("SWAIG function signature request")
 @doc("""
   Sent once per [`SWAIG.includes`](/docs/swml/reference/calling/ai/swaig/includes) entry when an AI
   agent loads, to discover the functions your server hosts. Every way of building an agent sends it —
   SWML you write yourself, SWML a Server SDK generates, or an agent you configure in your Dashboard —
-  because they all resolve `includes` the same way. Return a JSON array of function definitions, each
-  shaped like an entry in
+  because they all resolve `includes` the same way.
+  
+  Reply with the function definitions you host, each shaped like an entry in
   [`SWAIG.functions`](/docs/swml/reference/calling/ai/swaig/functions#properties) — `function`,
-  `description`, and `parameters`. Functions the agent can call are the ones you return here.
+  `description`, and `parameters`. Three forms are accepted:
+  
+  - an array of definitions, the usual one;
+  - a single definition on its own;
+  - an object `{functions, defaults}`, where `defaults` sets
+    [`SWAIG.defaults`](/docs/swml/reference/calling/ai/swaig#swaigdefaults) across the definitions it
+    carries — useful when they share a `web_hook_url` or auth.
+  
+  Every definition you return is registered, whether or not it was named in the request's
+  `functions` list.
   
   This is not the payload a function call sends. It goes to the `includes` entry's `url`, using
   `auth_user` and `auth_password` when set. Your endpoint can also receive it outside of a call, as a
@@ -65,40 +69,10 @@ op aiSwaigToolWebhook(
   """)
 @webhook
 @operationId("swaig_signature_request")
-@returnsDoc("The function definitions your server hosts.")
-@opExample(
-  #{
-    returnType: #{
-      statusCode: 200,
-      body: #[
-        #{
-          function: "get_weather",
-          description: "Look up the current weather for a city.",
-          parameters: #{
-            type: "object",
-            properties: #{
-              city: #{ type: "string", description: "The city to look up." },
-            },
-            required: #["city"],
-          },
-        }
-      ],
-    },
-  },
-  #{
-    title: "One function",
-    description: "The usual form — an array of definitions, each shaped like a `SWAIG.functions` entry.",
-  }
-)
 @post
-op swaigSignatureRequest(@body payload: SwaigSignatureRequestPayload): {
-  // Wrapped rather than returned bare: a union return type is read as a set of
-  // response variants, and @returnsDoc / @opExample bind to none of them. An
-  // explicit @body collapses it to one 200 carrying the anyOf.
-  @statusCode statusCode: 200;
-
-  @body body: SwaigSignatureResponse;
-};
+op swaigSignatureRequest(
+  @body payload: SwaigSignatureRequestPayload,
+): WebhookAck;
 
 @summary("AI post-prompt callback")
 @doc("""
@@ -154,9 +128,16 @@ op aiDebugWebhook(@body payload: AiDebugWebhookPayload): WebhookAck;
 @doc("""
   Sent to a tool's `web_hook_url` (or the SWAIG `defaults.web_hook_url`) when an
   [`amazon_bedrock`](/docs/swml/reference/calling/amazon-bedrock) agent calls one of your functions.
-  Your endpoint runs the function and returns a JSON object with a `response` string (the result the
-  agent reads next) and, optionally, an `action` — a single object or an array — telling the agent
-  what to do.
+  Your endpoint runs the function and replies with a
+  [`BedrockOutput`](/docs/swml/reference/calling/amazon-bedrock/swaig/functions/data-map) object.
+  Both fields are optional, so `{}` is a valid reply:
+  
+  - `response` — the result the agent reads next. A plain string only here; the
+    `{tool_result, tool_prompt}` object form that [`ai`](/docs/swml/reference/calling/ai) agents
+    accept is not read. Omit it and the agent reads a default result.
+  - `action` — a single action object or an array of them, executed on the live call.
+  
+  There is no `post_process`: a Bedrock agent always defers actions until after it has spoken.
   
   Bedrock agents send a different payload from [`ai`](/docs/swml/reference/calling/ai) agents. Notably
   `content_type` is `text/json` rather than `text/swaig`, `argument` carries no `substituted` value,
@@ -166,23 +147,10 @@ op aiDebugWebhook(@body payload: AiDebugWebhookPayload): WebhookAck;
   """)
 @webhook
 @operationId("bedrock_swaig_tool_webhook")
-@returnsDoc("The function result. Both fields are optional; `{}` is a valid reply.")
-@opExample(
-  #{
-    returnType: #{
-      response: "The fare to the airport is $38.60.",
-      action: #[#{ set_global_data: #{ quoted_fare: "38.60" } }],
-    },
-  },
-  #{
-    title: "Result with an action",
-    description: "`response` must be a plain string here — the `tool_result`/`tool_prompt` object form is not read.",
-  }
-)
 @post
 op bedrockSwaigToolWebhook(
   @body payload: BedrockSwaigToolWebhookPayload,
-): SWML.Calling.BedrockOutput;
+): WebhookAck;
 
 @summary("Amazon Bedrock post-prompt callback")
 @doc("""
@@ -224,28 +192,26 @@ op aiSidecarCallback(@body payload: AISidecarCallbackPayload): WebhookAck;
 @summary("AI sidecar SWAIG tool webhook")
 @doc("""
   Sent to a sidecar tool's `web_hook_url` (or the SWAIG `defaults.web_hook_url`) when the sidecar
-  calls one of your functions. Your endpoint runs the function and returns a JSON object with a
-  `response` string (the result the model reads next) and, optionally, an `action` — a single object
-  or an array — telling the sidecar what to do. See
-  [Supported SWAIG actions](/docs/swml/reference/calling/ai-sidecar#supported-swaig-actions) for what
-  you can return.
+  calls one of your functions.
+  
+  Your endpoint runs the function and replies with a JSON object. Both fields are optional, so `{}`
+  is a valid reply:
+  
+  - `response` — the result the model reads next. A plain string only; the
+    `{tool_result, tool_prompt}` object form that [`ai`](/docs/swml/reference/calling/ai) agents
+    accept is not read. Omit it and the model reads a default result.
+  - `action` — a single action object or an array of them. See
+    [Supported SWAIG actions](/docs/swml/reference/calling/ai-sidecar#supported-swaig-actions) for
+    what you can return.
+  
+  There is no `post_process` on a sidecar reply.
   
   The sidecar only listens to the call and never speaks on it, so a `say` action is reported back to
   you as a callback rather than being spoken aloud.
   """)
 @webhook
 @operationId("ai_sidecar_swaig_tool_webhook")
-@returnsDoc("The function result. Both fields are optional; `{}` is a valid reply.")
-@opExample(
-  #{
-    returnType: #{ response: "Acme Corp is the closest competitor by price." },
-  },
-  #{
-    title: "Plain result",
-    description: "A sidecar function usually just returns text for the agent to read.",
-  }
-)
 @post
 op aiSidecarSwaigToolWebhook(
   @body payload: AISidecarSwaigToolWebhookPayload,
-): SWML.Calling.AISidecarOutput;
+): WebhookAck;

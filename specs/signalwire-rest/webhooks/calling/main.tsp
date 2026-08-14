@@ -54,25 +54,5 @@ op streamStatusCallback(@body payload: StreamStatusCallbackPayload): WebhookAck;
   """)
 @webhook
 @operationId("inbound_call_webhook")
-@returnsDoc("The SWML document to execute for the call.")
-@opExample(
-  #{
-    returnType: #{
-      version: "1.0.0",
-      sections: #{
-        main: #[
-          #{ answer: #{} },
-          #{ play: #{ url: "say:Thanks for calling." } }
-        ],
-      },
-    },
-  },
-  #{
-    title: "Answer and speak",
-    description: "Execution starts at `sections.main` and runs each method in order.",
-  }
-)
 @post
-op inboundCallWebhook(
-  @body payload: InboundCallWebhookPayload,
-): SWML.Calling.SWMLObject;
+op inboundCallWebhook(@body payload: InboundCallWebhookPayload): WebhookAck;
