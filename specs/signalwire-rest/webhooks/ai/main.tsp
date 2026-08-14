@@ -25,10 +25,9 @@ namespace SignalWireAPI.Webhooks.AI;
   Sent to a tool's `web_hook_url` (or the SWAIG `defaults.web_hook_url`) when an
   [`ai`](/docs/swml/reference/calling/ai) agent calls one of your functions.
   
-  Your endpoint runs the function and replies with an
-  [`Output`](/docs/swml/reference/calling/ai/swaig/functions/data-map) object — the same shape a
-  `data_map` produces, because the platform reads both the same way. Every field is optional, so
-  `{}` is a valid reply and a handler that only steers the call can return `action` alone:
+  Your endpoint runs the function and replies with a JSON object — the same shape a `data_map`
+  output produces, because the platform reads both the same way. Every field is optional, so `{}` is
+  a valid reply and a handler that only steers the call can return `action` alone:
   
   - `response` — the result the agent reads next, written to the AI rather than spoken to the
     caller. A plain string becomes the tool message as-is; the object form
@@ -55,9 +54,8 @@ op aiSwaigToolWebhook(@body payload: AiSwaigToolWebhookPayload): WebhookAck;
   
   - an array of definitions, the usual one;
   - a single definition on its own;
-  - an object `{functions, defaults}`, where `defaults` sets
-    [`SWAIG.defaults`](/docs/swml/reference/calling/ai/swaig#swaigdefaults) across the definitions it
-    carries — useful when they share a `web_hook_url` or auth.
+  - an object `{functions, defaults}`, where `defaults` sets SWAIG defaults across the definitions
+    it carries — useful when they share a `web_hook_url` or auth.
   
   Every definition you return is registered, whether or not it was named in the request's
   `functions` list.
@@ -128,9 +126,8 @@ op aiDebugWebhook(@body payload: AiDebugWebhookPayload): WebhookAck;
 @doc("""
   Sent to a tool's `web_hook_url` (or the SWAIG `defaults.web_hook_url`) when an
   [`amazon_bedrock`](/docs/swml/reference/calling/amazon-bedrock) agent calls one of your functions.
-  Your endpoint runs the function and replies with a
-  [`BedrockOutput`](/docs/swml/reference/calling/amazon-bedrock/swaig/functions/data-map) object.
-  Both fields are optional, so `{}` is a valid reply:
+  Your endpoint runs the function and replies with a JSON object. Both fields are optional, so `{}`
+  is a valid reply:
   
   - `response` — the result the agent reads next. A plain string only here; the
     `{tool_result, tool_prompt}` object form that [`ai`](/docs/swml/reference/calling/ai) agents
