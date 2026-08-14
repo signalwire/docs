@@ -25,7 +25,7 @@ model SipAddress {
   @example("8a7b6c5d-4e3f-2a1b-0c9d-8e7f6a5b4c3d")
   resource_id: uuid;
 
-  @doc("URL-safe name for the SIP address. Used to build its SIP URI.")
+  @doc("URL-safe name for the SIP address. Must be unique within your project.")
   @example("support-line")
   name: string;
 
@@ -33,12 +33,17 @@ model SipAddress {
   @example("support-line")
   display_name: string;
 
-  @doc("The Domain this address is grouped under — for example, `public` for your project's default Domain.")
+  @doc("The Domain this address is grouped under — for example, `public` for your project's default Domain. The Domain name forms the second half of the address's inbound SIP host.")
   @example("public")
   context: string;
 
-  @doc("Full SIP URI for this address.")
-  @example("sip:my-space-support-line@sip.signalwire.com")
+  @doc("""
+    Inbound SIP URI for this address, in the form `sip:{space_name}-{domain}.dapp.signalwire.com`.
+    Send SIP INVITEs here to reach the resource that handles this address — this is the host you
+    give an external carrier. Note that it is a different host from the
+    `{space_name}.sip.signalwire.com` domain that SIP Credentials register against.
+    """)
+  @example("sip:my-space-public.dapp.signalwire.com")
   uri: string;
 
   @doc("SIP username used to reach this address. `*` accepts any username.")

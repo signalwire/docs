@@ -52,7 +52,12 @@ model DomainApplication {
   @example("domain_application")
   type: string;
 
-  @doc("The unique domain for this application, combining your space subdomain and identifier.")
+  @doc("""
+    The unique domain for this application, combining your space subdomain and identifier.
+    This is a label, not a routable host on its own. To reach this domain application over SIP,
+    append `.dapp.signalwire.com` — a `domain` of `your-space-test_id` is reached at
+    `your-space-test_id.dapp.signalwire.com`, which is the host you give an external carrier.
+    """)
   @example("your-space-test_id")
   domain: string;
 
@@ -67,11 +72,11 @@ model DomainApplication {
   @example("helpdesk")
   user: string;
 
-  @doc("Whether the domain application will enforce IP authentication for incoming requests.")
+  @doc("Whether the domain application will enforce IP authentication for incoming requests. When `true`, only the addresses listed in `ip_auth` may send SIP traffic to this domain application, and `ip_auth` must contain at least one entry.")
   @example(true)
   ip_auth_enabled: boolean;
 
-  @doc("A list containing whitelisted IP addresses and IP blocks used if ip_auth_enabled is true.")
+  @doc("A list containing allowed IP addresses and IP blocks, applied when `ip_auth_enabled` is `true`.")
   ip_auth: string[];
 
   @doc("Specify how the domain application will handle calls.")

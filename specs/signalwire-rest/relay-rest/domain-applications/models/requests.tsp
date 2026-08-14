@@ -8,18 +8,23 @@ model CreateDomainApplicationRequest {
   @example("Test App")
   name: string;
 
-  @doc("A string representing the identifier portion of the domain application.")
+  @doc("""
+    A string representing the identifier portion of the domain application. SignalWire combines it
+    with your space subdomain to build the `domain` on the response, so an `identifier` of `test_id`
+    in the space `your-space` is reached over SIP at `your-space-test_id.dapp.signalwire.com`.
+    """)
+  @example("test_id")
   identifier: string;
 
-  @doc("The user portion of the domain application.")
+  @doc("The user portion of the domain application. Defaults to `*`, which accepts any user.")
   @example("helpdesk")
   user?: string = "*";
 
-  @doc("Whether the domain application will enforce IP authentication for incoming requests.")
+  @doc("Whether the domain application will enforce IP authentication for incoming requests. When `true`, only the addresses listed in `ip_auth` may send SIP traffic to this domain application, and `ip_auth` must contain at least one entry.")
   @example(true)
   ip_auth_enabled?: boolean;
 
-  @doc("A list containing whitelisted IP addresses and IP blocks used if ip_auth_enabled is true.")
+  @doc("A list containing allowed IP addresses and IP blocks, applied when `ip_auth_enabled` is `true`.")
   ip_auth?: string[] = #[];
 
   @doc("Whether connections to this domain application require encryption or if encryption is optional.")
@@ -118,18 +123,23 @@ model UpdateDomainApplicationRequest {
   @example("Test App")
   name?: string;
 
-  @doc("A string representing the identifier portion of the domain application.")
+  @doc("""
+    A string representing the identifier portion of the domain application. Changing it also changes
+    the `domain` and the SIP host that reaches this domain application, so update any carrier
+    configuration that points at the old host.
+    """)
+  @example("test_id")
   identifier?: string;
 
-  @doc("A string representing the user portion of the domain application.")
+  @doc("A string representing the user portion of the domain application. `*` accepts any user.")
   @example("helpdesk")
   user?: string;
 
-  @doc("Whether the domain application will enforce IP authentication for incoming requests.")
+  @doc("Whether the domain application will enforce IP authentication for incoming requests. When `true`, only the addresses listed in `ip_auth` may send SIP traffic to this domain application, and `ip_auth` must contain at least one entry.")
   @example(true)
   ip_auth_enabled?: boolean;
 
-  @doc("A list containing whitelisted IP addresses and IP blocks used if ip_auth_enabled is true.")
+  @doc("A list containing allowed IP addresses and IP blocks, applied when `ip_auth_enabled` is `true`.")
   ip_auth?: string[];
 
   @doc("Whether connections to this domain application require encryption or if encryption is optional.")
