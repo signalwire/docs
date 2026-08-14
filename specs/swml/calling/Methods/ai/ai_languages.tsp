@@ -1,5 +1,6 @@
 import "@typespec/json-schema";
 import "../../../Shared/Types/main.tsp";
+import "./ai_pronounce.tsp";
 
 using TypeSpec.JsonSchema;
 
@@ -15,9 +16,22 @@ model LanguagesBase {
     The language code for ASR (Automatic Speech Recognition) purposes. By default, SignalWire uses Deepgram's
     Nova-3 STT engine, so this value should match a code from Deepgram's Nova-3 language codes.
     If a different STT model was selected using the `openai_asr_engine` parameter, you must select a code supported by that engine.
+
+    Supply an array to have this voice listen for up to three codes at once.
+
+    Set it to `multi` to have the engine transcribe whichever of its supported languages the caller
+    speaks, rather than one fixed language. The agent still answers in this entry's single `voice`.
+    To answer in the caller's language as well, use [`ai.multilingual`](/docs/swml/reference/calling/ai/multilingual)
+    instead, which builds on the same code-switching mode and adds a voice per language.
     """)
   @example("fr-FR")
-  code: string;
+  code: string | string[];
+
+  @doc("""
+    An alias for `code`, read only when `code` is absent. Prefer `code`.
+    """)
+  @example("fr-FR")
+  listen_language?: string | string[];
 
   @doc("""
     Voice to use for the language. String format: `<engine id>.<voice id>`, with an optional
@@ -38,21 +52,24 @@ model LanguagesBase {
   `model`?: string;
 
   @doc("""
-    Enables automatic emotion detection for the set TTS engine. This allows the AI to express emotions when speaking.
-    A global emotion or specific emotions for certain topics can be set within the prompt of the AI.
+    Lets the AI vary its emotion as it speaks. A global emotion, or specific emotions for certain
+    topics, can be set within the prompt of the AI.
     IMPORTANT: Only works with the [`Cartesia`](/docs/platform/voice/tts/cartesia) and [`MiniMax`](/docs/platform/voice/tts/minimax) TTS engines.
     For a fixed (non-automatic) MiniMax emotion, use [`params.emotion`](#languagesparams) instead.
     """)
-  @example("auto")
-  emotion?: "auto";
+  @example(true)
+  auto_emotion?: boolean = false;
 
   @doc("""
-    The speed to use for the specified TTS engine. This allows the AI to speak at a different speed at different points in the conversation.
-    The speed behavior can be defined in the prompt of the AI.
-    IMPORTANT: Only works with [`Cartesia`](/docs/platform/voice/tts/cartesia) TTS engine.
+    Lets the AI vary its speaking speed during the conversation. The speed behavior can be defined
+    in the prompt of the AI.
+    IMPORTANT: Only works with the [`Cartesia`](/docs/platform/voice/tts/cartesia),
+    [`ElevenLabs`](/docs/platform/voice/tts/elevenlabs), [`MiniMax`](/docs/platform/voice/tts/minimax),
+    [`Rime`](/docs/platform/voice/tts/rime), [`Inworld`](/docs/platform/voice/tts/inworld),
+    [`Smallest`](/docs/platform/voice/tts/smallest), and [`Fish`](/docs/platform/voice/tts/fish) TTS engines.
     """)
-  @example("auto")
-  speed?: "auto";
+  @example(true)
+  auto_speed?: boolean = false;
 
   // Deprecated so SWML voice IDs are written the same way as voice IDs elsewhere on the
   // platform, cXML included: one `engine.voice` string rather than a separate engine field.
@@ -113,16 +130,19 @@ model LanguageParams {
   emotion?: "happy" | "sad" | "angry" | "fearful" | "disgusted" | "surprised" | "neutral";
 }
 
-@summary("Language with Fillers (Deprecated)")
-model LanguagesWithSoloFillers is LanguagesBase {
-  #deprecated "The `fillers` property is deprecated. Please use `function_fillers` and `speech_fillers` instead."
-  @doc("An array of strings to be used as fillers in the conversation. This will be used for both speech and function fillers if provided.")
+// One model rather than the two-variant union this used to be. The union made `fillers` and
+// `speech_fillers` mutually exclusive, which the engine never enforced — it reads all of these
+// keys off the same entry.
+@summary("languages")
+model Languages is LanguagesBase {
+  #deprecated "The `fillers` property is deprecated. Please use `function_fillers` instead."
+  @doc("""
+    A deprecated spelling of `function_fillers`, and never used for speech fillers.
+    An explicit `function_fillers` on the same entry takes precedence over it.
+    """)
   @example(#["umm", "let me check"])
   fillers?: string[];
-}
 
-@summary("Language with Speech and Function Fillers")
-model LanguagesWithFillers is LanguagesBase {
   @doc("An array of strings to be used as fillers in the conversation when calling a `swaig function`. This helps the AI break silence between responses. The filler is played asynchronously during the function call.")
   @example(#["great", "ok"])
   function_fillers?: string[];
@@ -134,10 +154,20 @@ model LanguagesWithFillers is LanguagesBase {
     """)
   @example(#["umm", "hmm"])
   speech_fillers?: string[];
-}
 
-@summary("languages")
-union Languages {
-  LanguagesWithSoloFillers,
-  LanguagesWithFillers,
+  @doc("""
+    Short backchannels played while the caller still has the floor and the agent is deliberately
+    waiting, as when they spell a name or read out a number, to signal it is still listening.
+    Unlike the language-keyed map on [`ai.multilingual`](/docs/swml/reference/calling/ai/multilingual),
+    this is a plain array, because the entry already fixes the language.
+    Which waits earn one is set by [`params.turn_filler_sources`](/docs/swml/reference/calling/ai/params#paramsturn_filler_sources).
+    """)
+  @example(#["mhm", "go on"])
+  turn_fillers?: string[];
+
+  @doc("""
+    Pronunciation replacements applied only while this language is active.
+    For replacements that apply to the whole call, use [`ai.pronounce`](/docs/swml/reference/calling/ai#aipronounce) instead.
+    """)
+  pronounce?: Pronounce[];
 }

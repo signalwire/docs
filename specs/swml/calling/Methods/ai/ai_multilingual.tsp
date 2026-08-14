@@ -105,7 +105,10 @@ model Multilingual {
   function_fillers?: string[] | FunctionFillers;
 
   @doc("""
-    Fillers used to acknowledge the caller the moment they finish a turn.
+    Short backchannels played while the caller still has the floor and the agent is
+    deliberately waiting, as when they spell a name or read out a number, to signal it
+    is still listening. Which waits earn one is set by `params.turn_filler_sources`.
+
     Supply an object keyed by language code, optionally with a `default` key for
     languages you have not listed. These fillers are never translated on the fly, so
     the `auto` key does not apply here — resolving them has to be fast enough to play

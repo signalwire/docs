@@ -31998,6 +31998,48 @@ components:
           examples:
             - 250
           default: 250
+        turn_filler_sources:
+          type: string
+          description: |-
+            Which deliberate waits earn a backchannel from `languages[].turn_fillers`, as a comma-separated
+            list of exact tokens. A wait happens when the agent holds off answering because the caller is
+            not finished, and the token names why.
+
+            List a specific hold source, or a whole class of wait:
+            - `spell` — the caller is spelling something out
+            - `number` — the caller is reading out digits
+            - `text` — the wording suggests the caller is mid-sentence
+            - `acoustic` — the audio suggests the caller is mid-sentence
+            - `veto` — any of the above
+
+            The default answers `spell` and `number` only, because those pauses are expected and cannot be
+            shortened. A backchannel during `text` or `acoustic` usually talks over a caller who is still
+            going, so give either its own delay with a `<token>:<ms>` suffix rather than listing it bare,
+            as in `spell,number,text:1200`.
+          examples:
+            - spell,number
+          default: spell,number
+        turn_filler_every_n:
+          type: integer
+          minimum: 1
+          description: |-
+            Play a backchannel on every Nth opportunity rather than all of them. The count advances only on
+            opportunities that would otherwise have produced one, and the first of each wait always plays,
+            so this widens the spacing during a long wait without delaying the first response.
+          examples:
+            - 2
+          default: 1
+        turn_filler_min_ms:
+          type: integer
+          minimum: 0
+          description: |-
+            How long a wait must already have run, in milliseconds, before a backchannel plays. Off by
+            default: waits open the moment the agent decides to hold, and `spell` and `number` are meant to
+            be answered right then. A `<token>:<ms>` suffix in `turn_filler_sources` overrides this for that
+            token.
+          examples:
+            - 800
+          default: 0
         tts_number_format:
           type: string
           enum:
@@ -37185,11 +37227,6 @@ components:
         not: {}
       title: LanguageParams
     SWML.Calling.Languages:
-      anyOf:
-        - $ref: '#/components/schemas/SWML.Calling.LanguagesWithSoloFillers'
-        - $ref: '#/components/schemas/SWML.Calling.LanguagesWithFillers'
-      title: languages
-    SWML.Calling.LanguagesWithFillers:
       type: object
       required:
         - name
@@ -37202,11 +37239,31 @@ components:
           examples:
             - French
         code:
-          type: string
+          anyOf:
+            - type: string
+            - type: array
+              items:
+                type: string
           description: |-
             The language code for ASR (Automatic Speech Recognition) purposes. By default, SignalWire uses Deepgram's
             Nova-3 STT engine, so this value should match a code from Deepgram's Nova-3 language codes.
             If a different STT model was selected using the `openai_asr_engine` parameter, you must select a code supported by that engine.
+
+            Supply an array to have this voice listen for up to three codes at once.
+
+            Set it to `multi` to have the engine transcribe whichever of its supported languages the caller
+            speaks, rather than one fixed language. The agent still answers in this entry's single `voice`.
+            To answer in the caller's language as well, use [`ai.multilingual`](/docs/swml/reference/calling/ai/multilingual)
+            instead, which builds on the same code-switching mode and adds a voice per language.
+          examples:
+            - fr-FR
+        listen_language:
+          anyOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+          description: An alias for `code`, read only when `code` is absent. Prefer `code`.
           examples:
             - fr-FR
         voice:
@@ -37227,27 +37284,28 @@ components:
             Set this only if the `voice` string does not already carry a `:<model id>` suffix.
           examples:
             - coda
-        emotion:
-          type: string
-          enum:
-            - auto
+        auto_emotion:
+          type: boolean
           description: |-
-            Enables automatic emotion detection for the set TTS engine. This allows the AI to express emotions when speaking.
-            A global emotion or specific emotions for certain topics can be set within the prompt of the AI.
+            Lets the AI vary its emotion as it speaks. A global emotion, or specific emotions for certain
+            topics, can be set within the prompt of the AI.
             IMPORTANT: Only works with the [`Cartesia`](/docs/platform/voice/tts/cartesia) and [`MiniMax`](/docs/platform/voice/tts/minimax) TTS engines.
             For a fixed (non-automatic) MiniMax emotion, use [`params.emotion`](#languagesparams) instead.
           examples:
-            - auto
-        speed:
-          type: string
-          enum:
-            - auto
+            - true
+          default: false
+        auto_speed:
+          type: boolean
           description: |-
-            The speed to use for the specified TTS engine. This allows the AI to speak at a different speed at different points in the conversation.
-            The speed behavior can be defined in the prompt of the AI.
-            IMPORTANT: Only works with [`Cartesia`](/docs/platform/voice/tts/cartesia) TTS engine.
+            Lets the AI vary its speaking speed during the conversation. The speed behavior can be defined
+            in the prompt of the AI.
+            IMPORTANT: Only works with the [`Cartesia`](/docs/platform/voice/tts/cartesia),
+            [`ElevenLabs`](/docs/platform/voice/tts/elevenlabs), [`MiniMax`](/docs/platform/voice/tts/minimax),
+            [`Rime`](/docs/platform/voice/tts/rime), [`Inworld`](/docs/platform/voice/tts/inworld),
+            [`Smallest`](/docs/platform/voice/tts/smallest), and [`Fish`](/docs/platform/voice/tts/fish) TTS engines.
           examples:
-            - auto
+            - true
+          default: false
         engine:
           type: string
           description: The engine to use for the language. For example, `elevenlabs`.
@@ -37258,6 +37316,17 @@ components:
           allOf:
             - $ref: '#/components/schemas/SWML.Calling.LanguageParams'
           description: TTS engine-specific parameters for this language.
+        fillers:
+          type: array
+          items:
+            type: string
+          description: |-
+            A deprecated spelling of `function_fillers`, and never used for speech fillers.
+            An explicit `function_fillers` on the same entry takes precedence over it.
+          deprecated: true
+          examples:
+            - - umm
+              - let me check
         function_fillers:
           type: array
           items:
@@ -37277,90 +37346,29 @@ components:
           examples:
             - - umm
               - hmm
-      unevaluatedProperties:
-        not: {}
-      title: Language with Speech and Function Fillers
-    SWML.Calling.LanguagesWithSoloFillers:
-      type: object
-      required:
-        - name
-        - code
-        - voice
-      properties:
-        name:
-          type: string
-          description: Name of the language (e.g., 'French', 'English'). This value is used in the system prompt to instruct the LLM what language is being spoken.
-          examples:
-            - French
-        code:
-          type: string
-          description: |-
-            The language code for ASR (Automatic Speech Recognition) purposes. By default, SignalWire uses Deepgram's
-            Nova-3 STT engine, so this value should match a code from Deepgram's Nova-3 language codes.
-            If a different STT model was selected using the `openai_asr_engine` parameter, you must select a code supported by that engine.
-          examples:
-            - fr-FR
-        voice:
-          type: string
-          description: |-
-            Voice to use for the language. String format: `<engine id>.<voice id>`, with an optional
-            `:<model id>` suffix for engines that offer a choice of model.
-            Select engine from `gcloud`, `polly`, `amazon`, `azure`, `openai`, `elevenlabs`, `cartesia`, `deepgram`, `rime`,
-            `inworld`, `minimax`, `groq-tts`, `mistral`, `grok`, `smallest`, `fish`, or `speechify`.
-            For example, `gcloud.fr-FR-Neural2-B` or `elevenlabs.rachel:eleven_flash_v2_5`.
-            Always name the engine: a bare voice id resolves against a default engine that can change.
-          examples:
-            - gcloud.fr-FR-Neural2-B
-        model:
-          type: string
-          description: |-
-            The model to use for the specified TTS engine. For example, `coda`.
-            Set this only if the `voice` string does not already carry a `:<model id>` suffix.
-          examples:
-            - coda
-        emotion:
-          type: string
-          enum:
-            - auto
-          description: |-
-            Enables automatic emotion detection for the set TTS engine. This allows the AI to express emotions when speaking.
-            A global emotion or specific emotions for certain topics can be set within the prompt of the AI.
-            IMPORTANT: Only works with the [`Cartesia`](/docs/platform/voice/tts/cartesia) and [`MiniMax`](/docs/platform/voice/tts/minimax) TTS engines.
-            For a fixed (non-automatic) MiniMax emotion, use [`params.emotion`](#languagesparams) instead.
-          examples:
-            - auto
-        speed:
-          type: string
-          enum:
-            - auto
-          description: |-
-            The speed to use for the specified TTS engine. This allows the AI to speak at a different speed at different points in the conversation.
-            The speed behavior can be defined in the prompt of the AI.
-            IMPORTANT: Only works with [`Cartesia`](/docs/platform/voice/tts/cartesia) TTS engine.
-          examples:
-            - auto
-        engine:
-          type: string
-          description: The engine to use for the language. For example, `elevenlabs`.
-          deprecated: true
-          examples:
-            - elevenlabs
-        params:
-          allOf:
-            - $ref: '#/components/schemas/SWML.Calling.LanguageParams'
-          description: TTS engine-specific parameters for this language.
-        fillers:
+        turn_fillers:
           type: array
           items:
             type: string
-          description: An array of strings to be used as fillers in the conversation. This will be used for both speech and function fillers if provided.
-          deprecated: true
+          description: |-
+            Short backchannels played while the caller still has the floor and the agent is deliberately
+            waiting, as when they spell a name or read out a number, to signal it is still listening.
+            Unlike the language-keyed map on [`ai.multilingual`](/docs/swml/reference/calling/ai/multilingual),
+            this is a plain array, because the entry already fixes the language.
+            Which waits earn one is set by [`params.turn_filler_sources`](/docs/swml/reference/calling/ai/params#paramsturn_filler_sources).
           examples:
-            - - umm
-              - let me check
+            - - mhm
+              - go on
+        pronounce:
+          type: array
+          items:
+            $ref: '#/components/schemas/SWML.Calling.Pronounce'
+          description: |-
+            Pronunciation replacements applied only while this language is active.
+            For replacements that apply to the whole call, use [`ai.pronounce`](/docs/swml/reference/calling/ai#aipronounce) instead.
       unevaluatedProperties:
         not: {}
-      title: Language with Fillers (Deprecated)
+      title: languages
     SWML.Calling.LiveTranscribe:
       type: object
       required:
@@ -37538,7 +37546,10 @@ components:
                 type: string
             - $ref: '#/components/schemas/SWML.Calling.FunctionFillers'
           description: |-
-            Fillers used to acknowledge the caller the moment they finish a turn.
+            Short backchannels played while the caller still has the floor and the agent is
+            deliberately waiting, as when they spell a name or read out a number, to signal it
+            is still listening. Which waits earn one is set by `params.turn_filler_sources`.
+
             Supply an object keyed by language code, optionally with a `default` key for
             languages you have not listed. These fillers are never translated on the fly, so
             the `auto` key does not apply here — resolving them has to be fast enough to play
@@ -37691,7 +37702,10 @@ components:
                 type: string
             - $ref: '#/components/schemas/SWML.Calling.FunctionFillers'
           description: |-
-            Fillers used to acknowledge the caller the moment they finish a turn.
+            Short backchannels played while the caller still has the floor and the agent is
+            deliberately waiting, as when they spell a name or read out a number, to signal it
+            is still listening. Which waits earn one is set by `params.turn_filler_sources`.
+
             Supply an object keyed by language code, optionally with a `default` key for
             languages you have not listed. These fillers are never translated on the fly, so
             the `auto` key does not apply here — resolving them has to be fast enough to play
@@ -39096,10 +39110,6 @@ components:
     SWML.Calling.SWAIGInternalFiller:
       type: object
       properties:
-        hangup:
-          allOf:
-            - $ref: '#/components/schemas/SWML.Calling.FunctionFillers'
-          description: Filler phrases played when the AI Agent is hanging up the call.
         check_time:
           allOf:
             - $ref: '#/components/schemas/SWML.Calling.FunctionFillers'

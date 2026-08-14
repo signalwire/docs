@@ -558,6 +558,45 @@ model AIParams {
   turn_detection_timeout?: integer | SWMLVar = 250;
 
   @doc("""
+    Which deliberate waits earn a backchannel from `languages[].turn_fillers`, as a comma-separated
+    list of exact tokens. A wait happens when the agent holds off answering because the caller is
+    not finished, and the token names why.
+
+    List a specific hold source, or a whole class of wait:
+    - `spell` — the caller is spelling something out
+    - `number` — the caller is reading out digits
+    - `text` — the wording suggests the caller is mid-sentence
+    - `acoustic` — the audio suggests the caller is mid-sentence
+    - `veto` — any of the above
+
+    The default answers `spell` and `number` only, because those pauses are expected and cannot be
+    shortened. A backchannel during `text` or `acoustic` usually talks over a caller who is still
+    going, so give either its own delay with a `<token>:<ms>` suffix rather than listing it bare,
+    as in `spell,number,text:1200`.
+    """)
+  @example("spell,number")
+  turn_filler_sources?: string | SWMLVar = string("spell,number");
+
+  @doc("""
+    Play a backchannel on every Nth opportunity rather than all of them. The count advances only on
+    opportunities that would otherwise have produced one, and the first of each wait always plays,
+    so this widens the spacing during a long wait without delaying the first response.
+    """)
+  @minValue(1)
+  @example(2)
+  turn_filler_every_n?: integer | SWMLVar = 1;
+
+  @doc("""
+    How long a wait must already have run, in milliseconds, before a backchannel plays. Off by
+    default: waits open the moment the agent decides to hold, and `spell` and `number` are meant to
+    be answered right then. A `<token>:<ms>` suffix in `turn_filler_sources` overrides this for that
+    token.
+    """)
+  @minValue(0)
+  @example(800)
+  turn_filler_min_ms?: integer | SWMLVar = 0;
+
+  @doc("""
     The format for the AI agent to reference phone numbers.
     Allowed values are `international` and `national`.
     **Default:** `international`.
