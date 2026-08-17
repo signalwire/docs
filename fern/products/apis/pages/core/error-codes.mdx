@@ -57,7 +57,8 @@ A single response may contain multiple entries in `errors` if several fields fai
 
 Endpoints under `/api/relay/rest` use a slightly different shape: `{ errors: [{ detail, status, title, code }] }`. The `code` field still maps to the reference below.
 
-The AI chat endpoint is the exception: it speaks JSON-RPC, returns numeric codes, and reports failures under HTTP 200. Its codes are listed under [AI chat](#ai-chat) in the reference below.
+The AI chat endpoint also uses numeric JSON-RPC error codes. They are listed under
+[AI chat](#ai-chat).
 
 ## Error code reference
 
@@ -1275,17 +1276,8 @@ The `code` field above maps to one of the values below. Each entry describes the
 
 ### AI chat
 
-The [AI chat endpoint](/docs/apis/rest/ai-chat/chat-methods) speaks JSON-RPC 2.0, so its errors are
-numeric rather than the string codes above, and they arrive in an `error` object under **HTTP 200** —
-check for that key rather than reading the status code. `-32600` and below are the standard JSON-RPC
-codes; the rest are specific to AI chat.
-
-```json
-{ "jsonrpc": "2.0", "error": { "code": -32001, "message": "Conversation not found" }, "id": "req-1" }
-```
-
-Messages are deliberately coarse and don't describe internals. When diagnosing, the detail you need
-is usually in your own agent's logs or in the SWML you served.
+The [AI chat endpoint](/docs/apis/rest/ai-chat/chat-methods) returns these codes in JSON-RPC error
+responses.
 
 <ParamField path="-32001" type="Error" toc={true}>
 
@@ -1312,26 +1304,6 @@ is usually in your own agent's logs or in the SWML you served.
 - Too many `summarize` calls on this conversation, which allows one per minute.
 </ParamField>
 
-<ParamField path="-32006" type="Error" toc={true}>
-
-- Too many messages on this conversation.
-</ParamField>
-
-<ParamField path="-32007" type="Error" toc={true}>
-
-- A turn is already running on this conversation. Wait for it to return rather than retrying, which fails the same way.
-</ParamField>
-
-<ParamField path="-32008" type="Error" toc={true}>
-
-- The SWML your `config_url` served failed validation.
-</ParamField>
-
-<ParamField path="-32009" type="Error" toc={true}>
-
-- Credentials are missing, rejected, or lack the `chat` scope.
-</ParamField>
-
 <ParamField path="-32600" type="Error" toc={true}>
 
 - The JSON-RPC envelope was malformed.
@@ -1351,11 +1323,3 @@ is usually in your own agent's logs or in the SWML you served.
 
 - An unexpected failure.
 </ParamField>
-
-<ParamField path="-32700" type="Error" toc={true}>
-
-- The request body was not valid JSON.
-</ParamField>
-
-A `502` with `{"error": "AI chat service is unavailable"}` is the one failure that carries no code at
-all: SignalWire could not reach the chat service.

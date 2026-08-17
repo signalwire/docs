@@ -375,26 +375,13 @@ paths:
         | `chat_log` | Read the conversation back |
         | `summarize` | Generate a summary on demand |
 
-        ## Errors arrive under HTTP 200
+        ## Check the HTTP status and response body
 
-        JSON-RPC carries failures in the body, and the service commits `200` before a turn's outcome
-        is known. **Check for an `error` key, not the status code.** A `200` with `{"error": {...}}`
-        is a failed call. Every code and its meaning is documented under
+        Check the HTTP status first. Platform errors such as malformed JSON, rejected credentials,
+        and an unavailable service use non-200 responses and are not JSON-RPC envelopes. On `200`,
+        parse the JSON-RPC envelope and check for an `error` member; a `200` with
+        `{"error": {...}}` is a failed call. Documented JSON-RPC codes and their meanings are listed under
         [AI chat errors](/docs/apis/error-codes#ai-chat).
-
-        ## One turn at a time
-
-        A conversation runs one turn at a time. A second concurrent request on the same conversation
-        returns `-32007`. That is the contract rather than a transient failure, so retrying
-        immediately fails again. Wait for the first turn to return. Different conversations are
-        independent and run in parallel.
-
-        ## A slow response may begin with whitespace
-
-        A slow turn is padded with keepalive whitespace so intermediaries do not sever the connection
-        mid-answer. This is valid JSON and standard parsers handle it. It breaks code that inspects
-        the first byte, and code that assumes the whole body arrives in one read. Read to completion,
-        then parse.
 
         #### Permissions
 
@@ -409,14 +396,35 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AI.ChatResponse'
-        '401':
-          description: Access is unauthorized.
+        '400':
+          description: The request body was not valid JSON. This is a platform error, not a JSON-RPC error.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+                $ref: '#/components/schemas/AI.ChatInvalidJsonError'
+        '401':
+          description: Credentials are missing or rejected, the request targets another Space, the token does not include the chat scope, or the account must be verified before using this endpoint.
+          content:
+            text/plain:
+              schema:
+                type: string
+                enum:
+                  - Unauthorized
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: How to make the account eligible to use this endpoint.
+                    examples:
+                      - Please validate a phone number to access your account.
+                required:
+                  - message
+                unevaluatedProperties:
+                  not: {}
         '502':
-          description: SignalWire could not reach the AI chat service. This is not a JSON-RPC error and carries no code.
+          description: The AI chat service did not respond before the request timed out or could not be reached. This is not a JSON-RPC error and carries no code.
           content:
             application/json:
               schema:
@@ -14446,11 +14454,10 @@ components:
               examples:
                 - conv-123
             initial_message:
-              type: string
-              description: |-
-                The agent's opening line, when the agent greets first. Generating it is a turn, and a turn
-                bills. A page that creates a conversation on load pays for one whether or not the visitor
-                types anything.
+              anyOf:
+                - type: string
+                - type: 'null'
+              description: The agent's opening line, when the agent greets first.
               examples:
                 - Hi! How can I help?
           required:
@@ -14602,7 +14609,7 @@ components:
             conversation_timeout:
               type: integer
               format: int32
-              description: 'Seconds a conversation may sit idle before it ends. A conversation that ends is not resumable: the next message on the same `id` silently opens a new one with none of the history.'
+              description: Seconds a conversation may sit idle before it ends.
               examples:
                 - 1800
               default: 3600
@@ -14781,9 +14788,28 @@ components:
       unevaluatedProperties:
         not: {}
       description: |-
-        A failed method. This arrives under **HTTP 200**, like a successful one. Check for an `error` key
-        rather than reading the status code.
+        A JSON-RPC method failure returned under HTTP 200. After confirming the HTTP status, inspect the
+        envelope for this `error` member.
       title: Error
+    AI.ChatInvalidJsonError:
+      type: object
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Types.StatusCodes.RestApiErrorItem'
+          description: Details about the malformed request body.
+          examples:
+            - - type: validation_error
+                code: not_a_valid_json
+                message: JSON you submitted is not valid
+                attribute: null
+                url: https://signalwire.com/docs/apis/error-codes
+      unevaluatedProperties:
+        not: {}
+      description: The request body was not valid JSON. This is a platform error, not a JSON-RPC error.
     AI.ChatLogRequest:
       type: object
       required:
@@ -14896,8 +14922,8 @@ components:
         A JSON-RPC request. The `method` field selects which of the six methods runs, and `params` carries
         that method's arguments.
 
-        `params` carries payload only: `project_id`, `token`, and `space_id` are not valid keys there, and
-        a request carrying them is rejected.
+        Authenticate with HTTP Basic authentication. `params` contains only the arguments for the selected
+        method; do not put project IDs, API tokens, or Space IDs in the JSON-RPC body.
     AI.ChatResponse:
       anyOf:
         - $ref: '#/components/schemas/AI.ChatConversationCreatedResponse'
@@ -14911,8 +14937,8 @@ components:
         A JSON-RPC response. Which result you get follows from the method you sent; a response echoes no
         `method` of its own.
 
-        Both success and failure arrive under HTTP 200, so check for an `error` key rather than reading
-        the status code.
+        Check the HTTP status first. On HTTP 200, inspect the envelope for an `error` member. Non-200
+        platform errors are not JSON-RPC envelopes.
     AI.ChatSendMessageRequest:
       type: object
       required:
@@ -15015,7 +15041,7 @@ components:
             - AI chat service is unavailable
       unevaluatedProperties:
         not: {}
-      description: SignalWire could not reach the AI chat service. This is not a JSON-RPC error and carries no code.
+      description: The AI chat service did not respond before the request timed out or could not be reached. This is not a JSON-RPC error and carries no code.
     AI.ChatSummarizeRequest:
       type: object
       required:
@@ -15097,9 +15123,7 @@ components:
             - id
           unevaluatedProperties:
             not: {}
-          description: |-
-            The parameters for `summarize`. The sampling list is closed. Any key not listed here is
-            rejected.
+          description: The documented parameters for `summarize`.
       unevaluatedProperties:
         not: {}
       title: summarize
@@ -15141,11 +15165,9 @@ components:
       unevaluatedProperties:
         not: {}
       description: |-
-        The summary, or the reason one could not be produced. Exactly one of `summary` and `error` is
-        present.
-
-        Note that this `error` rides the success envelope and describes a failure to generate rather than
-        a failed request, so it is not a JSON-RPC error and carries no code.
+        The result of requesting a summary. A generated summary is returned in `summary`. If summary
+        generation fails after the request succeeds, the reason can be returned in `error`; this is not
+        a JSON-RPC error and carries no code.
       title: summarize result
     AI.ChatTranscriptResponse:
       type: object
@@ -15174,17 +15196,17 @@ components:
               items:
                 $ref: '#/components/schemas/Webhooks.AI.AICallLogEntry'
               description: |-
-                Every entry in the conversation, in order. Alongside the dialogue this carries your own prompt
-                as `system`, plus internal markers such as `system-log`, so filter to `user` and `assistant`
-                before displaying a transcript, or you publish your prompt to your users.
+                Every entry in the conversation, in order. Alongside the dialogue this can carry your own
+                prompt and other non-dialogue entries, so filter to `user` and `assistant` before displaying a
+                transcript.
             call_timeline:
               type: array
               items:
                 type: object
                 unevaluatedProperties: {}
               description: |-
-                A flat stream of structured events for the conversation, with microsecond timestamps. Entries
-                cover session start and end, context switches, and tool calls.
+                Structured timeline entries returned for the conversation. The entry shape depends on the
+                events recorded for that conversation.
           required:
             - chat_log
           unevaluatedProperties:

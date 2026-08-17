@@ -6,7 +6,6 @@ max-toc-depth: 3
 ---
 
 [chatgateway]: /docs/server-sdks/reference/python/agents/chat-gateway
-[chat-guide]: /docs/platform/ai/chat
 [chat-endpoint]: /docs/apis/rest/ai-chat/chat-methods
 [error-codes]: /docs/apis/error-codes#ai-chat
 [createconversation]: /docs/server-sdks/reference/python/agents/ai-chat-client/create-conversation
@@ -57,6 +56,11 @@ pip install signalwire-sdk
   `close()` closes it. Pass your own to control connection pooling or timeouts.
 </ParamField>
 
+<Warning>
+  The client does not add Basic authentication or its User-Agent to a session you supply. Configure
+  those headers on the session before passing `session=`, or let the client create the session.
+</Warning>
+
 A configured environment needs no arguments at all. Identity travels in HTTP Basic auth, never in the
 request body.
 
@@ -78,10 +82,10 @@ request body.
 ## **Exceptions**
 
 All inherit from `AIChatError`, which carries `code` and `message`. Codes without a specific class
-raise `AIChatError` itself, and every code is listed under [AI chat errors][error-codes].
+raise `AIChatError` itself. Documented codes are listed under [AI chat errors][error-codes].
 
 <ParamField path="AuthenticationError" type="AIChatError" toc={true}>
-  Missing or rejected credentials.
+  A JSON-RPC `-32009` response. A public-endpoint HTTP 401 currently raises `AIChatError` instead.
 </ParamField>
 
 <ParamField path="ConversationNotFoundError" type="AIChatError" toc={true}>
@@ -89,12 +93,11 @@ raise `AIChatError` itself, and every code is listed under [AI chat errors][erro
 </ParamField>
 
 <ParamField path="RateLimitError" type="AIChatError" toc={true}>
-  A project or conversation rate limit was hit.
+  The service returned a JSON-RPC rate-limit error.
 </ParamField>
 
 <ParamField path="ChatInProgressError" type="AIChatError" toc={true}>
-  A turn is already running on this conversation. Wait for it to return, since retrying immediately
-  fails again.
+  The service returned a JSON-RPC error indicating that a chat operation is already in progress.
 </ParamField>
 
 <ParamField path="SummaryError" type="AIChatError" toc={true}>
@@ -102,15 +105,15 @@ raise `AIChatError` itself, and every code is listed under [AI chat errors][erro
   than arriving as a JSON-RPC error.
 </ParamField>
 
-The client decides success from the response body rather than the HTTP status, so the endpoint's
-habit of reporting failures under HTTP 200 is handled for you.
+The client maps JSON-RPC error codes to these classes. Platform errors do not always use a JSON-RPC
+envelope, so an HTTP failure can raise `AIChatError` directly or, for some JSON response shapes,
+produce an empty result. Check the API error when handling failed calls.
 
 ## **Timeouts**
 
-The default session has no total cap, a 10-second connect timeout, and a 60-second `sock_read`
-timeout. A turn's length is the server's business, so liveness is byte-driven rather than
-wall-clock. The service pads a slow turn with keepalive whitespace, and 60 seconds of true byte
-silence means the request is dead.
+The default session has no client-side total cap, a 10-second connect timeout, and a 60-second
+`sock_read` timeout. The public endpoint separately limits an individual request to 30 seconds; a
+slower turn returns the same 502 response as an unavailable service.
 
 ## **Methods**
 
@@ -134,7 +137,7 @@ silence means the request is dead.
     Generate a summary of the conversation.
   </Card>
   <Card title="raw_post" href="/docs/server-sdks/reference/python/agents/ai-chat-client/raw-post">
-    Stream one JSON-RPC response through unread.
+    Access one JSON-RPC HTTP response with its body unread.
   </Card>
   <Card title="close" href="/docs/server-sdks/reference/python/agents/ai-chat-client/close">
     Close the session the client created.
@@ -167,7 +170,4 @@ async def main():
 asyncio.run(main())
 ```
 
-<Info>
-  The [AI chat guide][chat-guide] covers the behavior this class sits on top of, and the
-  [AI chat endpoint][chat-endpoint] documents the wire protocol underneath it.
-</Info>
+The [AI chat endpoint][chat-endpoint] documents the wire protocol underneath this class.

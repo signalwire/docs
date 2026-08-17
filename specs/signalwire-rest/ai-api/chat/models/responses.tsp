@@ -34,12 +34,10 @@ model ChatConversationCreatedResponse {
     id: string;
 
     @doc("""
-      The agent's opening line, when the agent greets first. Generating it is a turn, and a turn
-      bills. A page that creates a conversation on load pays for one whether or not the visitor
-      types anything.
+      The agent's opening line, when the agent greets first.
       """)
     @example("Hi! How can I help?")
-    initial_message?: string;
+    initial_message?: string | null;
   };
 }
 
@@ -120,9 +118,9 @@ model ChatTranscriptResponse {
   @doc("The conversation as the service holds it.")
   result: {
     @doc("""
-      Every entry in the conversation, in order. Alongside the dialogue this carries your own prompt
-      as `system`, plus internal markers such as `system-log`, so filter to `user` and `assistant`
-      before displaying a transcript, or you publish your prompt to your users.
+      Every entry in the conversation, in order. Alongside the dialogue this can carry your own
+      prompt and other non-dialogue entries, so filter to `user` and `assistant` before displaying a
+      transcript.
       """)
     chat_log: Webhooks.AI.AICallLogEntry[];
 
@@ -130,8 +128,8 @@ model ChatTranscriptResponse {
     // public source, and the voice equivalent (Webhooks.AI.AICallTimelineEntry) names a `ts` field
     // this pathway has not been confirmed to use.
     @doc("""
-      A flat stream of structured events for the conversation, with microsecond timestamps. Entries
-      cover session start and end, context switches, and tool calls.
+      Structured timeline entries returned for the conversation. The entry shape depends on the
+      events recorded for that conversation.
       """)
     call_timeline?: Record<unknown>[];
   };
@@ -143,11 +141,9 @@ model ChatTranscriptResponse {
 
 @summary("summarize result")
 @doc("""
-  The summary, or the reason one could not be produced. Exactly one of `summary` and `error` is
-  present.
-
-  Note that this `error` rides the success envelope and describes a failure to generate rather than
-  a failed request, so it is not a JSON-RPC error and carries no code.
+  The result of requesting a summary. A generated summary is returned in `summary`. If summary
+  generation fails after the request succeeds, the reason can be returned in `error`; this is not
+  a JSON-RPC error and carries no code.
   """)
 model ChatSummaryResponse {
   ...JsonRpcResponseEnvelope;
@@ -172,8 +168,8 @@ model ChatSummaryResponse {
   A JSON-RPC response. Which result you get follows from the method you sent; a response echoes no
   `method` of its own.
 
-  Both success and failure arrive under HTTP 200, so check for an `error` key rather than reading
-  the status code.
+  Check the HTTP status first. On HTTP 200, inspect the envelope for an `error` member. Non-200
+  platform errors are not JSON-RPC envelopes.
   """)
 union ChatResponse {
   ChatConversationCreatedResponse,
@@ -189,7 +185,45 @@ union ChatResponse {
 // HTTP-level failures
 // ============================================
 
-@doc("SignalWire could not reach the AI chat service. This is not a JSON-RPC error and carries no code.")
+@doc("The request body was not valid JSON. This is a platform error, not a JSON-RPC error.")
+@error
+model ChatInvalidJsonError {
+  @statusCode statusCode: 400;
+
+  @doc("Details about the malformed request body.")
+  @example(#[
+    #{
+      type: "validation_error",
+      code: "not_a_valid_json",
+      message: "JSON you submitted is not valid",
+      attribute: null,
+      url: "https://signalwire.com/docs/apis/error-codes",
+    }
+  ])
+  errors: Types.StatusCodes.RestApiErrorItem[];
+}
+
+@doc("Credentials are missing or rejected, the request targets another Space, the token does not include the chat scope, or the account must be verified before using this endpoint.")
+@error
+model ChatUnauthorizedError {
+  @statusCode statusCode: 401;
+  @header contentType: "text/plain";
+  @body body: "Unauthorized";
+}
+
+@doc("The account must be verified before it can use this endpoint.")
+@error
+model ChatAccountVerificationError {
+  @statusCode statusCode: 401;
+  @header contentType: "application/json";
+  @body body: {
+    @doc("How to make the account eligible to use this endpoint.")
+    @example("Please validate a phone number to access your account.")
+    message: string;
+  };
+}
+
+@doc("The AI chat service did not respond before the request timed out or could not be reached. This is not a JSON-RPC error and carries no code.")
 @error
 model ChatServiceUnavailableError {
   @statusCode statusCode: 502;

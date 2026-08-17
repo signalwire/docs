@@ -1,5 +1,6 @@
 ---
-title: Chat
+title: AI chat
+sidebar-title: Chat
 slug: /ai/chat
 description: Build a chat application against a SignalWire AI agent, from your own server or from a browser, using the same agent and tools a voice call would use.
 subtitle: Reach an AI agent over HTTP instead of a phone call
@@ -131,7 +132,7 @@ flowchart LR
     Browser -->|"publishable key"| Gateway
     Gateway -->|"project + API token"| SW
     SW -->|"the agent's turn"| Gateway
-    Gateway -->|"relayed, unbuffered"| Browser
+    Gateway -->|"JSON response"| Browser
 ```
 
 A key lifted from your page reaches one agent and can do nothing else: it cannot name a different
@@ -141,6 +142,8 @@ page needs the new key to keep working, so serve it rather than hard-coding it i
 rotate.
 
 ```python title="gateway.py"
+import os
+
 from fastapi import FastAPI
 from signalwire.ai_chat import ChatGateway
 
@@ -149,6 +152,7 @@ app = FastAPI()
 gateway = ChatGateway(
     config_url="https://bayview-taxi.example.com/swml",  # never leaves the server
     key="pk_your_publishable_key",                       # safe in the page
+    secret=os.environ["SIGNALWIRE_CHAT_GATEWAY_SECRET"],
     allowed_origins=["https://bayviewtaxi.example.com"],
     conversation_timeout=1800,
 )
@@ -212,17 +216,18 @@ conversation eventually reaches it. Treat a `403` on `log` as "start a new conve
 something to show the visitor.
 
 `log` returns user and assistant turns only. Your system prompt and the tool traffic never leave your
-gateway, so a handle cannot be used to read your prompt. Each message carries `role`, `content`, and
-`timestamp`, and the response also carries `timeout` and `last_activity` — enough to warn a visitor
+gateway, so a handle cannot be used to read your prompt. Each message carries `role` and `content`;
+`timestamp` is included when the source message has one. The response also carries `timeout` and
+`last_activity` — enough to warn a visitor
 that their next message will start a new conversation.
 
 ### What a leaked key costs you
 
-A publishable key is public by definition, so design for it being taken. It cannot read anything.
-What it can do is talk, and talking bills. That makes the caps the real control rather than a
-nicety: `max_new_conversations` bounds how many conversations can exist, and `max_turns` bounds how
-long each one runs. The first matters most, because a leaked key does not hammer one conversation —
-it opens thousands of one-turn ones, and every one of those bills its opening turn.
+A publishable key is public by definition, so design for it being taken. A key without a valid
+handle cannot read a conversation. A caller holding a handle can use `log` to read that
+conversation's filtered user and assistant transcript. A leaked key can also start conversations
+and send messages. `max_new_conversations` limits new conversations per rolling `window_seconds`,
+while `max_turns` limits the turns in each conversation.
 
 The origin allowlist stops a key pasted into someone else's page, because a browser sends its origin
 and the gateway refuses it. It does not stop `curl`, which omits the header. Treat it as leak
@@ -235,58 +240,29 @@ run more than one replica.
 
 Both paths share these.
 
-### Errors arrive under HTTP 200
+### Check the HTTP status and response body
 
-JSON-RPC carries failures in the body, and the service commits `200` before a turn's outcome is
-known. Check for an `error` key, not the status code. A `200` with `{"error": {...}}` is a failed
-call.
+For direct REST calls, check the HTTP status first. Platform failures such as malformed JSON,
+rejected credentials, and an unavailable or slow service use non-200 responses and are not JSON-RPC
+envelopes. On `200`, parse the JSON-RPC envelope and check for an `error` member. For chat requests,
+the gateway creates its response as HTTP 200 before it processes the JSON-RPC body, so use that body
+to determine the outcome.
 
-### Response bodies may begin with whitespace
+For responses returned by the AI chat service, the public endpoint preserves the HTTP status. Its
+own `400`, `401`, and `502` failures use the shapes documented in the API reference.
 
-A slow turn is padded with keepalive whitespace so that intermediaries do not sever the connection
-mid-answer. This is valid JSON and standard parsers handle it. Two things it does break: code that
-inspects the first byte, and code that assumes the whole body arrives in one read. Read to
-completion, then parse.
-
-If you put your own proxy in front of a gateway, make sure it does not buffer the body either —
-buffering absorbs the padding and recreates the timeout the padding exists to prevent.
-
-### One turn at a time, per conversation
-
-A conversation accepts one turn at a time. A second concurrent request returns `-32007`. That is the
-contract, not a transient failure, so retrying immediately fails again — wait for the first turn to
-return. Different conversations are independent and run in parallel.
+A direct REST turn that takes longer than 30 seconds returns the same 502 response as a service that
+cannot be reached. The response does not distinguish those causes; retry with backoff.
 
 ### An idle conversation ends quietly
 
 A conversation left idle past its `conversation_timeout` (3600 seconds by default, settable per
-conversation) is ended for you. Ending is not instantaneous; expect it within about a minute of the
-limit being crossed.
-
-The consequence is quiet and worth handling: your next message silently opens a *different*
-conversation. The transcript above it still looks continuous, but the agent remembers none of it. If
-you keep a conversation open across a visitor's absence, track the idle time and tell them.
-
-### Timestamp units differ
-
-The `chat_log` messages, `call_timeline`, and the `post_prompt` payload use epoch **microseconds**.
-The gateway's `log` uses epoch **seconds**, converted for you.
-
-A thousand-fold mistake here is silent rather than loud: a conversation reads as fresh forever, or as
-ancient. Convert at the boundary, and assert the magnitude.
-
-### Creating a conversation costs a turn
-
-The agent's greeting is generated by the model and bills like any other turn. A page that creates a
-conversation on load pays for one visit whether or not the visitor types anything. Create the
-conversation when the visitor opens the chat, not when the page loads.
+conversation) ends.
 
 ### The transcript includes your prompt
 
-`chat_log` returns the conversation as the service holds it, including `system` and `system-log`
-entries — your own prompt and internal markers, not just dialogue. Filter to `user` and `assistant`
-before displaying it, or you publish your prompt to your users. The gateway's `log` does this for
-you.
+`chat_log` can include your prompt and other non-dialogue entries. Filter to `user` and `assistant`
+before displaying it. The gateway's `log` does this for you.
 
 ## Webhooks you receive
 
@@ -305,8 +281,8 @@ too, and carries the same caution: it puts the whole conversation in a body leav
 **A summary** reaches your [`post_prompt_url`][post-prompt] after the conversation ends, when your
 SWML sets one. Not instantly — expect seconds. The
 [AI post-prompt callback][post-prompt-webhook] documents the payload. One trap in it is worth
-repeating: `call_log` has the same caveat as `chat_log`, in that it includes your system prompt and
-internal markers, so filter to `user` and `assistant` before showing it to anyone.
+repeating: `call_log` has the same caveat as `chat_log`, in that it can include your system prompt
+and other non-dialogue entries. Filter to `user` and `assistant` before showing it to anyone.
 
 ## Confirm it works
 
@@ -322,19 +298,18 @@ The second line is the one that proves the whole path: it means SignalWire fetch
 turn, and — if the answer carries a real fare rather than a vague one — called your tool and used
 what your code returned.
 
-When it goes wrong, the failure is almost always one of these — and every code is listed under
+When it goes wrong, the failure is almost always one of these. Documented codes are listed under
 [AI chat errors][error-codes]:
 
 - **`-32002` on the first call.** Your `config_url` could not be fetched. Open it from outside your
   network; a `localhost` or private address fails here even though it works in a browser on your
   machine.
-- **`AuthenticationError`, or `-32009`.** The token is missing the `chat` scope. Check the token in
-  your Space rather than the code.
+- **HTTP `401` with `Unauthorized`.** Confirm that the project and token belong to the Space in the
+  request URL and that the token includes the `chat` scope. These causes share the same response.
 - **Ada answers, but with an invented fare.** The conversation is working and the tool call is not.
   The model answered from nothing, which means your SWAIG function was never called or returned an
   error — check your own agent's logs, since the chat service reports nothing about your tool's
   behavior.
-- **`-32008`.** Your SWML failed validation. The document is served but malformed.
 
 ## Next steps
 

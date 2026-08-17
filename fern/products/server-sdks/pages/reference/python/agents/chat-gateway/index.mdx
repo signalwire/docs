@@ -6,7 +6,6 @@ max-toc-depth: 3
 ---
 
 [aichatclient]: /docs/server-sdks/reference/python/agents/ai-chat-client
-[chat-guide]: /docs/platform/ai/chat
 [router]: /docs/server-sdks/reference/python/agents/chat-gateway/router
 [minthandle]: /docs/server-sdks/reference/python/agents/chat-gateway/mint-handle
 [readhandle]: /docs/server-sdks/reference/python/agents/chat-gateway/read-handle
@@ -123,13 +122,14 @@ path is `/chat/`, since the router mounts `POST /`.
 
 | Method | Body | Returns |
 |---|---|---|
-| `start` | `{"method": "start"}` | `{greeting, status, timeout}` plus an `X-Chat-Handle` header |
-| `chat` | `{"method": "chat", "handle", "message"}` | the service's JSON-RPC envelope, relayed unbuffered |
+| `start` | `{"method": "start", "handle"?}` | `{greeting, status, timeout}` plus an `X-Chat-Handle` header when a handle is minted |
+| `chat` | `{"method": "chat", "handle", "message"}` | the service's JSON-RPC envelope |
 | `log` | `{"method": "log", "handle"}` | `{messages, timeout, last_activity}` |
 | `end` | `{"method": "end", "handle"}` | `{"status": "ended"}` |
 
 A `chat` with no handle mints a conversation, so `start` is how you get a greeting before the visitor
 types rather than a required first step. Anything outside these four methods is a `400`.
+If `method` is omitted, it defaults to `chat`. `start` can also reuse a valid existing handle.
 
 Rejections carry an HTTP status and `{"error": "<reason>"}`: `400` malformed, `401` bad key, `403`
 bad or expired handle or a disallowed origin, `429` a cap was hit.
@@ -138,12 +138,14 @@ bad or expired handle or a disallowed origin, `429` a cap was hit.
 
 A publishable key is public by definition, so design for it being taken.
 
-**It cannot read anything.** `chat_log` is not exposed, and handles are HMAC-signed, so conversation
-ids cannot be guessed or enumerated. A caller can only present handles this gateway issued.
+**A key alone cannot read a conversation.** Without a handle there is no conversation to attach
+`log` to, and handles are HMAC-signed so they cannot be forged, guessed, or enumerated. A caller
+holding a valid handle can use `log` to read that conversation's filtered user and assistant
+transcript, but not its system prompt or tool traffic.
 
-**It can talk, and talking bills.** That is the real exposure, which is why the caps are the primary
-control. `max_new_conversations` matters more than `max_turns`, because a leaked key does not hammer
-one conversation. It opens thousands of one-turn ones, and every one of those bills its opening turn.
+**It can start conversations and send messages.** Use `max_new_conversations` and `max_turns` to
+bound that usage. The first limits newly created conversations per rolling window; the second limits
+turns in each conversation.
 
 Counters live in the serving process. Behind several replicas each keeps its own, so the effective
 cap multiplies by replica count. Set them with that in mind, or put a shared limiter in front.
@@ -205,8 +207,3 @@ gateway = ChatGateway(
 
 app.include_router(gateway.router(), prefix="/chat")
 ```
-
-<Info>
-  The [AI chat guide][chat-guide] shows the browser side of this: storing the handle, replaying a
-  conversation after a reload, and handling an expired handle.
-</Info>

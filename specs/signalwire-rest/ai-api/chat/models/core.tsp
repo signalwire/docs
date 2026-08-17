@@ -20,7 +20,7 @@ const configUrlDescription = """
   then sends every tool call nowhere.
   """;
 
-const conversationTimeoutDescription = "Seconds a conversation may sit idle before it ends. A conversation that ends is not resumable: the next message on the same `id` silently opens a new one with none of the history.";
+const conversationTimeoutDescription = "Seconds a conversation may sit idle before it ends.";
 
 const userMetaDataDescription = "Arbitrary data about the user, echoed back on the webhooks this conversation produces.";
 
@@ -88,8 +88,8 @@ model ChatError {
 
 @summary("Error")
 @doc("""
-  A failed method. This arrives under **HTTP 200**, like a successful one. Check for an `error` key
-  rather than reading the status code.
+  A JSON-RPC method failure returned under HTTP 200. After confirming the HTTP status, inspect the
+  envelope for this `error` member.
   """)
 model ChatErrorResponse {
   ...JsonRpcResponseEnvelope;

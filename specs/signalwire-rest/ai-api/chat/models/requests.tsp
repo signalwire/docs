@@ -182,8 +182,7 @@ model ChatSummarizeRequest {
   method: "summarize";
 
   @doc("""
-    The parameters for `summarize`. The sampling list is closed. Any key not listed here is
-    rejected.
+    The documented parameters for `summarize`.
     """)
   params: {
     @doc(conversationIdDescription)
@@ -225,8 +224,8 @@ model ChatSummarizeRequest {
   A JSON-RPC request. The `method` field selects which of the six methods runs, and `params` carries
   that method's arguments.
 
-  `params` carries payload only: `project_id`, `token`, and `space_id` are not valid keys there, and
-  a request carrying them is rejected.
+  Authenticate with HTTP Basic authentication. `params` contains only the arguments for the selected
+  method; do not put project IDs, API tokens, or Space IDs in the JSON-RPC body.
   """)
 union ChatRequest {
   create_conversation: ChatCreateConversationRequest,

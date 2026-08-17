@@ -36,26 +36,13 @@ namespace SignalWireAPI.AI.Chat {
       | `chat_log` | Read the conversation back |
       | `summarize` | Generate a summary on demand |
 
-      ## Errors arrive under HTTP 200
+      ## Check the HTTP status and response body
 
-      JSON-RPC carries failures in the body, and the service commits `200` before a turn's outcome
-      is known. **Check for an `error` key, not the status code.** A `200` with `{"error": {...}}`
-      is a failed call. Every code and its meaning is documented under
+      Check the HTTP status first. Platform errors such as malformed JSON, rejected credentials,
+      and an unavailable service use non-200 responses and are not JSON-RPC envelopes. On `200`,
+      parse the JSON-RPC envelope and check for an `error` member; a `200` with
+      `{"error": {...}}` is a failed call. Documented JSON-RPC codes and their meanings are listed under
       [AI chat errors](/docs/apis/error-codes#ai-chat).
-
-      ## One turn at a time
-
-      A conversation runs one turn at a time. A second concurrent request on the same conversation
-      returns `-32007`. That is the contract rather than a transient failure, so retrying
-      immediately fails again. Wait for the first turn to return. Different conversations are
-      independent and run in parallel.
-
-      ## A slow response may begin with whitespace
-
-      A slow turn is padded with keepalive whitespace so intermediaries do not sever the connection
-      mid-answer. This is valid JSON and standard parsers handle it. It breaks code that inspects
-      the first byte, and code that assumes the whole body arrives in one read. Read to completion,
-      then parse.
 
       ${tokenPermissions<"_Chat_">}
       """)
@@ -96,7 +83,9 @@ namespace SignalWireAPI.AI.Chat {
           @statusCode statusCode: 200;
           @body response: ChatResponse;
         }
-      | StatusCode401
+      | ChatInvalidJsonError
+      | ChatUnauthorizedError
+      | ChatAccountVerificationError
       | ChatServiceUnavailableError;
   }
 }
