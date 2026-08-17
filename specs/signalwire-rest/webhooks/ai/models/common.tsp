@@ -125,7 +125,10 @@ model AIResponseTiming {
   detail applies to it, such as recognition confidence on a caller turn or timings on a reply.
   """)
 model AICallLogEntry is Record<unknown> {
-  @doc("Who produced the entry: `system`, `user`, `assistant`, or `tool`.")
+  @doc("""
+    Who produced the entry. Common roles include `system`, `user`, `assistant`, and `tool`. Other
+    roles may appear, so filter to the roles your application uses rather than assuming a fixed set.
+    """)
   @example("assistant")
   role: string;
 
