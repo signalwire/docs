@@ -55,7 +55,7 @@ model JsonRpcResponseEnvelope {
 // and what each one means is documented once on the error codes page rather than duplicated here.
 @doc("""
   Why a method failed. `-32600` and below are the standard JSON-RPC codes; the rest are specific to
-  AI chat. See [AI chat errors](/docs/apis/error-codes#ai-chat) for the codes callers should handle
+  AI chat. See [API error codes](/docs/apis/error-codes) for the codes callers should handle
   and what they mean.
   """)
 enum ChatErrorCode {
@@ -77,7 +77,7 @@ enum ChatErrorCode {
 
 @doc("A JSON-RPC error returned for the requested method.")
 model ChatError {
-  @doc("Which failure this was.")
+  @doc("Which failure this was. See [API error codes](/docs/apis/error-codes) for descriptions and troubleshooting context.")
   @example(ChatErrorCode.CONVERSATION_NOT_FOUND)
   code: ChatErrorCode;
 
