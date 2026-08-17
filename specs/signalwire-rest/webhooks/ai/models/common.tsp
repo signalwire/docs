@@ -126,8 +126,8 @@ model AIResponseTiming {
   """)
 model AICallLogEntry is Record<unknown> {
   @doc("""
-    Who produced the entry: `system`, `user`, `assistant`, or `tool`. Internal markers such as
-    `system-log` also appear, so filter to the roles you mean to read rather than assuming the set.
+    Who produced the entry. Common roles include `system`, `user`, `assistant`, and `tool`. Other
+    roles may appear, so filter to the roles your application uses rather than assuming a fixed set.
     """)
   @example("assistant")
   role: string;

@@ -115,7 +115,7 @@ model ChatConversationDeletedResponse {
 model ChatTranscriptResponse {
   ...JsonRpcResponseEnvelope;
 
-  @doc("The conversation as the service holds it.")
+  @doc("The entries recorded for the conversation.")
   result: {
     @doc("""
       Every entry in the conversation, in order. Alongside the dialogue this can carry your own
@@ -168,8 +168,8 @@ model ChatSummaryResponse {
   A JSON-RPC response. Which result you get follows from the method you sent; a response echoes no
   `method` of its own.
 
-  Check the HTTP status first. On HTTP 200, inspect the envelope for an `error` member. Non-200
-  platform errors are not JSON-RPC envelopes.
+  Check the HTTP status first. On HTTP 200, inspect the envelope for an `error` member. HTTP-level
+  errors returned with another status are not JSON-RPC envelopes.
   """)
 union ChatResponse {
   ChatConversationCreatedResponse,
@@ -185,7 +185,7 @@ union ChatResponse {
 // HTTP-level failures
 // ============================================
 
-@doc("The request body was not valid JSON. This is a platform error, not a JSON-RPC error.")
+@doc("The request body was not valid JSON. The response is not a JSON-RPC envelope.")
 @error
 model ChatInvalidJsonError {
   @statusCode statusCode: 400;

@@ -181,9 +181,7 @@ model ChatSummarizeRequest {
   @example("summarize")
   method: "summarize";
 
-  @doc("""
-    The documented parameters for `summarize`.
-    """)
+  @doc("The parameters for `summarize`.")
   params: {
     @doc(conversationIdDescription)
     @example("conv-123")

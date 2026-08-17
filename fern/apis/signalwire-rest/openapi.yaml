@@ -377,11 +377,11 @@ paths:
 
         ## Check the HTTP status and response body
 
-        Check the HTTP status first. Platform errors such as malformed JSON, rejected credentials,
-        and an unavailable service use non-200 responses and are not JSON-RPC envelopes. On `200`,
-        parse the JSON-RPC envelope and check for an `error` member; a `200` with
-        `{"error": {...}}` is a failed call. Documented JSON-RPC codes and their meanings are listed under
-        [AI chat errors](/docs/apis/error-codes#ai-chat).
+        Check the HTTP status first. HTTP-level errors such as malformed JSON, rejected credentials,
+        and an unavailable service use non-200 responses and are not JSON-RPC envelopes. Responses
+        from AI chat retain their HTTP status. On `200`, parse the JSON-RPC envelope and check for an
+        `error` member; a `200` with `{"error": {...}}` is a failed call. Documented JSON-RPC codes
+        and their meanings are listed under [AI chat errors](/docs/apis/error-codes#ai-chat).
 
         #### Permissions
 
@@ -397,7 +397,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/AI.ChatResponse'
         '400':
-          description: The request body was not valid JSON. This is a platform error, not a JSON-RPC error.
+          description: The request body was not valid JSON. The response is not a JSON-RPC envelope.
           content:
             application/json:
               schema:
@@ -14596,9 +14596,8 @@ components:
               type: string
               format: uri
               description: |-
-                The URL serving your agent's SWML. SignalWire fetches it server-to-server, so it must be
-                reachable from the public internet. A `localhost` or private address creates the conversation,
-                then sends every tool call nowhere.
+                The publicly reachable URL serving your agent's SWML. `localhost` and private network addresses
+                cannot be reached by SignalWire.
               examples:
                 - https://your-agent.example.com/swml
             user_message:
@@ -14616,7 +14615,7 @@ components:
             user_meta_data:
               type: object
               unevaluatedProperties: {}
-              description: Arbitrary data about the user, echoed back on the webhooks this conversation produces.
+              description: Arbitrary data about the user, included in webhooks generated for this conversation.
               examples:
                 - customer_tier: premium
             reinit:
@@ -14741,7 +14740,7 @@ components:
             - Conversation not found
       unevaluatedProperties:
         not: {}
-      description: What went wrong. The `message` is deliberately coarse and does not describe internals; when diagnosing, the detail you need is usually in your own agent's logs or in the SWML you served.
+      description: A JSON-RPC error returned for the requested method.
     AI.ChatErrorCode:
       type: number
       enum:
@@ -14761,7 +14760,8 @@ components:
         - -32700
       description: |-
         Why a method failed. `-32600` and below are the standard JSON-RPC codes; the rest are specific to
-        AI chat. See [AI chat errors](/docs/apis/error-codes#ai-chat) for what each code means.
+        AI chat. See [AI chat errors](/docs/apis/error-codes#ai-chat) for the codes callers should handle
+        and what they mean.
     AI.ChatErrorResponse:
       type: object
       required:
@@ -14809,7 +14809,7 @@ components:
                 url: https://signalwire.com/docs/apis/error-codes
       unevaluatedProperties:
         not: {}
-      description: The request body was not valid JSON. This is a platform error, not a JSON-RPC error.
+      description: The request body was not valid JSON. The response is not a JSON-RPC envelope.
     AI.ChatLogRequest:
       type: object
       required:
@@ -14937,8 +14937,8 @@ components:
         A JSON-RPC response. Which result you get follows from the method you sent; a response echoes no
         `method` of its own.
 
-        Check the HTTP status first. On HTTP 200, inspect the envelope for an `error` member. Non-200
-        platform errors are not JSON-RPC envelopes.
+        Check the HTTP status first. On HTTP 200, inspect the envelope for an `error` member. HTTP-level
+        errors returned with another status are not JSON-RPC envelopes.
     AI.ChatSendMessageRequest:
       type: object
       required:
@@ -15011,7 +15011,7 @@ components:
             user_meta_data:
               type: object
               unevaluatedProperties: {}
-              description: Arbitrary data about the user, echoed back on the webhooks this conversation produces.
+              description: Arbitrary data about the user, included in webhooks generated for this conversation.
               examples:
                 - customer_tier: premium
             reinit:
@@ -15123,7 +15123,7 @@ components:
             - id
           unevaluatedProperties:
             not: {}
-          description: The documented parameters for `summarize`.
+          description: The parameters for `summarize`.
       unevaluatedProperties:
         not: {}
       title: summarize
@@ -15211,7 +15211,7 @@ components:
             - chat_log
           unevaluatedProperties:
             not: {}
-          description: The conversation as the service holds it.
+          description: The entries recorded for the conversation.
       unevaluatedProperties:
         not: {}
       title: chat_log result
@@ -50849,8 +50849,8 @@ components:
         role:
           type: string
           description: |-
-            Who produced the entry: `system`, `user`, `assistant`, or `tool`. Internal markers such as
-            `system-log` also appear, so filter to the roles you mean to read rather than assuming the set.
+            Who produced the entry. Common roles include `system`, `user`, `assistant`, and `tool`. Other
+            roles may appear, so filter to the roles your application uses rather than assuming a fixed set.
           examples:
             - assistant
         content:

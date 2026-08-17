@@ -38,11 +38,11 @@ namespace SignalWireAPI.AI.Chat {
 
       ## Check the HTTP status and response body
 
-      Check the HTTP status first. Platform errors such as malformed JSON, rejected credentials,
-      and an unavailable service use non-200 responses and are not JSON-RPC envelopes. On `200`,
-      parse the JSON-RPC envelope and check for an `error` member; a `200` with
-      `{"error": {...}}` is a failed call. Documented JSON-RPC codes and their meanings are listed under
-      [AI chat errors](/docs/apis/error-codes#ai-chat).
+      Check the HTTP status first. HTTP-level errors such as malformed JSON, rejected credentials,
+      and an unavailable service use non-200 responses and are not JSON-RPC envelopes. Responses
+      from AI chat retain their HTTP status. On `200`, parse the JSON-RPC envelope and check for an
+      `error` member; a `200` with `{"error": {...}}` is a failed call. Documented JSON-RPC codes
+      and their meanings are listed under [AI chat errors](/docs/apis/error-codes#ai-chat).
 
       ${tokenPermissions<"_Chat_">}
       """)

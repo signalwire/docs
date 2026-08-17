@@ -15,14 +15,13 @@ namespace SignalWireAPI.AI;
 const conversationIdDescription = "The conversation this method acts on. You choose the value when you create the conversation, and it is scoped to your project.";
 
 const configUrlDescription = """
-  The URL serving your agent's SWML. SignalWire fetches it server-to-server, so it must be
-  reachable from the public internet. A `localhost` or private address creates the conversation,
-  then sends every tool call nowhere.
+  The publicly reachable URL serving your agent's SWML. `localhost` and private network addresses
+  cannot be reached by SignalWire.
   """;
 
 const conversationTimeoutDescription = "Seconds a conversation may sit idle before it ends.";
 
-const userMetaDataDescription = "Arbitrary data about the user, echoed back on the webhooks this conversation produces.";
+const userMetaDataDescription = "Arbitrary data about the user, included in webhooks generated for this conversation.";
 
 const reinitDescription = "Reset an existing conversation instead of returning it as-is. Clears the message history.";
 
@@ -56,7 +55,8 @@ model JsonRpcResponseEnvelope {
 // and what each one means is documented once on the error codes page rather than duplicated here.
 @doc("""
   Why a method failed. `-32600` and below are the standard JSON-RPC codes; the rest are specific to
-  AI chat. See [AI chat errors](/docs/apis/error-codes#ai-chat) for what each code means.
+  AI chat. See [AI chat errors](/docs/apis/error-codes#ai-chat) for the codes callers should handle
+  and what they mean.
   """)
 enum ChatErrorCode {
   CONVERSATION_NOT_FOUND: -32001,
@@ -75,7 +75,7 @@ enum ChatErrorCode {
   PARSE_ERROR: -32700,
 }
 
-@doc("What went wrong. The `message` is deliberately coarse and does not describe internals; when diagnosing, the detail you need is usually in your own agent's logs or in the SWML you served.")
+@doc("A JSON-RPC error returned for the requested method.")
 model ChatError {
   @doc("Which failure this was.")
   @example(ChatErrorCode.CONVERSATION_NOT_FOUND)
