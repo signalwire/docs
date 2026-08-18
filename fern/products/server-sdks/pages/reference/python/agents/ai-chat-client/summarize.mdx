@@ -1,0 +1,63 @@
+---
+title: "summarize"
+slug: /reference/python/agents/ai-chat-client/summarize
+description: Generate an AI summary of a conversation on demand.
+max-toc-depth: 3
+---
+
+[ref-aichatclient]: /docs/server-sdks/reference/python/agents/ai-chat-client
+[post-prompt]: /docs/swml/reference/calling/ai
+
+Generate a summary of the conversation. The service rate limits this to one call per minute per
+conversation.
+
+## **Parameters**
+
+<ParamField path="conversation_id" type="str" required={true} toc={true}>
+  The conversation to summarize.
+</ParamField>
+
+<ParamField path="summary_prompt" type="str | None" toc={true}>
+  How to summarize. Overrides the [`post_prompt`][post-prompt] text in your SWML for this call only.
+</ParamField>
+
+<ParamField path="**sampling" type="Any" toc={true}>
+  Sampling controls passed through to the service: `temperature` (0.3), `top_p` (0.3),
+  `frequency_penalty` (1.0), `presence_penalty` (1.0), and `max_tokens` (512). The list is closed, so
+  any other key is rejected.
+</ParamField>
+
+## **Returns**
+
+`str` — the generated summary.
+
+## **Raises**
+
+`SummaryError` when the service reports that generation failed. The service returns exactly one of
+`summary` or `error`, both on the success envelope, so a failed summary surfaces as an exception
+rather than reaching you as an empty string. `RateLimitError` when you exceed one call per minute.
+
+## **Example**
+
+```python {9}
+import asyncio
+
+from signalwire.ai_chat import AIChatClient, SummaryError
+
+
+async def main():
+    async with AIChatClient(space="your-space") as client:
+        try:
+            summary = await client.summarize(
+                "chat-8f21",
+                summary_prompt="List the pickup address, the destination, and the quoted fare.",
+            )
+        except SummaryError as err:
+            print("no summary:", err.message)
+            return
+
+        print(summary)
+
+
+asyncio.run(main())
+```
