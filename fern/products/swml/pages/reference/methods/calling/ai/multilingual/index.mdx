@@ -9,6 +9,7 @@ max-toc-depth: 3
 [voices-and-languages]: /docs/platform/voice/tts
 [variables]: /docs/swml/reference/variables
 [openai-asr-engine]: /docs/swml/reference/calling/ai/params#paramsopenai_asr_engine
+[turn-filler-sources]: /docs/swml/reference/calling/ai/params#paramsturn_filler_sources
 
 Use `ai.multilingual` to let one AI Agent detect the language a caller is speaking and answer
 in that language, switching whenever the caller does. You give it a voice per language, and the
@@ -55,9 +56,12 @@ is not accepted here either, because the value is validated before variables are
   language that has no entry of its own, and it is the voice the agent opens the call with.
 </ParamField>
 
-<ParamField path="ai.multilingual.languages[].voice" type="string" required={true} toc={true}>
+<ParamField path="ai.multilingual.languages[].voice" type="string" toc={true}>
   Voice to use for this language, in the format `<engine id>.<voice id>`, with an optional
   `:<model id>` suffix. For example, `elevenlabs.rachel` or `elevenlabs.rachel:eleven_flash_v2_5`.
+
+  Only the catch-all entry has to carry a voice. An entry that leaves it out is answered in the
+  catch-all voice instead.
 
   Always name the engine. A bare voice id resolves against a default engine that can change.
   Refer to [Supported voices and languages][voices-and-languages] for the voice ids each provider offers.
@@ -65,7 +69,8 @@ is not accepted here either, because the value is validated before variables are
 
 <ParamField path="ai.multilingual.languages[].model" type="string" toc={true}>
   The model to use for the specified TTS engine. For example, `coda`. Set this only if the `voice`
-  string does not already carry a `:<model id>` suffix.
+  string does not already carry a `:<model id>` suffix — a suffix on the `voice` string wins, and
+  this key is then ignored without a warning.
 </ParamField>
 
 <ParamField path="ai.multilingual.languages[].engine" type="string" deprecated={true} toc={true}>
@@ -80,17 +85,23 @@ is not accepted here either, because the value is validated before variables are
 </Indent>
 
 <ParamField path="ai.multilingual.allowed" type="string[]" toc={true}>
-  Restricts detection to this set of language codes. Every code must be supported by the ASR engine
-  and model in use, or multilingual mode does not start. Omit to let the ASR engine detect any
-  language it supports.
+  Restricts the agent to this set of language codes. The speech recognition engine still transcribes
+  whatever it hears, but the agent will not switch into a language outside the list — it keeps the
+  language it is already speaking. The list also tells the agent, in its prompt, which languages are
+  in play.
+
+  Every code must be supported by the ASR engine and model in use, or multilingual mode does not
+  start. Omit to let the agent follow the caller into any language the ASR engine detects.
 </ParamField>
 
 <ParamField path="ai.multilingual.engine" type="string" toc={true}>
   The ASR (Automatic Speech Recognition) engine used to detect the spoken language. This is separate
   from the TTS engine that speaks each voice.
 
-  If you leave it unset, the engine already configured for the agent is used, falling back to
-  `deepgram` when the agent has none.
+  If you leave it unset, `deepgram` is used.
+
+  Do not set this alongside [`params.openai_asr_engine`][openai-asr-engine], which overrides both
+  this engine and [`model`](#aimultilingualmodel). When both are present, the `params` value wins.
 </ParamField>
 
 <ParamField path="ai.multilingual.model" type="string" default="nova-3" toc={true}>
@@ -114,11 +125,14 @@ is not accepted here either, because the value is validated before variables are
   How many words a caller must say before the agent will switch languages.
 
   A single word is often the same in several languages — a name, `no`, `ok` — so a one-word turn
-  is an unreliable signal. Set to `1` to allow single-word switches.
+  is an unreliable signal. Set to `1` to allow single-word switches. A value below `1` is treated as
+  the default of `2` rather than rejected.
 </ParamField>
 
 <ParamField path="ai.multilingual.fillers" type="string[] | object" toc={true}>
-  Fillers used to break silence between turns.
+  Fillers used to break silence between turns. This is the speech filler map, so it is the
+  counterpart of [`languages[].speech_fillers`](/docs/swml/reference/calling/ai/languages#languagesspeech_fillers)
+  rather than of `languages[].fillers`, which is a deprecated spelling of `function_fillers`.
 
   Supply an array to have the fillers translated into whichever language the caller is speaking,
   or an object keyed by language code to set them per language verbatim. An `auto` key inside the
@@ -136,12 +150,15 @@ is not accepted here either, because the value is validated before variables are
 <ParamField path="ai.multilingual.turn_fillers" type="string[] | object" toc={true}>
   Short backchannels played while the caller still has the floor and the agent is deliberately
   waiting, as when they spell a name or read out a number, to signal it is still listening. Which
-  waits earn one is set by [`params.turn_filler_sources`](/docs/swml/reference/calling/ai/params#paramsturn_filler_sources).
+  waits earn one is set by [`params.turn_filler_sources`][turn-filler-sources].
 
   Supply an object keyed by language code, optionally with a `default` key covering languages you
   have not listed. Unlike the other two, these are never translated on the fly, so the `auto` key
   does not apply here — resolving them has to be fast enough to play immediately. An array is
   accepted and treated as the `default` set.
+
+  An entry that is an absolute path or a `scheme://` URI is played as audio instead of being spoken,
+  which is a way to use a recorded backchannel.
 </ParamField>
 
 </Indent>
