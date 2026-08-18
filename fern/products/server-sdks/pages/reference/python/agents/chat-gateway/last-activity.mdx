@@ -1,0 +1,50 @@
+---
+title: "last_activity"
+slug: /reference/python/agents/chat-gateway/last-activity
+description: Find when a conversation was last touched, so a reload can resume its idle clock.
+max-toc-depth: 3
+---
+
+[ref-chatgateway]: /docs/server-sdks/reference/python/agents/chat-gateway
+[log]: /docs/server-sdks/reference/python/agents/ai-chat-client/log
+[visiblemessages]: /docs/server-sdks/reference/python/agents/chat-gateway/visible-messages
+
+Epoch seconds of the newest message, or `None` when nothing is dated. A static method.
+
+This bootstraps a browser's idle clock across a reload. Without it a widget restarts the clock at
+zero on load, so a tab closed for 55 minutes of a 60-minute timeout would wait another full hour
+before warning, while the conversation actually dies in five.
+
+Every role counts, not just the visible ones. The service's idle clock runs off the conversation's
+own last write, so filtering to `user` and `assistant` would report an older time than the service is
+measuring and warn early for no reason. Call this **before**
+[`visible_messages()`][visiblemessages], which strips timestamps.
+
+## **Parameters**
+
+<ParamField path="messages" type="list[dict[str, Any]] | None" required={true} toc={true}>
+  The raw messages, as returned by [`AIChatClient.log()`][log].
+</ParamField>
+
+## **Returns**
+
+`float | None` — epoch seconds of the newest message, converted from the microseconds the service
+stores. `None` when no message carries a timestamp.
+
+## **Example**
+
+```python {9,10}
+import time
+
+from signalwire.ai_chat import AIChatClient, ChatGateway
+
+gateway = ChatGateway(config_url="https://bayview-taxi.example.com/swml")
+
+
+async def idle_seconds_left(client: AIChatClient, conversation_id: str) -> float | None:
+    conversation = await client.log(conversation_id)
+    last = ChatGateway.last_activity(conversation.messages)
+    if last is None:
+        return None
+    return gateway.effective_timeout - (time.time() - last)
+```
