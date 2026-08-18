@@ -25,10 +25,13 @@ model LanguagesBase {
     instead, which builds on the same code-switching mode and adds a voice per language.
     """)
   @example("fr-FR")
+  @maxItems(3)
   code: string | string[];
 
   @doc("""
-    An alias for `code`, read only when `code` is absent. Prefer `code`.
+    A legacy alias for `code`, kept so that documents written before `code` existed keep
+    working. It is read only when `code` is absent, so it has no effect alongside `code`.
+    Write `code` in new documents.
     """)
   @example("fr-FR")
   listen_language?: string | string[];
@@ -47,6 +50,7 @@ model LanguagesBase {
   @doc("""
     The model to use for the specified TTS engine. For example, `coda`.
     Set this only if the `voice` string does not already carry a `:<model id>` suffix.
+    A suffix on the `voice` string wins, and this key is then ignored without a warning.
     """)
   @example("coda")
   `model`?: string;
@@ -55,7 +59,7 @@ model LanguagesBase {
     Lets the AI vary its emotion as it speaks. A global emotion, or specific emotions for certain
     topics, can be set within the prompt of the AI.
     IMPORTANT: Only works with the [`Cartesia`](/docs/platform/voice/tts/cartesia) and [`MiniMax`](/docs/platform/voice/tts/minimax) TTS engines.
-    For a fixed (non-automatic) MiniMax emotion, use [`params.emotion`](#languagesparams) instead.
+    For a fixed (non-automatic) MiniMax emotion, use [`params.emotion`](#paramsemotion) instead.
     """)
   @example(true)
   auto_emotion?: boolean = false;
@@ -123,7 +127,7 @@ model LanguageParams {
 
   @doc("""
     A fixed emotional tone for the generated speech.
-    To vary the emotion automatically during a conversation, use [`languages[].emotion`](#languagesemotion) set to `auto` instead.
+    To vary the emotion automatically during a conversation, use [`languages[].auto_emotion`](#languagesauto_emotion) instead.
     IMPORTANT: Only works with the MiniMax TTS engine.
     """)
   @example("happy")
