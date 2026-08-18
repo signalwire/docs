@@ -28,7 +28,11 @@ model MultilingualLanguage {
   @example("es")
   language: string;
 
-  ...PickProperties<LanguagesBase, PickedMultilingualLanguage>;
+  // `voice` is required on `languages[]` but not here. Only the base entry — the `default`
+  // entry when one is given, otherwise the first language listed — has to carry a voice; an
+  // entry without one is answered in the base voice. OptionalProperties relaxes just that,
+  // and keeps the descriptions in LanguagesBase rather than restating them here.
+  ...OptionalProperties<PickProperties<LanguagesBase, PickedMultilingualLanguage>>;
 }
 
 @summary("multilingual")
@@ -42,9 +46,12 @@ model Multilingual {
   languages: MultilingualLanguage[];
 
   @doc("""
-    Restricts detection to this set of language codes. Every code must be supported by
-    the ASR engine and model in use, or multilingual mode does not start.
-    Omit to let the ASR engine detect any language it supports.
+    Restricts the agent to this set of language codes. The speech recognition engine still
+    transcribes whatever it hears, but the agent will not switch into a language outside the
+    list — it keeps the language it is already speaking. The list also tells the agent, in its
+    prompt, which languages are in play. Every code must be supported by the ASR engine and
+    model in use, or multilingual mode does not start.
+    Omit to let the agent follow the caller into any language the ASR engine detects.
     """)
   @example(#["en", "es", "fr"])
   allowed?: string[];
@@ -52,8 +59,9 @@ model Multilingual {
   @doc("""
     The ASR (Automatic Speech Recognition) engine used to detect the spoken language.
     This is separate from the TTS engine that speaks each voice.
-    If you leave it unset, the engine already configured for the agent is used, falling back to
-    `deepgram` when the agent has none.
+    If you leave it unset, `deepgram` is used.
+    Do not set this alongside `params.openai_asr_engine`, which overrides both this engine and
+    `model`. When both are present, the `params` value wins.
     """)
   @example("deepgram")
   engine?: string;
@@ -81,13 +89,16 @@ model Multilingual {
     How many words a caller must say before the agent will switch languages.
     A single word is often the same in several languages — a name, `no`, `ok` — so a
     one-word turn is an unreliable signal. Set to `1` to allow single-word switches.
+    A value below `1` is treated as the default of `2` rather than rejected.
     """)
   @minValue(1)
   @example(2)
   min_switch_words?: integer = 2;
 
   @doc("""
-    Fillers used to break silence between turns.
+    Fillers used to break silence between turns. This is the speech filler map, so it is the
+    counterpart of `languages[].speech_fillers` rather than of `languages[].fillers`, which is
+    a deprecated spelling of `function_fillers`.
     Supply an array to have the fillers translated into whichever language the caller
     is speaking, or an object keyed by language code to set them per language verbatim.
     An `auto` key inside the object is translated the same way an array is.
@@ -113,6 +124,9 @@ model Multilingual {
     languages you have not listed. These fillers are never translated on the fly, so
     the `auto` key does not apply here — resolving them has to be fast enough to play
     immediately. An array is accepted and treated as the `default` set.
+
+    An entry that is an absolute path or a `scheme://` URI is played as audio instead of
+    being spoken, which is a way to use a recorded backchannel.
     """)
-  turn_fillers?: string[] | FunctionFillers;
+  turn_fillers?: string[] | TurnFillers;
 }
