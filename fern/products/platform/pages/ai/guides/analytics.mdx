@@ -1,7 +1,7 @@
 ---
 title: Conversation analytics
 slug: /ai/analytics
-description: The measurements a SignalWire AI call produces, the fields that carry them, and what to change when one goes wrong.
+description: Use live debug events and post-conversation reports to measure, troubleshoot, and improve SignalWire AI conversations.
 max-toc-depth: 3
 ---
 
@@ -21,8 +21,10 @@ max-toc-depth: 3
 [tool-calling]: /docs/platform/ai/tool-calling
 [tts]: /docs/platform/voice/tts
 
-Every AI call emits a record of what was said, how long each part took, and what your tools
-returned. This page covers the measurements in that record and what to change when one goes wrong.
+SignalWire AI gives you two views of a conversation: a stream of debug events while a voice call is
+running, and a final report after a voice or text conversation ends. Use the live stream to react or
+diagnose in the moment. Use the final report to measure trends, inspect the complete conversation,
+and count outcomes.
 
 ## What you can measure
 
@@ -54,27 +56,75 @@ returned. This page covers the measurements in that record and what to change wh
 
 </CardGroup>
 
-## Where the measurements come from
+## Choose the right data source
 
-Two channels carry this data off the same call.
+The debug webhook and post-prompt callback are independent. You can enable either one or both.
 
-| Channel | Set by | Fires | Use for |
+| Data source | Available for | When it fires | Use it for |
 |---|---|---|---|
-| Debug webhook | [`ai.params.debug_webhook_url`][ai-params], `debug_webhook_level` | Per event, during the call | Live supervision, alerting |
-| Post-call report | [`ai.post_prompt`, `ai.post_prompt_url`][ai-reference] | Once, at hangup | Analysis, tuning |
+| Debug webhook | Voice calls | Many times during the live session and its post-processing | Supervision, alerts, and tracing why the agent took an action |
+| Post-prompt callback | Voice and AI Chat | Once after the conversation ends | Transcripts, performance analysis, tool history, usage, and structured outcomes |
 
 ```mermaid
 flowchart LR
-    Call["AI call"]
+    Call["AI conversation"]
     Debug["Your endpoint<br/>debug_webhook_url"]
     Report["Your endpoint<br/>post_prompt_url"]
 
-    Call -->|"each event, while the call runs"| Debug
-    Call -->|"one report, at hangup"| Report
+    Call -->|"voice: events as they happen"| Debug
+    Call -->|"voice or chat: one final report"| Report
 ```
 
-At `debug_webhook_level` 2 and above, the debug webhook includes `conversation_add`, one event per
-turn:
+### Enable live debug events
+
+Setting [`debug_webhook_url`][ai-params] enables the feed. `debug_webhook_level` controls how much it
+contains: use level 1 for routine high-level events, and switch to level 2 when you need every
+conversation addition and model request or response. Level 2 is much higher volume, so enable it
+for a focused investigation rather than as the default collection level.
+
+<Tabs>
+<Tab title="SWML">
+
+```json title="SWML"
+{
+  "ai": {
+    "prompt": { "text": "You dispatch taxis..." },
+    "params": {
+      "debug_webhook_url": "https://example.com/ai-events",
+      "debug_webhook_level": 1
+    }
+  }
+}
+```
+
+</Tab>
+<Tab title="Server SDK">
+
+```python title="Python"
+from signalwire import AgentBase
+
+
+agent = AgentBase(name="dispatch")
+agent.prompt_add_section("Role", "You dispatch taxis.")
+agent.enable_debug_events(level=1)
+
+
+@agent.on_debug_event
+def handle_debug_event(event_type, data):
+    if event_type == "llm_error":
+        alert_operations(data)
+```
+
+</Tab>
+</Tabs>
+
+The Server SDK creates the callback URL and receives the events at its own `/debug_events`
+endpoint. [`enable_debug_events()`][enable-debug-events] documents that setup.
+
+Each webhook request contains `call_info` and one or more properties named for the events that
+happened. Handle the properties you recognize and ignore the rest so new event types do not break
+your collector. Level 1 includes session lifecycle, errors, tool activity, and other high-level
+events. At level 2, `conversation_add` gives you one event for each entry added to the conversation:
 
 ```json title="conversation_add event"
 {
@@ -91,13 +141,18 @@ turn:
 }
 ```
 
-Use it when something must happen mid-call: paging a supervisor, flagging a handoff. In the Server
-SDKs, [`enable_debug_events()`][enable-debug-events] wires the URL and endpoint for you. The
-[AI debug webhook reference][debug-webhook-ref] documents all 47 event types it can carry.
+Use the feed when something must happen before the call ends, such as paging a supervisor after an
+error or flagging a handoff. It also answers diagnostic questions such as which function ran, how
+long it took, or where the agent changed context. The [AI debug webhook reference][debug-webhook-ref]
+documents the event properties and their fields.
 
-Everything else on this page comes from the post-call report.
+### Enable the post-conversation report
 
-### Enable the post-call report
+The two settings do different jobs. [`post_prompt`][ai-reference] is an instruction the model runs
+after the conversation, such as producing a summary or a set of outcome fields.
+`post_prompt_url` is the endpoint that receives the complete report, including the model's answer to
+that instruction. A URL without a useful post-prompt does not create the structured outcome data
+you need for aggregation.
 
 <Tabs>
 <Tab title="SWML">
@@ -106,7 +161,7 @@ Everything else on this page comes from the post-call report.
 {
   "ai": {
     "prompt": { "text": "You dispatch taxis..." },
-    "post_prompt": { "text": "Summarize the call as JSON with keys intent, resolved, sentiment." },
+    "post_prompt": { "text": "Return JSON with keys intent, resolved, and sentiment." },
     "post_prompt_url": "https://example.com/reports"
   }
 }
@@ -125,7 +180,7 @@ class DispatchAgent(AgentBase):
         self.prompt_add_section("Role", "You dispatch taxis.")
 
         self.set_post_prompt(
-            "Summarize the call as JSON with keys intent, resolved, sentiment."
+            "Return JSON with keys intent, resolved, and sentiment."
         )
         self.set_post_prompt_url("https://example.com/reports")
 ```
@@ -134,10 +189,12 @@ class DispatchAgent(AgentBase):
 </Tabs>
 
 See [`set_post_prompt()`][set-post-prompt] and [`set_post_prompt_url()`][set-post-prompt-url], or
-[`on_summary()`][on-summary] to handle the report in process. The
-[AI post-prompt callback reference][post-prompt-callback] documents every field.
+[`on_summary()`][on-summary] to handle the report in process. Ending an AI Chat conversation also
+starts this post-processing when the agent's SWML configures it. The
+[AI post-prompt callback reference][post-prompt-callback] documents every field and identifies the
+source as `voice` or `chat` in `conversation_type`.
 
-<Accordion title="A full post-call report">
+<Accordion title="A full post-conversation report">
 
 <WebhookPayloadSnippet webhook="aiPostPromptCallback" />
 
@@ -149,6 +206,24 @@ fields over time; a mirrored schema needs a migration each time. Send unparseabl
 dead-letter store rather than discarding them, and set credentials on the collector — the URL
 accepts `username:password@url`.
 </Tip>
+
+### Match measurements to their source
+
+Some measurements are useful while the call is live; others only exist once the report is
+assembled.
+
+| Question | Live debug source | Final report source |
+|---|---|---|
+| What is happening now? | Session, error, context, webhook, and function events | Not applicable until the conversation ends |
+| What was added to this turn? | `conversation_add` at level 2 | `call_log` and `raw_call_log` |
+| How long did a tool take? | `function_call.duration_ms` | Matching tool entry timestamps and `swaig_log` |
+| What happened in order? | Individual events as they arrive | `call_timeline` aligned to `raw_call_log` |
+| Did the conversation succeed? | Your application can react to chosen events | `post_prompt_data` with the outcome fields you requested |
+| What did it consume? | Session-end token totals | Accounting totals in the report when enabled |
+
+The detailed sections below use the final report because it keeps the complete conversation and is
+the right source for comparisons across many sessions. Use the matching debug event when you need
+the same signal before a voice call ends.
 
 ### Pick the right log
 
@@ -173,6 +248,11 @@ Each `call_log` entry carries a `role`:
 | `system-log` | Platform events: step changes, function calls, session start and end |
 
 ## Responsiveness
+
+<Note>
+Responsiveness, recognition, and turn-taking in the next three sections describe voice calls. AI
+Chat skips speech recognition and synthesis, so audio and interruption measurements do not apply.
+</Note>
 
 Each `assistant` entry carries three timings from the same origin. The gaps between them are where
 the time actually went.
@@ -480,6 +560,7 @@ turn. Prompt length is a running cost, not a one-time one.
 
 | Symptom | Measurement | Change |
 |---|---|---|
+| A live call enters a bad state | Matching debug error, context, or function event | Alert or intervene before the session ends |
 | Replies feel sluggish | p95 of `audio_latency`, decomposed | Fix the dominant segment |
 | One kind of call drags | Runtime by `command_name` | Speed up that handler, or cover the wait |
 | The agent mishears names | `confidence` below 0.5, grouped by term | Add [speech hints][hints] |
@@ -500,7 +581,11 @@ handling this data, and a reference if you build your own.
 <CardGroup cols={3}>
 
 <Card title="Post-prompt callback" href="/docs/apis/rest/webhooks/ai-post-prompt-callback" icon="regular book">
-  Every field the post-call report carries.
+  Every field the final voice or Chat report carries.
+</Card>
+
+<Card title="AI debug webhook" href="/docs/apis/rest/webhooks/ai-debug-webhook" icon="regular bug">
+  The live voice events available for supervision, alerts, and diagnosis.
 </Card>
 
 <Card title="Tool calling" href="/docs/platform/ai/tool-calling" icon="regular webhook">

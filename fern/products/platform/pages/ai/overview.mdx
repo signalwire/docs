@@ -10,6 +10,9 @@ max-toc-depth: 3
 
 [addresses]: /docs/platform/addresses
 [best-practices]: /docs/platform/ai/best-practices
+[chat-api]: /docs/apis/rest/ai-chat/chat-methods
+[chat-client]: /docs/server-sdks/reference/python/agents/ai-chat-client
+[chat-gateway]: /docs/server-sdks/reference/python/agents/chat-gateway
 [call-transfer]: /docs/server-sdks/guides/call-transfer
 [compliance]: /docs/platform/compliance
 [function-result]: /docs/server-sdks/reference/python/agents/function-result
@@ -20,18 +23,16 @@ max-toc-depth: 3
 [tool-calling]: /docs/platform/ai/tool-calling
 [tts]: /docs/platform/voice/tts
 
-An AI agent is a resource you create on the SignalWire platform, reachable at one or more
-[addresses][addresses]: a phone number, a SIP URI, or a name your own application dials. Reading the
-intent behind the conversation, deciding what to say, and delivering the reply all come with the
-platform. What you supply is the prompt that shapes how the agent responds, and the tools that
-connect it to your systems.
+An AI agent is a conversation you define once and make available over voice or text. The prompt,
+contexts, state, and tools stay with the agent whichever channel a person uses. SignalWire runs the
+model and the conversation; you supply the instructions and connect the agent to your systems.
 
 The model conducts the conversation, but your code decides what it can say and do. Anything that has
 to be exact, current, or enforced comes from your systems, reached through tools you define.
 
 <llms-ignore>
 
-  <img src="/assets/images/img/ai-agent-flow-themed.svg" alt="How a conversation flows: an end user reaches an AI agent on the SignalWire platform over the phone network, SIP, WebRTC, or chat, where end-pointing, speech-to-text, and text-to-speech all run in one engine; SWAIG, the SignalWire AI Gateway, delivers tool calls to your backend over HTTP, the only network hop, and returns the JSON reply to the conversation." />
+  <img src="/assets/images/img/ai-agent-flow-themed.svg" alt="Voice and text channels arrive at the same SignalWire AI agent, and the agent's reply travels back out the same channel. A channel carries only transport: voice over PSTN, SIP, or WebRTC, and text as one HTTP request per turn through the AI Chat API. The SignalWire platform handles end-pointing, speech-to-text, text-to-speech, and the call or chat session, and holds the agent's prompt, contexts, and state. The agent's SWAIG tools post each tool call to your backend over HTTP, the only network hop off the platform, where your webhook reads your own systems." />
 
 </llms-ignore>
 
@@ -39,22 +40,26 @@ to be exact, current, or enforced comes from your systems, reached through tools
 
 ```mermaid
 flowchart LR
-    EndUser["End user<br/>PSTN · SIP · WebRTC · chat"]
+    subgraph Channels["Channels — carry the conversation, both ways"]
+        Voice["Voice<br/>PSTN · SIP · WebRTC<br/>audio in, audio out"]
+        Chat["Text<br/>AI Chat API<br/>one HTTP request per turn"]
+    end
 
-    subgraph SW["SignalWire platform: one engine (end-pointing, speech-to-text, text-to-speech)"]
-        Agent["AI agent<br/>prompt · voice · user intent<br/>call · chat session"]
-        SWAIG["SWAIG<br/>SignalWire AI Gateway"]
+    subgraph SW["SignalWire platform<br/>end-pointing · speech-to-text · text-to-speech<br/>call and chat session"]
+        Agent["One AI agent<br/>prompt · contexts · state"]
+        SWAIG["SWAIG tools<br/>same functions · results · actions"]
     end
 
     subgraph BE["Your backend"]
-        Webhook["Webhook<br/>your server · any language"]
+        Webhook["Tool webhook<br/>your server · any language"]
         Systems["Your systems<br/>databases · APIs · rules"]
     end
 
-    EndUser <-->|conversation| Agent
+    Voice <--> Agent
+    Chat <--> Agent
     Agent -->|tool call| SWAIG
     SWAIG -->|response + actions| Agent
-    SWAIG -->|"HTTP POST · the only network hop"| Webhook
+    SWAIG -->|"HTTP POST"| Webhook
     Webhook -->|JSON reply| SWAIG
     Webhook <--> Systems
 ```
@@ -63,10 +68,21 @@ flowchart LR
 
 ## How it works
 
-Your agent is reachable from the phone network, SIP (Session Initiation Protocol), a browser, or a
-mobile app. On a voice channel, every turn passes through four stages before the caller hears a
-reply: detecting that the caller has finished speaking (end-pointing), transcribing the audio,
-generating the response, and synthesizing the reply as speech.
+People can reach the same agent in two ways:
+
+| Channel | How the conversation arrives | What the platform handles |
+|---|---|---|
+| Voice | A [phone number, SIP URI, or dialable resource name][addresses] over the Public Switched Telephone Network (PSTN), SIP (Session Initiation Protocol), or WebRTC | Audio, end-pointing, speech recognition, the model, and speech synthesis |
+| Text | One HTTP request per turn through the [AI Chat API][chat-api] | Conversation state, the model, tool calls, and the text response |
+
+Server code can call the Chat API directly with [`AIChatClient`][chat-client]. A browser or mobile
+app connects through [`ChatGateway`][chat-gateway], which runs in your application so your
+SignalWire API token never reaches an untrusted client.
+
+On a voice channel, every turn passes through four stages before the caller hears a reply: detecting
+that the caller has finished speaking (end-pointing), transcribing the audio, generating the
+response, and synthesizing the reply as speech. A text turn skips the audio stages, but reaches the
+same prompt, contexts, state, and tools.
 
 Assembling those stages from separate services puts a network boundary at each one, on every turn.
 SignalWire runs all four inside the engine that carries the call's audio, so response time stays low
@@ -81,8 +97,8 @@ a ride to the airport costs and it calls your tool instead of guessing: your cod
 pricing and returns the fare. Your handler can also say no, so returning "no driver until four" stops
 the agent from promising a car at two.
 
-That tool call is the only network hop in the round trip, and it is a hop you control. Enforcing a
-fact in code means fetching it while the caller waits, so your server's own response time is real.
+For both channels, the SWAIG tool call is the network hop to infrastructure you control. Enforcing a
+fact in code means fetching it while the person waits, so your server's own response time is real.
 [Tool calling][tool-calling] covers the round trip, and [best practices][best-practices] covers the
 filler phrases and background audio that keep the caller from sitting in silence.
 
@@ -90,8 +106,10 @@ filler phrases and background audio that keep the caller from sitting in silence
 
 | Layer | Who runs it |
 |---|---|
-| End-pointing, speech-to-text, the model, text-to-speech | SignalWire, inside the engine carrying the call's audio |
-| Phone numbers, SIP trunks, browser and mobile sessions | SignalWire |
+| Model and conversation state | SignalWire, for voice and text conversations |
+| End-pointing, speech-to-text, and text-to-speech | SignalWire, on voice channels |
+| Phone numbers, SIP trunks, and WebRTC sessions | SignalWire |
+| Browser and mobile chat connection | You, through `ChatGateway`; SignalWire handles each text turn through the AI Chat API |
 | Voice and language | SignalWire, integrated with more than a dozen [text-to-speech providers][tts] for you to choose from; a multilingual agent can use a different voice per language |
 | Prompt and conversational style | You |
 | Business logic, external data, and actions | You, in handlers on your own infrastructure that the agent calls over SWAIG |
@@ -248,9 +266,10 @@ everything it is allowed to do.
 ## Capabilities
 
 An agent is not tied to one channel. The definition you write once — the prompt, the tools, the
-contexts, the state your handlers keep — answers a phone call, a SIP session, a browser or mobile
-session, and a text chat. A tool call behaves the same way on all of them, so the code enforcing your
-business rules is written once and does not care how the conversation arrived.
+contexts, and the state your handlers keep — handles voice calls and text conversations. SWAIG uses
+the same function definitions and response structure for each. Its webhook identifies the channel
+as `voice` or `chat`, but the code enforcing your business rules does not need a separate tool
+implementation for each one.
 
 What differs between channels is the audio-specific work. Choosing a voice, adding speech hints, and
 detecting that a caller has finished speaking all shape a spoken turn and have nothing to act on in a
@@ -298,8 +317,8 @@ you design an agent:
 </Card>
 
 <Card title="Conversation analytics" href="/docs/platform/ai/analytics" icon="regular gauge-high">
-  Every exchange posted to a URL you set, with the transcript, token counts, per-turn latency, and
-  language in use.
+  Live diagnostic events for voice calls and a final report for voice or text conversations, with
+  transcripts, tool activity, outcomes, and the measurements each channel produces.
 </Card>
 
 </CardGroup>
