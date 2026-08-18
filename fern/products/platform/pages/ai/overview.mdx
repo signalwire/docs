@@ -3,36 +3,45 @@ slug: /ai
 title: System-directed AI
 sidebar-title: Overview
 position: 0
-subtitle: Build conversational agents driven by your systems, not a prompt
-description: AI agents that run on the SignalWire platform, carrying the conversation, answering from your systems, and acting only through tools you write.
+subtitle: Build conversational agents directed by your code, data, and business rules
+description: SignalWire AI runs voice and text conversations while your code supplies current data, enforces business rules, and directs agent actions.
 max-toc-depth: 3
 ---
 
 [addresses]: /docs/platform/addresses
+[analytics]: /docs/platform/ai/analytics
 [best-practices]: /docs/platform/ai/best-practices
 [chat-api]: /docs/apis/rest/ai-chat/chat-methods
 [chat-client]: /docs/server-sdks/reference/python/agents/ai-chat-client
 [chat-gateway]: /docs/server-sdks/reference/python/agents/chat-gateway
 [call-transfer]: /docs/server-sdks/guides/call-transfer
 [compliance]: /docs/platform/compliance
-[function-result]: /docs/server-sdks/reference/python/agents/function-result
+[content-redaction]: /docs/platform/ai/content-redaction
+[contexts]: /docs/server-sdks/guides/contexts-workflows
+[datamap]: /docs/server-sdks/guides/data-map
+[datasphere]: /docs/server-sdks/reference/python/rest/datasphere
+[hints]: /docs/server-sdks/guides/hints
+[mcp-gateway]: /docs/server-sdks/guides/mcp-gateway
 [prompt-engineering]: /docs/platform/ai/prompt-engineering
-[result-actions]: /docs/server-sdks/guides/result-actions
+[skills]: /docs/server-sdks/guides/understanding-skills
 [state-management]: /docs/server-sdks/guides/state-management
-[swaig-functions]: /docs/swml/reference/calling/ai/swaig/functions
 [tool-calling]: /docs/platform/ai/tool-calling
 [tts]: /docs/platform/voice/tts
 
-An AI agent is a conversation you define once and make available over voice or text. The prompt,
-contexts, state, and tools stay with the agent whichever channel a person uses. SignalWire runs the
-model and the conversation; you supply the instructions and connect the agent to your systems.
+SignalWire AI separates conversation from control. The model interprets what a person says and
+carries the conversation. Your code checks current data, applies business rules, performs actions,
+and returns results that direct what the agent does next.
 
-The model conducts the conversation, but your code decides what it can say and do. Anything that has
-to be exact, current, or enforced comes from your systems, reached through tools you define.
+This division makes the agent **system-directed**. A prompt defines how the agent communicates and
+when it should use a tool. Your systems remain the source of truth for facts and decisions that must
+be exact, current, or enforced.
+
+An agent definition includes its prompt, contexts, state, and tools. The same definition can handle
+voice calls and text conversations while SignalWire runs the model and manages the session.
 
 <llms-ignore>
 
-  <img src="/assets/images/img/ai-agent-flow-themed.svg" alt="Voice and text channels arrive at the same SignalWire AI agent, and the agent's reply travels back out the same channel. A channel carries only transport: voice over PSTN, SIP, or WebRTC, and text as one HTTP request per turn through the AI Chat API. The SignalWire platform handles end-pointing, speech-to-text, text-to-speech, and the call or chat session, and holds the agent's prompt, contexts, and state. The agent's SWAIG tools post each tool call to your backend over HTTP, the only network hop off the platform, where your webhook reads your own systems." />
+  <img src="/assets/images/img/ai-agent-flow-themed.svg" alt="Voice over PSTN, SIP, or WebRTC and text through the AI Chat API connect to the SignalWire platform, where the AI agent runs. SignalWire handles speech processing, the model, and session state. The agent uses SWAIG functions, results, and actions to exchange requests with a tool webhook on the customer's backend, where code reads databases, APIs, and business rules." />
 
 </llms-ignore>
 
@@ -40,313 +49,146 @@ to be exact, current, or enforced comes from your systems, reached through tools
 
 ```mermaid
 flowchart LR
-    subgraph Channels["Channels — carry the conversation, both ways"]
-        Voice["Voice<br/>PSTN · SIP · WebRTC<br/>audio in, audio out"]
-        Chat["Text<br/>AI Chat API<br/>one HTTP request per turn"]
+    subgraph Channels["Channels — ways people interact with an agent"]
+        Voice["Voice<br/>PSTN · SIP · WebRTC"]
+        Text["Text<br/>AI Chat API"]
     end
 
-    subgraph SW["SignalWire platform<br/>end-pointing · speech-to-text · text-to-speech<br/>call and chat session"]
-        Agent["One AI agent<br/>prompt · contexts · state"]
-        SWAIG["SWAIG tools<br/>same functions · results · actions"]
+    subgraph SW["SignalWire platform — speech processing · model · session state"]
+        Agent["AI agent<br/>prompt · contexts · state"]
+        SWAIG["SWAIG tools<br/>functions · results · actions"]
+        Agent <--> SWAIG
     end
 
-    subgraph BE["Your backend"]
+    subgraph Backend["Your backend — the only network hop off platform"]
         Webhook["Tool webhook<br/>your server · any language"]
         Systems["Your systems<br/>databases · APIs · rules"]
+        Webhook <--> Systems
     end
 
-    Voice <--> Agent
-    Chat <--> Agent
-    Agent -->|tool call| SWAIG
-    SWAIG -->|response + actions| Agent
-    SWAIG -->|"HTTP POST"| Webhook
-    Webhook -->|JSON reply| SWAIG
-    Webhook <--> Systems
+    Channels <--> SW
+    SWAIG <--> Webhook
 ```
 
 </llms-only>
 
-## How it works
+## How system-directed AI works
 
-People can reach the same agent in two ways:
+A conversation moves between the model and your systems as the situation requires:
 
-| Channel | How the conversation arrives | What the platform handles |
+1. A person speaks on a voice channel or sends a turn through the [AI Chat API][chat-api].
+2. SignalWire adds the input to the session. The model interprets it using the agent's prompt,
+   current context, and state.
+3. When the agent needs current information or permission to act, it calls a tool defined through
+   the **SignalWire AI Gateway (SWAIG)**.
+4. Your code validates the input, reads your systems of record, applies your rules, and returns a
+   result. The result can include data for the agent, instructions for the next response, and
+   actions for SignalWire to execute.
+5. The agent explains the result and continues the conversation. A returned action can update
+   state, change context, send a message, transfer a call, or take another step in the conversation.
+
+Consider a taxi dispatcher. The model can recognize that a caller wants a ride and collect the
+pickup time. It cannot know which drivers are working. A SWAIG tool sends the requested time to the
+dispatch system, where code checks availability and policy. The result tells the agent which times
+it may offer instead of leaving that decision to the prompt.
+
+The [Tool calling guide][tool-calling] covers this request and response cycle, including validation,
+state, and actions.
+
+## What each layer controls
+
+| Layer | Responsibility |
+|---|---|
+| Your agent definition | The prompt, tool descriptions, contexts, workflows, and initial configuration you provide |
+| SignalWire | Voice and text sessions, the model, conversation state, SWAIG tool routing, and platform actions |
+| Your systems | Input validation, current data, business rules, authorization, calculations, and side effects |
+
+A prompt remains useful for identity, tone, conversational goals, and deciding when to reach for a
+tool. It is not an enforcement boundary. Put prices, schedules, eligibility rules, and other
+authoritative decisions in code. Store checked values in [agent state][state-management] so later
+tools use validated data instead of asking the model to recall it.
+
+[Prompt engineering][prompt-engineering] covers the conversational side of this design.
+[Best practices][best-practices] explains how to divide work between the prompt and your code.
+
+## One agent across voice and text
+
+Voice and text are channels into the same agent. Both use the same prompt, contexts, state, SWAIG
+functions, and tool results.
+
+| Channel | How a person connects | What SignalWire handles |
 |---|---|---|
-| Voice | A [phone number, SIP URI, or dialable resource name][addresses] over the Public Switched Telephone Network (PSTN), SIP (Session Initiation Protocol), or WebRTC | Audio, end-pointing, speech recognition, the model, and speech synthesis |
+| Voice | A [phone number, SIP URI, or dialable resource name][addresses] over the Public Switched Telephone Network (PSTN), Session Initiation Protocol (SIP), or WebRTC | Audio, end-pointing, speech recognition, the model, and speech synthesis |
 | Text | One HTTP request per turn through the [AI Chat API][chat-api] | Conversation state, the model, tool calls, and the text response |
 
-Server code can call the Chat API directly with [`AIChatClient`][chat-client]. A browser or mobile
-app connects through [`ChatGateway`][chat-gateway], which runs in your application so your
-SignalWire API token never reaches an untrusted client.
+Server applications can send text turns with [`AIChatClient`][chat-client]. Browser and mobile
+applications connect through [`ChatGateway`][chat-gateway], which keeps SignalWire credentials in
+your trusted application rather than in the client.
 
-On a voice channel, every turn passes through four stages before the caller hears a reply: detecting
-that the caller has finished speaking (end-pointing), transcribing the audio, generating the
-response, and synthesizing the reply as speech. A text turn skips the audio stages, but reaches the
-same prompt, contexts, state, and tools.
+Voice-specific settings, such as voices, speech hints, and end-pointing, do not apply to text.
+Business rules and tool implementations can remain channel-independent. A SWAIG request identifies
+its conversation as `voice` or `chat` when your application needs channel-specific behavior.
 
-Assembling those stages from separate services puts a network boundary at each one, on every turn.
-SignalWire runs all four inside the engine that carries the call's audio, so response time stays low
-and stays consistent from turn to turn. SignalWire's
-[performance analysis](https://signalwire.com/c/performance-analysis) publishes measured turn latency
-for the platform.
+## Choose how to build
 
-Your systems are the one part that isn't on the platform, and SWAIG, the SignalWire AI Gateway,
-bridges them. The tools you define are SWAIG functions: when the agent calls one, SWAIG posts it to
-your endpoint over HTTP and hands your JSON reply back to the conversation. Ask a dispatch agent what
-a ride to the airport costs and it calls your tool instead of guessing: your code runs your real
-pricing and returns the fare. Your handler can also say no, so returning "no driver until four" stops
-the agent from promising a car at two.
-
-For both channels, the SWAIG tool call is the network hop to infrastructure you control. Enforcing a
-fact in code means fetching it while the person waits, so your server's own response time is real.
-[Tool calling][tool-calling] covers the round trip, and [best practices][best-practices] covers the
-filler phrases and background audio that keep the caller from sitting in silence.
-
-## What you build, what the platform runs
-
-| Layer | Who runs it |
-|---|---|
-| Model and conversation state | SignalWire, for voice and text conversations |
-| End-pointing, speech-to-text, and text-to-speech | SignalWire, on voice channels |
-| Phone numbers, SIP trunks, and WebRTC sessions | SignalWire |
-| Browser and mobile chat connection | You, through `ChatGateway`; SignalWire handles each text turn through the AI Chat API |
-| Voice and language | SignalWire, integrated with more than a dozen [text-to-speech providers][tts] for you to choose from; a multilingual agent can use a different voice per language |
-| Prompt and conversational style | You |
-| Business logic, external data, and actions | You, in handlers on your own infrastructure that the agent calls over SWAIG |
-
-The agent knows when a caller has finished speaking rather than waiting out a timer, and it takes
-several facts from one sentence. A caller who says "a van from 123 Gough Street to the airport, as
-soon as you can" has supplied the vehicle, both addresses, and the timing in a single turn.
-
-## What your code controls
-
-A prompt is a suggestion the model follows most of the time, not every time. Your code runs the same
-logic every time. Every [tool call][tool-calling] hands your code what the agent heard, and takes
-back what the agent says and does next.
-
-### Check what the model can't know
-
-Ask a model whether a car is free at two o'clock and it will likely say yes, or invent some other
-answer that fits the conversation. It has no schedule to check, and the caller sounds like someone
-hoping for a yes. Your dispatch system has the schedule, so that answer has to come from a tool call:
-
-<Tabs>
-<Tab title="Server SDK">
-
-```python title="Python backend, using the Server SDK"
-from signalwire import AgentBase, FunctionResult
-
-
-class DispatchAgent(AgentBase):
-    def __init__(self):
-        super().__init__(name="dispatch")
-        self.prompt_add_section(
-            "Role",
-            "You dispatch taxis. Check availability before promising a pickup.",
-        )
-
-        # The agent reads this description to decide when to call the tool, so it
-        # says what the tool does and what it needs to do it.
-        self.define_tool(
-            name="check_availability",
-            description="Check whether a driver is free at the time the caller wants",
-            parameters={
-                "type": "object",
-                "properties": {
-                    "pickup_time": {
-                        "type": "string",
-                        "description": "Requested pickup time, as the caller said it",
-                    }
-                },
-                "required": ["pickup_time"],
-            },
-            handler=self.check_availability,
-        )
-
-    def check_availability(self, args, raw_data):
-        # args is what the agent heard, transcribed from speech. Treat it the way
-        # you'd treat anything typed into a form by a stranger.
-        when = parse_time(args.get("pickup_time", ""))  # your own code
-
-        if not when:
-            return FunctionResult(
-                "Didn't catch a time. Ask the caller when they need the car."
-            )
-
-        # Your dispatch system knows who is on shift. The model doesn't, and will
-        # promise a car at two if nothing stops it.
-        driver = first_free_driver(when)  # your own code
-
-        if not driver:
-            # The response is read by the agent, not the caller, so it can carry
-            # the constraint and what to do about it.
-            return FunctionResult(
-                "No driver until four. Offer four o'clock or later, "
-                "and don't promise anything sooner."
-            )
-
-        # Writing to call state means the booking tool reads a checked time
-        # instead of asking the model to remember one.
-        return FunctionResult(
-            "A driver is free then. Confirm the pickup with the caller."
-        ).update_global_data({"pickup_time": when.isoformat(), "driver_id": driver.id})
-
-
-if __name__ == "__main__":
-    DispatchAgent().run()
-```
-
-</Tab>
-<Tab title="Any HTTP endpoint">
-
-The SDK is a convenience, not a requirement. Any endpoint that accepts JSON over HTTPS can serve a
-tool: SignalWire posts the function name and the arguments the agent extracted, and you return a
-`response` for the agent to read, plus optional `action` objects the platform executes on the live
-call.
-
-When the fleet is busy, the reply is the response alone:
-
-```json title="Your endpoint's JSON reply"
-{
-  "response": "No driver until four. Offer four o'clock or later, and don't promise anything sooner."
-}
-```
-
-When a driver is free, the same reply carries an action that writes the checked values to call state.
-This is the raw form of what `update_global_data` builds for you:
-
-```json title="Your endpoint's JSON reply"
-{
-  "response": "A driver is free then. Confirm the pickup with the caller.",
-  "action": [
-    { "set_global_data": { "pickup_time": "2026-03-04T16:00:00", "driver_id": "d-114" } }
-  ]
-}
-```
-
-</Tab>
-</Tabs>
-
-The same shape covers anything the model has no way to check: a reservation on a day you're closed,
-a discount the caller doesn't qualify for, a part that's out of stock. Checked values belong in
-[call state][state-management] rather than the model's memory, so the booking tool reads
-`pickup_time` from there and declares no parameters of its own. A tool that takes no arguments has no
-arguments to get wrong.
-
-### Steer the call with tool actions
-
-A result carries the line the agent speaks next. It can also carry [actions][result-actions] the
-platform executes on the live conversation:
-
-```python title="Python backend, using the Server SDK"
-# A second handler on DispatchAgent, registered with define_tool the same way.
-def book_ride(self, args, raw_data):
-    state = raw_data.get("global_data", {})  # checked in check_availability
-    ride = dispatch(state["pickup_time"], state["driver_id"])  # your dispatch system
-
-    # The result carries what the agent says next and an action the platform runs
-    # on the live conversation. Chain as many actions as the moment needs.
-    return FunctionResult(
-        f"Booked. {ride.driver} arrives at {ride.eta}."
-    ).send_sms(
-        to_number=raw_data.get("caller_id_number"),
-        from_number="+15551234567",
-        body=f"{ride.driver}, {ride.plate}, arriving {ride.eta}",
-    )
-```
-
-Other actions hand the call to a person or [another agent][call-transfer], play audio, run SWML, or
-move to a step where a different set of tools is exposed. The
-[`FunctionResult` reference][function-result] documents the full set, and
-[SWAIG functions][swaig-functions] documents the same actions in their raw JSON form.
-
-Use [prompt engineering][prompt-engineering] to shape how the agent converses, and your code for
-everything it is allowed to do.
-
-## Capabilities
-
-An agent is not tied to one channel. The definition you write once — the prompt, the tools, the
-contexts, and the state your handlers keep — handles voice calls and text conversations. SWAIG uses
-the same function definitions and response structure for each. Its webhook identifies the channel
-as `voice` or `chat`, but the code enforcing your business rules does not need a separate tool
-implementation for each one.
-
-What differs between channels is the audio-specific work. Choosing a voice, adding speech hints, and
-detecting that a caller has finished speaking all shape a spoken turn and have nothing to act on in a
-text conversation. Everything else below applies whichever channel a conversation arrives on.
-
-Not everything has to be built from scratch. These are the parts of the platform worth knowing before
-you design an agent:
+Each authoring path produces an agent that runs on SignalWire and can connect to your systems.
 
 <CardGroup cols={3}>
 
-<Card title="Skills" href="/docs/server-sdks/guides/understanding-skills" icon="regular cubes">
-  Prebuilt tools you register in one call: date and time, math, web search, Google Maps, and more.
+<Card title="Server SDK" href="/docs/server-sdks/guides/quickstart" icon="regular code">
+  Build agents and tool handlers in application code.
 </Card>
 
-<Card title="DataSphere" href="/docs/server-sdks/reference/python/rest/datasphere" icon="regular book-open">
-  Retrieval over documents you upload, added as a `search_knowledge` tool that answers from your
-  content rather than the model's.
+<Card title="SWML" href="/docs/platform/ai/quickstart" icon="regular brackets-curly">
+  Define agents directly in JSON or YAML.
 </Card>
 
-<Card title="DataMap" href="/docs/server-sdks/guides/data-map" icon="regular rectangle-api">
-  A REST call described declaratively and executed by SignalWire, for tools that need no server of
-  your own at all.
-</Card>
-
-<Card title="MCP gateway" href="/docs/server-sdks/guides/mcp-gateway" icon="regular layer-group">
-  Tools from an MCP (Model Context Protocol) server, exposed to the agent.
-</Card>
-
-<Card title="Contexts and workflows" href="/docs/server-sdks/guides/contexts-workflows" icon="regular diagram-project">
-  Each job in a conversation gets its own prompt, memory, and set of available tools.
-</Card>
-
-<Card title="Call transfer" href="/docs/server-sdks/guides/call-transfer" icon="regular headset">
-  Handoff to a person, a queue, or another agent, with your code deciding what goes along.
-</Card>
-
-<Card title="Speech hints" href="/docs/server-sdks/guides/hints" icon="regular comments">
-  Recognition help for names, jargon, and product terms the model would otherwise mishear. Voice
-  channels only.
-</Card>
-
-<Card title="Voices and languages" href="/docs/platform/voice/tts" icon="regular waveform-lines">
-  More than a dozen text-to-speech providers, with a different voice per language. Voice channels
-  only.
-</Card>
-
-<Card title="Conversation analytics" href="/docs/platform/ai/analytics" icon="regular gauge-high">
-  Live diagnostic events for voice calls and a final report for voice or text conversations, with
-  transcripts, tool activity, outcomes, and the measurements each channel produces.
+<Card title="Dashboard" href="/docs/platform/resources#in-the-dashboard" icon="regular browser">
+  Configure agents and webhook-backed tools in your SignalWire Space.
 </Card>
 
 </CardGroup>
 
-## Security and compliance
+## Extend your agent
 
-The platform encrypts communications, and content redaction masks payment details, account numbers,
-and health information in the transcripts, logs, and post-call reports a conversation leaves behind.
-Audit logging and granular access controls record who reached what.
+Once the agent can converse and call your code, add capabilities based on what the application
+needs.
 
-Which rules apply depends on why you're calling and what you're handling. The
-[compliance guides][compliance] work through the regulated cases, and each one identifies the
-controls that belong in your code rather than in a prompt.
+| Goal | Capabilities |
+|---|---|
+| Connect knowledge and services | Add prebuilt [Skills][skills], retrieve from [DataSphere][datasphere], call REST APIs with [DataMap][datamap], or expose tools through the [MCP gateway][mcp-gateway] |
+| Control the conversation | Use [contexts and workflows][contexts] to change the prompt and available tools, keep verified values in [state][state-management], and [transfer calls][call-transfer] |
+| Shape voice interactions | Choose [voices and languages][tts] and add [speech hints][hints] for names and specialized terms |
 
-<CardGroup cols={3}>
+## Operate agents in production
 
-<Card title="TCPA" href="/docs/platform/compliance/tcpa" icon="regular phone">
-  Consent gating, AI disclosure, calling-hour rules, and opt-out handling for outbound voice AI under
-  the Telephone Consumer Protection Act (TCPA).
+[Conversation analytics][analytics] provides live diagnostic events for voice calls and a final
+report for voice or text conversations. Use those records to inspect transcripts, tool activity,
+outcomes, usage, and the measurements available for each channel.
+
+[Content redaction][content-redaction] masks configured sensitive values in conversation records.
+The [compliance guides][compliance] cover requirements such as consent, disclosure, access control,
+and handling regulated data. Rules that must hold on every conversation belong in your application,
+not only in the prompt.
+
+## Start building
+
+<CardGroup cols={2}>
+
+<Card title="Build your first agent" href="/docs/platform/ai/quickstart" icon="regular bolt">
+  Build one agent, call it over a phone number, and send it a text turn through the AI Chat API.
 </Card>
 
-<Card title="HIPAA" href="/docs/platform/compliance/hipaa" icon="regular shield-halved">
-  Protecting Protected Health Information (PHI) across the call lifecycle, under the Health Insurance
-  Portability and Accountability Act (HIPAA).
+<Card title="Connect your systems" href="/docs/platform/ai/tool-calling" icon="regular webhook">
+  Define SWAIG functions that look up data, enforce rules, update state, and perform actions.
 </Card>
 
-<Card title="Content redaction" href="/docs/platform/ai/content-redaction" icon="regular eye-slash">
-  Masking sensitive information in conversation records.
+<Card title="Write the prompt" href="/docs/platform/ai/prompt-engineering" icon="regular message-lines">
+  Structure the agent's role, conversational duties, tool guidance, and guardrails.
+</Card>
+
+<Card title="Measure conversations" href="/docs/platform/ai/analytics" icon="regular gauge-high">
+  Collect live events and final reports to troubleshoot behavior and improve outcomes.
 </Card>
 
 </CardGroup>

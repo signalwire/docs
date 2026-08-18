@@ -39,6 +39,10 @@ agent as context it can act on and talk about.
 On SignalWire, tool calls travel over **SWAIG**, the SignalWire AI Gateway,
 and the tools you define are **SWAIG functions**.
 
+SWAIG functions belong to the agent definition, not to a communication channel. The same functions
+can serve voice calls and text conversations. Channel-specific actions, such as transferring a call
+or playing audio, apply only when the active channel supports them.
+
 This guide follows one agent the whole way through: a dispatcher for a taxi company that quotes fares
 and books pickups.
 
@@ -127,8 +131,8 @@ A minimal reply:
 <Note>
 The `response` is written to the AI, not to the caller.
 It can carry data, and it can carry instructions about what the agent should do next.
-A reply can also carry `action`, which changes what the call itself does next —
-see [steering the call](#steering-the-call).
+A reply can also carry `action`, which changes what the conversation does next. See
+[steering the conversation](#steering-the-conversation).
 </Note>
 
 ### Where the code lives
@@ -286,16 +290,16 @@ From there the two paths converge. A remotely declared function receives the sam
 same `response` and `action`, and steers the call the same way; nothing downstream of the declaration
 can tell them apart.
 
-## Steering the call
+## Steering the conversation
 
-Alongside `response`, your code can return **actions**: instructions the platform executes on the
-live call:
+Alongside `response`, your code can return **actions**: instructions the platform executes during
+the conversation. Some actions operate on either channel, while others require a live voice call:
 
-- **Transfer the call** to a human, a queue, or another agent.
-- **Send an SMS**, such as a confirmation, a link, or a receipt.
-- **Play audio or execute SWML** mid-conversation.
-- **Update call state** (`global_data`) that later functions and the prompt can use.
+- **Update conversation state** (`global_data`) that later functions and the prompt can use.
 - **Move the conversation** to a different step or context, changing which functions are exposed.
+- **Send an SMS**, such as a confirmation, a link, or a receipt.
+- **Transfer the call** to a human, a queue, or another agent during a voice call.
+- **Play audio or execute calling SWML** during a voice call.
 
 Your backend decides, and the function result tells the agent what to do about it.
 When your code books the ride, it can return the pickup time for the agent to read out and an action
@@ -320,7 +324,7 @@ such as "No match for that address. Ask the caller to repeat it, street first."
 ### Keep validated state in `global_data`
 
 Once your code has verified something, don't make the AI carry it.
-Write it to `global_data`, the call-scoped state that lives with the session,
+Write it to `global_data`, the conversation state that lives with the session,
 and let downstream functions take **no arguments at all**, reading the validated state instead.
 
 The dispatcher does this with a pair of handlers on the agent class. `validate_trip` takes the two
@@ -361,7 +365,7 @@ A function with no arguments has no arguments to get wrong.
 The quote is computed from addresses your code validated, so a creative caller can't talk the agent
 into a different pickup or a better price.
 The [dispatch agent](#a-dispatch-agent) at the end of this guide wires both functions into a
-complete, runnable agent.
+complete Server SDK application and shows the equivalent SWML agent definition.
 See [state management][state-management] for the full `global_data` lifecycle.
 
 ### Scope functions to each step
@@ -373,7 +377,7 @@ The dispatcher can't call `book_ride` before `get_quote` if `book_ride` doesn't 
 For more on scoping functions to a step, see [contexts and workflows][contexts-workflows] in the
 Server SDK, or [toggling functions][toggle-functions] in SWML.
 
-### Cover the wait
+### Cover the wait on voice calls
 
 Most lookups take a noticeable moment, and callers hear silence as a dropped call.
 Give every function that leaves the conversation a filler phrase ("Let me work that out...")
@@ -385,7 +389,8 @@ Configure per-function `fillers`, as in the dispatch agent below, and agent-wide
 ### Read the post-prompt report
 
 Define a `post_prompt` and set a [`post_prompt_url`][ai-reference], and the platform delivers a report
-after each call ends: the summary, the full conversation log, and every function call with its timing.
+after each conversation ends: the summary, the full conversation log, and every function call with
+its timing.
 Study the turns around each function call. A mis-picked function or a guessed argument usually traces
 back to the function's description, which you can revise like any other interface copy.
 The open-source [post prompt viewer](https://github.com/signalwire/post_prompt_viewer)
@@ -395,9 +400,9 @@ In the Server SDK, see [post-prompt data][state-management].
 ## A dispatch agent
 
 Everything above comes together in one agent. A fare depends on two addresses, the current rate card,
-and how busy the fleet is, so no prompt could hold it. The agent below confirms the addresses in code
-before anything is priced, keeps them in `global_data` so the quote itself takes no arguments, covers
-both waits with fillers, and declares both functions inline.
+and how busy the fleet is, so no prompt could hold it. The examples below confirm the addresses in
+code before anything is priced, keep them in `global_data` so the quote itself takes no arguments,
+cover both waits with fillers, and declare both functions inline.
 
 <CodeBlocks>
 <CodeBlock title="Server SDK (Python)">
@@ -538,6 +543,9 @@ sections:
 
 In SWML, `web_hook_url` names the server you run; with the Server SDK, the class *is* the server,
 and the SDK hosts the endpoint for you.
+The Server SDK tab is a complete local application. The SWML tab is the equivalent agent definition;
+replace its example webhook URLs with public endpoints that implement `validate_trip` and
+`get_quote` before you run it.
 For the SDK side, see [SWAIG functions in the Server SDK][sdk-functions] and
 [SWAIG request handling][sdk-swaig].
 For SWML, see the [SWAIG guide][swaig-guide] and the [`SWAIG.functions` reference][swaig-functions].

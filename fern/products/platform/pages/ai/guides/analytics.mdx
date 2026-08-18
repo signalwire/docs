@@ -1,611 +1,441 @@
 ---
 title: Conversation analytics
 slug: /ai/analytics
-description: Use live debug events and post-conversation reports to measure, troubleshoot, and improve SignalWire AI conversations.
+description: Use final post-prompt reports to analyze SignalWire AI conversations and live debug webhooks to troubleshoot voice calls.
 max-toc-depth: 3
 ---
 
-[ai-params]: /docs/swml/reference/calling/ai/params
-[ai-reference]: /docs/swml/reference/calling/ai
 [best-practices]: /docs/platform/ai/best-practices
 [content-redaction]: /docs/platform/ai/content-redaction
-[enable-debug-events]: /docs/server-sdks/reference/python/agents/agent-base/enable-debug-events
-[hints]: /docs/server-sdks/guides/hints
-[on-summary]: /docs/server-sdks/reference/python/agents/agent-base/on-summary
 [debug-webhook-ref]: /docs/apis/rest/webhooks/ai-debug-webhook
+[enable-debug-events]: /docs/server-sdks/reference/python/agents/agent-base/enable-debug-events
+[on-summary]: /docs/server-sdks/reference/python/agents/agent-base/on-summary
 [post-prompt-callback]: /docs/apis/rest/webhooks/ai-post-prompt-callback
 [prompt-engineering]: /docs/platform/ai/prompt-engineering
 [set-post-prompt]: /docs/server-sdks/reference/python/agents/agent-base/set-post-prompt
-[set-post-prompt-url]: /docs/server-sdks/reference/python/agents/agent-base/set-post-prompt-url
-[state-management]: /docs/server-sdks/guides/state-management
 [tool-calling]: /docs/platform/ai/tool-calling
 [tts]: /docs/platform/voice/tts
 
-SignalWire AI gives you two views of a conversation: a stream of debug events while a voice call is
-running, and a final report after a voice or text conversation ends. Use the live stream to react or
-diagnose in the moment. Use the final report to measure trends, inspect the complete conversation,
-and count outcomes.
+Conversation analytics shows what happened during an AI conversation, how well the experience
+performed, and whether the user accomplished their goal. Use it to replace impressions such as
+“the agent felt slow” or “the call went poorly” with specific evidence you can act on.
 
-## What you can measure
+You can identify where a response was delayed, find words the agent repeatedly misheard, understand
+why callers interrupted, inspect function behavior, measure outcomes, and connect resource usage to
+successful conversations. Comparing those signals over time helps you improve prompts, functions,
+voices, and recognition settings without guessing.
+
+## What you can learn
 
 <CardGroup cols={3}>
 
-<Card title="Responsiveness" href="#responsiveness" icon="regular stopwatch">
-  Does the agent reply fast enough to feel like a conversation?
+<Card title="Outcomes" href="#understand-outcomes" icon="regular bullseye-arrow">
+  Did the conversation accomplish what the user needed?
 </Card>
 
-<Card title="Recognition" href="#recognition" icon="regular ear-listen">
-  Is the agent hearing callers correctly?
+<Card title="Responsiveness" href="#measure-responsiveness" icon="regular stopwatch">
+  Where did the delay occur before the caller heard a reply?
 </Card>
 
-<Card title="Turn-taking" href="#turn-taking" icon="regular arrows-turn-to-dots">
-  Does it speak at the right moment, and stop when interrupted?
+<Card title="Recognition" href="#diagnose-recognition" icon="regular ear-listen">
+  Which words and phrases does the agent regularly mishear?
 </Card>
 
-<Card title="Tool health" href="#tool-health" icon="regular webhook">
-  Are the calls into your systems fast and correct?
+<Card title="Turn-taking" href="#evaluate-turn-taking" icon="regular arrows-turn-to-dots">
+  Is the agent speaking at the right time and stopping when interrupted?
 </Card>
 
-<Card title="Conversation shape" href="#conversation-shape" icon="regular comments">
-  Is the agent saying more than it needs to?
+<Card title="Function health" href="#inspect-function-activity" icon="regular webhook">
+  Did the agent choose the right function, with the right arguments, and get a useful result?
 </Card>
 
-<Card title="Outcomes and cost" href="#outcomes-and-cost" icon="regular receipt">
-  Did the call succeed, and what did it consume?
+<Card title="Usage" href="#connect-usage-to-value" icon="regular receipt">
+  What did successful and unsuccessful conversations consume?
 </Card>
 
 </CardGroup>
 
-## Choose the right data source
+## Choose the right source
 
-The debug webhook and post-prompt callback are independent. You can enable either one or both.
+SignalWire provides two independent ways to collect this information. Configure either one or both,
+depending on when you need the data and what you want to do with it:
 
-| Data source | Available for | When it fires | Use it for |
-|---|---|---|---|
-| Debug webhook | Voice calls | Many times during the live session and its post-processing | Supervision, alerts, and tracing why the agent took an action |
-| Post-prompt callback | Voice and AI Chat | Once after the conversation ends | Transcripts, performance analysis, tool history, usage, and structured outcomes |
+| Source | Delivery | Availability | Use it for |
+| --- | --- | --- | --- |
+| [Post-prompt report](#post-prompt-reports) | One callback after the conversation ends | Voice and AI Chat | Analytics, transcripts, outcomes, performance, function history, and usage |
+| [Debug webhook](#live-debug-events) | A stream of events during the session | Voice | Development-time tracing, live errors, context changes, function activity, and turn behavior |
 
-```mermaid
-flowchart LR
-    Call["AI conversation"]
-    Debug["Your endpoint<br/>debug_webhook_url"]
-    Report["Your endpoint<br/>post_prompt_url"]
+Use the post-prompt report as your durable analytics record. Debug events are asynchronous,
+high-volume diagnostics rather than a guaranteed event store. They are not a replacement for the
+final report.
 
-    Call -->|"voice: events as they happen"| Debug
-    Call -->|"voice or chat: one final report"| Report
-```
+## Post-prompt reports
 
-### Enable live debug events
+A post-prompt has two parts:
 
-Setting [`debug_webhook_url`][ai-params] enables the feed. `debug_webhook_level` controls how much it
-contains: use level 1 for routine high-level events, and switch to level 2 when you need every
-conversation addition and model request or response. Level 2 is much higher volume, so enable it
-for a focused investigation rather than as the default collection level.
+- `post_prompt` tells the model what to extract or summarize after the conversation.
+- `post_prompt_url` receives the complete report, including the model's post-prompt response and the
+  conversation telemetry assembled by the platform.
+
+The post-prompt runs after the conversation, so it cannot change what the agent already said or did.
+Ask for structured JSON when you need outcomes that can be counted across conversations.
+
+### Configure a final report
 
 <Tabs>
-<Tab title="SWML">
-
-```json title="SWML"
-{
-  "ai": {
-    "prompt": { "text": "You dispatch taxis..." },
-    "params": {
-      "debug_webhook_url": "https://example.com/ai-events",
-      "debug_webhook_level": 1
-    }
-  }
-}
-```
-
-</Tab>
 <Tab title="Server SDK">
 
-```python title="Python"
+The Server SDK creates and handles its own `post_prompt_url`. Use
+[`set_post_prompt()`][set-post-prompt] to define the analysis instruction and override
+[`on_summary()`][on-summary] to process the result.
+
+```python {11-14,17-19}
 from signalwire import AgentBase
 
 
-agent = AgentBase(name="dispatch")
-agent.prompt_add_section("Role", "You dispatch taxis.")
+class AnalyticsAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="bayview-analytics")
+        self.prompt_add_section(
+            "Role",
+            "You are Ada, the dispatcher for Bayview Taxi. Help callers request fare quotes.",
+        )
+        self.set_post_prompt(
+            "Return JSON only with these keys: intent, outcome, escalated, and sentiment. "
+            "Set outcome to resolved, unresolved, or abandoned."
+        )
+        self.set_params({"accounting": True})
+
+    def on_summary(self, summary, raw_data=None):
+        print("Outcome:", summary)
+        print("Complete report:", raw_data)
+
+
+if __name__ == "__main__":
+    AnalyticsAgent().run()
+```
+
+</Tab>
+<Tab title="SWML">
+
+Set `post_prompt_url` to an endpoint that accepts the final callback.
+
+```yaml {10-15}
+version: 1.0.0
+sections:
+  main:
+    - answer: {}
+    - ai:
+        prompt:
+          text: >-
+            You are Ada, the dispatcher for Bayview Taxi. Help callers request
+            fare quotes.
+        post_prompt:
+          text: >-
+            Return JSON only with these keys: intent, outcome, escalated, and
+            sentiment. Set outcome to resolved, unresolved, or abandoned.
+        # Replace this URL with an endpoint that accepts the final report.
+        post_prompt_url: https://example.com/ai/post-prompt
+        params:
+          accounting: true
+```
+
+</Tab>
+</Tabs>
+
+The generated [post-prompt callback documentation][post-prompt-callback] provides request examples
+and documents the complete payload. The `conversation_type` field identifies voice or chat reports.
+
+### Understand outcomes
+
+`post_prompt_data` contains the model's answer to your post-prompt. Its shape depends on the output
+you requested and on the conversation engine, so treat the schema in your prompt as an application
+contract.
+
+For aggregate reporting, ask for named fields with limited values. Useful fields include:
+
+- intent or request category
+- outcome such as `resolved`, `unresolved`, or `abandoned`
+- whether the conversation escalated to a person
+- caller sentiment
+- follow-up work that remains
+
+Voice and chat can deliver `post_prompt_data` in different wrappers. The Server SDK normalizes these
+forms before passing the result to `on_summary()`. If you process callbacks yourself, preserve the
+raw payload and handle `raw`, flat objects, and `parsed` wrappers described in the
+[post-prompt callback reference][post-prompt-callback].
+
+The wording of the post-prompt determines whether the result is useful at scale. A request such as
+“summarize the conversation” produces prose for reviewing one conversation. Named fields with a
+small set of allowed values produce records you can group, filter, and compare. For example, once
+`intent`, `outcome`, and `escalated` are consistent, you can calculate the resolution rate for each
+intent without rereading transcripts.
+
+Do not rely only on the model's assessment for facts your application already knows. Values written
+by your functions appear in `global_data`; use those values for verified facts such as an order ID,
+appointment status, or transfer result.
+
+### Reconstruct the conversation
+
+The final report provides three views of the conversation:
+
+| Field | Contains | Use it for |
+| --- | --- | --- |
+| `call_log` | The filtered, or “blessed,” conversation after consolidation | Readable transcripts and per-turn analysis |
+| `raw_call_log` | The append-only conversation before filtering | Interrupted responses and details removed during consolidation |
+| `call_timeline` | A flat stream of typed events extracted from the conversation log | Replaying context changes, functions, and other events in order |
+
+Dialogue entries use `user` and `assistant` roles. Other roles describe prompts, tool results, model
+thinking, manual speech, and platform lifecycle events. Filter by role when you need a caller-facing
+transcript, but retain the full logs for diagnosis.
+
+### Measure responsiveness
+
+Voice reports expose two related views of responsiveness:
+
+- **Caller-perceived latency** runs from the end of the caller's last word to the first audio from
+  the agent. This is the silence the caller experiences.
+- **Pipeline latency** starts after the caller's speech has been finalized and separates model,
+  utterance, and audio processing.
+
+Do not use `audio_latency` alone as mouth-to-ear latency. It begins after speech recognition has
+produced its final result, so it excludes the time spent detecting the end of the caller's turn.
+
+```mermaid
+flowchart LR
+    W["Caller's last word"] -->|"eos_to_push_latency"| S["Final speech result"]
+    S --> M["Model<br/>latency"]
+    M --> U["Utterance assembly<br/>utterance_latency − latency"]
+    U --> A["Audio delivery<br/>audio_latency − utterance_latency"]
+    A --> E["Caller hears reply"]
+```
+
+| Measurement | How to read it | What to investigate |
+| --- | --- | --- |
+| Turn detection | `eos_to_push_latency` measures the caller's last word to the final speech result | End-of-speech and recognition settings |
+| Model | `latency` measures the final speech result to the model's first token | Prompt size, model choice, and unnecessary functions |
+| Utterance assembly | `utterance_latency - latency` isolates preparation of the first speakable utterance | Long or complex responses |
+| Audio delivery | `audio_latency - utterance_latency` isolates speech generation and delivery inside the server | Voice and [text-to-speech provider][tts] |
+| Mouth-to-ear | `first_audio - last_word_end` from `stamps_us`; `acoustic_latency` is the corresponding reported field | The complete delay experienced by the caller |
+
+Use one value per caller turn when aggregating mouth-to-ear and turn-detection latency. A single
+caller turn can trigger filler speech, a function, and a final response that share the same
+`last_word_end`; only the first agent audio represents that turn's response latency. The Post Prompt
+Viewer deduplicates on this anchor and can compare the reported timing with the call recording.
+
+Track the median to understand a typical turn and the 95th percentile to expose the pauses users
+remember. Compare the same intent and conversation type before and after a change; one overall
+average can hide a slow function or a particularly verbose workflow. If the report does not contain
+the required timing anchor, omit that turn rather than inventing one.
+
+### Diagnose recognition
+
+Recognition metrics apply to voice calls, not AI Chat. Each `user` turn can include:
+
+- `confidence`, from 0 to 1, estimates how confidently speech was recognized
+- `content_type` distinguishes detected speech from inputs such as keypad digits
+- `merge_count` shows how many recognition segments were combined into the utterance
+
+Confidence is most useful as a way to find patterns, not as a score to average across every call.
+Review the transcript around low-confidence turns and group them by repeated terms. Product names,
+street names, abbreviations, and account identifiers often emerge as the real problem. Add
+<Tooltip tip="Speech hints bias recognition toward names and domain-specific vocabulary.">speech hints</Tooltip>
+for vocabulary that is repeatedly misrecognized.
+
+Use `merge_count` or `timing.segments` as context when a turn spans several recognition segments;
+those turns are not directly comparable to a simple, single-segment utterance.
+
+### Evaluate turn-taking
+
+Recognition asks whether the platform heard the correct words. Turn-taking asks whether the agent
+listened and spoke at the right moments.
+
+| Field | What it reveals |
+| --- | --- |
+| `speaking_to_turn_detection` | Time from speech onset until the platform identified the end of the user's turn |
+| `turn_detection_to_final_event` | Time from turn detection to the final recognition result |
+| `barged` and `barge_count` | Whether the caller interrupted and the number of recorded interruptions |
+| `barge_elapsed_ms`, `text_spoken_total`, and `text_heard_approx` | When the interruption occurred and how much of the response was likely heard |
+
+The explicit barge fields are carried on interrupted responses in `raw_call_log` and corresponding
+`call_timeline` events; they can be absent from the consolidated `call_log`. Use the raw entry to
+separate the portion the caller likely heard from the portion cut off by the interruption.
+
+Look at the interruption rate together with response length. Frequent barges often mean the useful
+answer arrives too late, the response includes unnecessary detail, or the agent continues after the
+caller is ready to move on. Put the answer first and tighten the response guidelines in the
+[prompt][prompt-engineering]. Use short filler language only when a function genuinely takes time;
+[AI best practices][best-practices] explains that pattern.
+
+### Inspect function activity
+
+`swaig_log` records each SignalWire AI Gateway (SWAIG) function call, including its name, arguments,
+endpoint, request body, and response. Use it to answer:
+
+- Did the agent choose the correct function?
+- Were the extracted arguments correct?
+- Did the endpoint return the expected response and actions?
+- Did the agent repeat the same function unnecessarily?
+
+Use `swaig_log` for the authoritative function name, arguments, request, and response. For timing,
+pair it with the corresponding `role: "tool"` entry and prefer `execution_latency` or
+`function_latency`. Do not treat the tool entry's generic `latency` value as model response latency.
+
+Aggregate runtime by function name rather than across all functions. This exposes one slow backend
+behind an otherwise healthy average. Also track calls per conversation: repeated calls to the same
+function often mean its description is too broad, its result did not give the model enough context,
+or its response instructed the agent to try again. See [tool calling][tool-calling] for designing
+clear function contracts.
+
+### Examine conversation shape
+
+Conversation shape connects several user-experience problems. Per-response fields such as
+`response_word_count`, `tokens`, `answer_time`, and `tps` show how much the agent produced and how
+quickly. Entries with an empty response usually dispatched a function instead of speaking, so omit
+them from response-length averages.
+
+These fields are stored in `times[]`, which can also contain generations that produced a function
+call instead of speech. Match an entry to the spoken assistant turn by response text rather than by
+array position.
+
+Long replies take longer to generate and synthesize, consume more tokens and text-to-speech
+characters, and create more opportunities for interruption. If response length rises, inspect the
+affected intents and tighten the prompt's response guidelines instead of applying an arbitrary
+global word limit.
+
+### Connect usage to value
+
+When accounting is enabled, the final report includes totals for:
+
+- conversation minutes
+- input and output tokens
+- billable wire tokens and per-minute rates
+- text-to-speech characters
+- speech-recognition minutes and cost factor
+
+Compare usage with outcomes rather than optimizing it alone. A shorter prompt reduces input tokens
+on every turn, while shorter replies reduce output tokens, speech synthesis, latency, and
+interruption opportunities.
+
+Input tokens often exceed output tokens because the prompt and accumulated conversation are sent
+again on later turns. Compare cost per resolved conversation, not simply cost per minute: a cheaper
+call that fails and requires another contact is not necessarily an improvement.
+
+## Live debug events
+
+The debug webhook sends event objects while a voice session is running. Each request includes
+`call_info` and one or more properties named for the events in that request.
+
+Use level 1 for routine diagnostics such as session lifecycle, errors, function activity, barges,
+and step changes. Level 2 also emits high-volume details such as each `conversation_add` and model
+request or response. Enable level 2 for a focused investigation rather than as a default analytics
+feed.
+
+### Configure debug events
+
+<Tabs>
+<Tab title="Server SDK">
+
+The Server SDK generates a callback to its `/debug_events` route and passes each event to the
+registered handler. See [`enable_debug_events()`][enable-debug-events] for the SDK configuration.
+
+```python {9,12-14}
+from signalwire import AgentBase
+
+
+agent = AgentBase(name="bayview-debug")
+agent.prompt_add_section(
+    "Role",
+    "You are Ada, the dispatcher for Bayview Taxi. Help callers request fare quotes.",
+)
 agent.enable_debug_events(level=1)
 
 
 @agent.on_debug_event
 def handle_debug_event(event_type, data):
-    if event_type == "llm_error":
-        alert_operations(data)
+    print(event_type, data)
+
+
+if __name__ == "__main__":
+    agent.run()
 ```
 
 </Tab>
-</Tabs>
-
-The Server SDK creates the callback URL and receives the events at its own `/debug_events`
-endpoint. [`enable_debug_events()`][enable-debug-events] documents that setup.
-
-Each webhook request contains `call_info` and one or more properties named for the events that
-happened. Handle the properties you recognize and ignore the rest so new event types do not break
-your collector. Level 1 includes session lifecycle, errors, tool activity, and other high-level
-events. At level 2, `conversation_add` gives you one event for each entry added to the conversation:
-
-```json title="conversation_add event"
-{
-  "call_info": { "project_id": "b08dacad...", "content_type": "text/json", "call_id": "b3f4e4e1..." },
-  "conversation_add": {
-    "role": "assistant",
-    "content": "...",
-    "lang": "en-US",
-    "tokens": 53,
-    "latency": 836,
-    "utterance_latency": 934,
-    "audio_latency": 1106
-  }
-}
-```
-
-Use the feed when something must happen before the call ends, such as paging a supervisor after an
-error or flagging a handoff. It also answers diagnostic questions such as which function ran, how
-long it took, or where the agent changed context. The [AI debug webhook reference][debug-webhook-ref]
-documents the event properties and their fields.
-
-### Enable the post-conversation report
-
-The two settings do different jobs. [`post_prompt`][ai-reference] is an instruction the model runs
-after the conversation, such as producing a summary or a set of outcome fields.
-`post_prompt_url` is the endpoint that receives the complete report, including the model's answer to
-that instruction. A URL without a useful post-prompt does not create the structured outcome data
-you need for aggregation.
-
-<Tabs>
 <Tab title="SWML">
 
-```json title="SWML"
-{
-  "ai": {
-    "prompt": { "text": "You dispatch taxis..." },
-    "post_prompt": { "text": "Return JSON with keys intent, resolved, and sentiment." },
-    "post_prompt_url": "https://example.com/reports"
-  }
-}
-```
+Provide your own collector URL in `debug_webhook_url`.
 
-</Tab>
-<Tab title="Server SDK">
-
-```python title="Python"
-from signalwire import AgentBase
-
-
-class DispatchAgent(AgentBase):
-    def __init__(self):
-        super().__init__(name="dispatch")
-        self.prompt_add_section("Role", "You dispatch taxis.")
-
-        self.set_post_prompt(
-            "Return JSON with keys intent, resolved, and sentiment."
-        )
-        self.set_post_prompt_url("https://example.com/reports")
+```yaml {10-13}
+version: 1.0.0
+sections:
+  main:
+    - answer: {}
+    - ai:
+        prompt:
+          text: >-
+            You are Ada, the dispatcher for Bayview Taxi. Help callers request
+            fare quotes.
+        params:
+          # Replace this URL with an endpoint that accepts debug event POSTs.
+          debug_webhook_url: https://example.com/ai/debug-events
+          debug_webhook_level: 1
 ```
 
 </Tab>
 </Tabs>
 
-See [`set_post_prompt()`][set-post-prompt] and [`set_post_prompt_url()`][set-post-prompt-url], or
-[`on_summary()`][on-summary] to handle the report in process. Ending an AI Chat conversation also
-starts this post-processing when the agent's SWML configures it. The
-[AI post-prompt callback reference][post-prompt-callback] documents every field and identifies the
-source as `voice` or `chat` in `conversation_type`.
-
-<Accordion title="A full post-conversation report">
-
-<WebhookPayloadSnippet webhook="aiPostPromptCallback" />
-
-</Accordion>
-
-<Tip>
-Store the body verbatim in a JSON column and extract only the columns you query. The report gains
-fields over time; a mirrored schema needs a migration each time. Send unparseable bodies to a
-dead-letter store rather than discarding them, and set credentials on the collector — the URL
-accepts `username:password@url`.
-</Tip>
-
-### Match measurements to their source
-
-Some measurements are useful while the call is live; others only exist once the report is
-assembled.
-
-| Question | Live debug source | Final report source |
-|---|---|---|
-| What is happening now? | Session, error, context, webhook, and function events | Not applicable until the conversation ends |
-| What was added to this turn? | `conversation_add` at level 2 | `call_log` and `raw_call_log` |
-| How long did a tool take? | `function_call.duration_ms` | Matching tool entry timestamps and `swaig_log` |
-| What happened in order? | Individual events as they arrive | `call_timeline` aligned to `raw_call_log` |
-| Did the conversation succeed? | Your application can react to chosen events | `post_prompt_data` with the outcome fields you requested |
-| What did it consume? | Session-end token totals | Accounting totals in the report when enabled |
-
-The detailed sections below use the final report because it keeps the complete conversation and is
-the right source for comparisons across many sessions. Use the matching debug event when you need
-the same signal before a voice call ends.
-
-### Pick the right log
-
-The report carries the conversation three times.
-
-| Field | Contains | Use for |
-|---|---|---|
-| `call_log` | Filtered conversation: interrupted segments consolidated, evicted entries dropped | Transcripts, per-turn timings |
-| `raw_call_log` | Unfiltered, append-only. Interruption detail appears **here only** | Barge-in analysis |
-| `call_timeline` | Flat stream of typed events, aligned to `raw_call_log` | Replaying a call in order |
-
-Each `call_log` entry carries a `role`:
-
-| Role | Entry |
-|---|---|
-| `user` | Caller speech, with recognition confidence and timings |
-| `assistant` | Agent reply, with the three latency fields |
-| `tool` | Function result returned to the model |
-| `system` | Prompt text |
-| `assistant-manual` | A line the agent was instructed to speak |
-| `assistant-thinking` | Model reasoning before an answer |
-| `system-log` | Platform events: step changes, function calls, session start and end |
-
-## Responsiveness
-
-<Note>
-Responsiveness, recognition, and turn-taking in the next three sections describe voice calls. AI
-Chat skips speech recognition and synthesis, so audio and interruption measurements do not apply.
-</Note>
-
-Each `assistant` entry carries three timings from the same origin. The gaps between them are where
-the time actually went.
-
-<llms-ignore>
-
-  <img src="/assets/images/img/turn-latency-themed.svg" alt="A turn's timings on one axis. The report gives three cumulative values measured from the same start: latency at 814 ms, utterance_latency at 937 ms, audio_latency at 1493 ms. Subtracting each from the next yields the segments you act on: 814 ms model time, 123 ms utterance assembly, 556 ms audio delivery." />
-
-</llms-ignore>
-
-<llms-only>
-
-```mermaid
-flowchart LR
-    S["Turn starts"] --> M["Model<br/>814 ms<br/>(latency)"]
-    M --> U["Utterance<br/>123 ms<br/>(utterance_latency − latency)"]
-    U --> A["Audio delivery<br/>556 ms<br/>(audio_latency − utterance_latency)"]
-    A --> E["Caller hears reply<br/>1493 ms total"]
-```
-
-</llms-only>
-
-<ParamField path="latency" type="integer">
-  Milliseconds to the model's first token.
-</ParamField>
-
-<ParamField path="utterance_latency" type="integer">
-  Milliseconds until the reply was assembled into speakable text. Includes `latency`.
-</ParamField>
-
-<ParamField path="audio_latency" type="integer">
-  Milliseconds until speech was synthesized and delivered. Includes `utterance_latency`.
-</ParamField>
-
-| Segment | Formula | What to change |
-|---|---|---|
-| Model | `latency` | Shorten the prompt, remove tools the agent never calls |
-| Utterance | `utterance_latency - latency` | Ask for shorter replies |
-| Audio | `audio_latency - utterance_latency` | Try a different voice or [text-to-speech provider][tts] |
-
-```python title="Decompose per-turn latency"
-def latency_segments(report):
-    """Yield (model_ms, utterance_ms, audio_ms) for each spoken assistant turn."""
-    for entry in report["call_log"]:
-        if entry.get("role") != "assistant" or not entry.get("audio_latency"):
-            continue
-
-        model = entry["latency"]
-        yield (
-            model,
-            entry["utterance_latency"] - model,
-            entry["audio_latency"] - entry["utterance_latency"],
-        )
-```
-
-<Warning>
-On `role: "tool"` entries, the fields `latency`, `utterance_latency`, `audio_latency`,
-`function_latency`, and `execution_latency` describe the **surrounding turn**, not the function. The
-entry says so itself, in a `deprecation_warning` field.
-
-A function's real runtime is `end_timestamp - start_timestamp`, in microseconds.
-</Warning>
-
-### Set a target
-
-Track the 95th percentile of `audio_latency`, not the average. One three-second pause is what a
-caller remembers about an otherwise quick call.
-
-| Average `audio_latency` | Rating |
-|---|---|
-| Under 1200 ms | Excellent |
-| 1200–1800 ms | Good |
-| 1800–2500 ms | Fair |
-| Over 2500 ms | Needs work |
-
-<Note>
-These bands are the convention used by the [post prompt viewer](#the-improvement-loop), not a
-platform commitment. SignalWire publishes measured turn latency in its
-[performance analysis](https://signalwire.com/c/performance-analysis).
-</Note>
-
-<Accordion title="Rule out the phone leg first">
-
-Tool time runs on your infrastructure, so it belongs to your handler, not the agent. Track it under
-[tool health](#tool-health) instead.
-
-Delay before anyone spoke isn't the agent either. The report's date fields are microsecond
-timestamps, and two differences separate telephony from the AI session:
-
-| Interval | Formula |
-|---|---|
-| Ring time | `call_answer_date - call_start_date` |
-| Session setup | `ai_start_date - call_answer_date` |
-
-</Accordion>
-
-## Recognition
-
-<ParamField path="confidence" type="float">
-  Recognition confidence for a `user` entry, from 0 to 1.
-</ParamField>
-
-<ParamField path="content_type" type="string">
-  `Detected Speech` for spoken input. Keypad digits carry no meaningful confidence.
-</ParamField>
-
-<ParamField path="merge_count" type="integer">
-  Recognition segments stitched into this utterance. Above 1, the entry's `start_timestamp` refers
-  to the earliest segment and its timings run long.
-</ParamField>
-
-| Confidence | Read it as |
-|---|---|
-| 0.8 and above | Healthy |
-| 0.5–0.8 | Review the turn against what the agent replied |
-| Below 0.5 | Assume it misheard |
-
-Averaging confidence across a call tells you little. The value is in the outliers and what they have
-in common: sort a week of low-confidence turns and the same street names, product codes, and
-surnames surface.
-
-<Tip>
-That list of recurring terms is what [speech hints][hints] are for. Hints prime recognition toward
-vocabulary the model would otherwise guess at, and cost less than a prompt change.
-</Tip>
-
-Exclude entries with `merge_count` above 1 before averaging any recognition timing.
-
-## Turn-taking
-
-Recognition is whether the agent heard the right words. Turn-taking is whether it started speaking
-at the right moment.
-
-<ParamField path="speaking_to_turn_detection" type="integer">
-  Milliseconds from speech onset to the platform deciding the caller had finished. **Negative when
-  the caller interrupted.**
-</ParamField>
-
-<ParamField path="turn_detection_to_final_event" type="integer">
-  Milliseconds from that decision to the final recognition result.
-</ParamField>
-
-<ParamField path="speaking_to_final_event" type="integer">
-  Milliseconds across the whole utterance.
-</ParamField>
-
-<ParamField path="barge_count" type="integer">
-  Interruption count for the entry, where the platform records it.
-</ParamField>
-
-A negative `speaking_to_turn_detection` means turn detection fired before the utterance was expected
-to end, so the caller spoke over the agent. It's the most reliable interruption signal in the
-filtered log:
-
-```python title="Count interruptions"
-def interruptions(report):
-    return [
-        entry
-        for entry in report["call_log"]
-        if entry.get("role") == "user"
-        and (entry.get("speaking_to_turn_detection") or 0) < 0
-    ]
-```
-
-For how much of a reply landed, `raw_call_log` carries `text_spoken_total` against
-`text_heard_approx`.
-
-<Tip>
-A rising interruption rate is a response-design problem, not a recognition one. Callers interrupt
-when the answer isn't arriving, so put it in the first sentence. [Best practices][best-practices]
-covers the filler phrases that hold attention while a tool runs.
-</Tip>
-
-## Tool health
-
-Every function call appears in `swaig_log`, one entry each.
-
-<ParamField path="command_name" type="string">
-  The function the agent chose.
-</ParamField>
-
-<ParamField path="command_arg" type="string">
-  Arguments the agent extracted, as a JSON string.
-</ParamField>
-
-<ParamField path="epoch_time" type="integer">
-  Call start, in **seconds** rather than the microseconds used elsewhere.
-</ParamField>
-
-<ParamField path="url" type="string">
-  The endpoint the platform posted to.
-</ParamField>
-
-<ParamField path="post_data" type="object">
-  The full request body your handler received.
-</ParamField>
-
-<ParamField path="post_response" type="object">
-  Your handler's reply: the `response` text and any `action` array.
-</ParamField>
-
-<ParamField path="active_count" type="integer | string">
-  Remaining permitted uses, or `endless`.
-</ParamField>
-
-<ParamField path="native" type="boolean">
-  `true` on platform functions such as `next_step` and `end_call`.
-</ParamField>
-
-For timing, use the matching `call_log` entry with `role: "tool"`, where `function_name` identifies
-the function and `end_timestamp - start_timestamp` gives its runtime. A `system-log` entry with
-`action: "function_call"` reports `metadata.duration_ms` directly.
-
-| Aggregate | What it finds |
-|---|---|
-| Average runtime by `command_name` | The one slow handler behind a healthy overall average |
-| Tool calls per minute of AI session | An agent calling functions more than the conversation warrants |
-| Calls per distinct function | An agent looping on one tool |
-
-The last two are usually function descriptions that read more broadly than intended.
-[Tool calling][tool-calling] covers writing them.
-
-## Conversation shape
-
-`call_log` supports turns exchanged, messages per role, and words per role. Per generated response,
-`times[]` adds:
-
-<ParamField path="response_word_count" type="integer">
-  Words in the generated reply.
-</ParamField>
-
-<ParamField path="tokens" type="integer">
-  Tokens in the reply.
-</ParamField>
-
-<ParamField path="answer_time" type="float">
-  Seconds to produce the reply.
-</ParamField>
-
-<ParamField path="tps" type="float">
-  Token throughput for this generation. `avg_tps` gives the running average.
-</ParamField>
-
-Entries with an empty `response` dispatched a tool rather than speaking. Drop them before averaging.
-
-`response_word_count` connects three sections of this page: longer replies take longer to
-synthesize, cost more in speech synthesis characters, and give callers more to interrupt. When it
-climbs, look at the response guidelines in the prompt ([prompt engineering][prompt-engineering]).
-
-## Outcomes and cost
-
-<ParamField path="post_prompt_data.raw" type="string">
-  The agent's answer to the post-prompt.
-</ParamField>
-
-<ParamField path="post_prompt_data.substituted" type="string">
-  The same answer with template variables resolved.
-</ParamField>
-
-<ParamField path="post_prompt_data.parsed" type="array">
-  The structured form. **Empty unless the post-prompt asks for structured output.**
-</ParamField>
-
-That last field decides whether outcomes are countable. "Summarize the call" produces prose you read
-one call at a time. Naming the keys produces records you can aggregate:
-
-```python title="A post-prompt that produces aggregatable outcomes"
-self.set_post_prompt(
-    """
-    Return JSON only, with these keys:
-      intent: what the caller wanted, in three words or fewer
-      resolved: yes, no, or partial
-      escalated: true if the call was handed to a person
-      sentiment: positive, neutral, or negative
-    """
-)
-```
-
-With that in place, "how many booking calls resolved without a transfer last week" is a query.
-[`on_summary()`][on-summary] receives the same structure in process.
-
-<ParamField path="global_data" type="object">
-  State your tools wrote during the call, so the report shows values your code verified rather than
-  ones the model remembered. See [state management][state-management].
-</ParamField>
-
-<ParamField path="SWMLVars" type="object">
-  Runtime values, including `ai_result` and the recording URL.
-</ParamField>
-
-Usage totals close the report:
-
-| Field | Counts |
-|---|---|
-| `total_input_tokens`, `total_output_tokens` | Tokens the model processed and produced |
-| `total_wire_input_tokens`, `total_wire_output_tokens` | Billable tokens, with matching `_per_minute` rates |
-| `total_tts_chars`, `total_tts_chars_per_min` | Characters sent to speech synthesis |
-| `total_asr_minutes`, `total_asr_cost_factor` | Speech recognition volume |
-| `total_minutes` | Billable call minutes |
-
-Input tokens dwarf output tokens, because the prompt and the conversation so far are resent every
-turn. Prompt length is a running cost, not a one-time one.
-
-## The improvement loop
-
-| Symptom | Measurement | Change |
-|---|---|---|
-| A live call enters a bad state | Matching debug error, context, or function event | Alert or intervene before the session ends |
-| Replies feel sluggish | p95 of `audio_latency`, decomposed | Fix the dominant segment |
-| One kind of call drags | Runtime by `command_name` | Speed up that handler, or cover the wait |
-| The agent mishears names | `confidence` below 0.5, grouped by term | Add [speech hints][hints] |
-| Callers talk over the agent | Negative `speaking_to_turn_detection` | Put the answer in the first sentence |
-| The agent rambles | `response_word_count` trending up | Tighten the response guidelines |
-| Outcomes can't be counted | `post_prompt_data.parsed` empty | Ask the post-prompt for named JSON keys |
-
-Change one thing at a time and compare the same measurement before and after. The
-[iterative refinement process][prompt-engineering] covers running that loop against real calls.
-
-The open-source [post prompt viewer](https://github.com/signalwire/post_prompt_viewer) ingests these
-reports at a URL you point your agent at, then renders the transcript, per-turn timings, and tool
-calls side by side, cross-checking reported latency against the recording. It is one example of
-handling this data, and a reference if you build your own.
-
-## Next steps
-
-<CardGroup cols={3}>
-
-<Card title="Post-prompt callback" href="/docs/apis/rest/webhooks/ai-post-prompt-callback" icon="regular book">
-  Every field the final voice or Chat report carries.
-</Card>
-
-<Card title="AI debug webhook" href="/docs/apis/rest/webhooks/ai-debug-webhook" icon="regular bug">
-  The live voice events available for supervision, alerts, and diagnosis.
-</Card>
-
-<Card title="Tool calling" href="/docs/platform/ai/tool-calling" icon="regular webhook">
-  The round trip behind every SWAIG log entry.
-</Card>
-
-<Card title="Prompt engineering" href="/docs/platform/ai/prompt-engineering" icon="regular pen-nib">
-  Turning measurements into prompt changes.
-</Card>
-
-<Card title="Best practices" href="/docs/platform/ai/best-practices" icon="regular list-check">
-  Designing for real-time voice before the metrics tell you to.
-</Card>
-
-<Card title="Speech hints" href="/docs/server-sdks/guides/hints" icon="regular comments">
-  Recognition help for the terms your callers say.
-</Card>
-
-<Card title="Handling sensitive content" href="/docs/platform/ai/content-redaction" icon="regular eye-slash">
-  Masking values in the records a call leaves behind.
-</Card>
-
-</CardGroup>
+The generated [debug webhook documentation][debug-webhook-ref] provides request examples and
+documents the event types and their fields.
+
+### Handle the stream safely
+
+Debug events are posted asynchronously so the collector does not block the conversation. Design the
+collector for diagnostics:
+
+- return a successful response quickly and process events asynchronously
+- identify sessions with `call_info.call_id`
+- handle recognized event properties and ignore unknown ones
+- expect multiple event properties in one request
+- avoid putting business-critical state changes behind debug delivery
+- protect and redact stored event bodies when they contain conversation content
+
+Debug events help explain a call while it is happening. The final report remains the source for a
+complete transcript and cross-conversation metrics.
+
+## Store and review reports
+
+Store each final report verbatim in a JSON column and extract only the fields you query frequently.
+This preserves new fields without requiring an immediate database migration. Send malformed bodies
+to a dead-letter store instead of discarding them, and authenticate both final-report and debug
+collectors.
+
+The open-source [Post Prompt Viewer](https://github.com/signalwire/post_prompt_viewer) demonstrates
+this pattern. It stores the complete payload while extracting a small set of fields for search and
+the call index. Its views combine the transcript, event timeline, per-turn pipeline, functions,
+usage data, and raw report. When a recording is available, it can compare report timings with the
+silence measured in the audio. Point `post_prompt_url` at its `/collect` endpoint to inspect reports
+without building a viewer first.
+
+Conversation reports and debug events can contain caller speech, addresses, tool arguments, and
+other sensitive values. Apply [content redaction][content-redaction], restrict access, and set a
+retention policy appropriate for your application.
+
+## Improve the agent
+
+Use a repeatable loop:
+
+1. Define the outcome and performance measurements that matter.
+2. Collect final reports for a representative set of conversations.
+3. Segment by intent, outcome, function, or failure type.
+4. Inspect the transcript and timeline behind an outlier.
+5. Use debug level 2 to reproduce a live problem when the final report is not enough.
+6. Change one prompt, function, or voice setting and compare the same measurements again.
+
+| Symptom | Start with | Likely change |
+| --- | --- | --- |
+| Outcomes cannot be counted | `post_prompt_data` | Ask for named fields and limited values |
+| Replies feel slow | Mouth-to-ear percentiles and the per-turn pipeline | Fix turn detection or the dominant model, utterance, or audio segment |
+| The agent mishears recurring terms | Low-confidence user turns | Add <Tooltip tip="Speech hints bias recognition toward names and domain-specific vocabulary.">speech hints</Tooltip> |
+| A function is slow or repeated | `swaig_log` and function timing | Improve the handler or narrow its description |
+| A live call enters the wrong step | Debug step and function events | Fix context transitions or function scope |
+| Replies are long or often interrupted | Word counts and turn-taking fields | Tighten [prompt response guidelines][prompt-engineering] |
