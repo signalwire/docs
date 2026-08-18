@@ -13,13 +13,15 @@ model EnterQueueObject {
   queue_name: string;
 
   @doc("""
-    SWML to execute after the bridge completes. This defines what should happen after the call is connected to an agent and the bridge ends.
+    SWML to execute when the queue interaction ends. This defines what should happen after the call is connected to an agent and the bridge ends.
     Can be either:
     - A URL (http or https) that returns a SWML document
     - An inline SWML document (as a JSON string)
+
+    **Note:** If absent, the call hangs up when the queue interaction ends.
     """)
   @example("https://example.com/post-call-survey")
-  transfer_after_bridge: string | SWMLVar;
+  execute_after_queue?: string | SWMLVar;
 
   @doc("HTTP or HTTPS URL to deliver queue status events. Default not set")
   @example("https://example.com/queue-status")
@@ -41,7 +43,7 @@ model EnterQueue {
     Place the current call in a named queue where it will wait to be connected to an available agent or resource.
     While waiting, callers will hear music or custom audio.
     When an agent connects to the queue (using the connect method), the caller and agent are bridged together.
-    After the bridge completes, execution continues with the SWML script specified in transfer_after_bridge.
+    After the bridge completes, execution continues with the SWML script specified in execute_after_queue.
     """)
   @summary("enter_queue")
   enter_queue: EnterQueueObject;

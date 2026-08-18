@@ -145,20 +145,30 @@ model ConnectDeviceBase {
   @example("optional")
   encryption?: "mandatory" | "optional" | "forbidden" = "optional";
 
-  @doc("Webhook URL to send call status change notifications to. Authentication can also be set in the URL in the format of `username:password@url`.")
+  @doc("""
+    Webhook URL to send call status change notifications to. Authentication can also be set in the URL
+    in the format of `username:password@url`.
+
+    Reports the lifecycle of a leg this `connect` originates. Destinations that bridge an existing leg
+    instead of originating one — `queue:`, `call:`, and `stream:` — have no such lifecycle, so they are
+    skipped when this is set at the top level, and setting it directly on such a destination fails
+    validation. To observe a queue destination, use `status_url` on this method, the `status_url` on
+    `enter_queue`, or the `connect_result` / `connect_failed_reason` variables.
+    """)
   @example("https://example.com/call-status")
   call_state_url?: url;
 
   @doc("""
-    SWML to execute after the bridge completes. This defines what should happen after the call is connected and the bridge ends.
+    SWML to execute when the queue interaction ends. Applies only when the destination is a queue
+    (when `to`, or a member of `serial`/`parallel`/`serial_parallel`, starts with "queue:").
     Can be either:
     - A URL (http or https) that returns a SWML document
     - An inline SWML document (as a JSON string)
 
-    **Note:** This parameter is REQUIRED when connecting to a queue (when `to` starts with "queue:")
+    **Note:** If absent, the call hangs up when the queue interaction ends.
     """)
-  @example("https://example.com/after-bridge.swml")
-  transfer_after_bridge?: string | SWMLVar;
+  @example("https://example.com/after-queue.swml")
+  execute_after_queue?: string | SWMLVar;
 
   @doc("""
     An array of call state event names to be notified about.
@@ -167,6 +177,8 @@ model ConnectDeviceBase {
         - `ringing`
         - `answered`
         - `ended`
+
+    Subject to the same destination restriction as `call_state_url`.
     """)
   call_state_events?: CallStatus[] = #[CallStatus.ended];
 
@@ -174,6 +186,10 @@ model ConnectDeviceBase {
     HTTP or HTTPS URL to deliver connect status events.
     These events report the overall status of the connect operation
     (connecting, connected, failed, disconnected) via a `calling.call.connect` event.
+    When `connect_state` is `failed`, the event carries a `failed_reason`.
+
+    A failed connect is also delivered to the Status Change Webhook configured on the resource
+    that handled the call, so a failure is observable even without this URL set.
     """)
   @example("https://example.com/connect-status")
   status_url?: url;
@@ -256,10 +272,16 @@ model ConnectDestination {
     An array of call state event names to be notified about for this destination.
     Overrides the top-level `call_state_events`.
     Allowed event names are: `created`, `ringing`, `answered`, `ended`.
+
+    Not supported on `queue:`, `call:`, or `stream:` destinations — setting it there fails validation.
     """)
   call_state_events?: CallStatus[] = #[CallStatus.ended];
 
-  @doc("Webhook URL for call status change notifications for this destination. Overrides the top-level `call_state_url`.")
+  @doc("""
+    Webhook URL for call status change notifications for this destination. Overrides the top-level `call_state_url`.
+
+    Not supported on `queue:`, `call:`, or `stream:` destinations — setting it there fails validation.
+    """)
   @example("https://example.com/call-status")
   call_state_url?: url;
 
