@@ -4921,6 +4921,7 @@
                     "examples": [
                         "fr-FR"
                     ],
+                    "maxItems": 3,
                     "description": "The language code for ASR (Automatic Speech Recognition) purposes. By default, SignalWire uses Deepgram's\nNova-3 STT engine, so this value should match a code from Deepgram's Nova-3 language codes.\nIf a different STT model was selected using the `openai_asr_engine` parameter, you must select a code supported by that engine.\n\nSupply an array to have this voice listen for up to three codes at once.\n\nSet it to `multi` to have the engine transcribe whichever of its supported languages the caller\nspeaks, rather than one fixed language. The agent still answers in this entry's single `voice`.\nTo answer in the caller's language as well, use [`ai.multilingual`](/docs/swml/reference/calling/ai/multilingual)\ninstead, which builds on the same code-switching mode and adds a voice per language."
                 },
                 "listen_language": {
@@ -4938,7 +4939,7 @@
                     "examples": [
                         "fr-FR"
                     ],
-                    "description": "An alias for `code`, read only when `code` is absent. Prefer `code`."
+                    "description": "A legacy alias for `code`, kept so that documents written before `code` existed keep\nworking. It is read only when `code` is absent, so it has no effect alongside `code`.\nWrite `code` in new documents."
                 },
                 "voice": {
                     "type": "string",
@@ -4952,7 +4953,7 @@
                     "examples": [
                         "coda"
                     ],
-                    "description": "The model to use for the specified TTS engine. For example, `coda`.\nSet this only if the `voice` string does not already carry a `:<model id>` suffix."
+                    "description": "The model to use for the specified TTS engine. For example, `coda`.\nSet this only if the `voice` string does not already carry a `:<model id>` suffix.\nA suffix on the `voice` string wins, and this key is then ignored without a warning."
                 },
                 "auto_emotion": {
                     "type": "boolean",
@@ -4960,7 +4961,7 @@
                     "examples": [
                         true
                     ],
-                    "description": "Lets the AI vary its emotion as it speaks. A global emotion, or specific emotions for certain\ntopics, can be set within the prompt of the AI.\nIMPORTANT: Only works with the [`Cartesia`](/docs/platform/voice/tts/cartesia) and [`MiniMax`](/docs/platform/voice/tts/minimax) TTS engines.\nFor a fixed (non-automatic) MiniMax emotion, use [`params.emotion`](#languagesparams) instead."
+                    "description": "Lets the AI vary its emotion as it speaks. A global emotion, or specific emotions for certain\ntopics, can be set within the prompt of the AI.\nIMPORTANT: Only works with the [`Cartesia`](/docs/platform/voice/tts/cartesia) and [`MiniMax`](/docs/platform/voice/tts/minimax) TTS engines.\nFor a fixed (non-automatic) MiniMax emotion, use [`params.emotion`](#paramsemotion) instead."
                 },
                 "auto_speed": {
                     "type": "boolean",
@@ -5075,14 +5076,14 @@
                             "fr"
                         ]
                     ],
-                    "description": "Restricts detection to this set of language codes. Every code must be supported by\nthe ASR engine and model in use, or multilingual mode does not start.\nOmit to let the ASR engine detect any language it supports."
+                    "description": "Restricts the agent to this set of language codes. The speech recognition engine still\ntranscribes whatever it hears, but the agent will not switch into a language outside the\nlist — it keeps the language it is already speaking. The list also tells the agent, in its\nprompt, which languages are in play. Every code must be supported by the ASR engine and\nmodel in use, or multilingual mode does not start.\nOmit to let the agent follow the caller into any language the ASR engine detects."
                 },
                 "engine": {
                     "type": "string",
                     "examples": [
                         "deepgram"
                     ],
-                    "description": "The ASR (Automatic Speech Recognition) engine used to detect the spoken language.\nThis is separate from the TTS engine that speaks each voice.\nIf you leave it unset, the engine already configured for the agent is used, falling back to\n`deepgram` when the agent has none."
+                    "description": "The ASR (Automatic Speech Recognition) engine used to detect the spoken language.\nThis is separate from the TTS engine that speaks each voice.\nIf you leave it unset, `deepgram` is used.\nDo not set this alongside `params.openai_asr_engine`, which overrides both this engine and\n`model`. When both are present, the `params` value wins."
                 },
                 "model": {
                     "type": "string",
@@ -5114,7 +5115,7 @@
                         2
                     ],
                     "minimum": 1,
-                    "description": "How many words a caller must say before the agent will switch languages.\nA single word is often the same in several languages — a name, `no`, `ok` — so a\none-word turn is an unreliable signal. Set to `1` to allow single-word switches."
+                    "description": "How many words a caller must say before the agent will switch languages.\nA single word is often the same in several languages — a name, `no`, `ok` — so a\none-word turn is an unreliable signal. Set to `1` to allow single-word switches.\nA value below `1` is treated as the default of `2` rather than rejected."
                 },
                 "fillers": {
                     "anyOf": [
@@ -5134,7 +5135,7 @@
                             "hmm"
                         ]
                     ],
-                    "description": "Fillers used to break silence between turns.\nSupply an array to have the fillers translated into whichever language the caller\nis speaking, or an object keyed by language code to set them per language verbatim.\nAn `auto` key inside the object is translated the same way an array is."
+                    "description": "Fillers used to break silence between turns. This is the speech filler map, so it is the\ncounterpart of `languages[].speech_fillers` rather than of `languages[].fillers`, which is\na deprecated spelling of `function_fillers`.\nSupply an array to have the fillers translated into whichever language the caller\nis speaking, or an object keyed by language code to set them per language verbatim.\nAn `auto` key inside the object is translated the same way an array is."
                 },
                 "function_fillers": {
                     "anyOf": [
@@ -5165,10 +5166,10 @@
                             }
                         },
                         {
-                            "$ref": "#/$defs/FunctionFillers"
+                            "$ref": "#/$defs/TurnFillers"
                         }
                     ],
-                    "description": "Short backchannels played while the caller still has the floor and the agent is\ndeliberately waiting, as when they spell a name or read out a number, to signal it\nis still listening. Which waits earn one is set by `params.turn_filler_sources`.\n\nSupply an object keyed by language code, optionally with a `default` key for\nlanguages you have not listed. These fillers are never translated on the fly, so\nthe `auto` key does not apply here — resolving them has to be fast enough to play\nimmediately. An array is accepted and treated as the `default` set."
+                    "description": "Short backchannels played while the caller still has the floor and the agent is\ndeliberately waiting, as when they spell a name or read out a number, to signal it\nis still listening. Which waits earn one is set by `params.turn_filler_sources`.\n\nSupply an object keyed by language code, optionally with a `default` key for\nlanguages you have not listed. These fillers are never translated on the fly, so\nthe `auto` key does not apply here — resolving them has to be fast enough to play\nimmediately. An array is accepted and treated as the `default` set.\n\nAn entry that is an absolute path or a `scheme://` URI is played as audio instead of\nbeing spoken, which is a way to use a recorded backchannel."
                 }
             },
             "required": [
@@ -5988,10 +5989,6 @@
                             "$ref": "#/$defs/SWMLVar"
                         }
                     ],
-                    "default": false,
-                    "examples": [
-                        true
-                    ],
                     "description": "Has no effect and can be omitted.\nA `languages` array takes effect because it is set, not because of this flag, so setting this\nto `false` does not disable one. The separate `multilingual` object is likewise switched on by\nbeing set."
                 },
                 "local_tz": {
@@ -6445,7 +6442,7 @@
                     "examples": [
                         "spell,number"
                     ],
-                    "description": "Which deliberate waits earn a backchannel from `languages[].turn_fillers`, as a comma-separated\nlist of exact tokens. A wait happens when the agent holds off answering because the caller is\nnot finished, and the token names why.\n\nList a specific hold source, or a whole class of wait:\n- `spell` — the caller is spelling something out\n- `number` — the caller is reading out digits\n- `text` — the wording suggests the caller is mid-sentence\n- `acoustic` — the audio suggests the caller is mid-sentence\n- `veto` — any of the above\n\nThe default answers `spell` and `number` only, because those pauses are expected and cannot be\nshortened. A backchannel during `text` or `acoustic` usually talks over a caller who is still\ngoing, so give either its own delay with a `<token>:<ms>` suffix rather than listing it bare,\nas in `spell,number,text:1200`."
+                    "description": "Which deliberate waits earn a backchannel from `languages[].turn_fillers`, or from\n`multilingual.turn_fillers` when the agent is in multilingual mode, as a comma-separated list\nof tokens. A wait happens when the agent holds off answering because the caller is not\nfinished, and the token names why.\n\nList a specific hold source, or a whole class of wait:\n- `spell` — the caller is spelling something out\n- `number` — the caller is reading out digits\n- `text` — the wording suggests the caller is mid-sentence\n- `acoustic` — the audio suggests the caller is mid-sentence\n- `veto` — any of the above\n\nThe default answers `spell` and `number` only, because those pauses are expected and cannot be\nshortened. A backchannel during `text` or `acoustic` usually talks over a caller who is still\ngoing, so give either its own delay with a `<token>:<ms>` suffix rather than listing it bare,\nas in `spell,number,text:1200`.\n\nTokens are matched whole and case-insensitively, and a space after a comma is fine. A token\nthat is not one of the five above matches no wait, so nothing here is validated and a\nmisspelling silently leaves the agent with no backchannels at all."
                 },
                 "turn_filler_every_n": {
                     "anyOf": [
@@ -6461,7 +6458,7 @@
                         2
                     ],
                     "minimum": 1,
-                    "description": "Play a backchannel on every Nth opportunity rather than all of them. The count advances only on\nopportunities that would otherwise have produced one, and the first of each wait always plays,\nso this widens the spacing during a long wait without delaying the first response."
+                    "description": "Play a backchannel on every Nth opportunity rather than all of them. The count advances only on\nopportunities that would otherwise have produced one, and resets when the caller starts a new\nturn, so the first opportunity of each turn always plays. A turn that chains several waits\nshares one count, so raising this widens the spacing across the whole stretch rather than\nrestarting at each wait."
                 },
                 "turn_filler_min_ms": {
                     "anyOf": [
@@ -8338,7 +8335,7 @@
                     "examples": [
                         "happy"
                     ],
-                    "description": "A fixed emotional tone for the generated speech.\nTo vary the emotion automatically during a conversation, use [`languages[].emotion`](#languagesemotion) set to `auto` instead.\nIMPORTANT: Only works with the MiniMax TTS engine."
+                    "description": "A fixed emotional tone for the generated speech.\nTo vary the emotion automatically during a conversation, use [`languages[].auto_emotion`](#languagesauto_emotion) instead.\nIMPORTANT: Only works with the MiniMax TTS engine."
                 }
             },
             "unevaluatedProperties": {
@@ -8368,7 +8365,7 @@
                     "examples": [
                         "coda"
                     ],
-                    "description": "The model to use for the specified TTS engine. For example, `coda`.\nSet this only if the `voice` string does not already carry a `:<model id>` suffix."
+                    "description": "The model to use for the specified TTS engine. For example, `coda`.\nSet this only if the `voice` string does not already carry a `:<model id>` suffix.\nA suffix on the `voice` string wins, and this key is then ignored without a warning."
                 },
                 "engine": {
                     "type": "string",
@@ -8384,8 +8381,7 @@
                 }
             },
             "required": [
-                "language",
-                "voice"
+                "language"
             ],
             "unevaluatedProperties": {
                 "not": {}
@@ -9130,7 +9126,734 @@
                     "type": "string"
                 }
             },
-            "description": "Filler phrases keyed by language code, one array per language. A single phrase is\npicked from the matching array at random.\n\nThe agent looks for an entry matching the language being spoken, then `auto`, then\n`default`, and plays nothing when none of the three is set. Any code the speech\nrecognition engine reports works as a key — the codes listed here are the common set\nfor the default engine, not a closed list."
+            "description": "Filler phrases keyed by language code, one array per language. A single phrase is\npicked from the matching array at random.\n\nThe agent looks for an entry matching the language being spoken, then `auto`, then\n`default`, and plays nothing when none of the three is set. Under `ai.multilingual` the\nkey is whichever code the speech recognition engine reports for the turn, so any code it\nreturns works. Under `ai.languages` the key has to match the `code` set on the entry.\nThe codes listed here are the ones in common use, not a closed list."
+        },
+        "TurnFillers": {
+            "type": "object",
+            "properties": {
+                "default": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "mhm",
+                            "go on"
+                        ]
+                    ],
+                    "description": "Played when no entry matches the language being spoken."
+                },
+                "bg": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "един момент",
+                            "нека проверя"
+                        ]
+                    ],
+                    "description": "Bulgarian"
+                },
+                "ca": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "un moment",
+                            "deixa'm comprovar"
+                        ]
+                    ],
+                    "description": "Catalan"
+                },
+                "zh": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "请稍等",
+                            "让我查一下"
+                        ]
+                    ],
+                    "description": "Chinese (Simplified)"
+                },
+                "zh-CN": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "请稍等",
+                            "让我查一下"
+                        ]
+                    ],
+                    "description": "Chinese (Simplified, China)"
+                },
+                "zh-Hans": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "请稍等",
+                            "让我查一下"
+                        ]
+                    ],
+                    "description": "Chinese (Simplified Han)"
+                },
+                "zh-TW": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "請稍等",
+                            "讓我查一下"
+                        ]
+                    ],
+                    "description": "Chinese (Traditional, Taiwan)"
+                },
+                "zh-Hant": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "請稍等",
+                            "讓我查一下"
+                        ]
+                    ],
+                    "description": "Chinese (Traditional Han)"
+                },
+                "zh-HK": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "請稍等",
+                            "讓我查一下"
+                        ]
+                    ],
+                    "description": "Chinese (Traditional, Hong Kong)"
+                },
+                "cs": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "moment prosím",
+                            "nechte mě zkontrolovat"
+                        ]
+                    ],
+                    "description": "Czech"
+                },
+                "da": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "et øjeblik",
+                            "lad mig tjekke"
+                        ]
+                    ],
+                    "description": "Danish"
+                },
+                "da-DK": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "et øjeblik",
+                            "lad mig tjekke"
+                        ]
+                    ],
+                    "description": "Danish (Denmark)"
+                },
+                "nl": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "een moment",
+                            "laat me even kijken"
+                        ]
+                    ],
+                    "description": "Dutch"
+                },
+                "en": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "one moment please",
+                            "let me check"
+                        ]
+                    ],
+                    "description": "English"
+                },
+                "en-US": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "one moment please",
+                            "let me check"
+                        ]
+                    ],
+                    "description": "English (United States)"
+                },
+                "en-GB": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "one moment please",
+                            "let me check"
+                        ]
+                    ],
+                    "description": "English (United Kingdom)"
+                },
+                "en-NZ": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "one moment please",
+                            "let me check"
+                        ]
+                    ],
+                    "description": "English (New Zealand)"
+                },
+                "en-IN": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "one moment please",
+                            "let me check"
+                        ]
+                    ],
+                    "description": "English (India)"
+                },
+                "en-AU": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "one moment please",
+                            "let me check"
+                        ]
+                    ],
+                    "description": "English (Australia)"
+                },
+                "et": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "üks hetk",
+                            "las ma kontrollin"
+                        ]
+                    ],
+                    "description": "Estonian"
+                },
+                "fi": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "hetkinen",
+                            "annas kun tarkistan"
+                        ]
+                    ],
+                    "description": "Finnish"
+                },
+                "nl-BE": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "een moment",
+                            "laat me even kijken"
+                        ]
+                    ],
+                    "description": "Flemish (Belgian Dutch)"
+                },
+                "fr": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "un instant",
+                            "laissez-moi vérifier"
+                        ]
+                    ],
+                    "description": "French"
+                },
+                "fr-CA": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "un instant",
+                            "laissez-moi vérifier"
+                        ]
+                    ],
+                    "description": "French (Canada)"
+                },
+                "de": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "einen Moment bitte",
+                            "lassen Sie mich nachsehen"
+                        ]
+                    ],
+                    "description": "German"
+                },
+                "de-CH": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "einen Moment bitte",
+                            "lassen Sie mich nachsehen"
+                        ]
+                    ],
+                    "description": "German (Switzerland)"
+                },
+                "el": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "μια στιγμή",
+                            "επιτρέψτε μου να ελέγξω"
+                        ]
+                    ],
+                    "description": "Greek"
+                },
+                "hi": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "एक पल रुकिए",
+                            "मुझे जांचने दीजिए"
+                        ]
+                    ],
+                    "description": "Hindi"
+                },
+                "hu": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "egy pillanat",
+                            "hadd ellenőrizzem"
+                        ]
+                    ],
+                    "description": "Hungarian"
+                },
+                "id": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "sebentar",
+                            "biar saya periksa"
+                        ]
+                    ],
+                    "description": "Indonesian"
+                },
+                "it": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "un momento",
+                            "lasciami controllare"
+                        ]
+                    ],
+                    "description": "Italian"
+                },
+                "ja": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "少々お待ちください",
+                            "確認いたします"
+                        ]
+                    ],
+                    "description": "Japanese"
+                },
+                "ko": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "잠시만요",
+                            "확인해 보겠습니다"
+                        ]
+                    ],
+                    "description": "Korean"
+                },
+                "ko-KR": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "잠시만요",
+                            "확인해 보겠습니다"
+                        ]
+                    ],
+                    "description": "Korean (South Korea)"
+                },
+                "lv": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "vienu brīdi",
+                            "ļaujiet man pārbaudīt"
+                        ]
+                    ],
+                    "description": "Latvian"
+                },
+                "lt": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "vieną akimirką",
+                            "leiskite patikrinti"
+                        ]
+                    ],
+                    "description": "Lithuanian"
+                },
+                "ms": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "sebentar",
+                            "biar saya semak"
+                        ]
+                    ],
+                    "description": "Malay"
+                },
+                "multi": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "one moment",
+                            "un momento"
+                        ]
+                    ],
+                    "description": "Used when the agent's language code is set to `multi`, which lets the speech recognition engine transcribe whichever of its supported languages the caller speaks."
+                },
+                "no": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "et øyeblikk",
+                            "la meg sjekke"
+                        ]
+                    ],
+                    "description": "Norwegian"
+                },
+                "pl": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "chwileczkę",
+                            "pozwól mi sprawdzić"
+                        ]
+                    ],
+                    "description": "Polish"
+                },
+                "pt": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "um momento",
+                            "deixe-me verificar"
+                        ]
+                    ],
+                    "description": "Portuguese"
+                },
+                "pt-BR": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "um momento",
+                            "deixa eu verificar"
+                        ]
+                    ],
+                    "description": "Portuguese (Brazil)"
+                },
+                "pt-PT": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "um momento",
+                            "deixe-me verificar"
+                        ]
+                    ],
+                    "description": "Portuguese (Portugal)"
+                },
+                "ro": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "un moment",
+                            "să verific"
+                        ]
+                    ],
+                    "description": "Romanian"
+                },
+                "ru": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "одну минуту",
+                            "позвольте проверить"
+                        ]
+                    ],
+                    "description": "Russian"
+                },
+                "sk": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "moment prosím",
+                            "dovoľte mi skontrolovať"
+                        ]
+                    ],
+                    "description": "Slovak"
+                },
+                "es": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "un momento",
+                            "déjame verificar"
+                        ]
+                    ],
+                    "description": "Spanish"
+                },
+                "es-419": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "un momento",
+                            "déjame verificar"
+                        ]
+                    ],
+                    "description": "Spanish (Latin America)"
+                },
+                "sv": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "ett ögonblick",
+                            "låt mig kolla"
+                        ]
+                    ],
+                    "description": "Swedish"
+                },
+                "sv-SE": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "ett ögonblick",
+                            "låt mig kolla"
+                        ]
+                    ],
+                    "description": "Swedish (Sweden)"
+                },
+                "th": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "สักครู่",
+                            "ให้ผมตรวจสอบ"
+                        ]
+                    ],
+                    "description": "Thai"
+                },
+                "th-TH": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "สักครู่",
+                            "ให้ผมตรวจสอบ"
+                        ]
+                    ],
+                    "description": "Thai (Thailand)"
+                },
+                "tr": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "bir dakika",
+                            "kontrol edeyim"
+                        ]
+                    ],
+                    "description": "Turkish"
+                },
+                "uk": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "одну хвилину",
+                            "дозвольте перевірити"
+                        ]
+                    ],
+                    "description": "Ukrainian"
+                },
+                "vi": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "xin chờ một chút",
+                            "để tôi kiểm tra"
+                        ]
+                    ],
+                    "description": "Vietnamese"
+                }
+            },
+            "unevaluatedProperties": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                }
+            },
+            "description": "Backchannel phrases keyed by language code, one array per language. A single phrase is\npicked from the matching array at random.\n\nThe agent looks for an entry matching the language being spoken, then `default`, and plays\nnothing when neither is set. There is no `auto` key here: these phrases are never\ntranslated on the fly, because they have to be ready to play immediately.\nThe codes listed here are the ones in common use, not a closed list."
         },
         "AttentionTimeout": {
             "type": "integer",
@@ -9819,11 +10542,15 @@
                 },
                 "get_visual_input": {
                     "$ref": "#/$defs/FunctionFillers",
-                    "description": "Filler phrases played when the AI Agent is processing visual input. This function is enabled when `enable_vision` is set to `true` in `ai.params`."
+                    "description": "Filler phrases played when the AI Agent is processing visual input. This function is enabled\nwhen `enable_vision` is set to `true` in `ai.params`.\nLeaving this out does not silence the agent: a built-in English set is used under `en-US`\ninstead, so set this key to change the wording or to cover another language."
                 },
                 "get_ideal_strategy": {
                     "$ref": "#/$defs/FunctionFillers",
-                    "description": "Filler phrases played when the AI Agent is thinking or considering options. This is utilized when `enable_thinking` is set to `true` in `ai.params`."
+                    "description": "Filler phrases played when the AI Agent is thinking or considering options. This is utilized\nwhen `enable_thinking` is set to `true` in `ai.params`.\nLeaving this out does not silence the agent: a built-in English set is used under `en-US`\ninstead, so set this key to change the wording or to cover another language."
+                },
+                "pause_conversation": {
+                    "$ref": "#/$defs/FunctionFillers",
+                    "description": "Filler phrases played when the AI Agent pauses the conversation at the caller's request. This\nfunction is enabled when `enable_pause` is set to `true` in `ai.params`, which `start_paused`\nalso turns on. Setting `speak_when_spoken_to` turns `enable_pause` back off, which leaves this\nkey with nothing to play."
                 }
             },
             "unevaluatedProperties": {

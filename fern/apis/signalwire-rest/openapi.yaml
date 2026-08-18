@@ -31770,9 +31770,6 @@ components:
             A `languages` array takes effect because it is set, not because of this flag, so setting this
             to `false` does not disable one. The separate `multilingual` object is likewise switched on by
             being set.
-          examples:
-            - true
-          default: false
         local_tz:
           type: string
           description: The local timezone setting for the AI. Value should use `IANA TZ ID`
@@ -32001,9 +31998,10 @@ components:
         turn_filler_sources:
           type: string
           description: |-
-            Which deliberate waits earn a backchannel from `languages[].turn_fillers`, as a comma-separated
-            list of exact tokens. A wait happens when the agent holds off answering because the caller is
-            not finished, and the token names why.
+            Which deliberate waits earn a backchannel from `languages[].turn_fillers`, or from
+            `multilingual.turn_fillers` when the agent is in multilingual mode, as a comma-separated list
+            of tokens. A wait happens when the agent holds off answering because the caller is not
+            finished, and the token names why.
 
             List a specific hold source, or a whole class of wait:
             - `spell` — the caller is spelling something out
@@ -32016,6 +32014,10 @@ components:
             shortened. A backchannel during `text` or `acoustic` usually talks over a caller who is still
             going, so give either its own delay with a `<token>:<ms>` suffix rather than listing it bare,
             as in `spell,number,text:1200`.
+
+            Tokens are matched whole and case-insensitively, and a space after a comma is fine. A token
+            that is not one of the five above matches no wait, so nothing here is validated and a
+            misspelling silently leaves the agent with no backchannels at all.
           examples:
             - spell,number
           default: spell,number
@@ -32024,8 +32026,10 @@ components:
           minimum: 1
           description: |-
             Play a backchannel on every Nth opportunity rather than all of them. The count advances only on
-            opportunities that would otherwise have produced one, and the first of each wait always plays,
-            so this widens the spacing during a long wait without delaying the first response.
+            opportunities that would otherwise have produced one, and resets when the caller starts a new
+            turn, so the first opportunity of each turn always plays. A turn that chains several waits
+            shares one count, so raising this widens the spacing across the whole stretch rather than
+            restarting at each wait.
           examples:
             - 2
           default: 1
@@ -36503,9 +36507,10 @@ components:
         picked from the matching array at random.
 
         The agent looks for an entry matching the language being spoken, then `auto`, then
-        `default`, and plays nothing when none of the three is set. Any code the speech
-        recognition engine reports works as a key — the codes listed here are the common set
-        for the default engine, not a closed list.
+        `default`, and plays nothing when none of the three is set. Under `ai.multilingual` the
+        key is whichever code the speech recognition engine reports for the turn, so any code it
+        returns works. Under `ai.languages` the key has to match the `code` set on the entry.
+        The codes listed here are the ones in common use, not a closed list.
     SWML.Calling.FunctionParameters:
       type: object
       required:
@@ -37219,7 +37224,7 @@ components:
             - neutral
           description: |-
             A fixed emotional tone for the generated speech.
-            To vary the emotion automatically during a conversation, use [`languages[].emotion`](#languagesemotion) set to `auto` instead.
+            To vary the emotion automatically during a conversation, use [`languages[].auto_emotion`](#languagesauto_emotion) instead.
             IMPORTANT: Only works with the MiniMax TTS engine.
           examples:
             - happy
@@ -37244,6 +37249,7 @@ components:
             - type: array
               items:
                 type: string
+          maxItems: 3
           description: |-
             The language code for ASR (Automatic Speech Recognition) purposes. By default, SignalWire uses Deepgram's
             Nova-3 STT engine, so this value should match a code from Deepgram's Nova-3 language codes.
@@ -37263,7 +37269,10 @@ components:
             - type: array
               items:
                 type: string
-          description: An alias for `code`, read only when `code` is absent. Prefer `code`.
+          description: |-
+            A legacy alias for `code`, kept so that documents written before `code` existed keep
+            working. It is read only when `code` is absent, so it has no effect alongside `code`.
+            Write `code` in new documents.
           examples:
             - fr-FR
         voice:
@@ -37282,6 +37291,7 @@ components:
           description: |-
             The model to use for the specified TTS engine. For example, `coda`.
             Set this only if the `voice` string does not already carry a `:<model id>` suffix.
+            A suffix on the `voice` string wins, and this key is then ignored without a warning.
           examples:
             - coda
         auto_emotion:
@@ -37290,7 +37300,7 @@ components:
             Lets the AI vary its emotion as it speaks. A global emotion, or specific emotions for certain
             topics, can be set within the prompt of the AI.
             IMPORTANT: Only works with the [`Cartesia`](/docs/platform/voice/tts/cartesia) and [`MiniMax`](/docs/platform/voice/tts/minimax) TTS engines.
-            For a fixed (non-automatic) MiniMax emotion, use [`params.emotion`](#languagesparams) instead.
+            For a fixed (non-automatic) MiniMax emotion, use [`params.emotion`](#paramsemotion) instead.
           examples:
             - true
           default: false
@@ -37463,9 +37473,12 @@ components:
           items:
             type: string
           description: |-
-            Restricts detection to this set of language codes. Every code must be supported by
-            the ASR engine and model in use, or multilingual mode does not start.
-            Omit to let the ASR engine detect any language it supports.
+            Restricts the agent to this set of language codes. The speech recognition engine still
+            transcribes whatever it hears, but the agent will not switch into a language outside the
+            list — it keeps the language it is already speaking. The list also tells the agent, in its
+            prompt, which languages are in play. Every code must be supported by the ASR engine and
+            model in use, or multilingual mode does not start.
+            Omit to let the agent follow the caller into any language the ASR engine detects.
           examples:
             - - en
               - es
@@ -37475,8 +37488,9 @@ components:
           description: |-
             The ASR (Automatic Speech Recognition) engine used to detect the spoken language.
             This is separate from the TTS engine that speaks each voice.
-            If you leave it unset, the engine already configured for the agent is used, falling back to
-            `deepgram` when the agent has none.
+            If you leave it unset, `deepgram` is used.
+            Do not set this alongside `params.openai_asr_engine`, which overrides both this engine and
+            `model`. When both are present, the `params` value wins.
           examples:
             - deepgram
         model:
@@ -37508,6 +37522,7 @@ components:
             How many words a caller must say before the agent will switch languages.
             A single word is often the same in several languages — a name, `no`, `ok` — so a
             one-word turn is an unreliable signal. Set to `1` to allow single-word switches.
+            A value below `1` is treated as the default of `2` rather than rejected.
           examples:
             - 2
           default: 2
@@ -37518,7 +37533,9 @@ components:
                 type: string
             - $ref: '#/components/schemas/SWML.Calling.FunctionFillers'
           description: |-
-            Fillers used to break silence between turns.
+            Fillers used to break silence between turns. This is the speech filler map, so it is the
+            counterpart of `languages[].speech_fillers` rather than of `languages[].fillers`, which is
+            a deprecated spelling of `function_fillers`.
             Supply an array to have the fillers translated into whichever language the caller
             is speaking, or an object keyed by language code to set them per language verbatim.
             An `auto` key inside the object is translated the same way an array is.
@@ -37544,7 +37561,7 @@ components:
             - type: array
               items:
                 type: string
-            - $ref: '#/components/schemas/SWML.Calling.FunctionFillers'
+            - $ref: '#/components/schemas/SWML.Calling.TurnFillers'
           description: |-
             Short backchannels played while the caller still has the floor and the agent is
             deliberately waiting, as when they spell a name or read out a number, to signal it
@@ -37554,6 +37571,9 @@ components:
             languages you have not listed. These fillers are never translated on the fly, so
             the `auto` key does not apply here — resolving them has to be fast enough to play
             immediately. An array is accepted and treated as the `default` set.
+
+            An entry that is an absolute path or a `scheme://` URI is played as audio instead of
+            being spoken, which is a way to use a recorded backchannel.
       unevaluatedProperties:
         not: {}
       title: multilingual
@@ -37561,7 +37581,6 @@ components:
       type: object
       required:
         - language
-        - voice
       properties:
         language:
           type: string
@@ -37587,6 +37606,7 @@ components:
           description: |-
             The model to use for the specified TTS engine. For example, `coda`.
             Set this only if the `voice` string does not already carry a `:<model id>` suffix.
+            A suffix on the `voice` string wins, and this key is then ignored without a warning.
           examples:
             - coda
         engine:
@@ -37619,9 +37639,12 @@ components:
           items:
             type: string
           description: |-
-            Restricts detection to this set of language codes. Every code must be supported by
-            the ASR engine and model in use, or multilingual mode does not start.
-            Omit to let the ASR engine detect any language it supports.
+            Restricts the agent to this set of language codes. The speech recognition engine still
+            transcribes whatever it hears, but the agent will not switch into a language outside the
+            list — it keeps the language it is already speaking. The list also tells the agent, in its
+            prompt, which languages are in play. Every code must be supported by the ASR engine and
+            model in use, or multilingual mode does not start.
+            Omit to let the agent follow the caller into any language the ASR engine detects.
           examples:
             - - en
               - es
@@ -37631,8 +37654,9 @@ components:
           description: |-
             The ASR (Automatic Speech Recognition) engine used to detect the spoken language.
             This is separate from the TTS engine that speaks each voice.
-            If you leave it unset, the engine already configured for the agent is used, falling back to
-            `deepgram` when the agent has none.
+            If you leave it unset, `deepgram` is used.
+            Do not set this alongside `params.openai_asr_engine`, which overrides both this engine and
+            `model`. When both are present, the `params` value wins.
           examples:
             - deepgram
         model:
@@ -37664,6 +37688,7 @@ components:
             How many words a caller must say before the agent will switch languages.
             A single word is often the same in several languages — a name, `no`, `ok` — so a
             one-word turn is an unreliable signal. Set to `1` to allow single-word switches.
+            A value below `1` is treated as the default of `2` rather than rejected.
           examples:
             - 2
           default: 2
@@ -37674,7 +37699,9 @@ components:
                 type: string
             - $ref: '#/components/schemas/SWML.Calling.FunctionFillers'
           description: |-
-            Fillers used to break silence between turns.
+            Fillers used to break silence between turns. This is the speech filler map, so it is the
+            counterpart of `languages[].speech_fillers` rather than of `languages[].fillers`, which is
+            a deprecated spelling of `function_fillers`.
             Supply an array to have the fillers translated into whichever language the caller
             is speaking, or an object keyed by language code to set them per language verbatim.
             An `auto` key inside the object is translated the same way an array is.
@@ -37700,7 +37727,7 @@ components:
             - type: array
               items:
                 type: string
-            - $ref: '#/components/schemas/SWML.Calling.FunctionFillers'
+            - $ref: '#/components/schemas/SWML.Calling.TurnFillers'
           description: |-
             Short backchannels played while the caller still has the floor and the agent is
             deliberately waiting, as when they spell a name or read out a number, to signal it
@@ -37710,6 +37737,9 @@ components:
             languages you have not listed. These fillers are never translated on the fly, so
             the `auto` key does not apply here — resolving them has to be fast enough to play
             immediately. An array is accepted and treated as the `default` set.
+
+            An entry that is an absolute path or a `scheme://` URI is played as audio instead of
+            being spoken, which is a way to use a recorded backchannel.
       unevaluatedProperties:
         not: {}
       title: multilingual
@@ -39137,11 +39167,27 @@ components:
         get_visual_input:
           allOf:
             - $ref: '#/components/schemas/SWML.Calling.FunctionFillers'
-          description: Filler phrases played when the AI Agent is processing visual input. This function is enabled when `enable_vision` is set to `true` in `ai.params`.
+          description: |-
+            Filler phrases played when the AI Agent is processing visual input. This function is enabled
+            when `enable_vision` is set to `true` in `ai.params`.
+            Leaving this out does not silence the agent: a built-in English set is used under `en-US`
+            instead, so set this key to change the wording or to cover another language.
         get_ideal_strategy:
           allOf:
             - $ref: '#/components/schemas/SWML.Calling.FunctionFillers'
-          description: Filler phrases played when the AI Agent is thinking or considering options. This is utilized when `enable_thinking` is set to `true` in `ai.params`.
+          description: |-
+            Filler phrases played when the AI Agent is thinking or considering options. This is utilized
+            when `enable_thinking` is set to `true` in `ai.params`.
+            Leaving this out does not silence the agent: a built-in English set is used under `en-US`
+            instead, so set this key to change the wording or to cover another language.
+        pause_conversation:
+          allOf:
+            - $ref: '#/components/schemas/SWML.Calling.FunctionFillers'
+          description: |-
+            Filler phrases played when the AI Agent pauses the conversation at the caller's request. This
+            function is enabled when `enable_pause` is set to `true` in `ai.params`, which `start_paused`
+            also turns on. Setting `speak_when_spoken_to` turns `enable_pause` back off, which leaves this
+            key with nothing to play.
       unevaluatedProperties:
         not: {}
     SWML.Calling.SWAIGNativeFunction:
@@ -40457,6 +40503,461 @@ components:
         - `shakespeare` - Translates to sound like Shakespeare, speaking in iambic pentameter
         - `gen-z` - Translates to use Gen-Z slang and expressions
       title: Filter Presets
+    SWML.Calling.TurnFillers:
+      type: object
+      properties:
+        default:
+          type: array
+          items:
+            type: string
+          description: Played when no entry matches the language being spoken.
+          examples:
+            - - mhm
+              - go on
+        bg:
+          type: array
+          items:
+            type: string
+          description: Bulgarian
+          examples:
+            - - един момент
+              - нека проверя
+        ca:
+          type: array
+          items:
+            type: string
+          description: Catalan
+          examples:
+            - - un moment
+              - deixa'm comprovar
+        zh:
+          type: array
+          items:
+            type: string
+          description: Chinese (Simplified)
+          examples:
+            - - 请稍等
+              - 让我查一下
+        zh-CN:
+          type: array
+          items:
+            type: string
+          description: Chinese (Simplified, China)
+          examples:
+            - - 请稍等
+              - 让我查一下
+        zh-Hans:
+          type: array
+          items:
+            type: string
+          description: Chinese (Simplified Han)
+          examples:
+            - - 请稍等
+              - 让我查一下
+        zh-TW:
+          type: array
+          items:
+            type: string
+          description: Chinese (Traditional, Taiwan)
+          examples:
+            - - 請稍等
+              - 讓我查一下
+        zh-Hant:
+          type: array
+          items:
+            type: string
+          description: Chinese (Traditional Han)
+          examples:
+            - - 請稍等
+              - 讓我查一下
+        zh-HK:
+          type: array
+          items:
+            type: string
+          description: Chinese (Traditional, Hong Kong)
+          examples:
+            - - 請稍等
+              - 讓我查一下
+        cs:
+          type: array
+          items:
+            type: string
+          description: Czech
+          examples:
+            - - moment prosím
+              - nechte mě zkontrolovat
+        da:
+          type: array
+          items:
+            type: string
+          description: Danish
+          examples:
+            - - et øjeblik
+              - lad mig tjekke
+        da-DK:
+          type: array
+          items:
+            type: string
+          description: Danish (Denmark)
+          examples:
+            - - et øjeblik
+              - lad mig tjekke
+        nl:
+          type: array
+          items:
+            type: string
+          description: Dutch
+          examples:
+            - - een moment
+              - laat me even kijken
+        en:
+          type: array
+          items:
+            type: string
+          description: English
+          examples:
+            - - one moment please
+              - let me check
+        en-US:
+          type: array
+          items:
+            type: string
+          description: English (United States)
+          examples:
+            - - one moment please
+              - let me check
+        en-GB:
+          type: array
+          items:
+            type: string
+          description: English (United Kingdom)
+          examples:
+            - - one moment please
+              - let me check
+        en-NZ:
+          type: array
+          items:
+            type: string
+          description: English (New Zealand)
+          examples:
+            - - one moment please
+              - let me check
+        en-IN:
+          type: array
+          items:
+            type: string
+          description: English (India)
+          examples:
+            - - one moment please
+              - let me check
+        en-AU:
+          type: array
+          items:
+            type: string
+          description: English (Australia)
+          examples:
+            - - one moment please
+              - let me check
+        et:
+          type: array
+          items:
+            type: string
+          description: Estonian
+          examples:
+            - - üks hetk
+              - las ma kontrollin
+        fi:
+          type: array
+          items:
+            type: string
+          description: Finnish
+          examples:
+            - - hetkinen
+              - annas kun tarkistan
+        nl-BE:
+          type: array
+          items:
+            type: string
+          description: Flemish (Belgian Dutch)
+          examples:
+            - - een moment
+              - laat me even kijken
+        fr:
+          type: array
+          items:
+            type: string
+          description: French
+          examples:
+            - - un instant
+              - laissez-moi vérifier
+        fr-CA:
+          type: array
+          items:
+            type: string
+          description: French (Canada)
+          examples:
+            - - un instant
+              - laissez-moi vérifier
+        de:
+          type: array
+          items:
+            type: string
+          description: German
+          examples:
+            - - einen Moment bitte
+              - lassen Sie mich nachsehen
+        de-CH:
+          type: array
+          items:
+            type: string
+          description: German (Switzerland)
+          examples:
+            - - einen Moment bitte
+              - lassen Sie mich nachsehen
+        el:
+          type: array
+          items:
+            type: string
+          description: Greek
+          examples:
+            - - μια στιγμή
+              - επιτρέψτε μου να ελέγξω
+        hi:
+          type: array
+          items:
+            type: string
+          description: Hindi
+          examples:
+            - - एक पल रुकिए
+              - मुझे जांचने दीजिए
+        hu:
+          type: array
+          items:
+            type: string
+          description: Hungarian
+          examples:
+            - - egy pillanat
+              - hadd ellenőrizzem
+        id:
+          type: array
+          items:
+            type: string
+          description: Indonesian
+          examples:
+            - - sebentar
+              - biar saya periksa
+        it:
+          type: array
+          items:
+            type: string
+          description: Italian
+          examples:
+            - - un momento
+              - lasciami controllare
+        ja:
+          type: array
+          items:
+            type: string
+          description: Japanese
+          examples:
+            - - 少々お待ちください
+              - 確認いたします
+        ko:
+          type: array
+          items:
+            type: string
+          description: Korean
+          examples:
+            - - 잠시만요
+              - 확인해 보겠습니다
+        ko-KR:
+          type: array
+          items:
+            type: string
+          description: Korean (South Korea)
+          examples:
+            - - 잠시만요
+              - 확인해 보겠습니다
+        lv:
+          type: array
+          items:
+            type: string
+          description: Latvian
+          examples:
+            - - vienu brīdi
+              - ļaujiet man pārbaudīt
+        lt:
+          type: array
+          items:
+            type: string
+          description: Lithuanian
+          examples:
+            - - vieną akimirką
+              - leiskite patikrinti
+        ms:
+          type: array
+          items:
+            type: string
+          description: Malay
+          examples:
+            - - sebentar
+              - biar saya semak
+        multi:
+          type: array
+          items:
+            type: string
+          description: Used when the agent's language code is set to `multi`, which lets the speech recognition engine transcribe whichever of its supported languages the caller speaks.
+          examples:
+            - - one moment
+              - un momento
+        'no':
+          type: array
+          items:
+            type: string
+          description: Norwegian
+          examples:
+            - - et øyeblikk
+              - la meg sjekke
+        pl:
+          type: array
+          items:
+            type: string
+          description: Polish
+          examples:
+            - - chwileczkę
+              - pozwól mi sprawdzić
+        pt:
+          type: array
+          items:
+            type: string
+          description: Portuguese
+          examples:
+            - - um momento
+              - deixe-me verificar
+        pt-BR:
+          type: array
+          items:
+            type: string
+          description: Portuguese (Brazil)
+          examples:
+            - - um momento
+              - deixa eu verificar
+        pt-PT:
+          type: array
+          items:
+            type: string
+          description: Portuguese (Portugal)
+          examples:
+            - - um momento
+              - deixe-me verificar
+        ro:
+          type: array
+          items:
+            type: string
+          description: Romanian
+          examples:
+            - - un moment
+              - să verific
+        ru:
+          type: array
+          items:
+            type: string
+          description: Russian
+          examples:
+            - - одну минуту
+              - позвольте проверить
+        sk:
+          type: array
+          items:
+            type: string
+          description: Slovak
+          examples:
+            - - moment prosím
+              - dovoľte mi skontrolovať
+        es:
+          type: array
+          items:
+            type: string
+          description: Spanish
+          examples:
+            - - un momento
+              - déjame verificar
+        es-419:
+          type: array
+          items:
+            type: string
+          description: Spanish (Latin America)
+          examples:
+            - - un momento
+              - déjame verificar
+        sv:
+          type: array
+          items:
+            type: string
+          description: Swedish
+          examples:
+            - - ett ögonblick
+              - låt mig kolla
+        sv-SE:
+          type: array
+          items:
+            type: string
+          description: Swedish (Sweden)
+          examples:
+            - - ett ögonblick
+              - låt mig kolla
+        th:
+          type: array
+          items:
+            type: string
+          description: Thai
+          examples:
+            - - สักครู่
+              - ให้ผมตรวจสอบ
+        th-TH:
+          type: array
+          items:
+            type: string
+          description: Thai (Thailand)
+          examples:
+            - - สักครู่
+              - ให้ผมตรวจสอบ
+        tr:
+          type: array
+          items:
+            type: string
+          description: Turkish
+          examples:
+            - - bir dakika
+              - kontrol edeyim
+        uk:
+          type: array
+          items:
+            type: string
+          description: Ukrainian
+          examples:
+            - - одну хвилину
+              - дозвольте перевірити
+        vi:
+          type: array
+          items:
+            type: string
+          description: Vietnamese
+          examples:
+            - - xin chờ một chút
+              - để tôi kiểm tra
+      unevaluatedProperties:
+        type: array
+        items:
+          type: string
+      description: |-
+        Backchannel phrases keyed by language code, one array per language. A single phrase is
+        picked from the matching array at random.
+
+        The agent looks for an entry matching the language being spoken, then `default`, and plays
+        nothing when neither is set. There is no `auto` key here: these phrases are never
+        translated on the fly, because they have to be ready to play immediately.
+        The codes listed here are the ones in common use, not a closed list.
     SWML.Calling.Unset:
       type: object
       required:
