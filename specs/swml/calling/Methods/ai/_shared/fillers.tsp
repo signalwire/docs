@@ -9,9 +9,10 @@ namespace SWML.Calling;
   picked from the matching array at random.
 
   The agent looks for an entry matching the language being spoken, then `auto`, then
-  `default`, and plays nothing when none of the three is set. Any code the speech
-  recognition engine reports works as a key — the codes listed here are the common set
-  for the default engine, not a closed list.
+  `default`, and plays nothing when none of the three is set. Under `ai.multilingual` the
+  key is whichever code the speech recognition engine reports for the turn, so any code it
+  returns works. Under `ai.languages` the key has to match the `code` set on the entry.
+  The codes listed here are the ones in common use, not a closed list.
   """)
 model FunctionFillers {
   @doc("Played when no entry matches the language being spoken and no `auto` entry is set.")
@@ -245,4 +246,26 @@ model FunctionFillers {
   // and the engine matches keys by string compare against nothing but the current
   // language. The named properties above carry the docs; this keeps unlisted codes valid.
   ...TypeSpec.Record<string[]>;
+}
+
+// Turn fillers read the same language-keyed map, minus `auto`. The turn-filler lookup tries
+// the exact language and then `default`, and deliberately never `auto`: resolving `auto`
+// means translating on the fly, and a backchannel has to be ready to play the instant the
+// wait opens. Reusing FunctionFillers directly would advertise a key the engine never reads.
+// `default` is re-declared because its FunctionFillers description refers to `auto`.
+@doc("""
+  Backchannel phrases keyed by language code, one array per language. A single phrase is
+  picked from the matching array at random.
+
+  The agent looks for an entry matching the language being spoken, then `default`, and plays
+  nothing when neither is set. There is no `auto` key here: these phrases are never
+  translated on the fly, because they have to be ready to play immediately.
+  The codes listed here are the ones in common use, not a closed list.
+  """)
+model TurnFillers {
+  @doc("Played when no entry matches the language being spoken.")
+  @example(#["mhm", "go on"])
+  default?: string[];
+
+  ...OmitProperties<FunctionFillers, "default" | "auto">;
 }
