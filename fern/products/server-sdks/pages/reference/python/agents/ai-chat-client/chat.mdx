@@ -1,0 +1,86 @@
+---
+title: "chat"
+slug: /reference/python/agents/ai-chat-client/chat
+description: Send a message to an AI agent and return its reply.
+max-toc-depth: 3
+---
+
+[ref-aichatclient]: /docs/server-sdks/reference/python/agents/ai-chat-client
+[createconversation]: /docs/server-sdks/reference/python/agents/ai-chat-client/create-conversation
+[swml-user-event]: /docs/server-sdks/reference/python/agents/function-result/swml-user-event
+
+Send a message and return the agent's reply. One call is one full turn, including any tool calls the
+agent makes along the way, so expect seconds rather than milliseconds.
+
+## **Parameters**
+
+<ParamField path="conversation_id" type="str" required={true} toc={true}>
+  The conversation to send on.
+</ParamField>
+
+<ParamField path="message" type="str" required={true} toc={true}>
+  The message to send.
+</ParamField>
+
+<ParamField path="role" type="str" default="user" toc={true}>
+  `user` or `system`. A `system` message steers the agent without appearing as something the user
+  said.
+</ParamField>
+
+<ParamField path="config_url" type="str | None" toc={true}>
+  Creates the conversation if it does not exist yet. Saves a call, at the cost of never receiving
+  `initial_message`, so the agent does not speak first.
+</ParamField>
+
+<ParamField path="user_metadata" type="dict[str, Any] | None" toc={true}>
+  Applies only when this call creates the conversation.
+</ParamField>
+
+<ParamField path="timeout" type="int | None" toc={true}>
+  Applies only when this call creates the conversation.
+</ParamField>
+
+<ParamField path="reinit" type="bool" default="False" toc={true}>
+  Applies only when this call creates the conversation.
+</ParamField>
+
+## **Returns**
+
+`ChatResponse` — carries `text`, `conversation_id`, and `user_event`.
+
+`user_event` is present only when the turn produced one. Its contents are whatever your tool passed
+to [`swml_user_event()`][swml-user-event], so the shape is yours.
+
+## **Raises**
+
+`ChatInProgressError` when a turn is already running on this conversation. That is the contract
+rather than a transient failure, so wait for the first turn to return instead of retrying.
+
+## **Example**
+
+```python {13,19}
+import asyncio
+
+from signalwire.ai_chat import AIChatClient, ChatInProgressError
+
+CONFIG_URL = "https://bayview-taxi.example.com/swml"
+
+
+async def main():
+    async with AIChatClient(space="your-space") as client:
+        await client.create_conversation("chat-8f21", config_url=CONFIG_URL)
+
+        try:
+            reply = await client.chat(
+                "chat-8f21", "How much is a van from 123 Gough Street to the airport?"
+            )
+        except ChatInProgressError:
+            return  # a turn is already running; wait rather than retry
+
+        print("Ada:", reply.text)
+        if reply.user_event:
+            handle(reply.user_event)
+
+
+asyncio.run(main())
+```

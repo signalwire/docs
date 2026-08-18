@@ -1,0 +1,50 @@
+---
+title: "visible_messages"
+slug: /reference/python/agents/chat-gateway/visible-messages
+description: Filter a conversation down to the dialogue a browser may redraw.
+max-toc-depth: 3
+---
+
+[ref-chatgateway]: /docs/server-sdks/reference/python/agents/chat-gateway
+[log]: /docs/server-sdks/reference/python/agents/ai-chat-client/log
+
+The transcript a browser may redraw, and nothing else. A static method.
+
+`chat_log` hands back the conversation as the service holds it: the substituted system prompt first,
+then tool calls and their results alongside the dialogue. Relaying that verbatim would publish your
+prompt to anyone holding a handle. Only `user` and `assistant` turns with actual text survive,
+reduced to role, content, and when they were said.
+
+## **Parameters**
+
+<ParamField path="messages" type="list[dict[str, Any]] | None" required={true} toc={true}>
+  The raw messages, as returned by [`AIChatClient.log()`][log]. `None` yields an empty list.
+</ParamField>
+
+## **Returns**
+
+`list[dict[str, Any]]` — each entry carries `role` and `content`. A `timestamp` is included only when
+the source message contains a positive integer timestamp.
+
+When included, the timestamp is in epoch **seconds**, converted from the source value in
+microseconds.
+
+## **Example**
+
+```python {8}
+from signalwire.ai_chat import AIChatClient, ChatGateway
+
+gateway = ChatGateway(config_url="https://bayview-taxi.example.com/swml")
+
+
+async def transcript(client: AIChatClient, conversation_id: str):
+    conversation = await client.log(conversation_id)
+    return ChatGateway.visible_messages(conversation.messages)
+```
+
+```json title="What the browser receives"
+[
+  { "role": "assistant", "content": "Bayview Taxi, this is Ada. Where are you headed?", "timestamp": 1786258737.147 },
+  { "role": "user", "content": "The airport, from 123 Gough Street.", "timestamp": 1786258812.004 }
+]
+```
