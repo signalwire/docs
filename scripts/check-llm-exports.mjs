@@ -72,7 +72,11 @@ async function main() {
   }
 
   const baseUrl = normalizeDocsBase(rawBaseUrl);
-  const testCases = JSON.parse(await readFile(manifestPath, 'utf8'));
+  const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
+  const testCases = manifest.flatMap((testCase) => {
+    const paths = testCase.paths ?? [testCase.path];
+    return paths.map((path) => ({ ...testCase, path, paths: undefined }));
+  });
   const failures = [];
 
   await Promise.all(testCases.map(async (testCase) => {
