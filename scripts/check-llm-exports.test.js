@@ -19,3 +19,11 @@ test('reports missing and forbidden export content', () => {
     'contains forbidden text: "class=\\"fern-page-heading\\""',
   ]);
 });
+
+test('reports Fern soft-404 bodies even for notContains-only cases', () => {
+  const failures = checkBody({
+    notContains: ['<VoiceWidget'],
+  }, '> Documentation index\n\n# Page Not Found\n');
+
+  assert.deepEqual(failures, ['received a Page Not Found stub']);
+});

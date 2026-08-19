@@ -20,6 +20,10 @@ function normalizeDocsBase(rawBaseUrl) {
 function checkBody(testCase, body) {
   const failures = [];
 
+  if (/(?:^|\n)# Page Not Found(?:\n|$)/.test(body)) {
+    failures.push('received a Page Not Found stub');
+  }
+
   for (const required of testCase.contains ?? []) {
     if (!body.includes(required)) failures.push(`missing required text: ${JSON.stringify(required)}`);
   }
