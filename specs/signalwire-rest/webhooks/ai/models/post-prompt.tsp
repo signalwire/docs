@@ -62,11 +62,14 @@ model AiPostPromptCallbackPayload {
   @example("agent.summary")
   content_disposition: string;
 
-  @doc("The kind of conversation the agent ran. Always `voice`.")
+  @doc("""
+    The kind of conversation the agent ran: a call, or a text conversation held over the
+    [AI chat endpoint](/docs/apis/rest/ai-chat/chat-methods).
+    """)
   @example("voice")
-  conversation_type: string;
+  conversation_type: "voice" | "chat";
 
-  @doc("The ID of the call.")
+  @doc("The ID of the call. On a chat conversation this carries the conversation id instead.")
   @example("2e1e66e5-5d07-413d-9668-55542992eec0")
   call_id: string;
 

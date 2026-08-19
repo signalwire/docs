@@ -346,7 +346,150 @@ tags:
     externalDocs:
       url: https://signalwire.com/docs/apis
       description: Developer documentation on Calling API Call endpoints
+  - name: AI Chat
+    description: Endpoints related to holding a text conversation with an AI agent
+    externalDocs:
+      url: https://signalwire.com/docs/apis
+      description: Developer documentation on the AI Chat API endpoint
 paths:
+  /api/ai/chat:
+    post:
+      operationId: chat_methods
+      summary: Send AI chat methods
+      description: |-
+        Hold a text conversation with an AI agent. All six methods travel over this endpoint in a
+        JSON-RPC 2.0 body. Put the method name in `method` and its arguments in `params`.
+
+        Your agent is an SWML document you serve, and `config_url` is where you serve it. A
+        conversation is a series of turns addressed by an `id` you choose. A turn is one user message
+        and the agent's reply, including any tool calls made along the way. One request runs one turn.
+
+        ## Methods
+
+        | Method | Description |
+        |---|---|
+        | `create_conversation` | Create a conversation, or reset an existing one |
+        | `chat` | Send a message and receive the agent's reply |
+        | `end_conversation` | End the conversation and trigger post-processing |
+        | `delete` | Remove the conversation, with no post-processing |
+        | `chat_log` | Read the conversation back |
+        | `summarize` | Generate a summary on demand |
+
+        #### Permissions
+
+        The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Chat_.
+
+        [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AI.ChatResponse'
+        '400':
+          description: The request body was not valid JSON. The response is not a JSON-RPC envelope.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AI.ChatInvalidJsonError'
+        '401':
+          description: Credentials are missing or rejected, the request targets another Space, the token does not include the chat scope, or the account must be verified before using this endpoint.
+          content:
+            text/plain:
+              schema:
+                type: string
+                enum:
+                  - Unauthorized
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: How to make the account eligible to use this endpoint.
+                    examples:
+                      - Please validate a phone number to access your account.
+                required:
+                  - message
+                unevaluatedProperties:
+                  not: {}
+        '502':
+          description: The AI chat service did not respond before the request timed out or could not be reached. This is not a JSON-RPC error and carries no code.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AI.ChatServiceUnavailableError'
+      tags:
+        - AI Chat
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AI.ChatRequest'
+            examples:
+              delete:
+                summary: delete
+                description: Remove the conversation without post-processing
+                value:
+                  jsonrpc: '2.0'
+                  id: req-4
+                  method: delete
+                  params:
+                    id: conv-123
+              end_conversation:
+                summary: end_conversation
+                description: End the conversation and trigger post-processing
+                value:
+                  jsonrpc: '2.0'
+                  id: req-3
+                  method: end_conversation
+                  params:
+                    id: conv-123
+              summarize:
+                summary: summarize
+                description: Summarize the conversation on demand
+                value:
+                  jsonrpc: '2.0'
+                  id: req-6
+                  method: summarize
+                  params:
+                    id: conv-123
+                    summary_prompt: List the order numbers discussed and whether each was resolved.
+              chat_log:
+                summary: chat_log
+                description: Read the conversation back
+                value:
+                  jsonrpc: '2.0'
+                  id: req-5
+                  method: chat_log
+                  params:
+                    id: conv-123
+              chat:
+                summary: chat
+                description: Send a message and receive the agent's reply
+                value:
+                  jsonrpc: '2.0'
+                  id: req-2
+                  method: chat
+                  params:
+                    id: conv-123
+                    message: Where is order A-771?
+              create_conversation:
+                summary: create_conversation
+                description: Create a conversation against your agent's SWML
+                value:
+                  jsonrpc: '2.0'
+                  id: req-1
+                  method: create_conversation
+                  params:
+                    id: conv-123
+                    config_url: https://your-agent.example.com/swml
+                    conversation_timeout: 1800
+                    user_meta_data:
+                      customer_tier: premium
   /api/calling/calls:
     post:
       operationId: call-commands
@@ -14264,6 +14407,843 @@ components:
       schema:
         type: string
   schemas:
+    AI.ChatConversationCreatedResponse:
+      type: object
+      required:
+        - jsonrpc
+        - id
+        - result
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - '2.0'
+          description: The JSON-RPC version. Always `2.0`.
+          examples:
+            - '2.0'
+        id:
+          type: string
+          description: The `id` from your request.
+          examples:
+            - req-1
+        result:
+          type: object
+          properties:
+            status:
+              type: string
+              enum:
+                - created
+                - reinitialized
+                - exists
+              description: |-
+                What happened. `created` for a new conversation, `reinitialized` when `reinit` reset an
+                existing one, and `exists` when one was already there and was left alone.
+              examples:
+                - created
+            id:
+              type: string
+              description: The conversation id.
+              examples:
+                - conv-123
+            initial_message:
+              anyOf:
+                - type: string
+                - type: 'null'
+              description: The agent's opening line, when the agent greets first.
+              examples:
+                - Hi! How can I help?
+          required:
+            - status
+            - id
+          unevaluatedProperties:
+            not: {}
+          description: The conversation that now exists.
+      unevaluatedProperties:
+        not: {}
+      title: create_conversation result
+    AI.ChatConversationDeletedResponse:
+      type: object
+      required:
+        - jsonrpc
+        - id
+        - result
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - '2.0'
+          description: The JSON-RPC version. Always `2.0`.
+          examples:
+            - '2.0'
+        id:
+          type: string
+          description: The `id` from your request.
+          examples:
+            - req-1
+        result:
+          type: object
+          properties:
+            status:
+              type: string
+              enum:
+                - deleted
+                - not_found
+              description: '`deleted` when the conversation was removed, `not_found` when no conversation had that id.'
+              examples:
+                - deleted
+            id:
+              type: string
+              description: The conversation id.
+              examples:
+                - conv-123
+          required:
+            - status
+            - id
+          unevaluatedProperties:
+            not: {}
+          description: The outcome of deleting the conversation.
+      unevaluatedProperties:
+        not: {}
+      title: delete result
+    AI.ChatConversationEndedResponse:
+      type: object
+      required:
+        - jsonrpc
+        - id
+        - result
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - '2.0'
+          description: The JSON-RPC version. Always `2.0`.
+          examples:
+            - '2.0'
+        id:
+          type: string
+          description: The `id` from your request.
+          examples:
+            - req-1
+        result:
+          type: object
+          properties:
+            status:
+              type: string
+              enum:
+                - ended
+                - not_found
+              description: '`ended` when the conversation was ended, `not_found` when no conversation had that id.'
+              examples:
+                - ended
+            id:
+              type: string
+              description: The conversation id.
+              examples:
+                - conv-123
+          required:
+            - status
+            - id
+          unevaluatedProperties:
+            not: {}
+          description: The outcome of ending the conversation.
+      unevaluatedProperties:
+        not: {}
+      title: end_conversation result
+    AI.ChatCreateConversationRequest:
+      type: object
+      required:
+        - jsonrpc
+        - id
+        - method
+        - params
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - '2.0'
+          description: The JSON-RPC version. Always `2.0`.
+          examples:
+            - '2.0'
+        id:
+          type: string
+          description: Your identifier for this request, echoed back on the response so you can match the two.
+          examples:
+            - req-1
+        method:
+          type: string
+          enum:
+            - create_conversation
+          description: Creates a conversation, or resets an existing one when `reinit` is set.
+          examples:
+            - create_conversation
+        params:
+          type: object
+          properties:
+            id:
+              type: string
+              description: The conversation this method acts on. You choose the value when you create the conversation, and it is scoped to your project.
+              examples:
+                - conv-123
+            config_url:
+              type: string
+              format: uri
+              description: |-
+                The publicly reachable URL serving your agent's SWML. `localhost` and private network addresses
+                cannot be reached by SignalWire.
+              examples:
+                - https://your-agent.example.com/swml
+            user_message:
+              type: string
+              description: An opening message from the user, sent as part of creating the conversation.
+              examples:
+                - I need help with an order
+            conversation_timeout:
+              type: integer
+              format: int32
+              description: Seconds a conversation may sit idle before it ends.
+              examples:
+                - 1800
+              default: 3600
+            user_meta_data:
+              type: object
+              unevaluatedProperties: {}
+              description: Arbitrary data about the user, included in webhooks generated for this conversation.
+              examples:
+                - customer_tier: premium
+            reinit:
+              type: boolean
+              description: Reset an existing conversation instead of returning it as-is. Clears the message history.
+              examples:
+                - true
+              default: false
+          required:
+            - id
+            - config_url
+          unevaluatedProperties:
+            not: {}
+          description: The parameters for `create_conversation`.
+      unevaluatedProperties:
+        not: {}
+      title: create_conversation
+    AI.ChatDeleteRequest:
+      type: object
+      required:
+        - jsonrpc
+        - id
+        - method
+        - params
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - '2.0'
+          description: The JSON-RPC version. Always `2.0`.
+          examples:
+            - '2.0'
+        id:
+          type: string
+          description: Your identifier for this request, echoed back on the response so you can match the two.
+          examples:
+            - req-1
+        method:
+          type: string
+          enum:
+            - delete
+          description: Removes the conversation and its messages. Nothing is post-processed and no webhook fires.
+          examples:
+            - delete
+        params:
+          type: object
+          properties:
+            id:
+              type: string
+              description: The conversation this method acts on. You choose the value when you create the conversation, and it is scoped to your project.
+              examples:
+                - conv-123
+          required:
+            - id
+          unevaluatedProperties:
+            not: {}
+          description: The parameters for `delete`.
+      unevaluatedProperties:
+        not: {}
+      title: delete
+    AI.ChatEndConversationRequest:
+      type: object
+      required:
+        - jsonrpc
+        - id
+        - method
+        - params
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - '2.0'
+          description: The JSON-RPC version. Always `2.0`.
+          examples:
+            - '2.0'
+        id:
+          type: string
+          description: Your identifier for this request, echoed back on the response so you can match the two.
+          examples:
+            - req-1
+        method:
+          type: string
+          enum:
+            - end_conversation
+          description: |-
+            Ends the conversation and starts post-processing: the summary, and a request to your
+            `post_prompt_url` when your SWML sets one.
+          examples:
+            - end_conversation
+        params:
+          type: object
+          properties:
+            id:
+              type: string
+              description: The conversation this method acts on. You choose the value when you create the conversation, and it is scoped to your project.
+              examples:
+                - conv-123
+          required:
+            - id
+          unevaluatedProperties:
+            not: {}
+          description: The parameters for `end_conversation`.
+      unevaluatedProperties:
+        not: {}
+      title: end_conversation
+    AI.ChatError:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          allOf:
+            - $ref: '#/components/schemas/AI.ChatErrorCode'
+          description: Which failure this was. See [API error codes](/docs/apis/error-codes) for descriptions and troubleshooting context.
+          examples:
+            - -32001
+        message:
+          type: string
+          description: A short description of the failure.
+          examples:
+            - Conversation not found
+      unevaluatedProperties:
+        not: {}
+      description: A JSON-RPC error returned for the requested method.
+    AI.ChatErrorCode:
+      type: number
+      enum:
+        - -32001
+        - -32002
+        - -32003
+        - -32004
+        - -32005
+        - -32006
+        - -32007
+        - -32600
+        - -32601
+        - -32602
+        - -32603
+      description: |-
+        Why a method failed. `-32600` and below are the standard JSON-RPC codes; the rest are specific to
+        AI chat. See [API error codes](/docs/apis/error-codes) for the codes callers should handle
+        and what they mean.
+    AI.ChatErrorResponse:
+      type: object
+      required:
+        - jsonrpc
+        - id
+        - error
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - '2.0'
+          description: The JSON-RPC version. Always `2.0`.
+          examples:
+            - '2.0'
+        id:
+          type: string
+          description: The `id` from your request.
+          examples:
+            - req-1
+        error:
+          allOf:
+            - $ref: '#/components/schemas/AI.ChatError'
+          description: The error that ended this call.
+      unevaluatedProperties:
+        not: {}
+      description: |-
+        A JSON-RPC method failure returned under HTTP 200. After confirming the HTTP status, inspect the
+        envelope for this `error` member.
+      title: Error
+    AI.ChatInvalidJsonError:
+      type: object
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Types.StatusCodes.RestApiErrorItem'
+          description: Details about the malformed request body.
+          examples:
+            - - type: validation_error
+                code: not_a_valid_json
+                message: JSON you submitted is not valid
+                attribute: null
+                url: https://signalwire.com/docs/apis/error-codes
+      unevaluatedProperties:
+        not: {}
+      description: The request body was not valid JSON. The response is not a JSON-RPC envelope.
+    AI.ChatLogRequest:
+      type: object
+      required:
+        - jsonrpc
+        - id
+        - method
+        - params
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - '2.0'
+          description: The JSON-RPC version. Always `2.0`.
+          examples:
+            - '2.0'
+        id:
+          type: string
+          description: Your identifier for this request, echoed back on the response so you can match the two.
+          examples:
+            - req-1
+        method:
+          type: string
+          enum:
+            - chat_log
+          description: Reads the conversation back. Changes nothing.
+          examples:
+            - chat_log
+        params:
+          type: object
+          properties:
+            id:
+              type: string
+              description: The conversation this method acts on. You choose the value when you create the conversation, and it is scoped to your project.
+              examples:
+                - conv-123
+          required:
+            - id
+          unevaluatedProperties:
+            not: {}
+          description: The parameters for `chat_log`.
+      unevaluatedProperties:
+        not: {}
+      title: chat_log
+    AI.ChatReplyResponse:
+      type: object
+      required:
+        - jsonrpc
+        - id
+        - result
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - '2.0'
+          description: The JSON-RPC version. Always `2.0`.
+          examples:
+            - '2.0'
+        id:
+          type: string
+          description: The `id` from your request.
+          examples:
+            - req-1
+        result:
+          type: object
+          properties:
+            response:
+              type: string
+              description: The agent's reply. When this call created the conversation, this is the agent's opening message.
+              examples:
+                - Order A-771 shipped on Tuesday and is out for delivery today.
+            user_event:
+              type: object
+              unevaluatedProperties: {}
+              description: |-
+                An event one of your tools raised for your application to act on, present only when the turn
+                produced one. The contents under `event` are whatever your tool sent, so the shape is yours;
+                the convention is a `type` key your client can switch on.
+              examples:
+                - event:
+                    type: order_located
+                    order_id: A-771
+                    eta: '2026-08-14'
+          required:
+            - response
+          unevaluatedProperties:
+            not: {}
+          description: The agent's turn.
+      unevaluatedProperties:
+        not: {}
+      title: chat result
+    AI.ChatRequest:
+      type: object
+      oneOf:
+        - $ref: '#/components/schemas/AI.ChatCreateConversationRequest'
+        - $ref: '#/components/schemas/AI.ChatSendMessageRequest'
+        - $ref: '#/components/schemas/AI.ChatEndConversationRequest'
+        - $ref: '#/components/schemas/AI.ChatDeleteRequest'
+        - $ref: '#/components/schemas/AI.ChatLogRequest'
+        - $ref: '#/components/schemas/AI.ChatSummarizeRequest'
+      discriminator:
+        propertyName: method
+        mapping:
+          create_conversation: '#/components/schemas/AI.ChatCreateConversationRequest'
+          chat: '#/components/schemas/AI.ChatSendMessageRequest'
+          end_conversation: '#/components/schemas/AI.ChatEndConversationRequest'
+          delete: '#/components/schemas/AI.ChatDeleteRequest'
+          chat_log: '#/components/schemas/AI.ChatLogRequest'
+          summarize: '#/components/schemas/AI.ChatSummarizeRequest'
+      description: |-
+        A JSON-RPC request. The `method` field selects which of the six methods runs, and `params` carries
+        that method's arguments.
+
+        Authenticate with HTTP Basic authentication. `params` contains only the arguments for the selected
+        method; do not put project IDs, API tokens, or Space IDs in the JSON-RPC body.
+    AI.ChatResponse:
+      anyOf:
+        - $ref: '#/components/schemas/AI.ChatConversationCreatedResponse'
+        - $ref: '#/components/schemas/AI.ChatReplyResponse'
+        - $ref: '#/components/schemas/AI.ChatConversationEndedResponse'
+        - $ref: '#/components/schemas/AI.ChatConversationDeletedResponse'
+        - $ref: '#/components/schemas/AI.ChatTranscriptResponse'
+        - $ref: '#/components/schemas/AI.ChatSummaryResponse'
+        - $ref: '#/components/schemas/AI.ChatErrorResponse'
+      description: |-
+        A JSON-RPC response. Which result you get follows from the method you sent; a response echoes no
+        `method` of its own.
+
+        Check the HTTP status first. On HTTP 200, inspect the envelope for an `error` member. HTTP-level
+        errors returned with another status are not JSON-RPC envelopes.
+    AI.ChatSendMessageRequest:
+      type: object
+      required:
+        - jsonrpc
+        - id
+        - method
+        - params
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - '2.0'
+          description: The JSON-RPC version. Always `2.0`.
+          examples:
+            - '2.0'
+        id:
+          type: string
+          description: Your identifier for this request, echoed back on the response so you can match the two.
+          examples:
+            - req-1
+        method:
+          type: string
+          enum:
+            - chat
+          description: |-
+            Sends a message and returns the agent's reply. One request is one full turn, including any tool
+            calls the agent makes along the way, so expect this to take seconds rather than milliseconds.
+          examples:
+            - chat
+        params:
+          type: object
+          properties:
+            id:
+              type: string
+              description: The conversation this method acts on. You choose the value when you create the conversation, and it is scoped to your project.
+              examples:
+                - conv-123
+            message:
+              type: string
+              description: The message to send.
+              examples:
+                - Where is order A-771?
+            role:
+              type: string
+              enum:
+                - user
+                - system
+              description: |-
+                Who the message is from. A `system` message steers the agent without appearing as something
+                the user said.
+              examples:
+                - user
+              default: user
+            config_url:
+              type: string
+              format: uri
+              description: |-
+                Creates the conversation if it does not exist yet, using this SWML. Sending it here means one
+                call instead of two, at the cost of never receiving `initial_message`, so the agent does not
+                speak first.
+              examples:
+                - https://your-agent.example.com/swml
+            conversation_timeout:
+              type: integer
+              format: int32
+              description: Applies only when this call creates the conversation.
+              examples:
+                - 1800
+              default: 3600
+            user_meta_data:
+              type: object
+              unevaluatedProperties: {}
+              description: Arbitrary data about the user, included in webhooks generated for this conversation.
+              examples:
+                - customer_tier: premium
+            reinit:
+              type: boolean
+              description: Applies only when this call creates the conversation.
+              examples:
+                - true
+              default: false
+          required:
+            - id
+            - message
+          unevaluatedProperties:
+            not: {}
+          description: The parameters for `chat`.
+      unevaluatedProperties:
+        not: {}
+      title: chat
+    AI.ChatServiceUnavailableError:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: A short description of the failure.
+          examples:
+            - AI chat service is unavailable
+      unevaluatedProperties:
+        not: {}
+      description: The AI chat service did not respond before the request timed out or could not be reached. This is not a JSON-RPC error and carries no code.
+    AI.ChatSummarizeRequest:
+      type: object
+      required:
+        - jsonrpc
+        - id
+        - method
+        - params
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - '2.0'
+          description: The JSON-RPC version. Always `2.0`.
+          examples:
+            - '2.0'
+        id:
+          type: string
+          description: Your identifier for this request, echoed back on the response so you can match the two.
+          examples:
+            - req-1
+        method:
+          type: string
+          enum:
+            - summarize
+          description: |-
+            Generates a summary of the conversation on demand. Limited to one call per minute per
+            conversation; over that returns `-32005`.
+          examples:
+            - summarize
+        params:
+          type: object
+          properties:
+            id:
+              type: string
+              description: The conversation this method acts on. You choose the value when you create the conversation, and it is scoped to your project.
+              examples:
+                - conv-123
+            summary_prompt:
+              type: string
+              description: How to summarize. Overrides the `post_prompt` text in your SWML for this call only.
+              examples:
+                - List the order numbers discussed and whether each was resolved.
+            temperature:
+              type: number
+              format: float
+              description: Sampling temperature for the summary.
+              examples:
+                - 0.3
+              default: 0.3
+            top_p:
+              type: number
+              format: float
+              description: Nucleus sampling cutoff for the summary.
+              examples:
+                - 0.3
+              default: 0.3
+            frequency_penalty:
+              type: number
+              format: float
+              description: Penalty applied to tokens by how often they have already appeared.
+              examples:
+                - 1
+              default: 1
+            presence_penalty:
+              type: number
+              format: float
+              description: Penalty applied to tokens that have appeared at all.
+              examples:
+                - 1
+              default: 1
+            max_tokens:
+              type: integer
+              format: int32
+              description: Longest summary to generate, in tokens.
+              examples:
+                - 512
+              default: 512
+          required:
+            - id
+          unevaluatedProperties:
+            not: {}
+          description: The parameters for `summarize`.
+      unevaluatedProperties:
+        not: {}
+      title: summarize
+    AI.ChatSummaryResponse:
+      type: object
+      required:
+        - jsonrpc
+        - id
+        - result
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - '2.0'
+          description: The JSON-RPC version. Always `2.0`.
+          examples:
+            - '2.0'
+        id:
+          type: string
+          description: The `id` from your request.
+          examples:
+            - req-1
+        result:
+          type: object
+          properties:
+            summary:
+              type: string
+              description: The generated summary.
+              examples:
+                - Customer asked about order A-771, confirmed the delivery date, and ended satisfied.
+            error:
+              type: string
+              description: Why no summary was produced.
+              examples:
+                - Summary generation failed
+          unevaluatedProperties:
+            not: {}
+          description: The outcome of summarizing.
+      unevaluatedProperties:
+        not: {}
+      description: |-
+        The result of requesting a summary. A generated summary is returned in `summary`. If summary
+        generation fails after the request succeeds, the reason can be returned in `error`; this is not
+        a JSON-RPC error and carries no code.
+      title: summarize result
+    AI.ChatTranscriptResponse:
+      type: object
+      required:
+        - jsonrpc
+        - id
+        - result
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - '2.0'
+          description: The JSON-RPC version. Always `2.0`.
+          examples:
+            - '2.0'
+        id:
+          type: string
+          description: The `id` from your request.
+          examples:
+            - req-1
+        result:
+          type: object
+          properties:
+            chat_log:
+              type: array
+              items:
+                $ref: '#/components/schemas/Webhooks.AI.AICallLogEntry'
+              description: |-
+                Every entry in the conversation, in order. Alongside the dialogue this can carry your own
+                prompt and other non-dialogue entries, so filter to `user` and `assistant` before displaying a
+                transcript.
+            call_timeline:
+              type: array
+              items:
+                type: object
+                unevaluatedProperties: {}
+              description: |-
+                Structured timeline entries returned for the conversation. The entry shape depends on the
+                events recorded for that conversation.
+          required:
+            - chat_log
+          unevaluatedProperties:
+            not: {}
+          description: The entries recorded for the conversation.
+      unevaluatedProperties:
+        not: {}
+      title: chat_log result
+    AI.JsonRpcRequestEnvelope:
+      type: object
+      required:
+        - jsonrpc
+        - id
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - '2.0'
+          description: The JSON-RPC version. Always `2.0`.
+          examples:
+            - '2.0'
+        id:
+          type: string
+          description: Your identifier for this request, echoed back on the response so you can match the two.
+          examples:
+            - req-1
+      unevaluatedProperties:
+        not: {}
+    AI.JsonRpcResponseEnvelope:
+      type: object
+      required:
+        - jsonrpc
+        - id
+      properties:
+        jsonrpc:
+          type: string
+          enum:
+            - '2.0'
+          description: The JSON-RPC version. Always `2.0`.
+          examples:
+            - '2.0'
+        id:
+          type: string
+          description: The `id` from your request.
+          examples:
+            - req-1
+      unevaluatedProperties:
+        not: {}
     AIAddressPaginationResponse:
       type: object
       required:
@@ -14328,7 +15308,18 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SWML.Calling.Languages'
-          description: An array of JSON objects defining supported languages in the conversation.
+          description: |-
+            An array of JSON objects defining supported languages in the conversation.
+            Mutually exclusive with `multilingual`: if both are set, `multilingual` is used and
+            this array is ignored.
+        multilingual:
+          allOf:
+            - $ref: '#/components/schemas/SWML.Calling.Multilingual'
+          description: |-
+            Configures a single agent to detect the caller's language and answer in it, switching
+            as the caller switches. Use this instead of `languages` when one conversation may span
+            several languages. Mutually exclusive with `languages`: if both are set, `multilingual`
+            is used and `languages` is ignored.
         params:
           allOf:
             - $ref: '#/components/schemas/SWML.Calling.AIParams'
@@ -14423,7 +15414,18 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SWML.Calling.Languages'
-          description: An array of JSON objects defining supported languages in the conversation.
+          description: |-
+            An array of JSON objects defining supported languages in the conversation.
+            Mutually exclusive with `multilingual`: if both are set, `multilingual` is used and
+            this array is ignored.
+        multilingual:
+          allOf:
+            - $ref: '#/components/schemas/SWML.Calling.Multilingual'
+          description: |-
+            Configures a single agent to detect the caller's language and answer in it, switching
+            as the caller switches. Use this instead of `languages` when one conversation may span
+            several languages. Mutually exclusive with `languages`: if both are set, `multilingual`
+            is used and `languages` is ignored.
         params:
           allOf:
             - $ref: '#/components/schemas/SWML.Calling.AIParams'
@@ -14618,7 +15620,18 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SWML.Calling.Languages'
-          description: An array of JSON objects defining supported languages in the conversation.
+          description: |-
+            An array of JSON objects defining supported languages in the conversation.
+            Mutually exclusive with `multilingual`: if both are set, `multilingual` is used and
+            this array is ignored.
+        multilingual:
+          allOf:
+            - $ref: '#/components/schemas/SWML.Calling.MultilingualUpdate'
+          description: |-
+            Configures a single agent to detect the caller's language and answer in it, switching
+            as the caller switches. Use this instead of `languages` when one conversation may span
+            several languages. Mutually exclusive with `languages`: if both are set, `multilingual`
+            is used and `languages` is ignored.
         params:
           allOf:
             - $ref: '#/components/schemas/SWML.Calling.AIParams'
@@ -14647,7 +15660,7 @@ components:
             and how it should respond to various scenarios. It is recommended to write prompts using markdown formatting.
         SWAIG:
           allOf:
-            - $ref: '#/components/schemas/SWML.Calling.SWAIGUpdate'
+            - $ref: '#/components/schemas/SWML.Calling.SWAIG'
           description: An array of JSON objects to create user-defined functions/endpoints that can be executed during the dialogue.
         agent_id:
           allOf:
@@ -31249,7 +32262,18 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SWML.Calling.Languages'
-          description: An array of JSON objects defining supported languages in the conversation.
+          description: |-
+            An array of JSON objects defining supported languages in the conversation.
+            Mutually exclusive with `multilingual`: if both are set, `multilingual` is used and
+            this array is ignored.
+        multilingual:
+          allOf:
+            - $ref: '#/components/schemas/SWML.Calling.Multilingual'
+          description: |-
+            Configures a single agent to detect the caller's language and answer in it, switching
+            as the caller switches. Use this instead of `languages` when one conversation may span
+            several languages. Mutually exclusive with `languages`: if both are set, `multilingual`
+            is used and `languages` is ignored.
         params:
           allOf:
             - $ref: '#/components/schemas/SWML.Calling.AIParams'
@@ -31721,10 +32745,11 @@ components:
             - Inform user that you can't hear anything
         languages_enabled:
           type: boolean
-          description: Allows multilingualism when `true`.
-          examples:
-            - true
-          default: false
+          description: |-
+            Has no effect and can be omitted.
+            A `languages` array takes effect because it is set, not because of this flag, so setting this
+            to `false` does not disable one. The separate `multilingual` object is likewise switched on by
+            being set.
         local_tz:
           type: string
           description: The local timezone setting for the AI. Value should use `IANA TZ ID`
@@ -31950,6 +32975,55 @@ components:
           examples:
             - 250
           default: 250
+        turn_filler_sources:
+          type: string
+          description: |-
+            Which deliberate waits earn a backchannel from `languages[].turn_fillers`, or from
+            `multilingual.turn_fillers` when the agent is in multilingual mode, as a comma-separated list
+            of tokens. A wait happens when the agent holds off answering because the caller is not
+            finished, and the token names why.
+
+            List a specific hold source, or a whole class of wait:
+            - `spell` — the caller is spelling something out
+            - `number` — the caller is reading out digits
+            - `text` — the wording suggests the caller is mid-sentence
+            - `acoustic` — the audio suggests the caller is mid-sentence
+            - `veto` — any of the above
+
+            The default answers `spell` and `number` only, because those pauses are expected and cannot be
+            shortened. A backchannel during `text` or `acoustic` usually talks over a caller who is still
+            going, so give either its own delay with a `<token>:<ms>` suffix rather than listing it bare,
+            as in `spell,number,text:1200`.
+
+            Tokens are matched whole and case-insensitively, and a space after a comma is fine. A token
+            that is not one of the five above matches no wait, so nothing here is validated and a
+            misspelling silently leaves the agent with no backchannels at all.
+          examples:
+            - spell,number
+          default: spell,number
+        turn_filler_every_n:
+          type: integer
+          minimum: 1
+          description: |-
+            Play a backchannel on every Nth opportunity rather than all of them. The count advances only on
+            opportunities that would otherwise have produced one, and resets when the caller starts a new
+            turn, so the first opportunity of each turn always plays. A turn that chains several waits
+            shares one count, so raising this widens the spacing across the whole stretch rather than
+            restarting at each wait.
+          examples:
+            - 2
+          default: 1
+        turn_filler_min_ms:
+          type: integer
+          minimum: 0
+          description: |-
+            How long a wait must already have run, in milliseconds, before a backchannel plays. Off by
+            default: waits open the moment the agent decides to hold, and `spell` and `number` are meant to
+            be answered right then. A `<token>:<ms>` suffix in `turn_filler_sources` overrides this for that
+            token.
+          examples:
+            - 800
+          default: 0
         tts_number_format:
           type: string
           enum:
@@ -35490,15 +36564,13 @@ components:
             - true
           default: false
         enter_fillers:
-          type: array
-          items:
-            $ref: '#/components/schemas/SWML.Calling.FunctionFillers'
-          description: Language-specific filler phrases played when transitioning into this context. Helps provide smooth context switches.
+          allOf:
+            - $ref: '#/components/schemas/SWML.Calling.FunctionFillers'
+          description: Filler phrases played when entering this context, keyed by language code.
         exit_fillers:
-          type: array
-          items:
-            $ref: '#/components/schemas/SWML.Calling.FunctionFillers'
-          description: Language-specific filler phrases played when leaving this context. Ensures natural transitions out of specialized modes.
+          allOf:
+            - $ref: '#/components/schemas/SWML.Calling.FunctionFillers'
+          description: Filler phrases played when leaving this context, keyed by language code.
         pom:
           type: array
           items:
@@ -35524,15 +36596,13 @@ components:
             - true
           default: false
         enter_fillers:
-          type: array
-          items:
-            $ref: '#/components/schemas/SWML.Calling.FunctionFillers'
-          description: Language-specific filler phrases played when transitioning into this context. Helps provide smooth context switches.
+          allOf:
+            - $ref: '#/components/schemas/SWML.Calling.FunctionFillers'
+          description: Filler phrases played when entering this context, keyed by language code.
         exit_fillers:
-          type: array
-          items:
-            $ref: '#/components/schemas/SWML.Calling.FunctionFillers'
-          description: Language-specific filler phrases played when leaving this context. Ensures natural transitions out of specialized modes.
+          allOf:
+            - $ref: '#/components/schemas/SWML.Calling.FunctionFillers'
+          description: Filler phrases played when leaving this context, keyed by language code.
         pom:
           type: array
           items:
@@ -35560,15 +36630,13 @@ components:
             - true
           default: false
         enter_fillers:
-          type: array
-          items:
-            $ref: '#/components/schemas/SWML.Calling.FunctionFillers'
-          description: Language-specific filler phrases played when transitioning into this context. Helps provide smooth context switches.
+          allOf:
+            - $ref: '#/components/schemas/SWML.Calling.FunctionFillers'
+          description: Filler phrases played when entering this context, keyed by language code.
         exit_fillers:
-          type: array
-          items:
-            $ref: '#/components/schemas/SWML.Calling.FunctionFillers'
-          description: Language-specific filler phrases played when leaving this context. Ensures natural transitions out of specialized modes.
+          allOf:
+            - $ref: '#/components/schemas/SWML.Calling.FunctionFillers'
+          description: Filler phrases played when leaving this context, keyed by language code.
         text:
           type: string
           description: The text to send to the agent.
@@ -35592,15 +36660,13 @@ components:
             - true
           default: false
         enter_fillers:
-          type: array
-          items:
-            $ref: '#/components/schemas/SWML.Calling.FunctionFillers'
-          description: Language-specific filler phrases played when transitioning into this context. Helps provide smooth context switches.
+          allOf:
+            - $ref: '#/components/schemas/SWML.Calling.FunctionFillers'
+          description: Filler phrases played when entering this context, keyed by language code.
         exit_fillers:
-          type: array
-          items:
-            $ref: '#/components/schemas/SWML.Calling.FunctionFillers'
-          description: Language-specific filler phrases played when leaving this context. Ensures natural transitions out of specialized modes.
+          allOf:
+            - $ref: '#/components/schemas/SWML.Calling.FunctionFillers'
+          description: Filler phrases played when leaving this context, keyed by language code.
         text:
           type: string
           description: The text to send to the agent.
@@ -35960,1441 +37026,471 @@ components:
         not: {}
       title: Expression object
     SWML.Calling.FunctionFillers:
-      anyOf:
-        - type: object
-          properties:
-            default:
-              type: array
-              items:
-                type: string
-              description: Default language set by the user
-              examples:
-                - - one moment please
-                  - let me check
-          required:
-            - default
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            bg:
-              type: array
-              items:
-                type: string
-              description: Bulgarian
-              examples:
-                - - един момент
-                  - нека проверя
-          required:
-            - bg
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            ca:
-              type: array
-              items:
-                type: string
-              description: Catalan
-              examples:
-                - - un moment
-                  - deixa'm comprovar
-          required:
-            - ca
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            zh:
-              type: array
-              items:
-                type: string
-              description: Chinese (Simplified)
-              examples:
-                - - 请稍等
-                  - 让我查一下
-          required:
-            - zh
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            zh-CN:
-              type: array
-              items:
-                type: string
-              description: Chinese (Simplified, China)
-              examples:
-                - - 请稍等
-                  - 让我查一下
-          required:
-            - zh-CN
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            zh-Hans:
-              type: array
-              items:
-                type: string
-              description: Chinese (Simplified Han)
-              examples:
-                - - 请稍等
-                  - 让我查一下
-          required:
-            - zh-Hans
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            zh-TW:
-              type: array
-              items:
-                type: string
-              description: Chinese (Traditional, Taiwan)
-              examples:
-                - - 請稍等
-                  - 讓我查一下
-          required:
-            - zh-TW
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            zh-Hant:
-              type: array
-              items:
-                type: string
-              description: Chinese (Traditional Han)
-              examples:
-                - - 請稍等
-                  - 讓我查一下
-          required:
-            - zh-Hant
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            zh-HK:
-              type: array
-              items:
-                type: string
-              description: Chinese (Traditional, Hong Kong)
-              examples:
-                - - 請稍等
-                  - 讓我查一下
-          required:
-            - zh-HK
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            cs:
-              type: array
-              items:
-                type: string
-              description: Czech
-              examples:
-                - - moment prosím
-                  - nechte mě zkontrolovat
-          required:
-            - cs
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            da:
-              type: array
-              items:
-                type: string
-              description: Danish
-              examples:
-                - - et øjeblik
-                  - lad mig tjekke
-          required:
-            - da
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            da-DK:
-              type: array
-              items:
-                type: string
-              description: Danish (Denmark)
-              examples:
-                - - et øjeblik
-                  - lad mig tjekke
-          required:
-            - da-DK
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            nl:
-              type: array
-              items:
-                type: string
-              description: Dutch
-              examples:
-                - - een moment
-                  - laat me even kijken
-          required:
-            - nl
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            en:
-              type: array
-              items:
-                type: string
-              description: English
-              examples:
-                - - one moment please
-                  - let me check
-          required:
-            - en
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            en-US:
-              type: array
-              items:
-                type: string
-              description: English (United States)
-              examples:
-                - - one moment please
-                  - let me check
-          required:
-            - en-US
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            en-GB:
-              type: array
-              items:
-                type: string
-              description: English (United Kingdom)
-              examples:
-                - - one moment please
-                  - let me check
-          required:
-            - en-GB
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            en-NZ:
-              type: array
-              items:
-                type: string
-              description: English (New Zealand)
-              examples:
-                - - one moment please
-                  - let me check
-          required:
-            - en-NZ
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            en-IN:
-              type: array
-              items:
-                type: string
-              description: English (India)
-              examples:
-                - - one moment please
-                  - let me check
-          required:
-            - en-IN
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            en-AU:
-              type: array
-              items:
-                type: string
-              description: English (Australia)
-              examples:
-                - - one moment please
-                  - let me check
-          required:
-            - en-AU
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            et:
-              type: array
-              items:
-                type: string
-              description: Estonian
-              examples:
-                - - üks hetk
-                  - las ma kontrollin
-          required:
-            - et
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            fi:
-              type: array
-              items:
-                type: string
-              description: Finnish
-              examples:
-                - - hetkinen
-                  - annas kun tarkistan
-          required:
-            - fi
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            nl-BE:
-              type: array
-              items:
-                type: string
-              description: Flemish (Belgian Dutch)
-              examples:
-                - - een moment
-                  - laat me even kijken
-          required:
-            - nl-BE
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            fr:
-              type: array
-              items:
-                type: string
-              description: French
-              examples:
-                - - un instant
-                  - laissez-moi vérifier
-          required:
-            - fr
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            fr-CA:
-              type: array
-              items:
-                type: string
-              description: French (Canada)
-              examples:
-                - - un instant
-                  - laissez-moi vérifier
-          required:
-            - fr-CA
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            de:
-              type: array
-              items:
-                type: string
-              description: German
-              examples:
-                - - einen Moment bitte
-                  - lassen Sie mich nachsehen
-          required:
-            - de
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            de-CH:
-              type: array
-              items:
-                type: string
-              description: German (Switzerland)
-              examples:
-                - - einen Moment bitte
-                  - lassen Sie mich nachsehen
-          required:
-            - de-CH
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            el:
-              type: array
-              items:
-                type: string
-              description: Greek
-              examples:
-                - - μια στιγμή
-                  - επιτρέψτε μου να ελέγξω
-          required:
-            - el
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            hi:
-              type: array
-              items:
-                type: string
-              description: Hindi
-              examples:
-                - - एक पल रुकिए
-                  - मुझे जांचने दीजिए
-          required:
-            - hi
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            hu:
-              type: array
-              items:
-                type: string
-              description: Hungarian
-              examples:
-                - - egy pillanat
-                  - hadd ellenőrizzem
-          required:
-            - hu
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            id:
-              type: array
-              items:
-                type: string
-              description: Indonesian
-              examples:
-                - - sebentar
-                  - biar saya periksa
-          required:
-            - id
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            it:
-              type: array
-              items:
-                type: string
-              description: Italian
-              examples:
-                - - un momento
-                  - lasciami controllare
-          required:
-            - it
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            ja:
-              type: array
-              items:
-                type: string
-              description: Japanese
-              examples:
-                - - 少々お待ちください
-                  - 確認いたします
-          required:
-            - ja
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            ko:
-              type: array
-              items:
-                type: string
-              description: Korean
-              examples:
-                - - 잠시만요
-                  - 확인해 보겠습니다
-          required:
-            - ko
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            ko-KR:
-              type: array
-              items:
-                type: string
-              description: Korean (South Korea)
-              examples:
-                - - 잠시만요
-                  - 확인해 보겠습니다
-          required:
-            - ko-KR
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            lv:
-              type: array
-              items:
-                type: string
-              description: Latvian
-              examples:
-                - - vienu brīdi
-                  - ļaujiet man pārbaudīt
-          required:
-            - lv
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            lt:
-              type: array
-              items:
-                type: string
-              description: Lithuanian
-              examples:
-                - - vieną akimirką
-                  - leiskite patikrinti
-          required:
-            - lt
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            ms:
-              type: array
-              items:
-                type: string
-              description: Malay
-              examples:
-                - - sebentar
-                  - biar saya semak
-          required:
-            - ms
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            multi:
-              type: array
-              items:
-                type: string
-              description: Multilingual (Spanish + English)
-              examples:
-                - - one moment
-                  - un momento
-          required:
-            - multi
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            'no':
-              type: array
-              items:
-                type: string
-              description: Norwegian
-              examples:
-                - - et øyeblikk
-                  - la meg sjekke
-          required:
-            - 'no'
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            pl:
-              type: array
-              items:
-                type: string
-              description: Polish
-              examples:
-                - - chwileczkę
-                  - pozwól mi sprawdzić
-          required:
-            - pl
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            pt:
-              type: array
-              items:
-                type: string
-              description: Portuguese
-              examples:
-                - - um momento
-                  - deixe-me verificar
-          required:
-            - pt
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            pt-BR:
-              type: array
-              items:
-                type: string
-              description: Portuguese (Brazil)
-              examples:
-                - - um momento
-                  - deixa eu verificar
-          required:
-            - pt-BR
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            pt-PT:
-              type: array
-              items:
-                type: string
-              description: Portuguese (Portugal)
-              examples:
-                - - um momento
-                  - deixe-me verificar
-          required:
-            - pt-PT
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            ro:
-              type: array
-              items:
-                type: string
-              description: Romanian
-              examples:
-                - - un moment
-                  - să verific
-          required:
-            - ro
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            ru:
-              type: array
-              items:
-                type: string
-              description: Russian
-              examples:
-                - - одну минуту
-                  - позвольте проверить
-          required:
-            - ru
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            sk:
-              type: array
-              items:
-                type: string
-              description: Slovak
-              examples:
-                - - moment prosím
-                  - dovoľte mi skontrolovať
-          required:
-            - sk
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            es:
-              type: array
-              items:
-                type: string
-              description: Spanish
-              examples:
-                - - un momento
-                  - déjame verificar
-          required:
-            - es
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            es-419:
-              type: array
-              items:
-                type: string
-              description: Spanish (Latin America)
-              examples:
-                - - un momento
-                  - déjame verificar
-          required:
-            - es-419
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            sv:
-              type: array
-              items:
-                type: string
-              description: Swedish
-              examples:
-                - - ett ögonblick
-                  - låt mig kolla
-          required:
-            - sv
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            sv-SE:
-              type: array
-              items:
-                type: string
-              description: Swedish (Sweden)
-              examples:
-                - - ett ögonblick
-                  - låt mig kolla
-          required:
-            - sv-SE
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            th:
-              type: array
-              items:
-                type: string
-              description: Thai
-              examples:
-                - - สักครู่
-                  - ให้ผมตรวจสอบ
-          required:
-            - th
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            th-TH:
-              type: array
-              items:
-                type: string
-              description: Thai (Thailand)
-              examples:
-                - - สักครู่
-                  - ให้ผมตรวจสอบ
-          required:
-            - th-TH
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            tr:
-              type: array
-              items:
-                type: string
-              description: Turkish
-              examples:
-                - - bir dakika
-                  - kontrol edeyim
-          required:
-            - tr
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            uk:
-              type: array
-              items:
-                type: string
-              description: Ukrainian
-              examples:
-                - - одну хвилину
-                  - дозвольте перевірити
-          required:
-            - uk
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            vi:
-              type: array
-              items:
-                type: string
-              description: Vietnamese
-              examples:
-                - - xin chờ một chút
-                  - để tôi kiểm tra
-          required:
-            - vi
-          unevaluatedProperties:
-            not: {}
-      description: Supported language codes
-    SWML.Calling.FunctionFillersUpdate:
-      anyOf:
-        - type: object
-          properties:
-            default:
-              type: array
-              items:
-                type: string
-              description: Default language set by the user
-              examples:
-                - - one moment please
-                  - let me check
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            bg:
-              type: array
-              items:
-                type: string
-              description: Bulgarian
-              examples:
-                - - един момент
-                  - нека проверя
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            ca:
-              type: array
-              items:
-                type: string
-              description: Catalan
-              examples:
-                - - un moment
-                  - deixa'm comprovar
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            zh:
-              type: array
-              items:
-                type: string
-              description: Chinese (Simplified)
-              examples:
-                - - 请稍等
-                  - 让我查一下
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            zh-CN:
-              type: array
-              items:
-                type: string
-              description: Chinese (Simplified, China)
-              examples:
-                - - 请稍等
-                  - 让我查一下
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            zh-Hans:
-              type: array
-              items:
-                type: string
-              description: Chinese (Simplified Han)
-              examples:
-                - - 请稍等
-                  - 让我查一下
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            zh-TW:
-              type: array
-              items:
-                type: string
-              description: Chinese (Traditional, Taiwan)
-              examples:
-                - - 請稍等
-                  - 讓我查一下
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            zh-Hant:
-              type: array
-              items:
-                type: string
-              description: Chinese (Traditional Han)
-              examples:
-                - - 請稍等
-                  - 讓我查一下
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            zh-HK:
-              type: array
-              items:
-                type: string
-              description: Chinese (Traditional, Hong Kong)
-              examples:
-                - - 請稍等
-                  - 讓我查一下
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            cs:
-              type: array
-              items:
-                type: string
-              description: Czech
-              examples:
-                - - moment prosím
-                  - nechte mě zkontrolovat
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            da:
-              type: array
-              items:
-                type: string
-              description: Danish
-              examples:
-                - - et øjeblik
-                  - lad mig tjekke
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            da-DK:
-              type: array
-              items:
-                type: string
-              description: Danish (Denmark)
-              examples:
-                - - et øjeblik
-                  - lad mig tjekke
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            nl:
-              type: array
-              items:
-                type: string
-              description: Dutch
-              examples:
-                - - een moment
-                  - laat me even kijken
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            en:
-              type: array
-              items:
-                type: string
-              description: English
-              examples:
-                - - one moment please
-                  - let me check
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            en-US:
-              type: array
-              items:
-                type: string
-              description: English (United States)
-              examples:
-                - - one moment please
-                  - let me check
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            en-GB:
-              type: array
-              items:
-                type: string
-              description: English (United Kingdom)
-              examples:
-                - - one moment please
-                  - let me check
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            en-NZ:
-              type: array
-              items:
-                type: string
-              description: English (New Zealand)
-              examples:
-                - - one moment please
-                  - let me check
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            en-IN:
-              type: array
-              items:
-                type: string
-              description: English (India)
-              examples:
-                - - one moment please
-                  - let me check
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            en-AU:
-              type: array
-              items:
-                type: string
-              description: English (Australia)
-              examples:
-                - - one moment please
-                  - let me check
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            et:
-              type: array
-              items:
-                type: string
-              description: Estonian
-              examples:
-                - - üks hetk
-                  - las ma kontrollin
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            fi:
-              type: array
-              items:
-                type: string
-              description: Finnish
-              examples:
-                - - hetkinen
-                  - annas kun tarkistan
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            nl-BE:
-              type: array
-              items:
-                type: string
-              description: Flemish (Belgian Dutch)
-              examples:
-                - - een moment
-                  - laat me even kijken
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            fr:
-              type: array
-              items:
-                type: string
-              description: French
-              examples:
-                - - un instant
-                  - laissez-moi vérifier
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            fr-CA:
-              type: array
-              items:
-                type: string
-              description: French (Canada)
-              examples:
-                - - un instant
-                  - laissez-moi vérifier
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            de:
-              type: array
-              items:
-                type: string
-              description: German
-              examples:
-                - - einen Moment bitte
-                  - lassen Sie mich nachsehen
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            de-CH:
-              type: array
-              items:
-                type: string
-              description: German (Switzerland)
-              examples:
-                - - einen Moment bitte
-                  - lassen Sie mich nachsehen
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            el:
-              type: array
-              items:
-                type: string
-              description: Greek
-              examples:
-                - - μια στιγμή
-                  - επιτρέψτε μου να ελέγξω
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            hi:
-              type: array
-              items:
-                type: string
-              description: Hindi
-              examples:
-                - - एक पल रुकिए
-                  - मुझे जांचने दीजिए
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            hu:
-              type: array
-              items:
-                type: string
-              description: Hungarian
-              examples:
-                - - egy pillanat
-                  - hadd ellenőrizzem
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            id:
-              type: array
-              items:
-                type: string
-              description: Indonesian
-              examples:
-                - - sebentar
-                  - biar saya periksa
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            it:
-              type: array
-              items:
-                type: string
-              description: Italian
-              examples:
-                - - un momento
-                  - lasciami controllare
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            ja:
-              type: array
-              items:
-                type: string
-              description: Japanese
-              examples:
-                - - 少々お待ちください
-                  - 確認いたします
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            ko:
-              type: array
-              items:
-                type: string
-              description: Korean
-              examples:
-                - - 잠시만요
-                  - 확인해 보겠습니다
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            ko-KR:
-              type: array
-              items:
-                type: string
-              description: Korean (South Korea)
-              examples:
-                - - 잠시만요
-                  - 확인해 보겠습니다
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            lv:
-              type: array
-              items:
-                type: string
-              description: Latvian
-              examples:
-                - - vienu brīdi
-                  - ļaujiet man pārbaudīt
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            lt:
-              type: array
-              items:
-                type: string
-              description: Lithuanian
-              examples:
-                - - vieną akimirką
-                  - leiskite patikrinti
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            ms:
-              type: array
-              items:
-                type: string
-              description: Malay
-              examples:
-                - - sebentar
-                  - biar saya semak
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            multi:
-              type: array
-              items:
-                type: string
-              description: Multilingual (Spanish + English)
-              examples:
-                - - one moment
-                  - un momento
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            'no':
-              type: array
-              items:
-                type: string
-              description: Norwegian
-              examples:
-                - - et øyeblikk
-                  - la meg sjekke
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            pl:
-              type: array
-              items:
-                type: string
-              description: Polish
-              examples:
-                - - chwileczkę
-                  - pozwól mi sprawdzić
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            pt:
-              type: array
-              items:
-                type: string
-              description: Portuguese
-              examples:
-                - - um momento
-                  - deixe-me verificar
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            pt-BR:
-              type: array
-              items:
-                type: string
-              description: Portuguese (Brazil)
-              examples:
-                - - um momento
-                  - deixa eu verificar
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            pt-PT:
-              type: array
-              items:
-                type: string
-              description: Portuguese (Portugal)
-              examples:
-                - - um momento
-                  - deixe-me verificar
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            ro:
-              type: array
-              items:
-                type: string
-              description: Romanian
-              examples:
-                - - un moment
-                  - să verific
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            ru:
-              type: array
-              items:
-                type: string
-              description: Russian
-              examples:
-                - - одну минуту
-                  - позвольте проверить
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            sk:
-              type: array
-              items:
-                type: string
-              description: Slovak
-              examples:
-                - - moment prosím
-                  - dovoľte mi skontrolovať
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            es:
-              type: array
-              items:
-                type: string
-              description: Spanish
-              examples:
-                - - un momento
-                  - déjame verificar
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            es-419:
-              type: array
-              items:
-                type: string
-              description: Spanish (Latin America)
-              examples:
-                - - un momento
-                  - déjame verificar
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            sv:
-              type: array
-              items:
-                type: string
-              description: Swedish
-              examples:
-                - - ett ögonblick
-                  - låt mig kolla
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            sv-SE:
-              type: array
-              items:
-                type: string
-              description: Swedish (Sweden)
-              examples:
-                - - ett ögonblick
-                  - låt mig kolla
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            th:
-              type: array
-              items:
-                type: string
-              description: Thai
-              examples:
-                - - สักครู่
-                  - ให้ผมตรวจสอบ
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            th-TH:
-              type: array
-              items:
-                type: string
-              description: Thai (Thailand)
-              examples:
-                - - สักครู่
-                  - ให้ผมตรวจสอบ
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            tr:
-              type: array
-              items:
-                type: string
-              description: Turkish
-              examples:
-                - - bir dakika
-                  - kontrol edeyim
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            uk:
-              type: array
-              items:
-                type: string
-              description: Ukrainian
-              examples:
-                - - одну хвилину
-                  - дозвольте перевірити
-          unevaluatedProperties:
-            not: {}
-        - type: object
-          properties:
-            vi:
-              type: array
-              items:
-                type: string
-              description: Vietnamese
-              examples:
-                - - xin chờ một chút
-                  - để tôi kiểm tra
-          unevaluatedProperties:
-            not: {}
-      description: Supported language codes
+      type: object
+      properties:
+        default:
+          type: array
+          items:
+            type: string
+          description: Played when no entry matches the language being spoken and no `auto` entry is set.
+          examples:
+            - - one moment please
+              - let me check
+        auto:
+          type: array
+          items:
+            type: string
+          description: |-
+            Phrases to translate into whichever language is being spoken, used when no entry
+            matches that language. Takes precedence over `default`.
+          examples:
+            - - one moment please
+              - let me check
+        bg:
+          type: array
+          items:
+            type: string
+          description: Bulgarian
+          examples:
+            - - един момент
+              - нека проверя
+        ca:
+          type: array
+          items:
+            type: string
+          description: Catalan
+          examples:
+            - - un moment
+              - deixa'm comprovar
+        zh:
+          type: array
+          items:
+            type: string
+          description: Chinese (Simplified)
+          examples:
+            - - 请稍等
+              - 让我查一下
+        zh-CN:
+          type: array
+          items:
+            type: string
+          description: Chinese (Simplified, China)
+          examples:
+            - - 请稍等
+              - 让我查一下
+        zh-Hans:
+          type: array
+          items:
+            type: string
+          description: Chinese (Simplified Han)
+          examples:
+            - - 请稍等
+              - 让我查一下
+        zh-TW:
+          type: array
+          items:
+            type: string
+          description: Chinese (Traditional, Taiwan)
+          examples:
+            - - 請稍等
+              - 讓我查一下
+        zh-Hant:
+          type: array
+          items:
+            type: string
+          description: Chinese (Traditional Han)
+          examples:
+            - - 請稍等
+              - 讓我查一下
+        zh-HK:
+          type: array
+          items:
+            type: string
+          description: Chinese (Traditional, Hong Kong)
+          examples:
+            - - 請稍等
+              - 讓我查一下
+        cs:
+          type: array
+          items:
+            type: string
+          description: Czech
+          examples:
+            - - moment prosím
+              - nechte mě zkontrolovat
+        da:
+          type: array
+          items:
+            type: string
+          description: Danish
+          examples:
+            - - et øjeblik
+              - lad mig tjekke
+        da-DK:
+          type: array
+          items:
+            type: string
+          description: Danish (Denmark)
+          examples:
+            - - et øjeblik
+              - lad mig tjekke
+        nl:
+          type: array
+          items:
+            type: string
+          description: Dutch
+          examples:
+            - - een moment
+              - laat me even kijken
+        en:
+          type: array
+          items:
+            type: string
+          description: English
+          examples:
+            - - one moment please
+              - let me check
+        en-US:
+          type: array
+          items:
+            type: string
+          description: English (United States)
+          examples:
+            - - one moment please
+              - let me check
+        en-GB:
+          type: array
+          items:
+            type: string
+          description: English (United Kingdom)
+          examples:
+            - - one moment please
+              - let me check
+        en-NZ:
+          type: array
+          items:
+            type: string
+          description: English (New Zealand)
+          examples:
+            - - one moment please
+              - let me check
+        en-IN:
+          type: array
+          items:
+            type: string
+          description: English (India)
+          examples:
+            - - one moment please
+              - let me check
+        en-AU:
+          type: array
+          items:
+            type: string
+          description: English (Australia)
+          examples:
+            - - one moment please
+              - let me check
+        et:
+          type: array
+          items:
+            type: string
+          description: Estonian
+          examples:
+            - - üks hetk
+              - las ma kontrollin
+        fi:
+          type: array
+          items:
+            type: string
+          description: Finnish
+          examples:
+            - - hetkinen
+              - annas kun tarkistan
+        nl-BE:
+          type: array
+          items:
+            type: string
+          description: Flemish (Belgian Dutch)
+          examples:
+            - - een moment
+              - laat me even kijken
+        fr:
+          type: array
+          items:
+            type: string
+          description: French
+          examples:
+            - - un instant
+              - laissez-moi vérifier
+        fr-CA:
+          type: array
+          items:
+            type: string
+          description: French (Canada)
+          examples:
+            - - un instant
+              - laissez-moi vérifier
+        de:
+          type: array
+          items:
+            type: string
+          description: German
+          examples:
+            - - einen Moment bitte
+              - lassen Sie mich nachsehen
+        de-CH:
+          type: array
+          items:
+            type: string
+          description: German (Switzerland)
+          examples:
+            - - einen Moment bitte
+              - lassen Sie mich nachsehen
+        el:
+          type: array
+          items:
+            type: string
+          description: Greek
+          examples:
+            - - μια στιγμή
+              - επιτρέψτε μου να ελέγξω
+        hi:
+          type: array
+          items:
+            type: string
+          description: Hindi
+          examples:
+            - - एक पल रुकिए
+              - मुझे जांचने दीजिए
+        hu:
+          type: array
+          items:
+            type: string
+          description: Hungarian
+          examples:
+            - - egy pillanat
+              - hadd ellenőrizzem
+        id:
+          type: array
+          items:
+            type: string
+          description: Indonesian
+          examples:
+            - - sebentar
+              - biar saya periksa
+        it:
+          type: array
+          items:
+            type: string
+          description: Italian
+          examples:
+            - - un momento
+              - lasciami controllare
+        ja:
+          type: array
+          items:
+            type: string
+          description: Japanese
+          examples:
+            - - 少々お待ちください
+              - 確認いたします
+        ko:
+          type: array
+          items:
+            type: string
+          description: Korean
+          examples:
+            - - 잠시만요
+              - 확인해 보겠습니다
+        ko-KR:
+          type: array
+          items:
+            type: string
+          description: Korean (South Korea)
+          examples:
+            - - 잠시만요
+              - 확인해 보겠습니다
+        lv:
+          type: array
+          items:
+            type: string
+          description: Latvian
+          examples:
+            - - vienu brīdi
+              - ļaujiet man pārbaudīt
+        lt:
+          type: array
+          items:
+            type: string
+          description: Lithuanian
+          examples:
+            - - vieną akimirką
+              - leiskite patikrinti
+        ms:
+          type: array
+          items:
+            type: string
+          description: Malay
+          examples:
+            - - sebentar
+              - biar saya semak
+        multi:
+          type: array
+          items:
+            type: string
+          description: Used when the agent's language code is set to `multi`, which lets the speech recognition engine transcribe whichever of its supported languages the caller speaks.
+          examples:
+            - - one moment
+              - un momento
+        'no':
+          type: array
+          items:
+            type: string
+          description: Norwegian
+          examples:
+            - - et øyeblikk
+              - la meg sjekke
+        pl:
+          type: array
+          items:
+            type: string
+          description: Polish
+          examples:
+            - - chwileczkę
+              - pozwól mi sprawdzić
+        pt:
+          type: array
+          items:
+            type: string
+          description: Portuguese
+          examples:
+            - - um momento
+              - deixe-me verificar
+        pt-BR:
+          type: array
+          items:
+            type: string
+          description: Portuguese (Brazil)
+          examples:
+            - - um momento
+              - deixa eu verificar
+        pt-PT:
+          type: array
+          items:
+            type: string
+          description: Portuguese (Portugal)
+          examples:
+            - - um momento
+              - deixe-me verificar
+        ro:
+          type: array
+          items:
+            type: string
+          description: Romanian
+          examples:
+            - - un moment
+              - să verific
+        ru:
+          type: array
+          items:
+            type: string
+          description: Russian
+          examples:
+            - - одну минуту
+              - позвольте проверить
+        sk:
+          type: array
+          items:
+            type: string
+          description: Slovak
+          examples:
+            - - moment prosím
+              - dovoľte mi skontrolovať
+        es:
+          type: array
+          items:
+            type: string
+          description: Spanish
+          examples:
+            - - un momento
+              - déjame verificar
+        es-419:
+          type: array
+          items:
+            type: string
+          description: Spanish (Latin America)
+          examples:
+            - - un momento
+              - déjame verificar
+        sv:
+          type: array
+          items:
+            type: string
+          description: Swedish
+          examples:
+            - - ett ögonblick
+              - låt mig kolla
+        sv-SE:
+          type: array
+          items:
+            type: string
+          description: Swedish (Sweden)
+          examples:
+            - - ett ögonblick
+              - låt mig kolla
+        th:
+          type: array
+          items:
+            type: string
+          description: Thai
+          examples:
+            - - สักครู่
+              - ให้ผมตรวจสอบ
+        th-TH:
+          type: array
+          items:
+            type: string
+          description: Thai (Thailand)
+          examples:
+            - - สักครู่
+              - ให้ผมตรวจสอบ
+        tr:
+          type: array
+          items:
+            type: string
+          description: Turkish
+          examples:
+            - - bir dakika
+              - kontrol edeyim
+        uk:
+          type: array
+          items:
+            type: string
+          description: Ukrainian
+          examples:
+            - - одну хвилину
+              - дозвольте перевірити
+        vi:
+          type: array
+          items:
+            type: string
+          description: Vietnamese
+          examples:
+            - - xin chờ một chút
+              - để tôi kiểm tra
+      unevaluatedProperties:
+        type: array
+        items:
+          type: string
+      description: |-
+        Filler phrases keyed by language code, one array per language. A single phrase is
+        picked from the matching array at random.
+
+        The agent looks for an entry matching the language being spoken, then `auto`, then
+        `default`, and plays nothing when none of the three is set. Under `ai.multilingual` the
+        key is whichever code the speech recognition engine reports for the turn, so any code it
+        returns works. Under `ai.languages` the key has to match the `code` set on the entry.
+        The codes listed here are the ones in common use, not a closed list.
     SWML.Calling.FunctionParameters:
       type: object
       required:
@@ -38108,7 +38204,7 @@ components:
             - neutral
           description: |-
             A fixed emotional tone for the generated speech.
-            To vary the emotion automatically during a conversation, use [`languages[].emotion`](#languagesemotion) set to `auto` instead.
+            To vary the emotion automatically during a conversation, use [`languages[].auto_emotion`](#languagesauto_emotion) instead.
             IMPORTANT: Only works with the MiniMax TTS engine.
           examples:
             - happy
@@ -38116,11 +38212,6 @@ components:
         not: {}
       title: LanguageParams
     SWML.Calling.Languages:
-      anyOf:
-        - $ref: '#/components/schemas/SWML.Calling.LanguagesWithSoloFillers'
-        - $ref: '#/components/schemas/SWML.Calling.LanguagesWithFillers'
-      title: languages
-    SWML.Calling.LanguagesWithFillers:
       type: object
       required:
         - name
@@ -38133,51 +38224,81 @@ components:
           examples:
             - French
         code:
-          type: string
+          anyOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+          maxItems: 3
           description: |-
             The language code for ASR (Automatic Speech Recognition) purposes. By default, SignalWire uses Deepgram's
             Nova-3 STT engine, so this value should match a code from Deepgram's Nova-3 language codes.
             If a different STT model was selected using the `openai_asr_engine` parameter, you must select a code supported by that engine.
+
+            Supply an array to have this voice listen for up to three codes at once.
+
+            Set it to `multi` to have the engine transcribe whichever of its supported languages the caller
+            speaks, rather than one fixed language. The agent still answers in this entry's single `voice`.
+            To answer in the caller's language as well, use [`ai.multilingual`](/docs/swml/reference/calling/ai/multilingual)
+            instead, which builds on the same code-switching mode and adds a voice per language.
+          examples:
+            - fr-FR
+        listen_language:
+          anyOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+          description: |-
+            A legacy alias for `code`, kept so that documents written before `code` existed keep
+            working. It is read only when `code` is absent, so it has no effect alongside `code`.
+            Write `code` in new documents.
           examples:
             - fr-FR
         voice:
           type: string
           description: |-
-            Voice to use for the language. String format: `<engine id>.<voice id>`.
+            Voice to use for the language. String format: `<engine id>.<voice id>`, with an optional
+            `:<model id>` suffix for engines that offer a choice of model.
             Select engine from `gcloud`, `polly`, `amazon`, `azure`, `openai`, `elevenlabs`, `cartesia`, `deepgram`, `rime`,
             `inworld`, `minimax`, `groq-tts`, `mistral`, `grok`, `smallest`, `fish`, or `speechify`.
-            For example, `gcloud.fr-FR-Neural2-B`.
+            For example, `gcloud.fr-FR-Neural2-B` or `elevenlabs.rachel:eleven_flash_v2_5`.
+            Always name the engine: a bare voice id resolves against a default engine that can change.
           examples:
             - gcloud.fr-FR-Neural2-B
         model:
           type: string
-          description: The model to use for the specified TTS engine. For example, 'coda'.
+          description: |-
+            The model to use for the specified TTS engine. For example, `coda`.
+            Set this only if the `voice` string does not already carry a `:<model id>` suffix.
+            A suffix on the `voice` string wins, and this key is then ignored without a warning.
           examples:
             - coda
-        emotion:
-          type: string
-          enum:
-            - auto
+        auto_emotion:
+          type: boolean
           description: |-
-            Enables automatic emotion detection for the set TTS engine. This allows the AI to express emotions when speaking.
-            A global emotion or specific emotions for certain topics can be set within the prompt of the AI.
+            Lets the AI vary its emotion as it speaks. A global emotion, or specific emotions for certain
+            topics, can be set within the prompt of the AI.
             IMPORTANT: Only works with the [`Cartesia`](/docs/platform/voice/tts/cartesia) and [`MiniMax`](/docs/platform/voice/tts/minimax) TTS engines.
-            For a fixed (non-automatic) MiniMax emotion, use [`params.emotion`](#languagesparams) instead.
+            For a fixed (non-automatic) MiniMax emotion, use [`params.emotion`](#paramsemotion) instead.
           examples:
-            - auto
-        speed:
-          type: string
-          enum:
-            - auto
+            - true
+          default: false
+        auto_speed:
+          type: boolean
           description: |-
-            The speed to use for the specified TTS engine. This allows the AI to speak at a different speed at different points in the conversation.
-            The speed behavior can be defined in the prompt of the AI.
-            IMPORTANT: Only works with [`Cartesia`](/docs/platform/voice/tts/cartesia) TTS engine.
+            Lets the AI vary its speaking speed during the conversation. The speed behavior can be defined
+            in the prompt of the AI.
+            IMPORTANT: Only works with the [`Cartesia`](/docs/platform/voice/tts/cartesia),
+            [`ElevenLabs`](/docs/platform/voice/tts/elevenlabs), [`MiniMax`](/docs/platform/voice/tts/minimax),
+            [`Rime`](/docs/platform/voice/tts/rime), [`Inworld`](/docs/platform/voice/tts/inworld),
+            [`Smallest`](/docs/platform/voice/tts/smallest), and [`Fish`](/docs/platform/voice/tts/fish) TTS engines.
           examples:
-            - auto
+            - true
+          default: false
         engine:
           type: string
-          description: The engine to use for the language. For example, 'elevenlabs'.
+          description: The engine to use for the language. For example, `elevenlabs`.
           deprecated: true
           examples:
             - elevenlabs
@@ -38185,6 +38306,17 @@ components:
           allOf:
             - $ref: '#/components/schemas/SWML.Calling.LanguageParams'
           description: TTS engine-specific parameters for this language.
+        fillers:
+          type: array
+          items:
+            type: string
+          description: |-
+            A deprecated spelling of `function_fillers`, and never used for speech fillers.
+            An explicit `function_fillers` on the same entry takes precedence over it.
+          deprecated: true
+          examples:
+            - - umm
+              - let me check
         function_fillers:
           type: array
           items:
@@ -38204,86 +38336,29 @@ components:
           examples:
             - - umm
               - hmm
-      unevaluatedProperties:
-        not: {}
-      title: Language with Speech and Function Fillers
-    SWML.Calling.LanguagesWithSoloFillers:
-      type: object
-      required:
-        - name
-        - code
-        - voice
-      properties:
-        name:
-          type: string
-          description: Name of the language (e.g., 'French', 'English'). This value is used in the system prompt to instruct the LLM what language is being spoken.
-          examples:
-            - French
-        code:
-          type: string
-          description: |-
-            The language code for ASR (Automatic Speech Recognition) purposes. By default, SignalWire uses Deepgram's
-            Nova-3 STT engine, so this value should match a code from Deepgram's Nova-3 language codes.
-            If a different STT model was selected using the `openai_asr_engine` parameter, you must select a code supported by that engine.
-          examples:
-            - fr-FR
-        voice:
-          type: string
-          description: |-
-            Voice to use for the language. String format: `<engine id>.<voice id>`.
-            Select engine from `gcloud`, `polly`, `amazon`, `azure`, `openai`, `elevenlabs`, `cartesia`, `deepgram`, `rime`,
-            `inworld`, `minimax`, `groq-tts`, `mistral`, `grok`, `smallest`, `fish`, or `speechify`.
-            For example, `gcloud.fr-FR-Neural2-B`.
-          examples:
-            - gcloud.fr-FR-Neural2-B
-        model:
-          type: string
-          description: The model to use for the specified TTS engine. For example, 'coda'.
-          examples:
-            - coda
-        emotion:
-          type: string
-          enum:
-            - auto
-          description: |-
-            Enables automatic emotion detection for the set TTS engine. This allows the AI to express emotions when speaking.
-            A global emotion or specific emotions for certain topics can be set within the prompt of the AI.
-            IMPORTANT: Only works with the [`Cartesia`](/docs/platform/voice/tts/cartesia) and [`MiniMax`](/docs/platform/voice/tts/minimax) TTS engines.
-            For a fixed (non-automatic) MiniMax emotion, use [`params.emotion`](#languagesparams) instead.
-          examples:
-            - auto
-        speed:
-          type: string
-          enum:
-            - auto
-          description: |-
-            The speed to use for the specified TTS engine. This allows the AI to speak at a different speed at different points in the conversation.
-            The speed behavior can be defined in the prompt of the AI.
-            IMPORTANT: Only works with [`Cartesia`](/docs/platform/voice/tts/cartesia) TTS engine.
-          examples:
-            - auto
-        engine:
-          type: string
-          description: The engine to use for the language. For example, 'elevenlabs'.
-          deprecated: true
-          examples:
-            - elevenlabs
-        params:
-          allOf:
-            - $ref: '#/components/schemas/SWML.Calling.LanguageParams'
-          description: TTS engine-specific parameters for this language.
-        fillers:
+        turn_fillers:
           type: array
           items:
             type: string
-          description: An array of strings to be used as fillers in the conversation. This will be used for both speech and function fillers if provided.
-          deprecated: true
+          description: |-
+            Short backchannels played while the caller still has the floor and the agent is deliberately
+            waiting, as when they spell a name or read out a number, to signal it is still listening.
+            Unlike the language-keyed map on [`ai.multilingual`](/docs/swml/reference/calling/ai/multilingual),
+            this is a plain array, because the entry already fixes the language.
+            Which waits earn one is set by [`params.turn_filler_sources`](/docs/swml/reference/calling/ai/params#paramsturn_filler_sources).
           examples:
-            - - umm
-              - let me check
+            - - mhm
+              - go on
+        pronounce:
+          type: array
+          items:
+            $ref: '#/components/schemas/SWML.Calling.Pronounce'
+          description: |-
+            Pronunciation replacements applied only while this language is active.
+            For replacements that apply to the whole call, use [`ai.pronounce`](/docs/swml/reference/calling/ai#aipronounce) instead.
       unevaluatedProperties:
         not: {}
-      title: Language with Fillers (Deprecated)
+      title: languages
     SWML.Calling.LiveTranscribe:
       type: object
       required:
@@ -38359,6 +38434,295 @@ components:
       unevaluatedProperties:
         not: {}
       title: MCP server object
+    SWML.Calling.Multilingual:
+      type: object
+      required:
+        - languages
+      properties:
+        languages:
+          type: array
+          items:
+            $ref: '#/components/schemas/SWML.Calling.MultilingualLanguage'
+          description: |-
+            An array of voices, one per language the agent speaks.
+            At least one entry must supply a `voice`, either an entry with `language` set to
+            `default` or the first language listed. Without one, multilingual mode does not
+            start and the agent falls back to a single English voice.
+        allowed:
+          type: array
+          items:
+            type: string
+          description: |-
+            Restricts the agent to this set of language codes. The speech recognition engine still
+            transcribes whatever it hears, but the agent will not switch into a language outside the
+            list — it keeps the language it is already speaking. The list also tells the agent, in its
+            prompt, which languages are in play. Every code must be supported by the ASR engine and
+            model in use, or multilingual mode does not start.
+            Omit to let the agent follow the caller into any language the ASR engine detects.
+          examples:
+            - - en
+              - es
+              - fr
+        engine:
+          type: string
+          description: |-
+            The ASR (Automatic Speech Recognition) engine used to detect the spoken language.
+            This is separate from the TTS engine that speaks each voice.
+            If you leave it unset, `deepgram` is used.
+            Do not set this alongside `params.openai_asr_engine`, which overrides both this engine and
+            `model`. When both are present, the `params` value wins.
+          examples:
+            - deepgram
+        model:
+          type: string
+          description: The ASR model used to detect the spoken language. The model must support code-switching, or multilingual mode does not start.
+          examples:
+            - nova-3
+          default: nova-3
+        provider:
+          type: string
+          description: |-
+            The ASR provider used to detect the spoken language.
+            If you leave it unset, the provider already configured for the agent is used, falling back to
+            `deepgram` when the agent has none. Setting it here also applies it to the recognizer.
+          examples:
+            - deepgram
+        start_language:
+          type: string
+          description: |-
+            The language the agent opens the conversation in, before the caller has said
+            anything for the ASR engine to detect.
+          examples:
+            - en
+          default: en
+        min_switch_words:
+          type: integer
+          minimum: 1
+          description: |-
+            How many words a caller must say before the agent will switch languages.
+            A single word is often the same in several languages — a name, `no`, `ok` — so a
+            one-word turn is an unreliable signal. Set to `1` to allow single-word switches.
+            A value below `1` is treated as the default of `2` rather than rejected.
+          examples:
+            - 2
+          default: 2
+        fillers:
+          anyOf:
+            - type: array
+              items:
+                type: string
+            - $ref: '#/components/schemas/SWML.Calling.FunctionFillers'
+          description: |-
+            Fillers used to break silence between turns. This is the speech filler map, so it is the
+            counterpart of `languages[].speech_fillers` rather than of `languages[].fillers`, which is
+            a deprecated spelling of `function_fillers`.
+            Supply an array to have the fillers translated into whichever language the caller
+            is speaking, or an object keyed by language code to set them per language verbatim.
+            An `auto` key inside the object is translated the same way an array is.
+          examples:
+            - - umm
+              - hmm
+        function_fillers:
+          anyOf:
+            - type: array
+              items:
+                type: string
+            - $ref: '#/components/schemas/SWML.Calling.FunctionFillers'
+          description: |-
+            Fillers used while a SWAIG function runs.
+            Supply an array to have the fillers translated into whichever language the caller
+            is speaking, or an object keyed by language code to set them per language verbatim.
+            An `auto` key inside the object is translated the same way an array is.
+          examples:
+            - - great
+              - ok
+        turn_fillers:
+          anyOf:
+            - type: array
+              items:
+                type: string
+            - $ref: '#/components/schemas/SWML.Calling.TurnFillers'
+          description: |-
+            Short backchannels played while the caller still has the floor and the agent is
+            deliberately waiting, as when they spell a name or read out a number, to signal it
+            is still listening. Which waits earn one is set by `params.turn_filler_sources`.
+
+            Supply an object keyed by language code, optionally with a `default` key for
+            languages you have not listed. These fillers are never translated on the fly, so
+            the `auto` key does not apply here — resolving them has to be fast enough to play
+            immediately. An array is accepted and treated as the `default` set.
+
+            An entry that is an absolute path or a `scheme://` URI is played as audio instead of
+            being spoken, which is a way to use a recorded backchannel.
+      unevaluatedProperties:
+        not: {}
+      title: multilingual
+    SWML.Calling.MultilingualLanguage:
+      type: object
+      required:
+        - language
+      properties:
+        language:
+          type: string
+          description: |-
+            The language this voice applies to, as a code the ASR engine supports.
+            Use `default` instead of a code to mark the catch-all entry, which speaks any
+            detected language that has no entry of its own.
+          examples:
+            - es
+        voice:
+          type: string
+          description: |-
+            Voice to use for the language. String format: `<engine id>.<voice id>`, with an optional
+            `:<model id>` suffix for engines that offer a choice of model.
+            Select engine from `gcloud`, `polly`, `amazon`, `azure`, `openai`, `elevenlabs`, `cartesia`, `deepgram`, `rime`,
+            `inworld`, `minimax`, `groq-tts`, `mistral`, `grok`, `smallest`, `fish`, or `speechify`.
+            For example, `gcloud.fr-FR-Neural2-B` or `elevenlabs.rachel:eleven_flash_v2_5`.
+            Always name the engine: a bare voice id resolves against a default engine that can change.
+          examples:
+            - gcloud.fr-FR-Neural2-B
+        model:
+          type: string
+          description: |-
+            The model to use for the specified TTS engine. For example, `coda`.
+            Set this only if the `voice` string does not already carry a `:<model id>` suffix.
+            A suffix on the `voice` string wins, and this key is then ignored without a warning.
+          examples:
+            - coda
+        engine:
+          type: string
+          description: The engine to use for the language. For example, `elevenlabs`.
+          deprecated: true
+          examples:
+            - elevenlabs
+        params:
+          allOf:
+            - $ref: '#/components/schemas/SWML.Calling.LanguageParams'
+          description: TTS engine-specific parameters for this language.
+      unevaluatedProperties:
+        not: {}
+      title: MultilingualLanguage
+    SWML.Calling.MultilingualUpdate:
+      type: object
+      properties:
+        languages:
+          type: array
+          items:
+            $ref: '#/components/schemas/SWML.Calling.MultilingualLanguage'
+          description: |-
+            An array of voices, one per language the agent speaks.
+            At least one entry must supply a `voice`, either an entry with `language` set to
+            `default` or the first language listed. Without one, multilingual mode does not
+            start and the agent falls back to a single English voice.
+        allowed:
+          type: array
+          items:
+            type: string
+          description: |-
+            Restricts the agent to this set of language codes. The speech recognition engine still
+            transcribes whatever it hears, but the agent will not switch into a language outside the
+            list — it keeps the language it is already speaking. The list also tells the agent, in its
+            prompt, which languages are in play. Every code must be supported by the ASR engine and
+            model in use, or multilingual mode does not start.
+            Omit to let the agent follow the caller into any language the ASR engine detects.
+          examples:
+            - - en
+              - es
+              - fr
+        engine:
+          type: string
+          description: |-
+            The ASR (Automatic Speech Recognition) engine used to detect the spoken language.
+            This is separate from the TTS engine that speaks each voice.
+            If you leave it unset, `deepgram` is used.
+            Do not set this alongside `params.openai_asr_engine`, which overrides both this engine and
+            `model`. When both are present, the `params` value wins.
+          examples:
+            - deepgram
+        model:
+          type: string
+          description: The ASR model used to detect the spoken language. The model must support code-switching, or multilingual mode does not start.
+          examples:
+            - nova-3
+          default: nova-3
+        provider:
+          type: string
+          description: |-
+            The ASR provider used to detect the spoken language.
+            If you leave it unset, the provider already configured for the agent is used, falling back to
+            `deepgram` when the agent has none. Setting it here also applies it to the recognizer.
+          examples:
+            - deepgram
+        start_language:
+          type: string
+          description: |-
+            The language the agent opens the conversation in, before the caller has said
+            anything for the ASR engine to detect.
+          examples:
+            - en
+          default: en
+        min_switch_words:
+          type: integer
+          minimum: 1
+          description: |-
+            How many words a caller must say before the agent will switch languages.
+            A single word is often the same in several languages — a name, `no`, `ok` — so a
+            one-word turn is an unreliable signal. Set to `1` to allow single-word switches.
+            A value below `1` is treated as the default of `2` rather than rejected.
+          examples:
+            - 2
+          default: 2
+        fillers:
+          anyOf:
+            - type: array
+              items:
+                type: string
+            - $ref: '#/components/schemas/SWML.Calling.FunctionFillers'
+          description: |-
+            Fillers used to break silence between turns. This is the speech filler map, so it is the
+            counterpart of `languages[].speech_fillers` rather than of `languages[].fillers`, which is
+            a deprecated spelling of `function_fillers`.
+            Supply an array to have the fillers translated into whichever language the caller
+            is speaking, or an object keyed by language code to set them per language verbatim.
+            An `auto` key inside the object is translated the same way an array is.
+          examples:
+            - - umm
+              - hmm
+        function_fillers:
+          anyOf:
+            - type: array
+              items:
+                type: string
+            - $ref: '#/components/schemas/SWML.Calling.FunctionFillers'
+          description: |-
+            Fillers used while a SWAIG function runs.
+            Supply an array to have the fillers translated into whichever language the caller
+            is speaking, or an object keyed by language code to set them per language verbatim.
+            An `auto` key inside the object is translated the same way an array is.
+          examples:
+            - - great
+              - ok
+        turn_fillers:
+          anyOf:
+            - type: array
+              items:
+                type: string
+            - $ref: '#/components/schemas/SWML.Calling.TurnFillers'
+          description: |-
+            Short backchannels played while the caller still has the floor and the agent is
+            deliberately waiting, as when they spell a name or read out a number, to signal it
+            is still listening. Which waits earn one is set by `params.turn_filler_sources`.
+
+            Supply an object keyed by language code, optionally with a `default` key for
+            languages you have not listed. These fillers are never translated on the fly, so
+            the `auto` key does not apply here — resolving them has to be fast enough to play
+            immediately. An array is accepted and treated as the `default` set.
+
+            An entry that is an absolute path or a `scheme://` URI is played as audio instead of
+            being spoken, which is a way to use a recorded backchannel.
+      unevaluatedProperties:
+        not: {}
+      title: multilingual
     SWML.Calling.NullProperty:
       type: object
       required:
@@ -39756,10 +40120,6 @@ components:
     SWML.Calling.SWAIGInternalFiller:
       type: object
       properties:
-        hangup:
-          allOf:
-            - $ref: '#/components/schemas/SWML.Calling.FunctionFillers'
-          description: Filler phrases played when the AI Agent is hanging up the call.
         check_time:
           allOf:
             - $ref: '#/components/schemas/SWML.Calling.FunctionFillers'
@@ -39787,52 +40147,27 @@ components:
         get_visual_input:
           allOf:
             - $ref: '#/components/schemas/SWML.Calling.FunctionFillers'
-          description: Filler phrases played when the AI Agent is processing visual input. This function is enabled when `enable_vision` is set to `true` in `ai.params`.
+          description: |-
+            Filler phrases played when the AI Agent is processing visual input. This function is enabled
+            when `enable_vision` is set to `true` in `ai.params`.
+            Leaving this out does not silence the agent: a built-in English set is used under `en-US`
+            instead, so set this key to change the wording or to cover another language.
         get_ideal_strategy:
           allOf:
             - $ref: '#/components/schemas/SWML.Calling.FunctionFillers'
-          description: Filler phrases played when the AI Agent is thinking or considering options. This is utilized when `enable_thinking` is set to `true` in `ai.params`.
-      unevaluatedProperties:
-        not: {}
-    SWML.Calling.SWAIGInternalFillerUpdate:
-      type: object
-      properties:
-        hangup:
+          description: |-
+            Filler phrases played when the AI Agent is thinking or considering options. This is utilized
+            when `enable_thinking` is set to `true` in `ai.params`.
+            Leaving this out does not silence the agent: a built-in English set is used under `en-US`
+            instead, so set this key to change the wording or to cover another language.
+        pause_conversation:
           allOf:
-            - $ref: '#/components/schemas/SWML.Calling.FunctionFillersUpdate'
-          description: Filler phrases played when the AI Agent is hanging up the call.
-        check_time:
-          allOf:
-            - $ref: '#/components/schemas/SWML.Calling.FunctionFillersUpdate'
-          description: Filler phrases played when the AI Agent is checking the time.
-        wait_for_user:
-          allOf:
-            - $ref: '#/components/schemas/SWML.Calling.FunctionFillersUpdate'
-          description: Filler phrases played when the AI Agent is waiting for user input.
-        wait_seconds:
-          allOf:
-            - $ref: '#/components/schemas/SWML.Calling.FunctionFillersUpdate'
-          description: Filler phrases played during deliberate pauses or wait periods.
-        adjust_response_latency:
-          allOf:
-            - $ref: '#/components/schemas/SWML.Calling.FunctionFillersUpdate'
-          description: Filler phrases played when the AI Agent is adjusting response timing.
-        next_step:
-          allOf:
-            - $ref: '#/components/schemas/SWML.Calling.FunctionFillersUpdate'
-          description: Filler phrases played when transitioning between conversation steps when utilizing `prompt.contexts`.
-        change_context:
-          allOf:
-            - $ref: '#/components/schemas/SWML.Calling.FunctionFillersUpdate'
-          description: Filler phrases played when switching between conversation contexts when utilizing `prompt.contexts`.
-        get_visual_input:
-          allOf:
-            - $ref: '#/components/schemas/SWML.Calling.FunctionFillersUpdate'
-          description: Filler phrases played when the AI Agent is processing visual input. This function is enabled when `enable_vision` is set to `true` in `ai.params`.
-        get_ideal_strategy:
-          allOf:
-            - $ref: '#/components/schemas/SWML.Calling.FunctionFillersUpdate'
-          description: Filler phrases played when the AI Agent is thinking or considering options. This is utilized when `enable_thinking` is set to `true` in `ai.params`.
+            - $ref: '#/components/schemas/SWML.Calling.FunctionFillers'
+          description: |-
+            Filler phrases played when the AI Agent pauses the conversation at the caller's request. This
+            function is enabled when `enable_pause` is set to `true` in `ai.params`, which `start_paused`
+            also turns on. Setting `speak_when_spoken_to` turns `enable_pause` back off, which leaves this
+            key with nothing to play.
       unevaluatedProperties:
         not: {}
     SWML.Calling.SWAIGNativeFunction:
@@ -39843,43 +40178,6 @@ components:
         - wait_for_user
         - adjust_response_latency
       title: native_functions
-    SWML.Calling.SWAIGUpdate:
-      type: object
-      properties:
-        defaults:
-          allOf:
-            - $ref: '#/components/schemas/SWML.Calling.SWAIGDefaults'
-          description: Default settings for all SWAIG functions. If `defaults` is not set, settings may be set in each function object. Default is not set.
-        mcp_servers:
-          type: array
-          items:
-            $ref: '#/components/schemas/SWML.Calling.MCPServer'
-          description: An array of MCP (Model Context Protocol) servers whose tools and resources are made available to the AI agent. Each server's tools are discovered when the agent starts and registered as callable functions.
-        native_functions:
-          type: array
-          items:
-            $ref: '#/components/schemas/SWML.Calling.SWAIGNativeFunction'
-          description: Prebuilt functions the AI agent is able to call from this list of available native functions
-        includes:
-          type: array
-          items:
-            $ref: '#/components/schemas/SWML.Calling.SWAIGIncludes'
-          description: |-
-            An array of objects to include remote function signatures.
-            This allows you to include functions that are defined in a remote location.
-            The object fields are `url` to specify where the remote functions are defined and `functions` which is an array of the function names as strings.
-        functions:
-          type: array
-          items:
-            $ref: '#/components/schemas/SWML.Calling.SWAIGFunction'
-          description: An array of JSON objects to define functions that can be executed during the interaction with the AI. Default is not set.
-        internal_fillers:
-          allOf:
-            - $ref: '#/components/schemas/SWML.Calling.SWAIGInternalFillerUpdate'
-          description: An object containing filler phrases for internal SWAIG functions. These fillers are played while utilizing internal functions.
-      unevaluatedProperties:
-        not: {}
-      title: swaig
     SWML.Calling.SWMLAction:
       type: object
       required:
@@ -41185,6 +41483,461 @@ components:
         - `shakespeare` - Translates to sound like Shakespeare, speaking in iambic pentameter
         - `gen-z` - Translates to use Gen-Z slang and expressions
       title: Filter Presets
+    SWML.Calling.TurnFillers:
+      type: object
+      properties:
+        default:
+          type: array
+          items:
+            type: string
+          description: Played when no entry matches the language being spoken.
+          examples:
+            - - mhm
+              - go on
+        bg:
+          type: array
+          items:
+            type: string
+          description: Bulgarian
+          examples:
+            - - един момент
+              - нека проверя
+        ca:
+          type: array
+          items:
+            type: string
+          description: Catalan
+          examples:
+            - - un moment
+              - deixa'm comprovar
+        zh:
+          type: array
+          items:
+            type: string
+          description: Chinese (Simplified)
+          examples:
+            - - 请稍等
+              - 让我查一下
+        zh-CN:
+          type: array
+          items:
+            type: string
+          description: Chinese (Simplified, China)
+          examples:
+            - - 请稍等
+              - 让我查一下
+        zh-Hans:
+          type: array
+          items:
+            type: string
+          description: Chinese (Simplified Han)
+          examples:
+            - - 请稍等
+              - 让我查一下
+        zh-TW:
+          type: array
+          items:
+            type: string
+          description: Chinese (Traditional, Taiwan)
+          examples:
+            - - 請稍等
+              - 讓我查一下
+        zh-Hant:
+          type: array
+          items:
+            type: string
+          description: Chinese (Traditional Han)
+          examples:
+            - - 請稍等
+              - 讓我查一下
+        zh-HK:
+          type: array
+          items:
+            type: string
+          description: Chinese (Traditional, Hong Kong)
+          examples:
+            - - 請稍等
+              - 讓我查一下
+        cs:
+          type: array
+          items:
+            type: string
+          description: Czech
+          examples:
+            - - moment prosím
+              - nechte mě zkontrolovat
+        da:
+          type: array
+          items:
+            type: string
+          description: Danish
+          examples:
+            - - et øjeblik
+              - lad mig tjekke
+        da-DK:
+          type: array
+          items:
+            type: string
+          description: Danish (Denmark)
+          examples:
+            - - et øjeblik
+              - lad mig tjekke
+        nl:
+          type: array
+          items:
+            type: string
+          description: Dutch
+          examples:
+            - - een moment
+              - laat me even kijken
+        en:
+          type: array
+          items:
+            type: string
+          description: English
+          examples:
+            - - one moment please
+              - let me check
+        en-US:
+          type: array
+          items:
+            type: string
+          description: English (United States)
+          examples:
+            - - one moment please
+              - let me check
+        en-GB:
+          type: array
+          items:
+            type: string
+          description: English (United Kingdom)
+          examples:
+            - - one moment please
+              - let me check
+        en-NZ:
+          type: array
+          items:
+            type: string
+          description: English (New Zealand)
+          examples:
+            - - one moment please
+              - let me check
+        en-IN:
+          type: array
+          items:
+            type: string
+          description: English (India)
+          examples:
+            - - one moment please
+              - let me check
+        en-AU:
+          type: array
+          items:
+            type: string
+          description: English (Australia)
+          examples:
+            - - one moment please
+              - let me check
+        et:
+          type: array
+          items:
+            type: string
+          description: Estonian
+          examples:
+            - - üks hetk
+              - las ma kontrollin
+        fi:
+          type: array
+          items:
+            type: string
+          description: Finnish
+          examples:
+            - - hetkinen
+              - annas kun tarkistan
+        nl-BE:
+          type: array
+          items:
+            type: string
+          description: Flemish (Belgian Dutch)
+          examples:
+            - - een moment
+              - laat me even kijken
+        fr:
+          type: array
+          items:
+            type: string
+          description: French
+          examples:
+            - - un instant
+              - laissez-moi vérifier
+        fr-CA:
+          type: array
+          items:
+            type: string
+          description: French (Canada)
+          examples:
+            - - un instant
+              - laissez-moi vérifier
+        de:
+          type: array
+          items:
+            type: string
+          description: German
+          examples:
+            - - einen Moment bitte
+              - lassen Sie mich nachsehen
+        de-CH:
+          type: array
+          items:
+            type: string
+          description: German (Switzerland)
+          examples:
+            - - einen Moment bitte
+              - lassen Sie mich nachsehen
+        el:
+          type: array
+          items:
+            type: string
+          description: Greek
+          examples:
+            - - μια στιγμή
+              - επιτρέψτε μου να ελέγξω
+        hi:
+          type: array
+          items:
+            type: string
+          description: Hindi
+          examples:
+            - - एक पल रुकिए
+              - मुझे जांचने दीजिए
+        hu:
+          type: array
+          items:
+            type: string
+          description: Hungarian
+          examples:
+            - - egy pillanat
+              - hadd ellenőrizzem
+        id:
+          type: array
+          items:
+            type: string
+          description: Indonesian
+          examples:
+            - - sebentar
+              - biar saya periksa
+        it:
+          type: array
+          items:
+            type: string
+          description: Italian
+          examples:
+            - - un momento
+              - lasciami controllare
+        ja:
+          type: array
+          items:
+            type: string
+          description: Japanese
+          examples:
+            - - 少々お待ちください
+              - 確認いたします
+        ko:
+          type: array
+          items:
+            type: string
+          description: Korean
+          examples:
+            - - 잠시만요
+              - 확인해 보겠습니다
+        ko-KR:
+          type: array
+          items:
+            type: string
+          description: Korean (South Korea)
+          examples:
+            - - 잠시만요
+              - 확인해 보겠습니다
+        lv:
+          type: array
+          items:
+            type: string
+          description: Latvian
+          examples:
+            - - vienu brīdi
+              - ļaujiet man pārbaudīt
+        lt:
+          type: array
+          items:
+            type: string
+          description: Lithuanian
+          examples:
+            - - vieną akimirką
+              - leiskite patikrinti
+        ms:
+          type: array
+          items:
+            type: string
+          description: Malay
+          examples:
+            - - sebentar
+              - biar saya semak
+        multi:
+          type: array
+          items:
+            type: string
+          description: Used when the agent's language code is set to `multi`, which lets the speech recognition engine transcribe whichever of its supported languages the caller speaks.
+          examples:
+            - - one moment
+              - un momento
+        'no':
+          type: array
+          items:
+            type: string
+          description: Norwegian
+          examples:
+            - - et øyeblikk
+              - la meg sjekke
+        pl:
+          type: array
+          items:
+            type: string
+          description: Polish
+          examples:
+            - - chwileczkę
+              - pozwól mi sprawdzić
+        pt:
+          type: array
+          items:
+            type: string
+          description: Portuguese
+          examples:
+            - - um momento
+              - deixe-me verificar
+        pt-BR:
+          type: array
+          items:
+            type: string
+          description: Portuguese (Brazil)
+          examples:
+            - - um momento
+              - deixa eu verificar
+        pt-PT:
+          type: array
+          items:
+            type: string
+          description: Portuguese (Portugal)
+          examples:
+            - - um momento
+              - deixe-me verificar
+        ro:
+          type: array
+          items:
+            type: string
+          description: Romanian
+          examples:
+            - - un moment
+              - să verific
+        ru:
+          type: array
+          items:
+            type: string
+          description: Russian
+          examples:
+            - - одну минуту
+              - позвольте проверить
+        sk:
+          type: array
+          items:
+            type: string
+          description: Slovak
+          examples:
+            - - moment prosím
+              - dovoľte mi skontrolovať
+        es:
+          type: array
+          items:
+            type: string
+          description: Spanish
+          examples:
+            - - un momento
+              - déjame verificar
+        es-419:
+          type: array
+          items:
+            type: string
+          description: Spanish (Latin America)
+          examples:
+            - - un momento
+              - déjame verificar
+        sv:
+          type: array
+          items:
+            type: string
+          description: Swedish
+          examples:
+            - - ett ögonblick
+              - låt mig kolla
+        sv-SE:
+          type: array
+          items:
+            type: string
+          description: Swedish (Sweden)
+          examples:
+            - - ett ögonblick
+              - låt mig kolla
+        th:
+          type: array
+          items:
+            type: string
+          description: Thai
+          examples:
+            - - สักครู่
+              - ให้ผมตรวจสอบ
+        th-TH:
+          type: array
+          items:
+            type: string
+          description: Thai (Thailand)
+          examples:
+            - - สักครู่
+              - ให้ผมตรวจสอบ
+        tr:
+          type: array
+          items:
+            type: string
+          description: Turkish
+          examples:
+            - - bir dakika
+              - kontrol edeyim
+        uk:
+          type: array
+          items:
+            type: string
+          description: Ukrainian
+          examples:
+            - - одну хвилину
+              - дозвольте перевірити
+        vi:
+          type: array
+          items:
+            type: string
+          description: Vietnamese
+          examples:
+            - - xin chờ một chút
+              - để tôi kiểm tra
+      unevaluatedProperties:
+        type: array
+        items:
+          type: string
+      description: |-
+        Backchannel phrases keyed by language code, one array per language. A single phrase is
+        picked from the matching array at random.
+
+        The agent looks for an entry matching the language being spoken, then `default`, and plays
+        nothing when neither is set. There is no `auto` key here: these phrases are never
+        translated on the fly, because they have to be ready to play immediately.
+        The codes listed here are the ones in common use, not a closed list.
     SWML.Calling.Unset:
       type: object
       required:
@@ -49857,7 +50610,9 @@ components:
       properties:
         role:
           type: string
-          description: 'Who produced the entry: `system`, `user`, `assistant`, or `tool`.'
+          description: |-
+            Who produced the entry. Common roles include `system`, `user`, `assistant`, and `tool`. Other
+            roles may appear, so filter to the roles your application uses rather than assuming a fixed set.
           examples:
             - assistant
         content:
@@ -51528,12 +52283,17 @@ components:
             - agent.summary
         conversation_type:
           type: string
-          description: The kind of conversation the agent ran. Always `voice`.
+          enum:
+            - voice
+            - chat
+          description: |-
+            The kind of conversation the agent ran: a call, or a text conversation held over the
+            [AI chat endpoint](/docs/apis/rest/ai-chat/chat-methods).
           examples:
             - voice
         call_id:
           type: string
-          description: The ID of the call.
+          description: The ID of the call. On a chat conversation this carries the conversation id instead.
           examples:
             - 2e1e66e5-5d07-413d-9668-55542992eec0
         app_name:
@@ -51781,6 +52541,7 @@ components:
         - content_type
         - version
         - content_disposition
+        - conversation_type
       properties:
         function:
           type: string
@@ -51837,7 +52598,7 @@ components:
             - Look up the current weather for a city.
         call_id:
           type: string
-          description: The ID of the call.
+          description: The ID of the call. On a chat conversation this carries the conversation id instead.
           examples:
             - 2e1e66e5-5d07-413d-9668-55542992eec0
         ai_session_id:
@@ -51847,7 +52608,10 @@ components:
             - a0d4e6e5-5d07-413d-9668-55542992eec0
         conversation_id:
           type: string
-          description: The conversation ID, when the AI session has one.
+          description: |-
+            The conversation ID, when the AI session has one. A text conversation held over the
+            [AI chat endpoint](/docs/apis/rest/ai-chat/chat-methods) always has one, and it matches
+            `call_id`.
         app_name:
           type: string
           description: The name of your AI application.
@@ -51913,6 +52677,16 @@ components:
           description: How the body is delivered. Always `SWAIG Function`.
           examples:
             - SWAIG Function
+        conversation_type:
+          type: string
+          enum:
+            - voice
+            - chat
+          description: |-
+            The kind of conversation the agent is running: a call, or a text conversation held over the
+            [AI chat endpoint](/docs/apis/rest/ai-chat/chat-methods).
+          examples:
+            - voice
         project_id:
           type: string
           description: Your project ID, when available.
