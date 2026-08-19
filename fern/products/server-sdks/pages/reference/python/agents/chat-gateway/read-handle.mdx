@@ -1,0 +1,59 @@
+---
+title: "read_handle"
+slug: /reference/python/agents/chat-gateway/read-handle
+description: Verify a signed handle and return the conversation id inside it.
+max-toc-depth: 3
+---
+
+[ref-chatgateway]: /docs/server-sdks/reference/python/agents/chat-gateway
+[minthandle]: /docs/server-sdks/reference/python/agents/chat-gateway/mint-handle
+
+Return the conversation id inside a handle. The signature is verified first and the expiry second,
+both before the id is trusted for anything.
+
+## **Parameters**
+
+<ParamField path="handle" type="str" required={true} toc={true}>
+  A handle this gateway issued, as returned by [`mint_handle()`][minthandle] or the
+  `X-Chat-Handle` response header.
+</ParamField>
+
+## **Returns**
+
+`str` — the conversation id.
+
+## **Raises**
+
+`GatewayRejection`, carrying the status the browser should see:
+
+<ParamField path="400 malformed handle" type="GatewayRejection" toc={true}>
+  The handle is not two base64url parts, or its payload does not decode.
+</ParamField>
+
+<ParamField path="403 invalid handle" type="GatewayRejection" toc={true}>
+  The signature does not match, so this gateway did not issue it.
+</ParamField>
+
+<ParamField path="403 expired handle" type="GatewayRejection" toc={true}>
+  The handle is past its `handle_ttl`.
+</ParamField>
+
+An expired handle is normal rather than exceptional. Every long-lived conversation reaches it
+eventually, so treat it as "start a new conversation" instead of something to show the visitor.
+
+## **Example**
+
+```python {8}
+from signalwire.ai_chat import ChatGateway, GatewayRejection
+
+gateway = ChatGateway(config_url="https://bayview-taxi.example.com/swml")
+
+
+def conversation_for(handle: str) -> str | None:
+    try:
+        return gateway.read_handle(handle)
+    except GatewayRejection as rejection:
+        if rejection.status == 403:
+            return None  # expired or forged; start fresh
+        raise
+```

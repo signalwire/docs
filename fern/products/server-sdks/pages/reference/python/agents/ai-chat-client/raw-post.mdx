@@ -1,0 +1,53 @@
+---
+title: "raw_post"
+slug: /reference/python/agents/ai-chat-client/raw-post
+description: Access one JSON-RPC HTTP response with its body unread.
+max-toc-depth: 3
+---
+
+[ref-aichatclient]: /docs/server-sdks/reference/python/agents/ai-chat-client
+[chatgateway]: /docs/server-sdks/reference/python/agents/chat-gateway
+[error-codes]: /docs/apis/error-codes
+
+An async context manager that yields the underlying response for one JSON-RPC call before the SDK
+parses its body. [`ChatGateway`][chatgateway] uses it when relaying a response body.
+
+Prefer the typed methods unless you are genuinely relaying bytes.
+
+## **Parameters**
+
+<ParamField path="method" type="str" required={true} toc={true}>
+  The JSON-RPC method name.
+</ParamField>
+
+<ParamField path="params" type="dict[str, Any]" required={true} toc={true}>
+  The method's parameters. The client wraps them in the envelope and supplies the request `id`.
+</ParamField>
+
+## **Returns**
+
+`aiohttp.ClientResponse`, yielded by the context manager with its body unread.
+
+<Warning>
+  You own interpreting the result. Check the HTTP status first; on `200`, inspect the JSON-RPC body
+  for an `error` member and compare its code with [AI chat errors][error-codes]. You can iterate
+  `resp.content` for chunk-level access, but the public endpoint may already have buffered the
+  response it received from the AI chat service.
+</Warning>
+
+## **Example**
+
+```python {10,12}
+import asyncio
+
+from signalwire.ai_chat import AIChatClient
+
+
+async def relay(conversation_id: str, message: str):
+    async with AIChatClient(space="your-space") as client:
+        params = {"id": conversation_id, "message": message}
+
+        async with client.raw_post("chat", params) as resp:
+            async for chunk in resp.content.iter_any():
+                yield chunk
+```

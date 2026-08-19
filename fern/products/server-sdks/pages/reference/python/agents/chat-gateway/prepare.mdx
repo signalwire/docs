@@ -1,0 +1,72 @@
+---
+title: "prepare"
+slug: /reference/python/agents/chat-gateway/prepare
+description: Validate a browser request and build the upstream JSON-RPC call, without FastAPI.
+max-toc-depth: 3
+---
+
+[ref-chatgateway]: /docs/server-sdks/reference/python/agents/chat-gateway
+[router]: /docs/server-sdks/reference/python/agents/chat-gateway/router
+[aichatclient]: /docs/server-sdks/reference/python/agents/ai-chat-client
+
+Validate a browser request and build the upstream call. This is the framework-agnostic core of the
+gateway, for serving it from something other than FastAPI. With FastAPI, use [`router()`][router]
+instead.
+
+Everything the browser could use to widen its own access is either rejected or overwritten here: the
+method must be one of the four, the conversation comes from a signed handle, and `config_url` is the
+gateway's.
+
+## **Parameters**
+
+<ParamField path="body" type="dict[str, Any]" required={true} toc={true}>
+  The parsed request body, carrying `method` and, depending on the method, `handle` and `message`.
+</ParamField>
+
+<ParamField path="origin" type="str | None" required={true} toc={true}>
+  The request's `Origin` header. Keyword-only. `None` is allowed, since a non-browser caller sends
+  none and refusing those would break server-side use without stopping an attacker, who simply omits
+  the header.
+</ParamField>
+
+<ParamField path="key" type="str | None" required={true} toc={true}>
+  The publishable key from `Authorization: Bearer`. Keyword-only.
+</ParamField>
+
+## **Returns**
+
+`tuple[str, dict[str, Any], str | None]` — the upstream method name, its params, and a newly minted
+handle. The handle is set only on the call that created the conversation, so you can hand it back in
+the `X-Chat-Handle` header.
+
+The upstream method is the service's, not the browser's: `start` becomes `create_conversation`, `end`
+becomes `end_conversation`, and `log` becomes `chat_log`.
+
+## **Raises**
+
+`GatewayRejection` for a bad key (`401`), a disallowed origin (`403`), a bad or expired handle
+(`403`), an unknown method or missing message (`400`), or a cap hit (`429`).
+
+## **Example**
+
+Serving the gateway from a framework of your own, forwarding with
+[`AIChatClient`][aichatclient]:
+
+```python {9,13}
+from signalwire.ai_chat import AIChatClient, ChatGateway, GatewayRejection
+
+client = AIChatClient(space="your-space")
+gateway = ChatGateway(config_url="https://bayview-taxi.example.com/swml", client=client)
+
+
+async def handle_request(body, origin, key):
+    try:
+        method, params, minted = gateway.prepare(body, origin=origin, key=key)
+    except GatewayRejection as rejection:
+        return rejection.status, {"error": rejection.reason}, None
+
+    async with client.raw_post(method, params) as resp:
+        payload = await resp.read()
+
+    return 200, payload, minted
+```
