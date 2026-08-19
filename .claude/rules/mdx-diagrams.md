@@ -70,8 +70,9 @@ diagram carries brand weight.
 Raster diagrams render as image links in the Markdown endpoint. Give human and agent readers equivalent information:
 
 - Put the complete `<Frame>` that contains an information-bearing raster diagram inside `<llms-ignore>`.
-- Follow it immediately with `<llms-only>` containing a Mermaid equivalent. Preserve the original entities, sequence, branches, labels, and direction; do not substitute a generic summary for relationships visible in the image.
-- Prefer `sequenceDiagram` for messages between actors, `flowchart` for processes and decisions, and ordinary Markdown for terminal output or a UI screenshot whose meaning is not relational.
+- Follow it immediately with `<llms-only>` containing an equivalent in Mermaid or structured Markdown. Preserve the original entities, sequence, branches, labels, and direction; do not substitute a generic summary for relationships visible in the image.
+- Choose the format that preserves the information most precisely. Use `sequenceDiagram` for messages between actors and `flowchart` for processes and decisions, but prefer an ordered list or table when it represents exact steps, ordering, or labels more faithfully.
+- Do not infer relationships from visual placement alone. A grid or grouped layout may be organizing information rather than defining branches or connections.
 - A standalone `<llms-ignore>` is allowed for a screenshot only when the adjacent prose already states every action or value needed to complete the task.
 - Do not pair Mermaid source with these tags. Mermaid already exports as readable source.
 
