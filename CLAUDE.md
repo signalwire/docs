@@ -10,6 +10,8 @@ Fern-powered documentation site. Two sources of truth: MDX pages under `fern/pro
 
 `specs/**/tsp-output/**` and the OpenAPI files it produces (`fern/apis/signalwire-rest/openapi.yaml`, `fern/apis/compatibility/openapi.yaml`) are build artifacts. The REST reference has no MDX at all: change the `.tsp` under `specs/`, run `yarn build:specs`, and commit source plus regenerated output together. When a rendered page is wrong, fix the generator or its source — never patch the output, which the next build overwrites.
 
+A SWML-only `.tsp` edit still moves `fern/apis/signalwire-rest/openapi.yaml`, because the REST tree imports the SWML models. Run `yarn build:specs` before committing even a SWML-only change, and expect a large REST diff in a SWML PR.
+
 ## Everything here is customer-facing
 
 Assume no prior knowledge, and never expose internal implementation detail — backend endpoints, transports, engine-side params. Every fact traces to source, a spec, the dashboard, or a ticket; if you can't verify one, write `[NEEDS SOURCE: what's missing]` instead of guessing.

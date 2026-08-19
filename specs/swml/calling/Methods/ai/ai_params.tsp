@@ -385,9 +385,13 @@ model AIParams {
   @example("Inform user that you can't hear anything")
   interrupt_prompt?: string;
 
-  @doc("Allows multilingualism when `true`.")
-  @example(true)
-  languages_enabled?: boolean | SWMLVar = false;
+  @doc("""
+    Has no effect and can be omitted.
+    A `languages` array takes effect because it is set, not because of this flag, so setting this
+    to `false` does not disable one. The separate `multilingual` object is likewise switched on by
+    being set.
+    """)
+  languages_enabled?: boolean | SWMLVar;
 
   @doc("The local timezone setting for the AI. Value should use `IANA TZ ID`")
   @example("America/Ensenada")
@@ -551,6 +555,52 @@ model AIParams {
   @maxValue(10000)
   @example(250)
   turn_detection_timeout?: integer | SWMLVar = 250;
+
+  @doc("""
+    Which deliberate waits earn a backchannel from `languages[].turn_fillers`, or from
+    `multilingual.turn_fillers` when the agent is in multilingual mode, as a comma-separated list
+    of tokens. A wait happens when the agent holds off answering because the caller is not
+    finished, and the token names why.
+
+    List a specific hold source, or a whole class of wait:
+    - `spell` — the caller is spelling something out
+    - `number` — the caller is reading out digits
+    - `text` — the wording suggests the caller is mid-sentence
+    - `acoustic` — the audio suggests the caller is mid-sentence
+    - `veto` — any of the above
+
+    The default answers `spell` and `number` only, because those pauses are expected and cannot be
+    shortened. A backchannel during `text` or `acoustic` usually talks over a caller who is still
+    going, so give either its own delay with a `<token>:<ms>` suffix rather than listing it bare,
+    as in `spell,number,text:1200`.
+
+    Tokens are matched whole and case-insensitively, and a space after a comma is fine. A token
+    that is not one of the five above matches no wait, so nothing here is validated and a
+    misspelling silently leaves the agent with no backchannels at all.
+    """)
+  @example("spell,number")
+  turn_filler_sources?: string | SWMLVar = string("spell,number");
+
+  @doc("""
+    Play a backchannel on every Nth opportunity rather than all of them. The count advances only on
+    opportunities that would otherwise have produced one, and resets when the caller starts a new
+    turn, so the first opportunity of each turn always plays. A turn that chains several waits
+    shares one count, so raising this widens the spacing across the whole stretch rather than
+    restarting at each wait.
+    """)
+  @minValue(1)
+  @example(2)
+  turn_filler_every_n?: integer | SWMLVar = 1;
+
+  @doc("""
+    How long a wait must already have run, in milliseconds, before a backchannel plays. Off by
+    default: waits open the moment the agent decides to hold, and `spell` and `number` are meant to
+    be answered right then. A `<token>:<ms>` suffix in `turn_filler_sources` overrides this for that
+    token.
+    """)
+  @minValue(0)
+  @example(800)
+  turn_filler_min_ms?: integer | SWMLVar = 0;
 
   @doc("""
     The format for the AI agent to reference phone numbers.
