@@ -27,3 +27,9 @@ test('reports Fern soft-404 bodies even for notContains-only cases', () => {
 
   assert.deepEqual(failures, ['received a Page Not Found stub']);
 });
+
+test('reports presigned image URLs', () => {
+  const failures = checkBody({}, 'https://example.com/image.webp?X-Amz-Signature=temporary');
+
+  assert.deepEqual(failures, ['contains a presigned image URL']);
+});

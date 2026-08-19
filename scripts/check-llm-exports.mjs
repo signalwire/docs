@@ -24,6 +24,10 @@ function checkBody(testCase, body) {
     failures.push('received a Page Not Found stub');
   }
 
+  if (body.includes('X-Amz-Signature')) {
+    failures.push('contains a presigned image URL');
+  }
+
   for (const required of testCase.contains ?? []) {
     if (!body.includes(required)) failures.push(`missing required text: ${JSON.stringify(required)}`);
   }
