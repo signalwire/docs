@@ -44,3 +44,5 @@ Custom components (registered in `docs.yml` → `fern/components/`):
 
 - `VoiceWidget` — interactive click-to-call demo. Human-only: wrap usages in `<llms-ignore>`.
 - `Skeleton` / `SkeletonText` — loading placeholders; registered, no MDX uses yet.
+
+Fern's Markdown export flattens an untitled callout into ordinary prose. Give a `Warning` a concise title when losing the warning context could change a reader's safe interpretation—for example, legal or compliance disclaimers, credential handling, network restrictions, or service availability. Do not add titles mechanically to every callout; the title must identify the specific hazard or constraint.
