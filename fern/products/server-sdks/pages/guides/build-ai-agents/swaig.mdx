@@ -14,9 +14,30 @@ max-toc-depth: 3
 
 SWAIG (SignalWire AI Gateway) connects the AI conversation to your backend logic. When the AI decides it needs to perform an action (like looking up an order or checking a balance), it calls a SWAIG function that you've defined.
 
+<llms-ignore>
+
 <Frame caption="SWAIG Function Flow">
   <img class="diagram" src="/assets/images/sdks/diagrams/02_03_swaig_diagram1.webp" alt="SWAIG function call flow." />
 </Frame>
+
+</llms-ignore>
+
+<llms-only>
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant AI as SignalWire AI Engine
+    participant Agent as Your agent
+    User->>AI: What is my account balance?
+    Note over AI: Transcribe speech, understand intent,<br/>select get_balance(account_id)
+    AI->>Agent: POST /swaig with function and arguments
+    Note over Agent: Look up balance and return<br/>SwaigFunctionResult
+    Agent-->>AI: Balance is $150.00
+    AI-->>User: Speak the result
+```
+
+</llms-only>
 
 ### SWAIG in SWML
 
@@ -540,9 +561,30 @@ return result;
 
 ### SWAIG Request Flow
 
+<llms-ignore>
+
 <Frame caption="SWAIG Request Processing">
   <img class="diagram" src="/assets/images/sdks/diagrams/02_03_swaig_diagram2.webp" alt="SWAIG request processing flow." />
 </Frame>
+
+</llms-ignore>
+
+<llms-only>
+
+```mermaid
+flowchart TD
+    request["SignalWire sends POST /swaig"] --> basic["Validate Basic Auth"]
+    basic --> token["Validate function-specific token, if configured"]
+    token --> lookup["Look up function in ToolRegistry"]
+    lookup -->|found| handler["Execute handler"]
+    handler --> result["Return SwaigFunctionResult"]
+    result --> json["Format JSON response"]
+    lookup -->|not found| error["Return error response"]
+    json & error --> response["Send response to SignalWire"]
+    response --> continue["AI incorporates response into conversation"]
+```
+
+</llms-only>
 
 ### SWAIG Request Format
 
