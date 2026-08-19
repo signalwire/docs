@@ -10,6 +10,8 @@ max-toc-depth: 3
 
 [functions-fillers]: /docs/swml/reference/calling/ai/swaig/functions
 [ai-languages-params]: /docs/swml/reference/calling/ai/languages#paramssimilarity
+[ai-languages]: /docs/swml/reference/calling/ai/languages
+[ai-multilingual]: /docs/swml/reference/calling/ai/multilingual
 [post-prompt-url]: /docs/swml/reference/calling/ai#post_prompt_url
 [get-visual-input]: /docs/swml/reference/calling/ai/swaig#internal_fillersget_visual_input
 [iana-tz]: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
@@ -109,8 +111,10 @@ These parameters control the fundamental behavior and capabilities of the AI age
   Enables visual input processing for the AI Agent. When set to `true`, the AI Agent will be able to utilize visual processing capabilities. The image used for visual processing will be gathered from the user's camera if video is available on the call, leveraging the [`get_visual_input`][get-visual-input] function.
 </ParamField>
 
-<ParamField path="params.languages_enabled" type="boolean" default="false" toc={true}>
-  Allows multilingualism when `true`.
+<ParamField path="params.languages_enabled" type="boolean" toc={true}>
+  Has no effect and can be omitted.
+
+  A [`languages`][ai-languages] array takes effect because it is set, not because of this flag, so setting this to `false` does not disable one. The separate [`multilingual`][ai-multilingual] object is likewise switched on by being set.
 </ParamField>
 
 
@@ -575,6 +579,33 @@ Fine-tune advanced AI behavior settings including response limits, data persiste
 
 <ParamField path="params.turn_detection_timeout" type="integer" default="250" toc={true}>
   Time in milliseconds to wait after detecting a potential end-of-turn before finalizing speech recognition. Works with `enable_turn_detection`. Lower values make the agent more responsive but may cut off users mid-sentence. Allowed values from `0` to `10000`.
+</ParamField>
+
+
+<ParamField path="params.turn_filler_every_n" type="integer" default="1" toc={true}>
+  Play a backchannel on every Nth opportunity rather than all of them. The count advances only on opportunities that would otherwise have produced one, and resets when the caller starts a new turn, so the first opportunity of each turn always plays. A turn that chains several waits shares one count, so raising this widens the spacing across the whole stretch rather than restarting at each wait.
+</ParamField>
+
+
+<ParamField path="params.turn_filler_min_ms" type="integer" default="0" toc={true}>
+  How long a wait must already have run, in milliseconds, before a backchannel plays. Off by default: waits open the moment the agent decides to hold, and `spell` and `number` are meant to be answered right then. A `<token>:<ms>` suffix in `turn_filler_sources` overrides this for that token.
+</ParamField>
+
+
+<ParamField path="params.turn_filler_sources" type="string" default="spell,number" toc={true}>
+  Which deliberate waits earn a backchannel from [`languages[].turn_fillers`](/docs/swml/reference/calling/ai/languages#languagesturn_fillers), or from [`multilingual.turn_fillers`](/docs/swml/reference/calling/ai/multilingual#aimultilingualturn_fillers) when the agent is in multilingual mode, as a comma-separated list of tokens. A wait happens when the agent holds off answering because the caller is not finished, and the token names why.
+
+  List a specific hold source, or a whole class of wait:
+
+  - `spell` — the caller is spelling something out
+  - `number` — the caller is reading out digits
+  - `text` — the wording suggests the caller is mid-sentence
+  - `acoustic` — the audio suggests the caller is mid-sentence
+  - `veto` — any of the above
+
+  The default answers `spell` and `number` only, because those pauses are expected and cannot be shortened. A backchannel during `text` or `acoustic` usually talks over a caller who is still going, so give either its own delay with a `<token>:<ms>` suffix rather than listing it bare, as in `spell,number,text:1200`.
+
+  Tokens are matched whole and case-insensitively, and a space after a comma is fine. A token that is not one of the five above matches no wait, so nothing here is validated and a misspelling silently leaves the agent with no backchannels at all.
 </ParamField>
 
 
