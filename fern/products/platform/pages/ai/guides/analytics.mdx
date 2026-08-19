@@ -13,12 +13,13 @@ max-toc-depth: 3
 [post-prompt-callback]: /docs/apis/rest/webhooks/ai-post-prompt-callback
 [prompt-engineering]: /docs/platform/ai/prompt-engineering
 [set-post-prompt]: /docs/server-sdks/reference/python/agents/agent-base/set-post-prompt
+[speech-hints]: /docs/server-sdks/guides/hints
 [tool-calling]: /docs/platform/ai/tool-calling
 [tts]: /docs/platform/voice/tts
 
 Conversation analytics shows what happened during an AI conversation, how well the experience
 performed, and whether the user accomplished their goal. Use it to replace impressions such as
-“the agent felt slow” or “the call went poorly” with specific evidence you can act on.
+"the agent felt slow" or "the call went poorly" with specific evidence you can act on.
 
 You can identify where a response was delayed, find words the agent repeatedly misheard, understand
 why callers interrupted, inspect function behavior, measure outcomes, and connect resource usage to
@@ -104,7 +105,7 @@ class AnalyticsAgent(AgentBase):
             "Return JSON only with these keys: intent, outcome, escalated, and sentiment. "
             "Set outcome to resolved, unresolved, or abandoned."
         )
-        self.set_params({"accounting": True})
+        self.set_params({"enable_accounting": True})
 
     def on_summary(self, summary, raw_data=None):
         print("Outcome:", summary)
@@ -137,14 +138,15 @@ sections:
         # Replace this URL with an endpoint that accepts the final report.
         post_prompt_url: https://example.com/ai/post-prompt
         params:
-          accounting: true
+          enable_accounting: true
 ```
 
 </Tab>
 </Tabs>
 
 The generated [post-prompt callback documentation][post-prompt-callback] provides request examples
-and documents the complete payload. The `conversation_type` field identifies voice or chat reports.
+and documents the callback's core fields. The `conversation_type` field identifies voice or chat
+reports.
 
 ### Understand outcomes
 
@@ -166,7 +168,7 @@ raw payload and handle `raw`, flat objects, and `parsed` wrappers described in t
 [post-prompt callback reference][post-prompt-callback].
 
 The wording of the post-prompt determines whether the result is useful at scale. A request such as
-“summarize the conversation” produces prose for reviewing one conversation. Named fields with a
+"summarize the conversation" produces prose for reviewing one conversation. Named fields with a
 small set of allowed values produce records you can group, filter, and compare. For example, once
 `intent`, `outcome`, and `escalated` are consistent, you can calculate the resolution rate for each
 intent without rereading transcripts.
@@ -181,7 +183,7 @@ The final report provides three views of the conversation:
 
 | Field | Contains | Use it for |
 | --- | --- | --- |
-| `call_log` | The filtered, or “blessed,” conversation after consolidation | Readable transcripts and per-turn analysis |
+| `call_log` | The filtered, or "blessed," conversation after consolidation | Readable transcripts and per-turn analysis |
 | `raw_call_log` | The append-only conversation before filtering | Interrupted responses and details removed during consolidation |
 | `call_timeline` | A flat stream of typed events extracted from the conversation log | Replaying context changes, functions, and other events in order |
 
@@ -239,8 +241,7 @@ Recognition metrics apply to voice calls, not AI Chat. Each `user` turn can incl
 Confidence is most useful as a way to find patterns, not as a score to average across every call.
 Review the transcript around low-confidence turns and group them by repeated terms. Product names,
 street names, abbreviations, and account identifiers often emerge as the real problem. Add
-<Tooltip tip="Speech hints bias recognition toward names and domain-specific vocabulary.">speech hints</Tooltip>
-for vocabulary that is repeatedly misrecognized.
+[speech hints][speech-hints] for vocabulary that is repeatedly misrecognized.
 
 Use `merge_count` or `timing.segments` as context when a turn spans several recognition segments;
 those turns are not directly comparable to a simple, single-segment utterance.
@@ -305,7 +306,7 @@ global word limit.
 
 ### Connect usage to value
 
-When accounting is enabled, the final report includes totals for:
+When `enable_accounting` is true, the final report includes totals for:
 
 - conversation minutes
 - input and output tokens
@@ -435,7 +436,7 @@ Use a repeatable loop:
 | --- | --- | --- |
 | Outcomes cannot be counted | `post_prompt_data` | Ask for named fields and limited values |
 | Replies feel slow | Mouth-to-ear percentiles and the per-turn pipeline | Fix turn detection or the dominant model, utterance, or audio segment |
-| The agent mishears recurring terms | Low-confidence user turns | Add <Tooltip tip="Speech hints bias recognition toward names and domain-specific vocabulary.">speech hints</Tooltip> |
+| The agent mishears recurring terms | Low-confidence user turns | Add [speech hints][speech-hints] |
 | A function is slow or repeated | `swaig_log` and function timing | Improve the handler or narrow its description |
 | A live call enters the wrong step | Debug step and function events | Fix context transitions or function scope |
 | Replies are long or often interrupted | Word counts and turn-taking fields | Tighten [prompt response guidelines][prompt-engineering] |
