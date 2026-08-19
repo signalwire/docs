@@ -1,0 +1,173 @@
+---
+title: "AIChatClient"
+slug: /reference/python/agents/ai-chat-client
+description: Async client for holding a text conversation with a SignalWire AI agent from your own server.
+max-toc-depth: 3
+---
+
+[chatgateway]: /docs/server-sdks/reference/python/agents/chat-gateway
+[chat-endpoint]: /docs/apis/rest/ai-chat/chat-methods
+[error-codes]: /docs/apis/error-codes
+[createconversation]: /docs/server-sdks/reference/python/agents/ai-chat-client/create-conversation
+[chat]: /docs/server-sdks/reference/python/agents/ai-chat-client/chat
+[end]: /docs/server-sdks/reference/python/agents/ai-chat-client/end
+[delete]: /docs/server-sdks/reference/python/agents/ai-chat-client/delete
+[log]: /docs/server-sdks/reference/python/agents/ai-chat-client/log
+[summarize]: /docs/server-sdks/reference/python/agents/ai-chat-client/summarize
+[rawpost]: /docs/server-sdks/reference/python/agents/ai-chat-client/raw-post
+[close]: /docs/server-sdks/reference/python/agents/ai-chat-client/close
+
+`AIChatClient` sends messages to an AI agent and returns its replies. The agent is the same one a
+phone call would reach, and each call to [`chat()`][chat] runs one full turn.
+
+It is async-first. A turn waits on a full model round trip, measured in seconds, and the typical
+consumers run on an asyncio event loop where a blocking HTTP call would stall every other
+conversation. Use it as an async context manager, or call [`close()`][close] yourself.
+
+```bash
+pip install signalwire-sdk
+```
+
+<Warning>
+  This class holds your API token, so it belongs on a server you control. To reach an agent from a
+  browser, use [`ChatGateway`][chatgateway] instead.
+</Warning>
+
+## **Parameters**
+
+<ParamField path="project" type="str | None" toc={true}>
+  Your project ID. Falls back to `SIGNALWIRE_PROJECT_ID`. Raises `ValueError` when neither is set.
+</ParamField>
+
+<ParamField path="token" type="str | None" toc={true}>
+  An API token with the `chat` scope. Falls back to `SIGNALWIRE_API_TOKEN`.
+</ParamField>
+
+<ParamField path="space" type="str | None" toc={true}>
+  Your Space name, used to build the service URL. Falls back to `SIGNALWIRE_SPACE`.
+</ParamField>
+
+<ParamField path="url" type="str | None" toc={true}>
+  The service URL, used verbatim. Overrides `space`. Raises `ValueError` when neither is available.
+</ParamField>
+
+<ParamField path="session" type="aiohttp.ClientSession | None" toc={true}>
+  An existing session to send requests on. When omitted, the client creates and owns one, and
+  `close()` closes it. Pass your own to control connection pooling or timeouts.
+</ParamField>
+
+<Warning>
+  The client does not add Basic authentication or its User-Agent to a session you supply. Configure
+  those headers on the session before passing `session=`, or let the client create the session.
+</Warning>
+
+A configured environment needs no arguments at all. Identity travels in HTTP Basic auth, never in the
+request body.
+
+## **Return types**
+
+<ParamField path="ConversationInfo" type="dataclass" toc={true}>
+  Returned by [`create_conversation()`][createconversation]. Carries `id`, `status`, and
+  `initial_message`.
+</ParamField>
+
+<ParamField path="ChatResponse" type="dataclass" toc={true}>
+  Returned by [`chat()`][chat]. Carries `text`, `conversation_id`, and `user_event`.
+</ParamField>
+
+<ParamField path="ChatLog" type="dataclass" toc={true}>
+  Returned by [`log()`][log]. Carries `messages` and `call_timeline`.
+</ParamField>
+
+## **Exceptions**
+
+All inherit from `AIChatError`, which carries `code` and `message`. Codes without a specific class
+raise `AIChatError` itself. Documented codes are listed under [AI chat errors][error-codes].
+
+<ParamField path="AuthenticationError" type="AIChatError" toc={true}>
+  A JSON-RPC `-32009` response. A public-endpoint HTTP 401 currently raises `AIChatError` instead.
+</ParamField>
+
+<ParamField path="ConversationNotFoundError" type="AIChatError" toc={true}>
+  No conversation with that id exists in your project.
+</ParamField>
+
+<ParamField path="RateLimitError" type="AIChatError" toc={true}>
+  The service returned a JSON-RPC rate-limit error.
+</ParamField>
+
+<ParamField path="ChatInProgressError" type="AIChatError" toc={true}>
+  The service returned a JSON-RPC error indicating that a chat operation is already in progress.
+</ParamField>
+
+<ParamField path="SummaryError" type="AIChatError" toc={true}>
+  Summary generation failed. `code` is `None`, because this failure rides the success envelope rather
+  than arriving as a JSON-RPC error.
+</ParamField>
+
+The client maps JSON-RPC error codes to these classes. Platform errors do not always use a JSON-RPC
+envelope, so an HTTP failure can raise `AIChatError` directly or, for some JSON response shapes,
+produce an empty result. Check the API error when handling failed calls.
+
+## **Timeouts**
+
+The default session has no client-side total cap, a 10-second connect timeout, and a 60-second
+`sock_read` timeout. The public endpoint separately limits an individual request to 30 seconds; a
+slower turn returns the same 502 response as an unavailable service.
+
+## **Methods**
+
+<CardGroup cols={3}>
+  <Card title="create_conversation" href="/docs/server-sdks/reference/python/agents/ai-chat-client/create-conversation">
+    Create a conversation, or reset an existing one.
+  </Card>
+  <Card title="chat" href="/docs/server-sdks/reference/python/agents/ai-chat-client/chat">
+    Send a message and return the agent's reply.
+  </Card>
+  <Card title="end" href="/docs/server-sdks/reference/python/agents/ai-chat-client/end">
+    End the conversation and start post-processing.
+  </Card>
+  <Card title="delete" href="/docs/server-sdks/reference/python/agents/ai-chat-client/delete">
+    Remove the conversation and its data.
+  </Card>
+  <Card title="log" href="/docs/server-sdks/reference/python/agents/ai-chat-client/log">
+    Read the conversation back.
+  </Card>
+  <Card title="summarize" href="/docs/server-sdks/reference/python/agents/ai-chat-client/summarize">
+    Generate a summary of the conversation.
+  </Card>
+  <Card title="raw_post" href="/docs/server-sdks/reference/python/agents/ai-chat-client/raw-post">
+    Access one JSON-RPC HTTP response with its body unread.
+  </Card>
+  <Card title="close" href="/docs/server-sdks/reference/python/agents/ai-chat-client/close">
+    Close the session the client created.
+  </Card>
+</CardGroup>
+
+## **Example**
+
+```python {10,13,18}
+import asyncio
+
+from signalwire.ai_chat import AIChatClient
+
+CONFIG_URL = "https://bayview-taxi.example.com/swml"
+
+
+async def main():
+    async with AIChatClient(space="your-space") as client:
+        info = await client.create_conversation("chat-8f21", config_url=CONFIG_URL)
+        print("Ada:", info.initial_message)
+
+        reply = await client.chat(
+            "chat-8f21", "How much is a van from 123 Gough Street to the airport?"
+        )
+        print("Ada:", reply.text)
+
+        await client.end("chat-8f21")
+
+
+asyncio.run(main())
+```
+
+The [AI chat endpoint][chat-endpoint] documents the wire protocol underneath this class.
