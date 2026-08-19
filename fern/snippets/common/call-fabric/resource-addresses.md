@@ -41,6 +41,16 @@ Once you have created a Resource, you can use the address to interact with it wi
 Additionally, you can view the created resource in the `Resources` tab of the SignalWire Dashboard.
 Here, you can view the address, type, and other details of the resource.
 
+<llms-ignore>
+
 <Frame caption="The filterable Resources list in the SignalWire Dashboard.">
   <img src="/assets/images/dashboard/resources/resource-list.webp" alt="The Resources page of the SignalWire Dashboard." />
 </Frame>
+
+</llms-ignore>
+
+<llms-only>
+
+The **My Resources** page lists each Resource's name, type, and last update time and provides search and type filters.
+
+</llms-only>

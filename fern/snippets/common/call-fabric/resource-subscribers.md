@@ -9,6 +9,16 @@ Subscribers can receive or initiate calls, messages, and other forms of interact
 The SignalWire platform facilitates smooth transitions between different communication modes,
 such as switching from a voice call to a video conference, or from a text chat to a voice call.
 
+<llms-ignore>
+
 <Frame caption="Viewing details for a Subscriber in the Resources tab of the SignalWire Dashboard.">
   <img src="/assets/images/dashboard/resources/subscriber.webp" alt="Subscribers." />
 </Frame>
+
+</llms-ignore>
+
+<llms-only>
+
+A Subscriber's detail page has **Configuration**, **Addresses**, and **SIP Endpoints** tabs. Configuration includes the Subscriber's email, profile, and password fields.
+
+</llms-only>
