@@ -433,7 +433,7 @@ model CallCreateParamsBase {
   @example("s3cr3t")
   password?: string;
 
-  @doc("Inline SWML document (JSON or YAML string), or an `http(s)://` URL that returns one, executed at the destination end. Useful for directing the call to a RelayBin / external SWML handler. When present, `to` may be omitted.")
+  @doc("Inline [Calling SWML document](/docs/swml/reference/calling) (JSON or YAML string), or an `http(s)://` URL that returns one, executed at the destination end. Useful for directing the call to a RelayBin / external SWML handler. When present, `to` may be omitted.")
   @example("https://example.com/destination.swml.json")
   @example(CallSWMLDocumentExample)
   to_script?: string | TypeSpec.Record<unknown>;
@@ -510,7 +510,7 @@ model CallCreateParamsURL is CallCreateParamsBase {
 
 @summary("dial (Inline SWML)")
 model CallCreateParamsSWML is CallCreateParamsBase {
-  @doc("Inline SWML object containing SWML instructions for handling the call. Either `url` or `swml` must be included for a new call.")
+  @doc("Inline [Calling SWML document](/docs/swml/reference/calling) containing instructions for handling the call. Either `url` or `swml` must be included for a new call.")
   @example(CallSWMLDocumentExample)
   swml: TypeSpec.Record<unknown>;
 }
@@ -539,7 +539,7 @@ model CallUpdateParamsBase {
 
 @summary("update (Inline SWML)")
 model CallUpdateParamsSWML is CallUpdateParamsBase {
-  @doc("Inline SWML object containing SWML instructions for handling the call. Either `url` or `swml` must be included for a new call.")
+  @doc("Inline [Calling SWML document](/docs/swml/reference/calling) containing instructions for handling the call. Either `url` or `swml` must be included for a new call.")
   @example(CallSWMLDocumentExample)
   swml: TypeSpec.Record<unknown>;
 }
@@ -1927,7 +1927,7 @@ model CallTransferRequest {
 
   @doc(paramsDescription)
   params: {
-    @doc("The destination to transfer the call to. Can be a SIP URI, phone number, SWML URL, or an inline SWML object.")
+    @doc("The destination to transfer the call to. Can be a SIP URI, phone number, SWML URL, or an inline [Calling SWML document](/docs/swml/reference/calling).")
     @example("sip:destination@example.com")
     @example(CallSWMLDocumentExample)
     dest: string | TypeSpec.Record<unknown>;
