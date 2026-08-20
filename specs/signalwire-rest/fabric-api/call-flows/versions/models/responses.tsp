@@ -1,7 +1,5 @@
 import "../../../../types";
 import "../../../_shared/const.tsp";
-import "../../../../../swml/calling";
-
 model CallFlowVersion {
   @doc("The unique identifier of the version.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
@@ -27,7 +25,7 @@ model CallFlowVersion {
 
   @doc("The calling SWML document this version snapshots. Uses [calling SWML methods](/docs/swml/reference/calling).")
   @example(SWML_CONTENTS_EXAMPLE)
-  relayml?: SWML.Calling.SWMLObject;
+  relayml?: TypeSpec.Record<unknown>;
 }
 
 model CallFlowVersionListResponse {
@@ -62,7 +60,7 @@ model CallFlowVersionDeployResponse {
 
   @doc("The calling SWML document deployed by this version. Uses [calling SWML methods](/docs/swml/reference/calling).")
   @example(SWML_CONTENTS_EXAMPLE)
-  relayml?: SWML.Calling.SWMLObject;
+  relayml?: TypeSpec.Record<unknown>;
 }
 
 model CallFlowVersionsPaginationResponse {

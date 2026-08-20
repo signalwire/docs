@@ -1,14 +1,8 @@
 import "./enums.tsp";
-import "./ai/main.tsp";
-
 import "../../../types";
-
-// Import SWML AI types for reuse
 import "../../../../swml/calling/Methods/ai/main.tsp";
 
 using TypeSpec.Http;
-
-using SWML.Calling;
 
 model AIAgentPathID {
   @doc("Unique ID of an AI Agent.")
@@ -18,8 +12,85 @@ model AIAgentPathID {
 }
 
 @summary("AI Agent")
-@doc("An AI Agent configuration that extends the SWML AI object with additional API-specific properties.")
-model AIAgent is AIObject {
+@doc("""
+  ${SWML.Calling.aiDescription}
+
+  See the [SWML `ai` method reference](/docs/swml/reference/calling/ai) for the complete configuration contract.
+  """)
+model AIAgent {
+  @doc("""
+    ${SWML.Calling.aiGlobalDataDescription}
+
+    See [`ai.global_data` in the SWML reference](/docs/swml/reference/calling/ai).
+    """)
+  @example(#{ company_name: "Acme Corp", support_hours: "9am-5pm EST" })
+  global_data?: TypeSpec.Record<unknown>;
+
+  @doc("""
+    ${SWML.Calling.aiHintsDescription}
+
+    See [`ai.hints` in the SWML reference](/docs/swml/reference/calling/ai).
+    """)
+  @example(#["pizza", "pepperoni"])
+  hints?: (string | TypeSpec.Record<unknown>)[];
+
+  @doc("""
+    ${SWML.Calling.aiLanguagesDescription}
+
+    See the [SWML `ai.languages` reference](/docs/swml/reference/calling/ai/languages).
+    """)
+  languages?: TypeSpec.Record<unknown>[];
+
+  @doc("""
+    ${SWML.Calling.aiMultilingualDescription}
+
+    See the [SWML `ai.multilingual` reference](/docs/swml/reference/calling/ai/multilingual).
+    """)
+  multilingual?: TypeSpec.Record<unknown>;
+
+  @doc("""
+    ${SWML.Calling.aiParamsDescription}
+
+    See the [SWML `ai.params` reference](/docs/swml/reference/calling/ai/params).
+    """)
+  params?: TypeSpec.Record<unknown>;
+
+  @doc("""
+    ${SWML.Calling.aiPostPromptDescription}
+
+    See [`ai.post_prompt` in the SWML reference](/docs/swml/reference/calling/ai).
+    """)
+  post_prompt?: TypeSpec.Record<unknown>;
+
+  @doc("""
+    ${SWML.Calling.aiPostPromptUrlDescription}
+
+    See [`ai.post_prompt_url` in the SWML reference](/docs/swml/reference/calling/ai#post_prompt_url-callback).
+    """)
+  @example("username:password@https://example.com")
+  post_prompt_url?: url;
+
+  @doc("""
+    ${SWML.Calling.aiPronounceDescription}
+
+    See [`ai.pronounce` in the SWML reference](/docs/swml/reference/calling/ai).
+    """)
+  pronounce?: TypeSpec.Record<unknown>[];
+
+  @doc("""
+    ${SWML.Calling.aiPromptDescription}
+
+    See the [SWML `ai.prompt` reference](/docs/swml/reference/calling/ai/prompt).
+    """)
+  prompt: TypeSpec.Record<unknown>;
+
+  @doc("""
+    ${SWML.Calling.aiSwaigDescription}
+
+    See the [SWML `ai.SWAIG` reference](/docs/swml/reference/calling/ai/swaig).
+    """)
+  SWAIG?: TypeSpec.Record<unknown>;
+
   @doc("Unique ID of an AI Agent.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
   agent_id: uuid;

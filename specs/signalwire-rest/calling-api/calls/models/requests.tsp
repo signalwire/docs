@@ -1,7 +1,8 @@
 import "@typespec/http";
 import "@typespec/openapi3";
 import "@typespec/json-schema";
-import "../../../../swml/calling";
+import "../../../../swml/calling/Methods/ai_sidecar";
+import "../../../../swml/calling/Methods/live_translate";
 import "./core.tsp";
 
 using TypeSpec.Http;
@@ -427,7 +428,7 @@ model CallCreateParamsBase {
 
   @doc("Inline SWML document (JSON or YAML string), or an `http(s)://` URL that returns one, executed at the destination end. Useful for directing the call to a RelayBin / external SWML handler. When present, `to` may be omitted.")
   @example("https://example.com/destination.swml.json")
-  to_script?: string | SWMLObject;
+  to_script?: string | TypeSpec.Record<unknown>;
 
   @doc("Caller ID displayed to the destination. E.164 for PSTN; short caller-id token or SIP URI for SIP/Verto.")
   @example("+1234567890")
@@ -502,7 +503,7 @@ model CallCreateParamsURL is CallCreateParamsBase {
 @summary("dial (Inline SWML)")
 model CallCreateParamsSWML is CallCreateParamsBase {
   @doc("Inline SWML object containing SWML instructions for handling the call. Either `url` or `swml` must be included for a new call.")
-  swml: SWMLObject;
+  swml: TypeSpec.Record<unknown>;
 }
 
 @summary("update")
@@ -530,7 +531,7 @@ model CallUpdateParamsBase {
 @summary("update (Inline SWML)")
 model CallUpdateParamsSWML is CallUpdateParamsBase {
   @doc("Inline SWML object containing SWML instructions for handling the call. Either `url` or `swml` must be included for a new call.")
-  swml: SWMLObject;
+  swml: TypeSpec.Record<unknown>;
 }
 
 @summary("update (URL)")
@@ -1918,7 +1919,7 @@ model CallTransferRequest {
   params: {
     @doc("The destination to transfer the call to. Can be a SIP URI, phone number, SWML URL, or an inline SWML object.")
     @example("sip:destination@example.com")
-    dest: string | SWMLObject;
+    dest: string | TypeSpec.Record<unknown>;
   };
 }
 
