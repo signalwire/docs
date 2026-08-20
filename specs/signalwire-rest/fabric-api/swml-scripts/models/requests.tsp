@@ -38,7 +38,7 @@ model MessagingSwmlScriptCreateRequest {
 
   @doc("The messaging SWML document. Uses [messaging SWML methods](/docs/swml/reference/messaging).")
   @example(SWML_MESSAGING_CONTENTS_EXAMPLE)
-  contents: SWML.Messaging.SWMLObject;
+  contents: unknown;
 }
 
 @summary("Create SWML Script")
@@ -83,7 +83,7 @@ model MessagingSwmlScriptUpdateRequest {
 
   @doc("The messaging SWML document. Uses [messaging SWML methods](/docs/swml/reference/messaging).")
   @example(SWML_MESSAGING_CONTENTS_EXAMPLE)
-  contents?: SWML.Messaging.SWMLObject;
+  contents?: unknown;
 }
 
 @summary("Update SWML Script")

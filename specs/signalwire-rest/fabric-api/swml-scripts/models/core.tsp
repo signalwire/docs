@@ -69,7 +69,7 @@ model MessagingSwmlScript {
 
   @doc("The messaging SWML document executed when this script runs. Uses [messaging SWML methods](/docs/swml/reference/messaging).")
   @example(SWML_MESSAGING_CONTENTS_EXAMPLE)
-  contents: SWML.Messaging.SWMLObject;
+  contents: unknown;
 }
 
 @summary("SWML Script")
