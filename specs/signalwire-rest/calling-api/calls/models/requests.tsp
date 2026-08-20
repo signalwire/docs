@@ -15,6 +15,13 @@ using SWML.Calling;
 
 const CallSWMLExample = "{'version': '1.0.0', 'sections': { 'main': [{ 'answer': { 'max_duration': 60 }},{ 'play': { 'urls': ['silence:2', 'say:Hello from SignalWire!']}}]}}";
 
+const CallSWMLDocumentExample = #{
+  version: "1.0.0",
+  sections: #{
+    main: #[#{ play: #{ url: "https://cdn.signalwire.com/swml/audio.mp3" } }],
+  },
+};
+
 const CallFallbackURLExample = "https://example.com/fallback";
 
 const CallSWMLURLExample = "https://example.com/swml";
@@ -428,6 +435,7 @@ model CallCreateParamsBase {
 
   @doc("Inline SWML document (JSON or YAML string), or an `http(s)://` URL that returns one, executed at the destination end. Useful for directing the call to a RelayBin / external SWML handler. When present, `to` may be omitted.")
   @example("https://example.com/destination.swml.json")
+  @example(CallSWMLDocumentExample)
   to_script?: string | TypeSpec.Record<unknown>;
 
   @doc("Caller ID displayed to the destination. E.164 for PSTN; short caller-id token or SIP URI for SIP/Verto.")
@@ -503,6 +511,7 @@ model CallCreateParamsURL is CallCreateParamsBase {
 @summary("dial (Inline SWML)")
 model CallCreateParamsSWML is CallCreateParamsBase {
   @doc("Inline SWML object containing SWML instructions for handling the call. Either `url` or `swml` must be included for a new call.")
+  @example(CallSWMLDocumentExample)
   swml: TypeSpec.Record<unknown>;
 }
 
@@ -531,6 +540,7 @@ model CallUpdateParamsBase {
 @summary("update (Inline SWML)")
 model CallUpdateParamsSWML is CallUpdateParamsBase {
   @doc("Inline SWML object containing SWML instructions for handling the call. Either `url` or `swml` must be included for a new call.")
+  @example(CallSWMLDocumentExample)
   swml: TypeSpec.Record<unknown>;
 }
 
@@ -1919,6 +1929,7 @@ model CallTransferRequest {
   params: {
     @doc("The destination to transfer the call to. Can be a SIP URI, phone number, SWML URL, or an inline SWML object.")
     @example("sip:destination@example.com")
+    @example(CallSWMLDocumentExample)
     dest: string | TypeSpec.Record<unknown>;
   };
 }

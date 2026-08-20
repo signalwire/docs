@@ -39,6 +39,7 @@ model AIAgent {
 
     See the [SWML `ai.languages` reference](/docs/swml/reference/calling/ai/languages).
     """)
+  @example(#[#{ name: "English", code: "en-US", voice: "rime.spore" }])
   languages?: TypeSpec.Record<unknown>[];
 
   @doc("""
@@ -46,6 +47,13 @@ model AIAgent {
 
     See the [SWML `ai.multilingual` reference](/docs/swml/reference/calling/ai/multilingual).
     """)
+  @example(#{
+    languages: #[
+      #{ language: "en", voice: "rime.spore" },
+      #{ language: "es", voice: "elevenlabs.rachel:eleven_flash_v2_5" }
+    ],
+    allowed: #["en", "es"],
+  })
   multilingual?: TypeSpec.Record<unknown>;
 
   @doc("""
@@ -53,6 +61,7 @@ model AIAgent {
 
     See the [SWML `ai.params` reference](/docs/swml/reference/calling/ai/params).
     """)
+  @example(#{ ai_model: "gpt-4o-mini", wait_for_user: true })
   params?: TypeSpec.Record<unknown>;
 
   @doc("""
@@ -60,6 +69,9 @@ model AIAgent {
 
     See [`ai.post_prompt` in the SWML reference](/docs/swml/reference/calling/ai).
     """)
+  @example(#{
+    text: "Summarize the conversation and provide any follow-up action items.",
+  })
   post_prompt?: TypeSpec.Record<unknown>;
 
   @doc("""
@@ -75,6 +87,7 @@ model AIAgent {
 
     See [`ai.pronounce` in the SWML reference](/docs/swml/reference/calling/ai).
     """)
+  @example(#[#{ replace: "SWML", with: "swim-el", ignore_case: true }])
   pronounce?: TypeSpec.Record<unknown>[];
 
   @doc("""
@@ -82,6 +95,7 @@ model AIAgent {
 
     See the [SWML `ai.prompt` reference](/docs/swml/reference/calling/ai/prompt).
     """)
+  @example(#{ text: "You are a helpful customer support assistant." })
   prompt: TypeSpec.Record<unknown>;
 
   @doc("""
@@ -89,6 +103,7 @@ model AIAgent {
 
     See the [SWML `ai.SWAIG` reference](/docs/swml/reference/calling/ai/swaig).
     """)
+  @example(#{ native_functions: #["check_time"] })
   SWAIG?: TypeSpec.Record<unknown>;
 
   @doc("Unique ID of an AI Agent.")
