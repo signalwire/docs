@@ -38,8 +38,16 @@ model SWAIGFunction {
   data_map?: DataMap;
 
   @doc("Function-specific URL to send status callbacks and reports to. Takes precedence over a default setting. Authentication can also be set in the url in the format of `username:password@url.`")
-  @example("username:password:https://statuscallback.com")
+  @example("https://username:password@example.com")
   web_hook_url?: string;
+
+  @doc("Username for basic auth on this function's webhook. Falls back to `defaults.web_hook_auth_user`.")
+  @example("username")
+  web_hook_auth_user?: string;
+
+  @doc("Password for basic auth on this function's webhook. Falls back to `defaults.web_hook_auth_password`.")
+  @example("password")
+  web_hook_auth_password?: string;
 
   @doc("A file to play while the function is running. `wait_file_loops` can specify the amount of times that files should continuously play. Default is not set.")
   @example("https://cdn.signalwire.com/default-music/welcome.mp3")
