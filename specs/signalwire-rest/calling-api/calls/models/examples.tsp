@@ -15,54 +15,13 @@ const dialCallExample = #{
     command: "dial",
     params: #{
       from: "+15551234567",
-      to: "sip:alice@sip.example.com",
-      url: "https://example.com/swml",
-      caller_id: "+15551234567",
-      username: "alice",
-      password: "s3cr3t",
-      status_url: "https://example.com/status_callback",
-      status_events: #["answered", "ended"],
-      codecs: #[OutboundCallCodec.PCMU, OutboundCallCodec.PCMA],
-      timeout: 30,
-      max_price_per_minute: 0.05,
-    },
-  },
-};
-
-const dialInlineSwmlCallExample = #{
-  request: #{
-    command: "dial",
-    params: #{
-      from: "+15551234567",
       to: "+15557654321",
       swml: CallSWMLDocumentExample,
     },
   },
 };
 
-const dialToScriptCallExample = #{
-  request: #{
-    command: "dial",
-    params: #{
-      from: "+15551234567",
-      to_script: CallSWMLDocumentExample,
-      url: "https://example.com/origin.swml.json",
-    },
-  },
-};
-
 const updateCallExample = #{
-  request: #{
-    command: "update",
-    params: #{
-      id: callId,
-      url: "https://example.com/swml",
-      fallback_url: "https://example.com/fallback",
-    },
-  },
-};
-
-const updateInlineSwmlCallExample = #{
   request: #{
     command: "update",
     params: #{ id: callId, swml: CallSWMLDocumentExample },
@@ -525,14 +484,6 @@ const referCallExample = #{
 
 // Transfer example
 const transferCallExample = #{
-  request: #{
-    command: "calling.transfer",
-    id: callId,
-    params: #{ dest: "sip:destination@example.com" },
-  },
-};
-
-const transferInlineSwmlCallExample = #{
   request: #{
     command: "calling.transfer",
     id: callId,
