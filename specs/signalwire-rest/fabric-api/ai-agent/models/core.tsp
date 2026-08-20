@@ -18,6 +18,9 @@ model AIAgentPathID {
   See the [SWML `ai` method reference](/docs/swml/reference/calling/ai) for the complete configuration contract.
   """)
 model AIAgent {
+  // TODO(https://github.com/signalwire/cloud-product/issues/20538): Re-enable
+  // when the Fabric AI Agent API persists this SWML property.
+  /*
   @doc("""
     ${SWML.Calling.aiGlobalDataDescription}
 
@@ -25,6 +28,7 @@ model AIAgent {
     """)
   @example(#{ company_name: "Acme Corp", support_hours: "9am-5pm EST" })
   global_data?: TypeSpec.Record<unknown>;
+  */
 
   @doc("""
     ${SWML.Calling.aiHintsDescription}
@@ -32,7 +36,9 @@ model AIAgent {
     See [`ai.hints` in the SWML reference](/docs/swml/reference/calling/ai#aihints).
     """)
   @example(#["pizza", "pepperoni"])
-  hints?: (string | TypeSpec.Record<unknown>)[];
+  // TODO(https://github.com/signalwire/cloud-product/issues/20539): Restore
+  // `(string | TypeSpec.Record<unknown>)[]` when structured hints are accepted.
+  hints?: string[];
 
   @doc("""
     ${SWML.Calling.aiLanguagesDescription}
@@ -42,6 +48,9 @@ model AIAgent {
   @example(#[#{ name: "English", code: "en-US", voice: "rime.spore" }])
   languages?: TypeSpec.Record<unknown>[];
 
+  // TODO(https://github.com/signalwire/cloud-product/issues/20538): Re-enable
+  // when the Fabric AI Agent API persists this SWML property.
+  /*
   @doc("""
     ${SWML.Calling.aiMultilingualDescription}
 
@@ -55,6 +64,7 @@ model AIAgent {
     allowed: #["en", "es"],
   })
   multilingual?: TypeSpec.Record<unknown>;
+  */
 
   @doc("""
     ${SWML.Calling.aiParamsDescription}
@@ -74,6 +84,9 @@ model AIAgent {
   })
   post_prompt?: TypeSpec.Record<unknown>;
 
+  // TODO(https://github.com/signalwire/cloud-product/issues/20538): Re-enable
+  // when the Fabric AI Agent API persists this SWML property.
+  /*
   @doc("""
     ${SWML.Calling.aiPostPromptUrlDescription}
 
@@ -81,6 +94,7 @@ model AIAgent {
     """)
   @example("username:password@https://example.com")
   post_prompt_url?: url;
+  */
 
   @doc("""
     ${SWML.Calling.aiPronounceDescription}

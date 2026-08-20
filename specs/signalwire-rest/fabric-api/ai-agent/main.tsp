@@ -69,7 +69,7 @@ namespace SignalWireAPI.Fabric.AIAgents {
       """)
     @opExample(
       #{
-        parameters: AI_AGENT_EXAMPLE,
+        parameters: AI_AGENT_REQUEST_EXAMPLE,
         returnType: #{ statusCode: 201, ai_agent: AI_AGENT_RESPONSE_EXAMPLE },
       },
       #{
@@ -100,7 +100,6 @@ namespace SignalWireAPI.Fabric.AIAgents {
         parameters: #{
           id: "993ed018-9e79-4e50-b97b-984bd5534095",
           prompt: #{ text: "You are a concise customer support assistant." },
-          agent_id: "a87db7ed-8ebe-42e4-829f-8ba5a4152f54",
           name: "Support Assistant",
         },
         returnType: #{ statusCode: 200, ai_agent: AI_AGENT_RESPONSE_EXAMPLE },

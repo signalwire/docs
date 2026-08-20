@@ -6,6 +6,11 @@ const FABRIC_PROJECT_ID_EXAMPLE = "1313fe58-5e14-4c11-bbe7-6fdfa11fe780";
 const FABRIC_CREATED_AT_EXAMPLE = utcDateTime.fromISO("2024-05-06T12:20:00Z");
 const FABRIC_UPDATED_AT_EXAMPLE = utcDateTime.fromISO("2024-05-06T12:25:00Z");
 
+const AI_AGENT_REQUEST_EXAMPLE = #{
+  prompt: #{ text: "You are a helpful customer support assistant." },
+  name: "Support Assistant",
+};
+
 const AI_AGENT_EXAMPLE = #{
   prompt: #{ text: "You are a helpful customer support assistant." },
   agent_id: "a87db7ed-8ebe-42e4-829f-8ba5a4152f54",
