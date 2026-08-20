@@ -29,6 +29,28 @@ const dialCallExample = #{
   },
 };
 
+const dialInlineSwmlCallExample = #{
+  request: #{
+    command: "dial",
+    params: #{
+      from: "+15551234567",
+      to: "+15557654321",
+      swml: CallSWMLDocumentExample,
+    },
+  },
+};
+
+const dialToScriptCallExample = #{
+  request: #{
+    command: "dial",
+    params: #{
+      from: "+15551234567",
+      to_script: CallSWMLDocumentExample,
+      url: "https://example.com/origin.swml.json",
+    },
+  },
+};
+
 const updateCallExample = #{
   request: #{
     command: "update",
@@ -37,6 +59,13 @@ const updateCallExample = #{
       url: "https://example.com/swml",
       fallback_url: "https://example.com/fallback",
     },
+  },
+};
+
+const updateInlineSwmlCallExample = #{
+  request: #{
+    command: "update",
+    params: #{ id: callId, swml: CallSWMLDocumentExample },
   },
 };
 
@@ -500,6 +529,14 @@ const transferCallExample = #{
     command: "calling.transfer",
     id: callId,
     params: #{ dest: "sip:destination@example.com" },
+  },
+};
+
+const transferInlineSwmlCallExample = #{
+  request: #{
+    command: "calling.transfer",
+    id: callId,
+    params: #{ dest: CallSWMLDocumentExample },
   },
 };
 

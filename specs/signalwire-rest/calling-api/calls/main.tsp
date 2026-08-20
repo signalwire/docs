@@ -353,10 +353,38 @@ namespace SignalWireAPI.Calling.Calls {
       }
     )
     @opExample(
+      #{ parameters: updateInlineSwmlCallExample },
+      #{
+        title: "update with inline SWML",
+        description: "Redirect an active call to a compact inline SWML document.",
+      }
+    )
+    @opExample(
       #{ parameters: dialCallExample },
       #{
         title: "dial",
         description: "Initiate a new outbound call with the dial command",
+      }
+    )
+    @opExample(
+      #{ parameters: dialInlineSwmlCallExample },
+      #{
+        title: "dial with inline SWML",
+        description: "Initiate an outbound call using a compact inline SWML document.",
+      }
+    )
+    @opExample(
+      #{ parameters: dialToScriptCallExample },
+      #{
+        title: "dial with a destination script",
+        description: "Initiate a call whose destination executes a compact inline SWML document.",
+      }
+    )
+    @opExample(
+      #{ parameters: transferInlineSwmlCallExample },
+      #{
+        title: "calling.transfer with inline SWML",
+        description: "Transfer an active call to a compact inline SWML document.",
       }
     )
     @post
