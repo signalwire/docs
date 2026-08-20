@@ -13,6 +13,34 @@ using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
+const CreateCallingSwmlScriptExample = #{
+  parameters: #{
+    request: #{
+      name: "Welcome Script",
+      script_type: "calling",
+      contents: SWML_CONTENTS_EXAMPLE,
+    }
+  },
+  returnType: #{
+    statusCode: 200,
+    swml_script: #{
+      id: "993ed018-9e79-4e50-b97b-984bd5534095",
+      project_id: "1313fe58-5e14-4c11-bbe7-6fdfa11fe780",
+      display_name: "Welcome Script",
+      type: FabricResponseType.SwmlScript,
+      created_at: utcDateTime.fromISO("2024-05-06T12:20:00Z"),
+      updated_at: utcDateTime.fromISO("2024-05-06T12:20:00Z"),
+      swml_script: #{
+        id: "993ed018-9e79-4e50-b97b-984bd5534095",
+        display_name: "Welcome Script",
+        script_type: "calling",
+        request_url: "https://example.signalwire.com/api/fabric/resources/swml_scripts/993ed018-9e79-4e50-b97b-984bd5534095",
+        contents: SWML_CONTENTS_EXAMPLE,
+      },
+    }
+  },
+};
+
 @route("/resources/swml_scripts")
 namespace SignalWireAPI.Fabric.SwmlScripts {
   @tag(SWML_SCRIPTS_TAG)
@@ -54,6 +82,13 @@ namespace SignalWireAPI.Fabric.SwmlScripts {
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
+    @opExample(
+      CreateCallingSwmlScriptExample,
+      #{
+        title: "Simple calling script",
+        description: "Create a Calling SWML Script that plays a single audio file.",
+      }
+    )
     @post
     create(@body request: SwmlScriptCreateRequest):
       | {
