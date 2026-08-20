@@ -1,0 +1,324 @@
+---
+title: Quickstart
+slug: /ai/quickstart
+description: Build one SignalWire AI agent with a Server SDK or SWML, then reach it over voice and through the AI Chat API.
+position: 1
+max-toc-depth: 3
+---
+
+[api-credentials]: /docs/platform/your-signalwire-api-space
+[chat-client]: /docs/server-sdks/reference/python/agents/ai-chat-client
+[chat-endpoint]: /docs/apis/rest/ai-chat/chat-methods
+[phone-numbers]: /docs/platform/phone-numbers
+
+Build one AI agent and reach it through two channels: a phone call and a text conversation. Choose
+the Server SDK or write SignalWire Markup Language (SWML) directly. Both paths produce one public
+agent configuration that you can connect to either channel.
+
+Before you start, you need:
+
+- A [SignalWire account](https://signalwire.com/signup)
+- Python 3 and [ngrok](https://ngrok.com/download) installed locally
+- A [SignalWire phone number][phone-numbers] for the Voice app
+- Your Space name, project ID, and an API token with the `chat` scope for the Chat app; manage
+  tokens in the [SignalWire Dashboard][api-credentials]
+
+---
+
+<Steps>
+
+### Build and publish the agent
+
+Choose one authoring path. Both paths create the same agent definition and give it a public
+configuration URL. You will connect that URL to a channel in the next step.
+
+<Tabs>
+<Tab title="Server SDK">
+
+<Note>
+  This quickstart uses Python throughout. The voice path is also available for TypeScript, but the
+  AI Chat client used in the next step is currently available only for Python. See the
+  [Server SDK documentation](/docs/server-sdks) for both SDKs.
+</Note>
+
+#### Install the Server SDK
+
+```bash
+python3 -m pip install signalwire-sdk
+```
+
+#### Write the agent
+
+Create `agent.py`:
+
+```python title="agent.py"
+from signalwire import AgentBase
+
+
+agent = AgentBase(name="quickstart-agent")
+agent.set_prompt_text(
+    "You are a concise and helpful SignalWire assistant. "
+    "Begin by greeting the person and asking how you can help."
+)
+
+
+if __name__ == "__main__":
+    agent.run()
+```
+
+This is the complete agent application. `agent.run()` starts an HTTP server on port `3000` and
+serves the SWML document that defines the agent.
+
+#### Give the agent a public URL
+
+In a second terminal, start ngrok:
+
+```bash
+ngrok http 3000
+```
+
+Copy the HTTPS forwarding URL, such as `https://abc123.ngrok-free.app`. Keep ngrok running.
+
+#### Start the agent with stable credentials
+
+In the first terminal, set a URL-safe development password and the ngrok URL before starting the
+agent. Reuse these values for the rest of the quickstart.
+
+```bash
+export SWML_BASIC_AUTH_USER="signalwire"
+export SWML_BASIC_AUTH_PASSWORD="replace-with-a-long-random-password"
+export SWML_PROXY_URL_BASE="https://abc123.ngrok-free.app"
+export SIGNALWIRE_AGENT_CONFIG_URL="https://signalwire:replace-with-a-long-random-password@abc123.ngrok-free.app/"
+python3 agent.py
+```
+
+The fixed credentials keep the agent URL valid if you restart the process. `SWML_PROXY_URL_BASE`
+lets the SDK generate public callback URLs when you add tools later.
+
+#### Verify the generated SWML
+
+From another terminal, request the agent configuration through the tunnel:
+
+```bash
+curl --fail \
+  --user "signalwire:replace-with-a-long-random-password" \
+  "https://abc123.ngrok-free.app/" \
+  | python3 -m json.tool
+```
+
+A working agent returns a JSON document with `"version": "1.0.0"` and a `sections.main` array that
+contains `answer` and `ai` methods. If the request returns `401`, use the same credentials that you
+exported before starting `agent.py`. If it cannot connect, confirm that both the agent and ngrok are
+still running.
+
+</Tab>
+<Tab title="SWML">
+
+#### Write the agent configuration
+
+Create `swml.json`:
+
+```json title="swml.json"
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "answer": {}
+      },
+      {
+        "ai": {
+          "prompt": {
+            "text": "You are a concise and helpful SignalWire assistant. Begin by greeting the person and asking how you can help."
+          },
+          "params": {}
+        }
+      }
+    ]
+  }
+}
+```
+
+The document is a complete SWML agent definition. `answer` accepts an incoming voice call, and `ai`
+starts the agent with the prompt.
+
+#### Serve the SWML document
+
+Start a local development server in the directory containing `swml.json`:
+
+```bash
+python3 -m http.server 3000
+```
+
+This server is for the quickstart only. It does not add authentication, TLS, or production request
+handling.
+
+#### Give the configuration a public URL
+
+In a second terminal, start ngrok:
+
+```bash
+ngrok http 3000
+```
+
+Copy the HTTPS forwarding URL, such as `https://abc123.ngrok-free.app`, and keep both processes
+running. Set the complete configuration URL in any terminal where you run the Chat app:
+
+```bash
+export SIGNALWIRE_AGENT_CONFIG_URL="https://abc123.ngrok-free.app/swml.json"
+```
+
+#### Verify the SWML document
+
+Request the document through the tunnel:
+
+```bash
+curl --fail "https://abc123.ngrok-free.app/swml.json" | python3 -m json.tool
+```
+
+The command prints the same JSON document you created. If it cannot connect, confirm that the local
+HTTP server and ngrok are running and that the URL ends in `/swml.json`.
+
+</Tab>
+</Tabs>
+
+### Connect a channel
+
+Voice and Chat use the same agent definition. Choose how you want to interact with the agent; you
+can return later and connect the other channel to the same configuration URL.
+
+<Tabs>
+<Tab title="Voice app">
+
+Route a phone number to the public configuration URL, then place a call.
+
+#### Create an External URL resource
+
+Open the [SignalWire Dashboard](https://my.signalwire.com), select **Script**, and then select
+**External URL**. Use the matching Primary Script URL:
+
+| Setup | Primary Script URL |
+|---|---|
+| Server SDK | `https://signalwire:replace-with-a-long-random-password@abc123.ngrok-free.app/` |
+| SWML | `https://abc123.ngrok-free.app/swml.json` |
+
+Select **Create**.
+
+#### Assign a phone number
+
+Open **Phone Numbers**, select a number, and then select **Edit Settings**. Under **Inbound Call
+Settings**, choose **Assign Resource**, select the External URL resource, and save the change.
+
+#### Place a call
+
+Call the SignalWire number. The agent greets you and asks how it can help. If the call does not reach
+the agent, request the configuration URL with `curl` again, then confirm that the phone number is
+assigned to the same External URL resource.
+
+</Tab>
+<Tab title="Chat app">
+
+The Chat app uses the same public configuration URL you created in the first step. This is the URL
+that serves your agent's SWML: the Server SDK's root URL or the URL of your `swml.json` file.
+`AIChatClient` passes it to SignalWire as `config_url`, and SignalWire fetches the agent definition
+server-to-server. Keep API credentials on your server; do not put them in browser code.
+
+#### Install the client and configure credentials
+
+Install the package if you chose the SWML authoring path:
+
+```bash
+python3 -m pip install signalwire-sdk
+```
+
+Export credentials from your SignalWire Space. Export the configuration URL from the authoring
+path you chose if it is not already present in this terminal.
+
+```bash
+export SIGNALWIRE_PROJECT_ID="your-project-id"
+export SIGNALWIRE_API_TOKEN="your-api-token"
+export SIGNALWIRE_SPACE="example.signalwire.com"
+
+# Server SDK setup:
+export SIGNALWIRE_AGENT_CONFIG_URL="https://signalwire:replace-with-a-long-random-password@abc123.ngrok-free.app/"
+
+# SWML setup instead:
+# export SIGNALWIRE_AGENT_CONFIG_URL="https://abc123.ngrok-free.app/swml.json"
+```
+
+#### Write the Chat app
+
+Create `chat.py`:
+
+```python title="chat.py"
+import asyncio
+import os
+import uuid
+
+from signalwire.ai_chat import AIChatClient
+
+
+async def main():
+    conversation_id = f"quickstart-{uuid.uuid4().hex}"
+    # Public URL that serves the agent's SWML definition.
+    config_url = os.environ["SIGNALWIRE_AGENT_CONFIG_URL"]
+
+    async with AIChatClient() as client:
+        conversation = await client.create_conversation(
+            conversation_id,
+            config_url=config_url,
+        )
+
+        if conversation.initial_message:
+            print("Agent:", conversation.initial_message)
+
+        reply = await client.chat(
+            conversation_id,
+            "What can you help me build with SignalWire?",
+        )
+        print("Agent:", reply.text)
+
+        await client.end(conversation_id)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+The example uses a unique conversation ID, sends one complete turn, prints the response, and ends
+the conversation so post-processing can run.
+
+#### Send a message
+
+```bash
+python3 chat.py
+```
+
+A working setup prints the agent's greeting and its response to the question. An authentication
+error usually means the project, token, and Space do not belong together. If conversation creation
+fails while the earlier `curl` succeeds, confirm that `SIGNALWIRE_AGENT_CONFIG_URL` contains the
+same public URL and any required Basic Auth credentials.
+
+The [AIChatClient reference][chat-client] documents every client method and return type. The
+[AI Chat endpoint][chat-endpoint] documents the JSON-RPC protocol underneath it.
+
+</Tab>
+</Tabs>
+
+</Steps>
+
+## Next steps
+
+<CardGroup cols={2}>
+
+<Card title="Tool calling" href="/docs/platform/ai/tool-calling" icon="regular webhook">
+  Connect the agent to your systems so both voice and text conversations can use current data and
+  take action.
+</Card>
+
+<Card title="Best practices" href="/docs/platform/ai/best-practices" icon="regular clipboard-check">
+  Prepare the agent for production with guidance for prompts, latency, recognition, testing, and
+  compliance.
+</Card>
+
+</CardGroup>
