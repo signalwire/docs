@@ -28,6 +28,7 @@
 
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import { Logger } from '../utils/logger.js';
 import { CHANGELOG_DIR, LEDGER_PATH, REPO_ROOT, STATE_DIR, batchDir } from './config.js';
@@ -601,10 +602,16 @@ Writes fern/products/home/changelog/<date>.mdx      (notable only)
   log.info(`  Review the files above, then commit on branch action-${date.replace(/-/g, '')}-changelog`);
 }
 
-try {
-  main();
-} catch (err) {
-  log.failure(err.message);
-  log.debug(err.stack);
-  process.exit(1);
+// Exported for render.test.js
+export { validate, buildDatedFile, parseExistingFile, sectionHeading, collectTags, resolveLinks };
+
+// Only run when invoked directly, not when imported (matches check-md-exports.js)
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  try {
+    main();
+  } catch (err) {
+    log.failure(err.message);
+    log.debug(err.stack);
+    process.exit(1);
+  }
 }

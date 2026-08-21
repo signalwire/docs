@@ -18,6 +18,7 @@
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import yaml from 'js-yaml';
 import { Logger } from '../utils/logger.js';
 import { CHANGELOG_DIR, REPO_ROOT, batchDir } from './config.js';
@@ -315,9 +316,15 @@ Environment Variables:
   }
 }
 
-try {
-  main();
-} catch (err) {
-  log.failure(err.message);
-  process.exit(1);
+// Exported for slack-digest.test.js
+export { splitSections, stripFrontmatter, toMrkdwn, truncate, windowLabel, MAX_SECTION_CHARS };
+
+// Only run when invoked directly, not when imported (matches check-md-exports.js)
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  try {
+    main();
+  } catch (err) {
+    log.failure(err.message);
+    process.exit(1);
+  }
 }

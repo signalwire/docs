@@ -31,6 +31,7 @@
 import { execFileSync } from 'node:child_process';
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import yaml from 'js-yaml';
 import { Logger } from '../utils/logger.js';
@@ -232,6 +233,19 @@ function frontmatter(contents) {
 }
 
 /**
+ * Assemble a live docs URL from a product slug and a page's own slug.
+ *
+ * Pure, and split out from resolvePageMeta so it can be tested directly: a wrong
+ * URL here lands a broken link on a customer-facing changelog entry. The home
+ * product has an empty slug, so it must not contribute a path segment.
+ */
+function buildPageUrl(productSlug, pageSlug) {
+  const normalized = pageSlug.startsWith('/') ? pageSlug : `/${pageSlug}`;
+  const productSegment = productSlug ? `/${productSlug}` : '';
+  return `/docs${productSegment}${normalized}`.replace(/\/+/g, '/');
+}
+
+/**
  * Resolve the live docs URL and page title for a changed file.
  *
  * Read at the tip of `main`, NOT at the PR's merge commit. The changelog sends
@@ -261,11 +275,10 @@ function resolvePageMeta(path, products) {
   const slug = typeof fm?.slug === 'string' ? fm.slug : null;
   if (!slug) return empty;
 
-  const normalized = slug.startsWith('/') ? slug : `/${slug}`;
-  const productSegment = product.slug ? `/${product.slug}` : '';
-  const url = `/docs${productSegment}${normalized}`.replace(/\/+/g, '/');
-
-  return { url, title: typeof fm?.title === 'string' ? fm.title : null };
+  return {
+    url: buildPageUrl(product.slug, slug),
+    title: typeof fm?.title === 'string' ? fm.title : null,
+  };
 }
 
 // ============================================
@@ -511,8 +524,14 @@ Next steps after running this:
   log.info('  3. Run: yarn changelog:render');
 }
 
-main().catch((err) => {
-  log.failure(err.message);
-  log.debug(err.stack);
-  process.exit(1);
-});
+// Exported for collect.test.js
+export { frontmatter, resolveWindow, buildPageUrl };
+
+// Only run when invoked directly, not when imported (matches check-md-exports.js)
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main().catch((err) => {
+    log.failure(err.message);
+    log.debug(err.stack);
+    process.exit(1);
+  });
+}
