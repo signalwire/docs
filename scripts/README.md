@@ -13,6 +13,10 @@ dependencies beyond what's in `package.json`) and share conventions: hand-rolled
 | `check-llm-exports.mjs` | `yarn check-llm-exports <preview-url>` | Check issue-specific required and forbidden content in preview `.md` exports. |
 | `llm-export-cases.json` | Used by `check-llm-exports.mjs` | Manifest of routes and semantic export assertions. |
 | `llm-agent-scenarios.md` | Manual preview evaluation | Context-isolated agent prompts and expected documentation destinations. |
+| `changelog/collect.js` | `yarn changelog:collect` | Collect PRs merged in a window, filter to docs-relevant paths, and write a classification prompt bundle. |
+| `changelog/render.js` | `yarn changelog:render` | Turn a batch's classification into dated changelog entries and the internal Support digest. |
+| `changelog/slack-digest.js` | `yarn changelog:slack` | Render Slack Block Kit payloads from the merged changelog markdown. |
+| `changelog/config.js` | — | Shared paths, docs-path filters, and prompt budgets for the changelog pipeline. |
 | `postman/` | `yarn postman:build` / `postman:publish` | Build and publish the Postman collection from the OpenAPI specs. |
 | `utils/logger.js` | — | Shared leveled logger (text/JSON, collectors) used by the scripts above. |
 
