@@ -1,0 +1,209 @@
+---
+title: "ChatGateway"
+slug: /reference/python/agents/chat-gateway
+description: Browser-facing proxy that lets a page chat with an AI agent without holding a SignalWire API token.
+max-toc-depth: 3
+---
+
+[aichatclient]: /docs/server-sdks/reference/python/agents/ai-chat-client
+[router]: /docs/server-sdks/reference/python/agents/chat-gateway/router
+[minthandle]: /docs/server-sdks/reference/python/agents/chat-gateway/mint-handle
+[readhandle]: /docs/server-sdks/reference/python/agents/chat-gateway/read-handle
+[prepare]: /docs/server-sdks/reference/python/agents/chat-gateway/prepare
+[visiblemessages]: /docs/server-sdks/reference/python/agents/chat-gateway/visible-messages
+[lastactivity]: /docs/server-sdks/reference/python/agents/chat-gateway/last-activity
+[close]: /docs/server-sdks/reference/python/agents/chat-gateway/close
+
+A chat widget in a page cannot hold a SignalWire API token: the token carries the whole project, and
+every visitor could read it. `ChatGateway` mounts inside a web application you already run, holds the
+credentials server-side, and forwards on the widget's behalf.
+
+The browser learns two things, the gateway's URL and a publishable key. Not the project, not the
+Space, not the token, and not which agent runs, because the gateway injects `config_url` itself and a
+key only ever reaches the one agent it was issued for.
+
+```python
+from signalwire.ai_chat import ChatGateway
+
+gateway = ChatGateway(
+    config_url="https://bayview-taxi.example.com/swml",
+    key="pk_your_publishable_key",
+    allowed_origins=["https://bayviewtaxi.example.com"],
+)
+
+app.include_router(gateway.router(), prefix="/chat")
+```
+
+It mounts on any FastAPI app. An agent already serves one, so this costs no new infrastructure:
+`agent.get_app().include_router(gateway.router(), prefix="/chat")`.
+
+## **Parameters**
+
+Keyword-only.
+
+<ParamField path="config_url" type="str" required={true} toc={true}>
+  The agent this key may talk to. Injected on every call and never accepted from the request, so
+  whoever holds a key cannot choose which agent runs.
+</ParamField>
+
+<ParamField path="key" type="str | None" toc={true}>
+  The publishable key the widget carries. Falls back to `SIGNALWIRE_CHAT_GATEWAY_KEY`, then to a
+  generated `pk_` value, which is useful only for a process that also serves the page and can embed
+  it.
+</ParamField>
+
+<ParamField path="allowed_origins" type="list[str] | tuple[str, ...]" default="()" toc={true}>
+  Origins permitted to use this key. Localhost is always allowed so local development works
+  unconfigured; anything else must be listed, so nothing ships open by accident.
+</ParamField>
+
+<ParamField path="client" type="AIChatClient | None" toc={true}>
+  The [`AIChatClient`][aichatclient] to forward on. Built from the environment when omitted.
+</ParamField>
+
+<ParamField path="secret" type="bytes | str | None" toc={true}>
+  HMAC key for signing handles. Falls back to `SIGNALWIRE_CHAT_GATEWAY_SECRET`, then to a random
+  per-process value.
+</ParamField>
+
+<ParamField path="handle_ttl" type="int" default="86400" toc={true}>
+  Seconds a handle stays valid. Long enough to outlive a page refresh, short enough that a session
+  left open overnight expires.
+</ParamField>
+
+<ParamField path="conversation_timeout" type="int | None" toc={true}>
+  Idle seconds before the service ends a conversation, passed on every create. `None` leaves it to
+  the service default of 3600. Set here rather than in the page, because the JSON-RPC result exposes
+  neither the deadline nor the server's clock, so a browser cannot discover it and two places holding
+  the same number drift.
+</ParamField>
+
+<ParamField path="max_new_conversations" type="int" default="60" toc={true}>
+  New conversations allowed per `window_seconds`. The cap that bounds what a leaked key can cost you,
+  since a leaked key opens many one-turn conversations rather than hammering one.
+</ParamField>
+
+<ParamField path="max_turns" type="int" default="200" toc={true}>
+  Turns a single conversation may run.
+</ParamField>
+
+<ParamField path="window_seconds" type="int" default="60" toc={true}>
+  The window for `max_new_conversations`.
+</ParamField>
+
+<Warning>
+  Set `secret` explicitly if you run more than one replica or restart often. A random per-process
+  secret invalidates outstanding handles on restart, and a handle signed by one replica is refused by
+  another.
+</Warning>
+
+## **Properties**
+
+<ParamField path="effective_timeout" type="int" toc={true}>
+  The idle timeout reported to clients. Never `None`, because it falls back to the service default,
+  so a widget is never asked to warn about a deadline it was told nothing about.
+</ParamField>
+
+<ParamField path="key" type="str" toc={true}>
+  The publishable key this gateway accepts, whether you passed one or it generated one.
+</ParamField>
+
+## **Exceptions**
+
+<ParamField path="GatewayRejection" type="Exception" toc={true}>
+  A request the gateway refused, carrying `.status` and `.reason`. Reasons are deliberately coarse,
+  because anything finer would let a caller map the caps and the allowlist by probing.
+</ParamField>
+
+## **The browser-facing wire**
+
+One endpoint: `POST {prefix}/` with the key in `Authorization: Bearer`. With `prefix="/chat"` the
+path is `/chat/`, since the router mounts `POST /`.
+
+| Method | Body | Returns |
+|---|---|---|
+| `start` | `{"method": "start", "handle"?}` | `{greeting, status, timeout}` plus an `X-Chat-Handle` header when a handle is minted |
+| `chat` | `{"method": "chat", "handle", "message"}` | the service's JSON-RPC envelope |
+| `log` | `{"method": "log", "handle"}` | `{messages, timeout, last_activity}` |
+| `end` | `{"method": "end", "handle"}` | `{"status": "ended"}` |
+
+A `chat` with no handle mints a conversation, so `start` is how you get a greeting before the visitor
+types rather than a required first step. Anything outside these four methods is a `400`.
+If `method` is omitted, it defaults to `chat`. `start` can also reuse a valid existing handle.
+
+Rejections carry an HTTP status and `{"error": "<reason>"}`: `400` malformed, `401` bad key, `403`
+bad or expired handle or a disallowed origin, `429` a cap was hit.
+
+## **What a leaked key can do**
+
+A publishable key is public by definition, so design for it being taken.
+
+**A key alone cannot read a conversation.** Without a handle there is no conversation to attach
+`log` to, and handles are HMAC-signed so they cannot be forged, guessed, or enumerated. A caller
+holding a valid handle can use `log` to read that conversation's filtered user and assistant
+transcript, but not its system prompt or tool traffic.
+
+**It can start conversations and send messages.** Use `max_new_conversations` and `max_turns` to
+bound that usage. The first limits newly created conversations per rolling window; the second limits
+turns in each conversation.
+
+Counters live in the serving process. Behind several replicas each keeps its own, so the effective
+cap multiplies by replica count. Set them with that in mind, or put a shared limiter in front.
+
+The origin allowlist stops a key pasted into someone else's page, because a browser sends their
+origin and the gateway refuses it. It does not stop `curl`, which simply omits the header. Treat it
+as leak containment, not access control. The same list drives CORS, including
+`Access-Control-Expose-Headers: X-Chat-Handle` and a preflight response.
+
+## **Rotating a key**
+
+There is no expiry on the key itself, because publishable keys live in static pages and a TTL means
+the widget dies silently at some point. Rotate on demand instead: construct the gateway with a new
+`key` and redeploy. Change `secret` at the same time to invalidate outstanding handles too.
+
+## **Methods**
+
+<CardGroup cols={3}>
+  <Card title="router" href="/docs/server-sdks/reference/python/agents/chat-gateway/router">
+    The APIRouter to mount on your app.
+  </Card>
+  <Card title="mint_handle" href="/docs/server-sdks/reference/python/agents/chat-gateway/mint-handle">
+    Issue a signed handle server-side.
+  </Card>
+  <Card title="read_handle" href="/docs/server-sdks/reference/python/agents/chat-gateway/read-handle">
+    Verify a handle and return its conversation id.
+  </Card>
+  <Card title="prepare" href="/docs/server-sdks/reference/python/agents/chat-gateway/prepare">
+    Validate a browser request without FastAPI.
+  </Card>
+  <Card title="visible_messages" href="/docs/server-sdks/reference/python/agents/chat-gateway/visible-messages">
+    The transcript a browser may redraw.
+  </Card>
+  <Card title="last_activity" href="/docs/server-sdks/reference/python/agents/chat-gateway/last-activity">
+    Epoch seconds of the newest message.
+  </Card>
+  <Card title="close" href="/docs/server-sdks/reference/python/agents/chat-gateway/close">
+    Close the client, when the gateway built it.
+  </Card>
+</CardGroup>
+
+## **Example**
+
+```python {10,12,13}
+from fastapi import FastAPI
+from signalwire.ai_chat import ChatGateway
+
+app = FastAPI()
+
+gateway = ChatGateway(
+    config_url="https://bayview-taxi.example.com/swml",  # never leaves the server
+    key="pk_your_publishable_key",                       # safe in the page
+    allowed_origins=["https://bayviewtaxi.example.com"],
+    secret="a-stable-secret-across-replicas",
+    conversation_timeout=1800,
+    max_new_conversations=60,
+    max_turns=200,
+)
+
+app.include_router(gateway.router(), prefix="/chat")
+```

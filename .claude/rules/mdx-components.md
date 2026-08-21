@@ -23,7 +23,7 @@ Every component available on this site: Fern's full default library (description
 | `EndpointResponseSnippet` | Embeds an endpoint's response example | In use |
 | `EndpointSchemaSnippet` | Embeds an endpoint's schema | In use — heavily, in SDK reference |
 | `Files` | Interactive file tree with expandable folders | Unused |
-| `Frame` | Image or diagram with caption and background variants | In use — wrap meaningful images |
+| `Frame` | Image or diagram with caption and background variants | In use — wrap meaningful images (themed SVGs excepted — see `mdx-diagrams`) |
 | `Icon` | Inline Font Awesome icon with size/color/style | Rare (×2) — short-form icon syntax per `mdx-mechanics` |
 | `If` | Shows/hides content by product, version, or reader role | Unused |
 | `Indent` | Left indentation for nested parameters and hierarchy | In use — nests `ParamField`s (blank lines inside) |
@@ -44,3 +44,5 @@ Custom components (registered in `docs.yml` → `fern/components/`):
 
 - `VoiceWidget` — interactive click-to-call demo. Human-only: wrap usages in `<llms-ignore>`.
 - `Skeleton` / `SkeletonText` — loading placeholders; registered, no MDX uses yet.
+
+Fern's Markdown export flattens an untitled callout into ordinary prose. Give a `Warning` a concise title when losing the warning context could change a reader's safe interpretation—for example, legal or compliance disclaimers, credential handling, network restrictions, or service availability. Do not add titles mechanically to every callout; the title must identify the specific hazard or constraint.

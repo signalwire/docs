@@ -19,18 +19,21 @@ Pick by asking: is the reader **learning or working**, and do they need **action
 
 One page, one type. Smells: a tutorial or how-to that keeps stopping to explain (move the theory to an explanation page or one short aside, and link it); reference written as instructions; one page trying to be all four types (split it); a guide with no onward links.
 
+Tutorials and how-tos give the reader a way to confirm the result — a command to run, a call to place, an expected transcript or output. Pair the success signal with the likeliest failure and its cause ("If `dial()` rejects with `CallCreateError`, the token's scope doesn't reach the destination"), so a reader whose run went wrong diagnoses it on the page. Verification comes before `## Next steps`. A reader who can't check the result can't trust the guide. [SW]
+
 ## Voice
 
 - Second person, present tense, active voice. The platform acts ("SignalWire sends…"); no editorial "we". Contractions welcome. [G][MS][SW]
 - Sentence-case headings, no end punctuation ("Next steps", never "Next Steps"). [G][MS][SW]
 - Open with a concrete hook — the problem or the outcome — never "In this guide, you will learn…". Close guides with `## Next steps` cards that deepen *this* topic only. [SW]
 - Vary sentence length and openers: split sentences past ~30 words, and don't start consecutive sentences the same way. [AS][MS]
+- One paragraph, one job: a paragraph carrying several distinct claims gets split so each has a single role. Not a word count — don't break a single sustained argument, and don't leave a run of one-sentence paragraphs. [SW]
 - Cut filler ("in order to", "it is important to note that", "due to the fact that") and reflexive hedging — state what the source supports, plainly, or don't state it. [AS][G]
 - Prose is the default; bullets only for true enumerations, kept parallel in form — never bold-label bullets as a paragraph substitute. [W][AS][SW]
 - No paragraph-closing summary sentences or significance tails ("…, highlighting the importance of…"). No "Additionally/Furthermore/Moreover" openers; no "In conclusion/Overall" closers. [W][AS]
 - State facts plainly: "is", not "serves as"/"stands as". No significance inflation ("plays a crucial role"), no marketing adjectives (powerful, seamless, robust), no empty "not just X, but Y". [W][G][SW]
 - No "simply/easily/just" and no "please" in instructions. [G]
-- Em-dashes are a house device — but not several per paragraph. [MS][SW] Aphorisms land at 2–3 per page, max. [SW] (judgment)
+- Em-dashes are a house device, not a default connector: one earns its place on a genuine break in thought or an appositive commas would muddle. Where a comma reads the same, write the comma. Never several per paragraph. [MS][SW] Aphorisms land at 2–3 per page, max. [SW] (judgment)
 - No emoji — not in headings, tab/card titles, or prose. Say good/bad in words. [SW]
 - Terminology: "Server SDKs" (never "Agents SDK"); tokens are *created*/*issued* (never *minted*); "resource addresses" (never "Fabric addresses"); expand every acronym at first use. [SW]
 
@@ -46,6 +49,7 @@ One page, one type. Smells: a tutorial or how-to that keeps stopping to explain 
 - Customer-facing only: no internal implementation detail (backend endpoints, transports, engine-side params). Placeholder data only — no real names, emails, or domains.
 - Examples do real work: tool call → your server → system of record → response. No knowledge-trivia bots.
 - Examples run as written: real imports, every required parameter, and only placeholders the reader can obviously fill. Verify each against the spec or SDK source — and against an actual run when the page ships a whole flow.
+- A cluster of guides shares one running example, so cross-links compound instead of restarting context. The AI guides use Bayview Taxi and its dispatcher Ada across `platform/pages/ai/overview.mdx` and `platform/pages/ai/guides/**`; adopt a cluster's existing cast when you add a page to it, and introduce a new one only for a new cluster. [SW]
 - Don't cite other vendors' docs as authority; never disparage anyone's product.
 
 ## Modes

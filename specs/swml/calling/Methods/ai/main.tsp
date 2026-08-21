@@ -1,5 +1,6 @@
 import "@typespec/json-schema";
 import "./ai_languages.tsp";
+import "./ai_multilingual.tsp";
 import "./prompt";
 import "./ai_pronounce.tsp";
 import "./ai_params.tsp";
@@ -25,8 +26,20 @@ model AIObject {
   @example(#["pizza", "pepperoni"])
   hints?: (string | Hint)[];
 
-  @doc("An array of JSON objects defining supported languages in the conversation.")
+  @doc("""
+    An array of JSON objects defining supported languages in the conversation.
+    Mutually exclusive with `multilingual`: if both are set, `multilingual` is used and
+    this array is ignored.
+    """)
   languages?: Languages[];
+
+  @doc("""
+    Configures a single agent to detect the caller's language and answer in it, switching
+    as the caller switches. Use this instead of `languages` when one conversation may span
+    several languages. Mutually exclusive with `languages`: if both are set, `multilingual`
+    is used and `languages` is ignored.
+    """)
+  multilingual?: Multilingual;
 
   @doc("A JSON object containing parameters as key-value pairs.")
   params?: AIParams;
