@@ -1,0 +1,351 @@
+---
+slug: /reference/calling/ai/multilingual
+title: multilingual
+description: Configure one AI Agent to detect the caller's language and answer in it, switching as the caller switches.
+max-toc-depth: 3
+---
+
+[languages]: /docs/swml/reference/calling/ai/languages
+[voices-and-languages]: /docs/platform/voice/tts
+[variables]: /docs/swml/reference/variables
+[openai-asr-engine]: /docs/swml/reference/calling/ai/params#paramsopenai_asr_engine
+[turn-filler-sources]: /docs/swml/reference/calling/ai/params#paramsturn_filler_sources
+
+Use `ai.multilingual` to let one AI Agent detect the language a caller is speaking and answer
+in that language, switching whenever the caller does. You give it a voice per language, and the
+agent selects the matching voice as the conversation moves between them.
+
+Use [`ai.languages`][languages] instead when each call stays in one language and you are choosing
+between a fixed set. Use neither when the agent only ever speaks one language — set the voice and
+leave both out.
+
+<Warning>
+`multilingual` and [`languages`][languages] are mutually exclusive. If both are set, SignalWire uses
+`multilingual` and ignores `languages` entirely. To go back to `languages`, remove the `multilingual`
+key rather than emptying it.
+</Warning>
+
+<Note>
+`multilingual` must be an object. Any other value — including `true` — fails SWML validation and ends
+the call, so you cannot switch the mode off by setting it to a boolean. A [SWML variable][variables]
+is not accepted here either, because the value is validated before variables are substituted.
+</Note>
+
+## **Properties**
+
+<ParamField path="ai.multilingual" type="object" toc={true}>
+  Configures language detection and the voice used for each detected language.
+</ParamField>
+
+<Indent>
+
+<ParamField path="ai.multilingual.languages" type="object[]" required={true} toc={true}>
+  An array of voices, one per language the agent speaks.
+
+  At least one entry must supply a `voice` — either an entry whose `language` is `default`, or
+  the first language listed. Without one, multilingual mode does not start and the agent falls
+  back to a single English voice.
+</ParamField>
+
+<Indent>
+
+<ParamField path="ai.multilingual.languages[].language" type="string" required={true} toc={true}>
+  The language this voice applies to, as a code the ASR engine supports.
+
+  Use `default` instead of a code to mark the catch-all entry. The catch-all speaks any detected
+  language that has no entry of its own, and it is the voice the agent opens the call with.
+</ParamField>
+
+<ParamField path="ai.multilingual.languages[].voice" type="string" toc={true}>
+  Voice to use for this language, in the format `<engine id>.<voice id>`, with an optional
+  `:<model id>` suffix. For example, `elevenlabs.rachel` or `elevenlabs.rachel:eleven_flash_v2_5`.
+
+  Only the catch-all entry has to carry a voice. An entry that leaves it out is answered in the
+  catch-all voice instead.
+
+  Always name the engine. A bare voice id resolves against a default engine that can change.
+  Refer to [Supported voices and languages][voices-and-languages] for the voice ids each provider offers.
+</ParamField>
+
+<ParamField path="ai.multilingual.languages[].model" type="string" toc={true}>
+  The model to use for the specified TTS engine. For example, `coda`. Set this only if the `voice`
+  string does not already carry a `:<model id>` suffix — a suffix on the `voice` string wins, and
+  this key is then ignored without a warning.
+</ParamField>
+
+<ParamField path="ai.multilingual.languages[].engine" type="string" deprecated={true} toc={true}>
+  The engine to use for this language. For example, `"elevenlabs"`. **Deprecated.** Set the engine with the [`voice`](#aimultilinguallanguagesvoice) parameter.
+</ParamField>
+
+<ParamField path="ai.multilingual.languages[].params" type="object" toc={true}>
+  TTS engine-specific parameters for this language, such as `stability` and `similarity`. These are
+  the same parameters accepted by [`languages[].params`][languages].
+</ParamField>
+
+</Indent>
+
+<ParamField path="ai.multilingual.allowed" type="string[]" toc={true}>
+  Restricts the agent to this set of language codes. The speech recognition engine still transcribes
+  whatever it hears, but the agent will not switch into a language outside the list — it keeps the
+  language it is already speaking. The list also tells the agent, in its prompt, which languages are
+  in play.
+
+  Every code must be supported by the ASR engine and model in use, or multilingual mode does not
+  start. Omit to let the agent follow the caller into any language the ASR engine detects.
+</ParamField>
+
+<ParamField path="ai.multilingual.engine" type="string" toc={true}>
+  The ASR (Automatic Speech Recognition) engine used to detect the spoken language. This is separate
+  from the TTS engine that speaks each voice.
+
+  If you leave it unset, `deepgram` is used.
+
+  Do not set this alongside [`params.openai_asr_engine`][openai-asr-engine], which overrides both
+  this engine and [`model`](#aimultilingualmodel). When both are present, the `params` value wins.
+</ParamField>
+
+<ParamField path="ai.multilingual.model" type="string" default="nova-3" toc={true}>
+  The ASR model used to detect the spoken language. The model must support code-switching, or
+  multilingual mode does not start.
+</ParamField>
+
+<ParamField path="ai.multilingual.provider" type="string" toc={true}>
+  The ASR provider used to detect the spoken language.
+
+  If you leave it unset, the provider already configured for the agent is used, falling back to
+  `deepgram` when the agent has none. Setting it here also applies it to the recognizer.
+</ParamField>
+
+<ParamField path="ai.multilingual.start_language" type="string" default="en" toc={true}>
+  The language the agent opens the conversation in, before the caller has said anything for the
+  ASR engine to detect.
+</ParamField>
+
+<ParamField path="ai.multilingual.min_switch_words" type="integer" default="2" toc={true}>
+  How many words a caller must say before the agent will switch languages.
+
+  A single word is often the same in several languages — a name, `no`, `ok` — so a one-word turn
+  is an unreliable signal. Set to `1` to allow single-word switches. A value below `1` is treated as
+  the default of `2` rather than rejected.
+</ParamField>
+
+<ParamField path="ai.multilingual.fillers" type="string[] | object" toc={true}>
+  Fillers used to break silence between turns. This is the speech filler map, so it is the
+  counterpart of [`languages[].speech_fillers`](/docs/swml/reference/calling/ai/languages#languagesspeech_fillers)
+  rather than of `languages[].fillers`, which is a deprecated spelling of `function_fillers`.
+
+  Supply an array to have the fillers translated into whichever language the caller is speaking,
+  or an object keyed by language code to set them per language verbatim. An `auto` key inside the
+  object is translated the same way an array is.
+</ParamField>
+
+<ParamField path="ai.multilingual.function_fillers" type="string[] | object" toc={true}>
+  Fillers used while a SWAIG function runs.
+
+  Supply an array to have the fillers translated into whichever language the caller is speaking,
+  or an object keyed by language code to set them per language verbatim. An `auto` key inside the
+  object is translated the same way an array is.
+</ParamField>
+
+<ParamField path="ai.multilingual.turn_fillers" type="string[] | object" toc={true}>
+  Short backchannels played while the caller still has the floor and the agent is deliberately
+  waiting, as when they spell a name or read out a number, to signal it is still listening. Which
+  waits earn one is set by [`params.turn_filler_sources`][turn-filler-sources].
+
+  Supply an object keyed by language code, optionally with a `default` key covering languages you
+  have not listed. Unlike the other two, these are never translated on the fly, so the `auto` key
+  does not apply here — resolving them has to be fast enough to play immediately. An array is
+  accepted and treated as the `default` set.
+
+  An entry that is an absolute path or a `scheme://` URI is played as audio instead of being spoken,
+  which is a way to use a recorded backchannel.
+</ParamField>
+
+</Indent>
+
+## How it differs from `languages`
+
+Both configure voices, but the shape and the behavior differ:
+
+| | [`languages`][languages] | `multilingual` |
+|---|---|---|
+| Chooses a language | Per call | Per turn, as the caller switches |
+| Entry key | `code`, plus a human-readable `name` | `language`, or `default` for the catch-all |
+| Catch-all entry | None | The `default` entry, or the first listed language |
+| ASR configuration | [`params.openai_asr_engine`][openai-asr-engine] | `engine`, `model`, and `provider` on this object |
+
+The two `languages` arrays are not interchangeable. An `ai.multilingual.languages` entry is flat —
+`language` and `voice`, plus an optional `model` and `params` — and takes no `name`,
+`speech_fillers`, or `function_fillers`. Set fillers once for the whole object instead.
+
+Where the two arrays share a property, they behave identically: `voice`, `model`, and `params` mean
+the same thing in both, and `engine` is deprecated in both in favor of naming the engine in the
+`voice` string.
+
+## **Examples**
+
+### Detect and switch between three languages
+
+The `default` entry supplies the voice for the opening turn and for any detected language without
+an entry of its own.
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+ai:
+  multilingual:
+    start_language: en
+    allowed:
+      - en
+      - es
+      - fr
+    languages:
+      - language: default
+        voice: elevenlabs.rachel
+      - language: es
+        voice: elevenlabs.maria
+      - language: fr
+        voice: gcloud.fr-FR-Neural2-B
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "ai": {
+    "multilingual": {
+      "start_language": "en",
+      "allowed": ["en", "es", "fr"],
+      "languages": [
+        {
+          "language": "default",
+          "voice": "elevenlabs.rachel"
+        },
+        {
+          "language": "es",
+          "voice": "elevenlabs.maria"
+        },
+        {
+          "language": "fr",
+          "voice": "gcloud.fr-FR-Neural2-B"
+        }
+      ]
+    }
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### Tune switching and per-voice parameters
+
+Allow single-word switches, and set ElevenLabs stability and similarity per voice.
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+ai:
+  multilingual:
+    min_switch_words: 1
+    languages:
+      - language: default
+        voice: elevenlabs.josh
+        params:
+          stability: 0.6
+          similarity: 0.8
+      - language: es
+        voice: elevenlabs.maria
+        params:
+          stability: 0.4
+          similarity: 0.9
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "ai": {
+    "multilingual": {
+      "min_switch_words": 1,
+      "languages": [
+        {
+          "language": "default",
+          "voice": "elevenlabs.josh",
+          "params": {
+            "stability": 0.6,
+            "similarity": 0.8
+          }
+        },
+        {
+          "language": "es",
+          "voice": "elevenlabs.maria",
+          "params": {
+            "stability": 0.4,
+            "similarity": 0.9
+          }
+        }
+      ]
+    }
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### Set fillers per language
+
+An array of fillers is translated into whichever language the caller is speaking. An object sets
+them per language verbatim, which is required for `turn_fillers`.
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+ai:
+  multilingual:
+    languages:
+      - language: default
+        voice: elevenlabs.rachel
+      - language: es
+        voice: elevenlabs.maria
+    function_fillers:
+      - one moment please
+      - let me check that
+    turn_fillers:
+      en:
+        - got it
+        - sure
+      es:
+        - entendido
+        - claro
+      default:
+        - mmhm
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "ai": {
+    "multilingual": {
+      "languages": [
+        {
+          "language": "default",
+          "voice": "elevenlabs.rachel"
+        },
+        {
+          "language": "es",
+          "voice": "elevenlabs.maria"
+        }
+      ],
+      "function_fillers": [
+        "one moment please",
+        "let me check that"
+      ],
+      "turn_fillers": {
+        "en": ["got it", "sure"],
+        "es": ["entendido", "claro"],
+        "default": ["mmhm"]
+      }
+    }
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>

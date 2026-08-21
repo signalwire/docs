@@ -23,11 +23,11 @@ model ContextObjectBase {
   @example(true)
   isolated?: boolean = false;
 
-  @doc("Language-specific filler phrases played when transitioning into this context. Helps provide smooth context switches.")
-  enter_fillers?: FunctionFillers[];
+  @doc("Filler phrases played when entering this context, keyed by language code.")
+  enter_fillers?: FunctionFillers;
 
-  @doc("Language-specific filler phrases played when leaving this context. Ensures natural transitions out of specialized modes.")
-  exit_fillers?: FunctionFillers[];
+  @doc("Filler phrases played when leaving this context, keyed by language code.")
+  exit_fillers?: FunctionFillers;
 }
 
 @summary("ContextsPOMObject")
