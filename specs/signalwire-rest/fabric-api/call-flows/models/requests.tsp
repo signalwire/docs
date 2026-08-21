@@ -1,7 +1,5 @@
 import "./core.tsp";
 import "../../_shared/const.tsp";
-import "../../../../swml/calling";
-
 model CallFlowCreateRequest {
   @doc("The name of the Call Flow")
   @example("Booking Assistant")
@@ -15,7 +13,7 @@ model CallFlowCreateRequest {
 
   @doc("The calling SWML document this Call Flow should execute. Uses [calling SWML methods](/docs/swml/reference/calling). Optional but must be paired with `flow_data` — provide both fields together or omit both. When both are omitted, SignalWire creates a starter SWML document.")
   @example(SWML_CONTENTS_EXAMPLE)
-  relayml?: SWML.Calling.SWMLObject;
+  relayml?: TypeSpec.Record<unknown>;
 }
 
 model CallFlowUpdateRequest {
@@ -35,5 +33,5 @@ model CallFlowUpdateRequest {
 
   @doc("The calling SWML document this Call Flow should execute. Uses [calling SWML methods](/docs/swml/reference/calling).")
   @example(SWML_CONTENTS_EXAMPLE)
-  relayml: SWML.Calling.SWMLObject;
+  relayml: TypeSpec.Record<unknown>;
 }
