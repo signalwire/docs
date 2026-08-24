@@ -18,7 +18,7 @@ namespace CompatibilityAPI.Conferences {
     @operationId("list_all_conferences")
     @summary("List All Conferences")
     @doc("""
-      The ability to read all of the conferences that are associated with your Account. This will be returned as a list of conferences.
+      Lists the account's voice conferences. Each conference has a SID used for live participant, recording, or stream management. Use [Conference logs](/docs/apis/rest/conference-logs/list-conferences) for cross-product history, or [Video Conferences](/docs/apis/rest/video/video-conferences/list-video-conferences) for hosted video configurations.
       
       ${tokenPermissions<"_Voice_">}
       """)
@@ -92,7 +92,7 @@ namespace CompatibilityAPI.Conferences {
     @operationId("retrieve_conference")
     @summary("Retrieve a Conference")
     @doc("""
-      Retrieve a single conference.
+      Retrieves one voice conference by SID so you can inspect a known conference and its current activity. Use [List All Conferences](/docs/compatibility-api/rest/conferences/list-all-conferences) to discover SIDs; Video Conferences are separate hosted video resources.
       
       ${tokenPermissions<"_Voice_">}
       """)
@@ -106,7 +106,7 @@ namespace CompatibilityAPI.Conferences {
     @operationId("update_conference")
     @summary("Update Conference")
     @doc("""
-      Allows you to modify the properties of a conference.
+      Ends a voice conference or plays an announcement into it by updating the conference SID. Use participant operations to mute, hold, coach, announce to, or remove one caller; Video Conference configuration uses the separate Video API.
       
       ${tokenPermissions<"_Voice_">}
       """)
@@ -133,7 +133,7 @@ namespace CompatibilityAPI.Conferences {
     @operationId("list_all_participants")
     @summary("List all active Participants")
     @doc("""
-      The ability to read all of the active participants that are associated with this conference call. This will be returned as a list of participants.
+      Lists the callers currently participating in a voice conference. Each participant is identified by the Call SID used for individual control. Video conference participants belong to Video Rooms and are not returned here.
       
       ${tokenPermissions<"_Voice_">}
       """)
@@ -178,7 +178,7 @@ namespace CompatibilityAPI.Conferences {
     @operationId("retrieve_participant")
     @summary("Retrieve a Participant")
     @doc("""
-      Retrieve a single participant.
+      Retrieves one active voice-conference participant by the call SID used to join the conference. Use [List all active Participants](/docs/compatibility-api/rest/conference-participants/list-all-participants) to discover Call SIDs; this operation does not retrieve Video Room participants.
       
       ${tokenPermissions<"_Voice_">}
       """)
@@ -196,7 +196,7 @@ namespace CompatibilityAPI.Conferences {
     @operationId("update_participant")
     @summary("Update a Participant")
     @doc("""
-      Update a participant.
+      Changes an active voice-conference participant's mute, hold, coaching, wait-audio, or announcement settings by Call SID. Use [Update Conference](/docs/compatibility-api/rest/conferences/update-conference) to end or announce to the entire conference, and delete the participant to remove only that caller.
       
       ${tokenPermissions<"_Voice_">}
       """)
@@ -218,7 +218,7 @@ namespace CompatibilityAPI.Conferences {
     @operationId("delete_participant")
     @summary("Delete a Participant")
     @doc("""
-      Deleting a participant will take them out of a conference call.
+      Removes one caller from an active voice conference by Call SID. This disconnects that participant from the conference without ending the conference for everyone else; use [Update Conference](/docs/compatibility-api/rest/conferences/update-conference) to complete the full conference.
       
       ${tokenPermissions<"_Voice_">}
       """)
@@ -243,7 +243,7 @@ namespace CompatibilityAPI.Conferences {
     @operationId("list_conference_recordings")
     @summary("List Conference Recordings")
     @doc("""
-      List all recordings for a conference.
+      Lists the saved voice recordings associated with one conference. Use the account-level [Recordings](/docs/compatibility-api/rest/recordings/list-recordings) collection to browse media across calls and conferences, or Video [Room Recordings](/docs/apis/rest/video/room-recordings/list-room-recordings) for video-room media.
       
       ${tokenPermissions<"_Voice_">}
       """)
@@ -293,7 +293,7 @@ namespace CompatibilityAPI.Conferences {
     @operationId("get_conference_recording")
     @summary("Get a Conference Recording")
     @doc("""
-      Get details for a specific conference recording.
+      Retrieves one voice-conference recording by conference SID and recording SID. Use [List Conference Recordings](/docs/compatibility-api/rest/conference-recordings/list-conference-recordings) to discover recording SIDs; Video Room recordings are separate media resources.
       
       ${tokenPermissions<"_Voice_">}
       """)
@@ -311,7 +311,7 @@ namespace CompatibilityAPI.Conferences {
     @operationId("update_conference_recording")
     @summary("Update a Conference Recording")
     @doc("""
-      Pause, resume or stop a conference recording. You can control what happens while recording is paused (replace pause with silence or skip it).
+      Pauses, resumes, or stops an in-progress voice-conference recording. When pausing, choose whether the elapsed interval becomes silence in the media or is skipped. This controls recording state; use [Get a Conference Recording](/docs/compatibility-api/rest/conference-recordings/get-conference-recording) to retrieve saved recording details.
       
       ${tokenPermissions<"_Voice_">}
       """)
@@ -334,7 +334,7 @@ namespace CompatibilityAPI.Conferences {
     @operationId("delete_conference_recording")
     @summary("Delete a Conference Recording")
     @doc("""
-      Delete a conference recording. If successful, a 204 response with no body will be returned.
+      Deletes one saved voice-conference recording by conference SID and recording SID, returning no body on success. This removes recording media without changing the conference or its participants. Video Room recordings have a separate delete operation.
       
       ${tokenPermissions<"_Voice_">}
       """)
@@ -358,7 +358,7 @@ namespace CompatibilityAPI.Conferences {
     @operationId("create_conference_stream")
     @summary("Create a Conference Stream")
     @doc("""
-      Create a stream for an existing conference.
+      Starts sending selected audio tracks from an active voice conference to a secure WebSocket endpoint. Use it for live conference-audio processing; use [Call Streams](/docs/compatibility-api/rest/streams/create-stream) for one call or [Video Room Streams](/docs/apis/rest/video/streams/list-room-streams) for RTMP video broadcasts.
       
       ${tokenPermissions<"_Voice_">}
       """)
@@ -378,7 +378,7 @@ namespace CompatibilityAPI.Conferences {
     @operationId("update_conference_stream")
     @summary("Update Conference Stream")
     @doc("""
-      Update an existing conference stream. Commonly used to stop/start streams or modify stream properties.
+      Stops an active WebSocket audio stream for a voice conference by stream SID. This ends media delivery without ending the conference. Call audio streams and Video RTMP streams use separate operations.
       
       ${tokenPermissions<"_Voice_">}
       """)

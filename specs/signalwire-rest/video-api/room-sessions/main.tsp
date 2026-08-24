@@ -19,7 +19,11 @@ namespace SignalWireAPI.Video.RoomSessions {
   interface RoomSessions {
     @operationId("list_room_sessions")
     @summary("List room sessions")
-    @doc("A list of past and in-progress Room Sessions.\n\n${tokenPermissions<"_Video_">}")
+    @doc("""
+      Lists past and in-progress activity sessions created when participants join the project's Video Rooms. Use it for session history and auditing; use [List rooms](/docs/apis/rest/video/rooms/list-rooms) to manage the reusable configurations instead.
+
+      ${tokenPermissions<"_Video_">}
+      """)
     list(...ListRoomSessionsRequest):
       | ListRoomSessionsResponse
       | StatusCode400
@@ -29,7 +33,11 @@ namespace SignalWireAPI.Video.RoomSessions {
 
     @operationId("get_room_session")
     @summary("Get room session")
-    @doc("Find a Room Session by ID.\n\n${tokenPermissions<"_Video_">}")
+    @doc("""
+      Retrieves one past or in-progress Room Session by ID. Use it to inspect the session associated with an event, member, or recording; use [Get room](/docs/apis/rest/video/rooms/get-room) when you need the reusable room configuration rather than an occurrence of activity.
+
+      ${tokenPermissions<"_Video_">}
+      """)
     @route("/{id}")
     read(
       ...RoomSessionPathID,
@@ -37,7 +45,11 @@ namespace SignalWireAPI.Video.RoomSessions {
 
     @operationId("list_room_session_recordings")
     @summary("List room session recordings")
-    @doc("A list of Room Recordings for a particular Room Session.\n\n${tokenPermissions<"_Video_">}")
+    @doc("""
+      Lists the recordings created during one Room Session. Returned media links use the requested `media_ttl` lifetime. Use [List room recordings](/docs/apis/rest/video/room-recordings/list-room-recordings) to browse recordings across rooms and sessions.
+
+      ${tokenPermissions<"_Video_">}
+      """)
     @route("/{id}/recordings")
     listRecordings(
       ...RoomSessionPathID,
@@ -51,7 +63,11 @@ namespace SignalWireAPI.Video.RoomSessions {
 
     @operationId("list_room_session_members")
     @summary("List room session members")
-    @doc("A list of Members for a particular Room Session.\n\n${tokenPermissions<"_Video_">}")
+    @doc("""
+      Lists the participants associated with one Room Session for attendance and session auditing. Participant controls for a live room belong in the client SDK rather than this read-only history endpoint.
+
+      ${tokenPermissions<"_Video_">}
+      """)
     @route("/{id}/members")
     listMembers(
       ...RoomSessionPathID,
@@ -65,7 +81,11 @@ namespace SignalWireAPI.Video.RoomSessions {
 
     @operationId("list_room_session_events")
     @summary("List room session events")
-    @doc("A list of Events for a particular Room Session.\n\n${tokenPermissions<"_Video_">}")
+    @doc("""
+      Lists the recorded event timeline for one Room Session. Use it to audit membership and media activity; this endpoint reports history and does not control the active room.
+
+      ${tokenPermissions<"_Video_">}
+      """)
     @route("/{id}/events")
     listEvents(
       ...RoomSessionPathID,

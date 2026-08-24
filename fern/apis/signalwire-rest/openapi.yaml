@@ -364,6 +364,8 @@ paths:
         conversation is a series of turns addressed by an `id` you choose. A turn is one user message
         and the agent's reply, including any tool calls made along the way. One request runs one turn.
 
+        Use this endpoint from a server when a text conversation should run against an AI agent's SWML and return each turn synchronously. It is separate from the channel-based Chat service: [Chat Tokens](/docs/apis/rest/chat-tokens/create-chat-token) authorize Chat clients but do not create or advance AI conversations.
+
         ## Methods
 
         | Method | Description |
@@ -498,6 +500,8 @@ paths:
         Unified JSON-RPC style endpoint for executing call methods through command-based dispatch.
         Send a request with the appropriate `command` field to invoke the desired call operation.
         Only the commands listed below are supported. Most operate on an already-active call; `dial` creates a new one. All commands are sent over HTTP (no persistent WebSocket connection required) and return immediately; operations that continue asynchronously deliver their results to your `status_url` webhooks.
+
+        Use the Calling API for SWML-driven calls and command-based control. Integrations built around form-encoded cXML requests and Call SIDs should use the Compatibility API's [Create a call](/docs/compatibility-api/rest/calls/create-a-call) and [Update a call](/docs/compatibility-api/rest/calls/update-a-call) operations instead.
 
         ## Supported Commands
 
@@ -1031,7 +1035,7 @@ paths:
       operationId: create_chat_token
       summary: Create chat token
       description: |-
-        Generate a Chat Token to be used to authenticate clients to the Chat Service.
+        Creates a time-limited Chat Token that a client consumes to access the Chat channels and permissions supplied in the request. Call this operation from your server when granting Chat access to a member; choose a lifetime from 1 minute through 30 days and never expose the project API token used to create it. Use [Create PubSub token](/docs/apis/rest/pubsub/create-token) for PubSub channels or [Create API token](/docs/apis/rest/project-tokens/create-token) for server-side REST authentication.
 
         #### Permissions
 
@@ -1077,7 +1081,7 @@ paths:
       operationId: list_documents
       summary: List documents
       description: |-
-        A list of Datasphere Documents.
+        Lists the source documents added to the project's Datasphere knowledge store. Use it to inventory material available to AI applications and monitor whether it is ready for retrieval. To find passages relevant to a question rather than browse documents, use [Search documents](/docs/apis/rest/documents/search-documents).
 
         #### Permissions
 
@@ -1125,7 +1129,7 @@ paths:
       operationId: create_document
       summary: Create document
       description: |-
-        Creates a Datasphere Document.
+        Ingests a document from the supplied URL, applies the selected chunking strategy, and creates its Datasphere record. Use it when adding source material for later semantic retrieval; use [Search documents](/docs/apis/rest/documents/search-documents) after ingestion, or [List documents](/docs/apis/rest/documents/list-documents) to monitor processing status.
 
         #### Permissions
 
@@ -1177,7 +1181,7 @@ paths:
       operationId: search_documents
       summary: Search documents
       description: |-
-        Search Datasphere Documents.
+        Finds passages in the project's Datasphere knowledge store that are semantically relevant to a query. Use the results as grounded context for an AI application; use [List documents](/docs/apis/rest/documents/list-documents) to browse the source documents instead.
 
         #### Permissions
 
@@ -1229,7 +1233,7 @@ paths:
       operationId: list_document_chunks
       summary: List chunks
       description: |-
-        A list of chunks for a Datasphere Document.
+        Lists the searchable passages generated from one Datasphere document. Use it to inspect how a known source was divided for retrieval; use [Search documents](/docs/apis/rest/documents/search-documents) to find passages by semantic relevance.
 
         #### Permissions
 
@@ -1285,7 +1289,7 @@ paths:
       operationId: get_document_chunk
       summary: Get chunk
       description: |-
-        Retrieves a specific chunk for a Datasphere Document by ID.
+        Retrieves one generated chunk by document and chunk IDs. Use it to inspect a known stored passage; use [List chunks](/docs/apis/rest/chunks/list-document-chunks) to discover chunk IDs or [Search documents](/docs/apis/rest/documents/search-documents) when starting from a natural-language query.
 
         #### Permissions
 
@@ -1332,7 +1336,7 @@ paths:
       operationId: delete_document_chunk
       summary: Delete chunk
       description: |-
-        Deletes a specific chunk for a Datasphere Document by ID.
+        Deletes one generated chunk from a Datasphere document by document and chunk IDs. Use it to exclude a specific passage from future retrieval without deleting the whole document; use [Delete document](/docs/apis/rest/documents/delete-document) to remove the document and all of its chunks.
 
         #### Permissions
 
@@ -1376,7 +1380,7 @@ paths:
       operationId: get_document
       summary: Get document
       description: |-
-        Retrieves a Datasphere Document by ID.
+        Retrieves one source document from the project's Datasphere knowledge store by ID. Use it to check a known document and its readiness for retrieval; use [List documents](/docs/apis/rest/documents/list-documents) to discover IDs or [Search documents](/docs/apis/rest/documents/search-documents) to find relevant passages.
 
         #### Permissions
 
@@ -1422,7 +1426,7 @@ paths:
       operationId: update_document
       summary: Update document
       description: |-
-        Updates a Datasphere Document by ID.
+        Changes the tags used to organize a Datasphere document and constrain knowledge retrieval. This operation does not replace the source URL or reconfigure chunking. Search document content through [Search documents](/docs/apis/rest/documents/search-documents).
 
         #### Permissions
 
@@ -1480,7 +1484,7 @@ paths:
       operationId: delete_document
       summary: Delete document
       description: |-
-        Deletes a Datasphere Document by ID.
+        Deletes a Datasphere document and its stored chunks by document ID. Use it when the source should no longer be available for semantic retrieval; use [Delete chunk](/docs/apis/rest/chunks/delete-document-chunk) when only one generated chunk should be removed.
 
         #### Permissions
 
@@ -1523,8 +1527,9 @@ paths:
       operationId: list_resource_addresses_client
       summary: List Resource Addresses from a Client
       description: |-
-        Lists resource addresses visible to the authenticated [subscriber](/docs/platform/subscribers). This endpoint uses bearer token authentication with a SAT (Subscriber Access Token),
-        which can be generated using the [Create Subscriber Token endpoint](/docs/apis/rest/subscribers/tokens/create-subscriber-token).
+        Returns the resource addresses visible to the authenticated [Subscriber](/docs/platform/subscribers). A subscriber client uses this collection to discover the callable handles it can reach. Authenticate with a Subscriber Access Token (SAT) created by [Create Subscriber token](/docs/apis/rest/subscribers/tokens/create-subscriber-token); project administration code should use the project-scoped [List Resource Addresses](/docs/apis/rest/addresses/list-resource-addresses) operation instead.
+
+        Resource addresses are callable handles, not standalone SIP Address configurations or physical [E911 Addresses](/docs/apis/rest/e-911-addresses/list-addresses).
         #### Permissions
 
         The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
@@ -1565,8 +1570,9 @@ paths:
       operationId: get_resource_address_client
       summary: Get Resource Address from a Client
       description: |-
-        Returns a resource address by ID. This endpoint uses bearer token authentication with a SAT ([Subscriber](/docs/platform/subscribers) Access Token),
-        which can be generated using the [Create Subscriber Token endpoint](/docs/apis/rest/subscribers/tokens/create-subscriber-token).
+        Retrieves one resource address visible to the authenticated [Subscriber](/docs/platform/subscribers) by address ID. Use it when a subscriber client already holds a callable address identifier; use [List Resource Addresses from a Client](/docs/apis/rest/addresses/list-resource-addresses-client) to discover visible addresses. Authenticate with a Subscriber Access Token (SAT), not a project API token.
+
+        Resource addresses are callable handles, not standalone SIP Address configurations or physical [E911 Addresses](/docs/apis/rest/e-911-addresses/get-address).
 
         #### Permissions
 
@@ -1609,7 +1615,9 @@ paths:
       operationId: create_guest_embed_token
       summary: Create guest embed token
       description: |-
-        Creates a guest [subscriber](/docs/platform/subscribers) token from a public Click-to-Call (C2C) token. The returned short-lived token authorizes a guest subscriber to place a call through the C2C embed widget without exposing sensitive credentials or requiring a full subscriber account.
+        Exchanges a public Click-to-Call token for a short-lived guest [Subscriber](/docs/platform/subscribers) token consumed by the Click-to-Call embed client. Use it only for a public embed flow that must place a call without exposing project credentials or requiring a full subscriber account.
+
+        Use [Create Subscriber guest token](/docs/apis/rest/subscribers/tokens/create-subscriber-guest-token) when your server chooses the guest's allowed resource addresses, or [Create Subscriber token](/docs/apis/rest/subscribers/tokens/create-subscriber-token) for a known subscriber.
 
         #### Permissions
 
@@ -1669,7 +1677,9 @@ paths:
       operationId: create_subscriber_guest_token
       summary: Create Subscriber guest token
       description: |-
-        Creates a [Subscriber](/docs/platform/subscribers) Guest Token. Authenticate this request with your project's API token.
+        Creates a temporary guest [Subscriber](/docs/platform/subscribers) token limited to the resource addresses in `allowed_addresses`. Call it from your server when a user without a full subscriber account needs scoped calling access. The token expires after two hours by default; authenticate this request with a project API token and give only the returned guest token to the client.
+
+        Use [Create Subscriber token](/docs/apis/rest/subscribers/tokens/create-subscriber-token) for a known subscriber, or [Create guest embed token](/docs/apis/rest/subscribers/tokens/create-guest-embed-token) when exchanging a public Click-to-Call token.
 
         #### Permissions
 
@@ -1721,7 +1731,7 @@ paths:
       operationId: list_resources
       summary: List Resources
       description: |-
-        A list of Fabric Resources
+        Lists every supported Fabric resource in your SignalWire project, regardless of type. Use it for project-wide inventory or when you do not yet know whether an ID belongs to an AI Agent, script, SIP resource, or another resource type. Use a type-specific collection such as [SWML Scripts](/docs/apis/rest/swml-scripts/list-swml-scripts) or [SIP Credentials](/docs/apis/rest/sip-credentials/list-sip-credentials) to create resources or work with their full configuration.
 
         #### Permissions
 
@@ -1761,7 +1771,7 @@ paths:
       operationId: list_ai_agents
       summary: List AI agents
       description: |-
-        A list of AI Agents
+        Lists the custom AI Agents in your SignalWire project. Each agent is a reusable Fabric resource that defines a conversational call experience and can be reached through resource addresses or assigned as a call handler. Use [Dialogflow Agents](/docs/apis/rest/ai-agents/ai-agents-dialogflow/list-dialogflow-agents) for linked Dialogflow integrations, or [Call Flows](/docs/apis/rest/call-flows/list-call-flows) for visual, deterministic call logic.
 
         #### Permissions
 
@@ -1800,7 +1810,7 @@ paths:
       operationId: create_ai_agent
       summary: Create AI agent
       description: |-
-        Creates an AI Agent
+        Creates a custom AI Agent in your SignalWire project. The new agent becomes a reusable Fabric resource for conversational calls and can be reached through resource addresses or assigned as a call handler. Use a [Dialogflow Agent](/docs/apis/rest/ai-agents/ai-agents-dialogflow/list-dialogflow-agents) for an existing Dialogflow integration, or [Create call flow](/docs/apis/rest/call-flows/create-call-flow) for visual, deterministic call logic.
 
         #### Permissions
 
@@ -1852,7 +1862,7 @@ paths:
       operationId: list_ai_agent_addresses
       summary: List AI agent Addresses
       description: |-
-        This endpoint returns a list of addresses associated with a specific AI Agent.
+        Lists the resource addresses through which calls can reach one custom AI Agent in your SignalWire project. Use [List AI agents](/docs/apis/rest/ai-agents/ai-agents-custom/list-ai-agents) to find the agent resources themselves; linked Dialogflow Agents expose their addresses separately.
 
         #### Permissions
 
@@ -1893,7 +1903,7 @@ paths:
       operationId: get_ai_agent
       summary: Get AI agent
       description: |-
-        Returns an AI Agent by ID
+        Retrieves one custom AI Agent from your SignalWire project. Use it to review an agent that is configured directly in SignalWire; use [List AI agents](/docs/apis/rest/ai-agents/ai-agents-custom/list-ai-agents) to find agents, or [Get Dialogflow agent](/docs/apis/rest/ai-agents/ai-agents-dialogflow/get-dialogflow-agent) for a linked Dialogflow resource.
 
         #### Permissions
 
@@ -1933,7 +1943,7 @@ paths:
       operationId: update_ai_agent
       summary: Update AI agent
       description: |-
-        Updates an AI Agent by ID
+        Updates how an existing custom AI Agent behaves in conversations. Use it for an agent configured directly in your SignalWire project; update a linked Dialogflow resource with [Update Dialogflow agent](/docs/apis/rest/ai-agents/ai-agents-dialogflow/update-dialogflow-agent).
 
         #### Permissions
 
@@ -1985,7 +1995,7 @@ paths:
       operationId: delete_ai_agent
       summary: Delete AI agent
       description: |-
-        Deletes an AI Agent by ID
+        Deletes a custom AI Agent from your SignalWire project so it can no longer be used as a conversational call handler. A linked [Dialogflow Agent](/docs/apis/rest/ai-agents/ai-agents-dialogflow/delete-dialogflow-agent) or a Call Flow must be deleted through its own operation.
 
         #### Permissions
 
@@ -2022,7 +2032,7 @@ paths:
       operationId: list_call_flow_addresses
       summary: List call flow Addresses
       description: |-
-        This endpoint returns a list of addresses associated with a specific Call Flow.
+        Returns the project-scoped resource addresses assigned to one Call Flow. Use these callable handles to see how calls can reach the deployed visual flow; use [List call flows](/docs/apis/rest/call-flows/list-call-flows) for the resources themselves, or the SWML Script address operation for directly authored stored SWML.
 
         #### Permissions
 
@@ -2063,7 +2073,7 @@ paths:
       operationId: list_call_flow_versions
       summary: List call flow versions
       description: |-
-        Returns a list of versions of a Call Flow.
+        Lists the saved revisions of one Call Flow. Use it to review the visual resource's history or select a version for deployment; use [Get call flow](/docs/apis/rest/call-flows/get-call-flow) for the current editable resource, or SWML Scripts when you do not need the Call Flow Builder deployment lifecycle.
 
         #### Permissions
 
@@ -2103,7 +2113,7 @@ paths:
       operationId: deploy_call_flow_version
       summary: Deploy call flow version
       description: |-
-        Deploys a specific version of a Call Flow.
+        Makes one saved Call Flow version active, selected by document version or version ID. Use it after updating a visual flow when that revision is ready to handle calls; updating the Call Flow saves a revision but does not replace this deployment step. Directly authored [SWML Scripts](/docs/apis/rest/swml-scripts/create-swml-script) do not use Call Flow versions.
 
         #### Permissions
 
@@ -2156,7 +2166,7 @@ paths:
       operationId: list_call_flows
       summary: List call flows
       description: |-
-        A list of Call Flows
+        Lists the Call Flows in your SignalWire project. A Call Flow is a visual, reusable call handler built in Call Flow Builder; it can be assigned to phone numbers and other routing resources. Use [SWML Scripts](/docs/apis/rest/swml-scripts/list-swml-scripts) when you author SWML directly, or a [Relay Application](/docs/apis/rest/relay-application/list-relay-applications) when a Server SDK process handles the call.
 
         #### Permissions
 
@@ -2195,7 +2205,7 @@ paths:
       operationId: create_call_flow
       summary: Create call flow
       description: |-
-        Creates a Call Flow
+        Creates a visual Call Flow in your SignalWire project. The new flow becomes a reusable call handler that can be edited in Call Flow Builder and assigned to phone numbers or other routing resources. Use [Create SWML Script](/docs/apis/rest/swml-scripts/create-swml-script) for directly authored SWML, or [Create Relay application](/docs/apis/rest/relay-application/create-relay-application) for a Server SDK handler.
 
         #### Permissions
 
@@ -2247,7 +2257,7 @@ paths:
       operationId: get_call_flow
       summary: Get call flow
       description: |-
-        Returns a Call Flow by ID
+        Retrieves one Call Flow from your SignalWire project for viewing or editing. Use [List call flows](/docs/apis/rest/call-flows/list-call-flows) to find flows, or [Get SWML Script](/docs/apis/rest/swml-scripts/get-swml-script) for a directly authored SWML handler.
 
         #### Permissions
 
@@ -2287,7 +2297,7 @@ paths:
       operationId: update_call_flow
       summary: Update call flow
       description: |-
-        Updates a Call Flow by ID
+        Saves a new editable revision of a Call Flow in your SignalWire project. Supply the next required `document_version`, then make the saved revision live with [Deploy call flow version](/docs/apis/rest/call-flows/deploy-call-flow-version). Directly authored SWML belongs in [Update SWML Script](/docs/apis/rest/swml-scripts/update-swml-script).
 
         #### Permissions
 
@@ -2339,7 +2349,7 @@ paths:
       operationId: delete_call_flow
       summary: Delete call flow
       description: |-
-        Deletes a Call Flow by ID
+        Deletes a Call Flow resource by ID. Use it when the visual flow should no longer be available as a call handler; deleting a [SWML Script](/docs/apis/rest/swml-scripts/delete-swml-script) or [Relay Application](/docs/apis/rest/relay-application/delete-relay-application) requires that resource's endpoint.
 
         #### Permissions
 
@@ -2376,7 +2386,7 @@ paths:
       operationId: list_conference_room_addresses
       summary: List conference room Addresses
       description: |-
-        This endpoint returns a list of addresses associated with a specific Conference Room.
+        Returns the project-scoped resource addresses assigned to one Fabric Conference Room. Use these callable handles to see how calls can reach the programmable room; use [Get conference room](/docs/apis/rest/conference-rooms/get-conference-room) for its video configuration. Managed Video Conferences and SDK-based Video Rooms are not addressed through this endpoint.
 
         #### Permissions
 
@@ -2417,7 +2427,7 @@ paths:
       operationId: list_conference_rooms
       summary: List conference rooms
       description: |-
-        Returns a list of conference rooms.
+        Returns the project's Fabric Conference Room resources. Use it to discover programmable video rooms that can be reached through resource addresses and used in call routing. Use [Video Conferences](/docs/apis/rest/video/video-conferences/list-video-conferences) for managed conferences with hosted guest and moderator access, or [Video Rooms](/docs/apis/rest/video/rooms/list-rooms) for SDK-based room configurations.
 
         #### Permissions
 
@@ -2456,7 +2466,7 @@ paths:
       operationId: create_conference_room
       summary: Create conference room
       description: |-
-        Creates a Conference Room
+        Creates a Fabric Conference Room resource that can be reached through resource addresses and used in call routing. Use it for a programmable, addressable video room; use [Create video conference](/docs/apis/rest/video/video-conferences/create-video-conference) for a managed hosted conference, or [Create room](/docs/apis/rest/video/rooms/create-room) for an SDK-based Video Room configuration.
 
         #### Permissions
 
@@ -2508,7 +2518,7 @@ paths:
       operationId: get_conference_room
       summary: Get conference room
       description: |-
-        Returns a Conference Room by ID
+        Retrieves one Fabric Conference Room by resource ID so you can inspect how the addressable room is configured. Use [List conference rooms](/docs/apis/rest/conference-rooms/list-conference-rooms) to discover IDs, or [Get video conference](/docs/apis/rest/video/video-conferences/get-video-conference) for a managed hosted conference.
 
         #### Permissions
 
@@ -2548,7 +2558,7 @@ paths:
       operationId: update_conference_room
       summary: Update conference room
       description: |-
-        Updates a Conference Room by ID
+        Changes how a Fabric Conference Room schedules and runs sessions while preserving the same addressable project resource. Managed Video Conferences and SDK-based Video Rooms have separate update operations.
 
         #### Permissions
 
@@ -2600,7 +2610,7 @@ paths:
       operationId: delete_conference_room
       summary: Delete conference room
       description: |-
-        Deletes a Conference Room by ID
+        Deletes a Fabric Conference Room resource by ID so it can no longer be reached through its resource addresses. This does not delete a managed [Video Conference](/docs/apis/rest/video/video-conferences/delete-video-conference) or an SDK-based [Video Room](/docs/apis/rest/video/rooms/delete-room).
 
         #### Permissions
 
@@ -2637,7 +2647,7 @@ paths:
       operationId: list_cxml_applications
       summary: List cXML applications
       description: |-
-        A list of cXML Applications
+        Lists the project's addressable cXML Applications, which provide reusable voice and messaging routing. These are the same applications exposed by the Compatibility API's [Applications](/docs/compatibility-api/rest/applications/list-applications), which is also where new ones are created. Use [cXML Webhooks](/docs/apis/rest/cxml-webhook/list-cxml-webhooks) when your server supplies cXML for each request.
 
         #### Permissions
 
@@ -2677,7 +2687,7 @@ paths:
       operationId: get_cxml_application
       summary: Get cXML application
       description: |-
-        Returns a cXML Application by ID
+        Retrieves one cXML Application resource by ID so you can inspect its voice and messaging routing. Use [List cXML applications](/docs/apis/rest/cxml-applications/list-cxml-applications) to discover IDs, or Compatibility [Get application](/docs/compatibility-api/rest/applications/get-application) when your integration holds an Application SID.
 
         #### Permissions
 
@@ -2717,7 +2727,7 @@ paths:
       operationId: update_cxml_application
       summary: Update cXML application
       description: |-
-        Updates a cXML Application by ID
+        Changes where a cXML Application sends voice and messaging requests and callbacks. Compatibility [Update application](/docs/compatibility-api/rest/applications/update-application) manages the same application by Application SID; use whichever identifier your integration holds.
 
         #### Permissions
 
@@ -2769,7 +2779,7 @@ paths:
       operationId: delete_cxml_application
       summary: Delete cXML application
       description: |-
-        Deletes a LAML Application by ID
+        Deletes a cXML Application by resource ID, removing its addresses and the corresponding Compatibility API [Application](/docs/compatibility-api/rest/applications/list-applications) as well. An individual cXML Webhook is a separate resource with its own delete operation.
 
         #### Permissions
 
@@ -2806,7 +2816,7 @@ paths:
       operationId: list_cxml_application_addresses
       summary: List cXML application Addresses
       description: |-
-        This endpoint returns a list of addresses associated with a specific LaML Application.
+        Returns the project-scoped resource addresses assigned to one cXML Application. Use these callable handles to see how calls or messages can reach its configured cXML handlers; use [List cXML applications](/docs/apis/rest/cxml-applications/list-cxml-applications) for the resources themselves, or the cXML Webhook address operation for an individual server-backed handler.
 
         #### Permissions
 
@@ -2847,7 +2857,7 @@ paths:
       operationId: list_cxml_scripts
       summary: List cXML Scripts
       description: |-
-        A list of cXML Scripts
+        Lists the project's addressable cXML Scripts, which store calling or messaging instructions in SignalWire. These are the same scripts the Compatibility API exposes as [LamlBins](/docs/compatibility-api/rest/cxml-scripts/list-cxml-scripts), addressed there by SID. Use [cXML Webhooks](/docs/apis/rest/cxml-webhook/list-cxml-webhooks) when your server must return cXML for each request, or [SWML Scripts](/docs/apis/rest/swml-scripts/list-swml-scripts) for SWML applications.
 
         #### Permissions
 
@@ -2886,7 +2896,7 @@ paths:
       operationId: create_cxml_script
       summary: Create cXML Script
       description: |-
-        Creates a cXML Script
+        Creates a resource that stores cXML instructions in SignalWire for a calling or messaging handler. Use it when the cXML can be managed as a Fabric resource; use [Create cXML webhook](/docs/apis/rest/cxml-webhook/create-cxml-webhook) when your server returns cXML per request, or Compatibility [Create a cXML Script](/docs/compatibility-api/rest/cxml-scripts/create-cxml-script) for a form-encoded LamlBin request.
 
         #### Permissions
 
@@ -2938,7 +2948,7 @@ paths:
       operationId: get_cxml_script
       summary: Get cXML Script
       description: |-
-        Returns a cXML Script by ID
+        Retrieves one stored cXML Script by resource ID. Use it when you know the Fabric resource ID; use [List cXML Scripts](/docs/apis/rest/cxml-scripts/list-cxml-scripts) to discover IDs. Integrations built around LamlBin SIDs can use Compatibility [Retrieve a cXML Script](/docs/compatibility-api/rest/cxml-scripts/retrieve-cxml-script).
 
         #### Permissions
 
@@ -2978,7 +2988,7 @@ paths:
       operationId: update_cxml_script
       summary: Update cXML Script
       description: |-
-        Updates a cXML Script by ID
+        Changes a stored cXML Script while preserving its Fabric resource and addresses. The change is also visible through Compatibility [Update a cXML Script](/docs/compatibility-api/rest/cxml-scripts/update-cxml-script), which manages the same script by LamlBin SID. Use [Update cXML webhook](/docs/apis/rest/cxml-webhook/update-cxml-webhook) for a server-backed handler.
 
         #### Permissions
 
@@ -3030,7 +3040,7 @@ paths:
       operationId: delete_cxml_script
       summary: Delete cXML Script
       description: |-
-        Deletes a cXML Script by ID
+        Deletes a stored cXML Script resource by ID, including its addresses and corresponding Compatibility API LamlBin. Use it when the cXML should no longer be available as a Fabric handler; delete a [cXML Webhook](/docs/apis/rest/cxml-webhook/delete-cxml-webhook) separately when the handler fetches cXML from your server.
 
         #### Permissions
 
@@ -3067,7 +3077,7 @@ paths:
       operationId: list_cxml_script_addresses
       summary: List cXML Script Addresses
       description: |-
-        This endpoint returns a list of addresses associated with a specific cXML Script.
+        Returns the project-scoped resource addresses assigned to one cXML Script. Use these callable handles to see how calls or messages can reach the stored cXML; use [List cXML Scripts](/docs/apis/rest/cxml-scripts/list-cxml-scripts) for the resources themselves, or the cXML Webhook address operation for server-generated cXML handlers.
 
         #### Permissions
 
@@ -3108,7 +3118,7 @@ paths:
       operationId: list_cxml_webhooks
       summary: List cXML webhooks
       description: |-
-        A list of cXML Webhooks
+        Returns the project's cXML Webhook resources, whose configured servers return cXML for each request. Use it to discover server-backed cXML handlers before retrieving or changing one. Use [cXML Scripts](/docs/apis/rest/cxml-scripts/list-cxml-scripts) when the cXML should be stored in SignalWire instead.
 
         #### Permissions
 
@@ -3147,7 +3157,7 @@ paths:
       operationId: create_cxml_webhook
       summary: Create cXML webhook
       description: |-
-        Creates an cXML Webhook
+        Creates a resource that requests cXML from your server when the handler runs. Use it when call or message instructions depend on current application state; use [Create cXML Script](/docs/apis/rest/cxml-scripts/create-cxml-script) when the cXML can be stored in SignalWire, or [Create SWML webhook](/docs/apis/rest/swml-webhook/create-swml-webhook) when the server returns SWML.
 
         #### Permissions
 
@@ -3199,7 +3209,7 @@ paths:
       operationId: list_cxml_webhook_addresses
       summary: List cXML webhook Addresses
       description: |-
-        This endpoint returns a list of addresses associated with a specific cXML Webhook.
+        Returns the project-scoped resource addresses assigned to one cXML Webhook. Use these callable handles to see how calls or messages can reach the server-backed cXML handler; use [List cXML webhooks](/docs/apis/rest/cxml-webhook/list-cxml-webhooks) for the resources themselves, or the cXML Script address operation for stored cXML handlers.
 
         #### Permissions
 
@@ -3240,7 +3250,7 @@ paths:
       operationId: get_cxml_webhook
       summary: Get cXML webhook
       description: |-
-        Returns an cXML Webhook by ID
+        Retrieves one cXML Webhook by resource ID so you can inspect the server-backed handler. Use [List cXML webhooks](/docs/apis/rest/cxml-webhook/list-cxml-webhooks) to discover IDs, or a [cXML Script](/docs/apis/rest/cxml-scripts/create-cxml-script) for cXML stored in SignalWire.
 
         #### Permissions
 
@@ -3280,7 +3290,7 @@ paths:
       operationId: update_cxml_webhook
       summary: Update cXML webhook
       description: |-
-        Updates an cXML Webhook by ID
+        Changes where and how a cXML Webhook requests instructions from your server. Use it when the server-backed handler's routing changes; use [Update cXML Script](/docs/apis/rest/cxml-scripts/update-cxml-script) for cXML stored in SignalWire.
 
         #### Permissions
 
@@ -3332,7 +3342,7 @@ paths:
       operationId: delete_cxml_webhook
       summary: Delete cXML webhook
       description: |-
-        Deletes an cXML Webhook by ID
+        Deletes a cXML Webhook resource by ID. Use it when SignalWire should stop requesting cXML from that server configuration; deleting a stored [cXML Script](/docs/apis/rest/cxml-scripts/delete-cxml-script) requires the script endpoint instead.
 
         #### Permissions
 
@@ -3369,7 +3379,7 @@ paths:
       operationId: list_dialogflow_agents
       summary: List Dialogflow agents
       description: |-
-        A list of Dialogflow Agents
+        Lists the Dialogflow integrations represented as AI Agent resources in your SignalWire project. These resources let SignalWire route calls to conversational agents hosted in Dialogflow. Use [custom AI Agents](/docs/apis/rest/ai-agents/ai-agents-custom/list-ai-agents) when the conversational behavior is configured directly in SignalWire.
 
         #### Permissions
 
@@ -3409,7 +3419,7 @@ paths:
       operationId: get_dialogflow_agent
       summary: Get Dialogflow agent
       description: |-
-        Returns a Dialogflow Agent by ID
+        Retrieves one Dialogflow-backed AI Agent resource from your SignalWire project. Use [List Dialogflow agents](/docs/apis/rest/ai-agents/ai-agents-dialogflow/list-dialogflow-agents) to find these resources, or [Get AI agent](/docs/apis/rest/ai-agents/ai-agents-custom/get-ai-agent) for an agent configured directly in SignalWire.
 
         #### Permissions
 
@@ -3449,7 +3459,7 @@ paths:
       operationId: update_dialogflow_agent
       summary: Update Dialogflow agent
       description: |-
-        Updates a Dialogflow Agent by ID
+        Updates how SignalWire connects to and presents a Dialogflow-backed AI Agent. This changes the linked resource in your SignalWire project, not the agent hosted in Dialogflow. Use [Update AI agent](/docs/apis/rest/ai-agents/ai-agents-custom/update-ai-agent) for an agent configured directly in SignalWire.
 
         #### Permissions
 
@@ -3501,7 +3511,7 @@ paths:
       operationId: delete_dialogflow_agent
       summary: Delete Dialogflow agent
       description: |-
-        Deletes a Dialogflow Agent by ID
+        Deletes the linked Dialogflow Agent resource from your SignalWire project so calls can no longer reach that integration through SignalWire. This does not delete the agent hosted in Dialogflow. A [custom AI Agent](/docs/apis/rest/ai-agents/ai-agents-custom/delete-ai-agent) has its own delete operation.
 
         #### Permissions
 
@@ -3538,7 +3548,7 @@ paths:
       operationId: list_dialogflow_agent_addresses
       summary: List Dialogflow agent Addresses
       description: |-
-        This endpoint returns a list of addresses associated with a specific Dialogflow Agent.
+        Lists the resource addresses through which calls can reach one Dialogflow-backed AI Agent in your SignalWire project. Use [List Dialogflow agents](/docs/apis/rest/ai-agents/ai-agents-dialogflow/list-dialogflow-agents) to find the linked resources themselves; custom SignalWire AI Agents expose their addresses separately.
 
         #### Permissions
 
@@ -3579,7 +3589,7 @@ paths:
       operationId: list_freeswitch_connectors
       summary: List FreeSWITCH connectors
       description: |-
-        A list of FreeSWITCH Connectors
+        Returns the project's FreeSWITCH Connector resources, which route communications to connected FreeSWITCH deployments. Use it to discover connectors before retrieving or changing one. Use a [Relay Application](/docs/apis/rest/relay-application/list-relay-applications) when a Relay Server SDK process handles events, or a [SIP Gateway](/docs/apis/rest/sip-gateway/list-sip-gateways) for calls sent to an external SIP destination.
 
         #### Permissions
 
@@ -3618,7 +3628,7 @@ paths:
       operationId: create_freeswitch_connector
       summary: Create FreeSWITCH connector
       description: |-
-        Creates a FreeSWITCH Connector
+        Creates a resource for a FreeSWITCH deployment that has been connected with the supplied token. Use it when calls or messages should route to your own FreeSWITCH; use [Create Relay application](/docs/apis/rest/relay-application/create-relay-application) for a Relay Server SDK process, or [Create SIP gateway](/docs/apis/rest/sip-gateway/create-sip-gateway) for an external SIP destination.
 
         #### Permissions
 
@@ -3670,7 +3680,7 @@ paths:
       operationId: get_freeswitch_connector
       summary: Get FreeSWITCH connector
       description: |-
-        Returns a FreeSWITCH Connector by ID
+        Retrieves one FreeSWITCH Connector by resource ID. Use it when you know the connector ID; use [List FreeSWITCH connectors](/docs/apis/rest/freeswitch-connector/list-freeswitch-connectors) to discover IDs, or [Get Relay application](/docs/apis/rest/relay-application/get-relay-application) for a Relay Server SDK handler.
 
         #### Permissions
 
@@ -3710,7 +3720,7 @@ paths:
       operationId: update_freeswitch_connector
       summary: Update FreeSWITCH connector
       description: |-
-        Updates a FreeSWITCH Connector by ID
+        Changes how a connected FreeSWITCH deployment is identified when SignalWire routes communications through it. Relay Applications and SIP Gateways have separate update operations.
 
         #### Permissions
 
@@ -3762,7 +3772,7 @@ paths:
       operationId: delete_freeswitch_connector
       summary: Delete FreeSWITCH connector
       description: |-
-        Deletes a FreeSWITCH Connector by ID
+        Deletes a FreeSWITCH Connector resource by ID. Use it when SignalWire should no longer route communications to that connected FreeSWITCH; deleting a [Relay Application](/docs/apis/rest/relay-application/delete-relay-application) or [SIP Gateway](/docs/apis/rest/sip-gateway/delete-sip-gateway) requires that resource's endpoint.
 
         #### Permissions
 
@@ -3799,7 +3809,7 @@ paths:
       operationId: list_freeswitch_connector_addresses
       summary: List FreeSWITCH connector Addresses
       description: |-
-        This endpoint returns a list of addresses associated with a specific FreeSWITCH Connector.
+        Returns the project-scoped resource addresses assigned to one FreeSWITCH Connector. Use these callable handles to see how communications can reach the connected FreeSWITCH; use [List FreeSWITCH connectors](/docs/apis/rest/freeswitch-connector/list-freeswitch-connectors) for the resources themselves, or the address operation for the handler type you actually use.
 
         #### Permissions
 
@@ -3840,7 +3850,7 @@ paths:
       operationId: list_relay_applications
       summary: List Relay applications
       description: |-
-        A list of Relay Applications
+        Returns the project's Relay Application resources, which route calls or messages to a Relay Server SDK application listening on a topic. Use it to discover topic-backed handlers before retrieving or changing one. Use a [SWML Webhook](/docs/apis/rest/swml-webhook/list-swml-webhooks) for an HTTP server that returns instructions per request, or a [Call Flow](/docs/apis/rest/call-flows/list-call-flows) for a visual handler.
 
         #### Permissions
 
@@ -3879,7 +3889,7 @@ paths:
       operationId: create_relay_application
       summary: Create Relay application
       description: |-
-        Creates a Relay Application
+        Creates a resource that routes calls or messages to a Relay Server SDK application listening on the configured topic. Use it when your long-running server application will handle events through the Relay SDK; use [Create SWML webhook](/docs/apis/rest/swml-webhook/create-swml-webhook) for request-and-response HTTP handling, or [Create call flow](/docs/apis/rest/call-flows/create-call-flow) for visual call logic.
 
         #### Permissions
 
@@ -3931,7 +3941,7 @@ paths:
       operationId: get_relay_application
       summary: Get Relay application
       description: |-
-        Returns a Relay Application by ID
+        Retrieves one Relay Application by resource ID so you can inspect how SignalWire routes events to its Relay Server SDK listener. Use [List Relay applications](/docs/apis/rest/relay-application/list-relay-applications) to discover IDs, or a [SWML Script](/docs/apis/rest/swml-scripts/create-swml-script) when no Relay Server SDK process should receive the event.
 
         #### Permissions
 
@@ -3971,7 +3981,7 @@ paths:
       operationId: update_relay_application
       summary: Update Relay application
       description: |-
-        Updates a Relay Application by ID
+        Changes where a Relay Application sends events or call-status updates while preserving the same Fabric resource. Update a SWML Webhook or Call Flow through its own resource endpoint instead.
 
         #### Permissions
 
@@ -4023,7 +4033,7 @@ paths:
       operationId: delete_relay_application
       summary: Delete Relay application
       description: |-
-        Deletes a Relay Application by ID
+        Deletes a Relay Application resource by ID. Use it when calls or messages should no longer route to the Relay Server SDK topic; deleting this resource does not delete a [SWML Webhook](/docs/apis/rest/swml-webhook/delete-swml-webhook) or [Call Flow](/docs/apis/rest/call-flows/delete-call-flow).
 
         #### Permissions
 
@@ -4060,7 +4070,7 @@ paths:
       operationId: list_relay_application_addresses
       summary: List Relay application Addresses
       description: |-
-        This endpoint returns a paginated list of addresses associated with a Relay Application.
+        Returns the project-scoped resource addresses assigned to one Relay Application. Use these callable handles to see how calls or messages can reach the Relay Server SDK topic; use [List Relay applications](/docs/apis/rest/relay-application/list-relay-applications) for the resources themselves, or the address operation for the handler type you actually use.
 
         #### Permissions
 
@@ -4101,7 +4111,7 @@ paths:
       operationId: list_sip_credentials
       summary: List SIP credentials
       description: |-
-        A list of SIP Credentials
+        Returns the project's SIP Credential resources. Use it to inventory credentials used by SIP devices that register with SignalWire. Use [Subscriber SIP Credentials](/docs/apis/rest/subscribers/sip-credentials/list-subscriber-sip-credentials) when credentials must belong to one Subscriber, or [SIP Gateways](/docs/apis/rest/sip-gateway/list-sip-gateways) for external SIP destinations that SignalWire dials.
 
         #### Permissions
 
@@ -4142,7 +4152,7 @@ paths:
       operationId: create_sip_credential
       summary: Create SIP credential
       description: |-
-        Creates a SIP Credential
+        Creates a project-scoped SIP Credential for a SIP device to register with SignalWire. Use it for a shared or independently managed device; use [Create Subscriber SIP credential](/docs/apis/rest/subscribers/sip-credentials/create-subscriber-sip-credential) when the credential belongs to a specific Subscriber. To attach an already-existing resource as the credential's outbound call handler, use [Assign Resource to SIP credential](/docs/apis/rest/sip-credentials/assign-resource-to-sip-credential) instead.
 
         #### Permissions
 
@@ -4194,7 +4204,7 @@ paths:
       operationId: get_sip_credential
       summary: Get SIP credential
       description: |-
-        Returns a SIP Credential by ID
+        Retrieves one project-scoped SIP Credential by resource ID so you can inspect how its device registers and places calls through SignalWire. Use [List SIP credentials](/docs/apis/rest/sip-credentials/list-sip-credentials) to discover IDs, or the Subscriber endpoint for a credential owned by one Subscriber.
 
         #### Permissions
 
@@ -4234,7 +4244,7 @@ paths:
       operationId: update_sip_credential
       summary: Update SIP credential
       description: |-
-        Updates a SIP Credential by ID
+        Changes how a project-scoped SIP device registers with SignalWire or handles outbound calls. Update a Subscriber-owned credential through [Update Subscriber SIP credential](/docs/apis/rest/subscribers/sip-credentials/update-subscriber-sip-credential).
 
         #### Permissions
 
@@ -4286,7 +4296,7 @@ paths:
       operationId: delete_sip_credential
       summary: Delete SIP credential
       description: |-
-        Deletes a SIP Credential by ID
+        Deletes a project-scoped SIP Credential by ID so its device can no longer register with those credentials. Use it for a project-owned credential; delete a Subscriber-owned credential through [Delete Subscriber SIP credential](/docs/apis/rest/subscribers/sip-credentials/delete-subscriber-sip-credential), and delete an outbound SIP Gateway through its own endpoint.
 
         #### Permissions
 
@@ -4323,7 +4333,7 @@ paths:
       operationId: list_sip_credential_addresses
       summary: List SIP credential Addresses
       description: |-
-        A list of addresses assigned to a SIP Credential.
+        Returns the project-scoped resource addresses assigned to one SIP Credential. Use these callable handles to see how the registered SIP device can be reached; use [Get SIP credential](/docs/apis/rest/sip-credentials/get-sip-credential) for registration and outbound call-handler settings, or the Subscriber SIP Credential endpoints for a Subscriber-owned device.
 
         #### Permissions
 
@@ -4364,7 +4374,7 @@ paths:
       operationId: list_sip_gateways
       summary: List SIP gateways
       description: |-
-        Returns a paginated list of SIP Gateways for the authenticated project.
+        Lists the SIP Gateways in your SignalWire project. A gateway forwards outbound calls from SignalWire to an external SIP provider, PBX, or other destination. Use [SIP Credentials](/docs/apis/rest/sip-credentials/list-sip-credentials) when a device registers with SignalWire, or [SIP Addresses](/docs/apis/rest/sip-addresses/list-sip-addresses) for standalone SIP URIs with inbound handlers.
 
         #### Permissions
 
@@ -4403,7 +4413,7 @@ paths:
       operationId: create_sip_gateway
       summary: Create SIP gateway
       description: |-
-        Creates a SIP Gateway that can be used to dial external SIP entities.
+        Creates a SIP Gateway resource that forwards calls to an external SIP destination. Use it for outbound routing to a provider, PBX, or other SIP system that SignalWire dials. Use [Create SIP credential](/docs/apis/rest/sip-credentials/create-sip-credential) when the external device registers with SignalWire instead.
 
         #### Permissions
 
@@ -4455,7 +4465,7 @@ paths:
       operationId: get_sip_gateway
       summary: Get SIP gateway
       description: |-
-        Returns an SIP Gateway by ID
+        Retrieves one SIP Gateway from your SignalWire project. Use [List SIP gateways](/docs/apis/rest/sip-gateway/list-sip-gateways) to find gateways. A device that registers with SignalWire belongs under [SIP Credentials](/docs/apis/rest/sip-credentials/list-sip-credentials) instead.
 
         #### Permissions
 
@@ -4495,7 +4505,7 @@ paths:
       operationId: update_sip_gateway
       summary: Update SIP gateway
       description: |-
-        Updates a SIP Gateway by ID
+        Changes the destination or supported media settings of a SIP Gateway identified by resource ID. Use it when outbound SIP routing changes; update a registering device through [Update SIP credential](/docs/apis/rest/sip-credentials/update-sip-credential) instead.
 
         #### Permissions
 
@@ -4547,7 +4557,7 @@ paths:
       operationId: delete_sip_gateway
       summary: Delete SIP gateway
       description: |-
-        Deletes a SIP Gateway by ID
+        Deletes a SIP Gateway resource by ID so calls can no longer be forwarded to its external SIP destination. This does not delete a [SIP Credential](/docs/apis/rest/sip-credentials/delete-sip-credential) or a standalone SIP Address.
 
         #### Permissions
 
@@ -4584,7 +4594,7 @@ paths:
       operationId: list_sip_gateway_addresses
       summary: List SIP gateway Addresses
       description: |-
-        Returns a paginated list of Fabric Addresses associated with the specified SIP Gateway.
+        Returns the project-scoped resource addresses assigned to one SIP Gateway. Use these callable handles to see how calls can reach the gateway and continue to its external SIP destination; use [Get SIP gateway](/docs/apis/rest/sip-gateway/get-sip-gateway) for destination and media settings, or the SIP Credential address operation for a registering device.
 
         #### Permissions
 
@@ -4625,7 +4635,7 @@ paths:
       operationId: list_subscribers
       summary: List Subscribers
       description: |-
-        Retrieve a list of all [subscribers](/docs/platform/subscribers).
+        Returns the project's [Subscriber](/docs/platform/subscribers) resources. Use it to inventory known user identities before retrieving, updating, or issuing access for one. Use [Get Subscriber](/docs/apis/rest/subscribers/get-subscriber) when you already have a resource ID; temporary guests use Guest or Invite Tokens rather than full Subscriber resources.
 
         #### Permissions
 
@@ -4664,7 +4674,7 @@ paths:
       operationId: create_subscriber
       summary: Create Subscriber
       description: |-
-        Create a new [Subscriber](/docs/platform/subscribers).
+        Creates a [Subscriber](/docs/platform/subscribers) resource for a known user, with sign-in credentials and optional profile fields. Use it when the user needs a persistent identity for Browser SDK or resource access; use [Create Subscriber guest token](/docs/apis/rest/subscribers/tokens/create-subscriber-guest-token) for temporary scoped access without a full account. Issue the new subscriber a client credential through [Create Subscriber token](/docs/apis/rest/subscribers/tokens/create-subscriber-token).
 
         #### Permissions
 
@@ -4716,7 +4726,7 @@ paths:
       operationId: list_subscriber_sip_credentials
       summary: List Subscriber SIP credentials
       description: |-
-        A list of SIP Credentials for the [Subscriber](/docs/platform/subscribers).
+        Returns the SIP Credentials owned by one [Subscriber](/docs/platform/subscribers). Use this subscriber-scoped collection when each subscriber manages one or more registering SIP devices. Use the project-scoped [List SIP credentials](/docs/apis/rest/sip-credentials/list-sip-credentials) for shared or independently managed devices.
 
         #### Permissions
 
@@ -4756,7 +4766,7 @@ paths:
       operationId: create_subscriber_sip_credential
       summary: Create Subscriber SIP credential
       description: |-
-        Creates a [Subscriber](/docs/platform/subscribers) SIP Credential.
+        Creates a SIP Credential owned by a specified [Subscriber](/docs/platform/subscribers), allowing that subscriber's SIP device to register with SignalWire. Use it for per-subscriber devices; use [Create SIP credential](/docs/apis/rest/sip-credentials/create-sip-credential) for a project-scoped credential not tied to a subscriber.
 
         #### Permissions
 
@@ -4809,7 +4819,7 @@ paths:
       operationId: get_subscriber_sip_credential
       summary: Get Subscriber SIP credential
       description: |-
-        Returns a [Subscriber](/docs/platform/subscribers) SIP Credential by ID.
+        Retrieves one SIP Credential belonging to a specified [Subscriber](/docs/platform/subscribers) by credential ID. Use it when both subscriber and credential IDs are known; use [List Subscriber SIP credentials](/docs/apis/rest/subscribers/sip-credentials/list-subscriber-sip-credentials) to discover the subscriber's credentials, or the project-scoped get operation for a shared device.
 
         #### Permissions
 
@@ -4850,7 +4860,7 @@ paths:
       operationId: update_subscriber_sip_credential
       summary: Update Subscriber SIP credential
       description: |-
-        Updates a [Subscriber](/docs/platform/subscribers) SIP Credential by ID.
+        Changes the configurable settings of one SIP Credential owned by a specified [Subscriber](/docs/platform/subscribers). Use it for per-subscriber device registration; use [Update SIP credential](/docs/apis/rest/sip-credentials/update-sip-credential) for a project-scoped credential.
 
         #### Permissions
 
@@ -4903,7 +4913,7 @@ paths:
       operationId: delete_subscriber_sip_credential
       summary: Delete Subscriber SIP credential
       description: |-
-        Deletes a [Subscriber](/docs/platform/subscribers) SIP Credential by ID.
+        Deletes one SIP Credential owned by a specified [Subscriber](/docs/platform/subscribers), preventing that device from registering with those credentials. Use [Delete SIP credential](/docs/apis/rest/sip-credentials/delete-sip-credential) for a project-scoped credential instead.
 
         #### Permissions
 
@@ -4941,7 +4951,7 @@ paths:
       operationId: get_subscriber
       summary: Get Subscriber
       description: |-
-        Fetch an existing [Subscriber](/docs/platform/subscribers).
+        Retrieves one [Subscriber](/docs/platform/subscribers) resource by ID. Use it to inspect a known user's profile and resource metadata; use [List Subscribers](/docs/apis/rest/subscribers/list-subscribers) to discover IDs, or the Subscriber Token endpoints to create client access rather than read the profile.
 
         #### Permissions
 
@@ -4981,7 +4991,7 @@ paths:
       operationId: update_subscriber
       summary: Update Subscriber
       description: |-
-        Update an existing [Subscriber](/docs/platform/subscribers).
+        Changes the profile or sign-in information for a persistent [Subscriber](/docs/platform/subscribers) identity in the project. Use [Create Subscriber token](/docs/apis/rest/subscribers/tokens/create-subscriber-token) or the refresh operation to manage a client's time-limited access.
 
         #### Permissions
 
@@ -5033,7 +5043,7 @@ paths:
       operationId: delete_subscriber
       summary: Delete Subscriber
       description: |-
-        Delete an existing [Subscriber](/docs/platform/subscribers).
+        Deletes a persistent [Subscriber](/docs/platform/subscribers) resource by ID. Use it when the user identity should no longer exist in the project; temporary Guest and Invite Tokens expire independently and are not deleted through this operation.
 
         #### Permissions
 
@@ -5070,7 +5080,7 @@ paths:
       operationId: list_subscriber_addresses
       summary: List Subscriber Addresses
       description: |-
-        List [Subscriber](/docs/platform/subscribers) Addresses.
+        Returns the project-scoped resource addresses assigned to one [Subscriber](/docs/platform/subscribers). Use these callable handles to see how calls or messages can reach that subscriber; use [Get Subscriber](/docs/apis/rest/subscribers/get-subscriber) for profile data, or the SAT-authenticated [List Resource Addresses from a Client](/docs/apis/rest/addresses/list-resource-addresses-client) when a subscriber client is discovering addresses it can reach.
 
         #### Permissions
 
@@ -5113,7 +5123,7 @@ paths:
       operationId: list_swml_scripts
       summary: List SWML Scripts
       description: |-
-        A list of SWML Scripts
+        Returns the project's SWML Script resources, which store calling or messaging SWML in SignalWire. Use it to discover scripts before retrieving or changing one. Use [SWML Webhooks](/docs/apis/rest/swml-webhook/list-swml-webhooks) when your server must return SWML for each request, or [cXML Scripts](/docs/apis/rest/cxml-scripts/list-cxml-scripts) for applications written in cXML.
 
         #### Permissions
 
@@ -5154,7 +5164,7 @@ paths:
       operationId: create_swml_script
       summary: Create SWML Script
       description: |-
-        Creates a SWML Script
+        Creates a resource that stores a calling or messaging SWML document in SignalWire. Use it for versioned instructions that can run without fetching content from your server; choose [Create SWML webhook](/docs/apis/rest/swml-webhook/create-swml-webhook) when your server must generate different SWML for each request, or [Create cXML Script](/docs/apis/rest/cxml-scripts/create-cxml-script) for cXML applications.
 
         #### Permissions
 
@@ -5206,7 +5216,7 @@ paths:
       operationId: get_swml_script
       summary: Get SWML Script
       description: |-
-        Returns a SWML Script by ID
+        Retrieves one stored SWML Script by resource ID so you can inspect the instructions used by its calling or messaging handler. Use [List SWML Scripts](/docs/apis/rest/swml-scripts/list-swml-scripts) to discover IDs, or a [SWML Webhook](/docs/apis/rest/swml-webhook/create-swml-webhook) when instructions must come from your server at request time.
 
         #### Permissions
 
@@ -5246,7 +5256,7 @@ paths:
       operationId: update_swml_script
       summary: Update SWML Script
       description: |-
-        Updates a SWML Script by ID
+        Changes a stored SWML Script while preserving the same Fabric resource and addresses. Use [Update SWML webhook](/docs/apis/rest/swml-webhook/update-swml-webhook) when the resource points to server-generated SWML instead.
 
         #### Permissions
 
@@ -5298,7 +5308,7 @@ paths:
       operationId: delete_swml_script
       summary: Delete SWML Script
       description: |-
-        Deletes a SWML Script by ID
+        Deletes a stored SWML Script resource by ID. Use it when the hosted SWML should no longer be available as a call or message handler; deleting a [SWML Webhook](/docs/apis/rest/swml-webhook/delete-swml-webhook) or another handler resource requires that resource's endpoint.
 
         #### Permissions
 
@@ -5335,7 +5345,7 @@ paths:
       operationId: list_swml_script_addresses
       summary: List SWML Script Addresses
       description: |-
-        This endpoints returns a list of addresses associated with a specific SWML script.
+        Returns the project-scoped resource addresses assigned to one SWML Script. Use these callable handles to see how calls or messages can reach the stored script; use [List SWML Scripts](/docs/apis/rest/swml-scripts/list-swml-scripts) for the resources themselves, or the SWML Webhook address operation for server-generated SWML handlers.
 
         #### Permissions
 
@@ -5376,7 +5386,7 @@ paths:
       operationId: list_swml_webhooks
       summary: List SWML webhooks
       description: |-
-        A list of SWML Webhooks
+        Returns the project's SWML Webhook resources, whose configured servers return calling or messaging SWML for each request. Use it to discover dynamic SWML handlers before retrieving or changing one. Use [SWML Scripts](/docs/apis/rest/swml-scripts/list-swml-scripts) when the SWML should be stored in SignalWire instead.
 
         #### Permissions
 
@@ -5415,7 +5425,7 @@ paths:
       operationId: create_swml_webhook
       summary: Create SWML webhook
       description: |-
-        Creates an SWML Webhook
+        Creates a resource that requests calling or messaging SWML from your server when the handler runs. Use it when instructions must be generated from current application state; use [Create SWML Script](/docs/apis/rest/swml-scripts/create-swml-script) when the SWML can be stored in SignalWire, or [Create cXML webhook](/docs/apis/rest/cxml-webhook/create-cxml-webhook) when the server returns cXML.
 
         #### Permissions
 
@@ -5467,7 +5477,7 @@ paths:
       operationId: get_swml_webhook
       summary: Get SWML webhook
       description: |-
-        Returns an SWML Webhook by ID
+        Retrieves one SWML Webhook by resource ID so you can inspect the server-backed handler. Use [List SWML webhooks](/docs/apis/rest/swml-webhook/list-swml-webhooks) to discover IDs, or a [SWML Script](/docs/apis/rest/swml-scripts/create-swml-script) for SWML stored in SignalWire.
 
         #### Permissions
 
@@ -5507,7 +5517,7 @@ paths:
       operationId: update_swml_webhook
       summary: Update SWML webhook
       description: |-
-        Updates an SWML Webhook by ID
+        Changes where and how a SWML Webhook requests instructions from your server. Use it when the server-backed handler's routing changes; use [Update SWML Script](/docs/apis/rest/swml-scripts/update-swml-script) for SWML stored in SignalWire.
 
         #### Permissions
 
@@ -5559,7 +5569,7 @@ paths:
       operationId: delete_swml_webhook
       summary: Delete SWML webhook
       description: |-
-        Deletes an SWML Webhook by ID
+        Deletes a SWML Webhook resource by ID. Use it when SignalWire should stop requesting SWML from that server configuration; deleting a stored [SWML Script](/docs/apis/rest/swml-scripts/delete-swml-script) requires the script endpoint instead.
 
         #### Permissions
 
@@ -5596,7 +5606,7 @@ paths:
       operationId: list_swml_webhook_addresses
       summary: List SWML webhook Addresses
       description: |-
-        This endpoint returns a list of addresses associated with a specific SWML webhook.
+        Returns the project-scoped resource addresses assigned to one SWML Webhook. Use these callable handles to see how calls or messages can reach the server-backed SWML handler; use [List SWML webhooks](/docs/apis/rest/swml-webhook/list-swml-webhooks) for the resources themselves, or the SWML Script address operation for stored SWML handlers.
 
         #### Permissions
 
@@ -5637,7 +5647,7 @@ paths:
       operationId: get_resource
       summary: Get Resource
       description: |-
-        Returns a Resource by ID
+        Retrieves a Fabric resource from your SignalWire project without requiring its type in advance. The response identifies what the resource is; use that resource type's own get operation when you need its full configuration.
 
         #### Permissions
 
@@ -5677,7 +5687,7 @@ paths:
       operationId: delete_resource
       summary: Delete Resource
       description: |-
-        Deletes a Resource by ID
+        Deletes a Fabric resource from your SignalWire project without requiring its type in advance. Use the type-specific delete operation instead when your application already knows the resource family and should make that intent explicit.
 
         #### Permissions
 
@@ -5714,7 +5724,7 @@ paths:
       operationId: list_resource_addresses
       summary: List Resource Addresses
       description: |-
-        This endpoint is used to retrieve addresses associated with a specific Resource.
+        Returns the project-scoped resource addresses assigned to any resource identified by ID. Use it from project administration code when the resource type is not known in advance; typed resource groups expose equivalent address lists alongside their type-specific fields. Subscriber clients must use the SAT-authenticated [List Resource Addresses from a Client](/docs/apis/rest/addresses/list-resource-addresses-client) operation instead.
 
         #### Permissions
 
@@ -5755,7 +5765,7 @@ paths:
       operationId: assign_resource_domain_application
       summary: Assign domain application handler
       description: |-
-        This endpoint assigns a specific resource to a Domain Application, allowing inbound calls to be handled by the resource.
+        Assigns an existing resource as the calling handler for a SIP Domain Application, so inbound SIP calls to that Domain Application run the resource. Use it when the Domain Application already exists and its handler should be a Fabric resource such as an AI Agent, Call Flow, or SIP Gateway. Use [Create domain application](/docs/apis/rest/domain-applications/create-domain-application) to create and configure the SIP-facing Domain Application itself.
         <Note>
         Currently only supports `calling` as a handler and automatically defaults to it.
         </Note>
@@ -5811,7 +5821,7 @@ paths:
       operationId: assign_resource_phone_route
       summary: Assign Resource to phone route
       description: |-
-        This endpoint assigns a specific resource to a phone route, allowing inbound calls & messages to be handled by the resource.
+        Assigns an existing Fabric resource as a phone number's calling or messaging handler. Use it when inbound traffic to an owned number should run an AI Agent, script, Call Flow, Relay Application, or another resource. This operation does not purchase or import the number; use [Purchase phone number](/docs/apis/rest/phone-numbers/purchase-phone-number) or [Import phone number](/docs/apis/rest/phone-numbers/create-imported-phone-number) first when needed.
 
         #### Permissions
 
@@ -5864,7 +5874,7 @@ paths:
       operationId: assign_resource_to_sip_credential
       summary: Assign Resource to SIP credential
       description: |-
-        This endpoint assigns a specific resource to a SIP endpoint, allowing inbound calls to be handled by the resource.
+        Assigns an existing resource as the calling handler for a SIP Credential. Use it when calls placed by the registered SIP device should run that resource's instructions. This operation does not create a credential; use [Create SIP credential](/docs/apis/rest/sip-credentials/create-sip-credential) first when the device does not yet have one.
         <Note>
         Currently only supports `calling` as a handler and automatically defaults to it.
         </Note>
@@ -5920,7 +5930,7 @@ paths:
       operationId: list_sip_addresses
       summary: List SIP addresses
       description: |-
-        Returns a paginated list of SIP addresses in the authenticated project.
+        Lists the standalone SIP Addresses in your SignalWire project. A SIP Address gives an external device or system a dedicated SIP URI for registration or inbound calling. Resource addresses are generic callable handles, [SIP Credentials](/docs/apis/rest/sip-credentials/list-sip-credentials) represent registering devices managed as Fabric resources, and [E911 addresses](/docs/apis/rest/e-911-addresses/list-addresses) represent physical emergency-service locations.
 
         #### Permissions
 
@@ -5968,7 +5978,7 @@ paths:
       operationId: create_sip_address
       summary: Create SIP address
       description: |-
-        Creates a SIP address, along with its username, encryption, codec, cipher, and IP authentication settings.
+        Creates a standalone SIP Address with a SIP URI, registration password, media and IP-authentication settings, and a resource that handles inbound calls. Use it when an external SIP device or system must register to or dial a dedicated URI. Use [Create SIP credential](/docs/apis/rest/sip-credentials/create-sip-credential) for a device credential managed as a Fabric resource, or [Create E911 address](/docs/apis/rest/e-911-addresses/create-address) for a physical emergency-service location.
 
         #### Permissions
 
@@ -6014,7 +6024,7 @@ paths:
       operationId: get_sip_address
       summary: Get SIP address
       description: |-
-        Returns a SIP address by ID.
+        Retrieves one standalone SIP Address from your SignalWire project. Use [List SIP addresses](/docs/apis/rest/sip-addresses/list-sip-addresses) to find addresses. Generic resource addresses and physical E911 addresses use different operations.
 
         #### Permissions
 
@@ -6054,8 +6064,7 @@ paths:
       operationId: update_sip_address
       summary: Update SIP address
       description: |-
-        Updates a SIP address by ID. Partial update: any field omitted from the body keeps its current value.
-        `calling_handler_resource_id` cannot be changed via this endpoint.
+        Partially updates a standalone SIP Address by ID; omitted fields retain their current values. Use it to change the URI name, Domain, registration password, media, encryption, or IP-authentication settings. `calling_handler_resource_id` cannot be changed through this operation. SIP Credentials and generic resource addresses have separate management endpoints.
 
         #### Permissions
 
@@ -6113,8 +6122,7 @@ paths:
       operationId: delete_sip_address
       summary: Delete SIP address
       description: |-
-        Deletes a SIP address by ID, along with its SIP configuration. Calls and registrations to this
-        address will stop working immediately.
+        Deletes a standalone SIP Address and its SIP configuration by ID. Use it when calls and registrations to that URI must stop immediately. This does not delete a [SIP Credential](/docs/apis/rest/sip-credentials/delete-sip-credential), a generic resource address, or an E911 address.
 
         #### Permissions
 
@@ -6151,7 +6159,9 @@ paths:
       operationId: create_subscriber_invite_token
       summary: Create Subscriber invite token
       description: |-
-        Creates a [Subscriber](/docs/platform/subscribers) Invite Token for use with client-side API calls. Authenticate this request with a subscriber's SAT (Subscriber Access Token), not the project level Basic Auth.
+        Creates a temporary invitation token for a guest to reach one of the authenticated [Subscriber's](/docs/platform/subscribers) resource addresses. A subscriber client calls this operation with its Subscriber Access Token (SAT), then passes the returned invitation to the guest. Invitations expire after two hours by default.
+
+        Use [Create Subscriber guest token](/docs/apis/rest/subscribers/tokens/create-subscriber-guest-token) when your server grants guest access with a project API token instead. This endpoint requires the subscriber's SAT, not project-level Basic authentication.
 
         #### Permissions
 
@@ -6205,7 +6215,9 @@ paths:
       operationId: create_subscriber_token
       summary: Create Subscriber token
       description: |-
-        Create a [Subscriber](/docs/platform/subscribers) Token.
+        Creates a Subscriber Access Token (SAT) for a known [Subscriber](/docs/platform/subscribers), identified by `reference`, and optionally updates that subscriber's profile. Call it from your server when a Browser SDK or other subscriber client needs to sign in. Tokens expire after two hours by default; bind one to a client with `fingerprint` and `sat:refresh` when that client should refresh its own access, or use [Refresh Subscriber token](/docs/apis/rest/subscribers/tokens/refresh-subscriber-token) from your backend.
+
+        Use [Create Subscriber guest token](/docs/apis/rest/subscribers/tokens/create-subscriber-guest-token) for temporary access limited to selected resource addresses, or [Create API token](/docs/apis/rest/project-tokens/create-token) for server-side REST authentication.
 
         #### Permissions
 
@@ -6257,7 +6269,9 @@ paths:
       operationId: refresh_subscriber_token
       summary: Refresh Subscriber token
       description: |-
-        Exchanges a valid refresh token for a new [subscriber](/docs/platform/subscribers) access token and a new refresh token. The new access token is valid for 2 hours, and the new refresh token is valid for 2 hours and 5 minutes.
+        Exchanges a valid refresh token for a new [Subscriber](/docs/platform/subscribers) Access Token (SAT) and a new refresh token. Call it from your server to continue a known subscriber's session without issuing a token from profile data again. The new access token is valid for 2 hours, and the new refresh token is valid for 2 hours and 5 minutes.
+
+        This operation consumes the `refresh_token` returned by [Create Subscriber token](/docs/apis/rest/subscribers/tokens/create-subscriber-token). A Browser SDK client with a fingerprint-bound `sat:refresh` token can refresh through the client flow instead.
 
         #### Permissions
 
@@ -6309,7 +6323,7 @@ paths:
       operationId: list_fax_logs
       summary: List fax logs
       description: |-
-        List the available logs.
+        Lists historical fax activity in the project for delivery review, usage reporting, and troubleshooting. The Fax Logs API is read-only; send or manage faxes through the Compatibility API's [Faxes](/docs/compatibility-api/rest/faxes/send-fax) operations instead.
 
         #### Permissions
 
@@ -6362,7 +6376,7 @@ paths:
       operationId: get_fax_log
       summary: Get fax log
       description: |-
-        Find a log by ID.
+        Retrieves one historical fax activity record by log ID for delivery review or troubleshooting. This read-only endpoint cannot send, cancel, or delete the fax; use Compatibility [Retrieve fax](/docs/compatibility-api/rest/faxes/retrieve-fax) for the managed fax resource.
 
         #### Permissions
 
@@ -6415,7 +6429,7 @@ paths:
       operationId: list_conferences
       summary: List conference logs
       description: |-
-        A list of Conferences.
+        Lists historical voice conferences and Video Room or Conference sessions across the project. Use it for usage reporting and auditing across conference types, not for live control. Use Compatibility [Conferences](/docs/compatibility-api/rest/conferences/list-all-conferences) to inspect or control live voice conferences, or [Video Conferences](/docs/apis/rest/video/video-conferences/list-video-conferences) to manage hosted video conference configurations.
 
         #### Permissions
 
@@ -6462,7 +6476,7 @@ paths:
       operationId: list_message_logs
       summary: List message logs
       description: |-
-        List the available logs.
+        Lists historical messaging activity in the project for delivery review, auditing, and troubleshooting. This collection is read-only; send or redact messages through the [Messages API](/docs/apis/rest/messages/create-message) instead.
 
         #### Permissions
 
@@ -6515,7 +6529,7 @@ paths:
       operationId: get_message_log
       summary: Get message log
       description: |-
-        Find a log by ID.
+        Retrieves one historical messaging record by log ID. Use it to inspect delivery details for a known message segment; this read-only endpoint does not send, retry, or redact the message. Use [List message logs](/docs/apis/rest/message-logs/list-message-logs) to discover log IDs or [Send a message](/docs/apis/rest/messages/create-message) for live messaging.
 
         #### Permissions
 
@@ -6573,6 +6587,8 @@ paths:
         - **SMS/MMS** when `from` is a purchased SignalWire phone number or shortcode. The message is MMS when `media` is present or `send_as_mms` is set, otherwise SMS.
         - **WhatsApp** when `from` is a `whatsapp:`-prefixed [WhatsApp number](/docs/platform/messaging/whatsapp/send-messages). Set `message_type` for a content message, or `template_id` for an [approved template](/docs/platform/messaging/whatsapp/message-templates). Free-form WhatsApp content is only allowed within the 24-hour customer service window.
 
+        Use this SignalWire REST operation for JSON requests. Integrations built around form-encoded requests and Message SIDs can use the Compatibility API's [Create message](/docs/compatibility-api/rest/messages/create-message) operation instead.
+
         #### Permissions
 
         The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Messaging_.
@@ -6628,6 +6644,8 @@ paths:
         Messages that are still in progress (`queued` or `initiated`) cannot be redacted. Messages in terminal states such as `delivered`, `undelivered`, or `failed` are eligible. Once redacted, the original body is overwritten and cannot be recovered.
 
         The `:message_id` path parameter is the message segment ID — the same ID returned by the create endpoint and shown in `/api/messaging/logs`.
+
+        Use this SignalWire REST operation for message redaction by message segment ID. Integrations built around Message SIDs can use the Compatibility API's [Update message](/docs/compatibility-api/rest/messages/update-message) operation instead.
 
         #### Permissions
 
@@ -6686,7 +6704,7 @@ paths:
       operationId: list_whatsapp_businesses
       summary: List WhatsApp Business Accounts
       description: |-
-        Returns the WhatsApp Business Accounts (WABAs) connected to your SignalWire Space. Each account can have its own set of phone numbers and message templates. Use a `whatsapp_business_id` from this list when creating or filtering [message templates](/docs/platform/messaging/whatsapp/message-templates).
+        Returns the WhatsApp Business Accounts connected to the project. Each account owns WhatsApp numbers and message templates. Use a `whatsapp_business_id` from this list when creating or filtering [message templates](/docs/platform/messaging/whatsapp/message-templates); use [List WhatsApp numbers](/docs/apis/rest/whatsapp/list-whatsapp-numbers) when you need a `whatsapp:`-prefixed sender address instead.
 
         #### Permissions
 
@@ -6720,7 +6738,7 @@ paths:
       operationId: list_whatsapp_numbers
       summary: List WhatsApp numbers
       description: |-
-        Returns the WhatsApp numbers connected to your Space. Each record includes its association with a WhatsApp Business Account, voice-capability flags, and the resource IDs used for routing calls or messages. Use `phone_number` (prefixed with `whatsapp:`) as the `from` address when [sending messages](/docs/platform/messaging/whatsapp/send-messages).
+        Lists the WhatsApp numbers connected to the project. These numbers act as WhatsApp senders and can route inbound communication to SignalWire resources. Prefix a number with `whatsapp:` when [sending messages](/docs/platform/messaging/whatsapp/send-messages). Standard SMS and MMS long codes use the [Phone Numbers API](/docs/apis/rest/phone-numbers/list-phone-numbers).
 
         #### Permissions
 
@@ -6754,7 +6772,7 @@ paths:
       operationId: retrieve_whatsapp_number
       summary: Get a WhatsApp number
       description: |-
-        Retrieves the details of a single WhatsApp number.
+        Retrieves one connected WhatsApp number by SignalWire ID so you can inspect how it is used for outbound and inbound communication. Use [List WhatsApp numbers](/docs/apis/rest/whatsapp/list-whatsapp-numbers) to discover IDs. Standard SMS and MMS phone numbers use [Get phone number](/docs/apis/rest/phone-numbers/retrieve-phone-number).
 
         #### Permissions
 
@@ -6795,7 +6813,7 @@ paths:
       operationId: list_whatsapp_templates
       summary: List message templates
       description: |-
-        Returns the message templates for your Space, optionally filtered by WhatsApp Business Account or approval status. A template must have `template_status` of `approved` before it can be used to send messages.
+        Lists the project's reusable WhatsApp message templates. Use it to find an approved template before sending business-initiated messages; a template must have `template_status` of `approved` before use. Use [Get a message template](/docs/apis/rest/whatsapp/retrieve-whatsapp-template) when you already have its SignalWire or Meta ID.
 
         #### Permissions
 
@@ -6836,7 +6854,7 @@ paths:
       operationId: create_whatsapp_template
       summary: Create a message template
       description: |-
-        Creates a message template and submits it to Meta for review. Approval typically takes from a few minutes to a few hours; poll the template's `template_status` until it becomes `approved`.
+        Creates a WhatsApp message template under a connected Business Account and submits it to Meta for review. Use it when outbound content must be sent outside the 24-hour customer service window. Approval typically takes from a few minutes to a few hours; poll the template until `template_status` becomes `approved`, then send it through [Send a message](/docs/apis/rest/messages/create-message).
 
         #### Permissions
 
@@ -6888,7 +6906,7 @@ paths:
       operationId: retrieve_whatsapp_template
       summary: Get a message template
       description: |-
-        Retrieves a single message template by SignalWire ID or Meta template ID.
+        Retrieves one WhatsApp message template by SignalWire ID or Meta template ID. Use it to inspect content and approval status for a known template; use [List message templates](/docs/apis/rest/whatsapp/list-whatsapp-templates) to discover or filter templates, or [Send a message](/docs/apis/rest/messages/create-message) after the template is approved.
 
         #### Permissions
 
@@ -6928,7 +6946,7 @@ paths:
       operationId: update_whatsapp_template
       summary: Update a message template
       description: |-
-        Updates a template's `category` or `components`. A template can only be updated while it is **not yet approved** — once approved, delete and recreate it to make changes.
+        Changes a WhatsApp template's category, components, or both. Use it while the template is still awaiting approval; an approved template cannot be updated and must be deleted and recreated. This operation edits reusable template content and does not send a message.
 
         #### Permissions
 
@@ -6986,7 +7004,7 @@ paths:
       operationId: delete_whatsapp_template
       summary: Delete a message template
       description: |-
-        Deletes a message template.
+        Deletes one WhatsApp message template by SignalWire ID or Meta template ID. Use it when the reusable template should no longer be available for outbound messages; this does not delete the WhatsApp Business Account or connected number.
 
         #### Permissions
 
@@ -7027,7 +7045,9 @@ paths:
       operationId: create_token
       summary: Create API token
       description: |-
-        Generate an API Token for a project to be used to authenticate requests within the project.
+        Creates a project API token for server-side authentication to SignalWire REST APIs, with only the permission categories supplied in the request. Use it when a backend service needs durable project credentials; client applications should receive a service-specific token such as a [Chat Token](/docs/apis/rest/chat-tokens/create-chat-token), [PubSub Token](/docs/apis/rest/pubsub/create-token), [Room Token](/docs/apis/rest/video/room-tokens/create-room-token), or [Subscriber Token](/docs/apis/rest/subscribers/tokens/create-subscriber-token) instead. The token remains usable until you delete it or remove required permissions.
+
+        The Compatibility API exposes the same project tokens through its account-scoped route. Use [Generate a new API Token](/docs/compatibility-api/rest/tokens/create-token) for that request format.
 
         #### Permissions
 
@@ -7079,7 +7099,7 @@ paths:
       operationId: update_token
       summary: Update API token
       description: |-
-        Update an API Token's name or permissions.
+        Changes the name or enabled permission categories of an existing project API token. Use it to rotate a token's responsibilities without replacing its identifier; remove permissions that the token's server-side caller no longer needs. For the account-scoped Compatibility API route, use [Update an API Token](/docs/compatibility-api/rest/tokens/update-token).
 
         #### Permissions
 
@@ -7142,7 +7162,7 @@ paths:
       operationId: delete_token
       summary: Delete API token
       description: |-
-        Delete an API Token. This action cannot be undone.
+        Permanently revokes and deletes a project API token. Use it when a server-side credential has been exposed, retired, or replaced; clients using Chat, PubSub, Room, or Subscriber Tokens require the corresponding service-specific token lifecycle instead. For the account-scoped Compatibility API route, use [Delete an API Token](/docs/compatibility-api/rest/tokens/delete-token).
 
         #### Permissions
 
@@ -7189,6 +7209,8 @@ paths:
         All endpoints operate only within the caller's project tree — the authenticated root
         project and the subprojects beneath it.
 
+        Filter by name when locating a project, or use [Retrieve a project](/docs/apis/rest/projects/get-project) when you already have its ID. Integrations built around Compatibility API Account SIDs can use [List accounts](/docs/compatibility-api/rest/accounts/list-accounts) instead.
+
         #### Permissions
 
         The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Management_.
@@ -7232,6 +7254,8 @@ paths:
 
         The response includes the `signing_key`. This is the only time it is returned — it
         cannot be retrieved through the API afterward, so capture it from this response.
+
+        Use a subproject to isolate settings and resources beneath a root project. Integrations built around Compatibility API Account SIDs can use [Create subprojects](/docs/compatibility-api/rest/accounts/create-subprojects) instead.
 
         #### Permissions
 
@@ -7284,6 +7308,8 @@ paths:
 
         A project ID outside the caller's project tree returns `404 Not Found`.
 
+        Use this operation when you already have the root-project or subproject ID; use [List projects](/docs/apis/rest/projects/list-projects) to discover IDs. Compatibility API Accounts use a separate SID-based retrieval route.
+
         #### Permissions
 
         The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Management_.
@@ -7322,7 +7348,7 @@ paths:
       operationId: update_project
       summary: Update a project
       description: |-
-        Updates a project's name and settings.
+        Changes the name and security settings of a root project or subproject in the caller's project tree. Use it to control media protection and HTTPS requirements; project API tokens are managed separately through [Project Tokens](/docs/apis/rest/project-tokens/create-token). Compatibility API Accounts use their own SID-based update route.
 
         #### Permissions
 
@@ -7383,6 +7409,8 @@ paths:
         On a successful delete, the subproject's registry brands and campaigns are migrated up
         to the parent project.
 
+        Use this operation only for a subproject that is ready to retire. The Compatibility API cannot close an account; its [Update account](/docs/compatibility-api/rest/accounts/update-account) operation only renames one, so deleting the subproject here is the API path for retiring it.
+
         #### Permissions
 
         The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Management_.
@@ -7432,6 +7460,8 @@ paths:
         The previous key may take about 1–2 minutes to stop working. As with create, the
         `signing_key` is only returned on this response and cannot be retrieved afterward.
 
+        Use it when the project's webhook-signing credential has been exposed or is due for rotation; this is separate from creating or revoking REST API tokens.
+
         #### Permissions
 
         The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Management_.
@@ -7471,7 +7501,7 @@ paths:
       operationId: create_token
       summary: Create PubSub token
       description: |-
-        Generate a PubSub Token to be used to authenticate clients to the PubSub Service.
+        Creates a time-limited PubSub Token that a client consumes to read from or publish to the channels allowed in the request. Call this operation from your server when granting PubSub access to a client; choose a lifetime from 1 minute through 30 days and never expose the project API token used to create it. Use [Create chat token](/docs/apis/rest/chat-tokens/create-chat-token) for Chat channels or [Create API token](/docs/apis/rest/project-tokens/create-token) for server-side REST authentication.
 
         #### Permissions
 
@@ -7523,7 +7553,7 @@ paths:
       operationId: list_addresses
       summary: List E911 addresses
       description: |-
-        Returns a list of your Addresses. The addresses are returned sorted by creation date, with the most recent appearing first.
+        Lists the physical E911 service addresses stored in your SignalWire project. An E911 address represents the real-world location emergency services should receive for a phone number; create and validate one before assigning it to that number. Resource addresses and SIP Addresses are callable routing handles, not emergency locations.
 
         #### Permissions
 
@@ -7566,7 +7596,7 @@ paths:
       operationId: create_address
       summary: Create E911 address
       description: |-
-        To create a new Address, make a POST request to the Address resource.
+        Creates a physical E911 service address that can be assigned to an owned phone number for emergency calling. Use it before [Assign an E911 address to a phone number](/docs/apis/rest/phone-numbers/assign-e-911-address) when emergency services need the caller's registered street location. Do not use this endpoint for a resource address or SIP URI.
 
         When `emergency_enabled=true` and the address is in the US (`country` = `US`), the address is validated against the carrier. A valid or auto-corrected address is stored (`validated: true`). An address the carrier cannot validate — or a correctable address when `auto_correct_address=false` — is rejected with a `422` whose body includes an `errors` array and a `candidates` array of suggested addresses (each with `street_number`, `street_name`, `city`, `state`, `postal_code`). Carrier validation applies to US addresses only: a non-US address is stored normally, with `emergency_enabled` returned as `false`. Requests without `emergency_enabled` are stored without carrier validation.
 
@@ -7617,8 +7647,7 @@ paths:
       operationId: get_address
       summary: Get E911 address
       description: |-
-        Retrieves the details of an Address that has been previously created.
-        Use the unique ID that was returned from your previous request to identify the specific instance.
+        Retrieves one physical E911 service address from your SignalWire project. Use [List E911 addresses](/docs/apis/rest/e-911-addresses/list-addresses) to find address IDs, or [Get phone number](/docs/apis/rest/phone-numbers/retrieve-phone-number) to inspect the address currently assigned to a number.
 
         #### Permissions
 
@@ -7664,7 +7693,7 @@ paths:
       operationId: update_address
       summary: Update E911 address
       description: |-
-        Updates an Address that has been previously created.
+        Changes a physical E911 service location and performs carrier validation when requested. Assigning the updated location to a phone number remains a separate [phone-number operation](/docs/apis/rest/phone-numbers/assign-e-911-address).
 
         When `emergency_enabled=true` and the address is in the US (`country` = `US`), the address is validated against the carrier. A valid or auto-corrected address is stored (`validated: true`). An address the carrier cannot validate — or a correctable address when `auto_correct_address=false` — is rejected with a `422` whose body includes an `errors` array and a `candidates` array of suggested addresses (each with `street_number`, `street_name`, `city`, `state`, `postal_code`). Carrier validation applies to US addresses only: a non-US address is stored normally, with `emergency_enabled` returned as `false`. Requests without `emergency_enabled` are stored without carrier validation.
 
@@ -7721,7 +7750,7 @@ paths:
       operationId: delete_address
       summary: Delete E911 address
       description: |-
-        Permanently deletes an Address. It cannot be undone.
+        Permanently deletes a physical E911 service address by ID. Use it when the emergency location record is no longer needed; use [Remove the E911 address from a phone number](/docs/apis/rest/phone-numbers/remove-e-911-address) when only the number's assignment should be removed. Resource addresses and SIP Addresses have separate delete operations.
 
         #### Permissions
 
@@ -7764,7 +7793,7 @@ paths:
       operationId: list_domain_applications
       summary: List domain applications
       description: |-
-        Returns a list of your domain applications. The domain applications are returned sorted by creation date, with the most recent domain applications appearing first.
+        Lists the SIP Domain Applications in your SignalWire project. A Domain Application gives inbound SIP traffic a project-specific domain and routes its calls to a configured handler. Use [Assign domain application handler](/docs/apis/rest/domain-applications/assign-resource-domain-application) when that handler is an existing Fabric resource.
 
         #### Permissions
 
@@ -7808,7 +7837,7 @@ paths:
       operationId: create_domain_application
       summary: Create domain application
       description: |-
-        Creates a new domain application.
+        Creates a SIP Domain Application that accepts inbound SIP traffic on its generated domain and routes calls to the configured handler. Use it for inbound bring-your-own-carrier or other custom SIP-domain routing. If the handler is an already-created Fabric resource, create the Domain Application first, then use [Assign domain application handler](/docs/apis/rest/domain-applications/assign-resource-domain-application).
 
         #### Permissions
 
@@ -7854,7 +7883,7 @@ paths:
       operationId: retrieve_domain_application
       summary: Get domain application
       description: |-
-        Retrieves the details of a Domain Application that has been previously created.
+        Retrieves one SIP Domain Application from your SignalWire project. Use [List domain applications](/docs/apis/rest/domain-applications/list-domain-applications) to find applications, or the Fabric assignment operation when you only need to attach an existing resource as its call handler.
 
         #### Permissions
 
@@ -7900,7 +7929,7 @@ paths:
       operationId: update_domain_application
       summary: Update domain application
       description: |-
-        Updates a Domain Application.
+        Changes how a project SIP domain authenticates endpoints, handles media, or routes inbound calls. Use [Assign domain application handler](/docs/apis/rest/domain-applications/assign-resource-domain-application) when assigning an existing Fabric resource as the calling handler.
 
         #### Permissions
 
@@ -7952,7 +7981,7 @@ paths:
       operationId: delete_domain_application
       summary: Delete domain application
       description: |-
-        Permanently deletes a Domain Application. It cannot be undone.
+        Permanently deletes a SIP Domain Application by ID, stopping inbound SIP traffic to its domain. This does not delete a Fabric resource that was assigned as its handler; delete that resource through its typed endpoint if it is also no longer needed.
 
         #### Permissions
 
@@ -7995,7 +8024,7 @@ paths:
       operationId: list_sip_endpoints
       summary: List SIP endpoints
       description: |-
-        Returns a list of your SIP endpoints.
+        Returns the legacy SIP endpoints in the project. Use it only to inventory an existing integration while migrating to the current SIP Credential resource.
 
         <Warning>This endpoint is deprecated. Use [SIP Credentials](/docs/apis/rest/sip-credentials/create-sip-credential) instead.</Warning>
 
@@ -8041,7 +8070,7 @@ paths:
       operationId: create_sip_endpoint
       summary: Create SIP endpoint
       description: |-
-        Creates a new SIP endpoint.
+        Creates a legacy SIP endpoint for a registering device. Use the current SIP Credential resource for new integrations.
 
         <Warning>This endpoint is deprecated. Use [SIP Credentials](/docs/apis/rest/sip-credentials/create-sip-credential) instead.</Warning>
 
@@ -8089,7 +8118,7 @@ paths:
       operationId: retrieve_sip_endpoint
       summary: Get SIP endpoint
       description: |-
-        Retrieves the details of a SIP endpoint.
+        Retrieves one legacy SIP endpoint by ID. Use it only for an existing integration while migrating the device to a current SIP Credential.
 
         <Warning>This endpoint is deprecated. Use [SIP Credentials](/docs/apis/rest/sip-credentials/create-sip-credential) instead.</Warning>
 
@@ -8137,7 +8166,7 @@ paths:
       operationId: update_sip_endpoint
       summary: Update SIP endpoint
       description: |-
-        Updates a SIP endpoint.
+        Changes how a legacy SIP endpoint registers or places calls. Use it only to maintain an existing integration while migrating to the current SIP Credential resource.
 
         <Warning>This endpoint is deprecated. Use [SIP Credentials](/docs/apis/rest/sip-credentials/create-sip-credential) instead.</Warning>
 
@@ -8191,7 +8220,7 @@ paths:
       operationId: delete_sip_endpoint
       summary: Delete SIP endpoint
       description: |-
-        Permanently deletes a SIP endpoint.
+        Permanently deletes a legacy SIP endpoint by ID. Use [Delete SIP credential](/docs/apis/rest/sip-credentials/delete-sip-credential) for a device already migrated to the current resource.
 
         <Warning>This endpoint is deprecated. Use [SIP Credentials](/docs/apis/rest/sip-credentials/create-sip-credential) instead.</Warning>
 
@@ -8236,7 +8265,7 @@ paths:
       operationId: create_imported_phone_number
       summary: Import phone number
       description: |-
-        Import a phone number hosted elsewhere into your SignalWire Space.
+        Imports a phone number that remains hosted with another provider into the SignalWire project and enables the requested capabilities. Use this Partner API when bringing externally hosted inventory; use [Purchase phone number](/docs/apis/rest/phone-numbers/purchase-phone-number) for SignalWire inventory, or Compatibility [Import phone number](/docs/compatibility-api/rest/imported-phone-numbers/create-imported-phone-number) for a form-encoded request.
 
         **Note:** This is a **Partner API**. To enable it on your SignalWire Space, contact [Sales](https://signalwire.com/company/contact?utm_campaign=devex_sent_em).
 
@@ -8284,9 +8313,7 @@ paths:
       operationId: lookup_phone_number
       summary: Look up phone number
       description: |-
-        This endpoint allows you to look up validity and formatting
-        information about a number. You can optionally lookup additional
-        information about the number such as carrier and caller ID data.
+        Returns validity and formatting information for any supplied E.164 phone number, with optional carrier and caller-name data. Use it to normalize or enrich a number before other workflows; it neither searches purchasable inventory nor returns numbers owned by the project. Use [Search phone numbers](/docs/apis/rest/phone-numbers/search-available-phone-numbers) or [List phone numbers](/docs/apis/rest/phone-numbers/list-phone-numbers) for those jobs.
 
         #### Permissions
 
@@ -8334,7 +8361,7 @@ paths:
       operationId: request_mfa_call
       summary: Request MFA token via call
       description: |-
-        Sends a multi-factor authentication code via voice call.
+        Creates a multi-factor authentication request and delivers its code in a voice call. Use it when the destination cannot receive SMS or voice delivery is preferred; save the returned request ID and submit the code to [Verify MFA token](/docs/apis/rest/multi-factor-authentication/verify-mfa-token). Use the SMS operation for text delivery.
 
         #### Permissions
 
@@ -8380,7 +8407,7 @@ paths:
       operationId: request_mfa_sms
       summary: Request MFA token via SMS
       description: |-
-        Sends a multi-factor authentication code via SMS.
+        Creates a multi-factor authentication request and sends its code to the destination by SMS. Use it when an application must verify possession of a text-capable phone number; save the returned request ID and submit the code to [Verify MFA token](/docs/apis/rest/multi-factor-authentication/verify-mfa-token). Use the voice-call operation when the recipient cannot receive SMS.
 
         #### Permissions
 
@@ -8426,7 +8453,7 @@ paths:
       operationId: verify_mfa_token
       summary: Verify MFA token
       description: |-
-        Verifies a multi-factor authentication code.
+        Checks a submitted code against the multi-factor authentication request identified in the path. Use it after requesting delivery by SMS or voice call and before granting the user access. The request's configured lifetime and attempt limit determine whether further verification is allowed.
 
         #### Permissions
 
@@ -8473,7 +8500,7 @@ paths:
       operationId: retrieve_number_group_membership
       summary: Get number group membership
       description: |-
-        Retrieves the details of a number group membership.
+        Retrieves one Number Group Membership by ID so you can inspect the link between a project phone number and its sender pool. Use [List number group memberships](/docs/apis/rest/number-group-membership/list-number-group-memberships) to discover memberships for a group.
 
         #### Permissions
 
@@ -8519,7 +8546,7 @@ paths:
       operationId: delete_number_group_membership
       summary: Delete number group membership
       description: |-
-        Removes a phone number from a number group.
+        Deletes one Number Group Membership by membership ID, removing the phone number from that pool. This does not release the phone number from the project or delete the Number Group.
 
         #### Permissions
 
@@ -8562,9 +8589,7 @@ paths:
       operationId: list_number_groups
       summary: List number groups
       description: |-
-        Returns a list of your Number Groups. The groups are returned sorted
-        by creation date, with the most recent appearing first. The list is
-        filterable by sending in any of the following parameters.
+        Lists the Number Groups in your SignalWire project. A Number Group organizes owned phone numbers into a sender pool and can preserve the same sender for repeated outbound traffic with `sticky_sender`. Use [List number group memberships](/docs/apis/rest/number-group-membership/list-number-group-memberships) to see which numbers belong to a group.
 
         #### Permissions
 
@@ -8607,7 +8632,7 @@ paths:
       operationId: create_number_group
       summary: Create number group
       description: |-
-        Creates a new number group.
+        Creates a named pool for project-owned phone numbers, with optional sticky-sender behavior. Use it when outbound traffic should select from a managed group rather than one fixed number; add numbers afterward with [Create number group membership](/docs/apis/rest/number-group-membership/create-number-group-membership). This operation does not purchase phone numbers.
 
         #### Permissions
 
@@ -8653,7 +8678,7 @@ paths:
       operationId: list_number_group_memberships
       summary: List number group memberships
       description: |-
-        Returns a list of phone numbers in a number group.
+        Lists the project-owned phone numbers that belong to one Number Group. Use it to understand which senders make up the pool; use [List phone numbers](/docs/apis/rest/phone-numbers/list-phone-numbers) for all numbers owned by the project.
 
         #### Permissions
 
@@ -8702,7 +8727,7 @@ paths:
       operationId: create_number_group_membership
       summary: Create number group membership
       description: |-
-        Adds a phone number to a number group.
+        Adds one project-owned phone number to a Number Group by phone-number ID. Use it to build or expand a sender pool after creating the group; this operation does not purchase or import the number. A phone number can belong to more than one group.
 
         #### Permissions
 
@@ -8755,7 +8780,7 @@ paths:
       operationId: retrieve_number_group
       summary: Get number group
       description: |-
-        Retrieves the details of a number group.
+        Retrieves one Number Group from your SignalWire project. Use [List number groups](/docs/apis/rest/number-groups/list-number-groups) to find groups, or list its memberships to inspect the actual phone numbers in the pool.
 
         #### Permissions
 
@@ -8801,7 +8826,7 @@ paths:
       operationId: update_number_group
       summary: Update number group
       description: |-
-        Updates a number group.
+        Changes how a project Number Group is identified or selects a consistent sender for a recipient. Add or remove individual phone numbers through the Number Group Membership operations instead.
 
         #### Permissions
 
@@ -8853,7 +8878,7 @@ paths:
       operationId: delete_number_group
       summary: Delete number group
       description: |-
-        Deletes a number group.
+        Deletes a Number Group by ID. Use it when the pool is no longer needed; this removes the grouping but does not release the project-owned phone numbers that belonged to it.
 
         #### Permissions
 
@@ -8896,10 +8921,7 @@ paths:
       operationId: list_phone_numbers
       summary: List phone numbers
       description: |-
-        Returns a list of your Phone Numbers. The phone numbers are returned
-        sorted by creation date, with the most recent phone numbers appearing
-        first. The list is filterable by sending in any of the following
-        parameters.
+        Lists the phone numbers owned by your SignalWire project. These numbers can send or receive communications according to their capabilities and assigned handlers. Use [Search phone numbers](/docs/apis/rest/phone-numbers/search-available-phone-numbers) for numbers available to purchase, or Compatibility [Incoming Phone Numbers](/docs/compatibility-api/rest/incoming-phone-numbers/list-incoming-phone-numbers) for SID-based routes.
 
         #### Permissions
 
@@ -8943,7 +8965,7 @@ paths:
       operationId: purchase_phone_number
       summary: Purchase phone number
       description: |-
-        Purchases a phone number.
+        Purchases one available phone number and adds it to the project. Search first with [Search phone numbers](/docs/apis/rest/phone-numbers/search-available-phone-numbers), then pass the selected E.164 number here. Use [Import phone number](/docs/apis/rest/phone-numbers/create-imported-phone-number) when the number remains hosted elsewhere, or Compatibility [Incoming Phone Numbers](/docs/compatibility-api/rest/incoming-phone-numbers/create-incoming-phone-number) for form-encoded requests.
 
         #### Permissions
 
@@ -8995,7 +9017,7 @@ paths:
       operationId: search_available_phone_numbers
       summary: Search phone numbers
       description: |-
-        Searches for available phone numbers to purchase.
+        Searches SignalWire's available inventory for local or toll-free phone numbers. Search results are candidates, not numbers your project owns; pass a selected result to [Purchase phone number](/docs/apis/rest/phone-numbers/purchase-phone-number). Use [List phone numbers](/docs/apis/rest/phone-numbers/list-phone-numbers) for owned numbers, or Compatibility [Available Phone Numbers](/docs/compatibility-api/rest/available-phone-numbers/search-local-available-phone-numbers) for form-encoded requests.
 
         #### Permissions
 
@@ -9086,7 +9108,7 @@ paths:
       operationId: retrieve_phone_number
       summary: Get phone number
       description: |-
-        Retrieves the details of a phone number.
+        Retrieves one phone number owned by your SignalWire project. Use [List phone numbers](/docs/apis/rest/phone-numbers/list-phone-numbers) to find owned numbers, or [Search phone numbers](/docs/apis/rest/phone-numbers/search-available-phone-numbers) to find numbers that have not yet been purchased.
 
         #### Permissions
 
@@ -9132,7 +9154,7 @@ paths:
       operationId: update_phone_number
       summary: Update phone number
       description: |-
-        Updates a phone number.
+        Changes how a project-owned phone number is identified or routes inbound calls and messages. Use [Assign Resource to phone route](/docs/apis/rest/phone-numbers/assign-resource-phone-route) when assigning an existing Fabric resource as the handler.
 
         #### Permissions
 
@@ -9184,7 +9206,7 @@ paths:
       operationId: release_phone_number
       summary: Release phone number
       description: |-
-        Releases a phone number.
+        Releases a project-owned phone number by ID, removing it from the project. Use it only when the number should no longer be owned; deleting a handler resource or removing its E911 assignment does not release the number. Compatibility Incoming Phone Numbers use their own delete operation.
 
         #### Permissions
 
@@ -9228,6 +9250,8 @@ paths:
       summary: Assign an E911 address to a phone number
       description: |-
         Assigns a validated E911 address to the phone number and begins provisioning at the carrier. The number's `e911_status` becomes `pending`; it moves to `active` asynchronously once the carrier confirms. The address is re-validated at the carrier and must be valid.
+
+        Use this operation after [Create E911 address](/docs/apis/rest/e-911-addresses/create-address) when emergency calls from the number must present that physical service location. Resource addresses and SIP Addresses are routing handles and cannot be assigned for E911.
 
         The address `label` is sent to the carrier as the caller name presented to the dispatcher. The emergency network limits that field to 32 characters, so a longer label is truncated to the first 32 characters. Truncation never affects the street address used to route the call, and does not cause the assignment to fail.
 
@@ -9283,6 +9307,8 @@ paths:
       description: |-
         Removes the E911 address from the phone number and begins deprovisioning at the carrier. Only allowed while the number is `active`. The `e911_status` becomes `pending_removal`; the address remains associated until the carrier confirms removal.
 
+        Use this operation to stop emergency-service provisioning for the number without deleting the reusable E911 address or releasing the phone number.
+
         #### Permissions
 
         The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Numbers_.
@@ -9328,7 +9354,7 @@ paths:
       operationId: list_queues
       summary: List queues
       description: |-
-        Returns a list of your queues.
+        Lists the voice call queues in your SignalWire project. Queues hold callers until your call workflow is ready to handle them. The Compatibility API's [List queues](/docs/compatibility-api/rest/queues/list-queues) exposes the same queues through SID-based routes.
 
         #### Permissions
 
@@ -9367,7 +9393,7 @@ paths:
       operationId: create_queue
       summary: Create queue
       description: |-
-        Creates a new queue.
+        Creates a voice call queue in the project for calls that need to wait for later handling. Queue names must be unique among active queues; a deleted queue's name can be reused. The call workflow is responsible for placing callers into the queue. Use Compatibility [Create queue](/docs/compatibility-api/rest/queues/create-queue) for form-encoded requests.
 
         #### Permissions
 
@@ -9413,7 +9439,7 @@ paths:
       operationId: get_queue
       summary: Get queue
       description: |-
-        Retrieves the details of a queue.
+        Retrieves one voice call queue from your SignalWire project. Use [List queues](/docs/apis/rest/queues/list-queues) to find queues or [List queue members](/docs/apis/rest/queue-members/list-queue-members) to inspect the calls currently waiting in one.
 
         #### Permissions
 
@@ -9459,7 +9485,7 @@ paths:
       operationId: update_queue
       summary: Update queue
       description: |-
-        Updates a queue.
+        Changes how a project voice queue is identified or how many callers it can hold. A new name must remain unique among the project's active queues. Queue-member positions and wait times are read through the Queue Members endpoints. The Compatibility API updates the same queues through its SID-based route.
 
         #### Permissions
 
@@ -9511,7 +9537,7 @@ paths:
       operationId: delete_queue
       summary: Delete queue
       description: |-
-        Deletes a queue.
+        Deletes a voice call queue by ID. The queue must be empty; a queue with waiting callers returns a validation error. This removes the same queue that the Compatibility [Delete queue](/docs/compatibility-api/rest/queues/delete-queue) operation manages.
 
         #### Permissions
 
@@ -9554,7 +9580,7 @@ paths:
       operationId: list_queue_members
       summary: List queue members
       description: |-
-        Returns a list of members in a queue.
+        Lists the calls currently waiting in one voice queue. Use it to monitor the queue and decide which caller to handle next; use [List queues](/docs/apis/rest/queues/list-queues) to find queues, or Compatibility [List all queue members](/docs/compatibility-api/rest/queue-members/list-all-queue-members) for SID-based routes.
 
         #### Permissions
 
@@ -9595,7 +9621,7 @@ paths:
       operationId: retrieve_next_queue_member
       summary: Get next queue member
       description: |-
-        Retrieves the next member in the queue without dequeuing.
+        Retrieves the call at the front of one voice queue without removing it. Use it to inspect which waiting caller would be handled next; use [Get queue member](/docs/apis/rest/queue-members/retrieve-queue-member) for a specific member ID. This read does not dequeue or redirect the call.
 
         #### Permissions
 
@@ -9636,7 +9662,7 @@ paths:
       operationId: retrieve_queue_member
       summary: Get queue member
       description: |-
-        Retrieves the details of a queue member.
+        Retrieves one call that is waiting in a voice queue. Use [List queue members](/docs/apis/rest/queue-members/list-queue-members) to find waiting calls or [Get next queue member](/docs/apis/rest/queue-members/retrieve-next-queue-member) to inspect the caller at the front of the queue.
 
         #### Permissions
 
@@ -9678,7 +9704,7 @@ paths:
       operationId: list_call_recordings
       summary: List recordings
       description: |-
-        Returns a list of your recordings.
+        Returns the project's voice call recordings for later review or cleanup. Use it to browse recordings across calls; use [Get recording](/docs/apis/rest/recordings/get-call-recording) when you already have the recording ID. Compatibility [Recordings](/docs/compatibility-api/rest/recordings/list-recordings) include per-call creation and management, while [Room Recordings](/docs/apis/rest/video/room-recordings/list-room-recordings) contain video-room media.
 
         #### Permissions
 
@@ -9724,7 +9750,7 @@ paths:
       operationId: get_call_recording
       summary: Get recording
       description: |-
-        Retrieves the details of a recording.
+        Retrieves one voice call recording by ID. Use it after listing recordings or when a call event saved the recording identifier. Use Compatibility [Retrieve recording](/docs/compatibility-api/rest/recordings/retrieve-recording) for SID-based recording routes, or [Get room recording](/docs/apis/rest/video/room-recordings/get-room-recording) for video-room media.
 
         #### Permissions
 
@@ -9774,7 +9800,7 @@ paths:
       operationId: delete_call_recording
       summary: Delete recording
       description: |-
-        Deletes a recording.
+        Permanently deletes one voice call recording by ID. Use it to remove voice media that is no longer needed; Compatibility call recordings and Video Room recordings have separate delete operations on their respective API surfaces.
 
         #### Permissions
 
@@ -9817,7 +9843,7 @@ paths:
       operationId: list_brands
       summary: List brands
       description: |-
-        Returns a list of your registered brands for 10DLC.
+        Lists the project's US 10-digit long code (10DLC) brand registrations. Each brand represents the business identity that must be registered before its messaging use cases can become campaigns. Use [Get brand](/docs/apis/rest/campaign-registry/brands/retrieve-brand) when you already have the brand ID.
 
         #### Permissions
 
@@ -9864,7 +9890,7 @@ paths:
       operationId: create_brand
       summary: Create brand
       description: |-
-        Creates a new brand for 10DLC registration.
+        Submits a business identity for US 10-digit long code (10DLC) brand registration, or imports an approved self-registered Campaign Service Provider brand. Use it as the first Campaign Registry step before [Create campaign](/docs/apis/rest/campaign-registry/campaigns/create-campaign); creating a project or phone number does not register a 10DLC brand.
 
         #### Permissions
 
@@ -9912,7 +9938,7 @@ paths:
       operationId: retrieve_brand
       summary: Get brand
       description: |-
-        Retrieves the details of a brand.
+        Retrieves one US 10-digit long code (10DLC) brand registration by ID so you can check its business identity and registration progress. Use [List brands](/docs/apis/rest/campaign-registry/brands/list-brands) to discover IDs or [List campaigns](/docs/apis/rest/campaign-registry/campaigns/list-campaigns) for messaging use cases registered under the brand.
 
         #### Permissions
 
@@ -9953,7 +9979,7 @@ paths:
       operationId: list_campaigns
       summary: List campaigns
       description: |-
-        Returns a list of campaigns for a brand.
+        Lists the US 10-digit long code (10DLC) messaging campaigns registered under one brand. Each campaign represents an approved messaging use case to which project phone numbers can be assigned. Use [Get campaign](/docs/apis/rest/campaign-registry/campaigns/retrieve-campaign) when you already have a campaign ID.
 
         #### Permissions
 
@@ -10007,7 +10033,7 @@ paths:
       operationId: create_campaign
       summary: Create campaign
       description: |-
-        Creates a new campaign for 10DLC registration.
+        Submits a US 10-digit long code (10DLC) messaging use case under an existing brand, or imports an approved Campaign Service Provider campaign. Use it after brand registration and before assigning phone numbers. Once the campaign is ready, use [Create phone number assignment order](/docs/apis/rest/campaign-registry/phone-number-assignments/create-order) to bind project numbers to it.
 
         #### Permissions
 
@@ -10062,7 +10088,7 @@ paths:
       operationId: retrieve_campaign
       summary: Get campaign
       description: |-
-        Retrieves the details of a campaign.
+        Retrieves one US 10-digit long code (10DLC) campaign by ID so you can inspect its registered messaging use case and approval progress. Use [List campaigns](/docs/apis/rest/campaign-registry/campaigns/list-campaigns) to discover IDs or [List phone number assignments](/docs/apis/rest/campaign-registry/phone-number-assignments/list-number-assignments) for the numbers bound to it.
 
         #### Permissions
 
@@ -10102,7 +10128,7 @@ paths:
       operationId: update_campaign
       summary: Update campaign
       description: |-
-        Updates a campaign.
+        Changes the editable fields of an existing US 10-digit long code (10DLC) campaign by ID. Use it to maintain the campaign registration itself; phone numbers are added through [Create phone number assignment order](/docs/apis/rest/campaign-registry/phone-number-assignments/create-order) and removed through the assignment delete operation.
 
         #### Permissions
 
@@ -10155,7 +10181,7 @@ paths:
       operationId: list_number_assignments
       summary: List phone number assignments
       description: |-
-        Returns a list of phone numbers assigned to a campaign.
+        Lists the project phone numbers bound to one US 10-digit long code (10DLC) campaign. These assignments determine which numbers may send traffic for the registered use case. Use [List phone number assignment orders](/docs/apis/rest/campaign-registry/phone-number-assignments/list-orders) to monitor batch requests that create the bindings.
 
         #### Permissions
 
@@ -10203,7 +10229,7 @@ paths:
       operationId: list_orders
       summary: List phone number assignment orders
       description: |-
-        Returns a list of orders for a campaign.
+        Lists the batch requests submitted to bind project phone numbers to one US 10-digit long code (10DLC) campaign. Use it to monitor assignment processing; use [List phone number assignments](/docs/apis/rest/campaign-registry/phone-number-assignments/list-number-assignments) for the resulting bindings.
 
         #### Permissions
 
@@ -10250,7 +10276,7 @@ paths:
       operationId: create_order
       summary: Create phone number assignment order
       description: |-
-        Creates a new order for a campaign.
+        Submits a batch request to assign project phone numbers to one US 10-digit long code (10DLC) campaign. Use it after the brand and campaign are registered and the numbers are owned by the project. Monitor processing with [Get phone number assignment order](/docs/apis/rest/campaign-registry/phone-number-assignments/retrieve-order).
 
         #### Permissions
 
@@ -10303,7 +10329,7 @@ paths:
       operationId: delete_number_assignment
       summary: Delete phone number assignment
       description: |-
-        Removes a phone number from a campaign.
+        Removes one phone-number assignment from its US 10-digit long code (10DLC) campaign by assignment ID. Use it when the number should stop sending traffic for that campaign; this does not release the phone number from the project or delete the campaign.
 
         #### Permissions
 
@@ -10340,7 +10366,7 @@ paths:
       operationId: retrieve_order
       summary: Get phone number assignment order
       description: |-
-        Retrieves the details of an order.
+        Retrieves one phone-number assignment order by ID so you can monitor a known batch request. Use [List phone number assignment orders](/docs/apis/rest/campaign-registry/phone-number-assignments/list-orders) to discover orders for a campaign or list assignments to inspect the resulting bindings.
 
         #### Permissions
 
@@ -10381,8 +10407,7 @@ paths:
       operationId: list_short_codes
       summary: List short codes
       description: |-
-        Returns a list of your short codes. The short codes are returned sorted
-        by creation date, with the most recent appearing first.
+        Lists the messaging Short Codes connected to your SignalWire project. These leased codes can send and receive high-volume messages through their configured handlers. Standard long-code phone numbers are available through [List phone numbers](/docs/apis/rest/phone-numbers/list-phone-numbers).
 
         #### Permissions
 
@@ -10427,7 +10452,7 @@ paths:
       operationId: retrieve_short_code
       summary: Get short code
       description: |-
-        Retrieves the details of a short code.
+        Retrieves one messaging Short Code connected to your SignalWire project. Use [List short codes](/docs/apis/rest/short-codes/list-short-codes) to find Short Codes, or [Get phone number](/docs/apis/rest/phone-numbers/retrieve-phone-number) for a standard long code.
 
         #### Permissions
 
@@ -10473,7 +10498,7 @@ paths:
       operationId: update_short_code
       summary: Update short code
       description: |-
-        Updates a short code's configuration.
+        Changes how a project Short Code is identified or routes inbound messages. It can route incoming traffic to a cXML webhook, cXML Application, or Relay handler. Standard project phone numbers use [Update phone number](/docs/apis/rest/phone-numbers/update-phone-number) instead.
 
         #### Permissions
 
@@ -10526,7 +10551,7 @@ paths:
       operationId: retrieve_sip_profile
       summary: Get SIP profile
       description: |-
-        Retrieves the SIP profile settings for your project.
+        Retrieves the SIP Profile shared across your SignalWire project. The profile supplies project-wide defaults to SIP Credentials that use it; individual registering devices and external destinations are represented by [SIP Credentials](/docs/apis/rest/sip-credentials/get-sip-credential) and [SIP Gateways](/docs/apis/rest/sip-gateway/get-sip-gateway).
 
         #### Permissions
 
@@ -10559,7 +10584,7 @@ paths:
       operationId: update_sip_profile
       summary: Update SIP profile
       description: |-
-        Updates the SIP profile settings for your project.
+        Changes the project-wide defaults that SIP Credentials use for registration, media, security, and outbound calling. This updates the project's single SIP Profile; it does not create or update an individual [SIP Credential](/docs/apis/rest/sip-credentials/update-sip-credential) or [SIP Gateway](/docs/apis/rest/sip-gateway/update-sip-gateway).
 
         #### Permissions
 
@@ -10605,7 +10630,7 @@ paths:
       operationId: list_verified_caller_ids
       summary: List verified caller IDs
       description: |-
-        Returns a list of your Verified Caller IDs. The caller IDs are returned sorted by creation date, with the most recent caller IDs appearing first. The list is filterable by sending in any of the following parameters.
+        Lists external phone numbers your SignalWire project has submitted for outbound caller-ID verification. Verified Caller IDs let calls present a number the project does not own; project-owned numbers are managed through [Phone Numbers](/docs/apis/rest/phone-numbers/list-phone-numbers) and do not need this verification flow.
 
         #### Permissions
 
@@ -10652,7 +10677,7 @@ paths:
       operationId: create_verified_caller_id
       summary: Create verified caller ID
       description: |-
-        Creates a new verified caller ID. A verification code will be sent to the phone number.
+        Starts verification of an external phone number for use as an outbound caller ID and sends a verification code to that number. Use it when presenting a number the project does not own; use a purchased or imported project number directly instead. Complete the flow with [Validate verification code](/docs/apis/rest/verified-caller-id/validate-verification-code).
 
         #### Permissions
 
@@ -10698,7 +10723,7 @@ paths:
       operationId: retrieve_verified_caller_id
       summary: Get verified caller ID
       description: |-
-        Retrieves the details of a verified caller ID.
+        Retrieves one external caller-ID verification record from your SignalWire project. Use it to check or display an existing verification; use [Get phone number](/docs/apis/rest/phone-numbers/retrieve-phone-number) for a project-owned number instead.
 
         #### Permissions
 
@@ -10738,7 +10763,7 @@ paths:
       operationId: update_verified_caller_id
       summary: Update verified caller ID
       description: |-
-        Updates a verified caller ID.
+        Changes the configurable label of an external verified caller-ID record by ID. Use it to maintain the record after verification; updating a project-owned phone number uses [Update phone number](/docs/apis/rest/phone-numbers/update-phone-number) instead.
 
         #### Permissions
 
@@ -10790,7 +10815,7 @@ paths:
       operationId: delete_verified_caller_id
       summary: Delete verified caller ID
       description: |-
-        Deletes a verified caller ID.
+        Deletes an external verified caller-ID record by ID so it is no longer available for outbound caller ID. This does not release or delete a project-owned [Phone Number](/docs/apis/rest/phone-numbers/release-phone-number).
 
         #### Permissions
 
@@ -10827,7 +10852,7 @@ paths:
       operationId: redial_verification_call
       summary: Redial verification call
       description: |-
-        Redials the verification call for a verified caller ID.
+        Places another verification call for a pending external caller-ID record. Use it when the original verification call or code was missed, then submit the new code through [Validate verification code](/docs/apis/rest/verified-caller-id/validate-verification-code).
 
         #### Permissions
 
@@ -10867,7 +10892,7 @@ paths:
       operationId: validate_verification_code
       summary: Validate verification code
       description: |-
-        Validates the verification code for a verified caller ID.
+        Submits the code received by an external phone number and marks the caller-ID record verified when it matches. Use it to finish the flow started by [Create verified caller ID](/docs/apis/rest/verified-caller-id/create-verified-caller-id); purchased project numbers do not use this flow.
 
         #### Permissions
 
@@ -10920,7 +10945,7 @@ paths:
       operationId: get_conference_token
       summary: Get conference token
       description: |-
-        Find a conference token by ID.
+        Retrieves one Video Conference access token by ID. Use it after listing a conference's tokens when you need one specific guest or moderator credential; Room Tokens are issued through [Create room token](/docs/apis/rest/video/room-tokens/create-room-token) instead.
 
         #### Permissions
 
@@ -10967,7 +10992,7 @@ paths:
       operationId: reset_conference_token
       summary: Reset conference token
       description: |-
-        Reset a conference token by ID.
+        Replaces a Video Conference access token identified by ID, invalidating the previous token. The role and permissions carry over, but the response contains a new token value and a new token ID, so update any stored reference to either. Use it when a guest or moderator credential has been exposed or should no longer grant access; this operation does not reset Room Tokens.
 
         #### Permissions
 
@@ -11014,7 +11039,7 @@ paths:
       operationId: create_video_conference
       summary: Create video conference
       description: |-
-        Create a Video Conference.
+        Creates a managed Video Conference in the project with hosted guest and moderator access. Use it when SignalWire should provide the conference experience as well as the video session. For a custom client built with Room Tokens and a SignalWire client SDK, use [Create room](/docs/apis/rest/video/rooms/create-room).
 
         #### Permissions
 
@@ -11065,7 +11090,7 @@ paths:
       operationId: list_video_conferences
       summary: List video conferences
       description: |-
-        List Video Conferences.
+        Lists the project's managed Video Conferences. These configurations provide hosted guest and moderator access and define when each conference can be joined. Use [Get video conference](/docs/apis/rest/video/video-conferences/get-video-conference) when you already have the conference ID.
 
         #### Permissions
 
@@ -11117,7 +11142,7 @@ paths:
       operationId: get_video_conference
       summary: Get video conference
       description: |-
-        Find a Video Conference by ID.
+        Retrieves one managed Video Conference by ID so you can inspect its hosted experience and current activity. Use [List video conferences](/docs/apis/rest/video/video-conferences/list-video-conferences) to discover conference IDs.
 
         #### Permissions
 
@@ -11176,7 +11201,7 @@ paths:
       operationId: update_video_conference
       summary: Update video conference
       description: |-
-        Update a Video Conference.
+        Changes how a managed Video Conference is presented and runs for subsequent joins while preserving the same project resource and access links.
 
         #### Permissions
 
@@ -11234,7 +11259,7 @@ paths:
       operationId: delete_video_conference
       summary: Delete video conference
       description: |-
-        Delete a Video Conference.
+        Deletes a managed Video Conference by ID so it can no longer be joined. This removes the conference configuration; use the Room Recordings endpoints when you need to find or delete recorded media.
 
         #### Permissions
 
@@ -11277,7 +11302,7 @@ paths:
       operationId: list_conference_tokens
       summary: List conference tokens
       description: |-
-        List conference tokens.
+        Lists the guest and moderator access tokens issued for one managed Video Conference. These credentials grant access to the hosted conference experience; use [Create room token](/docs/apis/rest/video/room-tokens/create-room-token) for an SDK-based Video Room instead.
 
         #### Permissions
 
@@ -11333,6 +11358,8 @@ paths:
       operationId: list_conference_streams
       summary: List conference streams
       description: |-
+        Returns the outbound RTMP or RTMPS streams created for one Video Conference. Use it to discover stream IDs for a known conference before retrieving, changing, or stopping a broadcast. For live voice-conference audio sent over WebSocket, use [Create conference stream](/docs/compatibility-api/rest/conference-streams/create-conference-stream) in the Compatibility API instead.
+
         #### Permissions
 
         The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Video_.
@@ -11376,6 +11403,8 @@ paths:
       operationId: create_conference_stream
       summary: Create conference stream
       description: |-
+        Starts an outbound RTMP or RTMPS stream from a Video Conference to the supplied ingest URL. Use it to broadcast a conference to an external streaming destination. For live voice-conference audio sent over WebSocket, use [Create conference stream](/docs/compatibility-api/rest/conference-streams/create-conference-stream) in the Compatibility API instead.
+
         #### Permissions
 
         The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Video_.
@@ -11426,7 +11455,7 @@ paths:
       operationId: list_logs
       summary: List video logs
       description: |-
-        List the available logs.
+        Lists historical Video API activity in the project for usage review and troubleshooting. This collection does not manage live Rooms or Conferences; use [Get video log](/docs/apis/rest/video-logs/get-log) when you already have a log ID.
 
         #### Permissions
 
@@ -11485,7 +11514,7 @@ paths:
       operationId: get_log
       summary: Get video log
       description: |-
-        Find a log by ID.
+        Retrieves one historical Video API activity log by ID. Use it to inspect a record selected from [List video logs](/docs/apis/rest/video-logs/list-logs); this read-only endpoint reports past activity and does not control a live Room or Conference.
 
         #### Permissions
 
@@ -11544,7 +11573,7 @@ paths:
       operationId: list_room_recordings
       summary: List room recordings
       description: |-
-        A list of all Room Recordings.
+        Lists recordings produced by the project's Video Rooms across sessions. Returned media links use the requested `media_ttl` lifetime. Use [List room session recordings](/docs/apis/rest/video/room-sessions/list-room-session-recordings) when you already know the Room Session.
 
         #### Permissions
 
@@ -11594,7 +11623,7 @@ paths:
       operationId: get_room_recording
       summary: Get room recording
       description: |-
-        A detailed summary of a particular Room Recording.
+        Retrieves one Video Room recording by ID and returns a media link with the requested lifetime. Use it when you saved a recording ID or selected one from a recording list; voice-call recordings are available through the [Recordings API](/docs/apis/rest/recordings/list-call-recordings) instead.
 
         #### Permissions
 
@@ -11655,7 +11684,7 @@ paths:
       operationId: delete_room_recording
       summary: Delete room recording
       description: |-
-        Delete a Room Recording.
+        Permanently deletes one Video Room recording by ID. Use it to remove recorded room media that is no longer needed; this operation does not delete the Room or its Room Session history.
 
         #### Permissions
 
@@ -11704,7 +11733,7 @@ paths:
       operationId: list_room_recording_events
       summary: List room recording events
       description: |-
-        A list of Events for a particular Room Recording.
+        Lists the event timeline for one Video Room recording. Use it to audit the recording lifecycle; use [List room session events](/docs/apis/rest/video/room-sessions/list-room-session-events) for the wider session timeline.
 
         #### Permissions
 
@@ -11754,7 +11783,7 @@ paths:
       operationId: list_room_sessions
       summary: List room sessions
       description: |-
-        A list of past and in-progress Room Sessions.
+        Lists past and in-progress activity sessions created when participants join the project's Video Rooms. Use it for session history and auditing; use [List rooms](/docs/apis/rest/video/rooms/list-rooms) to manage the reusable configurations instead.
 
         #### Permissions
 
@@ -11807,7 +11836,7 @@ paths:
       operationId: get_room_session
       summary: Get room session
       description: |-
-        Find a Room Session by ID.
+        Retrieves one past or in-progress Room Session by ID. Use it to inspect the session associated with an event, member, or recording; use [Get room](/docs/apis/rest/video/rooms/get-room) when you need the reusable room configuration rather than an occurrence of activity.
 
         #### Permissions
 
@@ -11854,7 +11883,7 @@ paths:
       operationId: list_room_session_events
       summary: List room session events
       description: |-
-        A list of Events for a particular Room Session.
+        Lists the recorded event timeline for one Room Session. Use it to audit membership and media activity; this endpoint reports history and does not control the active room.
 
         #### Permissions
 
@@ -11904,7 +11933,7 @@ paths:
       operationId: list_room_session_members
       summary: List room session members
       description: |-
-        A list of Members for a particular Room Session.
+        Lists the participants associated with one Room Session for attendance and session auditing. Participant controls for a live room belong in the client SDK rather than this read-only history endpoint.
 
         #### Permissions
 
@@ -11954,7 +11983,7 @@ paths:
       operationId: list_room_session_recordings
       summary: List room session recordings
       description: |-
-        A list of Room Recordings for a particular Room Session.
+        Lists the recordings created during one Room Session. Returned media links use the requested `media_ttl` lifetime. Use [List room recordings](/docs/apis/rest/video/room-recordings/list-room-recordings) to browse recordings across rooms and sessions.
 
         #### Permissions
 
@@ -12005,7 +12034,7 @@ paths:
       operationId: create_room_token
       summary: Create room token
       description: |-
-        Generate a Room Token allowing a client to join a Room.
+        Creates a Room Token that a client consumes to join a named Video Room with the supplied identity, permissions, join window, and media settings. Call this operation from your server when granting a user access to an SDK-based room; never expose the project API token used to create it. Managed Video Conferences use their own [Conference Tokens](/docs/apis/rest/video/conference-tokens/list-conference-tokens).
 
         #### Permissions
 
@@ -12057,7 +12086,7 @@ paths:
       operationId: create_room
       summary: Create room
       description: |-
-        Create a room.
+        Creates a reusable Video Room in the project for applications built with a SignalWire client SDK. Your server issues Room Tokens to participants and your application provides the client experience. For hosted guest and moderator access, use [Create video conference](/docs/apis/rest/video/video-conferences/create-video-conference).
 
         #### Permissions
 
@@ -12108,7 +12137,7 @@ paths:
       operationId: list_rooms
       summary: List rooms
       description: |-
-        List rooms.
+        Lists the project's reusable Video Rooms for SDK-based video experiences. Use [Get room](/docs/apis/rest/video/rooms/get-room) when you already have a room ID, or [Get room by name](/docs/apis/rest/video/rooms/get-room-by-name) when your application stores the room's unique name.
 
         #### Permissions
 
@@ -12203,7 +12232,7 @@ paths:
       operationId: get_room
       summary: Get room
       description: |-
-        Find a room by ID.
+        Retrieves one Video Room by ID so you can inspect its configuration and current activity. Use [Get room by name](/docs/apis/rest/video/rooms/get-room-by-name) when your application holds the room's unique name instead.
 
         #### Permissions
 
@@ -12267,7 +12296,7 @@ paths:
       operationId: update_room
       summary: Update room
       description: |-
-        Update a room.
+        Changes how an existing Video Room runs for subsequent joins while preserving the same project resource and unique name. Use client SDK controls for actions on participants in an active session.
 
         #### Permissions
 
@@ -12330,7 +12359,7 @@ paths:
       operationId: delete_room
       summary: Delete room
       description: |-
-        Delete a room.
+        Deletes a Video Room configuration by ID. Use it when the named room should no longer accept future joins; this operation is for the reusable configuration, not for deleting a recording or querying past Room Sessions.
 
         #### Permissions
 
@@ -12378,6 +12407,8 @@ paths:
       operationId: list_room_streams
       summary: List room streams
       description: |-
+        Returns the outbound RTMP or RTMPS streams created for one Video Room. Use it to discover the stream IDs associated with a known room before retrieving, changing, or stopping a stream. For live voice-call audio sent over WebSocket, use the Compatibility API's [Create stream](/docs/compatibility-api/rest/streams/create-stream) operation instead.
+
         #### Permissions
 
         The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Video_.
@@ -12416,6 +12447,8 @@ paths:
       operationId: create_room_stream
       summary: Create room stream
       description: |-
+        Starts an outbound RTMP or RTMPS stream from a Video Room to the supplied ingest URL. Use it to broadcast a room to an external streaming destination. For live voice-call audio sent over WebSocket, use the Compatibility API's [Create stream](/docs/compatibility-api/rest/streams/create-stream) operation instead.
+
         #### Permissions
 
         The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Video_.
@@ -12467,7 +12500,7 @@ paths:
       operationId: get_room_by_name
       summary: Get room by name
       description: |-
-        Find a room by name.
+        Retrieves one Video Room configuration by its unique name. Use this operation when your application identifies rooms by the same stable name supplied at creation; use [Get room](/docs/apis/rest/video/rooms/get-room) when you have the generated room ID instead.
 
         #### Permissions
 
@@ -12532,6 +12565,8 @@ paths:
       operationId: get_stream
       summary: Get stream
       description: |-
+        Retrieves one outbound Video stream by its stream ID. Use it when you need the current destination or state of a known room or conference stream; use the room- or conference-specific list operation when you need to discover its ID.
+
         #### Permissions
 
         The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Video_.
@@ -12570,6 +12605,8 @@ paths:
       operationId: update_stream
       summary: Update stream
       description: |-
+        Changes the RTMP or RTMPS destination URL for an existing Video stream identified by ID. Use it to redirect an active room or conference broadcast without creating a second stream.
+
         #### Permissions
 
         The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Video_.
@@ -12620,6 +12657,8 @@ paths:
       operationId: delete_stream
       summary: Delete stream
       description: |-
+        Stops and deletes an outbound Video stream by its stream ID. Use it when a room or conference should no longer broadcast to the configured RTMP or RTMPS destination.
+
         #### Permissions
 
         The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Video_.
@@ -12655,7 +12694,7 @@ paths:
       operationId: list_voice_logs
       summary: List voice logs
       description: |-
-        List the available logs.
+        Lists historical voice activity in the project across supported call types. Use it for usage reporting, billing review, and troubleshooting, not live call control. Place or control calls through [Send call commands](/docs/apis/rest/calls/call-commands) or the Compatibility Calls API instead.
 
         #### Permissions
 
@@ -12708,7 +12747,7 @@ paths:
       operationId: get_voice_log
       summary: Get voice log
       description: |-
-        Find a log by ID.
+        Retrieves one historical voice activity record by log ID for reporting or troubleshooting a known call segment. This read-only endpoint does not retrieve or control a live call; use [Send call commands](/docs/apis/rest/calls/call-commands) for live control.
 
         #### Permissions
 
@@ -12761,7 +12800,7 @@ paths:
       operationId: list_voice_log_events
       summary: List voice log events
       description: |-
-        List all events for a specific log.
+        Returns the recorded event timeline for one historical voice log. Use it to troubleshoot the sequence of events for a known call segment; use [Get voice log](/docs/apis/rest/voice-logs/get-voice-log) for the log summary. This endpoint reports history and does not subscribe to or control live call events.
 
         #### Permissions
 
@@ -22475,7 +22514,7 @@ components:
           enum:
             - 1080p
             - 720p
-          description: The viudeo quality of the Conference Room.
+          description: The video quality of the Conference Room.
           examples:
             - 1080p
           default: 720p
@@ -22674,7 +22713,7 @@ components:
           enum:
             - 1080p
             - 720p
-          description: The viudeo quality of the Conference Room.
+          description: The video quality of the Conference Room.
           examples:
             - 1080p
           default: 720p

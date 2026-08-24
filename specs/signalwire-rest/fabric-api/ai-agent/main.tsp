@@ -21,7 +21,7 @@ namespace SignalWireAPI.Fabric.AIAgents {
     @operationId("list_ai_agents")
     @summary("List AI agents")
     @doc("""
-      A list of AI Agents
+      Lists the custom AI Agents in your SignalWire project. Each agent is a reusable Fabric resource that defines a conversational call experience and can be reached through resource addresses or assigned as a call handler. Use [Dialogflow Agents](/docs/apis/rest/ai-agents/ai-agents-dialogflow/list-dialogflow-agents) for linked Dialogflow integrations, or [Call Flows](/docs/apis/rest/call-flows/list-call-flows) for visual, deterministic call logic.
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
@@ -30,7 +30,7 @@ namespace SignalWireAPI.Fabric.AIAgents {
     @operationId("get_ai_agent")
     @summary("Get AI agent")
     @doc("""
-      Returns an AI Agent by ID
+      Retrieves one custom AI Agent from your SignalWire project. Use it to review an agent that is configured directly in SignalWire; use [List AI agents](/docs/apis/rest/ai-agents/ai-agents-custom/list-ai-agents) to find agents, or [Get Dialogflow agent](/docs/apis/rest/ai-agents/ai-agents-dialogflow/get-dialogflow-agent) for a linked Dialogflow resource.
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
@@ -46,7 +46,7 @@ namespace SignalWireAPI.Fabric.AIAgents {
     @operationId("create_ai_agent")
     @summary("Create AI agent")
     @doc("""
-      Creates an AI Agent
+      Creates a custom AI Agent in your SignalWire project. The new agent becomes a reusable Fabric resource for conversational calls and can be reached through resource addresses or assigned as a call handler. Use a [Dialogflow Agent](/docs/apis/rest/ai-agents/ai-agents-dialogflow/list-dialogflow-agents) for an existing Dialogflow integration, or [Create call flow](/docs/apis/rest/call-flows/create-call-flow) for visual, deterministic call logic.
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
@@ -64,7 +64,7 @@ namespace SignalWireAPI.Fabric.AIAgents {
     @operationId("update_ai_agent")
     @summary("Update AI agent")
     @doc("""
-      Updates an AI Agent by ID
+      Updates how an existing custom AI Agent behaves in conversations. Use it for an agent configured directly in your SignalWire project; update a linked Dialogflow resource with [Update Dialogflow agent](/docs/apis/rest/ai-agents/ai-agents-dialogflow/update-dialogflow-agent).
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
@@ -82,7 +82,7 @@ namespace SignalWireAPI.Fabric.AIAgents {
     @operationId("delete_ai_agent")
     @summary("Delete AI agent")
     @doc("""
-      Deletes an AI Agent by ID
+      Deletes a custom AI Agent from your SignalWire project so it can no longer be used as a conversational call handler. A linked [Dialogflow Agent](/docs/apis/rest/ai-agents/ai-agents-dialogflow/delete-dialogflow-agent) or a Call Flow must be deleted through its own operation.
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
