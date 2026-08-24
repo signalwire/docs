@@ -50,7 +50,7 @@ Ranked corpus inconsistencies (evidence for the rules; cleanup is a separate, ex
 7. Bold-label bullets ×113 lines (param enumerations are legitimate; prose-substitutes aren't).
 8. `<Cards>` stragglers ×2 (house standard is `<CardGroup>`).
 
-Em-dashes are a deliberate house device (1,153 uses across 365 files) — the rule restricts chains, never the character. Reference-style link definitions (`[key]: /docs/…`, ×3,180) are the house pattern for link-heavy pages.
+Em-dashes are a deliberate house device (1,153 uses across 365 files); the rule restricts chains and comma-substitutable dashes, never the character. That corpus predates the tightened rule, so it governs what you write or rewrite rather than licensing a cleanup sweep (see the editing rule in `mdx-style`). Reference-style link definitions (`[key]: /docs/…`, ×3,180) are the house pattern for link-heavy pages.
 
 ## Extended voice rules (apply during dedicated polish; too fine-grained for the always-on rule)
 
@@ -83,7 +83,7 @@ Weights = independent credible sources agreeing. [W] Wikipedia "Signs of AI writ
 Deliberately **not** rules, and why:
 
 - **Vocabulary ban lists**: the overused set shifts by era (2023 "delve/intricate" → mid-2025 "enhance/showcasing" — Kobak), and models are trained around flagged words. Structural tells age better.
-- **Em-dashes**: Microsoft *prescribes* them (unspaced); the house uses them deliberately. Only chains/overuse tell.
+- **Banning the em-dash**: Microsoft *prescribes* the character (unspaced) and the house uses it deliberately, so the character itself stays. What `mdx-style` restricts is structural: chains, and a dash standing in where a comma would read the same.
 - **Contractions**: not an AI tell in either direction; every adopted guide encourages them.
 - **"Elegant variation"**: contested — Wikipedia flags synonym-cycling while the academic survey finds AI *lower* in lexical diversity; era/model-dependent, so unstable.
 - Wikipedia's own warning applies to us directly: don't merely mask the signs (that just makes detection harder) — fix the writing. And human writing is drifting toward these patterns, so every tell decays; prefer rhythm/variety heuristics over fixed lists.

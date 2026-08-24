@@ -1,219 +1,343 @@
 ---
-id: 3244a74f-bdd3-4454-8c02-7ae18c802b7e
 title: Prompt engineering
 sidebar-title: Prompt engineering
-subtitle: The craft of writing effective prompts for SignalWire AI agents
+subtitle: Write clear, reliable prompts for SignalWire AI agents
 slug: /ai/prompt-engineering
-description: Learn the fundamentals of prompt engineering and how it can help you create responsive and reliable AI agents for your SignalWire applications.
+description: Learn where to place AI agent instructions, how to structure an effective prompt, and when to enforce behavior in code instead.
 max-toc-depth: 3
 ---
 
-[context-steps]: /docs/platform/ai/prompt-engineering/where-to-apply#context-steps
-[swaig]: /docs/platform/ai/prompt-engineering/where-to-apply#swaig-functions
-[conscience]: /docs/platform/ai/prompt-engineering/where-to-apply#conscience
-[post-prompt]: /docs/platform/ai/prompt-engineering/where-to-apply#post-prompt
+[tool-calling]: /docs/platform/ai/tool-calling
 
-SignalWire AI Agents combine 
-<Tooltip tip="ASR, or 'Automatic Speech Recognition', is also known as 'Speech-to-Text' (STT).">ASR</Tooltip>, 
-conversational intelligence, 
-[tool calling](/docs/platform/ai/tool-calling),
-<Tooltip tip="'Retrieval Augmented Generation' systems, like SignalWire's Datasphere, empower AI Agents with structured data to improve quality and reliability.">integrated RAG</Tooltip>, and 
-<Tooltip tip="'Text-to-Speech' models speak text in a variety of languages and voices.">TTS</Tooltip>,
-all in one system integrated with and optimized for telecommunications.
+A prompt tells an AI agent who it is, what it needs to accomplish, and how to handle the
+conversation. The most effective prompts give the model the context only your application can
+provide, then leave exact data and hard rules to your code.
 
-[Prompts](/docs/platform/ai/prompt-engineering/where-to-apply) are used to design and configure an AI Agent. 
-In addition to its primary (or "Main") prompt, each SignalWire AI Agent has additional areas that accept prompts, like 
-[Context Steps][context-steps], 
-[SWAIG Functions][swaig], 
-[Conscience][conscience],
-and the [Post-Prompt][post-prompt].
+Start with the smallest prompt that handles the common case. Add instructions when testing reveals
+a specific gap, and remove instructions that don't change the agent's behavior.
 
-Think of prompt engineering like giving detailed instructions to a new team member: for them to succeed,
-you need to be clear about what you want them to do, how to do it, and what counts as done. 
-A good prompt tells the AI how to handle user questions, what tone to use, and what information to focus on.
-The rules that have to hold on every call belong in your code, where they are enforced instead of requested.
+## Prompt surfaces
 
-## What makes a prompt work
+SignalWire AI Agents accept instructions in five places. Put each instruction as close as possible
+to the behavior it controls.
 
-How you write your prompts determines your AI's performance: a well-prompted agent stays
-consistent from caller to caller, handles real back-and-forth conversation, and recovers
-gracefully when things get confusing.
-The best prompts share a few traits.
-They use clear, specific language, because the AI takes instructions literally.
-They organize information with headings and consistent formatting, so the AI can tell how
-the pieces fit together.
-They leave room for real conversations, which rarely follow a script.
-And they stay lean: excessive instructions muddle behavior rather than tightening it,
-and business data belongs behind a [tool call](/docs/platform/ai/tool-calling) rather than
-in the prompt.
-The [prompt writing techniques](/docs/platform/ai/prompt-engineering/best-practices) guide
-covers each of these traits in depth, with worked examples of prompts that follow them
-and prompts that don't.
+| Prompt surface | Use it for |
+| --- | --- |
+| [Main prompt](#main-prompt) | Identity, objective, stable knowledge, conversation flow, and response style |
+| [Context steps](#context-steps) | Goals, available functions, and transitions for one stage of a multi-step conversation |
+| [SignalWire AI Gateway (SWAIG) functions](#swaig-functions) | When to call a function and how to collect its parameters |
+| [Conscience](#conscience) | Short, global standards that remain active throughout the conversation |
+| [Post-prompt](#post-prompt) | Summarizing or extracting data after the conversation ends |
 
-## Building your prompt structure
+The main prompt, context steps, functions, and conscience affect the live conversation. The
+post-prompt runs after the conversation and cannot change how the agent responds during the call.
 
-A solid prompt is like a well-organized recipe - it has all the right ingredients in the right order. Here's how to structure your prompts for SignalWire AI agents:
+### Main prompt
 
-### Role definition
-Begin by establishing who your AI is supposed to be. This identity is the foundation of the prompt, setting the tone and expertise level for all interactions. When you tell your AI "You are a well-tenured taxi dispatcher," you're giving it a clear persona to embody throughout the conversation.
+The main prompt provides shared context for the complete conversation. Organize it so the agent can
+distinguish its objective, facts, process, and speaking style. A useful starting structure is:
 
-### Context
-Every conversation happens within a context that shapes understanding. Your AI needs background information to perform well: details about user demographics and technical knowledge, system capabilities and limitations, or relevant history that might influence the interaction. This context keeps the AI from making inappropriate assumptions.
+- **Role and objective:** who the agent represents, what it does, and what completes the interaction
+- **Stable knowledge:** terminology, available services, and information required to complete a task
+- **Task structure:** the expected flow, written as outcomes rather than a script for every sentence
+- **Response guidelines:** the tone, response length, and application-specific formatting rules
 
-### Response guidelines
-Response guidelines shape how your AI communicates. Defining whether you want "friendly, simple language with clear steps" or "professional but approachable, getting straight to the point" keeps the conversation natural and aligned with your brand voice.
+Keep stage-specific directions in context steps, function selection details in SWAIG function
+descriptions, global standards in the conscience, and after-call extraction in the post-prompt.
 
-### Guardrails
-Guardrails are the rules that keep the agent in bounds: what it won't promise, what it won't decide on
-its own, what it hands off. Most of them work better outside the prompt than in it, so the prompt
-carries only the few that can't live anywhere else.
-[Where guardrails belong](#where-guardrails-belong) covers the order to reach for them in.
+### Context steps
 
-### Example structure
+Use context steps when a conversation has distinct stages. Each step can define:
 
-Here's a well-structured prompt for Bayview Taxi's dispatcher, the agent the rest of these guides build on:
+- `text`: what the agent should accomplish and how it should behave in that stage
+- `step_criteria`: the condition that completes the stage
+- `functions`: the functions available during the stage
+- `valid_steps`: the stages the agent may enter next
 
-```markdown
-## Role
-You are Ada, the dispatcher for Bayview Taxi. You quote fares and book pickups.
+For example, expose `get_quote` only in the quote step. This prevents the agent from quoting before
+it confirms the trip instead of relying on a sentence that asks it not to.
 
-## Knowledge base
-- Vehicle types: standard, van, wheelchair accessible
-- Payment: card over the phone, or cash to the driver
-- A booking needs a pickup address, a destination, and a pickup time
+### SWAIG functions
 
-## Tools
-- get_quote: prices a trip and returns the fare and the distance. Call it once you have both addresses, and every time either one changes.
-- book_ride: dispatches a driver and returns the pickup time and vehicle. Call it only after the caller has accepted a quote.
+A function definition is also a prompt. Give each function a descriptive name, state when to call
+it, and describe each parameter precisely.
 
-## Task structure
-1. Greet the caller and ask where they are and where they're going
-2. To quote a trip:
-   - Collect the pickup address and the destination
-   - Confirm both back to the caller before pricing
-   - Call get_quote and read the fare it returns
-3. To book:
-   - Ask which vehicle type they need
-   - Call book_ride, then read back the pickup time and vehicle
+Prefer `get_quote` with the description "Price a trip after the caller confirms both addresses" over
+`function_1` with the description "Check price." Parameter descriptions should also define the
+expected value, such as an address in the caller's words or one of the supported vehicle types.
 
-## Response guidelines
-- Use a calm, efficient tone; callers are often in a hurry
-- Confirm addresses back before acting on them
-- Read fares and pickup times exactly as the functions return them
-- Offer the nearest alternative when a caller asks for something unavailable
+Return enough information for the agent to respond without guessing. A quoting function might
+return the fare, distance, and a caller-facing explanation when it rejects a trip. A response such
+as `ok` leaves the agent to invent the missing details.
 
-## Guardrails
-- Fares, surcharges, and distances come from get_quote; relay its answer rather than working them out
-- Availability and pickup times are decided by book_ride
-- If asked how long a trip will take, give the estimate book_ride returned and say traffic can change it
+### Conscience
+
+Use the conscience for a small set of standards that apply throughout the conversation, including
+after function calls. Write the behavior you want rather than a long list of prohibitions.
+
+For example: "Say what you know, be clear about what you don't know, and offer to find help instead
+of filling gaps. Collect only the information needed to serve the caller."
+
+Exact outcomes still belong in code. A conscience can tell the agent to respect a pricing policy;
+only the quoting function can enforce that policy on every call.
+
+### Post-prompt
+
+Use the post-prompt to summarize the completed conversation or extract structured data for another
+system. Name the required fields, allowed values, and output format.
+
+For example, ask for a JSON object containing the final confirmed pickup address, destination, and
+an outcome limited to `quoted`, `declined`, or `unavailable`.
+
+## Write focused instructions
+
+Use clear, specific language and consistent headings. Tell the agent what a successful interaction
+looks like, then give it enough flexibility to handle interruptions, corrections, and information
+provided out of order.
+
+Describe the behavior you want instead of trying to anticipate every failure. "Transfer fare
+disputes to a dispatcher" gives the agent a clear action. "Don't mishandle disputes" does not.
+
+### Avoid overprompting
+
+Models already understand grammar, common conversational patterns, and how to structure a sentence.
+Use prompt space for your application's vocabulary, workflow, boundaries, and required response
+format.
+
+Don't embed large catalogs, rate tables, policies, or facts that change. They make the prompt harder
+to maintain and can still leave the model to calculate or choose an answer. Retrieve that data with
+a [tool call][tool-calling], then have the agent relay the result.
+
+The [complete example](#complete-example) applies these principles without putting fare data in the
+prompt.
+
+## Complete example
+
+The two implementations below create the same fare-quote agent. The Server SDK example is first and
+runs its lookup in Python. The SDK generates a function webhook URL that routes calls to the
+`get_quote` handler. In the SWML example, replace the placeholder `web_hook_url` with an endpoint
+that performs the same lookup.
+
+Both versions include a main prompt, context steps, a `get_quote` function, a conscience, and a
+post-prompt. The small route table stands in for your dispatch system; replace it with your own
+current data source in production.
+
+<CodeBlocks>
+<CodeBlock title="Server SDK">
+```python title="agent.py"
+from signalwire import AgentBase, FunctionResult
+
+
+FARES = {
+    ("123 gough street", "sfo"): 38.60,
+    ("123 gough street", "embarcadero"): 10.25,
+}
+
+
+class QuoteAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="bayview-quote-agent")
+
+        self.prompt_add_section(
+            "Role and objective",
+            "You are Ada, the dispatcher for Bayview Taxi. Give callers fare quotes. "
+            "A call is complete when the caller receives a quote or learns that the "
+            "route is unavailable.",
+        )
+        self.prompt_add_section(
+            "Stable knowledge",
+            "A quote requires a pickup address and destination. Recognize SFO as "
+            "San Francisco International Airport.",
+        )
+        self.prompt_add_section(
+            "Response guidelines",
+            "Use a calm, efficient tone. Keep replies short enough for the caller to "
+            "interrupt. Read the fare exactly as get_quote returns it.",
+        )
+
+        self.set_params(
+            {
+                "conscience": (
+                    "Say what you know and be clear about what you don't know. "
+                    "Collect only the information needed to quote the trip."
+                )
+            }
+        )
+        self.set_post_prompt(
+            "Return JSON with pickup_address, destination, and outcome. "
+            "Set outcome to quoted, declined, or unavailable."
+        )
+
+        self.define_tool(
+            name="get_quote",
+            description=(
+                "Return the fare after the caller confirms both addresses. "
+                "Call again if either address changes."
+            ),
+            parameters={
+                "type": "object",
+                "properties": {
+                    "pickup": {
+                        "type": "string",
+                        "description": "The confirmed pickup address",
+                    },
+                    "destination": {
+                        "type": "string",
+                        "description": "The confirmed destination; use SFO for the airport",
+                    },
+                },
+                "required": ["pickup", "destination"],
+            },
+            handler=self.get_quote,
+        )
+
+        contexts = self.define_contexts()
+        default = contexts.add_context("default")
+        default.add_step("collect_trip") \
+            .set_text("Collect and confirm the pickup address and destination.") \
+            .set_step_criteria("Both addresses are confirmed.") \
+            .set_functions([]) \
+            .set_valid_steps(["quote"])
+        default.add_step("quote") \
+            .set_text("Call get_quote, read its result, and ask if the caller needs anything else.") \
+            .set_step_criteria("The caller has received the quote or learned it is unavailable.") \
+            .set_functions(["get_quote"])
+
+    def get_quote(self, args, raw_data):
+        pickup = args.get("pickup", "").lower().strip()
+        destination = args.get("destination", "").lower().strip()
+        fare = FARES.get((pickup, destination))
+
+        if fare is None:
+            return FunctionResult(
+                "That route is unavailable. Say that you cannot quote it and ask "
+                "whether the caller wants to try different addresses."
+            )
+
+        return FunctionResult(
+            f"The fare is ${fare:.2f}. Read this exact amount to the caller."
+        )
+
+
+if __name__ == "__main__":
+    QuoteAgent().run()
 ```
-
-<Info>
-The prompt holds the shape of a booking — the vehicle types, the ways to pay, what a booking needs —
-and nothing whose answer can change. Fares move with distance, time of day, and surge, so they come
-from `get_quote`. Pickup times depend on which driver is free, so they come from `book_ride`. Both are
-SWAIG functions the agent calls on your backend through a
-[tool call](/docs/platform/ai/tool-calling).
-
-That split is also what replaces a list of prohibitions. `get_quote` prices the trip and `book_ride`
-refuses a pickup no driver can make, so a caller can't talk the agent into a cheaper fare or a car that
-isn't there, and the prompt never has to forbid either.
-</Info>
-
-### Visual representation of prompt impact
-
-The following diagram illustrates the above prompt in a real conversation and how it influences the AI's responses:
-
-<llms-ignore>
-
-<Frame caption="Each turn traces back to the part of the prompt that shaped it — except the fare, which comes from code">
-  <img src="/assets/images/img/prompt-impact-flow-themed.svg" alt="A taxi booking call, turn by turn: the role and response guidelines shape the greeting, the task structure and knowledge base drive the pickup-address question, the response guidelines set expectations about the trip, and the guardrails leave the fare to the get_quote function." />
-</Frame>
-
-</llms-ignore>
-
-<llms-only>
-
-```mermaid
-flowchart TD
-    Start([Inbound call])
-    Start --> R1["Bayview Taxi, this is Ada. Where can we pick you up?"]
-    R1 --> Q1["I need a ride to the airport"]
-    Q1 --> R2["Happy to help. What address are you starting from?"]
-    R2 --> Q2["123 Gough Street"]
-    Q2 --> R3["Got it. Airport runs from Gough usually take about twenty five minutes at this hour."]
-    R3 --> Q3["What's it going to cost?"]
-    Q3 --> R4["Let me price that with dispatch and I'll have an exact fare for you in just a moment."]
-
-    Note1["Role + response guidelines:<br/>a warm greeting in the brand's voice"]
-    Note2["Task structure + knowledge base:<br/>pickup address first, then the fare"]
-    Note3["Response guidelines:<br/>set expectations before quoting"]
-    Note4["Guardrails:<br/>fares come back from get_quote"]
-
-    Note1 -.-> R1
-    Note2 -.-> R2
-    Note3 -.-> R3
-    Note4 -.-> R4
+</CodeBlock>
+<CodeBlock title="SWML">
+```yaml title="agent.yaml"
+version: 1.0.0
+sections:
+  main:
+    - answer: {}
+    - ai:
+        prompt:
+          pom:
+            - title: Role and objective
+              body: >-
+                You are Ada, the dispatcher for Bayview Taxi. Give callers fare
+                quotes. A call is complete when the caller receives a quote or
+                learns that the route is unavailable.
+            - title: Stable knowledge
+              body: >-
+                A quote requires a pickup address and destination. Recognize SFO
+                as San Francisco International Airport.
+            - title: Response guidelines
+              body: >-
+                Use a calm, efficient tone. Keep replies short enough for the
+                caller to interrupt. Read the fare exactly as get_quote returns it.
+          contexts:
+            default:
+              steps:
+                - name: collect_trip
+                  text: Collect and confirm the pickup address and destination.
+                  step_criteria: Both addresses are confirmed.
+                  functions: []
+                  valid_steps:
+                    - quote
+                - name: quote
+                  text: Call get_quote, read its result, and ask if the caller needs anything else.
+                  step_criteria: The caller has received the quote or learned it is unavailable.
+                  functions:
+                    - get_quote
+        params:
+          conscience: >-
+            Say what you know and be clear about what you don't know. Collect only
+            the information needed to quote the trip.
+        SWAIG:
+          functions:
+            - function: get_quote
+              description: >-
+                Return the fare after the caller confirms both addresses. Call again
+                if either address changes.
+              parameters:
+                type: object
+                properties:
+                  pickup:
+                    type: string
+                    description: The confirmed pickup address
+                  destination:
+                    type: string
+                    description: The confirmed destination; use SFO for the airport
+                required:
+                  - pickup
+                  - destination
+              # Replace this URL with your endpoint. It receives the function
+              # arguments and must return a SWAIG function response, such as:
+              # {"response":"The fare is $38.60. Read this exact amount to the caller."}
+              web_hook_url: https://example.com/swaig/get-quote
+        post_prompt:
+          text: >-
+            Return JSON with pickup_address, destination, and outcome. Set outcome
+            to quoted, declined, or unavailable.
 ```
+</CodeBlock>
+</CodeBlocks>
 
-</llms-only>
+## Put guardrails in the right layer
 
-This diagram demonstrates how:
-- The **role** shapes the AI's calm, professional greeting
-- The **knowledge base** informs accurate responses about vehicle types and how a booking works
-- The **task structure** collects both addresses before anything is priced
-- **Response guidelines** maintain consistent, helpful interaction throughout
-- **Guardrails** leave the fare to the code that owns it, and keep the redirection polite
+A prompt requests behavior; code enforces it. Use these options in order:
 
-## Where guardrails belong
+1. **Define success.** A clear objective handles many boundaries without extra prohibitions.
+2. **Enforce exact rules in code.** Use functions for prices, discounts, eligibility, permissions,
+   current data, and other outcomes that must be correct.
+3. **Remove unavailable actions.** Limit functions and transitions with context steps so the agent
+   cannot take an action at the wrong stage.
+4. **Apply global standards through the conscience.** Reserve it for a short set of behavioral,
+   safety, compliance, or brand standards that code cannot express.
+5. **Add a prompt rule when needed.** Make it specific and describe the desired response. "Transfer
+   fare disputes to a dispatcher" gives the agent an action; "don't mishandle disputes" does not.
 
-A prompt full of prohibitions is one of the most common ways an agent becomes unpredictable.
-Every rule you add competes with the others for the model's attention, and a prohibition is followed
-less reliably than the same rule written as an instruction.
-Work through the options below in order, and stop as soon as the behavior is covered.
+## Test and refine
 
-1. **State what success looks like.** An agent that knows its objective works out most of its
-   own limits. "Quote the trip, book it once the caller accepts, and hand off anything you
-   can't complete" already rules out competitor talk and freelance discounts, without a
-   single prohibition.
-2. **Enforce hard rules in code.** Prices, discounts, eligibility, and anything that must be
-   exact or current belong behind a [tool call](/docs/platform/ai/tool-calling), where your
-   handler validates the caller's input and decides the outcome. Your handler enforces a pricing
-   rule on every call; the prompt only asks.
-3. **Remove the possibility.** Scope which functions exist at each stage with
-   [context steps][context-steps]: the agent can't book before it quotes if the booking
-   function isn't available yet.
-4. **Put global rules in the conscience.** Tone, persona, safety, and compliance rules that
-   apply to the whole call belong in the [conscience][conscience]. It is reinforced throughout
-   the conversation, including after function calls, so the rule doesn't fade the way one line
-   in the middle of a long main prompt does.
-5. **Then, sparingly, write a don't.** A short list of genuine non-negotiables that can't be
-   enforced structurally still earns its place. Keep it specific, and phrase it as the
-   behavior you want wherever you can: "If asked how long the trip will take, give the estimate
-   book_ride returned and say traffic can change it" steers better than "Don't promise arrival times".
+Treat the first prompt as a draft. Test it against representative conversations, revise one behavior
+at a time, and keep the prompt under version control with its test cases.
 
-## From draft to production
+Test the common path first, then cover:
 
-A first prompt is a draft.
-Expect to test it against real conversations, watch where the agent hesitates or drifts,
-and refine it in small steps.
-The [iterative refinement process](/docs/platform/ai/prompt-engineering/best-practices#iterative-refinement-process)
-walks through that workflow, from objectives and audience research to systematic testing.
+- interruptions, corrections, and information provided out of order
+- missing, ambiguous, or unsupported requests
+- attempts to override the agent's instructions
+- function failures and handoffs
+- boundaries where the agent should say it doesn't know
+
+When a test fails, identify the right layer before adding prompt text. Fix incorrect data or hard
+rules in code, function timing in context steps, function selection in its description, and global
+behavior in the conscience.
+
+Trim after each successful revision. Remove one line, rerun the same tests, and keep the deletion if
+behavior stays the same. This prevents duplicated rules and general knowledge from hiding the
+instructions specific to your application.
 
 ## Next steps
 
-<CardGroup cols={3}>
-
-<Card title="Prompt writing techniques" href="/docs/platform/ai/prompt-engineering/best-practices" icon="regular pen-nib">
-  Core techniques for clear, reliable prompts.
-</Card>
-
-<Card title="Where to apply prompt engineering" href="/docs/platform/ai/prompt-engineering/where-to-apply" icon="regular layer-group">
-  The five surfaces that accept prompts.
-</Card>
+<CardGroup cols={2}>
 
 <Card title="Tool calling" href="/docs/platform/ai/tool-calling" icon="regular webhook">
-  The other half of a reliable agent.
+  Connect prompts to current data and rules your application can enforce.
+</Card>
+
+<Card title="AI agent best practices" href="/docs/platform/ai/best-practices" icon="regular list-check">
+  Apply prompt design alongside testing, latency, error handling, and observability practices.
 </Card>
 
 </CardGroup>
