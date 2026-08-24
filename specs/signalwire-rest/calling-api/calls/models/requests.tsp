@@ -3,6 +3,7 @@ import "@typespec/openapi3";
 import "@typespec/json-schema";
 import "../../../../swml/calling/Methods/ai_sidecar";
 import "../../../../swml/calling/Methods/live_translate";
+import "../../../fabric-api/_shared/const.tsp";
 import "./core.tsp";
 
 using TypeSpec.Http;
@@ -15,12 +16,7 @@ using SWML.Calling;
 
 const CallSWMLExample = "{'version': '1.0.0', 'sections': { 'main': [{ 'answer': { 'max_duration': 60 }},{ 'play': { 'urls': ['silence:2', 'say:Hello from SignalWire!']}}]}}";
 
-const CallSWMLDocumentExample = #{
-  version: "1.0.0",
-  sections: #{
-    main: #[#{ play: #{ url: "https://cdn.signalwire.com/swml/audio.mp3" } }],
-  },
-};
+const CallSWMLDocumentExample = SWML_CONTENTS_EXAMPLE;
 
 const CallFallbackURLExample = "https://example.com/fallback";
 

@@ -58,7 +58,7 @@ const CALLING_SWML_SCRIPT_EXAMPLE = #{
   id: FABRIC_RESOURCE_ID_EXAMPLE,
   display_name: "Welcome Script",
   script_type: "calling",
-  request_url: "https://example.signalwire.com/api/fabric/resources/swml_scripts/993ed018-9e79-4e50-b97b-984bd5534095",
+  request_url: "https://example.com/swml_script",
   contents: SWML_CONTENTS_EXAMPLE,
 };
 
@@ -66,7 +66,7 @@ const MESSAGING_SWML_SCRIPT_EXAMPLE = #{
   id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
   display_name: "Reply Bot",
   script_type: "messaging",
-  request_url: "https://example.signalwire.com/api/fabric/resources/swml_scripts/3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  request_url: "https://example.com/swml_script",
   contents: SWML_MESSAGING_CONTENTS_EXAMPLE,
 };
 

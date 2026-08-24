@@ -16,7 +16,7 @@ const dialCallExample = #{
     params: #{
       from: "+15551234567",
       to: "+15557654321",
-      swml: CallSWMLDocumentExample,
+      url: CallSWMLURLExample,
     },
   },
 };
@@ -24,7 +24,7 @@ const dialCallExample = #{
 const updateCallExample = #{
   request: #{
     command: "update",
-    params: #{ id: callId, swml: CallSWMLDocumentExample },
+    params: #{ id: callId, url: CallSWMLURLExample },
   },
 };
 
@@ -487,7 +487,7 @@ const transferCallExample = #{
   request: #{
     command: "calling.transfer",
     id: callId,
-    params: #{ dest: CallSWMLDocumentExample },
+    params: #{ dest: CallSWMLURLExample },
   },
 };
 

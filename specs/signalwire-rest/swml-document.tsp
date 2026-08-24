@@ -1,23 +1,12 @@
 import "../swml/calling";
 import "../swml/messaging";
+import "./fabric-api/_shared/const.tsp";
 
 namespace SignalWireAPI;
 
-@@example(SWML.Calling.SWMLObject,
-  #{
-    version: "1.0.0",
-    sections: #{
-      main: #[#{ play: #{ url: "https://cdn.signalwire.com/swml/audio.mp3" } }],
-    },
-  }
-);
+@@example(SWML.Calling.SWMLObject, SWML_CONTENTS_EXAMPLE);
 
-@@example(SWML.Messaging.SWMLObject,
-  #{
-    version: "1.0.0",
-    sections: #{ main: #[#{ reply: "Thanks for your message!" }] },
-  }
-);
+@@example(SWML.Messaging.SWMLObject, SWML_MESSAGING_CONTENTS_EXAMPLE);
 
 union SWMLDocument {
   calling: SWML.Calling.SWMLObject,
