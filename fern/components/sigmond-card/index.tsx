@@ -75,6 +75,12 @@ export function SigmondWidget({ token = DEFAULT_TOKEN }: SigmondWidgetProps) {
       document.querySelectorAll<HTMLElement>("[data-sigmond-launcher]"),
     ).filter((el) => !el.dataset.sigmondWired);
 
+    if (launchers.length === 0) {
+      console.warn(
+        "SigmondWidget: no [data-sigmond-launcher] element found on this page — the card will render but do nothing.",
+      );
+    }
+
     for (const el of launchers) {
       el.dataset.sigmondWired = "true";
       let widget: WidgetInstance | null = null;
@@ -90,7 +96,6 @@ export function SigmondWidget({ token = DEFAULT_TOKEN }: SigmondWidgetProps) {
           if (!widget) {
             const host = document.createElement("div");
             host.className = "sigmond-widget-host";
-            host.setAttribute("aria-hidden", "true");
             document.body.appendChild(host);
             widget = global.mount(host, {
               token,
@@ -107,10 +112,13 @@ export function SigmondWidget({ token = DEFAULT_TOKEN }: SigmondWidgetProps) {
             });
             const mounted = widget;
             teardown.push(() => {
-              host.remove();
-              if (window.SignalWireAddressWidget?.unmount) {
-                void window.SignalWireAddressWidget.unmount(mounted);
-              }
+              const unmount = window.SignalWireAddressWidget?.unmount;
+              const done = unmount
+                ? Promise.resolve(unmount(mounted)).catch((e) =>
+                    console.error("SigmondWidget: unmount failed:", e),
+                  )
+                : Promise.resolve();
+              void done.then(() => host.remove());
             });
           }
           widget.theme = theme;
