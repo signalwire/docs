@@ -18,6 +18,7 @@ import "./datasphere-api";
 import "./pubsub-api";
 import "./logs-api";
 import "./webhooks";
+import "./swml-document.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
