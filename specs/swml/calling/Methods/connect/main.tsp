@@ -159,8 +159,9 @@ model ConnectDeviceBase {
   call_state_url?: url;
 
   @doc("""
-    SWML to execute when the queue interaction ends. Applies only when the destination is a queue
-    (when `to`, or a member of `serial`/`parallel`/`serial_parallel`, starts with "queue:").
+    SWML to execute when the queue interaction ends. Applies only when the top-level `to` is a
+    `queue:` destination; it is not supported on `serial`/`parallel`/`serial_parallel` members,
+    where setting it fails validation.
     Can be either:
     - A URL (http or https) that returns a SWML document
     - An inline SWML document (as a JSON string)
