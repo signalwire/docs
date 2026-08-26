@@ -35,7 +35,7 @@ Tutorials and how-tos give the reader a way to confirm the result — a command 
 - No "simply/easily/just" and no "please" in instructions. [G]
 - Em-dashes are a house device, not a default connector: one earns its place on a genuine break in thought or an appositive commas would muddle. Where a comma reads the same, write the comma. Never several per paragraph. [MS][SW] Aphorisms land at 2–3 per page, max. [SW] (judgment)
 - No emoji — not in headings, tab/card titles, or prose. Say good/bad in words. [SW]
-- Terminology: "Server SDKs" (never "Agents SDK"); tokens are *created*/*issued* (never *minted*); "resource addresses" (never "Fabric addresses"); expand every acronym at first use. [SW]
+- Terminology: the published glossary at `/docs/platform/glossary` (`fern/products/platform/pages/platform/core/glossary.mdx`) is the source of truth for canonical names, aliases, and historical names — check it before naming a product or entity, and record a decision there rather than here. Tokens are *created*/*issued* (never *minted*); expand every acronym at first use. [SW]
 
 ## Accessibility and inclusive language [G][MS]
 
