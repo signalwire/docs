@@ -1,0 +1,598 @@
+---
+title: Glossary
+slug: /glossary
+description: One canonical definition per SignalWire term, with the aliases and historical names each one answers to.
+max-toc-depth: 3
+---
+
+[addresses]: /docs/platform/addresses
+[agent-base]: /docs/server-sdks/guides/agent-base
+[ai-method]: /docs/swml/reference/calling/ai
+[ai-overview]: /docs/platform/ai
+[api-credentials]: /docs/platform/your-signalwire-api-space
+[authorization]: /docs/apis/authorization
+[base-url]: /docs/apis/base-url
+[browser-sdk]: /docs/browser-sdk/v4/guides/overview
+[cfb-ai-node]: /docs/call-flow-builder/reference/ai-agent
+[cfb]: /docs/call-flow-builder
+[chat-token]: /docs/apis/rest/chat-tokens/create-chat-token
+[compat-rest]: /docs/compatibility-api/rest
+[cxml]: /docs/compatibility-api/cxml
+[expressions]: /docs/swml/reference/expressions
+[relay-client]: /docs/server-sdks/guides/relay-client
+[projects-api]: /docs/apis/rest/projects/create-a-subproject
+[resources]: /docs/platform/resources
+[sat]: /docs/browser-sdk/v4/guides/authentication
+[segment-ids]: /docs/platform/what-is-a-sid
+[server-sdks]: /docs/server-sdks
+[signup]: /docs/platform/signing-up-for-a-space
+[subscribers]: /docs/platform/subscribers
+[swaig]: /docs/swml/guides/swaig
+[swml-calling]: /docs/swml/reference/calling
+[swml-messaging]: /docs/swml/reference/messaging
+[tool-calling]: /docs/platform/ai/tool-calling
+[video-token]: /docs/apis/rest/video/room-tokens/create-room-token
+[webhooks]: /docs/platform/webhooks
+
+This glossary defines each SignalWire term, with the aliases and historical names it answers to and the similar terms it should not be confused with. 
+
+LLMs and other programmatic readers should use the [registry](#registry) at the end. It carries the same information in structured YAML, with stable identifiers and canonical URLs.
+
+## Accounts and access
+
+One account owns one or more Spaces, each Space holds one or more Projects, and a Project can hold subprojects.
+
+<llms-ignore>
+
+<img src="/assets/images/img/account-hierarchy-themed.svg" alt="One account owns two Spaces, example.signalwire.com and example-dev.signalwire.com. The first Space holds two Projects, one of which holds a Subproject; the second Space holds one Project." />
+
+</llms-ignore>
+
+### Space [#space]
+
+The subdomain created alongside your SignalWire account, in the form `example.signalwire.com`. Your [Dashboard][signup] lives there, and every API request goes through it over HTTPS. One account can own and access multiple Spaces, and each Space can hold many Projects.
+
+Its hostname is also your **Space URL**, the [base URL][base-url] for API requests. It appears alongside your Project ID and API tokens under **API Credentials** in the Dashboard.
+
+### Project [#project]
+
+A grouping of resources inside a Space, according to any classification you choose, such as by customer, or by region. 
+Each Project has its own Project ID and API tokens, so a Project is the unit of both organization and access. A Project can hold [subprojects](#subproject), one level deep.
+
+A Project is not a Space. A Space is the domain you sign in to; a Project is one compartment within it.
+
+### Subproject [#subproject]
+
+A Project nested one level beneath a root Project. A subproject is a full Project — it has its own Project ID and groups its own resources — and the nesting stops there: a subproject cannot contain subprojects of its own.
+
+The difference that matters is lifecycle. Subprojects are created and deleted through the [Projects API][projects-api]; root Projects are created in the Dashboard, and the API cannot delete them. A subproject must release its phone numbers before it can be deleted.
+
+### Project ID [#project-id]
+
+The UUID that identifies a Project to the API, and the username half of HTTP Basic authentication. Find it under **API Credentials** in the [Dashboard][api-credentials].
+
+### Account SID [#account-sid]
+
+The Compatibility API's name for the Project ID. It is the same value under a different label, kept so that code written for other providers works without change. There is no separate account identifier to look up.
+
+### API token [#api-token]
+
+A Project-scoped credential used server-side, and the password half of HTTP Basic [authentication][authorization]. A Project can hold several tokens, each with its own scopes, and you create and revoke them from the Dashboard.
+
+An API token is not a subscriber token, and it does not belong in a browser. Client-side credentials — subscriber tokens, video room tokens, chat tokens, embed tokens — are created *by* calling an API endpoint with your API token.
+
+### Personal access token [#personal-access-token]
+
+A user-level Dashboard token, issued from the user menu rather than from a Project's API Credentials page. It authenticates you as a person rather than a Project, and its use is FreeSWITCH-specific: it is what authorizes you to download FreeSWITCH and FreeSWITCH Advantage binaries. It is not interchangeable with an API token.
+
+The tokens at a glance:
+
+| Token name | Description |
+|---|---|
+| [API token](#api-token) | Server-side, per Project. The password half of Basic authentication. |
+| [Subscriber token (SAT)](#subscriber-token) | Short-lived, per Subscriber. Bearer credential for the Browser SDK. |
+| [Embed token][sat] | Lives in a public page, tied to one resource, for click-to-call widgets. |
+| [Video Room token][video-token] | Client-side credential for Video, created with an API token. |
+| [Chat token][chat-token] | Client-side credential for Chat, created with an API token. |
+| [Personal access token](#personal-access-token) | Per user, not per Project. Downloads FreeSWITCH binaries. |
+
+## Call Fabric
+
+### Call Fabric [#call-fabric]
+
+SignalWire's addressing model. Every communication entity — a user, a script, an AI agent, a SIP endpoint, a video room — is a [Resource][resources] reachable at an address, so one dialing model reaches all of them and all of them are managed the same way.
+
+### Resource [#resource]
+
+A container object representing one communication entity. Every Resource has a **Type** — Subscriber, SWML Script, cXML Script, AI Agent, Call Flow, Relay Application, FreeSWITCH Connector, SIP Endpoint, Video Room — and one or more [addresses][addresses] that make it reachable. All types share the same addressing and management model.
+
+Capital-R Resource is not the generic "REST resource" of an API path. The REST namespace of the Server SDKs uses "resource" in that looser sense too.
+
+### Resource address [#resource-address]
+
+The path that reaches a Resource, in the form `/context/name`. The context is `public` or `private`, and the name defaults to the Resource's name. An AI agent named `Sigmond` in the public context is reachable at `/public/Sigmond`.
+
+Addresses are mutable and a Resource can have several, including phone numbers and SIP URIs. Within the same context you can omit it and write `/Bob`.
+
+Some older pages say "Fabric address"; it names the same thing.
+
+### Phone number [#phone-number]
+
+A number in <Tooltip tip="The international phone number format: a plus sign, country code, and number, such as `+14155551234`.">E.164</Tooltip> format on your Space. As an address type it maps to a Resource, which is how an inbound call to that number reaches your script, agent, or Subscriber.
+
+### Subscriber [#subscriber]
+
+A [Resource][subscribers] type representing a user in your communication system, with authentication, communication endpoints, and billing attached. The Browser SDK calls the signed-in Subscriber a `User` in code (`client.user`); the Dashboard, the platform docs, and the REST API all say Subscriber.
+
+#### Subscriber token [#subscriber-token]
+
+A short-lived credential identifying one Subscriber and carrying the capabilities granted to them, sent as Bearer authentication. Also written **Subscriber Access Token** or **SAT**. Your backend creates one using your Project's API token and hands it to the browser, where the [Browser SDK][sat] uses it to open a session.
+
+Three variants exist for different levels of trust — the default SAT, a Guest SAT, and an Invite SAT — alongside a separate Embed token for public widgets.
+
+### Relay Application [#relay-application]
+
+A Resource type representing your own server connected over [Relay](#relay). It carries a **topic**, and calls addressed to the Resource are handed to whichever Relay client is subscribed to that topic.
+
+A Relay Application is not the Relay namespace of the Server SDKs and not the Server SDKs themselves. It is the Dashboard-side Resource that routes a call to code you are already running.
+
+### Call Flow [#call-flow]
+
+A Resource type holding a call flow built visually in [Call Flow Builder](#call-flow-builder). Like any Resource, it has an address and can be dialed.
+
+## Calls
+
+### Call [#call]
+
+The whole call as the person on the other end experiences it, from the moment it is placed on the platform to the moment it ends. It is the umbrella term: one call is made of one or more [legs](#call-leg), and it can pass through several Resources on the way.
+
+### Call leg [#call-leg]
+
+The relationship between two user agents. A call is made of one or more legs: forwarding an inbound call to a single SIP endpoint is two legs, and fanning it out to four endpoints is five.
+
+In SWML each leg has its own `call` object with its own `call_id`, and connecting to a new leg re-initializes that object with the new leg's data.
+
+### Segment ID [#segment-id]
+
+A UUID identifying a call, message, or fax in the logs, written **SID**. The REST APIs return it as `id`, and it is the identifier to quote when filing a support ticket. Find SIDs under **Logs** in the [Dashboard][segment-ids].
+
+### Relay session [#relay-session]
+
+The persistent, authenticated WebSocket connection a `RelayClient` holds to the Relay service, over which it subscribes to topics and receives events. One session carries every call and message the client handles.
+
+## SWML
+
+### SWML document [#swml-document]
+
+A document written in SignalWire Markup Language, in YAML or JSON, that tells SignalWire how to handle a call or a message. It has a top-level `sections` map with `sections.main` as the entry point, and each section holds an ordered array of methods that run in sequence.
+
+Every SWML document is one of two types, [Calling](#calling-swml) or [Messaging](#messaging-swml). They share the document structure and nothing else: different method sets, different webhook payloads, different variable rules, and separate error code namespaces.
+
+#### Calling SWML [#calling-swml]
+
+The [document type][swml-calling] for voice calls. JavaScript expressions in `${...}` are a Calling SWML feature.
+
+#### Messaging SWML [#messaging-swml]
+
+The [document type][swml-messaging] for inbound SMS and MMS. A document can run up to 100 method steps per inbound message, and execution stops at that ceiling.
+
+Messaging SWML is not Calling SWML with a smaller method set. It supports only plain variable substitution with `%{path.to.value}` — no JavaScript, no method calls, no operators. For dynamic behavior, use `switch` to branch and `request` to fetch computed values from your server. See the [expressions reference][expressions].
+
+### SWAIG [#swaig]
+
+The SignalWire AI Gateway: a JSON protocol over HTTP by which an AI agent calls code you host. SignalWire POSTs a JSON object to your endpoint and your endpoint returns one. See the [SWAIG guide][swaig].
+
+#### SWAIG function [#swaig-function]
+
+A named capability you hand to the agent — a name, a description, and a JSON Schema describing its parameters. Each call is one HTTP POST answered by one JSON reply, with nothing held open in between. See the [tool calling guide][tool-calling].
+
+A SWAIG function is not an ordinary webhook, in four ways. The model decides when to call it, reading your description, rather than an event triggering it. The reply's `response` field is written into the agent's conversational context rather than spoken verbatim. There is a discovery step — a function signature request — that enumerates available functions when the agent loads. And a `data_map` variant runs entirely on SignalWire's side, with no server of yours involved at all.
+
+### Webhook [#webhook]
+
+An HTTP request SignalWire sends to your server when an event occurs, such as an inbound call or message. Some webhooks also let your response direct what happens next: you reply with a [SWML document](#swml-document) and SignalWire executes it. See the [webhooks guide][webhooks].
+
+## Interfaces
+
+### Server SDKs [#server-sdks]
+
+The unified server-side SDK, published as `signalwire-sdk` on PyPI and `@signalwire/sdk` on npm. It exposes three namespaces — [Agents](#agents-namespace), [Relay](#relay), and [REST](#rest-namespace) — and you can use one or combine all three in a single application. See the [Server SDKs documentation][server-sdks].
+
+It was previously offered as two products, the **Agents SDK** and the **Server SDK**; links to either name now land on the unified Server SDKs documentation. **Realtime SDK** and **Relay Realtime SDK** are older names too: they refer to the Relay namespace of this SDK, not to a separate package.
+
+The Server SDKs are not the [Browser SDK](#browser-sdk), which is a different package for client-side code.
+
+#### Agents namespace [#agents-namespace]
+
+The namespace that builds AI-driven call flows declaratively. Your agent runs an HTTP server; SignalWire requests a [SWML document](#swml-document) from it and manages speech recognition, the model, and tool calling for the rest of the conversation. `AgentBase` is its [base class][agent-base].
+
+#### Relay namespace [#relay]
+
+SignalWire's real-time protocol for imperative call control — JSON-RPC 2.0 over a persistent WebSocket — and the SDK namespace that speaks it. Your code subscribes to topics, reacts to events as they arrive, and issues commands: answer, play, collect digits, record, bridge, transfer. See the [Relay client guide][relay-client].
+
+Reach for Relay when you need to react to a call as it unfolds. Reach for [SWML](#swml-document) when you can describe the whole flow up front.
+
+You'll also see the all-caps spelling **RELAY** on older pages, along with the names **Realtime SDK** and **Relay Realtime SDK**. All three refer to this namespace; the capitalization carries no meaning.
+
+Relay is not a [Relay Application](#relay-application), which is the Dashboard Resource that routes a call to your Relay client.
+
+#### REST namespace [#rest-namespace]
+
+The synchronous HTTP client for the platform APIs: purchasing numbers, provisioning Resources, querying logs. Request and response, with no connection held open.
+
+### Browser SDK [#browser-sdk]
+
+The client-side SDK for voice, video, and chat in the browser, published as `@signalwire/js`. It authenticates with a [subscriber token](#subscriber-token), never with an API token. See the [Browser SDK documentation][browser-sdk].
+
+Version 2 was branded the **Relay SDK for JavaScript**; that name is historical and unrelated to the Relay namespace of the Server SDKs.
+
+### Compatibility API [#compatibility-api]
+
+The REST API that mirrors other providers' request and response shapes so existing code runs against SignalWire with minimal change. See the [Compatibility API documentation][compat-rest]. Its markup language is [cXML](#cxml).
+
+The Compatibility API is not the route to SignalWire AI. Use [SWML](#swml-document) or the [Server SDKs](#server-sdks) for that.
+
+#### cXML [#cxml]
+
+Compatibility XML, the XML language for controlling calls, messages, and faxes through the Compatibility API. It is compatible with Twilio's TwiML, so existing TwiML documents work without modification. See the [cXML specification][cxml].
+
+#### LaML [#laml]
+
+The former name of cXML and the Compatibility API. It is retired as a product name but still live as an identifier, so you will keep meeting it: in `/api/laml/` URL paths, in the `RestClient.LaML` SDK namespace, in the LAML Bins resource type, and on Dashboard labels such as **cXML/LaML**.
+
+When you see LaML in a name or a URL, read cXML.
+
+### Call Flow Builder [#call-flow-builder]
+
+The no-code visual tool in the Dashboard for building voice applications as a tree of nodes. See the [Call Flow Builder documentation][cfb]. What it produces is a [Call Flow](#call-flow) Resource.
+
+## AI agents
+
+### AI agent [#ai-agent]
+
+"AI agent" names five different things across SignalWire products. The product you are reading about tells you which one is meant:
+
+| Where you read it | What "AI agent" means there |
+|---|---|
+| [SWML][ai-method] | The `ai` method: runs a conversation on a live call, joining speech recognition, a model, and text-to-speech. |
+| [The platform][ai-overview] | SignalWire AI as a capability: prompts, contexts, state, and tools. |
+| [The Dashboard][resources] | The AI Agent Resource type: configured in the Dashboard, reachable at an address like any Resource. |
+| [Server SDKs][agent-base] | An `AgentBase` application: your Python or TypeScript program that generates SWML at request time. |
+| [Call Flow Builder][cfb-ai-node] | The AI Agent node: one block in a visual call flow. |
+
+Lowercase "AI agent" is the general idea. The capitalized AI Agent names the Resource type and the node.
+
+## Registry
+
+The same information in machine-readable form. Identifiers are stable, so tools and documents can reference the `id` values rather than restating aliases.
+
+```yaml
+schema_version: 1
+
+concepts:
+  - id: space
+    canonical_name: Space
+    aliases: [SignalWire Space]
+    not_the_same_as: [project]
+    children: [project]
+    products: [platform, apis, dashboard]
+    example: example.signalwire.com
+    canonical_url: /docs/platform/signing-up-for-a-space
+
+  - id: space_url
+    canonical_name: Space URL
+    aliases: [Space subdomain, base URL]
+    parent: space
+    products: [platform, apis, compatibility_api]
+    example: https://example.signalwire.com
+    canonical_url: /docs/apis/base-url
+
+  - id: project
+    canonical_name: Project
+    not_the_same_as: [space]
+    parent: space
+    children: [subproject]
+    products: [platform, apis, dashboard]
+    canonical_url: /docs/platform/signing-up-for-a-space
+
+  - id: subproject
+    canonical_name: Subproject
+    parent: project
+    max_nesting: 1
+    api_lifecycle: Subprojects are created and deleted through the Projects API; root Projects are not.
+    products: [platform, apis]
+    canonical_url: /docs/platform/glossary#subproject
+
+  - id: project_id
+    canonical_name: Project ID
+    aliases: [Account SID, AccountSid]
+    parent: project
+    products: [platform, apis, compatibility_api, server_sdks]
+    example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+    canonical_url: /docs/platform/your-signalwire-api-space
+
+  - id: account_sid
+    canonical_name: Account SID
+    same_as: project_id
+    note: The Compatibility API's label for the Project ID. Same value.
+    products: [compatibility_api]
+    canonical_url: /docs/compatibility-api/rest#accountsid-vs-projectid
+
+  - id: api_token
+    canonical_name: API token
+    aliases: [API Authentication Token, REST API token, Auth Token]
+    not_the_same_as: [subscriber_token, personal_access_token]
+    parent: project
+    products: [platform, apis, server_sdks, compatibility_api]
+    example: HTTP Basic auth, project_id as username, api_token as password
+    canonical_url: /docs/apis/authorization
+
+  - id: subscriber_token
+    canonical_name: Subscriber token
+    aliases: [Subscriber Access Token, SAT]
+    variants: [Guest SAT, Invite SAT]
+    not_the_same_as: [api_token, personal_access_token, embed_token]
+    created_using: api_token
+    products: [browser_sdk, apis, platform]
+    example: Authorization Bearer header on a Browser SDK session
+    canonical_url: /docs/browser-sdk/v4/guides/authentication
+
+  - id: personal_access_token
+    canonical_name: Personal access token
+    not_the_same_as: [api_token, subscriber_token]
+    scope: user
+    products: [platform, dashboard]
+    canonical_url: /docs/platform/glossary#personal-access-token
+
+  - id: subscriber
+    canonical_name: Subscriber
+    aliases: [User]
+    note: The Browser SDK exposes the signed-in Subscriber as client.user.
+    parent: resource
+    products: [platform, browser_sdk, apis]
+    canonical_url: /docs/platform/subscribers
+
+  - id: call_fabric
+    canonical_name: Call Fabric
+    children: [resource, resource_address]
+    products: [platform, apis, browser_sdk, server_sdks]
+    canonical_url: /docs/platform/glossary#call-fabric
+
+  - id: resource
+    canonical_name: Resource
+    not_the_same_as: [rest_namespace]
+    parent: call_fabric
+    children: [subscriber, relay_application, call_flow, swml_document, cxml]
+    products: [platform, apis, server_sdks, dashboard]
+    canonical_url: /docs/platform/resources
+
+  - id: resource_address
+    canonical_name: Resource address
+    aliases: [Address]
+    historical_names: [Fabric address]
+    parent: resource
+    products: [platform, apis, browser_sdk]
+    example: /public/Sigmond
+    canonical_url: /docs/platform/addresses
+
+  - id: phone_number
+    canonical_name: Phone number
+    parent: resource_address
+    products: [platform, apis, compatibility_api]
+    example: "+14155551234"
+    canonical_url: /docs/platform/addresses
+
+  - id: relay_application
+    canonical_name: Relay Application
+    not_the_same_as: [relay, server_sdks]
+    parent: resource
+    products: [platform, apis, dashboard, swml]
+    example: A Resource with topic "booking", handed to a RelayClient subscribed to that topic
+    canonical_url: /docs/platform/resources
+
+  - id: call_flow
+    canonical_name: Call Flow
+    parent: resource
+    produced_by: call_flow_builder
+    products: [call_flow_builder, platform, dashboard]
+    canonical_url: /docs/call-flow-builder
+
+  - id: call
+    canonical_name: Call
+    note: >-
+      The umbrella term - the whole call as the recipient experiences it, made
+      up of one or more legs.
+    children: [call_leg]
+    not_the_same_as: [call_leg, segment_id]
+    products: [platform, swml, server_sdks, apis, compatibility_api]
+    canonical_url: /docs/platform/glossary#call
+
+  - id: call_leg
+    canonical_name: Call leg
+    parent: call
+    not_the_same_as: [call, segment_id]
+    products: [platform, swml, server_sdks]
+    example: An inbound call forwarded to one SIP endpoint is two legs
+    canonical_url: /docs/platform/glossary#call-leg
+
+  - id: segment_id
+    canonical_name: Segment ID
+    aliases: [SID]
+    not_the_same_as: [call_leg]
+    products: [platform, apis, dashboard]
+    example: Returned as id by the REST APIs
+    canonical_url: /docs/platform/what-is-a-sid
+
+  - id: relay_session
+    canonical_name: Relay session
+    parent: relay
+    products: [server_sdks]
+    example: The connection held open by a RelayClient
+    canonical_url: /docs/platform/glossary#relay-session
+
+  - id: swml_document
+    canonical_name: SWML document
+    expansion: SignalWire Markup Language
+    formats: [yaml, json]
+    children: [calling_swml, messaging_swml]
+    products: [swml, platform, server_sdks, apis]
+    canonical_url: /docs/swml
+
+  - id: calling_swml
+    canonical_name: Calling SWML
+    not_the_same_as: [messaging_swml]
+    parent: swml_document
+    supports_expressions: true
+    products: [swml]
+    canonical_url: /docs/swml/reference/calling
+
+  - id: messaging_swml
+    canonical_name: Messaging SWML
+    not_the_same_as: [calling_swml]
+    parent: swml_document
+    supports_expressions: false
+    substitution_syntax: "%{path.to.value}"
+    max_method_steps: 100
+    products: [swml]
+    canonical_url: /docs/swml/reference/messaging
+
+  - id: swaig
+    canonical_name: SWAIG
+    expansion: SignalWire AI Gateway
+    protocol: JSON over HTTP
+    products: [swml, platform, server_sdks]
+    canonical_url: /docs/swml/guides/swaig
+
+  - id: swaig_function
+    canonical_name: SWAIG function
+    aliases: [tool, function]
+    not_the_same_as: [webhook]
+    parent: swaig
+    variants: [remote function, data_map]
+    products: [swml, platform, server_sdks]
+    example: A get_quote function the agent calls after extracting two addresses
+    canonical_url: /docs/platform/ai/tool-calling
+
+  - id: webhook
+    canonical_name: Webhook
+    not_the_same_as: [swaig_function]
+    products: [platform, apis, swml, compatibility_api]
+    canonical_url: /docs/platform/webhooks
+
+  - id: server_sdks
+    canonical_name: Server SDKs
+    aliases: [Server SDK, Realtime SDK, Relay Realtime SDK, Relay SDK, RELAY SDK, SignalWire SDK]
+    historical_names: [Agents SDK]
+    not_the_same_as: [browser_sdk, relay_application]
+    children: [agents_namespace, relay, rest_namespace]
+    packages:
+      python: signalwire-sdk
+      node: "@signalwire/sdk"
+    languages: [python, typescript]
+    products: [server_sdks]
+    example: pip install signalwire-sdk
+    canonical_url: /docs/server-sdks
+
+  - id: agents_namespace
+    canonical_name: Agents
+    aliases: [Agents namespace]
+    parent: server_sdks
+    protocol: HTTPS
+    pattern: declarative
+    products: [server_sdks]
+    example: AgentBase
+    canonical_url: /docs/server-sdks/guides/agent-base
+
+  - id: relay
+    canonical_name: Relay
+    aliases: [Relay namespace, RELAY, Realtime SDK, Relay Realtime SDK, Relay client]
+    casing: Relay. Older pages use the all-caps RELAY; the spelling carries no meaning.
+    not_the_same_as: [relay_application, browser_sdk]
+    parent: server_sdks
+    protocol: JSON-RPC 2.0 over WebSocket
+    pattern: imperative
+    products: [server_sdks, platform]
+    example: RelayClient
+    canonical_url: /docs/server-sdks/guides/relay-client
+
+  - id: rest_namespace
+    canonical_name: REST
+    aliases: [REST namespace]
+    not_the_same_as: [resource]
+    parent: server_sdks
+    protocol: HTTPS
+    pattern: request/response
+    products: [server_sdks, apis]
+    example: RestClient
+    canonical_url: /docs/apis
+
+  - id: browser_sdk
+    canonical_name: Browser SDK
+    historical_names: [Relay SDK for JavaScript]
+    not_the_same_as: [server_sdks]
+    packages:
+      node: "@signalwire/js"
+    authenticates_with: subscriber_token
+    products: [browser_sdk]
+    canonical_url: /docs/browser-sdk/v4/guides/overview
+
+  - id: compatibility_api
+    canonical_name: Compatibility API
+    historical_names: [LaML API]
+    not_the_same_as: [rest_namespace]
+    avoid_when: [signalwire ai]
+    markup: cxml
+    products: [compatibility_api]
+    canonical_url: /docs/compatibility-api/rest
+
+  - id: cxml
+    canonical_name: cXML
+    expansion: Compatibility XML
+    historical_names: [LaML]
+    compatible_with: TwiML
+    products: [compatibility_api, platform, server_sdks]
+    canonical_url: /docs/compatibility-api/cxml
+
+  - id: laml
+    canonical_name: LaML
+    status: historical
+    replaced_by: cxml
+    note: >-
+      Retired as a product name, still live as an identifier in /api/laml/ URL
+      paths, the RestClient.LaML SDK namespace, the LAML Bins resource type,
+      and the cXML/LaML Dashboard label.
+    products: [compatibility_api, server_sdks, dashboard]
+    canonical_url: /docs/compatibility-api/rest
+
+  - id: call_flow_builder
+    canonical_name: Call Flow Builder
+    produces: call_flow
+    products: [call_flow_builder, dashboard]
+    canonical_url: /docs/call-flow-builder
+
+  - id: ai_agent
+    canonical_name: AI agent
+    ambiguous: true
+    casing: Lower case for the general idea; capitalize only the AI Agent Resource type and the AI Agent node.
+    meanings:
+      - id: swml_ai_method
+        description: The ai method in Calling SWML, which starts a conversation on a live call.
+        products: [swml]
+        canonical_url: /docs/swml/reference/calling/ai
+      - id: signalwire_ai_platform
+        description: The platform capability - prompts, contexts, state, and tools.
+        products: [platform]
+        canonical_url: /docs/platform/ai
+      - id: ai_agent_resource
+        description: A Call Fabric Resource type configured in the Dashboard, with an address.
+        products: [platform, apis, dashboard]
+        canonical_url: /docs/platform/resources
+      - id: agent_base_application
+        description: A Python or TypeScript program built with the Agents namespace that generates SWML.
+        products: [server_sdks]
+        canonical_url: /docs/server-sdks/guides/agent-base
+      - id: call_flow_builder_ai_node
+        description: A single AI Agent node in a Call Flow Builder flow.
+        products: [call_flow_builder]
+        canonical_url: /docs/call-flow-builder/reference/ai-agent
+```
