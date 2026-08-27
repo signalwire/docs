@@ -1,11 +1,11 @@
-# Documentation changes for Support — 2026-08-27
+# Documentation changes — 2026-08-27
 
 Covers documentation merged between 2026-08-18 and 2026-08-27.
 3 new or changed capabilities, 3 corrections and moves.
 
 Entries marked **New** also appear on the public [changelog](/docs/platform/changelog).
-Entries marked **Changed** are internal-only: corrections to things the docs
-previously got wrong, and pages that moved to a new URL.
+Entries marked **Changed** stay internal: corrections to things the docs
+previously got wrong, pages that moved, and gaps that were filled.
 
 ## apis
 
