@@ -479,7 +479,9 @@ Next steps after running this:
     log.warn(`${unresolved} MDX files have no resolvable URL (versioned product or no slug frontmatter)`);
   }
   log.info(`Wrote ${inputPath.replace(`${REPO_ROOT}/`, '')}`);
-  log.info(`Wrote ${promptPath.replace(`${REPO_ROOT}/`, '')}`);
+  // Written for the local flow but gitignored — rebuild it anywhere else with
+  // `yarn changelog:prompt`. See .gitignore for why it is not committed.
+  log.info(`Wrote ${promptPath.replace(`${REPO_ROOT}/`, '')} (not committed)`);
   log.newline();
   log.header('Next: classify');
   log.info(`  1. Paste ${promptPath.replace(`${REPO_ROOT}/`, '')} into Claude Code`);

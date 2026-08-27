@@ -26,7 +26,7 @@
  *   LOGGER_LEVEL  Set log verbosity: error, warn, info, debug, trace (default: info)
  */
 
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
@@ -37,10 +37,10 @@ import {
   CHANGELOG_URL_PATH,
   LEDGER_PATH,
   REPO_ROOT,
-  STATE_DIR,
   batchDir,
   draftBranch,
   entryHeadings,
+  newestBatchDate,
   repoSlug,
 } from './config.js';
 
@@ -316,19 +316,6 @@ ${sections}
 }
 
 // ============================================
-// Work folder resolution
-// ============================================
-
-function newestWorkDate() {
-  const batchesDir = join(STATE_DIR, 'batches');
-  if (!existsSync(batchesDir)) return null;
-  const dates = readdirSync(batchesDir)
-    .filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d))
-    .sort();
-  return dates.length ? dates[dates.length - 1] : null;
-}
-
-// ============================================
 // Main
 // ============================================
 
@@ -359,7 +346,7 @@ Writes ${CHANGELOG_DIR_REL}/<date>.mdx      (notable only)
   log.header('Changelog renderer');
   log.newline();
 
-  date = date ?? newestWorkDate();
+  date = date ?? newestBatchDate();
   if (!date) {
     throw new Error('No work folder found. Run: yarn changelog:collect');
   }

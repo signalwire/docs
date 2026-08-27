@@ -7,6 +7,7 @@
  */
 
 import { execFileSync } from 'node:child_process';
+import { existsSync, readdirSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -44,6 +45,16 @@ export const STATE_DIR = join(REPO_ROOT, '.github', 'changelog-state');
 /** Everything about one batch lives in one folder, so the date appears once. */
 export function batchDir(date) {
   return join(STATE_DIR, 'batches', date);
+}
+
+/** Most recent batch on disk, for tools that default to "the one I just ran". */
+export function newestBatchDate() {
+  const batchesDir = join(STATE_DIR, 'batches');
+  if (!existsSync(batchesDir)) return null;
+  const dates = readdirSync(batchesDir)
+    .filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d))
+    .sort();
+  return dates.length ? dates[dates.length - 1] : null;
 }
 
 /**

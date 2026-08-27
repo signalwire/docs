@@ -14,6 +14,7 @@ dependencies beyond what's in `package.json`) and share conventions: hand-rolled
 | `llm-export-cases.json` | Used by `check-llm-exports.mjs` | Manifest of routes and semantic export assertions. |
 | `llm-agent-scenarios.md` | Manual preview evaluation | Context-isolated agent prompts and expected documentation destinations. |
 | `changelog/collect.js` | `yarn changelog:collect` | Collect PRs merged in a window, filter to docs-relevant paths, and write a classification prompt bundle. |
+| `changelog/prompt.js` | `yarn changelog:prompt` | Rebuild a batch's classification prompt from its `input.json`; `prompt.md` is not committed. |
 | `changelog/render.js` | `yarn changelog:render` | Turn a batch's classification into dated changelog entries and the internal Support digest. |
 | `changelog/slack-digest.js` | `yarn changelog:slack` | Render Slack Block Kit payloads from the merged changelog markdown. |
 | `changelog/config.js` | — | Shared paths, docs-path filters, and prompt budgets for the changelog pipeline. |

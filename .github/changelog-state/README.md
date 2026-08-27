@@ -74,7 +74,7 @@ input and gets advanced by the output — that loop is what makes re-runs safe.
 ```
 reported-prs.json          the ledger — see below
 batches/<batch-date>/
-├── prompt.md              generated prompt, pasted into an LLM by hand today
+├── prompt.md              generated prompt (gitignored: rebuilt from input.json)
 ├── classified.json        the reply, one tiering decision per PR
 ├── input.json             collected PR data — the record render validates against
 ├── support-digest.md      internal Support digest — source for the Support Slack post
@@ -112,11 +112,16 @@ unless someone runs it.
 `support-digest.md`, `manifest.json`, and the entry files are derived: re-run
 `yarn changelog:render` for the batch and they come back byte-identical.
 
-`prompt.md` and `input.json` are only *approximately* reproducible. `collect` resolves
-page titles and URLs at `HEAD` and reads PR bodies as they stand now, so re-running it
-weeks later yields a similar file, not the same one. Both are committed for that reason:
-they are the record of what the classifier actually saw. The draft PR body prints the
-exact command that produced them.
+`prompt.md` is not committed. It is exactly `buildPrompt(input.prs, input.window)` — the
+same PR data a second time, and the largest thing a batch writes at ~80KB a week. Rebuild
+it with `yarn changelog:prompt --date <date>`; `collect` also writes it locally, so
+running the pipeline by hand needs no extra step.
+
+`input.json` **is** committed, because it is only *approximately* reproducible: `collect`
+resolves page titles and URLs at `HEAD` and reads PR bodies as they stand now, so
+re-running it weeks later yields a similar file, not the same one. It is the record of
+what the classifier saw, and `render` validates against it. The draft PR body prints the
+exact command that produced it.
 
 `classified.json` is not reproducible at all — it holds judgment, not derivation. Do not
 delete it.
