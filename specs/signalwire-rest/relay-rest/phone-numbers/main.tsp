@@ -137,11 +137,11 @@ namespace SignalWireAPI.RelayRest.PhoneNumbers {
     @operationId("retrieve_caller_id_name")
     @summary("Get the caller ID name for a phone number")
     @doc("""
-      Retrieves the most recent caller ID name request for the phone number, and where that request stands. Poll this operation after [Request a caller ID name](/docs/apis/rest/phone-numbers/request-caller-id-name) until `status` is `approved`, `rejected`, or `failed`.
+      Retrieves the most recent caller ID name request for a phone number in your project, including its current review status. After [Request a caller ID name](/docs/apis/rest/phone-numbers/request-caller-id-name), poll this operation until `status` is `approved`, `rejected`, or `failed`.
 
-      The `name` here is the name that was requested, which is not necessarily the name callers currently see: the two differ while a request is under review, and after one is rejected. For the name live at the carrier, read `cnam` on the phone number itself with [Get phone number](/docs/apis/rest/phone-numbers/retrieve-phone-number).
+      The response's `name` is the requested name. It can differ from the name callers currently see while the request is `pending` or `in_review`, or after it is `rejected` or `failed`. To retrieve the caller ID name currently applied at the carrier, read `cnam` on the phone number with [Get phone number](/docs/apis/rest/phone-numbers/retrieve-phone-number).
 
-      Returns `404` when the number has never had a caller ID name requested.
+      Returns `404` when the phone number is not in your project or has never had a caller ID name requested.
 
       ${tokenPermissions<"_Numbers_">}
       """)
@@ -156,17 +156,17 @@ namespace SignalWireAPI.RelayRest.PhoneNumbers {
     @operationId("request_caller_id_name")
     @summary("Request a caller ID name for a phone number")
     @doc("""
-      Requests the caller ID name displayed alongside this number on outbound calls. A `201` means the request was accepted, not that callers see the name yet.
+      Requests the caller ID name displayed alongside a project-owned phone number on outbound calls. Caller ID name is available only for numbers whose carrier offers it. This operation sets the outbound name for your own number; to retrieve the name published for another number, use [Look up phone number](/docs/apis/rest/phone-numbers/lookup-phone-number) with `include=cnam`.
 
-      A name this number has not already had approved comes back with `status` set to `pending`, queued for compliance review. Poll [Get the caller ID name](/docs/apis/rest/phone-numbers/retrieve-caller-id-name) until `status` is `approved`, `rejected`, or `failed`. Requesting a name that was previously `rejected` or `failed` returns it to `pending`.
+      A `201` means SignalWire accepted the request, not necessarily that callers see the name yet. A new name, or one previously `rejected` or `failed`, returns with `status` set to `pending` and is queued for compliance review. Poll [Get the caller ID name](/docs/apis/rest/phone-numbers/retrieve-caller-id-name) until `status` is `approved`, `rejected`, or `failed`.
 
-      Re-requesting a name already `approved` on this number is the exception: that request comes back as it stands, `201` with `status` still `approved`, and the name is re-applied at the carrier without going through review again.
+      Re-requesting a name already `approved` for this phone number returns the existing request with `201` and `status` still `approved`. SignalWire re-applies that name at the carrier without another compliance review.
 
-      A number carries one live request at a time, so a new request supersedes any earlier one still awaiting a decision.
+      A phone number can have only one request awaiting a decision. Submitting a different name supersedes any earlier request with a `pending` or `in_review` status.
 
-      SignalWire normalizes `name` before validating it, so check the rules against the normalized form described on that field. A `422` means the number's carrier does not offer caller ID name, `name` was blank, or the normalized name broke the length or character rules.
+      SignalWire normalizes `name` before validating it, so apply the length and character rules to the normalized form described on that field. A `422` means the phone number's carrier does not offer caller ID name, `name` was blank, or the normalized name did not meet those rules.
 
-      Caller ID name is available only on numbers whose carrier offers it. This operation sets your own outbound name; to read the name published for someone else's number, use [Look up phone number](/docs/apis/rest/phone-numbers/lookup-phone-number) with `include=cnam`.
+      Returns `404` when the phone number is not in your project.
 
       ${tokenPermissions<"_Numbers_">}
       """)
@@ -185,9 +185,11 @@ namespace SignalWireAPI.RelayRest.PhoneNumbers {
     @operationId("clear_caller_id_name")
     @summary("Clear the caller ID name on a phone number")
     @doc("""
-      Removes the caller ID name from the phone number and cancels any request still awaiting a decision. A `204` means the removal was queued; `cnam` on the phone number becomes `null` once the carrier confirms it.
+      Queues removal of the caller ID name from a phone number in your project. A `204` means SignalWire accepted the request; the applied name remains available as `cnam` on the phone number until the carrier confirms the removal. After confirmation, `cnam` becomes `null` and SignalWire cancels any request still `pending` or `in_review`.
 
-      There must be something to clear — either a name applied at the carrier or a request awaiting a decision — otherwise the request returns `422`. A `422` is also returned when the number's carrier does not offer caller ID name.
+      SignalWire first checks whether the phone number's carrier offers caller ID name. If it does not, the operation returns `422`. For a supported phone number, there must be an applied name or a request awaiting a decision; otherwise the operation returns `422` because there is nothing to clear.
+
+      Returns `404` when the phone number is not in your project.
 
       ${tokenPermissions<"_Numbers_">}
       """)

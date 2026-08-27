@@ -30,7 +30,7 @@ enum PhoneNumberE911Status {
   unregistered: "unregistered",
 }
 
-@doc("Review status of a caller ID name request.")
+@doc("Possible review statuses for a caller ID name request.")
 enum PhoneNumberCnamStatus {
   pending: "pending",
   approved: "approved",
@@ -39,7 +39,7 @@ enum PhoneNumberCnamStatus {
   failed: "failed",
 }
 
-@doc("Reason a caller ID name request was not approved. Each code is explained on the `reason` field.")
+@doc("Possible reasons a caller ID name request requires review, was rejected, or failed. Each code is explained on the `reason` field.")
 enum PhoneNumberCnamReason {
   offensive_language: "offensive_language",
   impersonation: "impersonation",
@@ -157,9 +157,11 @@ model PhoneNumber {
   e911_status: PhoneNumberE911Status | null;
 
   @doc("""
-    The caller ID name set at the carrier for this phone number, or `null` when none is set. This is
-    the name callers see. Change it with [Request a caller ID name](/docs/apis/rest/phone-numbers/request-caller-id-name);
-    the value here changes only once a request is approved and applied at the carrier.
+    The caller ID name currently applied at the carrier for this phone number, or `null` when none is
+    set. This is the name callers can see. Change it with
+    [Request a caller ID name](/docs/apis/rest/phone-numbers/request-caller-id-name).
+    This value changes only after a request is approved and applied at the carrier, so it can differ
+    from the requested `name` while a request is being reviewed or after one is rejected or fails.
     """)
   @example("ACME PLUMBING")
   @maxLength(15)
@@ -287,7 +289,7 @@ model PhoneNumber {
   country_code: string | null;
 }
 
-@doc("A caller ID name request for a phone number.")
+@doc("Details and review status of a caller ID name request for a phone number.")
 model PhoneNumberCnam {
   @doc("The type of object. Always `cnam`.")
   type: "cnam";
@@ -301,27 +303,33 @@ model PhoneNumberCnam {
   phone_number_id: uuid;
 
   @doc("""
-    The requested caller ID name, as stored after normalization: upper-cased, with runs of
-    whitespace collapsed to single spaces. At most 15 characters.
+    The requested caller ID name after normalization. SignalWire removes control characters,
+    collapses runs of whitespace to single spaces, and converts letters to upper case before storing
+    the value. The stored name is at most 15 characters.
     """)
   @example("ACME PLUMBING")
   @maxLength(15)
   name: string;
 
   @doc("""
-    Where the request stands. `pending` means it is queued for compliance review. `approved` means
-    the name passed review and is set at the carrier. `in_review` means automated review could not
-    approve it and a person needs to decide. `rejected` means the name isn't allowed, so submit a
-    different one. `failed` means processing did not complete, and the same name can be requested
-    again.
+    The current state of the request.
+
+    | Status | What it means |
+    | --- | --- |
+    | `pending` | The name is queued for compliance review. |
+    | `approved` | The name passed review and is applied at the carrier. |
+    | `in_review` | The name needs a manual decision before it can be approved or rejected. |
+    | `rejected` | The name is not allowed. Submit a different name or follow `required_action` when provided. |
+    | `failed` | SignalWire could not finish processing the request. Request the same name again. |
     """)
   @example(PhoneNumberCnamStatus.approved)
   status: PhoneNumberCnamStatus;
 
   @doc("""
-    The specific concern review recorded, or `null` when it recorded none. Always `null` while the
-    request is `pending` or once it is `approved`, and it can also be `null` on a request that was
-    held for review or rejected before review reached a name-specific finding.
+    A machine-readable reason the request requires review, was rejected, or failed, or `null` when
+    no specific reason was recorded. This value is always `null` while the request is `pending` and
+    after it is `approved`. It can also be `null` when a request was held for review or rejected
+    before SignalWire recorded a concern about the requested name.
 
     | Code | What it means |
     | --- | --- |
@@ -343,8 +351,8 @@ model PhoneNumberCnam {
   reason: PhoneNumberCnamReason | null;
 
   @doc("""
-    What to change, verify, or supply to move the request forward, or `null` when review produced no
-    such step.
+    An action you can take to address the review, such as changing, verifying, or documenting the
+    requested name. `null` when review produced no specific action.
     """)
   @example("Provide documentation showing you are authorized to use this name.")
   required_action: string | null;

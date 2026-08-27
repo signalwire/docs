@@ -122,13 +122,14 @@ model AssignE911AddressRequest {
 @doc("Request body for requesting a caller ID name for a phone number.")
 model CreatePhoneNumberCnamRequest {
   @doc("""
-    The caller ID name you want callers to see. SignalWire normalizes the value before validating and
-    storing it: control characters are removed, runs of whitespace collapse to single spaces, and the
-    result is upper-cased, so `Acme Plumbing` is stored as `ACME PLUMBING`.
+    The caller ID name you want displayed on outbound calls. SignalWire normalizes the value before
+    validating and storing it: control characters are removed, runs of whitespace collapse to single
+    spaces, and letters are converted to upper case. For example, `Acme Plumbing` is stored as
+    `ACME PLUMBING`.
 
     The normalized name must be 15 characters or fewer, start with a letter or digit, and contain only
-    letters, digits, spaces, and the characters `&`, `'`, `.`, `,`, and `-`. Because these rules apply
-    after normalization, extra surrounding or repeated whitespace does not count against the limit.
+    letters, digits, spaces, and `&`, `'`, `.`, `,`, and `-`. Because these rules apply after
+    normalization, surrounding or repeated whitespace does not count against the limit.
     """)
   @example("Acme Plumbing")
   name: string;

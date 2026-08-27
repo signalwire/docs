@@ -42,7 +42,7 @@ model PhoneNumberResponse {
   ...PhoneNumber;
 }
 
-@doc("Response containing a caller ID name request.")
+@doc("Details and review status returned for a caller ID name request.")
 model PhoneNumberCnamResponse {
   ...PhoneNumberCnam;
 }

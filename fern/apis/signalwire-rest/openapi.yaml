@@ -9780,11 +9780,11 @@ paths:
       operationId: retrieve_caller_id_name
       summary: Get the caller ID name for a phone number
       description: |-
-        Retrieves the most recent caller ID name request for the phone number, and where that request stands. Poll this operation after [Request a caller ID name](/docs/apis/rest/phone-numbers/request-caller-id-name) until `status` is `approved`, `rejected`, or `failed`.
+        Retrieves the most recent caller ID name request for a phone number in your project, including its current review status. After [Request a caller ID name](/docs/apis/rest/phone-numbers/request-caller-id-name), poll this operation until `status` is `approved`, `rejected`, or `failed`.
 
-        The `name` here is the name that was requested, which is not necessarily the name callers currently see: the two differ while a request is under review, and after one is rejected. For the name live at the carrier, read `cnam` on the phone number itself with [Get phone number](/docs/apis/rest/phone-numbers/retrieve-phone-number).
+        The response's `name` is the requested name. It can differ from the name callers currently see while the request is `pending` or `in_review`, or after it is `rejected` or `failed`. To retrieve the caller ID name currently applied at the carrier, read `cnam` on the phone number with [Get phone number](/docs/apis/rest/phone-numbers/retrieve-phone-number).
 
-        Returns `404` when the number has never had a caller ID name requested.
+        Returns `404` when the phone number is not in your project or has never had a caller ID name requested.
 
         #### Permissions
 
@@ -9824,17 +9824,17 @@ paths:
       operationId: request_caller_id_name
       summary: Request a caller ID name for a phone number
       description: |-
-        Requests the caller ID name displayed alongside this number on outbound calls. A `201` means the request was accepted, not that callers see the name yet.
+        Requests the caller ID name displayed alongside a project-owned phone number on outbound calls. Caller ID name is available only for numbers whose carrier offers it. This operation sets the outbound name for your own number; to retrieve the name published for another number, use [Look up phone number](/docs/apis/rest/phone-numbers/lookup-phone-number) with `include=cnam`.
 
-        A name this number has not already had approved comes back with `status` set to `pending`, queued for compliance review. Poll [Get the caller ID name](/docs/apis/rest/phone-numbers/retrieve-caller-id-name) until `status` is `approved`, `rejected`, or `failed`. Requesting a name that was previously `rejected` or `failed` returns it to `pending`.
+        A `201` means SignalWire accepted the request, not necessarily that callers see the name yet. A new name, or one previously `rejected` or `failed`, returns with `status` set to `pending` and is queued for compliance review. Poll [Get the caller ID name](/docs/apis/rest/phone-numbers/retrieve-caller-id-name) until `status` is `approved`, `rejected`, or `failed`.
 
-        Re-requesting a name already `approved` on this number is the exception: that request comes back as it stands, `201` with `status` still `approved`, and the name is re-applied at the carrier without going through review again.
+        Re-requesting a name already `approved` for this phone number returns the existing request with `201` and `status` still `approved`. SignalWire re-applies that name at the carrier without another compliance review.
 
-        A number carries one live request at a time, so a new request supersedes any earlier one still awaiting a decision.
+        A phone number can have only one request awaiting a decision. Submitting a different name supersedes any earlier request with a `pending` or `in_review` status.
 
-        SignalWire normalizes `name` before validating it, so check the rules against the normalized form described on that field. A `422` means the number's carrier does not offer caller ID name, `name` was blank, or the normalized name broke the length or character rules.
+        SignalWire normalizes `name` before validating it, so apply the length and character rules to the normalized form described on that field. A `422` means the phone number's carrier does not offer caller ID name, `name` was blank, or the normalized name did not meet those rules.
 
-        Caller ID name is available only on numbers whose carrier offers it. This operation sets your own outbound name; to read the name published for someone else's number, use [Look up phone number](/docs/apis/rest/phone-numbers/lookup-phone-number) with `include=cnam`.
+        Returns `404` when the phone number is not in your project.
 
         #### Permissions
 
@@ -9886,9 +9886,11 @@ paths:
       operationId: clear_caller_id_name
       summary: Clear the caller ID name on a phone number
       description: |-
-        Removes the caller ID name from the phone number and cancels any request still awaiting a decision. A `204` means the removal was queued; `cnam` on the phone number becomes `null` once the carrier confirms it.
+        Queues removal of the caller ID name from a phone number in your project. A `204` means SignalWire accepted the request; the applied name remains available as `cnam` on the phone number until the carrier confirms the removal. After confirmation, `cnam` becomes `null` and SignalWire cancels any request still `pending` or `in_review`.
 
-        There must be something to clear — either a name applied at the carrier or a request awaiting a decision — otherwise the request returns `422`. A `422` is also returned when the number's carrier does not offer caller ID name.
+        SignalWire first checks whether the phone number's carrier offers caller ID name. If it does not, the operation returns `422`. For a supported phone number, there must be an applied name or a request awaiting a decision; otherwise the operation returns `422` because there is nothing to clear.
+
+        Returns `404` when the phone number is not in your project.
 
         #### Permissions
 
@@ -24285,13 +24287,14 @@ components:
         name:
           type: string
           description: |-
-            The caller ID name you want callers to see. SignalWire normalizes the value before validating and
-            storing it: control characters are removed, runs of whitespace collapse to single spaces, and the
-            result is upper-cased, so `Acme Plumbing` is stored as `ACME PLUMBING`.
+            The caller ID name you want displayed on outbound calls. SignalWire normalizes the value before
+            validating and storing it: control characters are removed, runs of whitespace collapse to single
+            spaces, and letters are converted to upper case. For example, `Acme Plumbing` is stored as
+            `ACME PLUMBING`.
 
             The normalized name must be 15 characters or fewer, start with a letter or digit, and contain only
-            letters, digits, spaces, and the characters `&`, `'`, `.`, `,`, and `-`. Because these rules apply
-            after normalization, extra surrounding or repeated whitespace does not count against the limit.
+            letters, digits, spaces, and `&`, `'`, `.`, `,`, and `-`. Because these rules apply after
+            normalization, surrounding or repeated whitespace does not count against the limit.
           examples:
             - Acme Plumbing
       unevaluatedProperties:
@@ -30101,9 +30104,11 @@ components:
             - type: 'null'
           maxLength: 15
           description: |-
-            The caller ID name set at the carrier for this phone number, or `null` when none is set. This is
-            the name callers see. Change it with [Request a caller ID name](/docs/apis/rest/phone-numbers/request-caller-id-name);
-            the value here changes only once a request is approved and applied at the carrier.
+            The caller ID name currently applied at the carrier for this phone number, or `null` when none is
+            set. This is the name callers can see. Change it with
+            [Request a caller ID name](/docs/apis/rest/phone-numbers/request-caller-id-name).
+            This value changes only after a request is approved and applied at the carrier, so it can differ
+            from the requested `name` while a request is being reviewed or after one is rejected or fails.
           examples:
             - ACME PLUMBING
         created_at:
@@ -30392,7 +30397,7 @@ components:
         - needs_documentation
         - other_compliance_concern
         - processing_failed
-      description: Reason a caller ID name request was not approved. Each code is explained on the `reason` field.
+      description: Possible reasons a caller ID name request requires review, was rejected, or failed. Each code is explained on the `reason` field.
     PhoneNumberCnamResponse:
       type: object
       required:
@@ -30427,19 +30432,24 @@ components:
           type: string
           maxLength: 15
           description: |-
-            The requested caller ID name, as stored after normalization: upper-cased, with runs of
-            whitespace collapsed to single spaces. At most 15 characters.
+            The requested caller ID name after normalization. SignalWire removes control characters,
+            collapses runs of whitespace to single spaces, and converts letters to upper case before storing
+            the value. The stored name is at most 15 characters.
           examples:
             - ACME PLUMBING
         status:
           allOf:
             - $ref: '#/components/schemas/PhoneNumberCnamStatus'
           description: |-
-            Where the request stands. `pending` means it is queued for compliance review. `approved` means
-            the name passed review and is set at the carrier. `in_review` means automated review could not
-            approve it and a person needs to decide. `rejected` means the name isn't allowed, so submit a
-            different one. `failed` means processing did not complete, and the same name can be requested
-            again.
+            The current state of the request.
+
+            | Status | What it means |
+            | --- | --- |
+            | `pending` | The name is queued for compliance review. |
+            | `approved` | The name passed review and is applied at the carrier. |
+            | `in_review` | The name needs a manual decision before it can be approved or rejected. |
+            | `rejected` | The name is not allowed. Submit a different name or follow `required_action` when provided. |
+            | `failed` | SignalWire could not finish processing the request. Request the same name again. |
           examples:
             - approved
         reason:
@@ -30447,9 +30457,10 @@ components:
             - $ref: '#/components/schemas/PhoneNumberCnamReason'
             - type: 'null'
           description: |-
-            The specific concern review recorded, or `null` when it recorded none. Always `null` while the
-            request is `pending` or once it is `approved`, and it can also be `null` on a request that was
-            held for review or rejected before review reached a name-specific finding.
+            A machine-readable reason the request requires review, was rejected, or failed, or `null` when
+            no specific reason was recorded. This value is always `null` while the request is `pending` and
+            after it is `approved`. It can also be `null` when a request was held for review or rejected
+            before SignalWire recorded a concern about the requested name.
 
             | Code | What it means |
             | --- | --- |
@@ -30473,8 +30484,8 @@ components:
             - type: string
             - type: 'null'
           description: |-
-            What to change, verify, or supply to move the request forward, or `null` when review produced no
-            such step.
+            An action you can take to address the review, such as changing, verifying, or documenting the
+            requested name. `null` when review produced no specific action.
           examples:
             - Provide documentation showing you are authorized to use this name.
         created_at:
@@ -30487,7 +30498,7 @@ components:
           description: The date the request was last updated.
       unevaluatedProperties:
         not: {}
-      description: Response containing a caller ID name request.
+      description: Details and review status returned for a caller ID name request.
     PhoneNumberCnamStatus:
       type: string
       enum:
@@ -30496,7 +30507,7 @@ components:
         - in_review
         - rejected
         - failed
-      description: Review status of a caller ID name request.
+      description: Possible review statuses for a caller ID name request.
     PhoneNumberE911Status:
       type: string
       enum:
@@ -30701,9 +30712,11 @@ components:
             - type: 'null'
           maxLength: 15
           description: |-
-            The caller ID name set at the carrier for this phone number, or `null` when none is set. This is
-            the name callers see. Change it with [Request a caller ID name](/docs/apis/rest/phone-numbers/request-caller-id-name);
-            the value here changes only once a request is approved and applied at the carrier.
+            The caller ID name currently applied at the carrier for this phone number, or `null` when none is
+            set. This is the name callers can see. Change it with
+            [Request a caller ID name](/docs/apis/rest/phone-numbers/request-caller-id-name).
+            This value changes only after a request is approved and applied at the carrier, so it can differ
+            from the requested `name` while a request is being reviewed or after one is rejected or fails.
           examples:
             - ACME PLUMBING
         created_at:
