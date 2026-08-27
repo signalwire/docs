@@ -156,11 +156,14 @@ jobs:
         run: |
           BRANCH="action-$(echo "$DATE" | tr -d '-')-changelog"
 
+          # The changelog location is defined once, in the pipeline config.
+          CHANGELOG_DIR=$(node -e "import('./scripts/changelog/config.js').then(m => console.log(m.CHANGELOG_DIR_REL))")
+
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git checkout -b "$BRANCH"
 
-          git add .github/changelog-state fern/products/home/changelog
+          git add .github/changelog-state "$CHANGELOG_DIR"
 
           # Open a PR whenever anything staged changed — including a batch that
           # produced no entries at all. That PR carries only the ledger update, which
@@ -197,7 +200,7 @@ jobs:
           every audience. Entry files are named for the date each PR merged, so a batch
           usually touches several.
 
-          - \`fern/products/home/changelog/<merge-date>.mdx\` — **public, customer-facing.**
+          - \`${CHANGELOG_DIR}/<merge-date>.mdx\` — **public, customer-facing.**
             One \`##\` per change; each renders as its own card on the timeline.
           - \`.github/changelog-state/batches/${DATE}/support-digest.md\` — internal Support
             digest, includes
@@ -208,6 +211,11 @@ jobs:
           - **Delete** an entry that should not have been reported.
           - **Move** an entry between the two files to change who hears about it.
           - **Reword** freely; the prose ships as written.
+
+          PMs hand-author entries for high-profile features, usually in a separate PR
+          from the docs change. The pipeline only skips generation when the entry shipped
+          in the same PR, so check each generated entry against recent hand-authored ones
+          and delete the generated duplicate.
 
           If a tier looks wrong, fix it here and note it — the rubric in
           \`.github/scripts/changelog-criteria.cjs\` is meant to be tuned from real misses.
