@@ -3,7 +3,9 @@
 **Nothing in this directory is published.** It is the changelog pipeline's internal
 state and its non-public outputs.
 
-The customer-facing changelog lives at `fern/products/home/changelog/`. Fern requires
+The customer-facing changelog lives at `fern/products/platform/changelog/` — the
+pipeline reads this location from `scripts/changelog/config.js`, the one place it
+is defined. Fern requires
 that folder to be named exactly `changelog`, which is why this one is
 `changelog-state` — the two are otherwise easy to confuse, and only one ships.
 
@@ -35,7 +37,7 @@ flowchart TD
     Input --> Render
     Classified --> Render
 
-    Render --> Entries[/"fern/products/home/changelog/<br/>&lt;merge-date&gt;.mdx &nbsp;<b>PUBLIC</b>"/]
+    Render --> Entries[/"fern/products/platform/changelog/<br/>&lt;merge-date&gt;.mdx &nbsp;<b>PUBLIC</b>"/]
     Render --> Support[/"batches/&lt;date&gt;/support-digest.md"/]
     Render --> Manifest[/"batches/&lt;date&gt;/manifest.json"/]
     Render ==>|"advances"| Ledger
@@ -47,7 +49,7 @@ flowchart TD
     Review{{"HUMAN REVIEW<br/>one PR · action-YYYYMMDD-changelog<br/><i>delete · retier · reword</i>"}} --> Merge(["merge to main"])
 
     Merge --> Deploy["publish-docs.yml<br/><i>automatic</i>"]
-    Deploy --> Live["/docs/changelog<br/><i>hidden: reachable by URL only</i>"]
+    Deploy --> Live["/docs/platform/changelog"]
 
     Merge -.->|"no automatic post"| Manual
     Manual["changelog-publish.yml<br/><b>manual run only</b>"] --> Devex["#devex-general<br/><i>from entry files</i>"]

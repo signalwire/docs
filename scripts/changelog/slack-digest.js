@@ -21,7 +21,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import yaml from 'js-yaml';
 import { Logger } from '../utils/logger.js';
-import { CHANGELOG_DIR, REPO_ROOT, batchDir } from './config.js';
+import { CHANGELOG_DIR, CHANGELOG_URL_PATH, REPO_ROOT, batchDir } from './config.js';
 
 const log = new Logger();
 
@@ -152,7 +152,7 @@ function buildDevexFromFiles(date, baseUrl, entryFiles, window) {
 
   if (entries.length === 0) return null;
 
-  const changelogUrl = `${baseUrl}/changelog`;
+  const changelogUrl = `${baseUrl}${CHANGELOG_URL_PATH}`;
   const bullets = entries
     .map((e) => {
       // Lead sentence only — the Slack post is a pointer, not a copy, and this

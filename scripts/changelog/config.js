@@ -12,7 +12,22 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export const REPO_ROOT = dirname(dirname(__dirname));
-export const CHANGELOG_DIR = join(REPO_ROOT, 'fern', 'products', 'home', 'changelog');
+
+/**
+ * Where the published changelog lives — the single source for the whole
+ * pipeline, including the draft workflow, which reads it via `node -e`.
+ *
+ * Fern requires the folder itself to be named exactly `changelog`. Two places
+ * cannot read this file and must be kept in sync by hand when the changelog
+ * moves: the nav entry in the owning product's yml (`- changelog: ./changelog`)
+ * and the navbar link in fern/docs.yml.
+ */
+export const CHANGELOG_DIR_REL = 'fern/products/platform/changelog';
+
+/** Public URL path of the changelog page, appended to the site's /docs base. */
+export const CHANGELOG_URL_PATH = '/platform/changelog';
+
+export const CHANGELOG_DIR = join(REPO_ROOT, CHANGELOG_DIR_REL);
 /**
  * Pipeline state and non-public outputs.
  *
@@ -39,9 +54,6 @@ export function batchDir(date) {
  * abandoned draft correctly leaves its PRs unreported.
  */
 export const LEDGER_PATH = join(STATE_DIR, 'reported-prs.json');
-
-/** Repo-relative path of the changelog directory, for matching PR file lists. */
-export const CHANGELOG_DIR_REL = 'fern/products/home/changelog';
 
 /**
  * True for a dated changelog entry file.

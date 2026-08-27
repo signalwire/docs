@@ -10,7 +10,13 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { isDocsRelevant, isChangelogEntryFile, isMechanicalPatch, batchDir } from './config.js';
+import {
+  CHANGELOG_DIR_REL,
+  isDocsRelevant,
+  isChangelogEntryFile,
+  isMechanicalPatch,
+  batchDir,
+} from './config.js';
 
 test('isDocsRelevant admits doc sources and spec sources', () => {
   assert.ok(isDocsRelevant('fern/products/platform/pages/guides/e911.mdx'));
@@ -35,10 +41,10 @@ test('isDocsRelevant excludes tooling, drafts, and assets', () => {
 });
 
 test('isChangelogEntryFile matches dated entries but not the overview', () => {
-  assert.ok(isChangelogEntryFile('fern/products/home/changelog/2026-08-10.mdx'));
-  assert.ok(isChangelogEntryFile('fern/products/home/changelog/2026-08-10.md'));
+  assert.ok(isChangelogEntryFile(`${CHANGELOG_DIR_REL}/2026-08-10.mdx`));
+  assert.ok(isChangelogEntryFile(`${CHANGELOG_DIR_REL}/2026-08-10.md`));
   // overview.mdx is hand-maintained; editing it is not self-documenting a change.
-  assert.equal(isChangelogEntryFile('fern/products/home/changelog/overview.mdx'), false);
+  assert.equal(isChangelogEntryFile(`${CHANGELOG_DIR_REL}/overview.mdx`), false);
   assert.equal(isChangelogEntryFile('fern/products/home/pages/welcome.mdx'), false);
 });
 

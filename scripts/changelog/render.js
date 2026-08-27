@@ -5,7 +5,7 @@
  * Reads the classified entries, validates them strictly, and writes the two
  * artifacts that a human reviews in the weekly PR:
  *
- *   fern/products/home/changelog/<date>.mdx     public, `notable` only
+ *   <changelog dir, see config.js>/<date>.mdx     public, `notable` only
  *   .github/changelog-state/batches/<date>/support-digest.md   internal, notable + minor
  *
  * These two markdown files are the single source of truth. The Slack digests are
@@ -31,7 +31,15 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import { Logger } from '../utils/logger.js';
-import { CHANGELOG_DIR, LEDGER_PATH, REPO_ROOT, STATE_DIR, batchDir } from './config.js';
+import {
+  CHANGELOG_DIR,
+  CHANGELOG_DIR_REL,
+  CHANGELOG_URL_PATH,
+  LEDGER_PATH,
+  REPO_ROOT,
+  STATE_DIR,
+  batchDir,
+} from './config.js';
 
 const require = createRequire(import.meta.url);
 const { TIERS, TIER_ROUTING } = require('../../.github/scripts/changelog-criteria.cjs');
@@ -290,7 +298,7 @@ function renderSupport(date, entries, window, pageMeta) {
 Covers documentation merged between ${window.since} and ${window.until}.
 ${plural(counts.notable, 'new or changed capability', 'new or changed capabilities')}, ${plural(counts.minor, 'correction or move', 'corrections and moves')}.
 
-Entries marked **New** also appear on the public [changelog](/docs/changelog).
+Entries marked **New** also appear on the public [changelog](/docs${CHANGELOG_URL_PATH}).
 Entries marked **Changed** are internal-only: corrections to things the docs
 previously got wrong, and pages that moved to a new URL.
 
@@ -304,8 +312,8 @@ ${sections}
 
 function newestWorkDate() {
   const batchesDir = join(STATE_DIR, 'batches');
-  if (!existsSync(workDir)) return null;
-  const dates = readdirSync(workDir)
+  if (!existsSync(batchesDir)) return null;
+  const dates = readdirSync(batchesDir)
     .filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d))
     .sort();
   return dates.length ? dates[dates.length - 1] : null;
@@ -332,7 +340,7 @@ Options:
   --dry-run            Print what would be written without writing it
 
 Reads  .github/changelog-state/batches/<date>/{input.json,classified.json}
-Writes fern/products/home/changelog/<date>.mdx      (notable only)
+Writes ${CHANGELOG_DIR_REL}/<date>.mdx      (notable only)
        .github/changelog-state/batches/<date>/support-digest.md  (notable + minor)
 `);
       process.exit(0);
