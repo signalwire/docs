@@ -38,12 +38,12 @@ flowchart TD
     Classified --> Render
 
     Render --> Entries[/"fern/products/platform/changelog/<br/>&lt;merge-date&gt;.mdx &nbsp;<b>PUBLIC</b>"/]
-    Render --> Support[/"batches/&lt;date&gt;/support-digest.md"/]
+    Render --> Digest[/"batches/&lt;date&gt;/digest.md"/]
     Render --> Manifest[/"batches/&lt;date&gt;/manifest.json"/]
     Render ==>|"advances"| Ledger
 
     Entries --> Review
-    Support --> Review
+    Digest --> Review
     Manifest --> Review
 
     Review{{"HUMAN REVIEW<br/>one PR · action-YYYYMMDD-changelog<br/><i>delete · retier · reword</i>"}} --> Merge(["merge to main"])
@@ -52,17 +52,16 @@ flowchart TD
     Deploy --> Live["/docs/platform/changelog"]
 
     Merge -.->|"no automatic post"| Manual
-    Manual["changelog-publish.yml<br/><b>manual run only</b>"] --> Devex["#devex-general<br/><i>from entry files</i>"]
-    Manual --> Sup["Support channel<br/><i>from support-digest.md</i>"]
+    Manual["changelog-publish.yml<br/><b>manual run only</b>"] --> Slack["#devex-general<br/><i>from digest.md</i>"]
 
     classDef state fill:#e8eaf6,stroke:#5c6bc0,color:#1a237e
     classDef public fill:#e8f5e9,stroke:#43a047,color:#1b5e20
     classDef gate fill:#fff8e1,stroke:#f9a825,color:#e65100
     classDef manual fill:#fce4ec,stroke:#d81b60,color:#880e4f
-    class Input,Prompt,Classified,Support,Manifest,Ledger state
+    class Input,Prompt,Classified,Digest,Manifest,Ledger state
     class Entries,Live,Deploy public
     class Review,Merge gate
-    class Manual,Devex,Sup manual
+    class Manual,Slack manual
 ```
 
 Reading it: everything blue is state in this directory, green is customer-facing, amber is
@@ -77,7 +76,7 @@ batches/<batch-date>/
 ├── prompt.md              generated prompt (gitignored: rebuilt from input.json)
 ├── classified.json        the reply, one tiering decision per PR
 ├── input.json             collected PR data — the record render validates against
-├── support-digest.md      internal Support digest — source for the Support Slack post
+├── digest.md              internal digest — source for the Slack post
 └── manifest.json          which entry files belong to this batch
 ```
 
@@ -101,16 +100,22 @@ where every PR was skipped.
 ## manifest.json
 
 Which entry files belong to a batch, plus the `##` headings in each that were already
-reported earlier. The Slack digests read this to scope themselves to what is new.
+reported earlier, so a re-run cannot re-announce a date's existing entries.
 
-Adding a manifest is also what triggers the Slack posts once `changelog-publish.yml` is
+Adding a manifest is also what triggers the Slack post once `changelog-publish.yml` is
 switched back to its push trigger. Today that workflow is manual, so nothing is sent
 unless someone runs it.
 
 ## Regenerating
 
-`support-digest.md`, `manifest.json`, and the entry files are derived: re-run
+`digest.md`, `manifest.json`, and the entry files are derived: re-run
 `yarn changelog:render` for the batch and they come back byte-identical.
+
+One consequence: **re-rendering undoes a reviewer's demotion.** Deleting a `##` section
+from an entry file is how an entry is demoted to internal-only, but the tier in
+`classified.json` still says `notable`, so a re-render writes the section back. Within
+the normal flow — render once, review, merge — this never comes up. If you do need to
+re-render a reviewed batch, change the tier in `classified.json` to `minor` first.
 
 `prompt.md` is not committed. It is exactly `buildPrompt(input.prs, input.window)` — the
 same PR data a second time, and the largest thing a batch writes at ~80KB a week. Rebuild
@@ -129,7 +134,7 @@ delete it.
 ## Related
 
 - `scripts/changelog/` — the collect / render / slack-digest scripts
-- `.github/scripts/changelog-criteria.cjs` — the tiering rubric; **edit this** when the
-  digests are too noisy or too quiet
+- `.github/scripts/changelog-criteria.cjs` — the tiering rubric and the audience routing;
+  **edit this** when the digest is too noisy or too quiet
 - `.github/scripts/changelog-prompt.cjs` — the prompt builder, shared by the human path
   and the (not yet enabled) automated one

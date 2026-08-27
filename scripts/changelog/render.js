@@ -6,7 +6,7 @@
  * artifacts that a human reviews in the weekly PR:
  *
  *   <changelog dir, see config.js>/<date>.mdx     public, `notable` only
- *   .github/changelog-state/batches/<date>/support-digest.md   internal, notable + minor
+ *   .github/changelog-state/batches/<date>/digest.md            internal, notable + minor
  *
  * These two markdown files are the single source of truth. The Slack digests are
  * rendered FROM them at publish time by changelog-publish.yml, so editing an
@@ -103,8 +103,8 @@ function validate(payload, knownPrs) {
     if (!e.entry_body || typeof e.entry_body !== 'string') {
       problems.push(`${at}: "entry_body" is required for tier "${e.tier}"`);
     }
-    if (e.tier === 'minor' && !e.support_detail) {
-      problems.push(`${at}: "support_detail" is required for tier "minor" — it is the only audience`);
+    if (e.tier === 'minor' && !e.internal_detail) {
+      problems.push(`${at}: "internal_detail" is required for tier "minor" — the digest is its only audience`);
     }
 
     if (!Array.isArray(e.pages)) {
@@ -254,11 +254,14 @@ function buildDatedFile(existingContents, entries, pageMeta) {
 }
 
 /**
- * Internal Support digest. Everything that reached `notable` or `minor`, grouped
- * by product, with the specific difference spelled out and the page URL.
+ * The internal digest. Everything that reached `notable` or `minor`, grouped by
+ * product, with the specific difference spelled out and the page URL.
+ *
+ * This is the single source for every internal channel — Slack renders one payload
+ * from it at publish time, so adding a channel is a webhook, not another artifact.
  */
-function renderSupport(date, entries, window, pageMeta) {
-  const relevant = entries.filter((e) => TIER_ROUTING[e.tier]?.includes('support'));
+function renderDigest(date, entries, window, pageMeta) {
+  const relevant = entries.filter((e) => TIER_ROUTING[e.tier]?.includes('slack'));
   if (relevant.length === 0) return null;
 
   const byProduct = new Map();
@@ -280,7 +283,7 @@ function renderSupport(date, entries, window, pageMeta) {
         .sort((a, b) => (a.tier === b.tier ? 0 : a.tier === 'notable' ? -1 : 1))
         .map((e) => {
           const label = e.tier === 'notable' ? 'New' : 'Changed';
-          const detail = (e.support_detail || e.entry_body || '').trim();
+          const detail = (e.internal_detail || e.entry_body || '').trim();
 
           const pages = (e.pages ?? [])
             .map((p) => {
@@ -302,14 +305,14 @@ function renderSupport(date, entries, window, pageMeta) {
 
   const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
-  return `# Documentation changes for Support — ${date}
+  return `# Documentation changes — ${date}
 
 Covers documentation merged between ${window.since} and ${window.until}.
 ${plural(counts.notable, 'new or changed capability', 'new or changed capabilities')}, ${plural(counts.minor, 'correction or move', 'corrections and moves')}.
 
 Entries marked **New** also appear on the public [changelog](/docs${CHANGELOG_URL_PATH}).
-Entries marked **Changed** are internal-only: corrections to things the docs
-previously got wrong, and pages that moved to a new URL.
+Entries marked **Changed** stay internal: corrections to things the docs
+previously got wrong, pages that moved, and gaps that were filled.
 
 ${sections}
 `;
@@ -337,7 +340,7 @@ Options:
 
 Reads  .github/changelog-state/batches/<date>/{input.json,classified.json}
 Writes ${CHANGELOG_DIR_REL}/<date>.mdx      (notable only)
-       .github/changelog-state/batches/<date>/support-digest.md  (notable + minor)
+       .github/changelog-state/batches/<date>/digest.md          (notable + minor)
 `);
       process.exit(0);
     }
@@ -434,15 +437,15 @@ Writes ${CHANGELOG_DIR_REL}/<date>.mdx      (notable only)
     );
   }
 
-  const support = renderSupport(date, entries, window, pageMeta);
+  const digest = renderDigest(date, entries, window, pageMeta);
 
   log.newline();
 
   if (byDate.size === 0) {
     log.warn('No notable entries — no public changelog files for this window.');
   }
-  if (!support) {
-    log.warn('No notable or minor entries — no Support digest for this window.');
+  if (!digest) {
+    log.warn('No notable or minor entries — no internal digest for this window.');
   }
   // Note: even a fully-skipped batch advances the ledger below, so those PRs are
   // not reclassified next run. That is why the ledger write is unconditional.
@@ -455,7 +458,7 @@ Writes ${CHANGELOG_DIR_REL}/<date>.mdx      (notable only)
       date: d,
       path,
       existed: Boolean(existing),
-      // Headings already in the file before this batch. The devex digest excludes
+      // Headings already in the file before this batch. The Slack digest excludes
       // them, so appending a late entry to an already-published date cannot
       // re-announce that date's earlier entries.
       alreadyReported: entryHeadings(existing),
@@ -489,7 +492,7 @@ Writes ${CHANGELOG_DIR_REL}/<date>.mdx      (notable only)
     c.flush({ header: `${bareLabels.length} link labels do not stand alone out of context:` });
   }
 
-  const supportPath = join(batchDir(date), 'support-digest.md');
+  const digestPath = join(batchDir(date), 'digest.md');
   const manifestPath = join(batchDir(date), 'manifest.json');
 
   // A dry run writes nothing, ledger included — it must be safe to re-run.
@@ -498,9 +501,9 @@ Writes ${CHANGELOG_DIR_REL}/<date>.mdx      (notable only)
       log.header(`--- ${f.path.replace(`${REPO_ROOT}/`, '')}${f.existed ? ' (merging into existing)' : ''} ---`);
       console.log(f.contents);
     }
-    if (support) {
-      log.header(`--- ${supportPath.replace(`${REPO_ROOT}/`, '')} ---`);
-      console.log(support);
+    if (digest) {
+      log.header(`--- ${digestPath.replace(`${REPO_ROOT}/`, '')} ---`);
+      console.log(digest);
     }
     return;
   }
@@ -513,12 +516,12 @@ Writes ${CHANGELOG_DIR_REL}/<date>.mdx      (notable only)
   }
 
   mkdirSync(batchDir(date), { recursive: true });
-  if (support) {
-    writeFileSync(supportPath, support);
-    log.success(`Wrote ${supportPath.replace(`${REPO_ROOT}/`, '')}`);
+  if (digest) {
+    writeFileSync(digestPath, digest);
+    log.success(`Wrote ${digestPath.replace(`${REPO_ROOT}/`, '')}`);
   }
 
-  const hasArtifacts = files.length > 0 || Boolean(support);
+  const hasArtifacts = files.length > 0 || Boolean(digest);
 
   // The batch manifest is what changelog-publish.yml keys off. Entry files are now
   // one-per-merge-date, so triggering on those would post one Slack digest per
@@ -539,7 +542,7 @@ Writes ${CHANGELOG_DIR_REL}/<date>.mdx      (notable only)
           window,
           entryFiles: manifestFiles,
           dates,
-          support: support ? supportPath.replace(`${REPO_ROOT}/`, '') : null,
+          digest: digest ? digestPath.replace(`${REPO_ROOT}/`, '') : null,
         },
         null,
         2,

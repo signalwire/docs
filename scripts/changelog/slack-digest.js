@@ -5,23 +5,32 @@
  * This runs at publish time, after a human has reviewed and merged the weekly PR.
  * It deliberately reads the committed markdown rather than any intermediate JSON:
  * the reviewed files are the single source of truth, so an edit made during review
- * reaches Slack automatically and the three audiences cannot drift apart.
+ * reaches Slack automatically and the two audiences cannot drift apart.
+ *
+ * There is ONE payload. Every internal channel gets the same post, so adding a
+ * channel is a webhook in changelog-publish.yml and nothing else.
  *
  * Usage:
- *   node scripts/changelog/slack-digest.js --audience devex   --date 2026-08-17
- *   node scripts/changelog/slack-digest.js --audience support --date 2026-08-17
- *   node scripts/changelog/slack-digest.js --audience devex   --date 2026-08-17 --output payload.json
+ *   node scripts/changelog/slack-digest.js --date 2026-08-17
+ *   node scripts/changelog/slack-digest.js --date 2026-08-17 --output payload.json
  *
- * Exits 2 (not 1) when there is nothing to post for that audience, so the
- * workflow can distinguish "quiet week" from "something broke".
+ * Exits 2 (not 1) when there is nothing to post, so the workflow can distinguish
+ * "quiet week" from "something broke".
  */
 
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import yaml from 'js-yaml';
 import { Logger } from '../utils/logger.js';
-import { CHANGELOG_DIR, CHANGELOG_URL_PATH, REPO_ROOT, batchDir, repoSlug } from './config.js';
+import {
+  CHANGELOG_DIR,
+  CHANGELOG_URL_PATH,
+  REPO_ROOT,
+  batchDir,
+  entryHeadings,
+  repoSlug,
+} from './config.js';
 
 const log = new Logger();
 
@@ -93,115 +102,40 @@ function splitSections(markdown, level) {
 // ============================================
 
 /**
- * Entry files belonging to a batch, from the manifest render.js wrote.
+ * Every `##` heading currently on the public changelog.
  *
- * Entry files are named for the date their PR merged, so one batch spans several
- * of them. The manifest is the only thing that knows which belong together.
+ * The digest labels each item by whether it actually reached customers, so this
+ * reads the published entry files rather than trusting the tier.
  */
-function readManifest(batchDate) {
-  const manifestPath = join(batchDir(batchDate), 'manifest.json');
-  if (!existsSync(manifestPath)) return null;
-  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
-  return {
-    ...manifest,
-    entryFiles: (manifest.entryFiles ?? []).map((f) => ({
-      path: join(REPO_ROOT, f.path),
-      alreadyReported: f.alreadyReported ?? [],
-    })),
-  };
-}
-
-/** Label for a batch covering several merge dates. */
-function windowLabel(window, fallbackDate) {
-  if (!window?.since || !window?.until) return fallbackDate;
-  return window.since === window.until ? window.until : `${window.since} to ${window.until}`;
-}
-
-/**
- * #devex-general: what shipped, terse, one line per notable entry.
- * Built from the public changelog files, so it never says more than customers see.
- */
-function buildDevexPayload(date, baseUrl) {
-  const manifest = readManifest(date);
-  if (!manifest) {
-    // No manifest: fall back to a single same-dated entry file.
-    const single = join(CHANGELOG_DIR, `${date}.mdx`);
-    if (!existsSync(single)) return null;
-    return buildDevexFromFiles(date, baseUrl, [{ path: single, alreadyReported: [] }], null);
+function publishedHeadings() {
+  if (!existsSync(CHANGELOG_DIR)) return new Set();
+  const headings = new Set();
+  for (const file of readdirSync(CHANGELOG_DIR)) {
+    if (!/^\d{4}-\d{2}-\d{2}\.mdx?$/.test(file)) continue;
+    for (const h of entryHeadings(readFileSync(join(CHANGELOG_DIR, file), 'utf8'))) {
+      headings.add(h);
+    }
   }
-  return buildDevexFromFiles(
-    date,
-    baseUrl,
-    manifest.entryFiles.filter((f) => existsSync(f.path)),
-    manifest.window,
-  );
-}
-
-function buildDevexFromFiles(date, baseUrl, entryFiles, window) {
-  // Newest first, matching how the timeline reads. Headings the manifest lists as
-  // already reported are excluded, so appending a late entry to an existing dated
-  // file does not re-announce that date's earlier entries.
-  const entries = [...entryFiles]
-    .sort((a, b) => b.path.localeCompare(a.path))
-    .flatMap(({ path, alreadyReported }) => {
-      const seen = new Set(alreadyReported);
-      return splitSections(stripFrontmatter(readFileSync(path, 'utf8')), 2).filter(
-        (s) => !seen.has(s.heading),
-      );
-    });
-
-  if (entries.length === 0) return null;
-
-  const changelogUrl = `${baseUrl}${CHANGELOG_URL_PATH}`;
-  const bullets = entries
-    .map((e) => {
-      // Lead sentence only — the Slack post is a pointer, not a copy, and this
-      // keeps a busy week scannable instead of truncated. Splitting on
-      // punctuation-then-whitespace leaves "Smallest.ai" and file names intact.
-      const firstPara = e.body.split('\n\n')[0] ?? '';
-      const lead = firstPara.split(/(?<=[.!?])\s+/)[0] ?? firstPara;
-      return `• *${e.heading}*\n${toMrkdwn(lead, baseUrl)}`;
-    })
-    .join('\n\n');
-
-  const count = entries.length;
-  const label = windowLabel(window, date);
-  return {
-    text: `Docs changelog for ${label}: ${count} ${count === 1 ? 'update' : 'updates'}`,
-    blocks: [
-      {
-        type: 'header',
-        text: { type: 'plain_text', text: `Docs updates — ${label}` },
-      },
-      {
-        type: 'section',
-        text: { type: 'mrkdwn', text: truncate(bullets) },
-      },
-      {
-        type: 'context',
-        elements: [
-          { type: 'mrkdwn', text: `<${changelogUrl}|Full changelog> · published to customers` },
-        ],
-      },
-    ],
-  };
+  return headings;
 }
 
 /**
- * Support channel: the detailed digest. Includes corrections and URL changes that
- * never reach the public changelog. Inlines a per-product summary and links to the
- * committed file for the full detail, because the full text routinely exceeds
- * Slack's per-block limit.
+ * The internal digest payload. One post, sent to every internal channel.
+ *
+ * Includes the corrections and URL changes that never reach the public changelog.
+ * Inlines a per-product summary and links to the committed file for the full
+ * detail, because the full text routinely exceeds Slack's per-block limit.
  */
-function buildSupportPayload(date, baseUrl, repo, sha) {
-  const path = join(batchDir(date), 'support-digest.md');
+function buildPayload(date, baseUrl, repo, sha) {
+  const path = join(batchDir(date), 'digest.md');
   if (!existsSync(path)) return null;
 
   const contents = readFileSync(path, 'utf8');
   const products = splitSections(contents, 2);
   if (products.length === 0) return null;
 
-  const fileUrl = `https://github.com/${repo}/blob/${sha}/.github/changelog-state/batches/${date}/support-digest.md`;
+  const fileUrl = `https://github.com/${repo}/blob/${sha}/.github/changelog-state/batches/${date}/digest.md`;
+  const published = publishedHeadings();
 
   const summary = products
     .map((p) => {
@@ -209,10 +143,14 @@ function buildSupportPayload(date, baseUrl, repo, sha) {
         .split('\n')
         .filter((l) => l.startsWith('- **'))
         .map((l) => {
-          const m = l.match(/^- \*\*(New|Changed) — (.+?)\*\*/);
+          const m = l.match(/^- \*\*(?:New|Changed) — (.+?)\*\*/);
           if (!m) return null;
-          const marker = m[1] === 'New' ? 'New' : 'Changed';
-          return `   • _${marker}_ ${m[2]}`;
+          // Labelled by what actually shipped, not by the tier baked in at render
+          // time. Deleting a section from the entry file is how a reviewer demotes
+          // an entry, and that happens after render — so the digest must read the
+          // published changelog to stay truthful.
+          const marker = published.has(m[1]) ? 'Published' : 'Internal';
+          return `   • _${marker}_ ${m[1]}`;
         })
         .filter(Boolean);
 
@@ -226,17 +164,17 @@ function buildSupportPayload(date, baseUrl, repo, sha) {
   );
 
   return {
-    text: `Docs changes for Support — ${date}: ${total} ${total === 1 ? 'item' : 'items'}`,
+    text: `Docs changes — ${date}: ${total} ${total === 1 ? 'item' : 'items'}`,
     blocks: [
       {
         type: 'header',
-        text: { type: 'plain_text', text: `Docs changes for Support — ${date}` },
+        text: { type: 'plain_text', text: `Docs changes — ${date}` },
       },
       {
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: `${total} documentation ${total === 1 ? 'change' : 'changes'} worth knowing about. *Changed* means the docs previously said something different — a correction or a moved page.`,
+          text: `${total} documentation ${total === 1 ? 'change' : 'changes'} worth knowing about. *Published* entries are on the public changelog; *Internal* ones are not — corrections, moved pages, and filled gaps.`,
         },
       },
       { type: 'divider' },
@@ -263,33 +201,28 @@ function buildSupportPayload(date, baseUrl, repo, sha) {
 
 function main() {
   const args = process.argv.slice(2);
-  let audience = null;
   let date = null;
   let output = null;
 
   for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--audience' && args[i + 1]) audience = args[++i];
     if (args[i] === '--date' && args[i + 1]) date = args[++i];
     if (args[i] === '--output' && args[i + 1]) output = args[++i];
     if (args[i] === '-h' || args[i] === '--help') {
       console.log(`
-Usage: node scripts/changelog/slack-digest.js --audience <devex|support> --date <YYYY-MM-DD> [--output <file>]
+Usage: node scripts/changelog/slack-digest.js --date <YYYY-MM-DD> [--output <file>]
 
-Reads the merged markdown artifacts and prints a Slack Block Kit payload.
-Exits ${EXIT_NOTHING_TO_POST} when there is nothing to post for that audience.
+Reads the merged digest.md and prints a Slack Block Kit payload.
+Exits ${EXIT_NOTHING_TO_POST} when there is nothing to post.
 
 Environment Variables:
-  GITHUB_REPOSITORY  owner/repo, for linking the Support detail file
+  GITHUB_REPOSITORY  owner/repo, for linking the full detail file
                      (default: GH_REPO, then the origin remote, then signalwire/docs)
-  GITHUB_SHA         commit to link the Support detail file at (default: main)
+  GITHUB_SHA         commit to link the full detail file at (default: main)
 `);
       process.exit(0);
     }
   }
 
-  if (!['devex', 'support'].includes(audience)) {
-    throw new Error('--audience must be "devex" or "support"');
-  }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date ?? '')) {
     throw new Error('--date must be YYYY-MM-DD');
   }
@@ -298,13 +231,10 @@ Environment Variables:
   const repo = repoSlug();
   const sha = process.env.GITHUB_SHA || 'main';
 
-  const payload =
-    audience === 'devex'
-      ? buildDevexPayload(date, baseUrl)
-      : buildSupportPayload(date, baseUrl, repo, sha);
+  const payload = buildPayload(date, baseUrl, repo, sha);
 
   if (!payload) {
-    log.warn(`Nothing to post to ${audience} for ${date}`);
+    log.warn(`Nothing to post for ${date}`);
     process.exit(EXIT_NOTHING_TO_POST);
   }
 
@@ -318,7 +248,7 @@ Environment Variables:
 }
 
 // Exported for slack-digest.test.js
-export { splitSections, stripFrontmatter, toMrkdwn, truncate, windowLabel, MAX_SECTION_CHARS };
+export { splitSections, stripFrontmatter, toMrkdwn, truncate, MAX_SECTION_CHARS };
 
 // Only run when invoked directly, not when imported (matches check-md-exports.js)
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

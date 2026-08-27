@@ -3,9 +3,9 @@
  *
  * Run with:  yarn test:scripts
  *
- * The lead-sentence split is the fragile part: it must not break on a product
- * name containing a period ("Smallest.ai") or on a version like "v2." at a
- * sentence end, because the result is posted verbatim to a channel.
+ * These cover the text transforms that reach a channel verbatim: frontmatter
+ * stripping, section splitting, markdown-to-mrkdwn conversion, and the truncation
+ * guard for Slack's per-block character limit.
  */
 
 import { test } from 'node:test';
@@ -15,7 +15,6 @@ import {
   stripFrontmatter,
   toMrkdwn,
   truncate,
-  windowLabel,
   MAX_SECTION_CHARS,
 } from './slack-digest.js';
 
@@ -53,28 +52,4 @@ test('truncate leaves short text alone and marks long text', () => {
   const long = truncate('x'.repeat(MAX_SECTION_CHARS + 500));
   assert.ok(long.length <= MAX_SECTION_CHARS, 'must fit Slack\'s per-block limit');
   assert.match(long, /_…truncated_$/);
-});
-
-test('windowLabel renders a range, and collapses a single day', () => {
-  assert.equal(windowLabel({ since: '2026-08-04', until: '2026-08-11' }, 'x'), '2026-08-04 to 2026-08-11');
-  assert.equal(windowLabel({ since: '2026-08-11', until: '2026-08-11' }, 'x'), '2026-08-11');
-  assert.equal(windowLabel(null, 'fallback'), 'fallback');
-});
-
-// The lead-sentence split lives in buildDevexFromFiles; this locks in the regex
-// contract it depends on, which is the part that would silently mangle a post.
-const lead = (s) => s.split(/(?<=[.!?])\s+/)[0];
-
-test('lead sentence keeps a product name containing a period intact', () => {
-  const body = 'Groq, Mistral, Smallest.ai, and Fish Audio are documented. A second sentence follows.';
-  assert.equal(lead(body), 'Groq, Mistral, Smallest.ai, and Fish Audio are documented.');
-});
-
-test('lead sentence splits on a real sentence boundary', () => {
-  const body = 'The v3 guides are removed and v3 is reference-only, matching v2. The reference is unchanged.';
-  assert.equal(lead(body), 'The v3 guides are removed and v3 is reference-only, matching v2.');
-});
-
-test('lead sentence returns the whole body when there is one sentence', () => {
-  assert.equal(lead('Only one sentence here.'), 'Only one sentence here.');
 });

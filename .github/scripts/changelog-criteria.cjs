@@ -23,10 +23,16 @@ const TIERS = ['notable', 'minor', 'skip'];
  */
 const MAX_LISTED_FILES = 20;
 
-/** Which audiences each tier reaches. Render and publish both key off this. */
+/**
+ * Which audiences each tier reaches. Render and publish both key off this.
+ *
+ * There are exactly two: `changelog` is external and public, `slack` is internal.
+ * Every internal channel gets the same digest, so adding one is a webhook in
+ * changelog-publish.yml, not a new tier or a new artifact.
+ */
 const TIER_ROUTING = {
-  notable: ['changelog', 'devex', 'support'],
-  minor: ['support'],
+  notable: ['changelog', 'slack'],
+  minor: ['slack'],
   skip: [],
 };
 
@@ -45,23 +51,35 @@ documentation. Each PR gets exactly one tier, which decides who hears about it.
 
 ## Tiers
 
-**notable** — published to the public customer-facing changelog AND both internal
-Slack digests. Reserve this for changes a customer building on SignalWire would
-want to know about:
-- A new page, guide, or tutorial.
+**notable** — published to the public customer-facing changelog AND the internal
+Slack digest. The test is always what a reader can now do or now knows. It is
+never whether the documentation improved:
+- A capability a reader had no way to discover before. Age is irrelevant: a guide
+  for behavior that has worked the same way for years is notable if readers
+  genuinely could not find it, and is not notable if they could.
 - A new endpoint, method, field, or parameter appearing in the API or SWML reference.
 - A documented behavior change, new limit, or changed default.
-- A deprecation or removal.
+- A deprecated or removed **capability**. Retiring, consolidating, or reorganizing
+  documentation pages is not a deprecation — that is a URL change, so \`minor\`.
 
-**minor** — internal Support digest only. Support needs these to answer tickets;
+**minor** — internal Slack digest only. Colleagues answering questions need these;
 customers do not get a card for them:
 - A corrected factual error (wrong type, wrong default, wrong enum value, wrong
-  description). Support must know the docs previously said something wrong.
+  description). Colleagues must know the docs previously said something wrong.
 - A page that moved, was renamed, or got a new slug — any URL change, because
-  Support may have shared the old link.
+  someone may have shared the old link. This includes retiring or consolidating
+  pages for an existing product.
 - A substantive change to an example or code sample: it previously did not run,
   used the wrong parameter, or now demonstrates a different approach.
 - A clarification that changes what a reader would conclude.
+- **Filling a documentation gap**: formalizing something a reader could already
+  learn. Moving a contract from prose into the rendered reference, adding schemas
+  to a page that already described them in words, completing a partially
+  documented payload. The information was reachable; it is now tidier.
+- **A change of posture or emphasis**: new warnings, callouts, or guidance steering
+  readers away from a footgun, where the platform behaves as it always did and the
+  behavior was already documented. The volume of new prose does not make this
+  notable.
 
 **skip** — nobody hears about it:
 - Typos, spelling, grammar, punctuation, capitalization.
@@ -79,9 +97,13 @@ customers do not get a card for them:
 1. Read the PR title, body, and the changed files with their diffs.
 2. Ask what a customer reading the docs would *newly be able to do or know*.
    If the answer is nothing, the tier is \`skip\` or \`minor\`, never \`notable\`.
-3. Ask whether the docs previously told someone something false, or whether a URL
+3. If the change documents something that already existed, apply exactly the same
+   test — the feature's age is irrelevant. Ask only: **could a reader have found
+   this before?** If yes, you are filling a gap, so \`minor\` at most. Never tier
+   something \`notable\` on the grounds that the documentation caught up.
+4. Ask whether the docs previously told someone something false, or whether a URL
    changed. If so, the tier is at least \`minor\`.
-4. Assign the single highest tier justified by the change. One PR that adds a new
+5. Assign the single highest tier justified by the change. One PR that adds a new
    guide and also fixes six typos is \`notable\` — describe the guide, ignore the typos.
 
 ## Worked examples
@@ -96,8 +118,31 @@ customers do not get a card for them:
   → **notable**. Behavior change; readers may have built around the old value.
 
 - Corrects a parameter documented as \`string\` that is actually an object.
-  → **minor**. The docs were wrong and Support needs to know, but this is not a
+  → **minor**. The docs were wrong and colleagues need to know, but this is not a
   new capability and does not belong on the public timeline.
+
+- Adds a guide for verifying request signatures. The signing has behaved this way
+  for years but was documented nowhere.
+  → **notable**. Undiscoverable before, discoverable now — a reader gained
+  something real, whatever the feature's age. Describe the verification itself,
+  not the arrival of documentation.
+
+- Adds response schemas to webhook reference pages whose response contract was
+  already described in prose on the same pages.
+  → **minor**. Gap-filling. A reader could already learn the contract; it is now
+  rendered rather than narrated.
+
+- Retires the guides for an older SDK version, leaving its reference pages in
+  place, with the old guide URLs redirecting.
+  → **minor**. Documentation reorganization and a URL change. Retiring *guides* is
+  not deprecating a *product*, and nobody wants a public card announcing that some
+  pages went away.
+
+- Adds callouts and a reliability section warning that status callbacks are
+  best-effort and must not gate critical logic. The platform is unchanged and the
+  behavior was already documented.
+  → **minor**. A posture change: the docs now steer harder. Worth flagging
+  internally, but no reader gained a capability.
 
 - Moves a page from \`/docs/ai/tool-calling\` to \`/docs/swml/ai/tool-calling\`.
   → **minor**. URL change; Support may have sent customers the old link.

@@ -1,13 +1,13 @@
 name: changelog-publish
 
-# Posts the internal Slack digests for a batch. **Manual only, for now.**
+# Posts the internal Slack digest for a batch. **Manual only, for now.**
 #
 # Nothing about merging a changelog PR sends a Slack message: you run this workflow
 # yourself and name the batch. The public changelog is deployed by publish-docs.yml,
 # which already runs on every push to main.
 #
-# Both payloads are rendered from the MERGED markdown, so whatever a reviewer edited
-# in the PR is what gets posted.
+# The payload is rendered from the MERGED markdown, so whatever a reviewer edited in
+# the PR is what gets posted. There is one payload for every internal channel.
 #
 # TO AUTOMATE LATER: replace `workflow_dispatch` with the push trigger below, and
 # restore the added-files guard in the "Find newly added batches" step. Both are kept
@@ -39,7 +39,7 @@ permissions:
 
 jobs:
   publish:
-    name: Post changelog digests
+    name: Post changelog digest
     runs-on: ubuntu-latest
 
     steps:
@@ -91,63 +91,59 @@ jobs:
           # so a later edit to a published entry never re-notifies. github.event.before is
           # all zeros on a first or force push, hence the fallback to the parent commit.
 
-      - name: Post digests
+      - name: Post digest
         if: steps.added.outputs.dates != ''
         env:
           # Already validated as YYYY-MM-DD by the previous step, which fails the job
           # otherwise. Read through env so nothing user-supplied reaches the script body.
           BATCH_DATE: ${{ inputs.batch_date }}
-          DEVEX_WEBHOOK: ${{ secrets.SLACK_CHANGELOG_DEVEX_WEBHOOK_URL }}
-          SUPPORT_WEBHOOK: ${{ secrets.SLACK_CHANGELOG_SUPPORT_WEBHOOK_URL }}
+          # TO ADD A CHANNEL: add its webhook secret here and add the variable name to
+          # CHANNELS below. Every channel receives the same payload, so there is nothing
+          # else to change — no new tier, no new artifact, no second render.
+          SLACK_DEVEX_GENERAL: ${{ secrets.SLACK_CHANGELOG_DEVEX_WEBHOOK_URL }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_SHA: ${{ github.sha }}
         run: |
           set -u
 
-          post() {
-            local audience="$1" date="$2" webhook="$3" name="$4"
+          CHANNELS="SLACK_DEVEX_GENERAL"
 
-            if [ -z "$webhook" ]; then
-              echo "::notice::${name} not set, skipping ${audience} digest for ${date}"
-              return 0
-            fi
+          PAYLOAD="/tmp/changelog-${BATCH_DATE}.json"
 
-            set +e
-            node scripts/changelog/slack-digest.js \
-              --audience "$audience" \
-              --date "$date" \
-              --output "/tmp/${audience}-${date}.json"
-            local status=$?
-            set -e
+          set +e
+          node scripts/changelog/slack-digest.js --date "$BATCH_DATE" --output "$PAYLOAD"
+          STATUS=$?
+          set -e
 
-            # Exit 2 means "nothing to post for this audience" — a quiet week, not a failure.
-            if [ "$status" -eq 2 ]; then
-              echo "::notice::Nothing to post to ${audience} for ${date}"
-              return 0
-            fi
-            if [ "$status" -ne 0 ]; then
-              echo "::error::Failed to build ${audience} payload for ${date}"
-              return 1
+          # Exit 2 means "nothing to post" — a quiet week, not a failure.
+          if [ "$STATUS" -eq 2 ]; then
+            echo "::notice::Nothing to post for ${BATCH_DATE}"
+            exit 0
+          fi
+          if [ "$STATUS" -ne 0 ]; then
+            echo "::error::Failed to build the payload for ${BATCH_DATE}"
+            exit 1
+          fi
+
+          FAILED=0
+          for NAME in $CHANNELS; do
+            WEBHOOK="${!NAME}"
+
+            if [ -z "$WEBHOOK" ]; then
+              echo "::notice::${NAME} not set, skipping that channel"
+              continue
             fi
 
             HTTP=$(curl -sS -o /tmp/slack-response.txt -w '%{http_code}' \
               -X POST -H 'Content-Type: application/json' \
-              -d @"/tmp/${audience}-${date}.json" \
-              "$webhook")
+              -d @"$PAYLOAD" \
+              "$WEBHOOK")
 
             if [ "$HTTP" != "200" ]; then
-              echo "::error::Slack returned ${HTTP} for ${audience} ${date}: $(cat /tmp/slack-response.txt)"
-              return 1
+              echo "::error::Slack returned ${HTTP} for ${NAME}: $(cat /tmp/slack-response.txt)"
+              FAILED=1
+              continue
             fi
-            echo "Posted ${audience} digest for ${date}"
-          }
-
-          FAILED=0
-          # Quoted, and driven by the env var rather than a `${{ }}` splice into the
-          # script body. The loop stays because restoring the push trigger makes
-          # `dates` a space-separated list again — at which point drop the quotes.
-          for DATE in "$BATCH_DATE"; do
-            post devex   "$DATE" "$DEVEX_WEBHOOK"   "SLACK_CHANGELOG_DEVEX_WEBHOOK_URL"   || FAILED=1
-            post support "$DATE" "$SUPPORT_WEBHOOK" "SLACK_CHANGELOG_SUPPORT_WEBHOOK_URL" || FAILED=1
+            echo "Posted the ${BATCH_DATE} digest to ${NAME}"
           done
           exit $FAILED

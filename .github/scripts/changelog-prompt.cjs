@@ -24,7 +24,7 @@ const OUTPUT_SCHEMA = `{
       "product": "calling" | "swml" | "platform" | "server-sdks" | "browser-sdks" | "apis" | "compatibility-api" | "call-flow-builder" | "other",
       "entry_title": "Sentence-case title naming the change, not the week. Null when tier is skip.",
       "entry_body": "1-3 sentences, second person, present tense. Customer-facing prose. Null when tier is skip.",
-      "support_detail": "What specifically changed and what it means for a Support conversation. More detail than entry_body, internal audience. Null when tier is skip.",
+      "internal_detail": "What specifically changed and what it means when answering a question about it. More detail than entry_body, internal audience. Null when tier is skip.",
       "pages": [{ "path": "fern/...", "url": "/docs/... or null", "status": "added" | "modified" | "removed" | "renamed" }],
       "confidence": 0.0,
       "reasoning": "Why this tier."
@@ -118,6 +118,15 @@ customers on a public page:
 - No marketing adjectives (powerful, seamless, robust), no emoji, no "simply".
 - Do not describe the pull request or the repository. Describe what the reader
   can now do or now knows.
+- **Never frame an entry as the documentation catching up.** Write about the
+  capability, not about its coverage. Banned: "now documented", "the docs now
+  cover", "previously undocumented", "fully documented", "finally", and any
+  sentence contrasting the feature's age with the documentation's ("the signing
+  isn't new — the documentation is"). If a change is only worth reporting because
+  the docs improved, it was not \`notable\` in the first place.
+- **No launch fanfare.** No "now available", "introducing", "we're excited", no
+  exclamation marks. Product announcements are the PMs' job; this page is a
+  record. State what the thing does and link to it.
 
 ${prs.map(formatPr).join('\n\n---\n\n')}
 

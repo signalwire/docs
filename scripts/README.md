@@ -15,8 +15,8 @@ dependencies beyond what's in `package.json`) and share conventions: hand-rolled
 | `llm-agent-scenarios.md` | Manual preview evaluation | Context-isolated agent prompts and expected documentation destinations. |
 | `changelog/collect.js` | `yarn changelog:collect` | Collect PRs merged in a window, filter to docs-relevant paths, and write a classification prompt bundle. |
 | `changelog/prompt.js` | `yarn changelog:prompt` | Rebuild a batch's classification prompt from its `input.json`; `prompt.md` is not committed. |
-| `changelog/render.js` | `yarn changelog:render` | Turn a batch's classification into dated changelog entries and the internal Support digest. |
-| `changelog/slack-digest.js` | `yarn changelog:slack` | Render Slack Block Kit payloads from the merged changelog markdown. |
+| `changelog/render.js` | `yarn changelog:render` | Turn a batch's classification into dated changelog entries and the internal digest. |
+| `changelog/slack-digest.js` | `yarn changelog:slack` | Render the Slack Block Kit payload from the merged changelog markdown. |
 | `changelog/config.js` | — | Shared paths, docs-path filters, and prompt budgets for the changelog pipeline. |
 | `changelog/*.test.js` | `yarn test:scripts` | Fixture tests for the changelog pipeline's pure helpers: path filters, mechanical-change detection, payload validation, entry-file merging, and Slack text rendering. |
 | `postman/` | `yarn postman:build` / `postman:publish` | Build and publish the Postman collection from the OpenAPI specs. |

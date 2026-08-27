@@ -31,7 +31,7 @@ const notable = (over = {}) => ({
   product: 'platform',
   entry_title: 'A title',
   entry_body: 'A body.',
-  support_detail: 'Detail.',
+  internal_detail: 'Detail.',
   pages: [],
   confidence: 0.9,
   reasoning: 'Because.',
@@ -75,11 +75,12 @@ test('validate rejects an off-site or relative URL', () => {
   );
 });
 
-test('validate requires support_detail on a minor entry', () => {
-  // Support is the only audience for `minor`, so an empty detail reports nothing.
+test('validate requires internal_detail on a minor entry', () => {
+  // The internal digest is the only audience for `minor`, so an empty detail
+  // means the entry reports nothing to anyone.
   assert.throws(
-    () => validate({ entries: [notable({ tier: 'minor', support_detail: null })] }, KNOWN),
-    /"support_detail" is required for tier "minor"/,
+    () => validate({ entries: [notable({ tier: 'minor', internal_detail: null })] }, KNOWN),
+    /"internal_detail" is required for tier "minor"/,
   );
 });
 
