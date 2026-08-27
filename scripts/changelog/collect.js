@@ -41,8 +41,6 @@ import {
   MAX_PATCH_CHARS_PER_PR,
   REPO_ROOT,
   batchDir,
-  entryHeadings,
-  isChangelogEntryFile,
   isDocsRelevant,
   isMechanicalPatch,
   resolveRepo,
@@ -195,16 +193,6 @@ function fileAtRef(ref, path) {
   }
 }
 
-/**
- * The `##` headings of a changelog entry file at a given ref, or [] if the file
- * did not exist there. Used to tell an author's new entries from ones already
- * published under the same date.
- */
-function headingsAtRef(ref, path) {
-  if (!ref) return [];
-  return entryHeadings(fileAtRef(ref, path));
-}
-
 function frontmatter(contents) {
   if (!contents?.startsWith('---')) return null;
   const end = contents.indexOf('\n---', 3);
@@ -317,31 +305,13 @@ function collect(window, products, ledger) {
 
     const allFiles = fetchPrFiles(pr.number);
 
-    // Detected from the RAW file list, before the docs-relevance filter: changelog
-    // entry files are not doc content, so they must not enter classification as if
-    // they were, but a PR that wrote one has documented itself.
-    //
-    // Both heading sets are resolved at this PR's OWN merge commit, never at HEAD:
-    // priorHeadings is the file before the PR, addedHeadings is what the PR itself
-    // contributed. Deriving "what did this PR add" downstream by reading HEAD and
-    // subtracting credits a PR with headings a later PR added to the same file.
-    const authoredEntries = allFiles
-      .filter((f) => isChangelogEntryFile(f.filename))
-      .map((f) => {
-        const merged = pr.mergeCommit?.oid ?? null;
-        const priorHeadings = headingsAtRef(merged ? `${merged}^` : null, f.filename);
-        const prior = new Set(priorHeadings);
-        return {
-          path: f.filename,
-          priorHeadings,
-          addedHeadings: headingsAtRef(merged, f.filename).filter((h) => !prior.has(h)),
-        };
-      });
-    const selfDocumented = authoredEntries.length > 0;
-
     const relevant = allFiles.filter((f) => isDocsRelevant(f.filename));
 
-    if (relevant.length === 0 && !selfDocumented) {
+    // A changelog entry file is not doc content and is not under an INCLUDE path, so
+    // a PR that only writes one — a hand-authored entry, or this pipeline's own
+    // weekly PR — has nothing relevant and drops out here. Hand-authored entries are
+    // deduplicated by the reviewer of the draft PR, not by this script.
+    if (relevant.length === 0) {
       skipped.info(`#${pr.number} ${pr.title} — no docs-relevant files`);
       continue;
     }
@@ -394,8 +364,6 @@ function collect(window, products, ledger) {
       mergeCommit: pr.mergeCommit?.oid ?? null,
       url: pr.url,
       mechanical,
-      selfDocumented,
-      authoredEntries,
       fileCount: files.length,
       files,
     });

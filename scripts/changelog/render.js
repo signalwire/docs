@@ -316,50 +316,6 @@ ${sections}
 }
 
 // ============================================
-// Manifest
-// ============================================
-
-/**
- * Manifest rows for entry files an author wrote themselves, so both digests pick
- * them up exactly like workflow-authored ones.
- *
- * `alreadyReported` is stated as "everything in the file that this batch did not
- * add", rather than accumulated from each PR's `priorHeadings`. Two self-documented
- * PRs writing to one file see different priors — the second sees the first's heading
- * as pre-existing — so combining priors suppresses the first PR's entry entirely.
- * What the batch added is order-independent.
- *
- * @param {Iterable<object[]>} authored  Per-PR `authoredEntries` arrays from input.json.
- * @param {Set<string>} covered  Absolute paths this batch already wrote; covered elsewhere.
- * @param {(rel: string) => string[] | null} readHeadings  Current `##` headings, or
- *   null when the file no longer exists.
- */
-function authoredEntryFiles(authored, covered, readHeadings) {
-  const addedByPath = new Map();
-  for (const entries of authored) {
-    for (const { path: rel, addedHeadings } of entries) {
-      const acc = addedByPath.get(rel) ?? new Set();
-      for (const heading of addedHeadings ?? []) acc.add(heading);
-      addedByPath.set(rel, acc);
-    }
-  }
-
-  const rows = [];
-  for (const [rel, added] of addedByPath) {
-    const abs = join(REPO_ROOT, rel);
-    if (covered.has(abs)) continue;
-    const current = readHeadings(rel);
-    if (current === null) continue;
-    rows.push({
-      path: abs,
-      alreadyReported: current.filter((h) => !added.has(h)),
-      authored: true,
-    });
-  }
-  return rows;
-}
-
-// ============================================
 // Work folder resolution
 // ============================================
 
@@ -444,12 +400,10 @@ Writes ${CHANGELOG_DIR_REL}/<date>.mdx      (notable only)
   const window = input.window ?? { since: 'unknown', until: date };
   const pageMeta = new Map();
   const mergeDates = new Map();
-  const selfDocumented = new Map();
 
   for (const pr of input.prs ?? []) {
     // Each entry is dated by when its PR merged, not when the batch was drafted.
     if (pr.mergedAt) mergeDates.set(pr.number, pr.mergedAt.slice(0, 10));
-    if (pr.selfDocumented) selfDocumented.set(pr.number, pr.authoredEntries ?? []);
 
     // Authoritative URLs and link text, read from page frontmatter at collect time.
     for (const file of pr.files ?? []) {
@@ -474,15 +428,9 @@ Writes ${CHANGELOG_DIR_REL}/<date>.mdx      (notable only)
 
   // Group notable entries by the date their PR merged, so each entry lands on the
   // timeline under its real date instead of the date the batch was drafted.
-  //
-  // Self-documented PRs are excluded here only: their author already wrote the
-  // public entry, so writing another would duplicate it. They still reach both
-  // Slack digests, via the manifest below and the Support digest.
   const byDate = new Map();
   const undated = [];
   for (const entry of entries.filter((e) => e.tier === 'notable')) {
-    if (selfDocumented.has(entry.pr)) continue;
-
     const merged = mergeDates.get(entry.pr);
     if (!merged) {
       undated.push(entry);
@@ -499,23 +447,7 @@ Writes ${CHANGELOG_DIR_REL}/<date>.mdx      (notable only)
     );
   }
 
-  // For a self-documented change the author's heading is the published title, so the
-  // Support digest must use it too — otherwise the same change carries two different
-  // names across channels and nobody can cross-reference them. The classifier's
-  // support_detail is still what Support reads; only the title is overridden.
-  //
-  // addedHeadings is resolved by collect at the PR's own merge commit. Recomputing
-  // it here from the file at HEAD would credit the first of two PRs touching one
-  // file with the second's headings.
-  const supportEntries = entries.map((entry) => {
-    const authored = selfDocumented.get(entry.pr);
-    if (!authored || entry.tier === 'skip') return entry;
-
-    const headings = authored.flatMap((a) => a.addedHeadings ?? []);
-    return headings.length ? { ...entry, entry_title: headings.join(' · ') } : entry;
-  });
-
-  const support = renderSupport(date, supportEntries, window, pageMeta);
+  const support = renderSupport(date, entries, window, pageMeta);
 
   log.newline();
 
@@ -538,8 +470,7 @@ Writes ${CHANGELOG_DIR_REL}/<date>.mdx      (notable only)
       existed: Boolean(existing),
       // Headings already in the file before this batch. The devex digest excludes
       // them, so appending a late entry to an already-published date cannot
-      // re-announce that date's earlier entries. Extracted with the same helper
-      // collect uses for priorHeadings — the two must agree, or dedup breaks.
+      // re-announce that date's earlier entries.
       alreadyReported: entryHeadings(existing),
       contents: buildDatedFile(existing, byDate.get(d), pageMeta),
       count: byDate.get(d).length,
@@ -571,15 +502,6 @@ Writes ${CHANGELOG_DIR_REL}/<date>.mdx      (notable only)
     c.flush({ header: `${bareLabels.length} link labels do not stand alone out of context:` });
   }
 
-  const authoredFiles = authoredEntryFiles(
-    selfDocumented.values(),
-    new Set(files.map((f) => f.path)),
-    (rel) => {
-      const abs = join(REPO_ROOT, rel);
-      return existsSync(abs) ? entryHeadings(readFileSync(abs, 'utf8')) : null;
-    },
-  );
-
   const supportPath = join(batchDir(date), 'support-digest.md');
   const manifestPath = join(batchDir(date), 'manifest.json');
 
@@ -609,15 +531,14 @@ Writes ${CHANGELOG_DIR_REL}/<date>.mdx      (notable only)
     log.success(`Wrote ${supportPath.replace(`${REPO_ROOT}/`, '')}`);
   }
 
-  const hasArtifacts = files.length > 0 || authoredFiles.length > 0 || Boolean(support);
+  const hasArtifacts = files.length > 0 || Boolean(support);
 
   // The batch manifest is what changelog-publish.yml keys off. Entry files are now
   // one-per-merge-date, so triggering on those would post one Slack digest per
   // date; the manifest gives the batch a single identity and one post each.
-  const manifestFiles = [...files, ...authoredFiles].map((f) => ({
+  const manifestFiles = files.map((f) => ({
     path: f.path.replace(`${REPO_ROOT}/`, ''),
     alreadyReported: f.alreadyReported,
-    ...(f.authored ? { authored: true } : {}),
   }));
 
   // No manifest on a batch with nothing to announce: its absence is what tells
@@ -653,7 +574,6 @@ Writes ${CHANGELOG_DIR_REL}/<date>.mdx      (notable only)
       batch: date,
       window,
       tier: entry.tier,
-      ...(selfDocumented.has(entry.pr) ? { selfDocumented: true } : {}),
     };
   }
 
@@ -680,7 +600,6 @@ export {
   sectionHeading,
   collectTags,
   resolveLinks,
-  authoredEntryFiles,
 };
 
 // Only run when invoked directly, not when imported (matches check-md-exports.js)

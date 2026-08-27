@@ -78,20 +78,9 @@ function formatPr(pr) {
 
   const body = pr.body ? pr.body.trim().slice(0, 1500) : '_(no description)_';
 
-  const flags = [];
-  if (pr.mechanical) {
-    flags.push(
-      'Every sampled diff in this PR changes only whitespace, line endings, or letter case. Almost certainly `skip`.',
-    );
-  }
-  if (pr.selfDocumented) {
-    flags.push(
-      `The author wrote their own public changelog entry in this PR (${pr.authoredEntries
-        .map((e) => e.path)
-        .join(', ')}), so their entry text already stands and yours will not be published. Still tier it and still write \`support_detail\` — the internal digests report it like any other change.`,
-    );
-  }
-  const flagLine = flags.length ? `\n**Signal:** ${flags.join(' ')}\n` : '';
+  const flagLine = pr.mechanical
+    ? '\n**Signal:** Every sampled diff in this PR changes only whitespace, line endings, or letter case. Almost certainly `skip`.\n'
+    : '';
 
   return `### PR #${pr.number} — ${pr.title}
 

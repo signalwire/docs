@@ -58,16 +58,6 @@ export function batchDir(date) {
  */
 export const LEDGER_PATH = join(STATE_DIR, 'reported-prs.json');
 
-/**
- * True for a dated changelog entry file.
- *
- * `overview.mdx` is hand-maintained and is not an entry, so a PR editing only the
- * overview is not self-documenting a change.
- */
-export function isChangelogEntryFile(path) {
-  return new RegExp(`^${CHANGELOG_DIR_REL}/\\d{4}-\\d{2}-\\d{2}\\.mdx?$`).test(path);
-}
-
 /** Paths that can produce a changelog entry. */
 const INCLUDE = [
   /^fern\/products\/[^/]+\/pages\/.+\.mdx$/,
@@ -138,10 +128,9 @@ export function draftBranch(date) {
 /**
  * The `##` headings of a changelog entry file.
  *
- * A heading is the identity of an entry: collect uses this to tell an author's
- * new entries from already-published ones, and render records these in the
- * manifest so the Slack digests announce only what is new. Both sides must
- * extract headings identically, so the extraction lives here.
+ * A heading is the identity of an entry. Render records the headings already in a
+ * dated file in the manifest, so the Slack digests announce only what this batch
+ * added rather than re-announcing that date's earlier entries.
  */
 export function entryHeadings(markdown) {
   if (!markdown) return [];

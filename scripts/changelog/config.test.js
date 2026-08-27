@@ -16,7 +16,6 @@ import {
   draftBranch,
   entryHeadings,
   isDocsRelevant,
-  isChangelogEntryFile,
   isMechanicalPatch,
   batchDir,
   resolveRepo,
@@ -43,12 +42,11 @@ test('isDocsRelevant excludes tooling and assets', () => {
   assert.equal(isDocsRelevant('fern/products/home/pages/styles.css'), false);
 });
 
-test('isChangelogEntryFile matches dated entries but not the overview', () => {
-  assert.ok(isChangelogEntryFile(`${CHANGELOG_DIR_REL}/2026-08-10.mdx`));
-  assert.ok(isChangelogEntryFile(`${CHANGELOG_DIR_REL}/2026-08-10.md`));
-  // overview.mdx is hand-maintained; editing it is not self-documenting a change.
-  assert.equal(isChangelogEntryFile(`${CHANGELOG_DIR_REL}/overview.mdx`), false);
-  assert.equal(isChangelogEntryFile('fern/products/home/pages/welcome.mdx'), false);
+test('isDocsRelevant excludes the changelog itself', () => {
+  // A PR that only writes a changelog entry — a hand-authored one, or this
+  // pipeline's own weekly PR — must not re-enter the pipeline as docs content.
+  assert.equal(isDocsRelevant(`${CHANGELOG_DIR_REL}/2026-08-10.mdx`), false);
+  assert.equal(isDocsRelevant(`${CHANGELOG_DIR_REL}/overview.mdx`), false);
 });
 
 test('isMechanicalPatch detects a case-only change', () => {
