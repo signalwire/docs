@@ -19,9 +19,7 @@ namespace SignalWireAPI.RelayRest.NumberGroups {
     @operationId("list_number_groups")
     @summary("List number groups")
     @doc("""
-      Returns a list of your Number Groups. The groups are returned sorted
-      by creation date, with the most recent appearing first. The list is
-      filterable by sending in any of the following parameters.
+      Lists the Number Groups in your SignalWire project. A Number Group organizes owned phone numbers into a sender pool and can preserve the same sender for repeated outbound traffic with `sticky_sender`. Use [List number group memberships](/docs/apis/rest/number-group-membership/list-number-group-memberships) to see which numbers belong to a group. Results are sorted by creation date, most recent first.
       
       ${tokenPermissions<"_Numbers_">}
       """)
@@ -34,7 +32,7 @@ namespace SignalWireAPI.RelayRest.NumberGroups {
     @operationId("create_number_group")
     @summary("Create number group")
     @doc("""
-      Creates a new number group.
+      Creates a named pool for project-owned phone numbers, with optional sticky-sender behavior. Use it when outbound traffic should select from a managed group rather than one fixed number; add numbers afterward with [Create number group membership](/docs/apis/rest/number-group-membership/create-number-group-membership). This operation does not purchase phone numbers.
       
       ${tokenPermissions<"_Numbers_">}
       """)
@@ -48,7 +46,7 @@ namespace SignalWireAPI.RelayRest.NumberGroups {
     @operationId("retrieve_number_group")
     @summary("Get number group")
     @doc("""
-      Retrieves the details of a number group.
+      Retrieves one Number Group from your SignalWire project. Use [List number groups](/docs/apis/rest/number-groups/list-number-groups) to find groups, or list its memberships to inspect the actual phone numbers in the pool.
       
       ${tokenPermissions<"_Numbers_">}
       """)
@@ -62,7 +60,7 @@ namespace SignalWireAPI.RelayRest.NumberGroups {
     @operationId("update_number_group")
     @summary("Update number group")
     @doc("""
-      Updates a number group.
+      Changes how a project Number Group is identified or selects a consistent sender for a recipient. Add or remove individual phone numbers through the Number Group Membership operations instead.
       
       ${tokenPermissions<"_Numbers_">}
       """)
@@ -77,7 +75,7 @@ namespace SignalWireAPI.RelayRest.NumberGroups {
     @operationId("delete_number_group")
     @summary("Delete number group")
     @doc("""
-      Deletes a number group.
+      Deletes a Number Group by ID. Use it when the pool is no longer needed; this removes the grouping but does not release the project-owned phone numbers that belonged to it.
       
       ${tokenPermissions<"_Numbers_">}
       """)
@@ -99,7 +97,7 @@ namespace SignalWireAPI.RelayRest.NumberGroups {
     @operationId("list_number_group_memberships")
     @summary("List number group memberships")
     @doc("""
-      Returns a list of phone numbers in a number group.
+      Lists the project-owned phone numbers that belong to one Number Group. Use it to understand which senders make up the pool; use [List phone numbers](/docs/apis/rest/phone-numbers/list-phone-numbers) for all numbers owned by the project.
       
       ${tokenPermissions<"_Numbers_">}
       """)
@@ -114,7 +112,7 @@ namespace SignalWireAPI.RelayRest.NumberGroups {
     @operationId("create_number_group_membership")
     @summary("Create number group membership")
     @doc("""
-      Adds a phone number to a number group.
+      Adds one project-owned phone number to a Number Group by phone-number ID. Use it to build or expand a sender pool after creating the group; this operation does not purchase or import the number. A phone number can belong to more than one group.
       
       ${tokenPermissions<"_Numbers_">}
       """)
@@ -139,7 +137,7 @@ namespace SignalWireAPI.RelayRest.NumberGroupMemberships {
     @operationId("retrieve_number_group_membership")
     @summary("Get number group membership")
     @doc("""
-      Retrieves the details of a number group membership.
+      Retrieves one Number Group Membership by ID so you can inspect the link between a project phone number and its sender pool. Use [List number group memberships](/docs/apis/rest/number-group-membership/list-number-group-memberships) to discover memberships for a group.
       
       ${tokenPermissions<"_Numbers_">}
       """)
@@ -153,7 +151,7 @@ namespace SignalWireAPI.RelayRest.NumberGroupMemberships {
     @operationId("delete_number_group_membership")
     @summary("Delete number group membership")
     @doc("""
-      Removes a phone number from a number group.
+      Deletes one Number Group Membership by membership ID, removing the phone number from that pool. This does not release the phone number from the project or delete the Number Group.
       
       ${tokenPermissions<"_Numbers_">}
       """)

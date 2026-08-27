@@ -17,7 +17,7 @@ namespace SignalWireAPI.Fabric.SipEndpoint.Addresses {
     @operationId("list_sip_credential_addresses")
     @summary("List SIP credential Addresses")
     @doc("""
-      A list of addresses assigned to a SIP Credential.
+      Returns the project-scoped resource addresses assigned to one SIP Credential. Use these callable handles to see how the registered SIP device can be reached; use [Get SIP credential](/docs/apis/rest/sip-credentials/get-sip-credential) for registration and outbound call-handler settings, or the Subscriber SIP Credential endpoints for a Subscriber-owned device.
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)

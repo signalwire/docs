@@ -20,7 +20,7 @@ namespace SignalWireAPI.Fax.Logs {
     @operationId("list_fax_logs")
     @summary("List fax logs")
     @doc("""
-      List the available logs.
+      Lists historical fax activity in the project for delivery review, usage reporting, and troubleshooting. The Fax Logs API is read-only; send or manage faxes through the Compatibility API's [Faxes](/docs/compatibility-api/rest/faxes/send-fax) operations instead.
       
       ${tokenPermissions<"_Fax_">}
       """)
@@ -34,7 +34,7 @@ namespace SignalWireAPI.Fax.Logs {
     @operationId("get_fax_log")
     @summary("Get fax log")
     @doc("""
-      Find a log by ID.
+      Retrieves one historical fax activity record by log ID for delivery review or troubleshooting. This read-only endpoint cannot send, cancel, or delete the fax; use Compatibility [Retrieve fax](/docs/compatibility-api/rest/faxes/retrieve-fax) for the managed fax resource.
       
       ${tokenPermissions<"_Fax_">}
       """)

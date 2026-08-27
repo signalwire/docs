@@ -17,7 +17,7 @@ namespace SignalWireAPI.Fabric.FreeswitchConnectorAddresses {
     @operationId("list_freeswitch_connector_addresses")
     @summary("List FreeSWITCH connector Addresses")
     @doc("""
-      This endpoint returns a list of addresses associated with a specific FreeSWITCH Connector.
+      Returns the project-scoped resource addresses assigned to one FreeSWITCH Connector. Use these callable handles to see how communications can reach the connected FreeSWITCH; use [List FreeSWITCH connectors](/docs/apis/rest/freeswitch-connector/list-freeswitch-connectors) for the resources themselves, or the address operation for the handler type you actually use.
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)

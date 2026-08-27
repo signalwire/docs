@@ -20,7 +20,7 @@ namespace SignalWireAPI.Message.Logs {
     @operationId("list_message_logs")
     @summary("List message logs")
     @doc("""
-      List the available logs.
+      Lists historical messaging activity in the project for delivery review, auditing, and troubleshooting. This collection is read-only; send or redact messages through the [Messages API](/docs/apis/rest/messages/create-message) instead.
 
       ${tokenPermissions<"_Messaging_">}
       """)
@@ -34,7 +34,7 @@ namespace SignalWireAPI.Message.Logs {
     @operationId("get_message_log")
     @summary("Get message log")
     @doc("""
-      Find a log by ID.
+      Retrieves one historical messaging record by log ID. Use it to inspect delivery details for a known message segment; this read-only endpoint does not send, retry, or redact the message. Use [List message logs](/docs/apis/rest/message-logs/list-message-logs) to discover log IDs or [Send a message](/docs/apis/rest/messages/create-message) for live messaging.
 
       ${tokenPermissions<"_Messaging_">}
       """)

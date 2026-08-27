@@ -19,7 +19,7 @@ namespace SignalWireAPI.Fabric.Subscribers.Addresses {
     @operationId("list_subscriber_addresses")
     @summary("List Subscriber Addresses")
     @doc("""
-      List [Subscriber](/docs/platform/subscribers) Addresses.
+      Returns the project-scoped resource addresses assigned to one [Subscriber](/docs/platform/subscribers). Use these callable handles to see how calls or messages can reach that subscriber; use [Get Subscriber](/docs/apis/rest/subscribers/get-subscriber) for profile data, or the SAT-authenticated [List Resource Addresses from a Client](/docs/apis/rest/addresses/list-resource-addresses-client) when a subscriber client is discovering addresses it can reach.
 
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)

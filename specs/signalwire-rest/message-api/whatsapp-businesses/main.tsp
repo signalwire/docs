@@ -18,7 +18,7 @@ namespace SignalWireAPI.Message.WhatsappBusinesses {
     @operationId("list_whatsapp_businesses")
     @summary("List WhatsApp Business Accounts")
     @doc("""
-      Returns the WhatsApp Business Accounts (WABAs) connected to your SignalWire Space. Each account can have its own set of phone numbers and message templates. Use a `whatsapp_business_id` from this list when creating or filtering [message templates](/docs/platform/messaging/whatsapp/message-templates).
+      Returns the WhatsApp Business Accounts connected to the project. Each account owns WhatsApp numbers and message templates. Use a `whatsapp_business_id` from this list when creating or filtering [message templates](/docs/platform/messaging/whatsapp/message-templates); use [List WhatsApp numbers](/docs/apis/rest/whatsapp/list-whatsapp-numbers) when you need a `whatsapp:`-prefixed sender address instead.
 
       ${tokenPermissions<"_Numbers_">}
       """)
