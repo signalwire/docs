@@ -13,6 +13,16 @@
 /** Tier names, in descending order of reach. */
 const TIERS = ['notable', 'minor', 'skip'];
 
+/**
+ * Max files listed individually per PR before the prompt falls back to a
+ * per-directory tally.
+ *
+ * Lives here, not in config.js, because the prompt builder is the only consumer
+ * and it is CommonJS — this file is the one both worlds already read. config.js
+ * re-exports it so ESM callers still have a single import surface.
+ */
+const MAX_LISTED_FILES = 20;
+
 /** Which audiences each tier reaches. Render and publish both key off this. */
 const TIER_ROUTING = {
   notable: ['changelog', 'devex', 'support'],
@@ -113,4 +123,4 @@ ignore the digest, which is the failure mode this pipeline exists to avoid. Set
 \`confidence\` below 0.7 whenever you are unsure, and say why in \`reasoning\` —
 a human reviews every tier call before anything is published.`;
 
-module.exports = { TIERS, TIER_ROUTING, rubric };
+module.exports = { TIERS, TIER_ROUTING, MAX_LISTED_FILES, rubric };

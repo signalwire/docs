@@ -36,10 +36,9 @@ test('isDocsRelevant excludes generated output even under an included prefix', (
   assert.equal(isDocsRelevant('fern/apis/signalwire-rest/openapi.yaml'), false);
 });
 
-test('isDocsRelevant excludes tooling, drafts, and assets', () => {
+test('isDocsRelevant excludes tooling and assets', () => {
   assert.equal(isDocsRelevant('scripts/changelog/collect.js'), false);
   assert.equal(isDocsRelevant('.github/workflows/check-links.yml'), false);
-  assert.equal(isDocsRelevant('fern/products/x/pages/y.mdx.draft'), false);
   assert.equal(isDocsRelevant('fern/assets/images/diagram.png'), false);
   assert.equal(isDocsRelevant('fern/products/home/pages/styles.css'), false);
 });

@@ -7,9 +7,11 @@
  */
 
 import { execFileSync } from 'node:child_process';
+import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+const require = createRequire(import.meta.url);
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export const REPO_ROOT = dirname(dirname(__dirname));
@@ -78,11 +80,13 @@ const INCLUDE = [
 /**
  * Paths that never produce an entry, checked BEFORE INCLUDE so that generated
  * output nested under an included prefix is still excluded.
+ *
+ * Drafts need no rule here: the convention is `<name>.mdx.draft`, and every
+ * INCLUDE pattern is anchored to a real extension, so a draft never matches one.
  */
 const EXCLUDE = [
   /^specs\/.*\/tsp-output\//,
   /^fern\/apis\/.*\/openapi\.ya?ml$/,
-  /\.draft$/,
   /^scripts\//,
   /^\.github\//,
   /^fern\/assets\//,
@@ -166,8 +170,14 @@ export const MAX_PATCH_CHARS = 1200;
 /** Max diff characters across all files in one PR. */
 export const MAX_PATCH_CHARS_PER_PR = 6000;
 
-/** Max files listed individually per PR. Beyond this, a per-directory tally. */
-export const MAX_LISTED_FILES = 20;
+/**
+ * Max files listed individually per PR. Beyond this, a per-directory tally.
+ *
+ * Defined in changelog-criteria.cjs and re-exported here rather than duplicated:
+ * its only consumer is the CommonJS prompt builder, which cannot import this
+ * file, but ESM callers should still have one import surface for the budgets.
+ */
+export const { MAX_LISTED_FILES } = require('../../.github/scripts/changelog-criteria.cjs');
 
 /**
  * True when a diff changes nothing but whitespace, line endings, or letter case.

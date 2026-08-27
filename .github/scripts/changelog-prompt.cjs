@@ -13,7 +13,7 @@
  * ESM callers import it with `import buildPrompt from '...cjs'` (default interop).
  */
 
-const { rubric } = require('./changelog-criteria.cjs');
+const { rubric, MAX_LISTED_FILES } = require('./changelog-criteria.cjs');
 
 /** The JSON contract. Identical for the human and API paths. */
 const OUTPUT_SCHEMA = `{
@@ -31,9 +31,6 @@ const OUTPUT_SCHEMA = `{
     }
   ]
 }`;
-
-/** Max files listed individually before falling back to a per-directory tally. */
-const MAX_LISTED_FILES = 20;
 
 function formatFile(f) {
   const where = f.url ? ` → ${f.url}${f.title ? ` ("${f.title}")` : ''}` : '';
