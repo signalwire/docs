@@ -42,6 +42,11 @@ model PhoneNumberResponse {
   ...PhoneNumber;
 }
 
+@doc("Response containing a caller ID name request.")
+model PhoneNumberCnamResponse {
+  ...PhoneNumberCnam;
+}
+
 @doc("Response containing available phone numbers for purchase.")
 model AvailablePhoneNumbersResponse {
   @doc("Pagination links.")

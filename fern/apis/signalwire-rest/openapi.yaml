@@ -9775,6 +9775,157 @@ paths:
                 $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
       tags:
         - Phone Numbers
+  /api/relay/rest/phone_numbers/{id}/cnam:
+    get:
+      operationId: retrieve_caller_id_name
+      summary: Get the caller ID name for a phone number
+      description: |-
+        Retrieves the most recent caller ID name request for the phone number, and where that request stands. Poll this operation after [Request a caller ID name](/docs/apis/rest/phone-numbers/request-caller-id-name) until `status` is `approved`, `rejected`, or `failed`.
+
+        The `name` here is the name that was requested, which is not necessarily the name callers currently see: the two differ while a request is under review, and after one is rejected. For the name live at the carrier, read `cnam` on the phone number itself with [Get phone number](/docs/apis/rest/phone-numbers/retrieve-phone-number).
+
+        Returns `404` when the number has never had a caller ID name requested.
+
+        #### Permissions
+
+        The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Numbers_.
+
+        [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
+      parameters:
+        - $ref: '#/components/parameters/PhoneNumberPathID'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhoneNumberCnamResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode404'
+        '500':
+          description: An internal server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - Phone Numbers
+    post:
+      operationId: request_caller_id_name
+      summary: Request a caller ID name for a phone number
+      description: |-
+        Requests the caller ID name displayed alongside this number on outbound calls. A `201` means the request was accepted, not that callers see the name yet.
+
+        A name this number has not already had approved comes back with `status` set to `pending`, queued for compliance review. Poll [Get the caller ID name](/docs/apis/rest/phone-numbers/retrieve-caller-id-name) until `status` is `approved`, `rejected`, or `failed`. Requesting a name that was previously `rejected` or `failed` returns it to `pending`.
+
+        Re-requesting a name already `approved` on this number is the exception: that request comes back as it stands, `201` with `status` still `approved`, and the name is re-applied at the carrier without going through review again.
+
+        A number carries one live request at a time, so a new request supersedes any earlier one still awaiting a decision.
+
+        SignalWire normalizes `name` before validating it, so check the rules against the normalized form described on that field. A `422` means the number's carrier does not offer caller ID name, `name` was blank, or the normalized name broke the length or character rules.
+
+        Caller ID name is available only on numbers whose carrier offers it. This operation sets your own outbound name; to read the name published for someone else's number, use [Look up phone number](/docs/apis/rest/phone-numbers/lookup-phone-number) with `include=cnam`.
+
+        #### Permissions
+
+        The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Numbers_.
+
+        [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
+      parameters:
+        - $ref: '#/components/parameters/PhoneNumberPathID'
+      responses:
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhoneNumberCnamResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode404'
+        '422':
+          description: The request failed validation. See errors for details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.ValidationError'
+        '500':
+          description: An internal server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - Phone Numbers
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePhoneNumberCnamRequest'
+    delete:
+      operationId: clear_caller_id_name
+      summary: Clear the caller ID name on a phone number
+      description: |-
+        Removes the caller ID name from the phone number and cancels any request still awaiting a decision. A `204` means the removal was queued; `cnam` on the phone number becomes `null` once the carrier confirms it.
+
+        There must be something to clear — either a name applied at the carrier or a request awaiting a decision — otherwise the request returns `422`. A `422` is also returned when the number's carrier does not offer caller ID name.
+
+        #### Permissions
+
+        The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Numbers_.
+
+        [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
+      parameters:
+        - $ref: '#/components/parameters/PhoneNumberPathID'
+      responses:
+        '204':
+          description: 'There is no content to send for this request, but the headers may be useful. '
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode404'
+        '422':
+          description: The request failed validation. See errors for details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.ValidationError'
+        '500':
+          description: An internal server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - Phone Numbers
   /api/relay/rest/phone_numbers/{id}/e911_address:
     post:
       operationId: assign_e911_address
@@ -24126,6 +24277,26 @@ components:
       unevaluatedProperties:
         not: {}
       description: Request body for creating a partner/CSP campaign. Used when the brand is a CSP (self-registered) brand.
+    CreatePhoneNumberCnamRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: |-
+            The caller ID name you want callers to see. SignalWire normalizes the value before validating and
+            storing it: control characters are removed, runs of whitespace collapse to single spaces, and the
+            result is upper-cased, so `Acme Plumbing` is stored as `ACME PLUMBING`.
+
+            The normalized name must be 15 characters or fewer, start with a letter or digit, and contain only
+            letters, digits, spaces, and the characters `&`, `'`, `.`, `,`, and `-`. Because these rules apply
+            after normalization, extra surrounding or repeated whitespace does not count against the limit.
+          examples:
+            - Acme Plumbing
+      unevaluatedProperties:
+        not: {}
+      description: Request body for requesting a caller ID name for a phone number.
     CreateQueueRequest:
       type: object
       properties:
@@ -29842,6 +30013,7 @@ components:
         - number_type
         - e911_address_id
         - e911_status
+        - cnam
         - created_at
         - updated_at
         - next_billed_at
@@ -29923,6 +30095,17 @@ components:
             `unregistered` once the carrier confirms the removal.
           examples:
             - active
+        cnam:
+          anyOf:
+            - type: string
+            - type: 'null'
+          maxLength: 15
+          description: |-
+            The caller ID name set at the carrier for this phone number, or `null` when none is set. This is
+            the name callers see. Change it with [Request a caller ID name](/docs/apis/rest/phone-numbers/request-caller-id-name);
+            the value here changes only once a request is approved and applied at the carrier.
+          examples:
+            - ACME PLUMBING
         created_at:
           type: string
           format: date-time
@@ -30193,6 +30376,127 @@ components:
         - mms
         - fax
       description: Phone number capability.
+    PhoneNumberCnamReason:
+      type: string
+      enum:
+        - offensive_language
+        - impersonation
+        - unverified_brand
+        - implied_trusted_institution
+        - scam_wording
+        - deceptive
+        - unsupported_personal_name
+        - too_generic
+        - invalid_format
+        - unrelated_to_business
+        - needs_documentation
+        - other_compliance_concern
+        - processing_failed
+      description: Reason a caller ID name request was not approved. Each code is explained on the `reason` field.
+    PhoneNumberCnamResponse:
+      type: object
+      required:
+        - type
+        - id
+        - phone_number_id
+        - name
+        - status
+        - reason
+        - required_action
+        - created_at
+        - updated_at
+      properties:
+        type:
+          type: string
+          enum:
+            - cnam
+          description: The type of object. Always `cnam`.
+        id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: The unique identifier of the caller ID name request.
+          examples:
+            - b6a4f0c2-3f1e-4c9a-9c1b-7f2e5a1d8c40
+        phone_number_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: The unique identifier of the phone number this request belongs to.
+          examples:
+            - 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        name:
+          type: string
+          maxLength: 15
+          description: |-
+            The requested caller ID name, as stored after normalization: upper-cased, with runs of
+            whitespace collapsed to single spaces. At most 15 characters.
+          examples:
+            - ACME PLUMBING
+        status:
+          allOf:
+            - $ref: '#/components/schemas/PhoneNumberCnamStatus'
+          description: |-
+            Where the request stands. `pending` means it is queued for compliance review. `approved` means
+            the name passed review and is set at the carrier. `in_review` means automated review could not
+            approve it and a person needs to decide. `rejected` means the name isn't allowed, so submit a
+            different one. `failed` means processing did not complete, and the same name can be requested
+            again.
+          examples:
+            - approved
+        reason:
+          anyOf:
+            - $ref: '#/components/schemas/PhoneNumberCnamReason'
+            - type: 'null'
+          description: |-
+            The specific concern review recorded, or `null` when it recorded none. Always `null` while the
+            request is `pending` or once it is `approved`, and it can also be `null` on a request that was
+            held for review or rejected before review reached a name-specific finding.
+
+            | Code | What it means |
+            | --- | --- |
+            | `offensive_language` | The name contains language that can't be displayed on calls. |
+            | `impersonation` | The name appears to impersonate another person or organization. |
+            | `unverified_brand` | The name can't yet be confirmed as belonging to your business. |
+            | `implied_trusted_institution` | The name could imply you represent a bank, government agency, or similar institution. |
+            | `scam_wording` | The name uses wording commonly associated with scam calls. |
+            | `deceptive` | The name is misleading about who is calling. |
+            | `unsupported_personal_name` | The name is a personal name that isn't supported by your verified business details. |
+            | `too_generic` | The name is too generic to identify you on a call. |
+            | `invalid_format` | The name contains characters or formatting that can't be displayed. |
+            | `unrelated_to_business` | The name doesn't appear to relate to your verified business. |
+            | `needs_documentation` | Documentation showing you're authorized to use the name is required. |
+            | `other_compliance_concern` | The name didn't pass compliance review, for a reason not covered by the other codes. |
+            | `processing_failed` | Processing the request failed. Request the name again. |
+          examples:
+            - implied_trusted_institution
+        required_action:
+          anyOf:
+            - type: string
+            - type: 'null'
+          description: |-
+            What to change, verify, or supply to move the request forward, or `null` when review produced no
+            such step.
+          examples:
+            - Provide documentation showing you are authorized to use this name.
+        created_at:
+          type: string
+          format: date-time
+          description: The date the request was created.
+        updated_at:
+          type: string
+          format: date-time
+          description: The date the request was last updated.
+      unevaluatedProperties:
+        not: {}
+      description: Response containing a caller ID name request.
+    PhoneNumberCnamStatus:
+      type: string
+      enum:
+        - pending
+        - approved
+        - in_review
+        - rejected
+        - failed
+      description: Review status of a caller ID name request.
     PhoneNumberE911Status:
       type: string
       enum:
@@ -30309,6 +30613,7 @@ components:
         - number_type
         - e911_address_id
         - e911_status
+        - cnam
         - created_at
         - updated_at
         - next_billed_at
@@ -30390,6 +30695,17 @@ components:
             `unregistered` once the carrier confirms the removal.
           examples:
             - active
+        cnam:
+          anyOf:
+            - type: string
+            - type: 'null'
+          maxLength: 15
+          description: |-
+            The caller ID name set at the carrier for this phone number, or `null` when none is set. This is
+            the name callers see. Change it with [Request a caller ID name](/docs/apis/rest/phone-numbers/request-caller-id-name);
+            the value here changes only once a request is approved and applied at the carrier.
+          examples:
+            - ACME PLUMBING
         created_at:
           type: string
           format: date-time
