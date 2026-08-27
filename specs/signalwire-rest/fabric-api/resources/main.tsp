@@ -7,6 +7,7 @@ import "./models/errors.tsp";
 import "./addresses";
 import "../../types";
 import "../tags.tsp";
+import "../_shared/examples.tsp";
 import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
@@ -25,6 +26,21 @@ namespace SignalWireAPI.Fabric.Resources {
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
+    @opExample(
+      #{
+        returnType: #{
+          data: #[RESOURCE_AI_EXAMPLE],
+          links: #{
+            self: "https://example.signalwire.com/api/fabric/resources?page_number=0&page_size=50",
+            first: "https://example.signalwire.com/api/fabric/resources?page_number=0&page_size=50",
+          },
+        },
+      },
+      #{
+        title: "Resource list",
+        description: "A page containing one compact AI Agent resource.",
+      }
+    )
     list():
       | ResourceListResponse
       | StatusCode401
@@ -38,6 +54,32 @@ namespace SignalWireAPI.Fabric.Resources {
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
+    @opExample(
+      #{ returnType: #{ statusCode: 200, resource: RESOURCE_AI_EXAMPLE } },
+      #{ title: "AI Agent", description: "An AI Agent Fabric resource." }
+    )
+    @opExample(
+      #{ returnType: #{ statusCode: 200, resource: RESOURCE_CALL_FLOW_EXAMPLE } },
+      #{ title: "Call Flow", description: "A Call Flow with compact SWML content." }
+    )
+    @opExample(
+      #{
+        returnType: #{
+          statusCode: 200,
+          resource: RESOURCE_CALLING_SWML_SCRIPT_EXAMPLE,
+        },
+      },
+      #{ title: "Calling script", description: "A compact Calling SWML Script resource." }
+    )
+    @opExample(
+      #{
+        returnType: #{
+          statusCode: 200,
+          resource: RESOURCE_MESSAGING_SWML_SCRIPT_EXAMPLE,
+        },
+      },
+      #{ title: "Messaging script", description: "A compact Messaging SWML Script resource." }
+    )
     read(...ResourcePathID):
       | {
           @statusCode statusCode: 200;

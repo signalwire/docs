@@ -7,6 +7,7 @@ import "./models/errors.tsp";
 import "./addresses";
 import "../../types";
 import "../tags.tsp";
+import "../_shared/examples.tsp";
 import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
@@ -25,6 +26,18 @@ namespace SignalWireAPI.Fabric.AIAgents {
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
+    @opExample(
+      #{
+        returnType: #{
+          data: #[AI_AGENT_RESPONSE_EXAMPLE],
+          links: #{
+            self: "https://example.signalwire.com/api/fabric/resources/ai_agents?page_number=0&page_size=50",
+            first: "https://example.signalwire.com/api/fabric/resources/ai_agents?page_number=0&page_size=50",
+          },
+        },
+      },
+      #{ title: "AI agent list", description: "A page containing one AI agent." }
+    )
     list(): AIAgentListResponse | StatusCode401 | StatusCode404 | StatusCode500;
 
     @operationId("get_ai_agent")
@@ -34,6 +47,10 @@ namespace SignalWireAPI.Fabric.AIAgents {
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
+    @opExample(
+      #{ returnType: #{ statusCode: 200, ai_agent: AI_AGENT_RESPONSE_EXAMPLE } },
+      #{ title: "AI agent", description: "A customer support AI agent." }
+    )
     read(...AIAgentPathID):
       | {
           @statusCode statusCode: 200;
@@ -50,6 +67,16 @@ namespace SignalWireAPI.Fabric.AIAgents {
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
+    @opExample(
+      #{
+        parameters: AI_AGENT_REQUEST_EXAMPLE,
+        returnType: #{ statusCode: 201, ai_agent: AI_AGENT_RESPONSE_EXAMPLE },
+      },
+      #{
+        title: "Customer support agent",
+        description: "Create an AI agent with a concise text prompt.",
+      }
+    )
     @post
     create(...AIAgentCreateRequest):
       | {
@@ -68,6 +95,20 @@ namespace SignalWireAPI.Fabric.AIAgents {
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
+    @opExample(
+      #{
+        parameters: #{
+          id: "993ed018-9e79-4e50-b97b-984bd5534095",
+          prompt: #{ text: "You are a concise customer support assistant." },
+          name: "Support Assistant",
+        },
+        returnType: #{ statusCode: 200, ai_agent: AI_AGENT_RESPONSE_EXAMPLE },
+      },
+      #{
+        title: "Update the agent prompt",
+        description: "Replace an AI agent's prompt while leaving its other settings unchanged.",
+      }
+    )
     @patch(#{ implicitOptionality: true })
     update(...AIAgentPathID, ...AIAgentUpdateRequest):
       | {
