@@ -398,7 +398,9 @@ function collect(window, products, ledger) {
     collected.push({
       number: pr.number,
       title: pr.title,
-      body: pr.body,
+      // GitHub returns PR bodies with CRLF line endings, which would otherwise
+      // land verbatim in the committed prompt.md.
+      body: pr.body ? pr.body.replace(/\r\n/g, '\n') : pr.body,
       author: pr.author?.login ?? 'unknown',
       mergedAt: pr.mergedAt,
       mergeCommit: pr.mergeCommit?.oid ?? null,
