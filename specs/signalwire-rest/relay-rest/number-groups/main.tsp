@@ -19,7 +19,7 @@ namespace SignalWireAPI.RelayRest.NumberGroups {
     @operationId("list_number_groups")
     @summary("List number groups")
     @doc("""
-      Lists the Number Groups in your SignalWire project. A Number Group organizes owned phone numbers into a sender pool and can preserve the same sender for repeated outbound traffic with `sticky_sender`. Use [List number group memberships](/docs/apis/rest/number-group-membership/list-number-group-memberships) to see which numbers belong to a group.
+      Lists the Number Groups in your SignalWire project. A Number Group organizes owned phone numbers into a sender pool and can preserve the same sender for repeated outbound traffic with `sticky_sender`. Use [List number group memberships](/docs/apis/rest/number-group-membership/list-number-group-memberships) to see which numbers belong to a group. Results are sorted by creation date, most recent first.
       
       ${tokenPermissions<"_Numbers_">}
       """)

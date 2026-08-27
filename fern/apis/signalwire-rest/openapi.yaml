@@ -8084,7 +8084,7 @@ paths:
       operationId: list_addresses
       summary: List E911 addresses
       description: |-
-        Lists the physical E911 service addresses stored in your SignalWire project. An E911 address represents the real-world location emergency services should receive for a phone number; create and validate one before assigning it to that number. Resource addresses and SIP Addresses are callable routing handles, not emergency locations.
+        Lists the physical E911 service addresses stored in your SignalWire project. An E911 address represents the real-world location emergency services should receive for a phone number; create and validate one before assigning it to that number. Resource addresses and SIP Addresses are callable routing handles, not emergency locations. Results are sorted by creation date, most recent first.
 
         #### Permissions
 
@@ -8324,7 +8324,7 @@ paths:
       operationId: list_domain_applications
       summary: List domain applications
       description: |-
-        Lists the SIP Domain Applications in your SignalWire project. A Domain Application gives inbound SIP traffic a project-specific domain and routes its calls to a configured handler. Use [Assign domain application handler](/docs/apis/rest/domain-applications/assign-resource-domain-application) when that handler is an existing Fabric resource.
+        Lists the SIP Domain Applications in your SignalWire project. A Domain Application gives inbound SIP traffic a project-specific domain and routes its calls to a configured handler. Use [Assign domain application handler](/docs/apis/rest/domain-applications/assign-resource-domain-application) when that handler is an existing Fabric resource. Results are sorted by creation date, most recent first.
 
         #### Permissions
 
@@ -9120,7 +9120,7 @@ paths:
       operationId: list_number_groups
       summary: List number groups
       description: |-
-        Lists the Number Groups in your SignalWire project. A Number Group organizes owned phone numbers into a sender pool and can preserve the same sender for repeated outbound traffic with `sticky_sender`. Use [List number group memberships](/docs/apis/rest/number-group-membership/list-number-group-memberships) to see which numbers belong to a group.
+        Lists the Number Groups in your SignalWire project. A Number Group organizes owned phone numbers into a sender pool and can preserve the same sender for repeated outbound traffic with `sticky_sender`. Use [List number group memberships](/docs/apis/rest/number-group-membership/list-number-group-memberships) to see which numbers belong to a group. Results are sorted by creation date, most recent first.
 
         #### Permissions
 
@@ -9452,7 +9452,7 @@ paths:
       operationId: list_phone_numbers
       summary: List phone numbers
       description: |-
-        Lists the phone numbers owned by your SignalWire project. These numbers can send or receive communications according to their capabilities and assigned handlers. Use [Search phone numbers](/docs/apis/rest/phone-numbers/search-available-phone-numbers) for numbers available to purchase, or Compatibility [Incoming Phone Numbers](/docs/compatibility-api/rest/incoming-phone-numbers/list-incoming-phone-numbers) for SID-based routes.
+        Lists the phone numbers owned by your SignalWire project. These numbers can send or receive communications according to their capabilities and assigned handlers. Use [Search phone numbers](/docs/apis/rest/phone-numbers/search-available-phone-numbers) for numbers available to purchase, or Compatibility [Incoming Phone Numbers](/docs/compatibility-api/rest/incoming-phone-numbers/list-incoming-phone-numbers) for SID-based routes. Results are sorted by creation date, most recent first.
 
         #### Permissions
 
@@ -10938,7 +10938,7 @@ paths:
       operationId: list_short_codes
       summary: List short codes
       description: |-
-        Lists the messaging Short Codes connected to your SignalWire project. These leased codes can send and receive high-volume messages through their configured handlers. Standard long-code phone numbers are available through [List phone numbers](/docs/apis/rest/phone-numbers/list-phone-numbers).
+        Lists the messaging Short Codes connected to your SignalWire project. These leased codes can send and receive high-volume messages through their configured handlers. Standard long-code phone numbers are available through [List phone numbers](/docs/apis/rest/phone-numbers/list-phone-numbers). Results are sorted by creation date, most recent first.
 
         #### Permissions
 
@@ -11161,7 +11161,7 @@ paths:
       operationId: list_verified_caller_ids
       summary: List verified caller IDs
       description: |-
-        Lists external phone numbers your SignalWire project has submitted for outbound caller-ID verification. Verified Caller IDs let calls present a number the project does not own; project-owned numbers are managed through [Phone Numbers](/docs/apis/rest/phone-numbers/list-phone-numbers) and do not need this verification flow.
+        Lists external phone numbers your SignalWire project has submitted for outbound caller-ID verification. Verified Caller IDs let calls present a number the project does not own; project-owned numbers are managed through [Phone Numbers](/docs/apis/rest/phone-numbers/list-phone-numbers) and do not need this verification flow. Results are sorted by creation date, most recent first.
 
         #### Permissions
 
@@ -18204,7 +18204,7 @@ components:
           type: string
           enum:
             - calling.ai_sidecar.ask
-          description: The `calling.ai_sidecar.ask` command asks the sidecar a one-off question without affecting the live conversation. The answer arrives later as an `ask_answer` webhook callback carrying an `ask_id`, which also marks any tool or thought events the ask triggered.
+          description: The `calling.ai_sidecar.ask` command asks the sidecar a one-off question without affecting the live conversation. The REST response does not include an `ask_id`; when a callback `url` is configured, the `ask_request` callback supplies it and later callbacks for that ask repeat it.
           examples:
             - calling.ai_sidecar.ask
         params:
@@ -18224,9 +18224,10 @@ components:
         not: {}
       description: |-
         Asks the attached sidecar a one-off question without affecting the live conversation.
-        The HTTP response returns the call object; the answer arrives later as an `ask_answer`
-        webhook callback. That callback carries an `ask_id`, which is also stamped on any tool or
-        thought events the ask triggered.
+        The HTTP response returns the call object and does not include an `ask_id`. If the sidecar was
+        started with a callback `url`, the first callback for the request is `ask_request`, which carries
+        the generated `ask_id`. The later `ask_answer` callback and any `request`, `thought`, `tool_call`,
+        or `tool_result` callbacks triggered by the ask repeat that ID.
       title: calling.ai_sidecar.ask
     Calling.CallAISidecarPokeRequest:
       type: object
@@ -18329,8 +18330,10 @@ components:
       unevaluatedProperties:
         not: {}
       description: |-
-        Requests a snapshot of the attached sidecar's activity counters. The HTTP response
-        returns the call object; the counters themselves are not included in it.
+        Requests an internal snapshot of the attached sidecar's activity counters. The HTTP response
+        returns the call object and does not expose the requested snapshot. If the sidecar was started
+        with a callback `url`, its `final` callback provides end-of-session totals such as tool calls,
+        insights, and token usage; see the [SWML `ai_sidecar` callback types](/docs/swml/reference/calling/ai-sidecar#callback-types).
       title: calling.ai_sidecar.status
     Calling.CallAISidecarStopRequest:
       type: object
@@ -18558,8 +18561,7 @@ components:
       description: |-
         Collect user input (DTMF digits, speech, or both) on an active call.
 
-        At least one of `digits` or `speech` must be provided; requests missing
-        both return 400. Results are delivered asynchronously via the `status_url`
+        At least one of `digits` or `speech` must be provided. Results are delivered asynchronously via the `status_url`
         webhook. Digit events have the shape `{control_id, call_id, node_id, result: {type:"digit", params: {digits, terminator}}}`
         and speech events `{..., result: {type:"speech", params: {text, confidence}}}`.
 
@@ -19325,8 +19327,10 @@ components:
         not: {}
       description: |-
         Disconnects the peer leg of a connected call — for example, one joined by the SWML
-        `connect` method — while keeping this call leg active. Returns a conflict error when the
-        call is not currently connected. To end the call itself, use `calling.end`.
+        `connect` method — while keeping this call leg active. The call must currently be connected.
+        Otherwise, the HTTP response is still `200`; the command failure is recorded asynchronously
+        in the [call event log](/docs/apis/rest/voice-logs/list-voice-log-events) with error code `409`,
+        rather than delivered to a status webhook. To end the call itself, use `calling.end`.
       title: calling.disconnect
     Calling.CallHangupRequest:
       type: object
@@ -20594,8 +20598,8 @@ components:
 
         The transcription covers the whole call and completes when the call ends. For real-time
         transcription, use `calling.live_transcribe`. Only one transcription can be active on a call
-        at a time; starting another while one is running returns a `409` conflict. Stop it with
-        `calling.transcribe.stop` using the same `control_id`.
+        at a time. Stop it with `calling.transcribe.stop` using the same `control_id` before starting
+        another.
       title: calling.transcribe
     Calling.CallTranscribeStopRequest:
       type: object

@@ -19,7 +19,7 @@ namespace SignalWireAPI.RelayRest.DomainApplications {
     @operationId("list_domain_applications")
     @summary("List domain applications")
     @doc("""
-      Lists the SIP Domain Applications in your SignalWire project. A Domain Application gives inbound SIP traffic a project-specific domain and routes its calls to a configured handler. Use [Assign domain application handler](/docs/apis/rest/domain-applications/assign-resource-domain-application) when that handler is an existing Fabric resource.
+      Lists the SIP Domain Applications in your SignalWire project. A Domain Application gives inbound SIP traffic a project-specific domain and routes its calls to a configured handler. Use [Assign domain application handler](/docs/apis/rest/domain-applications/assign-resource-domain-application) when that handler is an existing Fabric resource. Results are sorted by creation date, most recent first.
       
       ${tokenPermissions<"_Voice_, _Messaging_, or _Fax_">}
       """)

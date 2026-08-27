@@ -18,7 +18,7 @@ namespace CompatibilityAPI.Transcriptions {
     @operationId("list_transcriptions")
     @summary("List all Transcriptions")
     @doc("""
-      Lists saved text transcriptions created from the account's voice recordings. Each transcription has a SID used for retrieval or deletion. For live call transcription commands rather than saved recording transcripts, use the [Calling API](/docs/apis/rest/calls/call-commands).
+      Lists saved text transcriptions created from the account's voice recordings. Each transcription has a SID used for retrieval or deletion. For live call transcription commands rather than saved recording transcripts, use the [Calling API](/docs/apis/rest/calls/call-commands). Results are ordered by creation date, newest first.
       
       ${tokenPermissions<"_Voice_">}
       """)

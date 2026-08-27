@@ -17,7 +17,7 @@ namespace CompatibilityAPI.Recordings {
     @operationId("list_recordings")
     @summary("List all Recordings")
     @doc("""
-      Lists saved voice recordings across the account's calls and conferences. Each recording has a SID used to retrieve or delete its media. SignalWire REST [Recordings](/docs/apis/rest/recordings/list-call-recordings) provide JSON operations, while Video [Room Recordings](/docs/apis/rest/video/room-recordings/list-room-recordings) contain video-room media.
+      Lists saved voice recordings across the account's calls and conferences. Each recording has a SID used to retrieve or delete its media. SignalWire REST [Recordings](/docs/apis/rest/recordings/list-call-recordings) provide JSON operations, while Video [Room Recordings](/docs/apis/rest/video/room-recordings/list-room-recordings) contain video-room media. Results are ordered by creation date, newest first.
       
       ${tokenPermissions<"_Voice_">}
       """)

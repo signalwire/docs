@@ -18,7 +18,7 @@ namespace CompatibilityAPI.CxmlScripts {
     @operationId("list_cxml_scripts")
     @summary("List All cXML Scripts")
     @doc("""
-      Lists the account's stored cXML scripts from the `LamlBins` collection. These scripts are also available as addressable [cXML Scripts](/docs/apis/rest/cxml-scripts/list-cxml-scripts) in the SignalWire REST API. Use these routes for integrations built around LamlBin SIDs, or [cXML Webhooks](/docs/apis/rest/cxml-webhook/list-cxml-webhooks) when your server generates instructions per request.
+      Lists the account's stored cXML scripts from the `LamlBins` collection. These scripts are also available as addressable [cXML Scripts](/docs/apis/rest/cxml-scripts/list-cxml-scripts) in the SignalWire REST API. Use these routes for integrations built around LamlBin SIDs, or [cXML Webhooks](/docs/apis/rest/cxml-webhook/list-cxml-webhooks) when your server generates instructions per request. Results are sorted by creation date, most recent first.
       
       ${tokenPermissions<"_Voice_ or _Messaging_ or _Fax_">}
       """)

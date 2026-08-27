@@ -106,7 +106,7 @@ namespace CompatibilityAPI.Conferences {
     @operationId("update_conference")
     @summary("Update Conference")
     @doc("""
-      Ends a voice conference or plays an announcement into it by updating the conference SID. Use participant operations to mute, hold, coach, announce to, or remove one caller; Video Conference configuration uses the separate Video API.
+      Ends a voice conference or plays an announcement into the conference identified by SID. Use participant operations to mute, hold, coach, announce to, or remove one caller; Video Conference configuration uses the separate Video API.
       
       ${tokenPermissions<"_Voice_">}
       """)

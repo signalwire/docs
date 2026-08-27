@@ -19,7 +19,7 @@ namespace SignalWireAPI.RelayRest.Addresses {
     @operationId("list_addresses")
     @summary("List E911 addresses")
     @doc("""
-      Lists the physical E911 service addresses stored in your SignalWire project. An E911 address represents the real-world location emergency services should receive for a phone number; create and validate one before assigning it to that number. Resource addresses and SIP Addresses are callable routing handles, not emergency locations.
+      Lists the physical E911 service addresses stored in your SignalWire project. An E911 address represents the real-world location emergency services should receive for a phone number; create and validate one before assigning it to that number. Resource addresses and SIP Addresses are callable routing handles, not emergency locations. Results are sorted by creation date, most recent first.
       
       ${tokenPermissions<"_Numbers_">}
       """)

@@ -19,7 +19,7 @@ namespace SignalWireAPI.RelayRest.ShortCodes {
     @operationId("list_short_codes")
     @summary("List short codes")
     @doc("""
-      Lists the messaging Short Codes connected to your SignalWire project. These leased codes can send and receive high-volume messages through their configured handlers. Standard long-code phone numbers are available through [List phone numbers](/docs/apis/rest/phone-numbers/list-phone-numbers).
+      Lists the messaging Short Codes connected to your SignalWire project. These leased codes can send and receive high-volume messages through their configured handlers. Standard long-code phone numbers are available through [List phone numbers](/docs/apis/rest/phone-numbers/list-phone-numbers). Results are sorted by creation date, most recent first.
       
       ${tokenPermissions<"_Numbers_">}
       """)

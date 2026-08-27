@@ -626,8 +626,10 @@ model CallUpdateCurrentCallRequest {
 @summary("calling.disconnect")
 @doc("""
   Disconnects the peer leg of a connected call — for example, one joined by the SWML
-  `connect` method — while keeping this call leg active. Returns a conflict error when the
-  call is not currently connected. To end the call itself, use `calling.end`.
+  `connect` method — while keeping this call leg active. The call must currently be connected.
+  Otherwise, the HTTP response is still `200`; the command failure is recorded asynchronously
+  in the [call event log](/docs/apis/rest/voice-logs/list-voice-log-events) with error code `409`,
+  rather than delivered to a status webhook. To end the call itself, use `calling.end`.
   """)
 model CallDisconnectRequest {
   @doc(uuidDescription)
@@ -1190,8 +1192,7 @@ model CollectSpeechParams {
 /**
  * Collect user input (DTMF digits, speech, or both) on an active call.
  *
- * At least one of `digits` or `speech` must be provided; requests missing
- * both return 400. Results are delivered asynchronously via the `status_url`
+ * At least one of `digits` or `speech` must be provided. Results are delivered asynchronously via the `status_url`
  * webhook. Digit events have the shape `{control_id, call_id, node_id, result: {type:"digit", params: {digits, terminator}}}`
  * and speech events `{..., result: {type:"speech", params: {text, confidence}}}`.
  *
@@ -1601,8 +1602,8 @@ model CallTapStopRequest {
  *
  * The transcription covers the whole call and completes when the call ends. For real-time
  * transcription, use `calling.live_transcribe`. Only one transcription can be active on a call
- * at a time; starting another while one is running returns a `409` conflict. Stop it with
- * `calling.transcribe.stop` using the same `control_id`.
+ * at a time. Stop it with `calling.transcribe.stop` using the same `control_id` before starting
+ * another.
  */
 @summary("calling.transcribe")
 model CallTranscribeRequest {
@@ -1876,16 +1877,17 @@ model CallAISidecarPokeRequest {
 @summary("calling.ai_sidecar.ask")
 @doc("""
   Asks the attached sidecar a one-off question without affecting the live conversation.
-  The HTTP response returns the call object; the answer arrives later as an `ask_answer`
-  webhook callback. That callback carries an `ask_id`, which is also stamped on any tool or
-  thought events the ask triggered.
+  The HTTP response returns the call object and does not include an `ask_id`. If the sidecar was
+  started with a callback `url`, the first callback for the request is `ask_request`, which carries
+  the generated `ask_id`. The later `ask_answer` callback and any `request`, `thought`, `tool_call`,
+  or `tool_result` callbacks triggered by the ask repeat that ID.
   """)
 model CallAISidecarAskRequest {
   @doc(uuidDescription)
   @example(CallIdExample)
   id: uuid;
 
-  @doc("The `calling.ai_sidecar.ask` command asks the sidecar a one-off question without affecting the live conversation. The answer arrives later as an `ask_answer` webhook callback carrying an `ask_id`, which also marks any tool or thought events the ask triggered.")
+  @doc("The `calling.ai_sidecar.ask` command asks the sidecar a one-off question without affecting the live conversation. The REST response does not include an `ask_id`; when a callback `url` is configured, the `ask_request` callback supplies it and later callbacks for that ask repeat it.")
   @example("calling.ai_sidecar.ask")
   command: "calling.ai_sidecar.ask";
 
@@ -1914,8 +1916,10 @@ model CallAISidecarStopRequest {
 
 @summary("calling.ai_sidecar.status")
 @doc("""
-  Requests a snapshot of the attached sidecar's activity counters. The HTTP response
-  returns the call object; the counters themselves are not included in it.
+  Requests an internal snapshot of the attached sidecar's activity counters. The HTTP response
+  returns the call object and does not expose the requested snapshot. If the sidecar was started
+  with a callback `url`, its `final` callback provides end-of-session totals such as tool calls,
+  insights, and token usage; see the [SWML `ai_sidecar` callback types](/docs/swml/reference/calling/ai-sidecar#callback-types).
   """)
 model CallAISidecarStatusRequest {
   @doc(uuidDescription)

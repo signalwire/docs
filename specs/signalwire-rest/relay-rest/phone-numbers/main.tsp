@@ -19,7 +19,7 @@ namespace SignalWireAPI.RelayRest.PhoneNumbers {
     @operationId("list_phone_numbers")
     @summary("List phone numbers")
     @doc("""
-      Lists the phone numbers owned by your SignalWire project. These numbers can send or receive communications according to their capabilities and assigned handlers. Use [Search phone numbers](/docs/apis/rest/phone-numbers/search-available-phone-numbers) for numbers available to purchase, or Compatibility [Incoming Phone Numbers](/docs/compatibility-api/rest/incoming-phone-numbers/list-incoming-phone-numbers) for SID-based routes.
+      Lists the phone numbers owned by your SignalWire project. These numbers can send or receive communications according to their capabilities and assigned handlers. Use [Search phone numbers](/docs/apis/rest/phone-numbers/search-available-phone-numbers) for numbers available to purchase, or Compatibility [Incoming Phone Numbers](/docs/compatibility-api/rest/incoming-phone-numbers/list-incoming-phone-numbers) for SID-based routes. Results are sorted by creation date, most recent first.
       
       ${tokenPermissions<"_Numbers_">}
       """)

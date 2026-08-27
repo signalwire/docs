@@ -19,7 +19,7 @@ namespace SignalWireAPI.RelayRest.VerifiedCallerID {
     @operationId("list_verified_caller_ids")
     @summary("List verified caller IDs")
     @doc("""
-      Lists external phone numbers your SignalWire project has submitted for outbound caller-ID verification. Verified Caller IDs let calls present a number the project does not own; project-owned numbers are managed through [Phone Numbers](/docs/apis/rest/phone-numbers/list-phone-numbers) and do not need this verification flow.
+      Lists external phone numbers your SignalWire project has submitted for outbound caller-ID verification. Verified Caller IDs let calls present a number the project does not own; project-owned numbers are managed through [Phone Numbers](/docs/apis/rest/phone-numbers/list-phone-numbers) and do not need this verification flow. Results are sorted by creation date, most recent first.
       
       ${tokenPermissions<"_Voice_">}
       """)
