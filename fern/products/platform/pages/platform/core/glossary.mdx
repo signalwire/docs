@@ -20,7 +20,7 @@ max-toc-depth: 3
 [cxml]: /docs/compatibility-api/cxml
 [expressions]: /docs/swml/reference/expressions
 [relay-client]: /docs/server-sdks/guides/relay-client
-[projects-api]: /docs/apis/rest/projects/create-a-subproject
+[projects-api]: /docs/apis/rest/projects/create-subproject
 [resources]: /docs/platform/resources
 [sat]: /docs/browser-sdk/v4/guides/authentication
 [segment-ids]: /docs/platform/what-is-a-sid
@@ -59,27 +59,23 @@ Its hostname is also your **Space URL**, the [base URL][base-url] for API reques
 A grouping of resources inside a Space, according to any classification you choose, such as by customer, or by region. 
 Each Project has its own Project ID and API tokens, so a Project is the unit of both organization and access. A Project can hold [subprojects](#subproject), one level deep.
 
-A Project is not a Space. A Space is the domain you sign in to; a Project is one compartment within it.
+#### Subproject [#subproject]
 
-### Subproject [#subproject]
+A Project nested one level beneath a root Project. A Subproject is a full Project with its own Project ID and Resources, but Subprojects cannot contain other Subprojects.
 
-A Project nested one level beneath a root Project. A subproject is a full Project — it has its own Project ID and groups its own resources — and the nesting stops there: a subproject cannot contain subprojects of its own.
+Unlike Projects, Subprojects can be created and deleted through the [Projects API][projects-api]. Note that Subprojects must release their phone numbers before they can be deleted.
 
-The difference that matters is lifecycle. Subprojects are created and deleted through the [Projects API][projects-api]; root Projects are created in the Dashboard, and the API cannot delete them. A subproject must release its phone numbers before it can be deleted.
-
-### Project ID [#project-id]
+#### Project ID [#project-id]
 
 The UUID that identifies a Project to the API, and the username half of HTTP Basic authentication. Find it under **API Credentials** in the [Dashboard][api-credentials].
 
-### Account SID [#account-sid]
-
-The Compatibility API's name for the Project ID. It is the same value under a different label, kept so that code written for other providers works without change. There is no separate account identifier to look up.
+In the Compatibility API, this is called the **Account SID** for compatibility with other providers.
 
 ### API token [#api-token]
 
 A Project-scoped credential used server-side, and the password half of HTTP Basic [authentication][authorization]. A Project can hold several tokens, each with its own scopes, and you create and revoke them from the Dashboard.
 
-An API token is not a subscriber token, and it does not belong in a browser. Client-side credentials — subscriber tokens, video room tokens, chat tokens, embed tokens — are created *by* calling an API endpoint with your API token.
+An API token does not belong in a browser; client-side credentials are created by calling an API endpoint with it.
 
 ### Personal access token [#personal-access-token]
 
@@ -96,9 +92,7 @@ The tokens at a glance:
 | [Chat token][chat-token] | Client-side credential for Chat, created with an API token. |
 | [Personal access token](#personal-access-token) | Per user, not per Project. Downloads FreeSWITCH binaries. |
 
-## Call Fabric
-
-### Call Fabric [#call-fabric]
+## Call Fabric [#call-fabric]
 
 SignalWire's addressing model. Every communication entity — a user, a script, an AI agent, a SIP endpoint, a video room — is a [Resource][resources] reachable at an address, so one dialing model reaches all of them and all of them are managed the same way.
 
@@ -146,19 +140,17 @@ A Resource type holding a call flow built visually in [Call Flow Builder](#call-
 
 The whole call as the person on the other end experiences it, from the moment it is placed on the platform to the moment it ends. It is the umbrella term: one call is made of one or more [legs](#call-leg), and it can pass through several Resources on the way.
 
-### Call leg [#call-leg]
+#### Call leg [#call-leg]
 
 The relationship between two user agents. A call is made of one or more legs: forwarding an inbound call to a single SIP endpoint is two legs, and fanning it out to four endpoints is five.
 
-In SWML each leg has its own `call` object with its own `call_id`, and connecting to a new leg re-initializes that object with the new leg's data.
+In SWML each leg has its own `call` object with its own `call_id`, and connecting to a new leg re-initializes that object with the new leg's data. A leg's `call_id` is the same identifier the logs show as its [Segment ID](#segment-id).
 
 ### Segment ID [#segment-id]
 
-A UUID identifying a call, message, or fax in the logs, written **SID**. The REST APIs return it as `id`, and it is the identifier to quote when filing a support ticket. Find SIDs under **Logs** in the [Dashboard][segment-ids].
+A UUID identifying one [leg](#call-leg) of a call — or one message or fax — in the logs, written **SID**. A call with several legs produces several segments, and each leg keeps its SID for its whole lifecycle. In Calling SWML, the same identifier appears as the leg's `call_id`.
 
-### Relay session [#relay-session]
-
-The persistent, authenticated WebSocket connection a `RelayClient` holds to the Relay service, over which it subscribes to topics and receives events. One session carries every call and message the client handles.
+The REST APIs return it as `id`, and it is the identifier to quote when filing a support ticket. The [Segment IDs page][segment-ids] shows where to find them in the Dashboard.
 
 ## SWML
 
@@ -198,7 +190,7 @@ An HTTP request SignalWire sends to your server when an event occurs, such as an
 
 The unified server-side SDK, published as `signalwire-sdk` on PyPI and `@signalwire/sdk` on npm. It exposes three namespaces — [Agents](#agents-namespace), [Relay](#relay), and [REST](#rest-namespace) — and you can use one or combine all three in a single application. See the [Server SDKs documentation][server-sdks].
 
-It was previously offered as two products, the **Agents SDK** and the **Server SDK**; links to either name now land on the unified Server SDKs documentation. **Realtime SDK** and **Relay Realtime SDK** are older names too: they refer to the Relay namespace of this SDK, not to a separate package.
+It was previously offered as two products, the **Agents SDK** and the **Server SDK**; links to either name now land on the unified Server SDKs documentation.
 
 The Server SDKs are not the [Browser SDK](#browser-sdk), which is a different package for client-side code.
 
@@ -211,6 +203,8 @@ The namespace that builds AI-driven call flows declaratively. Your agent runs an
 SignalWire's real-time protocol for imperative call control — JSON-RPC 2.0 over a persistent WebSocket — and the SDK namespace that speaks it. Your code subscribes to topics, reacts to events as they arrive, and issues commands: answer, play, collect digits, record, bridge, transfer. See the [Relay client guide][relay-client].
 
 Reach for Relay when you need to react to a call as it unfolds. Reach for [SWML](#swml-document) when you can describe the whole flow up front.
+
+The persistent, authenticated WebSocket connection a `RelayClient` holds is its **Relay session**: over one session it subscribes to topics, receives events, and carries every call and message it handles.
 
 You'll also see the all-caps spelling **RELAY** on older pages, along with the names **Realtime SDK** and **Relay Realtime SDK**. All three refer to this namespace; the capitalization carries no meaning.
 
@@ -246,9 +240,7 @@ When you see LaML in a name or a URL, read cXML.
 
 The no-code visual tool in the Dashboard for building voice applications as a tree of nodes. See the [Call Flow Builder documentation][cfb]. What it produces is a [Call Flow](#call-flow) Resource.
 
-## AI agents
-
-### AI agent [#ai-agent]
+## AI agent [#ai-agent]
 
 "AI agent" names five different things across SignalWire products. The product you are reading about tells you which one is meant:
 
@@ -291,7 +283,7 @@ concepts:
     canonical_name: Project
     not_the_same_as: [space]
     parent: space
-    children: [subproject]
+    children: [subproject, project_id]
     products: [platform, apis, dashboard]
     canonical_url: /docs/platform/signing-up-for-a-space
 
@@ -417,9 +409,12 @@ concepts:
 
   - id: segment_id
     canonical_name: Segment ID
-    aliases: [SID]
-    not_the_same_as: [call_leg]
-    products: [platform, apis, dashboard]
+    aliases: [SID, call_id]
+    identifies: call_leg
+    note: >-
+      One segment corresponds to one leg of a call, or one message or fax.
+      Calling SWML exposes the same identifier as the leg's call_id.
+    products: [platform, apis, dashboard, swml]
     example: Returned as id by the REST APIs
     canonical_url: /docs/platform/what-is-a-sid
 
@@ -428,7 +423,7 @@ concepts:
     parent: relay
     products: [server_sdks]
     example: The connection held open by a RelayClient
-    canonical_url: /docs/platform/glossary#relay-session
+    canonical_url: /docs/platform/glossary#relay
 
   - id: swml_document
     canonical_name: SWML document
