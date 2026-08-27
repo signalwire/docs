@@ -17,7 +17,7 @@ model CallingSwmlScriptCreateRequest {
 
   @doc("The calling SWML document. Uses [calling SWML methods](/docs/swml/reference/calling).")
   @example(SWML_CONTENTS_EXAMPLE)
-  contents: SWML.Calling.SWMLObject;
+  contents: TypeSpec.Record<unknown>;
 
   @doc("URL that receives status callbacks for messages sent or calls made by this script.")
   @example("https://example.com/status")
@@ -38,7 +38,7 @@ model MessagingSwmlScriptCreateRequest {
 
   @doc("The messaging SWML document. Uses [messaging SWML methods](/docs/swml/reference/messaging).")
   @example(SWML_MESSAGING_CONTENTS_EXAMPLE)
-  contents: SWML.Messaging.SWMLObject;
+  contents: TypeSpec.Record<unknown>;
 }
 
 @summary("Create SWML Script")
@@ -62,7 +62,7 @@ model CallingSwmlScriptUpdateRequest {
 
   @doc("The calling SWML document. Uses [calling SWML methods](/docs/swml/reference/calling).")
   @example(SWML_CONTENTS_EXAMPLE)
-  contents?: SWML.Calling.SWMLObject;
+  contents?: TypeSpec.Record<unknown>;
 
   @doc("URL that receives status callbacks for messages sent or calls made by this script.")
   @example("https://example.com/status")
@@ -83,7 +83,7 @@ model MessagingSwmlScriptUpdateRequest {
 
   @doc("The messaging SWML document. Uses [messaging SWML methods](/docs/swml/reference/messaging).")
   @example(SWML_MESSAGING_CONTENTS_EXAMPLE)
-  contents?: SWML.Messaging.SWMLObject;
+  contents?: TypeSpec.Record<unknown>;
 }
 
 @summary("Update SWML Script")

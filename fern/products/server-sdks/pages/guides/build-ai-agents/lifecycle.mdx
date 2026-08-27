@@ -11,17 +11,69 @@ max-toc-depth: 3
 
 Understanding the request lifecycle helps you debug issues and optimize your agents. Here's the complete flow:
 
+<llms-ignore>
+
 <Frame caption="Complete Call Lifecycle">
   <img class="diagram" src="/assets/images/sdks/diagrams/02_04_lifecycle_diagram1.webp" alt="Complete call lifecycle." />
 </Frame>
+
+</llms-ignore>
+
+<llms-only>
+
+The complete call lifecycle proceeds through these five phases:
+
+| Step | Phase | Event |
+|---:|---|---|
+| 1 | Call setup | Caller dials your phone number. |
+| 2 | Call setup | SignalWire receives the call. |
+| 3 | Call setup | SignalWire checks the number's webhook configuration. |
+| 4 | Call setup | SignalWire requests SWML by sending `POST https://your-agent.com/`. |
+| 5 | SWML generation | Your agent receives the HTTP request. |
+| 6 | SWML generation | The agent builds the SWML document, including prompts, functions, and languages. |
+| 7 | SWML generation | The agent generates security tokens for SWAIG functions. |
+| 8 | SWML generation | The agent returns a SWML JSON response. |
+| 9 | AI conversation | SignalWire executes the SWML, answers the call, and starts the AI. |
+| 10 | AI conversation | The AI speaks the greeting from the prompt. |
+| 11 | AI conversation | The user speaks; the AI listens and transcribes. |
+| 12 | AI conversation | The AI processes the input and responds, continuing the conversation loop. |
+| 13 | Function calls, as needed | The AI decides to call a function. |
+| 14 | Function calls, as needed | SignalWire sends a `POST` request to `/swaig` with the function name and arguments. |
+| 15 | Function calls, as needed | Your agent executes the handler. |
+| 16 | Function calls, as needed | The agent returns a `SwaigFunctionResult`. |
+| 17 | Function calls, as needed | The AI incorporates the result and continues the conversation. |
+| 18 | Call end | The call ends by hangup, transfer, or timeout. |
+| 19 | Call end | The AI generates a summary using `post_prompt`. |
+| 20 | Call end | SignalWire sends a `POST` request to `/post_prompt` with the summary. |
+| 21 | Call end | Your agent receives and processes the summary. |
+
+</llms-only>
 
 ### Phase 1: Call Setup
 
 When a call arrives at SignalWire:
 
+<llms-ignore>
+
 <Frame caption="Call Setup">
   <img class="diagram" src="/assets/images/sdks/diagrams/02_04_lifecycle_diagram2.webp" alt="Call setup phase." />
 </Frame>
+
+</llms-ignore>
+
+<llms-only>
+
+```mermaid
+sequenceDiagram
+    participant Caller
+    participant Cloud as SignalWire
+    participant Agent as Your agent
+    Caller->>Cloud: Dial SignalWire number
+    Note over Cloud: Look up webhook configuration<br/>for the called number
+    Cloud->>Agent: POST / with application/json and Basic Auth
+```
+
+</llms-only>
 
 **Key points:**
 
@@ -80,9 +132,28 @@ def _render_swml(self, request_body=None):
 
 Once SignalWire has the SWML, it executes the instructions:
 
+<llms-ignore>
+
 <Frame caption="AI Conversation Loop">
   <img class="diagram" src="/assets/images/sdks/diagrams/02_04_lifecycle_diagram3.webp" alt="AI conversation loop." />
 </Frame>
+
+</llms-ignore>
+
+<llms-only>
+
+```mermaid
+flowchart TD
+    listen["Listen with STT"] --> transcribe["Transcribe speech"]
+    transcribe --> intent["Process intent"]
+    intent --> decision{"Need a function?"}
+    decision -->|yes| function["Call SWAIG function"]
+    decision -->|no| response["Generate response"]
+    function & response --> speak["Speak with TTS"]
+    speak --> listen
+```
+
+</llms-only>
 
 **AI Parameters that control this loop:**
 
@@ -97,17 +168,50 @@ Once SignalWire has the SWML, it executes the instructions:
 
 When the AI needs to call a function:
 
+<llms-ignore>
+
 <Frame caption="SWAIG Function Call">
   <img class="diagram" src="/assets/images/sdks/diagrams/02_04_lifecycle_diagram4.webp" alt="SWAIG function call phase." />
 </Frame>
+
+</llms-ignore>
+
+<llms-only>
+
+```mermaid
+sequenceDiagram
+    participant AI as SignalWire AI
+    participant Agent as Your agent
+    AI->>Agent: POST /swaig with Basic Auth,<br/>function name, parsed arguments,<br/>call_id, and global_data
+    Note over Agent: Validate auth, find handler,<br/>execute function, build response
+    Agent-->>AI: 200 OK with response and optional actions
+    Note over AI: Speak response and continue conversation
+```
+
+</llms-only>
 
 ### Phase 5: Call End
 
 When the call ends, the post-prompt summary is sent:
 
+<llms-ignore>
+
 <Frame caption="Call Ending">
   <img class="diagram" src="/assets/images/sdks/diagrams/02_04_lifecycle_diagram5.webp" alt="Call ending phase." />
 </Frame>
+
+</llms-ignore>
+
+<llms-only>
+
+```mermaid
+flowchart TD
+    triggers["Hangup, transfer, stop action,<br/>inactivity timeout, or error"] --> summary["AI generates a summary using post_prompt"]
+    summary --> webhook["POST /post_prompt with post_prompt_data,<br/>call_id, caller_id_num, and call_duration"]
+    webhook --> agent["Your agent processes the summary<br/>for logging, CRM updates, or analytics"]
+```
+
+</llms-only>
 
 ### Handling Post-Prompt
 
