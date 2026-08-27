@@ -76,7 +76,7 @@ reported-prs.json          the ledger — see below
 batches/<batch-date>/
 ├── prompt.md              generated prompt, pasted into an LLM by hand today
 ├── classified.json        the reply, one tiering decision per PR
-├── input.json             collected PR data (gitignored: large, regenerable)
+├── input.json             collected PR data — the record render validates against
 ├── support-digest.md      internal Support digest — source for the Support Slack post
 └── manifest.json          which entry files belong to this batch
 ```
@@ -109,10 +109,17 @@ unless someone runs it.
 
 ## Regenerating
 
-`prompt.md`, `input.json`, `support-digest.md`, `manifest.json`, and the entry files are
-all reproducible: re-run `yarn changelog:collect` for the window, then
-`yarn changelog:render`. `classified.json` is the one artifact that is not — it holds
-judgment, not derivation. Do not delete it.
+`support-digest.md`, `manifest.json`, and the entry files are derived: re-run
+`yarn changelog:render` for the batch and they come back byte-identical.
+
+`prompt.md` and `input.json` are only *approximately* reproducible. `collect` resolves
+page titles and URLs at `HEAD` and reads PR bodies as they stand now, so re-running it
+weeks later yields a similar file, not the same one. Both are committed for that reason:
+they are the record of what the classifier actually saw. The draft PR body prints the
+exact command that produced them.
+
+`classified.json` is not reproducible at all — it holds judgment, not derivation. Do not
+delete it.
 
 ## Related
 

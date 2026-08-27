@@ -1,0 +1,1125 @@
+{
+  "window": {
+    "since": "2026-08-11",
+    "until": "2026-08-18"
+  },
+  "date": "2026-08-18",
+  "prs": [
+    {
+      "number": 604,
+      "title": "Add Google Analytics tag",
+      "body": "## Summary\n\n- configure the Google Analytics 4 measurement ID in Fern docs\n\n## Validation\n\n- parsed `fern/docs.yml` successfully and verified the configured measurement ID\n- `git diff --check`\n- `yarn fern-check` *(blocked by Fern registry HTTP 403 during the published redirects check)*",
+      "author": "Devon-White",
+      "mergedAt": "2026-08-18T17:18:59Z",
+      "mergeCommit": "7fbc3fb89721cab9f2e24cc18b9560e6f065a596",
+      "url": "https://github.com/signalwire/docs/pull/604",
+      "mechanical": false,
+      "selfDocumented": false,
+      "authoredEntries": [],
+      "fileCount": 1,
+      "files": [
+        {
+          "path": "fern/docs.yml",
+          "status": "modified",
+          "additions": 4,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": "@@ -28,6 +28,10 @@ agents:\n     For a complete index of all SignalWire documentation pages, fetch\n     https://signalwire.com/docs/llms.txt\n \n+analytics:\n+  ga4:\n+    measurement-id: G-5LFTNYK9JK\n+\n experimental:\n   ai-examples: false\n   mdx-components:"
+        }
+      ]
+    },
+    {
+      "number": 579,
+      "title": "refactor(specs): model webhooks as TypeSpec operations",
+      "body": "## Why\n\nOur `@webhook` decorator took a payload `Model` and hand-assembled the OpenAPI `webhooks` entry, with a hardcoded `responses: { 200: { description: \"Webhook received\" } }`. That shape can only ever describe the request SignalWire *sends*. It has no way to describe the reply — which is fine for a status callback, where a 2xx ack is the whole contract, but wrong for the SWAIG family, where we **parse** what your endpoint returns. That return contract existed only as `@doc` prose, so it never became a schema, an example, or anything Fern could render.\n\nOpenAPI 3.1 models both directions on a webhook (a Path Item's `requestBody` is what the provider sends; its `responses` is what the subscriber must return). We were using half of it.\n\n## What changed\n\nWebhooks are now real TypeSpec operations. An `op` already carries a request body, a return type, headers, and status codes — so the response side comes for free, and the decorator drops to a bare marker:\n\n```typespec\n@webhook\n@operationId(\"ai_swaig_tool_webhook\")\n@summary(\"AI SWAIG tool webhook\")\n@post\nop aiSwaigToolWebhook(@body payload: AiSwaigToolWebhookPayload): SwaigToolWebhookResponse;\n```\n\nThis is the shape TypeSpec has signposted in [microsoft/typespec#4736](https://github.com/microsoft/typespec/issues/4736) — *\"decorator indicating operation is a webhook\"*. That issue is open, `design:needed`, `lib:http`, milestone **Backlog**, untouched by maintainers since Oct 2024 (three \"any updates?\" comments, latest June 2026). So nothing is landing upstream soon, but when it does, our migration is a rename rather than a rewrite.\n\n### The mechanism\n\n`@webhook` parks the operation on a synthetic route (`/.typespec-webhook/<key>`). The stock OpenAPI emitter resolves it like any other path — which is exactly what produces real schemas, `$ref`s into `components`, tags, and examples — and then our wrapper emitter lifts it out of `paths` into `webhooks` and deletes the route. The route is resolved through `getHttpOperation` rather than rebuilt as a string, so a miss is a hard error, and a second guard fails the build if a synthetic route ever survives into the output.\n\nBoth `setRoute` and `getHttpOperation` are public `@typespec/http` exports; `getOpenAPI3` and `resolveOptions` are public `@typespec/openapi3` exports. No private API.\n\n### What this deletes\n\n`_shared/webhook/schema.js` — 425 lines re-implementing OpenAPI schema emission (stdlib scalar tables, `@encodedName` resolution, `seal-object-schemas`, nullable handling, version-dependent shape). It duplicated emitter behaviour and would have drifted on every TypeSpec bump. Payloads now go through the same schema emitter as everything else.\n\nNet: **+1,895 / −5,754**.\n\n### Structural changes\n\n- `_shared/webhook` (loose `.js` files) → `@signalwire/typespec-webhook`, a proper TypeSpec library mirroring `typespec-emit-filter`'s layout (`lib/`, `src/`, `generated-defs/`, `tsp-index.ts`).\n- The wrapper emitter now drives `getOpenAPI3()` **once per spec version** rather than delegating to `$onEmit`. `getOpenAPI3` flattens across versions and loses the version association, so asking for one at a time keeps `{openapi-version}` resolvable in `output-file` — the wrapper stays a drop-in.\n- Compatibility API webhooks moved off the `StatusCallback` url properties into `compatibility-api/webhooks/main.tsp`. They can't live under those resource namespaces: those carry an `/Accounts/{AccountSid}/...` route, and a webhook has no path to hang off. Each op keeps its own `@tag`, so they still file under Calls / Recordings / Messages / etc.\n\n### Response contracts now documented\n\n| Webhook | Response |\n|---|---|\n| `aiSwaigToolWebhook` | `SwaigToolWebhookResponse` — full form |\n| `bedrockSwaigToolWebhook`, `aiSidecarSwaigToolWebhook` | `SwaigToolWebhookBasicResponse` — narrower form |\n| `swaigSignatureRequest` | `SwaigSignatureResponse` — three accepted shapes |\n| `inboundCallWebhook` | `SWML.Calling.SWMLObject` |\n| `inboundMessageWebhook` | `SWML.Messaging.SWMLObject` |\n| everything else | `WebhookAck` — 200, no body (unchanged) |\n\nThe response models **reference** the canonical `SWML.Calling` types (`Action`, `UserSWAIGFunction`, `SWAIGDefaults`, `SWMLObject`) rather than restating them, so the contract stays defined in one place. All of them already existed in `components/schemas`, so this adds `$ref`s, not schema weight.\n\n### Verified against `mod_openai`, not against the prose\n\nThe second commit corrects the response models after checking the platform's own parser. The prose was both too strict and incomplete:\n\n- **`response` is optional.** `actions.c` substitutes `\"The operation was a success.\"` when absent; Bedrock uses `\"Function completed.\"` An action-only reply is valid, so a handler that only steers the call no longer has to invent a response string to satisfy the schema.\n- **`response` also accepts an object** — `{tool_result, tool_prompt}`, which splits the data half from the steering half (`actions.c:2416`). Previously undocumented.\n- **`post_process` (boolean) exists and was missing entirely** (`actions.c:2440`). Holds actions until after the agent speaks.\n- **The three agent surfaces don't accept the same reply.** `amazon_bedrock` (`bedrock.c:4463`) and `ai_sidecar` (its own `sidecar_dispatch_webhook` path, not the shared one) read `response` with `cJSON_GetObjectCstr`, which returns NULL for an object — so the split form is silently ignored there — and neither reads `post_process`. Hence the separate `Basic` model.\n- **The signature response accepts three shapes, not one** (`app_config.c:2415`): a bare array, a single definition, or an envelope `{functions, defaults}` where `defaults` sets SWAIG defaults across the included functions. The envelope form was entirely undocumented.\n\n### Spec validation\n\n`fern check` does **not** validate OpenAPI — it checks docs config, and the only thing it reported here was an unrelated network failure reaching FDR. TypeSpec ships no OpenAPI validator either: `@typespec/openapi3`'s CLI has a `convert` action only, and there's no validator dependency anywhere in the repo.\n\nSo I validated with Redocly CLI (`npx @redocly/cli lint`) against both emitted specs, and against the `main` baseline for comparison:\n\n| | before | after |\n|---|---|---|\n| signalwire-rest | 2 errors, 103 warnings | 2 errors, **89 warnings** |\n| compatibility | 0 errors, 39 warnings | 0 errors, 39 warnings |\n\nBoth signalwire-rest errors are **pre-existing on `main`**, unrelated to webhooks, and identical line-for-line (`no-identical-paths` on `/api/video/rooms/{id}` vs `{name}`, and a duplicate `operationId` at 7328). Worth fixing, but not here.\n\nThe 14 fewer warnings are exactly the 14 payload models: they were `no-unused-components` before, because they were inlined into the webhooks block *and* emitted again as unreferenced schemas. They're now referenced.\n\nAdding `redocly lint` to CI would be a reasonable follow-up — happy to do it in a separate PR if you want it.\n\n## Verification\n\nBaseline captured from `main`, which rebuilds byte-identically — so every difference below is attributable to this change. Compared structurally, not by line diff:\n\n|  | signalwire-rest | compatibility |\n|---|---|---|\n| `paths` key set | identical (150) | identical (45) |\n| surviving paths changed | **0** | **0** |\n| `webhooks` key set | identical (14) | identical (5) |\n| `tags` | identical (67) | identical (21) |\n| document root (ex. paths/webhooks/components) | identical | identical |\n| operationIds / summaries / descriptions | all unchanged | all unchanged |\n| pre-existing schemas changed | 14 (see below) | **0** |\n\nProse was relocated by codemod rather than retyped, and the unchanged summary/description columns above are the proof.\n\nAlso verified by hand: zero occurrences of `.typespec-webhook` in either emitted document, and the `duplicate-name` diagnostic fires correctly when two ops claim the same key.\n\n## Two deliberate deviations — please sanity-check\n\n**1. `security: [{}]` now appears on every webhook.** Previously absent, which in OpenAPI means *inherit document-level security* — i.e. our Basic project auth, which is wrong: SignalWire is the caller on a webhook, not the callee. The ops now carry `@useAuth(NoAuth)`, which emits the explicit \"no auth required\" form. More correct, but it is a visible output change and I'd like a second opinion on how Fern renders it.\n\n**2. The 14 changed schemas each lost `title` and `description`.** These are the webhook payload models. Their `@summary`/`@doc` moved onto the operation, where it now renders as the webhook's summary/description. Note these payloads were previously emitted **twice** — inlined into the `webhooks` block *and* again as unreferenced components — so this also deduplicates them. No prose was lost; it just has one home now instead of two.\n\n## Note on the second commit\n\nThe `response`-required question from the first commit is resolved — it's optional, per `actions.c`. See \"Verified against `mod_openai`\" above; the models were corrected in `ebe6f8e` rather than left as an open question.\n\nOne residual: the `ai_sidecar` reply shape is inferred from `sidecar_dispatch_webhook` returning the raw webhook body plus `sidecar_process_response_actions` reading `action` off it. That path has its own error fallbacks, all of the form `{\"response\": \"...\"}`, which is what the `Basic` model asserts. If sidecar is meant to support the split `response` object too, that's a source bug rather than a spec bug — worth a look either way.\n",
+      "author": "Devon-White",
+      "mergedAt": "2026-08-14T12:30:17Z",
+      "mergeCommit": "0c88164a6da9145af04f8f5b633fd1dbc6e1487c",
+      "url": "https://github.com/signalwire/docs/pull/579",
+      "mechanical": false,
+      "selfDocumented": false,
+      "authoredEntries": [],
+      "fileCount": 29,
+      "files": [
+        {
+          "path": "specs/_shared/webhook-ack.tsp",
+          "status": "added",
+          "additions": 8,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/_shared/webhook/decorator.tsp",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 123,
+          "url": null,
+          "title": null,
+          "patch": "@@ -1,123 +0,0 @@\n-import \"@typespec/openapi\";\n-import \"./decorator.js\";\n-\n-using TypeSpec.Reflection;\n-using TypeSpec.OpenAPI;\n-\n-/** Tag specification for a webhook — either a plain name or name with metadata. */\n-model WebhookTag {\n-  /** The tag name. */\n-  name: string;\n-\n-  /** A description of the tag. */\n-  description?: string;\n-\n-  /** External documentation for the tag. */\n-  externalDocs?: ExternalDocs;\n-}\n-\n-/**\n- * Attach an OpenAPI webhook definition to the service namespace.\n- *\n- * Produces a fully-formed entry in the OpenAPI `webhooks` object with an\n- * inline JSON schema derived from the payload model. No post-processing\n- * scripts or `$ref` resolution required — the output is valid OpenAPI 3.1.\n- *\n- * ## Targets\n- *\n- * | Target | Use case |\n- * |--------|----------|\n- * | **ModelProperty** | Colocate the webhook with the field that configures it (e.g., `status_url`). The webhook is attached to the service namespace automatically. |\n- * | **Namespace** | Attach a webhook directly to the service namespace for events not tied to a specific request field. |\n- *\n- * ## Metadata from standard decorators\n- *\n- * The decorator reads metadata from standard TypeSpec d"
+        },
+        {
+          "path": "specs/compatibility-api/calls/models/requests.tsp",
+          "status": "modified",
+          "additions": 0,
+          "deletions": 3,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/compatibility-api/calls/models/webhooks.tsp",
+          "status": "modified",
+          "additions": 0,
+          "deletions": 42,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/compatibility-api/incoming-phone-numbers/models/requests.tsp",
+          "status": "modified",
+          "additions": 0,
+          "deletions": 1,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/compatibility-api/incoming-phone-numbers/models/webhooks.tsp",
+          "status": "modified",
+          "additions": 0,
+          "deletions": 15,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/compatibility-api/main.tsp",
+          "status": "modified",
+          "additions": 1,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/compatibility-api/messages/models/requests.tsp",
+          "status": "modified",
+          "additions": 0,
+          "deletions": 1,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/compatibility-api/messages/models/webhooks.tsp",
+          "status": "modified",
+          "additions": 0,
+          "deletions": 30,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/compatibility-api/transcriptions/main.tsp",
+          "status": "modified",
+          "additions": 0,
+          "deletions": 1,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/compatibility-api/transcriptions/models/webhooks.tsp",
+          "status": "modified",
+          "additions": 0,
+          "deletions": 14,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/compatibility-api/webhooks/main.tsp",
+          "status": "added",
+          "additions": 157,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": "@@ -0,0 +1,157 @@\n+import \"@typespec/http\";\n+import \"@typespec/openapi\";\n+import \"@signalwire/typespec-webhook\";\n+import \"../../_shared/webhook-ack.tsp\";\n+import \"../tags.tsp\";\n+import \"../calls/models/webhooks.tsp\";\n+import \"../messages/models/webhooks.tsp\";\n+import \"../transcriptions/models/webhooks.tsp\";\n+import \"../incoming-phone-numbers/models/webhooks.tsp\";\n+\n+using TypeSpec.Http;\n+using TypeSpec.OpenAPI;\n+using SignalWire.Webhook;\n+\n+// Webhooks are collected here rather than on the resources that configure them\n+// because they cannot live under a routed namespace: the Compatibility API's\n+// resource namespaces carry an `/Accounts/{AccountSid}/...` route, and a webhook\n+// has no path to hang off. Each operation keeps its own @tag so it still files\n+// under the resource it belongs to.\n+//\n+// SignalWire is the caller here, not the callee, so the service's auth scheme\n+// does not apply.\n+@useAuth(NoAuth)\n+namespace CompatibilityAPI.Webhooks;\n+\n+@summary(\"Voice status callback\")\n+@doc(\"\"\"\n+  Payload sent by SignalWire to your Voice Status Callback URL when the status of a call changes.\n+  \n+  Configure this callback using the `StatusCallback` and `StatusCallbackEvent` para"
+        },
+        {
+          "path": "specs/emitters/typespec-webhook/lib/decorators.tsp",
+          "status": "added",
+          "additions": 62,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/emitters/typespec-webhook/lib/main.tsp",
+          "status": "added",
+          "additions": 2,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/calling-api/main.tsp",
+          "status": "modified",
+          "additions": 0,
+          "deletions": 1,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/webhooks/ai/main.tsp",
+          "status": "modified",
+          "additions": 204,
+          "deletions": 21,
+          "url": null,
+          "title": null,
+          "patch": "@@ -1,31 +1,214 @@\n-import \"../../../_shared/webhook/decorator.tsp\";\n+import \"@typespec/http\";\n+import \"@typespec/openapi\";\n import \"../tags.tsp\";\n import \"./models/common.tsp\";\n import \"./models/swaig.tsp\";\n import \"./models/post-prompt.tsp\";\n import \"./models/debug.tsp\";\n import \"./models/sidecar.tsp\";\n+import \"@signalwire/typespec-webhook\";\n+import \"../../../_shared/webhook-ack.tsp\";\n \n+using TypeSpec.Http;\n using TypeSpec.OpenAPI;\n+using SignalWire.Webhook;\n \n-@webhook(\"aiSwaigToolWebhook\", AiSwaigToolWebhookPayload, AI_WEBHOOKS_TAG)\n-@webhook(\"swaigSignatureRequest\", SwaigSignatureRequestPayload, AI_WEBHOOKS_TAG)\n-@webhook(\"aiPostPromptCallback\", AiPostPromptCallbackPayload, AI_WEBHOOKS_TAG)\n-@webhook(\"aiDebugWebhook\", AiDebugWebhookPayload, AI_WEBHOOKS_TAG)\n-@webhook(\n-  \"bedrockSwaigToolWebhook\",\n-  BedrockSwaigToolWebhookPayload,\n-  AI_WEBHOOKS_TAG\n-)\n-@webhook(\n-  \"bedrockPostPromptCallback\",\n-  BedrockPostPromptCallbackPayload,\n-  AI_WEBHOOKS_TAG\n-)\n-@webhook(\"aiSidecarCallback\", AISidecarCallbackPayload, AI_WEBHOOKS_TAG)\n-@webhook(\n-  \"aiSidecarSwaigToolWebhook\",\n-  AISidecarSwaigToolWebhookPayload,\n-  AI_WEBHOOKS_TAG\n-)\n+// SignalWire is the caller here, not the callee "
+        },
+        {
+          "path": "specs/signalwire-rest/webhooks/ai/models/debug.tsp",
+          "status": "modified",
+          "additions": 0,
+          "deletions": 17,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/webhooks/ai/models/post-prompt.tsp",
+          "status": "modified",
+          "additions": 0,
+          "deletions": 37,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/webhooks/ai/models/sidecar.tsp",
+          "status": "modified",
+          "additions": 0,
+          "deletions": 23,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/webhooks/ai/models/swaig.tsp",
+          "status": "modified",
+          "additions": 0,
+          "deletions": 36,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/webhooks/calling/main.tsp",
+          "status": "modified",
+          "additions": 51,
+          "deletions": 12,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/webhooks/calling/models/inbound-call.tsp",
+          "status": "modified",
+          "additions": 0,
+          "deletions": 6,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/webhooks/calling/models/status-callbacks.tsp",
+          "status": "modified",
+          "additions": 0,
+          "deletions": 16,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/webhooks/messaging/main.tsp",
+          "status": "modified",
+          "additions": 87,
+          "deletions": 16,
+          "url": null,
+          "title": null,
+          "patch": "@@ -1,23 +1,94 @@\n-import \"../../../_shared/webhook/decorator.tsp\";\n+import \"@typespec/http\";\n+import \"@typespec/openapi\";\n import \"../tags.tsp\";\n import \"./models/status-callbacks.tsp\";\n import \"./models/inbound-message.tsp\";\n+import \"@signalwire/typespec-webhook\";\n+import \"../../../_shared/webhook-ack.tsp\";\n+import \"../../../swml/messaging\";\n \n+using TypeSpec.Http;\n using TypeSpec.OpenAPI;\n+using SignalWire.Webhook;\n \n-@webhook(\n-  \"messageStatusCallback\",\n-  MessageStatusCallbackPayload,\n-  MESSAGING_WEBHOOKS_TAG\n-)\n-@webhook(\n-  \"tenDlcStatusCallback\",\n-  TenDlcStatusCallbackPayload,\n-  MESSAGING_WEBHOOKS_TAG\n-)\n-@webhook(\n-  \"inboundMessageWebhook\",\n-  InboundMessageWebhookPayload,\n-  MESSAGING_WEBHOOKS_TAG\n-)\n+// SignalWire is the caller here, not the callee — these operations describe\n+// requests we send to the customer's endpoint, so the service's own auth scheme\n+// does not apply to them.\n+@tag(MESSAGING_WEBHOOKS_TAG)\n+@useAuth(NoAuth)\n namespace SignalWireAPI.Webhooks.Messaging;\n+\n+@summary(\"SWML inbound message webhook\")\n+@doc(\"\"\"\n+  Payload sent by SignalWire to a SWML messaging webhook URL when an inbound SMS or MMS message arrives on a phone number configured with a"
+        },
+        {
+          "path": "specs/signalwire-rest/webhooks/messaging/models/inbound-message.tsp",
+          "status": "modified",
+          "additions": 0,
+          "deletions": 6,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/webhooks/messaging/models/status-callbacks.tsp",
+          "status": "modified",
+          "additions": 0,
+          "deletions": 50,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/swml/calling/Methods/ai/swaig/functions/data_map/output.tsp",
+          "status": "modified",
+          "additions": 61,
+          "deletions": 4,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/swml/calling/Methods/amazon_bedrock/swaig/data_map.tsp",
+          "status": "added",
+          "additions": 85,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": "@@ -0,0 +1,85 @@\n+import \"@typespec/json-schema\";\n+import \"../../ai/swaig/functions/data_map\";\n+\n+using TypeSpec.JsonSchema;\n+\n+namespace SWML.Calling;\n+\n+// Bedrock runs its own data_map evaluator (`bedrock_process_data_map`), which\n+// reads the result with a string-only accessor and always defers actions rather\n+// than honouring `post_process`. So its outputs are `BedrockOutput`, not the\n+// canonical `Output`.\n+//\n+// The Pick list below is this surface's to maintain: when `Output` gains a\n+// property, Bedrock keeps its current shape until someone confirms Bedrock reads\n+// the new field and adds it here. That is the safe direction — an allowlist\n+// cannot silently claim support that does not exist.\n+//\n+// The DataMap models re-point only the properties that carry an output and\n+// inherit the rest, so structural changes on the `ai` side still arrive free.\n+\n+@summary(\"Bedrock output object\")\n+@doc(\"\"\"\n+  The result of a SWAIG function run by an\n+  [`amazon_bedrock`](/docs/swml/reference/calling/amazon-bedrock) agent.\n+  \n+  Narrower than the canonical [`Output`](/docs/swml/reference/calling/ai/swaig/functions/data-map):\n+  Bedrock reads `response` as a plain string, and de"
+        },
+        {
+          "path": "specs/swml/calling/Methods/amazon_bedrock/swaig/functions.tsp",
+          "status": "modified",
+          "additions": 23,
+          "deletions": 5,
+          "url": null,
+          "title": null,
+          "patch": null
+        }
+      ]
+    },
+    {
+      "number": 575,
+      "title": "Webhooks: give webhooks their own top-level section",
+      "body": "## Why\n\nWebhook reference pages are filed under the resource whose OpenAPI tag they inherited, so all ten Calling webhooks sit under **Calls**. That never matched how the payloads are used: a SWAIG tool webhook fires for voice AI, Amazon Bedrock, sidecar agents, and — with the AI chat API (#572) — text conversations, all with the same body. Filing one shared payload under a single channel makes every other caller link sideways into Calls. `chat.mdx` on that branch already links `/docs/apis/rest/calls/webhooks/ai-swaig-tool-webhook` from a page about text conversations.\n\n## What changed\n\nWebhooks group by channel now, in the nav and on disk. Directory, tag, and nav section all carry the same name.\n\n| Channel | Count | Pages |\n|---|---|---|\n| AI | 8 | SWAIG tool + signature request, post-prompt, debug, Bedrock tool + post-prompt, sidecar callback + sidecar tool |\n| Calling | 3 | inbound call webhook, transcript status, stream status |\n| Messaging | 3 | inbound message webhook, message status, 10DLC status |\n\nAI is its own group because it spans the channels — that is the reason for the split. Everything else sits under the channel it serves, including the SWML document-fetch webhooks (a call fetch is Calling, a message fetch is Messaging).\n\n**Source layout** — new `specs/signalwire-rest/webhooks/`, a peer of the service dirs, one directory per channel with its own tag. Replaces the four scattered `models/webhooks.tsp` files; the 2000-line calling one becomes five topical files under `ai/`, with `common.tsp` for the four models several payloads share.\n\n**URLs** — channel sections are `skip-slug`, so each webhook keeps one flat URL at `/docs/apis/rest/webhooks/<name>` encoding no channel it might outgrow.\n\n## Generated spec: what actually changed\n\nPayload bodies are emitted inline, so schema content is untouched. The only changes to `openapi.yaml` are:\n\n- the per-webhook `tags` value, and three new tag entries\n- a consistent namespace rename of the 32 webhook schemas (`Calling.X` → `Webhooks.AI.X`, etc.), every `$ref` updated to match\n\nThe 854 other schemas and all `paths` are byte-identical. One net-new schema appears (`Webhooks.Messaging.TenDlcStatusCallbackPayload`) — it previously sat in the blockless namespace and wasn't emitted at all, so this makes the set consistent.\n\nThat rename does have one non-obvious consequence: two pages referenced those schemas through `<Schema type=\"Calling.…\">`, which binds by **schema name**, not operationId — so unlike `WebhookPayloadSnippet` it does not survive a namespace move. Both are repointed. I swept all 32 renamed names to confirm there were no others.\n\n## Redirects\n\nAll 18 published URLs, one to one, no wildcards:\n\n- **14 pages** → their new locations\n- **4 per-resource section URLs** (`/calls/webhooks` etc.) → these answer today with a `307` to their first child, and that landing is generated from the section, so it disappears with it. Each points at the new location of the page it lands on today, so the destination is a real page in the same channel.\n\nEnumerated from the production sitemap rather than the repo, since prod is the pre-change URL structure and therefore the authoritative list of what breaks.\n\n## Verification\n\n- `yarn build:specs` green; generated output in sync with source\n- `fern check` — no broken links. This is what proves the `subpackage_*` names resolve: `fern check` does not validate them directly, and a wrong name silently drops the pages. Confirmed the oracle works by deliberately breaking one ref and watching it report `broken link to /docs/apis/rest/webhooks/ai-swaig-tool-webhook`\n- `fern docs md check` — 2806/2806\n- 18/18 redirect coverage, no chains, no duplicate sources, every destination a real page\n\n**Not verified locally:** `fern check`'s own `missing-redirects` rule is skipped here (needs authenticated FDR access, returns 403). The 18/18 above is that check reproduced by hand against the prod sitemap and the nav's leaf refs. CI runs the real one.\n\n## Out of scope\n\nCompatibility API's 5 webhooks stay nested per-resource — that product's layout mirrors the docs customers port from.\n\n## Follow-up spotted\n\n#572 references `- aIChat` for tag `\"AI Chat\"`. By the naming rule this repo follows (55/55 tags, e.g. `\"AI Agents: Custom\"` → `aiAgentsCustom`), that should be `aiChat` — as written, the section renders empty and `fern check` won't flag it.\n",
+      "author": "Devon-White",
+      "mergedAt": "2026-08-13T16:05:52Z",
+      "mergeCommit": "b3c21ce21b4e16750ec9b0db3c3ee840c695f11f",
+      "url": "https://github.com/signalwire/docs/pull/575",
+      "mechanical": false,
+      "selfDocumented": false,
+      "authoredEntries": [],
+      "fileCount": 46,
+      "files": [
+        {
+          "path": "fern/docs.yml",
+          "status": "modified",
+          "additions": 49,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "fern/products/apis/apis.yml",
+          "status": "modified",
+          "additions": 35,
+          "deletions": 28,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "fern/products/platform/pages/ai/guides/tool-calling/index.mdx",
+          "status": "modified",
+          "additions": 2,
+          "deletions": 2,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "fern/products/platform/pages/platform/core/webhooks/index.mdx",
+          "status": "modified",
+          "additions": 2,
+          "deletions": 2,
+          "url": "/docs/platform/webhooks",
+          "title": "Webhooks",
+          "patch": null
+        },
+        {
+          "path": "fern/products/swml/pages/reference/methods/calling/ai/ai_params/index.mdx",
+          "status": "modified",
+          "additions": 1,
+          "deletions": 1,
+          "url": "/docs/swml/reference/calling/ai/params",
+          "title": "params",
+          "patch": null
+        },
+        {
+          "path": "fern/products/swml/pages/reference/methods/calling/ai/ai_swaig/functions/index.mdx",
+          "status": "modified",
+          "additions": 2,
+          "deletions": 2,
+          "url": "/docs/swml/reference/calling/ai/swaig/functions",
+          "title": "functions",
+          "patch": null
+        },
+        {
+          "path": "fern/products/swml/pages/reference/methods/calling/ai/ai_swaig/includes/index.mdx",
+          "status": "modified",
+          "additions": 1,
+          "deletions": 1,
+          "url": "/docs/swml/reference/calling/ai/swaig/includes",
+          "title": "includes",
+          "patch": null
+        },
+        {
+          "path": "fern/products/swml/pages/reference/methods/calling/ai/index.mdx",
+          "status": "modified",
+          "additions": 1,
+          "deletions": 1,
+          "url": "/docs/swml/reference/calling/ai",
+          "title": "ai",
+          "patch": null
+        },
+        {
+          "path": "fern/products/swml/pages/reference/methods/calling/ai_sidecar/index.mdx",
+          "status": "modified",
+          "additions": 2,
+          "deletions": 2,
+          "url": "/docs/swml/reference/calling/ai-sidecar",
+          "title": "ai_sidecar",
+          "patch": null
+        },
+        {
+          "path": "fern/products/swml/pages/reference/methods/calling/bedrock/index.mdx",
+          "status": "modified",
+          "additions": 1,
+          "deletions": 1,
+          "url": "/docs/swml/reference/calling/amazon-bedrock",
+          "title": "amazon_bedrock",
+          "patch": null
+        },
+        {
+          "path": "fern/products/swml/pages/reference/methods/calling/bedrock/swaig/functions/index.mdx",
+          "status": "modified",
+          "additions": 2,
+          "deletions": 2,
+          "url": "/docs/swml/reference/calling/amazon-bedrock/swaig/functions",
+          "title": "functions",
+          "patch": null
+        },
+        {
+          "path": "fern/products/swml/pages/reference/methods/calling/send_sms.mdx",
+          "status": "modified",
+          "additions": 1,
+          "deletions": 1,
+          "url": "/docs/swml/reference/calling/send-sms",
+          "title": "send_sms",
+          "patch": null
+        },
+        {
+          "path": "fern/products/swml/pages/reference/methods/calling/stream.mdx",
+          "status": "modified",
+          "additions": 1,
+          "deletions": 1,
+          "url": "/docs/swml/reference/calling/stream",
+          "title": "stream",
+          "patch": null
+        },
+        {
+          "path": "fern/products/swml/pages/reference/methods/calling/transcribe.mdx",
+          "status": "modified",
+          "additions": 1,
+          "deletions": 1,
+          "url": "/docs/swml/reference/calling/transcribe",
+          "title": "transcribe",
+          "patch": null
+        },
+        {
+          "path": "fern/products/swml/pages/reference/methods/messaging/overview.mdx",
+          "status": "modified",
+          "additions": 1,
+          "deletions": 1,
+          "url": "/docs/swml/reference/messaging",
+          "title": "Messaging SWML overview",
+          "patch": null
+        },
+        {
+          "path": "fern/products/swml/pages/reference/methods/messaging/reply.mdx",
+          "status": "modified",
+          "additions": 1,
+          "deletions": 1,
+          "url": "/docs/swml/reference/messaging/reply",
+          "title": "reply",
+          "patch": null
+        },
+        {
+          "path": "fern/products/swml/pages/reference/methods/messaging/transfer.mdx",
+          "status": "modified",
+          "additions": 1,
+          "deletions": 1,
+          "url": "/docs/swml/reference/messaging/transfer",
+          "title": "transfer",
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/calling-api/calls/main.tsp",
+          "status": "modified",
+          "additions": 0,
+          "deletions": 24,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/calling-api/calls/models/webhooks.tsp",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 2000,
+          "url": null,
+          "title": null,
+          "patch": "@@ -1,2000 +0,0 @@\n-import \"../../../../_shared/webhook/decorator.tsp\";\n-import \"../../../types\";\n-\n-namespace SignalWireAPI.Calling;\n-\n-@summary(\"Transcript status callback\")\n-@doc(\"\"\"\n-  Sent to your `status_url` when the call's transcription is ready.\n-  `calling.transcript.completed` includes the transcribed text;\n-  `calling.transcript.failed` means the call could not be transcribed.\n-\n-  Status callbacks are advisory, best-effort notifications — delivery can be delayed or fail silently, so don't gate time-critical actions on receiving one. See [Status callback reliability](/docs/platform/webhooks#status-callback-reliability).\n-  \"\"\")\n-model TranscribeStatusCallbackPayload {\n-  @doc(\"Whether the transcription completed or failed.\")\n-  @example(\"calling.transcript.completed\")\n-  event_type: \"calling.transcript.completed\" | \"calling.transcript.failed\";\n-\n-  @doc(\"When the event was sent, as a Unix timestamp in seconds.\")\n-  @example(1777565701.5623918)\n-  timestamp: float;\n-\n-  @doc(\"Your project ID.\")\n-  @example(\"4d0d6f16-5881-4fcc-92a4-02c51a91954d\")\n-  project_id: uuid;\n-\n-  @doc(\"Your Space ID.\")\n-  @example(\"451ed9ff-e568-4222-8af9-4f9ab7428d09\")\n-  space_id: uuid;\n-\n-  @d"
+        },
+        {
+          "path": "specs/signalwire-rest/fabric-api/swml-webhook/main.tsp",
+          "status": "modified",
+          "additions": 0,
+          "deletions": 4,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/fabric-api/swml-webhook/models/core.tsp",
+          "status": "modified",
+          "additions": 3,
+          "deletions": 3,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/fabric-api/swml-webhook/models/requests.tsp",
+          "status": "modified",
+          "additions": 6,
+          "deletions": 6,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/main.tsp",
+          "status": "modified",
+          "additions": 5,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/message-api/messages/main.tsp",
+          "status": "modified",
+          "additions": 0,
+          "deletions": 3,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/message-api/messages/models/requests.tsp",
+          "status": "modified",
+          "additions": 1,
+          "deletions": 1,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/message-api/messages/models/webhooks.tsp",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 59,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/relay-rest/campaign-registry/main.tsp",
+          "status": "modified",
+          "additions": 0,
+          "deletions": 2,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/relay-rest/campaign-registry/models/core.tsp",
+          "status": "modified",
+          "additions": 4,
+          "deletions": 4,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/relay-rest/campaign-registry/models/requests.tsp",
+          "status": "modified",
+          "additions": 6,
+          "deletions": 6,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/webhooks/ai/main.tsp",
+          "status": "added",
+          "additions": 31,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/webhooks/ai/models/common.tsp",
+          "status": "added",
+          "additions": 142,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/webhooks/ai/models/debug.tsp",
+          "status": "added",
+          "additions": 822,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": "@@ -0,0 +1,822 @@\n+import \"./common.tsp\";\n+\n+namespace SignalWireAPI.Webhooks.AI;\n+\n+@doc(\"Where in the agent's flow an event happened.\")\n+model AIDebugFlowLocation {\n+  @doc(\"The context the agent was in. `default` when you define no contexts.\")\n+  @example(\"default\")\n+  context: string;\n+\n+  @doc(\"The step the agent was on. Included only when the context defines steps.\")\n+  @example(\"collect_address\")\n+  step?: string;\n+\n+  @doc(\"The step's index. Included only when the context defines steps.\")\n+  @example(2)\n+  step_index?: integer;\n+}\n+\n+@summary(\"AI debug webhook\")\n+@doc(\"\"\"\n+  A diagnostic feed for a call that is still in progress. Set `debug_webhook_url` on your agent and\n+  every step it takes is posted to that URL as it happens: speech recognized, model called, tool\n+  invoked, context switched, error hit. Use it to work out why a call went the way it did — which\n+  tool the agent reached for, what came back, where a turn went wrong — or to react while the call is\n+  still live, such as paging a supervisor.\n+  \n+  Each request carries `call_info` plus one or more event properties, where the property name is the\n+  event. One moment can produce several: evaluating a `data_m"
+        },
+        {
+          "path": "specs/signalwire-rest/webhooks/ai/models/post-prompt.tsp",
+          "status": "added",
+          "additions": 458,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": "@@ -0,0 +1,458 @@\n+import \"./common.tsp\";\n+\n+namespace SignalWireAPI.Webhooks.AI;\n+\n+@doc(\"\"\"\n+  The answer an AI agent gave to your\n+  [`post_prompt`](/docs/swml/reference/calling/ai), in three forms.\n+  \"\"\")\n+model AIPostPromptData {\n+  @doc(\"\"\"\n+    Every JSON object found in the answer, parsed. An empty array when the agent answered in prose.\n+    Ask the post-prompt for named JSON keys when you want to count outcomes.\n+    \"\"\")\n+  @example(#[#{ intent: \"book_ride\", resolved: true }])\n+  parsed: Record<unknown>[];\n+\n+  @doc(\"The answer exactly as the agent produced it.\")\n+  @example(\"{\\\"intent\\\":\\\"book_ride\\\",\\\"resolved\\\":true}\")\n+  raw: string;\n+\n+  @doc(\"\"\"\n+    The answer with the JSON removed, leaving only the surrounding prose. Omitted when the answer was\n+    JSON and nothing followed it.\n+    \"\"\")\n+  @example(\"Caller booked a ride to the airport.\")\n+  substituted?: string;\n+}\n+\n+@doc(\"\"\"\n+  One event on the call, in order. Beyond `type`, an entry carries the fields belonging to that type.\n+  \"\"\")\n+model AICallTimelineEntry is Record<unknown> {\n+  @doc(\"\"\"\n+    What happened. `user_input`, `ai_response`, and `tool_result` cover the conversation; `pronounce`\n+    and `text"
+        },
+        {
+          "path": "specs/signalwire-rest/webhooks/ai/models/sidecar.tsp",
+          "status": "added",
+          "additions": 163,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": "@@ -0,0 +1,163 @@\n+import \"./common.tsp\";\n+\n+namespace SignalWireAPI.Webhooks.AI;\n+\n+@doc(\"\"\"\n+  The kind of AI sidecar callback. See the\n+  [SWML ai_sidecar reference](/docs/swml/reference/calling/ai-sidecar#callback-types)\n+  for the type-specific fields each one carries.\n+  \"\"\")\n+enum AISidecarCallbackType {\n+  @doc(\"The sidecar attached to the call.\")\n+  start,\n+\n+  @doc(\"The customer finished a turn and an evaluation is about to run.\")\n+  turn,\n+\n+  @doc(\"The sidecar called the model.\")\n+  request,\n+\n+  @doc(\"The model produced intermediate reasoning text.\")\n+  thought,\n+\n+  @doc(\"The sidecar's advice for the agent.\")\n+  insight,\n+\n+  @doc(\"The model called the built-in `sidecar_skip` tool to stay silent for this turn.\")\n+  skip,\n+\n+  @doc(\"The model called one of your tools.\")\n+  tool_call,\n+\n+  @doc(\"One of your tools returned a result.\")\n+  tool_result,\n+\n+  @doc(\"A SWAIG action was returned (and, if enabled, executed).\")\n+  action,\n+\n+  @doc(\"A `set_global_data` / `unset_global_data` action changed `global_data`.\")\n+  global_data_change,\n+\n+  @doc(\"The conversation history was trimmed to fit the token budget.\")\n+  history_pruned,\n+\n+  @doc(\"Something failed, or an anti-loo"
+        },
+        {
+          "path": "specs/signalwire-rest/webhooks/ai/models/swaig.tsp",
+          "status": "added",
+          "additions": 329,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": "@@ -0,0 +1,329 @@\n+import \"./common.tsp\";\n+\n+namespace SignalWireAPI.Webhooks.AI;\n+\n+@summary(\"SWAIG function signature request\")\n+@doc(\"\"\"\n+  Sent once per [`SWAIG.includes`](/docs/swml/reference/calling/ai/swaig/includes) entry when an AI\n+  agent loads, to discover the functions your server hosts. Every way of building an agent sends it —\n+  SWML you write yourself, SWML a Server SDK generates, or an agent you configure in your Dashboard —\n+  because they all resolve `includes` the same way. Return a JSON array of function definitions, each\n+  shaped like an entry in\n+  [`SWAIG.functions`](/docs/swml/reference/calling/ai/swaig/functions#properties) — `function`,\n+  `description`, and `parameters`. Functions the agent can call are the ones you return here.\n+  \n+  This is not the payload a function call sends. It goes to the `includes` entry's `url`, using\n+  `auth_user` and `auth_password` when set. Your endpoint can also receive it outside of a call, as a\n+  check that it answers, so answer it the same way. When your project has a signing key, the request\n+  carries an `X-SignalWire-Signature` header you can verify.\n+  \"\"\")\n+model SwaigSignatureRequestPayload {\n+  @doc(\"What the"
+        },
+        {
+          "path": "specs/signalwire-rest/webhooks/calling/main.tsp",
+          "status": "added",
+          "additions": 19,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/webhooks/calling/models/inbound-call.tsp",
+          "status": "renamed",
+          "additions": 3,
+          "deletions": 94,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/webhooks/calling/models/status-callbacks.tsp",
+          "status": "added",
+          "additions": 113,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/webhooks/main.tsp",
+          "status": "added",
+          "additions": 20,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/webhooks/messaging/main.tsp",
+          "status": "added",
+          "additions": 23,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/webhooks/messaging/models/inbound-message.tsp",
+          "status": "added",
+          "additions": 90,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/webhooks/messaging/models/status-callbacks.tsp",
+          "status": "renamed",
+          "additions": 82,
+          "deletions": 13,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/webhooks/tags.tsp",
+          "status": "added",
+          "additions": 31,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/swml/calling/Methods/send_sms/main.tsp",
+          "status": "modified",
+          "additions": 1,
+          "deletions": 1,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/swml/messaging/Methods/reply/main.tsp",
+          "status": "modified",
+          "additions": 1,
+          "deletions": 1,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/swml/messaging/Methods/transfer/main.tsp",
+          "status": "modified",
+          "additions": 1,
+          "deletions": 1,
+          "url": null,
+          "title": null,
+          "patch": null
+        }
+      ]
+    },
+    {
+      "number": 573,
+      "title": "remove Reo.dev tracking script",
+      "body": "## Description\r\n\r\nper Adam, this tracker is not needed after all\r\n",
+      "author": "hey-august",
+      "mergedAt": "2026-08-13T13:34:17Z",
+      "mergeCommit": "1d0f0135d723a3eb156e7534c7b9586cb3145bed",
+      "url": "https://github.com/signalwire/docs/pull/573",
+      "mechanical": false,
+      "selfDocumented": false,
+      "authoredEntries": [],
+      "fileCount": 1,
+      "files": [
+        {
+          "path": "fern/docs.yml",
+          "status": "modified",
+          "additions": 0,
+          "deletions": 3,
+          "url": null,
+          "title": null,
+          "patch": "@@ -181,9 +181,6 @@ css:\n   - components/skeleton/styles.css\n   - components/voice-widget/styles.css\n \n-js:\n-  - reo.js\n-\n redirects:\n   - source: /docs/agents-sdk\n     destination: /docs/server-sdks"
+        }
+      ]
+    },
+    {
+      "number": 572,
+      "title": "docs(ai): document the AI chat API",
+      "body": "Closes #569.\n\nDocuments the AI chat API: the JSON-RPC endpoint, the guide around it, and the Python `ai_chat` module that speaks it.\n\n## The endpoint lives in the spec, not MDX\n\n`POST /api/ai/chat` is JSON-RPC — one path, one HTTP method, six RPC methods selected by a body field — so it follows the pattern the Calling API already uses for `POST /api/calling/calls`: a single operation whose request body is a union of per-method models, discriminated on `method`, with one titled `@opExample` per method.\n\nNew `specs/signalwire-rest/ai-api/` family, because `/api/ai` is a route prefix no existing family owns. It covers all six methods and their results, the JSON-RPC error envelope with the error-code table, and the two failures that are not JSON-RPC at all: a `401`, and a `502` when the front door cannot reach the chat service. The operation documents the required **`chat` scope** via the shared `tokenPermissions` alias.\n\nReference page: `/docs/apis/rest/ai-chat/chat-methods`\n\n## Pages\n\n| Page | Type |\n|---|---|\n| `/ai/chat` | How-to: both connection paths, prerequisites, the behavior that bites, and how to confirm a working setup |\n| `/server-sdks/reference/python/ai-chat` | Module overview |\n| `.../ai-chat/ai-chat-client` | `AIChatClient` |\n| `.../ai-chat/chat-gateway` | `ChatGateway` |\n\n## Webhooks: reused, not forked\n\nA chat conversation delivers the same SWAIG and post-prompt payloads a voice session does, with different values — not different shapes — so no new webhook models were added. Following the reorg in #571/#575, the guide links the AI channel's canonical pages (`/docs/apis/rest/webhooks/ai-swaig-tool-webhook`, `/docs/apis/rest/webhooks/ai-post-prompt-callback`).\n\nThis branch widens the two fields chat actually changes, both of which said \"Always `voice`\":\n\n- `AiPostPromptCallbackPayload.conversation_type` now names `chat` alongside `voice`\n- `call_id` on both AI payloads notes that a chat conversation carries its conversation id there\n- `AiSwaigToolWebhookPayload.conversation_id` notes that a chat turn always has one and that it matches `call_id`\n\nThe Bedrock variants stay voice-only.\n\n## Notable decisions\n\n**Error codes are documented as code plus meaning, without internal constant names.** The names never appear on the wire (only `code` and a coarse `message` do), and one of them would name a model provider. The SDK's exception class names are customer-facing and are documented on the client page instead.\n\n**Python-only SDK reference.** The TypeScript SDK has no `ai_chat` module, so that variant gets nothing.\n\n**Three SDK pages rather than one per symbol.** The house pattern is one page per method (`function-result` has 50). For a two-class module this lands as three pages with every member documented inline; splitting per method is easy to do later if the module grows.\n\n## Verification\n\n- `yarn build:specs` — green; source and regenerated `openapi.yaml` committed together\n- `yarn fern-check` — only the pre-existing FDR-unreachable error, which predates this branch\n- `yarn fern-md-check` — all 2810 MDX files valid\n- Every Python and JS example parse-checked; every signature, kwarg, default, and return attribute verified against `signalwire-python` `ai_chat` source\n- Wire facts cross-checked against `signalwire-agent-chat`'s `rpc_doc.md` and the prime-rails front door (route, `chat` scope, 30-second proxy timeout, 502 body)\n\nNo live calls were made against the service, so production reachability is untested — the guide's \"Confirm it works\" section is written from the documented behavior, not from an observed run.\n\n## Please review\n\n- **`title: Chat`** on `/ai/chat` — unambiguous inside the AI tab, but it sits alongside Programmable Chat at `/chat` in search results and `llms.txt`. The `description` disambiguates.\n- **Placement** of the guide as a top-level entry in the AI tab rather than under Guides.\n\n## Merge of main (2026-08-14)\n\nMain's webhook-operations refactor (#579) conflicted only in generated output, so `openapi.yaml` was regenerated rather than hand-merged; it now differs from main solely by this branch's own additions. Three alignment changes came out of reviewing that refactor:\n\n**A correction.** An earlier commit here claimed voice AI accepts only a `response` string, and documented the `{tool_result, tool_prompt}` object form as chat-only. That was wrong — `actions.c:2404-2425` parses the object form for `ai` agents, and my evidence for the opposite was a truncated `grep`. The reply contract is the same on both channels, main's page documents it, and the guide now points there instead of restating it.\n\n**A stale trap removed.** `AIPostPromptData` now documents `parsed`, `raw` and `substituted`, so the guide's \"post_prompt_data is not parsed JSON\" caveat is gone rather than left to contradict the reference.\n\n**The new shared-contract rule applied.** `chat_log` entries are the same contract as the AI webhooks' `call_log` entries, so this branch dropped its own `ChatLogMessage` and references `Webhooks.AI.AICallLogEntry`. `call_timeline` stays `Record<unknown>[]` with a comment explaining that a chat timeline entry is not verifiable from a public source and the voice model names a `ts` field this pathway has not been confirmed to use. Widened that shared model's `role` doc as part of the reuse, since `system-log` reaches both pathways (`conversation.c:151`).\n",
+      "author": "Devon-White",
+      "mergedAt": "2026-08-17T20:08:37Z",
+      "mergeCommit": "6c4f3f9088684eaaba1b602b88a0765d138cfbea",
+      "url": "https://github.com/signalwire/docs/pull/572",
+      "mechanical": false,
+      "selfDocumented": false,
+      "authoredEntries": [],
+      "fileCount": 31,
+      "files": [
+        {
+          "path": "fern/products/apis/apis.yml",
+          "status": "modified",
+          "additions": 1,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "fern/products/apis/pages/core/error-codes.mdx",
+          "status": "modified",
+          "additions": 56,
+          "deletions": 1,
+          "url": "/docs/apis/error-codes",
+          "title": "Error codes",
+          "patch": null
+        },
+        {
+          "path": "fern/products/server-sdks/pages/reference/python/agents/ai-chat-client/chat.mdx",
+          "status": "added",
+          "additions": 86,
+          "deletions": 0,
+          "url": "/docs/server-sdks/reference/python/agents/ai-chat-client/chat",
+          "title": "chat",
+          "patch": null
+        },
+        {
+          "path": "fern/products/server-sdks/pages/reference/python/agents/ai-chat-client/close.mdx",
+          "status": "added",
+          "additions": 44,
+          "deletions": 0,
+          "url": "/docs/server-sdks/reference/python/agents/ai-chat-client/close",
+          "title": "close",
+          "patch": null
+        },
+        {
+          "path": "fern/products/server-sdks/pages/reference/python/agents/ai-chat-client/create-conversation.mdx",
+          "status": "added",
+          "additions": 76,
+          "deletions": 0,
+          "url": "/docs/server-sdks/reference/python/agents/ai-chat-client/create-conversation",
+          "title": "create_conversation",
+          "patch": null
+        },
+        {
+          "path": "fern/products/server-sdks/pages/reference/python/agents/ai-chat-client/delete.mdx",
+          "status": "added",
+          "additions": 39,
+          "deletions": 0,
+          "url": "/docs/server-sdks/reference/python/agents/ai-chat-client/delete",
+          "title": "delete",
+          "patch": null
+        },
+        {
+          "path": "fern/products/server-sdks/pages/reference/python/agents/ai-chat-client/end.mdx",
+          "status": "added",
+          "additions": 48,
+          "deletions": 0,
+          "url": "/docs/server-sdks/reference/python/agents/ai-chat-client/end",
+          "title": "end",
+          "patch": null
+        },
+        {
+          "path": "fern/products/server-sdks/pages/reference/python/agents/ai-chat-client/index.mdx",
+          "status": "added",
+          "additions": 173,
+          "deletions": 0,
+          "url": "/docs/server-sdks/reference/python/agents/ai-chat-client",
+          "title": "AIChatClient",
+          "patch": "@@ -0,0 +1,173 @@\n+---\n+title: \"AIChatClient\"\n+slug: /reference/python/agents/ai-chat-client\n+description: Async client for holding a text conversation with a SignalWire AI agent from your own server.\n+max-toc-depth: 3\n+---\n+\n+[chatgateway]: /docs/server-sdks/reference/python/agents/chat-gateway\n+[chat-endpoint]: /docs/apis/rest/ai-chat/chat-methods\n+[error-codes]: /docs/apis/error-codes\n+[createconversation]: /docs/server-sdks/reference/python/agents/ai-chat-client/create-conversation\n+[chat]: /docs/server-sdks/reference/python/agents/ai-chat-client/chat\n+[end]: /docs/server-sdks/reference/python/agents/ai-chat-client/end\n+[delete]: /docs/server-sdks/reference/python/agents/ai-chat-client/delete\n+[log]: /docs/server-sdks/reference/python/agents/ai-chat-client/log\n+[summarize]: /docs/server-sdks/reference/python/agents/ai-chat-client/summarize\n+[rawpost]: /docs/server-sdks/reference/python/agents/ai-chat-client/raw-post\n+[close]: /docs/server-sdks/reference/python/agents/ai-chat-client/close\n+\n+`AIChatClient` sends messages to an AI agent and returns its replies. The agent is the same one a\n+phone call would reach, and each call to [`chat()`][chat] runs one full turn.\n+\n+It is asyn"
+        },
+        {
+          "path": "fern/products/server-sdks/pages/reference/python/agents/ai-chat-client/log.mdx",
+          "status": "added",
+          "additions": 53,
+          "deletions": 0,
+          "url": "/docs/server-sdks/reference/python/agents/ai-chat-client/log",
+          "title": "log",
+          "patch": null
+        },
+        {
+          "path": "fern/products/server-sdks/pages/reference/python/agents/ai-chat-client/raw-post.mdx",
+          "status": "added",
+          "additions": 53,
+          "deletions": 0,
+          "url": "/docs/server-sdks/reference/python/agents/ai-chat-client/raw-post",
+          "title": "raw_post",
+          "patch": null
+        },
+        {
+          "path": "fern/products/server-sdks/pages/reference/python/agents/ai-chat-client/summarize.mdx",
+          "status": "added",
+          "additions": 63,
+          "deletions": 0,
+          "url": "/docs/server-sdks/reference/python/agents/ai-chat-client/summarize",
+          "title": "summarize",
+          "patch": null
+        },
+        {
+          "path": "fern/products/server-sdks/pages/reference/python/agents/chat-gateway/close.mdx",
+          "status": "added",
+          "additions": 43,
+          "deletions": 0,
+          "url": "/docs/server-sdks/reference/python/agents/chat-gateway/close",
+          "title": "close",
+          "patch": null
+        },
+        {
+          "path": "fern/products/server-sdks/pages/reference/python/agents/chat-gateway/index.mdx",
+          "status": "added",
+          "additions": 209,
+          "deletions": 0,
+          "url": "/docs/server-sdks/reference/python/agents/chat-gateway",
+          "title": "ChatGateway",
+          "patch": "@@ -0,0 +1,209 @@\n+---\n+title: \"ChatGateway\"\n+slug: /reference/python/agents/chat-gateway\n+description: Browser-facing proxy that lets a page chat with an AI agent without holding a SignalWire API token.\n+max-toc-depth: 3\n+---\n+\n+[aichatclient]: /docs/server-sdks/reference/python/agents/ai-chat-client\n+[router]: /docs/server-sdks/reference/python/agents/chat-gateway/router\n+[minthandle]: /docs/server-sdks/reference/python/agents/chat-gateway/mint-handle\n+[readhandle]: /docs/server-sdks/reference/python/agents/chat-gateway/read-handle\n+[prepare]: /docs/server-sdks/reference/python/agents/chat-gateway/prepare\n+[visiblemessages]: /docs/server-sdks/reference/python/agents/chat-gateway/visible-messages\n+[lastactivity]: /docs/server-sdks/reference/python/agents/chat-gateway/last-activity\n+[close]: /docs/server-sdks/reference/python/agents/chat-gateway/close\n+\n+A chat widget in a page cannot hold a SignalWire API token: the token carries the whole project, and\n+every visitor could read it. `ChatGateway` mounts inside a web application you already run, holds the\n+credentials server-side, and forwards on the widget's behalf.\n+\n+The browser learns two things, the gateway's URL and a publisha"
+        },
+        {
+          "path": "fern/products/server-sdks/pages/reference/python/agents/chat-gateway/last-activity.mdx",
+          "status": "added",
+          "additions": 50,
+          "deletions": 0,
+          "url": "/docs/server-sdks/reference/python/agents/chat-gateway/last-activity",
+          "title": "last_activity",
+          "patch": null
+        },
+        {
+          "path": "fern/products/server-sdks/pages/reference/python/agents/chat-gateway/mint-handle.mdx",
+          "status": "added",
+          "additions": 45,
+          "deletions": 0,
+          "url": "/docs/server-sdks/reference/python/agents/chat-gateway/mint-handle",
+          "title": "mint_handle",
+          "patch": null
+        },
+        {
+          "path": "fern/products/server-sdks/pages/reference/python/agents/chat-gateway/prepare.mdx",
+          "status": "added",
+          "additions": 72,
+          "deletions": 0,
+          "url": "/docs/server-sdks/reference/python/agents/chat-gateway/prepare",
+          "title": "prepare",
+          "patch": null
+        },
+        {
+          "path": "fern/products/server-sdks/pages/reference/python/agents/chat-gateway/read-handle.mdx",
+          "status": "added",
+          "additions": 59,
+          "deletions": 0,
+          "url": "/docs/server-sdks/reference/python/agents/chat-gateway/read-handle",
+          "title": "read_handle",
+          "patch": null
+        },
+        {
+          "path": "fern/products/server-sdks/pages/reference/python/agents/chat-gateway/router.mdx",
+          "status": "added",
+          "additions": 59,
+          "deletions": 0,
+          "url": "/docs/server-sdks/reference/python/agents/chat-gateway/router",
+          "title": "router",
+          "patch": null
+        },
+        {
+          "path": "fern/products/server-sdks/pages/reference/python/agents/chat-gateway/visible-messages.mdx",
+          "status": "added",
+          "additions": 50,
+          "deletions": 0,
+          "url": "/docs/server-sdks/reference/python/agents/chat-gateway/visible-messages",
+          "title": "visible_messages",
+          "patch": null
+        },
+        {
+          "path": "fern/products/server-sdks/pages/reference/python/agents/overview.mdx",
+          "status": "modified",
+          "additions": 12,
+          "deletions": 0,
+          "url": "/docs/server-sdks/reference/python/agents",
+          "title": "Agents",
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/ai-api/chat/main.tsp",
+          "status": "added",
+          "additions": 83,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/ai-api/chat/models/core.tsp",
+          "status": "added",
+          "additions": 96,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": "@@ -0,0 +1,96 @@\n+import \"@typespec/http\";\n+import \"@typespec/openapi3\";\n+import \"@typespec/json-schema\";\n+\n+using TypeSpec.Http;\n+using TypeSpec.OpenAPI;\n+using TypeSpec.JsonSchema;\n+\n+namespace SignalWireAPI.AI;\n+\n+// ============================================\n+// Reusable descriptions\n+// ============================================\n+\n+const conversationIdDescription = \"The conversation this method acts on. You choose the value when you create the conversation, and it is scoped to your project.\";\n+\n+const configUrlDescription = \"\"\"\n+  The publicly reachable URL serving your agent's SWML. `localhost` and private network addresses\n+  cannot be reached by SignalWire.\n+  \"\"\";\n+\n+const conversationTimeoutDescription = \"Seconds a conversation may sit idle before it ends.\";\n+\n+const userMetaDataDescription = \"Arbitrary data about the user, included in webhooks generated for this conversation.\";\n+\n+const reinitDescription = \"Reset an existing conversation instead of returning it as-is. Clears the message history.\";\n+\n+const requestIdDescription = \"Your identifier for this request, echoed back on the response so you can match the two.\";\n+\n+// ==========================================="
+        },
+        {
+          "path": "specs/signalwire-rest/ai-api/chat/models/examples.tsp",
+          "status": "added",
+          "additions": 72,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/ai-api/chat/models/requests.tsp",
+          "status": "added",
+          "additions": 235,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": "@@ -0,0 +1,235 @@\n+import \"@typespec/http\";\n+import \"@typespec/openapi3\";\n+import \"@typespec/json-schema\";\n+import \"./core.tsp\";\n+\n+using TypeSpec.Http;\n+using TypeSpec.OpenAPI;\n+using TypeSpec.JsonSchema;\n+\n+namespace SignalWireAPI.AI;\n+\n+// ============================================\n+// create_conversation\n+// ============================================\n+\n+@summary(\"create_conversation\")\n+model ChatCreateConversationRequest {\n+  ...JsonRpcRequestEnvelope;\n+\n+  @doc(\"Creates a conversation, or resets an existing one when `reinit` is set.\")\n+  @example(\"create_conversation\")\n+  method: \"create_conversation\";\n+\n+  @doc(\"The parameters for `create_conversation`.\")\n+  params: {\n+    @doc(conversationIdDescription)\n+    @example(\"conv-123\")\n+    id: string;\n+\n+    @doc(configUrlDescription)\n+    @example(\"https://your-agent.example.com/swml\")\n+    config_url: url;\n+\n+    @doc(\"An opening message from the user, sent as part of creating the conversation.\")\n+    @example(\"I need help with an order\")\n+    user_message?: string;\n+\n+    @doc(conversationTimeoutDescription)\n+    @example(1800)\n+    conversation_timeout?: int32 = 3600;\n+\n+    @doc(userMetaDataDescription)\n+    @example(#{ c"
+        },
+        {
+          "path": "specs/signalwire-rest/ai-api/chat/models/responses.tsp",
+          "status": "added",
+          "additions": 234,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": "@@ -0,0 +1,234 @@\n+import \"@typespec/http\";\n+import \"@typespec/openapi3\";\n+import \"@typespec/json-schema\";\n+import \"./core.tsp\";\n+// A conversation entry is one contract however it is fetched, so the transcript this endpoint\n+// returns reuses the model the AI webhooks already publish rather than forking a second one.\n+import \"../../../webhooks/ai/models/common.tsp\";\n+\n+using TypeSpec.Http;\n+using TypeSpec.OpenAPI;\n+using TypeSpec.JsonSchema;\n+\n+namespace SignalWireAPI.AI;\n+\n+// ============================================\n+// create_conversation\n+// ============================================\n+\n+@summary(\"create_conversation result\")\n+model ChatConversationCreatedResponse {\n+  ...JsonRpcResponseEnvelope;\n+\n+  @doc(\"The conversation that now exists.\")\n+  result: {\n+    @doc(\"\"\"\n+      What happened. `created` for a new conversation, `reinitialized` when `reinit` reset an\n+      existing one, and `exists` when one was already there and was left alone.\n+      \"\"\")\n+    @example(\"created\")\n+    status: \"created\" | \"reinitialized\" | \"exists\";\n+\n+    @doc(\"The conversation id.\")\n+    @example(\"conv-123\")\n+    id: string;\n+\n+    @doc(\"\"\"\n+      The agent's opening line, when the agent g"
+        },
+        {
+          "path": "specs/signalwire-rest/ai-api/main.tsp",
+          "status": "added",
+          "additions": 13,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/ai-api/tags.tsp",
+          "status": "added",
+          "additions": 11,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/main.tsp",
+          "status": "modified",
+          "additions": 3,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/webhooks/ai/models/common.tsp",
+          "status": "modified",
+          "additions": 4,
+          "deletions": 1,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/webhooks/ai/models/post-prompt.tsp",
+          "status": "modified",
+          "additions": 6,
+          "deletions": 3,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/webhooks/ai/models/swaig.tsp",
+          "status": "modified",
+          "additions": 13,
+          "deletions": 2,
+          "url": null,
+          "title": null,
+          "patch": null
+        }
+      ]
+    },
+    {
+      "number": 571,
+      "title": "rest(calling): add AI post-prompt and debug webhook definitions",
+      "body": "## What\n\nAdds the two missing AI webhook definitions to the REST spec's **Calling → Calls → Webhooks** section, plus the Bedrock post-prompt variant:\n\n| Webhook | Fields | Source |\n|---|---|---|\n| `aiPostPromptCallback` | 42 | `ai_utils.c:198-304` + `post_process.c:333-433` |\n| `aiDebugWebhook` | `call_info` + **47 events** | `webhook.c:428-532` + 47 call sites |\n| `bedrockPostPromptCallback` | 37 | `bedrock.c:1372-1496`, `:1607-1663` |\n\nEvery other AI callback (`aiSidecarCallback`, `aiSwaigToolWebhook`, `swaigSignatureRequest`, `bedrockSwaigToolWebhook`) was already modeled. These two carry the conversation itself and were not.\n\n## Errors corrected\n\n**The hand-maintained post-prompt field list was wrong in five places:**\n\n| Documented | Actual | Source |\n|---|---|---|\n| `content_type: \"text/swaig\"` | `\"text/json\"` | `ai_utils.c:215` |\n| `content_disposition: \"Conversation Log\"` | `\"agent.summary\"` | `post_process.c:339` |\n| `caller_id_num` | `caller_id_number` | `ai_utils.c:298` |\n| `version: \"2.0\"` | key does not exist — commented out | `ai_utils.c:216` |\n| `call_log` typed `object` | array of objects | `ai_utils.c:246` |\n\nIt was also missing ~20 keys. Those lists are now `<WebhookPayloadSnippet>` embeds, so they track the spec instead of drifting.\n\n**The debug envelope description was wrong on the one point a handler is built against.** The first commit claimed `call_info` plus *exactly one more key*, and told readers to \"read the key that is not `call_info`\". `send_debug_data_async` takes NULL-terminated `(label, payload)` varargs (`webhook.c:449-477`), and six AI-verb call sites pass several pairs at once — `actions.c:1161` sends `webhook`, `input`, `output`, `error_keys`, and `match` in one body. A handler following that advice picks one arbitrarily and drops the rest. Fixed in the second commit.\n\nAlso: an event carrying no data arrives as an explicit `null` (`webhook.c:471`) rather than being omitted, so presence is the check, not truthiness.\n\n**Two behavior claims** corrected against source: the post-prompt response body is logged and discarded (`post_process.c:447-460`) — only the conversation fetch reads what you return, and it reads `conversation_summary` (`ai_utils.c:707-710`); and `debug_webhook_level` only gates *up*, so level 0 does not disable the stream.\n\n## The debug webhook, and why it looks the way it does\n\nThe body is `{ call_info, <event_name>: <payload>, ... }`. **The event name is the JSON key** — there is no `type` field to switch on. So the events cannot be enum values on a property: there is no property to hold them, and inventing one would document a field the backend never sends.\n\nThey are modeled as **optional sibling properties on an open object**. That is not a compromise — it is the only shape that permits the multi-key bodies above. A `oneOf` across N variants would be *more* precise per-event and *wrong*, because it forbids exactly those payloads.\n\nAll 47 AI-verb events are now modeled with shapes read from their individual call sites, replacing the 38-name prose list the first commit shipped. Reconciled against source: **0 phantoms, 0 omissions.**\n\nVariant shapes are documented rather than flattened away:\n\n- `barge` differs by session type — `barge_type` / `barge_elapsed_ms` / `interrupt_count` on a standard session, `audio_played_ms` / `barge_count` on speech-to-speech\n- `attention_timeout` is an object or `null`\n- `llm_error` carries a different field set per `event` value\n- `startup_hook` / `hangup_hook` differ on success vs failure\n\nPassthrough payloads (`webhook`, `input`, `output`, `match`, `expression`, `process_action`, `swaig_call`, `webhook_reply`) are open records with prose saying what they hold; `output` / `match` / `webhook_reply` are nullable and `error_keys` is a nullable array.\n\n**`sidecar_event` was removed from this webhook.** It reuses the same envelope builder but posts to the sidecar's own `url` (`sidecar.c:505-507`), not `debug_webhook_url` — it is already covered by `aiSidecarCallback`.\n\nThe payload stays open (`is Record<unknown>`) because `live_translate` / `live_transcribe` add 15 more labels to the same stream. Those are called out as out of scope rather than modeled here.\n\n## Other modeling decisions\n\n- **Post-prompt is flat, not a union.** The same URL receives `fetch_conversation` (`ai_utils.c:686-694`), which shares ~30 keys and drops the summary-only ones. `action` is a required enum, so a union would be legal — but it would double the nav for two near-identical shapes.\n- **`is Record<unknown>`, not `...Record<unknown>`.** A spread into a model that already has named properties does not create an indexer; it emitted sealed. Verified in the output: open where the key set varies, sealed where it is fixed.\n- **Extracted `AICallInfo`** rather than duplicating the envelope across payloads. Emitted webhook schemas are unchanged (still inlined); the only visible difference is the sidecar's `call_id` description losing \"the sidecar is attached to\".\n- **Shared `AIDebugFlowLocation`** (`context` / `step` / `step_index`) spread into the five `gather` events, from `tl_stamp_location` (`timeline.c:52-65`).\n\n## Verification\n\n- `yarn build:specs` — clean\n- `yarn fern-md-check` — all 2806 MDX files valid\n- `yarn fern-check` — clean apart from the pre-existing FDR 403 that skips the redirects check (confirmed identical on a tree without these changes)\n- Event list reconciled programmatically against every `send_debug_data*` call site in `mod_openai`\n- Anchors and cross-links hand-checked (no CI covers them): `## post_prompt_url callback` headings preserved so existing inbound links keep working; `live-translate`, `live-transcribe`, `data-map`, `#paramsenable_inner_dialog` all confirmed to resolve\n\n## Review notes\n\n- `fern/apis/signalwire-rest/openapi.yaml` is generated — review the `.tsp` and skim the artifact.\n- Deletions are almost entirely the two hand-written `<ParamField>` lists being replaced by snippets, plus the prose event list and the `AICallInfo` extraction.\n\n## Follow-ups, not in this PR\n\n- `event_webhook_url` is a fourth undocumented AI webhook — mirrors the post-prompt body under a different envelope (`webhook.c:278-364`).\n- The 15 `live_translate` / `live_transcribe` debug events share this stream but belong to a different verb.\n- `specs/swml/calling/Methods/ai/ai_params.tsp:439` tells readers to set a `post_url` that is not declared anywhere in the spec. Pre-existing.\n- Once the AI analytics guide lands, `/docs/platform/ai/analytics` should be linked from the post-prompt payload doc and the debug webhook section. Those links were written, then removed because the page does not exist on `main` yet and `fern check` flagged them.\n",
+      "author": "Devon-White",
+      "mergedAt": "2026-08-13T12:29:26Z",
+      "mergeCommit": "71a36a3802610cb6a13befdbf7b28791309bbf5f",
+      "url": "https://github.com/signalwire/docs/pull/571",
+      "mechanical": false,
+      "selfDocumented": false,
+      "authoredEntries": [],
+      "fileCount": 6,
+      "files": [
+        {
+          "path": "fern/products/apis/apis.yml",
+          "status": "modified",
+          "additions": 3,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": "@@ -83,6 +83,9 @@ navigation:\n                   - subpackage_calls.ai_swaig_tool_webhook\n                   - subpackage_calls.bedrock_swaig_tool_webhook\n                   - subpackage_calls.swaig_signature_request\n+                  - subpackage_calls.ai_post_prompt_callback\n+                  - subpackage_calls.ai_debug_webhook\n+                  - subpackage_calls.bedrock_post_prompt_callback\n           - queues\n           - queueMembers\n           - recordings"
+        },
+        {
+          "path": "fern/products/swml/pages/reference/methods/calling/ai/ai_params/index.mdx",
+          "status": "modified",
+          "additions": 21,
+          "deletions": 2,
+          "url": "/docs/swml/reference/calling/ai/params",
+          "title": "params",
+          "patch": "@@ -492,12 +492,12 @@ Enable debugging tools, logging, and performance monitoring features to help dev\n \n \n <ParamField path=\"params.debug_webhook_level\" type=\"integer\" default=\"1\" toc={true}>\n-  Enables debugging to the set URL. Allowed values from `0`-`2`. Level 0 disables, 1 provides basic info, 2 provides verbose info.\n+  How much the debug stream carries. Allowed values from `0`-`2`. Level 2 adds `conversation_add`, `llm_request`, and `llm_response`, which together are far higher volume than everything else combined. Setting `debug_webhook_url` is what turns the stream on, so lowering the level thins the stream rather than stopping it. See the [debug_webhook_url callback](#debug_webhook_url-callback) below.\n </ParamField>\n \n \n <ParamField path=\"params.debug_webhook_url\" type=\"string\" toc={true}>\n-  Each interaction between the AI and end user is posted in real time to the established URL. Authentication can also be set in the url in the format of `username:password@url`.\n+  Each interaction between the AI and end user is posted in real time to the established URL. Authentication can also be set in the url in the format of `username:password@url`. See the [debug_webhook_url cal"
+        },
+        {
+          "path": "fern/products/swml/pages/reference/methods/calling/ai/index.mdx",
+          "status": "modified",
+          "additions": 14,
+          "deletions": 258,
+          "url": "/docs/swml/reference/calling/ai",
+          "title": "ai",
+          "patch": "@@ -166,272 +166,28 @@ it is recommended to read the [Prompting Best Practices][Prompting Best Practice\n \n ## post_prompt_url callback\n \n-SignalWire will make a request to the `post_prompt_url` with the following parameters:\n+SignalWire sends the report to your `post_prompt_url` as an HTTP `POST`.\n \n-<ParamField path=\"action\" type=\"string\" toc={true}>\n-  Action that prompted this request. The value will be \"post_conversation\".\n-</ParamField>\n-\n-\n-<ParamField path=\"ai_end_date\" type=\"integer\" toc={true}>\n-  Timestamp indicating when the AI session ended.\n-</ParamField>\n-\n-\n-<ParamField path=\"ai_session_id\" type=\"string\" toc={true}>\n-  A unique identifier for the AI session.\n-</ParamField>\n-\n-\n-<ParamField path=\"ai_start_date\" type=\"integer\" toc={true}>\n-  Timestamp indicating when the AI session started.\n-</ParamField>\n-\n-\n-<ParamField path=\"app_name\" type=\"string\" toc={true}>\n-  Name of the application that originated the request.\n-</ParamField>\n-\n-\n-<ParamField path=\"call_answer_date\" type=\"integer\" toc={true}>\n-  Timestamp indicating when the call was answered.\n-</ParamField>\n-\n-\n-<ParamField path=\"call_end_date\" type=\"integer\" toc={true}>\n-  Timestamp indicating when the call en"
+        },
+        {
+          "path": "fern/products/swml/pages/reference/methods/calling/bedrock/index.mdx",
+          "status": "modified",
+          "additions": 6,
+          "deletions": 264,
+          "url": "/docs/swml/reference/calling/amazon-bedrock",
+          "title": "amazon_bedrock",
+          "patch": "@@ -115,275 +115,17 @@ The `post_prompt` object accepts either a plain text prompt or a structured POM\n \n ## post_prompt_url callback\n \n-SignalWire will make a request to the `post_prompt_url` with the following parameters:\n+SignalWire sends the report to your `post_prompt_url` as an HTTP `POST`.\n \n-<ParamField path=\"action\" type=\"string\" toc={true}>\n-  Action that prompted this request. The value will be \"post_conversation\".\n-</ParamField>\n-\n-\n-<ParamField path=\"ai_end_date\" type=\"integer\" toc={true}>\n-  Timestamp indicating when the AI session ended.\n-</ParamField>\n-\n-\n-<ParamField path=\"ai_session_id\" type=\"string\" toc={true}>\n-  A unique identifier for the AI session.\n-</ParamField>\n-\n-\n-<ParamField path=\"ai_start_date\" type=\"integer\" toc={true}>\n-  Timestamp indicating when the AI session started.\n-</ParamField>\n-\n-\n-<ParamField path=\"app_name\" type=\"string\" toc={true}>\n-  Name of the application that originated the request.\n-</ParamField>\n+<WebhookPayloadSnippet webhook=\"bedrockPostPromptCallback\" />\n \n-\n-<ParamField path=\"call_answer_date\" type=\"integer\" toc={true}>\n-  Timestamp indicating when the call was answered.\n-</ParamField>\n-\n-\n-<ParamField path=\"call_end_date\" type="
+        },
+        {
+          "path": "specs/signalwire-rest/calling-api/calls/main.tsp",
+          "status": "modified",
+          "additions": 7,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": "@@ -29,6 +29,13 @@ using Types.StatusCodes;\n   BedrockSwaigToolWebhookPayload,\n   CALLS_TAG\n )\n+@webhook(\"aiPostPromptCallback\", AiPostPromptCallbackPayload, CALLS_TAG)\n+@webhook(\"aiDebugWebhook\", AiDebugWebhookPayload, CALLS_TAG)\n+@webhook(\n+  \"bedrockPostPromptCallback\",\n+  BedrockPostPromptCallbackPayload,\n+  CALLS_TAG\n+)\n namespace SignalWireAPI.Calling.Calls {\n   @tag(CALLS_TAG)\n   @friendlyName(\"Calls\")"
+        },
+        {
+          "path": "specs/signalwire-rest/calling-api/calls/models/webhooks.tsp",
+          "status": "modified",
+          "additions": 1458,
+          "deletions": 61,
+          "url": null,
+          "title": null,
+          "patch": "@@ -168,62 +168,93 @@ enum AISidecarCallbackType {\n   final,\n }\n \n+@doc(\"\"\"\n+  Identifies the call an AI callback came from. `project_id` and `space_id` are included when\n+  available.\n+  \"\"\")\n+model AICallInfo {\n+  @doc(\"Your project ID.\")\n+  @example(\"4d0d6f16-5881-4fcc-92a4-02c51a91954d\")\n+  project_id?: uuid;\n+\n+  @doc(\"Your Space ID.\")\n+  @example(\"451ed9ff-e568-4222-8af9-4f9ab7428d09\")\n+  space_id?: uuid;\n+\n+  @doc(\"ID of the call.\")\n+  @example(\"2e1e66e5-5d07-413d-9668-55542992eec0\")\n+  call_id: uuid;\n+\n+  @doc(\"The content type of the POST body. Always `text/json`.\")\n+  @example(\"text/json\")\n+  content_type: string;\n+\n+  @doc(\"How the body is delivered. Always `post_data`.\")\n+  @example(\"post_data\")\n+  content_disposition: string;\n+\n+  @doc(\"The conversation type. Always `voice`.\")\n+  @example(\"voice\")\n+  conversation_type: string;\n+}\n+\n @summary(\"AI sidecar callback\")\n @doc(\"\"\"\n   Sent to the sidecar's `url` as an HTTP `POST` whenever you set one. The same event is always\n   published in real time on the SignalWire Relay event channel (`calling.ai.sidecar`), so the\n   webhook is optional. Each event is wrapped under `sidecar_event` — read that before checking its\n   `type`"
+        }
+      ]
+    }
+  ]
+}
