@@ -63,6 +63,14 @@ jobs:
         env:
           BATCH_DATE: ${{ inputs.batch_date }}
         run: |
+          # Validate before the path check, not after: a newline in the input would
+          # otherwise forge arbitrary step outputs through the echo below, and those
+          # outputs are expanded into a shell command in the next step.
+          case "$BATCH_DATE" in
+            [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]) ;;
+            *) echo "::error::batch_date must be YYYY-MM-DD (got '${BATCH_DATE}')"; exit 1 ;;
+          esac
+
           if [ ! -d ".github/changelog-state/batches/${BATCH_DATE}" ]; then
             echo "::error::No batch at .github/changelog-state/batches/${BATCH_DATE}"
             exit 1
@@ -86,6 +94,9 @@ jobs:
       - name: Post digests
         if: steps.added.outputs.dates != ''
         env:
+          # Already validated as YYYY-MM-DD by the previous step, which fails the job
+          # otherwise. Read through env so nothing user-supplied reaches the script body.
+          BATCH_DATE: ${{ inputs.batch_date }}
           DEVEX_WEBHOOK: ${{ secrets.SLACK_CHANGELOG_DEVEX_WEBHOOK_URL }}
           SUPPORT_WEBHOOK: ${{ secrets.SLACK_CHANGELOG_SUPPORT_WEBHOOK_URL }}
           GITHUB_REPOSITORY: ${{ github.repository }}
@@ -132,7 +143,10 @@ jobs:
           }
 
           FAILED=0
-          for DATE in ${{ steps.added.outputs.dates }}; do
+          # Quoted, and driven by the env var rather than a `${{ }}` splice into the
+          # script body. The loop stays because restoring the push trigger makes
+          # `dates` a space-separated list again — at which point drop the quotes.
+          for DATE in "$BATCH_DATE"; do
             post devex   "$DATE" "$DEVEX_WEBHOOK"   "SLACK_CHANGELOG_DEVEX_WEBHOOK_URL"   || FAILED=1
             post support "$DATE" "$SUPPORT_WEBHOOK" "SLACK_CHANGELOG_SUPPORT_WEBHOOK_URL" || FAILED=1
           done
