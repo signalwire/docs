@@ -14,6 +14,8 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { join } from 'node:path';
+import { REPO_ROOT } from './config.js';
 import {
   validate,
   buildDatedFile,
@@ -21,6 +23,7 @@ import {
   sectionHeading,
   collectTags,
   resolveLinks,
+  authoredEntryFiles,
 } from './render.js';
 
 const KNOWN = new Set([501, 502]);
@@ -143,6 +146,50 @@ test('resolveLinks omits a page with no resolvable URL and dedupes', () => {
   const meta = new Map([['a.mdx', { url: '/docs/x', title: 'X' }], ['b.mdx', { url: '/docs/x', title: 'X' }]]);
   const entry = notable({ pages: [{ path: 'a.mdx' }, { path: 'b.mdx' }, { path: 'gone.mdx' }] });
   assert.equal(resolveLinks(entry, meta).length, 1);
+});
+
+test('authoredEntryFiles announces every heading the batch added to one file', () => {
+  // The regression: two self-documented PRs appending to the same dated file. PR B
+  // sees PR A's heading as pre-existing, so combining the two PRs' priorHeadings
+  // marked "First" as already reported and it was never announced anywhere.
+  const rows = authoredEntryFiles(
+    [
+      [{ path: 'fern/x/changelog/2026-09-01.mdx', priorHeadings: [], addedHeadings: ['First'] }],
+      [
+        {
+          path: 'fern/x/changelog/2026-09-01.mdx',
+          priorHeadings: ['First'],
+          addedHeadings: ['Second'],
+        },
+      ],
+    ],
+    new Set(),
+    () => ['First', 'Second'],
+  );
+
+  assert.equal(rows.length, 1);
+  assert.deepEqual(rows[0].alreadyReported, [], 'both headings are new to this batch');
+  assert.equal(rows[0].authored, true);
+});
+
+test('authoredEntryFiles excludes headings published before the batch', () => {
+  const rows = authoredEntryFiles(
+    [[{ path: 'fern/x/changelog/2026-09-01.mdx', priorHeadings: ['Old'], addedHeadings: ['New'] }]],
+    new Set(),
+    () => ['Old', 'New'],
+  );
+  assert.deepEqual(rows[0].alreadyReported, ['Old'], 'a late append must not re-announce the file');
+});
+
+test('authoredEntryFiles skips files this batch wrote or that no longer exist', () => {
+  const rel = 'fern/x/changelog/2026-09-01.mdx';
+  const authored = [[{ path: rel, priorHeadings: [], addedHeadings: ['A'] }]];
+
+  const covered = authoredEntryFiles(authored, new Set([join(REPO_ROOT, rel)]), () => ['A']);
+  assert.equal(covered.length, 0, 'already covered by the batch entry files');
+
+  const deleted = authoredEntryFiles(authored, new Set(), () => null);
+  assert.equal(deleted.length, 0, 'a deleted file has nothing to announce');
 });
 
 test('resolveLinks falls back to the URL when no title is known', () => {

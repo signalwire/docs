@@ -199,7 +199,7 @@ function parseExistingFile(contents) {
   }
 
   const sections = body
-    .split(/^(?=## )/m)
+    .split(/^(?=##\s)/m)
     .map((s) => s.trim())
     .filter(Boolean);
 
@@ -207,7 +207,7 @@ function parseExistingFile(contents) {
 }
 
 function readFrontmatterTags(raw) {
-  const match = raw.match(/tags:\s*(\[.*\])/s);
+  const match = raw.match(/tags:\s*(\[[^\]]*\])/);
   if (!match) return null;
   try {
     return JSON.parse(match[1]);
@@ -216,9 +216,15 @@ function readFrontmatterTags(raw) {
   }
 }
 
-/** Heading text of a `##` section, used to avoid duplicating an entry. */
+/**
+ * Heading text of a `##` section, used to avoid duplicating an entry.
+ *
+ * Delegates to config.js so there is exactly one definition of what a `##`
+ * heading is — collect uses the same helper to record priorHeadings, and dedup
+ * breaks the moment the two disagree.
+ */
 function sectionHeading(section) {
-  return section.split('\n')[0].replace(/^##\s*/, '').trim();
+  return entryHeadings(section)[0] ?? '';
 }
 
 /**
@@ -307,6 +313,50 @@ previously got wrong, and pages that moved to a new URL.
 
 ${sections}
 `;
+}
+
+// ============================================
+// Manifest
+// ============================================
+
+/**
+ * Manifest rows for entry files an author wrote themselves, so both digests pick
+ * them up exactly like workflow-authored ones.
+ *
+ * `alreadyReported` is stated as "everything in the file that this batch did not
+ * add", rather than accumulated from each PR's `priorHeadings`. Two self-documented
+ * PRs writing to one file see different priors — the second sees the first's heading
+ * as pre-existing — so combining priors suppresses the first PR's entry entirely.
+ * What the batch added is order-independent.
+ *
+ * @param {Iterable<object[]>} authored  Per-PR `authoredEntries` arrays from input.json.
+ * @param {Set<string>} covered  Absolute paths this batch already wrote; covered elsewhere.
+ * @param {(rel: string) => string[] | null} readHeadings  Current `##` headings, or
+ *   null when the file no longer exists.
+ */
+function authoredEntryFiles(authored, covered, readHeadings) {
+  const addedByPath = new Map();
+  for (const entries of authored) {
+    for (const { path: rel, addedHeadings } of entries) {
+      const acc = addedByPath.get(rel) ?? new Set();
+      for (const heading of addedHeadings ?? []) acc.add(heading);
+      addedByPath.set(rel, acc);
+    }
+  }
+
+  const rows = [];
+  for (const [rel, added] of addedByPath) {
+    const abs = join(REPO_ROOT, rel);
+    if (covered.has(abs)) continue;
+    const current = readHeadings(rel);
+    if (current === null) continue;
+    rows.push({
+      path: abs,
+      alreadyReported: current.filter((h) => !added.has(h)),
+      authored: true,
+    });
+  }
+  return rows;
 }
 
 // ============================================
@@ -453,19 +503,15 @@ Writes ${CHANGELOG_DIR_REL}/<date>.mdx      (notable only)
   // Support digest must use it too — otherwise the same change carries two different
   // names across channels and nobody can cross-reference them. The classifier's
   // support_detail is still what Support reads; only the title is overridden.
+  //
+  // addedHeadings is resolved by collect at the PR's own merge commit. Recomputing
+  // it here from the file at HEAD would credit the first of two PRs touching one
+  // file with the second's headings.
   const supportEntries = entries.map((entry) => {
     const authored = selfDocumented.get(entry.pr);
     if (!authored || entry.tier === 'skip') return entry;
 
-    const headings = authored.flatMap(({ path: rel, priorHeadings }) => {
-      const abs = join(REPO_ROOT, rel);
-      if (!existsSync(abs)) return [];
-      const prior = new Set(priorHeadings ?? []);
-      return parseExistingFile(readFileSync(abs, 'utf8'))
-        .sections.map(sectionHeading)
-        .filter((h) => !prior.has(h));
-    });
-
+    const headings = authored.flatMap((a) => a.addedHeadings ?? []);
     return headings.length ? { ...entry, entry_title: headings.join(' · ') } : entry;
   });
 
@@ -500,25 +546,39 @@ Writes ${CHANGELOG_DIR_REL}/<date>.mdx      (notable only)
     };
   });
 
-  // Entry files an author wrote themselves. Listed in the manifest so both digests
-  // pick them up exactly like workflow-authored ones, excluding any heading that
-  // was already in the file before the author's PR.
-  const authoredByPath = new Map();
-  for (const authored of selfDocumented.values()) {
-    for (const { path: rel, priorHeadings } of authored) {
-      if (!existsSync(join(REPO_ROOT, rel))) continue;
-      const prior = authoredByPath.get(rel) ?? [];
-      authoredByPath.set(rel, [...new Set([...prior, ...(priorHeadings ?? [])])]);
-    }
+  // Link text ships to customers as written. Reference-page frontmatter titles are
+  // often a bare lowercase token ("params", "ai") that does not name its destination
+  // out of context, which the MDX style rules require. Nothing here can invent better
+  // prose, so surface them for the reviewer's reword pass.
+  //
+  // Scoped to sections this run actually writes: a section already on disk keeps its
+  // own text when buildDatedFile merges, so warning about it would re-flag labels a
+  // reviewer has already fixed.
+  const bareLabels = files
+    .flatMap((f) => {
+      const already = new Set(f.alreadyReported);
+      return byDate
+        .get(f.date)
+        .filter((e) => !already.has(e.entry_title))
+        .flatMap((e) => resolveLinks(e, pageMeta).map((link) => ({ pr: e.pr, ...link })));
+    })
+    .filter((link) => /^[a-z0-9._-]+$/.test(link.label));
+
+  if (bareLabels.length > 0) {
+    log.newline();
+    const c = log.collector('bare-link-text');
+    for (const link of bareLabels) c.warn(`#${link.pr} [${link.label}](${link.url})`);
+    c.flush({ header: `${bareLabels.length} link labels do not stand alone out of context:` });
   }
-  const authoredFiles = [...authoredByPath.entries()]
-    // A file this batch also wrote to is already covered by `files`.
-    .filter(([rel]) => !files.some((f) => f.path === join(REPO_ROOT, rel)))
-    .map(([rel, alreadyReported]) => ({
-      path: join(REPO_ROOT, rel),
-      alreadyReported,
-      authored: true,
-    }));
+
+  const authoredFiles = authoredEntryFiles(
+    selfDocumented.values(),
+    new Set(files.map((f) => f.path)),
+    (rel) => {
+      const abs = join(REPO_ROOT, rel);
+      return existsSync(abs) ? entryHeadings(readFileSync(abs, 'utf8')) : null;
+    },
+  );
 
   const supportPath = join(batchDir(date), 'support-digest.md');
   const manifestPath = join(batchDir(date), 'manifest.json');
@@ -613,7 +673,15 @@ Writes ${CHANGELOG_DIR_REL}/<date>.mdx      (notable only)
 }
 
 // Exported for render.test.js
-export { validate, buildDatedFile, parseExistingFile, sectionHeading, collectTags, resolveLinks };
+export {
+  validate,
+  buildDatedFile,
+  parseExistingFile,
+  sectionHeading,
+  collectTags,
+  resolveLinks,
+  authoredEntryFiles,
+};
 
 // Only run when invoked directly, not when imported (matches check-md-exports.js)
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

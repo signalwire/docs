@@ -321,18 +321,22 @@ function collect(window, products, ledger) {
     // entry files are not doc content, so they must not enter classification as if
     // they were, but a PR that wrote one has documented itself.
     //
-    // priorHeadings is the file's `##` headings *before* this PR. An author who
-    // appends to an already-published date must not cause that date's earlier
-    // entries to be re-announced, so the digest excludes these.
+    // Both heading sets are resolved at this PR's OWN merge commit, never at HEAD:
+    // priorHeadings is the file before the PR, addedHeadings is what the PR itself
+    // contributed. Deriving "what did this PR add" downstream by reading HEAD and
+    // subtracting credits a PR with headings a later PR added to the same file.
     const authoredEntries = allFiles
       .filter((f) => isChangelogEntryFile(f.filename))
-      .map((f) => ({
-        path: f.filename,
-        priorHeadings: headingsAtRef(
-          pr.mergeCommit?.oid ? `${pr.mergeCommit.oid}^` : null,
-          f.filename,
-        ),
-      }));
+      .map((f) => {
+        const merged = pr.mergeCommit?.oid ?? null;
+        const priorHeadings = headingsAtRef(merged ? `${merged}^` : null, f.filename);
+        const prior = new Set(priorHeadings);
+        return {
+          path: f.filename,
+          priorHeadings,
+          addedHeadings: headingsAtRef(merged, f.filename).filter((h) => !prior.has(h)),
+        };
+      });
     const selfDocumented = authoredEntries.length > 0;
 
     const relevant = allFiles.filter((f) => isDocsRelevant(f.filename));
@@ -489,6 +493,11 @@ Next steps after running this:
 
   setOutput('empty', 'false');
   setOutput('date', date);
+  // The resolved window, so the draft PR can print the exact command that
+  // reproduces this batch. `since` is usually derived from the ledger, so it is
+  // not recoverable from the workflow inputs alone.
+  setOutput('since', window.since);
+  setOutput('until', window.until);
 
   const fileCount = prs.reduce((n, p) => n + p.files.length, 0);
   const unresolved = prs.reduce(
