@@ -39,6 +39,9 @@ import {
   REPO_ROOT,
   STATE_DIR,
   batchDir,
+  draftBranch,
+  entryHeadings,
+  repoSlug,
 } from './config.js';
 
 const require = createRequire(import.meta.url);
@@ -283,7 +286,7 @@ function renderSupport(date, entries, window, pageMeta) {
             })
             .join('\n');
 
-          return `- **${label} — ${e.entry_title}** ([#${e.pr}](https://github.com/signalwire/docs/pull/${e.pr}))\n\n  ${detail}\n\n${pages}`;
+          return `- **${label} — ${e.entry_title}** ([#${e.pr}](https://github.com/${repoSlug()}/pull/${e.pr}))\n\n  ${detail}\n\n${pages}`;
         })
         .join('\n\n');
 
@@ -489,10 +492,9 @@ Writes ${CHANGELOG_DIR_REL}/<date>.mdx      (notable only)
       existed: Boolean(existing),
       // Headings already in the file before this batch. The devex digest excludes
       // them, so appending a late entry to an already-published date cannot
-      // re-announce that date's earlier entries.
-      alreadyReported: existing
-        ? parseExistingFile(existing).sections.map(sectionHeading)
-        : [],
+      // re-announce that date's earlier entries. Extracted with the same helper
+      // collect uses for priorHeadings — the two must agree, or dedup breaks.
+      alreadyReported: entryHeadings(existing),
       contents: buildDatedFile(existing, byDate.get(d), pageMeta),
       count: byDate.get(d).length,
     };
@@ -607,7 +609,7 @@ Writes ${CHANGELOG_DIR_REL}/<date>.mdx      (notable only)
   }
   log.header('Next: review');
   log.info('  yarn fern-md-check');
-  log.info(`  Review the files above, then commit on branch action-${date.replace(/-/g, '')}-changelog`);
+  log.info(`  Review the files above, then commit on branch ${draftBranch(date)}`);
 }
 
 // Exported for render.test.js

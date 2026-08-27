@@ -6,6 +6,7 @@
  * the tiering rubric, which is the other half of the noise controls.
  */
 
+import { execFileSync } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -17,10 +18,10 @@ export const REPO_ROOT = dirname(dirname(__dirname));
  * Where the published changelog lives — the single source for the whole
  * pipeline, including the draft workflow, which reads it via `node -e`.
  *
- * Fern requires the folder itself to be named exactly `changelog`. Two places
- * cannot read this file and must be kept in sync by hand when the changelog
- * moves: the nav entry in the owning product's yml (`- changelog: ./changelog`)
- * and the navbar link in fern/docs.yml.
+ * Fern requires the folder itself to be named exactly `changelog`. Three places
+ * cannot read this file and must be kept in sync by hand when things move: the
+ * nav entry in the owning product's yml (`- changelog: ./changelog`), the navbar
+ * link in fern/docs.yml, and the state-dir ignore rules in .gitignore.
  */
 export const CHANGELOG_DIR_REL = 'fern/products/platform/changelog';
 
@@ -87,6 +88,61 @@ const EXCLUDE = [
   /^fern\/assets\//,
   /\.(css|scss|js|jsx|ts|tsx|png|jpe?g|svg|gif|webp|ico)$/,
 ];
+
+/**
+ * Repo slug (owner/name), resolved explicitly rather than letting gh infer it:
+ * this checkout can have several remotes (forks included), and inferring would
+ * silently target the wrong repo. CI sets GITHUB_REPOSITORY; locally GH_REPO or
+ * the origin remote decides. Returns null when nothing resolves — collect treats
+ * that as an error rather than guessing which repo's PRs to read.
+ */
+export function resolveRepo() {
+  const fromEnv = process.env.GH_REPO || process.env.GITHUB_REPOSITORY;
+  if (fromEnv) return fromEnv;
+  try {
+    const url = execFileSync('git', ['remote', 'get-url', 'origin'], {
+      cwd: REPO_ROOT,
+      encoding: 'utf8',
+    }).trim();
+    const match = url.match(/github\.com[:/](.+?)(?:\.git)?$/);
+    return match ? match[1] : null;
+  } catch {
+    return null;
+  }
+}
+
+let cachedRepoSlug;
+
+/**
+ * Repo slug for building GitHub links (PR references, file permalinks). Unlike
+ * resolveRepo, this never returns null: a link built in an environment with no
+ * usable remote should still point at the canonical repo.
+ */
+export function repoSlug() {
+  cachedRepoSlug ??= resolveRepo() ?? 'signalwire/docs';
+  return cachedRepoSlug;
+}
+
+/** Branch name prefix the draft workflow uses to find its own open PRs. */
+export const DRAFT_BRANCH_PREFIX = 'action-';
+
+/** Branch the draft workflow opens for a batch — also printed as a hint by render. */
+export function draftBranch(date) {
+  return `${DRAFT_BRANCH_PREFIX}${date.replace(/-/g, '')}-changelog`;
+}
+
+/**
+ * The `##` headings of a changelog entry file.
+ *
+ * A heading is the identity of an entry: collect uses this to tell an author's
+ * new entries from already-published ones, and render records these in the
+ * manifest so the Slack digests announce only what is new. Both sides must
+ * extract headings identically, so the extraction lives here.
+ */
+export function entryHeadings(markdown) {
+  if (!markdown) return [];
+  return [...markdown.matchAll(/^##\s+(.+)$/gm)].map((m) => m[1].trim());
+}
 
 /** True when a changed file is worth showing to the classifier. */
 export function isDocsRelevant(path) {

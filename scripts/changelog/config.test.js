@@ -12,10 +12,14 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   CHANGELOG_DIR_REL,
+  DRAFT_BRANCH_PREFIX,
+  draftBranch,
+  entryHeadings,
   isDocsRelevant,
   isChangelogEntryFile,
   isMechanicalPatch,
   batchDir,
+  resolveRepo,
 } from './config.js';
 
 test('isDocsRelevant admits doc sources and spec sources', () => {
@@ -87,4 +91,44 @@ test('isMechanicalPatch rejects empty input', () => {
 
 test('batchDir keeps one folder per batch', () => {
   assert.ok(batchDir('2026-08-11').endsWith('/.github/changelog-state/batches/2026-08-11'));
+});
+
+test('draftBranch matches the shape the PR search relies on', () => {
+  assert.equal(draftBranch('2026-08-27'), 'action-20260827-changelog');
+  assert.ok(draftBranch('2026-08-27').startsWith(DRAFT_BRANCH_PREFIX));
+});
+
+test('resolveRepo prefers the environment over the origin remote', () => {
+  const saved = { GH_REPO: process.env.GH_REPO, GITHUB_REPOSITORY: process.env.GITHUB_REPOSITORY };
+  try {
+    process.env.GH_REPO = 'someone/fork';
+    assert.equal(resolveRepo(), 'someone/fork');
+    delete process.env.GH_REPO;
+    process.env.GITHUB_REPOSITORY = 'ci/checkout';
+    assert.equal(resolveRepo(), 'ci/checkout');
+  } finally {
+    for (const [k, v] of Object.entries(saved)) {
+      if (v === undefined) delete process.env[k];
+      else process.env[k] = v;
+    }
+  }
+});
+
+test('entryHeadings extracts ## headings and nothing else', () => {
+  const file = [
+    '---',
+    'tags: ["apis"]',
+    '---',
+    '',
+    '## First entry',
+    '',
+    'Body with an ## inline marker that is not a heading.',
+    '',
+    '### A subsection is not an entry',
+    '',
+    '##  Second entry, extra space  ',
+  ].join('\n');
+  assert.deepEqual(entryHeadings(file), ['First entry', 'Second entry, extra space']);
+  assert.deepEqual(entryHeadings(''), []);
+  assert.deepEqual(entryHeadings(null), []);
 });

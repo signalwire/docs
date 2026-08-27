@@ -21,7 +21,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import yaml from 'js-yaml';
 import { Logger } from '../utils/logger.js';
-import { CHANGELOG_DIR, CHANGELOG_URL_PATH, REPO_ROOT, batchDir } from './config.js';
+import { CHANGELOG_DIR, CHANGELOG_URL_PATH, REPO_ROOT, batchDir, repoSlug } from './config.js';
 
 const log = new Logger();
 
@@ -249,7 +249,7 @@ function buildSupportPayload(date, baseUrl, repo, sha) {
         elements: [
           {
             type: 'mrkdwn',
-            text: `<${fileUrl}|Full detail with links> · <${baseUrl}/changelog|public changelog>`,
+            text: `<${fileUrl}|Full detail with links> · <${baseUrl}${CHANGELOG_URL_PATH}|public changelog>`,
           },
         ],
       },
@@ -279,7 +279,8 @@ Reads the merged markdown artifacts and prints a Slack Block Kit payload.
 Exits ${EXIT_NOTHING_TO_POST} when there is nothing to post for that audience.
 
 Environment Variables:
-  GITHUB_REPOSITORY  owner/repo, for linking the Support detail file (default: signalwire/docs)
+  GITHUB_REPOSITORY  owner/repo, for linking the Support detail file
+                     (default: GH_REPO, then the origin remote, then signalwire/docs)
   GITHUB_SHA         commit to link the Support detail file at (default: main)
 `);
       process.exit(0);
@@ -294,7 +295,7 @@ Environment Variables:
   }
 
   const baseUrl = docsBaseUrl();
-  const repo = process.env.GITHUB_REPOSITORY || 'signalwire/docs';
+  const repo = repoSlug();
   const sha = process.env.GITHUB_SHA || 'main';
 
   const payload =

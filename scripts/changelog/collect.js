@@ -41,9 +41,11 @@ import {
   MAX_PATCH_CHARS_PER_PR,
   REPO_ROOT,
   batchDir,
+  entryHeadings,
   isChangelogEntryFile,
   isDocsRelevant,
   isMechanicalPatch,
+  resolveRepo,
 } from './config.js';
 
 // The prompt builder is CommonJS so that actions/github-script can require() it.
@@ -70,26 +72,10 @@ function setOutput(key, value) {
 // ============================================
 
 /**
- * Repo to query, as owner/name.
- *
- * Set explicitly rather than letting gh infer it: this checkout can have several
- * remotes (forks included), and inferring would silently collect the wrong repo's
- * pull requests. CI sets GITHUB_REPOSITORY; locally --repo or origin decides.
+ * Repo to query, as owner/name. `--repo` wins; otherwise config.js resolveRepo
+ * decides (env, then origin). See resolveRepo for why gh must not infer it.
  */
-let targetRepo = process.env.GH_REPO || process.env.GITHUB_REPOSITORY || null;
-
-function resolveRepoFromOrigin() {
-  try {
-    const url = execFileSync('git', ['remote', 'get-url', 'origin'], {
-      cwd: REPO_ROOT,
-      encoding: 'utf8',
-    }).trim();
-    const match = url.match(/github\.com[:/](.+?)(?:\.git)?$/);
-    return match ? match[1] : null;
-  } catch {
-    return null;
-  }
-}
+let targetRepo = null;
 
 function gh(args) {
   try {
@@ -216,9 +202,7 @@ function fileAtRef(ref, path) {
  */
 function headingsAtRef(ref, path) {
   if (!ref) return [];
-  const contents = fileAtRef(ref, path);
-  if (!contents) return [];
-  return [...contents.matchAll(/^##\s+(.+)$/gm)].map((m) => m[1].trim());
+  return entryHeadings(fileAtRef(ref, path));
 }
 
 function frontmatter(contents) {
@@ -467,7 +451,7 @@ Next steps after running this:
   log.header('Changelog collector');
   log.newline();
 
-  targetRepo = targetRepo ?? resolveRepoFromOrigin();
+  targetRepo = targetRepo ?? resolveRepo();
   if (!targetRepo) {
     throw new Error('Could not determine the repo. Pass --repo <owner/name>.');
   }

@@ -64,7 +64,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          OPEN=$(gh pr list --state open --search 'head:action- in:title changelog' \
+          PREFIX=$(node -e "import('./scripts/changelog/config.js').then(m => console.log(m.DRAFT_BRANCH_PREFIX))")
+          OPEN=$(gh pr list --state open --search "head:${PREFIX} in:title changelog" \
             --json number,url --jq '.[0].url // empty')
           if [ -n "$OPEN" ]; then
             echo "::warning::A changelog PR is already open: ${OPEN}. Merge or close it first."
@@ -154,9 +155,8 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DATE: ${{ steps.collect.outputs.date }}
         run: |
-          BRANCH="action-$(echo "$DATE" | tr -d '-')-changelog"
-
-          # The changelog location is defined once, in the pipeline config.
+          # Branch name and changelog location are defined once, in the pipeline config.
+          BRANCH=$(node -e "import('./scripts/changelog/config.js').then(m => console.log(m.draftBranch(process.env.DATE)))")
           CHANGELOG_DIR=$(node -e "import('./scripts/changelog/config.js').then(m => console.log(m.CHANGELOG_DIR_REL))")
 
           git config user.name "github-actions[bot]"
