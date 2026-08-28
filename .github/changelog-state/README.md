@@ -30,7 +30,7 @@ flowchart TD
     Prompt --> Classify
     Classify --> Classified[/"batches/&lt;date&gt;/classified.json"/]
 
-    subgraph S3["3 · render &nbsp;yarn changelog:render"]
+    subgraph S3["3 · render &nbsp;<i>CI, on classified.json</i>"]
         Render["Validate · group by merge date<br/>Merge into existing entry files"]
     end
 
@@ -67,6 +67,11 @@ flowchart TD
 Reading it: everything blue is state in this directory, green is customer-facing, amber is
 the human gate, pink is manual-only today. The ledger is the one file that both gates the
 input and gets advanced by the output — that loop is what makes re-runs safe.
+
+Stages 1 and 3 both run in `changelog-draft.yml`, in both phases. Only stage 2 differs:
+today a human commits `classified.json` to the draft branch, which re-enters the workflow
+at stage 3; once `GEMINI_API_KEY` exists the same workflow writes that file itself and
+runs straight through. The step list does not change.
 
 ## Layout
 
