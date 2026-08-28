@@ -19,7 +19,7 @@ namespace SignalWireAPI.Fabric.DomainApplications {
     @operationId("assign_resource_domain_application")
     @summary("Assign domain application handler")
     @doc("""
-      This endpoint assigns a specific resource to a Domain Application, allowing inbound calls to be handled by the resource.
+      Assigns an existing resource as the calling handler for a SIP Domain Application, so inbound SIP calls to that Domain Application run the resource. Use it when the Domain Application already exists and its handler should be a Fabric resource such as an AI Agent, Call Flow, or SIP Gateway. Use [Create domain application](/docs/apis/rest/domain-applications/create-domain-application) to create and configure the SIP-facing Domain Application itself.
       <Note>
       Currently only supports `calling` as a handler and automatically defaults to it.
       </Note>

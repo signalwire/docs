@@ -6,16 +6,13 @@ import "./models/core.tsp";
 import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "./models/errors.tsp";
-import "./models/webhooks.tsp";
 import "./models/whatsapp.tsp";
 import "../../../_shared/alias/token-permissions.tsp";
-import "../../../_shared/webhook/decorator.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
-@webhook("messageStatusCallback", MessageStatusCallbackPayload, MESSAGES_TAG)
 @route("/messages")
 namespace SignalWireAPI.Message.Messages {
   @tag(MESSAGES_TAG)
@@ -28,6 +25,8 @@ namespace SignalWireAPI.Message.Messages {
 
       - **SMS/MMS** when `from` is a purchased SignalWire phone number or shortcode. The message is MMS when `media` is present or `send_as_mms` is set, otherwise SMS.
       - **WhatsApp** when `from` is a `whatsapp:`-prefixed [WhatsApp number](/docs/platform/messaging/whatsapp/send-messages). Set `message_type` for a content message, or `template_id` for an [approved template](/docs/platform/messaging/whatsapp/message-templates). Free-form WhatsApp content is only allowed within the 24-hour customer service window.
+
+      Use this SignalWire REST operation for JSON requests. Integrations built around form-encoded requests and Message SIDs can use the Compatibility API's [Create message](/docs/compatibility-api/rest/messages/create-message) operation instead.
 
       ${tokenPermissions<"_Messaging_">}
       """)
@@ -47,6 +46,8 @@ namespace SignalWireAPI.Message.Messages {
       Messages that are still in progress (`queued` or `initiated`) cannot be redacted. Messages in terminal states such as `delivered`, `undelivered`, or `failed` are eligible. Once redacted, the original body is overwritten and cannot be recovered.
       
       The `:message_id` path parameter is the message segment ID — the same ID returned by the create endpoint and shown in `/api/messaging/logs`.
+
+      Use this SignalWire REST operation for message redaction by message segment ID. Integrations built around Message SIDs can use the Compatibility API's [Update message](/docs/compatibility-api/rest/messages/update-message) operation instead.
       
       ${tokenPermissions<"_Messaging_">}
       """)

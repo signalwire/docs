@@ -17,7 +17,7 @@ namespace CompatibilityAPI.ImportedPhoneNumbers {
     @operationId("create_imported_phone_number")
     @summary("Import a Phone Number")
     @doc("""
-      Import a phone number you already own to your SignalWire Space to use with SignalWire APIs.
+      Registers a phone number you already own so it can route communications through the project while remaining externally hosted. Use [Create an Incoming Phone Number](/docs/compatibility-api/rest/incoming-phone-numbers/create-incoming-phone-number) to purchase from SignalWire inventory, or SignalWire REST [Import phone number](/docs/apis/rest/phone-numbers/create-imported-phone-number) for a JSON request.
       
       **Note:** This is a **Partner API**. To enable it on your SignalWire Space, contact
       [Sales](https://signalwire.com/company/contact?utm_campaign=devex_sent_em).

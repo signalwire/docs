@@ -20,7 +20,7 @@ namespace SignalWireAPI.Fabric.PhoneRoutes {
     @operationId("assign_resource_phone_route")
     @summary("Assign Resource to phone route")
     @doc("""
-      This endpoint assigns a specific resource to a phone route, allowing inbound calls & messages to be handled by the resource.
+      Assigns an existing Fabric resource as a phone number's calling or messaging handler. Use it when inbound traffic to an owned number should run an AI Agent, script, Call Flow, Relay Application, or another resource. This operation does not purchase or import the number; use [Purchase phone number](/docs/apis/rest/phone-numbers/purchase-phone-number) or [Import phone number](/docs/apis/rest/phone-numbers/create-imported-phone-number) first when needed.
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)

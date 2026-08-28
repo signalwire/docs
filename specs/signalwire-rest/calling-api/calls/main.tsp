@@ -5,24 +5,13 @@ import "../../../_shared/alias/token-permissions.tsp";
 import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "./models/examples.tsp";
-import "./models/webhooks.tsp";
 import "../tags.tsp";
-import "../../../_shared/webhook/decorator.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/calls")
-@webhook("transcribeStatusCallback", TranscribeStatusCallbackPayload, CALLS_TAG)
-@webhook("streamStatusCallback", StreamStatusCallbackPayload, CALLS_TAG)
-@webhook("aiSidecarCallback", AISidecarCallbackPayload, CALLS_TAG)
-@webhook(
-  "aiSidecarSwaigToolWebhook",
-  AISidecarSwaigToolWebhookPayload,
-  CALLS_TAG
-)
-@webhook("aiSwaigToolWebhook", AiSwaigToolWebhookPayload, CALLS_TAG)
 namespace SignalWireAPI.Calling.Calls {
   @tag(CALLS_TAG)
   @friendlyName("Calls")
@@ -32,6 +21,8 @@ namespace SignalWireAPI.Calling.Calls {
       Unified JSON-RPC style endpoint for executing call methods through command-based dispatch.
       Send a request with the appropriate `command` field to invoke the desired call operation.
       Only the commands listed below are supported. Most operate on an already-active call; `dial` creates a new one. All commands are sent over HTTP (no persistent WebSocket connection required) and return immediately; operations that continue asynchronously deliver their results to your `status_url` webhooks.
+
+      Use the Calling API for SWML-driven calls and command-based control. Integrations built around form-encoded cXML requests and Call SIDs should use the Compatibility API's [Create a call](/docs/compatibility-api/rest/calls/create-a-call) and [Update a call](/docs/compatibility-api/rest/calls/update-a-call) operations instead.
       
       ## Supported Commands
       

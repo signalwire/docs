@@ -1,820 +1,194 @@
 ---
-id: 9b5e2dd1-c53b-44fc-b210-ce32e99e5039
 slug: /ai
-title: SignalWire AI
+title: System-directed AI
 sidebar-title: Overview
 position: 0
-subtitle: Programmable, integrated, realtime voice AI
+subtitle: Build conversational agents directed by your code, data, and business rules
+description: SignalWire AI runs voice and text conversations while your code supplies current data, enforces business rules, and directs agent actions.
+max-toc-depth: 3
 ---
 
-SignalWire AI is built for **unlimited programmability and scale**.
-Integrate AI and deploy a MVP with low-code/no-code drag-and-drop tools, then scale your application on SignalWire's cloud platform.
+[addresses]: /docs/platform/addresses
+[analytics]: /docs/platform/ai/analytics
+[best-practices]: /docs/platform/ai/best-practices
+[chat-api]: /docs/apis/rest/ai-chat/chat-methods
+[chat-client]: /docs/server-sdks/reference/python/agents/ai-chat-client
+[chat-gateway]: /docs/server-sdks/reference/python/agents/chat-gateway
+[call-transfer]: /docs/server-sdks/guides/call-transfer
+[compliance]: /docs/platform/compliance
+[content-redaction]: /docs/platform/ai/content-redaction
+[contexts]: /docs/server-sdks/guides/contexts-workflows
+[datamap]: /docs/server-sdks/guides/data-map
+[datasphere]: /docs/server-sdks/reference/python/rest/datasphere
+[hints]: /docs/server-sdks/guides/hints
+[mcp-gateway]: /docs/server-sdks/guides/mcp-gateway
+[prompt-engineering]: /docs/platform/ai/prompt-engineering
+[skills]: /docs/server-sdks/guides/understanding-skills
+[state-management]: /docs/server-sdks/guides/state-management
+[tool-calling]: /docs/platform/ai/tool-calling
+[tts]: /docs/platform/voice/tts
 
-## Quickstart
+SignalWire AI separates conversation from control. The model interprets what a person says and
+carries the conversation. Your code checks current data, applies business rules, performs actions,
+and returns results that direct what the agent does next.
 
-Deploy a serverless AI Agent and call it over the PSTN in under 5 minutes.
+This division makes the agent **system-directed**. A prompt defines how the agent communicates and
+when it should use a tool. Your systems remain the source of truth for facts and decisions that must
+be exact, current, or enforced.
 
-<Steps>
+An agent definition includes its prompt, contexts, state, and tools. The same definition can handle
+voice calls and text conversations while SignalWire runs the model and manages the session.
 
-### Create a free account
+<llms-ignore>
 
-Register your SignalWire account.
+  <img src="/assets/images/img/ai-agent-flow-themed.svg" alt="Voice over PSTN, SIP, or WebRTC and text through the AI Chat API connect to the SignalWire platform, where the AI agent runs. SignalWire handles speech processing, the model, and session state. The agent uses SWAIG functions, results, and actions to exchange requests with a tool webhook on the customer's backend, where code reads databases, APIs, and business rules." />
 
-### Import SWML script
+</llms-ignore>
 
-Open the [Relay / SWML](https://my.signalwire.com?page=relay) tab in your SignalWire Dashboard,
-paste the following script, and hit <kbd>Save</kbd>.
+<llms-only>
 
-<Info title="Fun fact">This simple YAML/JSON document is a complete calling application!</Info>
+```mermaid
+flowchart LR
+    subgraph Channels["Channels — ways people interact with an agent"]
+        Voice["Voice<br/>PSTN · SIP · WebRTC"]
+        Text["Text<br/>AI Chat API"]
+    end
 
-```yaml title="swml.yaml"
-version: 1.0.0
-sections:
-  main:
-    - ai:
-        prompt:
-          text: You are a knowledgeable developer. Have an open-ended discussion with the caller about SignalWire and programmable communications.
+    subgraph SW["SignalWire platform — speech processing · model · session state"]
+        Agent["AI agent<br/>prompt · contexts · state"]
+        SWAIG["SWAIG tools<br/>functions · results · actions"]
+        Agent <--> SWAIG
+    end
+
+    subgraph Backend["Your backend — the only network hop off platform"]
+        Webhook["Tool webhook<br/>your server · any language"]
+        Systems["Your systems<br/>databases · APIs · rules"]
+        Webhook <--> Systems
+    end
+
+    Channels <--> SW
+    SWAIG <--> Webhook
 ```
 
-### Assign a phone number
+</llms-only>
 
-[Buy a phone number](https://my.signalwire.com?page=relay) using your $5 promotional credit.
+## How system-directed AI works
 
-### Give it a call
+A conversation moves between the model and your systems as the situation requires:
 
-Dial your newly configured AI Agent over the PSTN from your cell phone or a VoIP dialer.
+1. A person speaks on a voice channel or sends a turn through the [AI Chat API][chat-api].
+2. SignalWire adds the input to the session. The model interprets it using the agent's prompt,
+   current context, and state.
+3. When the agent needs current information or permission to act, it calls a tool defined through
+   the **SignalWire AI Gateway (SWAIG)**.
+4. Your code validates the input, reads your systems of record, applies your rules, and returns a
+   result. The result can include data for the agent, instructions for the next response, and
+   actions for SignalWire to execute.
+5. The agent explains the result and continues the conversation. A returned action can update
+   state, change context, send a message, transfer a call, or take another step in the conversation.
 
-</Steps>
+Consider a taxi dispatcher. The model can recognize that a caller wants a ride and collect the
+pickup time. It cannot know which drivers are working. A SWAIG tool sends the requested time to the
+dispatch system, where code checks availability and policy. The result tells the agent which times
+it may offer instead of leaving that decision to the prompt.
 
-## SWML
+The [Tool calling guide][tool-calling] covers this request and response cycle, including validation,
+state, and actions.
 
-SWML (SignalWire Markup Language) is the most powerful and flexible way to use AI on the SignalWire platform.
+## What each layer controls
 
-SWML is a structured language for configuring and orchestrating real-time communication applications
-using lightweight and readable JSON or YAML files.
-These SWML Scripts can be deployed serverlessly in SignalWire's cloud, or from your server.
+| Layer | Responsibility |
+|---|---|
+| Your agent definition | The prompt, tool descriptions, contexts, workflows, and initial configuration you provide |
+| SignalWire | Voice and text sessions, the model, conversation state, SWAIG tool routing, and platform actions |
+| Your systems | Input validation, current data, business rules, authorization, calculations, and side effects |
 
-SWML's `ai` method integrates advanced AI Agents, which can interact with external APIs.
+A prompt remains useful for identity, tone, conversational goals, and deciding when to reach for a
+tool. It is not an enforcement boundary. Put prices, schedules, eligibility rules, and other
+authoritative decisions in code. Store checked values in [agent state][state-management] so later
+tools use validated data instead of asking the model to recall it.
 
-<Card
-  title="Technical reference"
-  href="/docs/swml/reference/ai"
-  icon="regular code"
->
-  SWML AI method
-</Card>
+[Prompt engineering][prompt-engineering] covers the conversational side of this design.
+[Best practices][best-practices] explains how to divide work between the prompt and your code.
 
-## AI Agents
+## One agent across voice and text
 
-Configure AI Agents right in your SignalWire Space with a streamlined, no-code user interface.
+Voice and text are channels into the same agent. Both use the same prompt, contexts, state, SWAIG
+functions, and tool results.
 
-<Card
-  title="AI Agents in the Dashboard"
-  href="/docs/platform/ai/no-code-agents"
-  icon="regular robot"
->
-  Getting started guide
-</Card>
+| Channel | How a person connects | What SignalWire handles |
+|---|---|---|
+| Voice | A [phone number, SIP URI, or dialable resource name][addresses] over the Public Switched Telephone Network (PSTN), Session Initiation Protocol (SIP), or WebRTC | Audio, end-pointing, speech recognition, the model, and speech synthesis |
+| Text | One HTTP request per turn through the [AI Chat API][chat-api] | Conversation state, the model, tool calls, and the text response |
 
+Server applications can send text turns with [`AIChatClient`][chat-client]. Browser and mobile
+applications connect through [`ChatGateway`][chat-gateway], which keeps SignalWire credentials in
+your trusted application rather than in the client.
 
-## Call Flow Builder
+Voice-specific settings, such as voices, speech hints, and end-pointing, do not apply to text.
+Business rules and tool implementations can remain channel-independent. A SWAIG request identifies
+its conversation as `voice` or `chat` when your application needs channel-specific behavior.
 
-Add AI Agents built in your SignalWire Space directly to drag-and-drop call flows.
+## Choose how to build
 
-<Card
-  title="Call Flow Builder"
-  href="/docs/call-flow-builder/reference/ai-agent"
-  icon="regular sitemap"
->
-  Guide to the AI Agent node
-</Card>
-
-## Agents SDK
-
-Build powerful custom voice AI agents with Python. The SignalWire Agents SDK provides complete programmatic control for sophisticated voice applications.
+Each authoring path produces an agent that runs on SignalWire and can connect to your systems.
 
 <CardGroup cols={3}>
-<Card
-  title="Quick Start"
-  href="/docs/server-sdks/guides/quickstart"
-  icon="regular code"
->
-  Build your first agent in 5 minutes
+
+<Card title="Server SDK" href="/docs/server-sdks/guides/quickstart" icon="regular code">
+  Build agents and tool handlers in application code.
 </Card>
-<Card
-  title="Examples"
-  href="/docs/server-sdks/guides/build-ai-agents"
-  icon="regular code"
->
-  Progressive examples from simple to advanced
+
+<Card title="SWML" href="/docs/swml/reference/calling/ai" icon="regular brackets-curly">
+  Define agents directly in JSON or YAML.
 </Card>
-<Card
-  title="Prefab Agents"
-  href="/docs/server-sdks/guides/faq-bot"
-  icon="regular robot"
->
-  Ready-to-use agent templates
+
+<Card title="Dashboard" href="/docs/platform/resources#in-the-dashboard" icon="regular browser">
+  Configure agents and webhook-backed tools in your SignalWire Space.
 </Card>
+
 </CardGroup>
 
-### Use cases
+## Extend your agent
 
-<AccordionGroup>
-<Accordion title="Simple AI Phone Call" defaultOpen={true}>
+Once the agent can converse and call your code, add capabilities based on what the application
+needs.
 
-A basic AI-powered phone agent that can hold an open-ended conversation.
+| Goal | Capabilities |
+|---|---|
+| Connect knowledge and services | Add prebuilt [Skills][skills], retrieve from [DataSphere][datasphere], call REST APIs with [DataMap][datamap], or expose tools through the [Model Context Protocol (MCP) gateway][mcp-gateway] |
+| Control the conversation | Use [contexts and workflows][contexts] to change the prompt and available tools, keep verified values in [state][state-management], and [transfer calls][call-transfer] |
+| Shape voice interactions | Choose [voices and languages][tts] and add [speech hints][hints] for names and specialized terms |
 
-<Tabs>
-<Tab title="Agents SDK">
+## Operate agents in production
 
-```python
-from signalwire import AgentBase
+[Conversation analytics][analytics] provides live diagnostic events for voice calls and a final
+report for voice or text conversations. Use those records to inspect transcripts, tool activity,
+outcomes, usage, and the measurements available for each channel.
 
-# Create an agent and assign a route
-agent = AgentBase("My Assistant", route="/assistant")
+[Content redaction][content-redaction] masks configured sensitive values in conversation records.
+The [compliance guides][compliance] cover requirements such as consent, disclosure, access control,
+and handling regulated data. Rules that must hold on every conversation belong in your application,
+not only in the prompt.
 
-# Add some basic capabilities
-agent.add_skill("datetime")     # Current date/time info
-agent.add_skill("math")         # Mathematical calculations
-
-# Start the agent
-if __name__ == "__main__":
-    agent.run()
-```
-
-[Agents SDK docs](/docs/server-sdks) | [Quickstart guide](/docs/server-sdks/guides/quickstart)
-
-</Tab>
-<Tab title="SWML">
-
-```yaml
-version: 1.0.0
-sections:
-  main:
-    - ai:
-        post_prompt_url: https://example.com/my-post-prompt-url
-        params:
-          save_conversation: true
-        prompt:
-          text: |
-            You are a knowledgeable developer.
-            Have an open-ended discussion with the caller about SignalWire and programmable communications.
-```
-
-[SWML docs](/docs/swml) | [AI method reference](/docs/swml/reference/ai)
-
-</Tab>
-<Tab title="Call Flow Builder">
-
-<Frame>
-  <img src="/assets/images/img/cfb/simple-ai-cfb.webp" alt="A simple AI Agent in the Call Flow Builder interface." />
-</Frame>
-
-[Call Flow Builder docs](/docs/call-flow-builder)
-
-</Tab>
-</Tabs>
-
-</Accordion>
-<Accordion title="FAQ Bot">
-
-An AI agent that answers frequently asked questions about your business.
-
-<Tabs>
-<Tab title="Agents SDK">
-
-```python
-from signalwire.prefabs import FAQBotAgent
-
-agent = FAQBotAgent(
-    faqs=[
-        {
-            "question": "What are your hours?",
-            "answer": "We're open 9 AM to 5 PM, Monday to Friday."
-        },
-        {
-            "question": "Where are you located?",
-            "answer": "123 Main Street, Downtown."
-        }
-    ]
-)
-
-if __name__ == "__main__":
-    agent.run()
-```
-
-[Agents SDK docs](/docs/server-sdks) | [FAQ Bot prefab](/docs/server-sdks/guides/faq-bot)
-
-</Tab>
-<Tab title="SWML">
-
-```yaml
-version: 1.0.0
-sections:
-  main:
-    - ai:
-        prompt:
-          text: |
-            You are a helpful FAQ bot. Answer questions about our business using the available functions.
-        SWAIG:
-          defaults:
-            web_hook_url: https://example.com/faq-webhook
-          functions:
-            - function: search_faq
-              description: Search frequently asked questions
-              parameters:
-                type: object
-                properties:
-                  query:
-                    type: string
-                    description: The question to search for
-```
-
-[SWML docs](/docs/swml) | [SWAIG functions guide](/docs/swml/guides/swaig)
-
-</Tab>
-</Tabs>
-
-</Accordion>
-<Accordion title="Customer Service Agent">
-
-An agent that looks up customer accounts and transfers calls to human support when needed.
-
-<Tabs>
-<Tab title="Agents SDK">
-
-```python
-from signalwire import AgentBase, FunctionResult
-
-agent = AgentBase(name="support")
-agent.prompt_add_section("Role", "You are a helpful customer service agent.")
-
-@agent.tool(description="Look up customer account")
-def lookup_account(account_id: str) -> FunctionResult:
-    # Simulate database lookup
-    customer = {"name": "John Doe", "status": "active"}
-    return FunctionResult(f"Account: {customer['name']}, Status: {customer['status']}")
-
-@agent.tool(description="Transfer to support")
-def transfer_support() -> FunctionResult:
-    return FunctionResult("Connecting you to support.").connect("+15551234567")
-
-if __name__ == "__main__":
-    agent.run()
-```
-
-[Agents SDK docs](/docs/server-sdks) | [Custom functions guide](/docs/server-sdks/guides/prompts-pom)
-
-</Tab>
-<Tab title="SWML">
-
-```yaml
-version: 1.0.0
-sections:
-  main:
-    - ai:
-        prompt:
-          text: |
-            You are a customer service agent. Help customers with their questions and account needs.
-            Use the available functions to look up information or transfer calls when needed.
-        SWAIG:
-          functions:
-            - function: lookup_account
-              description: Look up customer account information
-              parameters:
-                type: object
-                properties:
-                  account_id:
-                    type: string
-                    description: Customer account ID
-              web_hook_url: https://example.com/account-lookup
-            - function: transfer_to_support
-              description: Transfer to human support agent
-              web_hook_url: https://example.com/transfer-support
-```
-
-[SWML docs](/docs/swml) | [SWAIG functions guide](/docs/swml/guides/swaig)
-
-</Tab>
-</Tabs>
-
-</Accordion>
-<Accordion title="Hotel Concierge">
-
-A virtual concierge that helps guests with amenity information and service bookings.
-
-<Tabs>
-<Tab title="Agents SDK">
-
-```python
-from signalwire.prefabs import ConciergeAgent
-
-agent = ConciergeAgent(
-    venue_name="Grand Hotel",
-    services=["room service", "spa bookings", "restaurant reservations"],
-    amenities={
-        "pool": {"hours": "7 AM - 10 PM", "location": "2nd Floor"},
-        "gym": {"hours": "24 hours", "location": "3rd Floor"}
-    }
-)
-
-if __name__ == "__main__":
-    agent.run()
-```
-
-[Agents SDK docs](/docs/server-sdks) | [Concierge prefab](/docs/server-sdks/guides/concierge)
-
-</Tab>
-<Tab title="SWML">
-
-```yaml
-version: 1.0.0
-sections:
-  main:
-    - ai:
-        prompt:
-          text: |
-            You are a hotel concierge for Grand Hotel. Help guests with information about amenities,
-            services, and bookings. Use available functions to provide accurate information.
-        SWAIG:
-          functions:
-            - function: check_availability
-              description: Check availability for services
-              parameters:
-                type: object
-                properties:
-                  service:
-                    type: string
-                    description: Service to check (spa, restaurant, etc.)
-                  date:
-                    type: string
-                    description: Date for booking
-              web_hook_url: https://example.com/hotel-availability
-            - function: get_amenity_info
-              description: Get information about hotel amenities
-              parameters:
-                type: object
-                properties:
-                  amenity:
-                    type: string
-                    description: Which amenity (pool, gym, spa, etc.)
-              web_hook_url: https://example.com/amenity-info
-```
-
-[SWML docs](/docs/swml) | [SWAIG functions guide](/docs/swml/guides/swaig)
-
-</Tab>
-</Tabs>
-
-</Accordion>
-<Accordion title="Appointment Scheduling">
-
-An agent that checks availability, books appointments, and sends SMS confirmations.
-
-<Tabs>
-<Tab title="Agents SDK">
-
-```python
-from signalwire import AgentBase, FunctionResult
-from datetime import datetime
-
-appointments = []
-
-agent = AgentBase(name="scheduler", route="/scheduler")
-agent.prompt_add_section("Role", "You help customers schedule appointments.")
-agent.prompt_add_section("Guidelines", """
-- Collect customer name, date, and preferred time
-- Confirm all details before booking
-- Send SMS confirmation when booking is complete
-""")
-agent.add_language("English", "en-US", "rime.spore")
-
-@agent.tool(description="Check if a time slot is available")
-def check_availability(date: str, time: str) -> FunctionResult:
-    for apt in appointments:
-        if apt["date"] == date and apt["time"] == time:
-            return FunctionResult(f"Sorry, {date} at {time} is not available.")
-    return FunctionResult(f"{date} at {time} is available.")
-
-@agent.tool(description="Book an appointment")
-def book_appointment(
-    name: str,
-    phone: str,
-    date: str,
-    time: str
-) -> FunctionResult:
-    appointments.append({
-        "name": name,
-        "phone": phone,
-        "date": date,
-        "time": time,
-        "booked_at": datetime.now().isoformat()
-    })
-    return (
-        FunctionResult(f"Appointment booked for {name} on {date} at {time}.")
-        .send_sms(
-            to_number=phone,
-            from_number="+15559876543",
-            body=f"Your appointment is confirmed for {date} at {time}."
-        )
-    )
-
-if __name__ == "__main__":
-    agent.run()
-```
-
-[Agents SDK docs](/docs/server-sdks) | [InfoGatherer prefab](/docs/server-sdks/guides/info-gatherer)
-
-</Tab>
-<Tab title="SWML">
-
-```yaml
-version: 1.0.0
-sections:
-  main:
-    - ai:
-        prompt:
-          text: |
-            You are an appointment scheduling agent. Help customers book appointments,
-            check availability, and send confirmations.
-        SWAIG:
-          functions:
-            - function: check_availability
-              description: Check if a time slot is available
-              parameters:
-                type: object
-                properties:
-                  date:
-                    type: string
-                    description: Date for appointment
-                  time:
-                    type: string
-                    description: Preferred time
-              web_hook_url: https://example.com/check-availability
-            - function: book_appointment
-              description: Book an appointment
-              parameters:
-                type: object
-                properties:
-                  name:
-                    type: string
-                    description: Customer name
-                  phone:
-                    type: string
-                    description: Customer phone number
-                  date:
-                    type: string
-                    description: Appointment date
-                  time:
-                    type: string
-                    description: Appointment time
-              web_hook_url: https://example.com/book-appointment
-```
-
-[SWML docs](/docs/swml) | [SWAIG functions guide](/docs/swml/guides/swaig)
-
-</Tab>
-</Tabs>
-
-</Accordion>
-<Accordion title="Survey">
-
-An agent that conducts customer satisfaction surveys with different question types.
-
-<Tabs>
-<Tab title="Agents SDK">
-
-```python
-from signalwire.prefabs import SurveyAgent
-
-agent = SurveyAgent(
-    survey_name="Customer Satisfaction Survey",
-    questions=[
-        {
-            "id": "satisfaction",
-            "text": "How satisfied were you with our service?",
-            "type": "rating",
-            "scale": 5
-        },
-        {
-            "id": "recommend",
-            "text": "Would you recommend us to others?",
-            "type": "yes_no"
-        },
-        {
-            "id": "comments",
-            "text": "Any additional comments?",
-            "type": "open_ended",
-            "required": False
-        }
-    ]
-)
-
-if __name__ == "__main__":
-    agent.run()
-```
-
-[Agents SDK docs](/docs/server-sdks) | [Survey prefab](/docs/server-sdks/guides/survey)
-
-</Tab>
-<Tab title="SWML">
-
-```yaml
-version: 1.0.0
-sections:
-  main:
-    - ai:
-        prompt:
-          text: |
-            You are a survey agent. Conduct a customer satisfaction survey by asking
-            the provided questions and recording their responses.
-        SWAIG:
-          functions:
-            - function: record_response
-              description: Record survey response
-              parameters:
-                type: object
-                properties:
-                  question_id:
-                    type: string
-                    description: ID of the question being answered
-                  response:
-                    type: string
-                    description: The customer's response
-              web_hook_url: https://example.com/record-survey
-            - function: get_next_question
-              description: Get the next survey question
-              parameters:
-                type: object
-                properties:
-                  current_id:
-                    type: string
-                    description: Current question ID
-              web_hook_url: https://example.com/next-question
-```
-
-[SWML docs](/docs/swml) | [SWAIG functions guide](/docs/swml/guides/swaig)
-
-</Tab>
-</Tabs>
-
-</Accordion>
-<Accordion title="Receptionist">
-
-A virtual receptionist that greets callers and routes them to the right department.
-
-<Tabs>
-<Tab title="Agents SDK">
-
-```python
-from signalwire.prefabs import ReceptionistAgent
-
-agent = ReceptionistAgent(
-    departments=[
-        {
-            "name": "sales",
-            "description": "Product inquiries, pricing, and purchasing",
-            "number": "+15551234567"
-        },
-        {
-            "name": "support",
-            "description": "Technical help and troubleshooting",
-            "number": "+15551234568"
-        },
-        {
-            "name": "billing",
-            "description": "Payment questions and account issues",
-            "number": "+15551234569"
-        }
-    ]
-)
-
-if __name__ == "__main__":
-    agent.run()
-```
-
-[Agents SDK docs](/docs/server-sdks) | [Receptionist prefab](/docs/server-sdks/guides/receptionist)
-
-</Tab>
-<Tab title="SWML">
-
-```yaml
-version: 1.0.0
-sections:
-  main:
-    - ai:
-        prompt:
-          text: |
-            You are a receptionist. Greet callers and determine which department
-            they need based on their inquiry. Transfer them to the appropriate department.
-        SWAIG:
-          functions:
-            - function: route_to_department
-              description: Transfer caller to specific department
-              parameters:
-                type: object
-                properties:
-                  department:
-                    type: string
-                    description: Target department (sales, support, billing)
-              web_hook_url: https://example.com/route-department
-            - function: get_department_info
-              description: Get information about available departments
-              parameters:
-                type: object
-                properties:
-                  department:
-                    type: string
-                    description: Department name to lookup
-              web_hook_url: https://example.com/department-info
-```
-
-[SWML docs](/docs/swml) | [SWAIG functions guide](/docs/swml/guides/swaig)
-
-</Tab>
-</Tabs>
-
-</Accordion>
-<Accordion title="Lead Qualification">
-
-An agent that collects information from potential customers and qualifies them for the sales team.
-
-<Tabs>
-<Tab title="Agents SDK">
-
-```python
-from signalwire.prefabs import InfoGathererAgent
-
-agent = InfoGathererAgent(
-    questions=[
-        {"key_name": "name", "question_text": "What is your name?"},
-        {"key_name": "company", "question_text": "What company are you with?"},
-        {"key_name": "phone", "question_text": "What is your phone number?", "confirm": True},
-        {"key_name": "budget", "question_text": "What is your budget range for this project?"},
-        {"key_name": "timeline", "question_text": "What is your timeline for making a decision?"}
-    ],
-    name="lead-qualifier"
-)
-
-agent.prompt_add_section(
-    "Role",
-    "You are qualifying leads for the sales team. Be friendly and professional."
-)
-
-if __name__ == "__main__":
-    agent.run()
-```
-
-[Agents SDK docs](/docs/server-sdks) | [InfoGatherer prefab](/docs/server-sdks/guides/info-gatherer)
-
-</Tab>
-<Tab title="SWML">
-
-```yaml
-version: 1.0.0
-sections:
-  main:
-    - ai:
-        prompt:
-          text: |
-            You are a lead qualification agent. Collect information from potential customers
-            and determine if they are qualified leads for our sales team.
-        SWAIG:
-          functions:
-            - function: collect_lead_info
-              description: Collect and qualify lead information
-              parameters:
-                type: object
-                properties:
-                  name:
-                    type: string
-                    description: Contact name
-                  company:
-                    type: string
-                    description: Company name
-                  budget:
-                    type: string
-                    description: Project budget range
-              web_hook_url: https://example.com/lead-qualification
-            - function: schedule_followup
-              description: Schedule a follow-up call
-              parameters:
-                type: object
-                properties:
-                  datetime:
-                    type: string
-                    description: When to schedule follow-up
-              web_hook_url: https://example.com/schedule-followup
-```
-
-[SWML docs](/docs/swml) | [SWAIG functions guide](/docs/swml/guides/swaig)
-
-</Tab>
-</Tabs>
-
-</Accordion>
-<Accordion title="Real-Time Transcription">
-
-An agent that records calls and provides real-time transcription.
-
-<Tabs>
-<Tab title="Agents SDK">
-
-```python
-from signalwire import AgentBase, FunctionResult
-
-agent = AgentBase(name="transcription-agent")
-agent.add_language("English", "en-US", "rime.spore")
-agent.prompt_add_section("Role", "You are a helpful assistant. The call is being recorded for transcription.")
-agent.set_params({"save_conversation": True})
-
-@agent.tool(description="Start recording the call for transcription")
-def start_recording() -> FunctionResult:
-    return (
-        FunctionResult("Recording has started.")
-        .record_call(
-            control_id="transcription",
-            stereo=True,
-            format="wav"
-        )
-    )
-
-if __name__ == "__main__":
-    agent.run()
-```
-
-[Agents SDK docs](/docs/server-sdks) | [Call recording guide](/docs/server-sdks/guides/call-recording)
-
-</Tab>
-<Tab title="SWML">
-
-```yaml
-version: 1.0.0
-sections:
-  main:
-    - record_call:
-        stereo: true
-        format: "wav"
-    - ai:
-        prompt:
-          text: |
-            You are a transcription agent. Listen to the conversation and provide
-            real-time transcription of what is being said.
-        params:
-          save_conversation: true
-          attention_timeout: 30000
-        SWAIG:
-          functions:
-            - function: get_transcript
-              description: Get current conversation transcript
-              parameters:
-                type: object
-                properties:
-                  format:
-                    type: string
-                    description: Output format (text, json, etc.)
-              web_hook_url: https://example.com/get-transcript
-```
-
-[SWML docs](/docs/swml) | [Call recording guide](/docs/server-sdks/guides/call-recording)
-
-</Tab>
-</Tabs>
-
-</Accordion>
-</AccordionGroup>
+## Start building
 
 <CardGroup cols={2}>
-<Card
-  title="View All Examples"
-  href="/docs/server-sdks/guides/build-ai-agents"
-  icon="regular code"
->
-  From beginner to expert level
+
+<Card title="Build your first agent" href="/docs/platform/ai/quickstart" icon="regular bolt">
+  Build one agent, call it over a phone number, and send it a text turn through the AI Chat API.
 </Card>
-<Card
-  title="SDK Documentation"
-  href="/docs/server-sdks"
-  icon="regular code"
->
-  Complete reference guide
+
+<Card title="Connect your systems" href="/docs/platform/ai/tool-calling" icon="regular webhook">
+  Define SWAIG functions that look up data, enforce rules, update state, and perform actions.
 </Card>
+
+<Card title="Write the prompt" href="/docs/platform/ai/prompt-engineering" icon="regular message-lines">
+  Structure the agent's role, conversational duties, tool guidance, and guardrails.
+</Card>
+
+<Card title="Measure conversations" href="/docs/platform/ai/analytics" icon="regular gauge-high">
+  Collect live events and final reports to troubleshoot behavior and improve outcomes.
+</Card>
+
 </CardGroup>
----
-
-## How does it work?
-
-Under the hood, the SignalWire AI Gateway (SWAIG) orchestrates the many supporting services
-that make integrated realtime voice AI possible.
-
-- AI Agent
-- Prompt
-- LLM
-- SWAIG Functions
-- TTS (Text-To-Speech) Providers
-
-<Frame>
-
-![AI Agent diagram.](/assets/images/img/ai-agent.svg)
-
-</Frame>

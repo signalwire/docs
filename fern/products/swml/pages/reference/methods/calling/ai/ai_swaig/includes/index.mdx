@@ -8,8 +8,8 @@ max-toc-depth: 3
 ---
 
 [swaig-functions]: /docs/swml/reference/calling/ai/swaig/functions#properties
-[webhook-response]: /docs/swml/reference/calling/ai/swaig/functions#webhook-response
-[webhook-request]: /docs/swml/reference/calling/ai/swaig/functions#callback-request-for-web_hook_url
+[webhook-response]: /docs/swml/reference/calling/ai/swaig/functions#reply
+[webhook-request]: /docs/swml/reference/calling/ai/swaig/functions#request
 [request-flow]: #request-flow
 
 Remote function signatures to include in SWAIG functions. Will allow you to include functions that are defined in a remote location
@@ -28,8 +28,17 @@ that can be executed during the interaction with the AI. To learn more about how
   URL where the remote functions are defined. Authentication can also be set in the url in the format of `username:password@url`.
 </ParamField>
 
-<ParamField path="includes[].function" type="string[]" required={true} toc={true}>
+<ParamField path="includes[].functions" type="string[]" required={true} toc={true}>
   An array of the function names to be included.
+</ParamField>
+
+<ParamField path="includes[].auth_user" type="string" toc={true}>
+  Username for HTTP basic authentication on the signature request, as an alternative to embedding
+  credentials in `url`.
+</ParamField>
+
+<ParamField path="includes[].auth_password" type="string" toc={true}>
+  Password for HTTP basic authentication on the signature request.
 </ParamField>
 
 <ParamField path="includes[].meta_data" type="object" toc={true}>
@@ -52,7 +61,7 @@ sections:
         SWAIG:
           includes:
             - url: "https://example.com/swaig"
-              function: ["get_weather"]
+              functions: ["get_weather"]
               meta_data:
                 user_id: "12345"
 ```
@@ -72,7 +81,7 @@ sections:
             "includes": [
               {
                 "url": "https://example.com/swaig",
-                "function": [
+                "functions": [
                   "get_weather"
                 ],
                 "meta_data": {
@@ -114,15 +123,22 @@ asking for the `get_weather` function definition. Along with this request, it fo
 configured—giving your server the context it needs to respond appropriately.
 
 **The discovery request:**
-```json
-{
-  "version": "2.0",
-  "action": "get_signature",
-  "content_type": "text/swaig",
-  "content_disposition": "function signature request",
-  "functions": ["get_weather"]
-}
-```
+
+<llms-ignore>
+
+<WebhookPayloadSnippet webhook="swaigSignatureRequest" />
+
+</llms-ignore>
+
+See the [SWAIG function signature request](/docs/apis/rest/webhooks/swaig-signature-request)
+webhook page for the full field reference.
+
+<Note>
+Your endpoint can also receive this request outside of a call, as a check that it answers. Reply the
+same way, and return every definition you want registered: the `functions` list in the request is
+advisory, and SignalWire registers whatever you send back. When your project has a signing key, the
+request carries an `X-SignalWire-Signature` header you can verify.
+</Note>
 
 **What your server should return:**
 Your endpoint must respond with complete function definitions that tell SWAIG everything it needs to know. Each function
@@ -169,8 +185,7 @@ found in the [web_hook_url][webhook-request] documentation.
   "function": "function_name1",
   "argument": {
     "parsed": [{"city": "New York"}],
-    "raw": "{\"city\":\"New York\"}",
-    "substituted": "{\"city\":\"New York\"}"
+    "raw": "{\"city\":\"New York\"}"
   },
   "meta_data": {
     "custom_key": "custom_value"
@@ -181,8 +196,9 @@ found in the [web_hook_url][webhook-request] documentation.
 }
 ```
 
-SWAIG provides arguments in multiple formats—`parsed` for direct access, `raw` for the original text, and `substituted`
-with variable replacements applied. This flexibility supports edge cases and complex parsing scenarios.
+`parsed` holds the arguments as objects, ready to use, and `raw` holds the string the agent produced.
+A `substituted` value appears only when the agent wrapped the JSON in text; it carries that surrounding
+text with the JSON removed.
 
 ---
 
