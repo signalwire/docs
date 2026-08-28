@@ -20,7 +20,7 @@ namespace SignalWireAPI.RelayRest.PhoneNumbers {
     @summary("List phone numbers")
     @doc("""
       Lists the phone numbers owned by your SignalWire project. These numbers can send or receive communications according to their capabilities and assigned handlers. Use [Search phone numbers](/docs/apis/rest/phone-numbers/search-available-phone-numbers) for numbers available to purchase, or Compatibility [Incoming Phone Numbers](/docs/compatibility-api/rest/incoming-phone-numbers/list-incoming-phone-numbers) for SID-based routes. Results are sorted by creation date, most recent first.
-      
+
       ${tokenPermissions<"_Numbers_">}
       """)
     list(...ListPhoneNumbersQuery):
@@ -134,81 +134,11 @@ namespace SignalWireAPI.RelayRest.PhoneNumbers {
       | ValidationError
       | StatusCode500;
 
-    @operationId("retrieve_caller_id_name")
-    @summary("Get the caller ID name for a phone number")
-    @doc("""
-      Retrieves the most recent caller ID name request for a phone number in your project, including its current review status. After [Request a caller ID name](/docs/apis/rest/phone-numbers/request-caller-id-name), poll this operation until `status` is `approved`, `rejected`, or `failed`.
-
-      The response's `name` is the requested name. It can differ from the name call recipients currently see while the request is `pending` or `in_review`, or after it is `rejected` or `failed`. To retrieve the caller ID name currently applied at the carrier, read `cnam` on the phone number with [Get phone number](/docs/apis/rest/phone-numbers/retrieve-phone-number).
-
-      Returns `404` when the phone number is not in your project or has never had a caller ID name requested.
-
-      ${tokenPermissions<"_Numbers_">}
-      """)
-    @route("/{id}/cnam")
-    @get
-    readCnam(...PhoneNumberPathID):
-      | PhoneNumberCnamResponse
-      | StatusCode401
-      | StatusCode404
-      | StatusCode500;
-
-    @operationId("request_caller_id_name")
-    @summary("Request a caller ID name for a phone number")
-    @doc("""
-      Requests the caller ID name displayed alongside a project-owned phone number on outbound calls. Caller ID name is available only for numbers whose carrier offers it. This operation sets the outbound name for your own number; to retrieve the name published for another number, use [Look up phone number](/docs/apis/rest/phone-numbers/lookup-phone-number) with `include=cnam`.
-
-      A `201` means SignalWire accepted the request, not necessarily that call recipients see the name yet. A new name, or one previously `rejected` or `failed`, returns with `status` set to `pending` and is queued for compliance review. Poll [Get the caller ID name](/docs/apis/rest/phone-numbers/retrieve-caller-id-name) until `status` is `approved`, `rejected`, or `failed`.
-
-      Re-requesting a name already `approved` for this phone number returns the existing request with `201` and `status` still `approved`. SignalWire re-applies that name at the carrier without another compliance review.
-
-      A phone number can have only one request awaiting a decision. Submitting a different name supersedes any earlier request with a `pending` or `in_review` status.
-
-      SignalWire normalizes `name` before validating it, so apply the length and character rules to the normalized form described on that field. A `422` means the phone number's carrier does not offer caller ID name, `name` was blank, or the normalized name did not meet those rules.
-
-      Returns `404` when the phone number is not in your project.
-
-      ${tokenPermissions<"_Numbers_">}
-      """)
-    @route("/{id}/cnam")
-    @post
-    requestCnam(...PhoneNumberPathID, @body body: CreatePhoneNumberCnamRequest):
-      | {
-          @statusCode statusCode: 201;
-          @body cnam: PhoneNumberCnamResponse;
-        }
-      | StatusCode401
-      | StatusCode404
-      | ValidationError
-      | StatusCode500;
-
-    @operationId("clear_caller_id_name")
-    @summary("Clear the caller ID name on a phone number")
-    @doc("""
-      Queues removal of the caller ID name from a phone number in your project. A `204` means SignalWire accepted the request; the applied name remains available as `cnam` on the phone number until the carrier confirms the removal. After confirmation, `cnam` becomes `null` and SignalWire cancels any request still `pending` or `in_review`.
-
-      SignalWire first checks whether the phone number's carrier offers caller ID name. If it does not, the operation returns `422`. For a supported phone number, there must be an applied name or a request awaiting a decision; otherwise the operation returns `422` because there is nothing to clear.
-
-      Returns `404` when the phone number is not in your project.
-
-      ${tokenPermissions<"_Numbers_">}
-      """)
-    @route("/{id}/cnam")
-    @delete
-    clearCnam(...PhoneNumberPathID):
-      | {
-          @statusCode statusCode: 204;
-        }
-      | StatusCode401
-      | StatusCode404
-      | ValidationError
-      | StatusCode500;
-
     @operationId("search_available_phone_numbers")
     @summary("Search phone numbers")
     @doc("""
       Searches SignalWire's available inventory for local or toll-free phone numbers. Search results are candidates, not numbers your project owns; pass a selected result to [Purchase phone number](/docs/apis/rest/phone-numbers/purchase-phone-number). Use [List phone numbers](/docs/apis/rest/phone-numbers/list-phone-numbers) for owned numbers, or Compatibility [Available Phone Numbers](/docs/compatibility-api/rest/available-phone-numbers/search-local-available-phone-numbers) for form-encoded requests.
-      
+
       ${tokenPermissions<"_Numbers_">}
       """)
     @route("/search")
@@ -246,6 +176,80 @@ namespace SignalWireAPI.RelayRest.PhoneNumbers {
       @doc("A specific City to search within. Must be used in combination with region. Only supported for local searches; not supported when `number_type` is toll-free.")
       city?: string,
     ): AvailablePhoneNumbersResponse | StatusCode401 | StatusCode500;
+  }
+}
+
+@route("/phone_numbers/{id}/cnam")
+namespace SignalWireAPI.RelayRest.CallerIDName {
+  @tag(CALLER_ID_NAME_TAG)
+  @friendlyName("Caller ID Name")
+  interface CallerIDName {
+    @operationId("retrieve_caller_id_name")
+    @summary("Get the caller ID name for a phone number")
+    @doc("""
+      Retrieves the most recent caller ID name request for a phone number in your project, including its current review status. After [Request a caller ID name](/docs/apis/rest/phone-numbers/request-caller-id-name), poll this operation until `status` is `approved`, `rejected`, or `failed`.
+
+      The response's `name` is the requested name. It can differ from the name call recipients currently see while the request is `pending` or `in_review`, or after it is `rejected` or `failed`. To retrieve the caller ID name currently applied at the carrier, read `cnam` on the phone number with [Get phone number](/docs/apis/rest/phone-numbers/retrieve-phone-number).
+
+      Returns `404` when the phone number is not in your project or has never had a caller ID name requested.
+
+      ${tokenPermissions<"_Numbers_">}
+      """)
+    @get
+    readCnam(...PhoneNumberPathID):
+      | PhoneNumberCnamResponse
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
+
+    @operationId("request_caller_id_name")
+    @summary("Request a caller ID name for a phone number")
+    @doc("""
+      Requests the caller ID name displayed alongside a project-owned phone number on outbound calls. Caller ID name is available only for numbers whose carrier offers it. This operation sets the outbound name for your own number; to retrieve the name published for another number, use [Look up phone number](/docs/apis/rest/phone-numbers/lookup-phone-number) with `include=cnam`.
+
+      A `201` means SignalWire accepted the request, not necessarily that call recipients see the name yet. A new name, or one previously `rejected` or `failed`, returns with `status` set to `pending` and is queued for compliance review. Poll [Get the caller ID name](/docs/apis/rest/phone-numbers/retrieve-caller-id-name) until `status` is `approved`, `rejected`, or `failed`.
+
+      Re-requesting a name already `approved` for this phone number returns the existing request with `201` and `status` still `approved`. SignalWire re-applies that name at the carrier without another compliance review.
+
+      A phone number can have only one request awaiting a decision. Submitting a different name supersedes any earlier request with a `pending` or `in_review` status.
+
+      SignalWire normalizes `name` before validating it, so apply the length and character rules to the normalized form described on that field. A `422` means the phone number's carrier does not offer caller ID name, `name` was blank, or the normalized name did not meet those rules.
+
+      Returns `404` when the phone number is not in your project.
+
+      ${tokenPermissions<"_Numbers_">}
+      """)
+    @post
+    requestCnam(...PhoneNumberPathID, @body body: CreatePhoneNumberCnamRequest):
+      | {
+          @statusCode statusCode: 201;
+          @body cnam: PhoneNumberCnamResponse;
+        }
+      | StatusCode401
+      | StatusCode404
+      | ValidationError
+      | StatusCode500;
+
+    @operationId("clear_caller_id_name")
+    @summary("Clear the caller ID name on a phone number")
+    @doc("""
+      Queues removal of the caller ID name from a phone number in your project. A `204` means SignalWire accepted the request; the applied name remains available as `cnam` on the phone number until the carrier confirms the removal. After confirmation, `cnam` becomes `null` and SignalWire cancels any request still `pending` or `in_review`.
+
+      SignalWire first checks whether the phone number's carrier offers caller ID name. If it does not, the operation returns `422`. For a supported phone number, there must be an applied name or a request awaiting a decision; otherwise the operation returns `422` because there is nothing to clear.
+
+      Returns `404` when the phone number is not in your project.
+
+      ${tokenPermissions<"_Numbers_">}
+      """)
+    @delete
+    clearCnam(...PhoneNumberPathID):
+      | {
+          @statusCode statusCode: 204;
+        }
+      | StatusCode401
+      | StatusCode404
+      | ValidationError
+      | StatusCode500;
   }
 }
 
