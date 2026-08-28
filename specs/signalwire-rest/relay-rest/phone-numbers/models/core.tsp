@@ -158,7 +158,7 @@ model PhoneNumber {
 
   @doc("""
     The caller ID name currently applied at the carrier for this phone number, or `null` when none is
-    set. This is the name callers can see. Change it with
+    set. This is the name call recipients can see. Change it with
     [Request a caller ID name](/docs/apis/rest/phone-numbers/request-caller-id-name).
     This value changes only after a request is approved and applied at the carrier, so it can differ
     from the requested `name` while a request is being reviewed or after one is rejected or fails.
