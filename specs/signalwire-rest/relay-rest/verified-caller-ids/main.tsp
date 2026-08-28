@@ -19,7 +19,7 @@ namespace SignalWireAPI.RelayRest.VerifiedCallerID {
     @operationId("list_verified_caller_ids")
     @summary("List verified caller IDs")
     @doc("""
-      Returns a list of your Verified Caller IDs. The caller IDs are returned sorted by creation date, with the most recent caller IDs appearing first. The list is filterable by sending in any of the following parameters.
+      Lists external phone numbers your SignalWire project has submitted for outbound caller-ID verification. Verified Caller IDs let calls present a number the project does not own; project-owned numbers are managed through [Phone Numbers](/docs/apis/rest/phone-numbers/list-phone-numbers) and do not need this verification flow. Results are sorted by creation date, most recent first.
       
       ${tokenPermissions<"_Voice_">}
       """)
@@ -35,7 +35,7 @@ namespace SignalWireAPI.RelayRest.VerifiedCallerID {
     @operationId("create_verified_caller_id")
     @summary("Create verified caller ID")
     @doc("""
-      Creates a new verified caller ID. A verification code will be sent to the phone number.
+      Starts verification of an external phone number for use as an outbound caller ID and sends a verification code to that number. Use it when presenting a number the project does not own; use a purchased or imported project number directly instead. Complete the flow with [Validate verification code](/docs/apis/rest/verified-caller-id/validate-verification-code).
       
       ${tokenPermissions<"_Voice_">}
       """)
@@ -52,7 +52,7 @@ namespace SignalWireAPI.RelayRest.VerifiedCallerID {
     @operationId("retrieve_verified_caller_id")
     @summary("Get verified caller ID")
     @doc("""
-      Retrieves the details of a verified caller ID.
+      Retrieves one external caller-ID verification record from your SignalWire project. Use it to check or display an existing verification; use [Get phone number](/docs/apis/rest/phone-numbers/retrieve-phone-number) for a project-owned number instead.
       
       ${tokenPermissions<"_Voice_">}
       """)
@@ -65,7 +65,7 @@ namespace SignalWireAPI.RelayRest.VerifiedCallerID {
     @operationId("update_verified_caller_id")
     @summary("Update verified caller ID")
     @doc("""
-      Updates a verified caller ID.
+      Changes the configurable label of an external verified caller-ID record by ID. Use it to maintain the record after verification; updating a project-owned phone number uses [Update phone number](/docs/apis/rest/phone-numbers/update-phone-number) instead.
       
       ${tokenPermissions<"_Voice_">}
       """)
@@ -83,7 +83,7 @@ namespace SignalWireAPI.RelayRest.VerifiedCallerID {
     @operationId("redial_verification_call")
     @summary("Redial verification call")
     @doc("""
-      Redials the verification call for a verified caller ID.
+      Places another verification call for a pending external caller-ID record. Use it when the original verification call or code was missed, then submit the new code through [Validate verification code](/docs/apis/rest/verified-caller-id/validate-verification-code).
       
       ${tokenPermissions<"_Voice_">}
       """)
@@ -98,7 +98,7 @@ namespace SignalWireAPI.RelayRest.VerifiedCallerID {
     @operationId("validate_verification_code")
     @summary("Validate verification code")
     @doc("""
-      Validates the verification code for a verified caller ID.
+      Submits the code received by an external phone number and marks the caller-ID record verified when it matches. Use it to finish the flow started by [Create verified caller ID](/docs/apis/rest/verified-caller-id/create-verified-caller-id); purchased project numbers do not use this flow.
       
       ${tokenPermissions<"_Voice_">}
       """)
@@ -117,7 +117,7 @@ namespace SignalWireAPI.RelayRest.VerifiedCallerID {
     @operationId("delete_verified_caller_id")
     @summary("Delete verified caller ID")
     @doc("""
-      Deletes a verified caller ID.
+      Deletes an external verified caller-ID record by ID so it is no longer available for outbound caller ID. This does not release or delete a project-owned [Phone Number](/docs/apis/rest/phone-numbers/release-phone-number).
       
       ${tokenPermissions<"_Voice_">}
       """)

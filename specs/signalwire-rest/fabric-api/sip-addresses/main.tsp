@@ -27,7 +27,7 @@ namespace SignalWireAPI.Fabric.SipAddresses {
 
     <Note>
     This is the public REST management API for standalone SIP addresses. It's separate from
-    [Assign domain application handler](/docs/apis/rest/domain-applications/assign-domain-application-handler),
+    [Assign domain application handler](/docs/apis/rest/domain-applications/assign-resource-domain-application),
     which attaches an already-created Domain Application to a resource.
     </Note>
     """)
@@ -35,7 +35,7 @@ namespace SignalWireAPI.Fabric.SipAddresses {
     @operationId("list_sip_addresses")
     @summary("List SIP addresses")
     @doc("""
-      Returns a paginated list of SIP addresses in the authenticated project.
+      Lists the standalone SIP Addresses in your SignalWire project. A SIP Address gives an external device or system a dedicated SIP URI for registration or inbound calling. Resource addresses are generic callable handles, [SIP Credentials](/docs/apis/rest/sip-credentials/list-sip-credentials) represent registering devices managed as Fabric resources, and [E911 addresses](/docs/apis/rest/e-911-addresses/list-addresses) represent physical emergency-service locations.
 
       ${tokenPermissions<"_Calling_, _Fax_, _Messaging_, or _Video_">}
       """)
@@ -49,7 +49,7 @@ namespace SignalWireAPI.Fabric.SipAddresses {
     @operationId("get_sip_address")
     @summary("Get SIP address")
     @doc("""
-      Returns a SIP address by ID.
+      Retrieves one standalone SIP Address from your SignalWire project. Use [List SIP addresses](/docs/apis/rest/sip-addresses/list-sip-addresses) to find addresses. Generic resource addresses and physical E911 addresses use different operations.
 
       ${tokenPermissions<"_Calling_, _Fax_, _Messaging_, or _Video_">}
       """)
@@ -65,7 +65,7 @@ namespace SignalWireAPI.Fabric.SipAddresses {
     @operationId("create_sip_address")
     @summary("Create SIP address")
     @doc("""
-      Creates a SIP address, along with its username, encryption, codec, cipher, and IP authentication settings.
+      Creates a standalone SIP Address with a SIP URI, registration password, media and IP-authentication settings, and a resource that handles inbound calls. Use it when an external SIP device or system must register to or dial a dedicated URI. Use [Create SIP credential](/docs/apis/rest/sip-credentials/create-sip-credential) for a device credential managed as a Fabric resource, or [Create E911 address](/docs/apis/rest/e-911-addresses/create-address) for a physical emergency-service location.
 
       ${tokenPermissions<"_Calling_, _Fax_, _Messaging_, or _Video_">}
       """)
@@ -82,8 +82,7 @@ namespace SignalWireAPI.Fabric.SipAddresses {
     @operationId("update_sip_address")
     @summary("Update SIP address")
     @doc("""
-      Updates a SIP address by ID. Partial update: any field omitted from the body keeps its current value.
-      `calling_handler_resource_id` cannot be changed via this endpoint.
+      Partially updates a standalone SIP Address by ID; omitted fields retain their current values. Use it to change the URI name, Domain, registration password, media, encryption, or IP-authentication settings. `calling_handler_resource_id` cannot be changed through this operation. SIP Credentials and generic resource addresses have separate management endpoints.
 
       ${tokenPermissions<"_Calling_, _Fax_, _Messaging_, or _Video_">}
       """)
@@ -102,8 +101,7 @@ namespace SignalWireAPI.Fabric.SipAddresses {
     @operationId("delete_sip_address")
     @summary("Delete SIP address")
     @doc("""
-      Deletes a SIP address by ID, along with its SIP configuration. Calls and registrations to this
-      address will stop working immediately.
+      Deletes a standalone SIP Address and its SIP configuration by ID. Use it when calls and registrations to that URI must stop immediately. This does not delete a [SIP Credential](/docs/apis/rest/sip-credentials/delete-sip-credential), a generic resource address, or an E911 address.
 
       ${tokenPermissions<"_Calling_, _Fax_, _Messaging_, or _Video_">}
       """)
