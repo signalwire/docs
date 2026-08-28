@@ -96,44 +96,6 @@ namespace SignalWireAPI.RelayRest.PhoneNumbers {
       | ValidationError
       | StatusCode500;
 
-    @operationId("assign_e911_address")
-    @summary("Assign an E911 address to a phone number")
-    @doc("""
-      Assigns a validated E911 address to the phone number and begins provisioning at the carrier. The number's `e911_status` becomes `pending`; it moves to `active` asynchronously once the carrier confirms. The address is re-validated at the carrier and must be valid.
-
-      Use this operation after [Create E911 address](/docs/apis/rest/e-911-addresses/create-address) when emergency calls from the number must present that physical service location. Resource addresses and SIP Addresses are routing handles and cannot be assigned for E911.
-
-      The address `label` is sent to the carrier as the caller name presented to the dispatcher. The emergency network limits that field to 32 characters, so a longer label is truncated to the first 32 characters. Truncation never affects the street address used to route the call, and does not cause the assignment to fail.
-
-      ${tokenPermissions<"_Numbers_">}
-      """)
-    @route("/{id}/e911_address")
-    @post
-    assignE911Address(...PhoneNumberPathID, @body body: AssignE911AddressRequest):
-      | PhoneNumberResponse
-      | StatusCode401
-      | StatusCode404
-      | ValidationError
-      | StatusCode500;
-
-    @operationId("remove_e911_address")
-    @summary("Remove the E911 address from a phone number")
-    @doc("""
-      Removes the E911 address from the phone number and begins deprovisioning at the carrier. Only allowed while the number is `active`. The `e911_status` becomes `pending_removal`; the address remains associated until the carrier confirms removal.
-
-      Use this operation to stop emergency-service provisioning for the number without deleting the reusable E911 address or releasing the phone number.
-
-      ${tokenPermissions<"_Numbers_">}
-      """)
-    @route("/{id}/e911_address")
-    @delete
-    removeE911Address(...PhoneNumberPathID):
-      | PhoneNumberResponse
-      | StatusCode401
-      | StatusCode404
-      | ValidationError
-      | StatusCode500;
-
     @operationId("search_available_phone_numbers")
     @summary("Search phone numbers")
     @doc("""
@@ -179,6 +141,49 @@ namespace SignalWireAPI.RelayRest.PhoneNumbers {
   }
 }
 
+@route("/phone_numbers/{id}/e911_address")
+namespace SignalWireAPI.RelayRest.PhoneNumberE911 {
+  @tag(ADDRESSES_TAG)
+  @friendlyName("E911 Phone Number Assignments")
+  interface PhoneNumberE911 {
+    @operationId("assign_e911_address")
+    @summary("Assign an E911 address to a phone number")
+    @doc("""
+      Assigns a validated E911 address to the phone number and begins provisioning at the carrier. The number's `e911_status` becomes `pending`; it moves to `active` asynchronously once the carrier confirms. The address is re-validated at the carrier and must be valid.
+
+      Use this operation after [Create E911 address](/docs/apis/rest/e-911-addresses/create-address) when emergency calls from the number must present that physical service location. Resource addresses and SIP Addresses are routing handles and cannot be assigned for E911.
+
+      The address `label` is sent to the carrier as the caller name presented to the dispatcher. The emergency network limits that field to 32 characters, so a longer label is truncated to the first 32 characters. Truncation never affects the street address used to route the call, and does not cause the assignment to fail.
+
+      ${tokenPermissions<"_Numbers_">}
+      """)
+    @post
+    assignE911Address(...PhoneNumberPathID, @body body: AssignE911AddressRequest):
+      | PhoneNumberResponse
+      | StatusCode401
+      | StatusCode404
+      | ValidationError
+      | StatusCode500;
+
+    @operationId("remove_e911_address")
+    @summary("Remove the E911 address from a phone number")
+    @doc("""
+      Removes the E911 address from the phone number and begins deprovisioning at the carrier. Only allowed while the number is `active`. The `e911_status` becomes `pending_removal`; the address remains associated until the carrier confirms removal.
+
+      Use this operation to stop emergency-service provisioning for the number without deleting the reusable E911 address or releasing the phone number.
+
+      ${tokenPermissions<"_Numbers_">}
+      """)
+    @delete
+    removeE911Address(...PhoneNumberPathID):
+      | PhoneNumberResponse
+      | StatusCode401
+      | StatusCode404
+      | ValidationError
+      | StatusCode500;
+  }
+}
+
 @route("/phone_numbers/{id}/cnam")
 namespace SignalWireAPI.RelayRest.CallerIDName {
   @tag(CALLER_ID_NAME_TAG)
@@ -187,7 +192,7 @@ namespace SignalWireAPI.RelayRest.CallerIDName {
     @operationId("retrieve_caller_id_name")
     @summary("Get the caller ID name for a phone number")
     @doc("""
-      Retrieves the most recent caller ID name request for a phone number in your project, including its current review status. After [Request a caller ID name](/docs/apis/rest/phone-numbers/request-caller-id-name), poll this operation until `status` is `approved`, `rejected`, or `failed`.
+      Retrieves the most recent caller ID name request for a phone number in your project, including its current review status. After [Request a caller ID name](/docs/apis/rest/caller-id-name/request-caller-id-name), poll this operation until `status` is `approved`, `rejected`, or `failed`.
 
       The response's `name` is the requested name. It can differ from the name call recipients currently see while the request is `pending` or `in_review`, or after it is `rejected` or `failed`. To retrieve the caller ID name currently applied at the carrier, read `cnam` on the phone number with [Get phone number](/docs/apis/rest/phone-numbers/retrieve-phone-number).
 
@@ -207,7 +212,7 @@ namespace SignalWireAPI.RelayRest.CallerIDName {
     @doc("""
       Requests the caller ID name displayed alongside a project-owned phone number on outbound calls. Caller ID name is available only for numbers whose carrier offers it. This operation sets the outbound name for your own number; to retrieve the name published for another number, use [Look up phone number](/docs/apis/rest/phone-numbers/lookup-phone-number) with `include=cnam`.
 
-      A `201` means SignalWire accepted the request, not necessarily that call recipients see the name yet. A new name, or one previously `rejected` or `failed`, returns with `status` set to `pending` and is queued for compliance review. Poll [Get the caller ID name](/docs/apis/rest/phone-numbers/retrieve-caller-id-name) until `status` is `approved`, `rejected`, or `failed`.
+      A `201` means SignalWire accepted the request, not necessarily that call recipients see the name yet. A new name, or one previously `rejected` or `failed`, returns with `status` set to `pending` and is queued for compliance review. Poll [Get the caller ID name](/docs/apis/rest/caller-id-name/retrieve-caller-id-name) until `status` is `approved`, `rejected`, or `failed`.
 
       Re-requesting a name already `approved` for this phone number returns the existing request with `201` and `status` still `approved`. SignalWire re-applies that name at the carrier without another compliance review.
 
