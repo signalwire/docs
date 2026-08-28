@@ -37,7 +37,7 @@ model SWAIGFunction {
     """)
   data_map?: DataMap;
 
-  @doc("Function-specific URL to send status callbacks and reports to. Takes precedence over a default setting. Authentication can also be set in the url in the format of `username:password@url.`")
+  @doc("Function-specific URL to send status callbacks and reports to. Takes precedence over a default setting. Authentication can also be set in the url in the format of `username:password@url`. Credentials embedded in the URL take precedence over `web_hook_auth_user` and `web_hook_auth_password`.")
   @example("https://username:password@example.com")
   web_hook_url?: string;
 
@@ -45,6 +45,8 @@ model SWAIGFunction {
   @example("username")
   web_hook_auth_user?: string;
 
+  // The `web_hook_auth_pass` alias that SWML accepts on a SWAIG function is deliberately absent
+  // here: this API stores only `web_hook_auth_password`.
   @doc("Password for basic auth on this function's webhook. Falls back to `defaults.web_hook_auth_password`.")
   @example("password")
   web_hook_auth_password?: string;

@@ -10,7 +10,7 @@ model SWAIGIncludes {
   @example(#["transfer call", "notify kitchen"])
   functions: string[];
 
-  @doc("URL to fetch remote functions and include in your AI application. Authentication can also be set in the url in the format of `username:password@url`.")
+  @doc("URL to fetch remote functions and include in your AI application. Authentication can also be set in the url in the format of `username:password@url`. Credentials embedded in the URL take precedence over `auth_user` and `auth_password`.")
   @example("https://username:password@example.com")
   url: string;
 
