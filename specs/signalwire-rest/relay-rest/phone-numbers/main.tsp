@@ -64,7 +64,7 @@ namespace SignalWireAPI.RelayRest.PhoneNumbers {
     @operationId("update_phone_number")
     @summary("Update phone number")
     @doc("""
-      Changes how a project-owned phone number is identified or routes inbound calls and messages. Use [Assign Resource to phone route](/docs/apis/rest/phone-numbers/assign-resource-phone-route) when assigning an existing Fabric resource as the handler.
+      Changes how a project-owned phone number is identified or routes inbound calls and messages. Use [Assign Resource to phone route](/docs/apis/rest/phone-routes/assign-resource-phone-route) when assigning an existing Fabric resource as the handler.
       
       ${tokenPermissions<"_Numbers_">}
       """)
