@@ -43,6 +43,7 @@ Every component available on this site: Fern's full default library (description
 Custom components (registered in `docs.yml` → `fern/components/`):
 
 - `VoiceWidget` — interactive click-to-call demo. Human-only: wrap usages in `<llms-ignore>`.
+- `SigmondWidget` — renders nothing itself; it wires every `[data-sigmond-launcher]` element on the page to the live Sigmond video call. Pair it with the clickable markup — `<Markdown src="/snippets/common/talk-with-sigmond.mdx" />` or the homepage band — or the card renders and does nothing. Human-only: wrap the launcher markup *and* the `<SigmondWidget />` element in `<llms-ignore>`.
 - `Skeleton` / `SkeletonText` — loading placeholders; registered, no MDX uses yet.
 
 Fern's Markdown export flattens an untitled callout into ordinary prose. Give a `Warning` a concise title when losing the warning context could change a reader's safe interpretation—for example, legal or compliance disclaimers, credential handling, network restrictions, or service availability. Do not add titles mechanically to every callout; the title must identify the specific hazard or constraint.
