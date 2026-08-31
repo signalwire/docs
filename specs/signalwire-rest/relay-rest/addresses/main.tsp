@@ -32,7 +32,7 @@ namespace SignalWireAPI.RelayRest.Addresses {
     @operationId("create_address")
     @summary("Create E911 address")
     @doc("""
-      Creates a physical E911 service address that can be assigned to an owned phone number for emergency calling. Use it before [Assign an E911 address to a phone number](/docs/apis/rest/phone-numbers/assign-e-911-address) when emergency services need the caller's registered street location. Do not use this endpoint for a resource address or SIP URI.
+      Creates a physical E911 service address that can be assigned to an owned phone number for emergency calling. Use it before [Assign an E911 address to a phone number](/docs/apis/rest/e-911-addresses/assign-e-911-address) when emergency services need the caller's registered street location. Do not use this endpoint for a resource address or SIP URI.
 
       When `emergency_enabled=true` and the address is in the US (`country` = `US`), the address is validated against the carrier. A valid or auto-corrected address is stored (`validated: true`). An address the carrier cannot validate — or a correctable address when `auto_correct_address=false` — is rejected with a `422` whose body includes an `errors` array and a `candidates` array of suggested addresses (each with `street_number`, `street_name`, `city`, `state`, `postal_code`). Carrier validation applies to US addresses only: a non-US address is stored normally, with `emergency_enabled` returned as `false`. Requests without `emergency_enabled` are stored without carrier validation.
 
@@ -62,7 +62,7 @@ namespace SignalWireAPI.RelayRest.Addresses {
     @operationId("update_address")
     @summary("Update E911 address")
     @doc("""
-      Changes a physical E911 service location and performs carrier validation when requested. Assigning the updated location to a phone number remains a separate [phone-number operation](/docs/apis/rest/phone-numbers/assign-e-911-address).
+      Changes a physical E911 service location and performs carrier validation when requested. Assigning the updated location to a phone number remains a separate [phone-number operation](/docs/apis/rest/e-911-addresses/assign-e-911-address).
 
       When `emergency_enabled=true` and the address is in the US (`country` = `US`), the address is validated against the carrier. A valid or auto-corrected address is stored (`validated: true`). An address the carrier cannot validate — or a correctable address when `auto_correct_address=false` — is rejected with a `422` whose body includes an `errors` array and a `candidates` array of suggested addresses (each with `street_number`, `street_name`, `city`, `state`, `postal_code`). Carrier validation applies to US addresses only: a non-US address is stored normally, with `emergency_enabled` returned as `false`. Requests without `emergency_enabled` are stored without carrier validation.
 
@@ -79,7 +79,7 @@ namespace SignalWireAPI.RelayRest.Addresses {
     @operationId("delete_address")
     @summary("Delete E911 address")
     @doc("""
-      Permanently deletes a physical E911 service address by ID. Use it when the emergency location record is no longer needed; use [Remove the E911 address from a phone number](/docs/apis/rest/phone-numbers/remove-e-911-address) when only the number's assignment should be removed. Resource addresses and SIP Addresses have separate delete operations.
+      Permanently deletes a physical E911 service address by ID. Use it when the emergency location record is no longer needed; use [Remove the E911 address from a phone number](/docs/apis/rest/e-911-addresses/remove-e-911-address) when only the number's assignment should be removed. Resource addresses and SIP Addresses have separate delete operations.
       
       ${tokenPermissions<"_Numbers_">}
       """)
