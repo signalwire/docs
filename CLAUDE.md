@@ -14,7 +14,7 @@ A SWML-only `.tsp` edit still moves `fern/apis/signalwire-rest/openapi.yaml`, be
 
 ## Changelog
 
-`fern/products/platform/changelog/` is a **product** changelog, written for customers and
+`fern/products/home/changelog/` is a **product** changelog, written for customers and
 authored by Product, Marketing, and PMs as well as docs. Copy `_template.mdx` to
 `YYYY-MM-DD.mdx` — the date the change reached customers, not the day you wrote it. Several
 changes on one date share a file, one `##` heading each.
