@@ -123,9 +123,9 @@ model AssignE911AddressRequest {
 model CreatePhoneNumberCnamRequest {
   @doc("""
     The caller ID name you want displayed on outbound calls. SignalWire normalizes the value before
-    validating and storing it: control characters are removed, runs of whitespace collapse to single
-    spaces, and letters are converted to upper case. For example, `Acme Plumbing` is stored as
-    `ACME PLUMBING`.
+    validating and storing it: control characters are removed, leading and trailing whitespace is
+    trimmed, runs of whitespace collapse to single spaces, and letters are converted to upper case.
+    For example, `Acme Plumbing` is stored as `ACME PLUMBING`.
 
     The normalized name must be 15 characters or fewer, start with a letter or digit, and contain only
     letters, digits, spaces, and `&`, `'`, `.`, `,`, and `-`. Because these rules apply after

@@ -304,8 +304,8 @@ model PhoneNumberCnam {
 
   @doc("""
     The requested caller ID name after normalization. SignalWire removes control characters,
-    collapses runs of whitespace to single spaces, and converts letters to upper case before storing
-    the value. The stored name is at most 15 characters.
+    trims leading and trailing whitespace, collapses runs of whitespace to single spaces, and converts
+    letters to upper case before storing the value. The stored name is at most 15 characters.
     """)
   @example("ACME PLUMBING")
   @maxLength(15)
@@ -347,14 +347,14 @@ model PhoneNumberCnam {
     | `other_compliance_concern` | The name didn't pass compliance review, for a reason not covered by the other codes. |
     | `processing_failed` | Processing the request failed. Request the name again. |
     """)
-  @example(PhoneNumberCnamReason.implied_trusted_institution)
+  @example(null)
   reason: PhoneNumberCnamReason | null;
 
   @doc("""
     An action you can take to address the review, such as changing, verifying, or documenting the
     requested name. `null` when review produced no specific action.
     """)
-  @example("Provide documentation showing you are authorized to use this name.")
+  @example(null)
   required_action: string | null;
 
   @doc("The date the request was created.")

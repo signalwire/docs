@@ -190,7 +190,7 @@ namespace SignalWireAPI.RelayRest.CallerIDName {
   @friendlyName("Caller ID Name")
   interface CallerIDName {
     @operationId("retrieve_caller_id_name")
-    @summary("Get the caller ID name for a phone number")
+    @summary("Get caller ID name")
     @doc("""
       Retrieves the most recent caller ID name request for a phone number in your project, including its current review status. After [Request a caller ID name](/docs/apis/rest/caller-id-name/request-caller-id-name), poll this operation until `status` is `approved`, `rejected`, or `failed`.
 
@@ -208,7 +208,7 @@ namespace SignalWireAPI.RelayRest.CallerIDName {
       | StatusCode500;
 
     @operationId("request_caller_id_name")
-    @summary("Request a caller ID name for a phone number")
+    @summary("Request caller ID name")
     @doc("""
       Requests the caller ID name displayed alongside a project-owned phone number on outbound calls. Caller ID name is available only for numbers whose carrier offers it. This operation sets the outbound name for your own number; to retrieve the name published for another number, use [Look up phone number](/docs/apis/rest/phone-number-lookup/lookup-phone-number) with `include=cnam`.
 
@@ -218,7 +218,7 @@ namespace SignalWireAPI.RelayRest.CallerIDName {
 
       A phone number can have only one request awaiting a decision. Submitting a different name supersedes any earlier request with a `pending` or `in_review` status.
 
-      SignalWire normalizes `name` before validating it, so apply the length and character rules to the normalized form described on that field. A `422` means the phone number's carrier does not offer caller ID name, `name` was blank, or the normalized name did not meet those rules.
+      SignalWire normalizes `name` before validating it, so apply the length and character rules to the normalized form described on that field. When the phone number's carrier does not offer caller ID name, the operation returns `422` with an item in `errors` whose `detail` is `Caller ID name isn't available for this number.` Other `422` responses mean `name` was blank or the normalized name did not meet those rules.
 
       Returns `404` when the phone number is not in your project.
 
@@ -236,11 +236,11 @@ namespace SignalWireAPI.RelayRest.CallerIDName {
       | StatusCode500;
 
     @operationId("clear_caller_id_name")
-    @summary("Clear the caller ID name on a phone number")
+    @summary("Clear caller ID name")
     @doc("""
       Queues removal of the caller ID name from a phone number in your project. A `204` means SignalWire accepted the request; the applied name remains available as `cnam` on the phone number until the carrier confirms the removal. After confirmation, `cnam` becomes `null` and SignalWire cancels any request still `pending` or `in_review`.
 
-      SignalWire first checks whether the phone number's carrier offers caller ID name. If it does not, the operation returns `422`. For a supported phone number, there must be an applied name or a request awaiting a decision; otherwise the operation returns `422` because there is nothing to clear.
+      SignalWire first checks whether the phone number's carrier offers caller ID name. If it does not, the operation returns `422` with an item in `errors` whose `detail` is `Caller ID name isn't available for this number.` For a supported phone number, there must be an applied name or a request awaiting a decision; otherwise the operation returns `422` because there is nothing to clear.
 
       Returns `404` when the phone number is not in your project.
 
