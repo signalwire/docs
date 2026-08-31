@@ -210,7 +210,7 @@ namespace SignalWireAPI.RelayRest.CallerIDName {
     @operationId("request_caller_id_name")
     @summary("Request a caller ID name for a phone number")
     @doc("""
-      Requests the caller ID name displayed alongside a project-owned phone number on outbound calls. Caller ID name is available only for numbers whose carrier offers it. This operation sets the outbound name for your own number; to retrieve the name published for another number, use [Look up phone number](/docs/apis/rest/phone-numbers/lookup-phone-number) with `include=cnam`.
+      Requests the caller ID name displayed alongside a project-owned phone number on outbound calls. Caller ID name is available only for numbers whose carrier offers it. This operation sets the outbound name for your own number; to retrieve the name published for another number, use [Look up phone number](/docs/apis/rest/phone-number-lookup/lookup-phone-number) with `include=cnam`.
 
       A `201` means SignalWire accepted the request, not necessarily that call recipients see the name yet. A new name, or one previously `rejected` or `failed`, returns with `status` set to `pending` and is queued for compliance review. Poll [Get the caller ID name](/docs/apis/rest/caller-id-name/retrieve-caller-id-name) until `status` is `approved`, `rejected`, or `failed`.
 
