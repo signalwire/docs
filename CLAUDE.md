@@ -12,6 +12,29 @@ Fern-powered documentation site. Two sources of truth: MDX pages under `fern/pro
 
 A SWML-only `.tsp` edit still moves `fern/apis/signalwire-rest/openapi.yaml`, because the REST tree imports the SWML models. Run `yarn build:specs` before committing even a SWML-only change, and expect a large REST diff in a SWML PR.
 
+## Changelog
+
+`fern/products/platform/changelog/` is a **product** changelog, written for customers and
+authored by Product, Marketing, and PMs as well as docs. Copy `_template.mdx` to
+`YYYY-MM-DD.mdx` — the date the change reached customers, not the day you wrote it. Several
+changes on one date share a file, one `##` heading each.
+
+- **Never make the documentation the subject.** Banned: "now documented", "the docs now
+  cover", "previously undocumented", "fully documented", "finally". Write what the reader
+  can now do or now knows.
+- **Titles are short noun phrases**, sentence case, no end punctuation — "Conversation
+  analytics", not "New guide for conversation analytics".
+- One to three sentences, second person, present tense. No marketing adjectives, no emoji.
+- A capability nobody was told about is new to the reader however long it shipped ago; don't
+  hedge it with a ship date. Open "Already available — " only where omitting it would
+  mislead (a security control, payload fields, a compliance gate).
+- **Links inline in prose, never a trailing "Updated pages:" list.** Copy every URL from the
+  target page's own `slug:` frontmatter, prefixed `/docs/<product-slug>/`. Never guess one.
+- Breaking changes lead with a titled `<Warning>` — an untitled callout flattens to plain
+  prose in the Markdown export and the reader loses the signal.
+
+Entries are customer-facing, so everything under "Everything here is customer-facing" applies.
+
 ## Everything here is customer-facing
 
 Assume no prior knowledge, and never expose internal implementation detail — backend endpoints, transports, engine-side params. Every fact traces to source, a spec, the dashboard, or a ticket; if you can't verify one, write `[NEEDS SOURCE: what's missing]` instead of guessing.
