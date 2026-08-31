@@ -1,0 +1,466 @@
+---
+title: Call recording
+slug: /voice/call-recording
+description: Learn to record calls on SignalWire, and to access and manage the recordings.
+subtitle: How to record calls, and how to access and manage them
+max-toc-depth: 3
+---
+
+[record]: /docs/swml/reference/calling/record
+[record-call]: /docs/swml/reference/calling/record-call
+[stop-record-call]: /docs/swml/reference/calling/stop-record-call
+[join-conference]: /docs/swml/reference/calling/join-conference
+[connect]: /docs/swml/reference/calling/connect
+[swml-recipe]: /docs/swml/guides/record-calls
+[swml-calls]: /docs/swml/guides/make-and-receive-calls
+[swml-quickstart]: /docs/swml/guides
+[sdk-quickstart]: /docs/server-sdks/guides/quickstart
+[phone-numbers]: /docs/platform/phone-numbers
+[call-commands]: /docs/apis/rest/calls/call-commands
+[sdk-recording]: /docs/server-sdks/guides/call-recording
+[cxml-record]: /docs/compatibility-api/cxml/reference/voice/record
+[cxml-dial]: /docs/compatibility-api/cxml/reference/voice/dial
+[cxml-conference]: /docs/compatibility-api/cxml/reference/voice/conference
+[rest-list]: /docs/apis/rest/recordings/list-call-recordings
+[rest-get]: /docs/apis/rest/recordings/get-call-recording
+[rest-delete]: /docs/apis/rest/recordings/delete-call-recording
+[compat-list]: /docs/compatibility-api/rest/recordings/list-recordings
+[compat-retrieve]: /docs/compatibility-api/rest/recordings/retrieve-recording
+[compat-update]: /docs/compatibility-api/rest/recordings/update-recording
+[compat-delete]: /docs/compatibility-api/rest/recordings/delete-recording
+[recording-status-callback]: /docs/compatibility-api/rest/recordings/webhooks/recording-status-callback
+[cfb-start]: /docs/call-flow-builder/reference/start-call-recording
+[cfb-stop]: /docs/call-flow-builder/reference/stop-call-recording
+[cfb-voicemail]: /docs/call-flow-builder/reference/voicemail-recording
+[media-protection]: /docs/platform/media-protection
+[compliance]: /docs/platform/compliance
+[webhooks]: /docs/platform/webhooks
+[browser-recording]: /docs/browser-sdk/v4/reference/webrtc-call/recording$
+
+There are several ways to make calls on SignalWire, and there are several channels over which calls can be made. So there are 
+multiple ways to record calls based on the product, the channel, the resource you are using, and your exact use case.
+
+All recordings are stored on the same Space storage, and can be managed with a uniform API.
+
+- [SWML](#swml):
+  - [In the background](#recording-in-the-background): simple full conversation recording
+  - [Record fragments](#recording-a-single-utterance): for voicemail and prompts. The script
+    blocks and records until the user stops the recording with a digit, a timeout or a set period of silence
+  - [A conference](#recording-a-conference): to capture a conference call from the moment you join
+- [Server SDKs](#server-sdks) — Server SDKs also emit SWML so all SWML recording functionality is available under a slightly different API
+- [Call Flow Builder](#call-flow-builder) — drag-and-drop nodes to record calls
+- [Using the Compatibility API](#already-using-the-compatibility-api) 
+
+{/* v4 browser sdk can't record yet */}
+
+Once you are recording, two sections cover what to do with the result:
+
+- [Recording options](#recording-options) — format, which side of the call you capture, mono versus
+  dual-channel, and what stops a recording
+- [Browse recordings](#browse-recordings) — the API, the Dashboard, and the status callback that
+  tells you a file is ready
+
+If you have not learnt to place calls yet, the guides below will walk you through making your first call.
+
+- [Making and receiving phone calls][swml-calls] routes a number to a SWML script and answers it.
+- [Your first agent][sdk-quickstart] does the same from the Server SDKs.
+- [Phone numbers][phone-numbers] covers buying a number and pointing it at a resource.
+
+## Record a call
+
+### SWML
+
+SWML has two different modes of recording:
+`record_call` records the call in the background, whereas `record` waits and records a fragment from the user (for example, to record voicemail).
+A conference recording can be enabled by setting an option while joining. 
+
+Server SDKs and Call Flow builder offer the same functionality under different APIs.
+
+#### Recording in the background
+
+[`record_call`][record-call] starts a recording and returns immediately.
+[`stop_record_call`][stop-record-call] ends it, matched by `control_id`.
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - answer: {}
+    - record_call:
+        control_id: main
+        format: mp3
+        direction: both
+        stereo: true
+    - play:
+        url: 'say:This call is being recorded.'
+    - stop_record_call:
+        control_id: main
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      { "answer": {} },
+      {
+        "record_call": {
+          "control_id": "main",
+          "format": "mp3",
+          "direction": "both",
+          "stereo": true
+        }
+      },
+      { "play": { "url": "say:This call is being recorded." } },
+      { "stop_record_call": { "control_id": "main" } }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+The `control_id` attribute is optional. If not explicitly provided, an auto-generated id is stored in the `record_control_id` variable
+which `stop_record_call` can target. But setting it yourself is simpler in general.
+
+The method also sets SWML variables `record_call_url` (the URL of the new recording) and `record_call_result`
+(`success` or `failed`). You can check `record_call_result` to ensure the recording started successfully.
+
+You do not need `stop_record_call` for a full call recording, as the recording stops automatically on hangup. Only use it to stop early.
+
+#### Recording a single utterance
+
+[`record`][record] is a blocking method which waits until the recording ends. The SWML execution resumes once the
+caller stops talking, presses a terminator digit, or hits a timeout. This enables you to record a small section for a prompt or a 
+voicemail application.
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - answer: {}
+    - play:
+        url: 'say:Leave a message after the beep. Press hash when you are done.'
+    - record:
+        beep: true
+        end_silence_timeout: 3
+    - play:
+        url: 'say:Recording ${record_result}. Here is what we got:'
+    - play:
+        url: '${record_url}'
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      { "answer": {} },
+      { "play": { "url": "say:Leave a message after the beep. Press hash when you are done." } },
+      { "record": { "beep": true, "end_silence_timeout": 3 } },
+      { "play": { "url": "say:Recording ${record_result}. Here is what we got:" } },
+      { "play": { "url": "${record_url}" } }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+`record` sets `record_url` and `record_result`, which the script above plays straight back. Note the
+names differ from the background method: `record_url`, not `record_call_url`.
+
+By default, `record` captures the `speak` side: what the caller is saying. Its default terminator
+is `#`, so the user can press that key to stop the recording.
+
+#### Recording a conference
+
+A conference is recorded by the conference itself, not by a separate method. Set the attribute `record` on
+[`join_conference`][join-conference] to `record-from-start` to record the conference.
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - answer: {}
+    - join_conference:
+        name: standup
+        record: record-from-start
+        recording_status_callback: https://example.com/recording-status
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      { "answer": {} },
+      {
+        "join_conference": {
+          "name": "standup",
+          "record": "record-from-start",
+          "recording_status_callback": "https://example.com/recording-status"
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+A conference names its callback settings differently from `record_call` —
+`recording_status_callback`, `recording_status_callback_method`,
+`recording_status_callback_event`, and `recording_status_callback_event_type` — but it is the same
+callback. See [Status callback when a recording is ready](#status-callback-when-a-recording-is-ready).
+
+### Server SDKs
+
+The SDKs emit the SWML above, so the core functionality and interface are the same here. The [Call recording in the Server SDKs][sdk-recording] guide covers it in detail.
+
+```python title="Python"
+result.record_call(control_id="main", stereo=True, format="mp3")
+result.stop_record_call(control_id="main")
+```
+
+```typescript title="TypeScript"
+result.recordCall({ controlId: 'main', stereo: true, format: 'wav' });
+result.stopRecordCall('main');
+```
+
+### Call Flow Builder
+
+Call Flow Builder provides three nodes to manage recordings: [Start Call Recording][cfb-start]
+records both sides in the background and stops automatically if the call disconnects,
+[Stop Call Recording][cfb-stop] stops a recording early, and
+[Voicemail Recording][cfb-voicemail] records snippets for voicemail-like applications.
+
+The start node has the same options as SWML `record_call` — Recording Name, Stereo, Beep,
+Terminators, and Format. It carries the same defaults too, so Terminators is empty unless you set
+it; the values in the screenshot below are that flow's settings, not the node's defaults.
+
+<llms-ignore>
+
+<Frame caption="The Start Call Recording node with its settings panel open.">
+![A Call Flow Builder canvas: Handle Call connects to Answer Call, which connects to a Start Call Recording node. The node settings panel shows Recording Name "My Recording", Stereo enabled, Beep enabled, Terminators set to #, and Format set to WAV.](/assets/images/call-flow/nodes/start_recording.webp)
+</Frame>
+
+</llms-ignore>
+
+<llms-only>
+
+The flow runs Handle Call, then Answer Call, then Start Call Recording. The node's settings are
+Recording Name (`My Recording`), Stereo (on), Beep (on), Terminators (`#`), and Format (`WAV`).
+
+</llms-only>
+
+Pairing the two nodes allows you to start and stop recording as required, just like with SWML,
+and `%{record_call_url}` carries the recording URL into later nodes.
+
+<llms-ignore>
+
+<Frame caption="Starting a recording, forwarding the call, then stopping the recording and capturing its URL.">
+![A Call Flow Builder canvas: Start Call Recording named "Sales Call" leads to a Forward to Phone node with Success, No Answer, Busy, Decline, and Error branches. Every branch converges on a Stop Call Recording node, which leads to a Set Variables node assigning sales_recording_url to the value %{record_call_url}.](/assets/images/call-flow/nodes/record-call.webp)
+</Frame>
+
+</llms-ignore>
+
+<llms-only>
+
+Start Call Recording (named `Sales Call`) connects to Forward to Phone
+(`sip:sales@example.com`). All five of that node's branches — Success, No Answer, Busy, Decline,
+Error — converge on Stop Call Recording for the same named recording. That leads to a Set Variables
+node assigning `sales_recording_url` the value `%{record_call_url}`.
+
+</llms-only>
+
+Format here offers wav and mp3 only, where SWML also takes mp4.
+
+## Recording options
+
+The recording options below apply to `record` and `record_call`, and the Server SDKs expose the same set under their
+own naming. 
+
+The defaults are different between the two SWML methods as they represent different use cases.
+
+| Option | `record` default | `record_call` default | What it changes |
+|---|---|---|---|
+| `format` | `wav` | `wav` | `wav`, `mp3`, or `mp4` |
+| `direction` | `speak` | `both` | Which side of the conversation is captured |
+| `stereo` | `false` | `false` | One mixed channel, or each party on their own |
+| `beep` | `false` | `false` | Plays a tone before recording starts |
+| `terminators` | `#` | none | DTMF digits that stop the recording |
+| `input_sensitivity` | `44.0` | `44.0` | How readily voice activity is detected |
+| `initial_timeout` | `4.0` | `0` | Seconds to wait for speech before giving up |
+| `end_silence_timeout` | `5.0` | `0` | Seconds of silence that end the recording |
+| `max_length` | none | none | Hard cap on recording length |
+| `status_url` | none | none | Where record status events are delivered |
+
+### Which side of the call you capture
+
+Set `direction` to `speak` to record what the caller says, or to `listen` for what they hear.
+`record_call` also accepts `both`, for the whole conversation. `record` defaults to `speak` and
+`record_call` defaults to `both`, in keeping with their most common use cases.
+
+### Mono and dual-channel
+
+By default both parties are mixed into one channel. Setting `stereo: true` puts each side on their
+own channel. The caller is on the left and the agent (what the caller hears) is on the right.
+
+Dual-channel is useful for analytics and transcription. Unmixing the mono file is difficult to do reliably. Single mono-channel is
+better if you're just keeping the call for compliance or QA reasons. 
+
+### Stopping the recording
+
+A recording ends in one of four ways: 
+
+1. when the call ends
+2. when `stop_record_call` is called with the matching `control_id`
+3. if the caller presses a `terminators` digit
+4. when `max_length` or `end_silence_timeout` is reached
+
+`terminators` behaves differently across the two methods.
+`record` defaults to `#`, and pressing it unblocks the rest of the script, whereas `record_call`
+defaults to no terminators at all. The option exists, but setting it is a deliberate choice: it lets
+the caller stop recording mid-call. Leave it unset to ensure recordings won't end abruptly from an
+accidental key press.
+
+### Playing a beep
+
+`beep` is off by default and plays a tone before recording starts. It is the usual mechanical way to
+signal that recording has begun, and in some jurisdictions a required one — see
+[Recording and the law](#recording-and-the-law).
+
+## Browse recordings
+
+Based on how you created the recording, there are two places it can be stored:
+
+| Created by | Retrieve from | Operations |
+|---|---|---|
+| SWML, Server SDKs, Call Flow Builder | `/api/relay/rest/recordings` | [List][rest-list], [Get][rest-get], [Delete][rest-delete] |
+| The Compatibility API | `/Accounts/{AccountSid}/Recordings` | See [Already using the Compatibility API](#already-using-the-compatibility-api) |
+
+<EndpointRequestSnippet endpoint="GET /api/relay/rest/recordings" />
+
+### View recordings from your dashboard
+
+Recordings appear under **Storage** > **Recordings** in your SignalWire Space. Opening one shows its
+status, the call it was recorded from, and a download link for each available format.
+
+<llms-ignore>
+
+<Frame caption="A finished recording in the Storage section of a SignalWire Space.">
+![The SignalWire Space sidebar with Storage expanded and Recordings selected. The detail pane shows a Recording with its ID, a status of Finished, the call it was recorded via, and a Files table offering Download (.wav) and Download (.mp3) links.](/assets/images/dashboard/sidebar/Call-Recording-Example-SWML.webp)
+</Frame>
+
+</llms-ignore>
+
+<llms-only>
+
+Recordings are listed under **Storage** > **Recordings** in your SignalWire Space. Selecting one
+opens a detail view showing the recording ID, its status (for example `Finished`), the call it was
+recorded from, and a Files table with a download link per available format.
+
+</llms-only>
+
+### Status callback when a recording is ready
+
+Rather than polling, you can set a callback URL that is notified when the recording is ready. That
+can arrive slightly later than the recording or the call ending. Set `status_url` on `record` and
+`record_call`, or `recording_status_callback` on `join_conference`.
+
+The payload delivered by `record_call` and `record` is a `calling.call.record` event whose
+`params.state` carries one of `recording`, `paused`, `finished`, `no_input`, or `error`.
+
+On `finished`, the callback has a `params.record` object with the recording's `url`, `duration`,
+`size`, and `format`. That is enough to store a reference without a follow-up API call. The full
+payload is documented under
+[status callbacks](/docs/swml/reference/calling/record-call#statuscallbacks).
+
+[Webhooks][webhooks] covers handling callbacks generally.
+
+<Markdown src="/snippets/common/_status-callback-advisory.mdx" />
+
+## Secure the media
+
+<Warning title="Recording URLs are public by default">
+Media URLs contain randomly generated UUIDs, which makes them impractical to guess, but anyone
+holding the link can fetch one. Enable Media URL Protection to require your project's API
+credentials instead — see [Media URL protection][media-protection].
+</Warning>
+
+Protection is set per project and per media type, so recordings can be protected independently of
+messages and faxes.
+
+<llms-ignore>
+
+<Frame caption="Media URL Protection settings, with a separate toggle for recordings.">
+![The Settings tab of a SignalWire project showing Media URL Protection Details, with separate No/Yes toggles for Protect Recording Media URLs, Protect Message Media URLs, and Protect Fax Media URLs.](/assets/images/dashboard/media-protection-interface.webp)
+</Frame>
+
+</llms-ignore>
+
+<llms-only>
+
+Under **Project Details** > **Settings**, the Media URL Protection Details panel has three
+independent toggles: Protect Recording Media URLs, Protect Message Media URLs, and Protect Fax
+Media URLs. They are all off by default.
+
+</llms-only>
+
+Turning media protection on might break systems for existing customers who are using the links without authentication, so ensure all downstream systems are updated before turning media protection on.
+
+## Recording and the law
+
+Consent requirements vary by jurisdiction, and some require every party to consent before a call is
+recorded. `beep` and a spoken disclosure are the usual ways to meet that. Regulated workloads carry
+their own requirements — see [Compliance][compliance].
+
+This is not legal advice. Confirm what applies to you before recording production calls.
+
+## Already using the Compatibility API
+
+| If you need | See |
+|---|---|
+| Recording in cXML markup | [`<Record>`][cxml-record], [`<Dial>`][cxml-dial], [`<Conference>`][cxml-conference] |
+| Pause, resume, or stop a live recording | [Update a recording][compat-update] |
+| Find and manage the resulting media | [List][compat-list], [Retrieve][compat-retrieve], [Delete][compat-delete] |
+| The recording status callback payload | [Recording status callback][recording-status-callback] |
+
+Two capabilities exist only here: pausing and resuming a recording that is already running, and
+`recordingStorageUrl` on `<Dial>`, which sends media to your own destination instead of SignalWire
+storage.
+
+## Next steps
+
+<CardGroup cols={2}>
+
+<Card title="record_call reference" href="/docs/swml/reference/calling/record-call" icon="regular circle-dot">
+  Every parameter for background recording in SWML, and the variables it sets.
+</Card>
+
+<Card title="Call recording in the Server SDKs" href="/docs/server-sdks/guides/call-recording" icon="regular code">
+  Recording from an AI agent or a call handler, in Python and TypeScript.
+</Card>
+
+<Card title="Recordings API" href="/docs/apis/rest/recordings/list-call-recordings" icon="regular rectangle-api">
+  List, fetch, and delete the recordings your scripts create.
+</Card>
+
+<Card title="record reference" href="/docs/swml/reference/calling/record" icon="regular microphone">
+  Foreground recording in SWML, for voicemail and single utterances.
+</Card>
+
+<Card title="Media URL protection" href="/docs/platform/media-protection" icon="regular lock">
+  Require API credentials before anyone can fetch your recorded media.
+</Card>
+
+</CardGroup>
