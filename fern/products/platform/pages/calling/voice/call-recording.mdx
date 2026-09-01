@@ -17,7 +17,11 @@ max-toc-depth: 3
 [sdk-quickstart]: /docs/server-sdks/guides/quickstart
 [phone-numbers]: /docs/platform/phone-numbers
 [call-commands]: /docs/apis/rest/calls/call-commands
-[sdk-recording]: /docs/server-sdks/guides/call-recording
+[sdk-install]: /docs/server-sdks/guides/installation
+[fr-record-call]: /docs/server-sdks/reference/python/agents/function-result/record-call
+[fr-stop-record-call]: /docs/server-sdks/reference/python/agents/function-result/stop-record-call
+[relay-record]: /docs/server-sdks/reference/python/relay/call/record
+[record-action]: /docs/server-sdks/reference/python/relay/actions/record-action
 [cxml-record]: /docs/compatibility-api/cxml/reference/voice/record
 [cxml-dial]: /docs/compatibility-api/cxml/reference/voice/dial
 [cxml-conference]: /docs/compatibility-api/cxml/reference/voice/conference
@@ -38,37 +42,39 @@ max-toc-depth: 3
 [browser-recording]: /docs/browser-sdk/v4/reference/webrtc-call/recording
 [ai-analytics]: /docs/platform/ai/analytics
 [post-prompt-webhook]: /docs/apis/rest/webhooks/ai-post-prompt-callback
+[ai-method]: /docs/swml/reference/calling/ai
+[ai-sidecar]: /docs/swml/reference/calling/ai-sidecar
+[transcribe]: /docs/swml/reference/calling/transcribe
+[live-transcribe]: /docs/swml/reference/calling/live-transcribe
 
 There are several ways to make calls on SignalWire, and there are several channels over which calls can be made. So there are 
 multiple ways to record calls based on the product, the channel, the resource you are using, and your exact use case.
 
 All recordings are stored on the same Space storage, and can be managed with a uniform API.
 
-<Note title="Recording is not the AI post-prompt summary">
-A recording is the audio of the call, stored as a media file you fetch by URL.
-
-The post-prompt summary and [conversation analytics][ai-analytics] an AI agent produces are structured text, generated after the conversation ends and delivered to your `post_prompt_url` as an [AI post-prompt callback][post-prompt-webhook]. They do not record anything, and they are not stored alongside your recordings.
-
-An AI call can have both. Recording an agent call is set up exactly as it is on any other call, and nothing on this page changes for AI.
-</Note>
-
 - [SWML](#swml):
   - [In the background](#recording-in-the-background): simple full conversation recording
   - [Record fragments](#recording-a-single-utterance): for voicemail and prompts. The script
     blocks and records until the user stops the recording with a digit, a timeout or a set period of silence
   - [A conference](#recording-a-conference): to capture a conference call from the moment you join
-- [Server SDKs](#server-sdks) — Server SDKs also emit SWML so all SWML recording functionality is available under a slightly different API
+- [Server SDKs](#server-sdks) — the SDKs emit SWML, so every SWML recording option is available under a slightly different API:
+  - [From an AI agent](#recording-from-an-ai-agent): `record_call` chained onto a tool handler's result, so
+    the agent can start recording once the caller consents
+  - [From a call handler](#recording-from-a-call-handler): `call.record`, which hands back an action
+    you can pause, resume, stop, or wait on
 - [Call Flow Builder](#call-flow-builder) — drag-and-drop nodes to record calls
 - [Using the Compatibility API](#already-using-the-compatibility-api) 
 
 {/* v4 browser sdk can't record yet */}
 
-Once you are recording, two sections cover what to do with the result:
+Once you are recording, three sections cover what to do with the result:
 
 - [Recording options](#recording-options) — format, which side of the call you capture, mono versus
-  dual-channel, and what stops a recording
+  dual-channel, and what stops, pauses, or resumes a recording
 - [Browse recordings](#browse-recordings) — the API, the Dashboard, and the status callback that
   tells you a file is ready
+- [Storage and retention](#storage-and-retention) — what recordings cost you in space, and how long
+  to keep them
 
 If you have not learnt to place calls yet, the guides below will walk you through making your first call.
 
@@ -234,17 +240,193 @@ callback. See [Status callback when a recording is ready](#status-callback-when-
 
 ### Server SDKs
 
-The SDKs emit the SWML above, so the core functionality and interface are the same here. The [Call recording in the Server SDKs][sdk-recording] guide covers it in detail.
+The Server SDKs emit the SWML above, so every option and default described on this page carries over.
+Only the naming changes, and there are two entry points depending on how your application handles the
+call.
 
-```python title="Python"
-result.record_call(control_id="main", stereo=True, format="mp3")
-result.stop_record_call(control_id="main")
-```
+Install the SDK first — see [Installation][sdk-install] for version requirements and the ESM note for
+TypeScript.
 
-```typescript title="TypeScript"
-result.recordCall({ controlId: 'main', stereo: true, format: 'wav' });
-result.stopRecordCall('main');
+<CodeBlocks>
+<CodeBlock title="Python">
+```bash
+pip install signalwire-sdk
 ```
+</CodeBlock>
+<CodeBlock title="TypeScript">
+```bash
+npm install @signalwire/sdk
+```
+</CodeBlock>
+</CodeBlocks>
+
+| What you want | Python | TypeScript |
+|---|---|---|
+| Start a background recording from an AI tool | [`record_call()`][fr-record-call] | `recordCall()` |
+| Stop it | [`stop_record_call()`][fr-stop-record-call] | `stopRecordCall()` |
+| Record from a call handler and wait for the file | [`call.record()`][relay-record] | `call.record()` |
+
+<Note title="The SDKs record to wav or mp3 only">
+`mp4` is available in SWML and the Compatibility API, not in the Server SDKs. Python raises
+`ValueError` if `format` is anything other than `"wav"` or `"mp3"`, or if `direction` is anything
+other than `"speak"`, `"listen"`, or `"both"`.
+</Note>
+
+#### Recording from an AI agent
+
+An AI agent starts a recording from inside a tool handler, by chaining `record_call` onto the
+`FunctionResult` the handler returns. Because the model decides when to call the tool, this is how you
+record only after the caller has agreed: the prompt tells the agent to ask, and the tool fires on a
+yes.
+
+<CodeBlocks>
+<CodeBlock title="Python">
+```python {17-23}
+from signalwire import AgentBase, FunctionResult
+
+agent = AgentBase(name="recording-agent", route="/agent")
+agent.add_language("English", "en-US", "rime.spore")
+
+agent.prompt_add_section(
+    "Recording policy",
+    body="Say 'This call may be recorded for quality purposes.' and ask the caller "
+    "whether they agree. Call start_recording only after they say yes. "
+    "If they decline, continue the call without recording.",
+)
+
+@agent.tool(name="start_recording", description="Start recording the call once the caller agrees")
+def start_recording(args, raw_data):
+    return (
+        FunctionResult("Recording has started.")
+        .record_call(
+            control_id="main",
+            stereo=True,
+            format="mp3",
+            status_url="https://example.com/recording-status",
+        )
+    )
+
+@agent.tool(name="stop_recording", description="Stop recording the call")
+def stop_recording(args, raw_data):
+    return FunctionResult("Recording has stopped.").stop_record_call(control_id="main")
+
+if __name__ == "__main__":
+    agent.run()
+```
+</CodeBlock>
+<CodeBlock title="TypeScript">
+```typescript {18-23}
+import { AgentBase, FunctionResult } from '@signalwire/sdk';
+
+const agent = new AgentBase({ name: 'recording-agent', route: '/agent' });
+agent.addLanguage({ name: 'English', code: 'en-US', voice: 'rime.spore' });
+
+agent.promptAddSection('Recording policy', {
+  body:
+    "Say 'This call may be recorded for quality purposes.' and ask the caller "
+    + 'whether they agree. Call start_recording only after they say yes. '
+    + 'If they decline, continue the call without recording.',
+});
+
+agent.defineTool({
+  name: 'start_recording',
+  description: 'Start recording the call once the caller agrees',
+  parameters: { type: 'object', properties: {} },
+  handler: () =>
+    new FunctionResult('Recording has started.').recordCall({
+      controlId: 'main',
+      stereo: true,
+      format: 'mp3',
+      statusUrl: 'https://example.com/recording-status',
+    }),
+});
+
+agent.defineTool({
+  name: 'stop_recording',
+  description: 'Stop recording the call',
+  parameters: { type: 'object', properties: {} },
+  handler: () => new FunctionResult('Recording has stopped.').stopRecordCall('main'),
+});
+
+await agent.run();
+```
+</CodeBlock>
+</CodeBlocks>
+
+Call the agent and ask it to start recording. The recording appears under **Storage** > **Recordings**
+in your Space within a few seconds of the call ending, and your `status_url` receives a `finished`
+event carrying the file URL. If no recording appears, check that the handler returned the
+`FunctionResult` rather than a plain string — only a returned `FunctionResult` carries the action back
+to the call.
+
+<Note title="Leave the timeouts unset for a full call recording">
+`initial_timeout` and `end_silence_timeout` stop a recording on silence, which is what a voicemail
+wants and what a call recording does not. Omit both for continuous recording, and end it with
+`stop_record_call` or by letting the call hang up. For voicemail, set them — `initial_timeout=10.0`
+and `end_silence_timeout=3.0` is a reasonable starting pair.
+</Note>
+
+#### Recording from a call handler
+
+Outside the AI agent, a Relay call handler records with [`call.record()`][relay-record], which returns
+a [`RecordAction`][record-action]. The action handle is the difference that matters: `wait()` blocks
+until the recording reaches a terminal state and hands you the file's `url`, `duration`, and `size`,
+so a voicemail flow needs no callback at all.
+
+<CodeBlocks>
+<CodeBlock title="Python">
+```python {15-16}
+from signalwire.relay import RelayClient
+
+client = RelayClient(
+    project="your-project-id",
+    token="your-api-token",
+    host="your-space.signalwire.com",
+    contexts=["default"],
+)
+
+@client.on_call
+async def handle_call(call):
+    await call.answer()
+    await call.play([{"type": "tts", "params": {"text": "Leave a message after the beep."}}])
+
+    action = await call.record(audio={"beep": True, "end_silence_timeout": 3, "terminators": "#"})
+    event = await action.wait()
+
+    print(f"Recording saved: {event.params.get('record', {}).get('url', '')}")
+    await call.hangup()
+
+client.run()
+```
+</CodeBlock>
+<CodeBlock title="TypeScript">
+```typescript {13-14}
+import { RelayClient } from '@signalwire/sdk';
+
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_API_TOKEN!,
+  contexts: ['default'],
+});
+
+client.onCall(async (call) => {
+  await call.answer();
+  await call.play([{ type: 'tts', text: 'Leave a message after the beep.' }]);
+
+  const action = await call.record({ beep: true, end_silence_timeout: 3, terminators: '#' });
+  const event = await action.wait();
+
+  console.log(`Recording saved: ${event.params.record?.url ?? ''}`);
+  await call.hangup();
+});
+
+await client.run();
+```
+</CodeBlock>
+</CodeBlocks>
+
+`RecordAction` also carries `stop()`, `pause()`, and `resume()` — see
+[Pause and resume](#pause-and-resume).
 
 ### Call Flow Builder
 
@@ -297,7 +479,8 @@ Format here offers wav and mp3 only, where SWML also takes mp4.
 ## Recording options
 
 The recording options below apply to `record` and `record_call`, and the Server SDKs expose the same set under their
-own naming. 
+own naming — snake_case in Python, camelCase in TypeScript. The one difference is `format`: the Server SDKs accept
+`wav` and `mp3` only. 
 
 The defaults are different between the two SWML methods as they represent different use cases.
 
@@ -313,6 +496,14 @@ The defaults are different between the two SWML methods as they represent differ
 | `end_silence_timeout` | `5.0` | `0` | Seconds of silence that end the recording |
 | `max_length` | none | none | Hard cap on recording length |
 | `status_url` | none | none | Where record status events are delivered |
+
+### Choosing a format
+
+`wav` is uncompressed, so the file is large but lossless, and generally easier to process. Use it when the recording feeds
+speech analytics or transcription, or when you may need to reprocess it years later. `mp3` is
+compressed and roughly a tenth the size, at quality that is more than enough for human review and for
+most transcription services. `mp4` carries a video track alongside the audio, so it is the format to
+pick when you are recording a video call rather than a voice call.
 
 ### Which side of the call you capture
 
@@ -342,6 +533,20 @@ A recording ends in one of four ways:
 defaults to no terminators at all. The option exists, but setting it is a deliberate choice: it lets
 the caller stop recording mid-call. Leave it unset to ensure recordings won't end abruptly from an
 accidental key press.
+
+### Pause and resume
+
+Stopping a recording finalizes the file. To leave a gap in the middle of one recording — while the
+caller reads out a card number, for example — pause it instead:
+
+| Where you are | How to pause and resume |
+|---|---|
+| A Relay call handler | `pause()` and `resume()` on the [`RecordAction`][record-action] returned by `call.record()` |
+| Any active call, from your own backend | The `calling.record.pause` and `calling.record.resume` [call commands][call-commands], targeting the recording's `control_id` |
+| The Compatibility API | [Update a recording][compat-update] |
+
+SWML and the AI agent's `FunctionResult` have no pause. Calling `stop_record_call` and then
+`record_call` again produces two separate recordings rather than one file with a gap.
 
 ### Playing a beep
 
@@ -399,6 +604,20 @@ payload is documented under
 
 <Markdown src="/snippets/common/_status-callback-advisory.mdx" />
 
+## Storage and retention
+
+Recordings accumulate. A ten-minute mono MP3 runs about 2 to 3 MB, so a business handling a thousand
+calls a day generates somewhere between 60 and 90 GB a month. Stereo roughly doubles that, and WAV
+multiplies it by about ten.
+
+How long you keep them is usually decided for you: financial services commonly retain call recordings
+for five to seven years, HIPAA-covered healthcare for six, and general business for one to two.
+Training and QA libraries are the exception — keep what is useful and delete the rest.
+
+Build the cleanup into your application rather than leaving it to someone's calendar. List recordings
+with [List call recordings][rest-list], filter by age, and remove them with
+[Delete a call recording][rest-delete].
+
 ## Secure the media
 
 <Warning title="Recording URLs are public by default">
@@ -430,11 +649,43 @@ Turning media protection on might break systems for existing customers who are u
 
 ## Recording and the law
 
-Consent requirements vary by jurisdiction, and some require every party to consent before a call is
-recorded. `beep` and a spoken disclosure are the usual ways to meet that. Regulated workloads carry
-their own requirements — see [Compliance][compliance].
+Consent requirements vary by jurisdiction. Under one-party consent, which covers most US states, only
+one party to the call needs to know it is being recorded, and an automated agent can be that party.
+Under all-party consent — California and much of Europe, among others — everyone has to agree first,
+which means telling the caller, asking, and continuing without a recording if they decline. `beep` and
+a spoken disclosure are the usual ways to meet either standard, and informing callers everywhere is
+the simpler policy to operate.
+
+Some material should not land in a recording at all: card numbers under PCI DSS, government
+identifiers, passwords and PINs, and medical detail outside a healthcare context. Pause the recording
+around those exchanges rather than capturing and redacting later — see
+[Pause and resume](#pause-and-resume). Regulated workloads carry their own requirements — see
+[Compliance][compliance].
 
 This is not legal advice. Confirm what applies to you before recording production calls.
+
+## Alternatives to recording
+
+Audio recordings take up a lot of space, and time to parse and process. They also come with heavier legal compliance requirements.
+Audio might not always be the best format to keep call history in. SignalWire offers transcription and AI summarization features 
+which are far easier to store, process and search.
+
+| If you need | Use | What you get |
+|---|---|---|
+| The summary of the call | An AI agent's post-prompt summary | Structured text at your `post_prompt_url` after the call, from the [`ai`][ai-method] method's `post_prompt` |
+| The full text of the call | [`transcribe`][transcribe] | The whole call transcribed in the background, delivered when the call ends |
+| Text while the call is still running | [`live_transcribe`][live-transcribe] | Transcription posted to your webhook as the call happens |
+| Advice for a human agent mid-call | [`ai_sidecar`][ai-sidecar] | An AI observer on a human-to-human call, streaming events to your application without speaking |
+
+The post-prompt summary is the most versatile of the bunch, as it will deliver the exact information you require
+in the format you specify. For example, if you're calling to get answers to certain survey questions, only the answers 
+to those questions can be kept.
+For more information, consult the [conversation analytics][ai-analytics] guide
+covers what it can report and how to read it, and the [AI post-prompt callback][post-prompt-webhook]
+for a reference.
+
+These are not exclusive with recording. A call can be recorded and transcribed, and an AI call can
+produce a summary and a recording. 
 
 ## Already using the Compatibility API
 
@@ -445,10 +696,6 @@ This is not legal advice. Confirm what applies to you before recording productio
 | Find and manage the resulting media | [List][compat-list], [Retrieve][compat-retrieve], [Delete][compat-delete] |
 | The recording status callback payload | [Recording status callback][recording-status-callback] |
 
-Two capabilities exist only here: pausing and resuming a recording that is already running, and
-`recordingStorageUrl` on `<Dial>`, which sends media to your own destination instead of SignalWire
-storage.
-
 ## Next steps
 
 <CardGroup cols={2}>
@@ -457,8 +704,8 @@ storage.
   Every parameter for background recording in SWML, and the variables it sets.
 </Card>
 
-<Card title="Call recording in the Server SDKs" href="/docs/server-sdks/guides/call-recording" icon="regular code">
-  Recording from an AI agent or a call handler, in Python and TypeScript.
+<Card title="record_call in the Server SDKs" href="/docs/server-sdks/reference/python/agents/function-result/record-call" icon="regular code">
+  Every parameter the AI agent's `FunctionResult` accepts, with Python and TypeScript examples.
 </Card>
 
 <Card title="Recordings API" href="/docs/apis/rest/recordings/list-call-recordings" icon="regular rectangle-api">
