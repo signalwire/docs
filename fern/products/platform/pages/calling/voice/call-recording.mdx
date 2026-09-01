@@ -17,11 +17,16 @@ max-toc-depth: 3
 [sdk-quickstart]: /docs/server-sdks/guides/quickstart
 [phone-numbers]: /docs/platform/phone-numbers
 [call-commands]: /docs/apis/rest/calls/call-commands
+[paging]: /docs/apis/paging
 [sdk-install]: /docs/server-sdks/guides/installation
-[fr-record-call]: /docs/server-sdks/reference/python/agents/function-result/record-call
-[fr-stop-record-call]: /docs/server-sdks/reference/python/agents/function-result/stop-record-call
-[relay-record]: /docs/server-sdks/reference/python/relay/call/record
-[record-action]: /docs/server-sdks/reference/python/relay/actions/record-action
+[py-record-call]: /docs/server-sdks/reference/python/agents/function-result/record-call
+[py-stop-record-call]: /docs/server-sdks/reference/python/agents/function-result/stop-record-call
+[py-relay-record]: /docs/server-sdks/reference/python/relay/call/record
+[py-record-action]: /docs/server-sdks/reference/python/relay/actions/record-action
+[ts-record-call]: /docs/server-sdks/reference/typescript/agents/function-result/record-call
+[ts-stop-record-call]: /docs/server-sdks/reference/typescript/agents/function-result/stop-record-call
+[ts-relay-record]: /docs/server-sdks/reference/typescript/relay/call/record
+[ts-record-action]: /docs/server-sdks/reference/typescript/relay/actions/record-action
 [cxml-record]: /docs/compatibility-api/cxml/reference/voice/record
 [cxml-dial]: /docs/compatibility-api/cxml/reference/voice/dial
 [cxml-conference]: /docs/compatibility-api/cxml/reference/voice/conference
@@ -197,7 +202,7 @@ is `#`, so the user can press that key to stop the recording.
 
 #### Recording a conference
 
-A conference is recorded by the conference itself, not by a separate method. Set the attribute `record` on
+Set the attribute `record` on
 [`join_conference`][join-conference] to `record-from-start` to record the conference.
 <CodeBlocks>
 <CodeBlock title="YAML">
@@ -233,10 +238,10 @@ sections:
 </CodeBlock>
 </CodeBlocks>
 
-A conference names its callback settings differently from `record_call` —
+A conference status callbacks are named: 
 `recording_status_callback`, `recording_status_callback_method`,
-`recording_status_callback_event`, and `recording_status_callback_event_type` — but it is the same
-callback. See [Status callback when a recording is ready](#status-callback-when-a-recording-is-ready).
+`recording_status_callback_event`, and `recording_status_callback_event_type`.
+See [Status callback when a recording is ready](#status-callback-when-a-recording-is-ready).
 
 ### Server SDKs
 
@@ -244,8 +249,7 @@ The Server SDKs emit the SWML above, so every option and default described on th
 Only the naming changes, and there are two entry points depending on how your application handles the
 call.
 
-Install the SDK first — see [Installation][sdk-install] for version requirements and the ESM note for
-TypeScript.
+[Install the SDK][sdk-install] on your codebase as follows:
 
 <CodeBlocks>
 <CodeBlock title="Python">
@@ -262,22 +266,15 @@ npm install @signalwire/sdk
 
 | What you want | Python | TypeScript |
 |---|---|---|
-| Start a background recording from an AI tool | [`record_call()`][fr-record-call] | `recordCall()` |
-| Stop it | [`stop_record_call()`][fr-stop-record-call] | `stopRecordCall()` |
-| Record from a call handler and wait for the file | [`call.record()`][relay-record] | `call.record()` |
-
-<Note title="The SDKs record to wav or mp3 only">
-`mp4` is available in SWML and the Compatibility API, not in the Server SDKs. Python raises
-`ValueError` if `format` is anything other than `"wav"` or `"mp3"`, or if `direction` is anything
-other than `"speak"`, `"listen"`, or `"both"`.
-</Note>
+| Start a background recording from an AI tool | [`record_call()`][py-record-call] | [`recordCall()`][ts-record-call] |
+| Stop it | [`stop_record_call()`][py-stop-record-call] | [`stopRecordCall()`][ts-stop-record-call] |
+| Record from a call handler and wait for the file | [`call.record()`][py-relay-record] | [`call.record()`][ts-relay-record] |
 
 #### Recording from an AI agent
 
 An AI agent starts a recording from inside a tool handler, by chaining `record_call` onto the
-`FunctionResult` the handler returns. Because the model decides when to call the tool, this is how you
-record only after the caller has agreed: the prompt tells the agent to ask, and the tool fires on a
-yes.
+`FunctionResult` the handler returns. The model decides when to call the tool, so this can be used to 
+only record if the caller has agreed.
 
 <CodeBlocks>
 <CodeBlock title="Python">
@@ -353,25 +350,15 @@ await agent.run();
 </CodeBlock>
 </CodeBlocks>
 
-Call the agent and ask it to start recording. The recording appears under **Storage** > **Recordings**
-in your Space within a few seconds of the call ending, and your `status_url` receives a `finished`
-event carrying the file URL. If no recording appears, check that the handler returned the
-`FunctionResult` rather than a plain string — only a returned `FunctionResult` carries the action back
-to the call.
 
-<Note title="Leave the timeouts unset for a full call recording">
-`initial_timeout` and `end_silence_timeout` stop a recording on silence, which is what a voicemail
-wants and what a call recording does not. Omit both for continuous recording, and end it with
-`stop_record_call` or by letting the call hang up. For voicemail, set them — `initial_timeout=10.0`
-and `end_silence_timeout=3.0` is a reasonable starting pair.
-</Note>
 
 #### Recording from a call handler
 
-Outside the AI agent, a Relay call handler records with [`call.record()`][relay-record], which returns
-a [`RecordAction`][record-action]. The action handle is the difference that matters: `wait()` blocks
-until the recording reaches a terminal state and hands you the file's `url`, `duration`, and `size`,
-so a voicemail flow needs no callback at all.
+Outside the AI agent, a Relay call handler records with `call.record()`
+([Python][py-relay-record], [TypeScript][ts-relay-record]), which returns a `RecordAction`
+([Python][py-record-action], [TypeScript][ts-record-action]). The action handle is the difference
+that matters: `wait()` blocks until the recording reaches a terminal state and hands you the file's
+`url`, `duration`, and `size`, so a voicemail flow needs no callback at all.
 
 <CodeBlocks>
 <CodeBlock title="Python">
@@ -536,12 +523,13 @@ accidental key press.
 
 ### Pause and resume
 
-Stopping a recording finalizes the file. To leave a gap in the middle of one recording — while the
-caller reads out a card number, for example — pause it instead:
+You can pause and resume call recordings without stopping it entirely using either Relay commands or
+a REST API invocation of the calling commands.
+This can be used to not record sensitive information like card details.
 
 | Where you are | How to pause and resume |
 |---|---|
-| A Relay call handler | `pause()` and `resume()` on the [`RecordAction`][record-action] returned by `call.record()` |
+| A Relay call handler | `pause()` and `resume()` on the `RecordAction` returned by `call.record()` ([Python][py-record-action], [TypeScript][ts-record-action]) |
 | Any active call, from your own backend | The `calling.record.pause` and `calling.record.resume` [call commands][call-commands], targeting the recording's `control_id` |
 | The Compatibility API | [Update a recording][compat-update] |
 
@@ -564,6 +552,23 @@ Based on how you created the recording, there are two places it can be stored:
 | The Compatibility API | `/Accounts/{AccountSid}/Recordings` | See [Already using the Compatibility API](#already-using-the-compatibility-api) |
 
 <EndpointRequestSnippet endpoint="GET /api/relay/rest/recordings" />
+
+A page of results comes back as a `data` array of recordings alongside a `links` object:
+
+<EndpointResponseSnippet endpoint="GET /api/relay/rest/recordings" />
+
+Each record lists what you need to fetch and account for the file without a second call: `url` for
+the media, `duration_in_seconds` and `byte_size` for the file itself, `stereo` and `track` for how it
+was captured, and `price` with `price_unit` for what it cost. `status` tells you whether the file is
+ready. A recording that failed carries an `error_code` instead of usable media.
+
+The rest of the object identifies where the recording came from. Every entry has a `project_id` and
+timestamps, plus exactly one source reference — `relay_pstn_leg_id`, `relay_sip_leg_id`, or
+`relay_webrtc_leg_id` for a call leg, and `relay_conference_id` for a conference. A leg that was part
+of a conference carries both.
+
+The full field list is on [List call recordings][rest-list]. The `links` object beside `data` is how
+you reach the pages after the first — see [Paging][paging].
 
 ### View recordings from your dashboard
 
@@ -705,7 +710,7 @@ produce a summary and a recording.
 </Card>
 
 <Card title="record_call in the Server SDKs" href="/docs/server-sdks/reference/python/agents/function-result/record-call" icon="regular code">
-  Every parameter the AI agent's `FunctionResult` accepts, with Python and TypeScript examples.
+  Every parameter the AI agent's `FunctionResult` accepts. TypeScript has its own [recordCall reference](/docs/server-sdks/reference/typescript/agents/function-result/record-call).
 </Card>
 
 <Card title="Recordings API" href="/docs/apis/rest/recordings/list-call-recordings" icon="regular rectangle-api">
