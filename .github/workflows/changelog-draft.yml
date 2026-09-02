@@ -1,0 +1,343 @@
+name: changelog-draft
+
+# Opens the weekly docs changelog PR. Merging that PR is the single human gate:
+# it publishes the public changelog AND enables the Slack digest (see
+# changelog-publish.yml). Nothing reaches anyone's notifications unreviewed.
+#
+# The step list below is FINAL. Exactly one thing differs between phase 1 and
+# phase 2 — who writes classified.json — and everything on either side of that
+# (collect, render, validate, commit, PR) runs here in both phases.
+#
+# PHASE 1 (current): a human classifies. Dispatch this workflow; it collects and
+# opens a draft PR. Then run `yarn changelog:prompt`, paste the prompt into Claude
+# Code, and commit classified.json to the branch. That push re-enters this same
+# workflow, which renders, validates, and pushes the artifacts back to the PR.
+#
+# PHASE 2 (when GEMINI_API_KEY exists): uncomment the "Classify with Gemini" step
+# and the `schedule:` trigger below. classified.json then exists on the first pass,
+# so the draft PR opens complete and the push trigger simply never fires.
+
+on:
+  # PHASE 2: uncomment to run automatically every Monday at 09:00 UTC.
+  # schedule:
+  #   - cron: '0 9 * * 1'
+  workflow_dispatch:
+    inputs:
+      since:
+        description: 'Window start YYYY-MM-DD (default: date of newest published entry)'
+        required: false
+        default: ''
+      until:
+        description: 'Window end YYYY-MM-DD (default: today)'
+        required: false
+        default: ''
+      open_pr:
+        description: 'Open a PR with the result'
+        required: false
+        type: boolean
+        default: true
+  # A human committing classified.json to a draft branch re-enters this workflow at
+  # the render step. Safe from self-triggering twice over: the render commit touches
+  # entry files, the digest, the manifest, and the ledger but never classified.json,
+  # and a push made with GITHUB_TOKEN does not start a workflow run at all.
+  push:
+    branches:
+      - 'action-*-changelog'
+    paths:
+      - '.github/changelog-state/batches/*/classified.json'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  draft:
+    name: Draft changelog
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          # Full history so collect.js can read page frontmatter at merge commits.
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      # Two open draft PRs would each classify the same PRs, because neither has
+      # merged the ledger that would exclude them. Bail rather than double-report.
+      # Skipped on push: that run is finishing the batch whose branch it is on.
+      - name: Check for an open changelog PR
+        id: existing
+        if: github.event_name != 'push'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PREFIX=$(node -e "import('./scripts/changelog/config.js').then(m => console.log(m.DRAFT_BRANCH_PREFIX))")
+          OPEN=$(gh pr list --state open --search "head:${PREFIX} in:title changelog" \
+            --json number,url --jq '.[0].url // empty')
+          if [ -n "$OPEN" ]; then
+            echo "::warning::A changelog PR is already open: ${OPEN}. Merge or close it first."
+            echo "### Skipped: changelog PR already open" >> $GITHUB_STEP_SUMMARY
+            echo "${OPEN}" >> $GITHUB_STEP_SUMMARY
+            echo "blocked=true" >> $GITHUB_OUTPUT
+          else
+            echo "blocked=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Collect merged PRs
+        if: github.event_name != 'push' && steps.existing.outputs.blocked == 'false'
+        id: collect
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Through env, never interpolated into the script body: a dispatch input
+          # spliced straight into `run:` is a shell injection.
+          SINCE: ${{ inputs.since }}
+          UNTIL: ${{ inputs.until }}
+        run: |
+          for value in "$SINCE" "$UNTIL"; do
+            case "$value" in
+              ''|[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]) ;;
+              *) echo "::error::Dates must be YYYY-MM-DD (got '${value}')"; exit 1 ;;
+            esac
+          done
+
+          ARGS=""
+          if [ -n "$SINCE" ]; then ARGS="$ARGS --since $SINCE"; fi
+          if [ -n "$UNTIL" ]; then ARGS="$ARGS --until $UNTIL"; fi
+
+          # collect.js writes `date`, `since`, `until`, and `empty` to $GITHUB_OUTPUT
+          # itself. Don't infer the date by listing the work directory: a backfill
+          # writes an older folder than ones already committed, so newest-wins picks
+          # wrong. `since` in particular is usually derived from the ledger, so it is
+          # not recoverable from the inputs above.
+          node scripts/changelog/collect.js $ARGS
+
+      # ------------------------------------------------------------------
+      # PHASE 2 — automated classification.
+      #
+      # Uncomment this step once GEMINI_API_KEY is added to repository secrets.
+      # It replaces the human paste step: it sends the SAME prompt text that
+      # collect.js wrote to prompt.md, and writes classified.json in the same
+      # shape render.js already validates. Follows the cloud-product pattern
+      # (see .github/workflows/daily-engineering-summary.yml there).
+      #
+      # - name: Classify with Gemini
+      #   if: steps.collect.outputs.empty == 'false'
+      #   uses: actions/github-script@v8
+      #   env:
+      #     GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      #     WORK_DATE: ${{ steps.collect.outputs.date }}
+      #   with:
+      #     script: |
+      #       const fs = require('fs');
+      #       const buildPrompt = require('./.github/scripts/changelog-prompt.cjs');
+      #
+      #       const dir = `.github/changelog-state/batches/${process.env.WORK_DATE}`;
+      #       const input = JSON.parse(fs.readFileSync(`${dir}/input.json`, 'utf8'));
+      #       const prompt = buildPrompt(input.prs, input.window);
+      #
+      #       const response = await fetch(
+      #         `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      #         {
+      #           method: 'POST',
+      #           headers: { 'Content-Type': 'application/json' },
+      #           body: JSON.stringify({
+      #             contents: [{ parts: [{ text: prompt }] }],
+      #             generationConfig: { responseMimeType: 'application/json' },
+      #           }),
+      #         }
+      #       );
+      #       if (!response.ok) {
+      #         core.setFailed(`Gemini returned ${response.status}: ${await response.text()}`);
+      #         return;
+      #       }
+      #       const data = await response.json();
+      #       const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      #       if (!text) {
+      #         core.setFailed('Gemini returned no text part');
+      #         return;
+      #       }
+      #       // render.js validates this strictly, so a malformed reply fails loudly
+      #       // in the next step rather than producing a bad changelog.
+      #       fs.writeFileSync(`${dir}/classified.json`, text);
+      # ------------------------------------------------------------------
+
+      # Which batch, if any, is ready to render. Phase 1's first pass has no
+      # classified.json yet and falls through; the human's push supplies it and
+      # lands here. Phase 2 writes it above and renders on the first pass.
+      - name: Resolve the batch to render
+        id: target
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            # github.event.before is all zeros on a branch's first push.
+            case "${{ github.event.before }}" in
+              ''|0000000000000000000000000000000000000000) BASE="${{ github.sha }}^" ;;
+              *) BASE="${{ github.event.before }}" ;;
+            esac
+            DATE=$(git diff --name-only "$BASE" "${{ github.sha }}" \
+              -- '.github/changelog-state/batches/*/classified.json' \
+              | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}' | sort -u | tail -1)
+          else
+            DATE="${{ steps.collect.outputs.date }}"
+          fi
+
+          if [ -n "$DATE" ] && [ -f ".github/changelog-state/batches/${DATE}/classified.json" ]; then
+            echo "Rendering batch ${DATE}"
+            echo "date=${DATE}" >> $GITHUB_OUTPUT
+          else
+            echo "::notice::No classified batch to render yet"
+            echo "date=" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Render artifacts
+        if: steps.target.outputs.date != ''
+        run: node scripts/changelog/render.js --date ${{ steps.target.outputs.date }}
+
+      - name: Validate rendered MDX
+        if: steps.target.outputs.date != ''
+        run: yarn fern-md-check
+
+      # Phase 1 only: the dispatch path commits inside "Open draft PR" below, but a
+      # push-triggered run is already on the branch and just needs its artifacts back.
+      - name: Push rendered artifacts
+        if: github.event_name == 'push' && steps.target.outputs.date != ''
+        env:
+          CHANGELOG_DATE: ${{ steps.target.outputs.date }}
+        run: |
+          CHANGELOG_DIR=$(node -e "import('./scripts/changelog/config.js').then(m => console.log(m.CHANGELOG_DIR_REL))")
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .github/changelog-state "$CHANGELOG_DIR"
+
+          if git diff --cached --quiet; then
+            echo "Nothing to commit; the batch is already rendered."
+            exit 0
+          fi
+
+          git commit -m "chore(changelog): render ${CHANGELOG_DATE}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+
+      - name: Open draft PR
+        if: github.event_name != 'push' && steps.existing.outputs.blocked == 'false' && steps.collect.outputs.empty == 'false' && inputs.open_pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DATE: ${{ steps.collect.outputs.date }}
+          SINCE: ${{ steps.collect.outputs.since }}
+          UNTIL: ${{ steps.collect.outputs.until }}
+        run: |
+          # Branch name and changelog location are defined once, in the pipeline config.
+          BRANCH=$(node -e "import('./scripts/changelog/config.js').then(m => console.log(m.draftBranch(process.env.DATE)))")
+          CHANGELOG_DIR=$(node -e "import('./scripts/changelog/config.js').then(m => console.log(m.CHANGELOG_DIR_REL))")
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+
+          git add .github/changelog-state "$CHANGELOG_DIR"
+
+          # Open a PR whenever anything staged changed — including a batch that
+          # produced no entries at all. That PR carries only the ledger update, which
+          # still has to merge, or those PRs get reclassified every run.
+          if git diff --cached --quiet; then
+            echo "Nothing to commit; no PR needed."
+            exit 0
+          fi
+
+          git commit -m "chore(changelog): docs changelog for ${DATE}"
+          git push origin "$BRANCH"
+
+          # PHASE 1 instructions. Once Gemini classification is enabled, replace
+          # steps 1-3 below with "review the rendered entries".
+          #
+          # The indentation below is the YAML block scalar's, and YAML strips it —
+          # the body reaches gh starting at column 0. Do NOT add indentation
+          # relative to this block: four extra spaces make markdown render the
+          # whole body as a code block.
+          PR_BODY="## Docs changelog draft — ${DATE}
+
+          Generated by \`changelog-draft.yml\`. **Merging this PR publishes the public
+          changelog.** The Slack digests are currently sent by manually running
+          \`changelog-publish.yml\`, so review is still the gate.
+
+          ### Phase 1: classify
+
+          Classification is not yet automated. To finish this draft:
+
+          Two steps. Everything else already ran, or runs automatically once you push.
+
+          1. Check out this branch and run \`yarn changelog:prompt --date ${DATE}\`. The
+             prompt is rebuilt from the committed \`input.json\` rather than committed
+             itself — it is the same PR data a second time, at ~80KB a week.
+          2. Paste it into Claude Code and commit the JSON reply to this branch as
+             \`.github/changelog-state/batches/${DATE}/classified.json\`.
+
+          That push re-runs \`changelog-draft\`, which renders the entries, validates them
+          with \`fern-md-check\`, and pushes the results back here. Then review below.
+
+          Once \`GEMINI_API_KEY\` is in place, both steps disappear and this PR opens with
+          the entries already rendered.
+
+          ### What to review
+
+          The entry files are the public changelog; the digest is the internal one. Both
+          are the single source of truth — the Slack payload is rendered from them at
+          publish time, so editing here changes what everyone sees. Entry files are named
+          for the date each PR merged, so a batch usually touches several.
+
+          - \`${CHANGELOG_DIR}/<merge-date>.mdx\` — **public, customer-facing.**
+            One \`##\` per change; each renders as its own card on the timeline.
+          - \`.github/changelog-state/batches/${DATE}/digest.md\` — the internal digest,
+            posted to Slack. Includes corrections, moved pages, and filled gaps that stay
+            off the public changelog.
+
+          Three edit levers:
+
+          - **Delete** a \`##\` section from an entry file to demote it. It stays in the
+            internal digest and drops off the public changelog — that is the whole
+            demotion. You do not need to touch the digest; the Slack post labels each
+            item by what actually shipped, not by the tier. Deleting is final for this
+            PR: re-running \`changelog:render\` would write the section back, because the
+            tier in \`classified.json\` is unchanged. Retier there first if you need to
+            re-render.
+          - **Delete** the whole entry file if you demote its only section.
+          - **Reword** freely; the prose ships as written.
+
+          PMs hand-author entries for high-profile features. The pipeline does not know
+          about those — a PR that only writes a changelog entry has no docs-relevant
+          files, so it never reaches classification. Check each generated entry against
+          recent hand-authored ones and delete the generated duplicate.
+
+          If a tier looks wrong, fix it here and note it — the rubric in
+          \`.github/scripts/changelog-criteria.cjs\` is meant to be tuned from real misses.
+
+          ### Reproducing this batch
+
+          \`prompt.md\` and \`input.json\` are committed because \`collect\` resolves page
+          titles and URLs at \`HEAD\`, so a later re-run is not byte-identical. If you do
+          need to regenerate them, this is the window that produced them:
+
+          \`\`\`
+          yarn changelog:collect --since ${SINCE} --until ${UNTIL} --date ${DATE}
+          \`\`\`
+
+          ---
+          [View workflow run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+
+          gh pr create \
+            --draft \
+            --title "chore(changelog): docs changelog for ${DATE}" \
+            --body "$PR_BODY" \
+            --base main \
+            --head "$BRANCH"
+
+      - name: Summary
+        if: github.event_name != 'push' && steps.collect.outputs.empty == 'true'
+        run: echo "### No docs changes in this window" >> $GITHUB_STEP_SUMMARY

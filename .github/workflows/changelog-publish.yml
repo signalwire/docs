@@ -1,0 +1,149 @@
+name: changelog-publish
+
+# Posts the internal Slack digest for a batch. **Manual only, for now.**
+#
+# Nothing about merging a changelog PR sends a Slack message: you run this workflow
+# yourself and name the batch. The public changelog is deployed by publish-docs.yml,
+# which already runs on every push to main.
+#
+# The payload is rendered from the MERGED markdown, so whatever a reviewer edited in
+# the PR is what gets posted. There is one payload for every internal channel.
+#
+# TO AUTOMATE LATER: replace `workflow_dispatch` with the push trigger below, and
+# restore the added-files guard in the "Find newly added batches" step. Both are kept
+# verbatim because they solve a real problem that should not have to be rediscovered —
+# the guard posts only for a batch manifest ADDED by the push, so editing an
+# already-published entry cannot re-notify anyone, and it is stateless, so the workflow
+# never re-triggers itself.
+#
+#   on:
+#     push:
+#       branches: [main]
+#       paths:
+#         - '.github/changelog-state/batches/*/manifest.json'
+#
+# Triggering on the manifest rather than the entry files is deliberate: entry files are
+# named for the date their PR merged, so one batch adds several and would fire one post
+# each.
+
+on:
+  workflow_dispatch:
+    inputs:
+      batch_date:
+        description: 'Batch to post, YYYY-MM-DD (the .github/changelog-state/batches/<date> folder)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Post changelog digest
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          # Two commits so the added-files guard can diff once the push trigger is
+          # restored; the manual path does not need it.
+          fetch-depth: 2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Resolve batch
+        id: added
+        env:
+          BATCH_DATE: ${{ inputs.batch_date }}
+        run: |
+          # Validate before the path check, not after: a newline in the input would
+          # otherwise forge arbitrary step outputs through the echo below, and those
+          # outputs are expanded into a shell command in the next step.
+          case "$BATCH_DATE" in
+            [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]) ;;
+            *) echo "::error::batch_date must be YYYY-MM-DD (got '${BATCH_DATE}')"; exit 1 ;;
+          esac
+
+          if [ ! -d ".github/changelog-state/batches/${BATCH_DATE}" ]; then
+            echo "::error::No batch at .github/changelog-state/batches/${BATCH_DATE}"
+            exit 1
+          fi
+          echo "dates=${BATCH_DATE}" >> $GITHUB_OUTPUT
+
+          # WHEN RESTORING THE PUSH TRIGGER, this step becomes the added-files guard:
+          #
+          #   case "$BEFORE" in
+          #     ''|0000000000000000000000000000000000000000) BASE="${{ github.sha }}^" ;;
+          #     *) BASE="$BEFORE" ;;
+          #   esac
+          #   ADDED=$(git diff --name-only --diff-filter=A "$BASE" ${{ github.sha }} \
+          #     -- '.github/changelog-state/batches/*/manifest.json' || true)
+          #   DATES=$(echo "$ADDED" | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}' | sort -u | tr '\n' ' ')
+          #
+          # --diff-filter=A is the load-bearing part: only a NEWLY ADDED manifest posts,
+          # so a later edit to a published entry never re-notifies. github.event.before is
+          # all zeros on a first or force push, hence the fallback to the parent commit.
+
+      - name: Post digest
+        if: steps.added.outputs.dates != ''
+        env:
+          # Already validated as YYYY-MM-DD by the previous step, which fails the job
+          # otherwise. Read through env so nothing user-supplied reaches the script body.
+          BATCH_DATE: ${{ inputs.batch_date }}
+          # TO ADD A CHANNEL: add its webhook secret here and add the variable name to
+          # CHANNELS below. Every channel receives the same payload, so there is nothing
+          # else to change — no new tier, no new artifact, no second render.
+          SLACK_DEVEX_GENERAL: ${{ secrets.SLACK_CHANGELOG_DEVEX_WEBHOOK_URL }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_SHA: ${{ github.sha }}
+        run: |
+          set -u
+
+          CHANNELS="SLACK_DEVEX_GENERAL"
+
+          PAYLOAD="/tmp/changelog-${BATCH_DATE}.json"
+
+          set +e
+          node scripts/changelog/slack-digest.js --date "$BATCH_DATE" --output "$PAYLOAD"
+          STATUS=$?
+          set -e
+
+          # Exit 2 means "nothing to post" — a quiet week, not a failure.
+          if [ "$STATUS" -eq 2 ]; then
+            echo "::notice::Nothing to post for ${BATCH_DATE}"
+            exit 0
+          fi
+          if [ "$STATUS" -ne 0 ]; then
+            echo "::error::Failed to build the payload for ${BATCH_DATE}"
+            exit 1
+          fi
+
+          FAILED=0
+          for NAME in $CHANNELS; do
+            WEBHOOK="${!NAME}"
+
+            if [ -z "$WEBHOOK" ]; then
+              echo "::notice::${NAME} not set, skipping that channel"
+              continue
+            fi
+
+            HTTP=$(curl -sS -o /tmp/slack-response.txt -w '%{http_code}' \
+              -X POST -H 'Content-Type: application/json' \
+              -d @"$PAYLOAD" \
+              "$WEBHOOK")
+
+            if [ "$HTTP" != "200" ]; then
+              echo "::error::Slack returned ${HTTP} for ${NAME}: $(cat /tmp/slack-response.txt)"
+              FAILED=1
+              continue
+            fi
+            echo "Posted the ${BATCH_DATE} digest to ${NAME}"
+          done
+          exit $FAILED

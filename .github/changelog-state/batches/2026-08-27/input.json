@@ -1,0 +1,2394 @@
+{
+  "window": {
+    "since": "2026-08-18",
+    "until": "2026-08-27"
+  },
+  "date": "2026-08-27",
+  "prs": [
+    {
+      "number": 621,
+      "title": "Decouple SWML schemas from REST operation models",
+      "body": "## Summary\n\n- replace direct Calling and Messaging SWML document references in REST operations with open object schemas\n- keep the full Calling and Messaging schemas in OpenAPI as unreferenced components through a service-level `SWMLDocument` union\n- expose a shallow AI Agent model with reusable descriptions and links to the canonical SWML reference\n- add compact manual request and success-response examples wherever REST operations carry AI or SWML data\n- cover AI Agents, Call Flows and versions, SWML Scripts, generic Fabric resources, and inline SWML Call commands\n- include both Calling and Messaging SWML Script variants without expanding the complete SWML or AI graphs\n\n## Validation\n\n- `yarn build:specs`\n- TypeSpec formatting check\n- validated 77 emitted manual media examples against their OpenAPI request or response schemas\n- validated all 26 embedded SWML documents against the emitted Calling or Messaging draft-2020-12 JSON Schema\n- validated shallow AI Agent configurations against the canonical SWML `AIObject` definition\n- confirmed `SWMLDocument`, `SWML.Calling.SWMLObject`, and `SWML.Messaging.SWMLObject` emit under `components.schemas`\n- confirmed none of those schemas are referenced from operations\n- `git diff --check`\n- local `fern check` reached the final FDR redirects comparison; FDR returned 403, so CI will perform that remote check",
+      "author": "Devon-White",
+      "mergedAt": "2026-08-24T21:11:43Z",
+      "mergeCommit": "2df36b6bfaf474ef3884cc7441f67b1939834922",
+      "url": "https://github.com/signalwire/docs/pull/621",
+      "mechanical": false,
+      "selfDocumented": false,
+      "authoredEntries": [],
+      "fileCount": 21,
+      "files": [
+        {
+          "path": "specs/signalwire-rest/calling-api/calls/models/examples.tsp",
+          "status": "modified",
+          "additions": 4,
+          "deletions": 16,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/calling-api/calls/models/requests.tsp",
+          "status": "modified",
+          "additions": 17,
+          "deletions": 9,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/fabric-api/_shared/examples.tsp",
+          "status": "added",
+          "additions": 131,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": "@@ -0,0 +1,131 @@\n+import \"./const.tsp\";\n+import \"./enums.tsp\";\n+\n+const FABRIC_RESOURCE_ID_EXAMPLE = \"993ed018-9e79-4e50-b97b-984bd5534095\";\n+const FABRIC_PROJECT_ID_EXAMPLE = \"1313fe58-5e14-4c11-bbe7-6fdfa11fe780\";\n+const FABRIC_CREATED_AT_EXAMPLE = utcDateTime.fromISO(\"2024-05-06T12:20:00Z\");\n+const FABRIC_UPDATED_AT_EXAMPLE = utcDateTime.fromISO(\"2024-05-06T12:25:00Z\");\n+\n+const AI_AGENT_REQUEST_EXAMPLE = #{\n+  prompt: #{ text: \"You are a helpful customer support assistant.\" },\n+  name: \"Support Assistant\",\n+};\n+\n+const AI_AGENT_EXAMPLE = #{\n+  prompt: #{ text: \"You are a helpful customer support assistant.\" },\n+  agent_id: \"a87db7ed-8ebe-42e4-829f-8ba5a4152f54\",\n+  name: \"Support Assistant\",\n+};\n+\n+const AI_AGENT_RESPONSE_EXAMPLE = #{\n+  id: FABRIC_RESOURCE_ID_EXAMPLE,\n+  project_id: FABRIC_PROJECT_ID_EXAMPLE,\n+  display_name: \"Support Assistant\",\n+  type: FabricResponseType.AiAgent,\n+  created_at: FABRIC_CREATED_AT_EXAMPLE,\n+  updated_at: FABRIC_UPDATED_AT_EXAMPLE,\n+  ai_agent: AI_AGENT_EXAMPLE,\n+};\n+\n+const CALL_FLOW_EXAMPLE = #{\n+  id: FABRIC_RESOURCE_ID_EXAMPLE,\n+  title: \"Welcome Call Flow\",\n+  flow_data: #{},\n+  relayml: SWML_CONTENTS_EXAMPLE,\n+  document_version: 1,\n+};"
+        },
+        {
+          "path": "specs/signalwire-rest/fabric-api/ai-agent/main.tsp",
+          "status": "modified",
+          "additions": 41,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/fabric-api/ai-agent/models/core.tsp",
+          "status": "modified",
+          "additions": 108,
+          "deletions": 8,
+          "url": null,
+          "title": null,
+          "patch": "@@ -1,15 +1,9 @@\n import \"./enums.tsp\";\n-import \"./ai/main.tsp\";\n-\n import \"../../../types\";\n-\n-// Import SWML AI types for reuse\n import \"../../../../swml/calling/Methods/ai/main.tsp\";\n \n using TypeSpec.Http;\n \n-using SWML.Calling;\n-\n model AIAgentPathID {\n   @doc(\"Unique ID of an AI Agent.\")\n   @example(\"3fa85f64-5717-4562-b3fc-2c963f66afa6\")\n@@ -18,8 +12,114 @@ model AIAgentPathID {\n }\n \n @summary(\"AI Agent\")\n-@doc(\"An AI Agent configuration that extends the SWML AI object with additional API-specific properties.\")\n-model AIAgent is AIObject {\n+@doc(\"\"\"\n+  ${SWML.Calling.aiDescription}\n+\n+  See the [SWML `ai` method reference](/docs/swml/reference/calling/ai) for the complete configuration contract.\n+  \"\"\")\n+model AIAgent {\n+  // TODO(https://github.com/signalwire/cloud-product/issues/20538): Re-enable\n+  // when the Fabric AI Agent API persists this SWML property.\n+  /*\n+  @doc(\"\"\"\n+    ${SWML.Calling.aiGlobalDataDescription}\n+\n+    See [`ai.global_data` in the SWML reference](/docs/swml/reference/calling/ai#aiglobal_data).\n+    \"\"\")\n+  @example(#{ company_name: \"Acme Corp\", support_hours: \"9am-5pm EST\" })\n+  global_data?: TypeSpec.Record<unknown>;\n+  */\n+\n+  @doc(\"\"\"\n+    ${SW"
+        },
+        {
+          "path": "specs/signalwire-rest/fabric-api/ai-agent/models/requests.tsp",
+          "status": "modified",
+          "additions": 4,
+          "deletions": 2,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/fabric-api/call-flows/main.tsp",
+          "status": "modified",
+          "additions": 51,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": "@@ -8,6 +8,7 @@ import \"./addresses\";\n import \"./versions\";\n import \"../../types\";\n import \"../tags.tsp\";\n+import \"../_shared/examples.tsp\";\n import \"../../../_shared/alias/token-permissions.tsp\";\n \n using TypeSpec.Http;\n@@ -26,6 +27,18 @@ namespace SignalWireAPI.Fabric.CallFlows {\n       \n       ${tokenPermissions<\"_Voice_, _Messaging_, _Fax_, or _Video_\">}\n       \"\"\")\n+    @opExample(\n+      #{\n+        returnType: #{\n+          links: #{\n+            self: \"https://example.signalwire.com/api/fabric/resources/call_flows?page_number=0&page_size=50\",\n+            first: \"https://example.signalwire.com/api/fabric/resources/call_flows?page_number=0&page_size=50\",\n+          },\n+          data: #[CALL_FLOW_RESPONSE_EXAMPLE],\n+        },\n+      },\n+      #{ title: \"Call flow list\", description: \"A page containing one Call Flow.\" }\n+    )\n     list():\n       | CallFlowListResponse\n       | StatusCode401\n@@ -39,6 +52,10 @@ namespace SignalWireAPI.Fabric.CallFlows {\n       \n       ${tokenPermissions<\"_Voice_, _Messaging_, _Fax_, or _Video_\">}\n       \"\"\")\n+    @opExample(\n+      #{ returnType: #{ statusCode: 200, call_flow: CALL_FLOW_RESPONSE_EXAMPLE } },\n+      #{ title: \"Call flow\", desc"
+        },
+        {
+          "path": "specs/signalwire-rest/fabric-api/call-flows/models/core.tsp",
+          "status": "modified",
+          "additions": 1,
+          "deletions": 3,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/fabric-api/call-flows/models/requests.tsp",
+          "status": "modified",
+          "additions": 2,
+          "deletions": 4,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/fabric-api/call-flows/models/responses.tsp",
+          "status": "modified",
+          "additions": 1,
+          "deletions": 3,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/fabric-api/call-flows/versions/main.tsp",
+          "status": "modified",
+          "additions": 40,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/fabric-api/call-flows/versions/models/responses.tsp",
+          "status": "modified",
+          "additions": 2,
+          "deletions": 4,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/fabric-api/resources/main.tsp",
+          "status": "modified",
+          "additions": 42,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/fabric-api/swml-scripts/main.tsp",
+          "status": "modified",
+          "additions": 116,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": "@@ -7,12 +7,41 @@ import \"./models/errors.tsp\";\n import \"./addresses\";\n import \"../../types\";\n import \"../tags.tsp\";\n+import \"../_shared/examples.tsp\";\n import \"../../../_shared/alias/token-permissions.tsp\";\n \n using TypeSpec.Http;\n using TypeSpec.OpenAPI;\n using Types.StatusCodes;\n \n+const CreateCallingSwmlScriptExample = #{\n+  parameters: #{\n+    request: #{\n+      name: \"Welcome Script\",\n+      script_type: \"calling\",\n+      contents: SWML_CONTENTS_EXAMPLE,\n+    }\n+  },\n+  returnType: #{\n+    statusCode: 200,\n+    swml_script: CALLING_SWML_SCRIPT_RESPONSE_EXAMPLE,\n+  },\n+};\n+\n+const CreateMessagingSwmlScriptExample = #{\n+  parameters: #{\n+    request: #{\n+      name: \"Reply Bot\",\n+      script_type: \"messaging\",\n+      contents: SWML_MESSAGING_CONTENTS_EXAMPLE,\n+    }\n+  },\n+  returnType: #{\n+    statusCode: 200,\n+    swml_script: MESSAGING_SWML_SCRIPT_RESPONSE_EXAMPLE,\n+  },\n+};\n+\n @route(\"/resources/swml_scripts\")\n namespace SignalWireAPI.Fabric.SwmlScripts {\n   @tag(SWML_SCRIPTS_TAG)\n@@ -25,6 +54,21 @@ namespace SignalWireAPI.Fabric.SwmlScripts {\n       \n       ${tokenPermissions<\"_Voice_, _Messaging_, _Fax_, or _Video_\">}\n       \"\"\")\n+    @opExample(\n+      #{\n+        retur"
+        },
+        {
+          "path": "specs/signalwire-rest/fabric-api/swml-scripts/models/core.tsp",
+          "status": "modified",
+          "additions": 2,
+          "deletions": 5,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/fabric-api/swml-scripts/models/requests.tsp",
+          "status": "modified",
+          "additions": 4,
+          "deletions": 4,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/main.tsp",
+          "status": "modified",
+          "additions": 1,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/swml-document.tsp",
+          "status": "added",
+          "additions": 14,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/webhooks/calling/main.tsp",
+          "status": "modified",
+          "additions": 0,
+          "deletions": 1,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/signalwire-rest/webhooks/messaging/main.tsp",
+          "status": "modified",
+          "additions": 0,
+          "deletions": 1,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/swml/calling/Methods/ai/main.tsp",
+          "status": "modified",
+          "additions": 56,
+          "deletions": 34,
+          "url": null,
+          "title": null,
+          "patch": "@@ -11,68 +11,90 @@ using TypeSpec.JsonSchema;\n \n namespace SWML.Calling;\n \n+const aiDescription: string = \"\"\"\n+  Creates an AI agent that conducts voice conversations using automatic speech recognition (ASR),\n+  large language models (LLMs), and text-to-speech (TTS) synthesis.\n+  The agent processes caller speech in real-time, generates contextually appropriate responses,\n+  and can execute custom functions to interact with external systems through SignalWire AI Gateway (SWAIG).\n+  \"\"\";\n+\n+const aiGlobalDataDescription: string = \"\"\"\n+  A key-value object for storing data that persists throughout the AI session.\n+  Can be set initially in the SWML script or modified during the conversation using the set_global_data action.\n+  The global_data object is accessible everywhere in the AI session: prompts, AI parameters,\n+  and SWML returned from SWAIG functions. Access properties using template strings (e.g. \\${global_data.property_name}).\n+  \"\"\";\n+\n+const aiHintsDescription: string = \"Hints help the AI agent understand certain words or phrases better. Words that can commonly be misinterpreted can be added to the hints to help the AI speak more accurately.\";\n+\n+const aiLanguagesDescript"
+        }
+      ]
+    },
+    {
+      "number": 616,
+      "title": "Fix a few stray voice ids missing engine declaration",
+      "body": "## Description\n\nI did another sweep and caught a few additional voice IDs that were listed without a declared engine.\n\n## Type of Change\n\n- [ ] Bug fix\n- [ ] New feature\n- [ ] Breaking change\n- [x] Documentation update\n- [ ] Code cleanup / refactor\n\n## Related Issues\n\nAdds to: #578 \nFinishes: #577\n",
+      "author": "hey-august",
+      "mergedAt": "2026-08-19T19:14:01Z",
+      "mergeCommit": "9045d2de2a296995707cf25dcdb1832a27841294",
+      "url": "https://github.com/signalwire/docs/pull/616",
+      "mechanical": false,
+      "selfDocumented": false,
+      "authoredEntries": [],
+      "fileCount": 1,
+      "files": [
+        {
+          "path": "fern/products/platform/pages/calling/voice/TTS/google.mdx",
+          "status": "modified",
+          "additions": 4,
+          "deletions": 4,
+          "url": "/docs/platform/voice/tts/gcloud",
+          "title": "Google Cloud",
+          "patch": "@@ -115,11 +115,11 @@ can change.\n \n Unlike the other supported engines, Google Cloud voice identifier strings include both voice and language keys,\n following the pattern `<language>-<model>-<variant>`.\n-For example:\n+Prefixed with the engine, complete voice strings look like this:\n \n-- English (UK) WaveNet female voice: `en-GB-Wavenet-A`\n-- Spanish (Spain) Neural2 male voice: `es-ES-Neural2-B`\n-- Mandarin Chinese Standard female voice: `cmn-CN-Standard-D`\n+- English (UK) WaveNet female voice: `gcloud.en-GB-Wavenet-A`\n+- Spanish (Spain) Neural2 male voice: `gcloud.es-ES-Neural2-B`\n+- Mandarin Chinese Standard female voice: `gcloud.cmn-CN-Standard-D`\n \n ---\n "
+        }
+      ]
+    },
+    {
+      "number": 614,
+      "title": "docs: add LLM equivalents for Call Flow screenshots",
+      "body": "## Summary\n\n- hide Call Flow Builder canvas screenshots from Markdown exports\n- preserve node topology, output-connector routing, variables, and configuration as text\n- cover procedural builder screenshots and provider-specific TTS selections\n- add local/manual deployed-preview assertions for all 22 affected routes and complex branch behavior; the checker is intentionally not wired into CI\n\n## Scope\n\nThis is PR 5 in the stacked implementation for #388 and depends on #613.\n\n## Validation\n\n- yarn test:scripts\n- yarn fern-md-check\n- git diff --check\n- yarn check-llm-exports <preview-url> passed for all 122 manifest routes\n- source audit confirms every rendered Call Flow image is inside llms-ignore\n\nRefs #388",
+      "author": "Devon-White",
+      "mergedAt": "2026-08-21T21:04:15Z",
+      "mergeCommit": "668371b217817d9037657f5079d2345945ad9331",
+      "url": "https://github.com/signalwire/docs/pull/614",
+      "mechanical": false,
+      "selfDocumented": false,
+      "authoredEntries": [],
+      "fileCount": 22,
+      "files": [
+        {
+          "path": "fern/products/call-flow-builder/pages/core/overview.mdx",
+          "status": "modified",
+          "additions": 34,
+          "deletions": 0,
+          "url": "/docs/call-flow-builder/",
+          "title": "Call Flow Builder",
+          "patch": "@@ -27,6 +27,12 @@ You can easily add, remove, and rearrange elements in the call flow using the vi\n \n </llms-ignore>\n \n+<llms-only>\n+\n+Sample topology: **Handle Call** → **Answer Call** → **Gather Input**. Pressing `1` plays a busy message and records voicemail; pressing `2` connects to AI Agent `Ally`; **Unknown** and **No Input** route to another voicemail recording. Both voicemail paths and the AI Agent end at **Hang Up Call**.\n+\n+</llms-only>\n+\n Add or remove any element from the call flow by dragging it into the desired location,\n and define links between them using the connection lines.\n \n@@ -85,6 +91,11 @@ After creating the call flow, the Call Flow will show up in the list of call flo\n \n </llms-ignore>\n \n+<llms-only>\n+\n+In the Dashboard, open **Tools** > **Call Flow Builder**, select **Add New**, enter a name, and select **Save**.\n+\n+</llms-only>\n \n ---\n \n@@ -101,6 +112,11 @@ From here, click on the `Edit` option to open the Call Flow Builder page.\n \n </llms-ignore>\n \n+<llms-only>\n+\n+On the Call Flow list, open the flow's **More Options** menu and select **Edit**.\n+\n+</llms-only>\n \n #### Add a node\n When you first open a new Call Flow, you will see a canvas with a single n"
+        },
+        {
+          "path": "fern/products/call-flow-builder/pages/core/variables.mdx",
+          "status": "modified",
+          "additions": 20,
+          "deletions": 0,
+          "url": "/docs/call-flow-builder/guides/variables",
+          "title": "Variables",
+          "patch": null
+        },
+        {
+          "path": "fern/products/call-flow-builder/pages/core/version.mdx",
+          "status": "modified",
+          "additions": 30,
+          "deletions": 0,
+          "url": "/docs/call-flow-builder/guides/version",
+          "title": "Versioning",
+          "patch": "@@ -14,10 +14,20 @@ and to revert to a previous version if needed.\n Once a Call Flow has been created, you can click on the `Version History` button located in the top left corner of the Call Flow Builder interface.\n This will open a panel showing all the versions of the call flow, along with a timestamp of when the version was created.\n \n+<llms-ignore>\n+\n <Frame caption=\"Opening the version history of a Call Flow.\">\n   ![Opening the version history of a Call Flow.](/assets/images/call-flow/version_button.webp)\n </Frame>\n \n+</llms-ignore>\n+\n+<llms-only>\n+\n+Select **Version History** in the top-left of the builder to open the version panel and its timestamped entries.\n+\n+</llms-only>\n+\n ---\n \n ## Deploy a new version\n@@ -27,10 +37,20 @@ Once you are satisfied with the new version, you can click the `Deploy` button t\n When a new version is saved, it will add a new entry to the version history. The name of the\n version will be `+1` from the previous version. E.g. `Version 1.0`, `Version 2.0`, `Version 3.0`, etc.\n \n+<llms-ignore>\n+\n <Frame caption=\"Deploying a new version of a Call Flow.\">\n   ![Deploying a new version of a Call Flow.](/assets/images/call-flow/deploy_version.webp)\n </Fr"
+        },
+        {
+          "path": "fern/products/call-flow-builder/pages/nodes/ai_agent.mdx",
+          "status": "modified",
+          "additions": 10,
+          "deletions": 0,
+          "url": "/docs/call-flow-builder/reference/ai-agent",
+          "title": "AI Agent",
+          "patch": null
+        },
+        {
+          "path": "fern/products/call-flow-builder/pages/nodes/answer_call.mdx",
+          "status": "modified",
+          "additions": 10,
+          "deletions": 0,
+          "url": "/docs/call-flow-builder/reference/answer-call",
+          "title": "Answer Call",
+          "patch": null
+        },
+        {
+          "path": "fern/products/call-flow-builder/pages/nodes/conditions.mdx",
+          "status": "modified",
+          "additions": 10,
+          "deletions": 0,
+          "url": "/docs/call-flow-builder/reference/conditions",
+          "title": "Conditions",
+          "patch": null
+        },
+        {
+          "path": "fern/products/call-flow-builder/pages/nodes/execute_swml.mdx",
+          "status": "modified",
+          "additions": 10,
+          "deletions": 1,
+          "url": "/docs/call-flow-builder/reference/execute-swml",
+          "title": "Execute SWML",
+          "patch": null
+        },
+        {
+          "path": "fern/products/call-flow-builder/pages/nodes/forward_to_phone.mdx",
+          "status": "modified",
+          "additions": 30,
+          "deletions": 0,
+          "url": "/docs/call-flow-builder/reference/forward-to-phone",
+          "title": "Forward to Phone",
+          "patch": "@@ -98,12 +98,22 @@ phone number, ensuring that the person receiving the forwarded call will see the\n If the forward is successful, the call connects directly. If the call fails for any reason (no answer, busy, declined, or error), the flow routes to **Hang Up Call**.\n This approach is particularly useful for business scenarios where you want to maintain transparency about who is calling.\n \n+<llms-ignore>\n+\n <Frame caption=\"Forward call while preserving original caller ID\" ogImage>\n \n ![A Call Flow that uses the Forward to Phone node to forward the call while preserving the original caller ID.](/assets/images/call-flow/nodes/forward-from-original-example.webp)\n \n </Frame>\n \n+</llms-ignore>\n+\n+<llms-only>\n+\n+Flow topology: **Handle Call** → **Forward to Phone**, with **From** set to `%{call.from}`. **Success** completes the forward; **No Answer**, **Busy**, **Decline**, and **Error** converge on **Hang Up Call**.\n+\n+</llms-only>\n+\n \n ### Forward to SIP\n \n@@ -115,12 +125,22 @@ For example:\n If the endpoint is unavailable, the flow will follow one of the four failed routes depending on the SIP signaling that is received. \n You can give individual actions for each signal, or route them"
+        },
+        {
+          "path": "fern/products/call-flow-builder/pages/nodes/gather_input.mdx",
+          "status": "modified",
+          "additions": 28,
+          "deletions": 0,
+          "url": "/docs/call-flow-builder/reference/gather-input",
+          "title": "Gather Input",
+          "patch": "@@ -94,25 +94,45 @@ For every input option you can configure, an output node connection will be crea\n You can choose to accept both Speech and DTMF tones with your IVR. \n The caller in this example can either press 1 or say “sales” to connect with the sales line.\n \n+<llms-ignore>\n+\n <Frame caption=\"Gather input as speech or DTMF and send call to the selected channel.\">\n \n ![Gather Input node example that accepts both DTMF and speech input.](/assets/images/call-flow/nodes/simple-input.webp)\n \n </Frame>\n \n+</llms-ignore>\n+\n+<llms-only>\n+\n+Flow topology: **Handle Call** → **Answer Call** → **Gather Input**. Option 1 (press `1` or say `sales`) routes to **Forward to Phone** at `sip:sales@example.com`; Option 2 (press `2` or say `support`) routes to `sip:support@example.com`. **Unknown** and **No Input** remain separate outputs.\n+\n+</llms-only>\n+\n ### Input with infinite loop prevention\n \n If you plan to loop your “No Input” route, you probably want to disconnect a call if the Gather Input node attempts to loop the call more than 2 times. \n You can do that with a combination of a [Set Variables](/docs/call-flow-builder/reference/set-variables) node \n and a [Conditions](/docs/call-flow-b"
+        },
+        {
+          "path": "fern/products/call-flow-builder/pages/nodes/handle_call.mdx",
+          "status": "modified",
+          "additions": 10,
+          "deletions": 0,
+          "url": "/docs/call-flow-builder/reference/handle-call",
+          "title": "Handle Call",
+          "patch": null
+        },
+        {
+          "path": "fern/products/call-flow-builder/pages/nodes/hangup_call.mdx",
+          "status": "modified",
+          "additions": 10,
+          "deletions": 0,
+          "url": "/docs/call-flow-builder/reference/hangup-call",
+          "title": "Hang Up Call",
+          "patch": null
+        },
+        {
+          "path": "fern/products/call-flow-builder/pages/nodes/play_audio_or_tts.mdx",
+          "status": "modified",
+          "additions": 10,
+          "deletions": 0,
+          "url": "/docs/call-flow-builder/reference/play-audio-or-tts",
+          "title": "Play Audio or TTS",
+          "patch": null
+        },
+        {
+          "path": "fern/products/call-flow-builder/pages/nodes/request.mdx",
+          "status": "modified",
+          "additions": 19,
+          "deletions": 0,
+          "url": "/docs/call-flow-builder/reference/request",
+          "title": "Request",
+          "patch": null
+        },
+        {
+          "path": "fern/products/call-flow-builder/pages/nodes/send_sms.mdx",
+          "status": "modified",
+          "additions": 20,
+          "deletions": 0,
+          "url": "/docs/call-flow-builder/reference/send-sms",
+          "title": "Send SMS",
+          "patch": null
+        },
+        {
+          "path": "fern/products/call-flow-builder/pages/nodes/set_variables.mdx",
+          "status": "modified",
+          "additions": 9,
+          "deletions": 0,
+          "url": "/docs/call-flow-builder/reference/set-variables",
+          "title": "Set Variables",
+          "patch": null
+        },
+        {
+          "path": "fern/products/call-flow-builder/pages/nodes/start_call_recording.mdx",
+          "status": "modified",
+          "additions": 10,
+          "deletions": 0,
+          "url": "/docs/call-flow-builder/reference/start-call-recording",
+          "title": "Start Call Recording",
+          "patch": null
+        },
+        {
+          "path": "fern/products/call-flow-builder/pages/nodes/stop_call_recording.mdx",
+          "status": "modified",
+          "additions": 10,
+          "deletions": 0,
+          "url": "/docs/call-flow-builder/reference/stop-call-recording",
+          "title": "Stop Call Recording",
+          "patch": null
+        },
+        {
+          "path": "fern/products/call-flow-builder/pages/nodes/unset_variables.mdx",
+          "status": "modified",
+          "additions": 10,
+          "deletions": 0,
+          "url": "/docs/call-flow-builder/reference/unset-variables",
+          "title": "Unset Variables",
+          "patch": null
+        },
+        {
+          "path": "fern/products/call-flow-builder/pages/nodes/voicemail_recording.mdx",
+          "status": "modified",
+          "additions": 30,
+          "deletions": 0,
+          "url": "/docs/call-flow-builder/reference/voicemail-recording",
+          "title": "Voicemail Recording",
+          "patch": "@@ -51,10 +51,20 @@ For a traditional voicemail experience, we recommend pairing the Voicemail Recor\n [Play Audio or TTS](/docs/call-flow-builder/reference/play-audio-or-tts) node and including a beep before recording. \n Including a terminator (in this case, a `#` sign) will allow nodes to run after the caller is finished leaving their voicemail.\n \n+<llms-ignore>\n+\n <Frame caption=\"Play TTS and record voicemail.\" ogImage>\n ![Play TTS and record voicemail.](/assets/images/call-flow/nodes/simple-voicemail.webp)\n </Frame>\n \n+</llms-ignore>\n+\n+<llms-only>\n+\n+Route **Forward to Phone**'s **No Answer**, **Busy**, **Decline**, and **Error** outputs to an unavailable-message **Play Audio or TTS** node → **Voicemail Recording** → a thank-you **Play Audio or TTS** node. Enable the recording beep, use `#` as the terminator, and save WAV format.\n+\n+</llms-only>\n+\n ---\n \n ### Record voicemail and send recording URL as a POST request\n@@ -64,10 +74,20 @@ Please note that any later recordings in the Flow will overwrite the `%{record_u\n so the Request node should immediately follow this Voicemail Recording node or use \n [Set Variables](/docs/call-flow-builder/reference/set-variables) to save this U"
+        },
+        {
+          "path": "fern/products/platform/pages/calling/voice/SIP/byoc/index.mdx",
+          "status": "modified",
+          "additions": 20,
+          "deletions": 0,
+          "url": "/docs/platform/voice/sip/bring-your-own-carrier",
+          "title": "Bring your own carrier",
+          "patch": null
+        },
+        {
+          "path": "fern/products/platform/pages/calling/voice/TTS/google.mdx",
+          "status": "modified",
+          "additions": 10,
+          "deletions": 0,
+          "url": "/docs/platform/voice/tts/gcloud",
+          "title": "Google Cloud",
+          "patch": null
+        },
+        {
+          "path": "fern/products/platform/pages/calling/voice/TTS/polly.mdx",
+          "status": "modified",
+          "additions": 10,
+          "deletions": 0,
+          "url": "/docs/platform/voice/tts/amazon-polly",
+          "title": "Amazon Polly",
+          "patch": null
+        }
+      ]
+    },
+    {
+      "number": 613,
+      "title": "docs: add LLM equivalents for Dashboard screenshots",
+      "body": "## Summary\n\n- hide Dashboard and related instructional screenshots and their expiring image URLs from Markdown exports\n- add page-specific text equivalents for navigation, settings, wizard state, and the two legacy SWML Dashboard screenshots\n- share only the nine identical TTS assignment blocks\n- add local/manual deployed-preview assertions for every affected route and key workflow; the checker is intentionally not wired into CI\n\n## Scope\n\nThis is PR 4 in the stacked implementation for #388 and depends on #612. The final audit also found and covered five screenshots stored outside the `/assets/images/dashboard/` path: three WireStarter/SWSH captures and two legacy SWML Dashboard captures.\n\n## Validation\n\n- yarn test:scripts\n- yarn fern-md-check\n- git diff --check\n- yarn check-llm-exports <preview-url> after the Fern preview deploys\n- source audit confirms every Dashboard image reference is inside llms-ignore\n- the manual checker rejects presigned image URLs on every tested route\n\nRefs #388",
+      "author": "Devon-White",
+      "mergedAt": "2026-08-21T21:01:59Z",
+      "mergeCommit": "9c37f8b2ff993dcbd5f86f6b821a391463fd18e6",
+      "url": "https://github.com/signalwire/docs/pull/613",
+      "mechanical": false,
+      "selfDocumented": false,
+      "authoredEntries": [],
+      "fileCount": 43,
+      "files": [
+        {
+          "path": "fern/products/apis/pages/core/authorization.mdx",
+          "status": "modified",
+          "additions": 10,
+          "deletions": 0,
+          "url": "/docs/apis/authorization",
+          "title": "Authorization",
+          "patch": null
+        },
+        {
+          "path": "fern/products/compatibility-api/pages/cxml/guides/gathering-user-input.mdx",
+          "status": "modified",
+          "additions": 8,
+          "deletions": 0,
+          "url": "/docs/compatibility-api/guides/gather-user-input",
+          "title": "Gathering user input",
+          "patch": null
+        },
+        {
+          "path": "fern/products/compatibility-api/pages/cxml/guides/receiving-your-first-sms.mdx",
+          "status": "modified",
+          "additions": 30,
+          "deletions": 0,
+          "url": "/docs/compatibility-api/guides/receive-sms",
+          "title": "Receiving your first SMS",
+          "patch": "@@ -57,10 +57,20 @@ which allows you to generate scripts dynamically.\n Navigate to the \"Resources\" tab from the sidebar and create a new Resource.\n There, select the resource type of \"Script\", and pick \"cXML script\".\n \n+<llms-ignore>\n+\n <Frame>\n   ![Create a new cXML script.](/assets/images/dashboard/resources/new-cxml-bin.webp)\n </Frame>\n \n+</llms-ignore>\n+\n+<llms-only>\n+\n+In **My Resources**, select **+ Add New** > **Script** > **cXML Script**.\n+\n+</llms-only>\n+\n <Markdown src=\"/snippets/common/dashboard/_resource-admonition.mdx\" />\n \n ### Paste the script\n@@ -102,10 +112,20 @@ You will need at least one number to receive messages.\n Navigate to the \"Phone Numbers\" section of your Dashboard and open the settings for the number you want to configure.\n There, assign the cXML script you just created to handle messages.\n \n+<llms-ignore>\n+\n <Frame>\n   ![Open the settings for the number.](/assets/images/dashboard/phone-numbers/assign-resource-full.webp)\n </Frame>\n \n+</llms-ignore>\n+\n+<llms-only>\n+\n+On the phone number's edit page, select **+ Assign Resource** under **Inbound Message Settings**, choose the cXML script, and save.\n+\n+</llms-only>\n+\n ### Send a test SMS\n \n Try sending a mes"
+        },
+        {
+          "path": "fern/products/compatibility-api/pages/cxml/guides/securing-callback-for-inbound-fax.mdx",
+          "status": "modified",
+          "additions": 10,
+          "deletions": 0,
+          "url": "/docs/compatibility-api/guides/callback-for-inbound-fax",
+          "title": "Callback for inbound fax",
+          "patch": null
+        },
+        {
+          "path": "fern/products/compatibility-api/pages/cxml/guides/sending-your-first-sms.mdx",
+          "status": "modified",
+          "additions": 11,
+          "deletions": 1,
+          "url": "/docs/compatibility-api/guides/send-sms",
+          "title": "Sending your first SMS",
+          "patch": null
+        },
+        {
+          "path": "fern/products/compatibility-api/pages/cxml/guides/webhooks/index.mdx",
+          "status": "modified",
+          "additions": 10,
+          "deletions": 0,
+          "url": "/docs/compatibility-api/guides/webhooks",
+          "title": "Compatibility API Webhooks",
+          "patch": null
+        },
+        {
+          "path": "fern/products/compatibility-api/pages/cxml/guides/webhooks/webhook-security.mdx",
+          "status": "modified",
+          "additions": 10,
+          "deletions": 0,
+          "url": "/docs/compatibility-api/guides/webhook-security",
+          "title": "Webhook security",
+          "patch": null
+        },
+        {
+          "path": "fern/products/compatibility-api/pages/rest-api/core/authorization.mdx",
+          "status": "modified",
+          "additions": 10,
+          "deletions": 0,
+          "url": "/docs/compatibility-api/authorization",
+          "title": "Authorization",
+          "patch": null
+        },
+        {
+          "path": "fern/products/platform/pages/calling/fax/overview.mdx",
+          "status": "modified",
+          "additions": 30,
+          "deletions": 0,
+          "url": "/docs/platform/fax",
+          "title": "First steps with fax",
+          "patch": null
+        },
+        {
+          "path": "fern/products/platform/pages/calling/voice/SIP/sip-trunking/index.mdx",
+          "status": "modified",
+          "additions": 20,
+          "deletions": 0,
+          "url": "/docs/platform/voice/sip/trunking",
+          "title": "SIP trunking",
+          "patch": null
+        },
+        {
+          "path": "fern/products/platform/pages/calling/voice/TTS/fish.mdx",
+          "status": "modified",
+          "additions": 1,
+          "deletions": 3,
+          "url": "/docs/platform/voice/tts/fish",
+          "title": "Fish Audio",
+          "patch": null
+        },
+        {
+          "path": "fern/products/platform/pages/calling/voice/TTS/grok.mdx",
+          "status": "modified",
+          "additions": 1,
+          "deletions": 3,
+          "url": "/docs/platform/voice/tts/grok",
+          "title": "Grok",
+          "patch": null
+        },
+        {
+          "path": "fern/products/platform/pages/calling/voice/TTS/groq-tts.mdx",
+          "status": "modified",
+          "additions": 1,
+          "deletions": 3,
+          "url": "/docs/platform/voice/tts/groq-tts",
+          "title": "Groq",
+          "patch": null
+        },
+        {
+          "path": "fern/products/platform/pages/calling/voice/TTS/inworld.mdx",
+          "status": "modified",
+          "additions": 1,
+          "deletions": 3,
+          "url": "/docs/platform/voice/tts/inworld",
+          "title": "Inworld",
+          "patch": null
+        },
+        {
+          "path": "fern/products/platform/pages/calling/voice/TTS/minimax.mdx",
+          "status": "modified",
+          "additions": 1,
+          "deletions": 3,
+          "url": "/docs/platform/voice/tts/minimax",
+          "title": "MiniMax",
+          "patch": null
+        },
+        {
+          "path": "fern/products/platform/pages/calling/voice/TTS/mistral.mdx",
+          "status": "modified",
+          "additions": 1,
+          "deletions": 3,
+          "url": "/docs/platform/voice/tts/mistral",
+          "title": "Mistral",
+          "patch": null
+        },
+        {
+          "path": "fern/products/platform/pages/calling/voice/TTS/rime.mdx",
+          "status": "modified",
+          "additions": 1,
+          "deletions": 3,
+          "url": "/docs/platform/voice/tts/rime",
+          "title": "Rime",
+          "patch": null
+        },
+        {
+          "path": "fern/products/platform/pages/calling/voice/TTS/smallest.mdx",
+          "status": "modified",
+          "additions": 1,
+          "deletions": 3,
+          "url": "/docs/platform/voice/tts/smallest",
+          "title": "Smallest.ai",
+          "patch": null
+        },
+        {
+          "path": "fern/products/platform/pages/calling/voice/TTS/speechify.mdx",
+          "status": "modified",
+          "additions": 1,
+          "deletions": 3,
+          "url": "/docs/platform/voice/tts/speechify",
+          "title": "Speechify",
+          "patch": null
+        },
+        {
+          "path": "fern/products/platform/pages/calling/voice/caller-id-and-cnam.mdx",
+          "status": "modified",
+          "additions": 10,
+          "deletions": 0,
+          "url": "/docs/platform/voice/how-to-set-caller-id-or-cnam",
+          "title": "Caller ID & CNAM",
+          "patch": null
+        },
+        {
+          "path": "fern/products/platform/pages/messaging/sms/character-limits.mdx",
+          "status": "modified",
+          "additions": 10,
+          "deletions": 0,
+          "url": "/docs/platform/messaging/character-limits",
+          "title": "Character limits",
+          "patch": null
+        },
+        {
+          "path": "fern/products/platform/pages/messaging/sms/the-campaign-registry/registration/index.mdx",
+          "status": "modified",
+          "additions": 90,
+          "deletions": 0,
+          "url": "/docs/platform/messaging/campaign-registry/registration",
+          "title": "Registration",
+          "patch": "@@ -94,8 +94,18 @@ To see the details of an existing Brand, click on the Brand Name. None of these\n details are editable. If you are trying to make changes to an existing Brand,\n please use the button to contact Support for assistance.\n \n+<llms-ignore>\n+\n ![Brand details page](/assets/images/dashboard/campaign-registry/sms/brand-details.webp)\n \n+</llms-ignore>\n+\n+<llms-only>\n+\n+Select a Brand name to open its detail page. The page has **Settings**, **Campaigns**, **Campaign Phone Numbers**, and **Assignment Orders** tabs; use **Contact Support** if its locked details must change.\n+\n+</llms-only>\n+\n ### Creating a new brand\n \n <Tip>\n@@ -108,8 +118,18 @@ To create a new Brand, start by clicking the blue \"+ New\" button to open the New\n    Campaign Service Provider (CSP) by clicking the \"Create a Partner Brand\" button.\n 1. Create a new Brand to register and manage with SignalWire by filling out the form.\n \n+<llms-ignore>\n+\n ![Brand creation page](/assets/images/dashboard/campaign-registry/sms/TCR-wizard-1.webp)\n \n+</llms-ignore>\n+\n+<llms-only>\n+\n+The New Brand wizard has **Company Details**, **Company Contact**, and **Legal** steps. To import an approved brand from another Campaign Ser"
+        },
+        {
+          "path": "fern/products/platform/pages/platform/call-fabric/resources.mdx",
+          "status": "modified",
+          "additions": 30,
+          "deletions": 0,
+          "url": "/docs/platform/resources",
+          "title": "Resources",
+          "patch": null
+        },
+        {
+          "path": "fern/products/platform/pages/platform/core/how-to-enable-international-outbound-dialing-sms.mdx",
+          "status": "modified",
+          "additions": 10,
+          "deletions": 0,
+          "url": "/docs/platform/how-to-enable-international-services",
+          "title": "International support",
+          "patch": null
+        },
+        {
+          "path": "fern/products/platform/pages/platform/core/media-protection.mdx",
+          "status": "modified",
+          "additions": 20,
+          "deletions": 1,
+          "url": "/docs/platform/media-protection",
+          "title": "Media URL protection",
+          "patch": null
+        },
+        {
+          "path": "fern/products/platform/pages/platform/core/segment-ids.mdx",
+          "status": "modified",
+          "additions": 10,
+          "deletions": 0,
+          "url": "/docs/platform/what-is-a-sid",
+          "title": "Segment IDs",
+          "patch": null
+        },
+        {
+          "path": "fern/products/platform/pages/platform/core/webhooks/index.mdx",
+          "status": "modified",
+          "additions": 50,
+          "deletions": 0,
+          "url": "/docs/platform/webhooks",
+          "title": "Webhooks",
+          "patch": "@@ -37,38 +37,78 @@ flowchart LR\n \n In the SignalWire Dashboard, open the **My Resources** tab and click **+ Add**, then choose **SWML Script**.\n \n+<llms-ignore>\n+\n <Frame caption=\"The Resource selection menu\">\n \n ![Selecting a Resource type in the SignalWire Dashboard](/assets/images/dashboard/resources/add-new-resource.webp)\n \n </Frame>\n \n+</llms-ignore>\n+\n+<llms-only>\n+\n+In **My Resources**, select **+ Add**, then choose **Script** > **SWML Application**.\n+\n+</llms-only>\n+\n Give the script a name, set **Handle Calls Using** to **External URL**, and enter your webhook URL in the **Primary Script URL** field. Click **Create** to save the Resource.\n \n+<llms-ignore>\n+\n <Frame caption=\"A SWML Script Resource configured to fetch SWML from an external webhook URL\">\n \n ![Configuring a SWML Script Resource with an external URL in the SignalWire Dashboard](/assets/images/dashboard/resources/external-swml-script.webp)\n \n </Frame>\n \n+</llms-ignore>\n+\n+<llms-only>\n+\n+In the **New SWML Application** form, enter a name, set **Handle Calls Using** to **External URL**, enter the webhook endpoint in **Primary Script URL**, and create the Resource.\n+\n+</llms-only>\n+\n ### Assign the Resource to you"
+        },
+        {
+          "path": "fern/products/platform/pages/platform/integrations/FreeSWITCH/add-ai-to-freeswitch/index.mdx",
+          "status": "modified",
+          "additions": 10,
+          "deletions": 1,
+          "url": "/docs/platform/freeswitch/add-ai-to-freeswitch",
+          "title": "Adding AI capabilities to FreeSWITCH",
+          "patch": null
+        },
+        {
+          "path": "fern/products/platform/pages/platform/integrations/FreeSWITCH/installing-freeswitch-or-freeswitch-advantage/index.mdx",
+          "status": "modified",
+          "additions": 10,
+          "deletions": 0,
+          "url": "/docs/platform/freeswitch/installing-freeswitch",
+          "title": "Installing FreeSWITCH or FreeSWITCH Enterprise",
+          "patch": null
+        },
+        {
+          "path": "fern/products/platform/pages/platform/phone-numbers/overview.mdx",
+          "status": "modified",
+          "additions": 10,
+          "deletions": 0,
+          "url": "/docs/platform/phone-numbers",
+          "title": "Phone numbers",
+          "patch": null
+        },
+        {
+          "path": "fern/products/platform/pages/platform/setup/api-credentials.mdx",
+          "status": "modified",
+          "additions": 10,
+          "deletions": 0,
+          "url": "/docs/platform/your-signalwire-api-space",
+          "title": "API credentials",
+          "patch": null
+        },
+        {
+          "path": "fern/products/platform/pages/platform/setup/create-an-account.mdx",
+          "status": "modified",
+          "additions": 10,
+          "deletions": 0,
+          "url": "/docs/platform/signing-up-for-a-space",
+          "title": "Create an account",
+          "patch": null
+        },
+        {
+          "path": "fern/products/platform/pages/tools/wirestarter/index.mdx",
+          "status": "modified",
+          "additions": 28,
+          "deletions": 2,
+          "url": "/docs/platform/wirestarter",
+          "title": "Introduction to WireStarter",
+          "patch": null
+        },
+        {
+          "path": "fern/products/swml/pages/guides/basics/swml_remote_server.mdx",
+          "status": "modified",
+          "additions": 10,
+          "deletions": 0,
+          "url": "/docs/swml/guides/remote-server",
+          "title": "Handle incoming calls from code",
+          "patch": null
+        },
+        {
+          "path": "fern/products/swml/pages/guides/basics/webhook-security.mdx",
+          "status": "modified",
+          "additions": 10,
+          "deletions": 0,
+          "url": "/docs/swml/guides/webhook-security",
+          "title": "Verify SWML request signatures",
+          "patch": null
+        },
+        {
+          "path": "fern/products/swml/pages/guides/get-started/quickstart.mdx",
+          "status": "modified",
+          "additions": 40,
+          "deletions": 0,
+          "url": "/docs/swml/guides",
+          "title": "Quickstart",
+          "patch": "@@ -96,14 +96,34 @@ You can write and save new SWML scripts from the \"Relay/SWML\" section of your Da\n In that section, switch to the tab named [SWML Scripts](https://my.signalwire.com/relay-bins).\n Once there, you can create a new SWML script:\n \n+<llms-ignore>\n+\n ![Image](/assets/images/swml/new-swml-2.png)\n \n+</llms-ignore>\n+\n+<llms-only>\n+\n+On the **New SWML Script** page, enter a name, paste the script into the **SWML** field, and click **Save**.\n+\n+</llms-only>\n+\n After you save the SWML, navigate to the [Phone Numbers](https://my.signalwire.com/phone_numbers) page.\n Open the settings for a phone number you own (you may have to buy a new one),\n and configure it to handle incoming calls using the SWML script you just saved.\n \n+<llms-ignore>\n+\n ![Image](/assets/images/swml/add-phone-number.png)\n \n+</llms-ignore>\n+\n+<llms-only>\n+\n+In **Voice and Fax Settings**, set **Accept Incoming Calls As** to **Voice Calls**, set **Handle Calls Using** to **a SWML Script**, and choose the saved script under **When a Call Comes In**. Enable the external-URL fallback option only if you need a fallback SWML handler.\n+\n+</llms-only>\n+\n </Accordion>\n \n <Accordion title=\"Learn about the Legacy Dashb"
+        },
+        {
+          "path": "fern/products/swml/pages/guides/recipes/creating-ivr-with-swml.mdx",
+          "status": "modified",
+          "additions": 10,
+          "deletions": 0,
+          "url": "/docs/swml/guides/ivr",
+          "title": "Simple IVR",
+          "patch": null
+        },
+        {
+          "path": "fern/products/swml/pages/guides/recipes/forwarding-calls.mdx",
+          "status": "modified",
+          "additions": 10,
+          "deletions": 0,
+          "url": "/docs/swml/guides/forward-calls",
+          "title": "Forwarding calls",
+          "patch": null
+        },
+        {
+          "path": "fern/products/swml/pages/guides/recipes/making-and-receiving-calls.mdx",
+          "status": "modified",
+          "additions": 10,
+          "deletions": 0,
+          "url": "/docs/swml/guides/make-and-receive-calls",
+          "title": "Making and receiving phone calls",
+          "patch": null
+        },
+        {
+          "path": "fern/products/swml/pages/guides/recipes/recording-calls.mdx",
+          "status": "modified",
+          "additions": 20,
+          "deletions": 0,
+          "url": "/docs/swml/guides/record-calls",
+          "title": "Recording calls",
+          "patch": null
+        },
+        {
+          "path": "fern/products/swml/pages/guides/recipes/voicemail.mdx",
+          "status": "modified",
+          "additions": 10,
+          "deletions": 0,
+          "url": "/docs/swml/guides/voicemail",
+          "title": "Setting up voicemail",
+          "patch": null
+        },
+        {
+          "path": "fern/snippets/common/dashboard/_assign-resource-voice.mdx",
+          "status": "added",
+          "additions": 15,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "fern/snippets/dashboard/ui-accordion.mdx",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 37,
+          "url": null,
+          "title": null,
+          "patch": "@@ -1,37 +0,0 @@\n-<Accordion title=\"Learn about the Legacy Dashboard migration\">\n-\n-Identify your Dashboard and select between Legacy and New UIs using the tabs below.\n-\n-<Tabs>\n-\n-<Tab title=\"New Dashboard\">\n-\n-<Frame caption=\"The redesigned main menu.\">\n-  ![The main sidebar menu of the new SignalWire Space Dashboard UI.](/assets/images/dashboard/sidebar/new-sidebar.webp)\n-</Frame>\n-\n-<Frame caption=\"The new SignalWire Dashboard features a streamlined sidebar menu. Many items are now located in the unified My Resources menu.\">\n-  ![The selection menu when a new Resource is created.](/assets/images/dashboard/resources/add-new-resource.webp)\n-</Frame>\n-\n-Resources that were previously accessible in the sidebar of the legacy UI are now located in the unified **My Resources** menu.\n-\n-</Tab>\n-\n-<Tab title=\"Legacy Dashboard\">\n-\n-<Frame caption=\"The legacy main menu.\">\n-  ![The main sidebar menu of the legacy SignalWire Space Dashboard UI.](/assets/images/dashboard/legacy/sidebar.webp)\n-</Frame>\n-\n-In the Legacy Dashboard, there is no **My Resources** tab.\n-\n-Instead, Resources are accessible as individual tabs in the main navigational sidebar.\n-\n-To upgrade your Space to the New UI, ["
+        }
+      ]
+    },
+    {
+      "number": 612,
+      "title": "docs: add LLM equivalents for Server SDK diagrams",
+      "body": "Stacks on #611. Covers all 46 raster diagram references across 30 Server SDK guide pages: human Frames are excluded from Markdown exports, 38 diagrams receive Mermaid equivalents, five receive structured-Markdown equivalents, and three Dashboard captures rely on complete adjacent numbered instructions. Adds a diagram-specific authoring rule and local/manual preview acceptance cases. The export checker is intentionally not wired into CI.\n\nValidation:\n- manually compared all 46 source assets with their LLM-view content\n- yarn test:scripts\n- yarn fern-md-check (all 2,824 MDX files valid)\n- git diff --check\n- yarn check-llm-exports <preview-url> after the Fern preview deploys\n\nPart of #388.",
+      "author": "Devon-White",
+      "mergedAt": "2026-08-21T20:55:51Z",
+      "mergeCommit": "1cc8957a673686821a323fa6f0265211f4b687be",
+      "url": "https://github.com/signalwire/docs/pull/612",
+      "mechanical": false,
+      "selfDocumented": false,
+      "authoredEntries": [],
+      "fileCount": 30,
+      "files": [
+        {
+          "path": "fern/products/server-sdks/pages/guides/build-ai-agents/agent-base.mdx",
+          "status": "modified",
+          "additions": 57,
+          "deletions": 0,
+          "url": "/docs/server-sdks/guides/agent-base",
+          "title": "AgentBase",
+          "patch": "@@ -38,10 +38,30 @@ Before building agents, you should understand:\n \n ## Agent Architecture Overview\n \n+<llms-ignore>\n+\n <Frame caption=\"Agent Components\">\n   <img class=\"diagram\" src=\"/assets/images/sdks/diagrams/03_01_agent-base_diagram1.webp\" alt=\"Agent components overview.\" />\n </Frame>\n \n+</llms-ignore>\n+\n+<llms-only>\n+\n+```mermaid\n+flowchart TD\n+    agentClass[\"Your agent class<br/>extends AgentBase\"] --> config[\"Configuration\"]\n+    config --> prompts[\"Prompts<br/>role, guidelines, rules\"]\n+    config --> voice[\"Voice<br/>language, voice, TTS engine\"]\n+    config --> params[\"AI parameters<br/>timeouts, barge, attention\"]\n+    config --> hints[\"Hints<br/>keywords, names, terms\"]\n+    config --> functions[\"Functions<br/>tools, DataMap, handlers\"]\n+    config --> skills[\"Skills<br/>plugins, add-ons, integrations\"]\n+    prompts & voice & params & hints & functions & skills --> swml[\"Automatically generated SWML output\"]\n+```\n+\n+</llms-only>\n+\n ## A Complete Agent Example\n \n Here's what a production agent looks like across all supported languages:\n@@ -381,10 +401,31 @@ swaig-test my_agent.py --exec check_order --order_number 12345\n \n ## Class Overview\n \n+<llms-ignore>\n+\n <Frame c"
+        },
+        {
+          "path": "fern/products/server-sdks/pages/guides/build-ai-agents/architecture.mdx",
+          "status": "modified",
+          "additions": 43,
+          "deletions": 1,
+          "url": "/docs/server-sdks/guides/architecture",
+          "title": "Architecture",
+          "patch": "@@ -35,10 +35,30 @@ Before diving into these concepts, you should have:\n \n ## The Big Picture\n \n+<llms-ignore>\n+\n <Frame caption=\"SignalWire Server SDK Architecture\">\n   <img class=\"diagram\" src=\"/assets/images/sdks/diagrams/02_01_architecture_diagram1.webp\" alt=\"SignalWire Server SDK Architecture.\" />\n </Frame>\n \n+</llms-ignore>\n+\n+<llms-only>\n+\n+```mermaid\n+sequenceDiagram\n+    participant Caller\n+    participant Cloud as SignalWire Cloud\n+    participant Agent as Your Agent<br/>AgentBase and SWMLService\n+    Caller->>Cloud: Incoming call\n+    Cloud->>Agent: POST / or POST /swaig\n+    Note over Cloud: Receive call, request SWML,<br/>execute AI, call SWAIG tools\n+    Note over Agent: AuthMixin, WebMixin, PromptMixin,<br/>ToolMixin, SkillMixin, AIConfigMixin,<br/>ServerlessMixin, StateMixin\n+    Agent-->>Cloud: SWML JSON or function result\n+```\n+\n+</llms-only>\n+\n ## Key Terminology\n \n | Term | Definition |\n@@ -71,12 +91,34 @@ Understanding these core concepts helps you:\n \n ## The Mixin Composition Pattern\n \n-AgentBase doesn't inherit from a single monolithic class. Instead, it combines nine specialized mixins plus the SWMLService base class:\n+AgentBase doesn't inherit from a single"
+        },
+        {
+          "path": "fern/products/server-sdks/pages/guides/build-ai-agents/call-flow.mdx",
+          "status": "modified",
+          "additions": 16,
+          "deletions": 0,
+          "url": "/docs/server-sdks/guides/call-flow",
+          "title": "Call Flow Customization",
+          "patch": null
+        },
+        {
+          "path": "fern/products/server-sdks/pages/guides/build-ai-agents/call-transfer.mdx",
+          "status": "modified",
+          "additions": 13,
+          "deletions": 0,
+          "url": "/docs/server-sdks/guides/call-transfer",
+          "title": "Call Transfer",
+          "patch": null
+        },
+        {
+          "path": "fern/products/server-sdks/pages/guides/build-ai-agents/concierge.mdx",
+          "status": "modified",
+          "additions": 17,
+          "deletions": 0,
+          "url": "/docs/server-sdks/guides/concierge",
+          "title": "Concierge",
+          "patch": null
+        },
+        {
+          "path": "fern/products/server-sdks/pages/guides/build-ai-agents/contexts-workflows.mdx",
+          "status": "modified",
+          "additions": 21,
+          "deletions": 0,
+          "url": "/docs/server-sdks/guides/contexts-workflows",
+          "title": "Contexts and Workflows",
+          "patch": null
+        },
+        {
+          "path": "fern/products/server-sdks/pages/guides/build-ai-agents/defining-functions.mdx",
+          "status": "modified",
+          "additions": 20,
+          "deletions": 0,
+          "url": "/docs/server-sdks/guides/defining-functions",
+          "title": "SWAIG Functions",
+          "patch": null
+        },
+        {
+          "path": "fern/products/server-sdks/pages/guides/build-ai-agents/hints.mdx",
+          "status": "modified",
+          "additions": 10,
+          "deletions": 0,
+          "url": "/docs/server-sdks/guides/hints",
+          "title": "Hints",
+          "patch": null
+        },
+        {
+          "path": "fern/products/server-sdks/pages/guides/build-ai-agents/info-gatherer.mdx",
+          "status": "modified",
+          "additions": 20,
+          "deletions": 0,
+          "url": "/docs/server-sdks/guides/info-gatherer",
+          "title": "InfoGatherer",
+          "patch": null
+        },
+        {
+          "path": "fern/products/server-sdks/pages/guides/build-ai-agents/lifecycle.mdx",
+          "status": "modified",
+          "additions": 104,
+          "deletions": 0,
+          "url": "/docs/server-sdks/guides/lifecycle",
+          "title": "Request Lifecycle",
+          "patch": "@@ -11,18 +11,70 @@ max-toc-depth: 3\n \n Understanding the request lifecycle helps you debug issues and optimize your agents. Here's the complete flow:\n \n+<llms-ignore>\n+\n <Frame caption=\"Complete Call Lifecycle\">\n   <img class=\"diagram\" src=\"/assets/images/sdks/diagrams/02_04_lifecycle_diagram1.webp\" alt=\"Complete call lifecycle.\" />\n </Frame>\n \n+</llms-ignore>\n+\n+<llms-only>\n+\n+The complete call lifecycle proceeds through these five phases:\n+\n+| Step | Phase | Event |\n+|---:|---|---|\n+| 1 | Call setup | Caller dials your phone number. |\n+| 2 | Call setup | SignalWire receives the call. |\n+| 3 | Call setup | SignalWire checks the number's webhook configuration. |\n+| 4 | Call setup | SignalWire requests SWML by sending `POST https://your-agent.com/`. |\n+| 5 | SWML generation | Your agent receives the HTTP request. |\n+| 6 | SWML generation | The agent builds the SWML document, including prompts, functions, and languages. |\n+| 7 | SWML generation | The agent generates security tokens for SWAIG functions. |\n+| 8 | SWML generation | The agent returns a SWML JSON response. |\n+| 9 | AI conversation | SignalWire executes the SWML, answers the call, and starts the AI. |\n+| 10 | AI conversat"
+        },
+        {
+          "path": "fern/products/server-sdks/pages/guides/build-ai-agents/mcp-gateway.mdx",
+          "status": "modified",
+          "additions": 26,
+          "deletions": 0,
+          "url": "/docs/server-sdks/guides/mcp-gateway",
+          "title": "MCP Gateway",
+          "patch": null
+        },
+        {
+          "path": "fern/products/server-sdks/pages/guides/build-ai-agents/multi-agent.mdx",
+          "status": "modified",
+          "additions": 32,
+          "deletions": 0,
+          "url": "/docs/server-sdks/guides/multi-agent",
+          "title": "Multi-Agent Servers",
+          "patch": null
+        },
+        {
+          "path": "fern/products/server-sdks/pages/guides/build-ai-agents/prompts-pom.mdx",
+          "status": "modified",
+          "additions": 17,
+          "deletions": 0,
+          "url": "/docs/server-sdks/guides/prompts-pom",
+          "title": "Prompts & POM",
+          "patch": null
+        },
+        {
+          "path": "fern/products/server-sdks/pages/guides/build-ai-agents/receptionist.mdx",
+          "status": "modified",
+          "additions": 18,
+          "deletions": 0,
+          "url": "/docs/server-sdks/guides/receptionist",
+          "title": "Receptionist",
+          "patch": null
+        },
+        {
+          "path": "fern/products/server-sdks/pages/guides/build-ai-agents/search-knowledge.mdx",
+          "status": "modified",
+          "additions": 16,
+          "deletions": 0,
+          "url": "/docs/server-sdks/guides/search-knowledge",
+          "title": "Search and Knowledge",
+          "patch": null
+        },
+        {
+          "path": "fern/products/server-sdks/pages/guides/build-ai-agents/skill-config.mdx",
+          "status": "modified",
+          "additions": 16,
+          "deletions": 0,
+          "url": "/docs/server-sdks/guides/skill-config",
+          "title": "Skill Configuration",
+          "patch": null
+        },
+        {
+          "path": "fern/products/server-sdks/pages/guides/build-ai-agents/state-management.mdx",
+          "status": "modified",
+          "additions": 18,
+          "deletions": 0,
+          "url": "/docs/server-sdks/guides/state-management",
+          "title": "State Management",
+          "patch": null
+        },
+        {
+          "path": "fern/products/server-sdks/pages/guides/build-ai-agents/survey.mdx",
+          "status": "modified",
+          "additions": 23,
+          "deletions": 0,
+          "url": "/docs/server-sdks/guides/survey",
+          "title": "Survey",
+          "patch": null
+        },
+        {
+          "path": "fern/products/server-sdks/pages/guides/build-ai-agents/swaig.mdx",
+          "status": "modified",
+          "additions": 42,
+          "deletions": 0,
+          "url": "/docs/server-sdks/guides/swaig",
+          "title": "SWAIG (SignalWire AI Gateway)",
+          "patch": "@@ -14,10 +14,31 @@ max-toc-depth: 3\n \n SWAIG (SignalWire AI Gateway) connects the AI conversation to your backend logic. When the AI decides it needs to perform an action (like looking up an order or checking a balance), it calls a SWAIG function that you've defined.\n \n+<llms-ignore>\n+\n <Frame caption=\"SWAIG Function Flow\">\n   <img class=\"diagram\" src=\"/assets/images/sdks/diagrams/02_03_swaig_diagram1.webp\" alt=\"SWAIG function call flow.\" />\n </Frame>\n \n+</llms-ignore>\n+\n+<llms-only>\n+\n+```mermaid\n+sequenceDiagram\n+    participant User\n+    participant AI as SignalWire AI Engine\n+    participant Agent as Your agent\n+    User->>AI: What is my account balance?\n+    Note over AI: Transcribe speech, understand intent,<br/>select get_balance(account_id)\n+    AI->>Agent: POST /swaig with function and arguments\n+    Note over Agent: Look up balance and return<br/>SwaigFunctionResult\n+    Agent-->>AI: Balance is $150.00\n+    AI-->>User: Speak the result\n+```\n+\n+</llms-only>\n+\n ### SWAIG in SWML\n \n When your agent generates SWML, it includes SWAIG function definitions in the `ai` verb:\n@@ -540,10 +561,31 @@ return result;\n \n ### SWAIG Request Flow\n \n+<llms-ignore>\n+\n <Frame caption=\"SWAIG "
+        },
+        {
+          "path": "fern/products/server-sdks/pages/guides/build-ai-agents/swml.mdx",
+          "status": "modified",
+          "additions": 38,
+          "deletions": 0,
+          "url": "/docs/server-sdks/guides/swml",
+          "title": "SWML (SignalWire Markup Language)",
+          "patch": "@@ -12,10 +12,26 @@ max-toc-depth: 3\n \n SWML (SignalWire Markup Language) is a document that instructs SignalWire how to handle a phone call. SWML can be written in JSON or YAML format -- **this guide uses JSON throughout**. When a call comes in, SignalWire requests SWML from your agent, then executes the instructions.\n \n+<llms-ignore>\n+\n <Frame caption=\"SWML Flow\">\n   <img class=\"diagram\" src=\"/assets/images/sdks/diagrams/02_02_swml_diagram1.webp\" alt=\"SWML request and response flow.\" />\n </Frame>\n \n+</llms-ignore>\n+\n+<llms-only>\n+\n+```mermaid\n+flowchart TD\n+    call[\"Call arrives\"] --> request[\"SignalWire sends POST https://your-agent.com/\"]\n+    request --> response[\"Your agent returns SWML JSON\"]\n+    response --> execute[\"SignalWire executes the SWML instructions\"]\n+    execute --> conversation[\"AI conversation begins from the SWML configuration\"]\n+```\n+\n+</llms-only>\n+\n ### SWML Document Structure\n \n Every SWML document has this structure:\n@@ -364,10 +380,32 @@ When SignalWire requests SWML, the agent's render method (`_render_swml()` in Py\n \n ### SWML Rendering Pipeline\n \n+<llms-ignore>\n+\n <Frame caption=\"SWML Rendering Pipeline\">\n   <img class=\"diagram\" src=\"/assets/images/"
+        },
+        {
+          "path": "fern/products/server-sdks/pages/guides/build-ai-agents/understanding-skills.mdx",
+          "status": "modified",
+          "additions": 17,
+          "deletions": 0,
+          "url": "/docs/server-sdks/guides/understanding-skills",
+          "title": "Skills",
+          "patch": null
+        },
+        {
+          "path": "fern/products/server-sdks/pages/guides/deploy/cgi-mode.mdx",
+          "status": "modified",
+          "additions": 17,
+          "deletions": 0,
+          "url": "/docs/server-sdks/guides/cgi-mode",
+          "title": "CGI Mode",
+          "patch": null
+        },
+        {
+          "path": "fern/products/server-sdks/pages/guides/deploy/docker-kubernetes.mdx",
+          "status": "modified",
+          "additions": 17,
+          "deletions": 0,
+          "url": "/docs/server-sdks/guides/docker-kubernetes",
+          "title": "Docker & Kubernetes",
+          "patch": null
+        },
+        {
+          "path": "fern/products/server-sdks/pages/guides/deploy/production.mdx",
+          "status": "modified",
+          "additions": 16,
+          "deletions": 0,
+          "url": "/docs/server-sdks/guides/production",
+          "title": "Production Deployment",
+          "patch": null
+        },
+        {
+          "path": "fern/products/server-sdks/pages/guides/deploy/serverless.mdx",
+          "status": "modified",
+          "additions": 17,
+          "deletions": 0,
+          "url": "/docs/server-sdks/guides/serverless",
+          "title": "Serverless Deployment",
+          "patch": null
+        },
+        {
+          "path": "fern/products/server-sdks/pages/guides/getting-started/exposing-agents.mdx",
+          "status": "modified",
+          "additions": 32,
+          "deletions": 0,
+          "url": "/docs/server-sdks/guides/exposing-agents",
+          "title": "Exposing Your Agent to the Internet",
+          "patch": null
+        },
+        {
+          "path": "fern/products/server-sdks/pages/guides/getting-started/overview.mdx",
+          "status": "modified",
+          "additions": 36,
+          "deletions": 0,
+          "url": "/docs/server-sdks/",
+          "title": "SignalWire SDKs",
+          "patch": null
+        },
+        {
+          "path": "fern/products/server-sdks/pages/guides/getting-started/quickstart.mdx",
+          "status": "modified",
+          "additions": 20,
+          "deletions": 0,
+          "url": "/docs/server-sdks/guides/quickstart",
+          "title": "Quick Start: Your First Agent",
+          "patch": null
+        },
+        {
+          "path": "fern/products/server-sdks/pages/guides/manage-resources/account-setup.mdx",
+          "status": "modified",
+          "additions": 35,
+          "deletions": 0,
+          "url": "/docs/server-sdks/guides/account-setup",
+          "title": "Account Setup",
+          "patch": null
+        },
+        {
+          "path": "fern/products/server-sdks/pages/guides/manage-resources/mapping-numbers.mdx",
+          "status": "modified",
+          "additions": 29,
+          "deletions": 1,
+          "url": "/docs/server-sdks/guides/mapping-numbers",
+          "title": "Mapping Numbers",
+          "patch": null
+        }
+      ]
+    },
+    {
+      "number": 611,
+      "title": "docs: improve callout and voice widget LLM exports",
+      "body": "Part 2 of #388, stacked on #610.\n\n- hides all 17 VoiceWidget instances and widget-only instructions from .md exports\n- preserves the existing provider voice documentation as the machine-readable source\n- adds targeted titles where legal, credential, network-security, or availability warnings otherwise lose intent\n- extends the local/manual preview assertions across all canonical TTS provider routes; the checker is intentionally not wired into CI\n\nValidation:\n- yarn test:scripts\n- yarn fern-md-check\n- yarn check-llm-exports <preview-url> after the Fern preview deploys\n\nRetarget to main after #610 merges.",
+      "author": "Devon-White",
+      "mergedAt": "2026-08-21T19:07:40Z",
+      "mergeCommit": "a2ae1e6b993f02d852c9caad6e881db2d2305194",
+      "url": "https://github.com/signalwire/docs/pull/611",
+      "mechanical": false,
+      "selfDocumented": false,
+      "authoredEntries": [],
+      "fileCount": 25,
+      "files": [
+        {
+          "path": "fern/products/browser-sdk/pages/v4/guides/getting-started/authentication.mdx",
+          "status": "modified",
+          "additions": 1,
+          "deletions": 1,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "fern/products/compatibility-api/pages/cxml/guides/webhooks/webhook-security.mdx",
+          "status": "modified",
+          "additions": 1,
+          "deletions": 1,
+          "url": "/docs/compatibility-api/guides/webhook-security",
+          "title": "Webhook security",
+          "patch": null
+        },
+        {
+          "path": "fern/products/platform/pages/ai/get-started/best-practices-for-ai/index.mdx",
+          "status": "modified",
+          "additions": 1,
+          "deletions": 1,
+          "url": "/docs/platform/ai/best-practices",
+          "title": "Best practices for creating a SignalWire AI agent",
+          "patch": null
+        },
+        {
+          "path": "fern/products/platform/pages/ai/guides/Integrations/vapi/inbound-calls.mdx",
+          "status": "modified",
+          "additions": 1,
+          "deletions": 1,
+          "url": "/docs/platform/ai/vapi/inbound",
+          "title": "VAPI inbound calling",
+          "patch": null
+        },
+        {
+          "path": "fern/products/platform/pages/calling/voice/SIP/byoc/index.mdx",
+          "status": "modified",
+          "additions": 1,
+          "deletions": 1,
+          "url": "/docs/platform/voice/sip/bring-your-own-carrier",
+          "title": "Bring your own carrier",
+          "patch": null
+        },
+        {
+          "path": "fern/products/platform/pages/calling/voice/TTS/azure.mdx",
+          "status": "modified",
+          "additions": 4,
+          "deletions": 0,
+          "url": "/docs/platform/voice/tts/azure",
+          "title": "Azure",
+          "patch": "@@ -12,10 +12,14 @@ Microsoft's Azure platform offers an impressive array of high-quality, multiling\n \n ## Voices\n \n+<llms-ignore>\n+\n Press play to audition any Azure voice, then **copy config** to grab the value for SWML or your SDK.\n \n <VoiceWidget provider=\"azure\" />\n \n+</llms-ignore>\n+\n <CardGroup cols={2}>\n   <Card title=\"Voices\" href=\"https://learn.microsoft.com/en-us/azure/ai-services/speech-service/language-support?tabs=tts\">\n     Browse the complete list of Azure Neural voices in Microsoft's official documentation."
+        },
+        {
+          "path": "fern/products/platform/pages/calling/voice/TTS/cartesia.mdx",
+          "status": "modified",
+          "additions": 4,
+          "deletions": 0,
+          "url": "/docs/platform/voice/tts/cartesia",
+          "title": "Cartesia",
+          "patch": "@@ -43,10 +43,14 @@ Cartesia account — including custom or cloned voices — will not work.\n See [Custom and cloned voices](/docs/platform/voice/tts#custom-and-cloned-voices) for details.\n </Warning>\n \n+<llms-ignore>\n+\n Press play to audition any Cartesia voice, then **copy config** to grab the value for SWML or your SDK.\n \n <VoiceWidget provider=\"cartesia\" />\n \n+</llms-ignore>\n+\n Copy the voice ID from the table below:\n \n "
+        },
+        {
+          "path": "fern/products/platform/pages/calling/voice/TTS/deepgram.mdx",
+          "status": "modified",
+          "additions": 4,
+          "deletions": 0,
+          "url": "/docs/platform/voice/tts/deepgram",
+          "title": "Deepgram",
+          "patch": "@@ -28,10 +28,14 @@ Deepgram's Aura model provides ultra-low latency text-to-speech optimized for co\n \n ## Voices\n \n+<llms-ignore>\n+\n Press play to audition any Deepgram voice, then **copy config** to grab the value for SWML or your SDK.\n \n <VoiceWidget provider=\"deepgram\" />\n \n+</llms-ignore>\n+\n Deepgram Aura voices are designed for natural-sounding English speech. Each voice follows the pattern `aura-<name>-en`.\n \n Popular voices include:"
+        },
+        {
+          "path": "fern/products/platform/pages/calling/voice/TTS/elevenlabs.mdx",
+          "status": "modified",
+          "additions": 4,
+          "deletions": 0,
+          "url": "/docs/platform/voice/tts/elevenlabs",
+          "title": "ElevenLabs",
+          "patch": "@@ -30,10 +30,14 @@ ElevenLabs voice import is available by request:\n see [Custom and cloned voices](/docs/platform/voice/tts#custom-and-cloned-voices) for details.\n </Warning>\n \n+<llms-ignore>\n+\n Press play to audition any ElevenLabs voice, then **copy config** to grab the value for SWML or your SDK.\n \n <VoiceWidget provider=\"elevenlabs\" />\n \n+</llms-ignore>\n+\n You can use the **Name** and **ID** values for each voice in the below table interchangeably.\n \n | Name | ID |"
+        },
+        {
+          "path": "fern/products/platform/pages/calling/voice/TTS/fish.mdx",
+          "status": "modified",
+          "additions": 4,
+          "deletions": 0,
+          "url": "/docs/platform/voice/tts/fish",
+          "title": "Fish Audio",
+          "patch": "@@ -26,10 +26,14 @@ See [Fish Audio's documentation](https://docs.fish.audio/) for more detail.\n \n ## Voices\n \n+<llms-ignore>\n+\n Press play to audition any Fish Audio voice, then **copy config** to grab the value for SWML or your SDK.\n \n <VoiceWidget provider=\"fish\" />\n \n+</llms-ignore>\n+\n A Fish Audio voice ID is a **reference ID** — a long hexadecimal string found on the voice's page\n in the Fish Audio marketplace. The default voice is Energetic Male\n (`802e3bc2b27e49c2995d23ef70e6ac89`)."
+        },
+        {
+          "path": "fern/products/platform/pages/calling/voice/TTS/google.mdx",
+          "status": "modified",
+          "additions": 10,
+          "deletions": 0,
+          "url": "/docs/platform/voice/tts/gcloud",
+          "title": "Google Cloud",
+          "patch": "@@ -41,10 +41,20 @@ the `polyglot-1` voice has variants for English (Australia), English (US), Frenc\n \n ## Voices\n \n+<llms-ignore>\n+\n Press play to audition any Google Cloud voice, then **copy config** to grab the value for SWML or your SDK.\n \n <VoiceWidget provider=\"gcloud\" />\n \n+</llms-ignore>\n+\n+<llms-only>\n+\n+Browse Google's table of [supported voices](https://cloud.google.com/text-to-speech/docs/voices) and copy the **Voice name** value to use as the voice ID.\n+\n+</llms-only>\n+\n ## Billing\n \n Google Cloud TTS usage on SignalWire is billed according to the following SKU codes:"
+        },
+        {
+          "path": "fern/products/platform/pages/calling/voice/TTS/grok.mdx",
+          "status": "modified",
+          "additions": 4,
+          "deletions": 0,
+          "url": "/docs/platform/voice/tts/grok",
+          "title": "Grok",
+          "patch": "@@ -18,10 +18,14 @@ never append a `:model` suffix.\n \n ## Voices\n \n+<llms-ignore>\n+\n Press play to audition any Grok voice, then **copy config** to grab the value for SWML or your SDK.\n \n <VoiceWidget provider=\"grok\" />\n \n+</llms-ignore>\n+\n Grok provides five voices: `ara`, `eve`, `leo`, `rex`, and `sal`.\n `eve` is the default, and is also used as the fallback when an unrecognized voice is requested.\n "
+        },
+        {
+          "path": "fern/products/platform/pages/calling/voice/TTS/groq-tts.mdx",
+          "status": "modified",
+          "additions": 4,
+          "deletions": 0,
+          "url": "/docs/platform/voice/tts/groq-tts",
+          "title": "Groq",
+          "patch": "@@ -35,10 +35,14 @@ Requests fail until the terms are accepted.\n \n ## Voices\n \n+<llms-ignore>\n+\n Press play to audition any Groq voice, then **copy config** to grab the value for SWML or your SDK.\n \n <VoiceWidget provider=\"groq-tts\" />\n \n+</llms-ignore>\n+\n Groq's Orpheus deployment provides the following voices:\n \n | Voice | Description |"
+        },
+        {
+          "path": "fern/products/platform/pages/calling/voice/TTS/index.mdx",
+          "status": "modified",
+          "additions": 10,
+          "deletions": 0,
+          "url": "/docs/platform/voice/tts",
+          "title": "Voices and languages",
+          "patch": "@@ -38,6 +38,8 @@ Refer to each provider's documentation for up-to-date model details and service\n \n ## Browse and audition voices\n \n+<llms-ignore>\n+\n Choose a provider to browse and audition its full voice catalog. Press play to audition a voice, and use **copy config** to\n grab the engine and voice values for your SWML or SDK code. Each provider's complete voice list\n lives on its reference page, linked in the table below.\n@@ -48,6 +50,14 @@ for supported options.\n \n <VoiceWidget groupBy=\"none\" />\n \n+</llms-ignore>\n+\n+<llms-only>\n+\n+Browse each provider's complete voice list on its reference page, linked in the table below.\n+\n+</llms-only>\n+\n ## Compare providers and models\n \n SignalWire's TTS providers offer a wide range of voice engines optimized for various applications."
+        },
+        {
+          "path": "fern/products/platform/pages/calling/voice/TTS/inworld.mdx",
+          "status": "modified",
+          "additions": 4,
+          "deletions": 0,
+          "url": "/docs/platform/voice/tts/inworld",
+          "title": "Inworld",
+          "patch": "@@ -28,10 +28,14 @@ defaults to `inworld-tts-1.5-max`. Set a model explicitly to override this.\n \n ## Voices\n \n+<llms-ignore>\n+\n Press play to audition any Inworld voice, then **copy config** to grab the value for SWML or your SDK.\n \n <VoiceWidget provider=\"inworld\" />\n \n+</llms-ignore>\n+\n Inworld provides a large library of expressive voices across many languages.\n A voice's name is its voice ID — for example, `Lauren` becomes `inworld.Lauren` in the\n [voice string](#usage)."
+        },
+        {
+          "path": "fern/products/platform/pages/calling/voice/TTS/minimax.mdx",
+          "status": "modified",
+          "additions": 4,
+          "deletions": 0,
+          "url": "/docs/platform/voice/tts/minimax",
+          "title": "MiniMax",
+          "patch": "@@ -28,10 +28,14 @@ SignalWire supports the following MiniMax models. Pick a `turbo` model for speed\n \n ## Voices\n \n+<llms-ignore>\n+\n Press play to audition any MiniMax voice, then **copy config** to grab the value for SWML or your SDK.\n \n <VoiceWidget provider=\"minimax\" />\n \n+</llms-ignore>\n+\n MiniMax provides a large library of system voices across many languages.\n A voice's **Voice ID** is what you put in the [voice string](#usage): for exampl"
+        },
+        {
+          "path": "fern/products/platform/pages/calling/voice/TTS/mistral.mdx",
+          "status": "modified",
+          "additions": 4,
+          "deletions": 0,
+          "url": "/docs/platform/voice/tts/mistral",
+          "title": "Mistral",
+          "patch": null
+        },
+        {
+          "path": "fern/products/platform/pages/calling/voice/TTS/openai.mdx",
+          "status": "modified",
+          "additions": 4,
+          "deletions": 0,
+          "url": "/docs/platform/voice/tts/openai",
+          "title": "OpenAI",
+          "patch": null
+        },
+        {
+          "path": "fern/products/platform/pages/calling/voice/TTS/polly.mdx",
+          "status": "modified",
+          "additions": 10,
+          "deletions": 0,
+          "url": "/docs/platform/voice/tts/amazon-polly",
+          "title": "Amazon Polly",
+          "patch": "@@ -38,10 +38,20 @@ SignalWire supports the following three Amazon models.\n \n ## Voices\n \n+<llms-ignore>\n+\n Press play to audition any Amazon Polly voice, then **copy config** to grab the value for SWML or your SDK.\n \n <VoiceWidget provider=\"polly\" />\n \n+</llms-ignore>\n+\n+<llms-only>\n+\n+Browse Amazon's list of [available voices](https://docs.aws.amazon.com/polly/latest/dg/available-voices.html) and build the voice ID string as shown in the model cards above.\n+\n+</llms-only>\n+\n ## Languages\n \n Consult AWS documentation for a comprehensive and up-to-date list of supported voices,"
+        },
+        {
+          "path": "fern/products/platform/pages/calling/voice/TTS/rime.mdx",
+          "status": "modified",
+          "additions": 4,
+          "deletions": 0,
+          "url": "/docs/platform/voice/tts/rime",
+          "title": "Rime",
+          "patch": null
+        },
+        {
+          "path": "fern/products/platform/pages/calling/voice/TTS/smallest.mdx",
+          "status": "modified",
+          "additions": 4,
+          "deletions": 0,
+          "url": "/docs/platform/voice/tts/smallest",
+          "title": "Smallest.ai",
+          "patch": null
+        },
+        {
+          "path": "fern/products/platform/pages/calling/voice/TTS/speechify.mdx",
+          "status": "modified",
+          "additions": 4,
+          "deletions": 0,
+          "url": "/docs/platform/voice/tts/speechify",
+          "title": "Speechify",
+          "patch": null
+        },
+        {
+          "path": "fern/products/platform/pages/platform/compliance/hipaa.mdx",
+          "status": "modified",
+          "additions": 1,
+          "deletions": 1,
+          "url": "/docs/platform/compliance/hipaa",
+          "title": "HIPAA",
+          "patch": null
+        },
+        {
+          "path": "fern/products/platform/pages/platform/compliance/overview.mdx",
+          "status": "modified",
+          "additions": 1,
+          "deletions": 1,
+          "url": "/docs/platform/compliance",
+          "title": "Compliance",
+          "patch": null
+        },
+        {
+          "path": "fern/products/platform/pages/platform/compliance/tcpa.mdx",
+          "status": "modified",
+          "additions": 1,
+          "deletions": 1,
+          "url": "/docs/platform/compliance/tcpa",
+          "title": "TCPA",
+          "patch": null
+        }
+      ]
+    },
+    {
+      "number": 610,
+      "title": "docs: improve LLM export correctness",
+      "body": "Part 1 of #388.\n\n- adds structured LLM views for the homepage and getting-started routing\n- preserves webhook, tooltip, iframe, button, and Postman semantics in .md exports\n- adds local/manual preview semantic assertions and agent scenarios; the export checker is intentionally not wired into CI\n- documents the llms-only/llms-ignore authoring convention\n\nValidation:\n- yarn test:scripts\n- yarn fern-md-check\n- yarn check-llm-exports <preview-url> after the Fern preview deploys",
+      "author": "Devon-White",
+      "mergedAt": "2026-08-21T18:57:03Z",
+      "mergeCommit": "4bae12d16f2b620c8d37a70cb8560e93695e0be2",
+      "url": "https://github.com/signalwire/docs/pull/610",
+      "mechanical": false,
+      "selfDocumented": false,
+      "authoredEntries": [],
+      "fileCount": 27,
+      "files": [
+        {
+          "path": "fern/products/apis/pages/core/overview.mdx",
+          "status": "modified",
+          "additions": 10,
+          "deletions": 0,
+          "url": "/docs/apis/",
+          "title": "Overview",
+          "patch": null
+        },
+        {
+          "path": "fern/products/call-flow-builder/pages/core/overview.mdx",
+          "status": "modified",
+          "additions": 33,
+          "deletions": 1,
+          "url": "/docs/call-flow-builder/",
+          "title": "Call Flow Builder",
+          "patch": "@@ -19,10 +19,14 @@ It features a simple drag-and-drop interface for creating complex call flows wit\n All elements of the call flow are represented as nodes in a tree structure.\n You can easily add, remove, and rearrange elements in the call flow using the visual interface.\n \n+<llms-ignore>\n+\n <Frame caption=\"A sample Call Flow showcasing input-gathering, recording, AI Agent, and TTS features.\">\n   ![A sample call flow created with Call Flow Builder, showing connections between nodes.](/assets/images/call-flow/sample-flow.webp)\n </Frame>\n \n+</llms-ignore>\n+\n Add or remove any element from the call flow by dragging it into the desired location,\n and define links between them using the connection lines.\n \n@@ -46,6 +50,8 @@ To get started with Call Flow Builder, open the **Tools** tab in the left menu o\n \n Check out this brief demo to see how to add, configure, and connect nodes in Call Flow Builder.\n \n+<llms-ignore>\n+\n <iframe\n   src=\"https://www.youtube.com/embed/ZPnwEKOhYH4?si=Q1cEQi9RrG6L6VZw\"\n   title=\"YouTube video player\"\n@@ -56,17 +62,29 @@ Check out this brief demo to see how to add, configure, and connect nodes in Cal\n   style=\"width: 100%; aspect-ratio: 16/9;\">\n </iframe>\n "
+        },
+        {
+          "path": "fern/products/compatibility-api/pages/cxml/voice/conference-noun.mdx",
+          "status": "modified",
+          "additions": 10,
+          "deletions": 0,
+          "url": "/docs/compatibility-api/cxml/reference/voice/conference",
+          "title": "Conference",
+          "patch": null
+        },
+        {
+          "path": "fern/products/compatibility-api/pages/cxml/voice/dial.mdx",
+          "status": "modified",
+          "additions": 10,
+          "deletions": 0,
+          "url": "/docs/compatibility-api/cxml/reference/voice/dial",
+          "title": "Dial",
+          "patch": null
+        },
+        {
+          "path": "fern/products/compatibility-api/pages/cxml/voice/number-noun.mdx",
+          "status": "modified",
+          "additions": 10,
+          "deletions": 0,
+          "url": "/docs/compatibility-api/cxml/reference/voice/number",
+          "title": "Number",
+          "patch": null
+        },
+        {
+          "path": "fern/products/compatibility-api/pages/cxml/voice/record.mdx",
+          "status": "modified",
+          "additions": 20,
+          "deletions": 0,
+          "url": "/docs/compatibility-api/cxml/reference/voice/record",
+          "title": "Record",
+          "patch": "@@ -104,13 +104,33 @@ The `action` request contains the [Standard Request Parameters](/docs/compatibil\n \n #### Request parameters for `recordingStatusCallback`  [#record_recordingStatusCallback]\n \n+<llms-ignore>\n+\n <WebhookPayloadSnippet webhook=\"recordingStatusCallback\" />\n \n+</llms-ignore>\n+\n+<llms-only>\n+\n+See the [Recording status callback reference](/docs/compatibility-api/rest/recordings/webhooks/recording-status-callback) for the request fields sent to `recordingStatusCallback`.\n+\n+</llms-only>\n+\n \n #### Request parameters for `transcribeCallback`  [#record_transcribeCallback]\n \n+<llms-ignore>\n+\n <WebhookPayloadSnippet webhook=\"transcriptionStatusCallback\" />\n \n+</llms-ignore>\n+\n+<llms-only>\n+\n+See the [Transcription status callback reference](/docs/compatibility-api/rest/recording-transcriptions/webhooks/transcription-status-callback) for the request fields sent to `transcribeCallback`.\n+\n+</llms-only>\n+\n ## Nesting\n \n No other verbs can be nested within `<Record>` and you cannot nest `<Record>` within any other verbs."
+        },
+        {
+          "path": "fern/products/compatibility-api/pages/cxml/voice/sip-noun.mdx",
+          "status": "modified",
+          "additions": 10,
+          "deletions": 0,
+          "url": "/docs/compatibility-api/cxml/reference/voice/sip",
+          "title": "Sip",
+          "patch": null
+        },
+        {
+          "path": "fern/products/compatibility-api/pages/rest-api/core/overview.mdx",
+          "status": "modified",
+          "additions": 10,
+          "deletions": 0,
+          "url": "/docs/compatibility-api/rest",
+          "title": "Overview",
+          "patch": null
+        },
+        {
+          "path": "fern/products/home/pages/welcome.mdx",
+          "status": "modified",
+          "additions": 38,
+          "deletions": 0,
+          "url": "/docs/",
+          "title": "SignalWire Documentation",
+          "patch": "@@ -9,6 +9,8 @@ layout: custom\n \n <Markdown src=\"/snippets/llms-hint.mdx\" />\n \n+<llms-ignore>\n+\n <div class=\"lp-page-container\">\n   <div class=\"main-content\">\n     {/* Dashed Pattern */}\n@@ -114,3 +116,39 @@ layout: custom\n \n   </div>\n </div>\n+\n+</llms-ignore>\n+\n+<llms-only>\n+\n+SignalWire is a programmable communications platform for building voice, video, messaging, and AI applications.\n+Use the build type or interface below to choose the shortest path into the documentation.\n+\n+## Choose what to build\n+\n+| Goal | Start here | Use it for |\n+|---|---|---|\n+| AI voice agent | [AI application path](/docs/platform/getting-started#ai-application) | LLM-powered phone agents and virtual assistants |\n+| Browser or mobile experience | [Browser or mobile path](/docs/platform/getting-started#browser-or-mobile-app) | WebRTC voice, video, and chat in an application |\n+| Server application | [Server application path](/docs/platform/getting-started#server-application) | Backend call routing, messaging, interactive voice response, and realtime control |\n+| No-code application | [No-code and low-code path](/docs/platform/getting-started#no-code--low-code) | Dashboard AI agents and drag-and-drop ca"
+        },
+        {
+          "path": "fern/products/platform/pages/ai/get-started/tool-calling/index.mdx",
+          "status": "modified",
+          "additions": 4,
+          "deletions": 0,
+          "url": "/docs/platform/ai/tool-calling",
+          "title": "Tool calling",
+          "patch": null
+        },
+        {
+          "path": "fern/products/platform/pages/getting-started.mdx",
+          "status": "modified",
+          "additions": 35,
+          "deletions": 1,
+          "url": "/docs/platform/getting-started",
+          "title": "Get started",
+          "patch": "@@ -29,17 +29,39 @@ In your Dashboard, you can:\n - Access your API credentials\n - Set up AI agents, call flows, and more\n \n+<llms-ignore>\n+\n <Frame>\n   ![The SignalWire Dashboard](/assets/images/dashboard/home/home.webp)\n </Frame>\n \n+</llms-ignore>\n+\n+<llms-only>\n+\n+The Dashboard's left navigation includes **My Resources**, **Click-to-Call**, **Phone Numbers**, **Messaging Campaigns**, **API Credentials**, **Logs**, **Storage**, and **Configuration**. The home page also displays the current **Project ID** and **Space URL**.\n+\n+</llms-only>\n+\n ## Start building\n \n Let's begin by figuring out the best way for you to build.\n The right approach depends on what you're creating and how you prefer to work.\n \n ### What are you trying to build?\n \n+<llms-only>\n+\n+| What you are building | Primary interface | Choose another interface when |\n+|---|---|---|\n+| AI voice agent | [Server SDKs](/docs/server-sdks) | Use [SignalWire AI](/docs/platform/ai) for Dashboard configuration or [SWML AI](/docs/swml/reference/calling/ai) when AI is one part of a declarative call flow. |\n+| Browser or mobile voice, video, or chat | [Browser SDK](/docs/browser-sdk) | Use a server interface only for trusted backe"
+        },
+        {
+          "path": "fern/products/platform/pages/messaging/sms/hosted-messaging.mdx",
+          "status": "modified",
+          "additions": 13,
+          "deletions": 1,
+          "url": "/docs/platform/messaging/hosted-messaging",
+          "title": "Hosted messaging",
+          "patch": "@@ -5,10 +5,22 @@ title: Hosted messaging\n description: Learn about porting Messaging services only to the SignalWire platform.\n ---\n \n+<llms-ignore>\n+\n Hosted Messaging allows you to use SignalWire to send and receive SMS and MMS on \n-<Tooltip tip=\"10DLC stands for '10-digit long code numbers', such as `(123) 456-7890`. [Learn more](/docs/platform/phone-numbers/getting-started/buying-a-phone-number/#types-of-phone-number)\">10DLC</Tooltip> \n+<Tooltip tip=\"10DLC stands for '10-digit long code numbers', such as `(123) 456-7890`. [Learn more](/docs/platform/phone-numbers)\">10DLC</Tooltip>\n and Toll-Free VoIP phone numbers that are held elsewhere for voice (such as a PBX or VoIP provider).\n \n+</llms-ignore>\n+\n+<llms-only>\n+\n+Hosted Messaging allows you to use SignalWire to send and receive SMS and MMS on\n+[10-digit long code (10DLC) phone numbers](/docs/platform/phone-numbers),\n+such as `(123) 456-7890`, and Toll-Free VoIP phone numbers that are held elsewhere for voice, such as by a PBX or VoIP provider.\n+\n+</llms-only>\n+\n Use Hosted Messaging to migrate a phone number to SignalWire's robust Messaging platform\n while maintaining your existing Voice infrastructure.\n "
+        },
+        {
+          "path": "fern/products/platform/pages/messaging/whatsapp/receive-messages.mdx",
+          "status": "modified",
+          "additions": 12,
+          "deletions": 2,
+          "url": "/docs/platform/messaging/whatsapp/receive-messages",
+          "title": "Receive WhatsApp messages",
+          "patch": "@@ -37,11 +37,21 @@ You can also view message history graphically in your\n [SignalWire Dashboard](https://my.signalwire.com) under **Logs → Messaging**.\n \n To be notified of eac"
+        },
+        {
+          "path": "fern/products/swml/pages/reference/methods/calling/ai/ai_params/index.mdx",
+          "status": "modified",
+          "additions": 4,
+          "deletions": 0,
+          "url": "/docs/swml/reference/calling/ai/params",
+          "title": "params",
+          "patch": null
+        },
+        {
+          "path": "fern/products/swml/pages/reference/methods/calling/ai/ai_swaig/functions/index.mdx",
+          "status": "modified",
+          "additions": 4,
+          "deletions": 0,
+          "url": "/docs/swml/reference/calling/ai/swaig/functions",
+          "title": "functions",
+          "patch": null
+        },
+        {
+          "path": "fern/products/swml/pages/reference/methods/calling/ai/ai_swaig/includes/index.mdx",
+          "status": "modified",
+          "additions": 4,
+          "deletions": 0,
+          "url": "/docs/swml/reference/calling/ai/swaig/includes",
+          "title": "includes",
+          "patch": null
+        },
+        {
+          "path": "fern/products/swml/pages/reference/methods/calling/ai/index.mdx",
+          "status": "modified",
+          "additions": 4,
+          "deletions": 0,
+          "url": "/docs/swml/reference/calling/ai",
+          "title": "ai",
+          "patch": null
+        },
+        {
+          "path": "fern/products/swml/pages/reference/methods/calling/ai_sidecar/index.mdx",
+          "status": "modified",
+          "additions": 8,
+          "deletions": 0,
+          "url": "/docs/swml/reference/calling/ai-sidecar",
+          "title": "ai_sidecar",
+          "patch": null
+        },
+        {
+          "path": "fern/products/swml/pages/reference/methods/calling/bedrock/index.mdx",
+          "status": "modified",
+          "additions": 4,
+          "deletions": 0,
+          "url": "/docs/swml/reference/calling/amazon-bedrock",
+          "title": "amazon_bedrock",
+          "patch": null
+        },
+        {
+          "path": "fern/products/swml/pages/reference/methods/calling/bedrock/swaig/functions/index.mdx",
+          "status": "modified",
+          "additions": 4,
+          "deletions": 0,
+          "url": "/docs/swml/reference/calling/amazon-bedrock/swaig/functions",
+          "title": "functions",
+          "patch": null
+        },
+        {
+          "path": "fern/products/swml/pages/reference/methods/calling/overview.mdx",
+          "status": "modified",
+          "additions": 10,
+          "deletions": 0,
+          "url": "/docs/swml/reference/calling",
+          "title": "Calling SWML overview",
+          "patch": null
+        },
+        {
+          "path": "fern/products/swml/pages/reference/methods/calling/send_sms.mdx",
+          "status": "modified",
+          "additions": 5,
+          "deletions": 1,
+          "url": "/docs/swml/reference/calling/send-sms",
+          "title": "send_sms",
+          "patch": null
+        },
+        {
+          "path": "fern/products/swml/pages/reference/methods/calling/stream.mdx",
+          "status": "modified",
+          "additions": 4,
+          "deletions": 0,
+          "url": "/docs/swml/reference/calling/stream",
+          "title": "stream",
+          "patch": null
+        },
+        {
+          "path": "fern/products/swml/pages/reference/methods/calling/transcribe.mdx",
+          "status": "modified",
+          "additions": 4,
+          "deletions": 0,
+          "url": "/docs/swml/reference/calling/transcribe",
+          "title": "transcribe",
+          "patch": null
+        },
+        {
+          "path": "fern/products/swml/pages/reference/methods/messaging/overview.mdx",
+          "status": "modified",
+          "additions": 10,
+          "deletions": 1,
+          "url": "/docs/swml/reference/messaging",
+          "title": "Messaging SWML overview",
+          "patch": null
+        },
+        {
+          "path": "fern/products/swml/pages/reference/methods/messaging/reply.mdx",
+          "status": "modified",
+          "additions": 5,
+          "deletions": 2,
+          "url": "/docs/swml/reference/messaging/reply",
+          "title": "reply",
+          "patch": null
+        },
+        {
+          "path": "fern/products/swml/pages/reference/methods/messaging/transfer.mdx",
+          "status": "modified",
+          "additions": 10,
+          "deletions": 1,
+          "url": "/docs/swml/reference/messaging/transfer",
+          "title": "transfer",
+          "patch": null
+        }
+      ]
+    },
+    {
+      "number": 603,
+      "title": "Render web-components reference in .md exports, and add check-md-exports audit script",
+      "body": "## Description\n\n**Fixes**\n- Rename `fern/products/browser-sdk/pages/v4/web-components/*.md` → `.mdx` (27 files) and update `v4.yml` nav paths. These pages use `<ParamField>`/`<CardGroup>`, which Fern's `.md`-export path only compiles in `.mdx` files — every page in this section was exporting raw JSX to AI consumers while rendering fine as HTML. **Verified on the preview: the exports now render every term properly.**\n- Add the MDX-required blank lines inside `<Accordion>` blocks in 5 v4 guides (house-style normalization per `documentation-style.md`; note the authentication guide's export corruption turned out to be a separate Fern exporter bug — fence imbalance in `<EndpointRequestSnippet>` output — reported upstream, not fixable from our MDX).\n- Replace an authored `&#xA;` entity with a period in `sw-audio-level`'s methods table.\n\n**New tooling**:\n- `scripts/check-md-exports.js` (`yarn check-md-exports`): audits the llms.txt tree + all `.md` exports for structural breakage. Tiered checks (error/warn/info), `--cross-check` mode verifying ParamField terms from sources against deployed exports (with `--source-ref origin/main` to read sources from the ref the site was built from, eliminating branch-drift noise), `--base-url` for previews, markdown/JSON reports, CI-ready exit codes. Zero dependencies, mirrors `check-links.js` conventions.\n- `scripts/check-md-exports.test.js` (`yarn test:scripts`, 18 fixture tests on `node:test`): locks in the detection heuristics — the #525 regression shape must trip, the legitimate older page styles must not, and the cross-check URL-mapping rules are pinned.\n- `scripts/README.md`: documents all repo scripts, with a usage guide for the new audit.\n\n**Verification**:\n- `fern check` ✓; `fern docs md check` ✓ (2,806 MDX files valid on the rebased base); `yarn test:scripts` 18/18 ✓\n- Full-corpus run against production: 3,156 pages, 34 errors, all triaged\n- Preview run (`--base-url <preview>/docs --product browser-sdk`, 664 pages): 34 → 2 errors; both remaining are the upstream Fern snippet-fence bug\n- `--source-ref origin/main --product swml`: 1,469 ParamField terms across 74 sources, zero missing from deployed exports (the 3 findings from the working-tree run were confirmed as branch drift, which this mode eliminates)\n\n## Type of Change\n\n- [x] Bug fix\n- [x] New feature\n- [ ] Breaking change\n- [x] Documentation update\n- [ ] Code cleanup / refactor\n\n## Related Issues\n\nCloses #525.\n\n## Testing\n\n<!-- How did you test your changes? -->\n\n- [ ] Added/updated unit tests\n- [x] Tested manually\n- [ ] Tested with live SignalWire credentials (if applicable)\n\n## Checklist\n\n- [ ] I have read the [CONTRIBUTING](CONTRIBUTING.md) guidelines\n- [ ] My code follows the project's style guidelines\n- [ ] I have added tests for my changes (if applicable)\n- [ ] I have updated documentation (if applicable)\n- [ ] All existing tests pass\n\n## Additional Notes\n\n<!-- Any other context about the PR -->\n",
+      "author": "hey-august",
+      "mergedAt": "2026-08-19T15:14:30Z",
+      "mergeCommit": "41dbbcc8e01582552824eca4882f711bdebf3fa0",
+      "url": "https://github.com/signalwire/docs/pull/603",
+      "mechanical": false,
+      "selfDocumented": false,
+      "authoredEntries": [],
+      "fileCount": 32,
+      "files": [
+        {
+          "path": "fern/products/browser-sdk/pages/v4/guides/build-voice-video/device-management.mdx",
+          "status": "modified",
+          "additions": 2,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": "@@ -254,6 +254,7 @@ Save the page below as `devices-demo.html` and open it over HTTPS (or `localhost\n Pick a different mic, camera, or speaker before dialing. The log records each pick as `preference: …` — that's the `client.select*` branch in action. Plug or unplug a USB headset to see `deviceRecovered$` fire.\n \n <Accordion title=\"devices-demo.html — full source\">\n+\n ```html\n <!doctype html>\n <html lang=\"en\">\n@@ -442,6 +443,7 @@ Pick a different mic, camera, or speaker before dialing. The log records each pi\n   </body>\n </html>\n ```\n+\n </Accordion>\n \n ### Switch a device mid-call"
+        },
+        {
+          "path": "fern/products/browser-sdk/pages/v4/guides/build-voice-video/inbound-calls.mdx",
+          "status": "modified",
+          "additions": 2,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": "@@ -217,6 +217,7 @@ Once registered, the log prints the user's dialable `/private/<name>` address(es\n Leave the page open — when the call arrives, the **Caller** line populates and the **Answer** / **Decline** buttons enable. After you accept, **Hang up** enables so you can end the call.\n \n <Accordion title=\"inbound-demo.html — full source\">\n+\n ```html\n <!doctype html>\n <html lang=\"en\">\n@@ -376,6 +377,7 @@ Leave the page open — when the call arrives, the **Caller** line populates and\n   </body>\n </html>\n ```\n+\n </Accordion>\n \n ### Place a test call"
+        },
+        {
+          "path": "fern/products/browser-sdk/pages/v4/guides/build-voice-video/messaging-chat.mdx",
+          "status": "modified",
+          "additions": 2,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": "@@ -199,6 +199,7 @@ The demo touches: `client.directory$` (to list addresses),\n same conversation).\n \n <Accordion title=\"messaging-chat-demo.html — full source\">\n+\n ```html\n <!doctype html>\n <html lang=\"en\">\n@@ -416,6 +417,7 @@ same conversation).\n   </body>\n </html>\n ```\n+\n </Accordion>\n \n ## Reference"
+        },
+        {
+          "path": "fern/products/browser-sdk/pages/v4/guides/build-voice-video/outbound-calls.mdx",
+          "status": "modified",
+          "additions": 2,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": "@@ -132,6 +132,7 @@ Create a SAT against your project — the [Authentication guide](/docs/browser-s\n Copy the returned `token`, save the page below as `outbound-demo.html`, and open it over HTTPS (or `localhost`). Paste the SAT and a destination, toggle the **Send audio** / **Send video** checkboxes to match the call shape you want, click **Dial**, and watch the log — it records every status the call moves through. The checkboxes map directly onto the `audio` and `video` keys of `dial()`'s [`DialOptions`](/docs/browser-sdk/v4/reference/interfaces/dial-options).\n \n <Accordion title=\"outbound-demo.html — full source\">\n+\n ```html\n <!doctype html>\n <html lang=\"en\">\n@@ -241,6 +242,7 @@ Copy the returned `token`, save the page below as `outbound-demo.html`, and open\n   </body>\n </html>\n ```\n+\n </Accordion>\n \n You should see `Status: connected` once the destination picks up. If `dial()` rejects with `CallCreateError`, the token's scope doesn't reach the destination — re-check `allowed_addresses` or the token's project."
+        },
+        {
+          "path": "fern/products/browser-sdk/pages/v4/guides/getting-started/authentication.mdx",
+          "status": "modified",
+          "additions": 2,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": "@@ -341,6 +341,7 @@ The Project API Token can issue a SAT for any user in your project. Use a develo\n Copy the returned `token`, save the page below as `auth-demo.html`, and open it in a browser. Paste the SAT into the input, click **Authenticate**, and watch the log. It reports whether the SDK was able to open a session with the SAT.\n \n <Accordion title=\"auth-demo.html — full source\">\n+\n ```html\n <!doctype html>\n <html lang=\"en\">\n@@ -399,6 +400,7 @@ Copy the returned `token`, save the page below as `auth-demo.html`, and open it\n   </body>\n </html>\n ```\n+\n </Accordion>\n \n You should see `Authenticated — WebSocket open.` in the log. If you see `Failed: InvalidCredentialsError`, the SAT is expired, malformed, or issued for a different SignalWire space than the SDK is connecting to. Create a fresh one and try again."
+        },
+        {
+          "path": "fern/products/browser-sdk/pages/v4/web-components/index.mdx",
+          "status": "renamed",
+          "additions": 0,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "fern/products/browser-sdk/pages/v4/web-components/sw-audio-level.mdx",
+          "status": "renamed",
+          "additions": 1,
+          "deletions": 1,
+          "url": null,
+          "title": null,
+          "patch": "@@ -65,7 +65,7 @@ _Class: `SwAudioLevel` · Module: `packages/web-components/src/components/sw-aud\n \n | Name               | Privacy | Description                                                                                                                            | Parameters | Return | Inherited From |\n | ------------------ | ------- | -------------------------------------------------------------------------------------------------------------------------------------- | ---------- | ------ | -------------- |\n-| `releaseResources` | public  | Public method to release all audio resources immediately&#xA;Call this before stopping the MediaStream tracks to ensure proper cleanup |            | `void` |                |\n+| `releaseResources` | public  | Public method to release all audio resources immediately. Call this before stopping the MediaStream tracks to ensure proper cleanup |            | `void` |                |\n \n ### Attributes\n "
+        },
+        {
+          "path": "fern/products/browser-sdk/pages/v4/web-components/sw-call-controls.mdx",
+          "status": "renamed",
+          "additions": 0,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "fern/products/browser-sdk/pages/v4/web-components/sw-call-dialpad.mdx",
+          "status": "renamed",
+          "additions": 0,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "fern/products/browser-sdk/pages/v4/web-components/sw-call-media.mdx",
+          "status": "renamed",
+          "additions": 0,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "fern/products/browser-sdk/pages/v4/web-components/sw-call-provider.mdx",
+          "status": "renamed",
+          "additions": 0,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "fern/products/browser-sdk/pages/v4/web-components/sw-call-status.mdx",
+          "status": "renamed",
+          "additions": 0,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "fern/products/browser-sdk/pages/v4/web-components/sw-call-widget.mdx",
+          "status": "renamed",
+          "additions": 0,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "fern/products/browser-sdk/pages/v4/web-components/sw-click-to-call.mdx",
+          "status": "renamed",
+          "additions": 0,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "fern/products/browser-sdk/pages/v4/web-components/sw-device-selector.mdx",
+          "status": "renamed",
+          "additions": 0,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "fern/products/browser-sdk/pages/v4/web-components/sw-directory.mdx",
+          "status": "renamed",
+          "additions": 0,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "fern/products/browser-sdk/pages/v4/web-components/sw-local-camera.mdx",
+          "status": "renamed",
+          "additions": 0,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "fern/products/browser-sdk/pages/v4/web-components/sw-participant-controls.mdx",
+          "status": "renamed",
+          "additions": 0,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "fern/products/browser-sdk/pages/v4/web-components/sw-participants.mdx",
+          "status": "renamed",
+          "additions": 0,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "fern/products/browser-sdk/pages/v4/web-components/sw-self-media.mdx",
+          "status": "renamed",
+          "additions": 0,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "fern/products/browser-sdk/pages/v4/web-components/sw-ui-alert.mdx",
+          "status": "renamed",
+          "additions": 0,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "fern/products/browser-sdk/pages/v4/web-components/sw-ui-background.mdx",
+          "status": "renamed",
+          "additions": 0,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "fern/products/browser-sdk/pages/v4/web-components/sw-ui-call-layout.mdx",
+          "status": "renamed",
+          "additions": 0,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "fern/products/browser-sdk/pages/v4/web-components/sw-ui-content-drawer.mdx",
+          "status": "renamed",
+          "additions": 0,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "fern/products/browser-sdk/pages/v4/web-components/sw-ui-control-bar.mdx",
+          "status": "renamed",
+          "additions": 0,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "fern/products/browser-sdk/pages/v4/web-components/sw-ui-dialpad.mdx",
+          "status": "renamed",
+          "additions": 0,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "fern/products/browser-sdk/pages/v4/web-components/sw-ui-dropup.mdx",
+          "status": "renamed",
+          "additions": 0,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "fern/products/browser-sdk/pages/v4/web-components/sw-ui-icon.mdx",
+          "status": "renamed",
+          "additions": 0,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "fern/products/browser-sdk/pages/v4/web-components/sw-ui-modal.mdx",
+          "status": "renamed",
+          "additions": 0,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "fern/products/browser-sdk/pages/v4/web-components/sw-ui-responsive-container.mdx",
+          "status": "renamed",
+          "additions": 0,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "fern/products/browser-sdk/pages/v4/web-components/sw-ui-split-button.mdx",
+          "status": "renamed",
+          "additions": 0,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "fern/products/browser-sdk/pages/v4/web-components/sw-ui-transcript-view.mdx",
+          "status": "renamed",
+          "additions": 0,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        }
+      ]
+    },
+    {
+      "number": 593,
+      "title": "Mark required method keys on four SWML reference pages",
+      "body": "## Description\n\nThis was a fix that came up during my review of #361, but didn't make it in before we merged that PR.\n\nThe SWML schema declares every method key as required. `SWMLObject.json` lists `required: [\"answer\"]`, `[\"stop_stream\"]`, `[\"transcribe\"]`, and `[\"transcribe_stop\"]`, matching the `?`-free declarations in the TypeSpec\nsources under `specs/swml/calling/Methods/`.\n\nThese four reference pages rendered the top-level `ParamField` without `required={true}`, so the method key incorrectly appeared to be optional.\n\nA sweep of all 113 schema-required top-level keys against the SWML reference found these four pages and no others. One line changes on each; `yarn fern-md-check` passes.\n\n## Type of Change\n\n- [ ] Bug fix\n- [ ] New feature\n- [ ] Breaking change\n- [x] Documentation update\n- [ ] Code cleanup / refactor\n\n## Related Issues\n\n<!-- Link any related issues: Fixes #123 or Relates to #456 -->\n\n## Testing\n\n<!-- How did you test your changes? -->\n\n- [ ] Added/updated unit tests\n- [ ] Tested manually\n- [ ] Tested with live SignalWire credentials (if applicable)\n\n## Checklist\n\n- [ ] I have read the [CONTRIBUTING](CONTRIBUTING.md) guidelines\n- [ ] My code follows the project's style guidelines\n- [ ] I have added tests for my changes (if applicable)\n- [ ] I have updated documentation (if applicable)\n- [ ] All existing tests pass\n",
+      "author": "hey-august",
+      "mergedAt": "2026-08-19T16:35:42Z",
+      "mergeCommit": "20fd5a3ceaa4ed67c9574c4059def8f98232b3dd",
+      "url": "https://github.com/signalwire/docs/pull/593",
+      "mechanical": false,
+      "selfDocumented": false,
+      "authoredEntries": [],
+      "fileCount": 4,
+      "files": [
+        {
+          "path": "fern/products/swml/pages/reference/methods/calling/answer.mdx",
+          "status": "modified",
+          "additions": 1,
+          "deletions": 1,
+          "url": "/docs/swml/reference/calling/answer",
+          "title": "answer",
+          "patch": "@@ -10,7 +10,7 @@ Answer incoming call and set an optional maximum duration.\n \n ## **Properties**\n \n-<ParamField path=\"answer\" type=\"object\" toc={true}>\n+<ParamField path=\"answer\" type=\"object\" required={true} toc={true}>\n   An object that accepts the following properties.\n </ParamField>\n "
+        },
+        {
+          "path": "fern/products/swml/pages/reference/methods/calling/stop_stream.mdx",
+          "status": "modified",
+          "additions": 1,
+          "deletions": 1,
+          "url": "/docs/swml/reference/calling/stop-stream",
+          "title": "stop_stream",
+          "patch": "@@ -9,7 +9,7 @@ Stop an audio stream started with [`stream`](/docs/swml/reference/calling/stream\n \n ## **Properties**\n \n-<ParamField path=\"stop_stream\" type=\"object\" toc={true}>\n+<ParamField path=\"stop_stream\" type=\"object\" required={true} toc={true}>\n   An object that accepts the following properties.\n </ParamField>\n "
+        },
+        {
+          "path": "fern/products/swml/pages/reference/methods/calling/transcribe.mdx",
+          "status": "modified",
+          "additions": 1,
+          "deletions": 1,
+          "url": "/docs/swml/reference/calling/transcribe",
+          "title": "transcribe",
+          "patch": "@@ -16,7 +16,7 @@ Only one transcription can be active on a call at a time. Starting another while\n \n ## **Properties**\n \n-<ParamField path=\"transcribe\" type=\"object\" toc={true}>\n+<ParamField path=\"transcribe\" type=\"object\" required={true} toc={true}>\n   An object that accepts the following properties.\n </ParamField>\n "
+        },
+        {
+          "path": "fern/products/swml/pages/reference/methods/calling/transcribe_stop.mdx",
+          "status": "modified",
+          "additions": 1,
+          "deletions": 1,
+          "url": "/docs/swml/reference/calling/transcribe-stop",
+          "title": "transcribe_stop",
+          "patch": "@@ -10,7 +10,7 @@ Stop the transcription currently running on the call, started with [`transcribe`\n \n ## **Properties**\n \n-<ParamField path=\"transcribe_stop\" type=\"object\" toc={true}>\n+<ParamField path=\"transcribe_stop\" type=\"object\" required={true} toc={true}>\n   An empty object.\n </ParamField>\n "
+        }
+      ]
+    },
+    {
+      "number": 578,
+      "title": "Document `ai.multilingual` and qualify voice strings with their engine",
+      "body": "## Description\n\nDocuments `ai.multilingual` for SWML. \n\n### Additions\n- `ai.multilingual` reference page, modeled field-by-field against source code. States the mutual exclusivity with regular `ai.languages` on both pages, plus the `ai` method (object) page.\n\n### Changes\n\n- **Added `engine` for incorrect \"bare form\" examples:** Per #577 , while the technical reference and TTS pages were correct, a few stray examples passed voice IDs without engine. These examples would only work if the voice ID string matched the platform default engine, which sometimes changes. Every voice example now names its engine.\n- **Removed default engine assertions:** Since the platform default TTS engine can change, I removed references to the default. Users who need a specific engine should declare it.\n- **Corrected `params.languages_enabled`:** its description previously claimed it enabled multilingualism when it only toggles handling for a languages array.\n- Fixed a broken `#providers` anchor \n\n### Two notes for reviewers\n\n**`multilingual` appears on the Fabric AI Agent REST schemas, but is SWML-only today.** `AIAgent` derives from the SWML `ai` object, so the new field lands on `AIAgent`, `AIAgentCreateRequest`, and `AIAgentUpdateRequest`. The Fabric API silently drops it, as it already does for `global_data` and `post_prompt_url`. Fixing the derivation is tracked in #594 rather than here, to keep the REST contract change out of a SWML PR.\n\n**This widens schema validation three ways, with no runtime behavior change.** The `Languages` collapse drops the old `fillers` vs `function_fillers` exclusivity, now that precedence is documented instead. A document carrying `emotion: \"auto\"` now fails validation where it previously passed — the key never did anything, so only the validation result changes. And `ai.multilingual.languages[].voice` is no longer required, matching the engine, which requires a voice only on the base entry.\n\n## Type of Change\n\n- [ ] Bug fix\n- [ ] New feature\n- [ ] Breaking change\n- [x] Documentation update\n- [ ] Code cleanup / refactor\n\n## Related Issues\n\n#577 \n\n## Testing\n\n<!-- How did you test your changes? -->\n\n- [ ] Added/updated unit tests\n- [ ] Tested manually\n- [ ] Tested with live SignalWire credentials (if applicable)\n\n## Checklist\n\n- [ ] I have read the [CONTRIBUTING](CONTRIBUTING.md) guidelines\n- [ ] My code follows the project's style guidelines\n- [ ] I have added tests for my changes (if applicable)\n- [ ] I have updated documentation (if applicable)\n- [ ] All existing tests pass\n\n## Additional Notes\n\nTwo corrections to the originating ticket, both verified against source. \n\n1. `multilingual` is an *object*, not a boolean, which is why this is a full reference page rather than a one-line note. \n2. The new default engine-voice combination (ElevenLabs \"Mark\") has not landed, so these docs are written to be default-agnostic.",
+      "author": "hey-august",
+      "mergedAt": "2026-08-19T18:53:57Z",
+      "mergeCommit": "c60a19d228ebc49b0beb223ce5cbc78f6f745f96",
+      "url": "https://github.com/signalwire/docs/pull/578",
+      "mechanical": false,
+      "selfDocumented": false,
+      "authoredEntries": [],
+      "fileCount": 18,
+      "files": [
+        {
+          "path": "fern/products/platform/pages/calling/voice/TTS/google.mdx",
+          "status": "modified",
+          "additions": 6,
+          "deletions": 3,
+          "url": "/docs/platform/voice/tts/gcloud",
+          "title": "Google Cloud",
+          "patch": null
+        },
+        {
+          "path": "fern/products/server-sdks/pages/guides/build-ai-agents/voice-language.mdx",
+          "status": "modified",
+          "additions": 9,
+          "deletions": 1,
+          "url": "/docs/server-sdks/guides/voice-language",
+          "title": "Voice & Language",
+          "patch": null
+        },
+        {
+          "path": "fern/products/server-sdks/pages/reference/python/agents/agent-base/add-language.mdx",
+          "status": "modified",
+          "additions": 10,
+          "deletions": 6,
+          "url": "/docs/server-sdks/reference/python/agents/agent-base/add-language",
+          "title": "add_language",
+          "patch": null
+        },
+        {
+          "path": "fern/products/server-sdks/pages/reference/typescript/agents/agent-base/add-language.mdx",
+          "status": "modified",
+          "additions": 10,
+          "deletions": 6,
+          "url": "/docs/server-sdks/reference/typescript/agents/agent-base/add-language",
+          "title": "addLanguage",
+          "patch": null
+        },
+        {
+          "path": "fern/products/swml/pages/reference/methods/calling/ai/ai_params/index.mdx",
+          "status": "modified",
+          "additions": 33,
+          "deletions": 2,
+          "url": "/docs/swml/reference/calling/ai/params",
+          "title": "params",
+          "patch": null
+        },
+        {
+          "path": "fern/products/swml/pages/reference/methods/calling/ai/ai_swaig/index.mdx",
+          "status": "modified",
+          "additions": 23,
+          "deletions": 21,
+          "url": "/docs/swml/reference/calling/ai/swaig",
+          "title": "SWAIG",
+          "patch": null
+        },
+        {
+          "path": "fern/products/swml/pages/reference/methods/calling/ai/index.mdx",
+          "status": "modified",
+          "additions": 10,
+          "deletions": 0,
+          "url": "/docs/swml/reference/calling/ai",
+          "title": "ai",
+          "patch": null
+        },
+        {
+          "path": "fern/products/swml/pages/reference/methods/calling/ai/languages/index.mdx",
+          "status": "modified",
+          "additions": 117,
+          "deletions": 66,
+          "url": "/docs/swml/reference/calling/ai/languages",
+          "title": "languages",
+          "patch": "@@ -8,13 +8,34 @@ description: Configure the spoken language of your AI Agent, as well as the TTS\n max-toc-depth: 3\n ---\n \n-[tts-providers]: /docs/platform/voice/tts#providers\n+[tts-providers]: /docs/platform/voice/tts#compare-providers-and-models\n [voices-and-languages]: /docs/platform/voice/tts\n [swaig-functions]: /docs/swml/reference/calling/ai/swaig/functions\n [deepgram-codes]: https://developers.deepgram.com/docs/models-languages-overview#nova-3\n+[multilingual]: /docs/swml/reference/calling/ai/multilingual\n+[openai-asr-engine]: /docs/swml/reference/calling/ai/params#paramsopenai_asr_engine\n+[turn-filler-sources]: /docs/swml/reference/calling/ai/params#paramsturn_filler_sources\n+[ai-pronounce]: /docs/swml/reference/calling/ai#aipronounce\n+[cartesia]: /docs/platform/voice/tts/cartesia\n+[elevenlabs]: /docs/platform/voice/tts/elevenlabs\n+[fish]: /docs/platform/voice/tts/fish\n+[inworld]: /docs/platform/voice/tts/inworld\n+[minimax]: /docs/platform/voice/tts/minimax\n+[rime]: /docs/platform/voice/tts/rime\n+[smallest]: /docs/platform/voice/tts/smallest\n \n Use `ai.languages` to configure the spoken language of your AI Agent, as well as the TTS engine, voice, and fillers.\n \n+Use [`ai.mul"
+        },
+        {
+          "path": "fern/products/swml/pages/reference/methods/calling/ai/multilingual/index.mdx",
+          "status": "added",
+          "additions": 351,
+          "deletions": 0,
+          "url": "/docs/swml/reference/calling/ai/multilingual",
+          "title": "multilingual",
+          "patch": "@@ -0,0 +1,351 @@\n+---\n+slug: /reference/calling/ai/multilingual\n+title: multilingual\n+description: Configure one AI Agent to detect the caller's language and answer in it, switching as the caller switches.\n+max-toc-depth: 3\n+---\n+\n+[languages]: /docs/swml/reference/calling/ai/languages\n+[voices-and-languages]: /docs/platform/voice/tts\n+[variables]: /docs/swml/reference/variables\n+[openai-asr-engine]: /docs/swml/reference/calling/ai/params#paramsopenai_asr_engine\n+[turn-filler-sources]: /docs/swml/reference/calling/ai/params#paramsturn_filler_sources\n+\n+Use `ai.multilingual` to let one AI Agent detect the language a caller is speaking and answer\n+in that language, switching whenever the caller does. You give it a voice per language, and the\n+agent selects the matching voice as the conversation moves between them.\n+\n+Use [`ai.languages`][languages] instead when each call stays in one language and you are choosing\n+between a fixed set. Use neither when the agent only ever speaks one language — set the voice and\n+leave both out.\n+\n+<Warning>\n+`multilingual` and [`languages`][languages] are mutually exclusive. If both are set, SignalWire uses\n+`multilingual` and ignores `languages` ent"
+        },
+        {
+          "path": "fern/products/swml/pages/reference/methods/calling/ai/prompt/index.mdx",
+          "status": "modified",
+          "additions": 32,
+          "deletions": 89,
+          "url": "/docs/swml/reference/calling/ai/prompt",
+          "title": "prompt",
+          "patch": "@@ -158,75 +158,22 @@ The `prompt` property accepts one of the following objects:\n   When `true`, resets conversation history to only the system prompt when entering this context. Useful for focused tasks that shouldn't be influenced by previous conversation.\n </ParamField>\n \n-<ParamField path=\"*.enter_fillers\" type=\"object[]\" toc={true}>\n-  Language-specific filler phrases played when transitioning into this context.\n+<ParamField path=\"*.enter_fillers\" type=\"object\" toc={true}>\n+  Filler phrases played when entering this context, keyed by language code. One phrase is picked at random.\n+\n+  The agent looks for an entry matching the language being spoken, then `auto`, then `default`, and plays nothing when none of the three is set.\n </ParamField>\n \n <Indent>\n \n-<ParamField path=\"enter_fillers[].<language_code toc={true}>\" type=\"string[]\">\n-  An array of filler phrases for the specified language code. One phrase is randomly selected during transitions. Possible language codes:\n-  - `default` - Default language set by the user in the [`ai.languages`](/docs/swml/reference/calling/ai/languages) property\n-  - `bg` - Bulgarian\n-  - `ca` - Catalan\n-  - `cs` - Czech\n-  - `da` - Danish\n-  - "
+        },
+        {
+          "path": "fern/snippets/swml/_supported-language-codes.mdx",
+          "status": "modified",
+          "additions": 3,
+          "deletions": 2,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/swml/calling/Methods/ai/_shared/fillers.tsp",
+          "status": "modified",
+          "additions": 264,
+          "deletions": 278,
+          "url": null,
+          "title": null,
+          "patch": "@@ -4,282 +4,268 @@ using TypeSpec.JsonSchema;\n \n namespace SWML.Calling;\n \n-@doc(\"Supported language codes\")\n-@oneOf\n-union FunctionFillers {\n-  {\n-    @doc(\"Default language set by the user\")\n-    @example(#[\"one moment please\", \"let me check\"])\n-    default: string[],\n-  },\n-  {\n-    @doc(\"Bulgarian\")\n-    @example(#[\"един момент\", \"нека проверя\"])\n-    bg: string[],\n-  },\n-  {\n-    @doc(\"Catalan\")\n-    @example(#[\"un moment\", \"deixa'm comprovar\"])\n-    ca: string[],\n-  },\n-  {\n-    @doc(\"Chinese (Simplified)\")\n-    @example(#[\"请稍等\", \"让我查一下\"])\n-    zh: string[],\n-  },\n-  {\n-    @doc(\"Chinese (Simplified, China)\")\n-    @example(#[\"请稍等\", \"让我查一下\"])\n-    `zh-CN`: string[],\n-  },\n-  {\n-    @doc(\"Chinese (Simplified Han)\")\n-    @example(#[\"请稍等\", \"让我查一下\"])\n-    `zh-Hans`: string[],\n-  },\n-  {\n-    @doc(\"Chinese (Traditional, Taiwan)\")\n-    @example(#[\"請稍等\", \"讓我查一下\"])\n-    `zh-TW`: string[],\n-  },\n-  {\n-    @doc(\"Chinese (Traditional Han)\")\n-    @example(#[\"請稍等\", \"讓我查一下\"])\n-    `zh-Hant`: string[],\n-  },\n-  {\n-    @doc(\"Chinese (Traditional, Hong Kong)\")\n-    @example(#[\"請稍等\", \"讓我查一下\"])\n-    `zh-HK`: string[],\n-  },\n-  {\n-    @doc(\"Czech\")\n-    @example(#[\"moment prosím\", \"nechte mě zko"
+        },
+        {
+          "path": "specs/swml/calling/Methods/ai/ai_languages.tsp",
+          "status": "modified",
+          "additions": 71,
+          "deletions": 28,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/swml/calling/Methods/ai/ai_multilingual.tsp",
+          "status": "added",
+          "additions": 132,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": "@@ -0,0 +1,132 @@\n+import \"@typespec/json-schema\";\n+import \"../../../Shared/Types/main.tsp\";\n+import \"./ai_languages.tsp\";\n+import \"./_shared/fillers.tsp\";\n+\n+using TypeSpec.JsonSchema;\n+\n+namespace SWML.Calling;\n+\n+// A multilingual entry is flat: parse_multilingual reads only `language`, `voice`, `engine`,\n+// `model`, and `params`. The last four are shared with `languages[]` and picked from\n+// LanguagesBase so their descriptions live in one place. Anything added to LanguagesBase must\n+// be picked in here deliberately, or it would appear in the schema while the engine ignores it.\n+union PickedMultilingualLanguage {\n+  \"voice\",\n+  \"engine\",\n+  \"model\",\n+  \"params\",\n+}\n+\n+@summary(\"MultilingualLanguage\")\n+model MultilingualLanguage {\n+  @doc(\"\"\"\n+    The language this voice applies to, as a code the ASR engine supports.\n+    Use `default` instead of a code to mark the catch-all entry, which speaks any\n+    detected language that has no entry of its own.\n+    \"\"\")\n+  @example(\"es\")\n+  language: string;\n+\n+  // `voice` is required on `languages[]` but not here. Only the base entry — the `default`\n+  // entry when one is given, otherwise the first language listed — has to carry a vo"
+        },
+        {
+          "path": "specs/swml/calling/Methods/ai/ai_params.tsp",
+          "status": "modified",
+          "additions": 53,
+          "deletions": 3,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/swml/calling/Methods/ai/main.tsp",
+          "status": "modified",
+          "additions": 14,
+          "deletions": 1,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/swml/calling/Methods/ai/prompt/contexts/main.tsp",
+          "status": "modified",
+          "additions": 4,
+          "deletions": 4,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "specs/swml/calling/Methods/ai/swaig/internal_filler.tsp",
+          "status": "modified",
+          "additions": 20,
+          "deletions": 5,
+          "url": null,
+          "title": null,
+          "patch": null
+        }
+      ]
+    },
+    {
+      "number": 568,
+      "title": "AI guides follow-ups",
+      "body": "",
+      "author": "Devon-White",
+      "mergedAt": "2026-08-19T20:30:29Z",
+      "mergeCommit": "99a10d207c627f5e0230b33e2d58a6081daf7593",
+      "url": "https://github.com/signalwire/docs/pull/568",
+      "mechanical": false,
+      "selfDocumented": false,
+      "authoredEntries": [],
+      "fileCount": 20,
+      "files": [
+        {
+          "path": "fern/docs.yml",
+          "status": "modified",
+          "additions": 18,
+          "deletions": 0,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "fern/products/call-flow-builder/pages/nodes/ai_agent.mdx",
+          "status": "modified",
+          "additions": 3,
+          "deletions": 3,
+          "url": "/docs/call-flow-builder/reference/ai-agent",
+          "title": "AI Agent",
+          "patch": null
+        },
+        {
+          "path": "fern/products/platform/pages/ai/get-started/best-practices-for-ai/index.mdx",
+          "status": "renamed",
+          "additions": 239,
+          "deletions": 186,
+          "url": "/docs/platform/ai/best-practices",
+          "title": "Best practices for creating a SignalWire AI agent",
+          "patch": null
+        },
+        {
+          "path": "fern/products/platform/pages/ai/get-started/capabilities/index.mdx",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 463,
+          "url": null,
+          "title": null,
+          "patch": "@@ -1,463 +0,0 @@\n----\n-id: ec1d338d-9a57-4256-bb95-fd50df79a14a\n-title: AI platform\n-slug: /ai/capabilities\n-description: How SignalWire's AI platform works, from the ways to build agents and AI in the media path to conversation intelligence, analytics, integrations, and compliance.\n-max-toc-depth: 3\n----\n-\n-SignalWire's AI platform is a single system for building and deploying conversational AI.\n-It orchestrates voice, video, and messaging on one platform, with native integrations for the major LLM,\n-Text-to-Speech, and Speech-to-Text providers.\n-Functions execute serverlessly during live conversations, in parallel and asynchronously where needed,\n-and a global edge network with points of presence in every major region keeps latency low.\n-Security, compliance, logging, and analytics are part of the platform rather than add-ons.\n-\n----\n-\n-## Ways to build AI agents\n-\n-An AI agent is a resource on the SignalWire platform.\n-However you create it — in SWML, with a Server SDK, in the Dashboard's AI Agents UI, or as a\n-node in Call Flow Builder — the result is the same kind of agent: addressable from phone\n-numbers, SIP, and your applications, running on the same realtime infrastructur"
+        },
+        {
+          "path": "fern/products/platform/pages/ai/get-started/no-code-agents.mdx",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 142,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "fern/products/platform/pages/ai/get-started/quickstart.mdx",
+          "status": "added",
+          "additions": 324,
+          "deletions": 0,
+          "url": "/docs/platform/ai/quickstart",
+          "title": "Quickstart",
+          "patch": null
+        },
+        {
+          "path": "fern/products/platform/pages/ai/get-started/tool-calling/index.mdx",
+          "status": "renamed",
+          "additions": 223,
+          "deletions": 217,
+          "url": "/docs/platform/ai/tool-calling",
+          "title": "Tool calling",
+          "patch": "@@ -4,6 +4,7 @@ slug: /ai/tool-calling\n description: Connect your AI agent to your backend with tool calls, so that your code owns business logic, live data, and decisions.\n subtitle: The AI runs the conversation. Your code runs the business.\n max-toc-depth: 3\n+position: 2\n ---\n \n [best-practices]: /docs/platform/ai/best-practices\n@@ -28,15 +29,20 @@ max-toc-depth: 3\n \n Ask a language model what a ride across town costs, with nothing else to go on, and it will give you\n a number. The number will sound right. That doesn't make it the fare you charge.\n+A model without tools has no way to tell the difference: it will invent an answer rather than admit\n+it doesn't know.\n \n-An agent on a real phone line needs two things a model can't supply on its own.\n-It needs facts that are current for this caller, like the fare to their address or whether a driver\n-is free. It also needs to act: book the pickup, text the receipt, transfer the call.\n-Tool calling, also called function calling, gives it both.\n-The agent runs the conversation while your backend stays the source of truth.\n+Tool calling, also called function calling, closes that gap. A tool can look up or check something,\n+such as the fa"
+        },
+        {
+          "path": "fern/products/platform/pages/ai/guides/analytics.mdx",
+          "status": "added",
+          "additions": 442,
+          "deletions": 0,
+          "url": "/docs/platform/ai/analytics",
+          "title": "Conversation analytics",
+          "patch": "@@ -0,0 +1,442 @@\n+---\n+title: Conversation analytics\n+slug: /ai/analytics\n+description: Use final post-prompt reports to analyze SignalWire AI conversations and live debug webhooks to troubleshoot voice calls.\n+max-toc-depth: 3\n+---\n+\n+[best-practices]: /docs/platform/ai/best-practices\n+[content-redaction]: /docs/platform/ai/content-redaction\n+[debug-webhook-ref]: /docs/apis/rest/webhooks/ai-debug-webhook\n+[enable-debug-events]: /docs/server-sdks/reference/python/agents/agent-base/enable-debug-events\n+[on-summary]: /docs/server-sdks/reference/python/agents/agent-base/on-summary\n+[post-prompt-callback]: /docs/apis/rest/webhooks/ai-post-prompt-callback\n+[prompt-engineering]: /docs/platform/ai/prompt-engineering\n+[set-post-prompt]: /docs/server-sdks/reference/python/agents/agent-base/set-post-prompt\n+[speech-hints]: /docs/server-sdks/guides/hints\n+[tool-calling]: /docs/platform/ai/tool-calling\n+[tts]: /docs/platform/voice/tts\n+\n+Conversation analytics shows what happened during an AI conversation, how well the experience\n+performed, and whether the user accomplished their goal. Use it to replace impressions such as\n+\"the agent felt slow\" or \"the call went poorly\" with specific eviden"
+        },
+        {
+          "path": "fern/products/platform/pages/ai/guides/content-redaction/index.mdx",
+          "status": "modified",
+          "additions": 213,
+          "deletions": 172,
+          "url": "/docs/platform/ai/content-redaction",
+          "title": "Handling sensitive content",
+          "patch": null
+        },
+        {
+          "path": "fern/products/platform/pages/ai/guides/prompt-engineering/best-practices.mdx",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 428,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "fern/products/platform/pages/ai/guides/prompt-engineering/index.mdx",
+          "status": "modified",
+          "additions": 314,
+          "deletions": 190,
+          "url": "/docs/platform/ai/prompt-engineering",
+          "title": "Prompt engineering",
+          "patch": "@@ -1,219 +1,343 @@\n ---\n-id: 3244a74f-bdd3-4454-8c02-7ae18c802b7e\n title: Prompt engineering\n sidebar-title: Prompt engineering\n-subtitle: The craft of writing effective prompts for SignalWire AI agents\n+subtitle: Write clear, reliable prompts for SignalWire AI agents\n slug: /ai/prompt-engineering\n-description: Learn the fundamentals of prompt engineering and how it can help you create responsive and reliable AI agents for your SignalWire applications.\n+description: Learn where to place AI agent instructions, how to structure an effective prompt, and when to enforce behavior in code instead.\n max-toc-depth: 3\n ---\n \n-[context-steps]: /docs/platform/ai/prompt-engineering/where-to-apply#context-steps\n-[swaig]: /docs/platform/ai/prompt-engineering/where-to-apply#swaig-functions\n-[conscience]: /docs/platform/ai/prompt-engineering/where-to-apply#conscience\n-[post-prompt]: /docs/platform/ai/prompt-engineering/where-to-apply#post-prompt\n-\n-SignalWire AI Agents combine \n-<Tooltip tip=\"ASR, or 'Automatic Speech Recognition', is also known as 'Speech-to-Text' (STT).\">ASR</Tooltip>, \n-conversational intelligence, \n-[tool calling](/docs/platform/ai/tool-calling),\n-<Tooltip tip=\"'Retrieval Aug"
+        },
+        {
+          "path": "fern/products/platform/pages/ai/guides/prompt-engineering/prompt-areas.mdx",
+          "status": "removed",
+          "additions": 0,
+          "deletions": 377,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "fern/products/platform/pages/ai/overview.mdx",
+          "status": "modified",
+          "additions": 140,
+          "deletions": 818,
+          "url": "/docs/platform/ai",
+          "title": "System-directed AI",
+          "patch": "@@ -1,872 +1,194 @@\n ---\n-id: 9b5e2dd1-c53b-44fc-b210-ce32e99e5039\n slug: /ai\n-title: SignalWire AI\n+title: System-directed AI\n sidebar-title: Overview\n position: 0\n-subtitle: Programmable, integrated, realtime voice AI\n-description: Build programmable, realtime voice AI agents with SWML, the SignalWire Dashboard, Call Flow Builder, or the Server SDKs.\n+subtitle: Build conversational agents directed by your code, data, and business rules\n+description: SignalWire AI runs voice and text conversations while your code supplies current data, enforces business rules, and directs agent actions.\n max-toc-depth: 3\n ---\n \n-SignalWire AI runs programmable voice agents on the same realtime platform that carries your calls.\n-Deploy a minimum viable product with no-code and low-code tools, then scale it with\n-[SWML](/docs/swml) or the [Server SDKs](/docs/server-sdks).\n+[addresses]: /docs/platform/addresses\n+[analytics]: /docs/platform/ai/analytics\n+[best-practices]: /docs/platform/ai/best-practices\n+[chat-api]: /docs/apis/rest/ai-chat/chat-methods\n+[chat-client]: /docs/server-sdks/reference/python/agents/ai-chat-client\n+[chat-gateway]: /docs/server-sdks/reference/python/agents/chat-gateway\n+[cal"
+        },
+        {
+          "path": "fern/products/platform/pages/calling/voice/overview.mdx",
+          "status": "modified",
+          "additions": 2,
+          "deletions": 2,
+          "url": "/docs/platform/voice",
+          "title": "Voice",
+          "patch": null
+        },
+        {
+          "path": "fern/products/platform/pages/getting-started.mdx",
+          "status": "modified",
+          "additions": 8,
+          "deletions": 19,
+          "url": "/docs/platform/getting-started",
+          "title": "Get started",
+          "patch": null
+        },
+        {
+          "path": "fern/products/platform/pages/platform/call-fabric/resources.mdx",
+          "status": "modified",
+          "additions": 2,
+          "deletions": 5,
+          "url": "/docs/platform/resources",
+          "title": "Resources",
+          "patch": null
+        },
+        {
+          "path": "fern/products/platform/platform.yml",
+          "status": "modified",
+          "additions": 0,
+          "deletions": 1,
+          "url": null,
+          "title": null,
+          "patch": null
+        },
+        {
+          "path": "fern/products/swml/pages/reference/methods/calling/ai/index.mdx",
+          "status": "modified",
+          "additions": 3,
+          "deletions": 3,
+          "url": "/docs/swml/reference/calling/ai",
+          "title": "ai",
+          "patch": null
+        },
+        {
+          "path": "fern/products/swml/pages/reference/methods/calling/ai/prompt/index.mdx",
+          "status": "modified",
+          "additions": 2,
+          "deletions": 2,
+          "url": "/docs/swml/reference/calling/ai/prompt",
+          "title": "prompt",
+          "patch": null
+        },
+        {
+          "path": "fern/products/swml/pages/reference/methods/calling/bedrock/index.mdx",
+          "status": "modified",
+          "additions": 2,
+          "deletions": 2,
+          "url": "/docs/swml/reference/calling/amazon-bedrock",
+          "title": "amazon_bedrock",
+          "patch": null
+        }
+      ]
+    },
+    {
+      "number": 527,
+      "title": "Add doc on SWML requests signature",
+      "body": "## Description\n\nDocuments the HMAC signature SignalWire sends with every request for a SWML document, so developers serving SWML from their own web server can verify the caller.\n\nThe scheme itself is not new — `X-Signalwire-Signature` has been sent on SWML document fetches for some time, and it is verifiable with the existing `validateRequest` helper. What was missing was any mention of it in the SWML documentation. The Compatibility API has a dedicated Webhook security page and the Platform section documents the signature generically, but a developer following the SWML guides had no way to learn that their endpoint receives a signature at all, or how to check it. This adds that page and links to it from the guide where it matters.\n\n## Type of Change\n\n- [ ] Bug fix\n- [ ] New feature\n- [ ] Breaking change\n- [x] Documentation update\n- [ ] Code cleanup / refactor\n\n## Related Issues\n\n<!-- Link any related issues: Fixes #123 or Relates to #456 -->\n\n## Testing\n\n<!-- How did you test your changes? -->\n\n- [ ] Added/updated unit tests\n- [ ] Tested manually\n- [ ] Tested with live SignalWire credentials (if applicable)\n\n## Checklist\n\n- [x] I have read the [CONTRIBUTING](CONTRIBUTING.md) guidelines\n- [x] My code follows the project's style guidelines\n- [x] I have added tests for my changes (if applicable)\n- [x] I have updated documentation (if applicable)\n- [x] All existing tests pass\n\n## Additional Notes\n\n<!-- Any other context about the PR -->\n",
+      "author": "giavac",
+      "mergedAt": "2026-08-19T13:48:40Z",
+      "mergeCommit": "2b2a182eb2ad9dea68bcf966690aec1653653d1b",
+      "url": "https://github.com/signalwire/docs/pull/527",
+      "mechanical": false,
+      "selfDocumented": false,
+      "authoredEntries": [],
+      "fileCount": 2,
+      "files": [
+        {
+          "path": "fern/products/swml/pages/guides/basics/swml_remote_server.mdx",
+          "status": "modified",
+          "additions": 12,
+          "deletions": 0,
+          "url": "/docs/swml/guides/remote-server",
+          "title": "Handle incoming calls from code",
+          "patch": "@@ -188,6 +188,18 @@ app.post(\"/start\", async (req, res) => {\n app.listen(3000);\n ```\n \n+### Verifying that the request came from SignalWire\n+\n+Anyone who learns your endpoint URL can POST to it and read back the SWML document you return, so a\n+public endpoint should check who is calling it before it answers.\n+\n+SignalWire signs every request for a SWML document with an HMAC signature in the\n+`X-Signalwire-Signature` header, which you can verify against your project's signing key.\n+\n+<Card title=\"Verify SWML request signatures\" href=\"/docs/swml/guides/webhook-security\">\n+  How the signature is computed, and how to verify it in Node, Python, or Ruby.\n+</Card>\n+\n ## Conclusion\n \n We have shown how to handle incoming calls from code, by emitting SWML instructions that say something on a call, but it can do so much more! For more advanced applications, you'll want to check out [SWML's Technical Reference](/docs/swml)."
+        },
+        {
+          "path": "fern/products/swml/pages/guides/basics/webhook-security.mdx",
+          "status": "added",
+          "additions": 279,
+          "deletions": 0,
+          "url": "/docs/swml/guides/webhook-security",
+          "title": "Verify SWML request signatures",
+          "patch": "@@ -0,0 +1,279 @@\n+---\n+title: Verify SWML request signatures\n+subtitle: Confirm that a request for a SWML document really came from SignalWire.\n+slug: /guides/webhook-security\n+description: Verify the HMAC signature SignalWire sends with every request for a SWML document, so your server can reject forged requests.\n+max-toc-depth: 3\n+---\n+\n+When you serve SWML from your own web server, anyone who learns your endpoint URL can POST to it\n+and read back the SWML document you return. Since a SWML document can contain phone numbers, SIP\n+credentials, and prompts, that endpoint should not answer to just anyone.\n+\n+To let you check the caller, SignalWire signs every request for a SWML document with an HMAC\n+signature derived from your project's signing key. Verifying that signature proves the request came\n+from SignalWire and that neither the URL nor the body was altered in transit.\n+\n+<Warning title=\"This step is not optional!\">\n+For production applications it is extremely important to verify the signature, so that requests\n+from a malicious third party are rejected instead of being served a SWML document.\n+</Warning>\n+\n+## Which requests are signed\n+\n+Every POST SignalWire makes to fetc"
+        }
+      ]
+    }
+  ]
+}
