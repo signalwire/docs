@@ -14,24 +14,34 @@ A SWML-only `.tsp` edit still moves `fern/apis/signalwire-rest/openapi.yaml`, be
 
 ## Changelog
 
-`fern/products/changelog/changelog/` is a **product** changelog, written for customers and
+`fern/products/platform/changelog/` is a **product** changelog, written for customers and
 authored by Product, Marketing, and PMs as well as docs. Copy `_template.mdx` to
 `YYYY-MM-DD.mdx` — the date the change reached customers, not the day you wrote it. Several
 changes on one date share a file, one `##` heading each.
 
-- **Never make the documentation the subject.** Banned: "now documented", "the docs now
-  cover", "previously undocumented", "fully documented", "finally". Write what the reader
-  can now do or now knows.
-- **Titles are short noun phrases**, sentence case, no end punctuation — "Conversation
-  analytics", not "New guide for conversation analytics".
-- One to three sentences, second person, present tense. No marketing adjectives, no emoji.
-- A capability nobody was told about is new to the reader however long it shipped ago; don't
-  hedge it with a ship date. Open "Already available — " only where omitting it would
-  mislead (a security control, payload fields, a compliance gate).
+- **Titles say what was added, changed, removed, or deprecated** — in words, since no tag
+  carries the kind. Sentence case, no end punctuation.
+  A reader skimming the index shouldn't have to open the entry. "Tool calling guide added",
+  not "Tool calling"; "Default TTS engine changed from Google to ElevenLabs", not "TTS
+  update". No marketing phrasing ("One AI agent, many languages").
+- **Lead with the capability, concretely, in the first clause** — the opening line is the
+  whole entry for anyone skimming. An imperative usually beats a formula ("Pick Groq or
+  Mistral as your TTS engine"); "You can now …" is one option, not a house opening, and a
+  run of identical openings stops being read. One to three sentences, second person.
+- **Tag product areas only, alphabetical** — `voice`, `messaging`, `ai`, `video`, `fabric`,
+  `sdks`, `swml`, `apis`, `tts`, `e911`, `compliance`, `security`. Chips render on the index
+  and feed the tag filter, so keep the list short; a tag matching one entry filters nothing.
+  The kind of change belongs in the title, not in a tag.
+- **Documentation work gets no entry at all.** A new guide, a new reference page, or writing
+  up something that already shipped is not a changelog entry, however important the feature.
+  The only exception is a capability customers had no way to discover, where publishing it is
+  effectively the release. When in doubt, leave it out.
+- **Every `##` section opens with a text paragraph**, never a component — Fern previews each
+  entry by its opening content and a callout there renders badly. A breaking change puts a
+  titled `<Warning>` after that paragraph; an untitled callout flattens to plain prose in the
+  Markdown export.
 - **Links inline in prose, never a trailing "Updated pages:" list.** Copy every URL from the
   target page's own `slug:` frontmatter, prefixed `/docs/<product-slug>/`. Never guess one.
-- Breaking changes lead with a titled `<Warning>` — an untitled callout flattens to plain
-  prose in the Markdown export and the reader loses the signal.
 
 Entries are customer-facing, so everything under "Everything here is customer-facing" applies.
 
