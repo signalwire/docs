@@ -95,26 +95,40 @@ the responsibility of `check-md-exports.js`.
 
 ### Corpus layout
 
-URL paths are mirrored beneath the output directory:
+Each page is written to its URL path relative to `--base-url` plus `.md`, which
+is the same `.md` URL Fern serves. Only the site root needs a name (`index.md`).
+A page and its child section therefore appear as a sibling file and directory:
 
 ```text
 dist/rag-corpus/
 ├── index.md
+├── swml.md
 ├── swml/
-│   ├── index.md
 │   └── reference/errors.md
 ├── apis/rest/queues/create-queue.md
 └── manifest.json
 ```
 
-`manifest.json` records each file's sitemap URL, relative path, raw byte length,
-and SHA-256. It is metadata only; the `.md` files are byte-for-byte copies of the
-Fern responses.
+Path segments are percent-encoded so that only unreserved URL characters appear
+in filenames (`call-updated$` becomes `call-updated%24.md`). The exporter refuses
+to run if two sitemap URLs would map to the same path, including case-insensitive
+matches.
 
-The snapshot is built in a staging directory. It replaces the existing output
-only after every sitemap page returns HTTP 200, `text/markdown`, and a nonempty
-body that is not Fern's `# Page Not Found` stub. Any failure leaves the previous
-snapshot untouched.
+`manifest.json` records each file's sitemap URL, relative path, raw byte length,
+and SHA-256, plus the sitemap and written page counts. It is metadata only; the
+`.md` files are byte-for-byte copies of the Fern responses.
+
+The snapshot is built in a staging directory beside the output. It replaces the
+existing output only after every sitemap page returns HTTP 200, `text/markdown`,
+and a nonempty body that is not Fern's `# Page Not Found` stub. A fetch or
+validation failure, or Ctrl-C, removes the staging directory and leaves the
+previous snapshot untouched. The final swap is two renames; if the process is
+killed between them, the previous snapshot survives as `<out>.backup-<uuid>`
+next to the output path.
+
+Because publishing deletes whatever is at `--out`, the exporter only replaces a
+missing or empty directory or a previous snapshot (identified by its
+`manifest.json`). Pointing `--out` at anything else is a usage error.
 
 ### Common invocations
 

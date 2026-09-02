@@ -12,8 +12,11 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
+  readFileSync,
+  readdirSync,
   renameSync,
   rmSync,
+  statSync,
   writeFileSync,
 } from 'node:fs';
 import {
@@ -35,6 +38,8 @@ const MAX_CONCURRENCY = 16;
 const USER_AGENT = 'signalwire-docs-rag-corpus-export';
 const MANIFEST_NAME = 'manifest.json';
 const REPO_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
+// Conventional shell exit codes for a process ended by these signals.
+const SIGNAL_EXIT_CODES = { SIGINT: 130, SIGTERM: 143 };
 
 const log = new Logger();
 
@@ -85,17 +90,23 @@ function parseArgs(args) {
     help: false,
   };
 
+  // Returns the value following a flag, refusing to consume another flag.
+  function takeValue(i, flag, what) {
+    const value = args[i + 1];
+    if (value === undefined || value === '' || value.startsWith('-')) {
+      throw new UsageError(`${flag} requires ${what}`);
+    }
+    return value;
+  }
+
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
     if (arg === '--out') {
-      if (!args[i + 1]) throw new UsageError('--out requires a directory');
-      options.outDir = args[++i];
+      options.outDir = takeValue(i++, '--out', 'a directory');
     } else if (arg === '--base-url') {
-      if (!args[i + 1]) throw new UsageError('--base-url requires a URL');
-      options.baseUrl = args[++i];
+      options.baseUrl = takeValue(i++, '--base-url', 'a URL');
     } else if (arg === '--concurrency') {
-      if (!args[i + 1]) throw new UsageError('--concurrency requires a number');
-      options.concurrency = parsePositiveInteger(args[++i], '--concurrency');
+      options.concurrency = parsePositiveInteger(takeValue(i++, '--concurrency', 'a number'), '--concurrency');
       if (options.concurrency > MAX_CONCURRENCY) {
         throw new UsageError(`--concurrency cannot exceed ${MAX_CONCURRENCY}`);
       }
@@ -175,6 +186,12 @@ function canonicalPageUrl(value, baseUrl) {
 }
 
 function parseSitemap(xml, baseUrl) {
+  if (/<sitemapindex[\s>]/i.test(xml)) {
+    throw new CorpusExportError(
+      'sitemap.xml is a sitemap index; this exporter expects a flat <urlset> of page URLs'
+    );
+  }
+
   const matches = [...xml.matchAll(/<loc>\s*([^<]+?)\s*<\/loc>/gi)];
   if (matches.length === 0) {
     throw new CorpusExportError('sitemap.xml contains no <loc> page URLs');
@@ -241,7 +258,8 @@ function safeSegment(segment) {
   // Avoid Windows reserved filenames and trailing dots while retaining a
   // deterministic, reversible percent-encoded representation.
   if (/^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(decoded)) {
-    encoded = `%${decoded.codePointAt(0).toString(16).toUpperCase()}${encoded.slice(1)}`;
+    const first = decoded.codePointAt(0).toString(16).toUpperCase().padStart(2, '0');
+    encoded = `%${first}${encoded.slice(1)}`;
   }
   encoded = encoded.replace(/\.+$/, (dots) => '%2E'.repeat(dots.length));
   return encoded;
@@ -258,13 +276,16 @@ function relativeUrlPath(pageUrl, baseUrl) {
   return relative;
 }
 
+/**
+ * Local path for a page: its URL path relative to --base-url plus `.md`, so it
+ * matches the `.md` URL Fern serves. Only the site root needs a name (index.md).
+ * A page and its child section land as a sibling file and directory
+ * (`swml.md` beside `swml/`), which no filesystem treats as a collision.
+ */
 function pageUrlToRelPath(pageUrl, baseUrl) {
   const relative = relativeUrlPath(pageUrl, baseUrl);
   if (relative === '') return 'index.md';
-
-  const segments = relative.split('/').map(safeSegment);
-  if (segments.length === 1) return `${segments[0]}/index.md`;
-  return `${segments.join('/')}.md`;
+  return `${relative.split('/').map(safeSegment).join('/')}.md`;
 }
 
 function markdownUrlForPage(pageUrl) {
@@ -297,11 +318,9 @@ function validateMarkdownResponse(response) {
   if (mediaType !== 'text/markdown') {
     return `expected Content-Type text/markdown, received ${response.contentType || 'none'}`;
   }
-  if (response.body.length === 0 || response.body.toString('utf8').trim().length === 0) {
-    return 'empty Markdown response';
-  }
-
-  const text = response.body.toString('utf8').replace(/^\uFEFF/, '').trimStart();
+  // trim() also strips a leading BOM (U+FEFF counts as whitespace).
+  const text = response.body.toString('utf8').trim();
+  if (text.length === 0) return 'empty Markdown response';
   if (text.startsWith('# Page Not Found')) {
     return 'Fern returned a Page Not Found Markdown stub';
   }
@@ -338,7 +357,31 @@ function validateOutputPath(outDir) {
   if (output === gitDir || output.startsWith(`${gitDir}${sep}`)) {
     throw new UsageError(`Refusing to write inside .git: ${output}`);
   }
+
+  // Publishing deletes whatever is at the output path, so only replace
+  // something this script produced: a missing or empty directory, or a
+  // previous snapshot identified by its manifest.
+  if (existsSync(output)) {
+    if (!statSync(output).isDirectory()) {
+      throw new UsageError(`Output path exists and is not a directory: ${output}`);
+    }
+    if (readdirSync(output).length > 0 && !isCorpusSnapshot(output)) {
+      throw new UsageError(
+        `Refusing to replace ${output}: it is not an empty directory or a previous ` +
+        `corpus snapshot (no valid ${MANIFEST_NAME}). Delete it or choose another --out.`
+      );
+    }
+  }
   return output;
+}
+
+function isCorpusSnapshot(directory) {
+  try {
+    const manifest = JSON.parse(readFileSync(join(directory, MANIFEST_NAME), 'utf8'));
+    return Number.isInteger(manifest?.schema_version);
+  } catch {
+    return false;
+  }
 }
 
 function publishStagedDirectory(stageDir, outDir) {
@@ -368,23 +411,35 @@ async function withStagingDirectory(outDir, build) {
   const parent = dirname(output);
   mkdirSync(parent, { recursive: true });
   const stageDir = mkdtempSync(join(parent, `.${basename(output)}.tmp-`));
+  const removeStage = () => {
+    if (existsSync(stageDir)) rmSync(stageDir, { recursive: true, force: true });
+  };
+  // `finally` does not run when a signal ends the process, so clean up the
+  // staging directory on Ctrl-C / SIGTERM. Signals are only observed between
+  // awaits, never inside the synchronous publish step.
+  const onSignal = (signal) => {
+    removeStage();
+    process.exit(SIGNAL_EXIT_CODES[signal]);
+  };
+  for (const signal of Object.keys(SIGNAL_EXIT_CODES)) process.on(signal, onSignal);
 
   try {
     await build(stageDir);
     publishStagedDirectory(stageDir, output);
   } finally {
-    if (existsSync(stageDir)) rmSync(stageDir, { recursive: true, force: true });
+    for (const signal of Object.keys(SIGNAL_EXIT_CODES)) process.removeListener(signal, onSignal);
+    removeStage();
   }
 }
 
-function buildManifest({ baseUrl, documents, generatedAt }) {
+function buildManifest({ baseUrl, documents, generatedAt, sitemapCount }) {
   const sorted = [...documents].sort((a, b) => a.path.localeCompare(b.path));
   return {
     schema_version: 1,
     generated_at: generatedAt,
     base_url: baseUrl,
     counts: {
-      sitemap: sorted.length,
+      sitemap: sitemapCount,
       written: sorted.length,
     },
     documents: sorted,
@@ -403,6 +458,9 @@ async function fetchDocuments(planned, stageDir, concurrency, fetchOptions = {})
         ...fetchOptions,
         userAgent: USER_AGENT,
         headers: { ...fetchOptions.headers, Accept: 'text/markdown' },
+        // Unlike the sitemap fetch, documents do not follow redirects: a
+        // redirected page fails loudly instead of storing another page's
+        // body under this path.
         redirect: 'manual',
         responseType: 'buffer',
         onRetry({ attempt, maxAttempts, error }) {
@@ -453,6 +511,7 @@ async function exportCorpus(options, fetchOptions = {}) {
       baseUrl: options.baseUrl,
       documents,
       generatedAt: new Date().toISOString(),
+      sitemapCount: pageUrls.length,
     });
     writeFileSync(join(stageDir, MANIFEST_NAME), `${JSON.stringify(manifest, null, 2)}\n`);
   });
@@ -501,6 +560,10 @@ async function main() {
     if (err instanceof CorpusExportError) {
       log.failure(err.message);
       return 1;
+    }
+    if (err instanceof UsageError) {
+      log.error(err.message);
+      return 2;
     }
     log.error(err.stack || err.message);
     return 2;

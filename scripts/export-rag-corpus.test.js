@@ -7,6 +7,7 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  readdirSync,
   rmSync,
   writeFileSync,
 } from 'node:fs';
@@ -14,6 +15,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
   DocumentExportError,
+  UsageError,
   buildManifest,
   exportCorpus,
   fetchDocuments,
@@ -58,21 +60,32 @@ test('parseSitemap rejects empty, external, and query-bearing inventories', () =
   );
 });
 
+test('parseSitemap rejects a sitemap index instead of treating child sitemaps as pages', () => {
+  const index = `<?xml version="1.0"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <sitemap><loc>${BASE}/sitemap-0.xml</loc></sitemap>
+</sitemapindex>`;
+  assert.throws(() => parseSitemap(index, BASE), /sitemap index/);
+});
+
 test('URL paths mirror sitemap paths and encode unsafe filename characters', () => {
   assert.equal(pageUrlToRelPath(BASE, BASE), 'index.md');
-  assert.equal(pageUrlToRelPath(`${BASE}/swml`, BASE), 'swml/index.md');
+  assert.equal(pageUrlToRelPath(`${BASE}/swml`, BASE), 'swml.md');
+  assert.equal(pageUrlToRelPath(`${BASE}/browser-sdk/reference`, BASE), 'browser-sdk/reference.md');
   assert.equal(
     pageUrlToRelPath(`${BASE}/browser-sdk/reference/webrtc-call/call-updated$`, BASE),
     'browser-sdk/reference/webrtc-call/call-updated%24.md'
   );
   assert.equal(safeSegment('foo$'), 'foo%24');
   assert.notEqual(safeSegment('foo'), safeSegment('foo$'));
+  assert.equal(safeSegment('CON'), '%43ON');
+  assert.equal(safeSegment('trailing.'), 'trailing%2E');
   assert.throws(() => safeSegment('%2E%2E'), /Unsafe URL path segment/);
 });
 
 test('planDocuments rejects exact and case-insensitive output collisions', () => {
   assert.throws(
-    () => planDocuments([`${BASE}/swml`, `${BASE}/swml/index`], BASE),
+    () => planDocuments([`${BASE}/guides/foo$`, `${BASE}/guides/foo%24`], BASE),
     /same local path/
   );
   assert.throws(
@@ -99,6 +112,7 @@ test('validateMarkdownResponse enforces transport integrity only', () => {
   assert.match(validateMarkdownResponse({ ...valid, status: 404 }), /HTTP 404/);
   assert.match(validateMarkdownResponse({ ...valid, contentType: 'text/html' }), /text\/markdown/);
   assert.match(validateMarkdownResponse({ ...valid, body: Buffer.alloc(0) }), /empty/);
+  assert.match(validateMarkdownResponse({ ...valid, body: Buffer.from('\uFEFF \n') }), /empty/);
   assert.match(
     validateMarkdownResponse({ ...valid, body: Buffer.from('# Page Not Found\n') }),
     /Page Not Found/
@@ -120,13 +134,14 @@ test('buildManifest sorts documents without adding page metadata', () => {
   const manifest = buildManifest({
     baseUrl: BASE,
     generatedAt: '2026-09-02T12:00:00.000Z',
+    sitemapCount: 3,
     documents: [
       { path: 'z.md', url: `${BASE}/z`, sha256: 'sha256:z', bytes: 2 },
       { path: 'a.md', url: `${BASE}/a`, sha256: 'sha256:a', bytes: 1 },
     ],
   });
   assert.equal(manifest.schema_version, 1);
-  assert.deepEqual(manifest.counts, { sitemap: 2, written: 2 });
+  assert.deepEqual(manifest.counts, { sitemap: 3, written: 2 });
   assert.deepEqual(manifest.documents.map((document) => document.path), ['a.md', 'z.md']);
 });
 
@@ -195,11 +210,16 @@ test('fetchDocuments writes raw bodies and reports invalid responses', async () 
   }
 });
 
+function seedSnapshot(output) {
+  mkdirSync(output);
+  writeFileSync(join(output, 'old.md'), 'old');
+  writeFileSync(join(output, 'manifest.json'), JSON.stringify({ schema_version: 1, documents: [] }));
+}
+
 test('withStagingDirectory leaves old output untouched when the build fails', async () => {
   const root = temporaryDirectory();
   const output = join(root, 'corpus');
-  mkdirSync(output);
-  writeFileSync(join(output, 'old.md'), 'old');
+  seedSnapshot(output);
 
   try {
     await assert.rejects(
@@ -219,15 +239,60 @@ test('withStagingDirectory leaves old output untouched when the build fails', as
 test('withStagingDirectory replaces old output only after success', async () => {
   const root = temporaryDirectory();
   const output = join(root, 'corpus');
-  mkdirSync(output);
-  writeFileSync(join(output, 'old.md'), 'old');
+  seedSnapshot(output);
+  const sigintListeners = process.listenerCount('SIGINT');
 
   try {
     await withStagingDirectory(output, async (stageDir) => {
+      assert.equal(process.listenerCount('SIGINT'), sigintListeners + 1);
       writeFileSync(join(stageDir, 'new.md'), 'new');
     });
+    assert.equal(process.listenerCount('SIGINT'), sigintListeners);
     assert.equal(existsSync(join(output, 'old.md')), false);
     assert.equal(readFileSync(join(output, 'new.md'), 'utf8'), 'new');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('withStagingDirectory accepts missing or empty output directories', async () => {
+  const root = temporaryDirectory();
+  try {
+    await withStagingDirectory(join(root, 'fresh'), async (stageDir) => {
+      writeFileSync(join(stageDir, 'new.md'), 'new');
+    });
+    assert.equal(readFileSync(join(root, 'fresh/new.md'), 'utf8'), 'new');
+
+    mkdirSync(join(root, 'empty'));
+    await withStagingDirectory(join(root, 'empty'), async (stageDir) => {
+      writeFileSync(join(stageDir, 'new.md'), 'new');
+    });
+    assert.equal(readFileSync(join(root, 'empty/new.md'), 'utf8'), 'new');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('withStagingDirectory refuses to replace a directory that is not a corpus snapshot', async () => {
+  const root = temporaryDirectory();
+  const output = join(root, 'precious');
+  mkdirSync(output);
+  writeFileSync(join(output, 'keep.txt'), 'keep');
+  const file = join(root, 'file.txt');
+  writeFileSync(file, 'file');
+
+  try {
+    let built = false;
+    await assert.rejects(
+      withStagingDirectory(output, async () => { built = true; }),
+      UsageError
+    );
+    assert.equal(built, false, 'refusal must happen before any fetching');
+    assert.equal(readFileSync(join(output, 'keep.txt'), 'utf8'), 'keep');
+    assert.deepEqual(readdirSync(root).sort(), ['file.txt', 'precious'], 'no staging directory left behind');
+
+    await assert.rejects(withStagingDirectory(file, async () => {}), /not a directory/);
+    assert.equal(readFileSync(file, 'utf8'), 'file');
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -270,8 +335,8 @@ test('exportCorpus discovers only sitemap URLs and publishes exact Markdown', as
       `${BASE}/swml.md`,
     ]);
     assert.deepEqual(readFileSync(join(output, 'index.md')), home);
-    assert.deepEqual(readFileSync(join(output, 'swml/index.md')), swml);
-    assert.equal(result.manifest.counts.written, 2);
+    assert.deepEqual(readFileSync(join(output, 'swml.md')), swml);
+    assert.deepEqual(result.manifest.counts, { sitemap: 2, written: 2 });
     assert.equal(JSON.parse(readFileSync(join(output, 'manifest.json'), 'utf8')).documents.length, 2);
   } finally {
     rmSync(root, { recursive: true, force: true });
@@ -285,4 +350,6 @@ test('parseArgs keeps the public CLI focused on complete snapshots', () => {
   assert.ok(options.outDir.endsWith('/dist/custom'));
   assert.throws(() => parseArgs(['--limit', '1']), /Unknown option/);
   assert.throws(() => parseArgs(['--concurrency', '17']), /cannot exceed 16/);
+  assert.throws(() => parseArgs(['--out']), /--out requires a directory/);
+  assert.throws(() => parseArgs(['--out', '--list']), /--out requires a directory/);
 });
