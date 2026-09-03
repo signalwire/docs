@@ -113,6 +113,7 @@ model FabricDeviceLeg {
   type: CallType.fabric_subscriber_device_leg;
 }
 
+@doc("One itemized charge applied to the call.")
 model ChargeDetails {
   @doc("Description for this charge.")
   @example("Text to Speech")

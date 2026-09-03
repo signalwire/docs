@@ -18,7 +18,7 @@ namespace SignalWireAPI.Chat.Tokens {
     @operationId("create_chat_token")
     @summary("Create chat token")
     @doc("""
-      Generate a Chat Token to be used to authenticate clients to the Chat Service.
+      Creates a time-limited Chat Token that a client consumes to access the Chat channels and permissions supplied in the request. Call this operation from your server when granting Chat access to a member; choose a lifetime from 1 minute through 30 days and never expose the project API token used to create it. Use [Create PubSub token](/docs/apis/rest/pubsub/create-token) for PubSub channels or [Create API token](/docs/apis/rest/project-tokens/create-token) for server-side REST authentication.
       
       ${tokenPermissions<"_Chat_">}
       """)

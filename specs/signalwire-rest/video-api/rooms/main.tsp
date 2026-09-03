@@ -20,7 +20,11 @@ namespace SignalWireAPI.Video.Rooms {
   interface Rooms {
     @operationId("create_room")
     @summary("Create room")
-    @doc("Create a room.\n\n${tokenPermissions<"_Video_">}")
+    @doc("""
+      Creates a reusable Video Room in the project for applications built with a SignalWire client SDK. Your server issues Room Tokens to participants and your application provides the client experience. For hosted guest and moderator access, use [Create video conference](/docs/apis/rest/video/video-conferences/create-video-conference).
+
+      ${tokenPermissions<"_Video_">}
+      """)
     @post
     create(@body body: CreateRoomRequest):
       | RoomResponse
@@ -31,7 +35,11 @@ namespace SignalWireAPI.Video.Rooms {
 
     @operationId("list_rooms")
     @summary("List rooms")
-    @doc("List rooms.\n\n${tokenPermissions<"_Video_">}")
+    @doc("""
+      Lists the project's reusable Video Rooms for SDK-based video experiences. Use [Get room](/docs/apis/rest/video/rooms/get-room) when you already have a room ID, or [Get room by name](/docs/apis/rest/video/rooms/get-room-by-name) when your application stores the room's unique name.
+
+      ${tokenPermissions<"_Video_">}
+      """)
     list(
       @query
       @doc("Specifies whether or not to include information about the room's active session (if any).")
@@ -74,7 +82,11 @@ namespace SignalWireAPI.Video.Rooms {
 
     @operationId("get_room_by_name")
     @summary("Get room by name")
-    @doc("Find a room by name.\n\n${tokenPermissions<"_Video_">}")
+    @doc("""
+      Retrieves one Video Room configuration by its unique name. Use this operation when your application identifies rooms by the same stable name supplied at creation; use [Get room](/docs/apis/rest/video/rooms/get-room) when you have the generated room ID instead.
+
+      ${tokenPermissions<"_Video_">}
+      """)
     @route("/{name}")
     getByName(
       @path
@@ -96,7 +108,11 @@ namespace SignalWireAPI.Video.Rooms {
 
     @operationId("get_room")
     @summary("Get room")
-    @doc("Find a room by ID.\n\n${tokenPermissions<"_Video_">}")
+    @doc("""
+      Retrieves one Video Room by ID so you can inspect its configuration and current activity. Use [Get room by name](/docs/apis/rest/video/rooms/get-room-by-name) when your application holds the room's unique name instead.
+
+      ${tokenPermissions<"_Video_">}
+      """)
     @route("/{id}")
     read(
       @path
@@ -118,7 +134,11 @@ namespace SignalWireAPI.Video.Rooms {
 
     @operationId("update_room")
     @summary("Update room")
-    @doc("Update a room.\n\n${tokenPermissions<"_Video_">}")
+    @doc("""
+      Changes how an existing Video Room runs for subsequent joins while preserving the same project resource and unique name. Use client SDK controls for actions on participants in an active session.
+
+      ${tokenPermissions<"_Video_">}
+      """)
     @route("/{id}")
     @put
     update(
@@ -138,7 +158,11 @@ namespace SignalWireAPI.Video.Rooms {
 
     @operationId("delete_room")
     @summary("Delete room")
-    @doc("Delete a room.\n\n${tokenPermissions<"_Video_">}")
+    @doc("""
+      Deletes a Video Room configuration by ID. Use it when the named room should no longer accept future joins; this operation is for the reusable configuration, not for deleting a recording or querying past Room Sessions.
+
+      ${tokenPermissions<"_Video_">}
+      """)
     @route("/{id}")
     @delete
     delete(

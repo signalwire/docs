@@ -23,7 +23,7 @@ namespace SignalWireAPI.Fabric.CallFlows {
     @operationId("list_call_flows")
     @summary("List call flows")
     @doc("""
-      A list of Call Flows
+      Lists the Call Flows in your SignalWire project. A Call Flow is a visual, reusable call handler built in Call Flow Builder; it can be assigned to phone numbers and other routing resources. Use [SWML Scripts](/docs/apis/rest/swml-scripts/list-swml-scripts) when you author SWML directly, or a [Relay Application](/docs/apis/rest/relay-application/list-relay-applications) when a Server SDK process handles the call.
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
@@ -48,7 +48,7 @@ namespace SignalWireAPI.Fabric.CallFlows {
     @operationId("get_call_flow")
     @summary("Get call flow")
     @doc("""
-      Returns a Call Flow by ID
+      Retrieves one Call Flow from your SignalWire project for viewing or editing. Use [List call flows](/docs/apis/rest/call-flows/list-call-flows) to find flows, or [Get SWML Script](/docs/apis/rest/swml-scripts/get-swml-script) for a directly authored SWML handler.
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
@@ -68,7 +68,7 @@ namespace SignalWireAPI.Fabric.CallFlows {
     @operationId("create_call_flow")
     @summary("Create call flow")
     @doc("""
-      Creates a Call Flow
+      Creates a visual Call Flow in your SignalWire project. The new flow becomes a reusable call handler that can be edited in Call Flow Builder and assigned to phone numbers or other routing resources. Use [Create SWML Script](/docs/apis/rest/swml-scripts/create-swml-script) for directly authored SWML, or [Create Relay application](/docs/apis/rest/relay-application/create-relay-application) for a Server SDK handler.
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
@@ -102,7 +102,7 @@ namespace SignalWireAPI.Fabric.CallFlows {
     @operationId("update_call_flow")
     @summary("Update call flow")
     @doc("""
-      Updates a Call Flow by ID
+      Saves a new editable revision of a Call Flow in your SignalWire project. Supply the next required `document_version`, then make the saved revision live with [Deploy call flow version](/docs/apis/rest/call-flows/deploy-call-flow-version). Directly authored SWML belongs in [Update SWML Script](/docs/apis/rest/swml-scripts/update-swml-script).
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
@@ -138,7 +138,7 @@ namespace SignalWireAPI.Fabric.CallFlows {
     @operationId("delete_call_flow")
     @summary("Delete call flow")
     @doc("""
-      Deletes a Call Flow by ID
+      Deletes a Call Flow resource by ID. Use it when the visual flow should no longer be available as a call handler; deleting a [SWML Script](/docs/apis/rest/swml-scripts/delete-swml-script) or [Relay Application](/docs/apis/rest/relay-application/delete-relay-application) requires that resource's endpoint.
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)

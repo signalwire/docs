@@ -30,7 +30,7 @@ model ConferenceRoomCreateRequest {
   @maxValue(300)
   max_members?: int32;
 
-  @doc("The viudeo quality of the Conference Room.")
+  @doc("The video quality of the Conference Room.")
   @example("1080p")
   quality?: "1080p" | "720p" = "720p";
 
@@ -107,7 +107,7 @@ model ConferenceRoomUpdateRequest {
   @maxValue(300)
   max_members?: int32;
 
-  @doc("The viudeo quality of the Conference Room.")
+  @doc("The video quality of the Conference Room.")
   @example("1080p")
   quality?: "1080p" | "720p" = "720p";
 
