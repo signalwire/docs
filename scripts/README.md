@@ -10,6 +10,7 @@ dependencies beyond what's in `package.json`) and share conventions: hand-rolled
 | `check-links.js` | `yarn check-links` | Validate every link on the published site (lychee over the sitemap, plus local git-based verification of GitHub blob/tree/tag URLs). |
 | `check-md-exports.js` | `yarn check-md-exports` | Audit the `.md` exports and `llms.txt` indexes served for AI consumption. |
 | `check-md-exports.test.js` | `yarn test:scripts` | Fixture tests locking in `check-md-exports.js`'s detection heuristics. |
+| `export-rag-corpus.js` | `yarn export-rag-corpus` | Download the raw Fern Markdown response for every page in `sitemap.xml`. |
 | `check-llm-exports.mjs` | `yarn check-llm-exports <preview-url>` | Check issue-specific required and forbidden content in preview `.md` exports. |
 | `llm-export-cases.json` | Used by `check-llm-exports.mjs` | Manifest of routes and semantic export assertions. |
 | `llm-agent-scenarios.md` | Manual preview evaluation | Context-isolated agent prompts and expected documentation destinations. |
@@ -80,3 +81,69 @@ canned markdown encoding the #525 regression shape, the legitimate page styles
 that must *not* fire, and the URL-mapping rules for `--cross-check`. If you tune
 a heuristic in `check-md-exports.js`, every fixture must still pass; add a new
 fixture for whatever prompted the tuning.
+
+## export-rag-corpus.js
+
+This script creates a fresh filesystem snapshot of the Markdown Fern publishes
+for every page in `sitemap.xml`. For each sitemap URL it requests `<url>.md` with
+`Accept: text/markdown` and writes the response bytes unchanged. Fern has already
+applied source-level `<llms-only>` and `<llms-ignore>` rules by this point.
+
+The exporter does not add frontmatter, clean links, inspect components, chunk
+documents, create embeddings, or load a RAG system. Content-quality checks remain
+the responsibility of `check-md-exports.js`.
+
+### Corpus layout
+
+Each page is written to its URL path relative to `--base-url` plus `.md`, which
+is the same `.md` URL Fern serves. Only the site root needs a name (`index.md`).
+A page and its child section therefore appear as a sibling file and directory:
+
+```text
+dist/rag-corpus/
+├── index.md
+├── swml.md
+├── swml/
+│   └── reference/errors.md
+├── apis/rest/queues/create-queue.md
+└── manifest.json
+```
+
+Path segments are percent-encoded so that only unreserved URL characters appear
+in filenames (`call-updated$` becomes `call-updated%24.md`). The exporter refuses
+to run if two sitemap URLs would map to the same path, including case-insensitive
+matches.
+
+`manifest.json` records each file's sitemap URL, relative path, raw byte length,
+and SHA-256, plus the sitemap and written page counts. It is metadata only; the
+`.md` files are byte-for-byte copies of the Fern responses.
+
+The snapshot is built in a staging directory beside the output. It replaces the
+existing output only after every sitemap page returns HTTP 200, `text/markdown`,
+and a nonempty body that is not Fern's `# Page Not Found` stub. A fetch or
+validation failure, or Ctrl-C, removes the staging directory and leaves the
+previous snapshot untouched. The final swap is two renames; if the process is
+killed between them, the previous snapshot survives as `<out>.backup-<uuid>`
+next to the output path.
+
+Because publishing deletes whatever is at `--out`, the exporter only replaces a
+missing or empty directory or a previous snapshot (identified by its
+`manifest.json`). Pointing `--out` at anything else is a usage error.
+
+### Common invocations
+
+```bash
+# Export the complete production sitemap (default: dist/rag-corpus)
+yarn export-rag-corpus
+
+# Export a Fern preview or another docs instance
+yarn export-rag-corpus --base-url https://example.docs.buildwithfern.com/docs \
+  --out dist/rag-preview
+
+# Inspect the sitemap inventory without writing files
+yarn export-rag-corpus --list
+```
+
+Run `yarn export-rag-corpus --help` for all options. Exit codes are `0` for a
+published snapshot, `1` for sitemap or page-export failures, and `2` for invalid
+arguments or unexpected runtime errors.
