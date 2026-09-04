@@ -1,6 +1,14 @@
 @summary("defaults")
 model SWAIGDefaults {
-  @doc("Default URL to send status callbacks and reports to. Authentication can also be set in the url in the format of `username:password@url.`")
-  @example("username:password@https://example.com")
+  @doc("Default URL to send status callbacks and reports to. Authentication can also be set in the url in the format of `username:password@url`. Credentials embedded in the URL take precedence over `web_hook_auth_user` and `web_hook_auth_password`.")
+  @example("https://username:password@example.com")
   web_hook_url?: string;
+
+  @doc("Default username for basic auth on the function webhook, for functions that don't set their own `web_hook_auth_user`.")
+  @example("username")
+  web_hook_auth_user?: string;
+
+  @doc("Default password for basic auth on the function webhook, for functions that don't set their own `web_hook_auth_password`.")
+  @example("password")
+  web_hook_auth_password?: string;
 }

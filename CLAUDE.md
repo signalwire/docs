@@ -12,6 +12,39 @@ Fern-powered documentation site. Two sources of truth: MDX pages under `fern/pro
 
 A SWML-only `.tsp` edit still moves `fern/apis/signalwire-rest/openapi.yaml`, because the REST tree imports the SWML models. Run `yarn build:specs` before committing even a SWML-only change, and expect a large REST diff in a SWML PR.
 
+## Changelog
+
+`fern/products/platform/changelog/` is a **product** changelog for customers, authored by
+Product, Marketing, and PMs as well as docs. One file per date, `YYYY-MM-DD.mdx`, dated when
+the change reached customers — not when it was written. Several changes on one date share a
+file, one `##` heading each, most important first. `overview.mdx` is the index page.
+
+- **Documentation work gets no entry.** A new guide, a new reference page, or writing up
+  something that already shipped is not a change, however important the feature. The only
+  exception is a capability customers had no way to discover, where publishing it is
+  effectively the release. When in doubt, leave it out.
+- **Titles say what was added, changed, removed, or deprecated** — in words, since no tag
+  carries the kind. Sentence case, no end punctuation. A reader skimming the index shouldn't
+  have to open the entry: "Default TTS engine changed from Google to ElevenLabs", not "TTS
+  update"; "E911 self-service added to the REST API", not "E911". Not "One AI agent, many
+  languages" (marketing), not "Webhook payloads documented" (documentation is not a change).
+- **Lead with the capability in the first clause** — that line is the whole entry for anyone
+  skimming. An imperative usually beats a formula ("Pick Groq or Mistral as your TTS
+  engine"); "You can now …" is one option, not a house opening. One to three sentences,
+  second person, present tense. No marketing adjectives, no emoji, no exclamation marks.
+- **Tag product areas only, alphabetical** — `voice`, `messaging`, `ai`, `video`, `fabric`,
+  `sdks`, `swml`, `apis`, `tts`, `e911`, `compliance`, `security`. Chips render on the index
+  and feed the tag filter, so keep the list short; a tag matching one entry filters nothing.
+  The kind of change goes in the title, never in a tag.
+- **Open every `##` section with a text paragraph**, never a component — Fern previews an
+  entry by its opening content and a callout there renders badly. A breaking change says so
+  in the title and puts a titled `<Warning>` after that paragraph; an untitled callout
+  flattens to plain prose in the Markdown export.
+- **Links inline in prose, never a trailing "Updated pages:" list.** Copy every URL from the
+  target page's own `slug:` frontmatter, prefixed `/docs/<product-slug>/`. Never guess one.
+
+Entries are customer-facing, so everything under "Everything here is customer-facing" applies.
+
 ## Everything here is customer-facing
 
 Assume no prior knowledge, and never expose internal implementation detail — backend endpoints, transports, engine-side params. Every fact traces to source, a spec, the dashboard, or a ticket; if you can't verify one, write `[NEEDS SOURCE: what's missing]` instead of guessing.

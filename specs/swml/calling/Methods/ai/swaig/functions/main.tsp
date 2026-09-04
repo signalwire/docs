@@ -79,9 +79,25 @@ model SWAIGFunctionBase {
   @example(true)
   skip_fillers?: boolean | SWMLVar = false;
 
-  @doc("Function-specific URL to send status callbacks and reports to. Takes precedence over a default setting. Authentication can also be set in the url in the format of `username:password@url.`")
-  @example("username:password:https://statuscallback.com")
+  @doc("Function-specific URL to send status callbacks and reports to. Takes precedence over a default setting. Authentication can also be set in the url in the format of `username:password@url`. Credentials embedded in the URL take precedence over `web_hook_auth_user` and `web_hook_auth_password`.")
+  @example("https://username:password@example.com")
   web_hook_url?: string;
+
+  @doc("Username for basic auth on this function's webhook. Falls back to `defaults.web_hook_auth_user`.")
+  @example("username")
+  web_hook_auth_user?: string;
+
+  @doc("Password for basic auth on this function's webhook. Falls back to `defaults.web_hook_auth_password`.")
+  @example("password")
+  web_hook_auth_password?: string;
+
+  #deprecated "Use `web_hook_auth_password` instead."
+  @doc("""
+    Password for basic auth on this function's webhook.
+    Deprecated. Use `web_hook_auth_password` instead.
+    This alias is read on individual functions only. The `ai` SWAIG `defaults` object does not accept it.
+    """)
+  web_hook_auth_pass?: string;
 
   @doc("A file to play while the function is running. `wait_file_loops` can specify the amount of times that files should continously play. Default is not set.")
   @example("https://cdn.signalwire.com/default-music/welcome.mp3")
