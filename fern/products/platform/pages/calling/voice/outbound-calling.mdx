@@ -1,0 +1,343 @@
+---
+title: Outbound calling
+slug: /voice/outbound-calling
+description: Place outbound calls from SignalWire with the Calling API, an AI agent, the Compatibility API, or a Relay server, then confirm the call connected.
+max-toc-depth: 3
+---
+
+[calling-api]: /docs/apis/rest/calls/call-commands
+[compat-create-call]: /docs/compatibility-api/rest/calls/create-a-call
+[compat-status-callback]: /docs/compatibility-api/rest/calls/webhooks/voice-status-callback
+[relay-dial-python]: /docs/server-sdks/reference/python/relay/client/dial
+[relay-dial-ts]: /docs/server-sdks/reference/typescript/relay/client/dial
+[browser-outbound]: /docs/browser-sdk/v4/guides/outbound-calls
+[sip-credentials]: /docs/platform/voice/sip/sip-credentials
+[caller-id]: /docs/platform/voice/how-to-set-caller-id-or-cnam
+[stir-shaken]: /docs/platform/voice/stir-shaken
+[spam-labels]: /docs/platform/voice/resolving-spam-labels
+[trial-mode]: /docs/platform/trial-mode
+[international]: /docs/platform/how-to-enable-international-services
+[api-credentials]: /docs/platform/your-signalwire-api-space
+[phone-numbers]: /docs/platform/phone-numbers
+[error-codes]: /docs/apis/error-codes
+[swml-ai]: /docs/swml/reference/calling/ai
+[swml-recipe]: /docs/swml/guides/make-and-receive-calls
+[swml-webhook-security]: /docs/swml/guides/webhook-security
+[swml-expressions]: /docs/swml/reference/expressions
+[ai-quickstart]: /docs/platform/ai/quickstart
+[ai-best-practices]: /docs/platform/ai/best-practices
+[tcpa]: /docs/platform/compliance/tcpa
+
+An outbound call takes one request: the number to call, the SignalWire number it comes from, and
+what should happen when someone answers. SignalWire places the call and hands control to your
+SWML, cXML, or Relay code.
+
+The examples below all place the same call. Bayview Taxi phones a rider to say their driver is on
+the way, first as a spoken announcement and then as a conversation with an AI agent.
+
+## Before you dial
+
+You need a [phone number][phone-numbers] purchased in your project, or a
+[verified caller ID][caller-id], to call from. Any number you pass as `from` or `caller_id` on a
+call to the public telephone network must be one of those, in E.164 format such as `+15551234567`.
+
+You also need your Project ID and an API token with voice permissions from the
+[API credentials][api-credentials] page of your Dashboard.
+
+Two account settings decide whether the call is allowed at all. A project in
+[trial mode][trial-mode] can only call purchased and verified numbers and can't call
+internationally. Outside trial mode, calls to other countries still need
+[international dialing enabled][international] for your Space.
+
+## Choose how to place the call
+
+| Method | Pick it when | What controls the call |
+|---|---|---|
+| [Calling API][calling-api] | Your code makes one HTTP request per call | SWML fetched from your URL or sent inline |
+| AI agent | The person you call should talk to an agent | The SWML [`ai` method][swml-ai] |
+| [Compatibility API][compat-create-call] | You're porting cXML code from another provider | cXML fetched from your URL |
+| Relay SDK | Your server stays on the call and reacts to events in real time | Your [Python][relay-dial-python] or [TypeScript][relay-dial-ts] code over a WebSocket |
+| [Browser SDK][browser-outbound] | A user clicks to call from a web page | Your browser code |
+| SIP device | A registered SIP phone or PBX dials out through SignalWire | The call handler on its [SIP credential][sip-credentials] |
+
+The first four are shown below. The Browser SDK guide and the SIP credentials page each cover their own outbound flow.
+
+## Place a call with the Calling API
+
+Send a `dial` command to the [Calling API][calling-api]. The request needs `from`, `to`, and one
+of `url` or `swml`. With `url`, SignalWire requests your endpoint when the call is created and runs
+the SWML it returns. With `swml`, you send the document inline as a JSON object.
+
+<CodeBlocks>
+<CodeBlock title="SWML from your URL">
+```bash
+curl -X POST "https://YOUR_SPACE.signalwire.com/api/calling/calls" \
+  -u "YOUR_PROJECT_ID:YOUR_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "command": "dial",
+    "params": {
+      "from": "+15551234567",
+      "to": "+15557654321",
+      "url": "https://example.com/swml/driver-on-the-way",
+      "status_url": "https://example.com/call-status",
+      "status_events": ["answered", "ended"]
+    }
+  }'
+```
+</CodeBlock>
+<CodeBlock title="Inline SWML">
+```bash
+curl -X POST "https://YOUR_SPACE.signalwire.com/api/calling/calls" \
+  -u "YOUR_PROJECT_ID:YOUR_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "command": "dial",
+    "params": {
+      "from": "+15551234567",
+      "to": "+15557654321",
+      "status_url": "https://example.com/call-status",
+      "status_events": ["answered", "ended"],
+      "swml": {
+        "version": "1.0.0",
+        "sections": {
+          "main": [
+            { "play": "say:Hi, this is Bayview Taxi. Your driver is on the way and will arrive in about five minutes." }
+          ]
+        }
+      }
+    }
+  }'
+```
+</CodeBlock>
+</CodeBlocks>
+
+The response returns the new call right away, before anyone answers:
+
+```json
+{
+  "id": "0e9c80d7-a149-4917-892d-420043709f45",
+  "from": "+15551234567",
+  "to": "+15557654321",
+  "direction": "outbound-api",
+  "status": "queued",
+  "created_at": "2026-09-04T15:20:00Z"
+}
+```
+
+Keep the `id`. Every other Calling API command, such as ending or transferring the call, takes it.
+Progress arrives at `status_url` as webhooks for the events you list in `status_events`: `created`,
+`ringing`, `answered`, and `ended`. If you omit `status_events`, you get `ended` only.
+
+Three optional parameters cover most other needs. `caller_id` shows a different number of yours to
+the person you call. `timeout` sets how many seconds to ring, from 1 to 600. `custom_variables`
+attaches up to 20 key-value strings to the call, which your SWML reads as `${envs.<key>}` using
+[SWML expressions][swml-expressions]. The full list is on the [Calling API reference][calling-api].
+
+## Place a call with an AI agent
+
+An AI agent is an outbound call whose SWML runs the [`ai` method][swml-ai]. The rider can ask how
+far away the driver is or say they no longer need the ride, and the agent answers or acts. Use the
+same `dial` command, and either send the agent inline or point `url` at an agent you serve from
+your own server, as in the [AI quickstart][ai-quickstart].
+
+<CodeBlocks>
+<CodeBlock title="Inline SWML">
+```bash
+curl -X POST "https://YOUR_SPACE.signalwire.com/api/calling/calls" \
+  -u "YOUR_PROJECT_ID:YOUR_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "command": "dial",
+    "params": {
+      "from": "+15551234567",
+      "to": "+15557654321",
+      "status_url": "https://example.com/call-status",
+      "status_events": ["answered", "ended"],
+      "swml": {
+        "version": "1.0.0",
+        "sections": {
+          "main": [
+            {
+              "ai": {
+                "params": {
+                  "static_greeting": "Hello, this is an automated assistant calling from Bayview Taxi about your pickup. This call uses an artificial voice.",
+                  "static_greeting_no_barge": true
+                },
+                "prompt": {
+                  "text": "You are calling to tell the rider their driver is about five minutes away. Answer questions about the pickup. If the rider says they no longer need the ride, or asks not to be contacted again, call cancel_pickup before saying anything else."
+                },
+                "SWAIG": {
+                  "functions": [
+                    {
+                      "function": "cancel_pickup",
+                      "description": "Cancel the pickup and record that the rider does not want further calls",
+                      "parameters": { "type": "object", "properties": {} },
+                      "web_hook_url": "https://example.com/swaig/cancel-pickup"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }'
+```
+</CodeBlock>
+<CodeBlock title="Agent served from your URL">
+```bash
+curl -X POST "https://YOUR_SPACE.signalwire.com/api/calling/calls" \
+  -u "YOUR_PROJECT_ID:YOUR_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "command": "dial",
+    "params": {
+      "from": "+15551234567",
+      "to": "+15557654321",
+      "url": "https://signalwire:YOUR_AGENT_PASSWORD@agent.example.com/",
+      "status_url": "https://example.com/call-status",
+      "status_events": ["answered", "ended"]
+    }
+  }'
+```
+</CodeBlock>
+</CodeBlocks>
+
+The `static_greeting` plays in full before the agent's first turn, so the AI disclosure is heard
+even if the rider starts talking. The `cancel_pickup` function calls your server, which cancels the
+ride in your dispatch system and records the opt-out before the agent confirms anything aloud.
+
+<Warning title="Outbound AI calls are regulated">
+An AI voice counts as an artificial voice under the Telephone Consumer Protection Act (TCPA).
+Check consent, your do-not-call list, and the local calling hours in your code before you send the
+`dial` request, because once the call is placed it has already happened. The [TCPA guide][tcpa] and
+the compliance section of [AI best practices][ai-best-practices] cover each obligation. This is
+technical guidance, not legal advice.
+</Warning>
+
+## Place a call with the Compatibility API
+
+Code written against cXML uses the Compatibility API's [Create a Call][compat-create-call]
+endpoint. The request is form-encoded, `From` and `To` are required, and `Url` points at the cXML
+document that runs when the call is answered. Call status webhooks go to `StatusCallback`, with the
+`completed` event by default. See the [voice status callback][compat-status-callback] for the
+payload.
+
+```bash
+curl -X POST "https://YOUR_SPACE.signalwire.com/api/laml/2010-04-01/Accounts/YOUR_PROJECT_ID/Calls" \
+  -u "YOUR_PROJECT_ID:YOUR_API_TOKEN" \
+  --data-urlencode "From=+15551234567" \
+  --data-urlencode "To=+15557654321" \
+  --data-urlencode "Url=https://example.com/cxml/driver-on-the-way.xml" \
+  --data-urlencode "StatusCallback=https://example.com/call-status"
+```
+
+If you're writing new code rather than porting, use the Calling API above. The AI agent example
+and the call commands in this guide run on SWML, which the Calling API executes and the
+Compatibility API doesn't.
+
+## Place a call from your server with Relay
+
+Relay keeps your server on a WebSocket for the life of the call, so you place the call and then
+act on it in the same program. The [`dial`][relay-dial-python] method waits for an answer and
+returns a call object you control directly.
+
+```python
+import asyncio
+from signalwire.relay import RelayClient
+
+client = RelayClient(
+    project="YOUR_PROJECT_ID",
+    token="YOUR_API_TOKEN",
+    host="YOUR_SPACE.signalwire.com",
+    contexts=["default"],
+)
+
+async def main():
+    async with client:
+        call = await client.dial(
+            devices=[[{
+                "type": "phone",
+                "params": {
+                    "from_number": "+15551234567",
+                    "to_number": "+15557654321",
+                    "timeout": 30,
+                },
+            }]],
+        )
+        action = await call.play([{
+            "type": "tts",
+            "params": {"text": "Hi, this is Bayview Taxi. Your driver is on the way."},
+        }])
+        await action.wait()
+        await call.hangup()
+
+asyncio.run(main())
+```
+
+`dial` raises `RelayError` if the call fails or nobody answers within `dial_timeout`, which
+defaults to 120 seconds. The [TypeScript client][relay-dial-ts] has the same method.
+
+## Confirm the call connected
+
+With the Calling API, a `200` response with a call `id` means SignalWire accepted the request, not
+that anyone answered. The `answered` event at your `status_url` is the confirmation, followed by
+`ended` when the call finishes. If `ended` arrives without `answered`, the destination didn't pick
+up or rejected the call. With Relay, a returned call object is the confirmation, and a
+`RelayError` is the failure.
+
+The likeliest failure is a `422` before the call is placed, with an error code such as
+`not_purchased_or_verified`. That means the `from` or `caller_id` number isn't purchased in this
+project or verified as a caller ID. The next section covers the other common causes.
+
+## Troubleshoot outbound calls
+
+### The request is rejected before the call is placed
+
+A `422` response carries an [error code][error-codes] that names the problem. `not_purchased_or_verified`
+means the `from` number isn't yours. `not_valid_for_caller_id` means `from` or `caller_id` isn't an
+E.164 number, caller ID string, or SIP URI. `invalid_destination_number` and
+`destination_number_not_supported` point at `to`. `insufficient_balance` means the project can't pay
+for the call. A `dial` request that has neither `url` nor `swml` is also rejected.
+
+### The call ends without being answered
+
+Check the account limits first. A project in [trial mode][trial-mode] can only reach purchased and
+verified numbers. International destinations fail until you [enable international
+dialing][international]. If those are fine, a `timeout` shorter than the destination's ring time
+ends the call early, and a `max_price_per_minute` below the route's price rejects it before it
+rings.
+
+### The person you call sees a spam warning or the wrong caller ID
+
+The displayed number is `from`, or `caller_id` when you set it, and both must be numbers you own.
+Set the caller name with the [Caller ID and CNAM][caller-id] guide. A "Spam likely" label on your
+number is a reputation problem rather than a configuration one. Start with the
+[spam labels][spam-labels] guide and confirm your calls carry [STIR/SHAKEN][stir-shaken]
+attestation.
+
+### The call connects but your SWML or cXML doesn't run
+
+SignalWire requests `url` with `POST` unless you set `url_method`, and the endpoint has to return a
+SWML document. Set `fallback_url` so a failed fetch still gets instructions, and secure the endpoint
+as described in [SWML webhook security][swml-webhook-security]. An inline `swml` value must be a
+JSON object, not a string of escaped JSON.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Calling API reference" icon="regular code" href="/docs/apis/rest/calls/call-commands">
+    Every `dial` parameter, plus the commands that control a call after it's placed.
+  </Card>
+  <Card title="Make and receive calls with SWML" icon="regular phone" href="/docs/swml/guides/make-and-receive-calls">
+    Handle the inbound side and build the SWML your outbound calls run.
+  </Card>
+  <Card title="AI best practices" icon="regular robot" href="/docs/platform/ai/best-practices">
+    Prompt design, speech hints, and the compliance controls an outbound agent needs.
+  </Card>
+  <Card title="Caller ID and CNAM" icon="regular id-card" href="/docs/platform/voice/how-to-set-caller-id-or-cnam">
+    Control the number and name the person you call sees.
+  </Card>
+</CardGroup>
