@@ -1,0 +1,99 @@
+---
+title: Projects
+description: Projects group the phone numbers, Resources, and credentials in your Space, and Subprojects nest one level beneath a root Project with their own Project ID and Resources.
+slug: /projects
+max-toc-depth: 3
+---
+
+A Project is the container for what you build in a SignalWire Space.
+Phone numbers, [Resources](/docs/platform/resources), and
+[API credentials](/docs/platform/your-signalwire-api-space) all belong to exactly one Project,
+which is how you group work by customer, by environment, or by any other classification you like.
+
+Your Space starts with one Project, created alongside the Space itself, and you can add more
+from your Dashboard at any time.
+
+## What a Project scopes
+
+Each Project carries its own Project ID and its own API tokens, and every request you make is
+authenticated as one Project and acts on that Project alone.
+
+Security settings belong to the Project too.
+Each Project has its own [media URL protection](/docs/platform/media-protection) settings for
+recordings, message media, and fax media, and its own choice of whether webhooks and callbacks
+must use HTTPS.
+
+Not everything divides along Project lines.
+Voice and messaging [rate limits](/docs/platform/rate-limits) are account-level, counted across
+every Project in your Space.
+
+## Subprojects
+
+A Subproject is a Project nested one level beneath a root Project.
+It is a full Project with its own Project ID and Resources, but a Subproject cannot contain other
+Subprojects.
+
+Unlike root Projects, Subprojects can be created and deleted through the
+[Projects API](/docs/apis/rest/projects/list-projects), so an application can open and retire a
+Project per customer, per tenant, or per environment on its own.
+Root Projects are created in the Dashboard and can't be deleted through the API.
+
+### Create a Subproject
+
+Authenticate as the root Project and send the Subproject's name, along with any security settings
+you want it to start with.
+A Subproject cannot create another Subproject, so a request authenticated as a Subproject fails
+with `422 nested_subprojects_not_allowed`.
+
+<EndpointRequestSnippet endpoint="POST /api/projects" />
+
+The response is the only place the new Project's `signing_key` appears — it can't be retrieved
+afterward, so capture it here.
+
+<EndpointResponseSnippet endpoint="POST /api/projects" />
+
+To get credentials for the new Subproject, call
+[Create API token](/docs/apis/rest/project-tokens/create-token) from the root Project with the
+Subproject's ID in `subproject_id`.
+
+### Delete a Subproject
+
+Only Subprojects can be deleted through the API; targeting the root Project returns
+`422 only_subprojects_can_be_deleted`.
+
+<Warning title="Release phone numbers first">
+
+A Project must have no phone numbers before it can be deleted, or the request returns
+`422 phone_numbers_must_be_removed`.
+Deleting a Subproject also migrates its registry brands and campaigns up to the parent Project.
+
+</Warning>
+
+<EndpointRequestSnippet endpoint="DELETE /api/projects/{id}" />
+
+## Manage Projects through the API
+
+Every Projects API request reaches only the authenticated Project and the Subprojects beneath it.
+[List projects](/docs/apis/rest/projects/list-projects) returns the authenticated Project
+alongside its Subprojects, and each entry reports whether it is a Subproject and which Project it
+belongs to.
+A Project ID outside that tree returns `404 Not Found`.
+
+[Update a project](/docs/apis/rest/projects/update-project) changes the name and security settings
+of any Project in that tree, root Project included.
+
+Integrations built around Compatibility API Account SIDs see the same tree as Accounts:
+[Create Subprojects](/docs/compatibility-api/rest/accounts/create-subprojects) and
+[List accounts](/docs/compatibility-api/rest/accounts/list-accounts) cover the same ground with
+form-encoded requests.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Projects API reference" icon="regular cubes" href="/docs/apis/rest/projects/list-projects">
+    Every operation for listing, creating, updating, and deleting Projects.
+  </Card>
+  <Card title="API credentials" icon="regular key" href="/docs/platform/your-signalwire-api-space">
+    Find a Project's Project ID and Space URL, and issue API tokens.
+  </Card>
+</CardGroup>
