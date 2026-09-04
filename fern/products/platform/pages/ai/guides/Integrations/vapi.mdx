@@ -1,0 +1,305 @@
+---
+title: VAPI integration
+slug: /ai/vapi
+description: Connect VAPI AI assistants to SignalWire phone numbers over SIP trunking, for inbound calls to an assistant and outbound calls from it.
+max-toc-depth: 3
+---
+
+[signup]: https://signalwire.com/signup
+[vapi]: https://dashboard.vapi.ai/
+[vapi-sip-guide]: https://docs.vapi.ai/advanced/sip/sip-trunk
+[vapi-test-guide]: https://docs.vapi.ai/advanced/sip/sip-trunk#test-your-sip-trunk
+[sw-firewall-guide]: /docs/platform/allow-signalwire-ips-through-your-firewall
+[resources]: https://my.signalwire.com?page=resources
+[addresses-guide]: /docs/platform/addresses
+[swml-guide]: /docs/swml
+[swml-connect]: /docs/swml/reference/calling/connect
+[outbound-calling]: /docs/platform/voice/outbound-calling
+
+VAPI assistants need phone numbers, and SignalWire supplies them over SIP trunking in both
+directions. Callers dial your SignalWire number and reach the assistant, and the assistant places
+calls that show your SignalWire number as caller ID.
+
+Each direction is its own SIP trunk in VAPI and its own SWML script in SignalWire. Set up the one
+you need, or both. The VAPI side follows VAPI's own [SIP trunk setup guide][vapi-sip-guide] with
+SignalWire-specific values.
+
+## What you'll need
+
+- A SignalWire account with at least one phone number ([sign up here][signup])
+- A [VAPI][vapi] account with API access
+- Your VAPI private API key (found in your VAPI dashboard)
+- For outbound calls, a SIP domain app password from SignalWire Support (requested below)
+
+## Inbound calls to your assistant
+
+VAPI has to accept calls from SignalWire's network, and SignalWire has to know which assistant a
+number belongs to. You create a trunk in VAPI that trusts SignalWire's IP addresses, register your
+number with it, and then route the number to VAPI with a SWML script.
+
+### Create the inbound SIP trunk in VAPI
+
+Run the API call below to create the trunk, making sure to replace `YOUR_VAPI_PRIVATE_KEY` with your actual API key.
+
+Save the `id` from the response - you'll need this credential ID for the next step.
+
+<Warning title="Monitor SignalWire IP ranges">
+These IP addresses are current as of this guide's publication, but SignalWire IPs can change and should be programmatically monitored to avoid any impact on calls. You can gather SignalWire's latest IPs by performing a DIG or nslookup of `sip.signalwire.com`.
+
+See our guide on [allowing SignalWire IPs through firewalls][sw-firewall-guide] for more details.
+</Warning>
+
+```bash
+curl -X POST "https://api.vapi.ai/credential" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_VAPI_PRIVATE_KEY" \
+  -d '{
+    "provider": "byo-sip-trunk",
+    "name": "SignalWire Inbound Trunk",
+    "gateways": [
+      { "ip": "170.64.128.96", "inboundEnabled": true },
+      { "ip": "198.13.56.186", "inboundEnabled": true },
+      { "ip": "104.248.176.184", "inboundEnabled": true },
+      { "ip": "152.42.144.114", "inboundEnabled": true },
+      { "ip": "104.248.150.114", "inboundEnabled": true },
+      { "ip": "138.68.125.160", "inboundEnabled": true },
+      { "ip": "159.65.244.171", "inboundEnabled": true },
+      { "ip": "167.99.198.84", "inboundEnabled": true },
+      { "ip": "13.245.35.235", "inboundEnabled": true },
+      { "ip": "108.61.169.31", "inboundEnabled": true },
+      { "ip": "137.184.4.155", "inboundEnabled": true },
+      { "ip": "188.166.126.7", "inboundEnabled": true },
+      { "ip": "139.59.34.94", "inboundEnabled": true },
+      { "ip": "165.232.186.228", "inboundEnabled": true },
+      { "ip": "157.175.131.128", "inboundEnabled": true }
+    ]
+  }'
+```
+
+### Register your SignalWire phone number
+
+Now register your SignalWire phone number with VAPI using the credential ID from above:
+
+```bash
+curl -X POST "https://api.vapi.ai/phone-number" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_VAPI_PRIVATE_KEY" \
+  -d '{
+    "provider": "byo-phone-number",
+    "name": "SignalWire Inbound Number",
+    "number": "+15551234567",
+    "numberE164CheckEnabled": true,
+    "credentialId": "YOUR_CREDENTIAL_ID"
+  }'
+```
+
+Make sure to replace:
+- `YOUR_VAPI_PRIVATE_KEY` with your actual API key
+- `+15551234567` with your SignalWire phone number in E.164 format (including the + and country code)
+- `YOUR_CREDENTIAL_ID` with the credential ID from the previous step
+
+### Assign your assistant
+
+In your VAPI dashboard, find the phone number you just registered and assign it to one of your AI
+assistants. Configure the inbound settings only. If you also set up outbound calls below, you
+register the same number a second time against the outbound trunk.
+
+### Create the routing script in SignalWire
+
+In your SignalWire dashboard, go to [**Resources**][resources] → **Add** → **Script** → **SWML Script**. This script will handle all incoming calls by immediately connecting them to VAPI:
+
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - connect:
+        to: 'sip:%{call.to}@YOUR_CREDENTIAL_ID.sip.vapi.ai'
+```
+
+Replace `YOUR_CREDENTIAL_ID` with the credential ID from the VAPI trunk setup above. The `%{call.to}` variable ensures VAPI receives the original dialed number, which helps with call routing and analytics.
+
+<Info>
+This SWML script uses the [`connect` method][swml-connect] to bridge the incoming call directly to VAPI's SIP endpoint.
+The call happens in real time with no delays. Learn more about SWML in our [complete guide][swml-guide].
+</Info>
+
+### Connect the script to your phone number
+
+Go to **Phone Numbers** in your SignalWire dashboard, find your number, and click **Edit Settings**. Under the voice settings, assign your new SWML script to handle incoming calls.
+
+### Test inbound calls
+
+Call your SignalWire phone number. Your VAPI assistant answers within a few seconds. If it doesn't,
+the [troubleshooting section](#troubleshoot-the-vapi-integration) below covers the common causes.
+
+## Outbound calls from your assistant
+
+For outbound calls the roles reverse. SignalWire publishes a SIP address that VAPI dials, and a SWML
+script bridges each call onto the public telephone network with your SignalWire number as caller
+ID. VAPI authenticates to that SIP address with a password issued by SignalWire Support.
+
+### Create the outbound routing script
+
+In your SignalWire dashboard, go to [**Resources**][resources] → **Add** → **Script** → **SWML Script**. This script will handle outbound calls by connecting them through the PSTN:
+
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - connect:
+        answer_on_bridge: true
+        from: +1A-Number-From-Your-Space-here
+        to: '%{call.to.replace(/^sip:/i, '''').replace(/@.*/, '''')}'
+```
+
+Replace `"+1A-Number-From-Your-Space-here"` with an actual phone number from your SignalWire account.
+This will be the caller ID shown to people who receive calls from your VAPI assistant.
+
+<Info>
+This SWML script uses the [`connect` method][swml-connect] with `answer_on_bridge: true` to ensure calls connect properly.
+The `to` field uses a regular expression to extract the phone number from VAPI's SIP format and route it through the PSTN.
+</Info>
+
+### Add a SIP address to your script
+
+After saving your SWML script, you'll need to create a SIP address that VAPI can connect to:
+
+1. In your saved SWML script, navigate to the **Addresses & Phone Numbers** section
+2. Click **Add** and select **SIP Address**
+3. Configure the SIP address settings and save
+
+After configuration, note down your unique SIP domain app. It will look something like: `test-space-vapi.dapp.signalwire.com`
+
+Learn more about addresses in our [Call Fabric Addresses documentation][addresses-guide].
+
+<Warning title="Request the SIP domain app password from Support">
+To complete this setup, you must contact SignalWire Support to generate a password for your SIP domain app. VAPI needs this password for authentication.
+
+Contact support by:
+- Clicking the "Help?" button in your SignalWire Space
+- Emailing support@signalwire.com
+
+Provide your SIP domain app and let them know you need a password for VAPI integration.
+</Warning>
+
+### Create the outbound SIP trunk in VAPI
+
+Run this API call to create the outbound trunk, making sure to replace the placeholder values with your actual configuration:
+
+```bash
+curl -X POST "https://api.vapi.ai/credential" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_VAPI_PRIVATE_KEY" \
+  -d '{
+    "provider": "byo-sip-trunk",
+    "name": "SignalWire Outbound Trunk",
+    "gateways": [{
+      "ip": "YOUR_SIGNALWIRE_SIP_DOMAIN",
+      "inboundEnabled": false
+    }],
+    "outboundLeadingPlusEnabled": true,
+    "outboundAuthenticationPlan": {
+      "authUsername": "YOUR_SIGNALWIRE_PHONE_NUMBER",
+      "authPassword": "YOUR_SIGNALWIRE_PASSWORD"
+    }
+  }'
+```
+
+Make sure to replace:
+- `YOUR_VAPI_PRIVATE_KEY` - Your VAPI API key
+- `YOUR_SIGNALWIRE_SIP_DOMAIN` - Your SIP domain app from the previous step (e.g., `test-space-vapi.dapp.signalwire.com`)
+- `YOUR_SIGNALWIRE_PHONE_NUMBER` - Your SignalWire phone number in E.164 format (e.g., `+15551234567`)
+- `YOUR_SIGNALWIRE_PASSWORD` - The password provided by SignalWire Support
+
+Save the `id` from the response - you'll need this credential ID for the next step.
+
+### Register your SignalWire phone number for outbound
+
+Register your SignalWire phone number with VAPI for outbound calling using the credential ID from above:
+
+```bash
+curl -X POST "https://api.vapi.ai/phone-number" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_VAPI_PRIVATE_KEY" \
+  -d '{
+    "provider": "byo-phone-number",
+    "name": "SignalWire Outbound Number",
+    "number": "+15551234567",
+    "numberE164CheckEnabled": true,
+    "credentialId": "YOUR_CREDENTIAL_ID"
+  }'
+```
+
+Replace:
+- `YOUR_VAPI_PRIVATE_KEY` - Your VAPI API key
+- `+15551234567` - Your actual SignalWire phone number in E.164 format
+- `YOUR_CREDENTIAL_ID` - The credential ID from the trunk creation step
+
+### Assign your assistant for outbound calls
+
+In your VAPI dashboard, find the phone number you just registered and assign it to one of your AI assistants. Configure the outbound settings to specify which assistant should handle outbound calls.
+
+<Note>
+If you've already set up inbound calling with the same number, VAPI will indicate this is a duplicate number. This is completely normal and expected - you're using the same phone number for both inbound and outbound calling with different configurations.
+</Note>
+
+### Test outbound calls
+
+Your VAPI assistant can now make outbound calls through SignalWire. The calls will show your SignalWire phone number as the caller ID.
+
+To test your setup, refer to VAPI's official documentation on [testing your SIP trunk][vapi-test-guide] for specific instructions on initiating outbound calls.
+
+## Troubleshoot the VAPI integration
+
+You can monitor call logs in both platforms. SignalWire shows the call routing, and VAPI shows the
+assistant interaction details.
+
+### Inbound calls aren't reaching VAPI
+
+Check that your SWML script has the correct credential ID and is assigned to your phone number.
+Also, verify that your phone number is set to accept voice calls. Phone numbers must be in E.164
+format (`+1234567890`) with no spaces or special characters.
+
+### VAPI can't connect on inbound calls
+
+Make sure all SignalWire IP addresses are in your VAPI inbound trunk. If SignalWire has added new
+IP addresses since you created the trunk, you'll need to update it.
+
+### Outbound calls from VAPI fail to authenticate
+
+Double-check that you're using the correct SIP domain app password from SignalWire Support. The
+authentication username should be your phone number in E.164 format.
+
+### Outbound calls from VAPI don't connect
+
+Verify your outbound SWML script has the correct caller ID number and that it's a valid number from
+your SignalWire account. Ensure your SIP domain app is properly configured in SignalWire and that
+VAPI can resolve the domain name.
+
+## Next steps
+
+<CardGroup cols={3}>
+  <Card
+    title="Outbound calling"
+    href="/docs/platform/voice/outbound-calling"
+    icon="regular phone"
+  >
+    Place outbound calls from SignalWire directly, including calls handled by a SignalWire AI agent
+  </Card>
+
+  <Card
+    title="Advanced call flows"
+    href="/docs/swml/guides"
+    icon="regular code"
+  >
+    Add IVR menus, call screening, or business hours logic before connecting to VAPI
+  </Card>
+
+  <Card
+    title="SWML connect reference"
+    href="/docs/swml/reference/calling/connect"
+    icon="regular book"
+  >
+    Every option on the method both routing scripts use
+  </Card>
+</CardGroup>
