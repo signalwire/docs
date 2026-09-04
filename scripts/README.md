@@ -11,6 +11,8 @@ dependencies beyond what's in `package.json`) and share conventions: hand-rolled
 | `check-md-exports.js` | `yarn check-md-exports` | Audit the `.md` exports and `llms.txt` indexes served for AI consumption. |
 | `check-md-exports.test.js` | `yarn test:scripts` | Fixture tests locking in `check-md-exports.js`'s detection heuristics. |
 | `export-rag-corpus.js` | `yarn export-rag-corpus` | Download the raw Fern Markdown response for every page in `sitemap.xml`. |
+| `check-llm-exports.mjs` | `yarn check-llm-exports <preview-url>` | Check issue-specific required and forbidden content in preview `.md` exports. |
+| `llm-export-cases.json` | Used by `check-llm-exports.mjs` | Manifest of routes and semantic export assertions. |
 | `llm-agent-scenarios.md` | Manual preview evaluation | Context-isolated agent prompts and expected documentation destinations. |
 | `postman/` | `yarn postman:build` / `postman:publish` | Build and publish the Postman collection from the OpenAPI specs. |
 | `utils/logger.js` | — | Shared leveled logger (text/JSON, collectors) used by the scripts above. |
