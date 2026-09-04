@@ -197,12 +197,17 @@ test('a "Page Not Found" stub is a soft-404 error', () => {
   assert.deepEqual(checkIds(body, { severity: 'error' }), ['soft-404']);
 });
 
+test('a page directive does not hide a "Page Not Found" stub', () => {
+  const body = `> Fetch clean Markdown from this deliberately long page directive that may change independently of the checker.\n\n# Page Not Found\n`;
+  assert.deepEqual(checkIds(body, { severity: 'error' }), ['soft-404']);
+});
+
 test('HTTP 404 on a listed page is a hard-404 error', () => {
   assert.deepEqual(checkIds('irrelevant', { status: 404 }), ['hard-404']);
 });
 
 test('a nearly empty body is an error', () => {
-  const body = '> For a complete index of all SignalWire documentation pages, fetch x\n\n# title\n\nshort.\n';
+  const body = '> Fetch clean Markdown from this deliberately long page directive that may change independently of the checker.\n\n# title\n\nshort.\n';
   assert.deepEqual(checkIds(body, { severity: 'error' }), ['empty-body']);
 });
 

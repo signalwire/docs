@@ -205,6 +205,14 @@ const TERM_RE = /^\*\*`[^`\n]+`\*\*/m;
 const PARAMS_HEADING_RE = /^#{2,4}\s+\**(Properties|Parameters|Attributes|Fields|Variables|Returns)\b/im;
 const HR_RE = /^\s*---\s*$/m;
 
+/** Remove a Fern page directive blockquote when it appears before the H1. */
+function stripLeadingPageDirective(body) {
+  return body.replace(
+    /^(?:[ \t]*\n)*(?:[ \t]*>[^\n]*(?:\n|$))+(?:[ \t]*\n)*(?=[ \t]*#\s)/,
+    '',
+  );
+}
+
 /**
  * Each check receives { body, stripped } and returns a message string (finding)
  * or null (clean). Severity tiers: error affects the exit code; warn is surfaced;
@@ -215,7 +223,7 @@ const CHECKS = [
     id: 'soft-404',
     severity: 'error',
     test({ body }) {
-      return body.trimStart().startsWith('# Page Not Found')
+      return stripLeadingPageDirective(body).trimStart().startsWith('# Page Not Found')
         ? 'listed in llms.txt but the .md export is a "Page Not Found" stub'
         : null;
     },
@@ -224,9 +232,9 @@ const CHECKS = [
     id: 'empty-body',
     severity: 'error',
     test({ body }) {
-      const content = body
+      const content = stripLeadingPageDirective(body)
         .split('\n')
-        .filter((l) => !/^>\s*For a complete index/.test(l) && !/^#\s/.test(l) && l.trim() !== '')
+        .filter((l) => !/^#\s/.test(l) && l.trim() !== '')
         .join('\n');
       return content.length < 80 ? `body is nearly empty (${content.length} chars of content)` : null;
     },
