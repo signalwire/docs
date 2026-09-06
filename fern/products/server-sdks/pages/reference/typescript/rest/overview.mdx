@@ -16,7 +16,10 @@ position: 0
 [datasphere]: /docs/server-sdks/reference/typescript/rest/datasphere
 [logs]: /docs/server-sdks/reference/typescript/rest/logs
 [registry]: /docs/server-sdks/reference/typescript/rest/registry
-[compat]: /docs/server-sdks/reference/typescript/rest/compat
+[messages]: /docs/server-sdks/reference/typescript/rest/messages
+[projects]: /docs/server-sdks/reference/typescript/rest/projects
+[request-options]: /docs/server-sdks/reference/typescript/rest/request-options
+[rest-error]: /docs/server-sdks/reference/typescript/rest/rest-error
 [mfa]: /docs/server-sdks/reference/typescript/rest/mfa
 
 The REST namespace provides an HTTP client for the SignalWire platform
@@ -39,7 +42,7 @@ const client = new RestClient({
 });
 
 // Search for available numbers in area code 512
-const available = await client.phoneNumbers.search({ areaCode: "512", quantity: 3 });
+const available = await client.phoneNumbers.search({ areacode: "512", max_results: 3 });
 for (const number of available.data ?? []) {
   console.log(`${number.number} - ${number.region}`);
 }
@@ -55,7 +58,7 @@ for (const agent of response.data ?? []) {
 }
 
 // Query recent voice call logs
-const logs = await client.logs.voice.list({ pageSize: 5 });
+const logs = await client.logs.voice.list({ page_size: 5 });
 for (const log of logs.data ?? []) {
   console.log(`Call from ${log.from} to ${log.to}`);
 }
@@ -67,9 +70,46 @@ All three constructor arguments can also be provided via environment variables:
 When those are set, you can instantiate with `new RestClient()` and no arguments.
 </Note>
 
+## Pagination
+
+`list()` returns one page. `paginate()` returns an async iterator that follows
+the server's next-page links and yields one item at a time, so you don't build
+the page loop yourself. Query parameters apply to the first request only.
+
+```typescript {5}
+import { RestClient } from "@signalwire/sdk";
+
+const client = new RestClient();
+
+for await (const address of client.fabric.addresses.paginate()) {
+  console.log(address.name);
+}
+```
+
+## Timeouts, retries, and cancellation
+
+Every resource method accepts a trailing `requestOptions` object that sets the
+timeout, retry count, backoff, and an `AbortSignal` for that one call. Pass the
+same object to the constructor to set a client-wide default. See
+[`RequestOptions`][request-options].
+
+```typescript {3,7}
+import { RestClient } from "@signalwire/sdk";
+
+const client = new RestClient({ requestOptions: { timeout: 10, retries: 2 } });
+
+const controller = new AbortController();
+const numbers = await client.phoneNumbers.list(
+  undefined,
+  { abortSignal: controller.signal },
+);
+```
+
 ## Error Handling
 
-REST errors throw `RestError`:
+REST errors throw [`RestError`][rest-error]. A request that never reaches the
+server, such as a DNS failure or a timeout, throws `RestTransportError`, a
+subclass of `RestError` with a `null` status code, so one `catch` handles both:
 
 ```typescript {6}
 import { RestClient, RestError } from "@signalwire/sdk";
@@ -82,6 +122,7 @@ try {
   if (e instanceof RestError) {
     console.log(`HTTP ${e.statusCode}: ${e.body}`);
     console.log(`URL: ${e.method} ${e.url}`);
+    console.log(`Request ID: ${e.requestId}`);
   }
 }
 ```
@@ -138,10 +179,16 @@ try {
     10DLC brand and campaign registration.
   </Card>
   <Card
-    title="Compatibility"
-    href="/docs/server-sdks/reference/typescript/rest/compat"
+    title="Messages"
+    href="/docs/server-sdks/reference/typescript/rest/messages"
   >
-    Twilio-compatible LAML API for migration.
+    Send SMS and MMS messages and redact message bodies.
+  </Card>
+  <Card
+    title="Projects"
+    href="/docs/server-sdks/reference/typescript/rest/projects"
+  >
+    Create and manage projects and rotate signing keys.
   </Card>
   <Card
     title="MFA"
