@@ -1,0 +1,60 @@
+---
+title: "set_tool_response"
+slug: /reference/python/agents/function-result/set-tool-response
+description: Split the response into a factual result and a speaking instruction.
+max-toc-depth: 3
+---
+
+[functionresult]: /docs/server-sdks/reference/python/agents/function-result
+[setresponse]: /docs/server-sdks/reference/python/agents/function-result/set-response
+
+Set the structured form of the response, separating what the tool did from what
+the model should say next. The response becomes an object with up to two keys:
+
+```json
+{
+  "tool_result": "status: on hold",
+  "tool_prompt": "Tell the caller you are placing them on hold."
+}
+```
+
+Splitting them keeps the model from reading a status line aloud, and keeps the
+spoken instruction from being mistaken for data. For a single instruction
+string, use [`set_response()`][setresponse].
+
+## **Parameters**
+
+<ParamField path="tool_result" type="str | None" default="None" toc={true}>
+  What the tool did: a factual status line for the model to reason from, such
+  as `"payment declined"` or `"3 seats left"`. Omit it when there is nothing
+  to report beyond the instruction.
+</ParamField>
+
+<ParamField path="tool_prompt" type="str | None" default="None" toc={true}>
+  What the model should now say, as an instruction in the second person. Omit
+  it for a silent, status-only result.
+</ParamField>
+
+## **Returns**
+
+[`FunctionResult`][functionresult] — self, for chaining.
+
+## **Example**
+
+```python {11-14}
+from signalwire import AgentBase
+from signalwire import FunctionResult
+
+agent = AgentBase(name="my-agent", route="/agent")
+agent.set_prompt_text("You are a helpful assistant.")
+
+@agent.tool(name="check_seats", description="Check remaining seats for a showing")
+def check_seats(args, raw_data):
+    seats = 3  # look this up in your booking system
+    return FunctionResult().set_tool_response(
+        tool_result=f"seats remaining: {seats}",
+        tool_prompt="Tell the caller how many seats are left and ask how many they want.",
+    )
+
+agent.serve()
+```

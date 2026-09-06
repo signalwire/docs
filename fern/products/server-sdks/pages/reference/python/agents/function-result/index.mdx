@@ -59,11 +59,13 @@ max-toc-depth: 3
 [rpcdial]: /docs/server-sdks/reference/python/agents/function-result/rpc-dial
 [rpcaimessage]: /docs/server-sdks/reference/python/agents/function-result/rpc-ai-message
 [rpcaiunhold]: /docs/server-sdks/reference/python/agents/function-result/rpc-ai-unhold
+[settoolresponse]: /docs/server-sdks/reference/python/agents/function-result/set-tool-response
+[rpcaiglobaldata]: /docs/server-sdks/reference/python/agents/function-result/rpc-ai-global-data
 
 `FunctionResult` is the return type for all SWAIG tool functions. It wraps a response
-message (text for the AI to speak) and an ordered list of actions (transfers, SMS,
-data updates, context switches, and more). Every method returns `self`, so you can
-chain calls into a single fluent expression.
+(a prompt the AI reads, not text it speaks verbatim) and an ordered list of actions
+(transfers, SMS, data updates, context switches, and more). Every method returns
+`self`, so you can chain calls into a single fluent expression.
 
 Returned from functions defined with the [`@tool()`][tool] decorator
 or [`define_tool()`][define-tool] on
@@ -75,10 +77,41 @@ See the [SWML SWAIG functions reference][swml-swaig-functions-reference] for the
 full response format specification.
 </Info>
 
+## **Constructor Parameters**
+
+<ParamField path="response" type="str | dict[str, Any] | None" default="None" toc={true}>
+  A prompt injected into the model's context after the function executes. The
+  model reads it and decides what to say, so write it as an instruction in the
+  second person: `"Tell the caller their order shipped Tuesday."` rather than
+  `"Your order shipped Tuesday."`. A first-person script usually still works
+  because the model tends to repeat it, but it is interpreted, not spoken, and
+  can drift or be merged with other context.
+</ParamField>
+
+<ParamField path="post_process" type="bool" default="False" toc={true}>
+  Let the AI take one more turn before executing actions. Set it whenever the
+  caller must hear something before an action that ends or suspends the AI's
+  turn: `hold` pauses speech detection, `connect` and `transfer` replace the
+  leg, and `hangup` ends the call.
+</ParamField>
+
+<ParamField path="tool_result" type="str | None" default="None" toc={true}>
+  Factual outcome of the call, such as `"status: on hold"`. When given, the
+  response takes the structured form described under
+  [`set_tool_response()`][settoolresponse].
+</ParamField>
+
+<ParamField path="tool_prompt" type="str | None" default="None" toc={true}>
+  Instruction for what the model should say next, in the second person. Pairs
+  with `tool_result`.
+</ParamField>
+
 ## **Properties**
 
-<ParamField path="response" type="str" default="''" toc={true}>
-  Text the AI speaks back to the caller after the function executes.
+<ParamField path="response" type="str | dict[str, Any]" default="''" toc={true}>
+  The prompt injected into the model's context. Either a plain string or a
+  `{"tool_result": ..., "tool_prompt": ...}` object built by
+  [`set_tool_response()`][settoolresponse].
 </ParamField>
 
 <ParamField path="action" type="list[dict[str, Any]]" default="[]" toc={true}>
@@ -87,9 +120,9 @@ full response format specification.
 </ParamField>
 
 <ParamField path="post_process" type="bool" default="False" toc={true}>
-  When `True`, the AI speaks the response and takes one more conversational turn
-  with the user before executing actions. When `False` (default), actions execute
-  immediately after the response.
+  When `True`, the AI responds to the prompt and takes one more conversational
+  turn with the user before executing actions. When `False` (default), actions
+  execute immediately after the response.
 </ParamField>
 
 ## **Example**
@@ -105,7 +138,7 @@ agent.set_prompt_text("You are a helpful assistant.")
 def transfer_to_billing(args, raw_data):
     return (
         FunctionResult(
-            "I'll transfer you to billing. Anything else first?",
+            "Tell the caller you are transferring them to billing and ask if they need anything else first.",
             post_process=True
         )
         .update_global_data({"transferred": True})
@@ -142,7 +175,7 @@ agent.set_prompt_text("You are a helpful assistant.")
 def transfer_call(args, raw_data):
     # Data update + SMS execute before the terminal transfer
     return (
-        FunctionResult("Transferring you now.")
+        FunctionResult("Tell the caller you are transferring them now.")
         .update_global_data({"transferred": True})
         .send_sms(
             to_number="+15551234567",
@@ -161,7 +194,10 @@ agent.serve()
 
 <CardGroup cols={3}>
   <Card title="set_response" href="/docs/server-sdks/reference/python/agents/function-result/set-response">
-    Set or replace the response text on a FunctionResult.
+    Set or replace the response prompt on a FunctionResult.
+  </Card>
+  <Card title="set_tool_response" href="/docs/server-sdks/reference/python/agents/function-result/set-tool-response">
+    Split the response into a factual result and a speaking instruction.
   </Card>
   <Card title="set_post_process" href="/docs/server-sdks/reference/python/agents/function-result/set-post-process">
     Enable or disable post-processing on a FunctionResult.
@@ -187,7 +223,7 @@ agent.serve()
     End the call immediately.
   </Card>
   <Card title="hold" href="/docs/server-sdks/reference/python/agents/function-result/hold">
-    Put the call on hold with an optional timeout.
+    Put the call on hold, announce it first, and route where it resumes.
   </Card>
   <Card title="swml_transfer" href="/docs/server-sdks/reference/python/agents/function-result/swml-transfer">
     Transfer the call to a SWML endpoint with a return message.
@@ -372,7 +408,10 @@ agent.serve()
     Dial out to a phone number with a destination SWML URL via RPC.
   </Card>
   <Card title="rpc_ai_message" href="/docs/server-sdks/reference/python/agents/function-result/rpc-ai-message">
-    Inject a message into the AI agent running on another call.
+    Inject a message or global data into the AI agent running on another call.
+  </Card>
+  <Card title="rpc_ai_global_data" href="/docs/server-sdks/reference/python/agents/function-result/rpc-ai-global-data">
+    Merge data into another call's global_data without a conversation turn.
   </Card>
   <Card title="rpc_ai_unhold" href="/docs/server-sdks/reference/python/agents/function-result/rpc-ai-unhold">
     Release another call from hold via RPC.

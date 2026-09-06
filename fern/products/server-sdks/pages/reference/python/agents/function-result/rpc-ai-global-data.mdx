@@ -1,0 +1,50 @@
+---
+title: "rpc_ai_global_data"
+slug: /reference/python/agents/function-result/rpc-ai-global-data
+description: Merge data into another call's global_data without adding a conversation turn.
+max-toc-depth: 3
+---
+
+[functionresult]: /docs/server-sdks/reference/python/agents/function-result
+[rpcaimessage]: /docs/server-sdks/reference/python/agents/function-result/rpc-ai-message
+
+Merge data into another call's `global_data` without injecting a conversation
+turn. A thin wrapper over [`rpc_ai_message()`][rpcaimessage] with only
+`global_data` set. Use it when the other call needs a value rather than an
+instruction; the destination prompt reads it back with `${global_data.key}`.
+
+## **Parameters**
+
+<ParamField path="call_id" type="str" required={true} toc={true}>
+  Call ID of the target call.
+</ParamField>
+
+<ParamField path="data" type="dict[str, Any]" required={true} toc={true}>
+  Object merged into that call's `global_data`. Existing keys not in `data`
+  are left in place.
+</ParamField>
+
+## **Returns**
+
+[`FunctionResult`][functionresult] — self, for chaining.
+
+## **Example**
+
+```python {11-13}
+from signalwire import AgentBase
+from signalwire import FunctionResult
+
+agent = AgentBase(name="my-agent", route="/agent")
+agent.set_prompt_text("You are a helpful assistant.")
+
+@agent.tool(name="share_eta", description="Send the ETA to the waiting caller")
+def share_eta(args, raw_data):
+    waiting_call_id = args["waiting_call_id"]
+    return (
+        FunctionResult("Tell the driver the passenger has been updated.")
+        .rpc_ai_global_data(waiting_call_id, {"eta_minutes": args["eta_minutes"]})
+        .rpc_ai_unhold(waiting_call_id)
+    )
+
+agent.serve()
+```
