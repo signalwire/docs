@@ -1,0 +1,66 @@
+---
+title: "handle_request"
+slug: /reference/python/agents/agent-base/handle-request
+description: Dispatch one HTTP request to the agent without a web framework.
+max-toc-depth: 3
+---
+
+[on-swml-request]: /docs/server-sdks/reference/python/agents/agent-base/on-swml-request
+[register-routing-callback]: /docs/server-sdks/reference/python/agents/agent-base/register-routing-callback
+[serverless]: /docs/server-sdks/reference/python/agents/agent-base/serverless
+
+Dispatch a request over plain values instead of FastAPI objects. Performs proxy
+detection, basic auth, the [routing callback][register-routing-callback] check,
+and [`on_swml_request()`][on-swml-request] modification, then renders the SWML
+document. The FastAPI routes delegate to the same logic, so both paths return
+identical responses.
+
+Use it to serve an agent from a framework the SDK has no adapter for. For the
+supported serverless platforms, use
+[`handle_serverless_request()`][serverless].
+
+## **Parameters**
+
+<ParamField path="method" type="str" required={true} toc={true}>
+  HTTP method, such as `"GET"` or `"POST"`.
+</ParamField>
+
+<ParamField path="url" type="str" required={true} toc={true}>
+  The full request URL. Used for proxy detection and to match a registered
+  routing callback path.
+</ParamField>
+
+<ParamField path="headers" type="dict[str, str]" required={true} toc={true}>
+  Request headers as a plain dictionary.
+</ParamField>
+
+<ParamField path="body" type="dict[str, Any] | None" default="None" toc={true}>
+  The already-parsed JSON body for `POST` requests.
+</ParamField>
+
+## **Returns**
+
+`tuple[int, dict[str, str], str]` -- `(status_code, response_headers, body)`.
+
+- `200` with the SWML document as a JSON string.
+- `307` with a `Location` header and an empty body when a routing callback
+  returned a destination.
+- `401` with `WWW-Authenticate: Basic` and a JSON error when basic auth fails.
+
+## **Example**
+
+```python {7-12}
+import json
+from signalwire import AgentBase
+
+agent = AgentBase(name="dispatch", route="/dispatch")
+agent.set_prompt_text("You are Ada, the dispatcher for Bayview Taxi.")
+
+status, headers, body = agent.handle_request(
+    "POST",
+    "https://bayview-taxi.example.com/dispatch",
+    {"content-type": "application/json"},
+    {"call": {"call_id": "abc-123"}},
+)
+print(status, json.loads(body)["sections"]["main"][0])
+```

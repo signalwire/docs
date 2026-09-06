@@ -1,0 +1,63 @@
+---
+title: "mount"
+slug: /reference/python/agents/agent-base/mount
+description: Attach an extra router or ASGI app to the agent's web app without shadowing its routes.
+max-toc-depth: 3
+---
+
+[ref-agentbase]: /docs/server-sdks/reference/python/agents/agent-base
+[get-app]: /docs/server-sdks/reference/python/agents/agent-base/get-app
+[chat-gateway]: /docs/server-sdks/reference/python/agents/chat-gateway
+
+Mount an extra router or ASGI app alongside this agent's own routes. Use it
+instead of [`get_app()`][get-app] followed by `include_router()` or `mount()`
+by hand, which fails silently in three ways:
+
+- Anything mounted after `serve()` starts is lost, because `serve()` builds a
+  fresh app when none exists. This method materializes the app first so a later
+  `serve()` reuses it.
+- The agent registers a catch-all route, and FastAPI matches routes in
+  registration order, so any route added afterwards is shadowed and never runs.
+  This method moves the catch-all back to the end.
+- The app that `get_app()` builds answers the agent's bare route (no trailing
+  slash) with `204` instead of SWML. This method re-registers that route, so the
+  URL the platform fetches keeps working.
+
+## **Parameters**
+
+<ParamField path="app_or_router" type="APIRouter | ASGI app" required={true} toc={true}>
+  A FastAPI `APIRouter`, included at `prefix`, or any other ASGI app such as
+  `StaticFiles`, mounted at `prefix`.
+</ParamField>
+
+<ParamField path="prefix" type="str" default='""' toc={true}>
+  Path prefix, without a trailing slash. Keyword-only.
+</ParamField>
+
+<ParamField path="name" type="str | None" default="None" toc={true}>
+  Mount name. Used only for ASGI apps. Keyword-only.
+</ParamField>
+
+## **Returns**
+
+[`AgentBase`][ref-agentbase] -- Returns self for method chaining.
+
+## **Example**
+
+```python {11-12}
+from fastapi.staticfiles import StaticFiles
+from signalwire import AgentBase
+from signalwire.ai_chat import ChatGateway
+
+agent = AgentBase(name="dispatch", route="/dispatch")
+gateway = ChatGateway(
+    config_url="https://bayview-taxi.example.com/dispatch",
+    key="pk_your_publishable_key",
+)
+
+agent.mount(gateway.router(), prefix="/chat")
+agent.mount(StaticFiles(directory="web", html=True), prefix="/demo")
+agent.serve()
+```
+
+See [`ChatGateway`][chat-gateway] for what the mounted router serves.

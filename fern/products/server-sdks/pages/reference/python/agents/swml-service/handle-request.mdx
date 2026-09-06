@@ -1,0 +1,61 @@
+---
+title: "handle_request"
+slug: /reference/python/agents/swml-service/handle-request
+description: Dispatch one HTTP request to the service without a web framework.
+max-toc-depth: 3
+---
+
+[on-request]: /docs/server-sdks/reference/python/agents/swml-service/on-request
+[register-routing-callback]: /docs/server-sdks/reference/python/agents/swml-service/register-routing-callback
+
+Dispatch a request over plain values instead of FastAPI objects. Performs proxy
+detection, basic auth, the [routing callback][register-routing-callback] check,
+and [`on_request()`][on-request] modification, then renders the document. The
+FastAPI routes delegate to the same logic, so both paths return identical
+responses.
+
+## **Parameters**
+
+<ParamField path="method" type="str" required={true} toc={true}>
+  HTTP method, such as `"GET"` or `"POST"`.
+</ParamField>
+
+<ParamField path="url" type="str" required={true} toc={true}>
+  The full request URL. Used for proxy detection and to match a registered
+  routing callback path.
+</ParamField>
+
+<ParamField path="headers" type="dict[str, str]" required={true} toc={true}>
+  Request headers as a plain dictionary.
+</ParamField>
+
+<ParamField path="body" type="dict[str, Any] | None" default="None" toc={true}>
+  The already-parsed JSON body for `POST` requests.
+</ParamField>
+
+## **Returns**
+
+`tuple[int, dict[str, str], str]` -- `(status_code, response_headers, body)`.
+
+- `200` with the SWML document as a JSON string.
+- `307` with a `Location` header and an empty body when a routing callback
+  returned a destination.
+- `401` with `WWW-Authenticate: Basic` and a JSON error when basic auth fails.
+
+## **Example**
+
+```python {8-13}
+import json
+from signalwire import SWMLService
+
+service = SWMLService(name="greeting", route="/greeting")
+service.add_verb("answer", {})
+service.add_verb("play", {"url": "say:Welcome to Bayview Taxi."})
+
+status, headers, body = service.handle_request(
+    "GET",
+    "https://bayview-taxi.example.com/greeting",
+    {},
+)
+print(status, json.loads(body)["sections"]["main"])
+```
