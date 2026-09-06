@@ -16,7 +16,11 @@ position: 0
 [datasphere]: /docs/server-sdks/reference/python/rest/datasphere
 [logs]: /docs/server-sdks/reference/python/rest/logs
 [registry]: /docs/server-sdks/reference/python/rest/registry
-[compat]: /docs/server-sdks/reference/python/rest/compat
+[messages]: /docs/server-sdks/reference/python/rest/messages
+[projects]: /docs/server-sdks/reference/python/rest/projects
+[paginate]: /docs/server-sdks/reference/python/rest/paginate
+[request-options]: /docs/server-sdks/reference/python/rest/request-options
+[transport-error]: /docs/server-sdks/reference/python/rest/rest-transport-error
 [mfa]: /docs/server-sdks/reference/python/rest/mfa
 
 The REST namespace provides a synchronous HTTP client for the SignalWire platform
@@ -39,7 +43,7 @@ client = RestClient(
 )
 
 # Search for available numbers in area code 512
-available = client.phone_numbers.search(area_code="512", quantity=3)
+available = client.phone_numbers.search(areacode="512", quantity=3)
 for number in available.get("data", []):
     print(f"{number['number']} - {number.get('region')}")
 
@@ -64,9 +68,30 @@ All three constructor arguments can also be provided via environment variables:
 When those are set, you can instantiate with `RestClient()` and no arguments.
 </Note>
 
+## Pagination
+
+`list()` returns one page, the server's first response. To walk every item across
+all pages, call [`paginate()`][paginate] on the same resource. It follows the
+response's `links.next` until the last page.
+
+```python
+for number in client.phone_numbers.paginate():
+    print(number["number"])
+```
+
+## Timeouts and retries
+
+Pass a [`RequestOptions`][request-options] to the constructor to set a default
+timeout and retry policy for every request, or to any method's `request_options=`
+argument to override it for one call.
+
 ## Error Handling
 
-REST errors raise `SignalWireRestError`:
+REST errors raise `SignalWireRestError`. A request that never reaches the
+server (connection refused, DNS failure, timeout) raises
+[`SignalWireRestTransportError`][transport-error], a subclass whose
+`status_code` is `None`, so one `except` clause covers both. The error carries the
+response headers and the platform `request_id` for support correlation.
 
 ```python
 from signalwire.rest import RestClient, SignalWireRestError
@@ -78,6 +103,7 @@ try:
 except SignalWireRestError as e:
     print(f"HTTP {e.status_code}: {e.body}")
     print(f"URL: {e.method} {e.url}")
+    print(f"Request ID: {e.request_id}")
 ```
 
 ## Resources
@@ -132,10 +158,16 @@ except SignalWireRestError as e:
     10DLC brand and campaign registration.
   </Card>
   <Card
-    title="Compatibility"
-    href="/docs/server-sdks/reference/python/rest/compat"
+    title="Messages"
+    href="/docs/server-sdks/reference/python/rest/messages"
   >
-    Twilio-compatible LAML API for migration.
+    Send SMS and MMS messages and redact sent message bodies.
+  </Card>
+  <Card
+    title="Projects"
+    href="/docs/server-sdks/reference/python/rest/projects"
+  >
+    Create and manage subprojects and rotate signing keys.
   </Card>
   <Card
     title="MFA"
