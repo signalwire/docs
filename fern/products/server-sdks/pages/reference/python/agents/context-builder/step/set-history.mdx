@@ -1,0 +1,56 @@
+---
+title: "set_history"
+slug: /reference/python/agents/context-builder/step/set-history
+description: Control what the model still sees from earlier steps when this step is entered.
+max-toc-depth: 3
+---
+
+[ref-step]: /docs/server-sdks/reference/python/agents/context-builder/step
+[ref-context-set-history]: /docs/server-sdks/reference/python/agents/context-builder/context/set-history
+
+Control what the model still sees when this step is entered. The mode applies at
+the moment of entry and governs everything that came before, including the turn
+that triggered the transition. It doesn't affect this step's own turns, which
+accumulate fresh. Nothing is deleted: the call log keeps every message.
+
+Overrides the context-level default set with
+[`Context.set_history()`][ref-context-set-history].
+
+## **Parameters**
+
+<ParamField path="history" type="str" required={true} toc={true}>
+  One of three modes.
+
+  - `"keep"` -- clear nothing. Every prior step's instructions and dialogue stay
+    visible to the model.
+  - `"default"` -- hide the prior step instructions, keep the user and assistant
+    dialogue. This is the behavior when unset.
+  - `"hide"` -- hide the prior instructions and pull the prior dialogue out of the
+    model's context. Pair it with a `${step_history.*}` reference in this step's
+    text to choose exactly what comes back.
+</ParamField>
+
+## **Returns**
+
+[`Step`][ref-step] -- Self for method chaining.
+
+## **Raises**
+
+`ValueError` if `history` is not one of the three modes.
+
+## **Example**
+
+```python {9-11}
+from signalwire import AgentBase
+
+agent = AgentBase(name="my-agent", route="/agent")
+
+contexts = agent.define_contexts()
+ctx = contexts.add_context("default")
+ctx.add_step("collect_trip").set_text("Ask where the caller is going and when.")
+ctx.add_step("confirm_trip").set_history("hide").set_text(
+    "Previously: ${step_history.prev.summary}\n\nConfirm the booking details."
+)
+
+agent.serve()
+```
