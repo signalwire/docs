@@ -10,7 +10,7 @@ max-toc-depth: 3
 
 ### What Is the REST Client?
 
-The `SignalWireClient` provides a synchronous Python interface to all SignalWire REST APIs. It organizes the platform's HTTP endpoints into namespaced resource objects with standard CRUD operations.
+The `RestClient` provides a synchronous Python interface to all SignalWire REST APIs. It organizes the platform's HTTP endpoints into namespaced resource objects with standard CRUD operations.
 
 #### When to Use REST vs Relay vs Agents
 
@@ -30,9 +30,9 @@ Use the REST client for tasks like purchasing phone numbers, managing fabric res
 #!/usr/bin/env python3
 """REST client quick start."""
 
-from signalwire.rest import SignalWireClient
+from signalwire.rest import RestClient
 
-client = SignalWireClient(
+client = RestClient(
     project="your-project-id",
     token="your-api-token",
     host="your-space.signalwire.com",
@@ -43,7 +43,7 @@ agents = client.fabric.ai_agents.list()
 print(agents)
 
 # Search for available phone numbers
-available = client.phone_numbers.search(area_code="512")
+available = client.phone_numbers.search(areacode="512")
 print(available)
 ```
 </Tab>
@@ -210,7 +210,7 @@ Console.WriteLine(available);
 
 | Language | Syntax |
 |----------|--------|
-| Python | `SignalWireClient(project="...", token="...", host="...")` |
+| Python | `RestClient(project="...", token="...", host="...")` |
 | TypeScript | `new RestClient({ project: '...', token: '...', host: '...' })` |
 {/*
 
@@ -225,7 +225,7 @@ Console.WriteLine(available);
 */}
 
 ```python
-client = SignalWireClient(
+client = RestClient(
     project="your-project-id",
     token="your-api-token",
     host="your-space.signalwire.com",
@@ -244,7 +244,7 @@ All credentials can be provided via environment variables:
 
 ```python
 # With env vars set, no arguments needed
-client = SignalWireClient()
+client = RestClient()
 ```
 
 ### Namespaced Resources
@@ -257,7 +257,8 @@ client.calling         # REST-based call control (37 commands)
 client.phone_numbers   # Search, purchase, manage numbers
 client.video           # Rooms, sessions, recordings, conferences
 client.datasphere      # Document management and semantic search
-client.compat          # Twilio-compatible LAML API
+client.messages        # Send SMS/MMS, redact sent messages
+client.projects        # Subprojects and signing keys
 client.logs            # Message, voice, fax, conference logs
 client.registry        # 10DLC brand/campaign management
 client.queues          # Call queue management
@@ -346,7 +347,7 @@ Search, purchase, and manage phone numbers:
 ```python
 # Search for available numbers
 available = client.phone_numbers.search(
-    area_code="512",
+    areacode="512",
     quantity=5,
 )
 
@@ -485,27 +486,23 @@ order = client.registry.campaigns.create_order(
 )
 ```
 
-### Compatibility (LAML) Namespace
+### Messages
 
-Twilio-compatible REST API for migrating existing applications:
+Send an SMS or MMS and redact a sent message's body:
 
 ```python
-# List calls
-calls = client.compat.calls.list()
-
-# Send an SMS
-msg = client.compat.messages.create(
-    To="+15559876543",
-    From="+15551234567",
-    Body="Hello from SignalWire!",
+# Send a message
+msg = client.messages.create(
+    to="+15559876543",
+    from_="+15551234567",
+    body="Your table is ready.",
 )
 
-# Manage phone numbers
-numbers = client.compat.phone_numbers.list()
-
-# Start call recording
-client.compat.calls.start_recording("call-sid")
+# Redact the body after delivery
+client.messages.update(msg["id"], body="")
 ```
+
+To query message history, use `client.logs.messages` instead.
 
 ### Other Resources
 
@@ -535,36 +532,45 @@ callers = client.verified_callers.list()
 
 ### Pagination
 
-For endpoints that return paginated results, use `PaginatedIterator`:
+`list()` returns a single page. Every list resource also exposes `paginate()`,
+which follows `links.next` and yields every item across all pages:
 
 ```python
-from signalwire.rest._pagination import PaginatedIterator
-
 # Iterate all phone numbers across pages
-for number in PaginatedIterator(
-    client._http,
-    "/api/relay/rest/phone_numbers",
-    data_key="data",
-):
+for number in client.phone_numbers.paginate():
     print(number["name"], number["number"])
 ```
 
-The iterator automatically follows `links.next` URLs to fetch subsequent pages.
+### Timeouts and retries
+
+Pass a `RequestOptions` to the client for a default timeout and retry policy, or
+to any method for a one-off override:
+
+```python
+from signalwire.rest import RestClient, RequestOptions
+
+client = RestClient(request_options=RequestOptions(timeout=10.0, retries=3))
+numbers = client.phone_numbers.list(request_options=RequestOptions(timeout=60.0))
+```
 
 ### Error Handling
 
-REST errors raise `SignalWireRestError`:
+REST errors raise `SignalWireRestError`. A request that never reaches the server
+raises `SignalWireRestTransportError`, a subclass with `status_code` set to
+`None`, so one `except` covers both. The error carries the platform
+`request_id` for support correlation.
 
 ```python
-from signalwire.rest import SignalWireClient, SignalWireRestError
+from signalwire.rest import RestClient, SignalWireRestError
 
-client = SignalWireClient()
+client = RestClient()
 
 try:
     client.phone_numbers.get("nonexistent-id")
 except SignalWireRestError as e:
     print(f"HTTP {e.status_code}: {e.body}")
     print(f"URL: {e.method} {e.url}")
+    print(f"Request ID: {e.request_id}")
 ```
 
 ### Practical Example: Provision and Configure
@@ -573,12 +579,12 @@ except SignalWireRestError as e:
 #!/usr/bin/env python3
 """Provision a phone number and assign it to an AI agent."""
 
-from signalwire.rest import SignalWireClient, SignalWireRestError
+from signalwire.rest import RestClient, SignalWireRestError
 
-client = SignalWireClient()
+client = RestClient()
 
 # Search for a local number
-available = client.phone_numbers.search(area_code="512", quantity=1)
+available = client.phone_numbers.search(areacode="512", quantity=1)
 numbers = available.get("data", [])
 
 if not numbers:
