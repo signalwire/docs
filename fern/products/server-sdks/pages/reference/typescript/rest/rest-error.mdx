@@ -7,7 +7,8 @@ max-toc-depth: 3
 
 Custom error class for REST API errors. Extends JavaScript's built-in `Error`
 class. Thrown when an HTTP request to the SignalWire REST API returns a non-success
-status code. The `name` property is always `"RestError"`.
+status code, or when the request never reaches the server. The `name` property is
+`"RestError"`, or `"RestTransportError"` for the transport subclass below.
 
 Also exported as `SignalWireRestError` to match the Python SDK class name.
 
@@ -17,8 +18,9 @@ import { RestError } from '@signalwire/sdk';
 
 ## **Properties**
 
-<ParamField path="statusCode" type="number" toc={true}>
-  HTTP status code returned by the API (e.g., `404`, `422`, `500`).
+<ParamField path="statusCode" type="number | null" toc={true}>
+  HTTP status code returned by the API (e.g., `404`, `422`, `500`). `null` for
+  a `RestTransportError`, where no response was received.
 </ParamField>
 
 <ParamField path="body" type={"string | Record<string, unknown>"} toc={true}>
@@ -35,13 +37,37 @@ import { RestError } from '@signalwire/sdk';
   The HTTP method used (`"GET"`, `"POST"`, `"PUT"`, `"PATCH"`, `"DELETE"`).
 </ParamField>
 
+<ParamField path="headers" type={"Record<string, string> | null"} toc={true}>
+  Response headers from the failed request. `null` for a transport failure.
+</ParamField>
+
+<ParamField path="requestId" type="string | null" toc={true}>
+  The platform request ID read from the response headers, or `null` when
+  absent. Quote it when you contact support about a failed request.
+</ParamField>
+
 <ParamField path="name" type="string" toc={true}>
-  Always `"RestError"`.
+  `"RestError"`, or `"RestTransportError"` for a transport failure.
 </ParamField>
 
 <ParamField path="message" type="string" toc={true}>
-  Human-readable summary: `"{method} {url} returned {statusCode}: {body}"`.
+  Human-readable summary: `"{method} {url} returned {statusCode}: {body}"`,
+  followed by `(request-id: ...)` when a request ID is available.
 </ParamField>
+
+## **RestTransportError**
+
+Thrown when a request never reaches a response: a connection refused, a DNS
+failure, a TLS error, or a `RequestOptions` timeout. It extends `RestError`, so
+one `catch (e instanceof RestError)` handles HTTP errors and transport failures
+alike. `statusCode`, `headers`, and `requestId` are `null`, and `body` holds the
+underlying transport error message.
+
+Also exported as `SignalWireRestTransportError`.
+
+```typescript {1}
+import { RestTransportError } from '@signalwire/sdk';
+```
 
 ## **Example**
 
@@ -60,6 +86,7 @@ try {
   if (e instanceof RestError) {
     console.log(`HTTP ${e.statusCode}: ${e.body}`);
     console.log(`Request: ${e.method} ${e.url}`);
+    console.log(`Request ID: ${e.requestId}`);
   }
 }
 ```

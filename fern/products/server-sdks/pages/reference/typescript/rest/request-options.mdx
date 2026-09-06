@@ -1,0 +1,101 @@
+---
+title: "RequestOptions"
+slug: /reference/typescript/rest/request-options
+description: Per-request timeout, retry, backoff, and cancellation settings for REST calls.
+max-toc-depth: 3
+---
+
+[restclient]: /docs/server-sdks/reference/typescript/rest/client
+[rest-error]: /docs/server-sdks/reference/typescript/rest/rest-error
+
+Every REST resource method accepts a trailing `requestOptions` argument that
+controls the transport for that one call: how long to wait, whether to retry,
+how to back off, and an `AbortSignal` to cancel. Pass the same object as the
+`requestOptions` option of the [`RestClient`][restclient] constructor to set a
+client-wide default. A per-request value overrides the client default field by
+field; an unset field inherits.
+
+Pass a plain object literal, typed as `RequestOptionsInit`. The `RequestOptions`
+class is exported too and is accepted anywhere the plain object is.
+
+```typescript {1}
+import type { RequestOptionsInit } from '@signalwire/sdk';
+```
+
+<Info>
+The REST transport envelope ships in the SDK's next major release. Check the
+package changelog for the version that includes it.
+</Info>
+
+## **Properties**
+
+<ParamField path="timeout" type="number" default="30" toc={true}>
+  Maximum seconds per attempt. When exceeded, the request throws a
+  `RestTransportError` (see [`RestError`][rest-error]).
+</ParamField>
+
+<ParamField path="retries" type="number" default="0" toc={true}>
+  Number of retry attempts after the first failure, so total attempts are
+  `retries + 1`. Retries are off by default.
+</ParamField>
+
+<ParamField path="retryOnStatus" type={"ReadonlySet<number>"} toc={true}>
+  HTTP statuses that trigger a retry. Defaults to `429`, `500`, `502`, `503`,
+  and `504`. `GET`, `PUT`, and `DELETE` retry on any status in the set.
+  `POST` and `PATCH` retry only on `429` and `503`, which mean the request was
+  not processed, so a partially applied write is never replayed.
+</ParamField>
+
+<ParamField path="retryBackoff" type="number" default="0.5" toc={true}>
+  Base seconds for exponential backoff between retries, doubling each attempt.
+  A `Retry-After` response header is honored when present.
+</ParamField>
+
+<ParamField path="abortSignal" type="AbortSignal" toc={true}>
+  Cancels the request. The signal is passed straight to `fetch`, so an
+  in-flight request is interrupted, and it is checked again before every retry.
+</ParamField>
+
+## **Examples**
+
+### Client-wide default
+
+```typescript {4}
+import { RestClient } from '@signalwire/sdk';
+
+const client = new RestClient({
+  requestOptions: { timeout: 10, retries: 2 },
+});
+
+const numbers = await client.phoneNumbers.list();
+```
+
+### Per-request override with cancellation
+
+```typescript {6-8,11}
+import { RestClient } from '@signalwire/sdk';
+
+const client = new RestClient();
+const controller = new AbortController();
+
+const agents = client.fabric.aiAgents.list(undefined, {
+  timeout: 5,
+  abortSignal: controller.signal,
+});
+
+setTimeout(() => controller.abort(), 2000);
+await agents;
+```
+
+### Retries on every page of an iteration
+
+`paginate()` forwards the same `requestOptions` to every page fetch.
+
+```typescript {4}
+import { RestClient } from '@signalwire/sdk';
+
+const client = new RestClient();
+for await (const address of client.fabric.addresses.paginate(undefined, { retries: 3 })) {
+  console.log(address.name);
+}
+```
