@@ -1,0 +1,82 @@
+---
+title: "Client capabilities"
+slug: /reference/python/core/capabilities
+description: Read the rendering capabilities a browser client declares in its user variables at dial time.
+max-toc-depth: 3
+---
+
+[user-variables]: /docs/server-sdks/reference/python/core/capabilities/user-variables
+[declared-capabilities]: /docs/server-sdks/reference/python/core/capabilities/declared-capabilities
+[has-capability]: /docs/server-sdks/reference/python/core/capabilities/has-capability
+[handoff-router]: /docs/server-sdks/reference/python/agents/handoff-router
+
+A browser client such as the SignalWire address widget declares what it can render in the user
+variables it sends at dial time. The `signalwire.core.capabilities` module reads those
+declarations so an agent can decide what to offer: whether to push content to a screen, whether to
+advertise a text-handoff tool.
+
+```json
+{
+  "vars": {
+    "userVariables": {
+      "capabilities": {
+        "display_content": true,
+        "transcript": true,
+        "chat_handoff": false
+      }
+    }
+  }
+}
+```
+
+<Warning title="Declarations, not grants">
+A capability says what the client can render. It is never permission to do anything privileged,
+because a caller controls its own user variables. Use these values as hints for what to offer.
+</Warning>
+
+Absence means no. Every function resolves errors and missing data to "not declared", because
+offering a caller something they can't reach is worse than never mentioning it: a phone caller has no
+screen. There is no fixed list of capability names; a client can declare a name this SDK has never
+seen and your application can act on it.
+
+```python
+from signalwire.core.capabilities import declared_capabilities, has_capability, user_variables
+```
+
+## **Functions**
+
+<CardGroup cols={3}>
+  <Card title="user_variables" href="/docs/server-sdks/reference/python/core/capabilities/user-variables">
+    Return the user variables from a SWML request body.
+  </Card>
+  <Card title="declared_capabilities" href="/docs/server-sdks/reference/python/core/capabilities/declared-capabilities">
+    Return the capability names the client declared as truthy.
+  </Card>
+  <Card title="has_capability" href="/docs/server-sdks/reference/python/core/capabilities/has-capability">
+    Whether the client declared one named capability.
+  </Card>
+</CardGroup>
+
+## **Example**
+
+Offer a screen-only tool to callers who can render it:
+
+```python {8-12}
+from signalwire import AgentBase
+from signalwire.core.capabilities import has_capability
+
+agent = AgentBase(name="dispatch", route="/dispatch")
+agent.set_prompt_text("You are Ada, the dispatcher for Bayview Taxi.")
+
+def configure(query_params, body_params, headers, ephemeral_agent):
+    if has_capability(body_params, "display_content"):
+        ephemeral_agent.prompt_add_section(
+            "Screen",
+            body="The caller can see a screen. Offer to show the fare breakdown there.",
+        )
+
+agent.add_per_call_config(configure)
+agent.serve()
+```
+
+For moving a conversation between chat and a call, see [`HandoffRouter`][handoff-router].
