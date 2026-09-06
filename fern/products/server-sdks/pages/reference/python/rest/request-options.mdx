@@ -1,0 +1,116 @@
+---
+title: "RequestOptions"
+slug: /reference/python/rest/request-options
+description: Timeout, retry, and cancellation settings for REST requests.
+max-toc-depth: 3
+---
+
+[restclient]: /docs/server-sdks/reference/python/rest/client
+[transport-error]: /docs/server-sdks/reference/python/rest/rest-transport-error
+
+Per-request transport settings: a timeout, an opt-in retry policy with
+exponential backoff, and cooperative cancellation. `RequestOptions` is a frozen
+dataclass; every field is optional and `None` means "inherit".
+
+```python {1}
+from signalwire.rest import RequestOptions
+```
+
+Supply it at two levels:
+
+- **Client default.** Pass `request_options=` to the [`RestClient`][restclient]
+  constructor and it applies to every request.
+- **Per-call override.** Every resource method accepts `request_options=`. Set
+  fields override the client default for that one call; unset fields fall back
+  to the client default, then to the built-in default.
+
+Retries are idempotency-aware. `GET`, `PUT`, and `DELETE` retry on any status in
+`retry_on_status`. `POST` and `PATCH` retry only on `429` and `503`, never on
+`500`, `502`, or `504`, so a request that may have partially applied is never
+replayed. A transport failure retries for every method. When retries are
+exhausted the request raises [`SignalWireRestTransportError`][transport-error]
+or `SignalWireRestError`, whichever matches the last attempt.
+
+## **Properties**
+
+<ParamField path="timeout" type="float | None" default="None" toc={true}>
+  Maximum wall-clock seconds per attempt. Exceeding it raises
+  `SignalWireRestTransportError`. Built-in default is `30.0`.
+</ParamField>
+
+<ParamField path="retries" type="int | None" default="None" toc={true}>
+  Number of retry attempts after the first failure, so total attempts equal
+  `retries + 1`. Built-in default is `0`.
+</ParamField>
+
+<ParamField path="retry_on_status" type="frozenset[int] | None" default="None" toc={true}>
+  HTTP statuses that trigger a retry for an idempotent method. Built-in default
+  is `{429, 500, 502, 503, 504}`.
+</ParamField>
+
+<ParamField path="retry_backoff" type="float | None" default="None" toc={true}>
+  Base seconds for exponential backoff between retries, computed as
+  `retry_backoff * 2 ** (attempt - 1)`. A `Retry-After` header on the response
+  takes precedence. Built-in default is `0.5`.
+</ParamField>
+
+<ParamField path="abort_signal" type="object | None" default="None" toc={true}>
+  Any object with an `is_set() -> bool` method, such as a `threading.Event`.
+  Checked before each attempt; if set, the request raises instead of proceeding.
+  The check is cooperative and doesn't interrupt an attempt already in flight.
+</ParamField>
+
+## **Methods**
+
+### merge
+
+`merge(override: RequestOptions | None) -> RequestOptions`
+
+Return a copy of this instance with every non-`None` field of `override` applied.
+This is the shallow merge the client performs when a per-call override meets the
+client default.
+
+## **Examples**
+
+### Client-wide retry policy
+
+```python {1,3-7}
+from signalwire.rest import RestClient, RequestOptions
+
+defaults = RequestOptions(
+    timeout=10.0,
+    retries=3,
+    retry_backoff=1.0,
+)
+
+client = RestClient(
+    project="your-project-id",
+    token="your-api-token",
+    host="your-space.signalwire.com",
+    request_options=defaults,
+)
+```
+
+### Per-call override
+
+```python
+# Inherit the client's retry policy but allow a longer timeout for this call.
+result = client.phone_numbers.search(
+    areacode="512",
+    request_options=RequestOptions(timeout=60.0),
+)
+```
+
+### Cancellation
+
+```python
+import threading
+
+cancel = threading.Event()
+
+# Another thread can call cancel.set() to stop between retry attempts.
+for project in client.projects.paginate(
+    request_options=RequestOptions(retries=5, abort_signal=cancel)
+):
+    print(project["name"])
+```
