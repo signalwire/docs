@@ -1,0 +1,126 @@
+---
+title: "ParameterSchema"
+slug: /reference/typescript/agents/parameter-schema
+description: Fluent builder that produces the JSON Schema parameters object for a SWAIG tool.
+max-toc-depth: 3
+---
+
+[define-tool]: /docs/server-sdks/reference/typescript/agents/agent-base/define-tool
+[define-typed-tool]: /docs/server-sdks/reference/typescript/agents/agent-base/define-typed-tool
+
+`ParameterSchema` is a fluent builder that produces the `parameters` object for
+[`defineTool()`][define-tool] or [`defineTypedTool()`][define-typed-tool].
+Properties appear in the order you add them, and the result is identical to the
+hand-written JSON Schema object. Create one with `paramSchema()`.
+
+```typescript {1}
+import { paramSchema, RECORD_FORMATS } from '@signalwire/sdk';
+```
+
+## **Methods**
+
+Every method except `build()` returns the builder for chaining.
+
+<ParamField path="property(name, type, description?, extra?)" type="this" toc={true}>
+  Add a property with an explicit JSON Schema `type` (`string`, `number`,
+  `integer`, `boolean`, `array`, or `object`). `extra` merges additional JSON
+  Schema keywords such as `enum`, `pattern`, `format`, or `items` into the
+  property.
+</ParamField>
+
+<ParamField path="string(name, description?, extra?)" type="this" toc={true}>
+  Add a `string` property.
+</ParamField>
+
+<ParamField path="integer(name, description?, extra?)" type="this" toc={true}>
+  Add an `integer` property.
+</ParamField>
+
+<ParamField path="number(name, description?, extra?)" type="this" toc={true}>
+  Add a `number` property.
+</ParamField>
+
+<ParamField path="boolean(name, description?, extra?)" type="this" toc={true}>
+  Add a `boolean` property.
+</ParamField>
+
+<ParamField path="array(name, items?, description?)" type="this" toc={true}>
+  Add an `array` property. `items` is the JSON Schema for each element, such as
+  `{ type: 'string' }`. Omit it for an untyped array.
+</ParamField>
+
+<ParamField path="enum(name, values, description?, type?)" type="this" toc={true}>
+  Add a property constrained to a closed set of values, emitted as `enum` in the
+  order given. `type` defaults to `string`.
+</ParamField>
+
+<ParamField path="recordFormat(name, description?)" type="this" toc={true}>
+  Add a `record_call` format property with `enum: ['wav', 'mp3', 'mp4']`.
+</ParamField>
+
+<ParamField path="recordDirection(name, description?)" type="this" toc={true}>
+  Add a `record_call` direction property with `enum: ['speak', 'listen', 'both']`.
+</ParamField>
+
+<ParamField path="tapDirection(name, description?)" type="this" toc={true}>
+  Add a `tap` direction property with `enum: ['speak', 'hear', 'both']`.
+</ParamField>
+
+<ParamField path="codec(name, description?)" type="this" toc={true}>
+  Add a `tap` codec property with `enum: ['PCMU', 'PCMA']`.
+</ParamField>
+
+<ParamField path="required(...names)" type="this" toc={true}>
+  Mark already-added properties as required. Names are recorded in the order
+  given; duplicates are ignored.
+</ParamField>
+
+<ParamField path="build()" type="ParameterSchemaObject" toc={true}>
+  Return the plain `{ type: 'object', properties, required? }` object. `required`
+  is present only when at least one property was marked required.
+</ParamField>
+
+## **Constants**
+
+The closed sets behind the typed helpers are exported as `as const` arrays,
+each with a matching union type.
+
+<ParamField path="RECORD_FORMATS" type="RecordFormat[]" toc={true}>
+  `['wav', 'mp3', 'mp4']`
+</ParamField>
+
+<ParamField path="RECORD_DIRECTIONS" type="RecordDirection[]" toc={true}>
+  `['speak', 'listen', 'both']`
+</ParamField>
+
+<ParamField path="TAP_DIRECTIONS" type="TapDirection[]" toc={true}>
+  `['speak', 'hear', 'both']`
+</ParamField>
+
+<ParamField path="TAP_CODECS" type="TapCodec[]" toc={true}>
+  `['PCMU', 'PCMA']`
+</ParamField>
+
+## **Example**
+
+```typescript {5-10}
+import { AgentBase, FunctionResult, paramSchema } from '@signalwire/sdk';
+
+const agent = new AgentBase({ name: 'dispatch', route: '/dispatch' });
+
+const params = paramSchema()
+  .string('pickup', 'Street address for the pickup')
+  .enum('vehicle', ['sedan', 'van', 'wheelchair'], 'Vehicle type')
+  .integer('passengers', 'Number of riders')
+  .required('pickup', 'vehicle')
+  .build();
+
+agent.defineTool({
+  name: 'book_ride',
+  description: 'Book a taxi for the caller',
+  parameters: params,
+  handler: async (args) => {
+    return new FunctionResult(`Booked a ${args.vehicle} to ${args.pickup}.`);
+  },
+});
+```

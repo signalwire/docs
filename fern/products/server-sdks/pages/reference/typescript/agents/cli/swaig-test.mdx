@@ -1,0 +1,185 @@
+---
+title: "swaig-test"
+slug: /reference/typescript/agents/cli/swaig-test
+description: "Test SWAIG functions and generate SWML documents locally without deploying."
+max-toc-depth: 3
+---
+
+[ref-datamap]: /docs/server-sdks/reference/typescript/agents/data-map
+
+The `swaig-test` command loads an agent file and lets you render its SWML, list
+its SWAIG functions, execute a function, and simulate serverless environments,
+all without deploying. It supports both webhook and [DataMap][ref-datamap]
+functions.
+
+```bash
+npx swaig-test <agent-path> [options]
+```
+
+<Note>
+One action flag is required. A target with no action exits with
+`Error: one of --dump-swml, --list-tools, or --exec is required`. The one
+exception is `--simulate-serverless`, which renders SWML for the platform on
+its own.
+</Note>
+
+## Actions
+
+Choose one action per invocation:
+
+<ParamField path="--list-tools" type="flag" toc={true}>
+  List all SWAIG functions registered on the agent, with their parameters.
+</ParamField>
+
+<ParamField path="--list-agents" type="flag" toc={true}>
+  List all agents exported from the file. Useful for multi-agent files.
+</ParamField>
+
+<ParamField path="--dump-swml" type="flag" toc={true}>
+  Generate and output the full SWML document. Combine with `--raw` for
+  machine-readable JSON.
+</ParamField>
+
+<ParamField path="--exec NAME" type="string" toc={true}>
+  Execute a SWAIG function by name. Pass arguments with `--arg key=value`.
+</ParamField>
+
+<ParamField path="--parse-only" type="flag" toc={true}>
+  Load the agent file and validate the arguments, then exit without running an
+  action. `--dry-run` is an alias. Accepted anywhere on the command line,
+  including after `--exec`.
+</ParamField>
+
+## Common Options
+
+<ParamField path="--raw" type="flag" toc={true}>
+  Output raw JSON only, suppressing all logs. Designed for piping to `jq`.
+</ParamField>
+
+<ParamField path="--verbose" type="flag" toc={true}>
+  Enable verbose output with debug information.
+</ParamField>
+
+<ParamField path="--format-json" type="flag" toc={true}>
+  Format output as indented JSON.
+</ParamField>
+
+<ParamField path="--agent-class" type="string" toc={true}>
+  Name of the agent class to use when the file exports several.
+</ParamField>
+
+<ParamField path="--route" type="string" toc={true}>
+  Override the agent's route.
+</ParamField>
+
+## Function Execution Options
+
+<ParamField path="--arg KEY=VALUE" type="string" toc={true}>
+  A function argument. Repeat for each argument.
+</ParamField>
+
+<ParamField path="--override KEY=VALUE" type="string" toc={true}>
+  Override a field in the mock call data using dot-path notation (e.g.,
+  `--override call.state=answered`). Repeatable.
+</ParamField>
+
+## SWML Generation Options
+
+<ParamField path="--call-type" type="string" default="webrtc" toc={true}>
+  Simulated call type: `sip` or `webrtc`.
+</ParamField>
+
+<ParamField path="--call-direction" type="string" default="inbound" toc={true}>
+  Simulated call direction: `inbound` or `outbound`.
+</ParamField>
+
+<ParamField path="--call-state" type="string" default="active" toc={true}>
+  Simulated call state: `active`, `ringing`, or `hold`.
+</ParamField>
+
+<ParamField path="--call-id" type="string" toc={true}>
+  Override the call ID in the mock data.
+</ParamField>
+
+<ParamField path="--from-number" type="string" toc={true}>
+  Override the caller's number in the mock data.
+</ParamField>
+
+<ParamField path="--to-extension" type="string" toc={true}>
+  Override the destination extension in the mock data.
+</ParamField>
+
+## Serverless Simulation
+
+<ParamField path="--simulate-serverless" type="string" toc={true}>
+  Render SWML as the agent would on a serverless platform. Valid values:
+  `lambda`, `gcf`, `azure`, and `cgi`. Any other value exits with an error
+  naming the supported set.
+</ParamField>
+
+<ParamField path="--env KEY=VALUE" type="string" toc={true}>
+  Set an environment variable. Repeatable. Applied after `--env-file`.
+</ParamField>
+
+<ParamField path="--env-file" type="string" toc={true}>
+  Load environment variables from a file (one `KEY=VALUE` per line).
+</ParamField>
+
+## Examples
+
+### List tools and generate SWML
+
+```bash
+# List all registered SWAIG functions
+npx swaig-test src/agent.ts --list-tools
+
+# Generate the SWML document
+npx swaig-test src/agent.ts --dump-swml
+
+# Generate raw JSON for piping
+npx swaig-test src/agent.ts --dump-swml --raw | jq '.'
+
+# Check the file loads without running anything
+npx swaig-test src/agent.ts --parse-only
+```
+
+### Execute functions
+
+```bash
+# Execute with arguments
+npx swaig-test src/agent.ts --exec search --arg query="AI agents" --arg limit=5
+
+# Execute with verbose debug output and a realistic call state
+npx swaig-test src/agent.ts --verbose --exec book_ride \
+  --arg pickup="123 Gough Street" \
+  --override call.state=answered
+```
+
+### Multi-agent files
+
+```bash
+# Discover agents in the file
+npx swaig-test src/agents.ts --list-agents
+
+# Target a specific agent by class name
+npx swaig-test src/agents.ts --agent-class SalesAgent --list-tools
+```
+
+### Serverless simulation
+
+```bash
+# AWS Lambda
+npx swaig-test src/agent.ts --simulate-serverless lambda
+
+# Google Cloud Functions, with environment variables
+npx swaig-test src/agent.ts --simulate-serverless gcf \
+  --env SWML_BASIC_AUTH_USER=user \
+  --env-file .env
+```
+
+## Exit Codes
+
+| Code | Meaning |
+|------|---------|
+| `0` | Success |
+| `1` | Error (file not found, invalid arguments, execution failure) |
