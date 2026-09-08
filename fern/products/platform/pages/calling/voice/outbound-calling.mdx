@@ -1,7 +1,7 @@
 ---
 title: Outbound calling
 slug: /voice/outbound-calling
-description: Choose server-side automation or client-side browser calling, then place an outbound call with the appropriate API or SDK.
+description: Learn how REST requests, inbound call forwarding, and SDK requests start outbound calls, with server and browser examples.
 max-toc-depth: 3
 ---
 
@@ -29,30 +29,71 @@ max-toc-depth: 3
 [tool-calling]: /docs/platform/ai/tool-calling
 [ai-best-practices]: /docs/platform/ai/best-practices
 [tcpa]: /docs/platform/compliance/tcpa
+[swml-connect]: /docs/swml/reference/calling/connect
+[forward-calls]: /docs/swml/guides/forward-calls
+[forward-node]: /docs/call-flow-builder/reference/forward-to-phone
 
-An outbound call is a call your application places to someone else's phone. Bayview Taxi might
-send an automated driver-arrival announcement or let a dispatcher speak to the rider from a web app.
+An outbound call is a call SignalWire places to a phone number or SIP endpoint. It can start
+with a REST API request, an inbound call being forwarded, or a request from an SDK.
 
-## Choose server-side or client-side calling
+## How outbound calls start
 
-Start with what your application needs to do:
+### REST API request
 
-| You want to… | Where your calling code runs | Start here |
-|---|---|---|
-| Play an announcement, run an AI agent, or automate a call | Your backend, using the Calling API or Server SDK | [Call from a server](#call-from-a-server) |
-| Let a person talk through a web app's microphone and speaker | The user's browser, using the Browser SDK | [Call from a browser](#call-from-a-browser) |
+Your backend sends a `dial` command to the [Calling API][calling-api] with a destination,
+a caller ID, and instructions for the call. Use this for scheduled calls, notifications, or other
+automation. The [REST example](#place-a-call-with-rest) shows the request directly with curl
+and through the Server SDK's REST clients.
 
-A button in a web app can also ask your backend to start an automated call. That uses the
-server-side path; use the Browser SDK when the person in the browser will participate in the call.
+### Forwarding an inbound call
 
-A registered SIP phone or phone system can also dial out through SignalWire. The
-[SIP credentials][sip-credentials] page covers that setup.
+Someone calls your SignalWire number, and its call flow dials another destination and connects
+the two calls. The call to the second destination is the outbound part of that conversation.
+
+Configure this with SWML's [`connect` method][swml-connect] or Call Flow Builder's
+[Forward to Phone node][forward-node]. The incoming call triggers the outbound call through that
+configuration. See the [forwarding example](#forward-an-inbound-call).
+
+### SDK request
+
+Your application calls an SDK method to dial a destination. The SDK you use depends on where
+your code runs:
+
+- **Server SDK:** Your backend uses the REST client to send a Calling API request, or the
+  [Relay client][relay-guide] to dial and control the call over a WebSocket connection.
+- **Browser SDK:** Your frontend dials from the user's device and connects its microphone and
+  speaker to the call. Use this when a person will speak through your web app.
+
+A button in a web app can also ask your backend to start an automated call. In that case, the
+backend makes the Calling API or Server SDK request. The Browser SDK is for participating in the
+call from the browser.
+
+A registered SIP phone or phone system can also dial out through SignalWire. See
+[SIP credentials][sip-credentials] for that setup.
+
+## What happens when someone answers
+
+The call's instructions determine what the recipient hears:
+
+- **REST-initiated calls** run a SignalWire Markup Language (SWML) document. Send it inline in
+  `swml`, or provide a `url` where SignalWire can fetch it. The document can play an announcement,
+  run an AI agent, or connect the recipient to another destination.
+- **Forwarded calls** connect the recipient to the original caller.
+- **Server SDK Relay calls** follow commands from your running backend, such as playing audio
+  or connecting the call.
+- **Browser SDK calls** carry live audio between the browser user and the recipient.
 
 ## Before you dial
 
-You need a [phone number][phone-numbers] purchased in your project, or a
-[verified caller ID][caller-id], to call from. Any number you pass as `from` or `caller_id` on a
-call to the public telephone network must be one of those, in E.164 format such as `+15551234567`.
+### Phone numbers and caller ID
+
+Use E.164 format for phone numbers, such as `+15551234567`. For Calling API requests, use a
+[phone number][phone-numbers] purchased in your project or a [verified caller ID][caller-id] as
+the calling number. Forwarding has its own caller ID configuration; the
+[forwarding guide][forward-calls] shows how to preserve the original caller's number.
+
+For inbound forwarding, assign your SWML script or Call Flow Builder flow to the SignalWire
+number receiving the call. The [forwarding guide][forward-calls] walks through this setup.
 
 <Note title="Trial mode and international calling">
 A project in [trial mode][trial-mode] can only call purchased and verified numbers, and can't call
@@ -60,24 +101,84 @@ internationally at all. Outside trial mode, calls to other countries still need
 [international dialing enabled][international] for your Space.
 </Note>
 
-## Call from a server
+### Server and browser credentials
 
-Run these examples on your backend. You need your Project ID and an API token with voice
-permissions from the [API credentials][api-credentials] page of your Dashboard. Keep the API
-token on the server.
+For Calling API and Server SDK requests, use your Project ID and an API token with voice
+permissions from the Dashboard's [API credentials][api-credentials] page. Keep the API token on
+your backend.
 
-There are two ways to control a server-initiated call:
+For Browser SDK calls, your backend authenticates the user and issues a
+[Subscriber Access Token (SAT)][browser-auth] that allows them to call the destination. Your
+frontend uses that SAT with `@signalwire/js`. The Project API Token stays on the backend.
 
-- **Calling API or Server SDK REST client:** Send SignalWire a SignalWire Markup Language (SWML)
-  document to run when the rider answers. Start here for an announcement or AI agent.
-- **Server SDK Relay client:** Keep a WebSocket connection open and control the call from your
-  Python or TypeScript code. See [Control the call with Relay](#control-the-call-with-relay).
+## Track the call's progress
 
-### Let SignalWire run the call
+| How you placed the call | How to confirm it connected |
+|---|---|
+| Calling API or Server SDK REST client | A `200` response with a call `id` means the request was accepted. Listen for an `answered` webhook to confirm pickup. |
+| Inbound forwarding with SWML | Use `connect`'s `call_state_url` and `call_state_events` to receive outbound call state webhooks. See [the reference][swml-connect]. |
+| Server SDK Relay client | `dial` returns a call object when the destination answers, or raises `RelayError` if dialing fails. |
+| Browser SDK | Watch for `status$` to reach `connected`. If `dial()` rejects, check the destination and token permissions. |
 
-Your server sends the dial request. SignalWire queues the call, runs your SWML when someone
-answers, and sends progress to your server's webhook endpoint. This diagram shows the flow with
-`answered` and `ended` webhooks enabled.
+For Calling API requests, send a `status_url` and choose `status_events`: `created`, `ringing`,
+`answered`, or `ended`. If you omit `status_events`, you receive `ended` only. Forwarding uses the
+callback settings of your SWML method or Call Flow Builder node.
+
+## Troubleshoot outbound calls
+
+For Calling API and Server SDK REST requests, a `422` means the call was rejected before it was
+placed. Check the error code first. For browser setup and token issues, see
+[Browser SDK authentication][browser-auth].
+
+<AccordionGroup>
+<Accordion title="The request is rejected before the call is placed">
+
+A `422` response carries an [error code][error-codes] that names the problem. `not_purchased_or_verified`
+means the `from` number is not purchased or verified for your project. `not_valid_for_caller_id`
+means `from` or `caller_id` isn't an E.164 number, caller ID string, or SIP URI. `invalid_destination_number` and
+`destination_number_not_supported` point at `to`. `insufficient_balance` means the project can't pay
+for the call. A `dial` request that has neither `url` nor `swml` is also rejected.
+
+</Accordion>
+<Accordion title="The call ends without being answered">
+
+Check the account limits first. A project in [trial mode][trial-mode] can only reach purchased and
+verified numbers. International destinations fail until you [enable international
+dialing][international]. If those are fine, a `timeout` shorter than the destination's ring time
+ends the call early, and a `max_price_per_minute` below the route's price rejects it before it
+rings.
+
+</Accordion>
+<Accordion title="The person you call sees a spam warning or the wrong caller ID">
+
+For Calling API requests, check `from` and any `caller_id` override against your purchased or
+verified numbers. For forwarded calls, check the caller ID configured in your forwarding flow.
+Set the caller name with the [Caller ID and CNAM][caller-id] guide. A "Spam likely" label on your
+number is a reputation problem rather than a configuration one. Start with the
+[spam labels][spam-labels] guide and confirm your calls carry [STIR/SHAKEN][stir-shaken]
+attestation.
+
+</Accordion>
+<Accordion title="The call connects but your SWML doesn't run">
+
+SignalWire requests `url` with `POST` unless you set `url_method`, and the endpoint has to return a
+SWML document. Set `fallback_url` so a failed fetch still gets instructions, and secure the endpoint
+as described in [SWML webhook security][swml-webhook-security]. An inline `swml` value must be a
+JSON object, not a string of escaped JSON.
+
+</Accordion>
+</AccordionGroup>
+
+## Examples
+
+These examples use Bayview Taxi: an automated driver-arrival announcement, an incoming call
+forwarded to a dispatcher, and a dispatcher speaking to a rider from the browser.
+
+### Place a call with REST
+
+Run the curl command from a terminal or the SDK code on your backend, using your Project ID,
+API token, and Space hostname. This flow uses SWML for the announcement and requests `answered`
+and `ended` webhooks:
 
 <llms-ignore>
 
@@ -192,13 +293,8 @@ The response returns the new call before anyone answers:
 }
 ```
 
-A `200` response with a call `id` means SignalWire accepted the request. It does not mean the
-rider answered. Keep the `id` to end or transfer the call with other Calling API commands.
-
-Progress arrives at `status_url` as webhooks for the events you list in `status_events`: `created`,
-`ringing`, `answered`, and `ended`. Omit `status_events` and you get `ended` only. The full
-parameter list is on the [Calling API reference][calling-api]. Listen for `answered` to confirm
-the rider picked up and `ended` to know the call finished.
+Keep the `id` to end or transfer the call with other Calling API commands. The `status_url`
+endpoint receives the `answered` and `ended` webhooks requested above.
 
 <Accordion title="Send the SWML inline and personalize each call">
 
@@ -234,47 +330,27 @@ many calls.
 
 </Accordion>
 
-### Run an AI agent with SWML
+### Forward an inbound call
 
-On calls where SignalWire runs the logic, swapping the SWML document changes what the rider hears
-without changing how you dial. Replace the `play` method with the [`ai` method][swml-ai] to turn
-the announcement into a conversation:
+Assign this SWML script to the SignalWire number that riders call. When a rider calls in,
+SignalWire dials the dispatcher's phone and connects them:
 
 ```yaml
 version: 1.0.0
 sections:
   main:
-    - ai:
-        params:
-          static_greeting: "Hello, this is an automated assistant calling from Bayview Taxi about your pickup. This call uses an artificial voice."
-          static_greeting_no_barge: true
-        prompt:
-          text: |
-            You are calling to tell the rider their driver is about five minutes away.
-            Answer questions using that estimate. You cannot change bookings or
-            contact preferences. If asked, explain that the rider needs to contact
-            Bayview Taxi to make those changes. Do not claim to have made a change.
+    - connect:
+        from: "+15551234567"
+        to: "+15557654321"
 ```
 
-This agent only answers questions about the arrival estimate. With `static_greeting_no_barge`
-enabled, the greeting plays in full before the agent's first turn, even if the rider starts talking.
+Replace `from` with your SignalWire number and `to` with the dispatcher's number. The dispatcher
+sees your SignalWire number as caller ID. See the [forwarding guide][forward-calls] for assigning
+the script and preserving the original caller's number instead.
 
-To let the agent change a booking or record a request to stop future calls, connect it to your
-backend with [tool calling][tool-calling]. Treat those as separate actions: stopping future calls
-doesn't cancel the current ride. The [AI quickstart][ai-quickstart] shows how to serve an agent
-from your own code.
+### Place a call with the Server SDK Relay client
 
-<Warning title="Outbound AI calls are regulated">
-An AI voice counts as an artificial voice under the Telephone Consumer Protection Act (TCPA).
-Check consent, your do-not-call list, and the local calling hours in your code before you send the
-`dial` request, because once the call is placed it has already happened. The [TCPA guide][tcpa] and
-the compliance section of [AI best practices][ai-best-practices] cover each obligation. This is
-technical guidance, not legal advice.
-</Warning>
-
-### Control the call with Relay
-
-These Relay examples play the announcement directly from your server. Your code waits for the
+Run these Relay examples on your server to play the announcement. Your code waits for the
 rider to answer, speaks the message, and ends the call.
 
 <CodeBlocks>
@@ -349,15 +425,11 @@ fails. Then `play` speaks the announcement and `hangup` ends the call.
 The [Python][relay-dial-python] and [TypeScript][relay-dial-ts] references cover timeouts and
 ringing several destinations.
 
-## Call from a browser
+### Place a call with the Browser SDK
 
-Run the Browser SDK in your frontend so the dispatcher can speak to the rider using the device's
-microphone and speaker. This path has two parts:
-
-1. **Backend:** Authenticate the user and issue a [Subscriber Access Token (SAT)][browser-auth]
-   that allows them to call phone numbers. Your Project API Token stays on the backend.
-2. **Browser:** Use that SAT with `@signalwire/js` to dial the rider and handle live audio and
-   call controls. The example below runs here.
+The dispatcher speaks to the rider through your web app. First have your backend issue a
+[Subscriber Access Token][browser-auth] for the dispatcher with permission to dial phone numbers.
+Pass that token to the frontend as `SAT`; the following code runs in the browser.
 
 Use an HTTPS page with `<audio id="remote-audio" autoplay></audio>` and
 `<button id="hangup">Hang up</button>`. Run the dialing code from a user action, such as a
@@ -382,63 +454,40 @@ Watch for `status$` to reach `connected` to confirm the browser call connected. 
 rejects, check that the token is allowed to reach the destination. The
 [Browser SDK outbound guide][browser-outbound] includes a complete page with media and call controls.
 
-## Troubleshoot outbound calls
+### Run an AI agent with SWML
 
-For Calling API and Server SDK REST requests, a `422` means the call was rejected before it was
-placed. Check the error code first. For browser setup and token issues, see
-[Browser SDK authentication][browser-auth].
+To turn the [REST announcement example](#place-a-call-with-rest) into an AI conversation,
+serve this SWML at the URL used in that request. It replaces `play` with the [`ai` method][swml-ai];
+the dial request stays the same:
 
-<AccordionGroup>
-<Accordion title="The request is rejected before the call is placed">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - ai:
+        params:
+          static_greeting: "Hello, this is an automated assistant calling from Bayview Taxi about your pickup. This call uses an artificial voice."
+          static_greeting_no_barge: true
+        prompt:
+          text: |
+            You are calling to tell the rider their driver is about five minutes away.
+            Answer questions using that estimate. You cannot change bookings or
+            contact preferences. If asked, explain that the rider needs to contact
+            Bayview Taxi to make those changes. Do not claim to have made a change.
+```
 
-A `422` response carries an [error code][error-codes] that names the problem. `not_purchased_or_verified`
-means the `from` number isn't yours. `not_valid_for_caller_id` means `from` or `caller_id` isn't an
-E.164 number, caller ID string, or SIP URI. `invalid_destination_number` and
-`destination_number_not_supported` point at `to`. `insufficient_balance` means the project can't pay
-for the call. A `dial` request that has neither `url` nor `swml` is also rejected.
+This agent only answers questions about the arrival estimate. With `static_greeting_no_barge`
+enabled, the greeting plays in full before the agent's first turn, even if the rider starts talking.
 
-</Accordion>
-<Accordion title="The call ends without being answered">
+To let the agent change a booking or record a request to stop future calls, connect it to your
+backend with [tool calling][tool-calling]. Treat those as separate actions: stopping future calls
+doesn't cancel the current ride. The [AI quickstart][ai-quickstart] shows how to serve an agent
+from your own code.
 
-Check the account limits first. A project in [trial mode][trial-mode] can only reach purchased and
-verified numbers. International destinations fail until you [enable international
-dialing][international]. If those are fine, a `timeout` shorter than the destination's ring time
-ends the call early, and a `max_price_per_minute` below the route's price rejects it before it
-rings.
-
-</Accordion>
-<Accordion title="The person you call sees a spam warning or the wrong caller ID">
-
-The displayed number is `from`, or `caller_id` when you set it, and both must be numbers you own.
-Set the caller name with the [Caller ID and CNAM][caller-id] guide. A "Spam likely" label on your
-number is a reputation problem rather than a configuration one. Start with the
-[spam labels][spam-labels] guide and confirm your calls carry [STIR/SHAKEN][stir-shaken]
-attestation.
-
-</Accordion>
-<Accordion title="The call connects but your SWML doesn't run">
-
-SignalWire requests `url` with `POST` unless you set `url_method`, and the endpoint has to return a
-SWML document. Set `fallback_url` so a failed fetch still gets instructions, and secure the endpoint
-as described in [SWML webhook security][swml-webhook-security]. An inline `swml` value must be a
-JSON object, not a string of escaped JSON.
-
-</Accordion>
-</AccordionGroup>
-
-## Next steps
-
-<CardGroup cols={2}>
-  <Card title="Calling API reference" icon="regular code" href="/docs/apis/rest/calls/call-commands">
-    Every `dial` parameter, plus the commands that control a call after it's placed.
-  </Card>
-  <Card title="Relay client" icon="regular server" href="/docs/server-sdks/guides/relay-client">
-    Stay on the call from your server and react to events as they happen.
-  </Card>
-  <Card title="Outbound calls from the browser" icon="regular browser" href="/docs/browser-sdk/v4/guides/outbound-calls">
-    Destinations, media options, and call controls for click-to-call pages.
-  </Card>
-  <Card title="Make and receive calls with SWML" icon="regular phone" href="/docs/swml/guides/make-and-receive-calls">
-    Handle the inbound side and build the SWML your outbound calls run.
-  </Card>
-</CardGroup>
+<Warning title="Outbound AI calls are regulated">
+An AI voice counts as an artificial voice under the Telephone Consumer Protection Act (TCPA).
+Check consent, your do-not-call list, and the local calling hours in your code before you send the
+`dial` request, because once the call is placed it has already happened. The [TCPA guide][tcpa] and
+the compliance section of [AI best practices][ai-best-practices] cover each obligation. This is
+technical guidance, not legal advice.
+</Warning>
