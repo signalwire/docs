@@ -291,20 +291,11 @@ Tell a rider their driver is on the way, using REST or Relay.
 
 #### Place a call with REST
 
-Host this SWML at a URL SignalWire can reach:
-
-```yaml
-version: 1.0.0
-sections:
-  main:
-    - play: "say:Hi, this is Bayview Taxi. Your driver is on the way and will arrive in about five minutes."
-```
-
-Run one of these equivalent requests from your terminal or backend. Replace the credentials,
-phone numbers, SWML URL, and status webhook URL with your own values.
+This request includes the SWML announcement. Replace the credentials and phone numbers,
+then run it from your terminal or backend.
 
 <CodeBlocks>
-<CodeBlock title="Calling API">
+<CodeBlock title="cURL — Calling API">
 ```bash
 curl -X POST "https://YOUR_SPACE.signalwire.com/api/calling/calls" \
   -u "YOUR_PROJECT_ID:YOUR_API_TOKEN" \
@@ -314,9 +305,14 @@ curl -X POST "https://YOUR_SPACE.signalwire.com/api/calling/calls" \
     "params": {
       "from": "+15551234567",
       "to": "+15557654321",
-      "url": "https://example.com/swml/driver-on-the-way",
-      "status_url": "https://example.com/call-status",
-      "status_events": ["answered", "ended"]
+      "swml": {
+        "version": "1.0.0",
+        "sections": {
+          "main": [
+            { "play": "say:Hi, this is Bayview Taxi. Your driver is on the way and will arrive in about five minutes." }
+          ]
+        }
+      }
     }
   }'
 ```
@@ -334,9 +330,14 @@ client = RestClient(
 call = client.calling.dial(
     from_="+15551234567",
     to="+15557654321",
-    url="https://example.com/swml/driver-on-the-way",
-    status_url="https://example.com/call-status",
-    status_events=["answered", "ended"],
+    swml={
+        "version": "1.0.0",
+        "sections": {
+            "main": [
+                {"play": "say:Hi, this is Bayview Taxi. Your driver is on the way and will arrive in about five minutes."}
+            ]
+        },
+    },
 )
 print(call["id"])
 ```
@@ -354,9 +355,14 @@ const client = new RestClient({
 const call = await client.calling.dial({
   from: "+15551234567",
   to: "+15557654321",
-  url: "https://example.com/swml/driver-on-the-way",
-  status_url: "https://example.com/call-status",
-  status_events: ["answered", "ended"],
+  swml: {
+    version: "1.0.0",
+    sections: {
+      main: [
+        { play: "say:Hi, this is Bayview Taxi. Your driver is on the way and will arrive in about five minutes." },
+      ],
+    },
+  },
 });
 console.log(call.id);
 ```
@@ -376,13 +382,13 @@ The response identifies the queued call:
 }
 ```
 
-Keep the `id` for later call commands. Your `status_url` receives the requested `answered` and
-`ended` webhooks. See the REST client reference for [Python][sdk-rest-dial-python] or
-[TypeScript][sdk-rest-dial-ts] for the full request schema.
+Keep the `id` for later call commands. To receive progress webhooks, add `status_url` and
+`status_events` as described in [Track the call's progress](#track-the-calls-progress).
+The REST client references for [Python][sdk-rest-dial-python] and [TypeScript][sdk-rest-dial-ts]
+cover all request fields.
 
-<Accordion title="Send the SWML inline and personalize each call">
+<Accordion title="Personalize each call">
 
-Send the document as a JSON object in `swml` instead of hosting it at `url`.
 Pass per-call values in `custom_variables` and read them with [SWML expressions][swml-expressions]
 such as `${envs.driver_name}`:
 
@@ -408,7 +414,8 @@ curl -X POST "https://YOUR_SPACE.signalwire.com/api/calling/calls" \
   }'
 ```
 
-`custom_variables` also works with SWML served from `url`.
+To reuse a hosted SWML document, pass its `url` instead of `swml`.
+`custom_variables` works with either approach.
 
 </Accordion>
 
@@ -539,8 +546,9 @@ includes a complete page with media and call controls.
 
 ### Run an AI agent with SWML
 
-Use this SWML in the [REST example](#place-a-call-with-rest) to replace the announcement with
-an AI conversation. The [`ai` method][swml-ai] supplies the agent's greeting and instructions:
+For an AI conversation, host the following SWML and replace `swml` in the
+[REST example](#place-a-call-with-rest) with the document's `url`.
+The [`ai` method][swml-ai] supplies the agent's greeting and instructions:
 
 ```yaml
 version: 1.0.0
