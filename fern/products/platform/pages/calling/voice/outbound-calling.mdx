@@ -591,25 +591,27 @@ to confirm pickup and `ended` to know the call finished.
 Set `status_url` to your webhook endpoint and choose `status_events`: `created`, `ringing`,
 `answered`, or `ended`. If you omit `status_events`, you receive `ended` only.
 
-A call reports more statuses than it fires events for. Each of the four event names matches the
-`status` the call reports when that event arrives:
+Each event name is also a `status` the call reports, so a webhook arrives when the call enters the
+state you subscribed to. A call passes through more states than there are events:
 
-| `status` | Webhook event |
+| `status` | Fires a webhook |
 |---|---|
-| `queued`, `initiated` | None — the call exists but has not been placed |
-| `created` | `created` |
-| `ringing` | `ringing` |
-| `answered` | `answered` |
-| `ending` | None |
-| `ended` | `ended` |
+| `queued` | No — accepted, not yet placed |
+| `initiated` | No — handed off to be placed |
+| `created` | Yes, as `created` |
+| `ringing` | Yes, as `ringing` |
+| `answered` | Yes, as `answered` |
+| `ending` | No |
+| `ended` | Yes, as `ended` |
+| `busy`, `no-answer`, `failed`, `canceled` | No |
 
-So the `queued` status in a `dial` response is not a missed webhook. Nothing fires until the call
-reaches `created`.
-
-A call also reports `failed`, `canceled`, and `completed`.
-[NEEDS SOURCE: whether a call that ends in `failed`, `canceled`, or `completed` delivers the
-`ended` webhook, or no webhook at all. The `status_events` enum defines only four event names, and
-no spec or reference in this repo maps these three terminal statuses onto them.]
+<Warning title="A call that never connects sends no status callback">
+`busy`, `no-answer`, `failed`, and `canceled` are not `status_events` values, so none of them
+delivers a callback — not even under the default `status_events` of `["ended"]`. Subscribe to
+`answered` and pair it with the ring `timeout` you set, so a call that never connects shows up as
+an `answered` webhook that never arrives. To confirm what happened, read the call's
+[voice log](/docs/apis/rest/voice-logs/list-voice-logs).
+</Warning>
 
 </Tab>
 <Tab title="Relay (WebSocket)">
