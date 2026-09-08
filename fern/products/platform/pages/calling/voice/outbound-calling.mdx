@@ -136,7 +136,7 @@ and callback settings.
 ## How the call runs
 
 Both server approaches ask SignalWire to place the call. The difference is how your backend
-supplies the call logic and receives progress. These diagrams trace a call to a rider's phone.
+supplies the call logic and receives progress. The diagrams show how each approach controls a call.
 
 <Tabs>
 <Tab title="REST">
@@ -181,34 +181,38 @@ Connect your Server SDK Relay client, then call `dial` with the devices to ring.
 for the dial outcome and returns a call object when the rider answers. Your running code then
 controls the call with methods such as `play`, `connect`, and `hangup`.
 
-Commands and call events travel over the same WebSocket connection. In this flow, your code
-plays an announcement, waits for playback to finish, and hangs up.
+The WebSocket is a persistent, bidirectional channel: your app sends commands to control the
+call, and SignalWire sends live events as its state, playback, or collected input changes.
+Your code uses those events to decide what to do next.
+
+The diagram shows examples of that feedback: start a greeting after answer, choose a destination
+from collected keypad input, or hang up after playback finishes. Input collection must first be
+started with a method such as [play and collect](/docs/server-sdks/reference/python/relay/call/play-and-collect).
+Your app makes each decision using event listeners or the SDK's action results.
 
 <llms-ignore>
 
-<img src="/assets/images/img/outbound-call-relay-lifecycle-themed.svg" alt="Your server keeps a Relay WebSocket connection open to SignalWire. It sends dial with devices, SignalWire rings the rider, and the rider answers. The dial outcome event lets the SDK return a call object. Your server sends play, waits for the playback-finished event, then sends hangup and receives the call-ended event." />
+<img src="/assets/images/img/outbound-call-relay-lifecycle-themed.svg" alt="One persistent WebSocket carries commands from your application to SignalWire and live events back to your application. Your code decides how to react: call answered can trigger play, collected keypad input can trigger connect to a chosen destination, and playback finished can trigger hangup. These are independent examples of application decisions; input events require an active collection operation." />
 
 </llms-ignore>
 
 <llms-only>
 
 ```mermaid
-sequenceDiagram
-    participant App as Your server
-    participant SW as SignalWire
-    participant Rider as Rider's phone
+flowchart TB
+    subgraph Channel[One persistent, bidirectional WebSocket]
+        direction LR
+        App[Your application: decides what happens next]
+        SW[SignalWire: places and controls the call]
+        App -->|Commands: dial, play, connect, hangup| SW
+        SW -.->|Live events: call state, playback, collected input| App
+    end
 
-    Note over App,SW: Authenticated WebSocket stays open
-    App->>SW: dial: devices
-    SW->>Rider: rings
-    Rider->>SW: answers
-    SW-->>App: Dial outcome: answered
-    Note over App: SDK returns a call object
-    App->>SW: play announcement
-    Note over SW,Rider: Announcement plays
-    SW-->>App: Playback finished
-    App->>SW: hangup
-    SW-->>App: Call ended
+    subgraph Reactions[Examples of application decisions, not an automatic sequence]
+        Answered[Call answered: calling.call.dial] --> Greeting[Your app: start the greeting] --> Play[Command: play]
+        Input[Keypad input collected: calling.call.collect] --> Route[Your app: route to dispatch] --> Connect[Command: connect]
+        Finished[Playback finished: calling.call.play] --> End[Your app: end the conversation] --> Hangup[Command: hangup]
+    end
 ```
 
 </llms-only>
