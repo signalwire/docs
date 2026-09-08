@@ -1,0 +1,251 @@
+---
+title: Coach a live call with an AI sidecar
+subtitle: Attach ai_sidecar to a call you bridge with connect, and receive its advice as events on your server
+slug: /guides/ai-sidecar
+description: Attach the SWML ai_sidecar verb to a call bridged with connect, receive insight events on a webhook, and confirm the coaching loop end to end.
+max-toc-depth: 3
+---
+
+A customer calls your number, a person on your team answers, and after each thing the customer
+says an AI posts one line of advice to your server. That is what the
+[`ai_sidecar`](/docs/swml/reference/calling/ai-sidecar) verb does. It listens to both sides of a
+live call and coaches the human agent. It never speaks on the call.
+
+Compare it with the [`ai`](/docs/swml/reference/calling/ai) verb, where the model is the agent
+and talks to the caller. With `ai_sidecar` the human stays on the call and the model writes only
+to the agent.
+
+By the end you have a SWML script that bridges an inbound call to an agent's phone with
+[`connect`](/docs/swml/reference/calling/connect), and a short web server that prints the
+sidecar's advice as it arrives.
+
+## Prerequisites
+
+- A SignalWire phone number you can [assign a SWML script to](/docs/swml/guides#assign-a-phone-number).
+- A second phone to play the agent. `connect` dials it.
+- A web server that SignalWire can reach over the internet. To expose a server on your own
+  machine, follow the tunnel steps in
+  [Handle incoming calls from code](/docs/swml/guides/remote-server#setting-up-a-web-server).
+
+## Write the SWML
+
+The script runs four verbs in order. [`answer`](/docs/swml/reference/calling/answer) picks up
+the call. `ai_sidecar` attaches the coach and returns right away, so the script keeps going.
+`connect` dials the agent's phone and bridges the two people together.
+[`hangup`](/docs/swml/reference/calling/hangup) ends the call once the agent hangs up.
+
+Three fields on `ai_sidecar` matter here. `lang` is the only required field, a BCP-47 tag such
+as `en-US` that sets the speech-recognition language. `prompt` tells the model what to coach on.
+It also has to tell the model to call
+[`sidecar_skip`](/docs/swml/reference/calling/ai-sidecar#built-in-sidecar_skip-tool) when it has
+nothing useful to say, otherwise the model fills every turn with filler. `url` is where
+SignalWire POSTs every event. A fourth field, `hints`, lists words that bias speech recognition
+toward names the model needs to catch, such as your product and the competitors you expect to
+hear about.
+
+The example assumes the customer dialed in and the agent is the party `connect` dials. If your
+agent places the call and `connect` dials the customer, set
+[`customer_role`](/docs/swml/reference/calling/ai-sidecar) to `local-caller`.
+
+Replace `to` with the agent's phone number and `from` with a number you own in your SignalWire
+Space.
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - answer: {}
+    - ai_sidecar:
+        prompt: "You are a real-time sales copilot for an ACME sales agent. After each customer turn, give the agent one short line of advice: a question to ask, an objection to answer, or a fact to confirm. If the customer mentions Globex or SOC 2, tell the agent exactly how to respond. If there is nothing useful to add, call sidecar_skip."
+        lang: "en-US"
+        url: "https://your-app.example.com/sidecar/events"
+        hints: ["ACME", "Globex", "SOC 2"]
+    - connect:
+        from: "+15555550100"
+        to: "+15555550199"
+        answer_on_bridge: true
+    - hangup: {}
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "answer": {}
+      },
+      {
+        "ai_sidecar": {
+          "prompt": "You are a real-time sales copilot for an ACME sales agent. After each customer turn, give the agent one short line of advice: a question to ask, an objection to answer, or a fact to confirm. If the customer mentions Globex or SOC 2, tell the agent exactly how to respond. If there is nothing useful to add, call sidecar_skip.",
+          "lang": "en-US",
+          "url": "https://your-app.example.com/sidecar/events",
+          "hints": ["ACME", "Globex", "SOC 2"]
+        }
+      },
+      {
+        "connect": {
+          "from": "+15555550100",
+          "to": "+15555550199",
+          "answer_on_bridge": true
+        }
+      },
+      {
+        "hangup": {}
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+The prompt names concrete triggers, Globex and SOC 2, so a test call produces advice instead of
+a string of skips. Everything else on the verb is optional, including `model`, `params`, and
+tools. SWAIG (SignalWire AI Gateway) functions work the same way they do on `ai`. The
+[sidecar SWAIG reference](/docs/swml/reference/calling/ai-sidecar/swaig) covers declaring them,
+and the example on the [`ai_sidecar` reference page](/docs/swml/reference/calling/ai-sidecar)
+shows this same flow with one attached.
+
+## Receive the events
+
+SignalWire POSTs one JSON body to `url` for every event. The event sits under a `sidecar_event`
+key, next to a `call_info` object that identifies the call. Unwrap `sidecar_event` before you
+read `type`. The advice is the `raw` field of each `insight` event.
+
+The same URL also receives at least one transcription POST at the end of the call, and that body
+has no `sidecar_event` key. Return 200 and ignore it.
+
+Both servers below print the event type for every event and append the advice for insights.
+They listen on port 3000. Install Flask with `pip install flask` or Express with
+`npm install express`, then start the server.
+
+<Tabs>
+  <Tab title="Python/Flask">
+
+```python
+from flask import Flask, request
+
+app = Flask(__name__)
+
+@app.post("/sidecar/events")
+def sidecar_events():
+    # Accept any content type.
+    body = request.get_json(force=True, silent=True) or {}
+    event = body.get("sidecar_event")
+    if event is None:
+        # Transcription posts share this URL and carry no sidecar_event.
+        return "", 200
+    line = event["type"]
+    if line == "insight":
+        line += ": " + event["raw"]
+    print(line, flush=True)
+    return "", 200
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=3000)
+```
+
+  </Tab>
+  <Tab title="JavaScript/Express">
+
+```javascript
+const express = require("express");
+
+const app = express();
+// Accept any content type. The final event carries the full transcript.
+app.use(express.json({ type: "*/*", limit: "5mb" }));
+
+app.post("/sidecar/events", (req, res) => {
+  const event = req.body && req.body.sidecar_event;
+  if (!event) {
+    // Transcription posts share this URL and carry no sidecar_event.
+    return res.sendStatus(200);
+  }
+  let line = event.type;
+  if (event.type === "insight") line += `: ${event.raw}`;
+  console.log(line);
+  res.sendStatus(200);
+});
+
+app.listen(3000);
+```
+
+  </Tab>
+</Tabs>
+
+Every event type and its fields are listed in the
+[callback types table](/docs/swml/reference/calling/ai-sidecar#callback-types) and the
+[AI sidecar callback](/docs/apis/rest/webhooks/ai-sidecar-callback) payload reference.
+
+## Place a test call
+
+Start the server and expose it to the internet. Put the public URL, including the
+`/sidecar/events` path, in `url`, save the script, and assign it to your number. Call the number
+from one phone and answer on the agent's phone. Then, as the customer, say something the prompt
+can act on, for example "We're comparing you with Globex, and we need SOC 2 before we sign."
+
+Your server log looks like this:
+
+```text title="Server log"
+start
+turn
+request
+skip
+turn
+request
+insight: Ask what Globex quoted, then confirm ACME's SOC 2 report is available on request.
+turn
+request
+insight: Offer to send the SOC 2 report today and ask for a decision date.
+stop
+final
+```
+
+The first `turn`, `request`, and `skip` arrive before anyone speaks, because the sidecar runs
+one evaluation as soon as it attaches. After that, each time the customer stops talking for
+about 200 ms, the default
+[`idle_timeout_ms`](/docs/swml/reference/calling/ai-sidecar/params#paramsidle_timeout_ms), a
+`turn` and a `request` arrive, followed by one `insight` or one `skip`. When either side hangs
+up, `stop` arrives and then `final`. The advice text varies from call to call.
+
+If the log doesn't match:
+
+- Nothing arrives, not even `start`. SignalWire can't reach `url`. POST an empty JSON object to
+  the public URL from outside your network. The handler returns 200 for a body without
+  `sidecar_event`, so a 200 proves the URL is reachable. A tunnel that restarted has a new URL,
+  so update `url` in the script and save it.
+- `start` arrives but every evaluation logs `skip`. The model has nothing concrete to flag.
+  Mention something the prompt names, such as Globex or SOC 2, or add triggers to the prompt.
+- Events arrive but `type` is `None` or `undefined` in a handler you wrote yourself. It is
+  reading the top of the body. The event is under `sidecar_event`.
+
+## Control it during a call
+
+While the sidecar is attached, four [call commands](/docs/apis/rest/calls/call-commands) on the
+REST API steer it. `calling.ai_sidecar.poke` sends a message to the sidecar and prompts an
+immediate response. `calling.ai_sidecar.ask` asks the sidecar a one-off question, and the answer
+arrives later as an `ask_answer` event. `calling.ai_sidecar.status` returns a snapshot of its
+activity counters. `calling.ai_sidecar.stop` stops and detaches the sidecar, which fires `stop`
+and then `final`.
+
+## Next steps
+
+<CardGroup cols={3}>
+
+<Card title="Add tools the sidecar can call" href="/docs/swml/reference/calling/ai-sidecar/swaig" icon="regular webhook">
+  Declare SWAIG functions the model calls mid-call, and return a user_event action to drive the agent's screen.
+</Card>
+
+<Card title="Tune how often it speaks up" href="/docs/swml/reference/calling/ai-sidecar/params" icon="regular gear">
+  Raise the idle timeout on slow consultative calls, or set a minimum interval to cap evaluations on chatty ones.
+</Card>
+
+<Card title="Read every callback field" href="/docs/apis/rest/webhooks/ai-sidecar-callback" icon="regular book-open">
+  The full payload for each event type, including the final snapshot with the transcript and counters.
+</Card>
+
+</CardGroup>
