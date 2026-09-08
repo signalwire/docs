@@ -31,29 +31,23 @@ max-toc-depth: 3
 [tcpa]: /docs/platform/compliance/tcpa
 
 An outbound call takes one request: the number to call, the SignalWire number it comes from, and
-what should happen when someone answers. SignalWire rings the destination and, when the call
-connects, either runs the call logic you supplied or hands the live call back to your code.
+what should happen when someone answers.
 
 Bayview Taxi needs to tell a rider their driver is on the way. The examples show an automated
 announcement, an AI conversation, and a dispatcher calling from a browser.
 
 ## How an outbound call works
 
-Your application can supply instructions for SignalWire to run or control the call as it happens.
+The request is the same everywhere — `dial`, with a `from`, a `to`, and something to run. What
+differs between the APIs is who controls the call once the rider answers.
 
-**Hand SignalWire the call logic.** Use the [Calling API][calling-api] or the Server SDK's REST
-client to supply a SignalWire Markup Language (SWML) document. It describes what happens when
-someone answers, such as playing an announcement or starting an AI conversation. The request
-returns as soon as the call is queued. SignalWire runs the call logic and sends progress updates
-to your configured webhook endpoint.
+Hand the call logic to SignalWire as a SignalWire Markup Language (SWML) document and the request
+returns as soon as the call is queued. SignalWire places the call, runs your document when someone
+answers, and posts progress to your webhook endpoint. The alternative is to keep your own code on
+the call over an open connection and drive each step yourself as it happens.
 
-**Keep your code on the call.** The Server SDK's Relay client holds a WebSocket open, so `dial`
-waits for the answer and returns a call object you drive directly. For a dispatcher speaking to
-the rider from a web app, the Browser SDK connects the device's microphone and speaker to the call.
-
-This sequence shows a Calling API or Server SDK REST call with `answered` and `ended` webhooks
-enabled, as in the examples below. Solid arrows show the request and phone activity; dashed
-arrows show the response and webhooks sent to your code.
+The sequence below traces a hand-off call with `answered` and `ended` webhooks enabled. Dashed
+arrows are what SignalWire sends back to your code.
 
 <llms-ignore>
 
@@ -81,12 +75,12 @@ sequenceDiagram
 
 </llms-only>
 
-| API or SDK | Control style | What runs the call |
+| API or SDK | Who controls the call | What runs it |
 |---|---|---|
-| [Calling API][calling-api] | Hand off | SWML fetched from your URL or sent inline |
-| Server SDK, REST client | Hand off | The same SWML, from [Python][sdk-rest-dial-python] or [TypeScript][sdk-rest-dial-ts] |
-| Server SDK, [Relay client][relay-guide] | Stay on the call | Your Python or TypeScript code over a WebSocket |
-| [Browser SDK][browser-outbound] | Stay on the call | Your browser code |
+| [Calling API][calling-api] | SignalWire | SWML fetched from your URL or sent inline |
+| Server SDK, REST client | SignalWire | The same SWML, from [Python][sdk-rest-dial-python] or [TypeScript][sdk-rest-dial-ts] |
+| Server SDK, [Relay client][relay-guide] | Your server | Your Python or TypeScript, over an open WebSocket |
+| [Browser SDK][browser-outbound] | Your browser | Your JavaScript, using the device's microphone and speaker |
 
 A registered SIP phone or phone system can also dial out through SignalWire. The
 [SIP credentials][sip-credentials] page covers that setup.
@@ -101,22 +95,30 @@ You also need your Project ID and an API token with voice permissions from the
 [API credentials][api-credentials] page of your Dashboard. Browser calls use a
 [Subscriber Access Token][browser-auth] your backend issues for the user instead.
 
-Two account settings decide whether the call is allowed at all. A project in
-[trial mode][trial-mode] can only call purchased and verified numbers and can't call
-internationally. Outside trial mode, calls to other countries still need
+<Note title="Trial mode and international calling">
+A project in [trial mode][trial-mode] can only call purchased and verified numbers, and can't call
+internationally at all. Outside trial mode, calls to other countries still need
 [international dialing enabled][international] for your Space.
+</Note>
 
 ## Call from a server
 
-From your backend, use the Calling API or the Server SDK's REST client to supply call logic,
-or the Server SDK's Relay client to control the live call. Both approaches can deliver the
-announcement to the rider.
+From your backend you can hand the call logic to SignalWire, or stay on the call and drive it
+yourself. Both deliver the same announcement to the rider.
 
-### Hand SignalWire the call logic
+### Let SignalWire run the call
 
-These three examples send the same request. Replace `url` with an endpoint serving the
-[announcement or AI agent SWML](#choose-what-runs-on-the-call), and `status_url` with your webhook
-endpoint. Each asks for an update when the call is answered and when it ends.
+Serve a SWML document at a URL SignalWire can reach. This one plays the announcement:
+
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - play: "say:Hi, this is Bayview Taxi. Your driver is on the way and will arrive in about five minutes."
+```
+
+Then point a `dial` request at that URL. These three examples send the same request, each asking
+for an update when the call is answered and when it ends.
 
 <CodeBlocks>
 <CodeBlock title="Calling API">
@@ -193,11 +195,46 @@ call before anyone answers:
 ```
 
 Keep the `id`. Every other Calling API command, such as ending or transferring the call, takes it.
+
 Progress arrives at `status_url` as webhooks for the events you list in `status_events`: `created`,
-`ringing`, `answered`, and `ended`. If you omit `status_events`, you get `ended` only. The full
+`ringing`, `answered`, and `ended`. Omit `status_events` and you get `ended` only. The full
 parameter list is on the [Calling API reference][calling-api].
 
-### Keep your code on the call
+<Accordion title="Send the SWML inline and personalize each call">
+
+You don't have to host the document. Send it in the `swml` field instead of `url`, as a JSON
+object rather than a string of escaped JSON. To make the logic specific to one call, attach your
+own values in `custom_variables` and read them in the SWML as `${envs.<key>}` using
+[SWML expressions][swml-expressions].
+
+```bash
+curl -X POST "https://YOUR_SPACE.signalwire.com/api/calling/calls" \
+  -u "YOUR_PROJECT_ID:YOUR_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "command": "dial",
+    "params": {
+      "from": "+15551234567",
+      "to": "+15557654321",
+      "custom_variables": { "driver_name": "Sam", "eta_minutes": "5" },
+      "swml": {
+        "version": "1.0.0",
+        "sections": {
+          "main": [
+            { "play": "say:Hi, this is Bayview Taxi. ${envs.driver_name} is on the way and will arrive in about ${envs.eta_minutes} minutes." }
+          ]
+        }
+      }
+    }
+  }'
+```
+
+The same variables are available when you serve SWML from `url`, so one document can personalize
+many calls.
+
+</Accordion>
+
+### Stay on the call from your code
 
 These Relay examples play the announcement directly from your server. Your code waits for the
 rider to answer, speaks the message, and ends the call.
@@ -301,22 +338,12 @@ hangupButton.onclick = () => call.hangup();
 The [Browser SDK outbound guide][browser-outbound] includes a complete page with media and call
 controls.
 
-## Choose what runs on the call
+## Run an AI agent on the call
 
-For the Calling API and Server SDK's REST client, the SWML behind `url` controls what the rider
-hears after answering. Serve one of these documents at that URL to choose between a spoken
-announcement and an AI conversation. You can change the call logic without changing how you dial.
+On calls where SignalWire runs the logic, swapping the SWML document changes what the rider hears
+without changing how you dial. Replace the `play` method with the [`ai` method][swml-ai] to turn
+the announcement into a conversation:
 
-<CodeBlocks>
-<CodeBlock title="Announcement">
-```yaml
-version: 1.0.0
-sections:
-  main:
-    - play: "say:Hi, this is Bayview Taxi. Your driver is on the way and will arrive in about five minutes."
-```
-</CodeBlock>
-<CodeBlock title="AI agent">
 ```yaml
 version: 1.0.0
 sections:
@@ -332,12 +359,9 @@ sections:
             contact preferences. If asked, explain that the rider needs to contact
             Bayview Taxi to make those changes. Do not claim to have made a change.
 ```
-</CodeBlock>
-</CodeBlocks>
 
-The [`ai` method][swml-ai] turns the announcement into a conversation. This example only answers
-questions about the arrival estimate. With `static_greeting_no_barge` enabled, the greeting plays
-in full before the agent's first turn, even if the rider starts talking.
+This agent only answers questions about the arrival estimate. With `static_greeting_no_barge`
+enabled, the greeting plays in full before the agent's first turn, even if the rider starts talking.
 
 To let the agent change a booking or record a request to stop future calls, connect it to your
 backend with [tool calling][tool-calling]. Treat those as separate actions: stopping future calls
@@ -352,39 +376,6 @@ the compliance section of [AI best practices][ai-best-practices] cover each obli
 technical guidance, not legal advice.
 </Warning>
 
-### Send the logic inline and carry data onto the call
-
-You don't have to host the document. Send it in the `swml` field instead of `url`, as a JSON
-object rather than a string of escaped JSON. To make the logic specific to one call, attach your
-own values in `custom_variables` and read them in the SWML as `${envs.<key>}` using
-[SWML expressions][swml-expressions].
-
-```bash
-curl -X POST "https://YOUR_SPACE.signalwire.com/api/calling/calls" \
-  -u "YOUR_PROJECT_ID:YOUR_API_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "command": "dial",
-    "params": {
-      "from": "+15551234567",
-      "to": "+15557654321",
-      "custom_variables": { "driver_name": "Sam", "eta_minutes": "5" },
-      "swml": {
-        "version": "1.0.0",
-        "sections": {
-          "main": [
-            { "play": "say:Hi, this is Bayview Taxi. ${envs.driver_name} is on the way and will arrive in about ${envs.eta_minutes} minutes." }
-          ]
-        }
-      }
-    }
-  }'
-```
-
-The same variables are available when you serve SWML from `url`, so one document can personalize
-many calls. The [Calling API reference][calling-api] covers variable limits and options such as
-caller ID and ring time.
-
 ## Confirm the call connected
 
 For REST calls, a `200` response with a call `id` means SignalWire accepted the request. Listen
@@ -395,11 +386,10 @@ With Relay, `dial` returns a call object once the destination answers, or raises
 the dial fails. In the browser, watch for `status$` to reach `connected`. If `dial()` rejects,
 check that the token is allowed to reach the destination.
 
-The likeliest failure is a `422` before the call is placed, with an error code such as
-`not_purchased_or_verified`. That means the `from` or `caller_id` number isn't purchased in this
-project or verified as a caller ID. The next section covers the other common causes.
-
 ## Troubleshoot outbound calls
+
+The likeliest failure is a `422` before the call is ever placed, usually because the `from` number
+isn't one you own.
 
 <AccordionGroup>
 <Accordion title="The request is rejected before the call is placed">
