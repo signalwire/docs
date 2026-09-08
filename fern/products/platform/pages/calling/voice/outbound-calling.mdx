@@ -43,18 +43,18 @@ Jump to the [examples](#examples) for working code or
 
 ## How outbound calls start
 
-Your **server** can send a REST request to the [Calling API][calling-api] or dial over a
-persistent Relay WebSocket connection. The Server SDK provides a client for each approach.
+Most outbound calls start on your server: send a REST request to the [Calling API][calling-api], or
+dial over a persistent Relay WebSocket connection. The Server SDK provides a client for each
+approach.
 
-**Forwarding an inbound call** places an outbound call to a second destination and connects the
-two callers. Configure it with [SWML call instructions][swml-connect] or Call Flow Builder's
-[Forward to Phone node][forward-node].
+Forwarding an inbound call also places an outbound call, dialing a second destination and
+connecting the two callers. Configure it with [SWML call instructions][swml-connect] or Call Flow
+Builder's [Forward to Phone node][forward-node].
 
-The **Browser SDK** lets a person dial and speak through your web app's microphone and speaker.
-A button that starts an automated call instead sends the request to your backend.
-
-Registered SIP phones and phone systems can also dial through SignalWire using
-[SIP credentials][sip-credentials].
+Calls can start on a device instead. The [Browser SDK][browser-outbound] dials from your web app so
+a person speaks through their own microphone and speaker, and registered SIP phones and phone
+systems dial through SignalWire using [SIP credentials][sip-credentials]. A browser button that
+starts an automated call is a server call: it sends the request to your backend.
 
 ## Destinations you can call
 
@@ -209,75 +209,6 @@ Server calls use your Project ID and an API token with voice permissions from th
 Browser calls use a [Subscriber Access Token (SAT)][browser-auth] that your backend issues for
 the user. Its permissions determine which destinations the user can call.
 
-## Track the call's progress
-
-<Tabs>
-<Tab title="REST">
-
-A `200` response with a call `id` means SignalWire accepted the request. Listen for `answered`
-to confirm pickup and `ended` to know the call finished.
-
-Set `status_url` to your webhook endpoint and choose `status_events`: `created`, `ringing`,
-`answered`, or `ended`. If you omit `status_events`, you receive `ended` only.
-
-</Tab>
-<Tab title="Relay (WebSocket)">
-
-The SDK's `dial` returns a call object after answer or raises `RelayError` on failure.
-Use `call.on` for state and action events, and `action.wait()` to wait for an action such as
-playback to finish. See the [Python](/docs/server-sdks/reference/python/relay/call/on) or
-[TypeScript](/docs/server-sdks/reference/typescript/relay/call/on) event reference.
-
-<Accordion title="Using the Relay protocol directly">
-The initial `calling.dial` response acknowledges the request. A later `calling.call.dial`
-event carries the dial outcome. The Server SDK waits for this event before returning a call object.
-</Accordion>
-
-</Tab>
-</Tabs>
-
-## Troubleshoot outbound calls
-
-Start with the error returned by your API or SDK, then check the relevant case below.
-Browser token setup is covered in [authentication][browser-auth].
-
-<AccordionGroup>
-<Accordion title="The REST request is rejected before the call is placed">
-
-A `422` response includes an [error code][error-codes]. Check the field it identifies:
-`not_purchased_or_verified` means that number is not purchased or verified for your project.
-Also check the destination (`to`), call instructions (`url` or `swml`), and account balance.
-
-</Accordion>
-<Accordion title="The Relay dial fails">
-
-Check the `RelayError`, confirm the client is connected, and review the device parameters.
-Phone devices use `to_number` and `from_number`; SIP devices use `to` and `from`.
-The [Relay guide][relay-guide] covers connection setup.
-
-</Accordion>
-<Accordion title="The call ends without being answered">
-
-Check the ring `timeout`, [trial limits][trial-mode], and [international dialing settings][international].
-For REST calls, a `max_price_per_minute` below the route's price rejects the call before it rings.
-
-</Accordion>
-<Accordion title="The person you call sees a spam warning or the wrong caller ID">
-
-Review the calling number and any caller ID override in your request or forwarding flow.
-The [Caller ID and CNAM][caller-id] guide covers display settings. For reputation issues, see
-[spam labels][spam-labels] and [STIR/SHAKEN][stir-shaken].
-
-</Accordion>
-<Accordion title="The call connects but your SWML doesn't run">
-
-Your `url` endpoint must return SWML and accept `POST` by default. Use `url_method` to change
-the method or `fallback_url` to provide backup instructions. Send inline `swml` as a JSON object.
-See [SWML webhook security][swml-webhook-security] for securing the endpoint.
-
-</Accordion>
-</AccordionGroup>
-
 ## Examples
 
 Bayview Taxi uses outbound calls to notify riders and connect them with dispatchers.
@@ -287,9 +218,7 @@ Bayview Taxi uses outbound calls to notify riders and connect them with dispatch
 Tell a rider their driver is on the way, using REST or Relay.
 
 <Tabs>
-<Tab title="SWML (REST)">
-
-#### Place a call with REST
+<Tab title="REST">
 
 This request includes the SWML announcement. Replace the credentials and phone numbers,
 then run it from your terminal or backend.
@@ -420,15 +349,13 @@ To reuse a hosted SWML document, pass its `url` instead of `swml`.
 </Accordion>
 
 </Tab>
-<Tab title="Server SDK (Relay)">
-
-#### Place a call with the Server SDK Relay client
+<Tab title="Relay (WebSocket)">
 
 Run this on your server with your credentials and phone numbers. It dials the rider, plays
 the announcement after answer, waits for playback to finish, and hangs up.
 
 <CodeBlocks>
-<CodeBlock title="Server SDK Relay (Python)">
+<CodeBlock title="Python — Relay client">
 ```python
 import asyncio
 from signalwire.relay import RelayClient
@@ -462,7 +389,7 @@ async def main():
 asyncio.run(main())
 ```
 </CodeBlock>
-<CodeBlock title="Server SDK Relay (TypeScript)">
+<CodeBlock title="TypeScript — Relay client">
 ```typescript
 import { RelayClient } from "@signalwire/sdk";
 
@@ -504,9 +431,10 @@ See the [Relay guide][relay-guide] for connection management and more call contr
 Connect an incoming rider call to a dispatcher. Set the calling number to your SignalWire
 number and the destination to the dispatcher's number.
 
-- **SWML:** Assign the script to the number riders call, using the [forwarding guide][forward-calls].
-- **Server SDK:** Route that number's inbound calls to the Relay `dispatch` context and run the
-  handler on your backend. See the [Relay guide][relay-guide] for setup.
+With SWML, assign the script below to the number riders call, following the
+[forwarding guide][forward-calls]. With the Server SDK, route that number's inbound calls to the
+Relay `dispatch` context and run the handler on your backend, as the [Relay guide][relay-guide]
+describes.
 
 <CodeBlocks>
 <CodeBlock title="SWML">
@@ -519,7 +447,7 @@ sections:
         to: "+15557654321"
 ```
 </CodeBlock>
-<CodeBlock title="Python — Relay SDK">
+<CodeBlock title="Python — Relay client">
 ```python
 from signalwire.relay import RelayClient
 
@@ -544,7 +472,7 @@ async def handle_call(call):
 client.run()
 ```
 </CodeBlock>
-<CodeBlock title="TypeScript — Relay SDK">
+<CodeBlock title="TypeScript — Relay client">
 ```typescript
 import { RelayClient } from "@signalwire/sdk";
 
@@ -603,12 +531,18 @@ includes a complete page with media and call controls.
 
 ### Run an AI agent
 
-Replace the announcement with an AI conversation about the rider's pickup.
+Replace the announcement with an AI conversation about the rider's pickup. Both versions build on
+[Place a call from a server](#place-a-call-from-a-server). With SWML, host the document below and
+pass its `url` in place of the inline `swml`. With the Server SDK, replace the playback and hangup
+steps with the snippet below, where `call` is the answered call returned by `dial`.
 
-- **SWML:** Host the document below and use its `url` in the [REST request](#place-a-call-with-rest)
-  in place of the inline `swml`.
-- **Server SDK:** In the [Relay example](#place-a-call-with-the-server-sdk-relay-client), replace
-  the playback and hangup steps with the SDK snippet below. `call` is the answered call returned by `dial`.
+<Warning title="Outbound AI calls are regulated">
+An AI voice counts as an artificial voice under the Telephone Consumer Protection Act (TCPA).
+Check consent, your do-not-call list, and the local calling hours in your code before you send the
+`dial` request. The [TCPA guide][tcpa] and
+the compliance section of [AI best practices][ai-best-practices] cover each obligation. This is
+technical guidance, not legal advice.
+</Warning>
 
 <CodeBlocks>
 <CodeBlock title="SWML">
@@ -628,7 +562,7 @@ sections:
             Bayview Taxi to make those changes. Do not claim to have made a change.
 ```
 </CodeBlock>
-<CodeBlock title="Python — Relay SDK">
+<CodeBlock title="Python — Relay client">
 ```python
 # After dialing, start the agent on the answered call.
 action = await call.ai(
@@ -647,7 +581,7 @@ await action.wait()
 await call.hangup()
 ```
 </CodeBlock>
-<CodeBlock title="TypeScript — Relay SDK">
+<CodeBlock title="TypeScript — Relay client">
 ```typescript
 // After dialing, start the agent on the answered call.
 const action = await call.ai({
@@ -675,10 +609,90 @@ See the [AI quickstart][ai-quickstart] or the Relay AI references for
 [Python](/docs/server-sdks/reference/python/relay/call/ai) and
 [TypeScript](/docs/server-sdks/reference/typescript/relay/call/ai).
 
-<Warning title="Outbound AI calls are regulated">
-An AI voice counts as an artificial voice under the Telephone Consumer Protection Act (TCPA).
-Check consent, your do-not-call list, and the local calling hours in your code before you send the
-`dial` request. The [TCPA guide][tcpa] and
-the compliance section of [AI best practices][ai-best-practices] cover each obligation. This is
-technical guidance, not legal advice.
-</Warning>
+## Track the call's progress
+
+Confirm SignalWire accepted the request, then follow the call to answer and hangup.
+
+<Tabs>
+<Tab title="REST">
+
+A `200` response with a call `id` means SignalWire accepted the request. Listen for `answered`
+to confirm pickup and `ended` to know the call finished.
+
+Set `status_url` to your webhook endpoint and choose `status_events`: `created`, `ringing`,
+`answered`, or `ended`. If you omit `status_events`, you receive `ended` only.
+
+</Tab>
+<Tab title="Relay (WebSocket)">
+
+The SDK's `dial` returns a call object after answer or raises `RelayError` on failure.
+Use `call.on` for state and action events, and `action.wait()` to wait for an action such as
+playback to finish. See the [Python](/docs/server-sdks/reference/python/relay/call/on) or
+[TypeScript](/docs/server-sdks/reference/typescript/relay/call/on) event reference.
+
+<Accordion title="Using the Relay protocol directly">
+The initial `calling.dial` response acknowledges the request. A later `calling.call.dial`
+event carries the dial outcome. The Server SDK waits for this event before returning a call object.
+</Accordion>
+
+</Tab>
+</Tabs>
+
+## Troubleshoot outbound calls
+
+Start with the error returned by your API or SDK, then check the relevant case below.
+Browser token setup is covered in [authentication][browser-auth].
+
+<AccordionGroup>
+<Accordion title="The REST request is rejected before the call is placed">
+
+A `422` response includes an [error code][error-codes]. Check the field it identifies:
+`not_purchased_or_verified` means that number is not purchased or verified for your project.
+Also check the destination (`to`), call instructions (`url` or `swml`), and account balance.
+
+</Accordion>
+<Accordion title="The Relay dial fails">
+
+Check the `RelayError`, confirm the client is connected, and review the device parameters.
+Phone devices use `to_number` and `from_number`; SIP devices use `to` and `from`.
+The [Relay guide][relay-guide] covers connection setup.
+
+</Accordion>
+<Accordion title="The call ends without being answered">
+
+Check the ring `timeout`, [trial limits][trial-mode], and [international dialing settings][international].
+For REST calls, a `max_price_per_minute` below the route's price rejects the call before it rings.
+
+</Accordion>
+<Accordion title="The person you call sees a spam warning or the wrong caller ID">
+
+Review the calling number and any caller ID override in your request or forwarding flow.
+The [Caller ID and CNAM][caller-id] guide covers display settings. For reputation issues, see
+[spam labels][spam-labels] and [STIR/SHAKEN][stir-shaken].
+
+</Accordion>
+<Accordion title="The call connects but your SWML doesn't run">
+
+Your `url` endpoint must return SWML and accept `POST` by default. Use `url_method` to change
+the method or `fallback_url` to provide backup instructions. Send inline `swml` as a JSON object.
+See [SWML webhook security][swml-webhook-security] for securing the endpoint.
+
+</Accordion>
+</AccordionGroup>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Calling API reference" icon="regular rectangle-api" href="/docs/apis/rest/calls/call-commands">
+    Every `dial` field, plus the commands that control a call already in progress.
+  </Card>
+  <Card title="Relay client guide" icon="regular server" href="/docs/server-sdks/guides/relay-client">
+    Connection management and event-driven call control from your backend.
+  </Card>
+  <Card title="Browser SDK outbound calls" icon="regular browser" href="/docs/browser-sdk/v4/guides/outbound-calls">
+    A complete web page with media handling and call controls.
+  </Card>
+  <Card title="AI agent quickstart" icon="regular robot" href="/docs/platform/ai/quickstart">
+    Build the agent that holds the conversation once someone answers.
+  </Card>
+</CardGroup>
