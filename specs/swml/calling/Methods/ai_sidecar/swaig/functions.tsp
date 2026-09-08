@@ -22,15 +22,15 @@ model AISidecarSWAIGFunction {
   @doc("The JSON-Schema object describing the function's arguments. When omitted, the function takes no arguments.")
   parameters?: AISidecarFunctionParameters;
 
-  @doc("Webhook URL for this function. Falls back to `defaults.web_hook_url`. Basic auth can be embedded as `username:password@url`.")
+  @doc("Webhook URL for this function. Falls back to `defaults.web_hook_url`. Authentication can also be set in the url in the format of `username:password@url`. Credentials embedded in the URL take precedence over `web_hook_auth_user` and `web_hook_auth_password`.")
   @example("https://example.com/sidecar/swaig")
   web_hook_url?: string;
 
-  @doc("Basic-auth username for this function's webhook. Falls back to `defaults.web_hook_auth_user`.")
-  @example("user")
+  @doc("Username for basic auth on this function's webhook. Falls back to `defaults.web_hook_auth_user`.")
+  @example("username")
   web_hook_auth_user?: string;
 
-  @doc("Basic-auth password for this function's webhook. Falls back to `defaults.web_hook_auth_password`.")
-  @example("pass")
+  @doc("Password for basic auth on this function's webhook. Falls back to `defaults.web_hook_auth_password`.")
+  @example("password")
   web_hook_auth_password?: string;
 }
