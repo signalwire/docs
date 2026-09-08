@@ -13,6 +13,7 @@ max-toc-depth: 3
 [escalate]: /docs/server-sdks/reference/python/agents/handoff-router/escalate
 [say]: /docs/server-sdks/reference/python/agents/handoff-router/say
 [router]: /docs/server-sdks/reference/python/agents/handoff-router/router
+[read-handle]: /docs/server-sdks/reference/python/agents/chat-gateway/read-handle
 
 [`ChatGateway`][chatgateway] lets a browser hold a text conversation. `HandoffRouter` is the other
 half the SignalWire address widget expects: three routes, served at the same URL prefix as the
@@ -43,8 +44,10 @@ agent.mount(handoff.router(), prefix="/chat")
 A browser can't be trusted to name a call, since a page-supplied call ID would let anyone inject
 speech into a stranger's call. Instead the browser proves which call it is on. Your application puts
 a random `handoff_nonce` in the user variables of one dial, [registers][register] it against that
-call's IDs from the dynamic-config callback, and the browser presents it later. Redemption for a
-handle is single use. Typing is repeatable for the life of the call, bounded by
+call's IDs from the dynamic-config callback, and the browser presents it later. The same dial
+carries the `chat_handle`, so the callback recovers the conversation ID with
+[`read_handle()`][read-handle].
+Redemption for a handle is single use. Typing is repeatable for the life of the call, bounded by
 `max_messages_per_call`.
 
 A new medium never starts until the one it replaces has finished and your `capture_leg` callback has
@@ -167,8 +170,9 @@ handoff = HandoffRouter(
 def remember_nonce(query_params, body_params, headers, ephemeral_agent):
     variables = user_variables(body_params)
     nonce = variables.get("handoff_nonce")
-    conversation_id = variables.get("conversation_id")
-    if nonce and conversation_id:
+    chat_handle = variables.get("chat_handle")
+    if nonce and chat_handle:
+        conversation_id = gateway.read_handle(chat_handle)
         call_id = body_params.get("call", {}).get("call_id")
         handoff.register(nonce, conversation_id=conversation_id, call_id=call_id)
 
