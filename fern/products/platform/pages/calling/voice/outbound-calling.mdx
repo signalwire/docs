@@ -1,7 +1,7 @@
 ---
 title: Outbound calling
 slug: /voice/outbound-calling
-description: Learn how REST requests, inbound call forwarding, and SDK requests start outbound calls, with server and browser examples.
+description: Learn how outbound calls start, which destinations each API and SDK supports, and how to place calls from a server or browser.
 max-toc-depth: 3
 ---
 
@@ -32,9 +32,12 @@ max-toc-depth: 3
 [swml-connect]: /docs/swml/reference/calling/connect
 [forward-calls]: /docs/swml/guides/forward-calls
 [forward-node]: /docs/call-flow-builder/reference/forward-to-phone
+[resource-addresses]: /docs/platform/addresses
+[resources]: /docs/platform/resources
 
-An outbound call is a call SignalWire places to a phone number or SIP endpoint. It can start
-with a REST API request, an inbound call being forwarded, or a request from an SDK.
+An outbound call is a call your application or call flow places to a destination: a phone number,
+SIP endpoint, or a user or application in SignalWire. It can start with a REST API request,
+an inbound call being forwarded, or a request from an SDK.
 
 ## How outbound calls start
 
@@ -71,6 +74,48 @@ call from the browser.
 A registered SIP phone or phone system can also dial out through SignalWire. See
 [SIP credentials][sip-credentials] for that setup.
 
+## Destinations you can call
+
+The destination identifies who or what you want to reach. A call can leave SignalWire over the
+public telephone network (PSTN) or SIP, or connect directly to a resource in your Space.
+
+| Destination | Address format | What you reach |
+|---|---|---|
+| Phone number | E.164, such as `+15557654321` | A mobile or landline phone over the PSTN. |
+| SIP endpoint | SIP URI, such as `sip:dispatcher@example.com` | A SIP phone, PBX, or another provider's SIP service. |
+| Call Fabric application or room | Resource address, such as `/public/dispatch-agent` | An AI agent, SWML application, or room in your Space. |
+| Call Fabric user | Resource address, such as `/private/dispatcher` | A registered user (Subscriber) in your Space. |
+
+Applications, rooms, and Subscribers are all [Resources][resources]. Use the actual
+[address][resource-addresses] configured for the resource, including its `public` or `private`
+context. Calling that address directly does not require a destination phone number.
+
+### Support by API and SDK
+
+- **Calling API and Server SDK REST clients:** Accept phone numbers, SIP URIs, and Call Fabric
+  addresses in `to`. See the [Calling API reference][calling-api].
+- **Server SDK Relay client:** Supports `phone` and `sip` devices in its `devices` list. Phone
+  devices use `params.to_number`; see the [dial reference][relay-dial-python] for the device format.
+- **Browser SDK:** Accepts phone numbers, SIP URIs, and Call Fabric addresses as the destination
+  passed to `client.dial()`. The user's token must allow access to that destination. See the
+  [Browser SDK outbound guide][browser-outbound].
+- **Inbound forwarding:** SWML's [`connect`][swml-connect] accepts phone numbers, SIP URIs, and
+  Call Fabric addresses in `to`. Call Flow Builder's [Forward to Phone node][forward-node]
+  supports phone numbers and SIP endpoints.
+
+<Accordion title="Additional Calling API and SWML destination options">
+
+The [Calling API][calling-api] also accepts `sips:`, `verto:`, and `client:` addresses in `to`.
+For a destination handled by a SWML script, use `to_script` with an inline document or a URL that
+returns one; `to` can then be omitted. This is separate from the `url` or `swml` instructions
+that handle the call.
+
+SWML's [`connect` method][swml-connect] also supports queues (`queue:support`) and WebSocket
+media streams (`stream:wss://example.com/audio`). These route an existing call to a queue or
+stream its media; they use the connection-specific options in the `connect` reference.
+
+</Accordion>
+
 ## What happens when someone answers
 
 The call's instructions determine what the recipient hears:
@@ -87,10 +132,13 @@ The call's instructions determine what the recipient hears:
 
 ### Phone numbers and caller ID
 
-Use E.164 format for phone numbers, such as `+15551234567`. For Calling API requests, use a
-[phone number][phone-numbers] purchased in your project or a [verified caller ID][caller-id] as
-the calling number. Forwarding has its own caller ID configuration; the
-[forwarding guide][forward-calls] shows how to preserve the original caller's number.
+Use E.164 format for phone numbers, such as `+15551234567`. For Calling API requests to the PSTN,
+use a [phone number][phone-numbers] purchased in your project or a [verified caller ID][caller-id]
+as the calling number. SIP destinations can use a SIP URI as the calling address; see the
+[Calling API reference][calling-api] for `from` and `caller_id`.
+
+Forwarding has its own caller ID configuration; the [forwarding guide][forward-calls] shows how
+to preserve the original caller's number.
 
 For inbound forwarding, assign your SWML script or Call Flow Builder flow to the SignalWire
 number receiving the call. The [forwarding guide][forward-calls] walks through this setup.
@@ -151,8 +199,8 @@ rings.
 </Accordion>
 <Accordion title="The person you call sees a spam warning or the wrong caller ID">
 
-For Calling API requests, check `from` and any `caller_id` override against your purchased or
-verified numbers. For forwarded calls, check the caller ID configured in your forwarding flow.
+For Calling API requests to phone numbers, check `from` and any `caller_id` override against your
+purchased or verified numbers. For forwarded calls, check the caller ID configured in your forwarding flow.
 Set the caller name with the [Caller ID and CNAM][caller-id] guide. A "Spam likely" label on your
 number is a reputation problem rather than a configuration one. Start with the
 [spam labels][spam-labels] guide and confirm your calls carry [STIR/SHAKEN][stir-shaken]
