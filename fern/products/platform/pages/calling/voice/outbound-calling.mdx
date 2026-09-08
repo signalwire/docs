@@ -1,7 +1,7 @@
 ---
 title: Outbound calling
 slug: /voice/outbound-calling
-description: Understand how outbound calls work, place a call with the Calling API or SDKs, and choose how to control it when someone answers.
+description: Choose server-side automation or client-side browser calling, then place an outbound call with the appropriate API or SDK.
 max-toc-depth: 3
 ---
 
@@ -30,24 +30,54 @@ max-toc-depth: 3
 [ai-best-practices]: /docs/platform/ai/best-practices
 [tcpa]: /docs/platform/compliance/tcpa
 
-An outbound call takes one request: the number to call, the SignalWire number it comes from, and
-what should happen when someone answers.
+An outbound call is a call your application places to someone else's phone. Bayview Taxi might
+send an automated driver-arrival announcement or let a dispatcher speak to the rider from a web app.
 
-Bayview Taxi needs to tell a rider their driver is on the way. The examples show an automated
-announcement, an AI conversation, and a dispatcher calling from a browser.
+## Choose server-side or client-side calling
 
-## How an outbound call works
+Start with what your application needs to do:
 
-The request is the same everywhere — `dial`, with a `from`, a `to`, and something to run. What
-differs between the APIs is who controls the call once the rider answers.
+| You want to… | Where your calling code runs | Start here |
+|---|---|---|
+| Play an announcement, run an AI agent, or automate a call | Your backend, using the Calling API or Server SDK | [Call from a server](#call-from-a-server) |
+| Let a person talk through a web app's microphone and speaker | The user's browser, using the Browser SDK | [Call from a browser](#call-from-a-browser) |
 
-Hand the call logic to SignalWire as a SignalWire Markup Language (SWML) document and the request
-returns as soon as the call is queued. SignalWire places the call, runs your document when someone
-answers, and posts progress to your webhook endpoint. The alternative is to keep your own code on
-the call over an open connection and drive each step yourself as it happens.
+A button in a web app can also ask your backend to start an automated call. That uses the
+server-side path; use the Browser SDK when the person in the browser will participate in the call.
 
-The sequence below traces a hand-off call with `answered` and `ended` webhooks enabled. Dashed
-arrows are what SignalWire sends back to your code.
+A registered SIP phone or phone system can also dial out through SignalWire. The
+[SIP credentials][sip-credentials] page covers that setup.
+
+## Before you dial
+
+You need a [phone number][phone-numbers] purchased in your project, or a
+[verified caller ID][caller-id], to call from. Any number you pass as `from` or `caller_id` on a
+call to the public telephone network must be one of those, in E.164 format such as `+15551234567`.
+
+<Note title="Trial mode and international calling">
+A project in [trial mode][trial-mode] can only call purchased and verified numbers, and can't call
+internationally at all. Outside trial mode, calls to other countries still need
+[international dialing enabled][international] for your Space.
+</Note>
+
+## Call from a server
+
+Run these examples on your backend. You need your Project ID and an API token with voice
+permissions from the [API credentials][api-credentials] page of your Dashboard. Keep the API
+token on the server.
+
+There are two ways to control a server-initiated call:
+
+- **Calling API or Server SDK REST client:** Send SignalWire a SignalWire Markup Language (SWML)
+  document to run when the rider answers. Start here for an announcement or AI agent.
+- **Server SDK Relay client:** Keep a WebSocket connection open and control the call from your
+  Python or TypeScript code. See [Control the call with Relay](#control-the-call-with-relay).
+
+### Let SignalWire run the call
+
+Your server sends the dial request. SignalWire queues the call, runs your SWML when someone
+answers, and sends progress to your server's webhook endpoint. This diagram shows the flow with
+`answered` and `ended` webhooks enabled.
 
 <llms-ignore>
 
@@ -74,39 +104,6 @@ sequenceDiagram
 ```
 
 </llms-only>
-
-| API or SDK | Who controls the call | What runs it |
-|---|---|---|
-| [Calling API][calling-api] | SignalWire | SWML fetched from your URL or sent inline |
-| Server SDK, REST client | SignalWire | The same SWML, from [Python][sdk-rest-dial-python] or [TypeScript][sdk-rest-dial-ts] |
-| Server SDK, [Relay client][relay-guide] | Your server | Your Python or TypeScript, over an open WebSocket |
-| [Browser SDK][browser-outbound] | Your browser | Your JavaScript, using the device's microphone and speaker |
-
-A registered SIP phone or phone system can also dial out through SignalWire. The
-[SIP credentials][sip-credentials] page covers that setup.
-
-## Before you dial
-
-You need a [phone number][phone-numbers] purchased in your project, or a
-[verified caller ID][caller-id], to call from. Any number you pass as `from` or `caller_id` on a
-call to the public telephone network must be one of those, in E.164 format such as `+15551234567`.
-
-You also need your Project ID and an API token with voice permissions from the
-[API credentials][api-credentials] page of your Dashboard. Browser calls use a
-[Subscriber Access Token][browser-auth] your backend issues for the user instead.
-
-<Note title="Trial mode and international calling">
-A project in [trial mode][trial-mode] can only call purchased and verified numbers, and can't call
-internationally at all. Outside trial mode, calls to other countries still need
-[international dialing enabled][international] for your Space.
-</Note>
-
-## Call from a server
-
-From your backend you can hand the call logic to SignalWire, or stay on the call and drive it
-yourself. Both deliver the same announcement to the rider.
-
-### Let SignalWire run the call
 
 Serve a SWML document at a URL SignalWire can reach. This one plays the announcement:
 
@@ -180,8 +177,9 @@ console.log(call.id);
 </CodeBlock>
 </CodeBlocks>
 
-All three send the same `dial` command, so their parameters match. The response returns the new
-call before anyone answers:
+The Calling API and Server SDK REST clients ([Python][sdk-rest-dial-python] or
+[TypeScript][sdk-rest-dial-ts]) send the same `dial` command, so their parameters match.
+The response returns the new call before anyone answers:
 
 ```json
 {
@@ -194,11 +192,13 @@ call before anyone answers:
 }
 ```
 
-Keep the `id`. Every other Calling API command, such as ending or transferring the call, takes it.
+A `200` response with a call `id` means SignalWire accepted the request. It does not mean the
+rider answered. Keep the `id` to end or transfer the call with other Calling API commands.
 
 Progress arrives at `status_url` as webhooks for the events you list in `status_events`: `created`,
 `ringing`, `answered`, and `ended`. Omit `status_events` and you get `ended` only. The full
-parameter list is on the [Calling API reference][calling-api].
+parameter list is on the [Calling API reference][calling-api]. Listen for `answered` to confirm
+the rider picked up and `ended` to know the call finished.
 
 <Accordion title="Send the SWML inline and personalize each call">
 
@@ -234,7 +234,45 @@ many calls.
 
 </Accordion>
 
-### Stay on the call from your code
+### Run an AI agent with SWML
+
+On calls where SignalWire runs the logic, swapping the SWML document changes what the rider hears
+without changing how you dial. Replace the `play` method with the [`ai` method][swml-ai] to turn
+the announcement into a conversation:
+
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - ai:
+        params:
+          static_greeting: "Hello, this is an automated assistant calling from Bayview Taxi about your pickup. This call uses an artificial voice."
+          static_greeting_no_barge: true
+        prompt:
+          text: |
+            You are calling to tell the rider their driver is about five minutes away.
+            Answer questions using that estimate. You cannot change bookings or
+            contact preferences. If asked, explain that the rider needs to contact
+            Bayview Taxi to make those changes. Do not claim to have made a change.
+```
+
+This agent only answers questions about the arrival estimate. With `static_greeting_no_barge`
+enabled, the greeting plays in full before the agent's first turn, even if the rider starts talking.
+
+To let the agent change a booking or record a request to stop future calls, connect it to your
+backend with [tool calling][tool-calling]. Treat those as separate actions: stopping future calls
+doesn't cancel the current ride. The [AI quickstart][ai-quickstart] shows how to serve an agent
+from your own code.
+
+<Warning title="Outbound AI calls are regulated">
+An AI voice counts as an artificial voice under the Telephone Consumer Protection Act (TCPA).
+Check consent, your do-not-call list, and the local calling hours in your code before you send the
+`dial` request, because once the call is placed it has already happened. The [TCPA guide][tcpa] and
+the compliance section of [AI best practices][ai-best-practices] cover each obligation. This is
+technical guidance, not legal advice.
+</Warning>
+
+### Control the call with Relay
 
 These Relay examples play the announcement directly from your server. Your code waits for the
 rider to answer, speaks the message, and ends the call.
@@ -306,19 +344,24 @@ await client.disconnect();
 </CodeBlock>
 </CodeBlocks>
 
-With Relay, `dial` waits for the answer, `play` speaks the announcement, and `hangup` ends the call.
+With Relay, `dial` returns a call object when the rider answers, or raises `RelayError` if dialing
+fails. Then `play` speaks the announcement and `hangup` ends the call.
 The [Python][relay-dial-python] and [TypeScript][relay-dial-ts] references cover timeouts and
 ringing several destinations.
 
 ## Call from a browser
 
-The Browser SDK opens a live audio call so the dispatcher can speak to the rider from a web app.
-It uses a Subscriber Access Token issued by your backend and connects the device's microphone
-and speaker to the call.
+Run the Browser SDK in your frontend so the dispatcher can speak to the rider using the device's
+microphone and speaker. This path has two parts:
+
+1. **Backend:** Authenticate the user and issue a [Subscriber Access Token (SAT)][browser-auth]
+   that allows them to call phone numbers. Your Project API Token stays on the backend.
+2. **Browser:** Use that SAT with `@signalwire/js` to dial the rider and handle live audio and
+   call controls. The example below runs here.
 
 Use an HTTPS page with `<audio id="remote-audio" autoplay></audio>` and
 `<button id="hangup">Hang up</button>`. Run the dialing code from a user action, such as a
-**Call rider** button, and use a token allowed to reach phone numbers.
+**Call rider** button.
 
 ```typescript
 import { SignalWire, StaticCredentialProvider } from "@signalwire/js";
@@ -335,61 +378,15 @@ call.remoteStream$.subscribe((stream) => (remoteAudio.srcObject = stream));
 hangupButton.onclick = () => call.hangup();
 ```
 
-The [Browser SDK outbound guide][browser-outbound] includes a complete page with media and call
-controls.
-
-## Run an AI agent on the call
-
-On calls where SignalWire runs the logic, swapping the SWML document changes what the rider hears
-without changing how you dial. Replace the `play` method with the [`ai` method][swml-ai] to turn
-the announcement into a conversation:
-
-```yaml
-version: 1.0.0
-sections:
-  main:
-    - ai:
-        params:
-          static_greeting: "Hello, this is an automated assistant calling from Bayview Taxi about your pickup. This call uses an artificial voice."
-          static_greeting_no_barge: true
-        prompt:
-          text: |
-            You are calling to tell the rider their driver is about five minutes away.
-            Answer questions using that estimate. You cannot change bookings or
-            contact preferences. If asked, explain that the rider needs to contact
-            Bayview Taxi to make those changes. Do not claim to have made a change.
-```
-
-This agent only answers questions about the arrival estimate. With `static_greeting_no_barge`
-enabled, the greeting plays in full before the agent's first turn, even if the rider starts talking.
-
-To let the agent change a booking or record a request to stop future calls, connect it to your
-backend with [tool calling][tool-calling]. Treat those as separate actions: stopping future calls
-doesn't cancel the current ride. The [AI quickstart][ai-quickstart] shows how to serve an agent
-from your own code.
-
-<Warning title="Outbound AI calls are regulated">
-An AI voice counts as an artificial voice under the Telephone Consumer Protection Act (TCPA).
-Check consent, your do-not-call list, and the local calling hours in your code before you send the
-`dial` request, because once the call is placed it has already happened. The [TCPA guide][tcpa] and
-the compliance section of [AI best practices][ai-best-practices] cover each obligation. This is
-technical guidance, not legal advice.
-</Warning>
-
-## Confirm the call connected
-
-For REST calls, a `200` response with a call `id` means SignalWire accepted the request. Listen
-for `answered` at your `status_url` to confirm the destination picked up, and `ended` to know
-the call finished.
-
-With Relay, `dial` returns a call object once the destination answers, or raises `RelayError` if
-the dial fails. In the browser, watch for `status$` to reach `connected`. If `dial()` rejects,
-check that the token is allowed to reach the destination.
+Watch for `status$` to reach `connected` to confirm the browser call connected. If `dial()`
+rejects, check that the token is allowed to reach the destination. The
+[Browser SDK outbound guide][browser-outbound] includes a complete page with media and call controls.
 
 ## Troubleshoot outbound calls
 
-The likeliest failure is a `422` before the call is ever placed, usually because the `from` number
-isn't one you own.
+For Calling API and Server SDK REST requests, a `422` means the call was rejected before it was
+placed. Check the error code first. For browser setup and token issues, see
+[Browser SDK authentication][browser-auth].
 
 <AccordionGroup>
 <Accordion title="The request is rejected before the call is placed">
