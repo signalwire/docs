@@ -12,7 +12,8 @@ Dispatch a request over plain values instead of FastAPI objects. Performs proxy
 detection, basic auth, the [routing callback][register-routing-callback] check,
 and [`on_request()`][on-request] modification, then renders the document. The
 FastAPI routes delegate to the same logic, so both paths return identical
-responses.
+responses. Basic auth is always on: pass `basic_auth` to the constructor and
+send a matching `Authorization` header, or the call returns `401`.
 
 ## **Parameters**
 
@@ -44,18 +45,20 @@ responses.
 
 ## **Example**
 
-```python {8-13}
+```python {10-15}
+import base64
 import json
 from signalwire import SWMLService
 
-service = SWMLService(name="greeting", route="/greeting")
+service = SWMLService(name="greeting", route="/greeting", basic_auth=("greeting", "s3cret"))
 service.add_verb("answer", {})
 service.add_verb("play", {"url": "say:Welcome to Bayview Taxi."})
 
+credentials = base64.b64encode(b"greeting:s3cret").decode()
 status, headers, body = service.handle_request(
     "GET",
     "https://bayview-taxi.example.com/greeting",
-    {},
+    {"authorization": f"Basic {credentials}"},
 )
 print(status, json.loads(body)["sections"]["main"])
 ```

@@ -12,8 +12,9 @@ max-toc-depth: 3
 Dispatch a request over plain values instead of FastAPI objects. Performs proxy
 detection, basic auth, the [routing callback][register-routing-callback] check,
 and [`on_swml_request()`][on-swml-request] modification, then renders the SWML
-document. The FastAPI routes delegate to the same logic, so both paths return
-identical responses.
+document, mirroring the response the FastAPI routes produce for the same
+request. Basic auth is always on: pass `basic_auth` to the constructor and send
+a matching `Authorization` header, or the call returns `401`.
 
 Use it to serve an agent from a framework the SDK has no adapter for. For the
 supported serverless platforms, use
@@ -30,7 +31,7 @@ supported serverless platforms, use
   routing callback path.
 </ParamField>
 
-<ParamField path="headers" type="dict[str, str]" required={true} toc={true}>
+<ParamField path="headers" type="dict[str, Any]" required={true} toc={true}>
   Request headers as a plain dictionary.
 </ParamField>
 
@@ -40,7 +41,7 @@ supported serverless platforms, use
 
 ## **Returns**
 
-`tuple[int, dict[str, str], str]` -- `(status_code, response_headers, body)`.
+`tuple[int, dict[str, Any], str]` -- `(status_code, response_headers, body)`.
 
 - `200` with the SWML document as a JSON string.
 - `307` with a `Location` header and an empty body when a routing callback
@@ -49,17 +50,22 @@ supported serverless platforms, use
 
 ## **Example**
 
-```python {7-12}
+```python {9-17}
+import base64
 import json
 from signalwire import AgentBase
 
-agent = AgentBase(name="dispatch", route="/dispatch")
+agent = AgentBase(name="dispatch", route="/dispatch", basic_auth=("dispatch", "s3cret"))
 agent.set_prompt_text("You are Ada, the dispatcher for Bayview Taxi.")
 
+credentials = base64.b64encode(b"dispatch:s3cret").decode()
 status, headers, body = agent.handle_request(
     "POST",
     "https://bayview-taxi.example.com/dispatch",
-    {"content-type": "application/json"},
+    {
+        "content-type": "application/json",
+        "authorization": f"Basic {credentials}",
+    },
     {"call": {"call_id": "abc-123"}},
 )
 print(status, json.loads(body)["sections"]["main"][0])
