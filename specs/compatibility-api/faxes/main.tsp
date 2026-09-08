@@ -18,7 +18,7 @@ namespace CompatibilityAPI.Faxes {
     @operationId("list_all_faxes")
     @summary("List all Faxes")
     @doc("""
-      List all faxes.
+      Lists the account's fax resources. Each fax has a SID used for delivery inspection, cancellation, deletion, or media access. Use [Fax logs](/docs/apis/rest/fax-logs/list-fax-logs) for read-only historical reporting.
       
       ${tokenPermissions<"_Fax_">}
       """)
@@ -71,7 +71,7 @@ namespace CompatibilityAPI.Faxes {
     @operationId("send_fax")
     @summary("Send a Fax")
     @doc("""
-      Send a fax.
+      Queues a fax from a SignalWire number to a destination number using a document at the supplied media URL. Use [Retrieve a Fax](/docs/compatibility-api/rest/faxes/retrieve-fax) to inspect its current status or [Update a Fax](/docs/compatibility-api/rest/faxes/update-fax) to cancel it while queued. The native Fax Logs API is read-only and cannot send faxes.
       
       ${tokenPermissions<"_Fax_">}
       """)
@@ -89,7 +89,7 @@ namespace CompatibilityAPI.Faxes {
     @operationId("retrieve_fax")
     @summary("Retrieve a Fax")
     @doc("""
-      Retrieve a fax.
+      Retrieves one managed fax by SID so you can inspect its delivery progress, result, and document media. Use [List all Faxes](/docs/compatibility-api/rest/faxes/list-all-faxes) to discover SIDs; use [Get fax log](/docs/apis/rest/fax-logs/get-fax-log) when you only need a historical log entry.
       
       ${tokenPermissions<"_Fax_">}
       """)
@@ -103,7 +103,7 @@ namespace CompatibilityAPI.Faxes {
     @operationId("update_fax")
     @summary("Update a Fax")
     @doc("""
-      Allows you to cancel a queued fax. Only faxes in 'queued' status can be canceled.
+      Cancels a fax while it is still in `queued` status. Faxes that have begun processing, sending, or receiving cannot be canceled with this operation. Fax Logs are read-only and cannot change delivery state.
       
       ${tokenPermissions<"_Fax_">}
       """)
@@ -124,7 +124,7 @@ namespace CompatibilityAPI.Faxes {
     @operationId("delete_fax")
     @summary("Delete a Fax")
     @doc("""
-      Delete a fax. Cannot delete a fax that is currently in progress (processing, sending, or receiving).
+      Deletes a managed fax by SID. A fax cannot be deleted while it is processing, sending, or receiving; cancel a still-queued fax first when appropriate. This removes the fax resource, while [Fax logs](/docs/apis/rest/fax-logs/list-fax-logs) provide the read-only historical view.
       
       ${tokenPermissions<"_Fax_">}
       """)
@@ -145,7 +145,7 @@ namespace CompatibilityAPI.Faxes {
     @operationId("list_all_fax_media")
     @summary("List Fax Media")
     @doc("""
-      List all media for a fax.
+      Returns the document media associated with one fax. Use it when a fax SID is known and you need the media SID or metadata; [Message Media](/docs/compatibility-api/rest/message-media/list-media) contains MMS attachments and is a separate collection.
       
       ${tokenPermissions<"_Fax_">}
       """)
@@ -180,7 +180,7 @@ namespace CompatibilityAPI.Faxes {
     @operationId("retrieve_medias")
     @summary("Retrieve Fax Media")
     @doc("""
-      Retrieve media for a fax.
+      Retrieves one document-media resource by fax SID and media SID. Use [List Fax Media](/docs/compatibility-api/rest/fax-media/list-all-fax-media) to discover media SIDs; this endpoint does not return MMS attachments or voice recordings.
       
       ${tokenPermissions<"_Fax_">}
       """)
@@ -194,7 +194,7 @@ namespace CompatibilityAPI.Faxes {
     @operationId("delete_fax_media")
     @summary("Delete Fax Media")
     @doc("""
-      Delete media for a fax. Cannot delete media for a fax that is in progress (queued, processing, sending, or receiving).
+      Deletes one document-media resource from a fax. Media cannot be deleted while the parent fax is queued, processing, sending, or receiving. This removes the media without deleting the fax record itself; MMS attachments use Message Media operations.
       
       ${tokenPermissions<"_Fax_">}
       """)

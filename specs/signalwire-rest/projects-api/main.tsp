@@ -26,6 +26,8 @@ namespace SignalWireAPI.Projects {
       
       All endpoints operate only within the caller's project tree — the authenticated root
       project and the subprojects beneath it.
+
+      Filter by name when locating a project, or use [Retrieve a project](/docs/apis/rest/projects/get-project) when you already have its ID. Integrations built around Compatibility API Account SIDs can use [List accounts](/docs/compatibility-api/rest/accounts/list-accounts) instead.
       
       ${tokenPermissions<"_Management_">}
       """)
@@ -45,6 +47,8 @@ namespace SignalWireAPI.Projects {
       
       The response includes the `signing_key`. This is the only time it is returned — it
       cannot be retrieved through the API afterward, so capture it from this response.
+
+      Use a subproject to isolate settings and resources beneath a root project. Integrations built around Compatibility API Account SIDs can use [Create subprojects](/docs/compatibility-api/rest/accounts/create-subprojects) instead.
       
       ${tokenPermissions<"_Management_">}
       """)
@@ -64,6 +68,8 @@ namespace SignalWireAPI.Projects {
       Retrieves a single project or subproject.
       
       A project ID outside the caller's project tree returns `404 Not Found`.
+
+      Use this operation when you already have the root-project or subproject ID; use [List projects](/docs/apis/rest/projects/list-projects) to discover IDs. Compatibility API Accounts use a separate SID-based retrieval route.
       
       ${tokenPermissions<"_Management_">}
       """)
@@ -77,7 +83,7 @@ namespace SignalWireAPI.Projects {
     @operationId("update_project")
     @summary("Update a project")
     @doc("""
-      Updates a project's name and settings.
+      Changes the name and security settings of a root project or subproject in the caller's project tree. Use it to control media protection and HTTPS requirements; project API tokens are managed separately through [Project Tokens](/docs/apis/rest/project-tokens/create-token). Compatibility API Accounts use their own SID-based update route.
       
       ${tokenPermissions<"_Management_">}
       """)
@@ -103,6 +109,8 @@ namespace SignalWireAPI.Projects {
       
       On a successful delete, the subproject's registry brands and campaigns are migrated up
       to the parent project.
+
+      Use this operation only for a subproject that is ready to retire. The Compatibility API cannot close an account; its [Update account](/docs/compatibility-api/rest/accounts/update-account) operation only renames one, so deleting the subproject here is the API path for retiring it.
       
       ${tokenPermissions<"_Management_">}
       """)
@@ -123,6 +131,8 @@ namespace SignalWireAPI.Projects {
       
       The previous key may take about 1–2 minutes to stop working. As with create, the
       `signing_key` is only returned on this response and cannot be retrieved afterward.
+
+      Use it when the project's webhook-signing credential has been exposed or is due for rotation; this is separate from creating or revoking REST API tokens.
       
       ${tokenPermissions<"_Management_">}
       """)

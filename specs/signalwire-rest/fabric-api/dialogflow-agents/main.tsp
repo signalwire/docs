@@ -20,7 +20,7 @@ namespace SignalWireAPI.Fabric.DialogflowAgents {
     @operationId("list_dialogflow_agents")
     @summary("List Dialogflow agents")
     @doc("""
-      A list of Dialogflow Agents
+      Lists the Dialogflow integrations represented as AI Agent resources in your SignalWire project. These resources let SignalWire route calls to conversational agents hosted in Dialogflow. Use [custom AI Agents](/docs/apis/rest/ai-agents/ai-agents-custom/list-ai-agents) when the conversational behavior is configured directly in SignalWire.
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
@@ -33,7 +33,7 @@ namespace SignalWireAPI.Fabric.DialogflowAgents {
     @operationId("get_dialogflow_agent")
     @summary("Get Dialogflow agent")
     @doc("""
-      Returns a Dialogflow Agent by ID
+      Retrieves one Dialogflow-backed AI Agent resource from your SignalWire project. Use [List Dialogflow agents](/docs/apis/rest/ai-agents/ai-agents-dialogflow/list-dialogflow-agents) to find these resources, or [Get AI agent](/docs/apis/rest/ai-agents/ai-agents-custom/get-ai-agent) for an agent configured directly in SignalWire.
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
@@ -49,7 +49,7 @@ namespace SignalWireAPI.Fabric.DialogflowAgents {
     @operationId("update_dialogflow_agent")
     @summary("Update Dialogflow agent")
     @doc("""
-      Updates a Dialogflow Agent by ID
+      Updates how SignalWire connects to and presents a Dialogflow-backed AI Agent. This changes the linked resource in your SignalWire project, not the agent hosted in Dialogflow. Use [Update AI agent](/docs/apis/rest/ai-agents/ai-agents-custom/update-ai-agent) for an agent configured directly in SignalWire.
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
@@ -70,7 +70,7 @@ namespace SignalWireAPI.Fabric.DialogflowAgents {
     @operationId("delete_dialogflow_agent")
     @summary("Delete Dialogflow agent")
     @doc("""
-      Deletes a Dialogflow Agent by ID
+      Deletes the linked Dialogflow Agent resource from your SignalWire project so calls can no longer reach that integration through SignalWire. This does not delete the agent hosted in Dialogflow. A [custom AI Agent](/docs/apis/rest/ai-agents/ai-agents-custom/delete-ai-agent) has its own delete operation.
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)

@@ -19,7 +19,7 @@ namespace SignalWireAPI.RelayRest.SipProfile {
     @operationId("retrieve_sip_profile")
     @summary("Get SIP profile")
     @doc("""
-      Retrieves the SIP profile settings for your project.
+      Retrieves the SIP Profile shared across your SignalWire project. The profile supplies project-wide defaults to SIP Credentials that use it; individual registering devices and external destinations are represented by [SIP Credentials](/docs/apis/rest/sip-credentials/get-sip-credential) and [SIP Gateways](/docs/apis/rest/sip-gateway/get-sip-gateway).
       
       ${tokenPermissions<"_Voice_">}
       """)
@@ -29,7 +29,7 @@ namespace SignalWireAPI.RelayRest.SipProfile {
     @operationId("update_sip_profile")
     @summary("Update SIP profile")
     @doc("""
-      Updates the SIP profile settings for your project.
+      Changes the project-wide defaults that SIP Credentials use for registration, media, security, and outbound calling. This updates the project's single SIP Profile; it does not create or update an individual [SIP Credential](/docs/apis/rest/sip-credentials/update-sip-credential) or [SIP Gateway](/docs/apis/rest/sip-gateway/update-sip-gateway).
       
       ${tokenPermissions<"_Voice_">}
       """)

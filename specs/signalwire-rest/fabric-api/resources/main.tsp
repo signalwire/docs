@@ -7,6 +7,7 @@ import "./models/errors.tsp";
 import "./addresses";
 import "../../types";
 import "../tags.tsp";
+import "../_shared/examples.tsp";
 import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
@@ -21,10 +22,25 @@ namespace SignalWireAPI.Fabric.Resources {
     @operationId("list_resources")
     @summary("List Resources")
     @doc("""
-      A list of Fabric Resources
+      Lists every supported Fabric resource in your SignalWire project, regardless of type. Use it for project-wide inventory or when you do not yet know whether an ID belongs to an AI Agent, script, SIP resource, or another resource type. Use a type-specific collection such as [SWML Scripts](/docs/apis/rest/swml-scripts/list-swml-scripts) or [SIP Credentials](/docs/apis/rest/sip-credentials/list-sip-credentials) to create resources or work with their full configuration.
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
+    @opExample(
+      #{
+        returnType: #{
+          data: #[RESOURCE_AI_EXAMPLE],
+          links: #{
+            self: "https://example.signalwire.com/api/fabric/resources?page_number=0&page_size=50",
+            first: "https://example.signalwire.com/api/fabric/resources?page_number=0&page_size=50",
+          },
+        },
+      },
+      #{
+        title: "Resource list",
+        description: "A page containing one compact AI Agent resource.",
+      }
+    )
     list():
       | ResourceListResponse
       | StatusCode401
@@ -34,10 +50,36 @@ namespace SignalWireAPI.Fabric.Resources {
     @operationId("get_resource")
     @summary("Get Resource")
     @doc("""
-      Returns a Resource by ID
+      Retrieves a Fabric resource from your SignalWire project without requiring its type in advance. The response identifies what the resource is; use that resource type's own get operation when you need its full configuration.
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
+    @opExample(
+      #{ returnType: #{ statusCode: 200, resource: RESOURCE_AI_EXAMPLE } },
+      #{ title: "AI Agent", description: "An AI Agent Fabric resource." }
+    )
+    @opExample(
+      #{ returnType: #{ statusCode: 200, resource: RESOURCE_CALL_FLOW_EXAMPLE } },
+      #{ title: "Call Flow", description: "A Call Flow with compact SWML content." }
+    )
+    @opExample(
+      #{
+        returnType: #{
+          statusCode: 200,
+          resource: RESOURCE_CALLING_SWML_SCRIPT_EXAMPLE,
+        },
+      },
+      #{ title: "Calling script", description: "A compact Calling SWML Script resource." }
+    )
+    @opExample(
+      #{
+        returnType: #{
+          statusCode: 200,
+          resource: RESOURCE_MESSAGING_SWML_SCRIPT_EXAMPLE,
+        },
+      },
+      #{ title: "Messaging script", description: "A compact Messaging SWML Script resource." }
+    )
     read(...ResourcePathID):
       | {
           @statusCode statusCode: 200;
@@ -50,7 +92,7 @@ namespace SignalWireAPI.Fabric.Resources {
     @operationId("delete_resource")
     @summary("Delete Resource")
     @doc("""
-      Deletes a Resource by ID
+      Deletes a Fabric resource from your SignalWire project without requiring its type in advance. Use the type-specific delete operation instead when your application already knows the resource family and should make that intent explicit.
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)

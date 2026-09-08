@@ -19,7 +19,7 @@ namespace SignalWireAPI.RelayRest.Queues {
     @operationId("list_queues")
     @summary("List queues")
     @doc("""
-      Returns a list of your queues.
+      Lists the voice call queues in your SignalWire project. Queues hold callers until your call workflow is ready to handle them. The Compatibility API's [List queues](/docs/compatibility-api/rest/queues/list-queues) exposes the same queues through SID-based routes.
       
       ${tokenPermissions<"_Voice_">}
       """)
@@ -28,7 +28,7 @@ namespace SignalWireAPI.RelayRest.Queues {
     @operationId("create_queue")
     @summary("Create queue")
     @doc("""
-      Creates a new queue.
+      Creates a voice call queue in the project for calls that need to wait for later handling. Queue names must be unique among active queues; a deleted queue's name can be reused. The call workflow is responsible for placing callers into the queue. Use Compatibility [Create queue](/docs/compatibility-api/rest/queues/create-queue) for form-encoded requests.
       
       ${tokenPermissions<"_Voice_">}
       """)
@@ -45,7 +45,7 @@ namespace SignalWireAPI.RelayRest.Queues {
     @operationId("get_queue")
     @summary("Get queue")
     @doc("""
-      Retrieves the details of a queue.
+      Retrieves one voice call queue from your SignalWire project. Use [List queues](/docs/apis/rest/queues/list-queues) to find queues or [List queue members](/docs/apis/rest/queue-members/list-queue-members) to inspect the calls currently waiting in one.
       
       ${tokenPermissions<"_Voice_">}
       """)
@@ -59,7 +59,7 @@ namespace SignalWireAPI.RelayRest.Queues {
     @operationId("update_queue")
     @summary("Update queue")
     @doc("""
-      Updates a queue.
+      Changes how a project voice queue is identified or how many callers it can hold. A new name must remain unique among the project's active queues. Queue-member positions and wait times are read through the Queue Members endpoints. The Compatibility API updates the same queues through its SID-based route.
       
       ${tokenPermissions<"_Voice_">}
       """)
@@ -77,7 +77,7 @@ namespace SignalWireAPI.RelayRest.Queues {
     @operationId("delete_queue")
     @summary("Delete queue")
     @doc("""
-      Deletes a queue.
+      Deletes a voice call queue by ID. The queue must be empty; a queue with waiting callers returns a validation error. This removes the same queue that the Compatibility [Delete queue](/docs/compatibility-api/rest/queues/delete-queue) operation manages.
       
       ${tokenPermissions<"_Voice_">}
       """)
@@ -99,7 +99,7 @@ namespace SignalWireAPI.RelayRest.Queues {
     @operationId("list_queue_members")
     @summary("List queue members")
     @doc("""
-      Returns a list of members in a queue.
+      Lists the calls currently waiting in one voice queue. Use it to monitor the queue and decide which caller to handle next; use [List queues](/docs/apis/rest/queues/list-queues) to find queues, or Compatibility [List all queue members](/docs/compatibility-api/rest/queue-members/list-all-queue-members) for SID-based routes.
       
       ${tokenPermissions<"_Voice_">}
       """)
@@ -113,7 +113,7 @@ namespace SignalWireAPI.RelayRest.Queues {
     @operationId("retrieve_next_queue_member")
     @summary("Get next queue member")
     @doc("""
-      Retrieves the next member in the queue without dequeuing.
+      Retrieves the call at the front of one voice queue without removing it. Use it to inspect which waiting caller would be handled next; use [Get queue member](/docs/apis/rest/queue-members/retrieve-queue-member) for a specific member ID. This read does not dequeue or redirect the call.
       
       ${tokenPermissions<"_Voice_">}
       """)
@@ -128,7 +128,7 @@ namespace SignalWireAPI.RelayRest.Queues {
     @operationId("retrieve_queue_member")
     @summary("Get queue member")
     @doc("""
-      Retrieves the details of a queue member.
+      Retrieves one call that is waiting in a voice queue. Use [List queue members](/docs/apis/rest/queue-members/list-queue-members) to find waiting calls or [Get next queue member](/docs/apis/rest/queue-members/retrieve-next-queue-member) to inspect the caller at the front of the queue.
       
       ${tokenPermissions<"_Voice_">}
       """)

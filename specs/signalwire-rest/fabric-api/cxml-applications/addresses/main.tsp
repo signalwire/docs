@@ -17,7 +17,7 @@ namespace SignalWireAPI.Fabric.CxmlApplication.Addresses {
     @operationId("list_cxml_application_addresses")
     @summary("List cXML application Addresses")
     @doc("""
-      This endpoint returns a list of addresses associated with a specific LaML Application.
+      Returns the project-scoped resource addresses assigned to one cXML Application. Use these callable handles to see how calls or messages can reach its configured cXML handlers; use [List cXML applications](/docs/apis/rest/cxml-applications/list-cxml-applications) for the resources themselves, or the cXML Webhook address operation for an individual server-backed handler.
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)

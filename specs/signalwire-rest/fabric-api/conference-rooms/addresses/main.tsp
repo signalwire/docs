@@ -17,7 +17,7 @@ namespace SignalWireAPI.Fabric.ConferenceRoom.Addresses {
     @operationId("list_conference_room_addresses")
     @summary("List conference room Addresses")
     @doc("""
-      This endpoint returns a list of addresses associated with a specific Conference Room.
+      Returns the project-scoped resource addresses assigned to one Fabric Conference Room. Use these callable handles to see how calls can reach the programmable room; use [Get conference room](/docs/apis/rest/conference-rooms/get-conference-room) for its video configuration. Managed Video Conferences and SDK-based Video Rooms are not addressed through this endpoint.
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)

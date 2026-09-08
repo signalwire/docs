@@ -23,7 +23,11 @@ namespace SignalWireAPI.Video.Conferences {
   interface Conferences {
     @operationId("create_video_conference")
     @summary("Create video conference")
-    @doc("Create a Video Conference.\n\n${tokenPermissions<"_Video_">}")
+    @doc("""
+      Creates a managed Video Conference in the project with hosted guest and moderator access. Use it when SignalWire should provide the conference experience as well as the video session. For a custom client built with Room Tokens and a SignalWire client SDK, use [Create room](/docs/apis/rest/video/rooms/create-room).
+
+      ${tokenPermissions<"_Video_">}
+      """)
     @post
     create(@body body: CreateConferenceRequest):
       | ConferenceResponse
@@ -34,7 +38,11 @@ namespace SignalWireAPI.Video.Conferences {
 
     @operationId("list_video_conferences")
     @summary("List video conferences")
-    @doc("List Video Conferences.\n\n${tokenPermissions<"_Video_">}")
+    @doc("""
+      Lists the project's managed Video Conferences. These configurations provide hosted guest and moderator access and define when each conference can be joined. Use [Get video conference](/docs/apis/rest/video/video-conferences/get-video-conference) when you already have the conference ID.
+
+      ${tokenPermissions<"_Video_">}
+      """)
     list(...ListConferencesRequest):
       | ListConferencesResponse
       | StatusCode400
@@ -44,7 +52,11 @@ namespace SignalWireAPI.Video.Conferences {
 
     @operationId("get_video_conference")
     @summary("Get video conference")
-    @doc("Find a Video Conference by ID.\n\n${tokenPermissions<"_Video_">}")
+    @doc("""
+      Retrieves one managed Video Conference by ID so you can inspect its hosted experience and current activity. Use [List video conferences](/docs/apis/rest/video/video-conferences/list-video-conferences) to discover conference IDs.
+
+      ${tokenPermissions<"_Video_">}
+      """)
     @route("/{id}")
     read(
       ...ConferencePathID,
@@ -63,7 +75,11 @@ namespace SignalWireAPI.Video.Conferences {
 
     @operationId("update_video_conference")
     @summary("Update video conference")
-    @doc("Update a Video Conference.\n\n${tokenPermissions<"_Video_">}")
+    @doc("""
+      Changes how a managed Video Conference is presented and runs for subsequent joins while preserving the same project resource and access links.
+
+      ${tokenPermissions<"_Video_">}
+      """)
     @route("/{id}")
     @put
     update(
@@ -80,7 +96,11 @@ namespace SignalWireAPI.Video.Conferences {
 
     @operationId("delete_video_conference")
     @summary("Delete video conference")
-    @doc("Delete a Video Conference.\n\n${tokenPermissions<"_Video_">}")
+    @doc("""
+      Deletes a managed Video Conference by ID so it can no longer be joined. This removes the conference configuration; use the Room Recordings endpoints when you need to find or delete recorded media.
+
+      ${tokenPermissions<"_Video_">}
+      """)
     @route("/{id}")
     @delete
     delete(
@@ -103,7 +123,11 @@ namespace SignalWireAPI.Video.ConferenceStreams {
   interface ConferenceStreams {
     @operationId("list_conference_streams")
     @summary("List conference streams")
-    @doc("${tokenPermissions<"_Video_">}")
+    @doc("""
+      Returns the outbound RTMP or RTMPS streams created for one Video Conference. Use it to discover stream IDs for a known conference before retrieving, changing, or stopping a broadcast. For live voice-conference audio sent over WebSocket, use [Create conference stream](/docs/compatibility-api/rest/conference-streams/create-conference-stream) in the Compatibility API instead.
+
+      ${tokenPermissions<"_Video_">}
+      """)
     list(
       @path
       @doc("Unique id of a video conference")
@@ -113,7 +137,11 @@ namespace SignalWireAPI.Video.ConferenceStreams {
 
     @operationId("create_conference_stream")
     @summary("Create conference stream")
-    @doc("${tokenPermissions<"_Video_">}")
+    @doc("""
+      Starts an outbound RTMP or RTMPS stream from a Video Conference to the supplied ingest URL. Use it to broadcast a conference to an external streaming destination. For live voice-conference audio sent over WebSocket, use [Create conference stream](/docs/compatibility-api/rest/conference-streams/create-conference-stream) in the Compatibility API instead.
+
+      ${tokenPermissions<"_Video_">}
+      """)
     @post
     create(
       @path

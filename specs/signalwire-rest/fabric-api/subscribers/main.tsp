@@ -27,7 +27,7 @@ namespace SignalWireAPI.Fabric.Subscribers {
     @operationId("list_subscribers")
     @summary("List Subscribers")
     @doc("""
-      Retrieve a list of all [subscribers](/docs/platform/subscribers).
+      Returns the project's [Subscriber](/docs/platform/subscribers) resources. Use it to inventory known user identities before retrieving, updating, or issuing access for one. Use [Get Subscriber](/docs/apis/rest/subscribers/get-subscriber) when you already have a resource ID; temporary guests use Guest or Invite Tokens rather than full Subscriber resources.
 
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
@@ -40,7 +40,7 @@ namespace SignalWireAPI.Fabric.Subscribers {
     @operationId("create_subscriber")
     @summary("Create Subscriber")
     @doc("""
-      Create a new [Subscriber](/docs/platform/subscribers).
+      Creates a [Subscriber](/docs/platform/subscribers) resource for a known user, with sign-in credentials and optional profile fields. Use it when the user needs a persistent identity for Browser SDK or resource access; use [Create Subscriber guest token](/docs/apis/rest/subscribers/tokens/create-subscriber-guest-token) for temporary scoped access without a full account. Issue the new subscriber a client credential through [Create Subscriber token](/docs/apis/rest/subscribers/tokens/create-subscriber-token).
 
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
@@ -58,7 +58,7 @@ namespace SignalWireAPI.Fabric.Subscribers {
     @operationId("get_subscriber")
     @summary("Get Subscriber")
     @doc("""
-      Fetch an existing [Subscriber](/docs/platform/subscribers).
+      Retrieves one [Subscriber](/docs/platform/subscribers) resource by ID. Use it to inspect a known user's profile and resource metadata; use [List Subscribers](/docs/apis/rest/subscribers/list-subscribers) to discover IDs, or the Subscriber Token endpoints to create client access rather than read the profile.
 
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
@@ -74,7 +74,7 @@ namespace SignalWireAPI.Fabric.Subscribers {
     @operationId("update_subscriber")
     @summary("Update Subscriber")
     @doc("""
-      Update an existing [Subscriber](/docs/platform/subscribers).
+      Changes the profile or sign-in information for a persistent [Subscriber](/docs/platform/subscribers) identity in the project. Use [Create Subscriber token](/docs/apis/rest/subscribers/tokens/create-subscriber-token) or the refresh operation to manage a client's time-limited access.
 
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
@@ -92,7 +92,7 @@ namespace SignalWireAPI.Fabric.Subscribers {
     @operationId("delete_subscriber")
     @summary("Delete Subscriber")
     @doc("""
-      Delete an existing [Subscriber](/docs/platform/subscribers).
+      Deletes a persistent [Subscriber](/docs/platform/subscribers) resource by ID. Use it when the user identity should no longer exist in the project; temporary Guest and Invite Tokens expire independently and are not deleted through this operation.
 
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)

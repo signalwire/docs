@@ -19,7 +19,11 @@ namespace SignalWireAPI.Video.RoomStreams {
   interface RoomStreams {
     @operationId("list_room_streams")
     @summary("List room streams")
-    @doc("${tokenPermissions<"_Video_">}")
+    @doc("""
+      Returns the outbound RTMP or RTMPS streams created for one Video Room. Use it to discover the stream IDs associated with a known room before retrieving, changing, or stopping a stream. For live voice-call audio sent over WebSocket, use the Compatibility API's [Create stream](/docs/compatibility-api/rest/streams/create-stream) operation instead.
+
+      ${tokenPermissions<"_Video_">}
+      """)
     list(...RoomPathID):
       | ListStreamsResponse
       | StatusCode401
@@ -28,7 +32,11 @@ namespace SignalWireAPI.Video.RoomStreams {
 
     @operationId("create_room_stream")
     @summary("Create room stream")
-    @doc("${tokenPermissions<"_Video_">}")
+    @doc("""
+      Starts an outbound RTMP or RTMPS stream from a Video Room to the supplied ingest URL. Use it to broadcast a room to an external streaming destination. For live voice-call audio sent over WebSocket, use the Compatibility API's [Create stream](/docs/compatibility-api/rest/streams/create-stream) operation instead.
+
+      ${tokenPermissions<"_Video_">}
+      """)
     @post
     create(...RoomPathID, @body body: CreateStreamRequest):
       | StreamCreatedResponse
@@ -46,7 +54,11 @@ namespace SignalWireAPI.Video.Streams {
   interface Streams {
     @operationId("get_stream")
     @summary("Get stream")
-    @doc("${tokenPermissions<"_Video_">}")
+    @doc("""
+      Retrieves one outbound Video stream by its stream ID. Use it when you need the current destination or state of a known room or conference stream; use the room- or conference-specific list operation when you need to discover its ID.
+
+      ${tokenPermissions<"_Video_">}
+      """)
     @route("/{id}")
     read(...StreamPathID):
       | StreamResponse
@@ -56,7 +68,11 @@ namespace SignalWireAPI.Video.Streams {
 
     @operationId("update_stream")
     @summary("Update stream")
-    @doc("${tokenPermissions<"_Video_">}")
+    @doc("""
+      Changes the RTMP or RTMPS destination URL for an existing Video stream identified by ID. Use it to redirect an active room or conference broadcast without creating a second stream.
+
+      ${tokenPermissions<"_Video_">}
+      """)
     @route("/{id}")
     @put
     update(...StreamPathID, @body body: UpdateStreamRequest):
@@ -68,7 +84,11 @@ namespace SignalWireAPI.Video.Streams {
 
     @operationId("delete_stream")
     @summary("Delete stream")
-    @doc("${tokenPermissions<"_Video_">}")
+    @doc("""
+      Stops and deletes an outbound Video stream by its stream ID. Use it when a room or conference should no longer broadcast to the configured RTMP or RTMPS destination.
+
+      ${tokenPermissions<"_Video_">}
+      """)
     @route("/{id}")
     @delete
     delete(...StreamPathID):

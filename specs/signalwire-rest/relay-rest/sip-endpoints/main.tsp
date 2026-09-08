@@ -19,7 +19,7 @@ namespace SignalWireAPI.RelayRest.SipEndpoints {
     @operationId("list_sip_endpoints")
     @summary("List SIP endpoints")
     @doc("""
-      Returns a list of your SIP endpoints.
+      Returns the legacy SIP endpoints in the project. Use it only to inventory an existing integration while migrating to the current SIP Credential resource.
 
       <Warning>This endpoint is deprecated. Use [SIP Credentials](/docs/apis/rest/sip-credentials/create-sip-credential) instead.</Warning>
 
@@ -34,7 +34,7 @@ namespace SignalWireAPI.RelayRest.SipEndpoints {
     @operationId("create_sip_endpoint")
     @summary("Create SIP endpoint")
     @doc("""
-      Creates a new SIP endpoint.
+      Creates a legacy SIP endpoint for a registering device. Use the current SIP Credential resource for new integrations.
 
       <Warning>This endpoint is deprecated. Use [SIP Credentials](/docs/apis/rest/sip-credentials/create-sip-credential) instead.</Warning>
 
@@ -50,7 +50,7 @@ namespace SignalWireAPI.RelayRest.SipEndpoints {
     @operationId("retrieve_sip_endpoint")
     @summary("Get SIP endpoint")
     @doc("""
-      Retrieves the details of a SIP endpoint.
+      Retrieves one legacy SIP endpoint by ID. Use it only for an existing integration while migrating the device to a current SIP Credential.
 
       <Warning>This endpoint is deprecated. Use [SIP Credentials](/docs/apis/rest/sip-credentials/create-sip-credential) instead.</Warning>
 
@@ -66,7 +66,7 @@ namespace SignalWireAPI.RelayRest.SipEndpoints {
     @operationId("update_sip_endpoint")
     @summary("Update SIP endpoint")
     @doc("""
-      Updates a SIP endpoint.
+      Changes how a legacy SIP endpoint registers or places calls. Use it only to maintain an existing integration while migrating to the current SIP Credential resource.
 
       <Warning>This endpoint is deprecated. Use [SIP Credentials](/docs/apis/rest/sip-credentials/create-sip-credential) instead.</Warning>
 
@@ -83,7 +83,7 @@ namespace SignalWireAPI.RelayRest.SipEndpoints {
     @operationId("delete_sip_endpoint")
     @summary("Delete SIP endpoint")
     @doc("""
-      Permanently deletes a SIP endpoint.
+      Permanently deletes a legacy SIP endpoint by ID. Use [Delete SIP credential](/docs/apis/rest/sip-credentials/delete-sip-credential) for a device already migrated to the current resource.
 
       <Warning>This endpoint is deprecated. Use [SIP Credentials](/docs/apis/rest/sip-credentials/create-sip-credential) instead.</Warning>
 

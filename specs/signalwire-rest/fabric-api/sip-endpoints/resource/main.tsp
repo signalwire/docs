@@ -19,7 +19,7 @@ namespace SignalWireAPI.Fabric.SipEndpoint.Resource {
     @operationId("assign_resource_to_sip_credential")
     @summary("Assign Resource to SIP credential")
     @doc("""
-      This endpoint assigns a specific resource to a SIP endpoint, allowing inbound calls to be handled by the resource.
+      Assigns an existing resource as the calling handler for a SIP Credential. Use it when calls placed by the registered SIP device should run that resource's instructions. This operation does not create a credential; use [Create SIP credential](/docs/apis/rest/sip-credentials/create-sip-credential) first when the device does not yet have one.
       <Note>
       Currently only supports `calling` as a handler and automatically defaults to it.
       </Note>

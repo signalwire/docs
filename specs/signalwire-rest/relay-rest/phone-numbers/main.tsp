@@ -19,11 +19,8 @@ namespace SignalWireAPI.RelayRest.PhoneNumbers {
     @operationId("list_phone_numbers")
     @summary("List phone numbers")
     @doc("""
-      Returns a list of your Phone Numbers. The phone numbers are returned
-      sorted by creation date, with the most recent phone numbers appearing
-      first. The list is filterable by sending in any of the following
-      parameters.
-      
+      Lists the phone numbers owned by your SignalWire project. These numbers can send or receive communications according to their capabilities and assigned handlers. Use [Search phone numbers](/docs/apis/rest/phone-numbers/search-available-phone-numbers) for numbers available to purchase, or Compatibility [Incoming Phone Numbers](/docs/compatibility-api/rest/incoming-phone-numbers/list-incoming-phone-numbers) for SID-based routes. Results are sorted by creation date, most recent first.
+
       ${tokenPermissions<"_Numbers_">}
       """)
     list(...ListPhoneNumbersQuery):
@@ -35,7 +32,7 @@ namespace SignalWireAPI.RelayRest.PhoneNumbers {
     @operationId("purchase_phone_number")
     @summary("Purchase phone number")
     @doc("""
-      Purchases a phone number.
+      Purchases one available phone number and adds it to the project. Search first with [Search phone numbers](/docs/apis/rest/phone-numbers/search-available-phone-numbers), then pass the selected E.164 number here. Use [Import phone number](/docs/apis/rest/phone-numbers/create-imported-phone-number) when the number remains hosted elsewhere, or Compatibility [Incoming Phone Numbers](/docs/compatibility-api/rest/incoming-phone-numbers/create-incoming-phone-number) for form-encoded requests.
       
       ${tokenPermissions<"_Numbers_">}
       """)
@@ -53,7 +50,7 @@ namespace SignalWireAPI.RelayRest.PhoneNumbers {
     @operationId("retrieve_phone_number")
     @summary("Get phone number")
     @doc("""
-      Retrieves the details of a phone number.
+      Retrieves one phone number owned by your SignalWire project. Use [List phone numbers](/docs/apis/rest/phone-numbers/list-phone-numbers) to find owned numbers, or [Search phone numbers](/docs/apis/rest/phone-numbers/search-available-phone-numbers) to find numbers that have not yet been purchased.
       
       ${tokenPermissions<"_Numbers_">}
       """)
@@ -67,7 +64,7 @@ namespace SignalWireAPI.RelayRest.PhoneNumbers {
     @operationId("update_phone_number")
     @summary("Update phone number")
     @doc("""
-      Updates a phone number.
+      Changes how a project-owned phone number is identified or routes inbound calls and messages. Use [Assign Resource to phone route](/docs/apis/rest/phone-routes/assign-resource-phone-route) when assigning an existing Fabric resource as the handler.
       
       ${tokenPermissions<"_Numbers_">}
       """)
@@ -85,7 +82,7 @@ namespace SignalWireAPI.RelayRest.PhoneNumbers {
     @operationId("release_phone_number")
     @summary("Release phone number")
     @doc("""
-      Releases a phone number.
+      Releases a project-owned phone number by ID, removing it from the project. Use it only when the number should no longer be owned; deleting a handler resource or removing its E911 assignment does not release the number. Compatibility Incoming Phone Numbers use their own delete operation.
       
       ${tokenPermissions<"_Numbers_">}
       """)
@@ -99,45 +96,11 @@ namespace SignalWireAPI.RelayRest.PhoneNumbers {
       | ValidationError
       | StatusCode500;
 
-    @operationId("assign_e911_address")
-    @summary("Assign an E911 address to a phone number")
-    @doc("""
-      Assigns a validated E911 address to the phone number and begins provisioning at the carrier. The number's `e911_status` becomes `pending`; it moves to `active` asynchronously once the carrier confirms. The address is re-validated at the carrier and must be valid.
-
-      The address `label` is sent to the carrier as the caller name presented to the dispatcher. The emergency network limits that field to 32 characters, so a longer label is truncated to the first 32 characters. Truncation never affects the street address used to route the call, and does not cause the assignment to fail.
-
-      ${tokenPermissions<"_Numbers_">}
-      """)
-    @route("/{id}/e911_address")
-    @post
-    assignE911Address(...PhoneNumberPathID, @body body: AssignE911AddressRequest):
-      | PhoneNumberResponse
-      | StatusCode401
-      | StatusCode404
-      | ValidationError
-      | StatusCode500;
-
-    @operationId("remove_e911_address")
-    @summary("Remove the E911 address from a phone number")
-    @doc("""
-      Removes the E911 address from the phone number and begins deprovisioning at the carrier. Only allowed while the number is `active`. The `e911_status` becomes `pending_removal`; the address remains associated until the carrier confirms removal.
-
-      ${tokenPermissions<"_Numbers_">}
-      """)
-    @route("/{id}/e911_address")
-    @delete
-    removeE911Address(...PhoneNumberPathID):
-      | PhoneNumberResponse
-      | StatusCode401
-      | StatusCode404
-      | ValidationError
-      | StatusCode500;
-
     @operationId("search_available_phone_numbers")
     @summary("Search phone numbers")
     @doc("""
-      Searches for available phone numbers to purchase.
-      
+      Searches SignalWire's available inventory for local or toll-free phone numbers. Search results are candidates, not numbers your project owns; pass a selected result to [Purchase phone number](/docs/apis/rest/phone-numbers/purchase-phone-number). Use [List phone numbers](/docs/apis/rest/phone-numbers/list-phone-numbers) for owned numbers, or Compatibility [Available Phone Numbers](/docs/compatibility-api/rest/available-phone-numbers/search-local-available-phone-numbers) for form-encoded requests.
+
       ${tokenPermissions<"_Numbers_">}
       """)
     @route("/search")
@@ -178,6 +141,123 @@ namespace SignalWireAPI.RelayRest.PhoneNumbers {
   }
 }
 
+@route("/phone_numbers/{id}/e911_address")
+namespace SignalWireAPI.RelayRest.PhoneNumberE911 {
+  @tag(ADDRESSES_TAG)
+  @friendlyName("E911 Phone Number Assignments")
+  interface PhoneNumberE911 {
+    @operationId("assign_e911_address")
+    @summary("Assign an E911 address to a phone number")
+    @doc("""
+      Assigns a validated E911 address to the phone number and begins provisioning at the carrier. The number's `e911_status` becomes `pending`; it moves to `active` asynchronously once the carrier confirms. The address is re-validated at the carrier and must be valid.
+
+      Use this operation after [Create E911 address](/docs/apis/rest/e-911-addresses/create-address) when emergency calls from the number must present that physical service location. Resource addresses and SIP Addresses are routing handles and cannot be assigned for E911.
+
+      The address `label` is sent to the carrier as the caller name presented to the dispatcher. The emergency network limits that field to 32 characters, so a longer label is truncated to the first 32 characters. Truncation never affects the street address used to route the call, and does not cause the assignment to fail.
+
+      ${tokenPermissions<"_Numbers_">}
+      """)
+    @post
+    assignE911Address(...PhoneNumberPathID, @body body: AssignE911AddressRequest):
+      | PhoneNumberResponse
+      | StatusCode401
+      | StatusCode404
+      | ValidationError
+      | StatusCode500;
+
+    @operationId("remove_e911_address")
+    @summary("Remove the E911 address from a phone number")
+    @doc("""
+      Removes the E911 address from the phone number and begins deprovisioning at the carrier. Only allowed while the number is `active`. The `e911_status` becomes `pending_removal`; the address remains associated until the carrier confirms removal.
+
+      Use this operation to stop emergency-service provisioning for the number without deleting the reusable E911 address or releasing the phone number.
+
+      ${tokenPermissions<"_Numbers_">}
+      """)
+    @delete
+    removeE911Address(...PhoneNumberPathID):
+      | PhoneNumberResponse
+      | StatusCode401
+      | StatusCode404
+      | ValidationError
+      | StatusCode500;
+  }
+}
+
+@route("/phone_numbers/{id}/cnam")
+namespace SignalWireAPI.RelayRest.CallerIDName {
+  @tag(CALLER_ID_NAME_TAG)
+  @friendlyName("Caller ID Name")
+  interface CallerIDName {
+    @operationId("retrieve_caller_id_name")
+    @summary("Get caller ID name")
+    @doc("""
+      Retrieves the most recent caller ID name request for a phone number in your project, including its current review status. After [Request a caller ID name](/docs/apis/rest/caller-id-name/request-caller-id-name), poll this operation until `status` is `approved`, `rejected`, or `failed`.
+
+      The response's `name` is the requested name. It can differ from the name call recipients currently see while the request is `pending` or `in_review`, or after it is `rejected` or `failed`. To retrieve the caller ID name currently applied at the carrier, read `cnam` on the phone number with [Get phone number](/docs/apis/rest/phone-numbers/retrieve-phone-number).
+
+      Returns `404` when the phone number is not in your project or has never had a caller ID name requested.
+
+      ${tokenPermissions<"_Numbers_">}
+      """)
+    @get
+    readCnam(...PhoneNumberPathID):
+      | PhoneNumberCnamResponse
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
+
+    @operationId("request_caller_id_name")
+    @summary("Request caller ID name")
+    @doc("""
+      Requests the caller ID name displayed alongside a project-owned phone number on outbound calls. Caller ID name is available only for numbers whose carrier offers it. This operation sets the outbound name for your own number; to retrieve the name published for another number, use [Look up phone number](/docs/apis/rest/phone-number-lookup/lookup-phone-number) with `include=cnam`.
+
+      A `201` means SignalWire accepted the request, not necessarily that call recipients see the name yet. A new name, or one previously `rejected` or `failed`, returns with `status` set to `pending` and is queued for compliance review. Poll [Get the caller ID name](/docs/apis/rest/caller-id-name/retrieve-caller-id-name) until `status` is `approved`, `rejected`, or `failed`.
+
+      Re-requesting a name already `approved` for this phone number returns the existing request with `201` and `status` still `approved`. SignalWire re-applies that name at the carrier without another compliance review.
+
+      A phone number can have only one request awaiting a decision. Submitting a different name supersedes any earlier request with a `pending` or `in_review` status.
+
+      SignalWire normalizes `name` before validating it, so apply the length and character rules to the normalized form described on that field. When the phone number's carrier does not offer caller ID name, the operation returns `422` with an item in `errors` whose `detail` is `Caller ID name isn't available for this number.` Other `422` responses mean `name` was blank or the normalized name did not meet those rules.
+
+      Returns `404` when the phone number is not in your project.
+
+      ${tokenPermissions<"_Numbers_">}
+      """)
+    @post
+    requestCnam(...PhoneNumberPathID, @body body: CreatePhoneNumberCnamRequest):
+      | {
+          @statusCode statusCode: 201;
+          @body cnam: PhoneNumberCnamResponse;
+        }
+      | StatusCode401
+      | StatusCode404
+      | ValidationError
+      | StatusCode500;
+
+    @operationId("clear_caller_id_name")
+    @summary("Clear caller ID name")
+    @doc("""
+      Queues removal of the caller ID name from a phone number in your project. A `204` means SignalWire accepted the request; the applied name remains available as `cnam` on the phone number until the carrier confirms the removal. After confirmation, `cnam` becomes `null` and SignalWire cancels any request still `pending` or `in_review`.
+
+      SignalWire first checks whether the phone number's carrier offers caller ID name. If it does not, the operation returns `422` with an item in `errors` whose `detail` is `Caller ID name isn't available for this number.` For a supported phone number, there must be an applied name or a request awaiting a decision; otherwise the operation returns `422` because there is nothing to clear.
+
+      Returns `404` when the phone number is not in your project.
+
+      ${tokenPermissions<"_Numbers_">}
+      """)
+    @delete
+    clearCnam(...PhoneNumberPathID):
+      | {
+          @statusCode statusCode: 204;
+        }
+      | StatusCode401
+      | StatusCode404
+      | ValidationError
+      | StatusCode500;
+  }
+}
+
 @route("/imported_phone_numbers")
 namespace SignalWireAPI.RelayRest.ImportedPhoneNumbers {
   @tag(IMPORTED_PHONE_NUMBERS_TAG)
@@ -186,7 +266,7 @@ namespace SignalWireAPI.RelayRest.ImportedPhoneNumbers {
     @operationId("create_imported_phone_number")
     @summary("Import phone number")
     @doc("""
-      Import a phone number hosted elsewhere into your SignalWire Space.
+      Imports a phone number that remains hosted with another provider into the SignalWire project and enables the requested capabilities. Use this Partner API when bringing externally hosted inventory; use [Purchase phone number](/docs/apis/rest/phone-numbers/purchase-phone-number) for SignalWire inventory, or Compatibility [Import phone number](/docs/compatibility-api/rest/imported-phone-numbers/create-imported-phone-number) for a form-encoded request.
       
       **Note:** This is a **Partner API**. To enable it on your SignalWire Space, contact [Sales](https://signalwire.com/company/contact?utm_campaign=devex_sent_em).
       
@@ -212,9 +292,7 @@ namespace SignalWireAPI.RelayRest.PhoneNumberLookup {
     @operationId("lookup_phone_number")
     @summary("Look up phone number")
     @doc("""
-      This endpoint allows you to look up validity and formatting
-      information about a number. You can optionally lookup additional
-      information about the number such as carrier and caller ID data.
+      Returns validity and formatting information for any supplied E.164 phone number, with optional carrier and caller-name data. Use it to normalize or enrich a number before other workflows; it neither searches purchasable inventory nor returns numbers owned by the project. Use [Search phone numbers](/docs/apis/rest/phone-numbers/search-available-phone-numbers) or [List phone numbers](/docs/apis/rest/phone-numbers/list-phone-numbers) for those jobs.
       
       #### Permissions
       

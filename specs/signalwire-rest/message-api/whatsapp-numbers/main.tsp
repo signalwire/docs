@@ -18,7 +18,7 @@ namespace SignalWireAPI.Message.WhatsappNumbers {
     @operationId("list_whatsapp_numbers")
     @summary("List WhatsApp numbers")
     @doc("""
-      Returns the WhatsApp numbers connected to your Space. Each record includes its association with a WhatsApp Business Account, voice-capability flags, and the resource IDs used for routing calls or messages. Use `phone_number` (prefixed with `whatsapp:`) as the `from` address when [sending messages](/docs/platform/messaging/whatsapp/send-messages).
+      Lists the WhatsApp numbers connected to the project. These numbers act as WhatsApp senders and can route inbound communication to SignalWire resources. Prefix a number with `whatsapp:` when [sending messages](/docs/platform/messaging/whatsapp/send-messages). Standard SMS and MMS long codes use the [Phone Numbers API](/docs/apis/rest/phone-numbers/list-phone-numbers).
 
       ${tokenPermissions<"_Numbers_">}
       """)
@@ -30,7 +30,7 @@ namespace SignalWireAPI.Message.WhatsappNumbers {
     @operationId("retrieve_whatsapp_number")
     @summary("Get a WhatsApp number")
     @doc("""
-      Retrieves the details of a single WhatsApp number.
+      Retrieves one connected WhatsApp number by SignalWire ID so you can inspect how it is used for outbound and inbound communication. Use [List WhatsApp numbers](/docs/apis/rest/whatsapp/list-whatsapp-numbers) to discover IDs. Standard SMS and MMS phone numbers use [Get phone number](/docs/apis/rest/phone-numbers/retrieve-phone-number).
 
       ${tokenPermissions<"_Numbers_">}
       """)

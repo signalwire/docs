@@ -7,11 +7,40 @@ import "./models/errors.tsp";
 import "./addresses";
 import "../../types";
 import "../tags.tsp";
+import "../_shared/examples.tsp";
 import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 using Types.StatusCodes;
+
+const CreateCallingSwmlScriptExample = #{
+  parameters: #{
+    request: #{
+      name: "Welcome Script",
+      script_type: "calling",
+      contents: SWML_CONTENTS_EXAMPLE,
+    }
+  },
+  returnType: #{
+    statusCode: 200,
+    swml_script: CALLING_SWML_SCRIPT_RESPONSE_EXAMPLE,
+  },
+};
+
+const CreateMessagingSwmlScriptExample = #{
+  parameters: #{
+    request: #{
+      name: "Reply Bot",
+      script_type: "messaging",
+      contents: SWML_MESSAGING_CONTENTS_EXAMPLE,
+    }
+  },
+  returnType: #{
+    statusCode: 200,
+    swml_script: MESSAGING_SWML_SCRIPT_RESPONSE_EXAMPLE,
+  },
+};
 
 @route("/resources/swml_scripts")
 namespace SignalWireAPI.Fabric.SwmlScripts {
@@ -21,10 +50,25 @@ namespace SignalWireAPI.Fabric.SwmlScripts {
     @operationId("list_swml_scripts")
     @summary("List SWML Scripts")
     @doc("""
-      A list of SWML Scripts
+      Returns the project's SWML Script resources, which store calling or messaging SWML in SignalWire. Use it to discover scripts before retrieving or changing one. Use [SWML Webhooks](/docs/apis/rest/swml-webhook/list-swml-webhooks) when your server must return SWML for each request, or [cXML Scripts](/docs/apis/rest/cxml-scripts/list-cxml-scripts) for applications written in cXML.
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
+    @opExample(
+      #{
+        returnType: #[#{
+          data: #[CALLING_SWML_SCRIPT_RESPONSE_EXAMPLE],
+          links: #{
+            self: "https://example.signalwire.com/api/fabric/resources/swml_scripts?page_number=0&page_size=50",
+            first: "https://example.signalwire.com/api/fabric/resources/swml_scripts?page_number=0&page_size=50",
+          },
+        }],
+      },
+      #{
+        title: "SWML Script list",
+        description: "A page containing one compact Calling script.",
+      }
+    )
     list():
       | SwmlScriptListResponse[]
       | StatusCode401
@@ -34,10 +78,28 @@ namespace SignalWireAPI.Fabric.SwmlScripts {
     @operationId("get_swml_script")
     @summary("Get SWML Script")
     @doc("""
-      Returns a SWML Script by ID
+      Retrieves one stored SWML Script by resource ID so you can inspect the instructions used by its calling or messaging handler. Use [List SWML Scripts](/docs/apis/rest/swml-scripts/list-swml-scripts) to discover IDs, or a [SWML Webhook](/docs/apis/rest/swml-webhook/create-swml-webhook) when instructions must come from your server at request time.
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
+    @opExample(
+      #{
+        returnType: #{
+          statusCode: 200,
+          swml_script: CALLING_SWML_SCRIPT_RESPONSE_EXAMPLE,
+        },
+      },
+      #{ title: "Calling script", description: "A Calling script that plays one audio file." }
+    )
+    @opExample(
+      #{
+        returnType: #{
+          statusCode: 200,
+          swml_script: MESSAGING_SWML_SCRIPT_RESPONSE_EXAMPLE,
+        },
+      },
+      #{ title: "Messaging script", description: "A Messaging script that sends one reply." }
+    )
     read(...SwmlScriptPathID):
       | {
           @statusCode statusCode: 200;
@@ -50,10 +112,24 @@ namespace SignalWireAPI.Fabric.SwmlScripts {
     @operationId("create_swml_script")
     @summary("Create SWML Script")
     @doc("""
-      Creates a SWML Script
+      Creates a resource that stores a calling or messaging SWML document in SignalWire. Use it for versioned instructions that can run without fetching content from your server; choose [Create SWML webhook](/docs/apis/rest/swml-webhook/create-swml-webhook) when your server must generate different SWML for each request, or [Create cXML Script](/docs/apis/rest/cxml-scripts/create-cxml-script) for cXML applications.
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
+    @opExample(
+      CreateCallingSwmlScriptExample,
+      #{
+        title: "Simple calling script",
+        description: "Create a Calling SWML Script that plays a single audio file.",
+      }
+    )
+    @opExample(
+      CreateMessagingSwmlScriptExample,
+      #{
+        title: "Simple messaging script",
+        description: "Create a Messaging SWML Script that sends a single reply.",
+      }
+    )
     @post
     create(@body request: SwmlScriptCreateRequest):
       | {
@@ -68,10 +144,50 @@ namespace SignalWireAPI.Fabric.SwmlScripts {
     @operationId("update_swml_script")
     @summary("Update SWML Script")
     @doc("""
-      Updates a SWML Script by ID
+      Changes a stored SWML Script while preserving the same Fabric resource and addresses. Use [Update SWML webhook](/docs/apis/rest/swml-webhook/update-swml-webhook) when the resource points to server-generated SWML instead.
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
+    @opExample(
+      #{
+        parameters: #{
+          id: "993ed018-9e79-4e50-b97b-984bd5534095",
+          request: #{
+            display_name: "Updated Welcome Script",
+            script_type: "calling",
+            contents: SWML_CONTENTS_EXAMPLE,
+          },
+        },
+        returnType: #{
+          statusCode: 200,
+          swml_script: CALLING_SWML_SCRIPT_RESPONSE_EXAMPLE,
+        },
+      },
+      #{
+        title: "Update a calling script",
+        description: "Update a Calling script with a compact SWML document.",
+      }
+    )
+    @opExample(
+      #{
+        parameters: #{
+          id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          request: #{
+            display_name: "Updated Reply Bot",
+            script_type: "messaging",
+            contents: SWML_MESSAGING_CONTENTS_EXAMPLE,
+          },
+        },
+        returnType: #{
+          statusCode: 200,
+          swml_script: MESSAGING_SWML_SCRIPT_RESPONSE_EXAMPLE,
+        },
+      },
+      #{
+        title: "Update a messaging script",
+        description: "Update a Messaging script with a compact SWML document.",
+      }
+    )
     @put
     update(...SwmlScriptPathID, @body request: SwmlScriptUpdateRequest):
       | {
@@ -86,7 +202,7 @@ namespace SignalWireAPI.Fabric.SwmlScripts {
     @operationId("delete_swml_script")
     @summary("Delete SWML Script")
     @doc("""
-      Deletes a SWML Script by ID
+      Deletes a stored SWML Script resource by ID. Use it when the hosted SWML should no longer be available as a call or message handler; deleting a [SWML Webhook](/docs/apis/rest/swml-webhook/delete-swml-webhook) or another handler resource requires that resource's endpoint.
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)

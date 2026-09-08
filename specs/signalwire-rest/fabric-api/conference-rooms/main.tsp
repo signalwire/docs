@@ -21,7 +21,7 @@ namespace SignalWireAPI.Fabric.ConferenceRooms {
     @operationId("list_conference_rooms")
     @summary("List conference rooms")
     @doc("""
-      Returns a list of conference rooms.
+      Returns the project's Fabric Conference Room resources. Use it to discover programmable video rooms that can be reached through resource addresses and used in call routing. Use [Video Conferences](/docs/apis/rest/video/video-conferences/list-video-conferences) for managed conferences with hosted guest and moderator access, or [Video Rooms](/docs/apis/rest/video/rooms/list-rooms) for SDK-based room configurations.
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
@@ -34,7 +34,7 @@ namespace SignalWireAPI.Fabric.ConferenceRooms {
     @operationId("get_conference_room")
     @summary("Get conference room")
     @doc("""
-      Returns a Conference Room by ID
+      Retrieves one Fabric Conference Room by resource ID so you can inspect how the addressable room is configured. Use [List conference rooms](/docs/apis/rest/conference-rooms/list-conference-rooms) to discover IDs, or [Get video conference](/docs/apis/rest/video/video-conferences/get-video-conference) for a managed hosted conference.
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
@@ -50,7 +50,7 @@ namespace SignalWireAPI.Fabric.ConferenceRooms {
     @operationId("create_conference_room")
     @summary("Create conference room")
     @doc("""
-      Creates a Conference Room
+      Creates a Fabric Conference Room resource that can be reached through resource addresses and used in call routing. Use it for a programmable, addressable video room; use [Create video conference](/docs/apis/rest/video/video-conferences/create-video-conference) for a managed hosted conference, or [Create room](/docs/apis/rest/video/rooms/create-room) for an SDK-based Video Room configuration.
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
@@ -68,7 +68,7 @@ namespace SignalWireAPI.Fabric.ConferenceRooms {
     @operationId("update_conference_room")
     @summary("Update conference room")
     @doc("""
-      Updates a Conference Room by ID
+      Changes how a Fabric Conference Room schedules and runs sessions while preserving the same addressable project resource. Managed Video Conferences and SDK-based Video Rooms have separate update operations.
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
@@ -89,7 +89,7 @@ namespace SignalWireAPI.Fabric.ConferenceRooms {
     @operationId("delete_conference_room")
     @summary("Delete conference room")
     @doc("""
-      Deletes a Conference Room by ID
+      Deletes a Fabric Conference Room resource by ID so it can no longer be reached through its resource addresses. This does not delete a managed [Video Conference](/docs/apis/rest/video/video-conferences/delete-video-conference) or an SDK-based [Video Room](/docs/apis/rest/video/rooms/delete-room).
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)

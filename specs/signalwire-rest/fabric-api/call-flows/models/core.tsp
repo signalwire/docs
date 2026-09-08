@@ -1,7 +1,5 @@
 import "../../../types";
 import "../../_shared/const.tsp";
-import "../../../../swml/calling";
-
 using TypeSpec.Http;
 
 model CallFlowPathID {
@@ -28,7 +26,7 @@ model CallFlow {
 
   @doc("The calling SWML document this Call Flow executes. Uses [calling SWML methods](/docs/swml/reference/calling).")
   @example(SWML_CONTENTS_EXAMPLE)
-  relayml?: SWML.Calling.SWMLObject;
+  relayml?: TypeSpec.Record<unknown>;
 
   @doc("The current revision of the call flow. Every update must increase this number.")
   @example(1)

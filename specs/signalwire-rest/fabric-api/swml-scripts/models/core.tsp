@@ -2,9 +2,6 @@ import "@typespec/openapi";
 import "../../../types";
 import "../../_shared/const.tsp";
 import "../../_shared/enums.tsp";
-import "../../../../swml/calling";
-import "../../../../swml/messaging";
-
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 
@@ -36,7 +33,7 @@ model CallingSwmlScript {
 
   @doc("The calling SWML document executed when this script runs. Uses [calling SWML methods](/docs/swml/reference/calling).")
   @example(SWML_CONTENTS_EXAMPLE)
-  contents: SWML.Calling.SWMLObject;
+  contents: TypeSpec.Record<unknown>;
 
   @doc("URL that receives status callbacks for messages sent or calls made by this script.")
   @example("https://website.com/status")
@@ -69,7 +66,7 @@ model MessagingSwmlScript {
 
   @doc("The messaging SWML document executed when this script runs. Uses [messaging SWML methods](/docs/swml/reference/messaging).")
   @example(SWML_MESSAGING_CONTENTS_EXAMPLE)
-  contents: SWML.Messaging.SWMLObject;
+  contents: TypeSpec.Record<unknown>;
 }
 
 @summary("SWML Script")

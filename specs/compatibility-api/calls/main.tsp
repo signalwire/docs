@@ -18,7 +18,7 @@ namespace CompatibilityAPI.Calls {
     @operationId("list_all_calls")
     @summary("List all Calls")
     @doc("""
-      List all calls.
+      Lists the account's calls. Each call has a Call SID that cXML integrations can use for inspection or control. Use [Retrieve a Call](/docs/compatibility-api/rest/calls/retrieve-a-call) when you already have its SID; use the [Calling API](/docs/apis/rest/calls/call-commands) for SWML-driven call commands.
       
       ${tokenPermissions<"_Voice_">}
       """)
@@ -109,7 +109,7 @@ namespace CompatibilityAPI.Calls {
     @operationId("create_a_call")
     @summary("Create a Call")
     @doc("""
-      Create a call.
+      Starts an outbound call whose behavior is supplied by a cXML URL or Application SID. Use this form-encoded route for integrations built around cXML call control and Call SIDs; use the [Calling API](/docs/apis/rest/calls/call-commands) for SWML-driven calls and command-based control.
       
       ${tokenPermissions<"_Voice_">}
       """)
@@ -127,7 +127,7 @@ namespace CompatibilityAPI.Calls {
     @operationId("retrieve_a_call")
     @summary("Retrieve a Call")
     @doc("""
-      Retrieve a call.
+      Retrieves one call by SID so you can inspect a known call's progress and outcome. Use [List all Calls](/docs/compatibility-api/rest/calls/list-all-calls) to discover SIDs. The Calling API is command-oriented and uses its own call identifiers.
       
       ${tokenPermissions<"_Voice_">}
       """)
@@ -141,7 +141,7 @@ namespace CompatibilityAPI.Calls {
     @operationId("update_a_call")
     @summary("Update a Call")
     @doc("""
-      Update a call.
+      Redirects an active call to new cXML instructions, cancels a queued call, or completes an in-progress call. Use it when controlling a call by Call SID and form-encoded cXML settings; use the [Calling API](/docs/apis/rest/calls/call-commands) for SWML call commands.
       
       ${tokenPermissions<"_Voice_">}
       """)
@@ -163,7 +163,7 @@ namespace CompatibilityAPI.Calls {
     @operationId("delete_a_call")
     @summary("Delete a Call")
     @doc("""
-      Delete a call record from your account. If the delete is successful, a 204 response, with no body, will be returned.
+      Deletes a call record from the account and returns no body on success. This removes the record; it does not hang up an active call. Use [Update a Call](/docs/compatibility-api/rest/calls/update-a-call) with an appropriate status to cancel or complete a live call.
       
       ${tokenPermissions<"_Voice_">}
       """)
@@ -184,7 +184,7 @@ namespace CompatibilityAPI.Calls {
     @operationId("create_recording")
     @summary("Create a Recording")
     @doc("""
-      Create a recording.
+      Starts a recording resource for an active call. Use [Update a Recording](/docs/compatibility-api/rest/recordings/update-recording) to pause, resume, or stop it; use the account-level [Recordings](/docs/compatibility-api/rest/recordings/list-recordings) collection to find saved media across calls.
       
       ${tokenPermissions<"_Voice_">}
       """)
@@ -205,7 +205,7 @@ namespace CompatibilityAPI.Calls {
     @operationId("update_recording")
     @summary("Update a Recording")
     @doc("""
-      Pause, resume or stop a Recording. You can control what happens while recording is paused (replace pause with silence or skip it).
+      Pauses, resumes, or stops a recording on an active call. When pausing, choose whether the elapsed interval becomes silence in the media or is skipped. This controls an in-progress recording; account-level [Recordings](/docs/compatibility-api/rest/recordings/list-recordings) operations retrieve or delete saved media.
       
       ${tokenPermissions<"_Voice_">}
       """)
@@ -233,7 +233,7 @@ namespace CompatibilityAPI.Calls {
     @operationId("create_stream")
     @summary("Create a Stream")
     @doc("""
-      Create a stream.
+      Starts sending selected audio tracks from an active call to a secure WebSocket endpoint. Use it for live call-audio processing; use [Conference Streams](/docs/compatibility-api/rest/conference-streams/create-conference-stream) for an entire voice conference or [Video Room Streams](/docs/apis/rest/video/streams/list-room-streams) for RTMP video broadcasts.
       
       ${tokenPermissions<"_Voice_">}
       """)
@@ -254,7 +254,7 @@ namespace CompatibilityAPI.Calls {
     @operationId("update_stream")
     @summary("Stop a Stream")
     @doc("""
-      Stop a Stream.
+      Stops an active WebSocket audio stream on a call by stream SID. This ends media delivery without ending the call. Conference audio streams and Video RTMP streams have separate operations.
       
       ${tokenPermissions<"_Voice_">}
       """)

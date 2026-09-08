@@ -1,7 +1,9 @@
 model AIAgentCreateRequest {
-  ...AIAgent;
+  // agent_id is server-generated and ignored when supplied by clients.
+  ...OmitProperties<AIAgent, "agent_id">;
 }
 
 model AIAgentUpdateRequest {
-  ...AIAgent;
+  // agent_id is server-generated and ignored when supplied by clients.
+  ...OmitProperties<AIAgent, "agent_id">;
 }

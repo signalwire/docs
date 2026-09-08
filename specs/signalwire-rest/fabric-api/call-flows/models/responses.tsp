@@ -1,8 +1,6 @@
 import "./core.tsp";
 import "../../_shared/enums.tsp";
 import "../../_shared/const.tsp";
-import "../../../../swml/calling";
-
 model CallFlowResponse {
   @doc("Unique ID of the Call Flow.")
   @example("993ed018-9e79-4e50-b97b-984bd5534095")
@@ -57,7 +55,7 @@ model CallFlowVersionResponse {
 
   @doc("The calling SWML document this version snapshots. Uses [calling SWML methods](/docs/swml/reference/calling).")
   @example(SWML_CONTENTS_EXAMPLE)
-  relayml?: SWML.Calling.SWMLObject;
+  relayml?: TypeSpec.Record<unknown>;
 }
 
 model CallFlowPaginationResponse {

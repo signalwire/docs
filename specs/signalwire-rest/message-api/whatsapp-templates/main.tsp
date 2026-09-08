@@ -19,7 +19,7 @@ namespace SignalWireAPI.Message.WhatsappTemplates {
     @operationId("list_whatsapp_templates")
     @summary("List message templates")
     @doc("""
-      Returns the message templates for your Space, optionally filtered by WhatsApp Business Account or approval status. A template must have `template_status` of `approved` before it can be used to send messages.
+      Lists the project's reusable WhatsApp message templates. Use it to find an approved template before sending business-initiated messages; a template must have `template_status` of `approved` before use. Use [Get a message template](/docs/apis/rest/whatsapp/retrieve-whatsapp-template) when you already have its SignalWire or Meta ID.
 
       ${tokenPermissions<"_Numbers_">}
       """)
@@ -32,7 +32,7 @@ namespace SignalWireAPI.Message.WhatsappTemplates {
     @operationId("retrieve_whatsapp_template")
     @summary("Get a message template")
     @doc("""
-      Retrieves a single message template by SignalWire ID or Meta template ID.
+      Retrieves one WhatsApp message template by SignalWire ID or Meta template ID. Use it to inspect content and approval status for a known template; use [List message templates](/docs/apis/rest/whatsapp/list-whatsapp-templates) to discover or filter templates, or [Send a message](/docs/apis/rest/messages/create-message) after the template is approved.
 
       ${tokenPermissions<"_Numbers_">}
       """)
@@ -45,7 +45,7 @@ namespace SignalWireAPI.Message.WhatsappTemplates {
     @operationId("create_whatsapp_template")
     @summary("Create a message template")
     @doc("""
-      Creates a message template and submits it to Meta for review. Approval typically takes from a few minutes to a few hours; poll the template's `template_status` until it becomes `approved`.
+      Creates a WhatsApp message template under a connected Business Account and submits it to Meta for review. Use it when outbound content must be sent outside the 24-hour customer service window. Approval typically takes from a few minutes to a few hours; poll the template until `template_status` becomes `approved`, then send it through [Send a message](/docs/apis/rest/messages/create-message).
 
       ${tokenPermissions<"_Numbers_">}
       """)
@@ -60,7 +60,7 @@ namespace SignalWireAPI.Message.WhatsappTemplates {
     @operationId("update_whatsapp_template")
     @summary("Update a message template")
     @doc("""
-      Updates a template's `category` or `components`. A template can only be updated while it is **not yet approved** — once approved, delete and recreate it to make changes.
+      Changes a WhatsApp template's category, components, or both. Use it while the template is still awaiting approval; an approved template cannot be updated and must be deleted and recreated. This operation edits reusable template content and does not send a message.
 
       ${tokenPermissions<"_Numbers_">}
       """)
@@ -76,7 +76,7 @@ namespace SignalWireAPI.Message.WhatsappTemplates {
     @operationId("delete_whatsapp_template")
     @summary("Delete a message template")
     @doc("""
-      Deletes a message template.
+      Deletes one WhatsApp message template by SignalWire ID or Meta template ID. Use it when the reusable template should no longer be available for outbound messages; this does not delete the WhatsApp Business Account or connected number.
 
       ${tokenPermissions<"_Numbers_">}
       """)

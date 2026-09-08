@@ -17,7 +17,7 @@ namespace CompatibilityAPI.AvailablePhoneNumbers {
     @operationId("list_available_phone_number_resources")
     @summary("List of AvailablePhoneNumber resources")
     @doc("""
-      Returns a list of URIs to phone number resources available to the account, categorized by type (Local, Toll-Free, Mobile, etc) and ISO country.
+      Returns the resource directories for searching available numbers, grouped by ISO country and number type such as Local or Toll-Free. This operation lists search routes rather than purchasable numbers; use a country-specific search below or SignalWire REST [Search phone numbers](/docs/apis/rest/phone-numbers/search-available-phone-numbers) to query inventory.
       
       ${tokenPermissions<"_Numbers_">}
       """)
@@ -28,7 +28,7 @@ namespace CompatibilityAPI.AvailablePhoneNumbers {
     @operationId("list_available_phone_number_resources_by_country")
     @summary("List of AvailablePhoneNumber resources by country")
     @doc("""
-      Returns a list of URIs to phone number resources available to the account in the specified ISO country, categorized by type (Local, Toll-Free, Mobile, etc).
+      Returns the available-number search directories for one ISO country, grouped by number type such as Local or Toll-Free. This operation describes search routes; use [Search local available phone numbers](/docs/compatibility-api/rest/available-phone-numbers/search-local-available-phone-numbers) or the toll-free search to return actual inventory.
       
       ${tokenPermissions<"_Numbers_">}
       """)
@@ -41,7 +41,7 @@ namespace CompatibilityAPI.AvailablePhoneNumbers {
     @operationId("search_local_available_phone_numbers")
     @summary("Search for available phone numbers that match your criteria.")
     @doc("""
-      Search for Local AvailablePhoneNumbers.
+      Searches SignalWire inventory for local phone numbers available in one ISO country. Results are candidates, not project resources, until purchased through Incoming Phone Numbers or the native purchase operation. Use the [toll-free search](/docs/compatibility-api/rest/available-phone-numbers/search-toll-free-available-phone-numbers) for toll-free inventory, or native [Search phone numbers](/docs/apis/rest/phone-numbers/search-available-phone-numbers) for the JSON API.
       
       ${tokenPermissions<"_Numbers_">}
       """)
@@ -66,22 +66,22 @@ namespace CompatibilityAPI.AvailablePhoneNumbers {
       Contains?: string,
 
       @query
-      @doc("Accepted for Twilio compatibility but has no effect on the response.")
+      @doc("Accepted but has no effect on the response.")
       @example(false)
       ExcludeAllAddressRequired?: boolean,
 
       @query
-      @doc("Accepted for Twilio compatibility but has no effect on the response.")
+      @doc("Accepted but has no effect on the response.")
       @example(false)
       ExcludeForeignAddressRequired?: boolean,
 
       @query
-      @doc("Accepted for Twilio compatibility but has no effect on the response.")
+      @doc("Accepted but has no effect on the response.")
       @example(false)
       ExcludeLocalAddressRequired?: boolean,
 
       @query
-      @doc("Not supported. Accepted for Twilio API compatibility.")
+      @doc("Accepted but not supported; has no effect on the response.")
       @example(true)
       FaxEnabled?: boolean,
 
@@ -96,17 +96,17 @@ namespace CompatibilityAPI.AvailablePhoneNumbers {
       InRegion?: string,
 
       @query
-      @doc("Not supported. Accepted for Twilio API compatibility.")
+      @doc("Accepted but not supported; has no effect on the response.")
       @example(true)
       MmsEnabled?: boolean,
 
       @query
-      @doc("Not supported. Accepted for Twilio API compatibility.")
+      @doc("Accepted but not supported; has no effect on the response.")
       @example(true)
       SmsEnabled?: boolean,
 
       @query
-      @doc("Not supported. Accepted for Twilio API compatibility.")
+      @doc("Accepted but not supported; has no effect on the response.")
       @example(true)
       VoiceEnabled?: boolean,
     ):
@@ -118,7 +118,7 @@ namespace CompatibilityAPI.AvailablePhoneNumbers {
     @operationId("search_toll_free_available_phone_numbers")
     @summary("Find toll-free numbers")
     @doc("""
-      Search for toll-free AvailablePhoneNumbers.
+      Searches SignalWire inventory for toll-free phone numbers available in one ISO country. Results are candidates, not project resources, until purchased through Incoming Phone Numbers or the native purchase operation. Use the [local search](/docs/compatibility-api/rest/available-phone-numbers/search-local-available-phone-numbers) for local inventory, or native [Search phone numbers](/docs/apis/rest/phone-numbers/search-available-phone-numbers) for the JSON API.
       
       ${tokenPermissions<"_Numbers_">}
       """)
@@ -143,22 +143,22 @@ namespace CompatibilityAPI.AvailablePhoneNumbers {
       Contains?: string,
 
       @query
-      @doc("Accepted for Twilio compatibility but has no effect on the response.")
+      @doc("Accepted but has no effect on the response.")
       @example(false)
       ExcludeAllAddressRequired?: boolean,
 
       @query
-      @doc("Accepted for Twilio compatibility but has no effect on the response.")
+      @doc("Accepted but has no effect on the response.")
       @example(false)
       ExcludeForeignAddressRequired?: boolean,
 
       @query
-      @doc("Accepted for Twilio compatibility but has no effect on the response.")
+      @doc("Accepted but has no effect on the response.")
       @example(false)
       ExcludeLocalAddressRequired?: boolean,
 
       @query
-      @doc("Not supported. Accepted for Twilio API compatibility.")
+      @doc("Accepted but not supported; has no effect on the response.")
       @example(true)
       FaxEnabled?: boolean,
 
@@ -173,17 +173,17 @@ namespace CompatibilityAPI.AvailablePhoneNumbers {
       InRegion?: string,
 
       @query
-      @doc("Not supported. Accepted for Twilio API compatibility.")
+      @doc("Accepted but not supported; has no effect on the response.")
       @example(true)
       MmsEnabled?: boolean,
 
       @query
-      @doc("Not supported. Accepted for Twilio API compatibility.")
+      @doc("Accepted but not supported; has no effect on the response.")
       @example(true)
       SmsEnabled?: boolean,
 
       @query
-      @doc("Not supported. Accepted for Twilio API compatibility.")
+      @doc("Accepted but not supported; has no effect on the response.")
       @example(true)
       VoiceEnabled?: boolean,
     ):

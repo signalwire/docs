@@ -17,7 +17,7 @@ namespace SignalWireAPI.Fabric.AIAgent.Addresses {
     @operationId("list_ai_agent_addresses")
     @summary("List AI agent Addresses")
     @doc("""
-      This endpoint returns a list of addresses associated with a specific AI Agent.
+      Lists the resource addresses through which calls can reach one custom AI Agent in your SignalWire project. Use [List AI agents](/docs/apis/rest/ai-agents/ai-agents-custom/list-ai-agents) to find the agent resources themselves; linked Dialogflow Agents expose their addresses separately.
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)

@@ -30,6 +30,32 @@ enum PhoneNumberE911Status {
   unregistered: "unregistered",
 }
 
+@doc("Possible review statuses for a caller ID name request.")
+enum PhoneNumberCnamStatus {
+  pending: "pending",
+  approved: "approved",
+  in_review: "in_review",
+  rejected: "rejected",
+  failed: "failed",
+}
+
+@doc("Possible reasons a caller ID name request requires review, was rejected, or failed. Each code is explained on the `reason` field.")
+enum PhoneNumberCnamReason {
+  offensive_language: "offensive_language",
+  impersonation: "impersonation",
+  unverified_brand: "unverified_brand",
+  implied_trusted_institution: "implied_trusted_institution",
+  scam_wording: "scam_wording",
+  deceptive: "deceptive",
+  unsupported_personal_name: "unsupported_personal_name",
+  too_generic: "too_generic",
+  invalid_format: "invalid_format",
+  unrelated_to_business: "unrelated_to_business",
+  needs_documentation: "needs_documentation",
+  other_compliance_concern: "other_compliance_concern",
+  processing_failed: "processing_failed",
+}
+
 @doc("Phone number capability.")
 enum PhoneNumberCapability {
   voice: "voice",
@@ -129,6 +155,17 @@ model PhoneNumber {
     """)
   @example(PhoneNumberE911Status.active)
   e911_status: PhoneNumberE911Status | null;
+
+  @doc("""
+    The caller ID name currently applied at the carrier for this phone number, or `null` when none is
+    set. This is the name call recipients can see. Change it with
+    [Request a caller ID name](/docs/apis/rest/caller-id-name/request-caller-id-name).
+    This value changes only after a request is approved and applied at the carrier, so it can differ
+    from the requested `name` while a request is being reviewed or after one is rejected or fails.
+    """)
+  @example("ACME PLUMBING")
+  @maxLength(15)
+  cnam: string | null;
 
   @doc("The date the number was added to your project.")
   created_at: utcDateTime;
@@ -250,6 +287,81 @@ model PhoneNumber {
   @doc("The ISO 3166-1 alpha-2 country code of the phone number.")
   @example("US")
   country_code: string | null;
+}
+
+@doc("Details and review status of a caller ID name request for a phone number.")
+model PhoneNumberCnam {
+  @doc("The type of object. Always `cnam`.")
+  type: "cnam";
+
+  @doc("The unique identifier of the caller ID name request.")
+  @example("b6a4f0c2-3f1e-4c9a-9c1b-7f2e5a1d8c40")
+  id: uuid;
+
+  @doc("The unique identifier of the phone number this request belongs to.")
+  @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
+  phone_number_id: uuid;
+
+  @doc("""
+    The requested caller ID name after normalization. SignalWire removes control characters,
+    trims leading and trailing whitespace, collapses runs of whitespace to single spaces, and converts
+    letters to upper case before storing the value. The stored name is at most 15 characters.
+    """)
+  @example("ACME PLUMBING")
+  @maxLength(15)
+  name: string;
+
+  @doc("""
+    The current state of the request.
+
+    | Status | What it means |
+    | --- | --- |
+    | `pending` | The name is queued for compliance review. |
+    | `approved` | The name passed review and is applied at the carrier. |
+    | `in_review` | The name needs a manual decision before it can be approved or rejected. |
+    | `rejected` | The name is not allowed. Submit a different name or follow `required_action` when provided. |
+    | `failed` | SignalWire could not finish processing the request. Request the same name again. |
+    """)
+  @example(PhoneNumberCnamStatus.approved)
+  status: PhoneNumberCnamStatus;
+
+  @doc("""
+    A machine-readable reason the request requires review, was rejected, or failed, or `null` when
+    no specific reason was recorded. This value is always `null` while the request is `pending` and
+    after it is `approved`. It can also be `null` when a request was held for review or rejected
+    before SignalWire recorded a concern about the requested name.
+
+    | Code | What it means |
+    | --- | --- |
+    | `offensive_language` | The name contains language that can't be displayed on calls. |
+    | `impersonation` | The name appears to impersonate another person or organization. |
+    | `unverified_brand` | The name can't yet be confirmed as belonging to your business. |
+    | `implied_trusted_institution` | The name could imply you represent a bank, government agency, or similar institution. |
+    | `scam_wording` | The name uses wording commonly associated with scam calls. |
+    | `deceptive` | The name is misleading about who is calling. |
+    | `unsupported_personal_name` | The name is a personal name that isn't supported by your verified business details. |
+    | `too_generic` | The name is too generic to identify you on a call. |
+    | `invalid_format` | The name contains characters or formatting that can't be displayed. |
+    | `unrelated_to_business` | The name doesn't appear to relate to your verified business. |
+    | `needs_documentation` | Documentation showing you're authorized to use the name is required. |
+    | `other_compliance_concern` | The name didn't pass compliance review, for a reason not covered by the other codes. |
+    | `processing_failed` | Processing the request failed. Request the name again. |
+    """)
+  @example(null)
+  reason: PhoneNumberCnamReason | null;
+
+  @doc("""
+    An action you can take to address the review, such as changing, verifying, or documenting the
+    requested name. `null` when review produced no specific action.
+    """)
+  @example(null)
+  required_action: string | null;
+
+  @doc("The date the request was created.")
+  created_at: utcDateTime;
+
+  @doc("The date the request was last updated.")
+  updated_at: utcDateTime;
 }
 
 @doc("Phone number capabilities.")
