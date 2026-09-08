@@ -287,7 +287,7 @@ Bayview Taxi uses outbound calls to notify riders and connect them with dispatch
 Tell a rider their driver is on the way, using REST or Relay.
 
 <Tabs>
-<Tab title="REST">
+<Tab title="SWML (REST)">
 
 #### Place a call with REST
 
@@ -317,7 +317,7 @@ curl -X POST "https://YOUR_SPACE.signalwire.com/api/calling/calls" \
   }'
 ```
 </CodeBlock>
-<CodeBlock title="Server SDK (Python)">
+<CodeBlock title="Python — REST client">
 ```python
 from signalwire.rest import RestClient
 
@@ -342,7 +342,7 @@ call = client.calling.dial(
 print(call["id"])
 ```
 </CodeBlock>
-<CodeBlock title="Server SDK (TypeScript)">
+<CodeBlock title="TypeScript — REST client">
 ```typescript
 import { RestClient } from "@signalwire/sdk";
 
@@ -420,7 +420,7 @@ To reuse a hosted SWML document, pass its `url` instead of `swml`.
 </Accordion>
 
 </Tab>
-<Tab title="Relay (WebSocket)">
+<Tab title="Server SDK (Relay)">
 
 #### Place a call with the Server SDK Relay client
 
@@ -454,7 +454,7 @@ async def main():
         )
         action = await call.play([{
             "type": "tts",
-            "params": {"text": "Hi, this is Bayview Taxi. Your driver is on the way."},
+            "params": {"text": "Hi, this is Bayview Taxi. Your driver is on the way and will arrive in about five minutes."},
         }])
         await action.wait()
         await call.hangup()
@@ -484,7 +484,7 @@ const call = await client.dial([[{
   },
 }]]);
 const action = await call.play([
-  { type: "tts", text: "Hi, this is Bayview Taxi. Your driver is on the way." },
+  { type: "tts", text: "Hi, this is Bayview Taxi. Your driver is on the way and will arrive in about five minutes." },
 ]);
 await action.wait();
 await call.hangup();
@@ -501,9 +501,15 @@ See the [Relay guide][relay-guide] for connection management and more call contr
 
 ### Forward an inbound call
 
-Assign this SWML script to the SignalWire number that riders call. When a rider calls in,
-SignalWire dials the dispatcher's phone and connects them:
+Connect an incoming rider call to a dispatcher. Set the calling number to your SignalWire
+number and the destination to the dispatcher's number.
 
+- **SWML:** Assign the script to the number riders call, using the [forwarding guide][forward-calls].
+- **Server SDK:** Route that number's inbound calls to the Relay `dispatch` context and run the
+  handler on your backend. See the [Relay guide][relay-guide] for setup.
+
+<CodeBlocks>
+<CodeBlock title="SWML">
 ```yaml
 version: 1.0.0
 sections:
@@ -512,10 +518,61 @@ sections:
         from: "+15551234567"
         to: "+15557654321"
 ```
+</CodeBlock>
+<CodeBlock title="Python — Relay SDK">
+```python
+from signalwire.relay import RelayClient
 
-Set `from` to your SignalWire number and `to` to the dispatcher's number. The
-[forwarding guide][forward-calls] covers assigning the script and preserving the original caller ID.
-Use `connect`'s `call_state_url` and `call_state_events` to track the outbound call.
+client = RelayClient(
+    project="YOUR_PROJECT_ID",
+    token="YOUR_API_TOKEN",
+    host="YOUR_SPACE.signalwire.com",
+    contexts=["dispatch"],
+)
+
+@client.on_call
+async def handle_call(call):
+    await call.answer()
+    await call.connect([[{
+        "type": "phone",
+        "params": {
+            "from_number": "+15551234567",
+            "to_number": "+15557654321",
+        },
+    }]])
+
+client.run()
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — Relay SDK">
+```typescript
+import { RelayClient } from "@signalwire/sdk";
+
+const client = new RelayClient({
+  project: "YOUR_PROJECT_ID",
+  token: "YOUR_API_TOKEN",
+  host: "YOUR_SPACE.signalwire.com",
+  contexts: ["dispatch"],
+});
+
+client.onCall(async (call) => {
+  await call.answer();
+  await call.connect([[{
+    type: "phone",
+    params: {
+      from_number: "+15551234567",
+      to_number: "+15557654321",
+    },
+  }]]);
+});
+
+await client.run();
+```
+</CodeBlock>
+</CodeBlocks>
+
+The connect references for [Python](/docs/server-sdks/reference/python/relay/call/connect) and
+[TypeScript](/docs/server-sdks/reference/typescript/relay/call/connect) cover additional Relay options. For SWML progress webhooks, use `call_state_url` and `call_state_events`.
 
 ### Place a call with the Browser SDK
 
@@ -544,12 +601,17 @@ hangupButton.onclick = () => call.hangup();
 Watch for `status$` to reach `connected`. The [Browser SDK outbound guide][browser-outbound]
 includes a complete page with media and call controls.
 
-### Run an AI agent with SWML
+### Run an AI agent
 
-For an AI conversation, host the following SWML and replace `swml` in the
-[REST example](#place-a-call-with-rest) with the document's `url`.
-The [`ai` method][swml-ai] supplies the agent's greeting and instructions:
+Replace the announcement with an AI conversation about the rider's pickup.
 
+- **SWML:** Host the document below and use its `url` in the [REST request](#place-a-call-with-rest)
+  in place of the inline `swml`.
+- **Server SDK:** In the [Relay example](#place-a-call-with-the-server-sdk-relay-client), replace
+  the playback and hangup steps with the SDK snippet below. `call` is the answered call returned by `dial`.
+
+<CodeBlocks>
+<CodeBlock title="SWML">
 ```yaml
 version: 1.0.0
 sections:
@@ -565,10 +627,53 @@ sections:
             contact preferences. If asked, explain that the rider needs to contact
             Bayview Taxi to make those changes. Do not claim to have made a change.
 ```
+</CodeBlock>
+<CodeBlock title="Python — Relay SDK">
+```python
+# After dialing, start the agent on the answered call.
+action = await call.ai(
+    ai_params={
+        "static_greeting": "Hello, this is an automated assistant calling from Bayview Taxi about your pickup. This call uses an artificial voice.",
+        "static_greeting_no_barge": True,
+    },
+    prompt={
+        "text": """You are calling to tell the rider their driver is about five minutes away.
+Answer questions using that estimate. You cannot change bookings or
+contact preferences. If asked, explain that the rider needs to contact
+Bayview Taxi to make those changes. Do not claim to have made a change."""
+    },
+)
+await action.wait()
+await call.hangup()
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — Relay SDK">
+```typescript
+// After dialing, start the agent on the answered call.
+const action = await call.ai({
+  aiParams: {
+    static_greeting: "Hello, this is an automated assistant calling from Bayview Taxi about your pickup. This call uses an artificial voice.",
+    static_greeting_no_barge: true,
+  },
+  prompt: {
+    text: `You are calling to tell the rider their driver is about five minutes away.
+Answer questions using that estimate. You cannot change bookings or
+contact preferences. If asked, explain that the rider needs to contact
+Bayview Taxi to make those changes. Do not claim to have made a change.`,
+  },
+});
+await action.wait();
+await call.hangup();
+```
+</CodeBlock>
+</CodeBlocks>
 
+The [`ai` method][swml-ai] uses the same greeting and prompt in each version.
 `static_greeting_no_barge` lets the greeting finish before the conversation begins. Add
 [tool calling][tool-calling] to let the agent take actions, such as updating a booking.
-The [AI quickstart][ai-quickstart] covers serving an agent from your code.
+See the [AI quickstart][ai-quickstart] or the Relay AI references for
+[Python](/docs/server-sdks/reference/python/relay/call/ai) and
+[TypeScript](/docs/server-sdks/reference/typescript/relay/call/ai).
 
 <Warning title="Outbound AI calls are regulated">
 An AI voice counts as an artificial voice under the Telephone Consumer Protection Act (TCPA).
