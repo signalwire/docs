@@ -14,31 +14,45 @@ max-toc-depth: 3
 [swml-ai]: /docs/swml/reference/calling/ai
 [ai-best-practices]: /docs/platform/ai/best-practices
 [tcpa]: /docs/platform/compliance/tcpa
-[resource-addresses]: /docs/platform/addresses
 [resources]: /docs/platform/resources
+[sdk-install]: /docs/server-sdks/guides/installation
+[browser-sdk]: /docs/browser-sdk/v4/guides/overview
 
-Place outbound calls to phone numbers, SIP endpoints, or SignalWire resources.
-[Call from your server](#place-a-call-from-a-server),
-[let a user call from your web app](#place-a-call-with-the-browser-sdk), or
-[connect someone to an AI agent](#run-an-ai-agent).
+Place outbound calls to phone numbers, SIP endpoints, web clients, or SignalWire Resources from
+your own code. SignalWire places the call and, once someone answers, runs whatever you asked for:
+a spoken announcement, a conversation with an AI agent, or a connection to another destination.
+
+You can dial:
+
+- **Phone numbers**, in E.164 format such as `+15557654321`.
+- **SIP endpoints**, by SIP URI such as `sip:support@example.com`.
+- **Web clients**, meaning users signed in to your app with the [Browser SDK][browser-auth].
+- **[SignalWire Resources][resources]**, by resource address: subscribers, AI agents, SWML scripts,
+  Call Flows, and conference rooms.
+
+And you can place the call with either of two APIs:
+
+- **The REST API.** Send one request and SignalWire handles the call from there, following the
+  instructions you include.
+- **The real-time WebSocket API (Relay).** Keep a connection open, send commands, and receive
+  events as the call progresses.
+
+The Server SDKs for Python and TypeScript support both. The Browser SDK uses the real-time API
+to place calls from a web page. The examples below cover
+[a call from your server](#place-a-call-from-a-server),
+[a call from your web app](#place-a-call-with-the-browser-sdk), and
+[a call into an AI agent](#run-an-ai-agent).
 
 ## Prerequisites
 
-### Choose a destination
-
-| Destination | Dial | Example |
-|---|---|---|
-| Phone | Its number in E.164 | `+15557654321` |
-| SIP endpoint | Its SIP URI | `sip:support@example.com` |
-| Subscriber | Their resource address | `/private/support-rep` |
-| Application | Its resource address | `/public/support-agent` |
-| Conference room | Its resource address | `/public/team-standup` |
-
-Subscribers (your users), applications (AI agents, SWML scripts, or Call Flows), and conference
-rooms are [Resources][resources]. Each has a [resource address][resource-addresses] in the form
-`/context/name`, where the context is `public` or `private`.
-
-### Set up your caller ID
+- **Your Project ID and an API token** from the Dashboard's [API credentials][api-credentials]
+  page. Server-side calls use them directly. The Browser SDK uses a
+  [Subscriber Access Token (SAT)][browser-auth] instead, which your backend creates with those
+  same credentials.
+- **A client to send the request**: cURL, the [Python or TypeScript Server SDK][sdk-install], or
+  the [Browser SDK][browser-sdk] for calls from a web page.
+- **A phone number to call from**, if you're dialing a phone number. Use a voice-capable number
+  [in your project][phone-numbers] or one you've [verified as a caller ID][caller-id].
 
 <Warning title="Trial projects and international calls are restricted">
 A [trial project][trial-mode] can dial only numbers it has purchased or verified, and cannot call
@@ -46,22 +60,9 @@ internationally at all. Any other project can dial any number, but needs
 [international dialing enabled][international] before it reaches another country.
 </Warning>
 
-| Dialing | What you need |
-|---|---|
-| A phone number | A voice-capable PSTN number in your project to present as the caller ID, either one you [bought from SignalWire][phone-numbers] or one you [verified as a caller ID][caller-id] |
-| A SIP URI | A caller ID, which here can be an E.164 number, a SIP URI, or a short token of up to 11 letters, digits, or underscores, plus a SIP username and password if the far end authenticates |
-| A resource address | A Resource in your Space already reachable at that address, and a credential permitted to dial it. Its caller ID isn't format-checked |
-
-### Get credentials
-
-| Dialing from | Use |
-|---|---|
-| Your server | Your Project ID and an API token with voice permissions, from the Dashboard's [API credentials][api-credentials] page |
-| Your web or mobile app | A [Subscriber Access Token (SAT)][browser-auth] that your backend issues for the signed-in user |
-
 ## Track the call's progress
 
-<Tabs>
+<Tabs groupId="outbound-api">
 <Tab title="REST">
 
 Once you create a call, SignalWire tracks its status through the lifecycle: `queued`, `created`,
@@ -77,6 +78,48 @@ Choose which statuses to receive with `status_events`: any of `created`, `ringin
 and `ended`. If you omit it, you receive `ended` only. Most applications ask for `answered`, to
 confirm someone picked up, and `ended`, to know the call is over. The `ended` payload includes an
 `end_reason`, such as `hangup`, `busy`, or `noAnswer`, so you can tell how it ended.
+
+<CodeBlocks>
+<CodeBlock title="cURL — Calling API">
+```bash
+curl -X POST "https://YOUR_SPACE.signalwire.com/api/calling/calls" \
+  -u "YOUR_PROJECT_ID:YOUR_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "command": "dial",
+    "params": {
+      "from": "+15551234567",
+      "to": "+15557654321",
+      "url": "https://example.com/swml",
+      "status_url": "https://example.com/call-status",
+      "status_events": ["ringing", "answered", "ended"]
+    }
+  }'
+```
+</CodeBlock>
+<CodeBlock title="Python — REST client">
+```python
+call = client.calling.dial(
+    from_="+15551234567",
+    to="+15557654321",
+    url="https://example.com/swml",
+    status_url="https://example.com/call-status",
+    status_events=["ringing", "answered", "ended"],
+)
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — REST client">
+```typescript
+const call = await client.calling.dial({
+  from: "+15551234567",
+  to: "+15557654321",
+  url: "https://example.com/swml",
+  status_url: "https://example.com/call-status",
+  status_events: ["ringing", "answered", "ended"],
+});
+```
+</CodeBlock>
+</CodeBlocks>
 
 This flow shows a call with `ringing`, `answered`, and `ended` status events enabled:
 
@@ -108,7 +151,7 @@ sequenceDiagram
 </llms-only>
 
 </Tab>
-<Tab title="Relay (WebSocket)">
+<Tab title="WebSocket (Relay)">
 
 Relay keeps one WebSocket open between your application and SignalWire. Your application sends
 commands over it, such as `calling.dial`, `calling.play`, and `calling.end`. SignalWire acknowledges
@@ -124,6 +167,31 @@ The SDK turns this exchange into ordinary calls. `dial()` returns the call once 
 reports `finished`. Use `call.on` to handle any event yourself, as described in the
 [Python](/docs/server-sdks/reference/python/relay/events) or
 [TypeScript](/docs/server-sdks/reference/typescript/relay/events) event reference.
+
+Because `dial()` returns once the call is answered, handlers you attach to the returned call see
+the states that follow, such as `ending` and `ended`:
+
+<CodeBlocks>
+<CodeBlock title="Python — Relay client">
+```python
+from signalwire.relay.event import CallStateEvent
+
+def handle_state(event: CallStateEvent):
+    print(f"State: {event.call_state}, reason: {event.end_reason}")
+
+call.on("calling.call.state", handle_state)
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — Relay client">
+```typescript
+import { CallStateEvent } from "@signalwire/sdk";
+
+call.on("calling.call.state", (event: CallStateEvent) => {
+  console.log(`State: ${event.callState}, reason: ${event.endReason}`);
+});
+```
+</CodeBlock>
+</CodeBlocks>
 
 This flow follows the Relay example above: dial, play the announcement, hang up.
 
@@ -171,7 +239,7 @@ sequenceDiagram
 Place a call that plays a spoken announcement when someone answers. Choose REST to have
 SignalWire run supplied instructions, or Relay to control the call through commands and events.
 
-<Tabs>
+<Tabs groupId="outbound-api">
 <Tab title="REST">
 
 Supply a SignalWire Markup Language (SWML) document in `swml` or at `url` to define what happens
@@ -271,7 +339,7 @@ The response identifies the queued call:
 To receive status webhooks, see [Track the call's progress](#track-the-calls-progress).
 
 </Tab>
-<Tab title="Relay (WebSocket)">
+<Tab title="WebSocket (Relay)">
 
 Run this on your server with your credentials and phone numbers. It dials the destination, plays
 the announcement after answer, waits for playback to finish, and hangs up.
