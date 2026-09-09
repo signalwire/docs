@@ -44,6 +44,208 @@ internationally at all. Any other project can dial any number, but needs
 [international dialing enabled][international] before it reaches another country.
 </Warning>
 
+## Make your first call
+
+Call a phone you can answer and play a short announcement from your server.
+
+<Steps>
+
+### Set your credentials and phone numbers
+
+Replace these values in the code sample you choose:
+
+| Value | Replace with |
+|---|---|
+| `YOUR_SPACE` | Your Space's subdomain in `YOUR_SPACE.signalwire.com` |
+| `YOUR_PROJECT_ID` | Your Project ID |
+| `YOUR_API_TOKEN` | Your API token |
+| `+15551234567` | Your caller ID number |
+| `+15557654321` | A phone number you can answer |
+
+Use E.164 format for both numbers, including `+` and the country code.
+
+### Place a call from a server
+
+Choose REST or WebSocket, then select a code sample. Run the cURL request in your terminal or
+the SDK code in your server environment.
+
+<Tabs groupId="outbound-api">
+<Tab title="REST">
+
+The request includes a SignalWire Markup Language (SWML) document in `swml`. SignalWire runs
+it when the destination answers, playing the announcement below.
+
+<CodeBlocks>
+<CodeBlock title="cURL — Calling API">
+```bash
+curl -X POST "https://YOUR_SPACE.signalwire.com/api/calling/calls" \
+  -u "YOUR_PROJECT_ID:YOUR_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "command": "dial",
+    "params": {
+      "from": "+15551234567",
+      "to": "+15557654321",
+      "swml": {
+        "version": "1.0.0",
+        "sections": {
+          "main": [
+            { "play": "say:Hi, this is Bayview Taxi. Your driver is on the way and will arrive in about five minutes." }
+          ]
+        }
+      }
+    }
+  }'
+```
+</CodeBlock>
+<CodeBlock title="Python — REST client">
+```python
+from signalwire.rest import RestClient
+
+client = RestClient(
+    project="YOUR_PROJECT_ID",
+    token="YOUR_API_TOKEN",
+    host="YOUR_SPACE.signalwire.com",
+)
+
+call = client.calling.dial(
+    from_="+15551234567",
+    to="+15557654321",
+    swml={
+        "version": "1.0.0",
+        "sections": {
+            "main": [
+                {"play": "say:Hi, this is Bayview Taxi. Your driver is on the way and will arrive in about five minutes."}
+            ]
+        },
+    },
+)
+print(call["id"])
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — REST client">
+```typescript
+import { RestClient } from "@signalwire/sdk";
+
+const client = new RestClient({
+  project: "YOUR_PROJECT_ID",
+  token: "YOUR_API_TOKEN",
+  host: "YOUR_SPACE.signalwire.com",
+});
+
+const call = await client.calling.dial({
+  from: "+15551234567",
+  to: "+15557654321",
+  swml: {
+    version: "1.0.0",
+    sections: {
+      main: [
+        { play: "say:Hi, this is Bayview Taxi. Your driver is on the way and will arrive in about five minutes." },
+      ],
+    },
+  },
+});
+console.log(call.id);
+```
+</CodeBlock>
+</CodeBlocks>
+
+The REST API returns a call `id` and status `queued`, confirming that it accepted the request:
+
+```json
+{
+  "id": "0e9c80d7-a149-4917-892d-420043709f45",
+  "from": "+15551234567",
+  "to": "+15557654321",
+  "direction": "outbound-api",
+  "status": "queued",
+  "created_at": "2026-09-04T15:20:00Z"
+}
+```
+
+</Tab>
+<Tab title="WebSocket (Relay)">
+
+The SDK opens a WebSocket connection, dials the destination, and plays the announcement after
+answer. It waits for playback to finish, then hangs up and closes the connection.
+
+<CodeBlocks>
+<CodeBlock title="Python — Relay client">
+```python
+import asyncio
+from signalwire.relay import RelayClient
+
+client = RelayClient(
+    project="YOUR_PROJECT_ID",
+    token="YOUR_API_TOKEN",
+    host="YOUR_SPACE.signalwire.com",
+    contexts=["default"],
+)
+
+async def main():
+    async with client:
+        call = await client.dial(
+            devices=[[{
+                "type": "phone",
+                "params": {
+                    "from_number": "+15551234567",
+                    "to_number": "+15557654321",
+                    "timeout": 30,
+                },
+            }]],
+        )
+        action = await call.play([{
+            "type": "tts",
+            "params": {"text": "Hi, this is Bayview Taxi. Your driver is on the way and will arrive in about five minutes."},
+        }])
+        await action.wait()
+        await call.hangup()
+
+asyncio.run(main())
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — Relay client">
+```typescript
+import { RelayClient } from "@signalwire/sdk";
+
+const client = new RelayClient({
+  project: "YOUR_PROJECT_ID",
+  token: "YOUR_API_TOKEN",
+  host: "YOUR_SPACE.signalwire.com",
+  contexts: ["default"],
+});
+
+await client.connect();
+
+const call = await client.dial([[{
+  type: "phone",
+  params: {
+    from_number: "+15551234567",
+    to_number: "+15557654321",
+    timeout: 30,
+  },
+}]]);
+const action = await call.play([
+  { type: "tts", text: "Hi, this is Bayview Taxi. Your driver is on the way and will arrive in about five minutes." },
+]);
+await action.wait();
+await call.hangup();
+
+await client.disconnect();
+```
+</CodeBlock>
+</CodeBlocks>
+
+</Tab>
+</Tabs>
+
+### Answer the call
+
+Answer the destination phone. You should hear “Hi, this is Bayview Taxi” followed by the driver
+arrival message. The call ends when the announcement finishes.
+
+</Steps>
+
 ## Track the call's progress
 
 <Tabs groupId="outbound-api">
@@ -178,7 +380,7 @@ call.on("calling.call.state", (event: CallStateEvent) => {
 </CodeBlock>
 </CodeBlocks>
 
-This flow follows the Relay example above: dial, play the announcement, hang up.
+This flow follows your first call: dial, play the announcement, hang up.
 
 <llms-ignore>
 
@@ -218,186 +420,6 @@ sequenceDiagram
 </Tabs>
 
 ## Examples
-
-### Place a call from a server
-
-Place a call that plays a spoken announcement when someone answers. Choose REST to have
-SignalWire run supplied instructions, or Relay to control the call through commands and events.
-
-<Tabs groupId="outbound-api">
-<Tab title="REST">
-
-Supply a SignalWire Markup Language (SWML) document in `swml` or at `url` to define what happens
-after answer: play audio, run an AI agent, or connect another destination.
-
-This example includes the announcement in `swml`. Replace the credentials and phone numbers,
-then run it from your terminal or backend.
-
-<CodeBlocks>
-<CodeBlock title="cURL — Calling API">
-```bash
-curl -X POST "https://YOUR_SPACE.signalwire.com/api/calling/calls" \
-  -u "YOUR_PROJECT_ID:YOUR_API_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "command": "dial",
-    "params": {
-      "from": "+15551234567",
-      "to": "+15557654321",
-      "swml": {
-        "version": "1.0.0",
-        "sections": {
-          "main": [
-            { "play": "say:Hi, this is Bayview Taxi. Your driver is on the way and will arrive in about five minutes." }
-          ]
-        }
-      }
-    }
-  }'
-```
-</CodeBlock>
-<CodeBlock title="Python — REST client">
-```python
-from signalwire.rest import RestClient
-
-client = RestClient(
-    project="YOUR_PROJECT_ID",
-    token="YOUR_API_TOKEN",
-    host="YOUR_SPACE.signalwire.com",
-)
-
-call = client.calling.dial(
-    from_="+15551234567",
-    to="+15557654321",
-    swml={
-        "version": "1.0.0",
-        "sections": {
-            "main": [
-                {"play": "say:Hi, this is Bayview Taxi. Your driver is on the way and will arrive in about five minutes."}
-            ]
-        },
-    },
-)
-print(call["id"])
-```
-</CodeBlock>
-<CodeBlock title="TypeScript — REST client">
-```typescript
-import { RestClient } from "@signalwire/sdk";
-
-const client = new RestClient({
-  project: "YOUR_PROJECT_ID",
-  token: "YOUR_API_TOKEN",
-  host: "YOUR_SPACE.signalwire.com",
-});
-
-const call = await client.calling.dial({
-  from: "+15551234567",
-  to: "+15557654321",
-  swml: {
-    version: "1.0.0",
-    sections: {
-      main: [
-        { play: "say:Hi, this is Bayview Taxi. Your driver is on the way and will arrive in about five minutes." },
-      ],
-    },
-  },
-});
-console.log(call.id);
-```
-</CodeBlock>
-</CodeBlocks>
-
-The response identifies the queued call:
-
-```json
-{
-  "id": "0e9c80d7-a149-4917-892d-420043709f45",
-  "from": "+15551234567",
-  "to": "+15557654321",
-  "direction": "outbound-api",
-  "status": "queued",
-  "created_at": "2026-09-04T15:20:00Z"
-}
-```
-
-To receive status webhooks, see [Track the call's progress](#track-the-calls-progress).
-
-</Tab>
-<Tab title="WebSocket (Relay)">
-
-Run this on your server with your credentials and phone numbers. It dials the destination, plays
-the announcement after answer, waits for playback to finish, and hangs up.
-
-<CodeBlocks>
-<CodeBlock title="Python — Relay client">
-```python
-import asyncio
-from signalwire.relay import RelayClient
-
-client = RelayClient(
-    project="YOUR_PROJECT_ID",
-    token="YOUR_API_TOKEN",
-    host="YOUR_SPACE.signalwire.com",
-    contexts=["default"],
-)
-
-async def main():
-    async with client:
-        call = await client.dial(
-            devices=[[{
-                "type": "phone",
-                "params": {
-                    "from_number": "+15551234567",
-                    "to_number": "+15557654321",
-                    "timeout": 30,
-                },
-            }]],
-        )
-        action = await call.play([{
-            "type": "tts",
-            "params": {"text": "Hi, this is Bayview Taxi. Your driver is on the way and will arrive in about five minutes."},
-        }])
-        await action.wait()
-        await call.hangup()
-
-asyncio.run(main())
-```
-</CodeBlock>
-<CodeBlock title="TypeScript — Relay client">
-```typescript
-import { RelayClient } from "@signalwire/sdk";
-
-const client = new RelayClient({
-  project: "YOUR_PROJECT_ID",
-  token: "YOUR_API_TOKEN",
-  host: "YOUR_SPACE.signalwire.com",
-  contexts: ["default"],
-});
-
-await client.connect();
-
-const call = await client.dial([[{
-  type: "phone",
-  params: {
-    from_number: "+15551234567",
-    to_number: "+15557654321",
-    timeout: 30,
-  },
-}]]);
-const action = await call.play([
-  { type: "tts", text: "Hi, this is Bayview Taxi. Your driver is on the way and will arrive in about five minutes." },
-]);
-await action.wait();
-await call.hangup();
-
-await client.disconnect();
-```
-</CodeBlock>
-</CodeBlocks>
-
-</Tab>
-</Tabs>
 
 ### Place a call with the Browser SDK
 
