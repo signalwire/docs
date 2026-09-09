@@ -29,9 +29,9 @@ an existing application, choose the approach that fits how you want to control t
 
 | What you want to do | Where to start |
 |---|---|
-| Have your server start a call with instructions to run when it's answered | [REST Calling API](#place-a-call-from-a-server), using cURL or a Server SDK |
-| Send commands and receive call events over a persistent connection | [WebSocket (Relay)](#place-a-call-from-a-server), using a Server SDK |
-| Let someone place and speak on a call from your web app | [Browser SDK](#place-a-call-with-the-browser-sdk) |
+| Have your server start a call with instructions to run when it's answered | [REST Calling API](#place-the-call), using cURL or a Server SDK |
+| Send commands and receive call events over a persistent connection | [WebSocket (Relay)](#place-the-call), using a Server SDK |
+| Let someone place and speak on a call from your web app | [Browser SDK](#place-the-call), over the same WebSocket |
 
 ## Prepare for your first call
 
@@ -57,7 +57,7 @@ internationally at all. Any other project can dial any number, but needs
 
 ## Make your first call
 
-Call a phone you can answer and play a short announcement from your server.
+Call a phone you can answer and play a short announcement.
 
 <Steps>
 
@@ -75,10 +75,12 @@ Replace these values in the code sample you choose:
 
 Use E.164 format for both numbers, including `+` and the country code.
 
-### Place a call from a server
+### Place the call
 
-Select **REST** and run the **cURL — Calling API** request in your terminal. To use a Server SDK,
-select a Python or TypeScript sample under **REST** or **WebSocket (Relay)**.
+Every REST request comes from your server. WebSocket (Relay) works the same way from a server,
+and also from a web page with the Browser SDK.
+
+For your first call, select **REST** and run the **cURL — Calling API** request in your terminal.
 
 <Tabs groupId="outbound-api">
 <Tab title="REST">
@@ -184,7 +186,9 @@ This response excerpt shows the fields used in the walkthrough.
 </Tab>
 <Tab title="WebSocket (Relay)">
 
-The SDK opens a WebSocket connection, dials the destination, and plays the announcement after
+**From your server**
+
+A Server SDK opens a WebSocket connection, dials the destination, and plays the announcement after
 answer. A playback completion callback hangs up the call. The script keeps the connection open
 until the call ends, including when the destination hangs up during the announcement.
 
@@ -267,6 +271,64 @@ try {
 ```
 </CodeBlock>
 </CodeBlocks>
+
+**From a web page**
+
+The [Browser SDK][browser-sdk] opens the same kind of connection from a browser, so a user can
+place and speak on the call. It authenticates with a Subscriber Access Token instead of your API
+token. Before running the snippet:
+
+- Install the Browser SDK and its observable dependency: `npm install @signalwire/js@4.0.0-rc.2 rxjs@7.8.2`.
+- Use your Project ID and API token on your backend to create a
+  [Subscriber Access Token (SAT)][browser-auth] with permission to call phone numbers.
+- Replace `YOUR_SUBSCRIBER_ACCESS_TOKEN` below with the token issued by your backend.
+- Replace `+15557654321` with a phone number you can answer.
+
+Serve the page over HTTPS or use `localhost` for development. Add these elements before your
+application script, and let the user select **Call** to start dialing:
+
+```html
+<audio id="remote-audio" autoplay></audio>
+<button id="call" type="button">Call</button>
+<button id="hangup" type="button" disabled>Hang up</button>
+```
+
+```typescript
+import { SignalWire, StaticCredentialProvider } from "@signalwire/js";
+
+const client = new SignalWire(new StaticCredentialProvider({
+  token: "YOUR_SUBSCRIBER_ACCESS_TOKEN",
+}));
+const remoteAudio = document.querySelector<HTMLAudioElement>("#remote-audio")!;
+const callButton = document.querySelector<HTMLButtonElement>("#call")!;
+const hangupButton = document.querySelector<HTMLButtonElement>("#hangup")!;
+
+callButton.onclick = async () => {
+  callButton.disabled = true;
+  try {
+    const call = await client.dial("+15557654321", { audio: true, video: false });
+    call.remoteStream$.subscribe((stream) => (remoteAudio.srcObject = stream));
+    hangupButton.disabled = false;
+    hangupButton.onclick = () => {
+      void call.hangup().catch(console.error);
+    };
+    call.status$.subscribe((status) => {
+      if (status === "disconnected" || status === "destroyed") {
+        remoteAudio.srcObject = null;
+        hangupButton.disabled = true;
+        callButton.disabled = false;
+      }
+    });
+  } catch (error) {
+    callButton.disabled = false;
+    console.error(error);
+  }
+};
+```
+
+Allow microphone access when prompted, then answer the destination phone to speak with the
+browser user. The [Browser SDK outbound calls guide](/docs/browser-sdk/v4/guides/outbound-calls)
+includes a complete page with media handling and call controls.
 
 </Tab>
 </Tabs>
@@ -525,73 +587,11 @@ sequenceDiagram
 </Tab>
 </Tabs>
 
-## Build on your first call
+## Run an AI agent
 
-Choose what to add next: let a user speak from your web app, or have an AI agent handle the
-conversation when the destination answers.
-
-### Place a call with the Browser SDK
-
-Let someone place and speak on a call from your web app using the [Browser SDK][browser-sdk].
-Before running the snippet:
-
-- Install the Browser SDK and its observable dependency: `npm install @signalwire/js@4.0.0-rc.2 rxjs@7.8.2`.
-- Use your Project ID and API token on your backend to create a
-  [Subscriber Access Token (SAT)][browser-auth] with permission to call phone numbers.
-- Replace `YOUR_SUBSCRIBER_ACCESS_TOKEN` below with the token issued by your backend.
-- Replace `+15557654321` with a phone number you can answer.
-
-Serve the page over HTTPS or use `localhost` for development. Add these elements before your
-application script, and let the user select **Call** to start dialing:
-
-```html
-<audio id="remote-audio" autoplay></audio>
-<button id="call" type="button">Call</button>
-<button id="hangup" type="button" disabled>Hang up</button>
-```
-
-```typescript
-import { SignalWire, StaticCredentialProvider } from "@signalwire/js";
-
-const client = new SignalWire(new StaticCredentialProvider({
-  token: "YOUR_SUBSCRIBER_ACCESS_TOKEN",
-}));
-const remoteAudio = document.querySelector<HTMLAudioElement>("#remote-audio")!;
-const callButton = document.querySelector<HTMLButtonElement>("#call")!;
-const hangupButton = document.querySelector<HTMLButtonElement>("#hangup")!;
-
-callButton.onclick = async () => {
-  callButton.disabled = true;
-  try {
-    const call = await client.dial("+15557654321", { audio: true, video: false });
-    call.remoteStream$.subscribe((stream) => (remoteAudio.srcObject = stream));
-    hangupButton.disabled = false;
-    hangupButton.onclick = () => {
-      void call.hangup().catch(console.error);
-    };
-    call.status$.subscribe((status) => {
-      if (status === "disconnected" || status === "destroyed") {
-        remoteAudio.srcObject = null;
-        hangupButton.disabled = true;
-        callButton.disabled = false;
-      }
-    });
-  } catch (error) {
-    callButton.disabled = false;
-    console.error(error);
-  }
-};
-```
-
-Allow microphone access when prompted, then answer the destination phone to speak with the
-browser user. The [Browser SDK outbound calls guide](/docs/browser-sdk/v4/guides/outbound-calls)
-includes a complete page with media handling and call controls.
-
-### Run an AI agent
-
-Replace the announcement in the [server example](#place-a-call-from-a-server) with an AI agent
-that tells the rider when their taxi will arrive and answers follow-up questions. Keep the same
-credentials, caller ID, and destination number.
+Replace the announcement from [your first call](#place-the-call) with an AI agent that tells the
+rider when their taxi will arrive and answers follow-up questions. Keep the same credentials,
+caller ID, and destination number.
 
 <Warning title="Outbound AI calls are regulated">
 An AI voice counts as an artificial voice under the Telephone Consumer Protection Act (TCPA).
@@ -604,7 +604,7 @@ technical guidance, not legal advice.
 Replace the credentials and phone numbers as you did for your first call, then choose REST or
 WebSocket (Relay).
 
-#### REST
+### REST
 
 Send a `dial` request with an inline SWML `ai` instruction. SignalWire calls the destination
 and starts the agent when the call is answered. Run one of these complete examples:
@@ -723,7 +723,7 @@ The response returns a call `id`; the conversation runs on SignalWire. To reuse 
 document, pass its URL as `url` in place of `swml`, as described in the
 [Calling API reference](/docs/apis/rest/calls/call-commands).
 
-#### WebSocket (Relay)
+### WebSocket (Relay)
 
 Connect a Relay client, dial the destination, then start the agent with `call.ai()` on the
 answered call. Python uses `ai_params`; TypeScript uses `aiParams` for the same AI settings.
