@@ -110,34 +110,52 @@ sequenceDiagram
 </Tab>
 <Tab title="Relay (WebSocket)">
 
-Relay carries commands and live events over a persistent WebSocket.
-The SDK's `dial` returns a call object after answer or raises `RelayError` on failure.
-Use `call.on` for state and action events, and `action.wait()` to wait for an action such as
-playback to finish. See the [Python](/docs/server-sdks/reference/python/relay/call/on) or
-[TypeScript](/docs/server-sdks/reference/typescript/relay/call/on) event reference.
+Relay keeps one WebSocket open between your application and SignalWire. Your application sends
+commands over it, such as `calling.dial`, `calling.play`, and `calling.end`. SignalWire acknowledges
+each command at once, then sends events back over the same connection as the call progresses.
+
+Some events are the direct result of a command: `calling.dial` produces the `created` state,
+`calling.play` produces `playing`, and `calling.end` produces `ending`. Others report what happened
+on the call: `ringing` and `answered` as the destination responds, `finished` when playback
+completes, and `ended` with an `end_reason` once the call is over.
+
+The SDK turns this exchange into ordinary calls. `dial()` returns the call once the
+`calling.call.dial` event reports `answered`, and `action.wait()` returns when the play event
+reports `finished`. Use `call.on` to handle any event yourself, as described in the
+[Python](/docs/server-sdks/reference/python/relay/events) or
+[TypeScript](/docs/server-sdks/reference/typescript/relay/events) event reference.
+
+This flow follows the Relay example above: dial, play the announcement, hang up.
 
 <llms-ignore>
 
-<img src="/assets/images/img/outbound-call-relay-lifecycle-themed.svg" alt="One persistent WebSocket carries commands from your application to SignalWire and live events back to your application. Your code decides how to react: call answered can trigger play, collected keypad input can trigger connect to a chosen destination, and playback finished can trigger hangup. These are independent examples of application decisions; input events require an active collection operation." />
+<img src="/assets/images/img/outbound-call-relay-lifecycle-themed.svg" alt="Your code and SignalWire share one persistent WebSocket. Dial: your code sends calling.dial, which SignalWire acknowledges at once; as the call progresses SignalWire sends calling.call.state events created, ringing, and answered, then calling.call.dial answered, which makes dial() return the call. Play: your code sends calling.play; SignalWire sends calling.call.play playing, then finished, which makes action.wait() return. Hang up: your code sends calling.end; SignalWire sends calling.call.state ending, then ended with end_reason hangup." />
 
 </llms-ignore>
 
 <llms-only>
 
 ```mermaid
-flowchart TB
-    subgraph Channel[One persistent, bidirectional WebSocket]
-        direction LR
-        App[Your application: decides what happens next]
-        SW[SignalWire: places and controls the call]
-        App -->|Commands: dial, play, connect, hangup| SW
-        SW -.->|Live events: call state, playback, collected input| App
-    end
+sequenceDiagram
+    participant App as Your code
+    participant SW as SignalWire
 
-    subgraph Reactions[Examples of application decisions, not an automatic sequence]
-        Answered[Call answered: calling.call.dial] --> Greeting[Your app: start the greeting] --> Play[Command: play]
-        Input[Keypad input collected: calling.call.collect] --> Route[Your app: route to dispatch] --> Connect[Command: connect]
-        Finished[Playback finished: calling.call.play] --> End[Your app: end the conversation] --> Hangup[Command: hangup]
+    Note over App,SW: One persistent WebSocket, both directions
+    rect rgba(0,0,0,0.04)
+    Note over App,SW: Dial
+    App->>SW: calling.dial (acknowledged at once)
+    SW-->>App: calling.call.state: created, ringing, answered
+    SW-->>App: calling.call.dial: answered (dial returns the call)
+    end
+    rect rgba(0,0,0,0.04)
+    Note over App,SW: Play the announcement
+    App->>SW: calling.play
+    SW-->>App: calling.call.play: playing, then finished (action.wait returns)
+    end
+    rect rgba(0,0,0,0.04)
+    Note over App,SW: Hang up
+    App->>SW: calling.end
+    SW-->>App: calling.call.state: ending, then ended (end_reason hangup)
     end
 ```
 
