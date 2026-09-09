@@ -25,20 +25,14 @@ max-toc-depth: 3
 [resource-addresses]: /docs/platform/addresses
 [resources]: /docs/platform/resources
 
-Outbound calls let your app reach a customer, play them a message, or start an AI conversation.
-You choose the destination and what happens on the call.
+Place outbound calls to phone numbers, SIP endpoints, or SignalWire resources.
+[Call from your server](#place-a-call-from-a-server),
+[let a user call from your web app](#place-a-call-with-the-browser-sdk), or
+[connect someone to an AI agent](#run-an-ai-agent).
 
-Jump to the [examples](#examples) for working code.
+## Prerequisites
 
-## How outbound calls start
-
-An outbound call starts from a request you make. You name a destination and say what should happen
-once someone answers, and SignalWire places the call and runs those instructions.
-
-## Destinations you can call
-
-A call can reach a phone anywhere on the public switched telephone network (PSTN), a SIP endpoint
-anywhere on the internet, or anything you have set up inside your own SignalWire Space.
+### Choose a destination
 
 | Destination | Dial | Example |
 |---|---|---|
@@ -48,94 +42,13 @@ anywhere on the internet, or anything you have set up inside your own SignalWire
 | Application | Its resource address | `/public/support-agent` |
 | Conference room | Its resource address | `/public/team-standup` |
 
-A Subscriber is one of your own users. An application is an AI agent, a SWML script, or a Call
-Flow.
+Subscribers (your users), applications (AI agents, SWML scripts, or Call Flows), and conference
+rooms are [Resources][resources]. Each has a [resource address][resource-addresses] in the form
+`/context/name`, where the context is `public` or `private`.
 
-Those last three are all [Resources][resources]: things you create in your Space, each reachable
-at a [resource address][resource-addresses] shaped `/context/name`, where the context is `public`
-or `private`. Whatever the type, you dial it the same way.
+The Relay client supports phone numbers and SIP endpoints only.
 
-The Relay client is the one exception: it dials phone numbers and SIP endpoints only, not
-resource addresses.
-
-## How the call runs
-
-With REST, SignalWire runs the instructions you supply. With Relay, your running application
-controls the call through commands and events.
-
-<Tabs>
-<Tab title="REST">
-
-A `dial` request supplies a SignalWire Markup Language (SWML) document in `swml` or at `url`.
-SignalWire places the call and runs the document after answer. The document can play audio,
-run an AI agent, or connect another destination. Progress arrives at your webhook endpoint.
-
-This flow uses `answered` and `ended` webhooks:
-
-<llms-ignore>
-
-<img src="/assets/images/img/outbound-call-lifecycle-themed.svg" alt="Your code sends a dial request with from, to, and SWML. SignalWire returns a call id with status queued and rings the destination. When the person answers, SignalWire sends an answered webhook and runs your SWML. When the call finishes, SignalWire sends an ended webhook." />
-
-</llms-ignore>
-
-<llms-only>
-
-```mermaid
-sequenceDiagram
-    participant App as Your code
-    participant SW as SignalWire
-    participant Rider as Rider's phone
-
-    App->>SW: dial: from, to, SWML
-    SW-->>App: call id, status queued
-    SW->>Rider: rings
-    Rider->>SW: answers
-    SW-->>App: status webhook answered
-    Note over SW,Rider: Your SWML runs
-    Note over SW,Rider: Call finishes
-    SW-->>App: status webhook ended
-```
-
-</llms-only>
-
-</Tab>
-<Tab title="Relay (WebSocket)">
-
-Relay keeps a bidirectional WebSocket open between your server and SignalWire. Your app sends
-commands such as `dial`, `play`, and `connect`; SignalWire sends live events back. Your code
-uses those events to decide what the call does next.
-
-<llms-ignore>
-
-<img src="/assets/images/img/outbound-call-relay-lifecycle-themed.svg" alt="One persistent WebSocket carries commands from your application to SignalWire and live events back to your application. Your code decides how to react: call answered can trigger play, collected keypad input can trigger connect to a chosen destination, and playback finished can trigger hangup. These are independent examples of application decisions; input events require an active collection operation." />
-
-</llms-ignore>
-
-<llms-only>
-
-```mermaid
-flowchart TB
-    subgraph Channel[One persistent, bidirectional WebSocket]
-        direction LR
-        App[Your application: decides what happens next]
-        SW[SignalWire: places and controls the call]
-        App -->|Commands: dial, play, connect, hangup| SW
-        SW -.->|Live events: call state, playback, collected input| App
-    end
-
-    subgraph Reactions[Examples of application decisions, not an automatic sequence]
-        Answered[Call answered: calling.call.dial] --> Greeting[Your app: start the greeting] --> Play[Command: play]
-        Input[Keypad input collected: calling.call.collect] --> Route[Your app: route to dispatch] --> Connect[Command: connect]
-        Finished[Playback finished: calling.call.play] --> End[Your app: end the conversation] --> Hangup[Command: hangup]
-    end
-```
-
-</llms-only>
-
-</Tab>
-</Tabs>
-
-## Getting started
+### Set up your caller ID
 
 <Warning title="Trial projects and international calls are restricted">
 A [trial project][trial-mode] can dial only numbers it has purchased or verified, and cannot call
@@ -143,32 +56,16 @@ internationally at all. Any other project can dial any number, but needs
 [international dialing enabled][international] before it reaches another country.
 </Warning>
 
-<Steps>
-
-<Step title="Get what your destination needs">
-
-You can dial any phone number, any SIP endpoint, and any resource address that exists in your
-Space. What each one needs from you before it will go through differs.
-
 | Dialing | What you need |
 |---|---|
 | A phone number | A voice-capable PSTN number in your project to present as the caller ID, either one you [bought from SignalWire][phone-numbers] or one you [verified as a caller ID][caller-id] |
 | A SIP URI | A caller ID, which here can be an E.164 number, a SIP URI, or a short token of up to 11 letters, digits, or underscores, plus a SIP username and password if the far end authenticates |
 | A resource address | A Resource in your Space already reachable at that address, and a credential permitted to dial it. Its caller ID isn't format-checked |
 
-The phone number is the demanding case, because SignalWire originates that call on the PSTN under
-your caller ID and has to be entitled to use it. The other two aren't PSTN originations, so they
-ask less of you.
+For phone calls, see [spam labels][spam-labels] and [STIR/SHAKEN][stir-shaken] for caller ID
+reputation and attestation.
 
-For calls to phones, how your caller ID is labeled decides whether people answer. The
-[spam labels][spam-labels] and [STIR/SHAKEN][stir-shaken] guides cover call reputation and
-attestation.
-
-</Step>
-
-<Step title="Get the right credential">
-
-Which credential you need depends on where the dialing code runs.
+### Get credentials
 
 | Dialing from | Use |
 |---|---|
@@ -177,40 +74,27 @@ Which credential you need depends on where the dialing code runs.
 
 Keep the API token on your backend.
 
-Which Resources a credential can dial follows from the credential itself. A project API token
-reaches every Resource in its own project, so nothing extra is needed there. A Subscriber Access
-Token reaches whatever its Subscriber can reach, and a
-[guest token](/docs/apis/rest/subscribers/tokens/create-subscriber-guest-token) reaches only the
-addresses you list in `allowed_addresses` when you create it, up to ten. When a call from your app
-to a Resource fails, that scope is the first thing to check.
-
-</Step>
-
-<Step title="Place the call">
-
-Send a `dial` request carrying three things: the caller ID from step one, the destination, and
-what should happen once someone answers. SignalWire answers with a call `id` and a `queued`
-status, then places the call.
-
-[Place a call from a server](#place-a-call-from-a-server) has that request in cURL, Python, and
-TypeScript, with the SWML announcement included inline so it runs as written.
-
-</Step>
-
-</Steps>
+<Accordion title="Resource access and troubleshooting">
+A project API token can dial every Resource in its project. A Subscriber Access Token has its
+Subscriber's access. A [guest token](/docs/apis/rest/subscribers/tokens/create-subscriber-guest-token)
+can dial only the addresses in its `allowed_addresses` list, up to ten. If a call to a Resource
+fails, check the token's access.
+</Accordion>
 
 ## Examples
 
-Working code for the three things people build first.
-
 ### Place a call from a server
 
-Place a call that plays a spoken announcement when someone answers, using REST or Relay.
+Place a call that plays a spoken announcement when someone answers. Choose REST to have
+SignalWire run supplied instructions, or Relay to control the call through commands and events.
 
 <Tabs>
 <Tab title="REST">
 
-This request includes the SWML announcement. Replace the credentials and phone numbers,
+Supply a SignalWire Markup Language (SWML) document in `swml` or at `url` to define what happens
+after answer: play audio, run an AI agent, or connect another destination.
+
+This example includes the announcement in `swml`. Replace the credentials and phone numbers,
 then run it from your terminal or backend.
 
 <CodeBlocks>
@@ -301,9 +185,7 @@ The response identifies the queued call:
 }
 ```
 
-`queued` means SignalWire accepted the call but has not placed it yet, so no webhook has fired.
-The first event you can subscribe to is `created`. Keep the `id` for later call commands, and add
-`status_url` and `status_events` as described in
+Keep the `id` for later call commands. To receive webhooks, see
 [Track the call's progress](#track-the-calls-progress).
 The REST client references for [Python][sdk-rest-dial-python] and [TypeScript][sdk-rest-dial-ts]
 cover all request fields.
@@ -415,10 +297,11 @@ includes a complete page with media and call controls.
 
 ### Run an AI agent
 
-Replace the announcement with an AI agent that holds a conversation. Both versions build on
-[Place a call from a server](#place-a-call-from-a-server). With SWML, host the document below and
-pass its `url` in place of the inline `swml`. With the Server SDK, replace the playback and hangup
-steps with the snippet below, where `call` is the answered call returned by `dial`.
+Replace the announcement in the [server example](#place-a-call-from-a-server) with an AI agent:
+
+- **SWML:** Host the document below and pass its `url` in place of the inline `swml`.
+- **Relay:** Replace the playback and hangup steps with the Python or TypeScript snippet below.
+  Here, `call` is the answered call returned by `dial`.
 
 <Warning title="Outbound AI calls are regulated">
 An AI voice counts as an artificial voice under the Telephone Consumer Protection Act (TCPA).
@@ -495,8 +378,6 @@ See the [AI quickstart][ai-quickstart] or the Relay AI references for
 
 ## Track the call's progress
 
-Confirm SignalWire accepted the request, then follow the call to answer and hangup.
-
 <Tabs>
 <Tab title="REST">
 
@@ -506,8 +387,35 @@ to confirm pickup and `ended` to know the call finished.
 Set `status_url` to your webhook endpoint and choose `status_events`: `created`, `ringing`,
 `answered`, or `ended`. If you omit `status_events`, you receive `ended` only.
 
-Each event name is also a `status` the call reports, so a webhook arrives when the call enters the
-state you subscribed to. A call passes through more states than there are events:
+This flow shows a call with `answered` and `ended` webhooks enabled:
+
+<llms-ignore>
+
+<img src="/assets/images/img/outbound-call-lifecycle-themed.svg" alt="Your code sends a dial request with from, to, and SWML. SignalWire returns a call id with status queued and rings the destination. When the person answers, SignalWire sends an answered webhook and runs your SWML. When the call finishes, SignalWire sends an ended webhook." />
+
+</llms-ignore>
+
+<llms-only>
+
+```mermaid
+sequenceDiagram
+    participant App as Your code
+    participant SW as SignalWire
+    participant Rider as Rider's phone
+
+    App->>SW: dial: from, to, SWML
+    SW-->>App: call id, status queued
+    SW->>Rider: rings
+    Rider->>SW: answers
+    SW-->>App: status webhook answered
+    Note over SW,Rider: Your SWML runs
+    Note over SW,Rider: Call finishes
+    SW-->>App: status webhook ended
+```
+
+</llms-only>
+
+Only some call states trigger webhooks:
 
 | `status` | Fires a webhook |
 |---|---|
@@ -522,19 +430,47 @@ state you subscribed to. A call passes through more states than there are events
 
 <Warning title="A call that never connects sends no status callback">
 `busy`, `no-answer`, `failed`, and `canceled` are not `status_events` values, so none of them
-delivers a callback — not even under the default `status_events` of `["ended"]`. Subscribe to
-`answered` and pair it with the ring `timeout` you set, so a call that never connects shows up as
-an `answered` webhook that never arrives. To confirm what happened, read the call's
-[voice log](/docs/apis/rest/voice-logs/list-voice-logs).
+delivers a callback, even with the default `status_events` of `["ended"]`. Subscribe to `answered`
+and set an application deadline based on the call's ring `timeout`, allowing for webhook delivery
+delay. If no `answered` webhook arrives by that deadline, check the call's
+[voice log](/docs/apis/rest/voice-logs/list-voice-logs) to confirm the outcome.
 </Warning>
 
 </Tab>
 <Tab title="Relay (WebSocket)">
 
+Relay carries commands and live events over a persistent WebSocket.
 The SDK's `dial` returns a call object after answer or raises `RelayError` on failure.
 Use `call.on` for state and action events, and `action.wait()` to wait for an action such as
 playback to finish. See the [Python](/docs/server-sdks/reference/python/relay/call/on) or
 [TypeScript](/docs/server-sdks/reference/typescript/relay/call/on) event reference.
+
+<llms-ignore>
+
+<img src="/assets/images/img/outbound-call-relay-lifecycle-themed.svg" alt="One persistent WebSocket carries commands from your application to SignalWire and live events back to your application. Your code decides how to react: call answered can trigger play, collected keypad input can trigger connect to a chosen destination, and playback finished can trigger hangup. These are independent examples of application decisions; input events require an active collection operation." />
+
+</llms-ignore>
+
+<llms-only>
+
+```mermaid
+flowchart TB
+    subgraph Channel[One persistent, bidirectional WebSocket]
+        direction LR
+        App[Your application: decides what happens next]
+        SW[SignalWire: places and controls the call]
+        App -->|Commands: dial, play, connect, hangup| SW
+        SW -.->|Live events: call state, playback, collected input| App
+    end
+
+    subgraph Reactions[Examples of application decisions, not an automatic sequence]
+        Answered[Call answered: calling.call.dial] --> Greeting[Your app: start the greeting] --> Play[Command: play]
+        Input[Keypad input collected: calling.call.collect] --> Route[Your app: route to dispatch] --> Connect[Command: connect]
+        Finished[Playback finished: calling.call.play] --> End[Your app: end the conversation] --> Hangup[Command: hangup]
+    end
+```
+
+</llms-only>
 
 <Accordion title="Using the Relay protocol directly">
 The initial `calling.dial` response acknowledges the request. A later `calling.call.dial`
