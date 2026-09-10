@@ -456,15 +456,13 @@ sequenceDiagram
 
 </llms-only>
 
-### WebSocket (Relay)
+### WebSocket
 
-The Relay SDK lets you follow the call in your code: `dial()` returns when the destination
-answers, and a playback completion callback ends the call after the announcement. Register a
-handler with `call.on` to observe later state changes, then wait for the call-ended event before
-closing the connection.
+Relay exposes call state events through `call.on()`. Because `dial()` returns after the destination
+answers, the handler observes later states such as `ending` and `ended`.
 
-Replace your first Relay script with the version below. It registers a state handler immediately
-after `dial()` returns, before playback starts, and keeps the same announcement and connection setup.
+The Browser SDK returns a WebRTC `Call` while it is `ringing`. Subscribe to `call.status$` to follow
+it through `connecting`, `connected`, and the final states.
 
 <CodeBlocks>
 <CodeBlock title="Python — Relay client">
@@ -552,15 +550,63 @@ try {
 }
 ```
 </CodeBlock>
+<CodeBlock title="JavaScript — Browser SDK">
+```javascript
+// Install: npm install @signalwire/js@4.0.0-rc.2 rxjs@7.8.2
+// Run on HTTPS or localhost with these elements in your page:
+// <p id="status">Idle</p>
+// <audio id="remote-audio" autoplay></audio>
+// <button id="call" type="button">Call</button>
+// <button id="hangup" type="button" disabled>Hang up</button>
+import { SignalWire, StaticCredentialProvider } from "@signalwire/js";
+
+const client = new SignalWire(new StaticCredentialProvider({
+  token: "<YOUR_SUBSCRIBER_ACCESS_TOKEN>",
+}));
+const statusLine = document.querySelector("#status");
+const remoteAudio = document.querySelector("#remote-audio");
+const callButton = document.querySelector("#call");
+const hangupButton = document.querySelector("#hangup");
+const finalStatuses = new Set(["disconnected", "failed", "destroyed"]);
+
+callButton.onclick = async () => {
+  callButton.disabled = true;
+  try {
+    const call = await client.dial("<YOUR_DESTINATION>", { audio: true, video: false });
+    call.remoteStream$.subscribe((stream) => (remoteAudio.srcObject = stream));
+    call.status$.subscribe((status) => {
+      statusLine.textContent = `Call: ${status}`;
+      console.log(`Call: ${status}`);
+
+      if (finalStatuses.has(status)) {
+        remoteAudio.srcObject = null;
+        hangupButton.disabled = true;
+        callButton.disabled = false;
+      }
+    });
+
+    hangupButton.disabled = false;
+    hangupButton.onclick = () => {
+      void call.hangup().catch(console.error);
+    };
+  } catch (error) {
+    statusLine.textContent = "Call failed";
+    callButton.disabled = false;
+    console.error(error);
+  }
+};
+```
+</CodeBlock>
 </CodeBlocks>
 
-Because you attach the handler after `dial()` returns, it observes later states such as `ending`
-and `ended`. For more event handlers, see the
+For more Relay event handlers, see the
 [Python events reference](/docs/server-sdks/reference/python/relay/events) or
 [TypeScript events reference](/docs/server-sdks/reference/typescript/relay/events).
+For Browser SDK call states, see the
+[outbound calls guide](/docs/browser-sdk/v4/guides/outbound-calls).
 
-This flow shows the commands your code sends and the events SignalWire returns over the same
-persistent connection:
+For Relay, this flow shows the commands your code sends and the events SignalWire returns over the
+same persistent connection:
 
 <llms-ignore>
 
