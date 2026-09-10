@@ -22,6 +22,8 @@ max-toc-depth: 3
 [swml-stream]: /docs/swml/reference/calling/stream
 [swml-stop-stream]: /docs/swml/reference/calling/stop-stream
 [call-whisper]: /docs/swml/guides/call-whisper
+[guest-token]: /docs/apis/rest/subscribers/tokens/create-subscriber-guest-token
+[browser-auth]: /docs/browser-sdk/v4/guides/authentication
 
 Place an outbound phone call with SignalWire and choose what happens when the destination answers.
 Start by calling your own phone and playing a short announcement, then track the call's progress,
@@ -1731,3 +1733,99 @@ try {
 
 `custom_parameters` reaches your endpoint in the message that opens the stream, which is where to
 put an identifier that ties the audio back to the ride.
+
+### Call from the browser
+
+Let a rider call Bayview Taxi from a web page. The Browser SDK places the call over WebRTC using a
+Subscriber Access Token (SAT) that your backend creates, so no project credentials reach the page.
+
+A [guest token][guest-token] suits this page: it can dial only the destinations you allow, and
+nothing else. Serve the page over HTTPS or from `localhost`, since browsers grant microphone access
+only on a secure origin. The [Browser SDK authentication guide][browser-auth] covers the other token
+types and how to refresh one before it expires.
+
+<CodeBlocks>
+<CodeBlock title="HTML — page">
+```html
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Call Bayview Taxi</title>
+  </head>
+  <body>
+    <p id="status">Idle</p>
+    <button id="call" type="button">Call dispatch</button>
+    <button id="hangup" type="button" disabled>Hang up</button>
+    <audio id="remote-audio" autoplay></audio>
+    <script type="module" src="./call.js"></script>
+  </body>
+</html>
+```
+</CodeBlock>
+<CodeBlock title="JavaScript — Browser SDK">
+```javascript
+// Install: npm install @signalwire/js@4.0.0-rc.2 rxjs@7.8.2
+// Save as call.js next to the page above.
+// GET /api/guest-token is your own endpoint: it creates a guest SAT with your
+// Project API token and returns it as {"token": "..."}.
+import { SignalWire, StaticCredentialProvider } from "@signalwire/js";
+
+const statusLine = document.querySelector("#status");
+const remoteAudio = document.querySelector("#remote-audio");
+const callButton = document.querySelector("#call");
+const hangupButton = document.querySelector("#hangup");
+
+let clientPromise;
+
+function getClient() {
+  clientPromise ??= (async () => {
+    const response = await fetch("/api/guest-token");
+    const { token } = await response.json();
+    return new SignalWire(new StaticCredentialProvider({ token }));
+  })();
+  return clientPromise;
+}
+
+function reset() {
+  remoteAudio.srcObject = null;
+  callButton.disabled = false;
+  hangupButton.disabled = true;
+}
+
+callButton.onclick = async () => {
+  callButton.disabled = true;
+  statusLine.textContent = "Connecting";
+  try {
+    const client = await getClient();
+    const call = await client.dial("+15557654321", { audio: true, video: false });
+    call.remoteStream$.subscribe((stream) => (remoteAudio.srcObject = stream));
+    hangupButton.disabled = false;
+    hangupButton.onclick = () => {
+      void call.hangup().catch(console.error);
+    };
+    call.status$.subscribe((status) => {
+      statusLine.textContent = status;
+      if (status === "disconnected" || status === "failed" || status === "destroyed") {
+        reset();
+      }
+    });
+  } catch (error) {
+    statusLine.textContent = "Call failed";
+    console.error(error);
+    reset();
+  }
+};
+```
+</CodeBlock>
+</CodeBlocks>
+
+Select **Call dispatch** and allow microphone access. The status line follows the call through
+`ringing`, `connecting`, and `connected`, then `disconnected` when either side hangs up. If the
+browser blocks the microphone, the dial fails, the error reaches the console, and the page returns
+to its idle state.
+
+For a mute control, subscribe to `call.self$` for the local participant, which carries
+`toggleMute()` and an `audioMuted$` observable. The
+[Browser SDK outbound calls guide](/docs/browser-sdk/v4/guides/outbound-calls) covers device
+selection, inbound calls, and dialing resource addresses instead of phone numbers.
