@@ -1,0 +1,399 @@
+---
+title: Route and control calls
+slug: /voice/route-and-control-calls
+description: Write a call flow that answers, asks the caller a question, and branches on what they say, then run it from the Dashboard and read the result in the call log.
+position: 1
+max-toc-depth: 3
+---
+
+[addresses]: /docs/platform/addresses
+[create-call]: /docs/apis/rest/calls/call-commands
+[phone-numbers]: /docs/platform/phone-numbers
+[resources]: /docs/platform/resources
+[server-sdks]: /docs/server-sdks
+[swml-prompt]: /docs/swml/reference/calling/prompt
+[swml-switch]: /docs/swml/reference/calling/switch
+[swml-transfer]: /docs/swml/reference/calling/transfer
+
+A call flow is a document that tells SignalWire what to do with a live call: answer it, play a
+message, listen for a reply, and decide what happens next. In this guide you write one, call it from
+the Dashboard, say something out loud, and hear the flow respond to what you said.
+
+The flow runs as SignalWire Markup Language (SWML). You can write that document by hand as JSON or
+YAML, or have the Server SDK generate it from Python. Both paths produce the same document, and
+SignalWire runs it the same way.
+
+Before you start, you need:
+
+- A [SignalWire account](https://signalwire.com/signup)
+- For the Server SDK path, Python 3 and [ngrok](https://ngrok.com/download) installed locally
+
+No phone number and no API token are required. The Dashboard can call a flow directly.
+
+---
+
+<Steps>
+
+### Write a flow that answers and speaks
+
+Start with the smallest flow that does something audible. Choose one authoring path.
+
+<Tabs>
+<Tab title="Server SDK">
+
+<Note>
+  This guide uses Python. The [Server SDK documentation][server-sdks] covers the TypeScript SDK as
+  well.
+</Note>
+
+#### Install the Server SDK
+
+```bash
+python3 -m pip install signalwire-sdk
+```
+
+#### Write the flow
+
+Create `route_calls.py`:
+
+```python title="route_calls.py"
+from signalwire import SWMLService
+
+service = SWMLService(name="route-calls")
+
+service.add_verb("answer", {})
+service.add_verb("play", {"url": "say:Thanks for calling. Your flow is running."})
+service.add_verb("hangup", {})
+
+
+if __name__ == "__main__":
+    service.serve()
+```
+
+`SWMLService` builds a SWML document and serves it over HTTP. Each `add_verb` call appends one
+instruction to the document's `main` section, and `serve()` starts a web server on port `3000`
+that returns the document when SignalWire requests it.
+
+#### Give the flow a public URL
+
+In a second terminal, start ngrok:
+
+```bash
+ngrok http 3000
+```
+
+Copy the HTTPS forwarding URL, such as `https://abc123.ngrok-free.app`, and keep ngrok running.
+
+#### Start the flow with stable credentials
+
+The service protects its URL with Basic Auth. Set the credentials yourself so they survive a
+restart, then start the flow in the first terminal:
+
+```bash
+export SWML_BASIC_AUTH_USER="signalwire"
+export SWML_BASIC_AUTH_PASSWORD="replace-with-a-long-random-password"
+python3 route_calls.py
+```
+
+#### Verify the generated SWML
+
+From another terminal, request the document through the tunnel:
+
+```bash
+curl --fail \
+  --user "signalwire:replace-with-a-long-random-password" \
+  "https://abc123.ngrok-free.app/" \
+  | python3 -m json.tool
+```
+
+A working flow returns a JSON document with `"version": "1.0.0"` and a `sections.main` array
+holding `answer`, `play`, and `hangup`. A `401` response means the credentials in the request don't
+match the ones you exported before starting the flow.
+
+#### Create an External URL resource
+
+SignalWire needs a resource to call. Open the [SignalWire Dashboard](https://my.signalwire.com),
+select **Script**, and then select **External URL**. Set the Primary Script URL to the tunnel URL
+with the credentials embedded:
+
+```text
+https://signalwire:replace-with-a-long-random-password@abc123.ngrok-free.app/
+```
+
+Select **Create**. The resource appears in **Resources**.
+
+</Tab>
+<Tab title="SWML">
+
+#### Create a SWML Script resource
+
+<Markdown src="/snippets/common/dashboard/create-swml-script.mdx" />
+
+Give the script a name and paste this document into the editor:
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - answer: {}
+    - play:
+        url: "say:Thanks for calling. Your flow is running."
+    - hangup: {}
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      { "answer": {} },
+      { "play": { "url": "say:Thanks for calling. Your flow is running." } },
+      { "hangup": {} }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+Save the script. It appears in **Resources**.
+
+Execution starts at the `main` section, which every document must have. Each section is an
+ordered list of methods, and later in this guide you add more sections and jump between them.
+`answer` picks up the call, `play` speaks the text after the `say:` prefix, and `hangup` ends the
+call.
+
+</Tab>
+</Tabs>
+
+### Call the flow
+
+Open the resource in **Resources** and use the Dashboard's click-to-call control to dial it.
+[NEEDS SOURCE: confirm the label and location of the click-to-call control on a resource in the
+new Dashboard.]
+
+You hear "Thanks for calling. Your flow is running." and the call ends.
+
+If the call connects but stays silent, the flow never ran. On the Server SDK path, repeat the
+`curl` request to confirm the tunnel still answers, then check that the External URL resource
+carries the same URL and credentials. On the SWML path, reopen the script and check that the
+document saved with a `main` section.
+
+To reach the same flow from a phone instead, assign one of your [phone numbers][phone-numbers] to
+the resource under **Inbound Call Settings** and dial it.
+
+### Listen and branch on what the caller says
+
+Now make the flow ask a question and route on the answer. Three methods do the work:
+
+- [`prompt`][swml-prompt] plays a question and waits for input. Setting `speech_hints` switches it
+  from keypad digits to speech and lists the words you expect to hear. When the caller
+  speaks, `prompt` stores the recognized text in the `prompt_value` variable and the outcome in
+  `prompt_result`.
+- [`switch`][swml-switch] compares a variable against a set of cases and runs the matching one.
+  The `default` case runs for anything else, including silence and unrecognized speech.
+- [`transfer`][swml-transfer] jumps to another section of the document and does not return.
+
+Replace the flow with this version. The `sales` and `support` sections each speak a different
+message, and `no_match` handles a caller who says nothing or something the flow doesn't expect.
+
+<Tabs>
+<Tab title="Server SDK">
+
+Replace `route_calls.py`:
+
+```python title="route_calls.py"
+from signalwire import SWMLService
+
+service = SWMLService(name="route-calls")
+
+service.add_verb("answer", {})
+service.add_verb(
+    "prompt",
+    {
+        "play": "say:Thanks for calling. Say sales or support.",
+        "speech_hints": ["sales", "support"],
+    },
+)
+service.add_verb(
+    "switch",
+    {
+        "variable": "prompt_value",
+        "case": {
+            "sales": [{"transfer": {"dest": "sales"}}],
+            "support": [{"transfer": {"dest": "support"}}],
+        },
+        "default": [{"transfer": {"dest": "no_match"}}],
+    },
+)
+
+service.add_verb_to_section("sales", "play", {"url": "say:You said sales."})
+service.add_verb_to_section("sales", "hangup", {})
+
+service.add_verb_to_section("support", "play", {"url": "say:You said support."})
+service.add_verb_to_section("support", "hangup", {})
+
+service.add_verb_to_section("no_match", "play", {"url": "say:Sorry, I didn't catch that. Goodbye."})
+service.add_verb_to_section("no_match", "hangup", {})
+
+
+if __name__ == "__main__":
+    service.serve()
+```
+
+`add_verb_to_section` creates the named section on first use and appends to it after that. The
+SDK validates every verb against the SWML schema as you add it, so a misspelled parameter raises
+an error at startup instead of failing on a live call.
+
+Restart the flow with the same credentials, then request the document again with `curl`. The
+`sections` object now holds `main`, `sales`, `support`, and `no_match`. The External URL resource
+already points at the tunnel, so there is nothing to change in the Dashboard.
+
+</Tab>
+<Tab title="SWML">
+
+Open the script in **Resources** and replace its contents:
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - answer: {}
+    - prompt:
+        play: "say:Thanks for calling. Say sales or support."
+        speech_hints:
+          - sales
+          - support
+    - switch:
+        variable: prompt_value
+        case:
+          sales:
+            - transfer:
+                dest: sales
+          support:
+            - transfer:
+                dest: support
+        default:
+          - transfer:
+              dest: no_match
+  sales:
+    - play:
+        url: "say:You said sales."
+    - hangup: {}
+  support:
+    - play:
+        url: "say:You said support."
+    - hangup: {}
+  no_match:
+    - play:
+        url: "say:Sorry, I didn't catch that. Goodbye."
+    - hangup: {}
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      { "answer": {} },
+      {
+        "prompt": {
+          "play": "say:Thanks for calling. Say sales or support.",
+          "speech_hints": ["sales", "support"]
+        }
+      },
+      {
+        "switch": {
+          "variable": "prompt_value",
+          "case": {
+            "sales": [{ "transfer": { "dest": "sales" } }],
+            "support": [{ "transfer": { "dest": "support" } }]
+          },
+          "default": [{ "transfer": { "dest": "no_match" } }]
+        }
+      }
+    ],
+    "sales": [
+      { "play": { "url": "say:You said sales." } },
+      { "hangup": {} }
+    ],
+    "support": [
+      { "play": { "url": "say:You said support." } },
+      { "hangup": {} }
+    ],
+    "no_match": [
+      { "play": { "url": "say:Sorry, I didn't catch that. Goodbye." } },
+      { "hangup": {} }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+Save the script. The next call picks up the new document.
+
+</Tab>
+</Tabs>
+
+### Call it three times
+
+Call the resource again and say "sales". The flow answers "You said sales." Call once more and say
+"support" to hear the other branch. On a third call, say nothing: after the input timeout the flow
+says "Sorry, I didn't catch that" and hangs up. The default wait for input is five seconds.
+
+If every call lands in `no_match`, the recognized text didn't equal a case key. `switch` compares
+the whole value exactly, so check the keys for capital letters and stray spaces. The next step
+shows you what the flow heard.
+
+### Read the call log
+
+Open **Logs** > **Calling** in the Dashboard and select the most recent call to see its details.
+[NEEDS SOURCE: confirm which details the new Dashboard's call log shows for a SWML call, in
+particular whether it lists the executed steps and the recognized speech.]
+
+To receive the recognized speech on your own server, add a `status_url` to the `prompt` method.
+SignalWire sends a `calling.call.collect` event to that URL when input arrives. The payload's
+`params.result.type` is `speech`, `no_input`, or `no_match`, and for speech the recognized text is
+included with its confidence score. The [`prompt` reference][swml-prompt] documents every field.
+
+</Steps>
+
+## One flow, any channel
+
+The document you wrote doesn't know where the call came from. The Dashboard reached it through
+click-to-call. A [phone number][phone-numbers] assigned to the same resource runs the identical
+document, and so does a SIP address, a browser call to the resource's [address][addresses], or an
+outbound call you place with the [REST API][create-call]. Direction and channel are routing
+details on the [resource][resources]. The flow is the same program.
+
+## Next steps
+
+<CardGroup cols={2}>
+
+<Card title="Control program flow" href="/docs/swml/guides/goto-execute-transfer-disambiguation" icon="regular code-branch">
+  Loop back to the question with `goto` and labels, call sections like functions with `execute`,
+  and see how `transfer` differs from both.
+</Card>
+
+<Card title="Simple IVR" href="/docs/swml/guides/ivr" icon="regular phone-office">
+  Accept keypad digits alongside speech, record the call, and connect each branch to a real
+  phone number.
+</Card>
+
+<Card title="SWMLService reference" href="/docs/server-sdks/reference/python/agents/swml-service" icon="regular server">
+  Serve a different document per call, add routing callbacks, and secure the endpoint for
+  production.
+</Card>
+
+<Card title="Phone numbers" href="/docs/platform/phone-numbers" icon="regular hashtag">
+  Buy a number, assign it to the flow, and dial it from your own phone.
+</Card>
+
+</CardGroup>
