@@ -298,7 +298,7 @@ callButton.onclick = async () => {
       void call.hangup().catch(console.error);
     };
     call.status$.subscribe((status) => {
-      if (status === "disconnected" || status === "destroyed") {
+      if (status === "disconnected" || status === "failed" || status === "destroyed") {
         remoteAudio.srcObject = null;
         hangupButton.disabled = true;
         callButton.disabled = false;
@@ -1781,9 +1781,14 @@ let clientPromise;
 function getClient() {
   clientPromise ??= (async () => {
     const response = await fetch("/api/guest-token");
+    if (!response.ok) throw new Error(`Token request failed: ${response.status}`);
     const { token } = await response.json();
+    if (!token) throw new Error("Token response did not include a token");
     return new SignalWire(new StaticCredentialProvider({ token }));
-  })();
+  })().catch((error) => {
+    clientPromise = undefined;
+    throw error;
+  });
   return clientPromise;
 }
 
