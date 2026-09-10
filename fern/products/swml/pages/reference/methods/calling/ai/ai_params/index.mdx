@@ -102,8 +102,15 @@ These parameters control the fundamental behavior and capabilities of the AI age
   Enables thinking output for the AI Agent. When set to `true`, the AI Agent will be able to utilize thinking capabilities. This may introduce a little bit of latency as the AI will use an additional turn in the conversation to think about the query.
 </ParamField>
 
-<ParamField path="params.enable_turn_detection" type="boolean" default="true" toc={true}>
-  Enables intelligent turn detection that monitors partial speech transcripts for sentence-ending punctuation. When detected, the system can proactively finalize the speech recognition, reducing latency before the AI responds. Works with `turn_detection_timeout`.
+<ParamField path="params.enable_turn_detection" type="string" default="both" toc={true}>
+  How the agent recognizes that the caller has finished speaking. Two signals feed the decision: sentence-ending punctuation in the partial transcript, and an acoustic read of the caller's intonation.
+
+  - `both` — Use both signals. Punctuation ends the turn, while the acoustic signal can hold the turn open for another word when the caller sounds mid-sentence, or end it when the caller trails off without punctuation. `true` is an alias.
+  - `punct_only` — Punctuation alone ends the turn.
+  - `acoustic_only` — The acoustic signal alone ends the turn.
+  - `off` — Neither signal is used, and the agent waits out [`end_of_speech_timeout`](#paramsend_of_speech_timeout) silence instead. `false` is an alias.
+
+  Every mode except `off` is tuned by [`turn_detection_min_length`](#paramsturn_detection_min_length) and [`turn_detection_timeout`](#paramsturn_detection_timeout). The parameter is also accepted under the name `turn_detection`.
 </ParamField>
 
 
@@ -577,8 +584,17 @@ Fine-tune advanced AI behavior settings including response limits, data persiste
 </ParamField>
 
 
-<ParamField path="params.turn_detection_timeout" type="integer" default="250" toc={true}>
-  Time in milliseconds to wait after detecting a potential end-of-turn before finalizing speech recognition. Works with `enable_turn_detection`. Lower values make the agent more responsive but may cut off users mid-sentence. Allowed values from `0` to `10000`.
+<ParamField path="params.turn_detection_min_length" type="integer" default="0" toc={true}>
+  Minimum number of characters the transcript must contain before punctuation on its own can end the caller's turn. Raise it so a back-channel the recognizer renders with a full stop — "Uh-huh." while the agent is still being answered — doesn't end a turn the caller hasn't finished. Allowed values from `0` to `1000`, where `0` lets a transcript of any length end a turn.
+
+  The acoustic signal overrides this: when it reads the caller as finished, the turn ends whatever the length, so short complete replies like "Yes." still work. That leaves this a filter on the punctuation path alone, and it has no effect when [`enable_turn_detection`](#paramsenable_turn_detection) is `off`.
+</ParamField>
+
+
+<ParamField path="params.turn_detection_timeout" type="integer" default="Value of end_of_speech_timeout" toc={true}>
+  Time in milliseconds the agent waits after deciding the caller's turn has ended before it finalizes the transcript. A partial transcript arriving inside the window cancels the decision, so this is a ceiling on how long a turn can hang rather than latency added to every turn — a caller who has finished usually commits well inside it.
+
+  Lowering it therefore doesn't make the agent answer faster, and values below `500` degrade transcription accuracy on words the recognizer needs the extra audio to disambiguate. Allowed values from `0` to `10000`, where `0` uses the default. Has no effect when [`enable_turn_detection`](#paramsenable_turn_detection) is `off`.
 </ParamField>
 
 

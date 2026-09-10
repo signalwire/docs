@@ -149,12 +149,27 @@ model AIParams {
   enable_pause?: boolean | SWMLVar = false;
 
   @doc("""
-    Enables intelligent turn detection that monitors partial speech transcripts for sentence-ending
-    punctuation. When detected, the system can proactively finalize the speech recognition,
-    reducing latency before the AI responds. Works with `turn_detection_timeout`.
+    How the agent recognizes that the caller has finished speaking. Two signals feed the decision:
+    sentence-ending punctuation in the partial transcript, and an acoustic read of the caller's
+    intonation.
+    `both` uses both, so punctuation ends the turn while the acoustic signal can hold the turn open
+    for another word when the caller sounds mid-sentence, or end it when the caller trails off
+    without punctuation.
+    `punct_only` ends the turn on punctuation alone, and `acoustic_only` on the acoustic signal alone.
+    `off` uses neither signal, leaving the agent to wait out `end_of_speech_timeout` silence.
+    `true` is an alias for `both` and `false` for `off`, and this parameter is also accepted under the
+    name `turn_detection`.
+    Every mode except `off` is tuned by `turn_detection_timeout` and `turn_detection_min_length`.
+    **Default:** `both`.
     """)
-  @example(true)
-  enable_turn_detection?: boolean | SWMLVar = true;
+  @example("both")
+  enable_turn_detection?:
+    | "off"
+    | "both"
+    | "punct_only"
+    | "acoustic_only"
+    | boolean
+    | SWMLVar = "both";
 
   @doc("""
     Takes a string, including a regular expression, defining barge behavior.
@@ -547,14 +562,33 @@ model AIParams {
   transfer_summary?: boolean | SWMLVar = false;
 
   @doc("""
-    Time in milliseconds to wait after detecting a potential end-of-turn before finalizing speech recognition.
-    A shorter timeout results in faster response times but may cut off the user if they pause mid-sentence.
-    Set to `0` to finalize immediately. Only used when `enable_turn_detection` is `true`.
+    Minimum number of characters the transcript must contain before punctuation on its own can end
+    the caller's turn. Raise it so a back-channel the recognizer renders with a full stop — "Uh-huh."
+    while the agent is still being answered — does not end a turn the caller has not finished.
+    The acoustic signal overrides this: when it reads the caller as finished, the turn ends whatever
+    the length, so short complete replies like "Yes." still work. That leaves this a filter on the
+    punctuation path alone, and it has no effect when `enable_turn_detection` is `off`.
+    **Default:** `0`, which lets a transcript of any length end a turn.
+    """)
+  @minValue(0)
+  @maxValue(1000)
+  @example(4)
+  turn_detection_min_length?: integer | SWMLVar = 0;
+
+  @doc("""
+    Time in milliseconds the agent waits after deciding the caller's turn has ended before it
+    finalizes the transcript. A partial transcript arriving inside the window cancels the decision,
+    so this is a ceiling on how long a turn can hang rather than latency added to every turn — a
+    caller who has finished usually commits well inside it. Lowering it therefore doesn't make the
+    agent answer faster, and values below `500` degrade transcription accuracy on words the
+    recognizer needs the extra audio to disambiguate.
+    Set to `0` to use the default. Has no effect when `enable_turn_detection` is `off`.
+    **Default:** the value of `end_of_speech_timeout`.
     """)
   @minValue(0)
   @maxValue(10000)
-  @example(250)
-  turn_detection_timeout?: integer | SWMLVar = 250;
+  @example(700)
+  turn_detection_timeout?: integer | SWMLVar;
 
   @doc("""
     Which deliberate waits earn a backchannel from `languages[].turn_fillers`, or from
