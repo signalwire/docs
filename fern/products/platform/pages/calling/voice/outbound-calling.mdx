@@ -16,14 +16,10 @@ max-toc-depth: 3
 [sdk-install]: /docs/server-sdks/guides/installation
 [webhooks]: /docs/platform/webhooks
 [swml-detect-machine]: /docs/swml/reference/calling/detect-machine
-[swml-connect]: /docs/swml/reference/calling/connect
 [swml-record-call]: /docs/swml/reference/calling/record-call
-[swml-stop-record-call]: /docs/swml/reference/calling/stop-record-call
 [swml-stream]: /docs/swml/reference/calling/stream
-[swml-stop-stream]: /docs/swml/reference/calling/stop-stream
 [call-whisper]: /docs/swml/guides/call-whisper
 [guest-token]: /docs/apis/rest/subscribers/tokens/create-subscriber-guest-token
-[browser-auth]: /docs/browser-sdk/v4/guides/authentication
 [resource-addresses]: /docs/platform/addresses
 [resources]: /docs/platform/resources
 
@@ -594,25 +590,16 @@ sequenceDiagram
 
 ### Run an AI agent
 
-Replace the announcement from [your first call](#place-the-call) with an AI agent that tells the
-rider when their taxi will arrive and answers follow-up questions. Keep the same credentials,
-caller ID, and destination number.
+Call a rider with an AI agent that shares their arrival time and answers follow-up questions.
 
 <Warning title="Outbound AI calls are regulated">
-An AI voice counts as an artificial voice under the Telephone Consumer Protection Act (TCPA).
-Check consent, your do-not-call list, and the local calling hours in your code before you send the
-`dial` request. The [TCPA guide][tcpa] and
-the compliance section of [AI best practices][ai-best-practices] cover each obligation. This is
-technical guidance, not legal advice.
+Before dialing, follow consent, do-not-call, and calling-hour requirements for artificial voices.
+See the [TCPA guide][tcpa] and [AI best practices][ai-best-practices].
 </Warning>
-
-Replace the credentials and phone numbers as you did for your first call, then choose REST or
-WebSocket (Relay).
 
 #### REST
 
-Send a `dial` request with an inline SWML `ai` instruction. SignalWire calls the destination
-and starts the agent when the call is answered. Run one of these complete examples:
+Send a `dial` request with an inline SWML [`ai` instruction][swml-ai] that starts when the call is answered.
 
 <CodeBlocks>
 <CodeBlock title="cURL — Calling API">
@@ -724,15 +711,9 @@ console.log(call.id);
 </CodeBlock>
 </CodeBlocks>
 
-The response returns a call `id`; the conversation runs on SignalWire. To reuse a hosted SWML
-document, pass its URL as `url` in place of `swml`, as described in the
-[Calling API reference](/docs/apis/rest/calls/call-commands).
-
 #### WebSocket (Relay)
 
-Connect a Relay client, dial the destination, then start the agent with `call.ai()` on the
-answered call. Python uses `ai_params`; TypeScript uses `aiParams` for the same AI settings.
-These scripts keep the WebSocket open until the destination hangs up, then disconnect.
+Dial with Relay, start the agent with `call.ai()`, and keep the connection open until the call ends.
 
 <CodeBlocks>
 <CodeBlock title="Python — Relay client">
@@ -825,37 +806,16 @@ try {
 </CodeBlock>
 </CodeBlocks>
 
-Use [Python `call.wait_for_ended()`](/docs/server-sdks/reference/python/relay/call/wait-for-ended)
-or [TypeScript `call.waitForEnded()`](/docs/server-sdks/reference/typescript/relay/call/wait-for-ended)
-to wait for the call to end. The AI action's `wait()` method waits for an AI action completion
-event, which is separate from the call-ended event.
-
-Answer the call to hear the automated greeting, then ask when your driver will arrive.
-The agent should respond using the five-minute estimate. Hang up the destination phone when
-you finish; the Relay script then exits.
-
-`static_greeting_no_barge` lets the greeting finish before the conversation begins. The SWML
-[`ai` method][swml-ai] reference covers every parameter, as does the Relay `ai` reference for
-[Python](/docs/server-sdks/reference/python/relay/call/ai),
-[TypeScript](/docs/server-sdks/reference/typescript/relay/call/ai), or your language's SDK.
-
 ### Leave a voicemail
 
-Not every call reaches a person. Answering machine detection tells you whether a human or a machine
-picked up, so the rider hears the arrival time either way — spoken to them live, or left on their
-voicemail after the greeting.
+Use answering machine detection (AMD) to speak to a person immediately or leave a message after a
+voicemail greeting and beep.
 
-A prerecorded voice is regulated much like an AI voice, so check consent and local calling hours
-before you dial. The [TCPA guide][tcpa] covers the obligations.
+Follow the consent and calling-hour requirements in the [TCPA guide][tcpa].
 
 #### REST
 
-`detect_machine` runs before the rest of the document and saves its verdict in the `detect_result`
-variable, which is `machine`, `human`, `fax`, `unknown`, or `error`. Setting `detect_message_end` to
-`true` holds the document until the greeting ends, so your message records from the beginning
-instead of over the greeting. The `switch` then picks what to play.
-
-The SDK snippets below keep the imports and `client` setup from your first REST example.
+Use [`detect_machine`][swml-detect-machine] and `switch` to choose the live or voicemail message.
 
 <CodeBlocks>
 <CodeBlock title="cURL — Calling API">
@@ -967,16 +927,10 @@ console.log(call.id);
 </CodeBlock>
 </CodeBlocks>
 
-Add a `status_url` to `detect_machine` to receive every detection event, including whether a beep
-was heard. The [`detect_machine` reference][swml-detect-machine] lists the timing parameters that
-control how patient the detector is.
-
 #### WebSocket (Relay)
 
-`call.detect()` starts the same detector on the answered call and reports its outcome in a
-`calling.call.detect` event: `MACHINE`, `HUMAN`, or `UNKNOWN`. A machine sends a further `READY`
-event once its greeting and beep have finished, which is the moment to start the message. Register
-the handler before you start detection, so no event arrives before you're listening.
+Use `call.detect()` to play the live message after `HUMAN` or `UNKNOWN`, or wait for `READY` after a
+machine greeting.
 
 <CodeBlocks>
 <CodeBlock title="Python — Relay client">
@@ -1107,25 +1061,14 @@ try {
 </CodeBlock>
 </CodeBlocks>
 
-Answer the destination phone to hear the live message, or let it ring through to voicemail to hear
-the recorded one.
-
 ### Whisper before connecting two people
 
-Tell the driver who they're about to speak to. A whisper plays to one leg of the call only, so the
-other person hears nothing but ringback while it plays.
-
-This example dials two phones. Keep `<YOUR_DESTINATION>` as the rider's number, and replace
-`<YOUR_DRIVER_NUMBER>` with a second number you can answer as the driver.
+Play pickup details privately to `<YOUR_DRIVER_NUMBER>`, then connect that call to
+`<YOUR_DESTINATION>`.
 
 #### REST
 
-Call the rider, then `connect` to the driver. The `confirm` array runs on the driver's leg as soon
-as they answer and finishes before the two legs are bridged, so only the driver hears the pickup
-details. `confirm` also takes the URL of a SWML document, which the
-[Call whisper guide][call-whisper] walks through.
-
-The SDK snippets below keep the imports and `client` setup from your first REST example.
+Use `connect.confirm` to play the [whisper][call-whisper] to the driver before bridging the calls.
 
 <CodeBlocks>
 <CodeBlock title="cURL — Calling API">
@@ -1216,15 +1159,9 @@ console.log(call.id);
 </CodeBlock>
 </CodeBlocks>
 
-`confirm_timeout` bounds how long the confirm script may run, and 20 seconds is ample for a
-one-sentence whisper. The [`connect` reference][swml-connect] covers dialing several numbers in turn
-or at once, and what to run when the connected call ends.
-
 #### WebSocket (Relay)
 
-Relay has no `confirm` parameter, so dial the person who gets the whisper first. These scripts call
-the driver, play the pickup details to that leg, then bridge the rider with `connect()`. The rider's
-phone rings only after the whisper finishes.
+Dial the driver first, play the whisper, then connect the rider after playback finishes.
 
 <CodeBlocks>
 <CodeBlock title="Python — Relay client">
@@ -1324,29 +1261,17 @@ try {
 </CodeBlock>
 </CodeBlocks>
 
-Answer the driver's phone to hear the whisper, then answer the rider's phone: the two legs are
-bridged once the whisper finishes.
-
 ### Record the call
 
-Keep an audio record of what was said, whether that's an automated message or a live conversation
-between the rider and a dispatcher.
+Record both sides of an outbound call and retrieve the finished recording URL.
 
 <Warning title="Recording consent is your responsibility">
-Recording laws vary by country and by state, and some require the consent of every party on the
-call. Confirm what applies to the numbers you dial, and announce the recording when consent is
-required. This is technical guidance, not legal advice.
+Confirm which parties must consent and announce the recording when required.
 </Warning>
 
 #### REST
 
-`record_call` starts a recording in the background and the document continues to the next
-instruction. The recording ends with the call, or when you run
-[`stop_record_call`][swml-stop-record-call]. SignalWire saves the recording's URL in the
-`record_call_url` variable, and POSTs the finished recording's URL, duration, and size to
-`status_url`.
-
-The SDK snippets below keep the imports and `client` setup from your first REST example.
+Start [`record_call`][swml-record-call] in the background and receive the result at `status_url`.
 
 <CodeBlocks>
 <CodeBlock title="cURL — Calling API">
@@ -1434,16 +1359,9 @@ console.log(call.id);
 </CodeBlock>
 </CodeBlocks>
 
-`direction` chooses whose audio to keep: `speak` for what the destination says, `listen` for what
-they hear, or `both`. With `stereo` set to `true`, each side lands on its own channel. The
-[`record_call` reference][swml-record-call] lists the rest of the parameters and the status callback
-payload.
-
 #### WebSocket (Relay)
 
-`call.record()` returns a handle you can pause, stop, and wait on. Here the recording ends with the
-call and its `finished` event carries the URL; call `recording.stop()` to end it sooner. The zero
-timeouts keep the recording running through pauses in the conversation.
+Start `call.record()` and read the recording URL from its `finished` event.
 
 <CodeBlocks>
 <CodeBlock title="Python — Relay client">
@@ -1547,22 +1465,13 @@ try {
 </CodeBlock>
 </CodeBlocks>
 
-Answer the phone to hear the beep before the announcement. The Relay scripts print the recording's
-URL when it finishes; with REST, that URL arrives at `status_url`.
-
 ### Stream the call audio
 
-Send the call's audio to a WebSocket endpoint you run while the call is still in progress, for live
-transcription, quality scoring, or any other processing that can't wait for a recording.
+Stream both sides of a live call to your secure WebSocket endpoint for real-time processing.
 
 #### REST
 
-`stream` opens the connection in the background and the document moves on to the next instruction.
-`track` chooses which side of the audio to send: `inbound_track` for what the destination says,
-`outbound_track` for what they hear, or `both_tracks` for both. Your endpoint has to accept a
-secure WebSocket (`wss://`) connection.
-
-The SDK snippets below keep the imports and `client` setup from your first REST example.
+Start [`stream`][swml-stream] in the background and send status events to your webhook.
 
 <CodeBlocks>
 <CodeBlock title="cURL — Calling API">
@@ -1647,15 +1556,9 @@ console.log(call.id);
 </CodeBlock>
 </CodeBlocks>
 
-The stream runs until the call ends or [`stop_stream`][swml-stop-stream] stops it. Give each stream
-its own `control_id` to run more than one at a time, and use `authorization_bearer_token` to
-authenticate the handshake with your endpoint. The [`stream` reference][swml-stream] documents the
-status events your endpoint receives.
-
 #### WebSocket (Relay)
 
-`call.stream()` starts the same background stream over your existing Relay connection and returns a
-handle. The stream ends with the call; call `stream.stop()` to end it sooner.
+Start `call.stream()` over the Relay connection and keep it running until the call ends.
 
 <CodeBlocks>
 <CodeBlock title="Python — Relay client">
@@ -1752,18 +1655,10 @@ try {
 </CodeBlock>
 </CodeBlocks>
 
-`custom_parameters` reaches your endpoint in the message that opens the stream, which is where to
-put an identifier that ties the audio back to the ride.
-
 ### Call from the browser
 
-Let a rider call Bayview Taxi from a web page. The Browser SDK places the call over WebRTC using a
-Subscriber Access Token (SAT) that your backend creates, so no project credentials reach the page.
-
-A [guest token][guest-token] suits this page: it can dial only the destinations you allow, and
-nothing else. Serve the page over HTTPS or from `localhost`, since browsers grant microphone access
-only on a secure origin. The [Browser SDK authentication guide][browser-auth] covers the other token
-types and how to refresh one before it expires.
+Place a WebRTC call from a web page using a restricted [guest token][guest-token] from your backend.
+Serve the page over HTTPS or `localhost` so the browser can access the microphone.
 
 <CodeBlocks>
 <CodeBlock title="HTML — page">
@@ -1846,12 +1741,4 @@ callButton.onclick = async () => {
 </CodeBlock>
 </CodeBlocks>
 
-Select **Call dispatch** and allow microphone access. The status line follows the call through
-`ringing`, `connecting`, and `connected`, then `disconnected` when either side hangs up. If the
-browser blocks the microphone, the dial fails, the error reaches the console, and the page returns
-to its idle state.
-
-For a mute control, subscribe to `call.self$` for the local participant, which carries
-`toggleMute()` and an `audioMuted$` observable. The
-[Browser SDK outbound calls guide](/docs/browser-sdk/v4/guides/outbound-calls) covers device
-selection, inbound calls, and dialing resource addresses instead of phone numbers.
+See the [Browser SDK outbound calls guide](/docs/browser-sdk/v4/guides/outbound-calls) for more.
