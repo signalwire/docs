@@ -7,10 +7,17 @@ max-toc-depth: 3
 
 [wait-for]: /docs/server-sdks/reference/python/relay/call/wait-for
 [relayevent]: /docs/server-sdks/reference/python/relay/events
+[answer]: /docs/server-sdks/reference/python/relay/call/answer
+[dial]: /docs/server-sdks/reference/python/relay/client/dial
 
 Wait until the call state reaches `answered`. Returns immediately if the call
 is already answered or has moved past it (ending or ended). A typed convenience over
 [`wait_for()`][wait-for] on the `calling.call.state` event.
+
+[`answer()`][answer] returns as soon as the platform accepts the command; the call reaches
+`answered` a moment later. Await `wait_for_answered()` when the next step needs the
+media path up. Outbound calls from [`client.dial()`][dial] are already answered when they
+return, so the method returns immediately for them.
 
 ## **Parameters**
 
@@ -25,7 +32,7 @@ is already answered or has moved past it (ending or ended). A typed convenience 
 
 ## **Example**
 
-```python {12-15}
+```python {12-13}
 from signalwire.relay import RelayClient
 
 client = RelayClient(
@@ -38,11 +45,8 @@ client = RelayClient(
 @client.on_call
 async def handle_call(call):
     await call.answer()
-    dialed = await client.dial(
-        devices=[[{"type": "phone", "params": {"to_number": "+15551234567", "from_number": "+15559876543"}}]]
-    )
-    await dialed.wait_for_answered(timeout=30)
-    await (await dialed.play_tts("Your taxi is on its way.")).wait()
+    await call.wait_for_answered(timeout=10)
+    await (await call.play_tts("Thanks for calling Bayview Taxi.")).wait()
 
 client.run()
 ```

@@ -7,10 +7,17 @@ max-toc-depth: 3
 
 [wait-for]: /docs/server-sdks/reference/python/relay/call/wait-for
 [relayevent]: /docs/server-sdks/reference/python/relay/events
+[dial]: /docs/server-sdks/reference/python/relay/client/dial
 
 Wait until the call state reaches `ringing`. Returns immediately if the call
 is already ringing or has moved past it (answered, ending, or ended). A typed convenience over
 [`wait_for()`][wait-for] on the `calling.call.state` event.
+
+In practice the call has usually passed `ringing` by the time you hold a reference to it.
+[`client.dial()`][dial] returns only after the far end answers, and an inbound call reaches
+your `on_call` handler already ringing. In both cases the method returns at once and
+`event.params["call_state"]` reports where the call is, so it works as a guard rather than a
+wait.
 
 ## **Parameters**
 
@@ -25,7 +32,7 @@ is already ringing or has moved past it (answered, ending, or ended). A typed co
 
 ## **Example**
 
-```python {12-15}
+```python {13-18}
 from signalwire.relay import RelayClient
 
 client = RelayClient(
@@ -41,8 +48,9 @@ async def handle_call(call):
     dialed = await client.dial(
         devices=[[{"type": "phone", "params": {"to_number": "+15551234567", "from_number": "+15559876543"}}]]
     )
-    await dialed.wait_for_ringing(timeout=10)
-    print("Ringing:", dialed.state)
+    event = await dialed.wait_for_ringing(timeout=10)
+    # dial() already waited for the answer, so this prints "answered".
+    print("State:", event.params["call_state"])
 
 client.run()
 ```
