@@ -220,7 +220,9 @@ settings for webhook URL generation.
 
 ## Relay and REST Client
 
-These variables are shared between the Relay WebSocket client and the REST HTTP client.
+`RelayClient`, `RestClient`, and `AIChatClient` read these variables. The
+three clients agree on the credential variables but not on `SIGNALWIRE_SPACE`,
+so read that entry before setting it in a process that uses more than one client.
 
 <ParamField path="SIGNALWIRE_PROJECT_ID" type="str" toc={true}>
   SignalWire project ID for authentication.
@@ -239,9 +241,26 @@ The SDK reads `SIGNALWIRE_API_TOKEN` only. Older examples that used
 `SIGNALWIRE_TOKEN` need to be updated; that name is not read anywhere.
 </Note>
 
-<ParamField path="SIGNALWIRE_SPACE" type="str" default="relay.signalwire.com" toc={true}>
-  Space hostname used for Relay WebSocket connections and as the REST API base URL.
+<ParamField path="SIGNALWIRE_SPACE" type="str" toc={true}>
+  Your space hostname, for example `your-space.signalwire.com`. `RestClient` uses
+  it as the REST API host and raises `ValueError` when neither this variable nor
+  the `host` argument is set. `AIChatClient` reads the same variable but expects
+  the bare space name, `your-space`, and appends `.signalwire.com` itself.
 </ParamField>
+
+<Warning title="Relay reads SIGNALWIRE_SPACE too">
+`RelayClient` connects to `relay.signalwire.com` by default and needs no space
+setting. When `SIGNALWIRE_SPACE` is set, it connects to that host instead. If
+the same process uses REST and Relay, pass `host="relay.signalwire.com"` to
+`RelayClient` so the REST setting does not redirect the WebSocket connection.
+</Warning>
+
+<Note>
+`sw-agent-init` and `sw-agent-dokku` read and write a different variable,
+`SIGNALWIRE_SPACE_NAME`, holding the bare space name. No client reads it, so a
+scaffolded project still needs `SIGNALWIRE_SPACE` before `RestClient()` can
+start from the environment.
+</Note>
 
 <ParamField path="SIGNALWIRE_REST_CA_FILE" type="str" toc={true}>
   Path to a CA bundle the REST client trusts for TLS verification. Unset uses
@@ -377,6 +396,7 @@ SIGNALWIRE_LOG_LEVEL=info
 # Relay / REST
 SIGNALWIRE_PROJECT_ID=your-project-id
 SIGNALWIRE_API_TOKEN=your-api-token
+# REST host. RelayClient reads it too; pass host="relay.signalwire.com" there.
 SIGNALWIRE_SPACE=your-space.signalwire.com
 
 # Custom Skills
