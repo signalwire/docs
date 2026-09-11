@@ -159,7 +159,8 @@ model AIParams {
     `off` uses neither signal, leaving the agent to wait out `end_of_speech_timeout` silence.
     `true` is an alias for `both` and `false` for `off`, and this parameter is also accepted under the
     name `turn_detection`.
-    Every mode except `off` is tuned by `turn_detection_timeout` and `turn_detection_min_length`.
+    The `both` and `punct_only` modes are tuned by `turn_detection_timeout` and
+    `turn_detection_min_length`; `acoustic_only` uses neither.
     **Default:** `both`.
     """)
   @example("both")
@@ -565,9 +566,10 @@ model AIParams {
     Minimum number of characters the transcript must contain before punctuation on its own can end
     the caller's turn. Raise it so a back-channel the recognizer renders with a full stop — "Uh-huh."
     while the agent is still being answered — does not end a turn the caller has not finished.
-    The acoustic signal overrides this: when it reads the caller as finished, the turn ends whatever
-    the length, so short complete replies like "Yes." still work. That leaves this a filter on the
-    punctuation path alone, and it has no effect when `enable_turn_detection` is `off`.
+    In `both` mode the acoustic signal overrides this: when it reads the caller as finished, the turn
+    ends whatever the length, so short complete replies like "Yes." still work. That leaves this a
+    filter on the punctuation path alone, and it has no effect when `enable_turn_detection` is `off`
+    or `acoustic_only`.
     **Default:** `0`, which lets a transcript of any length end a turn.
     """)
   @minValue(0)
@@ -578,11 +580,12 @@ model AIParams {
   @doc("""
     Time in milliseconds the agent waits after deciding the caller's turn has ended before it
     finalizes the transcript. A partial transcript arriving inside the window cancels the decision,
-    so this is a ceiling on how long a turn can hang rather than latency added to every turn — a
+    so this is a ceiling on how long a turn can hang rather than latency added to every turn. A
     caller who has finished usually commits well inside it. Lowering it therefore doesn't make the
     agent answer faster, and values below `500` degrade transcription accuracy on words the
     recognizer needs the extra audio to disambiguate.
-    Set to `0` to use the default. Has no effect when `enable_turn_detection` is `off`.
+    Set to `0` to use the default. Has no effect when `enable_turn_detection` is `off` or
+    `acoustic_only`.
     **Default:** the value of `end_of_speech_timeout`.
     """)
   @minValue(0)
