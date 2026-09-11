@@ -1,0 +1,978 @@
+---
+title: Record calls
+slug: /calling/record-calls
+description: Learn to record calls on SignalWire, and to manage the recordings.
+subtitle: Learn to record calls on SignalWire, and to manage the recordings
+max-toc-depth: 3
+---
+
+[record]: /docs/swml/reference/calling/record
+[record-call]: /docs/swml/reference/calling/record-call
+[stop-record-call]: /docs/swml/reference/calling/stop-record-call
+[join-conference]: /docs/swml/reference/calling/join-conference
+[swml-calls]: /docs/swml/guides/make-and-receive-calls
+[sdk-quickstart]: /docs/server-sdks/guides/quickstart
+[swml-intro]: /docs/swml
+[relay-ns]: /docs/server-sdks/reference/python/relay
+[agents-ns]: /docs/server-sdks/reference/python/agents
+[rest-api]: /docs/apis
+[rest-ns]: /docs/server-sdks/reference/python/rest
+[call-commands]: /docs/apis/rest/calls/call-commands
+[paging]: /docs/apis/paging
+[py-record-action]: /docs/server-sdks/reference/python/relay/actions/record-action
+[ts-record-action]: /docs/server-sdks/reference/typescript/relay/actions/record-action
+[rest-list]: /docs/apis/rest/recordings/list-call-recordings
+[rest-get]: /docs/apis/rest/recordings/get-call-recording
+[rest-delete]: /docs/apis/rest/recordings/delete-call-recording
+[cfb-start]: /docs/call-flow-builder/reference/start-call-recording
+[cfb-stop]: /docs/call-flow-builder/reference/stop-call-recording
+[cfb-voicemail]: /docs/call-flow-builder/reference/voicemail-recording
+[media-protection]: /docs/platform/media-protection
+[compliance]: /docs/platform/compliance
+[redaction]: /docs/platform/ai/content-redaction
+[webhooks]: /docs/platform/webhooks
+[ai-analytics]: /docs/platform/ai/analytics
+[ai-method]: /docs/swml/reference/calling/ai
+[ai-sidecar]: /docs/swml/reference/calling/ai-sidecar
+[transcribe]: /docs/swml/reference/calling/transcribe
+[live-transcribe]: /docs/swml/reference/calling/live-transcribe
+
+SignalWire lets you [make and receive calls][swml-calls] in several ways and across different channels.
+You can record the full conversation, or record fragments and utterances to capture a single message.
+Recordings can be found in the [**Storage** section](#view-recordings-from-your-dashboard) of your Space dashboard,
+or you can fetch and manage them with the [Recordings API][rest-list].
+
+This guide assumes you can already place or answer a call. If you can't yet, the
+[making and receiving phone calls][swml-calls] guide is a great starting point for SWML, and [your first agent][sdk-quickstart]
+guide for the Server SDKs. The Server SDKs emit SWML internally, so they are generally equivalent in options and behavior.
+
+## Pick the right product for your requirements
+
+Recording is available across every product, but not all functionality is available in all cases.
+
+| Function | SWML | Relay | Agents | REST |
+|---|---|---|---|---|
+| Record the whole call, in the background | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
+| Record a single message, blocking until it ends | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> |
+| Stop a recording early | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
+| Pause and resume a recording | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
+| Record a conference | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> |
+| Receive the recording's URL without a webhook | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> |
+
+- [SWML][swml-intro] is the YAML or JSON document your server returns when a call arrives, and it records with [`record_call`][record-call] in the background or [`record`][record] for a single message.
+- [Relay][relay-ns], a Server SDK namespace, holds a live connection to a call in progress, where `call.record()` returns an action handle you can pause, resume, stop, or await for the finished file.
+- [Agents][agents-ns], a Server SDK namespace, generates the SWML above — either as an AI agent whose tools return `FunctionResult.record_call()`, or as a `SWMLService` that emits the recording verbs directly.
+- [REST][rest-api] API can be directly accessed, or through the Server SDK's [`rest` namespace][rest-ns] wrapper.
+
+## Record the whole call
+
+Recording the entire call for compliance or quality assurance is a common requirement. You can start recording with
+`call.record` in the Server SDKs or the [`record_call`][record-call] method in SWML. The recording takes place in the background without interrupting 
+the flow of the call, and stops automatically when the call ends. You can also
+[stop it early](#stop-recording-the-call), or [pause and resume it](#pause-and-resume-recording).
+
+<Tabs>
+
+<Tab title="Python (Relay)">
+
+```python {15-17}
+from signalwire.relay import RelayClient
+
+client = RelayClient(
+    project="your-project-id",
+    token="your-api-token",
+    host="your-space.signalwire.com",
+    contexts=["default"],
+)
+
+@client.on_call
+async def handle_call(call):
+    await call.answer()
+    await call.play([{"type": "tts", "params": {"text": "This call is being recorded."}}])
+
+    action = await call.record(
+        audio={"direction": "both", "format": "mp3", "stereo": True}
+    )
+    await call.connect([[{"type": "phone", "params": {"to_number": "+15551234567"}}]])
+
+    event = await action.wait()
+    print(f"Recording saved: {event.url} ({event.duration}s, {event.size} bytes)")
+
+client.run()
+```
+
+</Tab>
+
+<Tab title="TypeScript (Relay)">
+
+```typescript {13}
+import { RelayClient } from '@signalwire/sdk';
+
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_API_TOKEN!,
+  contexts: ['default'],
+});
+
+client.onCall(async (call) => {
+  await call.answer();
+  await call.play([{ type: 'tts', text: 'This call is being recorded.' }]);
+
+  const action = await call.record({ direction: 'both', format: 'mp3', stereo: true });
+  await call.connect([[{ type: 'phone', params: { to_number: '+15551234567' } }]]);
+
+  const event = await action.wait();
+  const recordInfo = (event.params.record ?? {}) as Record<string, unknown>;
+  console.log(`Recording saved: ${recordInfo.url ?? event.params.url ?? ''}`);
+});
+
+await client.run();
+```
+
+</Tab>
+
+<Tab title="Python (Agents)">
+
+```python {6-8}
+from signalwire import AgentBase
+
+agent = AgentBase(
+    name="recorded-agent",
+    route="/agent",
+    record_call=True,
+    record_format="mp3",
+    record_stereo=True,
+)
+agent.add_language("English", "en-US", "rime.spore")
+agent.prompt_add_section("Purpose", body="Answer the caller's questions.")
+
+# record_call=True emits {"record_call": {"format": ..., "stereo": ...}} after
+# answer and before the ai verb. It takes no control_id and no status_url — for
+# either, or to start recording mid-call, use FunctionResult.record_call below.
+
+if __name__ == "__main__":
+    agent.run()
+```
+
+```python {7-13}
+# Same recording from a service that returns SWML without an AI agent.
+from signalwire import SWMLService
+
+service = SWMLService(name="recorded-call", route="/recorded")
+service.reset_document()
+service.add_verb("answer", {})
+service.add_verb("record_call", {
+    "control_id": "main",
+    "format": "mp3",
+    "direction": "both",
+    "stereo": True,
+    "status_url": "https://example.com/recording-status",
+})
+service.add_verb("connect", {"to": "+15551234567"})
+
+if __name__ == "__main__":
+    service.serve()
+```
+
+</Tab>
+
+<Tab title="TypeScript (Agents)">
+
+```typescript {6-8}
+import { AgentBase } from '@signalwire/sdk';
+
+const agent = new AgentBase({
+  name: 'recorded-agent',
+  route: '/agent',
+  recordCall: true,
+  recordFormat: 'mp3',
+  recordStereo: true,
+});
+agent.addLanguage({ name: 'English', code: 'en-US', voice: 'rime.spore' });
+agent.promptAddSection('Purpose', { body: "Answer the caller's questions." });
+
+// recordCall emits format and stereo only. For a controlId or a statusUrl, or
+// to start recording mid-call, use FunctionResult.recordCall below.
+
+await agent.run();
+```
+
+```typescript {7-13}
+// Same recording from a service that returns SWML without an AI agent.
+import { SWMLService } from '@signalwire/sdk';
+
+const service = new SWMLService({ name: 'recorded-call', route: '/recorded' });
+service
+  .addVerb('answer', {})
+  .addVerb('record_call', {
+    control_id: 'main',
+    format: 'mp3',
+    direction: 'both',
+    stereo: true,
+    status_url: 'https://example.com/recording-status',
+  })
+  .addVerb('connect', { to: '+15551234567' });
+
+await service.serve();
+```
+
+</Tab>
+
+<Tab title="SWML">
+
+```yaml {7-12}
+version: 1.0.0
+sections:
+  main:
+    - answer: {}
+    - play:
+        url: 'say:This call is being recorded.'
+    - record_call:
+        control_id: main
+        format: mp3
+        direction: both
+        stereo: true
+        status_url: https://example.com/recording-status
+    - connect:
+        to: '+15551234567'
+```
+
+The `control_id` lets you stop it later using `stop_record_call`. It can be manually assigned, but will 
+be automatically generated in the `{record_control_id}` SWML variable, and can be used to stop the recording as well.
+
+</Tab>
+
+</Tabs>
+
+When the recording finishes, the URL is put in the SWML variable `{record_call_url}` or the `record.url` param of the awaited action.
+If a `status_url` has been set, a callback will be sent [as described below.](#status-callback-for-recording).
+
+### Recording options
+
+There are tradeoffs associated with the some of the recording options, mainly between the file size and the quality of information stored.
+
+The `stereo` property should be set to `true` to put the caller on the left channel and the callee on the right. This 
+ensures proper separation of the roles but requires more storage space. If set to `false`, both audio streams get irreversibly mixed down to 
+mono. Stereo recording is useful for transcription and other processing later on, but mono stores more compactly, and is usually fine
+if the end user of the recording is a human listener.
+
+The `format` property can be `wav` or `mp3`. The `wav` format is uncompressed and several times bigger than the `mp3` format, but
+also stores very high quality audio. If the goal is for later processing, transcription and high-fidelity usage, `wav` is the better choice.
+SWML also accepts `mp4` to record the video call.
+
+The `direction` property can be `speak`, `listen` or `both`. When recording the whole call in the background, both sides get recorded by default. 
+But when recording a part of the call, only the speaker side gets recorded.
+
+`record_call` and `record` accept the same `terminators`, timeouts, and `direction`, but the two
+recordings don't put them to the same use. A message recording needs `terminators` and
+`end_silence_timeout` to know when the caller has finished, while a full call recording normally
+leaves both unset, so a keypress or a pause for breath can't end the file early. Recording the
+`speak` direction alone is the norm for a voicemail box and unusual on a call recording. Defaults for
+these and for `max_length`, `input_sensitivity`, and `beep` are in the [`record_call`][record-call]
+and [`record`][record] references.
+
+### Record after the caller agrees
+
+The Server SDK can pass the control to record a call to the AI agent talking to the caller (or the callee).
+To do so, give the agent a tool that enables them to start the recording.
+
+<Tabs>
+
+<Tab title="Python (Agents)">
+
+```python {16-22}
+from signalwire import AgentBase, FunctionResult
+
+agent = AgentBase(name="recording-agent", route="/agent")
+agent.add_language("English", "en-US", "rime.spore")
+
+agent.prompt_add_section(
+    "Recording policy",
+    body="Say 'This call may be recorded for quality purposes.' and ask the caller "
+    "whether they agree. Call start_recording only after they say yes. "
+    "If they decline, continue the call without recording.",
+)
+
+@agent.tool(name="start_recording", description="Start recording the call once the caller agrees")
+def start_recording(args, raw_data):
+    return (
+        FunctionResult("Recording has started.")
+        .record_call(
+            control_id="main",
+            stereo=True,
+            format="mp3",
+            status_url="https://example.com/recording-status",
+        )
+    )
+
+@agent.tool(name="stop_recording", description="Stop recording the call")
+def stop_recording(args, raw_data):
+    return FunctionResult("Recording has stopped.").stop_record_call(control_id="main")
+
+if __name__ == "__main__":
+    agent.run()
+```
+
+</Tab>
+
+<Tab title="TypeScript (Agents)">
+
+```typescript {18-23}
+import { AgentBase, FunctionResult } from '@signalwire/sdk';
+
+const agent = new AgentBase({ name: 'recording-agent', route: '/agent' });
+agent.addLanguage({ name: 'English', code: 'en-US', voice: 'rime.spore' });
+
+agent.promptAddSection('Recording policy', {
+  body:
+    "Say 'This call may be recorded for quality purposes.' and ask the caller "
+    + 'whether they agree. Call start_recording only after they say yes. '
+    + 'If they decline, continue the call without recording.',
+});
+
+agent.defineTool({
+  name: 'start_recording',
+  description: 'Start recording the call once the caller agrees',
+  parameters: { type: 'object', properties: {} },
+  handler: () =>
+    new FunctionResult('Recording has started.').recordCall({
+      controlId: 'main',
+      stereo: true,
+      format: 'mp3',
+      statusUrl: 'https://example.com/recording-status',
+    }),
+});
+
+agent.defineTool({
+  name: 'stop_recording',
+  description: 'Stop recording the call',
+  parameters: { type: 'object', properties: {} },
+  handler: () => new FunctionResult('Recording has stopped.').stopRecordCall('main'),
+});
+
+await agent.run();
+```
+
+</Tab>
+
+<Tab title="Python (Relay)">
+
+```python {14-15}
+# Without an AI agent, gate the recording on a keypress instead of a tool call.
+@client.on_call
+async def handle_call(call):
+    await call.answer()
+
+    action = await call.play_and_collect(
+        media=[{"type": "tts", "params": {
+            "text": "This call may be recorded for quality purposes. "
+                    "Press 1 to agree, or 2 to continue without recording."}}],
+        collect={"digits": {"max": 1, "digit_timeout": 5, "terminators": "#"}},
+    )
+    event = await action.wait()
+
+    if event.result.get("digits", "") == "1":
+        await call.record(audio={"direction": "both", "format": "mp3", "stereo": True})
+
+    await call.connect([[{"type": "phone", "params": {"to_number": "+15551234567"}}]])
+```
+
+</Tab>
+
+<Tab title="TypeScript (Relay)">
+
+```typescript {13-15}
+// Without an AI agent, gate the recording on a keypress instead of a tool call.
+client.onCall(async (call) => {
+  await call.answer();
+
+  const action = await call.playAndCollect(
+    [{ type: 'tts', text: 'This call may be recorded for quality purposes. '
+        + 'Press 1 to agree, or 2 to continue without recording.' }],
+    { digits: { max: 1, digit_timeout: 5, terminators: '#' } }
+  );
+  const event = await action.wait();
+
+  const result = (event.params.result ?? {}) as Record<string, unknown>;
+  if (result.digits === '1') {
+    await call.record({ direction: 'both', format: 'mp3', stereo: true });
+  }
+
+  await call.connect([[{ type: 'phone', params: { to_number: '+15551234567' } }]]);
+});
+```
+
+</Tab>
+
+</Tabs>
+
+### Stop recording the call
+
+A background recording ends on hangup without your help. Stop it yourself when you want the file to
+cover only part of the call — audio after the stop is never recorded in the first place.
+
+Every surface addresses a running recording by its `control_id`, so whatever started the recording
+can be stopped from anywhere: `stop_record_call` in a SWML script, `action.stop()` in a call handler,
+or `calling.record.stop` over REST against any live call.
+
+<Tabs>
+
+<Tab title="Python (Relay)">
+
+```python {7}
+@client.on_call
+async def handle_call(call):
+    await call.answer()
+    action = await call.record(audio={"direction": "both", "format": "mp3"})
+
+    await call.connect([[{"type": "phone", "params": {"to_number": "+15551234567"}}]])
+    await action.stop()
+```
+
+</Tab>
+
+<Tab title="TypeScript (Relay)">
+
+```typescript {6}
+client.onCall(async (call) => {
+  await call.answer();
+  const action = await call.record({ direction: 'both', format: 'mp3' });
+
+  await call.connect([[{ type: 'phone', params: { to_number: '+15551234567' } }]]);
+  await action.stop();
+});
+```
+
+</Tab>
+
+<Tab title="Python (Agents)">
+
+```python {4}
+# From an AI agent's tool, by control_id.
+@agent.tool(name="stop_recording", description="Stop recording the call")
+def stop_recording(args, raw_data):
+    return FunctionResult("Recording has stopped.").stop_record_call(control_id="main")
+```
+
+```python {7}
+# From a service that returns SWML, as a verb in the document.
+service = SWMLService(name="recorded-call", route="/recorded")
+service.reset_document()
+service.add_verb("answer", {})
+service.add_verb("record_call", {"control_id": "main"})
+service.add_verb("connect", {"to": "+15551234567"})
+service.add_verb("stop_record_call", {"control_id": "main"})
+```
+
+</Tab>
+
+<Tab title="TypeScript (Agents)">
+
+```typescript {6}
+// From an AI agent's tool, by controlId.
+agent.defineTool({
+  name: 'stop_recording',
+  description: 'Stop recording the call',
+  parameters: { type: 'object', properties: {} },
+  handler: () => new FunctionResult('Recording has stopped.').stopRecordCall('main'),
+});
+```
+
+```typescript {7}
+// From a service that returns SWML, as a verb in the document.
+const service = new SWMLService({ name: 'recorded-call', route: '/recorded' });
+service
+  .addVerb('answer', {})
+  .addVerb('record_call', { control_id: 'main' })
+  .addVerb('connect', { to: '+15551234567' })
+  .addVerb('stop_record_call', { control_id: 'main' });
+```
+
+</Tab>
+
+<Tab title="SWML">
+
+```yaml {10-11}
+version: 1.0.0
+sections:
+  main:
+    - answer: {}
+    - record_call:
+        control_id: main
+    - prompt:
+        play: 'say:Tell us why you are calling, then press pound.'
+        terminators: '#'
+    - stop_record_call:
+        control_id: main
+    - play:
+        url: 'say:Thanks. Connecting you now.'
+```
+
+</Tab>
+
+<Tab title="REST">
+
+```bash
+curl -X POST https://your-space.signalwire.com/api/calling/calls \
+  -u "$PROJECT_ID:$API_TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "command": "calling.record.stop",
+    "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "params": { "control_id": "main" }
+  }'
+```
+
+</Tab>
+
+</Tabs>
+
+Reference: [`stop_record_call`][stop-record-call] in SWML, `RecordAction.stop()`
+([Python][py-record-action], [TypeScript][ts-record-action]), and `calling.record.stop` in the
+[call commands][call-commands].
+
+### Pause and resume recording
+
+To pause and resume recording as the call is happening, you need to use the live control of the call that relay offers.
+Pausing takes an optional `behavior`. The default, `skip`, leaves the paused span out of the file
+entirely; `silence` replaces it with silence, so the recording's timing still lines up with the call.
+
+<Tabs>
+
+<Tab title="Python (Relay)">
+
+```python {6,8}
+@client.on_call
+async def handle_call(call):
+    await call.answer()
+    action = await call.record(audio={"direction": "both", "format": "mp3"})
+
+    await action.pause()
+    card_number = await take_payment(call)
+    await action.resume()
+```
+
+</Tab>
+
+<Tab title="TypeScript (Relay)">
+
+```typescript {5,7}
+client.onCall(async (call) => {
+  await call.answer();
+  const action = await call.record({ direction: 'both', format: 'mp3' });
+
+  await action.pause();
+  const cardNumber = await takePayment(call);
+  await action.resume();
+});
+```
+
+</Tab>
+
+<Tab title="REST">
+
+<EndpointRequestSnippet endpoint="POST /api/calling/calls" example="calling.record.pause" />
+
+<EndpointRequestSnippet endpoint="POST /api/calling/calls" example="calling.record.resume" />
+
+</Tab>
+
+</Tabs>
+
+Reference: `pause()` and `resume()` on `RecordAction` ([Python][py-record-action],
+[TypeScript][ts-record-action]), and `calling.record.pause` and `calling.record.resume` in the
+[call commands][call-commands].
+
+## Record a single message
+
+A voicemail box needs the opposite behavior: record, and don't go any further until the caller is
+done. The recording ends when they stop talking, press the terminator digit, or run out of time, and
+only then does the next instruction run.
+
+<Tabs>
+
+<Tab title="Python (Relay)">
+
+```python {5-6}
+@client.on_call
+async def handle_call(call):
+    await call.answer()
+
+    prompt = await call.play([{"type": "tts", "params": {"text": "Leave a message after the beep."}}])
+    await prompt.wait()  # play returns as soon as the command is accepted
+
+    action = await call.record(
+        audio={"beep": True, "end_silence_timeout": 3, "terminators": "#"}
+    )
+    event = await action.wait(timeout=180)
+
+    # no_input is terminal too, so a caller who never spoke lands here with no url
+    if event.state == "finished" and event.url:
+        print(f"Voicemail saved: {event.url} ({event.duration}s)")
+    else:
+        print(f"No voicemail recorded (state={event.state or 'call gone'})")
+
+    await call.hangup()
+```
+
+</Tab>
+
+<Tab title="TypeScript (Relay)">
+
+```typescript {5-6}
+client.onCall(async (call) => {
+  await call.answer();
+
+  const prompt = await call.play([{ type: 'tts', text: 'Leave a message after the beep.' }]);
+  await prompt.wait(); // play returns as soon as the command is accepted
+
+  const action = await call.record({ beep: true, end_silence_timeout: 3, terminators: '#' });
+  const event = await action.wait();
+
+  // no_input is terminal too, so a caller who never spoke lands here with no url
+  const recordInfo = (event.params.record ?? {}) as Record<string, unknown>;
+  const url = recordInfo.url ?? event.params.url ?? '';
+  console.log(url ? `Voicemail saved: ${url}` : `No voicemail recorded (${event.params.state})`);
+
+  await call.hangup();
+});
+```
+
+</Tab>
+
+<Tab title="Python (Agents)">
+
+```python {7-12}
+# record is a SWML verb with no FunctionResult helper: it blocks the script,
+# which an AI agent's turn cannot do. Emit it from a service instead.
+from signalwire import SWMLService
+
+service = SWMLService(name="voicemail", route="/voicemail")
+service.reset_document()
+service.add_verb("answer", {})
+service.add_verb("play", {"url": "say:Leave a message after the beep."})
+service.add_verb("record", {
+    "beep": True,
+    "end_silence_timeout": 3,
+    "terminators": "#",
+    "max_length": 120,
+})
+service.add_verb("play", {"url": "say:Got it. Here is what we recorded:"})
+service.add_verb("play", {"url": "${record_url}"})
+service.add_verb("hangup", {})
+
+if __name__ == "__main__":
+    service.serve()
+```
+
+</Tab>
+
+<Tab title="TypeScript (Agents)">
+
+```typescript {7-12}
+// record is a SWML verb with no FunctionResult helper: it blocks the script,
+// which an AI agent's turn cannot do. Emit it from a service instead.
+import { SWMLService } from '@signalwire/sdk';
+
+const service = new SWMLService({ name: 'voicemail', route: '/voicemail' });
+service
+  .addVerb('answer', {})
+  .addVerb('play', { url: 'say:Leave a message after the beep.' })
+  .addVerb('record', {
+    beep: true,
+    end_silence_timeout: 3,
+    terminators: '#',
+    max_length: 120,
+  })
+  .addVerb('play', { url: 'say:Got it. Here is what we recorded:' })
+  .addVerb('play', { url: '${record_url}' })
+  .addVerb('hangup', {});
+
+await service.serve();
+```
+
+</Tab>
+
+<Tab title="SWML">
+
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - answer: {}
+    - play:
+        url: 'say:Leave a message after the beep. Press pound when you are done.'
+    - record:
+        beep: true
+        end_silence_timeout: 3
+        terminators: '#'
+    - play:
+        url: 'say:Got it. Here is what we recorded:'
+    - play:
+        url: '${record_url}'
+```
+
+</Tab>
+
+</Tabs>
+
+The SWML tab plays the message straight back from `record_url`, and the SDK tabs get the same URL off
+the finished action. Note the variable name: [`record`][record] sets `record_url`, while
+[`record_call`][record-call] sets `record_call_url`.
+
+`record` captures the caller's side only unless you ask for more. The same `format`, `stereo`, and
+`direction` properties apply here — see [recording options](#recording-options).
+
+### Stop recording a message
+
+A message recording is meant to stop on its own, and three properties decide when.
+`end_silence_timeout` ends it after that many seconds of quiet, so the caller doesn't have to do
+anything at all. `terminators` lets them end it with a keypress the moment they're finished.
+`max_length` caps the file however the call goes, which stops a bad line from recording an hour of
+noise.
+
+In SWML those are the only ways a `record` ends, because the script is waiting on it and there's no
+later instruction to run. `record` defaults `terminators` to `#` for that reason, where `record_call`
+leaves it unset. The Server SDKs hand you the same recording as a `RecordAction`, so a handler can
+also [stop it explicitly](#stop-recording-the-call) without waiting for the caller.
+
+## Record a conference
+
+A conference records as a unit, and you opt in when you join it.
+
+<Tabs>
+
+<Tab title="SWML">
+
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - answer: {}
+    - join_conference:
+        name: standup
+        record: record-from-start
+        recording_status_callback: https://example.com/recording-status
+```
+
+</Tab>
+
+<Tab title="Python (Relay)">
+
+```python {5-9}
+@client.on_call
+async def handle_call(call):
+    await call.answer()
+
+    await call.join_conference(
+        name="standup",
+        record="record-from-start",
+        recording_status_callback="https://example.com/recording-status",
+    )
+```
+
+</Tab>
+
+<Tab title="Python (Agents)">
+
+```python {4-8}
+service = SWMLService(name="standup-conference", route="/standup")
+service.reset_document()
+service.add_verb("answer", {})
+service.add_verb("join_conference", {
+    "name": "standup",
+    "record": "record-from-start",
+    "recording_status_callback": "https://example.com/recording-status",
+})
+```
+
+</Tab>
+
+</Tabs>
+
+Conference callbacks use their own names — `recording_status_callback` and its `_method`, `_event`,
+and `_event_type` variants — rather than the `status_url` the other methods take. See
+[`join_conference`][join-conference].
+
+<Accordion title="Recording from Call Flow Builder">
+
+Start Call Recording and Stop Call Recording are a pair. Put the start node after Answer Call, run
+whatever the flow does in between, and route every outcome to the stop node so no branch leaves a
+recording running. `%{record_call_url}` carries the file's URL into later nodes.
+
+<llms-ignore>
+
+<Frame caption="Starting a recording, forwarding the call, then stopping the recording and capturing its URL.">
+![A Call Flow Builder canvas: Start Call Recording named "Sales Call" leads to a Forward to Phone node with Success, No Answer, Busy, Decline, and Error branches. Every branch converges on a Stop Call Recording node, which leads to a Set Variables node assigning sales_recording_url to the value %{record_call_url}.](/assets/images/call-flow/nodes/record-call.webp)
+</Frame>
+
+</llms-ignore>
+
+<llms-only>
+
+Start Call Recording (named `Sales Call`) connects to Forward to Phone
+(`sip:sales@example.com`). All five of that node's branches — Success, No Answer, Busy, Decline,
+Error — converge on Stop Call Recording for the same named recording. That leads to a Set Variables
+node assigning `sales_recording_url` the value `%{record_call_url}`.
+
+</llms-only>
+
+For a voicemail box, [Voicemail Recording][cfb-voicemail] is the single node that waits, the way SWML
+`record` does. Reference: [Start Call Recording][cfb-start] and [Stop Call Recording][cfb-stop].
+
+</Accordion>
+
+## Get the recording
+
+Recordings from SWML, the Server SDKs, and Call Flow Builder all land in the same place, and one API
+covers them: [List][rest-list], [Get][rest-get], and [Delete][rest-delete].
+
+<EndpointRequestSnippet endpoint="GET /api/relay/rest/recordings" />
+
+<EndpointResponseSnippet endpoint="GET /api/relay/rest/recordings" />
+
+Each entry carries what you need to store a reference and account for the file without a second call:
+`url`, `duration_in_seconds` and `byte_size`, `stereo` and `track` for how it was captured, `price`,
+and a `status` telling you whether the file is ready. A recording that failed has an `error_code`
+instead of usable media. [List call recordings][rest-list] has the full field list, and [paging][paging]
+covers the `links` object that gets you past the first page.
+
+### Status callback for recording
+
+Set `status_url` on `record` or `record_call` and SignalWire posts a `calling.call.record` event as
+the recording changes state. The one to act on is `finished`: its `params.record` object carries the
+`url`, `duration`, `size`, and `format`, which is everything you need to file the recording away.
+
+```json
+{
+  "event_type": "calling.call.record",
+  "params": {
+    "call_id": "xxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "control_id": "main",
+    "state": "finished",
+    "record": {
+      "url": "https://your-space.signalwire.com/api/v1/recordings/rec-uuid/download",
+      "duration": 15.5,
+      "size": 248320,
+      "format": "mp3"
+    }
+  }
+}
+```
+
+The other states are `recording`, `paused`, `no_input`, and `error`. The full payload is under
+[status callbacks](/docs/swml/reference/calling/record-call#statuscallbacks), and [webhooks][webhooks]
+covers receiving them in general.
+
+<Markdown src="/snippets/common/_status-callback-advisory.mdx" />
+
+### View recordings from your dashboard
+
+Recordings appear under **Storage** > **Recordings** in your SignalWire Space. Opening one shows its
+status, the call it was recorded from, and a download link for each available format.
+
+<llms-ignore>
+
+<Frame caption="A finished recording in the Storage section of a SignalWire Space.">
+![The SignalWire Space sidebar with Storage expanded and Recordings selected. The detail pane shows a Recording with its ID, a status of Finished, the call it was recorded via, and a Files table offering Download (.wav) and Download (.mp3) links.](/assets/images/dashboard/sidebar/Call-Recording-Example-SWML.webp)
+</Frame>
+
+</llms-ignore>
+
+<llms-only>
+
+Recordings are listed under **Storage** > **Recordings** in your SignalWire Space. Selecting one
+opens a detail view showing the recording ID, its status (for example `Finished`), the call it was
+recorded from, and a Files table with a download link per available format.
+
+</llms-only>
+
+## Secure the media
+
+<Warning title="Recording URLs are public by default">
+Media URLs contain randomly generated UUIDs, which makes them impractical to guess, 
+but they aren't access-gated by default.
+
+Enable [Media URL protection][media-protection] to require your project's API
+credentials to access the recordings.
+</Warning>
+
+Protection is set per project and per media type, so recordings can be protected independently of
+messages and faxes.
+
+<llms-ignore>
+
+<Frame caption="Media URL Protection settings, with a separate toggle for recordings.">
+![The Settings tab of a SignalWire project showing Media URL Protection Details, with separate No/Yes toggles for Protect Recording Media URLs, Protect Message Media URLs, and Protect Fax Media URLs.](/assets/images/dashboard/media-protection-interface.webp)
+</Frame>
+
+</llms-ignore>
+
+<llms-only>
+
+Under **Project Details** > **Settings**, the Media URL Protection Details panel has three
+independent toggles: Protect Recording Media URLs, Protect Message Media URLs, and Protect Fax
+Media URLs. They are all off by default.
+
+</llms-only>
+
+Turning on media protection will break any existing systems that rely on the stored media URLs, so ensure that 
+they're updated to pass the tokens as well.
+
+## Recording and the law
+
+Consent requirements and retention rules vary by jurisdiction, and some material like card numbers,
+government identifiers, and PINs shouldn't be recorded at all. Below are a few resources to help with
+compliance. 
+
+- [Compliance][compliance] covers the regulated workloads SignalWire supports such as HIPAA and TCPA among them.
+- [Handling sensitive content][redaction] keeps sensitive values out of recordings, transcripts, and an AI agent's context.
+- [Record if the caller agrees](#record-if-the-caller-agrees) discloses the recording and asks before starting one.
+- [Pause and resume recording](#pause-and-resume-recording) leaves a gap where a card number is read out, rather than capturing it and redacting later.
+
+## Alternatives to recording
+
+Audio recording is expensive to store and difficult to search. In many cases, a transcription or the 
+text summary is all you need. In some cases, only the answers or the result of the call needs
+to be stored. SignalWire offers several tools for those requirements. You can use these tools as an alternative to 
+recording, or in addition to recording. 
+
+| Requirement | Tool | Result|
+|---|---|---|
+| Structured summary of the call | An AI agent's post-prompt summary | Structured text at your `post_prompt_url` after the call, from the [`ai`][ai-method] method's `post_prompt` property|
+| The full text of the call | [`transcribe`][transcribe] | The whole call transcribed in the background, delivered when the call ends |
+| Text while the call is still running | [`live_transcribe`][live-transcribe] | Transcription posted to your webhook as the call happens |
+| Advice for a human agent mid-call | [`ai_sidecar`][ai-sidecar] | An AI observer on a human-to-human call, streaming events to your application without speaking |
+
+The post-prompt summary is the most powerful, as you can get the exact result of the call in the exact format you require.
+The [conversation analytics guide][ai-analytics] covers it in detail.
+
+## Next steps
+
+<CardGroup cols={2}>
+
+<Card title="call.record in the Server SDKs" href="/docs/server-sdks/reference/python/relay/call/record" icon="regular code">
+  Record from a call handler and pause, resume, or stop the result. TypeScript has its own [call.record reference](/docs/server-sdks/reference/typescript/relay/call/record).
+</Card>
+
+<Card title="record_call reference" href="/docs/swml/reference/calling/record-call" icon="regular circle-dot">
+  Every parameter for background recording in SWML, and the variables it sets.
+</Card>
+
+<Card title="record reference" href="/docs/swml/reference/calling/record" icon="regular microphone">
+  Foreground recording in SWML, for voicemail and single utterances.
+</Card>
+
+<Card title="Recordings API" href="/docs/apis/rest/recordings/list-call-recordings" icon="regular rectangle-api">
+  List, fetch, and delete the recordings your scripts create.
+</Card>
+
+<Card title="Media URL protection" href="/docs/platform/media-protection" icon="regular lock">
+  Require API credentials before anyone can fetch your recorded media.
+</Card>
+
+<Card title="Handling sensitive content" href="/docs/platform/ai/content-redaction" icon="regular shield-halved">
+  Keep card numbers and other sensitive values out of recordings, transcripts, and AI context.
+</Card>
+
+</CardGroup>
