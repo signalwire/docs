@@ -1,0 +1,59 @@
+---
+title: "on_call_end"
+slug: /reference/python/agents/agent-base/on-call-end
+description: Register a handler that receives the conversation transcript when a call ends.
+max-toc-depth: 3
+---
+
+[on-summary]: /docs/server-sdks/reference/python/agents/agent-base/on-summary
+[post-prompt]: /docs/server-sdks/reference/python/core/post-prompt/normalize-post-prompt
+
+Register a handler that runs when the call ends, with the transcript. Usable as
+a decorator or called directly. Handlers run in registration order.
+
+Under the hood this registers the platform's reserved `hangup_hook` function,
+which fires on hangup and is never offered to the model, so it can't be called
+early or skipped. Registering a handler also turns on the
+`swaig_post_conversation` parameter. Without it the hook still fires but
+carries no transcript, and the handler would receive an empty list forever
+with nothing to indicate why. If you have explicitly set that parameter to
+`False`, the SDK leaves it alone and logs a warning.
+
+The handler's return value is ignored, since the call is over. Exceptions are
+caught and logged rather than raised, so a failing handler doesn't turn into a
+failed hangup. For the post-prompt summary, see [`on_summary()`][on-summary].
+
+## Parameters
+
+<ParamField path="handler" type="Callable[[list[dict[str, Any]], dict[str, Any]], None]" required={true} toc={true}>
+  Called as `handler(call_log, raw_data)`.
+
+  - `call_log` -- the conversation as the platform recorded it, already resolved
+    from whichever field carried it.
+  - `raw_data` -- the complete SWAIG request, including `global_data` and
+    `call_id`.
+</ParamField>
+
+## Returns
+
+The handler, unchanged, so the method works as a decorator.
+
+## Example
+
+```python {6-10}
+from signalwire import AgentBase
+
+agent = AgentBase(name="dispatch", route="/dispatch")
+agent.set_prompt_text("You are Ada, the dispatcher for Bayview Taxi.")
+
+@agent.on_call_end
+def archive(call_log, raw_data):
+    conversation_id = raw_data.get("global_data", {}).get("conversation_id")
+    # Write the transcript to your system of record.
+    print(conversation_id, len(call_log), "turns")
+
+agent.serve()
+```
+
+To handle voice and chat transcripts with one shape, pass `raw_data` through
+[`normalize_post_prompt()`][post-prompt].

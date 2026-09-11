@@ -129,7 +129,7 @@ supported parameters and behaviors.
   Unique identifier for this agent instance. Auto-generated as a UUID if not provided.
 </ParamField>
 
-<ParamField path="pom" type="PromptObjectModel | None" toc={true}>
+<ParamField path="pom" type="PromptObjectModel | None" default="None" toc={true}>
   The Prompt Object Model instance used for structured prompt building. `None` when
   `use_pom=False`.
 </ParamField>
@@ -146,7 +146,7 @@ supported parameters and behaviors.
   instead of calling `prompt_add_section()` in the constructor.
 </ParamField>
 
-<ParamField path="basic_auth" type="Optional[tuple[str, str]]" toc={true}>
+<ParamField path="basic_auth" type="tuple[str, str] | None" default="None" toc={true}>
   Explicit `(username, password)` for HTTP Basic Auth on all endpoints. If not set,
   credentials are read from `SWML_BASIC_AUTH_USER` / `SWML_BASIC_AUTH_PASSWORD` env vars,
   or auto-generated on startup.
@@ -177,7 +177,7 @@ supported parameters and behaviors.
   Record in stereo (separate channels for each party) when `True`.
 </ParamField>
 
-<ParamField path="default_webhook_url" type="Optional[str]" toc={true}>
+<ParamField path="default_webhook_url" type="str | None" default="None" toc={true}>
   Base URL for SWAIG function webhooks. If not set, the SDK auto-detects from the
   incoming request or uses `SWML_PROXY_URL_BASE`.
 </ParamField>
@@ -194,18 +194,18 @@ supported parameters and behaviors.
   Allow dynamic per-request override of input checking behavior.
 </ParamField>
 
-<ParamField path="config_file" type="Optional[str]" toc={true}>
+<ParamField path="config_file" type="str | None" default="None" toc={true}>
   Path to a JSON config file. If not provided, the SDK searches default paths.
   See [`ConfigLoader`][configloader].
 </ParamField>
 
-<ParamField path="native_functions" type="Optional[list[str]]" toc={true}>
+<ParamField path="native_functions" type="list[str] | None" default="None" toc={true}>
   List of native SWAIG function names to enable at construction time (e.g.,
   `["check_time", "wait_for_user"]`). Can also be set later via
   [`set_native_functions()`][set-native-functions].
 </ParamField>
 
-<ParamField path="schema_path" type="Optional[str]" toc={true}>
+<ParamField path="schema_path" type="str | None" default="None" toc={true}>
   Path to a custom SWML schema file for validation. If not provided, the SDK searches
   default paths automatically.
 </ParamField>
@@ -215,7 +215,7 @@ supported parameters and behaviors.
   env var.
 </ParamField>
 
-<ParamField path="signing_key" type="Optional[str]" default="None" toc={true}>
+<ParamField path="signing_key" type="str | None" default="None" toc={true}>
   SignalWire Signing Key (Dashboard → API Credentials). When set, webhook signature
   validation is enforced on the `POST /`, `/swaig`, and `/post_prompt` endpoints, and
   unsigned or invalidly-signed requests receive an HTTP `403`. Falls back to the
@@ -227,6 +227,16 @@ supported parameters and behaviors.
   If `True`, honor the `X-Forwarded-Proto` / `X-Forwarded-Host` headers when
   reconstructing the request URL during signature validation. Defaults to `False`
   because proxy headers are spoofable; opt in only when you control the proxy chain.
+</ParamField>
+
+<ParamField path="swaig_secret" type="str | None" default="None" toc={true}>
+  Secret used to sign this agent's per-call SWAIG function tokens. Falls back to
+  the `SIGNALWIRE_SWAIG_SECRET` environment variable. When neither is set, a
+  random secret is generated per process, so tokens issued before a restart stop
+  verifying and callers mid-call see "the security token for this function is
+  invalid or expired" on their next tool call. Set it in production and whenever
+  more than one replica serves the same agent. Distinct from `signing_key`, which
+  validates inbound webhooks.
 </ParamField>
 
 <Note>
@@ -262,16 +272,16 @@ JSON Schema from Python type hints on the function signature.
 
 #### Parameters
 
-<ParamField path="name" type="Optional[str]" toc={true}>
+<ParamField path="name" type="str | None" default="None" toc={true}>
   Function name exposed to the AI. Defaults to the decorated function's `__name__`.
 </ParamField>
 
-<ParamField path="description" type="Optional[str]" toc={true}>
+<ParamField path="description" type="str | None" default="None" toc={true}>
   What the function does. The AI reads this to decide when to call it. Defaults to the
   function's docstring, or `"Function {name}"` as a fallback.
 </ParamField>
 
-<ParamField path="parameters" type="Optional[dict[str, Any]]" toc={true}>
+<ParamField path="parameters" type="dict[str, Any] | None" default="None" toc={true}>
   Explicit JSON Schema for function parameters. If omitted, the schema is
   automatically inferred from Python type hints on the decorated function.
 </ParamField>
@@ -280,15 +290,15 @@ JSON Schema from Python type hints on the function signature.
   Require token validation on tool calls.
 </ParamField>
 
-<ParamField path="fillers" type="Optional[dict[str, list[str]]]" toc={true}>
+<ParamField path="fillers" type="dict[str, list[str]] | None" default="None" toc={true}>
   Filler phrases by language code, spoken while the function runs.
 </ParamField>
 
-<ParamField path="webhook_url" type="Optional[str]" toc={true}>
+<ParamField path="webhook_url" type="str | None" default="None" toc={true}>
   External webhook URL. If set, SignalWire calls this URL instead of executing locally.
 </ParamField>
 
-<ParamField path="required" type="Optional[list[str]]" toc={true}>
+<ParamField path="required" type="list[str] | None" default="None" toc={true}>
   Required parameter names. Auto-inferred from type hints when not specified.
 </ParamField>
 
@@ -424,6 +434,9 @@ agent.run()
   <Card title="add_pattern_hint" href="/docs/server-sdks/reference/python/agents/agent-base/add-pattern-hint">
     Add a speech recognition hint with pattern matching and replacement.
   </Card>
+  <Card title="add_per_call_config" href="/docs/server-sdks/reference/python/agents/agent-base/add-per-call-config">
+    Register an additional per-request configuration callback.
+  </Card>
   <Card title="add_post_ai_verb" href="/docs/server-sdks/reference/python/agents/agent-base/add-post-ai-verb">
     Add a SWML verb to run after the AI conversation ends.
   </Card>
@@ -502,6 +515,9 @@ agent.run()
   <Card title="get_prompt" href="/docs/server-sdks/reference/python/agents/agent-base/get-prompt">
     Retrieve the current prompt configured on the agent.
   </Card>
+  <Card title="handle_request" href="/docs/server-sdks/reference/python/agents/agent-base/handle-request">
+    Dispatch one HTTP request without a web framework.
+  </Card>
   <Card title="has_skill" href="/docs/server-sdks/reference/python/agents/agent-base/has-skill">
     Check whether a specific skill is currently loaded on the agent.
   </Card>
@@ -511,8 +527,14 @@ agent.run()
   <Card title="manual_set_proxy_url" href="/docs/server-sdks/reference/python/agents/agent-base/manual-set-proxy-url">
     Manually set the proxy URL base for webhook callbacks.
   </Card>
+  <Card title="mount" href="/docs/server-sdks/reference/python/agents/agent-base/mount">
+    Attach a router or ASGI app to the agent's web app.
+  </Card>
   <Card title="set_native_functions" href="/docs/server-sdks/reference/python/agents/agent-base/native-functions">
     Enable built-in native functions that execute directly on the SignalWire platform.
+  </Card>
+  <Card title="on_call_end" href="/docs/server-sdks/reference/python/agents/agent-base/on-call-end">
+    Run a handler with the call log when a call ends.
   </Card>
   <Card title="on_debug_event" href="/docs/server-sdks/reference/python/agents/agent-base/on-debug-event">
     Register a callback for debug events received at the /debug_events endpoint.
@@ -579,6 +601,9 @@ agent.run()
   </Card>
   <Card title="set_languages" href="/docs/server-sdks/reference/python/agents/agent-base/set-languages">
     Replace all language configurations at once with a list of raw language dictionaries.
+  </Card>
+  <Card title="set_multilingual" href="/docs/server-sdks/reference/python/agents/agent-base/set-multilingual">
+    Let the caller switch languages mid-call with one configuration object.
   </Card>
   <Card title="set_param" href="/docs/server-sdks/reference/python/agents/agent-base/set-param">
     Set a single AI parameter by key.

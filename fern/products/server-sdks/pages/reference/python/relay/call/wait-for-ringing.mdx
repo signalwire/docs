@@ -1,0 +1,56 @@
+---
+title: "wait_for_ringing"
+slug: /reference/python/relay/call/wait-for-ringing
+description: "Wait until the call is ringing."
+max-toc-depth: 3
+---
+
+[wait-for]: /docs/server-sdks/reference/python/relay/call/wait-for
+[relayevent]: /docs/server-sdks/reference/python/relay/events
+[dial]: /docs/server-sdks/reference/python/relay/client/dial
+
+Wait until the call state reaches `ringing`. Returns immediately if the call
+is already ringing or has moved past it (answered, ending, or ended). A typed convenience over
+[`wait_for()`][wait-for] on the `calling.call.state` event.
+
+For an outbound call, this has usually already happened by the time you hold a reference
+to it: [`client.dial()`][dial] returns only after the far end answers, so the method
+returns at once and `event.params["call_state"]` reports where the call is, working as a
+guard rather than a wait. An inbound call's initial state is `created`; for it, the method
+returns once the `ringing` state event arrives, which usually precedes `answer()`.
+
+## Parameters
+
+<ParamField path="timeout" type="float | None" default="None" toc={true}>
+  Maximum seconds to wait. Raises `asyncio.TimeoutError` if exceeded. `None`
+  waits indefinitely.
+</ParamField>
+
+## Returns
+
+[`RelayEvent`][relayevent] -- The state event. When the call was already at or past the target, `event.params["call_state"]` holds the current state.
+
+## Example
+
+```python {13-18}
+from signalwire.relay import RelayClient
+
+client = RelayClient(
+    project="your-project-id",
+    token="your-api-token",
+    host="your-space.signalwire.com",
+    contexts=["default"],
+)
+
+@client.on_call
+async def handle_call(call):
+    await call.answer()
+    dialed = await client.dial(
+        devices=[[{"type": "phone", "params": {"to_number": "+15551234567", "from_number": "+15559876543"}}]]
+    )
+    event = await dialed.wait_for_ringing(timeout=10)
+    # dial() already waited for the answer, so this prints "answered".
+    print("State:", event.params["call_state"])
+
+client.run()
+```

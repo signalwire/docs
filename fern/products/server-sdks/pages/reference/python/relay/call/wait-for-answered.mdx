@@ -1,0 +1,52 @@
+---
+title: "wait_for_answered"
+slug: /reference/python/relay/call/wait-for-answered
+description: "Wait until the call is answered."
+max-toc-depth: 3
+---
+
+[wait-for]: /docs/server-sdks/reference/python/relay/call/wait-for
+[relayevent]: /docs/server-sdks/reference/python/relay/events
+[answer]: /docs/server-sdks/reference/python/relay/call/answer
+[dial]: /docs/server-sdks/reference/python/relay/client/dial
+
+Wait until the call state reaches `answered`. Returns immediately if the call
+is already answered or has moved past it (ending or ended). A typed convenience over
+[`wait_for()`][wait-for] on the `calling.call.state` event.
+
+[`answer()`][answer] returns as soon as the platform accepts the command; the call reaches
+`answered` a moment later. Await `wait_for_answered()` when the next step needs the
+media path up. Outbound calls from [`client.dial()`][dial] are already answered when they
+return, so the method returns immediately for them.
+
+## Parameters
+
+<ParamField path="timeout" type="float | None" default="None" toc={true}>
+  Maximum seconds to wait. Raises `asyncio.TimeoutError` if exceeded. `None`
+  waits indefinitely.
+</ParamField>
+
+## Returns
+
+[`RelayEvent`][relayevent] -- The state event. When the call was already at or past the target, `event.params["call_state"]` holds the current state.
+
+## Example
+
+```python {12-13}
+from signalwire.relay import RelayClient
+
+client = RelayClient(
+    project="your-project-id",
+    token="your-api-token",
+    host="your-space.signalwire.com",
+    contexts=["default"],
+)
+
+@client.on_call
+async def handle_call(call):
+    await call.answer()
+    await call.wait_for_answered(timeout=10)
+    await (await call.play_tts("Thanks for calling Bayview Taxi.")).wait()
+
+client.run()
+```

@@ -50,6 +50,26 @@ passwords change on every restart, which will break SignalWire webhook callbacks
 until you update the credentials in your SignalWire dashboard.
 </Warning>
 
+<ParamField path="SIGNALWIRE_SIGNING_KEY" type="str" toc={true}>
+  Your SignalWire Signing Key. When set, the agent validates the signature on
+  `POST /`, `/swaig`, and `/post_prompt` requests and rejects unsigned or
+  invalidly signed requests with `403`. The `signing_key` constructor argument
+  takes precedence.
+</ParamField>
+
+<ParamField path="SIGNALWIRE_SWAIG_SECRET" type="str" toc={true}>
+  Secret used to sign the agent's per-call SWAIG function tokens. When unset, a
+  random secret is generated per process, so tokens stop verifying after a
+  restart or when a tool call lands on a different replica. Set it in
+  production. The `swaig_secret` constructor argument takes precedence.
+</ParamField>
+
+<ParamField path="SWML_TRUST_REMOTE_USER" type="bool" default="false" toc={true}>
+  In CGI mode, accept a request authenticated by the web server (`REMOTE_USER`)
+  when no `HTTP_AUTHORIZATION` header is present. Accepts `"1"`, `"true"`, or
+  `"yes"`.
+</ParamField>
+
 ---
 
 ## SSL / TLS
@@ -89,6 +109,12 @@ until you update the credentials in your SignalWire dashboard.
 
 <ParamField path="SWML_PROXY_DEBUG" type="bool" default="false" toc={true}>
   Enable proxy request debug logging.
+</ParamField>
+
+<ParamField path="SWML_TRUST_PROXY_HEADERS" type="bool" default="false" toc={true}>
+  Trust `X-Forwarded-Host` and `X-Forwarded-Proto` headers when detecting the
+  public URL for webhook generation. Accepts `1`, `true`, or `yes`. Enable only
+  behind a reverse proxy you control. Setting `SWML_PROXY_URL_BASE` implies it.
 </ParamField>
 
 <Warning>
@@ -137,6 +163,26 @@ settings for webhook URL generation.
   HSTS `max-age` directive in seconds. Default is 1 year.
 </ParamField>
 
+<ParamField path="SWML_ALLOW_PRIVATE_URLS" type="bool" default="false" toc={true}>
+  Let URL validation accept hosts that resolve to private, loopback, or
+  link-local addresses. Accepts `"1"`, `"true"`, or `"yes"`. Leave unset in
+  production; it disables the SDK's protection against server-side request
+  forgery.
+</ParamField>
+
+## AI chat gateway
+
+<ParamField path="SIGNALWIRE_CHAT_GATEWAY_KEY" type="str" toc={true}>
+  Publishable key a `ChatGateway` accepts from the browser when no `key` is
+  passed to its constructor. A random `pk_` value is generated if neither is set.
+</ParamField>
+
+<ParamField path="SIGNALWIRE_CHAT_GATEWAY_SECRET" type="str" toc={true}>
+  HMAC secret a `ChatGateway` uses to sign handles when no `secret` is passed.
+  A random per-process value is generated if neither is set, which invalidates
+  outstanding handles on restart.
+</ParamField>
+
 ## Logging
 
 <ParamField path="SIGNALWIRE_LOG_MODE" type="str" default="auto" toc={true}>
@@ -174,7 +220,9 @@ settings for webhook URL generation.
 
 ## Relay and REST Client
 
-These variables are shared between the Relay WebSocket client and the REST HTTP client.
+`RelayClient`, `RestClient`, and `AIChatClient` read these variables. The
+three clients agree on the credential variables but not on `SIGNALWIRE_SPACE`,
+so read that entry before setting it in a process that uses more than one client.
 
 <ParamField path="SIGNALWIRE_PROJECT_ID" type="str" toc={true}>
   SignalWire project ID for authentication.
@@ -188,8 +236,40 @@ These variables are shared between the Relay WebSocket client and the REST HTTP 
   JWT token for Relay authentication. Alternative to project ID + API token.
 </ParamField>
 
-<ParamField path="SIGNALWIRE_SPACE" type="str" default="relay.signalwire.com" toc={true}>
-  Space hostname used for Relay WebSocket connections and as the REST API base URL.
+<Note>
+The SDK reads `SIGNALWIRE_API_TOKEN` only. Older examples that used
+`SIGNALWIRE_TOKEN` need to be updated; that name is not read anywhere.
+</Note>
+
+<ParamField path="SIGNALWIRE_SPACE" type="str" toc={true}>
+  Your space hostname, for example `your-space.signalwire.com`. `RestClient` uses
+  it as the REST API host and raises `ValueError` when neither this variable nor
+  the `host` argument is set. `AIChatClient` reads the same variable but expects
+  the bare space name, `your-space`, and appends `.signalwire.com` itself.
+</ParamField>
+
+<Warning title="Relay reads SIGNALWIRE_SPACE too">
+`RelayClient` connects to `relay.signalwire.com` by default and needs no space
+setting. When `SIGNALWIRE_SPACE` is set, it connects to that host instead. If
+the same process uses REST and Relay, pass `host="relay.signalwire.com"` to
+`RelayClient` so the REST setting does not redirect the WebSocket connection.
+</Warning>
+
+<Note>
+`sw-agent-init` and `sw-agent-dokku` read and write a different variable,
+`SIGNALWIRE_SPACE_NAME`, holding the bare space name. No client reads it, so a
+scaffolded project still needs `SIGNALWIRE_SPACE` before `RestClient()` can
+start from the environment.
+</Note>
+
+<ParamField path="SIGNALWIRE_REST_CA_FILE" type="str" toc={true}>
+  Path to a CA bundle the REST client trusts for TLS verification. Unset uses
+  the default trust store.
+</ParamField>
+
+<ParamField path="SIGNALWIRE_RELAY_CA_FILE" type="str" toc={true}>
+  Path to a CA bundle the Relay WebSocket client trusts for TLS verification.
+  Unset uses the system trust store.
 </ParamField>
 
 <ParamField path="RELAY_MAX_ACTIVE_CALLS" type="int" default="1000" toc={true}>
@@ -277,6 +357,15 @@ You typically do not set these manually -- they are provided by the platform run
   CGI script path.
 </ParamField>
 
+<ParamField path="PATH_INFO" type="str" default="" toc={true}>
+  Request path following the script name. Used to route the request to the
+  matching agent.
+</ParamField>
+
+<ParamField path="CONTENT_LENGTH" type="str" toc={true}>
+  Size of the POST body in bytes, read from stdin for SWAIG function calls.
+</ParamField>
+
 ## Example .env File
 
 ```bash
@@ -286,6 +375,8 @@ PORT=3000
 # Authentication
 SWML_BASIC_AUTH_USER=agent_user
 SWML_BASIC_AUTH_PASSWORD=secret_password_123
+SIGNALWIRE_SIGNING_KEY=your-signing-key
+SIGNALWIRE_SWAIG_SECRET=a-stable-secret-across-replicas
 
 # SSL Configuration
 SWML_SSL_ENABLED=true
@@ -305,6 +396,7 @@ SIGNALWIRE_LOG_LEVEL=info
 # Relay / REST
 SIGNALWIRE_PROJECT_ID=your-project-id
 SIGNALWIRE_API_TOKEN=your-api-token
+# REST host. RelayClient reads it too; pass host="relay.signalwire.com" there.
 SIGNALWIRE_SPACE=your-space.signalwire.com
 
 # Custom Skills

@@ -1,0 +1,39 @@
+---
+title: "router"
+slug: /reference/python/agents/handoff-router/router
+description: Build the APIRouter serving the handoff, escalate, and say routes.
+max-toc-depth: 3
+---
+
+[ref-handoffrouter]: /docs/server-sdks/reference/python/agents/handoff-router
+[mount]: /docs/server-sdks/reference/python/agents/agent-base/mount
+[gateway-router]: /docs/server-sdks/reference/python/agents/chat-gateway/router
+
+Return an `APIRouter` serving `POST /handoff`, `POST /escalate`, and `POST /say`. Mount it at the
+same prefix as the [gateway's router][gateway-router]: the browser derives all three paths from the
+one URL it was configured with, so they must be siblings of the gateway's endpoint.
+
+Each route checks the `Origin` header against the gateway's allowlist and answers `403` when it
+isn't allowed. A malformed or unknown nonce answers `404`; a missing handle on `/escalate` answers
+`400`.
+
+## Parameters
+
+None.
+
+## Returns
+
+`fastapi.APIRouter`
+
+## Example
+
+```python {4-5}
+gateway = ChatGateway(config_url="https://bayview-taxi.example.com/dispatch")
+handoff = HandoffRouter(gateway=gateway, capture_leg=save_leg, end_call=hang_up)
+
+agent.mount(gateway.router(), prefix="/chat")
+agent.mount(handoff.router(), prefix="/chat")
+```
+
+Use [`mount()`][mount] rather than `get_app().include_router()`, so the new routes aren't shadowed
+by the agent's catch-all. See [`HandoffRouter`][ref-handoffrouter] for the full flow.
