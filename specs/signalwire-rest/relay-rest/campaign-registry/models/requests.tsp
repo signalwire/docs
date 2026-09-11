@@ -87,6 +87,10 @@ model CreateManagedBrandRequest {
   @example("www.example.com")
   company_website: string;
 
+  @doc("Email addresses SignalWire uses for registration correspondence about this brand and its campaigns. Defaults to the user who submitted the registration.")
+  @example(#["brand_registrations@example.com"])
+  signalwire_contact_emails?: string[];
+
   @doc("Specify a URL to receive webhook notifications when your brand's state changes. See the [10DLC status callback](/docs/apis/rest/webhooks/ten-dlc-status-callback) docs for the webhook payload.")
   @example("https://example.com/handle_callback")
   @format("uri")
@@ -109,6 +113,10 @@ model CreateCspBrandRequest {
   @example("B123456")
   csp_brand_reference: string;
 
+  @doc("Email addresses SignalWire uses for registration correspondence about this brand and its campaigns. Defaults to the user who submitted the registration.")
+  @example(#["brand_registrations@example.com"])
+  signalwire_contact_emails?: string[];
+
   @doc("Specify a URL to receive webhook notifications when your brand's state changes. See the [10DLC status callback](/docs/apis/rest/webhooks/ten-dlc-status-callback) docs for the webhook payload.")
   @example("https://example.com/handle_callback")
   @format("uri")
@@ -130,6 +138,10 @@ model UpdateBrandRequest {
   @doc("A contact phone number for this brand.")
   @example("+18995551212")
   contact_phone?: string;
+
+  @doc("Email addresses SignalWire uses for registration correspondence about this brand and its campaigns. Defaults to the user who submitted the registration.")
+  @example(#["brand_registrations@example.com"])
+  signalwire_contact_emails?: string[];
 
   @doc("Optional: Specify a URL to receive webhook notifications when your brand's state changes. See the [10DLC status callback](/docs/apis/rest/webhooks/ten-dlc-status-callback) docs for the webhook payload.")
   @example("https://example.com/handle_callback")
@@ -252,6 +264,10 @@ model CreateManagedCampaignRequest {
   @example(true)
   terms_and_conditions: boolean;
 
+  @doc("Email addresses SignalWire uses for registration correspondence about this campaign. Defaults to the brand's addresses, then the user who submitted the registration.")
+  @example(#["campaign_registrations@example.com"])
+  signalwire_contact_emails?: string[];
+
   @doc("Specify a URL to receive webhook notifications when your campaign's state changes. See the [10DLC status callback](/docs/apis/rest/webhooks/ten-dlc-status-callback) docs for the webhook payload.")
   @example("https://example.com/handle_callback")
   @format("uri")
@@ -274,6 +290,10 @@ model CreatePartnerCampaignRequest {
   @example("C123456")
   csp_campaign_reference: string;
 
+  @doc("Email addresses SignalWire uses for registration correspondence about this campaign. Defaults to the brand's addresses, then the user who submitted the registration.")
+  @example(#["campaign_registrations@example.com"])
+  signalwire_contact_emails?: string[];
+
   @doc("Specify a URL to receive webhook notifications when your campaign's state changes. See the [10DLC status callback](/docs/apis/rest/webhooks/ten-dlc-status-callback) docs for the webhook payload.")
   @example("https://example.com/handle_callback")
   @format("uri")
@@ -287,6 +307,10 @@ model UpdateCampaignRequest {
   @doc("A name for the campaign.")
   @example("My Campaign")
   name?: string;
+
+  @doc("Email addresses SignalWire uses for registration correspondence about this campaign. Defaults to the brand's addresses, then the user who submitted the registration.")
+  @example(#["campaign_registrations@example.com"])
+  signalwire_contact_emails?: string[];
 }
 
 @doc("Request body for creating an order.")

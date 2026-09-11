@@ -86,6 +86,10 @@ model Brand {
   @example("+18995551212")
   contact_phone?: string;
 
+  @doc("Email addresses SignalWire uses for registration correspondence about this brand and its campaigns. Defaults to the user who submitted the registration.")
+  @example(#["brand_registrations@example.com"])
+  signalwire_contact_emails?: string[];
+
   @doc("Country of registration.")
   @example("United States")
   ein_issuing_country?: string;
@@ -234,6 +238,10 @@ model Campaign {
   @doc("If you are your own Campaign Service Provider, what is the approved Campaign ID? (Mandatory for CSPs, otherwise please omit)")
   @example("1231231")
   csp_campaign_reference?: string;
+
+  @doc("Email addresses SignalWire uses for registration correspondence about this campaign. Defaults to the brand's addresses, then the user who submitted the registration.")
+  @example(#["campaign_registrations@example.com"])
+  signalwire_contact_emails?: string[];
 
   @doc("Optional: Specify a URL to receive webhook notifications when your campaign's state changes. See the [10DLC status callback](/docs/apis/rest/webhooks/ten-dlc-status-callback) docs for the webhook payload.")
   @example("https://example.com/handle_callback")
