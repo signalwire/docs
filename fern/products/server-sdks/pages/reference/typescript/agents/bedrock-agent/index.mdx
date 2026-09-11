@@ -1,0 +1,173 @@
+---
+title: "BedrockAgent"
+slug: /reference/typescript/agents/bedrock-agent
+description: "Amazon Bedrock voice-to-voice agent extending AgentBase."
+max-toc-depth: 3
+---
+
+[agentbase]: /docs/server-sdks/reference/typescript/agents/agent-base
+[amazon-bedrock]: /docs/swml/reference/calling/amazon-bedrock
+[swml-bedrock-reference]: /docs/swml/reference/calling/amazon-bedrock
+[setvoice]: /docs/server-sdks/reference/typescript/agents/bedrock-agent/set-voice
+[setinferenceparams]: /docs/server-sdks/reference/typescript/agents/bedrock-agent/set-inference-params
+
+`BedrockAgent` extends [`AgentBase`][agentbase] to use Amazon Bedrock's
+voice-to-voice model as the AI backend. It renders SWML with the
+`amazon_bedrock` verb instead of `ai`, and keeps every standard agent feature:
+text and POM prompts, skills, SWAIG functions, post-prompt, and dynamic
+configuration.
+
+Extends [`AgentBase`][agentbase] -- inherits all parent properties and methods.
+
+<Info>
+BedrockAgent generates SWML with the [`amazon_bedrock`][amazon-bedrock] verb
+instead of `ai`. See the [SWML bedrock reference][swml-bedrock-reference] for the
+full specification.
+</Info>
+
+## **Constructor**
+
+```typescript {3}
+import { BedrockAgent } from '@signalwire/sdk';
+
+const agent = new BedrockAgent({
+  systemPrompt: 'You are a helpful voice assistant.',
+  voiceId: 'joanna',
+});
+```
+
+The `createBedrockAgent(config)` factory function returns the same instance as
+`new BedrockAgent(config)`.
+
+### Constructor parameters
+
+<ParamField path="name" type="string" default="bedrock_agent" toc={true}>
+  Agent name.
+</ParamField>
+
+<ParamField path="route" type="string" default="/bedrock" toc={true}>
+  HTTP route for the agent endpoint.
+</ParamField>
+
+<ParamField path="systemPrompt" type="string" toc={true}>
+  Initial system prompt, set as raw text. Can be overridden later with
+  `setPromptText()`. Leave it unset if you build the prompt from sections with
+  `promptAddSection()`, because raw text takes precedence over sections.
+</ParamField>
+
+<ParamField path="voiceId" type="string" default="matthew" toc={true}>
+  Bedrock voice identifier (e.g., `"matthew"`, `"joanna"`).
+</ParamField>
+
+<ParamField path="temperature" type="number" default="0.7" toc={true}>
+  Generation temperature. Range: 0 to 1.
+</ParamField>
+
+<ParamField path="topP" type="number" default="0.9" toc={true}>
+  Nucleus sampling parameter. Range: 0 to 1.
+</ParamField>
+
+<ParamField path="maxTokens" type="number" default="1024" toc={true}>
+  Maximum tokens to generate per response. Accepted for compatibility with the
+  Python SDK. Not currently applied to the call.
+</ParamField>
+
+<ParamField path="agentOptions" type={"Partial<AgentOptions>"} toc={true}>
+  Additional [`AgentBase`][agentbase] constructor options (e.g., `host`,
+  `port`, `basicAuth`).
+</ParamField>
+
+## **Methods**
+
+<CardGroup cols={2}>
+  <Card title="setVoice" href="/docs/server-sdks/reference/typescript/agents/bedrock-agent/set-voice">
+    Set the Bedrock voice ID after construction.
+  </Card>
+  <Card title="setInferenceParams" href="/docs/server-sdks/reference/typescript/agents/bedrock-agent/set-inference-params">
+    Update Bedrock inference parameters.
+  </Card>
+</CardGroup>
+
+## **Overridden behavior**
+
+BedrockAgent overrides several AgentBase methods to fit the Bedrock
+voice-to-voice model:
+
+| Method | Behavior |
+|--------|----------|
+| `setLlmModel()` | Logs a warning and does nothing. Bedrock uses a fixed voice-to-voice model. |
+| `setLlmTemperature()` | Redirects to `setInferenceParams(temperature)`. |
+| `setPromptLlmParams()` | Logs a warning. Use `setInferenceParams()` instead. |
+| `setPostPromptLlmParams()` | Logs a warning. The Bedrock post-prompt uses the LLM configured in the platform. |
+
+<Warning>
+Parameters specific to text-based LLMs (`barge_confidence`, `presence_penalty`,
+`frequency_penalty`) are filtered out during SWML rendering and have no effect
+on Bedrock agents.
+</Warning>
+
+Prompt methods (`setPromptText()`, `setPromptPom()`, `promptAddSection()`, and
+so on) work normally. The prompt is built the same way as in AgentBase and then
+placed in the `amazon_bedrock` verb along with `voice_id`, `temperature`, and
+`top_p`. Raw text set through `systemPrompt` or `setPromptText()` takes
+precedence: when it is present, sections added with `promptAddSection()` are not
+rendered. Use one style or the other for a given agent.
+
+## **Examples**
+
+### Basic Bedrock agent with a tool
+
+```typescript {3-11}
+import { BedrockAgent, FunctionResult } from '@signalwire/sdk';
+
+const agent = new BedrockAgent({
+  name: 'bedrock-assistant',
+  route: '/assistant',
+  voiceId: 'joanna',
+  temperature: 0.5,
+});
+
+agent.promptAddSection('Role', { body: 'You are a helpful customer service representative.' });
+agent.promptAddSection('Guidelines', { body: 'Be concise and professional.' });
+
+agent.defineTool({
+  name: 'check_order',
+  description: 'Look up order status',
+  parameters: {
+    order_id: { type: 'string', description: 'Order ID' },
+  },
+  required: ['order_id'],
+  handler: async (args) => {
+    return new FunctionResult(`Order ${args.order_id} is shipped and arriving tomorrow.`);
+  },
+});
+
+agent.setVoice('matthew');
+agent.setInferenceParams(0.3, 0.95);
+
+await agent.run();
+```
+
+### Multi-agent server with Bedrock
+
+```typescript {8-13}
+import { AgentBase, AgentServer, BedrockAgent } from '@signalwire/sdk';
+
+// Standard agent
+const standardAgent = new AgentBase({ name: 'standard', route: '/standard' });
+standardAgent.setPromptText('You are a general assistant.');
+
+// Bedrock voice-to-voice agent
+const bedrockAgent = new BedrockAgent({
+  name: 'bedrock',
+  route: '/bedrock',
+  systemPrompt: 'You are a voice-optimized assistant.',
+  voiceId: 'matthew',
+});
+
+const server = new AgentServer();
+server.register(standardAgent);
+server.register(bedrockAgent);
+
+await server.run();
+```

@@ -1,0 +1,53 @@
+---
+title: "registerRoutingCallback"
+slug: /reference/typescript/agents/agent-base/register-routing-callback
+description: Register a callback for dynamic request routing based on SIP URIs or POST data.
+max-toc-depth: 3
+---
+
+[enable-sip-routing]: /docs/server-sdks/reference/typescript/agents/agent-base/enable-sip-routing
+[extract-sip-username]: /docs/server-sdks/reference/typescript/agents/agent-base/extract-sip-username
+[ref-agentbase]: /docs/server-sdks/reference/typescript/agents/agent-base
+
+Register a callback for dynamic request routing. When a request arrives at
+`path`, the callback inspects the POST body and decides whether to redirect the
+request to a different route or let normal SWML serving continue.
+
+This is primarily used for SIP-based routing where the destination depends on
+the incoming SIP URI. For routing on agent name alone, use
+[`enableSipRouting()`][enable-sip-routing] instead.
+
+## **Parameters**
+
+<ParamField path="callback" type="RoutingCallback" required={true} toc={true}>
+  Receives the parsed request body. Return a route string to redirect the
+  request there (HTTP 307, preserving the POST body), or return `null` or
+  `undefined` to serve this agent's own SWML.
+</ParamField>
+
+<ParamField path="path" type="string" default="/sip" toc={true}>
+  HTTP path where the routing endpoint is registered. Normalized to start with
+  `/`, with trailing slashes stripped.
+</ParamField>
+
+## **Returns**
+
+[`AgentBase`][ref-agentbase] -- Returns `this` for method chaining.
+
+## **Example**
+
+```typescript {6-11}
+import { AgentBase } from '@signalwire/sdk';
+
+const agent = new AgentBase({ name: 'router', route: '/' });
+agent.setPromptText('You are a helpful assistant.');
+
+agent.registerRoutingCallback((body) => {
+  const username = AgentBase.extractSipUsername(body);
+  if (username === 'sales') return '/agents/sales';
+  if (username === 'support') return '/agents/support';
+  return null;
+}, '/sip');
+
+await agent.run();
+```

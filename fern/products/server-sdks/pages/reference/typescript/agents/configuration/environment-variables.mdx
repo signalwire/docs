@@ -103,6 +103,15 @@ for webhook URL generation.
   Useful for performance in production when you trust your SWML output.
 </ParamField>
 
+## Webhook signature validation
+
+<ParamField path="SIGNALWIRE_SIGNING_KEY" type="string" toc={true}>
+  Your SignalWire Signing Key. When set (or when the `signingKey` constructor
+  option is passed), the agent validates the signature on every inbound
+  webhook and rejects unsigned or mis-signed requests with HTTP 403. Treat it
+  as a secret.
+</ParamField>
+
 ## Security
 
 <ParamField path="SWML_ALLOWED_HOSTS" type="string" toc={true}>
@@ -145,7 +154,7 @@ for webhook URL generation.
 </ParamField>
 
 <ParamField path="SIGNALWIRE_LOG_LEVEL" type="string" default="info" toc={true}>
-  Log level.
+  Log level. Case-insensitive; an unrecognized value falls back to `"info"`.
 
   - `"debug"` -- verbose output for development and troubleshooting
   - `"info"` -- standard operational messages
@@ -160,6 +169,11 @@ for webhook URL generation.
   - `"json"` -- structured JSON log lines for log aggregation systems
 </ParamField>
 
+<ParamField path="SIGNALWIRE_LOG_COLOR" type="boolean" toc={true}>
+  Force colored text output on (`"true"`) or off (`"false"`). When unset, color
+  is enabled only when writing to a terminal.
+</ParamField>
+
 ## Skills
 
 <ParamField path="SIGNALWIRE_SKILL_PATHS" type="string" default="" toc={true}>
@@ -169,7 +183,9 @@ for webhook URL generation.
 
 ## Relay and REST Client
 
-These variables are shared between the Relay WebSocket client and the REST HTTP client.
+`RelayClient`, `RestClient`, and `AIChatClient` read these variables. The
+three clients agree on the credential variables but not on `SIGNALWIRE_SPACE`,
+so read that entry before setting it in a process that uses more than one client.
 
 <ParamField path="SIGNALWIRE_PROJECT_ID" type="string" toc={true}>
   SignalWire project ID for authentication.
@@ -183,8 +199,44 @@ These variables are shared between the Relay WebSocket client and the REST HTTP 
   JWT token for Relay authentication. Alternative to project ID + API token.
 </ParamField>
 
-<ParamField path="SIGNALWIRE_SPACE" type="string" default="relay.signalwire.com" toc={true}>
-  Space hostname used for Relay WebSocket connections and as the REST API base URL.
+<ParamField path="SIGNALWIRE_SPACE" type="string" toc={true}>
+  Your space hostname, for example `your-space.signalwire.com`. `RestClient` uses
+  it as the REST API host and throws when neither this variable, the `host` option,
+  nor `SIGNALWIRE_REST_BASE_URL` is set. `AIChatClient` reads the same variable but
+  expects the bare space name, `your-space`, and appends `.signalwire.com` itself.
+</ParamField>
+
+<Warning title="Relay reads SIGNALWIRE_SPACE too">
+`RelayClient` connects to `relay.signalwire.com` by default and needs no space
+setting. When `SIGNALWIRE_SPACE` is set, it connects to that host instead. If
+the same process uses REST and Relay, set `SIGNALWIRE_RELAY_HOST=relay.signalwire.com`
+or pass `host` to `RelayClient` so the REST setting does not redirect the WebSocket
+connection.
+</Warning>
+
+<ParamField path="SIGNALWIRE_REST_BASE_URL" type="string" toc={true}>
+  Full base URL for REST requests (e.g., `https://your-space.signalwire.com`).
+  Takes precedence over `SIGNALWIRE_SPACE`; the `host` constructor option
+  takes precedence over both.
+</ParamField>
+
+<ParamField path="SIGNALWIRE_REST_CA_FILE" type="string" toc={true}>
+  Path to a PEM file of additional CA certificates trusted for REST
+  connections. Adds trust; it never disables certificate verification.
+</ParamField>
+
+<ParamField path="SIGNALWIRE_RELAY_HOST" type="string" toc={true}>
+  Override the Relay WebSocket host. Takes precedence over `SIGNALWIRE_SPACE`;
+  the `host` constructor option takes precedence over both.
+</ParamField>
+
+<ParamField path="SIGNALWIRE_RELAY_SCHEME" type="string" default="wss" toc={true}>
+  WebSocket scheme for the Relay connection, `wss` or `ws`.
+</ParamField>
+
+<ParamField path="SIGNALWIRE_RELAY_CA_FILE" type="string" toc={true}>
+  Path to a PEM file of additional CA certificates trusted for the Relay
+  WebSocket connection. Adds trust; it never disables certificate verification.
 </ParamField>
 
 <ParamField path="RELAY_MAX_ACTIVE_CALLS" type="number" default="1000" toc={true}>
@@ -280,6 +332,7 @@ SIGNALWIRE_LOG_LEVEL=info
 # Relay / REST
 SIGNALWIRE_PROJECT_ID=your-project-id
 SIGNALWIRE_API_TOKEN=your-api-token
+# REST host. RelayClient reads it too; set SIGNALWIRE_RELAY_HOST to keep the default.
 SIGNALWIRE_SPACE=your-space.signalwire.com
 
 # Custom Skills
