@@ -1,0 +1,242 @@
+---
+title: AI Sidecar
+slug: /ai/sidecar
+description: Attach an AI observer to a live human call that never speaks, and streams coaching, compliance flags, and lookups to your agent's screen in real time.
+subtitle: A coach on the call that the caller never hears
+max-toc-depth: 3
+---
+
+{/*
+  SKELETON — structure, verified facts, links, and cards are in place.
+  Prose marked TODO is yours. Every slug below was verified against the repo.
+
+  Cast: this page joins the AI cluster, so it uses Bayview Taxi and Ada
+  (see /docs/platform/ai and the tool-calling guide). Here the human dispatcher
+  takes the call and the sidecar coaches them — Ada is not the one on the line.
+  Pick the human a placeholder name and keep it consistent.
+*/}
+
+[sidecar]: /docs/swml/reference/calling/ai-sidecar
+[sidecar-prompt]: /docs/swml/reference/calling/ai-sidecar/prompt
+[sidecar-params]: /docs/swml/reference/calling/ai-sidecar/params
+[sidecar-swaig]: /docs/swml/reference/calling/ai-sidecar/swaig
+[sidecar-callback]: /docs/apis/rest/webhooks/ai-sidecar-callback
+[sidecar-tool-webhook]: /docs/apis/rest/webhooks/ai-sidecar-swaig-tool-webhook
+[connect]: /docs/swml/reference/calling/connect
+[live-transcribe]: /docs/swml/reference/calling/live-transcribe
+[ai]: /docs/swml/reference/calling/ai
+[ai-overview]: /docs/platform/ai
+[tool-calling]: /docs/platform/ai/tool-calling
+[prompt-engineering]: /docs/platform/ai/prompt-engineering
+[webhooks]: /docs/platform/webhooks
+
+{/*
+  TODO(intro): Two or three sentences, and this one carries more weight than usual —
+  nobody arrives knowing what a sidecar is.
+  Establish, in order:
+    1. It is a second AI attached to a call between two humans.
+    2. It never speaks on the call. The caller cannot hear it.
+    3. Its output goes to your application as webhook callbacks, for an agent's UI to render.
+  Do not lead with configuration. Lead with the picture.
+*/}
+
+<Note>
+{/*
+  TODO: The distinction that saves a reader ten minutes — a sidecar rides an existing call,
+  it does not answer one. If you want an AI that talks to the caller, that is the
+  [`ai`][ai] method, and [AI overview][ai-overview] is the place to start.
+*/}
+</Note>
+
+## What you would use it for
+
+{/* TODO: Prose, not a bulleted feature list. The verified use cases are live sales coaching,
+     real-time compliance flagging, intent-based UI navigation, voice-of-customer signal
+     extraction, and supervisor-on-shoulder workflows.
+     Pick ONE and make it the running example for the whole page — the guide is much better
+     with a single concrete scenario than with five abstract ones.
+     Suggestion: a Bayview Taxi dispatcher taking a booking, with the sidecar surfacing the
+     caller's account and flagging a quote that undercuts the fare table. */}
+
+## How it works
+
+{/* TODO: Explain the tick model in prose. Verified mechanics, in order:
+     1. The sidecar detects the end of the customer's turn — a final transcription result
+        followed by a brief silence (idle_timeout_ms), or the agent starting to speak.
+     2. It sends the running transcript to the model with your prompt and your SWAIG tools.
+     3. The model returns one line of agent-facing advice (an `insight`), or calls the
+        built-in `sidecar_skip` tool to stay silent.
+     4. Any tools it calls run through your SWAIG functions and MCP servers.
+     5. Every step is reported as a structured callback carrying a `tick_id`.
+     Keep this tight — the reference documents the full callback catalog. */}
+
+```mermaid
+flowchart LR
+    Caller["Caller"]
+    Agent["Your human agent"]
+    Sidecar["AI Sidecar<br/>listens only"]
+    App["Your application<br/>agent's screen"]
+
+    Caller <-->|"the call"| Agent
+    Caller -.->|"transcript"| Sidecar
+    Agent -.->|"transcript"| Sidecar
+    Sidecar -->|"insight callbacks"| App
+    App -->|"rendered advice"| Agent
+```
+
+{/* TODO(verify): the diagram asserts the sidecar hears both legs. That matches the
+     "both legs required" limitation in the reference, but confirm on a real call. */}
+
+## Before you start
+
+{/* TODO: The prerequisites that actually bite:
+     - A call with two legs. A single-leg direction is rejected outright.
+     - A publicly reachable webhook URL — the sidecar's whole output arrives there,
+       so a localhost URL means a sidecar that appears to do nothing.
+     - Somewhere to render the advice. Without a UI consuming the callbacks there is
+       nothing to see, which is the most common "it didn't work" report.
+     Three bullets, or a short paragraph. Link setup, don't re-teach it. */}
+
+## Attach a sidecar
+
+{/* TODO: The main path. The natural shape is a `connect`-bridged call — the customer talks
+     to the human, the sidecar coaches the human's screen.
+     Minimum viable config is prompt + lang + a webhook URL; add one SWAIG function so the
+     example does real work (house rule: no knowledge-trivia bots).
+     VALIDATE against a real call before shipping. */}
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - answer: {}
+    - ai_sidecar:
+        lang: en-US
+        prompt: |
+          # TODO: the operator prompt that coaches the dispatcher.
+          # Tell it to call sidecar_skip when there is nothing useful to say.
+        # TODO: webhook URL and SWAIG functions — see the reference for exact keys.
+    - connect:
+        to: # TODO: the human agent
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      { "answer": {} },
+      {
+        "ai_sidecar": {
+          "lang": "en-US",
+          "prompt": "TODO"
+        }
+      },
+      { "connect": { "to": "TODO" } }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+<Note title="SWML only">
+{/*
+  TODO: There is no dedicated Server SDK helper for `ai_sidecar` today. SDK users emit this
+  block as raw SWML. Say so plainly rather than leaving readers to search for a method
+  that does not exist.
+*/}
+</Note>
+
+## Write the prompt
+
+{/* TODO: The prompt is what separates a useful sidecar from a noisy one, so this section
+     earns its length. Verified points worth making:
+     - The prompt is the operator prompt: it describes coaching behavior, not conversation.
+       SignalWire adds the built-in role instructions, so you don't restate them.
+     - Advice is one line per tick. Write for a glance, not a paragraph.
+     - Instruct the model to call `sidecar_skip` when there is nothing useful to say.
+       Without that instruction it fills silence with low-quality advice. This is the
+       highest-value sentence on the page.
+     - `sidecar_skip` is reserved — never define a function with that name.
+     Link [prompt-engineering] for general technique rather than repeating it. */}
+
+## Receive the output
+
+{/* TODO: Everything the sidecar produces arrives as webhook callbacks — insights, skips,
+     tool activity, stop and error events, each carrying a `tick_id` that ties it to one turn.
+     Show one insight payload and say which fields a UI actually renders.
+     Full catalog is in the reference; the payload shape is in [sidecar-callback].
+     General webhook handling: [webhooks]. */}
+
+## Give it tools
+
+{/* TODO: SWAIG functions work the same way they do for a voice agent — link [tool-calling]
+     rather than re-teaching the round trip. What is worth covering HERE is what differs:
+     - `say` does not speak. The sidecar has no voice, so a `say` action is reported as a
+       callback instead of being spoken aloud. Readers coming from the `ai` method assume
+       otherwise, so state it.
+     - Tool loops are capped: too many calls in one tick, a repeated call, or an unregistered
+       tool stops tool calling for that tick and returns an `error` callback with
+       error_reason: tool_loop. Tell readers the fix is clearer tool results and a prompt
+       that says what to do after a tool returns.
+     Tool webhook contract: [sidecar-tool-webhook]. */}
+
+## Limitations
+
+{/* TODO: These are verified from the reference and all of them cost real debugging time:
+     - One transcriber per call. `ai_sidecar` and [live-transcribe] cannot run on the same
+       call at once; starting one while the other is active is rejected.
+     - Both legs required. A single-leg direction is rejected.
+     - Turn detection is tuned for Deepgram, the default speech engine.
+     - `say` is reported, never spoken.
+     - The sidecar stops with the call — a `final` callback fires on hangup.
+     Prose or a list, but keep the cause-and-symptom pairing. */}
+
+{/* TODO(cost): a second model runs for the length of the call. Add a sentence on the
+     billing and latency implication once confirmed. [NEEDS SOURCE: sidecar pricing] */}
+
+## Confirm it works
+
+{/* TODO: The observable proof, and for this feature it is subtler than usual — a sidecar
+     that is working correctly may legitimately stay silent.
+     Give the reader:
+     1. the first callback they should see, and roughly when;
+     2. a line the caller can say that should reliably produce an insight;
+     3. how to tell "working and correctly quiet" from "not running at all"
+        (a `skip` callback proves the tick fired; silence proves nothing).
+     Pair it with the likeliest failure: no callbacks at all almost always means the
+     webhook URL is unreachable. */}
+
+## Next steps
+
+<CardGroup cols={2}>
+
+<Card title="ai_sidecar reference" href="/docs/swml/reference/calling/ai-sidecar" icon="regular book">
+  Every property, callback type, stop reason, and error reason.
+</Card>
+
+<Card title="Sidecar prompt" href="/docs/swml/reference/calling/ai-sidecar/prompt" icon="regular pen-ruler">
+  The supported prompt forms, including the Prompt Object Model.
+</Card>
+
+<Card title="Sidecar SWAIG" href="/docs/swml/reference/calling/ai-sidecar/swaig" icon="regular webhook">
+  Declare the tools the sidecar can call while it listens.
+</Card>
+
+<Card title="Sidecar callback" href="/docs/apis/rest/webhooks/ai-sidecar-callback" icon="regular arrow-right-to-bracket">
+  The payload your application receives on every tick.
+</Card>
+
+<Card title="Tool calling" href="/docs/platform/ai/tool-calling" icon="regular code">
+  How SWAIG functions reach your systems, shared with voice agents.
+</Card>
+
+<Card title="connect" href="/docs/swml/reference/calling/connect" icon="regular phone-arrow-right">
+  Bridge the caller to a human agent for the sidecar to coach.
+</Card>
+
+</CardGroup>
