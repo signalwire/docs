@@ -355,6 +355,13 @@ namespace SignalWireAPI.Calling.Calls {
       }
     )
     @opExample(
+      #{ parameters: outboundAnnouncementExample },
+      #{
+        title: "Outbound announcement",
+        description: "Dial a destination and play a greeting using inline SWML",
+      }
+    )
+    @opExample(
       #{ parameters: dialCallExample },
       #{
         title: "dial",

@@ -21,6 +21,22 @@ const dialCallExample = #{
   },
 };
 
+const outboundAnnouncementExample = #{
+  request: #{
+    command: "dial",
+    params: #{
+      from: "<YOUR_CALLER_ID>",
+      to: "<YOUR_DESTINATION>",
+      swml: #{
+        version: "1.0.0",
+        sections: #{
+          main: #[#{ play: #{ url: "say:Hello, welcome to SignalWire!" } }],
+        },
+      },
+    },
+  },
+};
+
 const updateCallExample = #{
   request: #{
     command: "update",
