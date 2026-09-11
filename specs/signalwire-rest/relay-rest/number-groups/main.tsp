@@ -19,7 +19,7 @@ namespace SignalWireAPI.RelayRest.NumberGroups {
     @operationId("list_number_groups")
     @summary("List number groups")
     @doc("""
-      Lists the Number Groups in your SignalWire project. A Number Group organizes owned phone numbers into a sender pool and can preserve the same sender for repeated outbound traffic with `sticky_sender`. Use [List number group memberships](/docs/apis/rest/number-group-membership/list-number-group-memberships) to see which numbers belong to a group. Results are sorted by creation date, most recent first.
+      Lists the Number Groups in your SignalWire project. A Number Group organizes owned phone numbers into a sender pool and can preserve the same sender for repeated outbound traffic with `sticky_sender`. Use [List number group memberships](/docs/apis/rest/number-groups/list-number-group-memberships) to see which numbers belong to a group. Results are sorted by creation date, most recent first.
       
       ${tokenPermissions<"_Numbers_">}
       """)
@@ -32,7 +32,7 @@ namespace SignalWireAPI.RelayRest.NumberGroups {
     @operationId("create_number_group")
     @summary("Create number group")
     @doc("""
-      Creates a named pool for project-owned phone numbers, with optional sticky-sender behavior. Use it when outbound traffic should select from a managed group rather than one fixed number; add numbers afterward with [Create number group membership](/docs/apis/rest/number-group-membership/create-number-group-membership). This operation does not purchase phone numbers.
+      Creates a named pool for project-owned phone numbers, with optional sticky-sender behavior. Use it when outbound traffic should select from a managed group rather than one fixed number; add numbers afterward with [Create number group membership](/docs/apis/rest/number-groups/create-number-group-membership). This operation does not purchase phone numbers.
       
       ${tokenPermissions<"_Numbers_">}
       """)
@@ -137,7 +137,7 @@ namespace SignalWireAPI.RelayRest.NumberGroupMemberships {
     @operationId("retrieve_number_group_membership")
     @summary("Get number group membership")
     @doc("""
-      Retrieves one Number Group Membership by ID so you can inspect the link between a project phone number and its sender pool. Use [List number group memberships](/docs/apis/rest/number-group-membership/list-number-group-memberships) to discover memberships for a group.
+      Retrieves one Number Group Membership by ID so you can inspect the link between a project phone number and its sender pool. Use [List number group memberships](/docs/apis/rest/number-groups/list-number-group-memberships) to discover memberships for a group.
       
       ${tokenPermissions<"_Numbers_">}
       """)
