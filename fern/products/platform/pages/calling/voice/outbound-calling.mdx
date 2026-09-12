@@ -1,0 +1,1735 @@
+---
+title: Outbound calling
+slug: /voice/outbound-calling
+description: Place your first outbound phone call, track its progress, and add AI or browser calling to your application.
+max-toc-depth: 3
+---
+
+[caller-id]: /docs/platform/voice/how-to-set-caller-id-or-cnam
+[trial-mode]: /docs/platform/trial-mode
+[international]: /docs/platform/how-to-enable-international-services
+[api-credentials]: /docs/platform/your-signalwire-api-space
+[phone-numbers]: /docs/platform/phone-numbers
+[swml-ai]: /docs/swml/reference/calling/ai
+[ai-best-practices]: /docs/platform/ai/best-practices
+[tcpa]: /docs/platform/compliance/tcpa
+[webhooks]: /docs/platform/webhooks
+[swml-detect-machine]: /docs/swml/reference/calling/detect-machine
+[swml-record-call]: /docs/swml/reference/calling/record-call
+[swml-stream]: /docs/swml/reference/calling/stream
+[call-whisper]: /docs/swml/guides/call-whisper
+[subscriber-token]: /docs/apis/rest/subscribers/tokens/create-subscriber-token
+[guest-token]: /docs/apis/rest/subscribers/tokens/create-subscriber-guest-token
+[resources]: /docs/platform/resources
+[sip-credentials]: /docs/platform/voice/sip/sip-credentials
+[web-clients]: /docs/platform/subscribers
+
+Place an outbound phone call with SignalWire and choose what happens when the destination answers.
+Start by calling your own phone and playing a short announcement, then track the call's progress,
+run an AI agent, or let users call from your web app.
+
+## Prepare for your first call
+
+Have these values ready:
+
+- Your Space URL, such as `<YOUR_SPACE>.signalwire.com`.
+- Your Project ID and API token from the Dashboard's [API credentials][api-credentials] page.
+  Enable the token's **Voice** permission for the Calling API.
+- If calling a phone number, a voice-capable [phone number purchased in your Space][phone-numbers]
+  or a [verified caller ID][caller-id].
+- If calling from a Web Client, you need a [Subscriber token][subscriber-token] or
+  [guest token][guest-token] to provide to the Browser SDK client.
+- A destination device you can answer.
+
+<Warning title="Trial projects and international calls are restricted">
+A [trial project][trial-mode] can dial only numbers it has purchased or verified, and cannot call
+internationally at all. Any other project can dial any number, but needs
+[international dialing enabled][international] before it reaches another country.
+</Warning>
+
+## Make your first call
+
+Call a phone you can answer and play a short announcement.
+
+<Steps>
+
+### Choose how to place your call
+
+Choose the approach that fits how you want to control the call.
+
+| What you want to do | Where to start |
+|---|---|
+| Give SignalWire call instructions over HTTP, supplied inline or returned by your webhook | [REST Calling API](#place-the-call), using cURL or a Server SDK |
+| Control the call in real time, asynchronously receiving events and sending commands over a persistent WebSocket connection | [WebSocket (Relay)](#place-the-call), using a Server SDK |
+| Let someone place and speak on a call from your web app | [Browser SDK](#place-the-call) |
+
+### Set your credentials and caller ID
+
+Replace these values in the code sample you choose:
+
+| Value | Replace with |
+|---|---|
+| `<YOUR_SPACE>` | Your Space's subdomain in `<YOUR_SPACE>.signalwire.com` |
+| `<YOUR_PROJECT_ID>` | Your Project ID |
+| `<YOUR_API_TOKEN>` | Your API token |
+| `<YOUR_CALLER_ID>` | Your caller ID number |
+
+### Choose a destination
+
+A call can reach a phone, a [SIP destination][sip-credentials], a [Web Client][web-clients], or
+another [Resource][resources] in your SignalWire Space.
+
+| Destination | Dial | Example |
+|---|---|---|
+| Phone | Its number in [E.164 format](/docs/platform/what-is-e164) | `+12025550123` |
+| SIP destination | Its SIP URI | `sip:support@example.com` |
+| Web Client | Its resource address | `/private/support-rep` |
+| Application | Its resource address | `/public/support-agent` |
+| Conference | Its resource address | `/public/team-standup` |
+
+For this walkthrough, choose a device you can answer and replace
+`<YOUR_DESTINATION>` with its address.
+
+### Place the call
+
+Use the REST Calling API with any server-side HTTP client or a SignalWire Server SDK. For
+WebSocket calling, use a Server SDK or the Browser SDK.
+
+<Tabs groupId="outbound-api">
+<Tab title="REST">
+
+The request includes a SignalWire Markup Language (SWML) document in `swml`. SignalWire runs
+it when the destination answers, playing the announcement below.
+
+<CodeBlocks>
+<CodeBlock title="cURL — Calling API">
+```bash
+curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
+  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "command": "dial",
+    "params": {
+      "from": "<YOUR_CALLER_ID>",
+      "to": "<YOUR_DESTINATION>",
+      "swml": {
+        "version": "1.0.0",
+        "sections": {
+          "main": [
+            { "play": {"url": "say:Hello, welcome to SignalWire!"} }
+          ]
+        }
+      }
+    }
+  }'
+```
+</CodeBlock>
+<CodeBlock title="Python — REST client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as outbound_call.py and run: python outbound_call.py
+from signalwire import SWMLBuilder, SWMLService
+from signalwire.rest import RestClient
+
+client = RestClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    host="<YOUR_SPACE>.signalwire.com",
+)
+
+swml = (
+    SWMLBuilder(SWMLService(name="outbound-call"))
+    .say("Hello, welcome to SignalWire!")
+    .build()
+)
+
+call = client.calling.dial(
+    from_="<YOUR_CALLER_ID>",
+    to="<YOUR_DESTINATION>",
+    swml=swml,
+)
+print(call["id"])
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — REST client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as outbound-call.mjs,
+// then run: node outbound-call.mjs
+import { RestClient, SwmlBuilder } from "@signalwire/sdk";
+
+const client = new RestClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  host: "<YOUR_SPACE>.signalwire.com",
+});
+
+const swml = new SwmlBuilder()
+  .say("Hello, welcome to SignalWire!")
+  .build();
+
+const call = await client.calling.dial({
+  from: "<YOUR_CALLER_ID>",
+  to: "<YOUR_DESTINATION>",
+  swml,
+});
+console.log(call.id);
+```
+</CodeBlock>
+</CodeBlocks>
+
+The REST API returns a call `id` and status `queued`. This confirms that SignalWire accepted the
+request; the call hasn't necessarily rung or been answered yet. Save the `id` to identify this call.
+
+<EndpointResponseSnippet endpoint="POST /api/calling/calls" />
+
+</Tab>
+<Tab title="WebSocket (Relay)">
+
+Use a Server SDK when controlling a call flow from the server, or the Browser SDK when placing a
+call from a web app.
+
+<CodeBlocks>
+<CodeBlock title="Python — Relay client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as outbound_call.py and run: python outbound_call.py
+import asyncio
+from signalwire.relay import RelayClient
+
+client = RelayClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    host="<YOUR_SPACE>.signalwire.com",
+    contexts=["default"],
+)
+
+async def main():
+    async with client:
+        call = await client.dial(
+            devices=[[{
+                "type": "phone",
+                "params": {
+                    "from_number": "<YOUR_CALLER_ID>",
+                    "to_number": "<YOUR_DESTINATION>",
+                    "timeout": 30,
+                },
+            }]],
+        )
+        async def hang_up_after_playback(_event):
+            if call.state != "ended":
+                await call.hangup()
+
+        await call.play([{
+            "type": "tts",
+            "params": {"text": "Hello, welcome to SignalWire!"},
+        }], on_completed=hang_up_after_playback)
+        await call.wait_for_ended()
+
+asyncio.run(main())
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — Relay client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as outbound-call.mjs,
+// then run: node outbound-call.mjs
+import { RelayClient } from "@signalwire/sdk";
+
+const client = new RelayClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  host: "<YOUR_SPACE>.signalwire.com",
+  contexts: ["default"],
+});
+
+await client.connect();
+
+try {
+  const call = await client.dial([[{
+    type: "phone",
+    params: {
+      from_number: "<YOUR_CALLER_ID>",
+      to_number: "<YOUR_DESTINATION>",
+      timeout: 30,
+    },
+  }]]);
+  await call.play([
+    { type: "tts", text: "Hello, welcome to SignalWire!" },
+  ], {
+    onCompleted: async () => {
+      if (call.state !== "ended") await call.hangup();
+    },
+  });
+  await call.waitForEnded();
+} finally {
+  await client.disconnect();
+}
+```
+</CodeBlock>
+<CodeBlock title="JavaScript — Browser SDK">
+```javascript
+// Install: npm install @signalwire/js@4.0.0-rc.2 rxjs@7.8.2
+// Run on HTTPS or localhost with these elements in your page:
+// <audio id="remote-audio" autoplay></audio>
+// <button id="call" type="button">Call</button>
+// <button id="hangup" type="button" disabled>Hang up</button>
+// Use a Subscriber Access Token issued by your backend.
+import { SignalWire, StaticCredentialProvider } from "@signalwire/js";
+
+const client = new SignalWire(new StaticCredentialProvider({
+  token: "<YOUR_SUBSCRIBER_ACCESS_TOKEN>",
+}));
+const remoteAudio = document.querySelector("#remote-audio");
+const callButton = document.querySelector("#call");
+const hangupButton = document.querySelector("#hangup");
+
+callButton.onclick = async () => {
+  callButton.disabled = true;
+  try {
+    const call = await client.dial("<YOUR_DESTINATION>", { audio: true, video: false });
+    call.remoteStream$.subscribe((stream) => (remoteAudio.srcObject = stream));
+    hangupButton.disabled = false;
+    hangupButton.onclick = () => {
+      void call.hangup().catch(console.error);
+    };
+    call.status$.subscribe((status) => {
+      if (status === "disconnected" || status === "failed" || status === "destroyed") {
+        remoteAudio.srcObject = null;
+        hangupButton.disabled = true;
+        callButton.disabled = false;
+      }
+    });
+  } catch (error) {
+    callButton.disabled = false;
+    console.error(error);
+  }
+};
+```
+</CodeBlock>
+</CodeBlocks>
+
+</Tab>
+</Tabs>
+
+### Answer the call
+
+Answer the destination phone. With a server example, you should hear “Hello, welcome to
+SignalWire!”, then the call ends. With the browser example, allow
+microphone access to speak on the call and select **Hang up** when you finish.
+
+</Steps>
+
+## Track the call's progress
+
+Use callbacks with REST or event handlers with Relay to follow what happens after you dial.
+Follow the section for the approach you used for your first call.
+
+### Track call progress via REST
+
+Add `status_url` and `status_events` to your first request to receive call progress callbacks.
+Keep the inline `swml` announcement. The examples below place another call with notifications
+for `ringing`, `answered`, and `ended`.
+
+Before running the request, replace `<YOUR_STATUS_WEBHOOK_URL>` with a webhook endpoint
+you control that SignalWire can reach. Your endpoint receives HTTP POST requests as the call
+reaches the selected states. See the [webhooks guide][webhooks] for endpoint setup and local testing.
+`status_events` accepts `created`, `ringing`, `answered`, and `ended`; if omitted, it defaults
+to `ended`. The `ended` payload includes an `end_reason` so you can tell how the call finished.
+
+<CodeBlocks>
+<CodeBlock title="cURL — Calling API">
+```bash
+curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
+  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "command": "dial",
+    "params": {
+      "from": "<YOUR_CALLER_ID>",
+      "to": "<YOUR_DESTINATION>",
+      "swml": {
+        "version": "1.0.0",
+        "sections": {
+          "main": [
+            { "play": {"url": "say:Hello, welcome to SignalWire!"} }
+          ]
+        }
+      },
+      "status_url": "<YOUR_STATUS_WEBHOOK_URL>",
+      "status_events": ["ringing", "answered", "ended"]
+    }
+  }'
+```
+</CodeBlock>
+<CodeBlock title="Python — REST client">
+```python
+swml = (
+    SWMLBuilder(SWMLService(name="outbound-call"))
+    .say("Hello, welcome to SignalWire!")
+    .build()
+)
+
+call = client.calling.dial(
+    from_="<YOUR_CALLER_ID>",
+    to="<YOUR_DESTINATION>",
+    swml=swml,
+    status_url="<YOUR_STATUS_WEBHOOK_URL>",
+    status_events=["ringing", "answered", "ended"],
+)
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — REST client">
+```typescript
+const swml = new SwmlBuilder()
+  .say("Hello, welcome to SignalWire!")
+  .build();
+
+const call = await client.calling.dial({
+  from: "<YOUR_CALLER_ID>",
+  to: "<YOUR_DESTINATION>",
+  swml,
+  status_url: "<YOUR_STATUS_WEBHOOK_URL>",
+  status_events: ["ringing", "answered", "ended"],
+});
+```
+</CodeBlock>
+</CodeBlocks>
+
+This flow shows a call with `ringing`, `answered`, and `ended` status events enabled:
+
+<llms-ignore>
+
+<img src="/assets/images/img/outbound-call-lifecycle-themed.svg" alt="Your code sends a dial request with from, to, and SWML. SignalWire returns the call id with status queued and rings the destination and reports status ringing. When the person answers, SignalWire reports status answered and runs your SWML. When the call finishes, SignalWire reports status ended." />
+
+</llms-ignore>
+
+<llms-only>
+
+```mermaid
+sequenceDiagram
+    participant App as Your code
+    participant SW as SignalWire
+    participant Dest as Destination
+
+    App->>SW: dial: from, to, SWML
+    SW-->>App: call id, status queued
+    SW->>Dest: rings
+    SW-->>App: status ringing
+    Dest->>SW: answers
+    SW-->>App: status answered
+    Note over SW,Dest: Your SWML runs
+    Note over SW,Dest: Call finishes
+    SW-->>App: status ended
+```
+
+</llms-only>
+
+### Track call progress via WebSocket
+
+Relay exposes call state events through `call.on()`. Because `dial()` returns after the destination
+answers, the handler observes later states such as `ending` and `ended`.
+
+The Browser SDK returns a WebRTC `Call` while it is `ringing`. Subscribe to `call.status$` to follow
+it through `connecting`, `connected`, and the final states.
+
+<CodeBlocks>
+<CodeBlock title="Python — Relay client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as outbound_call.py and run: python outbound_call.py
+import asyncio
+from signalwire.relay import RelayClient
+from signalwire.relay.event import CallStateEvent
+
+client = RelayClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    host="<YOUR_SPACE>.signalwire.com",
+    contexts=["default"],
+)
+
+async def main():
+    async with client:
+        call = await client.dial(
+            devices=[[{
+                "type": "phone",
+                "params": {
+                    "from_number": "<YOUR_CALLER_ID>",
+                    "to_number": "<YOUR_DESTINATION>",
+                    "timeout": 30,
+                },
+            }]],
+        )
+        def handle_state(event: CallStateEvent):
+            print(f"State: {event.call_state}, reason: {event.end_reason}")
+
+        call.on("calling.call.state", handle_state)
+        async def hang_up_after_playback(_event):
+            if call.state != "ended":
+                await call.hangup()
+
+        await call.play([{
+            "type": "tts",
+            "params": {"text": "Hello, welcome to SignalWire!"},
+        }], on_completed=hang_up_after_playback)
+        await call.wait_for_ended()
+
+asyncio.run(main())
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — Relay client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as outbound-call.mjs,
+// then run: node outbound-call.mjs
+import { RelayClient } from "@signalwire/sdk";
+
+const client = new RelayClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  host: "<YOUR_SPACE>.signalwire.com",
+  contexts: ["default"],
+});
+
+await client.connect();
+
+try {
+  const call = await client.dial([[{
+    type: "phone",
+    params: {
+      from_number: "<YOUR_CALLER_ID>",
+      to_number: "<YOUR_DESTINATION>",
+      timeout: 30,
+    },
+  }]]);
+  call.on("calling.call.state", (event) => {
+    console.log(`State: ${event.params.call_state}, reason: ${event.params.end_reason ?? ""}`);
+  });
+  await call.play([
+    { type: "tts", text: "Hello, welcome to SignalWire!" },
+  ], {
+    onCompleted: async () => {
+      if (call.state !== "ended") await call.hangup();
+    },
+  });
+  await call.waitForEnded();
+} finally {
+  await client.disconnect();
+}
+```
+</CodeBlock>
+<CodeBlock title="JavaScript — Browser SDK">
+```javascript
+// Install: npm install @signalwire/js@4.0.0-rc.2 rxjs@7.8.2
+// Run on HTTPS or localhost with these elements in your page:
+// <p id="status">Idle</p>
+// <audio id="remote-audio" autoplay></audio>
+// <button id="call" type="button">Call</button>
+// <button id="hangup" type="button" disabled>Hang up</button>
+import { SignalWire, StaticCredentialProvider } from "@signalwire/js";
+
+const client = new SignalWire(new StaticCredentialProvider({
+  token: "<YOUR_SUBSCRIBER_ACCESS_TOKEN>",
+}));
+const statusLine = document.querySelector("#status");
+const remoteAudio = document.querySelector("#remote-audio");
+const callButton = document.querySelector("#call");
+const hangupButton = document.querySelector("#hangup");
+const finalStatuses = new Set(["disconnected", "failed", "destroyed"]);
+
+callButton.onclick = async () => {
+  callButton.disabled = true;
+  try {
+    const call = await client.dial("<YOUR_DESTINATION>", { audio: true, video: false });
+    call.remoteStream$.subscribe((stream) => (remoteAudio.srcObject = stream));
+    call.status$.subscribe((status) => {
+      statusLine.textContent = `Call: ${status}`;
+      console.log(`Call: ${status}`);
+
+      if (finalStatuses.has(status)) {
+        remoteAudio.srcObject = null;
+        hangupButton.disabled = true;
+        callButton.disabled = false;
+      }
+    });
+
+    hangupButton.disabled = false;
+    hangupButton.onclick = () => {
+      void call.hangup().catch(console.error);
+    };
+  } catch (error) {
+    statusLine.textContent = "Call failed";
+    callButton.disabled = false;
+    console.error(error);
+  }
+};
+```
+</CodeBlock>
+</CodeBlocks>
+
+For more Relay event handlers, see
+[Event listeners in the Relay client guide](https://signalwire.com/docs/server-sdks/guides/relay-client#event-listeners).
+
+For Relay, this flow shows the commands your code sends and the events SignalWire returns over the
+same persistent connection:
+
+<llms-ignore>
+
+<img src="/assets/images/img/outbound-call-relay-lifecycle-themed.svg" alt="Your code and SignalWire share one persistent WebSocket. Your code sends calling.dial; SignalWire reports created, ringing, and answered through calling.call.state. Your code sends calling.play; SignalWire reports playing and finished through calling.call.play. Your code sends calling.end; SignalWire reports ending and ended through calling.call.state." />
+
+</llms-ignore>
+
+<llms-only>
+
+```mermaid
+sequenceDiagram
+    participant App as Your code
+    participant SW as SignalWire
+
+    Note over App,SW: One persistent WebSocket, both directions
+    App->>SW: calling.dial
+    SW-->>App: calling.call.state: created, ringing, answered
+    App->>SW: calling.play
+    SW-->>App: calling.call.play: playing, then finished
+    App->>SW: calling.end
+    SW-->>App: calling.call.state: ending, then ended
+```
+
+</llms-only>
+
+## Examples
+
+### Run an AI agent
+
+Start an AI agent that welcomes the person and answers basic questions about SignalWire.
+
+<Warning title="Outbound AI calls are regulated">
+Before dialing, follow consent, do-not-call, and calling-hour requirements for artificial voices.
+See the [TCPA guide][tcpa] and [AI best practices][ai-best-practices].
+</Warning>
+
+#### Run an AI agent via REST
+
+Send a `dial` request with an inline SWML [`ai` instruction][swml-ai] that starts when the call is answered.
+
+<CodeBlocks>
+<CodeBlock title="cURL — Calling API">
+```bash
+curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
+  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "command": "dial",
+    "params": {
+      "from": "<YOUR_CALLER_ID>",
+      "to": "<YOUR_DESTINATION>",
+      "swml": {
+        "version": "1.0.0",
+        "sections": {
+          "main": [
+            {
+              "ai": {
+                "params": {
+                  "static_greeting": "Hello, welcome to SignalWire! This call uses an artificial voice.",
+                  "static_greeting_no_barge": true
+                },
+                "prompt": {
+                  "text": "Welcome the caller to SignalWire. Briefly explain that SignalWire provides APIs and SDKs for voice, messaging, video, and AI. Answer basic follow-up questions. If you are unsure, direct the caller to signalwire.com."
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }'
+```
+</CodeBlock>
+<CodeBlock title="Python — REST client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as outbound_call.py and run: python outbound_call.py
+from signalwire import SWMLBuilder, SWMLService
+from signalwire.rest import RestClient
+
+client = RestClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    host="<YOUR_SPACE>.signalwire.com",
+)
+
+swml = (
+    SWMLBuilder(SWMLService(name="outbound-ai-call"))
+    .ai(
+        prompt_text="Welcome the caller to SignalWire. Briefly explain that SignalWire provides APIs and SDKs for voice, messaging, video, and AI. Answer basic follow-up questions. If you are unsure, direct the caller to signalwire.com.",
+        params={
+            "static_greeting": "Hello, welcome to SignalWire! This call uses an artificial voice.",
+            "static_greeting_no_barge": True,
+        },
+    )
+    .build()
+)
+
+call = client.calling.dial(
+    from_="<YOUR_CALLER_ID>",
+    to="<YOUR_DESTINATION>",
+    swml=swml,
+)
+print(call["id"])
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — REST client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as outbound-call.mjs,
+// then run: node outbound-call.mjs
+import { RestClient, SwmlBuilder } from "@signalwire/sdk";
+
+const client = new RestClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  host: "<YOUR_SPACE>.signalwire.com",
+});
+
+const swml = new SwmlBuilder()
+  .ai({
+    prompt: "Welcome the caller to SignalWire. Briefly explain that SignalWire provides APIs and SDKs for voice, messaging, video, and AI. Answer basic follow-up questions. If you are unsure, direct the caller to signalwire.com.",
+    params: {
+      static_greeting: "Hello, welcome to SignalWire! This call uses an artificial voice.",
+      static_greeting_no_barge: true,
+    },
+  })
+  .build();
+
+const call = await client.calling.dial({
+  from: "<YOUR_CALLER_ID>",
+  to: "<YOUR_DESTINATION>",
+  swml,
+});
+console.log(call.id);
+```
+</CodeBlock>
+</CodeBlocks>
+
+#### Run an AI agent via WebSocket (Relay)
+
+Dial with Relay, start the agent with `call.ai()`, and keep the connection open until the call ends.
+
+<CodeBlocks>
+<CodeBlock title="Python — Relay client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as outbound_call.py and run: python outbound_call.py
+import asyncio
+from signalwire.relay import RelayClient
+
+client = RelayClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    host="<YOUR_SPACE>.signalwire.com",
+    contexts=["default"],
+)
+
+async def main():
+    async with client:
+        call = await client.dial(
+            devices=[[{
+                "type": "phone",
+                "params": {
+                    "from_number": "<YOUR_CALLER_ID>",
+                    "to_number": "<YOUR_DESTINATION>",
+                    "timeout": 30,
+                },
+            }]],
+        )
+        await call.ai(
+            ai_params={
+                "static_greeting": "Hello, welcome to SignalWire! This call uses an artificial voice.",
+                "static_greeting_no_barge": True,
+            },
+            prompt={
+                "text": """Welcome the caller to SignalWire. Briefly explain that SignalWire
+provides APIs and SDKs for voice, messaging, video, and AI. Answer basic
+follow-up questions. If you are unsure, direct the caller to signalwire.com."""
+            },
+        )
+        # Keep the connection open until the destination hangs up.
+        await call.wait_for_ended()
+
+asyncio.run(main())
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — Relay client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as outbound-call.mjs,
+// then run: node outbound-call.mjs
+import { RelayClient } from "@signalwire/sdk";
+
+const client = new RelayClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  host: "<YOUR_SPACE>.signalwire.com",
+  contexts: ["default"],
+});
+
+await client.connect();
+
+try {
+  const call = await client.dial([[{
+    type: "phone",
+    params: {
+      from_number: "<YOUR_CALLER_ID>",
+      to_number: "<YOUR_DESTINATION>",
+      timeout: 30,
+    },
+  }]]);
+  await call.ai({
+    aiParams: {
+      static_greeting: "Hello, welcome to SignalWire! This call uses an artificial voice.",
+      static_greeting_no_barge: true,
+    },
+    prompt: {
+      text: `Welcome the caller to SignalWire. Briefly explain that SignalWire
+  provides APIs and SDKs for voice, messaging, video, and AI. Answer basic
+  follow-up questions. If you are unsure, direct the caller to signalwire.com.`,
+    },
+  });
+  // Keep the connection open until the destination hangs up.
+  await call.waitForEnded();
+} finally {
+  await client.disconnect();
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### Leave a voicemail
+
+Use answering machine detection (AMD) to speak to a person immediately or leave a message after a
+voicemail greeting and beep.
+
+Follow the consent and calling-hour requirements in the [TCPA guide][tcpa].
+
+#### Leave a voicemail via REST
+
+Use [`detect_machine`][swml-detect-machine] and `switch` to choose the live or voicemail message.
+
+<CodeBlocks>
+<CodeBlock title="cURL — Calling API">
+```bash
+curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
+  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "command": "dial",
+    "params": {
+      "from": "<YOUR_CALLER_ID>",
+      "to": "<YOUR_DESTINATION>",
+      "swml": {
+        "version": "1.0.0",
+        "sections": {
+          "main": [
+            {
+              "detect_machine": {
+                "detectors": "amd",
+                "detect_message_end": true,
+                "timeout": 30
+              }
+            },
+            {
+              "switch": {
+                "variable": "detect_result",
+                "case": {
+                  "machine": [
+                    { "play": {"url": "say:Hello, welcome to SignalWire! Visit signalwire.com to learn more."} }
+                  ],
+                  "human": [
+                    { "play": {"url": "say:Hello, welcome to SignalWire!"} }
+                  ]
+                },
+                "default": [
+                  { "play": {"url": "say:Hello, welcome to SignalWire!"} }
+                ]
+              }
+            },
+            { "hangup": {} }
+          ]
+        }
+      }
+    }
+  }'
+```
+</CodeBlock>
+<CodeBlock title="Python — REST client">
+```python
+voicemail = "say:Hello, welcome to SignalWire! Visit signalwire.com to learn more."
+live = "say:Hello, welcome to SignalWire!"
+
+swml = (
+    SWMLBuilder(SWMLService(name="outbound-voicemail"))
+    .detect_machine(
+        detectors="amd",
+        detect_message_end=True,
+        timeout=30,
+    )
+    .switch(
+        variable="detect_result",
+        case={
+            "machine": [{"play": {"url": voicemail}}],
+            "human": [{"play": {"url": live}}],
+        },
+        default=[{
+            "play": {
+                "url": "say:Hello, welcome to SignalWire!"
+            }
+        }],
+    )
+    .hangup()
+    .build()
+)
+
+call = client.calling.dial(
+    from_="<YOUR_CALLER_ID>",
+    to="<YOUR_DESTINATION>",
+    swml=swml,
+)
+print(call["id"])
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — REST client">
+```typescript
+const voicemail = "say:Hello, welcome to SignalWire! Visit signalwire.com to learn more.";
+const live = "say:Hello, welcome to SignalWire!";
+
+const swml = new SwmlBuilder()
+  .detect_machine({
+    detectors: "amd",
+    detect_message_end: true,
+    timeout: 30,
+  })
+  .switch({
+    variable: "detect_result",
+    case: {
+      machine: [{ play: { url: voicemail } }],
+      human: [{ play: { url: live } }],
+    },
+    default: [{
+      play: {
+        url: "say:Hello, welcome to SignalWire!",
+      },
+    }],
+  })
+  .hangup()
+  .build();
+
+const call = await client.calling.dial({
+  from: "<YOUR_CALLER_ID>",
+  to: "<YOUR_DESTINATION>",
+  swml,
+});
+console.log(call.id);
+```
+</CodeBlock>
+</CodeBlocks>
+
+#### Leave a voicemail via WebSocket (Relay)
+
+Use `call.detect()` to play the live message after `HUMAN` or `UNKNOWN`, or wait for `READY` after a
+machine greeting.
+
+<CodeBlocks>
+<CodeBlock title="Python — Relay client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as outbound_call.py and run: python outbound_call.py
+import asyncio
+from signalwire.relay import RelayClient
+from signalwire.relay.event import DetectEvent
+
+VOICEMAIL = "Hello, welcome to SignalWire! Visit signalwire.com to learn more."
+LIVE = "Hello, welcome to SignalWire!"
+
+client = RelayClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    host="<YOUR_SPACE>.signalwire.com",
+    contexts=["default"],
+)
+
+def outcome(event: DetectEvent) -> str:
+    return event.detect.get("params", {}).get("event", "")
+
+async def main():
+    async with client:
+        call = await client.dial(
+            devices=[[{
+                "type": "phone",
+                "params": {
+                    "from_number": "<YOUR_CALLER_ID>",
+                    "to_number": "<YOUR_DESTINATION>",
+                    "timeout": 30,
+                },
+            }]],
+        )
+        async def hang_up_after_playback(_event):
+            if call.state != "ended":
+                await call.hangup()
+
+        announced = False
+
+        async def announce(event: DetectEvent):
+            nonlocal announced
+            if announced or call.state == "ended":
+                return
+            result = outcome(event)
+            if result == "READY":
+                # The voicemail greeting and its beep have finished.
+                announced = True
+                await call.play(
+                    [{"type": "tts", "params": {"text": VOICEMAIL}}],
+                    on_completed=hang_up_after_playback,
+                )
+            elif result in ("HUMAN", "UNKNOWN"):
+                announced = True
+                await call.play(
+                    [{"type": "tts", "params": {"text": LIVE}}],
+                    on_completed=hang_up_after_playback,
+                )
+            elif result == "finished":
+                await call.hangup()
+
+        call.on("calling.call.detect", announce)
+        await call.detect({"type": "machine", "params": {"detect_message_end": True}}, timeout=30)
+        await call.wait_for_ended()
+
+asyncio.run(main())
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — Relay client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// Save as outbound-call.mts and run: npx tsx outbound-call.mts
+import { RelayClient, DetectEvent, RelayEvent } from "@signalwire/sdk";
+
+const VOICEMAIL = "Hello, welcome to SignalWire! Visit signalwire.com to learn more.";
+const LIVE = "Hello, welcome to SignalWire!";
+
+const client = new RelayClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  host: "<YOUR_SPACE>.signalwire.com",
+  contexts: ["default"],
+});
+
+function outcome(event: RelayEvent): string {
+  const detect = (event as DetectEvent).detect?.params as { event?: string } | undefined;
+  return detect?.event ?? "";
+}
+
+await client.connect();
+
+try {
+  const call = await client.dial([[{
+    type: "phone",
+    params: {
+      from_number: "<YOUR_CALLER_ID>",
+      to_number: "<YOUR_DESTINATION>",
+      timeout: 30,
+    },
+  }]]);
+  const hangUpAfterPlayback = async () => {
+    if (call.state !== "ended") await call.hangup();
+  };
+  let announced = false;
+
+  call.on("calling.call.detect", async (event) => {
+    if (announced || call.state === "ended") return;
+    const result = outcome(event);
+    if (result === "READY") {
+      // The voicemail greeting and its beep have finished.
+      announced = true;
+      await call.play([{ type: "tts", text: VOICEMAIL }], { onCompleted: hangUpAfterPlayback });
+    } else if (result === "HUMAN" || result === "UNKNOWN") {
+      announced = true;
+      await call.play([{ type: "tts", text: LIVE }], { onCompleted: hangUpAfterPlayback });
+    } else if (result === "finished") {
+      await call.hangup();
+    }
+  });
+
+  await call.detect({ type: "machine", params: { detect_message_end: true } }, { timeout: 30 });
+  await call.waitForEnded();
+} finally {
+  await client.disconnect();
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### Whisper before connecting two people
+
+Play a private message to `<YOUR_AGENT_DESTINATION>`, then connect that call to
+`<YOUR_DESTINATION>`.
+
+#### Play a whisper via REST
+
+Use `connect.confirm` to play the [whisper][call-whisper] to the agent before bridging the calls.
+
+<CodeBlocks>
+<CodeBlock title="cURL — Calling API">
+```bash
+curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
+  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "command": "dial",
+    "params": {
+      "from": "<YOUR_CALLER_ID>",
+      "to": "<YOUR_DESTINATION>",
+      "swml": {
+        "version": "1.0.0",
+        "sections": {
+          "main": [
+            { "play": {"url": "say:Hello, welcome to SignalWire!"} },
+            {
+              "connect": {
+                "from": "<YOUR_CALLER_ID>",
+                "to": "<YOUR_AGENT_DESTINATION>",
+                "confirm": [
+                  { "play": {"url": "say:You are about to be connected to the caller."} }
+                ],
+                "confirm_timeout": 20
+              }
+            }
+          ]
+        }
+      }
+    }
+  }'
+```
+</CodeBlock>
+<CodeBlock title="Python — REST client">
+```python
+whisper = "say:You are about to be connected to the caller."
+
+swml = (
+    SWMLBuilder(SWMLService(name="outbound-whisper"))
+    .say("Hello, welcome to SignalWire!")
+    .connect(**{
+        "from": "<YOUR_CALLER_ID>",
+        "to": "<YOUR_AGENT_DESTINATION>",
+        "confirm": [{"play": {"url": whisper}}],
+        "confirm_timeout": 20,
+    })
+    .build()
+)
+
+call = client.calling.dial(
+    from_="<YOUR_CALLER_ID>",
+    to="<YOUR_DESTINATION>",
+    swml=swml,
+)
+print(call["id"])
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — REST client">
+```typescript
+const whisper = "say:You are about to be connected to the caller.";
+
+const swml = new SwmlBuilder()
+  .say("Hello, welcome to SignalWire!")
+  .connect({
+    from: "<YOUR_CALLER_ID>",
+    to: "<YOUR_AGENT_DESTINATION>",
+    confirm: [{ play: { url: whisper } }],
+    confirm_timeout: 20,
+  })
+  .build();
+
+const call = await client.calling.dial({
+  from: "<YOUR_CALLER_ID>",
+  to: "<YOUR_DESTINATION>",
+  swml,
+});
+console.log(call.id);
+```
+</CodeBlock>
+</CodeBlocks>
+
+#### Play a whisper via WebSocket (Relay)
+
+Dial the agent first, play the whisper, then connect the caller after playback finishes.
+
+<CodeBlocks>
+<CodeBlock title="Python — Relay client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as outbound_call.py and run: python outbound_call.py
+import asyncio
+from signalwire.relay import RelayClient
+
+client = RelayClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    host="<YOUR_SPACE>.signalwire.com",
+    contexts=["default"],
+)
+
+async def main():
+    async with client:
+        # Call the agent first: only this leg hears the whisper.
+        call = await client.dial(
+            devices=[[{
+                "type": "phone",
+                "params": {
+                    "from_number": "<YOUR_CALLER_ID>",
+                    "to_number": "<YOUR_AGENT_DESTINATION>",
+                    "timeout": 30,
+                },
+            }]],
+        )
+        async def connect_the_caller(_event):
+            if call.state != "ended":
+                await call.connect([[{
+                    "type": "phone",
+                    "params": {
+                        "from_number": "<YOUR_CALLER_ID>",
+                        "to_number": "<YOUR_DESTINATION>",
+                        "timeout": 30,
+                    },
+                }]])
+
+        await call.play(
+            [{"type": "tts", "params": {"text": "You are about to be connected to the caller."}}],
+            on_completed=connect_the_caller,
+        )
+        await call.wait_for_ended()
+
+asyncio.run(main())
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — Relay client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as outbound-call.mjs,
+// then run: node outbound-call.mjs
+import { RelayClient } from "@signalwire/sdk";
+
+const client = new RelayClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  host: "<YOUR_SPACE>.signalwire.com",
+  contexts: ["default"],
+});
+
+await client.connect();
+
+try {
+  // Call the agent first: only this leg hears the whisper.
+  const call = await client.dial([[{
+    type: "phone",
+    params: {
+      from_number: "<YOUR_CALLER_ID>",
+      to_number: "<YOUR_AGENT_DESTINATION>",
+      timeout: 30,
+    },
+  }]]);
+  await call.play(
+    [{ type: "tts", text: "You are about to be connected to the caller." }],
+    {
+      onCompleted: async () => {
+        if (call.state === "ended") return;
+        await call.connect([[{
+          type: "phone",
+          params: {
+            from_number: "<YOUR_CALLER_ID>",
+            to_number: "<YOUR_DESTINATION>",
+            timeout: 30,
+          },
+        }]]);
+      },
+    },
+  );
+  await call.waitForEnded();
+} finally {
+  await client.disconnect();
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### Record the call
+
+Record both sides of an outbound call and retrieve the finished recording URL.
+
+<Warning title="Recording consent is your responsibility">
+Confirm which parties must consent and announce the recording when required.
+</Warning>
+
+#### Record the call via REST
+
+Start [`record_call`][swml-record-call] in the background and receive the result at `status_url`.
+
+<CodeBlocks>
+<CodeBlock title="cURL — Calling API">
+```bash
+curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
+  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "command": "dial",
+    "params": {
+      "from": "<YOUR_CALLER_ID>",
+      "to": "<YOUR_DESTINATION>",
+      "swml": {
+        "version": "1.0.0",
+        "sections": {
+          "main": [
+            {
+              "record_call": {
+                "format": "mp3",
+                "direction": "both",
+                "stereo": true,
+                "beep": true,
+                "status_url": "<YOUR_RECORDING_STATUS_URL>"
+              }
+            },
+            { "play": {"url": "say:Hello, welcome to SignalWire!"} }
+          ]
+        }
+      }
+    }
+  }'
+```
+</CodeBlock>
+<CodeBlock title="Python — REST client">
+```python
+swml = (
+    SWMLBuilder(SWMLService(name="outbound-recording"))
+    .record_call(
+        format="mp3",
+        direction="both",
+        stereo=True,
+        beep=True,
+        status_url="<YOUR_RECORDING_STATUS_URL>",
+    )
+    .say("Hello, welcome to SignalWire!")
+    .build()
+)
+
+call = client.calling.dial(
+    from_="<YOUR_CALLER_ID>",
+    to="<YOUR_DESTINATION>",
+    swml=swml,
+)
+print(call["id"])
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — REST client">
+```typescript
+const swml = new SwmlBuilder()
+  .record_call({
+    format: "mp3",
+    direction: "both",
+    stereo: true,
+    beep: true,
+    status_url: "<YOUR_RECORDING_STATUS_URL>",
+  })
+  .say("Hello, welcome to SignalWire!")
+  .build();
+
+const call = await client.calling.dial({
+  from: "<YOUR_CALLER_ID>",
+  to: "<YOUR_DESTINATION>",
+  swml,
+});
+console.log(call.id);
+```
+</CodeBlock>
+</CodeBlocks>
+
+#### Record the call via WebSocket (Relay)
+
+Start `call.record()` and read the recording URL from its `finished` event.
+
+<CodeBlocks>
+<CodeBlock title="Python — Relay client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as outbound_call.py and run: python outbound_call.py
+import asyncio
+from signalwire.relay import RelayClient
+
+client = RelayClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    host="<YOUR_SPACE>.signalwire.com",
+    contexts=["default"],
+)
+
+async def main():
+    async with client:
+        call = await client.dial(
+            devices=[[{
+                "type": "phone",
+                "params": {
+                    "from_number": "<YOUR_CALLER_ID>",
+                    "to_number": "<YOUR_DESTINATION>",
+                    "timeout": 30,
+                },
+            }]],
+        )
+        recording = await call.record(
+            audio={
+                "format": "mp3",
+                "direction": "both",
+                "stereo": True,
+                "beep": True,
+                "initial_timeout": 0,
+                "end_silence_timeout": 0,
+            },
+        )
+        async def hang_up_after_playback(_event):
+            if call.state != "ended":
+                await call.hangup()
+
+        await call.play(
+            [{"type": "tts", "params": {"text": "Hello, welcome to SignalWire!"}}],
+            on_completed=hang_up_after_playback,
+        )
+        await call.wait_for_ended()
+        finished = await recording.wait()
+        print(f"Recording: {finished.url}")
+
+asyncio.run(main())
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — Relay client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// Save as outbound-call.mts and run: npx tsx outbound-call.mts
+import { RelayClient, RecordEvent } from "@signalwire/sdk";
+
+const client = new RelayClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  host: "<YOUR_SPACE>.signalwire.com",
+  contexts: ["default"],
+});
+
+await client.connect();
+
+try {
+  const call = await client.dial([[{
+    type: "phone",
+    params: {
+      from_number: "<YOUR_CALLER_ID>",
+      to_number: "<YOUR_DESTINATION>",
+      timeout: 30,
+    },
+  }]]);
+  const recording = await call.record({
+    format: "mp3",
+    direction: "both",
+    stereo: true,
+    beep: true,
+    initial_timeout: 0,
+    end_silence_timeout: 0,
+  });
+  await call.play(
+    [{ type: "tts", text: "Hello, welcome to SignalWire!" }],
+    {
+      onCompleted: async () => {
+        if (call.state !== "ended") await call.hangup();
+      },
+    },
+  );
+  await call.waitForEnded();
+  const finished = await recording.wait();
+  console.log(`Recording: ${(finished as RecordEvent).url}`);
+} finally {
+  await client.disconnect();
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### Stream the call audio
+
+Stream both sides of a live call to your secure WebSocket endpoint for real-time processing.
+
+#### Stream call audio via REST
+
+Start [`stream`][swml-stream] in the background and send status events to your webhook.
+
+<CodeBlocks>
+<CodeBlock title="cURL — Calling API">
+```bash
+curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
+  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "command": "dial",
+    "params": {
+      "from": "<YOUR_CALLER_ID>",
+      "to": "<YOUR_DESTINATION>",
+      "swml": {
+        "version": "1.0.0",
+        "sections": {
+          "main": [
+            {
+              "stream": {
+                "url": "<YOUR_AUDIO_STREAM_URL>",
+                "track": "both_tracks",
+                "codec": "PCMU",
+                "status_url": "<YOUR_STREAM_STATUS_URL>"
+              }
+            },
+            { "play": {"url": "say:Hello, welcome to SignalWire!"} }
+          ]
+        }
+      }
+    }
+  }'
+```
+</CodeBlock>
+<CodeBlock title="Python — REST client">
+```python
+# `stream` is not yet in the builder's bundled schema, so add it as raw SWML.
+swml_builder = SWMLBuilder(
+    SWMLService(name="outbound-stream", schema_validation=False)
+)
+swml_builder.service.add_verb("stream", {
+    "url": "<YOUR_AUDIO_STREAM_URL>",
+    "track": "both_tracks",
+    "codec": "PCMU",
+    "status_url": "<YOUR_STREAM_STATUS_URL>",
+})
+swml = (
+    swml_builder
+    .say("Hello, welcome to SignalWire!")
+    .build()
+)
+
+call = client.calling.dial(
+    from_="<YOUR_CALLER_ID>",
+    to="<YOUR_DESTINATION>",
+    swml=swml,
+)
+print(call["id"])
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — REST client">
+```typescript
+// `stream` is not yet in the builder's bundled schema, so add it as raw SWML.
+const swmlBuilder = new SwmlBuilder();
+swmlBuilder.setValidation(false);
+swmlBuilder.addVerb("stream", {
+  url: "<YOUR_AUDIO_STREAM_URL>",
+  track: "both_tracks",
+  codec: "PCMU",
+  status_url: "<YOUR_STREAM_STATUS_URL>",
+});
+swmlBuilder.setValidation(true);
+const swml = swmlBuilder
+  .say("Hello, welcome to SignalWire!")
+  .build();
+
+const call = await client.calling.dial({
+  from: "<YOUR_CALLER_ID>",
+  to: "<YOUR_DESTINATION>",
+  swml,
+});
+console.log(call.id);
+```
+</CodeBlock>
+</CodeBlocks>
+
+#### Stream call audio via WebSocket (Relay)
+
+Start `call.stream()` over the Relay connection and keep it running until the call ends.
+
+<CodeBlocks>
+<CodeBlock title="Python — Relay client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as outbound_call.py and run: python outbound_call.py
+import asyncio
+from signalwire.relay import RelayClient
+
+client = RelayClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    host="<YOUR_SPACE>.signalwire.com",
+    contexts=["default"],
+)
+
+async def main():
+    async with client:
+        call = await client.dial(
+            devices=[[{
+                "type": "phone",
+                "params": {
+                    "from_number": "<YOUR_CALLER_ID>",
+                    "to_number": "<YOUR_DESTINATION>",
+                    "timeout": 30,
+                },
+            }]],
+        )
+        stream = await call.stream(
+            url="<YOUR_AUDIO_STREAM_URL>",
+            track="both_tracks",
+            codec="PCMU",
+            custom_parameters={"session_id": "<YOUR_SESSION_ID>"},
+        )
+        print(f"Streaming audio, control ID {stream.control_id}")
+
+        async def hang_up_after_playback(_event):
+            if call.state != "ended":
+                await call.hangup()
+
+        await call.play(
+            [{"type": "tts", "params": {"text": "Hello, welcome to SignalWire!"}}],
+            on_completed=hang_up_after_playback,
+        )
+        await call.wait_for_ended()
+
+asyncio.run(main())
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — Relay client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as outbound-call.mjs,
+// then run: node outbound-call.mjs
+import { RelayClient } from "@signalwire/sdk";
+
+const client = new RelayClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  host: "<YOUR_SPACE>.signalwire.com",
+  contexts: ["default"],
+});
+
+await client.connect();
+
+try {
+  const call = await client.dial([[{
+    type: "phone",
+    params: {
+      from_number: "<YOUR_CALLER_ID>",
+      to_number: "<YOUR_DESTINATION>",
+      timeout: 30,
+    },
+  }]]);
+  const stream = await call.stream("<YOUR_AUDIO_STREAM_URL>", {
+    track: "both_tracks",
+    codec: "PCMU",
+    customParameters: { session_id: "<YOUR_SESSION_ID>" },
+  });
+  console.log(`Streaming audio, control ID ${stream.controlId}`);
+  await call.play(
+    [{ type: "tts", text: "Hello, welcome to SignalWire!" }],
+    {
+      onCompleted: async () => {
+        if (call.state !== "ended") await call.hangup();
+      },
+    },
+  );
+  await call.waitForEnded();
+} finally {
+  await client.disconnect();
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### Call from the browser
+
+Place a WebRTC call from a web page using a restricted [guest token][guest-token] from your backend.
+Serve the page over HTTPS or `localhost` so the browser can access the microphone.
+
+<CodeBlocks>
+<CodeBlock title="index.html">
+```html
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Call with SignalWire</title>
+  </head>
+  <body>
+    <p id="status">Idle</p>
+    <button id="call" type="button">Call dispatch</button>
+    <button id="hangup" type="button" disabled>Hang up</button>
+    <audio id="remote-audio" autoplay></audio>
+    <script type="module" src="./call.js"></script>
+  </body>
+</html>
+```
+</CodeBlock>
+<CodeBlock title="call.js">
+```javascript
+// Install: npm install @signalwire/js@4.0.0-rc.2 rxjs@7.8.2
+// Save as call.js next to the page above.
+// GET /api/guest-token is your own endpoint: it creates a guest SAT with your
+// Project API token and returns it as {"token": "..."}.
+import { SignalWire, StaticCredentialProvider } from "@signalwire/js";
+
+const statusLine = document.querySelector("#status");
+const remoteAudio = document.querySelector("#remote-audio");
+const callButton = document.querySelector("#call");
+const hangupButton = document.querySelector("#hangup");
+
+let clientPromise;
+
+function getClient() {
+  clientPromise ??= (async () => {
+    const response = await fetch("/api/guest-token");
+    if (!response.ok) throw new Error(`Token request failed: ${response.status}`);
+    const { token } = await response.json();
+    if (!token) throw new Error("Token response did not include a token");
+    return new SignalWire(new StaticCredentialProvider({ token }));
+  })().catch((error) => {
+    clientPromise = undefined;
+    throw error;
+  });
+  return clientPromise;
+}
+
+function reset() {
+  remoteAudio.srcObject = null;
+  callButton.disabled = false;
+  hangupButton.disabled = true;
+}
+
+callButton.onclick = async () => {
+  callButton.disabled = true;
+  statusLine.textContent = "Connecting";
+  try {
+    const client = await getClient();
+    const call = await client.dial("<YOUR_DESTINATION>", { audio: true, video: false });
+    call.remoteStream$.subscribe((stream) => (remoteAudio.srcObject = stream));
+    hangupButton.disabled = false;
+    hangupButton.onclick = () => {
+      void call.hangup().catch(console.error);
+    };
+    call.status$.subscribe((status) => {
+      statusLine.textContent = status;
+      if (status === "disconnected" || status === "failed" || status === "destroyed") {
+        reset();
+      }
+    });
+  } catch (error) {
+    statusLine.textContent = "Call failed";
+    console.error(error);
+    reset();
+  }
+};
+```
+</CodeBlock>
+</CodeBlocks>
+
+See the [Browser SDK outbound calls guide](/docs/browser-sdk/v4/guides/outbound-calls) for more.
