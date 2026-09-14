@@ -1,6 +1,7 @@
 import "../../../types";
 import "../../../_globally_shared/enums.tsp";
 import "../../../_globally_shared/const.tsp";
+import "../../_shared/enums.tsp";
 import "../enums.tsp";
 
 using TypeSpec.Http;
@@ -50,8 +51,8 @@ model SipAddress {
   encryption: SipAddressEncryption;
 
   @doc("Enabled codecs for calls to this address.")
-  @example(#[SipAddressCodec.PCMU, SipAddressCodec.PCMA])
-  codecs: SipAddressCodec[];
+  @example(#[AddressCodec.PCMU, AddressCodec.PCMA])
+  codecs: AddressCodec[];
 
   @doc("Enabled SRTP ciphers for calls to this address.")
   @example(#[
