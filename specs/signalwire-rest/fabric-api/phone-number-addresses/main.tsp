@@ -6,6 +6,7 @@ import "./models/responses.tsp";
 import "./models/errors.tsp";
 import "../../types";
 import "../tags.tsp";
+import "../_shared/enums.tsp";
 import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
@@ -39,6 +40,8 @@ namespace SignalWireAPI.Fabric.PhoneNumberAddresses {
     @doc("""
       Lists the phone number addresses in your SignalWire project, newest first. Each address represents one channel (`calling` or `messaging`) of a phone number you own, together with the resource that handles it, if any. Addresses whose number has been released are not included. Use it to find the address ID for a number's channel before you link, re-point, or remove its resource.
 
+      Only the pagination parameters are supported; there are no filters. A `page_token` that is malformed or no longer resolves returns a `422` with the code `page_token_is_invalid`.
+
       <Warning title="Beta">This API is in beta and may change.</Warning>
 
       ${tokenPermissions<"_Calling_, _Fax_, _Messaging_, or _Video_">}
@@ -70,12 +73,50 @@ namespace SignalWireAPI.Fabric.PhoneNumberAddresses {
     @operationId("create_phone_number_address")
     @summary("Link a resource to a phone number")
     @doc("""
-      Links a resource to an unassigned channel of a phone number you own, so inbound calls or messages to that number reach the resource. Reference the number by `phone_number_id` or by its E.164 `number`, and pick the channel with `handler_type`. The address for that channel already exists, so this operation sets its resource rather than creating a new address, and it never purchases a number. If the channel already has a resource, the request fails with `already_assigned`; use [Update the resource for a phone number](/docs/apis/rest/phone-number-addresses/update-phone-number-address) to re-point it instead. [Assign Resource to phone route](/docs/apis/rest/phone-routes/assign-resource-phone-route) does the same from the resource's side.
+      Links a resource to an unassigned channel of a phone number you own, so inbound calls or messages to that number reach the resource. Reference the number by `phone_number_id` or by its E.164 `number`, and pick the channel with `handler_type`. The address for that channel already exists, so this operation sets its resource rather than creating a new address, and it never purchases a number. [Assign Resource to phone route](/docs/apis/rest/phone-routes/assign-resource-phone-route) does the same from the resource's side.
+
+      A `422` response names the problem in its `code`:
+
+      - `missing_required_parameter`: `resource_id` or `handler_type` is blank, or neither `phone_number_id` nor `number` was provided.
+      - `invalid_parameter`: `handler_type` is not `calling` or `messaging`.
+      - `provided_id_is_unrecognized`: the number is not owned by your project, or `resource_id` is not a resource in it.
+      - `invalid_resource_type`: the resource can't handle the chosen channel.
+      - `already_assigned`: the channel already has a resource. Use [Update the resource for a phone number](/docs/apis/rest/phone-number-addresses/update-phone-number-address) to re-point it instead.
 
       <Warning title="Beta">This API is in beta and may change.</Warning>
 
       ${tokenPermissions<"_Calling_, _Fax_, _Messaging_, or _Video_">}
       """)
+    @opExample(
+      #{
+        parameters: #{
+          request: #{
+            phone_number_id: "1f2e3d4c-5b6a-7980-a1b2-c3d4e5f60718",
+            resource_id: "8a7b6c5d-4e3f-2a1b-0c9d-8e7f6a5b4c3d",
+            handler_type: UsedForType.Calling,
+          },
+        },
+      },
+      #{
+        title: "By phone number ID",
+        description: "Link a calling handler to a number referenced by its ID",
+      }
+    )
+    @opExample(
+      #{
+        parameters: #{
+          request: #{
+            number: "+13105550100",
+            resource_id: "8a7b6c5d-4e3f-2a1b-0c9d-8e7f6a5b4c3d",
+            handler_type: UsedForType.Messaging,
+          },
+        },
+      },
+      #{
+        title: "By number",
+        description: "Link a messaging handler to a number referenced by its E.164 number",
+      }
+    )
     @post
     create(@body request: PhoneNumberAddressCreateRequest):
       | {
@@ -91,6 +132,12 @@ namespace SignalWireAPI.Fabric.PhoneNumberAddresses {
     @summary("Update the resource for a phone number")
     @doc("""
       Renames a phone number address, re-points its channel to a different resource, or both; omitted fields keep their current values. The channel itself is fixed: `handler_type` can't be changed, so to hand a number's other channel to a resource, update that channel's own address. Renaming the address also renames the phone number.
+
+      A `422` response names the problem in its `code`:
+
+      - `invalid_parameter`: `name` is not URL-safe or is longer than 256 characters.
+      - `provided_id_is_unrecognized`: `resource_id` is not a resource in your project.
+      - `invalid_resource_type`: the resource can't handle this address's channel.
 
       <Warning title="Beta">This API is in beta and may change.</Warning>
 
