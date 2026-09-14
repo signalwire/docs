@@ -219,3 +219,13 @@ const PHONE_ROUTES_TAG_METADATA = #{
     description: "Developer documentation on Phone Routes, Fabric API endpoints",
   },
 };
+
+const PHONE_NUMBER_ADDRESSES_TAG = "Phone Number Addresses";
+
+const PHONE_NUMBER_ADDRESSES_TAG_METADATA = #{
+  description: "Endpoints related to managing Phone Number Addresses — the per-channel address that routes an owned phone number's calls or messages to the resource that handles them.",
+  externalDocs: #{
+    url: "https://signalwire.com/docs/apis",
+    description: "Developer documentation on Phone Number Addresses, Fabric API endpoints",
+  },
+};
