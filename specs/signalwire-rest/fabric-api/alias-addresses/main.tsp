@@ -82,7 +82,7 @@ namespace SignalWireAPI.Fabric.AliasAddresses {
     @operationId("update_alias_address")
     @summary("Update alias address")
     @doc("""
-      Partially updates an alias address by ID; omitted fields keep their current values. Use it to rename the alias, change its display name, channels, or codecs, or move it between the `public` and `private` contexts. `resource_id` isn't accepted: to point an alias at a different resource, delete it and create a new one.
+      Partially updates an alias address by ID; omitted fields keep their current values. Use it to rename the alias, change its display name, channels, or codecs, or move it between the `public` and `private` contexts. `resource_id` isn't accepted: to point an alias at a different resource, delete it and create a new one. An ID that belongs to a different kind of address, such as a SIP address, returns a 404.
 
       ${tokenPermissions<"_Calling_, _Fax_, _Messaging_, or _Video_">}
       """)
@@ -101,7 +101,7 @@ namespace SignalWireAPI.Fabric.AliasAddresses {
     @operationId("delete_alias_address")
     @summary("Delete alias address")
     @doc("""
-      Deletes an alias address by ID, so `/<context>/<name>` no longer resolves. The handler resource it forwarded to isn't deleted.
+      Deletes an alias address by ID, so `/<context>/<name>` no longer resolves. The handler resource it forwarded to isn't deleted. An ID that belongs to a different kind of address, such as a SIP address, returns a 404.
 
       ${tokenPermissions<"_Calling_, _Fax_, _Messaging_, or _Video_">}
       """)
