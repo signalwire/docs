@@ -4,12 +4,21 @@ using TypeSpec.Http;
 
 namespace SignalWireAPI.Projects;
 
-@doc("Request body for creating a subproject.")
+@doc("Request body for creating a project.")
 model CreateProjectRequest {
-  @doc("The name of the subproject.")
+  @doc("The name of the project.")
   @maxLength(250)
   @example("Acme Staging")
   name: string;
+
+  @doc("""
+    Personal Access Token only. The root project to create the new project under. Omit it
+    to create a root project. Must name a root project the token holder can reach
+    (`invalid_parent_project_id`, `nested_subprojects_not_allowed`). Ignored with a
+    project API token, which always creates a subproject of its own project.
+    """)
+  @example("b3877739-5c7e-4d4f-9d1a-2f0c8c2f1a11")
+  parent_project_id?: uuid;
 
   @doc("When enabled, recordings created within the project require authentication to access.")
   @example(true)

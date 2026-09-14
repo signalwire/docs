@@ -25,3 +25,28 @@ alias tokenPermissions<Scopes extends string> = """
   
   [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
   """;
+
+/**
+ * Permissions block for operations that accept either a project API token or a
+ * Personal Access Token. Use it instead of `tokenPermissions` on the Projects and
+ * Project Tokens operations, which take both credentials on the same path.
+ */
+alias tokenOrPatPermissions<Scopes extends string> = """
+  #### Permissions
+  
+  With a project API token, the token must have the following scope(s) enabled to make a successful request: ${Scopes}.
+  
+  With a [Personal Access Token](/docs/apis/authorization#personal-access-tokens) there are no scopes. The token holder must be an owner or admin of the space, and the request reaches only the projects the holder is enabled for, plus their subprojects.
+  
+  [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
+  """;
+
+/**
+ * Permissions block for the Space Administration API, which accepts only a
+ * Personal Access Token and has no scopes.
+ */
+alias patPermissions = """
+  #### Permissions
+  
+  Authenticate with a [Personal Access Token](/docs/apis/authorization#personal-access-tokens) whose holder is an owner or admin of the space. A project API token is not accepted on this endpoint, and a Personal Access Token has no scopes: the holder's role in the space is the whole authorization decision.
+  """;

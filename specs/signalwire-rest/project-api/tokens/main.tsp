@@ -24,8 +24,10 @@ namespace SignalWireAPI.Project.Tokens {
       The Compatibility API exposes the same project tokens through its account-scoped route. Use [Generate a new API Token](/docs/compatibility-api/rest/tokens/create-token) for that request format.
 
       The response is the only place the token secret is returned. Store it securely; no later request, including [Update API token](/docs/apis/rest/project-tokens/update-token), can read it back.
+
+      With a project API token, the new token belongs to the authenticated project, or to one of its subprojects when `subproject_id` is given; `project_id` is ignored. With a [Personal Access Token](/docs/apis/authorization#personal-access-tokens), `project_id` is required and names the project the token is created for, which is how a root project created with [Create a project](/docs/apis/rest/projects/create-subproject) gets its first credential.
       
-      ${tokenPermissions<"_Management_">}
+      ${tokenOrPatPermissions<"_Management_">}
       
       #### Token Permissions
       
@@ -50,7 +52,7 @@ namespace SignalWireAPI.Project.Tokens {
 
       The response contains the token's `id`, `name`, and `permissions` only. The token secret is returned once, by [Create API token](/docs/apis/rest/project-tokens/create-token), and cannot be retrieved afterwards.
       
-      ${tokenPermissions<"_Management_">}
+      ${tokenOrPatPermissions<"_Management_">}
       
       #### Token Permissions
       
@@ -81,7 +83,7 @@ namespace SignalWireAPI.Project.Tokens {
     @doc("""
       Permanently revokes and deletes a project API token. Use it when a server-side credential has been exposed, retired, or replaced; clients using Chat, PubSub, Room, or Subscriber Tokens require the corresponding service-specific token lifecycle instead. For the account-scoped Compatibility API route, use [Delete an API Token](/docs/compatibility-api/rest/tokens/delete-token).
       
-      ${tokenPermissions<"_Management_">}
+      ${tokenOrPatPermissions<"_Management_">}
       """)
     @delete
     delete(
