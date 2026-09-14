@@ -1,0 +1,52 @@
+---
+title: "dialogue_turns"
+slug: /reference/python/core/post-prompt/dialogue-turns
+description: Extract the user and assistant turns from a call log, dropping tool traffic and the summary echo.
+max-toc-depth: 3
+---
+
+[ref-post-prompt]: /docs/server-sdks/reference/python/core/post-prompt
+
+Extract the real dialogue from a call log. Drops everything that is machinery rather than speech:
+entries whose role isn't in `roles`, entries carrying `tool_calls`, and empty content. The
+`system`, `system-log`, `tool`, and `assistant-manual` roles are all excluded by default.
+
+`drop_echo` handles one engine behavior. The chat engine appends its own post-prompt output to
+`call_log` as a bare `role: assistant` entry, indistinguishable by role from real speech. Replayed
+into another medium, the agent would narrate a summary of itself. It is identifiable only by
+content, being identical to `post_prompt_data.raw`, which is what this parameter compares against.
+
+## Parameters
+
+<ParamField path="call_log" type="Any" required={true} toc={true}>
+  The log, as delivered in `call_log`, `raw_call_log`, or `raw_messages`. A non-list value yields
+  `[]`.
+</ParamField>
+
+<ParamField path="roles" type="tuple[str, ...]" default='("user", "assistant")' toc={true}>
+  Roles to keep. Keyword-only. The default is exported as `DIALOGUE_ROLES`.
+</ParamField>
+
+<ParamField path="drop_echo" type="str | None" default="None" toc={true}>
+  Exact content to treat as the summary echo and drop. Keyword-only.
+</ParamField>
+
+## Returns
+
+`list[dict[str, str]]` -- `{"role", "content"}` pairs in order.
+
+## Example
+
+```python {4-7}
+from signalwire.core.post_prompt import dialogue_turns
+
+raw_summary = raw_body.get("post_prompt_data", {}).get("raw")
+turns = dialogue_turns(
+    raw_body.get("call_log", []),
+    drop_echo=raw_summary,
+)
+for turn in turns:
+    print(turn["role"], turn["content"])
+```
+
+Part of the [post-prompt normalization][ref-post-prompt] module.
