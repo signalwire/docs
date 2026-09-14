@@ -89,7 +89,8 @@ interface Billing {
   @summary("Retrieve a statement")
   @doc("""
     Returns one month's statement as JSON: the totals for the month, company-wide usage by
-    kind, and usage per project. Filter the breakdown with `kind` and `project`. For the
+    kind, and usage per project. Filter the breakdown with `kind` and `project`.
+    `/api/space/billing_statement.json` returns the same response. For the
     same statement as a file, use
     [Download a statement as CSV](/docs/apis/rest/space/billing/get-billing-statement-csv)
     or [Download a statement as PDF](/docs/apis/rest/space/billing/get-billing-statement-pdf).
