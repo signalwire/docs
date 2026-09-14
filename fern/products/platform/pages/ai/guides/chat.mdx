@@ -38,6 +38,26 @@ AI chat is the [`ai`][ai-reference] method or Server SDK agents reached over tex
 The [Chat API][messaging-chat] is an unrelated messaging product. And it is not the messaging flavor of SWML either.
 </Note>
 
+## Pick the right product for your requirements
+
+AI chat can be accessed in multiple ways, but not all functionality is available in all cases.
+
+| Function | Direct | Gateway | Phone number |
+|---|---|---|---|
+| Run it from a server you control | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
+| Run it from a browser, or any other untrusted client | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> |
+| Reach the agent over SMS, with no client of your own | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
+| Choose which agent a conversation reaches, per request | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
+| Summarize or delete a conversation on demand | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
+| Read the conversation log including its system entries | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
+
+- **Direct** is JSON-RPC 2.0 against [`POST /api/ai/chat`][chat-endpoint], carrying your project API token. [`AIChatClient`][chat-client] covers the same ground in Python with typed methods and typed exceptions.
+- **Gateway** is [`ChatGateway`][chat-gateway] mounted inside a web application you already host. It holds the API token, the project, and the `config_url`; the page holds a URL and a publishable key that the gateway manages itself.
+- **From a phone number** sits on top of the direct path rather than beside it: someone texts your number and the agent texts back. Your server still holds the token.
+
+A browser cannot use the direct path. Anything a page can read, a visitor can read, and an API
+token in a page is a published API token.
+
 ## Basic first example
 
 Consider the following simple AI agent, saved as a hosted script resource.
@@ -118,23 +138,6 @@ the same response.
 
 This is all it takes to text with your AI agent. Howerver, since this is directly over HTTP and uses your project API key, it can't be safely directly served on the browser without a proxy.
 
-## Connection with the AI Chat
-
-| | Direct | Through a gateway |
-|---|---|---|
-| Your code runs | on your server | in a browser, or any untrusted client |
-| Holds the API token | yes | no — your gateway does |
-| Talks to | `POST /api/ai/chat` | your own gateway URL |
-| Protocol | JSON-RPC 2.0 | a small POST shape |
-| Python helper | [`AIChatClient`][chat-client] | [`ChatGateway`][chat-gateway] |
-
-A browser cannot use the direct path. Anything a page can read, a visitor can read, and an API
-token in a page is a published API token.
-
-There is a third way in that sits on top of the direct path rather than beside it:
-[from a phone number](#from-a-phone-number), where someone texts your number and the agent texts
-back. Your server still holds the token.
-
 ## How a conversation works
 
 **Your agent** is the SWML document you serve. `config_url` is where you serve it.
@@ -145,52 +148,75 @@ project.
 **A turn** is one user message and the agent's reply, including any tool calls made along the way.
 One request, one turn, one response — and it takes seconds, not milliseconds.
 
-## From your server
+## Hold a conversation
 
 The [AI chat endpoint reference][chat-endpoint] documents all six methods, their parameters, and
 their error codes. In Python, [`AIChatClient`][chat-client] covers the same ground with typed
 methods and typed exceptions.
 
-### AI chat methods
+<Tabs>
 
-| Method | What it does | Worth knowing |
-|---|---|---|
-| [`create_conversation`][client-create] | Creates a conversation, or resets one with `reinit` | Returns `initial_message`, so the agent speaks first |
-| [`chat`][client-chat] | Sends a message, returns the reply | Passing `config_url` here creates the conversation in one call, but you never get `initial_message` |
-| [`chat_log`][client-log] | Reads the conversation back | Changes nothing |
-| `summarize` | Summarizes on demand | One call per minute per conversation; over that returns `-32005` |
-| [`end_conversation`][client-end] | Ends it and starts post-processing | Triggers the summary and your `post_prompt_url` |
-| `delete` | Removes the conversation and its messages | Nothing is post-processed and no webhook fires |
+<Tab title="From your server">
 
-Messages take a `role` of `user` or `system`. A `system` message steers the agent without appearing
-as something the user said.
+<Tabs>
 
-## Accessing AI chat from a browser
+<Tab title="Python">
 
-You run a **gateway**: [`ChatGateway`][chat-gateway] with the Server SDK, mounted inside a web application you already
-host. It holds the API token, the project, and the `config_url`. The page holds a URL and a
-publishable key that's managed by the gateway itself.
+```python {10,13}
+import asyncio
 
-```mermaid
-flowchart LR
-    Browser["Browser<br/>gateway URL + publishable key"]
-    Gateway["Your app<br/>ChatGateway"]
-    SW["SignalWire<br/>POST /api/ai/chat"]
+from signalwire.ai_chat import AIChatClient
 
-    Browser -->|"publishable key"| Gateway
-    Gateway -->|"project + API token"| SW
-    SW -->|"the agent's turn"| Gateway
-    Gateway -->|"JSON response"| Browser
+CONFIG_URL = "https://your-space.signalwire.com/relay-bins/8f3c1d94-2b7a-4e15-9c60-a1d8e4f70b23"
+
+
+async def main():
+    async with AIChatClient(space="your-space") as client:
+        info = await client.create_conversation("chat-demo-1", config_url=CONFIG_URL)
+        print("Ada:", info.initial_message)
+
+        reply = await client.chat("chat-demo-1", "I need a ride to the airport.")
+        print("Ada:", reply.text)
+
+        await client.end("chat-demo-1")
+
+
+asyncio.run(main())
 ```
 
-A key lifted from your page reaches one agent and can do nothing else. It cannot name a different
-`config_url`, because the gateway injects that itself and never accepts it from the request.
+</Tab>
 
-### The agent document
+<Tab title="HTTP">
 
-This is either a SWML document you're hosting, or a Server SDK agent.
+```json title="chat"
+{
+  "jsonrpc": "2.0",
+  "id": "req-2",
+  "method": "chat",
+  "params": {
+    "id": "chat-demo-1",
+    "message": "I need a ride to the airport."
+  }
+}
+```
 
-### The gateway
+```json title="response"
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "response": "Sure! Which airport are you heading to, and what time do you need the ride?"
+  },
+  "id": "req-2"
+}
+```
+
+</Tab>
+
+</Tabs>
+
+</Tab>
+
+<Tab title="From a browser">
 
 [`ChatGateway`][chat-gateway] mounts on any FastAPI app, and allows for safe browser-side access.
 
@@ -207,19 +233,9 @@ gateway = ChatGateway(
 app.include_router(gateway.router(), prefix="/chat")
 ```
 
-### The browser side 
+</Tab>
 
-One endpoint, [four methods][gateway-router]. The router adds a `POST /`, so with `prefix="/chat"`
-the path is `/chat/`. The key is a bearer token that automatically gets sent.
-
-| Method | Body | Returns |
-|---|---|---|
-| `start` | `{"method": "start"}` | `greeting`, `status`, `timeout`, plus an `X-Chat-Handle` header |
-| `chat` | `{"method": "chat", "handle", "message"}` | the service's JSON-RPC envelope |
-| `log` | `{"method": "log", "handle"}` | `messages`, `timeout`, `last_activity` |
-| `end` | `{"method": "end", "handle"}` | `{"status": "ended"}` |
-
-## From a phone number
+<Tab title="From a phone number">
 
 We can use the Server SDK to create a messaging variant SWML which replies to text conversations using the AI agent.
 
@@ -234,6 +250,56 @@ async def sms(request: Request):
 
     return {"version": "1.0.0", "sections": {"main": [{"reply": reply.text}]}}
 ```
+
+</Tab>
+
+</Tabs>
+
+### AI chat methods
+
+| Method | What it does | Worth knowing |
+|---|---|---|
+| [`create_conversation`][client-create] | Creates a conversation, or resets one with `reinit` | Returns `initial_message`, so the agent speaks first |
+| [`chat`][client-chat] | Sends a message, returns the reply | Passing `config_url` here creates the conversation in one call, but you never get `initial_message` |
+| [`chat_log`][client-log] | Reads the conversation back | Changes nothing |
+| `summarize` | Summarizes on demand | One call per minute per conversation; over that returns `-32005` |
+| [`end_conversation`][client-end] | Ends it and starts post-processing | Triggers the summary and your `post_prompt_url` |
+| `delete` | Removes the conversation and its messages | Nothing is post-processed and no webhook fires |
+
+Messages take a `role` of `user` or `system`. A `system` message steers the agent without appearing
+as something the user said.
+
+### The browser gateway
+
+You run a **gateway**: [`ChatGateway`][chat-gateway] with the Server SDK, mounted inside a web application you already
+host. It holds the API token, the project, and the `config_url`. The page holds a URL and a
+publishable key that's managed by the gateway itself. The agent it points at is either a SWML
+document you're hosting, or a Server SDK agent.
+
+```mermaid
+flowchart LR
+    Browser["Browser<br/>gateway URL + publishable key"]
+    Gateway["Your app<br/>ChatGateway"]
+    SW["SignalWire<br/>POST /api/ai/chat"]
+
+    Browser -->|"publishable key"| Gateway
+    Gateway -->|"project + API token"| SW
+    SW -->|"the agent's turn"| Gateway
+    Gateway -->|"JSON response"| Browser
+```
+
+A key lifted from your page reaches one agent and can do nothing else. It cannot name a different
+`config_url`, because the gateway injects that itself and never accepts it from the request.
+
+One endpoint, [four methods][gateway-router]. The router adds a `POST /`, so with `prefix="/chat"`
+the path is `/chat/`. The key is a bearer token that automatically gets sent.
+
+| Method | Body | Returns |
+|---|---|---|
+| `start` | `{"method": "start"}` | `greeting`, `status`, `timeout`, plus an `X-Chat-Handle` header |
+| `chat` | `{"method": "chat", "handle", "message"}` | the service's JSON-RPC envelope |
+| `log` | `{"method": "log", "handle"}` | `messages`, `timeout`, `last_activity` |
+| `end` | `{"method": "end", "handle"}` | `{"status": "ended"}` |
 
 ## Webhooks you receive
 
