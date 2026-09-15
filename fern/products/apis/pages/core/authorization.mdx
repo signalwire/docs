@@ -4,7 +4,8 @@ slug: /authorization
 ---
 
 SignalWire REST APIs support two authentication methods: **Basic Authentication** and **Bearer Authentication**.
-Each endpoint specifies which method it accepts.
+Basic Authentication takes either a Project's credentials or a [Personal access token](#personal-access-tokens).
+Each endpoint specifies which method and credential it accepts.
 
 ## Basic authentication
 
@@ -91,6 +92,43 @@ curl https://{Your_Space_Name}.signalwire.com/api/laml/2010-04-01/Accounts/{Your
 
 ---
 
+## Personal access tokens
+
+A Personal access token (PAT) authenticates you as a person rather than as a Project.
+It carries your role in the Space, owner or admin, instead of a Project's scopes, so it can do what no Project API token can:
+administer the Space itself, and create or delete root Projects.
+
+Create one from your user menu in the Dashboard, on the **Personal Access Tokens** page.
+The token is prefixed `pat_`, has no scopes, and can't be created through the API.
+
+### How it works
+
+Send a Personal access token with Basic Authentication, leaving the username empty and using the token as the password:
+
+```
+Authorization: Basic <Base64(":pat_...")>
+```
+
+```bash title="cURL"
+curl https://{Your_Space_Name}.signalwire.com/api/space \
+     -u ":pat_your_personal_access_token"
+```
+
+### Where it's accepted
+
+- The [Space Administration API](/docs/apis/rest/space/get-space) under `/api/space` accepts only a Personal access token. It manages the Space name, geographic permissions, members and their Project access, balance, billing, and payment methods.
+- The [Projects](/docs/apis/rest/projects/list-projects) and [Project Tokens](/docs/apis/rest/project-tokens/create-token) APIs accept either credential on the same path; the `pat_` prefix decides which rules apply. With a Personal access token you can create and delete root Projects, and create an API token for a Project named in the request.
+
+### Scope
+
+A Personal access token acts only on the Space whose subdomain you call. Its holder must be an owner or admin of that Space; an employee or guest membership is rejected.
+On the Projects and Project Tokens APIs it reaches only the Projects its holder is enabled for, plus their Subprojects, and any other Project ID returns `404`.
+
+Authorization failures return `401 Unauthorized` with the plain text body `Unauthorized`, not `403`, so a "wrong role" and a bad token look the same.
+A Space that hasn't yet verified a phone number receives `401` with a JSON body `{"message": "Please validate a phone number to access your account."}` on every `/api/space` endpoint.
+
+---
+
 ## Bearer authentication
 
 [Bearer Authentication](https://swagger.io/docs/specification/v3_0/authentication/bearer-authentication/) passes a token in the `Authorization` header. Use this for client-side calls where you can't safely expose your API credentials.
@@ -167,6 +205,7 @@ curl https://your-space.signalwire.com/api/fabric/addresses \
 ## Security best practices
 
 1. **Keep API credentials server-side.** Use Bearer tokens for client applications.
+   Treat a Personal access token as you would your own login: it carries your Space role, and it belongs in automation you run yourself.
 2. **Set short token lifetimes** to reduce risk if a token leaks.
 3. **Scope tokens narrowly**—only grant what's needed.
 4. **Always use HTTPS.** Plain HTTP requests will fail.
