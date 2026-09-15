@@ -28,6 +28,9 @@ max-toc-depth: 3
 [call-create-error]: /docs/browser-sdk/v4/reference/errors/call-create-error
 [browser-inbound]: /docs/browser-sdk/v4/guides/inbound-calls
 [browser-call-controls]: /docs/browser-sdk/v4/guides/call-controls
+[ts-dial]: /docs/server-sdks/reference/typescript/rest/calling/dial
+[address-default-channel]: /docs/browser-sdk/v4/reference/address/default-channel
+[browser-transfer]: /docs/browser-sdk/v4/reference/webrtc-call/transfer
 
 Place an outbound phone call with SignalWire and choose what happens when the destination answers.
 Start by calling your own phone and playing a short announcement, then track the call's progress,
@@ -77,6 +80,10 @@ Each approach places the same call, but they differ in how you follow and contro
 | Command a call already in progress from any process, by its call ID | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> |
 | Follow the call's events in your own code, with no public webhook URL | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
 | Receive call progress as HTTP callbacks to a URL you host | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> |
+
+SWML isn't a fourth column because it doesn't place calls. It's the script a call runs once it
+connects, so you place the call with REST or Relay and hand it SWML, as every REST example on this
+page does with the `swml` field.
 
 ### Set your credentials and caller ID
 
@@ -193,6 +200,12 @@ console.log(call.id);
 ```
 </CodeBlock>
 </CodeBlocks>
+
+<Note title="TypeScript `dial()` signature depends on the SDK version">
+The TypeScript samples on this page pin `@signalwire/sdk@2.0.5`, whose `dial()` takes a single
+options object. The [TypeScript `dial` reference][ts-dial] documents the positional
+`dial(from, to, options)` form of a newer release. Match the form to the version you install.
+</Note>
 
 The REST API returns a call `id` and status `queued`. This confirms that SignalWire accepted the
 request; the call hasn't necessarily rung or been answered yet. Save the `id` to identify this call.
@@ -1678,7 +1691,7 @@ Serve the page over HTTPS or `localhost` so the browser can access the microphon
   </head>
   <body>
     <p id="status">Idle</p>
-    <button id="call" type="button">Call dispatch</button>
+    <button id="call" type="button">Call</button>
     <button id="hangup" type="button" disabled>Hang up</button>
     <audio id="remote-audio" autoplay></audio>
     <script type="module" src="./call.js"></script>
@@ -1798,20 +1811,38 @@ Joins without sending any media. The remote tracks still arrive on `remoteStream
 </Tabs>
 
 A destination address can carry a `?channel=audio` or `?channel=video` hint that sets the matching
-defaults, but options passed to `dial()` always win. To pin the microphone, camera, or speaker across
+defaults, but options passed to `dial()` always win. If you're picking destinations from the
+directory, an `Address` exposes [`defaultChannel`][address-default-channel], a ready-to-dial URI, so
+you don't assemble the string yourself. To pin the microphone, camera, or speaker across
 every call instead of constraining each `dial()`, use the [device management APIs][device-management].
 
 #### Attach the media to the page
 
 The call exposes `localStream$` (what the user sends) and `remoteStream$` (what the user receives).
-Bind each to a media element's `srcObject`. Give the local element `muted` so the user doesn't hear
-their own voice back, leave the remote element unmuted, and give both `playsinline` for mobile Safari.
-An audio-only call uses `remoteStream$` the same way.
+Bind each to a media element's `srcObject`. The sample above binds `remoteStream$` to an `<audio>`
+element; a video call binds both streams to `<video>` elements:
+
+```html
+<video id="local-video" autoplay muted playsinline></video>
+<video id="remote-video" autoplay playsinline></video>
+```
+
+```javascript
+call.localStream$.subscribe((stream) => (localVideo.srcObject = stream));
+call.remoteStream$.subscribe((stream) => (remoteVideo.srcObject = stream));
+```
+
+Give the local element `muted` so the user doesn't hear their own voice back, leave the remote
+element unmuted, and give both `playsinline` for mobile Safari. An audio-only call uses
+`remoteStream$` the same way.
 
 Watch the browser console as you dial: the call moves through `connecting` to `connected`, and
 through `disconnecting`, `disconnected`, and `destroyed` once it ends. If `dial()` rejects with
 [`CallCreateError`][call-create-error], the token's scope doesn't reach the destination — re-check the
 token's `allowed_addresses` and its project.
+
+`call.hangup()` ends the call for everyone. To leave the page but keep the call alive on the platform,
+use [`transfer()`][browser-transfer] instead.
 
 For receiving calls in the browser, see the [inbound calls guide][browser-inbound]; for mute, hold,
 and other in-call controls, see [call controls][browser-call-controls].
