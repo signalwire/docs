@@ -1,0 +1,54 @@
+---
+title: "add_per_call_config"
+slug: /reference/python/agents/agent-base/add-per-call-config
+description: Register a per-request configuration callback without replacing callbacks already set.
+max-toc-depth: 3
+---
+
+[ref-agentbase]: /docs/server-sdks/reference/python/agents/agent-base
+[set-dynamic-config-callback]: /docs/server-sdks/reference/python/agents/agent-base/set-dynamic-config-callback
+
+Register a per-request configuration callback, keeping any already registered.
+Same signature and contract as
+[`set_dynamic_config_callback()`][set-dynamic-config-callback], except that
+callbacks accumulate instead of overwriting. They run in registration order
+against the same ephemeral agent, so a later callback sees what an earlier one
+configured and can build on or override it.
+
+Prefer this form when composing. A base class and a subclass, or an agent and a
+mixin, can each register what they own without knowing about the other. With
+`set_dynamic_config_callback()` the second registration silently drops the
+first.
+
+## Parameters
+
+<ParamField path="callback" type="Callable[[dict[str, Any], dict[str, Any], dict[str, Any], Any], None]" required={true} toc={true}>
+  A function with the signature `(query_params, body_params, headers, agent)`.
+  `agent` is the ephemeral per-request copy. Configure that object, never
+  `self`, or the configuration leaks across callers.
+</ParamField>
+
+## Returns
+
+[`AgentBase`][ref-agentbase] -- Returns self for method chaining.
+
+## Example
+
+```python {6-14}
+from signalwire import AgentBase
+
+agent = AgentBase(name="dispatch", route="/dispatch")
+agent.set_prompt_text("You are Ada, the dispatcher for Bayview Taxi.")
+
+def pick_language(query_params, body_params, headers, agent):
+    if query_params.get("lang") == "es":
+        agent.add_language("Spanish", "es-MX", "rime.marsh")
+
+def tag_tenant(query_params, body_params, headers, agent):
+    agent.set_global_data({"tenant": query_params.get("tenant", "default")})
+
+agent.add_per_call_config(pick_language)
+agent.add_per_call_config(tag_tenant)
+
+agent.serve()
+```

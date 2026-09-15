@@ -6,30 +6,49 @@ max-toc-depth: 3
 ---
 
 [functionresult]: /docs/server-sdks/reference/python/agents/function-result
+[rpcaiglobaldata]: /docs/server-sdks/reference/python/agents/function-result/rpc-ai-global-data
 
-Inject a message into the AI agent running on another call. Useful for
-cross-call coordination, such as notifying a held caller's agent about a
-status change or instructing it to relay information.
+Send a message, global data, or both to the AI agent running on another call.
+Useful for cross-call coordination, such as notifying a held caller's agent
+about a status change or handing it a value to speak later.
 
-## **Parameters**
+A message lands as a turn in the other agent's conversation, where it competes
+with everything else arriving that moment. Global data is merged silently into
+the other call's `global_data` and stays there until a prompt expands it with
+`${global_data.key}`, which makes it the more reliable channel for content a
+later step needs to say.
+
+## Parameters
 
 <ParamField path="call_id" type="str" required={true} toc={true}>
   Call ID of the target call whose AI agent should receive the message.
 </ParamField>
 
-<ParamField path="message_text" type="str" required={true} toc={true}>
+<ParamField path="message_text" type="str | None" default="None" toc={true}>
   The message text to inject into the target AI's conversation.
 </ParamField>
 
 <ParamField path="role" type="str" default="system" toc={true}>
-  Role for the injected message. Typically `"system"` for instructions.
+  Role for the injected message. Typically `"system"` for instructions. Sent
+  only when `message_text` is given.
 </ParamField>
 
-## **Returns**
+<ParamField path="global_data" type="dict[str, Any] | None" default="None" toc={true}>
+  Object merged into the target call's `global_data`. See also
+  [`rpc_ai_global_data()`][rpcaiglobaldata].
+</ParamField>
+
+## Raises
+
+`ValueError` when neither `message_text` nor `global_data` is given.
+
+## Returns
 
 [`FunctionResult`][functionresult] — self, for chaining.
 
-## **Example**
+## Examples
+
+### Inject a message
 
 ```python {12}
 from signalwire import AgentBase
@@ -42,7 +61,7 @@ agent.set_prompt_text("You are a helpful assistant.")
 def notify_caller(args, raw_data):
     caller_call_id = args.get("original_call_id")
     return (
-        FunctionResult("I'll let them know.")
+        FunctionResult("Tell the caller you have passed the message along.")
         .rpc_ai_message(
             call_id=caller_call_id,
             message_text="The person you're trying to reach is unavailable. Please leave a message."
@@ -50,4 +69,18 @@ def notify_caller(args, raw_data):
     )
 
 agent.serve()
+```
+
+### Hand the other call a value to speak
+
+```python
+# Sender: set the value, then release the held call.
+return (
+    FunctionResult("Tell the caller you have passed the message along.")
+    .rpc_ai_message(call_id, global_data={"decline_message": args["message"]})
+    .rpc_ai_unhold(call_id)
+)
+
+# Destination step, on the other call:
+# step.set_text("Tell the caller: ${global_data.decline_message}")
 ```

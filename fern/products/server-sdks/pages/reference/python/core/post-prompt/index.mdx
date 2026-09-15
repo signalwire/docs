@@ -1,0 +1,111 @@
+---
+title: "Post-prompt normalization"
+slug: /reference/python/core/post-prompt
+description: Read voice and chat post-prompt bodies as one shape, with the summary parsed and the dialogue extracted.
+max-toc-depth: 3
+---
+
+[normalize]: /docs/server-sdks/reference/python/core/post-prompt/normalize-post-prompt
+[parse]: /docs/server-sdks/reference/python/core/post-prompt/parse-post-prompt-data
+[dialogue]: /docs/server-sdks/reference/python/core/post-prompt/dialogue-turns
+[strip]: /docs/server-sdks/reference/python/core/post-prompt/strip-json-fence
+[on-summary]: /docs/server-sdks/reference/python/agents/agent-base/on-summary
+[on-call-end]: /docs/server-sdks/reference/python/agents/agent-base/on-call-end
+
+One conversation can run over voice and over text chat, and both produce a post-prompt body, but not
+the same shape. The `signalwire.core.post_prompt` module absorbs that divergence so your
+application sees one artifact regardless of which engine finished the conversation.
+
+| Field | Voice | Chat |
+|---|---|---|
+| `app_name` | `"swml app"` | `"ai_chat"` |
+| `conversation_id` | absent | present at top level |
+| Full log | `raw_call_log` | `raw_messages` |
+| Summary arrives as | a `summarize_conversation` tool call | a bare `role: assistant` turn inside `call_log` |
+| `post_prompt_data` | parsed object | `{"raw": "<fenced JSON string>"}` |
+
+`conversation_type` is a reliable top-level discriminator on both. The voice engine can also
+deliver `post_prompt_data` as `{"parsed": [ {...} ], "raw": "..."}`, an object wrapped in a
+list, which passes structural checks and misses every field lookup. The parser unwraps it.
+
+The module doesn't decide what a summary should contain. The schema is whatever your post-prompt
+text asked the model to produce, so parsing is schema-agnostic and returns the dict as found.
+Nothing here raises: the conversation that produced the body is already over.
+
+```python
+from signalwire.core.post_prompt import NormalizedPostPrompt, normalize_post_prompt
+```
+
+## Properties
+
+`NormalizedPostPrompt` is a frozen dataclass, one finished conversation leg in a shape that doesn't
+vary by engine.
+
+<ParamField path="medium" type="str" default='""' toc={true}>
+  `conversation_type` as reported, such as `"voice"` or `"chat"`. Empty when the engine didn't say.
+</ParamField>
+
+<ParamField path="conversation_id" type="str | None" default="None" toc={true}>
+  Present on chat, absent on voice. When `None`, fall back to your own key from `global_data` or
+  `call_id` rather than treating this as authoritative.
+</ParamField>
+
+<ParamField path="summary" type="dict[str, Any]" default="{}" toc={true}>
+  The parsed `post_prompt_data`, with whatever keys your post-prompt asked for. `{}` when there was
+  none or it couldn't be parsed. A model that answered in prose instead of JSON yields
+  `{"summary": "<the prose>"}`.
+</ParamField>
+
+<ParamField path="dialogue" type="list[dict[str, str]]" default="[]" toc={true}>
+  `user` and `assistant` turns only, as `{"role", "content"}` pairs, with tool calls and the chat
+  engine's summary echo removed.
+</ParamField>
+
+<ParamField path="call_id" type="str | None" default="None" toc={true}>
+  The platform call ID, when present.
+</ParamField>
+
+<ParamField path="raw" type="dict[str, Any]" default="{}" toc={true}>
+  The complete request body, untouched.
+</ParamField>
+
+## Functions
+
+<CardGroup cols={2}>
+  <Card title="normalize_post_prompt" href="/docs/server-sdks/reference/python/core/post-prompt/normalize-post-prompt">
+    Normalize a post-prompt body from either engine.
+  </Card>
+  <Card title="parse_post_prompt_data" href="/docs/server-sdks/reference/python/core/post-prompt/parse-post-prompt-data">
+    Return post_prompt_data as a plain dict, whichever shape it arrived in.
+  </Card>
+  <Card title="dialogue_turns" href="/docs/server-sdks/reference/python/core/post-prompt/dialogue-turns">
+    Extract the user and assistant turns from a call log.
+  </Card>
+  <Card title="strip_json_fence" href="/docs/server-sdks/reference/python/core/post-prompt/strip-json-fence">
+    Unwrap a fenced JSON code block.
+  </Card>
+</CardGroup>
+
+## Example
+
+Store every finished leg the same way, whether it came from
+[`on_summary()`][on-summary] or [`on_call_end()`][on-call-end]:
+
+```python {11-14}
+from signalwire import AgentBase
+from signalwire.core.post_prompt import normalize_post_prompt
+
+class DispatchAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="dispatch", route="/dispatch")
+        self.set_prompt_text("You are Ada, the dispatcher for Bayview Taxi.")
+        self.set_post_prompt("Summarize the call as JSON with keys intent and resolved.")
+
+    def on_summary(self, summary, raw_data=None):
+        leg = normalize_post_prompt(raw_data)
+        if leg.dialogue:
+            # Write to your system of record.
+            print(leg.medium, leg.conversation_id or leg.call_id, leg.summary)
+
+DispatchAgent().serve()
+```
