@@ -60,6 +60,16 @@ const FABRIC_ADDRESS_TAG_METADATA = #{
   },
 };
 
+const ALIAS_ADDRESSES_TAG = "Alias Addresses";
+
+const ALIAS_ADDRESSES_TAG_METADATA = #{
+  description: "Endpoints related to creating & managing alias addresses — named routes in the `public` or `private` context (`/<context>/<name>`) that forward calls and messages to a handler resource.",
+  externalDocs: #{
+    url: "https://signalwire.com/docs/apis",
+    description: "Developer documentation on Alias Addresses, Fabric API endpoints",
+  },
+};
+
 const FREESWITCH_CONNECTOR_TAG = "FreeSWITCH Connector";
 
 const FREESWITCH_CONNECTOR_TAG_METADATA = #{
