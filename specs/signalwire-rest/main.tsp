@@ -14,6 +14,7 @@ import "./fabric-api";
 import "./relay-rest";
 import "./project-api";
 import "./projects-api";
+import "./space-api";
 import "./datasphere-api";
 import "./pubsub-api";
 import "./logs-api";
@@ -134,6 +135,11 @@ using TypeSpec.OpenAPI;
 @tagMetadata(PROJECT_TOKENS_TAG, PROJECT_TOKENS_TAG_METADATA)
 // Projects Management API
 @tagMetadata(PROJECTS_TAG, PROJECTS_TAG_METADATA)
+// Space Administration API
+@tagMetadata(SPACE_TAG, SPACE_TAG_METADATA)
+@tagMetadata(SPACE_MEMBERS_TAG, SPACE_MEMBERS_TAG_METADATA)
+@tagMetadata(SPACE_BALANCE_TAG, SPACE_BALANCE_TAG_METADATA)
+@tagMetadata(SPACE_BILLING_TAG, SPACE_BILLING_TAG_METADATA)
 // Datasphere API
 @tagMetadata(DOCUMENTS_TAG, DOCUMENTS_TAG_METADATA)
 @tagMetadata(CHUNKS_TAG, CHUNKS_TAG_METADATA)
