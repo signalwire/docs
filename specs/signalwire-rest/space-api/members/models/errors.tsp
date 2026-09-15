@@ -4,7 +4,7 @@ using Types.StatusCodes;
 
 namespace SignalWireAPI.Space;
 
-@doc("The `role` filter is not a known role (`unknown_role`), or `page_number` is above 0 without a `page_token` (`page_token_required`).")
+@doc("The `role` filter is not a known role (`unknown_role`); `page_number` is above 0 without a `page_token` (`page_token_required_for_next_page`), or the `page_token` is not one this endpoint issued (`page_token_is_invalid`).")
 @example(#{
   statusCode: 422,
   errors: #[
@@ -72,16 +72,16 @@ model UpdateMemberStatusCode422 is StatusCode422;
 })
 model DeleteMemberStatusCode422 is StatusCode422;
 
-@doc("`page_number` is above 0 without a `page_token` (`page_token_required`).")
+@doc("`page_number` is above 0 without a `page_token` (`page_token_required_for_next_page`), or the `page_token` is not one this endpoint issued (`page_token_is_invalid`).")
 @example(#{
   statusCode: 422,
   errors: #[
     #{
       type: "validation_error",
-      code: "page_token_required",
-      message: "A page token is required if the page_number value is greater than 0.",
+      code: "page_token_required_for_next_page",
+      message: "The page token is required when the page number is passed and greater than 0.",
       attribute: "page_token",
-      url: "https://signalwire.com/docs/apis/error-codes#page_token_required",
+      url: "https://signalwire.com/docs/apis/error-codes#page_token_required_for_next_page",
     }
   ],
 })
