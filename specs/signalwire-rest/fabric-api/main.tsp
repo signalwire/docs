@@ -9,6 +9,7 @@ import "./cxml-scripts";
 import "./cxml-webhooks";
 import "./embeds-tokens";
 import "./addresses";
+import "./alias-addresses";
 import "./freeswitch-connectors";
 import "./cxml-applications";
 import "./relay-applications";
