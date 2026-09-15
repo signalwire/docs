@@ -1,0 +1,196 @@
+---
+title: "HandoffRouter"
+slug: /reference/python/agents/handoff-router
+description: The three routes a browser chat widget calls to move a conversation between text and a phone call.
+max-toc-depth: 3
+---
+
+[chatgateway]: /docs/server-sdks/reference/python/agents/chat-gateway
+[mount]: /docs/server-sdks/reference/python/agents/agent-base/mount
+[capabilities]: /docs/server-sdks/reference/python/core/capabilities
+[register]: /docs/server-sdks/reference/python/agents/handoff-router/register
+[redeem]: /docs/server-sdks/reference/python/agents/handoff-router/redeem
+[escalate]: /docs/server-sdks/reference/python/agents/handoff-router/escalate
+[say]: /docs/server-sdks/reference/python/agents/handoff-router/say
+[router]: /docs/server-sdks/reference/python/agents/handoff-router/router
+[read-handle]: /docs/server-sdks/reference/python/agents/chat-gateway/read-handle
+
+[`ChatGateway`][chatgateway] lets a browser hold a text conversation. `HandoffRouter` is the other
+half the SignalWire address widget expects: three routes, served at the same URL prefix as the
+gateway, that move that conversation to a phone call and back, and let a visitor type into a live
+call.
+
+| Route | Body | Effect |
+|---|---|---|
+| `POST {prefix}/handoff` | `{"nonce"}` | End the call, wait for its record, return a chat handle for the next leg |
+| `POST {prefix}/escalate` | `{"handle"}` | End the chat leg and wait for its record before a call is placed |
+| `POST {prefix}/say` | `{"nonce", "text"}` | Deliver typed text into the live call |
+
+Every route checks the request origin against the gateway's allowlist. Unknown, expired, and
+already-redeemed nonces all answer `404`, so a caller can't probe whether a given call is live.
+
+```python
+from signalwire.ai_chat import ChatGateway, HandoffRouter
+
+gateway = ChatGateway(config_url="https://bayview-taxi.example.com/dispatch")
+handoff = HandoffRouter(gateway=gateway, capture_leg=save_leg, end_call=hang_up)
+
+agent.mount(gateway.router(), prefix="/chat")
+agent.mount(handoff.router(), prefix="/chat")
+```
+
+## How the nonce works
+
+A browser can't be trusted to name a call, since a page-supplied call ID would let anyone inject
+speech into a stranger's call. Instead the browser proves which call it is on. Your application puts
+a random `handoff_nonce` in the user variables of one dial, [registers][register] it against that
+call's IDs from the dynamic-config callback, and the browser presents it later. The same dial
+carries the `chat_handle`, so the callback recovers the conversation ID with
+[`read_handle()`][read-handle].
+Redemption for a handle is single use. Typing is repeatable for the life of the call, bounded by
+`max_messages_per_call`.
+
+A new medium never starts until the one it replaces has finished and your `capture_leg` callback has
+confirmed its record is durable. Without that wait the new leg's config fetch races a record that is
+still being written and opens knowing nothing.
+
+<Warning title="The nonce registry is per process">
+Like the gateway's rate-limit counters, the registry lives in the serving process. A redemption must
+reach the replica that served the dial. Run one replica, use sticky routing, or pass a shared
+`registry`.
+</Warning>
+
+## Parameters
+
+Keyword-only.
+
+<ParamField path="gateway" type="ChatGateway" required={true} toc={true}>
+  The gateway that owns the conversations. Used to issue handles and to check origins, so both
+  halves of the URL enforce the same origin policy.
+</ParamField>
+
+<ParamField path="capture_leg" type="Callable[[str, str], bool | Awaitable[bool]] | None" default="None" toc={true}>
+  Called as `capture_leg(conversation_id, medium)` to end a leg and write its record. Return a truthy
+  value only once that record is durable. Sync or async. When omitted, no wait happens and the
+  ordering guarantee isn't provided.
+</ParamField>
+
+<ParamField path="end_call" type="Callable[[str], None | Awaitable[None]] | None" default="None" toc={true}>
+  Called as `end_call(call_id)` to hang the call up server-side so its teardown hooks fire
+  immediately.
+</ParamField>
+
+<ParamField path="send_message" type="Callable[[str, str], bool | Awaitable[bool]] | None" default="None" toc={true}>
+  Called as `send_message(call_id, text)` for `/say`. Omit to leave typing disabled; the route then
+  answers `404`.
+</ParamField>
+
+<ParamField path="next_conversation_id" type="Callable[[str], str] | None" default="None" toc={true}>
+  Called as `next_conversation_id(conversation_id)` to produce the ID for the new leg. An ended
+  conversation can't be reopened, so a fresh ID is required. Defaults to appending `.1`, or
+  incrementing an existing `.N` suffix.
+</ParamField>
+
+<ParamField path="nonce_ttl" type="int" default="3600" toc={true}>
+  Seconds a nonce stays redeemable.
+</ParamField>
+
+<ParamField path="max_messages_per_call" type="int" default="200" toc={true}>
+  Ceiling on typed messages for one call. Each is a billable turn, so this is a spend guard as much
+  as an abuse guard.
+</ParamField>
+
+<ParamField path="capture_timeout" type="float" default="8.0" toc={true}>
+  Seconds to wait for `capture_leg`. A ceiling, not a budget; capture is normally sub-second. On
+  timeout the next medium starts without this leg's record and a warning is logged.
+</ParamField>
+
+<ParamField path="registry" type="dict[str, NonceEntry] | None" default="None" toc={true}>
+  Shared mapping for the nonce table. Supply one backed by shared storage to run more than one
+  replica.
+</ParamField>
+
+## Properties
+
+<ParamField path="NonceEntry" type="dataclass" toc={true}>
+  What a nonce is a capability for. Importable from `signalwire.ai_chat`.
+</ParamField>
+
+<Indent>
+<ParamField path="NonceEntry.conversation_id" type="str" toc={true}>
+  The conversation the nonce belongs to.
+</ParamField>
+
+<ParamField path="NonceEntry.call_id" type="str | None" toc={true}>
+  The call it was registered against.
+</ParamField>
+
+<ParamField path="NonceEntry.issued_at" type="float" toc={true}>
+  Monotonic timestamp used for expiry.
+</ParamField>
+
+<ParamField path="NonceEntry.messages" type="int" toc={true}>
+  Typed messages delivered so far.
+</ParamField>
+</Indent>
+
+## Methods
+
+<CardGroup cols={3}>
+  <Card title="register" href="/docs/server-sdks/reference/python/agents/handoff-router/register">
+    Record what a nonce is a capability for.
+  </Card>
+  <Card title="redeem" href="/docs/server-sdks/reference/python/agents/handoff-router/redeem">
+    Exchange a nonce for a chat handle. Single use.
+  </Card>
+  <Card title="escalate" href="/docs/server-sdks/reference/python/agents/handoff-router/escalate">
+    End a chat leg and wait for its record.
+  </Card>
+  <Card title="say" href="/docs/server-sdks/reference/python/agents/handoff-router/say">
+    Deliver typed text into a live call.
+  </Card>
+  <Card title="router" href="/docs/server-sdks/reference/python/agents/handoff-router/router">
+    The APIRouter to mount beside the gateway's.
+  </Card>
+</CardGroup>
+
+## Example
+
+Register the nonce from the dynamic-config callback of the dial that carried it, reading the call ID
+from the platform's request rather than from anything the browser sent. The
+[`capabilities`][capabilities] helpers read the same user variables.
+
+```python {20-27,30-31}
+from signalwire import AgentBase
+from signalwire.ai_chat import ChatGateway, HandoffRouter
+from signalwire.core.capabilities import user_variables
+
+agent = AgentBase(name="dispatch", route="/dispatch")
+agent.set_prompt_text("You are Ada, the dispatcher for Bayview Taxi.")
+
+gateway = ChatGateway(
+    config_url="https://bayview-taxi.example.com/dispatch",
+    key="pk_your_publishable_key",
+    allowed_origins=["https://bayviewtaxi.example.com"],
+)
+handoff = HandoffRouter(
+    gateway=gateway,
+    capture_leg=save_leg,      # your function: write the leg's transcript, return True when durable
+    end_call=hang_up,          # your function: end the call server-side
+    send_message=inject_text,  # your function: speak typed text into the call
+)
+
+def remember_nonce(query_params, body_params, headers, ephemeral_agent):
+    variables = user_variables(body_params)
+    nonce = variables.get("handoff_nonce")
+    chat_handle = variables.get("chat_handle")
+    if nonce and chat_handle:
+        conversation_id = gateway.read_handle(chat_handle)
+        call_id = body_params.get("call", {}).get("call_id")
+        handoff.register(nonce, conversation_id=conversation_id, call_id=call_id)
+
+agent.add_per_call_config(remember_nonce)
+agent.mount(gateway.router(), prefix="/chat")
+agent.mount(handoff.router(), prefix="/chat")
+agent.serve()
+```
