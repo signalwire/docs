@@ -3,7 +3,7 @@ import "../../_shared/enums.tsp";
 import "../enums.tsp";
 
 model AliasAddressCreateRequest {
-  @doc("URL-safe name for the alias — lowercase letters and numbers, with underscores or dashes in place of spaces. Must be unique within its context and is used to build the alias's address.")
+  @doc("URL-safe name for the alias — lowercase letters and numbers, with underscores or dashes in place of spaces. Dashes can't start or end the name or appear twice in a row. Must be unique within its context and is used to build the alias's address.")
   @example("support")
   @maxLength(256)
   @pattern("^[a-z0-9_-]+$")
@@ -36,7 +36,7 @@ model AliasAddressCreateRequest {
 }
 
 model AliasAddressUpdateRequest {
-  @doc("URL-safe name for the alias — lowercase letters and numbers, with underscores or dashes in place of spaces. Must be unique within its context. Keeps the current value when omitted.")
+  @doc("URL-safe name for the alias — lowercase letters and numbers, with underscores or dashes in place of spaces. Dashes can't start or end the name or appear twice in a row. Must be unique within its context. Keeps the current value when omitted.")
   @example("customer-support")
   @maxLength(256)
   @pattern("^[a-z0-9_-]+$")

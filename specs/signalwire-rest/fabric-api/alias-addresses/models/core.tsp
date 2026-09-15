@@ -17,9 +17,9 @@ model AliasAddress {
   @example("8f14e45f-ceea-467d-9c2b-7a1d3a9b2c34")
   id: uuid;
 
-  @doc("The object type. Always `alias_address`.")
-  @example("alias_address")
-  type: "alias_address";
+  @doc("The object type. Always `alias`.")
+  @example("alias")
+  type: "alias";
 
   @doc("ID of the resource that handles calls and messages to this alias.")
   @example("b3877739-5c7e-4d4f-9d1a-2f0c8c2f1a11")
