@@ -30,7 +30,8 @@ interface Billing {
     The billing endpoints are available when billing is managed in the space itself, which
     is the case for every ordinary space: if the Billing section appears in your Dashboard,
     you can use them. A space purchased through a cloud marketplace, or a suspended or
-    deactivated space, receives `401`.
+    deactivated space, receives `401`. A space deactivated for nonpayment keeps them so that
+    its outstanding balance can be settled.
 
     ${patPermissions}
     """)

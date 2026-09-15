@@ -135,7 +135,7 @@ model ProjectUsage {
   @example("4d5e6f70-8192-4a3b-8c4d-5e6f70819234")
   id: uuid;
 
-  @doc("The name of the project, or `null` when the project no longer exists.")
+  @doc("The name of the project. Can be `null`.")
   @example("Root Project")
   name: string | null;
 

@@ -30,7 +30,7 @@ namespace SignalWireAPI.Space {
       trial state, and timestamps.
 
       Everything under `/api/space` is space-wide, so no project appears in the path. A
-      Personal Access Token acts only on the space whose subdomain was called; the same token
+      Personal access token acts only on the space whose subdomain was called; the same token
       sent to another subdomain resolves no membership and is rejected with `401`.
 
       ${patPermissions}

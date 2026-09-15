@@ -57,7 +57,7 @@ model TopUpStatusCode422 {
   @body body: SpaceErrorBody | CardDeclinedError;
 }
 
-@doc("The card was charged, but the deposit to the space balance could not be completed. Contact support with the `Idempotency-Key` you used.")
+@doc("An upstream billing service was unavailable and the deposit to the space balance could not be completed.")
 @error
 model TopUpDepositFailedError {
   @statusCode statusCode: 502;

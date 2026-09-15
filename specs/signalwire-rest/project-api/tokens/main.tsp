@@ -25,7 +25,7 @@ namespace SignalWireAPI.Project.Tokens {
 
       The response is the only place the token secret is returned. Store it securely; no later request, including [Update API token](/docs/apis/rest/project-tokens/update-token), can read it back.
 
-      With a project API token, the new token belongs to the authenticated project, or to one of its subprojects when `subproject_id` is given; `project_id` is ignored. With a [Personal Access Token](/docs/apis/authorization#personal-access-tokens), `project_id` is required and names the project the token is created for, which is how a root project created with [Create a project](/docs/apis/rest/projects/create-subproject) gets its first credential.
+      With a project API token, the new token belongs to the authenticated project, or to one of its subprojects when `subproject_id` is given; `project_id` is ignored. With a [Personal access token](/docs/apis/authorization#personal-access-tokens), `project_id` is required and names the project the token is created for, which is how a root project created with [Create a project](/docs/apis/rest/projects/create-subproject) gets its first credential.
       
       ${tokenOrPatPermissions<"_Management_">}
       

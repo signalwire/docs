@@ -26,7 +26,7 @@ namespace SignalWireAPI.Projects {
       Lists the projects the caller can reach.
 
       With a project API token, that is the authenticated root project and its
-      subprojects. With a Personal Access Token, it is every root project the token holder
+      subprojects. With a Personal access token, it is every root project the token holder
       is enabled for, plus their subprojects.
 
       Filter by name when locating a project, or use [Retrieve a project](/docs/apis/rest/projects/get-project) when you already have its ID. Integrations built around Compatibility API Account SIDs can use [List accounts](/docs/compatibility-api/rest/accounts/list-accounts) instead.
@@ -47,7 +47,7 @@ namespace SignalWireAPI.Projects {
         authenticated root project, and `parent_project_id` is ignored. Creating while
         authenticated as a subproject fails with `422 nested_subprojects_not_allowed`,
         since a subproject cannot contain subprojects.
-      - With a **Personal Access Token**, omit `parent_project_id` to create a root
+      - With a **Personal access token**, omit `parent_project_id` to create a root
         project, or set it to create a subproject of that project. The parent must be a
         root project the token holder can reach (`invalid_parent_project_id`,
         `nested_subprojects_not_allowed`).
@@ -115,7 +115,7 @@ namespace SignalWireAPI.Projects {
       Deletes a project.
 
       With a project API token, only subprojects can be deleted; targeting the root
-      project returns `422 only_subprojects_can_be_deleted`. With a Personal Access Token,
+      project returns `422 only_subprojects_can_be_deleted`. With a Personal access token,
       a root project can be deleted as well.
 
       In both cases the project must be empty first: remove its subprojects

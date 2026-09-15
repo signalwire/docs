@@ -103,7 +103,7 @@ model LowBalanceSetting {
   @example(true)
   send_topup: boolean;
 
-  @doc("The amount, in microdollars, deposited by each auto top-up, or `null` when auto top-up has never been configured.")
+  @doc("The amount, in microdollars, deposited by each auto top-up. Can be `null`.")
   @example(20000000)
   topup_amount_in_microdollars: int64 | null;
 

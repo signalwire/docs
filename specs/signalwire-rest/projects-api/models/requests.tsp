@@ -12,7 +12,7 @@ model CreateProjectRequest {
   name: string;
 
   @doc("""
-    Personal Access Token only. The root project to create the new project under. Omit it
+    Personal access token only. The root project to create the new project under. Omit it
     to create a root project. Must name a root project the token holder can reach
     (`invalid_parent_project_id`, `nested_subprojects_not_allowed`). Ignored with a
     project API token, which always creates a subproject of its own project.

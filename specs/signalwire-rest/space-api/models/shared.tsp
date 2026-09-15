@@ -60,7 +60,9 @@ model SpaceErrorBody {
 @doc("""
   The credential is missing, unknown, or revoked; its holder is not a member of the space in
   the subdomain; or the member is not an owner or admin. The body is the plain text
-  `Unauthorized`.
+  `Unauthorized`. An unverified space instead receives the JSON body
+  `{"message": "Please validate a phone number to access your account."}` on every endpoint
+  under `/api/space`.
   """)
 @error
 model SpaceUnauthorizedError {
@@ -75,7 +77,7 @@ model SpaceUnverifiedError {
   @statusCode statusCode: 401;
   @header contentType: "application/json";
   @body body: {
-    @doc("How to make the space eligible to use this endpoint.")
+    @doc("States that a phone number must be validated for the space before it can use the API.")
     @example("Please validate a phone number to access your account.")
     message: string;
   };
@@ -85,8 +87,11 @@ model SpaceUnverifiedError {
   The credential is missing, unknown, or revoked; its holder is not a member of the space in
   the subdomain; the member is not an owner or admin; or billing for this space is not
   managed in the space itself, which is the case for a space purchased through a cloud
-  marketplace and for a suspended or deactivated space. The body is the plain text
-  `Unauthorized`.
+  marketplace and for a suspended or deactivated space. A space deactivated for nonpayment
+  keeps the billing endpoints so that its outstanding balance can be settled. The body is the
+  plain text `Unauthorized`. An unverified space instead receives the JSON body
+  `{"message": "Please validate a phone number to access your account."}` on every endpoint
+  under `/api/space`.
   """)
 @error
 model SpaceBillingUnauthorizedError {

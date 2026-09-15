@@ -38,10 +38,10 @@ model SignalWireBasicAuth is BasicAuth;
 model SignalWireBearerAuth is BearerAuth;
 
 @doc("""
-  Personal Access Token authentication for space-wide administration.
+  Personal access token authentication for space-wide administration.
   
-  Send HTTP Basic auth with an empty username and the Personal Access Token as
-  the password. A Personal Access Token carries your own authority rather than a
+  Send HTTP Basic auth with an empty username and the Personal access token as
+  the password. A Personal access token carries your own authority rather than a
   project's: it is created from your user menu in the Dashboard, is prefixed
   `pat_`, and has no scopes. The holder must be an owner or admin of the space
   named by the subdomain, and the token acts only on that space.
