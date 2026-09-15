@@ -38,29 +38,26 @@ AI chat is the [`ai`][ai-reference] method or Server SDK agents reached over tex
 The [Chat API][messaging-chat] is an unrelated messaging product. And it is not the messaging flavor of SWML either.
 </Note>
 
-## Pick the right product for your requirements
+## Pick the right product for AI chat
 
-AI chat can be accessed in multiple ways, but not all functionality is available in all cases.
+AI chat runs on a single HTTP endpoint. Neither SWML nor Relay reaches it — an agent written in
+either is what you talk *to*, not what you talk *with* — so the only choice is how your code gets
+there.
 
-| Function | Direct | Gateway | Phone number |
-|---|---|---|---|
-| Run it from a server you control | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
-| Run it from a browser, or any other untrusted client | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> |
-| Reach the agent over SMS, with no client of your own | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
-| Choose which agent a conversation reaches, per request | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
-| Summarize or delete a conversation on demand | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
-| Read the conversation log including its system entries | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
+- The [AI chat REST API][chat-endpoint] is JSON-RPC 2.0 against `POST /api/ai/chat`, carrying your project API token. [`AIChatClient`][chat-client], in the Server SDKs, covers the same six methods in Python with typed methods and typed exceptions. Use either from a server you control.
+- [`ChatGateway`][chat-gateway], also in the Server SDKs, mounts inside a web application you already host and forwards on a page's behalf. It holds the API token, the project, and the `config_url`; the page holds a URL and a publishable key that the gateway manages itself. This is the only option that is safe from a browser.
+- A phone number sits on top of the REST API rather than beside it: someone texts your number, your webhook calls `chat`, and the agent texts back. Your server still holds the token.
 
-- **Direct** is JSON-RPC 2.0 against [`POST /api/ai/chat`][chat-endpoint], carrying your project API token. [`AIChatClient`][chat-client] covers the same ground in Python with typed methods and typed exceptions.
-- **Gateway** is [`ChatGateway`][chat-gateway] mounted inside a web application you already host. It holds the API token, the project, and the `config_url`; the page holds a URL and a publishable key that the gateway manages itself.
-- **From a phone number** sits on top of the direct path rather than beside it: someone texts your number and the agent texts back. Your server still holds the token.
-
-A browser cannot use the direct path. Anything a page can read, a visitor can read, and an API
+A browser cannot use the REST API directly. Anything a page can read, a visitor can read, and an API
 token in a page is a published API token.
 
-## Basic first example
+## Make your first AI chat request
 
-Consider the following simple AI agent, saved as a hosted script resource.
+Hold a short text conversation with an agent you host, using nothing but HTTP.
+
+<Steps>
+
+### Save an agent as a hosted script resource
 
 ```json title="agent.swml.json"
 {
@@ -80,26 +77,43 @@ Consider the following simple AI agent, saved as a hosted script resource.
 }
 ```
 
-Once saved, you will get a request URL like `(space name).signalwire.com/relay-bins/(uuid)`.
+Once saved, you will get a request URL like `<YOUR_SPACE>.signalwire.com/relay-bins/<YOUR_AGENT_ID>`.
 On top of testing this agent by voice with the Click-to-Test button, you can also hold conversations with it over HTTP.
+
+### Set your credentials
+
+Replace these values in the requests below:
+
+| Value | Replace with |
+|---|---|
+| `<YOUR_SPACE>` | Your Space's subdomain in `<YOUR_SPACE>.signalwire.com` |
+| `<YOUR_PROJECT_ID>` | Your Project ID |
+| `<YOUR_API_TOKEN>` | An API token with the `chat` scope |
+| `<YOUR_AGENT_ID>` | The UUID in your hosted script resource's request URL |
+
+Every method below is a POST to the same endpoint, authenticated with those credentials.
 
 <EndpointRequestSnippet endpoint="POST /api/ai/chat" />
 
+### Create the conversation
+
 `create_conversation` opens the conversation against your agent and hands back its opening line.
 
-```json title="create_conversation"
+<CodeBlocks>
+
+```json title="JSON-RPC request"
 {
   "jsonrpc": "2.0",
   "id": "req-1",
   "method": "create_conversation",
   "params": {
     "id": "chat-demo-1",
-    "config_url": "https://your-space.signalwire.com/relay-bins/8f3c1d94-2b7a-4e15-9c60-a1d8e4f70b23"
+    "config_url": "https://<YOUR_SPACE>.signalwire.com/relay-bins/<YOUR_AGENT_ID>"
   }
 }
 ```
 
-```json title="response"
+```json title="JSON-RPC response"
 {
   "jsonrpc": "2.0",
   "result": {
@@ -111,10 +125,16 @@ On top of testing this agent by voice with the Click-to-Test button, you can als
 }
 ```
 
+</CodeBlocks>
+
+### Send a turn
+
 Every turn after that is the same request with `chat` as the method, and the reply comes back in
 the same response.
 
-```json title="chat"
+<CodeBlocks>
+
+```json title="JSON-RPC request"
 {
   "jsonrpc": "2.0",
   "id": "req-2",
@@ -126,7 +146,7 @@ the same response.
 }
 ```
 
-```json title="response"
+```json title="JSON-RPC response"
 {
   "jsonrpc": "2.0",
   "result": {
@@ -136,9 +156,13 @@ the same response.
 }
 ```
 
-This is all it takes to text with your AI agent. Howerver, since this is directly over HTTP and uses your project API key, it can't be safely directly served on the browser without a proxy.
+</CodeBlocks>
 
-## How a conversation works
+</Steps>
+
+This is all it takes to text with your AI agent. However, since this is directly over HTTP and uses your project API key, it can't be safely directly served on the browser without a proxy.
+
+## How an AI chat conversation works
 
 **Your agent** is the SWML document you serve. `config_url` is where you serve it.
 
@@ -148,28 +172,26 @@ project.
 **A turn** is one user message and the agent's reply, including any tool calls made along the way.
 One request, one turn, one response — and it takes seconds, not milliseconds.
 
-## Hold a conversation
+## Hold an AI chat conversation
 
 The [AI chat endpoint reference][chat-endpoint] documents all six methods, their parameters, and
 their error codes. In Python, [`AIChatClient`][chat-client] covers the same ground with typed
 methods and typed exceptions.
 
-<Tabs>
-
-<Tab title="From your server">
+### Hold an AI chat conversation from your server
 
 <CodeBlocks>
 
-```python title="Python" {10,13}
+```python title="Python — AIChatClient" {10,13}
 import asyncio
 
 from signalwire.ai_chat import AIChatClient
 
-CONFIG_URL = "https://your-space.signalwire.com/relay-bins/8f3c1d94-2b7a-4e15-9c60-a1d8e4f70b23"
+CONFIG_URL = "https://<YOUR_SPACE>.signalwire.com/relay-bins/<YOUR_AGENT_ID>"
 
 
 async def main():
-    async with AIChatClient(space="your-space") as client:
+    async with AIChatClient(space="<YOUR_SPACE>") as client:
         info = await client.create_conversation("chat-demo-1", config_url=CONFIG_URL)
         print("Ada:", info.initial_message)
 
@@ -182,7 +204,7 @@ async def main():
 asyncio.run(main())
 ```
 
-```json title="HTTP request"
+```json title="JSON-RPC request"
 {
   "jsonrpc": "2.0",
   "id": "req-2",
@@ -194,7 +216,7 @@ asyncio.run(main())
 }
 ```
 
-```json title="HTTP response"
+```json title="JSON-RPC response"
 {
   "jsonrpc": "2.0",
   "result": {
@@ -206,9 +228,7 @@ asyncio.run(main())
 
 </CodeBlocks>
 
-</Tab>
-
-<Tab title="From a browser">
+### Hold an AI chat conversation from a browser
 
 [`ChatGateway`][chat-gateway] mounts on any FastAPI app, and allows for safe browser-side access.
 
@@ -225,9 +245,7 @@ gateway = ChatGateway(
 app.include_router(gateway.router(), prefix="/chat")
 ```
 
-</Tab>
-
-<Tab title="From a phone number">
+### Hold an AI chat conversation from a phone number
 
 We can use the Server SDK to create a messaging variant SWML which replies to text conversations using the AI agent.
 
@@ -243,11 +261,7 @@ async def sms(request: Request):
     return {"version": "1.0.0", "sections": {"main": [{"reply": reply.text}]}}
 ```
 
-</Tab>
-
-</Tabs>
-
-### AI chat methods
+### AI chat methods on the direct path
 
 | Method | What it does | Worth knowing |
 |---|---|---|
@@ -261,7 +275,7 @@ async def sms(request: Request):
 Messages take a `role` of `user` or `system`. A `system` message steers the agent without appearing
 as something the user said.
 
-### The browser gateway
+### The AI chat browser gateway
 
 You run a **gateway**: [`ChatGateway`][chat-gateway] with the Server SDK, mounted inside a web application you already
 host. It holds the API token, the project, and the `config_url`. The page holds a URL and a
@@ -293,7 +307,7 @@ the path is `/chat/`. The key is a bearer token that automatically gets sent.
 | `log` | `{"method": "log", "handle"}` | `messages`, `timeout`, `last_activity` |
 | `end` | `{"method": "end", "handle"}` | `{"status": "ended"}` |
 
-## Webhooks you receive
+## Webhooks an AI chat conversation sends
 
 A chat conversation delivers the same webhooks a voice AI session does.
 
