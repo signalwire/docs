@@ -20,10 +20,10 @@ model PhoneNumberAddressCreateRequest {
 }
 
 model PhoneNumberAddressUpdateRequest {
-  @doc("New name for the phone number address — lowercase letters, numbers, and hyphens only (no spaces or other special characters), up to 256 characters. Also renames the phone number. Defaults to the current value when omitted.")
+  @doc("New name for the phone number address — lowercase letters, numbers, underscores, and hyphens only (no spaces or other special characters), up to 256 characters. Also renames the phone number. Defaults to the current value when omitted.")
   @example("renamed-support-number")
   @maxLength(256)
-  @pattern("^[a-z0-9]+(-[a-z0-9]+)*$")
+  @pattern("^[a-z0-9_]+(-[a-z0-9_]+)*$")
   name?: string;
 
   @doc("ID of the resource that should handle the channel from now on. Must be a resource in your project of a type that can handle the address's channel. Defaults to the current value when omitted.")

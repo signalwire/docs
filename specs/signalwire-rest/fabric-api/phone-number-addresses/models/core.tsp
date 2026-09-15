@@ -16,9 +16,9 @@ model PhoneNumberAddress {
   @example("b3f1c0a2-0f6e-4a9d-9b2a-1c2d3e4f5a6b")
   id: uuid;
 
-  @doc("The object type. Always `phone_number_address`.")
-  @example("phone_number_address")
-  type: "phone_number_address";
+  @doc("The object type. Always `phone`.")
+  @example("phone")
+  type: "phone";
 
   @doc("The channel this address represents: `calling` for inbound calls or `messaging` for inbound messages. A phone number has one address per channel.")
   @example(UsedForType.Calling)
