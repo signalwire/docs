@@ -156,6 +156,11 @@ tags:
     externalDocs:
       url: https://signalwire.com/docs/apis
       description: Developer documentation on SignalWire REST APIs
+  - name: Phone Number Addresses
+    description: Endpoints related to managing Phone Number Addresses — the per-channel address that routes an owned phone number's calls or messages to the resource that handles them.
+    externalDocs:
+      url: https://signalwire.com/docs/apis
+      description: Developer documentation on Phone Number Addresses, Fabric API endpoints
   - name: Phone Routes
     description: Endpoints related to managing Phone Routes
     externalDocs:
@@ -1718,6 +1723,276 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/SubscriberGuestTokenCreateRequest'
+  /api/fabric/phone_number_addresses:
+    get:
+      operationId: list_phone_number_addresses
+      summary: List phone number addresses
+      description: |-
+        Lists the phone number addresses in your SignalWire project, newest first. Each address represents one channel (`calling` or `messaging`) of a phone number you own, together with the resource that handles it, if any. Addresses whose number has been released are not included. Use it to find the address ID for a number's channel before you link, re-point, or remove its resource.
+
+        Only the pagination parameters are supported; there are no filters. A `page_token` that is malformed or no longer resolves returns a `422` with the code `page_token_is_invalid`.
+
+        <Warning title="Beta">This API is in beta and may change.</Warning>
+
+        #### Permissions
+
+        The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Calling_, _Fax_, _Messaging_, or _Video_.
+
+        [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
+      parameters:
+        - $ref: '#/components/parameters/PhoneNumberAddressListQuery.page_size'
+        - $ref: '#/components/parameters/PhoneNumberAddressListQuery.page_number'
+        - $ref: '#/components/parameters/PhoneNumberAddressListQuery.page_token'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhoneNumberAddressListResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '422':
+          description: The request contains invalid parameters. See errors for details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhoneNumberAddressListStatusCode422'
+        '500':
+          description: An internal server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - Phone Number Addresses
+    post:
+      operationId: create_phone_number_address
+      summary: Link a resource to a phone number
+      description: |-
+        Links a resource to an unassigned channel of a phone number you own, so inbound calls or messages to that number reach the resource. Reference the number by `phone_number_id` or by its E.164 `number`, and pick the channel with `handler_type`. The address for that channel already exists, so this operation sets its resource rather than creating a new address, and it never purchases a number. [Assign Resource to phone route](/docs/apis/rest/phone-routes/assign-resource-phone-route) does the same from the resource's side.
+
+        A `422` response names the problem in its `code`:
+
+        - `missing_required_parameter`: `resource_id` or `handler_type` is blank, or neither `phone_number_id` nor `number` was provided.
+        - `invalid_parameter`: `handler_type` is not `calling` or `messaging`.
+        - `provided_id_is_unrecognized`: the number is not owned by your project, or `resource_id` is not a resource in it.
+        - `invalid_resource_type`: the resource can't handle the chosen channel.
+        - `already_assigned`: the channel already has a resource. Use [Update the resource for a phone number](/docs/apis/rest/phone-number-addresses/update-phone-number-address) to re-point it instead.
+
+        <Warning title="Beta">This API is in beta and may change.</Warning>
+
+        #### Permissions
+
+        The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Calling_, _Fax_, _Messaging_, or _Video_.
+
+        [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
+      parameters: []
+      responses:
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhoneNumberAddress'
+        '400':
+          description: The request is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode400'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '422':
+          description: The request contains invalid parameters. See errors for details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhoneNumberAddressCreateStatusCode422'
+        '500':
+          description: An internal server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - Phone Number Addresses
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PhoneNumberAddressCreateRequest'
+            examples:
+              By number:
+                summary: By number
+                description: Link a messaging handler to a number referenced by its E.164 number
+                value:
+                  number: '+13105550100'
+                  resource_id: 8a7b6c5d-4e3f-2a1b-0c9d-8e7f6a5b4c3d
+                  handler_type: messaging
+              By phone number ID:
+                summary: By phone number ID
+                description: Link a calling handler to a number referenced by its ID
+                value:
+                  phone_number_id: 1f2e3d4c-5b6a-7980-a1b2-c3d4e5f60718
+                  resource_id: 8a7b6c5d-4e3f-2a1b-0c9d-8e7f6a5b4c3d
+                  handler_type: calling
+  /api/fabric/phone_number_addresses/{id}:
+    get:
+      operationId: get_phone_number_address
+      summary: Get phone number address
+      description: |-
+        Retrieves one phone number address from your SignalWire project by ID. Use [List phone number addresses](/docs/apis/rest/phone-number-addresses/list-phone-number-addresses) to find the ID. The ID must belong to a phone number address in your project whose number you still own; an ID from another project, a different kind of resource address (for example, a SIP address), or a released number returns a 404.
+
+        <Warning title="Beta">This API is in beta and may change.</Warning>
+
+        #### Permissions
+
+        The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Calling_, _Fax_, _Messaging_, or _Video_.
+
+        [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
+      parameters:
+        - $ref: '#/components/parameters/PhoneNumberAddressPathID'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhoneNumberAddress'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode404'
+        '500':
+          description: An internal server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - Phone Number Addresses
+    patch:
+      operationId: update_phone_number_address
+      summary: Update the resource for a phone number
+      description: |-
+        Renames a phone number address, re-points its channel to a different resource, or both; omitted fields keep their current values. The channel itself is fixed: `handler_type` can't be changed, so to hand a number's other channel to a resource, update that channel's own address. Renaming the address also renames the phone number.
+
+        A `422` response names the problem in its `code`:
+
+        - `invalid_parameter`: `name` is not URL-safe or is longer than 256 characters.
+        - `provided_id_is_unrecognized`: `resource_id` is not a resource in your project.
+        - `invalid_resource_type`: the resource can't handle this address's channel.
+
+        <Warning title="Beta">This API is in beta and may change.</Warning>
+
+        #### Permissions
+
+        The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Calling_, _Fax_, _Messaging_, or _Video_.
+
+        [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
+      parameters:
+        - $ref: '#/components/parameters/PhoneNumberAddressPathID'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhoneNumberAddress'
+        '400':
+          description: The request is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode400'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode404'
+        '422':
+          description: The request contains invalid parameters. See errors for details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhoneNumberAddressUpdateStatusCode422'
+        '500':
+          description: An internal server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - Phone Number Addresses
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PhoneNumberAddressUpdateRequest'
+    delete:
+      operationId: delete_phone_number_address
+      summary: Remove the resource from a phone number
+      description: |-
+        Removes the resource from a phone number's channel, so inbound calls or messages on that channel no longer reach it. The number stays in your project, the resource is not deleted, and the address remains with `resource_id` set to `null`, so it still appears in [List phone number addresses](/docs/apis/rest/phone-number-addresses/list-phone-number-addresses). To give up the number itself, use [Release phone number](/docs/apis/rest/phone-numbers/release-phone-number).
+
+        <Warning title="Beta">This API is in beta and may change.</Warning>
+
+        #### Permissions
+
+        The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Calling_, _Fax_, _Messaging_, or _Video_.
+
+        [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
+      parameters:
+        - $ref: '#/components/parameters/PhoneNumberAddressPathID'
+      responses:
+        '204':
+          description: 'There is no content to send for this request, but the headers may be useful. '
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode404'
+        '500':
+          description: An internal server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - Phone Number Addresses
   /api/fabric/resources:
     get:
       operationId: list_resources
@@ -14362,6 +14637,44 @@ components:
       in: path
       required: true
       description: Unique ID of the order.
+      schema:
+        $ref: '#/components/schemas/uuid'
+    PhoneNumberAddressListQuery.page_number:
+      name: page_number
+      in: query
+      required: false
+      description: The page index, used together with `page_token`.
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+        default: 0
+      explode: false
+    PhoneNumberAddressListQuery.page_size:
+      name: page_size
+      in: query
+      required: false
+      description: The number of results per page.
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 1000
+        default: 50
+      explode: false
+    PhoneNumberAddressListQuery.page_token:
+      name: page_token
+      in: query
+      required: false
+      description: Opaque cursor token from a previous response's `links.next` or `links.prev`. Begins with `PA` or `PB`.
+      schema:
+        type: string
+      explode: false
+    PhoneNumberAddressPathID:
+      name: id
+      in: path
+      required: true
+      description: Unique ID of a phone number address.
       schema:
         $ref: '#/components/schemas/uuid'
     PhoneNumberPathID:
@@ -30319,6 +30632,243 @@ components:
       unevaluatedProperties:
         not: {}
       description: Phone number model.
+    PhoneNumberAddress:
+      type: object
+      required:
+        - id
+        - type
+        - handler_type
+        - resource_id
+        - name
+        - phone_number
+        - phone_number_id
+        - created_at
+        - updated_at
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Unique identifier for the phone number address.
+          examples:
+            - b3f1c0a2-0f6e-4a9d-9b2a-1c2d3e4f5a6b
+        type:
+          type: string
+          enum:
+            - phone
+          description: The object type. Always `phone`.
+          examples:
+            - phone
+        handler_type:
+          allOf:
+            - $ref: '#/components/schemas/UsedForType'
+          description: 'The channel this address represents: `calling` for inbound calls or `messaging` for inbound messages. A phone number has one address per channel.'
+          examples:
+            - calling
+        resource_id:
+          anyOf:
+            - $ref: '#/components/schemas/uuid'
+            - type: 'null'
+          description: ID of the resource that handles this channel. `null` when no resource is assigned.
+          examples:
+            - 8a7b6c5d-4e3f-2a1b-0c9d-8e7f6a5b4c3d
+        name:
+          type: string
+          description: Name of the phone number address.
+          examples:
+            - main-support-number
+        phone_number:
+          type: string
+          description: The phone number in E.164 format.
+          examples:
+            - '+13105550100'
+        phone_number_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: ID of the phone number this address belongs to.
+          examples:
+            - 1f2e3d4c-5b6a-7980-a1b2-c3d4e5f60718
+        created_at:
+          type: string
+          format: date-time
+          description: Date and time when the phone number address was created.
+          examples:
+            - '2024-05-06T12:20:00Z'
+        updated_at:
+          type: string
+          format: date-time
+          description: Date and time when the phone number address was last updated.
+          examples:
+            - '2024-05-06T12:20:00Z'
+      unevaluatedProperties:
+        not: {}
+    PhoneNumberAddressCreateRequest:
+      type: object
+      required:
+        - resource_id
+        - handler_type
+      properties:
+        phone_number_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: ID of a phone number your project owns. Provide this or `number`.
+          examples:
+            - 1f2e3d4c-5b6a-7980-a1b2-c3d4e5f60718
+        number:
+          type: string
+          description: A phone number your project owns, in E.164 format. Other common formats are accepted and normalized to E.164. Provide this or `phone_number_id`.
+          examples:
+            - '+13105550100'
+        resource_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: ID of the resource that should handle the channel. Must be a resource in your project of a type that can handle the chosen channel — for example, only messaging-capable resources can handle `messaging`.
+          examples:
+            - 8a7b6c5d-4e3f-2a1b-0c9d-8e7f6a5b4c3d
+        handler_type:
+          allOf:
+            - $ref: '#/components/schemas/UsedForType'
+          description: 'The channel to link the resource to: `calling` for inbound calls or `messaging` for inbound messages. The channel must not already have a resource assigned.'
+          examples:
+            - calling
+      unevaluatedProperties:
+        not: {}
+    PhoneNumberAddressCreateStatusCode422:
+      type: object
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Types.StatusCodes.RestApiErrorItem'
+          description: List of validation errors.
+      unevaluatedProperties:
+        not: {}
+      description: The request contains invalid parameters. See errors for details.
+      examples:
+        - statusCode: 422
+          errors:
+            - type: validation_error
+              code: already_assigned
+              message: is already assigned to a calling handler
+              attribute: phone_number_id
+              url: https://signalwire.com/docs/apis/error-codes#already_assigned
+    PhoneNumberAddressListResponse:
+      type: object
+      required:
+        - links
+        - items_count
+        - data
+      properties:
+        links:
+          allOf:
+            - $ref: '#/components/schemas/PhoneNumberAddressPaginationResponse'
+          description: Pagination links for the response.
+        items_count:
+          type: integer
+          format: int32
+          description: The number of phone number addresses in this page of results.
+          examples:
+            - 1
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/PhoneNumberAddress'
+          description: An array of phone number address objects.
+      unevaluatedProperties:
+        not: {}
+    PhoneNumberAddressListStatusCode422:
+      type: object
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Types.StatusCodes.RestApiErrorItem'
+          description: List of validation errors.
+      unevaluatedProperties:
+        not: {}
+      description: The request contains invalid parameters. See errors for details.
+      examples:
+        - statusCode: 422
+          errors:
+            - type: validation_error
+              code: page_token_is_invalid
+              message: Page token is invalid
+              attribute: null
+              url: https://signalwire.com/docs/apis/error-codes#page_token_is_invalid
+    PhoneNumberAddressPaginationResponse:
+      type: object
+      required:
+        - self
+        - first
+      properties:
+        self:
+          type: string
+          format: uri
+          description: Link to the current page of results.
+          examples:
+            - https://example.signalwire.com/api/fabric/phone_number_addresses?page_number=0&page_size=50
+        first:
+          type: string
+          format: uri
+          description: Link to the first page of results.
+          examples:
+            - https://example.signalwire.com/api/fabric/phone_number_addresses?page_number=0&page_size=50
+        next:
+          type: string
+          format: uri
+          description: Link to the next page of results.
+          examples:
+            - https://example.signalwire.com/api/fabric/phone_number_addresses?page_number=1&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca
+        prev:
+          type: string
+          format: uri
+          description: Link to the previous page of results.
+          examples:
+            - https://example.signalwire.com/api/fabric/phone_number_addresses?page_number=0&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca
+      unevaluatedProperties:
+        not: {}
+    PhoneNumberAddressUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 256
+          pattern: ^[a-z0-9_]+(-[a-z0-9_]+)*$
+          description: New name for the phone number address — lowercase letters, numbers, underscores, and hyphens only (no spaces or other special characters), up to 256 characters. Also renames the phone number. Defaults to the current value when omitted.
+          examples:
+            - renamed-support-number
+        resource_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: ID of the resource that should handle the channel from now on. Must be a resource in your project of a type that can handle the address's channel. Defaults to the current value when omitted.
+          examples:
+            - 9c8b7a6d-5e4f-3a2b-1c0d-9e8f7a6b5c4d
+      unevaluatedProperties:
+        not: {}
+    PhoneNumberAddressUpdateStatusCode422:
+      type: object
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Types.StatusCodes.RestApiErrorItem'
+          description: List of validation errors.
+      unevaluatedProperties:
+        not: {}
+      description: The request contains invalid parameters. See errors for details.
+      examples:
+        - statusCode: 422
+          errors:
+            - type: validation_error
+              code: invalid_parameter
+              message: Name is invalid
+              attribute: name
+              url: https://signalwire.com/docs/apis/error-codes#invalid_parameter
     PhoneNumberCallHandler:
       type: string
       enum:
