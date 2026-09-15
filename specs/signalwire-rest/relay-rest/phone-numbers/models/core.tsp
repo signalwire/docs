@@ -457,14 +457,6 @@ model PhoneNumberLookup {
 
 @doc("Carrier lookup information.")
 model CarrierLookupInfo {
-  @doc("The LRN associated with the number.")
-  @example("15551234567")
-  lrn?: string;
-
-  @doc("The Service Profile Identifier associated with the number.")
-  @example("683X")
-  spid?: string;
-
   @doc("The Operating Company Number associated with the number.")
   @example("12345")
   ocn?: string;

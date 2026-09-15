@@ -130,6 +130,14 @@ async function discoverPages(baseUrl) {
   const visited = new Set();
   const queue = [`${baseUrl}/llms.txt`];
 
+  // The root llms.txt is hand-maintained (fern/llms.txt) and links to production
+  // hosts. On a preview, rebase those links so the crawl still reaches every
+  // product index.
+  const rebase = (url) =>
+    baseUrl !== DEFAULT_BASE_URL && url.startsWith(DEFAULT_BASE_URL)
+      ? `${baseUrl}${url.slice(DEFAULT_BASE_URL.length)}`
+      : url;
+
   while (queue.length > 0) {
     const indexUrl = queue.shift();
     if (visited.has(indexUrl)) continue;
@@ -153,14 +161,15 @@ async function discoverPages(baseUrl) {
     let listedIndexes = 0;
 
     for (const match of body.matchAll(INDEX_LINK_RE)) {
-      const childUrl = match[1];
+      const childUrl = rebase(match[1]);
       if (!childUrl.startsWith(baseUrl)) continue;
       listedIndexes++;
       if (!visited.has(childUrl)) queue.push(childUrl);
     }
 
     for (const match of body.matchAll(PAGE_LINK_RE)) {
-      const [, title, pageUrl] = match;
+      const [, title] = match;
+      const pageUrl = rebase(match[2]);
       if (!pageUrl.startsWith(baseUrl)) continue;
       listedPages++;
       if (!pages.has(pageUrl)) {

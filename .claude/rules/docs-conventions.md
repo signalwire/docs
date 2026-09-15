@@ -15,6 +15,7 @@ paths:
 | REST API reference | rendered from `fern/apis/*/openapi.yaml` | **No MDX exists** — edit `.tsp` under `specs/`, run `yarn build:specs`, commit source + regenerated output |
 | Guides, tutorials, concepts | `fern/products/*/pages/**` | Yes |
 | Snippets/partials | `fern/snippets/**` | Yes — re-check every page that includes them |
+| Root llms.txt | `fern/llms.txt` | Yes — hand-maintained and served verbatim; product-level `/docs/<product>/llms.txt` indexes are generated |
 
 Generated artifacts — `specs/**/tsp-output/**` and the OpenAPI files it emits (`fern/apis/signalwire-rest/openapi.yaml`, `fern/apis/compatibility/openapi.yaml`) — are never hand-edited; the next build overwrites them. Not all of `fern/apis/` is generated: `calling-rpc/openrpc.yaml` has no generator and is hand-maintained (currently commented out of `fern/products/apis/apis.yml`). TypeSpec conventions live in `spec-conventions`.
 
