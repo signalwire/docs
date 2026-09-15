@@ -5,9 +5,10 @@ using Types.StatusCodes;
 namespace SignalWireAPI.Projects;
 
 @doc("""
-  The request could not be processed. When creating a project while authenticated as a
-  subproject, the response includes the `nested_subprojects_not_allowed` code. A blank or
-  overly long `name` returns a standard validation error.
+  The request could not be processed. Creating while authenticated as a subproject, or
+  naming a subproject as `parent_project_id`, returns `nested_subprojects_not_allowed`.
+  A `parent_project_id` the caller cannot reach returns `invalid_parent_project_id`. A
+  blank or overly long `name` returns a standard validation error.
   """)
 @example(#{
   statusCode: 422,
@@ -24,9 +25,11 @@ namespace SignalWireAPI.Projects;
 model CreateProjectStatusCode422 is StatusCode422;
 
 @doc("""
-  The request could not be processed. Deleting a root/parent project returns
-  `only_subprojects_can_be_deleted`, and deleting a project that still has phone numbers
-  assigned returns `phone_numbers_must_be_removed`.
+  The request could not be processed. Deleting a root project with a project API token
+  returns `only_subprojects_can_be_deleted`. Deleting a project that still has
+  subprojects returns `subprojects_must_be_removed`, one that still has phone numbers
+  returns `phone_numbers_must_be_removed`, and the last project in a space returns
+  `last_project_cannot_be_deleted`.
   """)
 @example(#{
   statusCode: 422,

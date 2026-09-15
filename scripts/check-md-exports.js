@@ -130,6 +130,14 @@ async function discoverPages(baseUrl) {
   const visited = new Set();
   const queue = [`${baseUrl}/llms.txt`];
 
+  // The root llms.txt is hand-maintained (fern/llms.txt) and links to production
+  // hosts. On a preview, rebase those links so the crawl still reaches every
+  // product index.
+  const rebase = (url) =>
+    baseUrl !== DEFAULT_BASE_URL && url.startsWith(DEFAULT_BASE_URL)
+      ? `${baseUrl}${url.slice(DEFAULT_BASE_URL.length)}`
+      : url;
+
   while (queue.length > 0) {
     const indexUrl = queue.shift();
     if (visited.has(indexUrl)) continue;
@@ -153,14 +161,15 @@ async function discoverPages(baseUrl) {
     let listedIndexes = 0;
 
     for (const match of body.matchAll(INDEX_LINK_RE)) {
-      const childUrl = match[1];
+      const childUrl = rebase(match[1]);
       if (!childUrl.startsWith(baseUrl)) continue;
       listedIndexes++;
       if (!visited.has(childUrl)) queue.push(childUrl);
     }
 
     for (const match of body.matchAll(PAGE_LINK_RE)) {
-      const [, title, pageUrl] = match;
+      const [, title] = match;
+      const pageUrl = rebase(match[2]);
       if (!pageUrl.startsWith(baseUrl)) continue;
       listedPages++;
       if (!pages.has(pageUrl)) {
@@ -205,6 +214,14 @@ const TERM_RE = /^\*\*`[^`\n]+`\*\*/m;
 const PARAMS_HEADING_RE = /^#{2,4}\s+\**(Properties|Parameters|Attributes|Fields|Variables|Returns)\b/im;
 const HR_RE = /^\s*---\s*$/m;
 
+/** Remove a Fern page directive blockquote when it appears before the H1. */
+function stripLeadingPageDirective(body) {
+  return body.replace(
+    /^(?:[ \t]*\n)*(?:[ \t]*>[^\n]*(?:\n|$))+(?:[ \t]*\n)*(?=[ \t]*#\s)/,
+    '',
+  );
+}
+
 /**
  * Each check receives { body, stripped } and returns a message string (finding)
  * or null (clean). Severity tiers: error affects the exit code; warn is surfaced;
@@ -215,7 +232,7 @@ const CHECKS = [
     id: 'soft-404',
     severity: 'error',
     test({ body }) {
-      return body.trimStart().startsWith('# Page Not Found')
+      return stripLeadingPageDirective(body).trimStart().startsWith('# Page Not Found')
         ? 'listed in llms.txt but the .md export is a "Page Not Found" stub'
         : null;
     },
@@ -224,9 +241,9 @@ const CHECKS = [
     id: 'empty-body',
     severity: 'error',
     test({ body }) {
-      const content = body
+      const content = stripLeadingPageDirective(body)
         .split('\n')
-        .filter((l) => !/^>\s*For a complete index/.test(l) && !/^#\s/.test(l) && l.trim() !== '')
+        .filter((l) => !/^#\s/.test(l) && l.trim() !== '')
         .join('\n');
       return content.length < 80 ? `body is nearly empty (${content.length} chars of content)` : null;
     },

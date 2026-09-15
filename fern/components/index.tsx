@@ -6,3 +6,4 @@
 // component's public surface (components + types) without enumerating them.
 export * from "./voice-widget/index";
 export * from "./skeleton/index";
+export * from "./sigmond-card/index";

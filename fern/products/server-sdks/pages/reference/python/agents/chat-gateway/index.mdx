@@ -13,6 +13,8 @@ max-toc-depth: 3
 [visiblemessages]: /docs/server-sdks/reference/python/agents/chat-gateway/visible-messages
 [lastactivity]: /docs/server-sdks/reference/python/agents/chat-gateway/last-activity
 [close]: /docs/server-sdks/reference/python/agents/chat-gateway/close
+[handoffrouter]: /docs/server-sdks/reference/python/agents/handoff-router
+[mount]: /docs/server-sdks/reference/python/agents/agent-base/mount
 
 A chat widget in a page cannot hold a SignalWire API token: the token carries the whole project, and
 every visitor could read it. `ChatGateway` mounts inside a web application you already run, holds the
@@ -35,7 +37,13 @@ app.include_router(gateway.router(), prefix="/chat")
 ```
 
 It mounts on any FastAPI app. An agent already serves one, so this costs no new infrastructure:
-`agent.get_app().include_router(gateway.router(), prefix="/chat")`.
+`agent.mount(gateway.router(), prefix="/chat")` (see [`mount()`][mount]).
+
+<Note>
+The SignalWire address widget also calls `/handoff`, `/escalate`, and `/say` at the same URL to
+move a conversation between chat and a phone call. [`HandoffRouter`][handoffrouter] serves those
+three routes; mount it at the same prefix as the gateway.
+</Note>
 
 ## **Parameters**
 
@@ -46,7 +54,7 @@ Keyword-only.
   whoever holds a key cannot choose which agent runs.
 </ParamField>
 
-<ParamField path="key" type="str | None" toc={true}>
+<ParamField path="key" type="str | None" default="None" toc={true}>
   The publishable key the widget carries. Falls back to `SIGNALWIRE_CHAT_GATEWAY_KEY`, then to a
   generated `pk_` value, which is useful only for a process that also serves the page and can embed
   it.
@@ -57,11 +65,11 @@ Keyword-only.
   unconfigured; anything else must be listed, so nothing ships open by accident.
 </ParamField>
 
-<ParamField path="client" type="AIChatClient | None" toc={true}>
+<ParamField path="client" type="AIChatClient | None" default="None" toc={true}>
   The [`AIChatClient`][aichatclient] to forward on. Built from the environment when omitted.
 </ParamField>
 
-<ParamField path="secret" type="bytes | str | None" toc={true}>
+<ParamField path="secret" type="bytes | str | None" default="None" toc={true}>
   HMAC key for signing handles. Falls back to `SIGNALWIRE_CHAT_GATEWAY_SECRET`, then to a random
   per-process value.
 </ParamField>
@@ -71,7 +79,7 @@ Keyword-only.
   left open overnight expires.
 </ParamField>
 
-<ParamField path="conversation_timeout" type="int | None" toc={true}>
+<ParamField path="conversation_timeout" type="int | None" default="None" toc={true}>
   Idle seconds before the service ends a conversation, passed on every create. `None` leaves it to
   the service default of 3600. Set here rather than in the page, because the JSON-RPC result exposes
   neither the deadline nor the server's clock, so a browser cannot discover it and two places holding

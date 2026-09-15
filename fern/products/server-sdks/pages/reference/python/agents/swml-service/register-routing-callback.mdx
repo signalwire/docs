@@ -14,8 +14,8 @@ the request to a different endpoint or let normal processing continue. This is p
 used for SIP-based routing where the destination depends on the incoming SIP URI.
 
 An HTTP endpoint is automatically created at the specified path when the service starts.
-The callback receives the raw FastAPI `Request` object and the parsed request body as
-a dictionary.
+The callback receives the parsed request body and the request headers, both as a
+dictionary — `callback_fn(body, headers)`.
 
 <Tip>
 This is also how you receive an [`ai_sidecar`](/docs/swml/reference/calling/ai-sidecar) verb's webhook
@@ -33,10 +33,11 @@ starting the server.
 
 ## **Parameters**
 
-<ParamField path="callback_fn" type="Callable[[Request, dict[str, Any]], Optional[str]]" required={true} toc={true}>
-  A function that receives a FastAPI `Request` and the parsed JSON body as a `dict`.
-  Return a route string to redirect the request (using HTTP 307 to preserve the POST
-  method and body), or return `None` to continue with normal SWML document serving.
+<ParamField path="callback_fn" type="Callable[[dict[str, Any], dict[str, Any]], str | None]" required={true} toc={true}>
+  A function that receives the parsed JSON body and the request headers, both as a
+  `dict` — `callback_fn(body, headers)`. Return a route string to redirect the request
+  (using HTTP 307 to preserve the POST method and body), or return `None` to continue
+  with normal SWML document serving.
 </ParamField>
 
 <ParamField path="path" type="str" default="/sip" toc={true}>
@@ -65,7 +66,7 @@ the `call.to` field.
 
 ### **Returns**
 
-`Optional[str]` — The extracted username or phone number, or `None` if the `call.to`
+`str | None` — The extracted username or phone number, or `None` if the `call.to`
 field is missing or cannot be parsed.
 
 ### **Example**
@@ -77,7 +78,7 @@ from signalwire import SWMLService
 
 service = SWMLService(name="sip-router", route="/")
 
-def route_sip_call(request, body):
+def route_sip_call(body, headers):
     """Route calls based on the SIP username in the request."""
     username = SWMLService.extract_sip_username(body)
     if username == "sales":

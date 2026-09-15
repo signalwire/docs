@@ -15,6 +15,7 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/api/projects")
+@useAuth(SignalWireBasicAuth | SignalWirePersonalAccessTokenAuth)
 namespace SignalWireAPI.Projects {
   @tag(PROJECTS_TAG)
   @friendlyName("Projects")
@@ -22,14 +23,15 @@ namespace SignalWireAPI.Projects {
     @operationId("list_projects")
     @summary("List projects")
     @doc("""
-      Lists the authenticated root project and its subprojects.
-      
-      All endpoints operate only within the caller's project tree — the authenticated root
-      project and the subprojects beneath it.
+      Lists the projects the caller can reach.
+
+      With a project API token, that is the authenticated root project and its
+      subprojects. With a Personal access token, it is every root project the token holder
+      is enabled for, plus their subprojects.
 
       Filter by name when locating a project, or use [Retrieve a project](/docs/apis/rest/projects/get-project) when you already have its ID. Integrations built around Compatibility API Account SIDs can use [List accounts](/docs/compatibility-api/rest/accounts/list-accounts) instead.
       
-      ${tokenPermissions<"_Management_">}
+      ${tokenOrPatPermissions<"_Management_">}
       """)
     @get
     list(
@@ -37,20 +39,29 @@ namespace SignalWireAPI.Projects {
     ): ProjectListResponse | StatusCode401 | StatusCode500;
 
     @operationId("create_subproject")
-    @summary("Create a subproject")
+    @summary("Create a project")
     @doc("""
-      Creates a subproject under the authenticated root project.
-      
-      Creating a project is only allowed when authenticated as a top-level (root) project.
-      A subproject cannot itself contain subprojects, so attempting to create one while
-      authenticated as a subproject fails with `422 nested_subprojects_not_allowed`.
+      Creates a project. Which kind depends on the credential:
+
+      - With a **project API token**, the new project is always a subproject of the
+        authenticated root project, and `parent_project_id` is ignored. Creating while
+        authenticated as a subproject fails with `422 nested_subprojects_not_allowed`,
+        since a subproject cannot contain subprojects.
+      - With a **Personal access token**, omit `parent_project_id` to create a root
+        project, or set it to create a subproject of that project. The parent must be a
+        root project the token holder can reach (`invalid_parent_project_id`,
+        `nested_subprojects_not_allowed`).
+
+      A new root project has no API token yet. Give it one with
+      [Create API token](/docs/apis/rest/project-tokens/create-token), passing its id as
+      `project_id`.
       
       The response includes the `signing_key`. This is the only time it is returned — it
       cannot be retrieved through the API afterward, so capture it from this response.
 
       Use a subproject to isolate settings and resources beneath a root project. Integrations built around Compatibility API Account SIDs can use [Create subprojects](/docs/compatibility-api/rest/accounts/create-subprojects) instead.
       
-      ${tokenPermissions<"_Management_">}
+      ${tokenOrPatPermissions<"_Management_">}
       """)
     @post
     create(@body body: CreateProjectRequest):
@@ -67,11 +78,11 @@ namespace SignalWireAPI.Projects {
     @doc("""
       Retrieves a single project or subproject.
       
-      A project ID outside the caller's project tree returns `404 Not Found`.
+      A project ID the caller cannot reach returns `404 Not Found`.
 
       Use this operation when you already have the root-project or subproject ID; use [List projects](/docs/apis/rest/projects/list-projects) to discover IDs. Compatibility API Accounts use a separate SID-based retrieval route.
       
-      ${tokenPermissions<"_Management_">}
+      ${tokenOrPatPermissions<"_Management_">}
       """)
     @get
     read(...ProjectPathID):
@@ -83,9 +94,9 @@ namespace SignalWireAPI.Projects {
     @operationId("update_project")
     @summary("Update a project")
     @doc("""
-      Changes the name and security settings of a root project or subproject in the caller's project tree. Use it to control media protection and HTTPS requirements; project API tokens are managed separately through [Project Tokens](/docs/apis/rest/project-tokens/create-token). Compatibility API Accounts use their own SID-based update route.
+      Changes the name and security settings of a root project or subproject the caller can reach. Use it to control media protection and HTTPS requirements; project API tokens are managed separately through [Project Tokens](/docs/apis/rest/project-tokens/create-token). Compatibility API Accounts use their own SID-based update route.
       
-      ${tokenPermissions<"_Management_">}
+      ${tokenOrPatPermissions<"_Management_">}
       """)
     @patch(#{ implicitOptionality: true })
     update(...ProjectPathID, @body body: UpdateProjectRequest):
@@ -99,20 +110,25 @@ namespace SignalWireAPI.Projects {
       | StatusCode500;
 
     @operationId("delete_subproject")
-    @summary("Delete a subproject")
+    @summary("Delete a project")
     @doc("""
-      Deletes a subproject.
-      
-      Only subprojects can be deleted through this API. Deleting the root/parent project
-      returns `422 only_subprojects_can_be_deleted`. A project must have no phone numbers
-      before it can be deleted; otherwise the request returns `422 phone_numbers_must_be_removed`.
-      
-      On a successful delete, the subproject's registry brands and campaigns are migrated up
-      to the parent project.
+      Deletes a project.
 
-      Use this operation only for a subproject that is ready to retire. The Compatibility API cannot close an account; its [Update account](/docs/compatibility-api/rest/accounts/update-account) operation only renames one, so deleting the subproject here is the API path for retiring it.
+      With a project API token, only subprojects can be deleted; targeting the root
+      project returns `422 only_subprojects_can_be_deleted`. With a Personal access token,
+      a root project can be deleted as well.
+
+      In both cases the project must be empty first: remove its subprojects
+      (`subprojects_must_be_removed`) and its phone numbers
+      (`phone_numbers_must_be_removed`). The last remaining project in a space cannot be
+      deleted (`last_project_cannot_be_deleted`).
       
-      ${tokenPermissions<"_Management_">}
+      On a successful subproject delete, the subproject's registry brands and campaigns
+      are migrated up to the parent project.
+
+      Use this operation only for a project that is ready to retire. The Compatibility API cannot close an account; its [Update account](/docs/compatibility-api/rest/accounts/update-account) operation only renames one, so deleting the project here is the API path for retiring it.
+      
+      ${tokenOrPatPermissions<"_Management_">}
       """)
     @delete
     delete(...ProjectPathID):
@@ -134,7 +150,7 @@ namespace SignalWireAPI.Projects {
 
       Use it when the project's webhook-signing credential has been exposed or is due for rotation; this is separate from creating or revoking REST API tokens.
       
-      ${tokenPermissions<"_Management_">}
+      ${tokenOrPatPermissions<"_Management_">}
       """)
     @route("/{id}/signing-key/rotate")
     @post

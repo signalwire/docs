@@ -88,8 +88,8 @@ model JoinConferenceObject {
   trim?: "trim-silence" | "do-not-trim" = "trim-silence";
 
   @doc("""
-    The call ID (a UUID) of a participant already in the conference to coach. This call becomes the coach: only the coached participant hears it, and its audio stays out of the main conference mix.
-    If the call ID is not a current participant, the join fails. A muted coach is heard by nobody.
+    Joins the conference as a coach for the participant identified by the given call ID (a UUID). The coach hears the whole conference but is heard only by the coached participant; the other participants cannot hear the coach.
+    The call ID must belong to a participant currently in the in-progress conference, or the join fails. A muted coach is heard by nobody.
     """)
   @example("b3877ee3-6f3c-4985-8066-6d24e3f65e12")
   coach?: string;

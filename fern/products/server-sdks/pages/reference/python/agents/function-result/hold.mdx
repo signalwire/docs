@@ -1,28 +1,61 @@
 ---
 title: "hold"
 slug: /reference/python/agents/function-result/hold
-description: Put the call on hold with an optional timeout.
+description: Put the call on hold, announce it first, and route where the call resumes.
 max-toc-depth: 3
 ---
 
 [functionresult]: /docs/server-sdks/reference/python/agents/function-result
+[settoolresponse]: /docs/server-sdks/reference/python/agents/function-result/set-tool-response
+[swmlchangestep]: /docs/server-sdks/reference/python/agents/function-result/swml-change-step
 
-Put the call on hold. The caller hears hold music until the hold is released
-or the timeout expires.
+Put the call on hold. The caller hears hold music until the hold is released or
+the timeout expires. During hold, speech detection is paused and the agent
+doesn't respond, so anything the caller needs to hear must be said before the
+hold takes effect. Pass `prompt` and the method arranges that for you.
 
-## **Parameters**
+## Parameters
 
-<ParamField path="timeout" type="int" default="300" toc={true}>
-  Maximum hold duration in seconds. Clamped to the range 0--900 (15 minutes max).
+<ParamField path="prompt" type="str | int | None" default="None" toc={true}>
+  Instruction for the model to deliver before the hold starts, in the second
+  person. Sets the response to
+  `{"tool_result": "status: on hold", "tool_prompt": prompt}` via
+  [`set_tool_response()`][settoolresponse] and turns on `post_process`, so the
+  model speaks once more before the hold executes. An `int` in this position is
+  treated as `timeout`, so `hold(120)` still works.
 </ParamField>
 
-## **Returns**
+<ParamField path="timeout" type="int" default="300" toc={true}>
+  Maximum hold duration in seconds. Clamped to the range 0 to 900.
+</ParamField>
+
+<ParamField path="step" type="str | None" default="None" toc={true}>
+  Step to move to when the call is taken off hold. Without it the caller
+  resumes in the step they left.
+</ParamField>
+
+<ParamField path="timeout_step" type="str | None" default="None" toc={true}>
+  Step to move to when the hold times out. Without it the caller resumes in
+  place.
+</ParamField>
+
+<Note>
+`step` and `timeout_step` are deferred: the transition fires when the hold ends.
+[`swml_change_step()`][swmlchangestep] applies immediately, so returning both a
+hold and a change step in one result moves the caller before the hold begins.
+When neither routing argument is given, the action is emitted as a bare integer
+timeout, so existing output is unchanged.
+</Note>
+
+## Returns
 
 [`FunctionResult`][functionresult] — self, for chaining.
 
-## **Example**
+## Examples
 
-```python {7,11}
+### Announce the hold
+
+```python {9-11}
 from signalwire import AgentBase
 from signalwire import FunctionResult
 
@@ -31,10 +64,22 @@ agent.set_prompt_text("You are a helpful assistant.")
 
 @agent.tool(name="hold_for_agent", description="Place the caller on hold")
 def hold_for_agent(args, raw_data):
-    return (
-        FunctionResult("Please hold while I find an available agent.")
-        .hold(timeout=60)
+    return FunctionResult().hold(
+        "Tell the caller you are placing them on hold while you find an agent.", 120
     )
 
 agent.serve()
+```
+
+### Route the caller when the hold ends
+
+```python
+@agent.tool(name="check_availability", description="Check whether the agent is free")
+def check_availability(args, raw_data):
+    return FunctionResult().hold(
+        "Tell the caller you are checking if the dispatcher is available.",
+        300,
+        step="back_with_agent",       # released early
+        timeout_step="take_a_message",  # nobody picked up
+    )
 ```

@@ -11,17 +11,20 @@ max-toc-depth: 3
 [ref-functionresult]: /docs/server-sdks/reference/typescript/agents/function-result
 [ref-pombuilder]: /docs/server-sdks/reference/typescript/agents/pom-builder
 [ref-skillregistry]: /docs/server-sdks/reference/typescript/agents/skill-registry
+[ref-skillbase-gettools]: /docs/server-sdks/reference/typescript/agents/skill-base/get-tools
+[ref-definetypedtool]: /docs/server-sdks/reference/typescript/agents/agent-base/define-typed-tool
 
 The SignalWire Server SDK exports helper functions and utilities at the top level for common
 tasks like creating standalone contexts, building server-side API tools,
 managing environment variable expansion, security, and type inference.
 All are imported directly from `@signalwire/sdk`.
 
-```typescript {2-11}
+```typescript {2-12}
 import {
   createSimpleContext,
   createSimpleApiTool,
   createExpressionTool,
+  defineSkillTool,
   setAllowedEnvPrefixes,
   getAllowedEnvPrefixes,
   safeAssign,
@@ -230,6 +233,68 @@ Since object keys must be unique, you cannot map multiple patterns against the s
 test value using `createExpressionTool`. For that case, use the [`DataMap`][datamap]
 builder and call `.expression()` multiple times.
 </Note>
+
+---
+
+## **defineSkillTool**
+
+```typescript {1}
+defineSkillTool(toolDef: SkillToolDefinition): SkillToolDefinition
+```
+
+Build a tool entry for a skill's [`getTools()`][ref-skillbase-gettools] array
+with typed handler arguments. The `parameters` schema and `required` list are
+captured at compile time, so a required `string` property arrives in the handler
+as `args.query: string`, an `enum` narrows to its literal union, and optional
+properties are marked `?`. The skill-side counterpart to
+[`defineTypedTool()`][ref-definetypedtool].
+
+The typing is an authoring convenience only. At runtime `args` is whatever the
+model extracted, so keep defensive checks on values that matter. The returned
+definition is an ordinary `SkillToolDefinition`, and the generated SWAIG output
+is identical to a hand-written entry.
+
+#### Parameters
+
+<ParamField path="toolDef" type="SkillToolDefinition" required={true} toc={true}>
+  The tool definition: `name`, `description`, `parameters`, optional
+  `required`, and a `handler` whose `args` type is inferred from the schema.
+</ParamField>
+
+#### Returns
+
+`SkillToolDefinition` -- The same definition, ready to return from `getTools()`.
+
+#### Example
+
+```typescript {9-23}
+import { SkillBase, defineSkillTool, FunctionResult, type SkillToolDefinition } from '@signalwire/sdk';
+
+class FareSkill extends SkillBase {
+  static override SKILL_NAME = 'fare';
+  static override SKILL_DESCRIPTION = 'Quote taxi fares.';
+
+  override getTools(): SkillToolDefinition[] {
+    return [
+      defineSkillTool({
+        name: 'quote_fare',
+        description: 'Quote a fare between two addresses',
+        parameters: {
+          pickup: { type: 'string', description: 'Pickup address' },
+          dropoff: { type: 'string', description: 'Drop-off address' },
+        },
+        required: ['pickup', 'dropoff'],
+        handler: async (args) => {
+          if (!args.pickup.trim() || !args.dropoff.trim()) {
+            return new FunctionResult('Provide both addresses.');
+          }
+          return new FunctionResult(`Estimated fare from ${args.pickup} to ${args.dropoff}: $32.`);
+        },
+      }),
+    ];
+  }
+}
+```
 
 ---
 

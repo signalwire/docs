@@ -1,0 +1,67 @@
+---
+title: "handleRequest"
+slug: /reference/typescript/agents/agent-base/handle-request
+description: Dispatch one inbound request from plain HTTP primitives, without a Hono app.
+max-toc-depth: 3
+---
+
+[as-router]: /docs/server-sdks/reference/typescript/agents/agent-base/as-router
+[render-swml]: /docs/server-sdks/reference/typescript/agents/agent-base/render-swml
+
+Dispatch one inbound request from plain HTTP primitives and get back a
+`[status, headers, body]` triple to write to the response. Use it to serve the
+agent from a framework the SDK has no adapter for. It performs Basic Auth,
+runs any routing callback, applies `onSwmlRequest` modifications, and renders
+SWML with [`renderSwml()`][render-swml]. For Hono-based hosts, mount
+[`asRouter()`][as-router] instead.
+
+## **Parameters**
+
+<ParamField path="method" type="string" required={true} toc={true}>
+  HTTP method, such as `"GET"` or `"POST"`.
+</ParamField>
+
+<ParamField path="url" type="string" required={true} toc={true}>
+  The full request URL.
+</ParamField>
+
+<ParamField path="headers" type={"Record<string, string>"} required={true} toc={true}>
+  Request headers as a plain object.
+</ParamField>
+
+<ParamField path="body" type={"Record<string, unknown> | null"} toc={true}>
+  The already-parsed JSON body for POST requests. Omit for GET.
+</ParamField>
+
+## **Returns**
+
+`Promise<[number, Record<string, string>, string]>` -- The status code,
+response headers, and body string. A failed Basic Auth check returns `401`
+with a `WWW-Authenticate` header; a routing callback that redirects returns
+`307` with a `Location` header.
+
+## **Example**
+
+```typescript {8-13}
+import { createServer } from 'node:http';
+import { AgentBase } from '@signalwire/sdk';
+
+const agent = new AgentBase({ name: 'dispatch', route: '/' });
+agent.setPromptText('You are a taxi dispatcher.');
+
+createServer(async (req, res) => {
+  const chunks: Buffer[] = [];
+  for await (const chunk of req) chunks.push(chunk as Buffer);
+  const raw = Buffer.concat(chunks).toString();
+  const body = raw ? JSON.parse(raw) : null;
+  const url = `https://${req.headers.host}${req.url}`;
+  const [status, headers, text] = await agent.handleRequest(
+    req.method ?? 'GET',
+    url,
+    req.headers as Record<string, string>,
+    body,
+  );
+  res.writeHead(status, headers);
+  res.end(text);
+}).listen(3000);
+```
