@@ -22,6 +22,8 @@ namespace SignalWireAPI.Project.Tokens {
       Creates a project API token for server-side authentication to SignalWire REST APIs, with only the permission categories supplied in the request. Use it when a backend service needs durable project credentials; client applications should receive a service-specific token such as a [Chat Token](/docs/apis/rest/chat-tokens/create-chat-token), [PubSub Token](/docs/apis/rest/pubsub/create-token), [Room Token](/docs/apis/rest/video/room-tokens/create-room-token), or [Subscriber Token](/docs/apis/rest/subscribers/tokens/create-subscriber-token) instead. The token remains usable until you delete it or remove required permissions.
 
       The Compatibility API exposes the same project tokens through its account-scoped route. Use [Generate a new API Token](/docs/compatibility-api/rest/tokens/create-token) for that request format.
+
+      The response is the only place the token secret is returned. Store it securely; no later request, including [Update API token](/docs/apis/rest/project-tokens/update-token), can read it back.
       
       ${tokenPermissions<"_Management_">}
       
@@ -35,7 +37,7 @@ namespace SignalWireAPI.Project.Tokens {
     create(...CreateTokenRequest):
       | {
           @statusCode statusCode: 200;
-          @body body: TokenResponse;
+          @body body: CreateTokenResponse;
         }
       | StatusCode401
       | TokenStatusCode422
@@ -45,6 +47,8 @@ namespace SignalWireAPI.Project.Tokens {
     @summary("Update API token")
     @doc("""
       Changes the name or enabled permission categories of an existing project API token. Use it to rotate a token's responsibilities without replacing its identifier; remove permissions that the token's server-side caller no longer needs. For the account-scoped Compatibility API route, use [Update an API Token](/docs/compatibility-api/rest/tokens/update-token).
+
+      The response contains the token's `id`, `name`, and `permissions` only. The token secret is returned once, by [Create API token](/docs/apis/rest/project-tokens/create-token), and cannot be retrieved afterwards.
       
       ${tokenPermissions<"_Management_">}
       
