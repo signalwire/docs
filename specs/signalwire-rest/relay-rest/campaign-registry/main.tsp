@@ -63,6 +63,24 @@ namespace SignalWireAPI.RelayRest.RegistryBeta {
       | StatusCode401
       | StatusCode404
       | StatusCode500;
+
+    @operationId("update_brand")
+    @summary("Update brand")
+    @doc("""
+      Changes the fields of an existing US 10-digit long code (10DLC) brand by ID. Fields you omit keep their current values. Once the brand leaves the `unverified` state, only `signalwire_contact_emails` can still change; a request that touches any other field is rejected with `invalid_state`.
+
+      ${tokenPermissions<"_Messaging_ and _Numbers_">}
+      """)
+    @put
+    update(...BrandPathID, @body body: UpdateBrandRequest):
+      | {
+          @statusCode statusCode: 200;
+          @body brand: BrandResponse;
+        }
+      | StatusCode401
+      | StatusCode404
+      | ValidationError
+      | StatusCode500;
   }
 
   @route("/brands/{id}/campaigns")

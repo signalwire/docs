@@ -125,26 +125,67 @@ model CreateCspBrandRequest {
 
 alias CreateBrandRequest = CreateManagedBrandRequest | CreateCspBrandRequest;
 
-@doc("Request body for updating a brand.")
+@doc("Request body for updating a brand. Every field is optional; a field you omit keeps its current value. After the brand leaves the `unverified` state, only `signalwire_contact_emails` can still change.")
 model UpdateBrandRequest {
-  @doc("Brand/Marketing/DBA name of the business if applicable.")
+  @doc("Brand/Marketing/DBA name of the business.")
   @example("My Brand")
+  @minLength(3)
+  @maxLength(64)
   name?: string;
+
+  @doc("The legal name of the business.")
+  @example("BrandCo")
+  @minLength(3)
+  @maxLength(64)
+  company_name?: string;
 
   @doc("A company contact email for this brand.")
   @example("brand_info@example.com")
+  @minLength(3)
+  @maxLength(64)
   contact_email?: string;
 
   @doc("A contact phone number for this brand.")
   @example("+18995551212")
+  @minLength(3)
+  @maxLength(64)
   contact_phone?: string;
 
-  @doc("Email addresses SignalWire uses for registration correspondence about this brand and its campaigns. Defaults to the user who submitted the registration.")
+  @doc("Country of registration.")
+  @example("United States")
+  ein_issuing_country?: string;
+
+  @doc("What type of legal entity is the organization?")
+  @example(LegalEntityType.PRIVATE_PROFIT)
+  legal_entity_type?: LegalEntityType;
+
+  @doc("Company EIN Number/Tax ID.")
+  @example("12-3456789")
+  ein?: string;
+
+  @doc("Full company address.")
+  @example("123 Brand St, Hill Valley CA, 91905")
+  company_address?: string;
+
+  @doc("An optional Vertical for the brand.")
+  @example(CompanyVertical.HEALTHCARE)
+  company_vertical?: CompanyVertical;
+
+  @doc("Link to the company website.")
+  @example("www.example.com")
+  company_website?: string;
+
+  @doc("The approved Brand ID from TCR, for self-registered CSP brands.")
+  @example("B123456")
+  csp_brand_reference?: string;
+
+  @doc("Email addresses SignalWire uses for registration correspondence about this brand and its campaigns. Defaults to the user who submitted the registration. Omit the field to keep the current list; send an empty list to clear it.")
   @example(#["brand_registrations@example.com"])
   signalwire_contact_emails?: string[];
 
-  @doc("Optional: Specify a URL to receive webhook notifications when your brand's state changes. See the [10DLC status callback](/docs/apis/rest/webhooks/ten-dlc-status-callback) docs for the webhook payload.")
+  @doc("Specify a URL to receive webhook notifications when your brand's state changes. See the [10DLC status callback](/docs/apis/rest/webhooks/ten-dlc-status-callback) docs for the webhook payload.")
   @example("https://example.com/handle_callback")
+  @format("uri")
   status_callback_url?: string;
 }
 
