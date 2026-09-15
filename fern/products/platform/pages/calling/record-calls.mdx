@@ -10,6 +10,7 @@ max-toc-depth: 3
 [record-call]: /docs/swml/reference/calling/record-call
 [stop-record-call]: /docs/swml/reference/calling/stop-record-call
 [join-conference]: /docs/swml/reference/calling/join-conference
+[calling]: /docs/platform/calling
 [swml-calls]: /docs/swml/guides/make-and-receive-calls
 [sdk-quickstart]: /docs/server-sdks/guides/quickstart
 [swml-intro]: /docs/swml
@@ -17,6 +18,9 @@ max-toc-depth: 3
 [agents-ns]: /docs/server-sdks/reference/python/agents
 [rest-api]: /docs/apis
 [rest-ns]: /docs/server-sdks/reference/python/rest
+[fr-hold]: /docs/server-sdks/reference/python/agents/function-result/hold
+[fr-swml]: /docs/server-sdks/reference/python/agents/function-result/execute-swml
+[relay-unhold]: /docs/server-sdks/reference/python/relay/call/ai-unhold
 [call-commands]: /docs/apis/rest/calls/call-commands
 [paging]: /docs/apis/paging
 [py-record-action]: /docs/server-sdks/reference/python/relay/actions/record-action
@@ -37,7 +41,7 @@ max-toc-depth: 3
 [transcribe]: /docs/swml/reference/calling/transcribe
 [live-transcribe]: /docs/swml/reference/calling/live-transcribe
 
-SignalWire lets you [make and receive calls][swml-calls] in several ways and across different channels.
+SignalWire lets you [make and receive calls][calling] in several ways and across different channels.
 You can record the full conversation, or record fragments and utterances to capture a single message.
 Recordings can be found in the [**Storage** section](#view-recordings-from-your-dashboard) of your Space dashboard,
 or you can fetch and manage them with the [Recordings API][rest-list].
@@ -574,9 +578,7 @@ only then does the next instruction run.
 
 <CodeBlocks>
 
-```python title="Python — Agents" {10-24}
-# FunctionResult has no record helper, so emit the blocking record verb with
-# execute_swml. The agent picks the conversation back up once the caller is done.
+```python title="Python — Agents" {10-19}
 from signalwire import AgentBase, FunctionResult
 
 agent = AgentBase(name="voicemail-agent", route="/agent")
@@ -584,30 +586,26 @@ agent = AgentBase(name="voicemail-agent", route="/agent")
 
 @agent.tool(name="take_voicemail", description="Record the caller's message")
 def take_voicemail(args, raw_data):
-    return FunctionResult("Go ahead after the beep.").execute_swml({
-        "version": "1.0.0",
-        "sections": {
-            "main": [
-                {
-                    "record": {
-                        "beep": True,
-                        "end_silence_timeout": 3,
-                        "terminators": "#",
-                        "max_length": 120,
-                    }
-                }
-            ]
-        },
-    })
+    return (
+        FunctionResult("Please leave your message after the beep.")
+        .record_call(
+            control_id="voicemail",
+            direction="speak",
+            terminators="#",
+            beep=True,
+            initial_timeout=5,
+            end_silence_timeout=3,
+            max_length=120,
+        )
+        .set_end_of_speech_timeout(2000)
+    )
 
 
 if __name__ == "__main__":
     agent.run()
 ```
 
-```typescript title="TypeScript — Agents" {12-26}
-// FunctionResult has no record helper, so emit the blocking record verb with
-// executeSwml. The agent picks the conversation back up once the caller is done.
+```typescript title="TypeScript — Agents" {11-20}
 import { AgentBase, FunctionResult } from '@signalwire/sdk';
 
 const agent = new AgentBase({ name: 'voicemail-agent', route: '/agent' });
@@ -617,21 +615,17 @@ agent.defineTool({
   description: "Record the caller's message",
   parameters: { type: 'object', properties: {} },
   handler: () =>
-    new FunctionResult('Go ahead after the beep.').executeSwml({
-      version: '1.0.0',
-      sections: {
-        main: [
-          {
-            record: {
-              beep: true,
-              end_silence_timeout: 3,
-              terminators: '#',
-              max_length: 120,
-            },
-          },
-        ],
-      },
-    }),
+    new FunctionResult('Please leave your message after the beep.')
+      .recordCall({
+        controlId: 'voicemail',
+        direction: 'speak',
+        terminators: '#',
+        beep: true,
+        initialTimeout: 5,
+        endSilenceTimeout: 3,
+        maxLength: 120,
+      })
+      .setEndOfSpeechTimeout(2000),
 });
 
 await agent.run();
@@ -760,7 +754,12 @@ noise.
 In SWML those are the only ways a `record` ends, because the script is waiting on it and there's no
 later instruction to run. `record` defaults `terminators` to `#` for that reason, where `record_call`
 leaves it unset. The Server SDKs hand you the same recording as a `RecordAction`, so a handler can
-also [stop it explicitly](#stop-recording-the-call) without waiting for the caller.
+also [stop it explicitly](#stop-recording-the-call) without waiting for the caller. When using the
+Agents namespace to control the call flow, there is no blocking `record` option. Assuming a
+conversation with voice AI is ongoing, either give the agent a
+[tool that records a voicemail](#record-a-single-message-via-swml), or put it on [AI hold][fr-hold],
+emit the blocking `record` verb with [`execute_swml`][fr-swml], and release it with
+[Relay's AI unhold][relay-unhold].
 
 ## Record a conference
 
