@@ -1,0 +1,169 @@
+---
+title: "AIChatClient"
+slug: /reference/typescript/agents/ai-chat-client
+description: Client for holding a text conversation with a SignalWire AI agent from your own server.
+max-toc-depth: 3
+---
+
+[chat-endpoint]: /docs/apis/rest/ai-chat/chat-methods
+[error-codes]: /docs/apis/error-codes
+[createconversation]: /docs/server-sdks/reference/typescript/agents/ai-chat-client/create-conversation
+[chat]: /docs/server-sdks/reference/typescript/agents/ai-chat-client/chat
+[end]: /docs/server-sdks/reference/typescript/agents/ai-chat-client/end
+[delete]: /docs/server-sdks/reference/typescript/agents/ai-chat-client/delete
+[log]: /docs/server-sdks/reference/typescript/agents/ai-chat-client/log
+[summarize]: /docs/server-sdks/reference/typescript/agents/ai-chat-client/summarize
+[close]: /docs/server-sdks/reference/typescript/agents/ai-chat-client/close
+
+`AIChatClient` sends messages to an AI agent and returns its replies. The agent
+is the same one a phone call would reach, and each call to [`chat()`][chat]
+runs one full turn.
+
+Every method returns a promise. A turn waits on a full model round trip,
+measured in seconds, so don't block on it in a request handler that serves
+other users.
+
+<Markdown src="/snippets/server-sdks/npm-install.mdx" />
+
+<Warning>
+  This class holds your API token, so it belongs on a server you control. Never
+  ship it to a browser.
+</Warning>
+
+## **Parameters**
+
+<ParamField path="project" type="string" toc={true}>
+  Your project ID. Falls back to `SIGNALWIRE_PROJECT_ID`. The constructor throws
+  when neither is set.
+</ParamField>
+
+<ParamField path="token" type="string" toc={true}>
+  An API token with the `chat` scope. Falls back to `SIGNALWIRE_API_TOKEN`.
+</ParamField>
+
+<ParamField path="space" type="string" toc={true}>
+  Your space name, `your-space` rather than `your-space.signalwire.com`, used to build
+  the service URL. Falls back to `SIGNALWIRE_SPACE`. `RestClient` reads that variable
+  as a full hostname, so a value set for REST builds a wrong URL here; pass `space` or
+  `url` explicitly in that case.
+</ParamField>
+
+<ParamField path="url" type="string" toc={true}>
+  The service URL, used verbatim. Overrides `space`. The constructor throws when
+  neither is available.
+</ParamField>
+
+<ParamField path="fetchImpl" type="typeof fetch" toc={true}>
+  Custom `fetch` implementation. Defaults to the global `fetch`.
+</ParamField>
+
+<ParamField path="readIdleTimeoutSeconds" type="number" default="60" toc={true}>
+  Seconds of silence on the connection before a request is abandoned. The
+  service sends keepalive bytes while a slow turn runs, so this bounds a dead
+  connection rather than total turn length. `0` disables it.
+</ParamField>
+
+A configured environment needs no arguments at all. Identity travels in HTTP
+Basic auth, never in the request body.
+
+## **Return types**
+
+<ParamField path="ConversationInfo" type="interface" toc={true}>
+  Returned by [`createConversation()`][createconversation]. Carries `id`,
+  `status`, and `initialMessage`.
+</ParamField>
+
+<ParamField path="ChatResponse" type="interface" toc={true}>
+  Returned by [`chat()`][chat]. Carries `text`, `conversationId`, and `userEvent`.
+</ParamField>
+
+<ParamField path="ChatLog" type="interface" toc={true}>
+  Returned by [`log()`][log]. Carries `messages` and `callTimeline`.
+</ParamField>
+
+## **Errors**
+
+All extend `AIChatError`, which carries `code` and `serverMessage`. Codes
+without a specific class throw `AIChatError` itself. Documented codes are listed
+under [AI chat errors][error-codes].
+
+<ParamField path="AuthenticationError" type="AIChatError" toc={true}>
+  A JSON-RPC `-32009` response.
+</ParamField>
+
+<ParamField path="ConversationNotFoundError" type="AIChatError" toc={true}>
+  No conversation with that id exists in your project.
+</ParamField>
+
+<ParamField path="RateLimitError" type="AIChatError" toc={true}>
+  The service returned a JSON-RPC rate-limit error.
+</ParamField>
+
+<ParamField path="ChatInProgressError" type="AIChatError" toc={true}>
+  A turn is already running on this conversation.
+</ParamField>
+
+<ParamField path="SummaryError" type="AIChatError" toc={true}>
+  Summary generation failed. `code` is `null`, because this failure rides the
+  success envelope rather than arriving as a JSON-RPC error.
+</ParamField>
+
+Success and failure are decided by the JSON-RPC body, not the HTTP status. A
+response that isn't JSON throws `AIChatError` with the HTTP status as its `code`.
+
+## **Methods**
+
+<CardGroup cols={3}>
+  <Card title="createConversation" href="/docs/server-sdks/reference/typescript/agents/ai-chat-client/create-conversation">
+    Create a conversation, or reset an existing one.
+  </Card>
+  <Card title="chat" href="/docs/server-sdks/reference/typescript/agents/ai-chat-client/chat">
+    Send a message and return the agent's reply.
+  </Card>
+  <Card title="end" href="/docs/server-sdks/reference/typescript/agents/ai-chat-client/end">
+    End the conversation and start post-processing.
+  </Card>
+  <Card title="delete" href="/docs/server-sdks/reference/typescript/agents/ai-chat-client/delete">
+    Remove the conversation and its data.
+  </Card>
+  <Card title="log" href="/docs/server-sdks/reference/typescript/agents/ai-chat-client/log">
+    Read the conversation back.
+  </Card>
+  <Card title="summarize" href="/docs/server-sdks/reference/typescript/agents/ai-chat-client/summarize">
+    Generate a summary of the conversation.
+  </Card>
+  <Card title="close" href="/docs/server-sdks/reference/typescript/agents/ai-chat-client/close">
+    Complete the client's lifecycle.
+  </Card>
+</CardGroup>
+
+## **Example**
+
+```typescript {6,9,14}
+import { AIChatClient } from '@signalwire/sdk';
+
+const CONFIG_URL = 'https://bayview-taxi.example.com/swml';
+
+async function main() {
+  await using client = new AIChatClient({ space: 'your-space' });
+
+  const info = await client.createConversation('chat-8f21', { configUrl: CONFIG_URL });
+  console.log('Ada:', info.initialMessage);
+
+  const reply = await client.chat(
+    'chat-8f21',
+    'How much is a van from 123 Gough Street to the airport?',
+  );
+  console.log('Ada:', reply.text);
+
+  await client.end('chat-8f21');
+}
+
+await main();
+```
+
+`await using` needs TypeScript 5.2 or later, which compiles it down for Node 22.
+Without it, call [`close()`][close] in a `finally` block instead.
+
+The [AI chat endpoint][chat-endpoint] documents the wire protocol underneath
+this class.
