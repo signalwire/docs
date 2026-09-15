@@ -343,15 +343,22 @@ model CreatePartnerCampaignRequest {
 
 alias CreateCampaignRequest = CreateManagedCampaignRequest | CreatePartnerCampaignRequest;
 
-@doc("Request body for updating a campaign.")
+@doc("Request body for updating a campaign. Every field is optional; a field you omit keeps its current value.")
 model UpdateCampaignRequest {
   @doc("A name for the campaign.")
   @example("My Campaign")
+  @minLength(3)
+  @maxLength(64)
   name?: string;
 
-  @doc("Email addresses SignalWire uses for registration correspondence about this campaign. Defaults to the brand's addresses, then the user who submitted the registration.")
+  @doc("Email addresses SignalWire uses for registration correspondence about this campaign. Defaults to the brand's addresses, then the user who submitted the registration. Omit the field to keep the current list; send an empty list to clear it.")
   @example(#["campaign_registrations@example.com"])
   signalwire_contact_emails?: string[];
+
+  @doc("Specify a URL to receive webhook notifications when your campaign's state changes. See the [10DLC status callback](/docs/apis/rest/webhooks/ten-dlc-status-callback) docs for the webhook payload.")
+  @example("https://example.com/handle_callback")
+  @format("uri")
+  status_callback_url?: string;
 }
 
 @doc("Request body for creating an order.")
