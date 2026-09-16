@@ -23,19 +23,6 @@ Anti-pattern smells (names from developer-docs-framework, kept for their diagnos
 - **Dead End** — a page with no onward links. Guides close with topical Next steps.
 - **Feature Mirror** — guides organized by product feature instead of user goal.
 
-## Capability guide template — rationale
-
-`mdx-capability-guides` fixes the skeleton for a how-to that teaches one capability across several surfaces. The shape came from three pages written in September 2026 (PRs #660 outbound calling, #692 call streaming, #693 machine detection); the second and third copied the first deliberately, and the rule writes down what they share so the fourth matches without reverse-engineering an 1,800-line page. Why each part is the way it is:
-
-- **First run → track → examples.** Diátaxis tutorials want visible progress early; how-tos want the goal met. The template borrows the tutorial's opening (call your own phone within the first screen) and then widens into how-to depth, so a reader who only needs the basic call leaves after `<Steps>` and a reader building a product keeps going. Concept sections sit after the first run unless the reader can't read the result without them.
-- **Surfaces as tabs on one page, not one page per surface.** The capability has one URL, so cross-links and `llms.txt` point at one place, and `groupId` keeps the reader's REST-or-Relay choice as they scroll. Separate pages per surface produced the Feature Mirror smell and drifted apart.
-- **Two choose-how tables.** The first answers "which surface do I want" by outcome; the second is the honest capability matrix, rows phrased as things the reader wants to do. Together they replace the paragraph of hedged prose that older guides used to compare approaches.
-- **Prepare as a value list.** Readers skim it for what to copy; prose hid the same facts. Constraints are titled `<Warning>`s because the Markdown export flattens untitled callouts.
-- **Every example is a complete program.** Fragments forced readers to reassemble state from three places up the page. The header comments (`Install:` / `Save as … and run:`) make each block executable as pasted and are the mechanism by which the code-validation procedure works.
-- **Literal pinned versions.** The TypeScript SDK's REST `dial` signature changed between the published 2.0.5 and the unreleased next major; guides pinned to a literal version stay true until someone bumps every guide at once. Unpinned installs would silently break the samples.
-- **`## Next steps` stays.** The three founding pages ended on their last example with inline onward links. The house rule kept the closing card grid, both for the Dead End smell and because the export and the sidebar treat it as the page's summary of where to go next; the founding pages get it on review.
-- **Settled drifts.** Header comments: every `## Examples` sample is standalone; `## Track…` blocks may show only changed lines when the paragraph names the sample they extend. Concept placement: before the first run only when needed to interpret it. Both are defaults, not doctrine; change them in the rule, not per page.
-
 ## House voice profile (corpus evidence, 2,801 pages)
 
 The corpus is two populations, not two opinions: modern-authored pages already match the target voice; nearly all drift sits on legacy ReadMe-ported pages (markers: `id:` UUID ×412 pages, `x-custom`/`ported_from_readme` ×55). The voice rules mostly *defend won ground* — classic AI tells are near-zero on modern pages (Furthermore ×0, Moreover ×1, In conclusion ×0).
