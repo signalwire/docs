@@ -104,23 +104,34 @@ Play a short announcement to anyone who dials your number.
 
 ### Choose how to handle the call
 
-Choose the approach that fits how you want to control the call.
+Inbound handling comes down to two questions: where does your logic run, and how does SignalWire
+reach it? Four approaches answer them differently.
 
-| What you want to do | Where to start |
-|---|---|
-| Return call instructions from your server as a document, built with a Server SDK on every call | [SWML](#create-your-call-handler), served by a Server SDK |
-| Control the call in real time, receiving events and sending commands over a persistent WebSocket connection | [WebSocket (Relay)](#create-your-call-handler), using a Server SDK |
-| Let someone answer and speak on the call from your web app | [Browser SDK](#create-your-call-handler) |
+| Approach | How SignalWire reaches your logic | Where your logic runs |
+|---|---|---|
+| [SWML over HTTP](#create-your-call-handler) | Requests a SWML document from your server on every call, then runs it | Your server, built with a Server SDK |
+| [Serverless SWML](#create-your-call-handler) | Runs a SWML document you host in your Space. No request reaches you. | SignalWire |
+| [WebSocket (Relay)](#create-your-call-handler) | Delivers the call over a persistent WebSocket your server holds open. Your code answers it and controls it command by command. | Your server, with a Server SDK Relay client |
+| [Browser SDK](#create-your-call-handler) | Delivers the call over the persistent connection a signed-in user's browser holds open. The user answers it. | The user's browser |
 
-Each approach answers the same call, but they differ in how you follow and control it afterward.
+The two SWML approaches run the same document and differ only in whether your server produces
+it. The two WebSocket approaches share a transport but not a purpose: Relay puts your code on the
+call, and the Browser SDK puts a person on it.
 
-| Function | SWML | WebSocket (Relay) | Browser SDK |
-|---|---|---|---|
-| Return call instructions from your Server SDK app without holding a connection open | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> |
-| Command a call already in progress from any process, by its call ID | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> |
-| React to events in your own code while the call is live, with no public URL | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
-| Answer from a web page, with the user speaking on the call | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
-| Start an AI agent, record, stream, or bridge the call from code | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> |
+| Function | SWML over HTTP | Serverless SWML | WebSocket (Relay) | Browser SDK |
+|---|---|---|---|---|
+| Nothing to run or expose on your side | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> |
+| Decide from your code what happens before the call is answered, such as looking the caller up | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> |
+| React to events in your own code while the call is live, with no public URL | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
+| A person answers and speaks on the call | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
+| Start an AI agent, record, stream, or bridge the call | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> |
+| Command the call from another process by its call ID | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> |
+
+<Warning title="Only Subscribers receive calls in the browser">
+A Browser SDK client receives calls only when it authenticates with a Subscriber token issued for
+a specific Subscriber, and that Subscriber is the number's call handler. Guest tokens and embed
+tokens, which power click-to-call widgets, are outbound-only and never ring.
+</Warning>
 
 The REST Calling API places calls; it doesn't answer them. To act on an inbound call from REST
 later, use the call ID that SWML or Relay gives you.
@@ -143,7 +154,7 @@ Replace these values in the code sample you choose:
 Write the code SignalWire runs, or connects to, when the number rings.
 
 <Tabs groupId="inbound-api">
-<Tab title="SWML">
+<Tab title="SWML over HTTP">
 
 A SWML document tells SignalWire what to do with the call. When the number rings, SignalWire
 requests the document from your server and runs it. Build and serve it with a Server SDK,
@@ -196,8 +207,7 @@ Anyone who learns the URL can fetch your document, so [verify the request signat
 before you serve anything sensitive.
 
 Both servers return this document. It plays the announcement, then hangs up when the document
-ends. If you'd rather not run a server yet, you can paste it into a hosted SWML Script in the
-next step instead, and the [SWML quickstart][swml-quickstart] covers that path.
+ends.
 
 <CodeBlocks>
 <CodeBlock title="YAML">
@@ -222,6 +232,46 @@ sections:
 ```
 </CodeBlock>
 </CodeBlocks>
+
+</Tab>
+<Tab title="Serverless SWML">
+
+Serverless SWML runs the same document as SWML over HTTP, hosted in your Space instead of on
+your server. There's nothing to run: in the next step you paste the document into a hosted SWML
+Script, and SignalWire executes it on every call. Use it when the call logic is fixed, or to try
+a document before you build the server. The [SWML quickstart][swml-quickstart] covers hosted
+scripts in depth, and the AI Agent and Call Flow Resources are serverless handlers you build in
+the Dashboard rather than as SWML.
+
+This document plays an announcement, then hangs up when it ends:
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - play:
+        url: 'say:Hello, welcome to SignalWire!'
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      { "play": { "url": "say:Hello, welcome to SignalWire!" } }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+A hosted document still sees the call: variables such as `${call.from}` resolve to the caller's
+details, so it can react to who's calling without a server. See
+[Read the call details via SWML](#read-the-call-details-via-swml).
 
 </Tab>
 <Tab title="WebSocket (Relay)">
@@ -288,8 +338,10 @@ next step, and only a client subscribed to it receives the call.
 </Tab>
 <Tab title="Browser SDK">
 
-A Browser SDK client registers as a Subscriber and receives the call in the page. Show the
-caller, then let the user answer or decline.
+A Browser SDK client authenticates as a Subscriber, registers, and receives the call in the
+page. Show the caller, then let the user answer or decline. The token must be a Subscriber token
+for the Subscriber you'll assign the number to; a guest or embed token comes online but never
+rings.
 
 ```javascript
 // Install: npm install @signalwire/js@latest rxjs
@@ -368,13 +420,11 @@ Assign a Resource as the number's call handler. Create the Resource first if you
 one.
 
 <Tabs groupId="inbound-api">
-<Tab title="SWML">
+<Tab title="SWML over HTTP">
 
 In the Dashboard, open **My Resources**, select **+ Add**, then **Script**, then **SWML Script**.
 Give it a name and leave **Used For** set to **Calling**. Under **Handle Calls Using**, choose
-**External URL** and enter your server's URL in **Primary Script URL**. To use the hosted
-document instead, choose **Hosted Script** and paste it into **Primary Script**. Select
-**Create**.
+**External URL** and enter your server's URL in **Primary Script URL**. Select **Create**.
 
 <llms-ignore>
 
@@ -438,11 +488,20 @@ await client.phoneNumbers.setSwmlWebhook("<YOUR_PHONE_NUMBER_ID>", "<YOUR_SWML_U
 </CodeBlock>
 </CodeBlocks>
 
-<Accordion title="Assign a hosted script with the REST API">
+</Tab>
+<Tab title="Serverless SWML">
 
-[Create the SWML Script][rest-create-script] with the document as `contents`, then
-[link it to the number][rest-link-number]. The link endpoint is in beta and requires the
-number's calling channel to have no Resource assigned yet.
+In the Dashboard, open **My Resources**, select **+ Add**, then **Script**, then **SWML Script**.
+Give it a name and leave **Used For** set to **Calling**. Under **Handle Calls Using**, choose
+**Hosted Script** and paste the document into **Primary Script**. Select **Create**.
+
+Then assign the SWML Script to your number.
+
+<Markdown src="/snippets/common/dashboard/_assign-resource-to-number.mdx" />
+
+To do the same with the REST API, [create the SWML Script][rest-create-script] with the document
+as `contents`, then [link it to the number][rest-link-number]. The link endpoint is in beta and
+requires the number's calling channel to have no Resource assigned yet.
 
 ```bash
 curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/fabric/resources/swml_scripts" \
@@ -470,8 +529,6 @@ curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/fabric/phone_number_addres
     "handler_type": "calling"
   }'
 ```
-
-</Accordion>
 
 </Tab>
 <Tab title="WebSocket (Relay)">
@@ -559,8 +616,8 @@ Space can call the same browser client without a phone number.
 
 ### Call your number
 
-Dial your SignalWire number from your phone. With SWML or Relay, you hear "Hello, welcome to
-SignalWire!" and the call ends. With the browser example, the page shows the incoming call.
+Dial your SignalWire number from your phone. With either SWML approach or with Relay, you hear
+"Hello, welcome to SignalWire!" and the call ends. With the browser example, the page shows the incoming call.
 Select **Answer**, allow microphone access, and select **Hang up** when you finish.
 
 If the call rings without an answer or fails, check these first:
@@ -568,8 +625,10 @@ If the call rings without an answer or fails, check these first:
 - The number's **Inbound Call Settings** show your Resource. An unassigned number takes no action.
 - You're calling from a verified number if the project is in trial mode.
 - For Relay, the Relay Application's **Topic** matches your client's `contexts` value and the client is running.
-- For SWML served from your server, SignalWire could reach the URL and got a valid document. Check the
-  call in the Dashboard's **Logs**.
+- For SWML over HTTP, SignalWire could reach the URL and got a valid document. Check the call in
+  the Dashboard's **Logs**.
+- For the browser, the token is a Subscriber token, not a guest or embed token, and the number is
+  assigned to that same Subscriber.
 
 </Steps>
 
@@ -580,13 +639,12 @@ section for the approach you used for your first call.
 
 ### Read the call details via SWML
 
-When SignalWire fetches your document, it sends your server a POST request whose `call` object
-carries the `from` and `to` addresses, the `direction`, and the `call_id`. See the
-[webhook payload reference][swml-webhook-payload] for every field.
+With SWML over HTTP, SignalWire sends your server a POST request whose `call` object carries the
+`from` and `to` addresses, the `direction`, and the `call_id`, so your code can decide the
+document per caller. See the [webhook payload reference][swml-webhook-payload] for every field.
 
-The same fields are available inside the document as [variables][swml-variables], so the
-document itself can use them, whether your server built it or you hosted it. This document reads
-the caller's number back to them:
+The same fields are available inside the document as [variables][swml-variables], so a hosted
+document can use them too. This document reads the caller's number back to them:
 
 <CodeBlocks>
 <CodeBlock title="YAML">
@@ -767,6 +825,10 @@ After the user answers, `status$` moves through `connecting` and `connected`, th
 `status$` subscription can dismiss the ringing UI for every outcome.
 
 ## Examples
+
+Each example shows the SWML document, which works both served from your server and hosted in
+your Space, and the Relay handler for your Server SDK client. The last example answers in the
+browser.
 
 ### Run an AI agent
 
