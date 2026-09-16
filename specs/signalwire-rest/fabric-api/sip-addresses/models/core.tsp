@@ -1,6 +1,7 @@
 import "../../../types";
 import "../../../_globally_shared/enums.tsp";
 import "../../../_globally_shared/const.tsp";
+import "../../_shared/enums.tsp";
 import "../enums.tsp";
 
 using TypeSpec.Http;
@@ -17,9 +18,9 @@ model SipAddress {
   @example("b3f1c0a2-0f6e-4a9d-9b2a-1c2d3e4f5a6b")
   id: uuid;
 
-  @doc("The object type. Always `sip_address`.")
-  @example("sip_address")
-  type: "sip_address";
+  @doc("The object type. Always `sip`.")
+  @example("sip")
+  type: "sip";
 
   @doc("ID of the resource this address belongs to.")
   @example("8a7b6c5d-4e3f-2a1b-0c9d-8e7f6a5b4c3d")
@@ -50,8 +51,8 @@ model SipAddress {
   encryption: SipAddressEncryption;
 
   @doc("Enabled codecs for calls to this address.")
-  @example(#[SipAddressCodec.PCMU, SipAddressCodec.PCMA])
-  codecs: SipAddressCodec[];
+  @example(#[AddressCodec.PCMU, AddressCodec.PCMA])
+  codecs: AddressCodec[];
 
   @doc("Enabled SRTP ciphers for calls to this address.")
   @example(#[
