@@ -1,0 +1,77 @@
+---
+title: "validate"
+slug: /reference/typescript/core/security/validate
+description: "Framework-free webhook validation that returns a rejection triple or null."
+max-toc-depth: 3
+---
+
+[validate-webhook-signature]: /docs/server-sdks/reference/typescript/core/security/validate-webhook-signature
+[webhook-validation-middleware]: /docs/server-sdks/reference/typescript/core/security/webhook-validation-middleware
+
+Decide whether an inbound webhook is authentic from plain request primitives,
+with no framework request or response objects. Returns `null` to let the
+request through, or a `[status, headers, body]` triple to write back verbatim.
+[`webhookValidationMiddleware()`][webhook-validation-middleware] is a thin Hono
+wrapper over this function; use `validate()` directly from any other server.
+
+```typescript {1}
+validate(method: string, url: string, headers: Record<string, string>, body: string, signingKey: string): WebhookRejection | null
+```
+
+## **Parameters**
+
+<ParamField path="method" type="string" required={true} toc={true}>
+  The HTTP method. Informational; the signature does not cover it.
+</ParamField>
+
+<ParamField path="url" type="string" required={true} toc={true}>
+  The full public URL SignalWire POSTed to, including scheme, host, path, and
+  query. Reconstruct it behind a proxy or tunnel before calling.
+</ParamField>
+
+<ParamField path="headers" type={"Record<string, string>"} required={true} toc={true}>
+  Request headers. The signature header is looked up case-insensitively under
+  `X-SignalWire-Signature`, or the legacy `X-Twilio-Signature` alias.
+</ParamField>
+
+<ParamField path="body" type="string" required={true} toc={true}>
+  The raw request body as a string, before any JSON or form parsing.
+</ParamField>
+
+<ParamField path="signingKey" type="string" required={true} toc={true}>
+  Your SignalWire Signing Key. An empty or non-string value throws an `Error`.
+</ParamField>
+
+## **Returns**
+
+`WebhookRejection | null` -- `null` when the signature is valid. Otherwise a
+`[403, {}, 'Forbidden']` triple, whether the header is missing, empty, or
+wrong. The body never says which check failed.
+
+## **Example**
+
+```typescript {8-13}
+import { createServer } from 'node:http';
+import { validate } from '@signalwire/sdk';
+
+createServer(async (req, res) => {
+  const chunks: Buffer[] = [];
+  for await (const chunk of req) chunks.push(chunk as Buffer);
+  const body = Buffer.concat(chunks).toString();
+  const rejection = validate(
+    req.method ?? 'POST',
+    `https://${req.headers.host}${req.url}`,
+    req.headers as Record<string, string>,
+    body,
+    process.env.SIGNALWIRE_SIGNING_KEY!,
+  );
+  if (rejection) {
+    const [status, headers, text] = rejection;
+    res.writeHead(status, headers);
+    res.end(text);
+    return;
+  }
+  // handle the authentic webhook
+  res.end('ok');
+}).listen(3000);
+```
