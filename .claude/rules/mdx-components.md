@@ -20,7 +20,7 @@ Every component available on this site: Fern's full default library (description
 | `Copy` | Click-to-copy for arbitrary text | Unused |
 | `Download` | Lets readers download PDFs, files, ZIP bundles | Unused |
 | `EndpointRequestSnippet` | Embeds an endpoint's request example from the API Reference | In use — pair with a link to the reference page |
-| `EndpointResponseSnippet` | Embeds an endpoint's response example | In use — closes the REST tab of a capability guide's first-run step |
+| `EndpointResponseSnippet` | Embeds an endpoint's response example | In use — prefer it, with `EndpointRequestSnippet`, over a hand-written REST request the reference already documents |
 | `EndpointSchemaSnippet` | Embeds an endpoint's schema | In use — heavily, in SDK reference |
 | `Files` | Interactive file tree with expandable folders | Unused |
 | `Frame` | Image or diagram with caption and background variants | In use — wrap meaningful images (themed SVGs excepted — see `mdx-diagrams`) |
@@ -35,7 +35,7 @@ Every component available on this site: Fern's full default library (description
 | `SchemaSnippet` | Displays a type definition as a JSON code block | Unused |
 | `Steps` / `Step` | Auto-numbered sequential walkthrough | In use — ordered procedures in guides |
 | Tables (markdown) | Rows and columns, optional sticky header | Native markdown — genuine enumerations only (see `mdx-style`) |
-| `Tabs` / `Tab` | Tabbed views with language synchronization | In use — switchable non-code variants; surface switching in guides (`REST` / `WebSocket (Relay)`) with a `groupId` so the reader's choice persists down the page |
+| `Tabs` / `Tab` | Tabbed views with language synchronization | In use — switchable non-code variants. In guides, surfaces get `###` headings, not tabs; the one exception is a step inside `<Steps>` (`mdx-capability-guides`) |
 | `Tooltip` | Contextual info on hover, for text and code | Rare (×6) — only where it genuinely helps |
 | `Versions` | Content that switches with a version dropdown | Unused |
 | `WebhookPayloadSnippet` | Embeds a webhook payload example from the API Reference | In use |

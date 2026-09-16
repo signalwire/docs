@@ -9,10 +9,8 @@ paths:
 ## Themed SVG diagrams
 
 Applies to hand-authored SVG diagrams under `fern/assets/images/img/`.
-Exemplar: `ai-agent-flow-themed.svg`. Sequence-diagram exemplars from the
-capability guides (pending #660, #692, #693): `outbound-call-lifecycle-themed.svg`,
-`outbound-call-relay-lifecycle-themed.svg`, `call-stream-lifecycle-themed.svg`,
-`machine-detection-flow-themed.svg`.
+Exemplar: `ai-agent-flow-themed.svg`; for sequence diagrams,
+`outbound-call-lifecycle-themed.svg` and `machine-detection-flow-themed.svg`.
 
 ### One file, both modes
 
