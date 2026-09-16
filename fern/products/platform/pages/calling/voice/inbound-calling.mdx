@@ -1,7 +1,7 @@
 ---
 title: Inbound calling
 slug: /voice/inbound-calling
-description: Answer your first inbound phone call, find out who is calling, and add an AI agent, a phone menu, or browser answering to your application.
+description: Answer your first inbound call to a phone number, SIP address, or alias, find out who is calling, and add an AI agent, a phone menu, or browser answering.
 max-toc-depth: 3
 ---
 
@@ -40,6 +40,13 @@ max-toc-depth: 3
 [rest-update-number]: /docs/apis/rest/phone-numbers/update-phone-number
 [rest-list-numbers]: /docs/apis/rest/phone-numbers/list-phone-numbers
 [rest-create-script]: /docs/apis/rest/swml-scripts/create-swml-script
+[rest-create-webhook]: /docs/apis/rest/swml-webhook/create-swml-webhook
+[rest-create-relay-app]: /docs/apis/rest/relay-application/create-relay-application
+[rest-create-subscriber]: /docs/apis/rest/subscribers/create-subscriber
+[rest-create-sip]: /docs/apis/rest/sip-addresses/create-sip-address
+[rest-create-alias]: /docs/apis/rest/alias-addresses/create-alias-address
+[rest-calling-dial]: /docs/apis/rest/calls/call-commands
+[outbound-calling]: /docs/platform/voice/outbound-calling
 [rest-link-number]: /docs/apis/rest/phone-number-addresses/create-phone-number-address
 [subscriber-token]: /docs/apis/rest/subscribers/tokens/create-subscriber-token
 [browser-auth]: /docs/browser-sdk/v4/guides/authentication
@@ -51,9 +58,10 @@ max-toc-depth: 3
 [browser-call]: /docs/browser-sdk/v4/reference/interfaces/call
 [browser-transfer]: /docs/browser-sdk/v4/reference/webrtc-call/transfer
 
-Answer a call to your SignalWire phone number and choose what happens when it rings. Start by
-playing a short announcement to yourself, then find out who is calling, run an AI agent, build a
-phone menu, or let a signed-in user answer from your web app.
+Answer a call to one of your SignalWire addresses, whether that's a phone number, a SIP address,
+or an alias another client dials, and choose what happens when it rings. Start by playing a short
+announcement to yourself, then find out who is calling, run an AI agent, build a phone menu, or
+let a signed-in user answer from your web app.
 
 ## Prepare for your first call
 
@@ -63,14 +71,17 @@ Have these values ready:
 - Your Project ID and API token from the Dashboard's [API credentials][api-credentials] page.
   Enable the token's **Voice** permission, and its **Numbers** permission if you assign the
   handler with the REST API rather than the Dashboard.
-- A voice-capable [phone number purchased in your Space][phone-numbers].
+- A way for callers to reach you. A voice-capable [phone number purchased in your Space][phone-numbers]
+  is the usual choice, but a SIP address or an alias works without one. You'll pick in
+  [Choose how callers reach you](#choose-how-callers-reach-you).
+- Something to place the test call from: a phone, a SIP softphone, or another SignalWire client,
+  depending on the address you pick.
 - If answering in the browser, a [Subscriber token][subscriber-token] for the [Subscriber][subscribers]
-  the number rings. Guest and embed tokens can't receive calls.
-- A phone you can call from.
+  that will take the calls. Guest and embed tokens can't receive calls.
 
-<Warning title="Trial projects only receive calls from verified numbers">
-A [trial project][trial-mode] receives calls only from phone numbers it has verified. Verify the
-phone you'll call from, or upgrade the project, before you dial.
+<Warning title="Trial projects only receive phone calls from verified numbers">
+A [trial project][trial-mode] receives calls to its phone numbers only from phone numbers it has
+verified. Verify the phone you'll call from, or upgrade the project, before you dial.
 </Warning>
 
 ## How a call reaches your code
@@ -136,6 +147,21 @@ tokens, which power click-to-call widgets, are outbound-only and never ring.
 The REST Calling API places calls; it doesn't answer them. To act on an inbound call from REST
 later, use the call ID that SWML or Relay gives you.
 
+### Choose how callers reach you
+
+Your handler is a Resource, and callers reach it through an [address][addresses]. Pick the
+address that matches who's calling. The choice is independent of the handler: any Resource can
+carry any of these, and one Resource can carry all three.
+
+| Address | Who dials it | You need |
+|---|---|---|
+| Phone number | Anyone on the phone network | A voice-capable number in your Space, and a phone to test from |
+| SIP address | SIP softphones, PBXs, and carriers outside SignalWire, dialing the URI SignalWire assigns | A SIP client to test from |
+| Alias | Other SignalWire clients and Resources: a Browser SDK `dial()`, a SWML `connect`, or a REST dial to `/public/<name>` | A Browser SDK client or another Resource to test from |
+
+The steps below show the address you pick in its own tab, alongside the handler tabs. Stay on the
+same tabs through the guide.
+
 ### Set your credentials
 
 Replace these values in the code sample you choose:
@@ -145,7 +171,9 @@ Replace these values in the code sample you choose:
 | `<YOUR_SPACE>` | Your Space's subdomain in `<YOUR_SPACE>.signalwire.com` |
 | `<YOUR_PROJECT_ID>` | Your Project ID |
 | `<YOUR_API_TOKEN>` | Your API token |
+| `<YOUR_PHONE_NUMBER>` | Your SignalWire number in E.164 format, such as `+12025550123` |
 | `<YOUR_PHONE_NUMBER_ID>` | The ID shown on the phone number's page in the Dashboard, or returned by [List phone numbers][rest-list-numbers] |
+| `<YOUR_RESOURCE_ID>` | The ID shown on your handler's Resource page, or returned when you create it with the REST API |
 | `<YOUR_SWML_URL>` | The public URL where your server serves the SWML document, including the basic-auth credentials for the Python example |
 | `<YOUR_SUBSCRIBER_ACCESS_TOKEN>` | A [Subscriber token][subscriber-token] created by your backend, for the Browser SDK examples |
 
@@ -414,10 +442,10 @@ online so calls can reach them. Leave the page open while you test.
 </Tab>
 </Tabs>
 
-### Point your number at the handler
+### Create the Resource
 
-Assign a Resource as the number's call handler. Create the Resource first if your handler needs
-one.
+Every handler is a Resource in your Space. Create it, then note its ID from the Resource's page
+or from the REST response; you'll attach the address to it next.
 
 <Tabs groupId="inbound-api">
 <Tab title="SWML over HTTP">
@@ -436,25 +464,17 @@ Give it a name and leave **Used For** set to **Calling**. Under **Handle Calls U
 
 </llms-ignore>
 
-Then assign the SWML Script to your number.
-
-<Markdown src="/snippets/common/dashboard/_assign-resource-to-number.mdx" />
-
-You can do the same with the REST API. [Update the phone number][rest-update-number] with the
-`relay_script` handler. This creates the SWML Script Resource for the URL and assigns it in one
-call; the Server SDKs wrap it as [`set_swml_webhook`][py-set-swml-webhook] and
-[`setSwmlWebhook`][ts-set-swml-webhook]. Find the number's ID on its Dashboard page or with
-[List phone numbers][rest-list-numbers].
+With the REST API, [create a SWML webhook][rest-create-webhook] pointing at your URL.
 
 <CodeBlocks>
-<CodeBlock title="cURL — Phone Numbers API">
+<CodeBlock title="cURL — Fabric API">
 ```bash
-curl -X PUT "https://<YOUR_SPACE>.signalwire.com/api/relay/rest/phone_numbers/<YOUR_PHONE_NUMBER_ID>" \
+curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/fabric/resources/swml_webhooks" \
   -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
   -H "Content-Type: application/json" \
   -d '{
-    "call_handler": "relay_script",
-    "call_relay_script_url": "<YOUR_SWML_URL>"
+    "name": "Inbound welcome",
+    "primary_request_url": "<YOUR_SWML_URL>"
   }'
 ```
 </CodeBlock>
@@ -469,7 +489,10 @@ client = RestClient(
     host="<YOUR_SPACE>.signalwire.com",
 )
 
-client.phone_numbers.set_swml_webhook("<YOUR_PHONE_NUMBER_ID>", "<YOUR_SWML_URL>")
+resource = client.fabric.swml_webhooks.create(
+    name="Inbound welcome", primary_request_url="<YOUR_SWML_URL>",
+)
+print(resource["id"])
 ```
 </CodeBlock>
 <CodeBlock title="TypeScript — REST client">
@@ -483,7 +506,11 @@ const client = new RestClient({
   host: "<YOUR_SPACE>.signalwire.com",
 });
 
-await client.phoneNumbers.setSwmlWebhook("<YOUR_PHONE_NUMBER_ID>", "<YOUR_SWML_URL>");
+const resource = await client.fabric.swmlWebhooks.create({
+  name: "Inbound welcome",
+  primary_request_url: "<YOUR_SWML_URL>",
+});
+console.log(resource.id);
 ```
 </CodeBlock>
 </CodeBlocks>
@@ -495,13 +522,7 @@ In the Dashboard, open **My Resources**, select **+ Add**, then **Script**, then
 Give it a name and leave **Used For** set to **Calling**. Under **Handle Calls Using**, choose
 **Hosted Script** and paste the document into **Primary Script**. Select **Create**.
 
-Then assign the SWML Script to your number.
-
-<Markdown src="/snippets/common/dashboard/_assign-resource-to-number.mdx" />
-
-To do the same with the REST API, [create the SWML Script][rest-create-script] with the document
-as `contents`, then [link it to the number][rest-link-number]. The link endpoint is in beta and
-requires the number's calling channel to have no Resource assigned yet.
+With the REST API, [create the SWML Script][rest-create-script] with the document as `contents`.
 
 ```bash
 curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/fabric/resources/swml_scripts" \
@@ -518,16 +539,6 @@ curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/fabric/resources/swml_scri
       }
     }
   }'
-
-# Use the "id" from the response as the resource_id.
-curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/fabric/phone_number_addresses" \
-  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "number": "<YOUR_PHONE_NUMBER>",
-    "resource_id": "<YOUR_SWML_SCRIPT_ID>",
-    "handler_type": "calling"
-  }'
 ```
 
 </Tab>
@@ -537,16 +548,113 @@ In the Dashboard, open **My Resources**, select **+ Add**, then **Relay Applicat
 a name, enter `inbound-calling` as the **Topic** to match the `contexts` value in your code, and
 select **Create**.
 
-Then assign the Relay Application to your number.
+With the REST API, [create a Relay Application][rest-create-relay-app] with the same topic.
+
+<CodeBlocks>
+<CodeBlock title="cURL — Fabric API">
+```bash
+curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/fabric/resources/relay_applications" \
+  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Inbound welcome",
+    "topic": "inbound-calling"
+  }'
+```
+</CodeBlock>
+<CodeBlock title="Python — REST client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+from signalwire.rest import RestClient
+
+client = RestClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    host="<YOUR_SPACE>.signalwire.com",
+)
+
+resource = client.fabric.relay_applications.create(
+    name="Inbound welcome", topic="inbound-calling",
+)
+print(resource["id"])
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — REST client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+import { RestClient } from "@signalwire/sdk";
+
+const client = new RestClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  host: "<YOUR_SPACE>.signalwire.com",
+});
+
+const resource = await client.fabric.relayApplications.create({
+  name: "Inbound welcome",
+  topic: "inbound-calling",
+});
+console.log(resource.id);
+```
+</CodeBlock>
+</CodeBlocks>
+
+</Tab>
+<Tab title="Browser SDK">
+
+The Subscriber is the Resource. Creating its [Subscriber token][subscriber-token] creates the
+Subscriber too when the `reference` is new, or you can [create one directly][rest-create-subscriber].
+Find it under **My Resources** and note its ID. The token you give the browser client must be for
+this Subscriber.
+
+</Tab>
+</Tabs>
+
+### Give the Resource an address
+
+Attach the address you chose so calls to it reach the Resource. SignalWire already created one
+alias from the Resource's name, so a phone number or SIP address is an addition, not a
+replacement.
+
+<Tabs groupId="inbound-address">
+<Tab title="Phone number">
 
 <Markdown src="/snippets/common/dashboard/_assign-resource-to-number.mdx" />
 
-To assign with the REST API instead, [update the phone number][rest-update-number] with the
-`relay_topic` handler and the topic name, or use the [`set_relay_topic`][py-set-relay-topic] and
-[`setRelayTopic`][ts-set-relay-topic] wrappers.
+With the REST API, [link the Resource to the number][rest-link-number]. This endpoint is in beta
+and requires the number's calling channel to have no Resource assigned yet.
+
+```bash
+curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/fabric/phone_number_addresses" \
+  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "number": "<YOUR_PHONE_NUMBER>",
+    "resource_id": "<YOUR_RESOURCE_ID>",
+    "handler_type": "calling"
+  }'
+```
+
+<Accordion title="Shortcut: create and assign a SWML URL or Relay topic in one call">
+
+For SWML over HTTP and Relay, [Update phone number][rest-update-number] creates the Resource and
+assigns it together, so you can skip the create step above. The Server SDKs wrap it as
+[`set_swml_webhook`][py-set-swml-webhook] and [`setSwmlWebhook`][ts-set-swml-webhook], and as
+[`set_relay_topic`][py-set-relay-topic] and [`setRelayTopic`][ts-set-relay-topic].
 
 <CodeBlocks>
-<CodeBlock title="cURL — Phone Numbers API">
+<CodeBlock title="cURL — SWML URL">
+```bash
+curl -X PUT "https://<YOUR_SPACE>.signalwire.com/api/relay/rest/phone_numbers/<YOUR_PHONE_NUMBER_ID>" \
+  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "call_handler": "relay_script",
+    "call_relay_script_url": "<YOUR_SWML_URL>"
+  }'
+```
+</CodeBlock>
+<CodeBlock title="cURL — Relay topic">
 ```bash
 curl -X PUT "https://<YOUR_SPACE>.signalwire.com/api/relay/rest/phone_numbers/<YOUR_PHONE_NUMBER_ID>" \
   -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
@@ -568,6 +676,9 @@ client = RestClient(
     host="<YOUR_SPACE>.signalwire.com",
 )
 
+# SWML over HTTP
+client.phone_numbers.set_swml_webhook("<YOUR_PHONE_NUMBER_ID>", "<YOUR_SWML_URL>")
+# WebSocket (Relay)
 client.phone_numbers.set_relay_topic("<YOUR_PHONE_NUMBER_ID>", "inbound-calling")
 ```
 </CodeBlock>
@@ -582,53 +693,116 @@ const client = new RestClient({
   host: "<YOUR_SPACE>.signalwire.com",
 });
 
+// SWML over HTTP
+await client.phoneNumbers.setSwmlWebhook("<YOUR_PHONE_NUMBER_ID>", "<YOUR_SWML_URL>");
+// WebSocket (Relay)
 await client.phoneNumbers.setRelayTopic("<YOUR_PHONE_NUMBER_ID>", { topic: "inbound-calling" });
 ```
 </CodeBlock>
 </CodeBlocks>
 
+</Accordion>
+
 </Tab>
-<Tab title="Browser SDK">
+<Tab title="SIP address">
 
-Assign the number to the Subscriber your token was issued for.
+Open the Resource from **My Resources**, select its **Addresses & Phone Numbers** tab, select
+**+ Add**, then **SIP Address**. Leave **User** as `*` to accept any username, pick a **Domain**,
+give the address a **Name**, and select **Create**. A password and an IP allowlist are optional;
+leave both off for the first call. The tab then shows the URI SignalWire assigned, in the form
+`sip:*@<YOUR_SPACE>-<domain>.dapp.signalwire.com`.
 
-<Markdown src="/snippets/common/dashboard/_assign-resource-to-number.mdx" />
-
-To assign with the REST API instead, [link the Subscriber to the number][rest-link-number]. This
-endpoint is in beta and requires the number's calling channel to have no Resource assigned yet.
+With the REST API, [create a SIP address][rest-create-sip] that names the Resource as its call
+handler. The response includes the `uri`.
 
 ```bash
-curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/fabric/phone_number_addresses" \
+curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/fabric/sip_addresses" \
   -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
   -H "Content-Type: application/json" \
   -d '{
-    "number": "<YOUR_PHONE_NUMBER>",
-    "resource_id": "<YOUR_SUBSCRIBER_ID>",
-    "handler_type": "calling"
+    "name": "inbound-welcome",
+    "user": "*",
+    "calling_handler_resource_id": "<YOUR_RESOURCE_ID>"
   }'
 ```
 
-The Subscriber also keeps its `/private/<name>` address, so another app or Resource in your
-Space can call the same browser client without a phone number.
+</Tab>
+<Tab title="Alias">
+
+Nothing to add. SignalWire created an alias from the Resource's name when you created it:
+`/public/<name>` for a script or application, and `/private/<name>` for a Subscriber. Open the
+Resource's **Addresses & Phone Numbers** tab to copy it.
+
+To reach the Resource under another name, or to limit it to audio, video, or messaging, select
+**+ Add**, then **Alias**, and fill in the **Alias**, **Display Name**, **Context**, and
+**Channels**. With the REST API, [create an alias address][rest-create-alias] with a `name`, the
+`resource_id`, and a `context`.
+
+```bash
+curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/fabric/alias_addresses" \
+  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "inbound-welcome",
+    "resource_id": "<YOUR_RESOURCE_ID>",
+    "context": "public"
+  }'
+```
+
+A `public` alias is reachable by any client, including one with a guest token. A `private` alias,
+which is what a Subscriber gets, is reachable only by authenticated users and by your own
+project's dials.
 
 </Tab>
 </Tabs>
 
-### Call your number
+### Place your test call
 
-Dial your SignalWire number from your phone. With either SWML approach or with Relay, you hear
-"Hello, welcome to SignalWire!" and the call ends. With the browser example, the page shows the incoming call.
-Select **Answer**, allow microphone access, and select **Hang up** when you finish.
+<Tabs groupId="inbound-address">
+<Tab title="Phone number">
+
+Dial your SignalWire number from your phone. In a trial project, call from the number you
+verified.
+
+</Tab>
+<Tab title="SIP address">
+
+Dial the URI from a SIP softphone or your PBX, for example `sip:test@<YOUR_SPACE>-<domain>.dapp.signalwire.com`.
+With **User** set to `*`, any username reaches the Resource. If you set a password, configure it
+in the client first.
+
+</Tab>
+<Tab title="Alias">
+
+Dial the alias from another SignalWire client. The quickest is the browser sample from the
+[outbound calling guide][outbound-calling] with the alias as the destination:
+
+```javascript
+const call = await client.dial("<YOUR_ALIAS>", { audio: true, video: false });
+```
+
+A guest token can dial a `public` alias. To reach a `private` alias, such as a Subscriber's, the
+caller must be an authenticated Subscriber, or place the call from your project with the
+[REST Calling API][rest-calling-dial] using the alias as `to`.
+
+</Tab>
+</Tabs>
+
+With either SWML approach or with Relay, you hear "Hello, welcome to SignalWire!" and the call
+ends. With the browser handler, the page shows the incoming call. Select **Answer**, allow
+microphone access, and select **Hang up** when you finish.
 
 If the call rings without an answer or fails, check these first:
 
-- The number's **Inbound Call Settings** show your Resource. An unassigned number takes no action.
-- You're calling from a verified number if the project is in trial mode.
-- For Relay, the Relay Application's **Topic** matches your client's `contexts` value and the client is running.
+- The address lists your Resource as its call handler. The Dashboard's **Addresses** page shows
+  every address with its handler; an unassigned phone number takes no action.
+- For a phone number in a trial project, you're calling from a verified number.
+- For Relay, the Relay Application's **Topic** matches your client's `contexts` value and the
+  client is running.
 - For SWML over HTTP, SignalWire could reach the URL and got a valid document. Check the call in
   the Dashboard's **Logs**.
-- For the browser, the token is a Subscriber token, not a guest or embed token, and the number is
-  assigned to that same Subscriber.
+- For the browser, the token is a Subscriber token, not a guest or embed token, and the address
+  belongs to that same Subscriber.
 
 </Steps>
 
@@ -641,7 +815,8 @@ section for the approach you used for your first call.
 
 With SWML over HTTP, SignalWire sends your server a POST request whose `call` object carries the
 `from` and `to` addresses, the `direction`, and the `call_id`, so your code can decide the
-document per caller. See the [webhook payload reference][swml-webhook-payload] for every field.
+document per caller. `from` is a phone number, a SIP URI, or an alias, depending on how the
+caller reached you. See the [webhook payload reference][swml-webhook-payload] for every field.
 
 The same fields are available inside the document as [variables][swml-variables], so a hosted
 document can use them too. This document reads the caller's number back to them:
