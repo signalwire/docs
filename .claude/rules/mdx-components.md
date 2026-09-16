@@ -16,15 +16,15 @@ Every component available on this site: Fern's full default library (description
 | `Button` | Interactive button with styles, sizes, intents, icons | Unused |
 | `Callout` → named variants `Note` `Info` `Warning` `Tip` `Check` `Error` `Success` `Launch` | Highlighted admonition block with intent and optional custom icon | House set: `Note`/`Tip`/`Warning`/`Info` = prereq / suggestion / hazard / pointer; `Error` rare (×2). Write the named variant, never generic `<Callout>` |
 | `Card` / `CardGroup` | Boxed content and link grids | In use — overviews and `## Next steps`. `<Cards>` is an undocumented legacy alias (×2 old pages); use `CardGroup` |
-| Code blocks: fenced + `CodeBlocks` / `CodeBlock` | Syntax highlighting with `title="…"`, line highlights `{6,9}`, focus | House: single example = plain fence; several languages/formats = `CodeBlocks` of titled `CodeBlock`s. `CodeGroup` (Fern's `for=`-synced grouping) unused here |
+| Code blocks: fenced + `CodeBlocks` / `CodeBlock` | Syntax highlighting with `title="…"`, line highlights `{6,9}`, focus | House: single example = plain fence; several languages/formats = `CodeBlocks` of titled `CodeBlock`s, titled `<Language> — <client>` (`Python — REST client`) in guides. `CodeGroup` (Fern's `for=`-synced grouping) unused here |
 | `Copy` | Click-to-copy for arbitrary text | Unused |
 | `Download` | Lets readers download PDFs, files, ZIP bundles | Unused |
 | `EndpointRequestSnippet` | Embeds an endpoint's request example from the API Reference | In use — pair with a link to the reference page |
-| `EndpointResponseSnippet` | Embeds an endpoint's response example | In use |
+| `EndpointResponseSnippet` | Embeds an endpoint's response example | In use — closes the REST tab of a capability guide's first-run step |
 | `EndpointSchemaSnippet` | Embeds an endpoint's schema | In use — heavily, in SDK reference |
 | `Files` | Interactive file tree with expandable folders | Unused |
 | `Frame` | Image or diagram with caption and background variants | In use — wrap meaningful images (themed SVGs excepted — see `mdx-diagrams`) |
-| `Icon` | Inline Font Awesome icon with size/color/style | Rare (×2) — short-form icon syntax per `mdx-mechanics` |
+| `Icon` | Inline Font Awesome icon with size/color/style | In use — capability matrices in guides use `regular circle-check` / `regular circle-xmark` with `color="var(--status-success)"` / `color="var(--status-error)"` (`mdx-capability-guides`); otherwise rare. Short-form icon syntax per `mdx-mechanics` |
 | `If` | Shows/hides content by product, version, or reader role | Unused |
 | `Indent` | Left indentation for nested parameters and hierarchy | In use — nests `ParamField`s (blank lines inside) |
 | `Markdown src="…"` | Includes a reusable snippet from `fern/snippets/`; supports `{{param}}` substitution | In use — self-closing; only genuinely shared content |
@@ -35,7 +35,7 @@ Every component available on this site: Fern's full default library (description
 | `SchemaSnippet` | Displays a type definition as a JSON code block | Unused |
 | `Steps` / `Step` | Auto-numbered sequential walkthrough | In use — ordered procedures in guides |
 | Tables (markdown) | Rows and columns, optional sticky header | Native markdown — genuine enumerations only (see `mdx-style`) |
-| `Tabs` / `Tab` | Tabbed views with language synchronization | In use — switchable non-code variants |
+| `Tabs` / `Tab` | Tabbed views with language synchronization | In use — switchable non-code variants; surface switching in guides (`REST` / `WebSocket (Relay)`) with a `groupId` so the reader's choice persists down the page |
 | `Tooltip` | Contextual info on hover, for text and code | Rare (×6) — only where it genuinely helps |
 | `Versions` | Content that switches with a version dropdown | Unused |
 | `WebhookPayloadSnippet` | Embeds a webhook payload example from the API Reference | In use |
