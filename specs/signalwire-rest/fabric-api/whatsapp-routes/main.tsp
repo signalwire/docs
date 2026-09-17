@@ -20,7 +20,7 @@ namespace SignalWireAPI.Fabric.WhatsAppRoutes {
     @operationId("assign_resource_whatsapp_number")
     @summary("Assign Resource to WhatsApp number")
     @doc("""
-      Assigns an existing Resource as a WhatsApp number's calling or messaging handler, so every inbound call or message to the number runs that Resource. Find the number's ID with [List WhatsApp numbers](/docs/apis/rest/whatsapp/list-whatsapp-numbers). A number that already has an address for the chosen channel is re-pointed at the new Resource; an address it holds for the other channel is removed, because a WhatsApp number holds one address at a time. Calling also requires voice to be enabled on the number, as described in [Enable voice on a WhatsApp number](/docs/platform/voice/whatsapp/enable-voice).
+      Assigns an existing Resource as a WhatsApp number's calling or messaging handler, so every inbound call or message to the number runs that Resource. Find the number's ID with [List WhatsApp numbers](/docs/apis/rest/whatsapp/list-whatsapp-numbers). A number that already has an Address for the chosen channel is re-pointed at the new Resource; an Address it holds for the other channel is removed, because a WhatsApp number holds one Address at a time. Calling also requires voice to be enabled on the number, as described in [Enable voice on a WhatsApp number](/docs/platform/voice/whatsapp/enable-voice).
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
