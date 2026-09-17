@@ -2,27 +2,38 @@
 title: Receive WhatsApp calls
 slug: /voice/whatsapp/receive-calls
 sidebar-title: Receive calls
-description: Attach a resource to answer inbound WhatsApp calls, read the caller and business numbers, and find the calls in your logs.
+position: 3
+description: Attach a Resource to answer inbound WhatsApp calls from the Dashboard or the REST API, read the caller and business numbers, and find the calls in your logs.
 max-toc-depth: 3
 ---
 
 A WhatsApp number with calling enabled still needs something to answer. Assigning the number to a
-[resource](/docs/platform/resources) makes that resource the number's calling handler: every inbound
+[Resource](/docs/platform/resources) makes that Resource the number's calling handler: every inbound
 call runs it.
 
 <Note>
-[Enable voice on the number](/docs/platform/voice/whatsapp/enable-voice) first. The picker below
-doesn't check for it, so a number you assign before that step gets a handler but still can't take
-calls.
+[Enable voice on the number](/docs/platform/voice/whatsapp/enable-voice) first. Neither the Dashboard
+picker nor the API checks for it, so a number you assign before that step gets a handler but still
+can't take calls.
 </Note>
 
-## Assign a number to a resource
+## Resources that can answer
+
+Any of these Resource types can be a WhatsApp number's calling handler:
+
+- [AI Agent](/docs/platform/ai)
+- [Call Flow](/docs/call-flow-builder), built in the Call Flow Builder
+- [SWML Script](/docs/swml), hosted on SignalWire or served from your own URL
+- [Relay Application](/docs/platform/glossary#relay-application), which hands the call to your Relay client
+- [Video Room](/docs/platform/video), which the caller joins with audio only
+
+## Assign a number in the Dashboard
 
 <Steps>
 
-### Open the resource
+### Open the Resource
 
-In your [SignalWire Dashboard](https://my.signalwire.com/resources), open the resource you want to
+In your [SignalWire Dashboard](https://my.signalwire.com/resources), open the Resource you want to
 answer the call, then open its **Addresses & Phone Numbers** tab.
 
 ### Add the address
@@ -36,82 +47,86 @@ Choose the number from the list and confirm.
 </Steps>
 
 The picker lists **Registered** WhatsApp numbers that don't already have an address in your Space,
-whether that address is for calling or for messaging. To point a number at a different resource,
+whether that address is for calling or for messaging. To point a number at a different Resource,
 delete its existing address first.
 
-## Resources that can answer
+## Assign a number with the API
 
-Any of these resource types can be a WhatsApp number's calling handler:
+The same assignment is one request. Put the Resource's ID in the path, and in the body pass the
+WhatsApp number's ID from [List WhatsApp numbers](/docs/apis/rest/whatsapp/list-whatsapp-numbers)
+with `calling` as the handler:
 
-- **AI Agent**
-- **Call Flow** built in the [Call Flow Builder](/docs/call-flow-builder)
-- **SWML Script**, hosted or at your own URL
-- **cXML Script**, hosted or at your own URL, or a **cXML Application**
-- **Relay Application**
-- **SIP Endpoint**, **SIP Gateway**, or **FreeSWITCH Connector**
-- **Dialogflow Agent**
-- **Video Room**, which the caller joins with audio only
+<EndpointRequestSnippet endpoint="POST /api/fabric/resources/{id}/whatsapp_numbers" />
 
-## What your application receives
+The response is the address SignalWire created for the number on that Resource:
 
-The call arrives with your business number as `to` and the caller's number as `from`. Your business
-number carries a `whatsapp:` prefix; the caller's number is plain E.164:
+<EndpointResponseSnippet endpoint="POST /api/fabric/resources/{id}/whatsapp_numbers" />
 
-```json
+Unlike the Dashboard picker, the API accepts a number that already has a calling address and
+re-points it at the new Resource. A WhatsApp number holds one address at a time, though, so
+assigning a calling handler removes any messaging address the number had. The
+[Assign Resource to WhatsApp number](/docs/apis/rest/whatsapp-routes/assign-resource-whatsapp-number)
+reference lists every field and error.
+
+## Confirm the number can take calls
+
+List your WhatsApp numbers again. The number's `voice_capable` field is true once a calling handler
+is attached and voice is enabled:
+
+<EndpointRequestSnippet endpoint="GET /api/messaging/whatsapp/numbers" />
+
+Then open a chat with your business in WhatsApp and tap the call button. The Resource you attached
+should answer. If the call doesn't connect and `voice_capable` is false, check `voice_enabled` in
+the same response: a false value means calling was never turned on, or Meta refused a renewal, and
+[Enable voice on a WhatsApp number](/docs/platform/voice/whatsapp/enable-voice#if-it-doesnt-turn-on)
+covers both.
+
+## Read the caller and business numbers
+
+When SignalWire runs your Resource, it hands over the call with your business number as `to` and the
+caller's number as `from`. Your business number carries a `whatsapp:` prefix. The caller's number is
+plain E.164, the phone number their WhatsApp account is registered to, so you can look a customer up
+the same way you would on an inbound phone call.
+
+For an AI Agent or SWML Script served by the [Server SDKs](/docs/server-sdks), both numbers arrive
+in the JSON body SignalWire POSTs to your server before the call starts, nested under `call`:
+
+```json title="Request body your server receives (excerpt)"
 {
-  "to": "whatsapp:+15557654321",
-  "from": "+15551234567"
-}
-```
-
-The caller's number is the phone number their WhatsApp account is registered to, so you can look a
-customer up the same way you would on an inbound phone call.
-
-Because the prefix only appears on `to`, one resource can serve both a phone number and a WhatsApp
-number and branch on how the call came in:
-
-<CodeBlocks>
-```yaml title="SWML"
-sections:
-  main:
-    - cond:
-        - when: call.to.startsWith('whatsapp:')
-          then:
-            - play:
-                url: "say:Thanks for calling us on WhatsApp."
-        - else:
-            - play:
-                url: "say:Thanks for calling."
-```
-```json title="SWML (JSON)"
-{
-  "sections": {
-    "main": [
-      {
-        "cond": [
-          {
-            "when": "call.to.startsWith('whatsapp:')",
-            "then": [{ "play": { "url": "say:Thanks for calling us on WhatsApp." } }]
-          },
-          { "else": [{ "play": { "url": "say:Thanks for calling." } }] }
-        ]
-      }
-    ]
+  "call": {
+    "to": "whatsapp:+15557654321",
+    "from": "+15551234567"
   }
 }
 ```
-</CodeBlocks>
 
-Past that point the call is an ordinary call. Recording, transcription, and the rest of the SWML and
-cXML verbs work as they do on a phone call, with one exception: WhatsApp calls don't support hold, so
-leave hold and hold music out of these flows.
+Because the prefix only appears on `to`, one agent can serve both a phone number and a WhatsApp
+number and adjust to how the call came in. Register a dynamic configuration callback with
+[`set_dynamic_config_callback`](/docs/server-sdks/reference/python/agents/agent-base/set-dynamic-config-callback)
+in Python or
+[`setDynamicConfigCallback`](/docs/server-sdks/reference/typescript/agents/agent-base/set-dynamic-config-callback)
+in TypeScript: it receives this body along with an ephemeral copy of the agent to configure for the
+call. The [WhatsApp calling overview](/docs/platform/voice/whatsapp#how-a-call-reaches-your-code)
+walks through a complete example.
+
+Past that point the call is an ordinary call. Recording, transcription, and the rest of SWML work as
+they do on a phone call, with one exception: WhatsApp calls don't support hold, so leave hold and
+hold music out of these flows.
 
 ## Find the calls in your logs
 
 WhatsApp calls appear alongside the rest of your voice traffic in your
-[SignalWire Dashboard](https://my.signalwire.com) under **Logs → Voice**, and through the
-[Voice Logs API](/docs/apis/rest/voice-logs/list-voice-logs). The `To` column shows the
-`whatsapp:`-prefixed business number, which is the quickest way to pick them out.
+[SignalWire Dashboard](https://my.signalwire.com) under **Logs → Voice**, where the **To** column
+shows the `whatsapp:`-prefixed business number. The same records come back from the Voice Logs API:
+
+<EndpointRequestSnippet endpoint="GET /api/voice/logs" />
+
+<EndpointResponseSnippet endpoint="GET /api/voice/logs" />
+
+Each entry's `to` is the `whatsapp:`-prefixed business number, which is the quickest way to pick
+WhatsApp calls out. The endpoint filters by date rather than by number, so request the window you
+need and match `to` against your business number. See
+[List voice logs](/docs/apis/rest/voice-logs/list-voice-logs) for the date filters and every field.
 
 ## Next steps
 
@@ -119,8 +134,8 @@ WhatsApp calls appear alongside the rest of your voice traffic in your
 <Card title="Build an AI Agent" href="/docs/platform/ai">
   Give WhatsApp callers a conversational agent that answers in natural language.
 </Card>
-<Card title="SWML reference" href="/docs/swml">
-  Every verb available to a script answering the call.
+<Card title="Server SDKs" href="/docs/server-sdks">
+  Build the agent or script that answers, in Python or TypeScript.
 </Card>
 <Card title="WhatsApp messaging" href="/docs/platform/messaging/whatsapp">
   Send and receive messages on the same business number.
