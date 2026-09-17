@@ -26,12 +26,12 @@ max-toc-depth: 3
 [mapping-numbers]: /docs/server-sdks/guides/mapping-numbers
 [py-dynamic-config]: /docs/server-sdks/reference/python/agents/agent-base/set-dynamic-config-callback
 [ts-dynamic-config]: /docs/server-sdks/reference/typescript/agents/agent-base/set-dynamic-config-callback
-[messaging]: /docs/platform/messaging/whatsapp
+[inbound-call-webhook]: /docs/apis/rest/webhooks/inbound-call-webhook
 
 Answer the calls your customers place to your WhatsApp business number and decide what happens when
-they connect. Start by pointing the number at a hosted script that plays a greeting, then assign the
-number from the Dashboard or the REST API, read the caller's number in an AI Agent, and find the
-calls in your logs.
+they connect. Start by pointing the number at a SWML Script hosted on SignalWire that plays a
+greeting, then assign the number from the Dashboard or the REST API, read the caller's number in an
+AI Agent, and find the calls in your logs.
 
 ## Pick the right product for WhatsApp calling
 
@@ -96,8 +96,8 @@ isn't a valid destination for the `connect` method or the Calls API.
 
 ## Answer your first WhatsApp call
 
-Point the number at a script hosted on SignalWire that plays a greeting, then call it from WhatsApp.
-Hosting the script on SignalWire means you need no public server for this first call.
+Point the number at a SWML Script Resource stored on SignalWire that plays a greeting, then call it
+from WhatsApp. Because SignalWire hosts the script, you need no public server for this first call.
 
 <Steps>
 
@@ -111,14 +111,32 @@ Replace these values in the code samples:
 | `<YOUR_PROJECT_ID>` | Your Project ID |
 | `<YOUR_API_TOKEN>` | Your API token |
 | `<YOUR_WHATSAPP_NUMBER_ID>` | The `id` of your WhatsApp number from [List WhatsApp numbers][list-numbers] |
-| `<YOUR_RESOURCE_ID>` | The `id` the next step prints |
+| `<YOUR_RESOURCE_ID>` | The `id` in the next step's response |
 
 ### Create a hosted script
 
-Create a SWML Script Resource whose document plays the greeting. The Server SDKs build the document
-and create the Resource in one program:
+Create a SWML Script Resource whose document plays the greeting, with cURL or a Server SDK REST
+client. The SDK clients build the document and create the Resource in one program:
 
 <CodeBlocks>
+<CodeBlock title="cURL — Fabric API">
+```bash
+curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/fabric/resources/swml_scripts" \
+  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "WhatsApp greeting",
+    "contents": {
+      "version": "1.0.0",
+      "sections": {
+        "main": [
+          { "play": { "url": "say:Hello, welcome to SignalWire!" } }
+        ]
+      }
+    }
+  }'
+```
+</CodeBlock>
 <CodeBlock title="Python — REST client">
 ```python
 # Install: python -m pip install signalwire-sdk==3.4.1
@@ -173,7 +191,8 @@ console.log(script.id);
 </CodeBlock>
 </CodeBlocks>
 
-The program prints the new Resource's `id`. That is your `<YOUR_RESOURCE_ID>`.
+The response carries the new Resource's `id`, which the SDK programs print. That is your
+`<YOUR_RESOURCE_ID>`.
 
 <EndpointResponseSnippet endpoint="POST /api/fabric/resources/swml_scripts" />
 
@@ -210,7 +229,7 @@ The number can point at an [AI Agent][ai], a [Call Flow][cfb], a [SWML Script][s
 [Relay Application][relay-application], or a [Video Room][video]. Assign it from the Dashboard or
 the REST API.
 
-### Assign the number via the Dashboard
+### Assign the WhatsApp number via the Dashboard
 
 In your [SignalWire Dashboard](https://my.signalwire.com/resources), open the Resource you want to
 answer the call and select its **Addresses & Phone Numbers** tab. Select **+ Add**, then
@@ -220,7 +239,7 @@ The picker lists **Registered** WhatsApp numbers that don't already have an addr
 whether that address is for calling or for messaging. To point a number at a different Resource,
 delete its existing address first.
 
-### Assign the number via the REST API
+### Assign the WhatsApp number via the REST API
 
 Put the Resource's `id` in the path, and in the body pass the WhatsApp number's `id` from
 [List WhatsApp numbers][list-numbers] with `calling` as the handler:
@@ -240,18 +259,24 @@ plain E.164, the phone number their WhatsApp account is registered to, so you ca
 the same way you would on an inbound phone call.
 
 For an AI Agent or SWML Script served by the [Server SDKs][server-sdks], both numbers arrive in the
-JSON body SignalWire POSTs to your server before the call starts, nested under `call`:
+JSON body SignalWire POSTs to your server before the call starts, nested under `call`. On a WhatsApp
+call, `call.to` is `whatsapp:+15557654321` and `call.from` is `+15551234567`. The
+[inbound call webhook][inbound-call-webhook] reference documents every field of that body:
 
-```json title="Request body your server receives (excerpt)"
-{
-  "call": {
-    "to": "whatsapp:+15557654321",
-    "from": "+15551234567"
-  }
-}
-```
+<llms-ignore>
 
-### Read the numbers via SWML
+<WebhookPayloadSnippet webhook="inboundCallWebhook" />
+
+</llms-ignore>
+
+<llms-only>
+
+See the [inbound call webhook reference][inbound-call-webhook] for the complete request body. This
+guide uses `call.to` and `call.from`.
+
+</llms-only>
+
+### Read the caller's number via SWML
 
 Because the prefix only appears on `to`, one agent can serve both a phone number and a WhatsApp
 number and adjust to how the call came in. Register a dynamic configuration callback with
@@ -321,20 +346,20 @@ they do on a phone call, with the hold exception noted above.
 
 ## Find the calls in your logs
 
-### Find the calls via the Dashboard
+### Find WhatsApp calls via the Dashboard
 
 WhatsApp calls appear alongside the rest of your voice traffic in your
 [SignalWire Dashboard](https://my.signalwire.com) under **Logs → Voice**. The **To** column shows the
 `whatsapp:`-prefixed business number, which is the quickest way to pick them out.
 
-### Find the calls via the Voice Logs API
+### Find WhatsApp calls via the Voice Logs API
 
-The same records come back from the Voice Logs API. Each entry's `to` is the `whatsapp:`-prefixed
-business number:
+The same records come back from the Voice Logs API. A WhatsApp call is logged as a Relay PSTN call
+whose `to` is the `whatsapp:`-prefixed business number:
 
 <EndpointRequestSnippet endpoint="GET /api/voice/logs" />
 
-<EndpointResponseSnippet endpoint="GET /api/voice/logs" />
+<EndpointResponseSnippet endpoint="GET /api/voice/logs" example="WhatsApp call" highlight={10} />
 
 The endpoint filters by date rather than by number, so request the window you need and match `to`
 against your business number. See [List voice logs][voice-logs-ref] for the date filters and every
@@ -349,7 +374,7 @@ field.
 <Card title="Mapping Numbers" href="/docs/server-sdks/guides/mapping-numbers">
   Serve an agent from your own server and point a SWML Script Resource at it.
 </Card>
-<Card title="WhatsApp messaging" href="/docs/platform/messaging/whatsapp">
-  Send and receive messages on the same business number.
+<Card title="Assign Resource to WhatsApp number" href="/docs/apis/rest/whatsapp-routes/assign-resource-whatsapp-number">
+  Every field and error of the assignment endpoint, with the address it returns.
 </Card>
 </CardGroup>
