@@ -27,10 +27,12 @@ slug: addresses
 [rest-list-addresses]: /docs/apis/rest/addresses/list-resource-addresses
 [rest-list-addresses-client]: /docs/apis/rest/addresses/list-resource-addresses-client
 [subscriber-token]: /docs/apis/rest/subscribers/tokens/create-subscriber-token
+[whatsapp-onboarding]: /docs/platform/messaging/whatsapp/onboarding
 
 A [Resource][resources] is what handles a call or message. An address is how anyone reaches it.
 Callers never dial a Resource directly: they dial a phone number, a SIP URI, or a name such as
-`/public/support`, and SignalWire hands the call to the Resource assigned to that address.
+`/public/support`, and SignalWire hands the call to the Resource assigned to that address. That
+assigned Resource is the address's **handler**.
 
 Every Resource gets one address when you create it, and most end up with several. The same
 addresses are what your own code uses to name things: the `to` of a REST dial, the destination
@@ -43,6 +45,12 @@ of [`connect`][swml-connect] in SWML, or the argument to `dial()` in the Browser
 | [Phone number](#phone-numbers) | `+12025550123` | Anyone on the phone network |
 | [SIP address](#sip-addresses) | `sip:*@acme-public.dapp.signalwire.com` | SIP devices, PBXs, and carriers outside SignalWire |
 | [Alias](#aliases) | `/public/support`, `/private/john-doe` | Your scripts, Browser SDK clients, REST dials, and other Resources |
+| [WhatsApp number](#whatsapp-numbers) | A WhatsApp business number connected to your Space | WhatsApp users |
+
+A few rules hold for every type. An address points at exactly one Resource, and a Resource can
+carry any number of addresses. Alias names are unique within a context, so `/public/support` and
+`/private/support` can point at different Resources. A phone number is two addresses, one for
+calling and one for messaging, each with its own handler.
 
 ### Phone numbers
 
@@ -82,44 +90,62 @@ at it; the [bring your own carrier][byoc] guide covers the full flow.
 An alias is a name in the form `/<context>/<name>`. SignalWire creates one from the Resource's
 name when you create the Resource, so a Subscriber named `john.doe` is reachable at
 `/private/john-doe` and an AI Agent named `Support Agent` at `/private/support-agent`. Names are
-lowercase letters, numbers, underscores, and dashes. Most types, including AI Agents, SWML
-Scripts, Call Flows, Relay Applications, and Subscribers, get their first alias in the `private`
-context; Video Rooms, SIP Credentials, SIP Gateways, cXML Scripts, and FreeSWITCH Connectors get a
-`public` one. Add a `public` alias yourself when unauthenticated callers need to reach a Resource
-that started out `private`.
+lowercase letters, numbers, underscores, and dashes.
 
-Add more aliases to expose the same Resource under other names, or to shape how it's reached:
+The context of that first alias depends on the Resource type:
 
+| First alias context | Resource types |
+|---|---|
+| `private` | AI Agents, hosted SWML Scripts, Call Flows, Relay Applications, Subscribers |
+| `public` | SWML Scripts served from an **External URL**, cXML Scripts, Video Rooms, SIP Credentials, SIP Gateways, FreeSWITCH Connectors |
+
+A new AI Agent is therefore unreachable from a public click-to-call widget until you add a
+`public` alias for it.
+
+Add more aliases to expose the same Resource under other names, or to shape how it's reached.
+Each alias has these properties, which the REST API returns on the alias object:
+
+- **Name** is the URL-safe part of the address; **Display Name** is the label client applications
+  show and defaults to the name.
+- **Context** is `public` or `private`. See [Contexts](#contexts).
 - **Channels** limit an alias to `audio`, `video`, `messaging`, or any combination. A
   messaging-only public alias gives a chat entry point to an agent that also takes voice calls
   through a private one.
+- **Codecs** restrict the audio and video codecs offered on calls to the alias. Empty means no
+  restriction.
 - **Display As** controls how the alias appears to client applications that browse the
   directory: as an app, a room, a call, or a subscriber. A script that dispatches callers to
-  your staff can present itself as a subscriber so callers feel they're dialing a person.
+  your staff can present itself as a subscriber so callers feel they're dialing a person. The
+  REST API derives it from the Resource type and returns it as `display_type`.
 
 An alias can't be moved to a different Resource in place, in the Dashboard or with the REST API.
 To swap the handler behind a name, [delete the alias][rest-delete-alias] and
 [create a new one][rest-create-alias] with the same `name` and `context` and the new
 `resource_id`. Nothing that dials the alias has to change.
 
-The Dashboard can also attach a WhatsApp business number to a Resource so it handles inbound
-WhatsApp calls and messages. It appears alongside the other types in the Add an Address menu.
+### WhatsApp numbers
+
+The Dashboard can attach a WhatsApp business number to a Resource so it handles inbound WhatsApp
+calls and messages. It appears alongside the other types in the Add an Address menu. Connecting
+the number itself is covered in [WhatsApp onboarding][whatsapp-onboarding].
 
 ## Contexts
 
-An alias lives in a context, and the context decides who can reach it:
+An alias lives in a context, and the context's access type decides who can reach it. `public` and
+`private` are built in and can't be changed:
 
 - **`public`** addresses are reachable by anyone, including unauthenticated callers. Use them for
   entry points such as a support agent behind a click-to-call button.
 - **`private`** addresses are reachable only by authenticated users, which makes them the home of
   [Subscribers][subscribers] and anything only your own users should dial.
 
-SIP addresses use the same contexts as their domain, and phone numbers sit in the `external`
-context. Your Space may show additional contexts in the Dashboard.
+A SIP address's domain is a context too, and phone numbers sit in the `external` context. Your
+Space may show additional contexts in the Dashboard.
 
 <Tip>
-From inside a context, you can omit it. A Subscriber dialing from `private` reaches `/private/bob`
-as `/bob`.
+Only a call placed by an authenticated Subscriber can omit the context: a Subscriber in `private`
+reaches `/private/bob` as `/bob`. REST dials and SWML [`connect`][swml-connect] need the full
+`/<context>/<name>`.
 </Tip>
 
 ## How SignalWire resolves an address
@@ -188,6 +214,10 @@ handler from the number's settings.
 **Across the Space.** The **Addresses** page in the left sidebar lists every address in the
 project with its context, type, call handler, and message handler. It's the quickest way to find
 a number with no handler or to see which Resource an alias points at.
+
+**Removing.** Deleting an address removes only that way in: the Resource stays, and calls already
+in progress continue. Removing a phone number's handler leaves the number in your Space,
+unassigned, until you assign another Resource.
 
 ### With the REST API
 
