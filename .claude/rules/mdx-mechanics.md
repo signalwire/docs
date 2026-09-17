@@ -13,7 +13,7 @@ paths:
 ```yaml
 ---
 title: "Tool calling"      # becomes the H1 and the sidebar label
-slug: /ai/tool-calling     # lowercase-kebab, 2–3 segments, no product prefix/extension; independent of folder path
+slug: ai/tool-calling      # lowercase-kebab, 2–3 segments, no leading slash (only the product root page uses `slug: /`); no product prefix/extension; independent of folder path
 description: One concrete sentence — feeds SEO meta AND llms.txt.
 max-toc-depth: 3           # always exactly 3
 ---
