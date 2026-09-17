@@ -14,4 +14,4 @@ using Types.StatusCodes;
     }
   ],
 })
-model WhatsAppRouteCreateStatusCode422 is StatusCode422;
+model WhatsAppRouteAssignStatusCode422 is StatusCode422;

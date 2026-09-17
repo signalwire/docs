@@ -32,7 +32,7 @@ namespace SignalWireAPI.Fabric.WhatsAppRoutes {
         }
       | StatusCode401
       | StatusCode404
-      | WhatsAppRouteCreateStatusCode422
+      | WhatsAppRouteAssignStatusCode422
       | StatusCode500;
   }
 }

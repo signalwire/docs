@@ -1,4 +1,3 @@
-import "@typespec/http";
 import "../../enums.tsp";
 import "../../const.tsp";
 
@@ -35,7 +34,7 @@ const VOICE_LOG_WHATSAPP_CALL_EXAMPLE = #{
   source: VoiceSources.realtime_api,
   charge: 0.01,
   charge_details: #[],
-  created_at: utcDateTime.fromISO("2026-09-16T15:04:05Z"),
+  created_at: UTC_TIME_EXAMPLE,
   type: RelayVoiceType.relay_pstn_call,
   url: null,
   direction: VoiceDirection.inbound,
