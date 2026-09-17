@@ -10,10 +10,28 @@ get errors$(): Observable<CallError>
 ```
 Observable stream of errors from media, signaling, and peer connection layers.
 
+Each emission is a [`CallError`](/docs/browser-sdk/v4/reference/interfaces/call-error) envelope, not a bare `Error`. Two of its fields decide how much a consumer has to care:
+
+- `fatal` — when `true` the call transitions to `'failed'` and is destroyed; the SDK sends its own `verto.bye` so the server releases the leg. Nothing further is required of you.
+- `leg` / `legId` — which peer connection failed. **An auxiliary leg is never fatal**, so a `leg` of `'screenshare'` means "the screen share failed, the call continues" and should be surfaced as such. Both fields are absent for call- and session-level errors, and `callId` is always the call's own ID — never the leg's.
+
 ## **Examples**
 
 ```ts
-call.errors$.subscribe((errors) => {
-  console.log('errors:', errors);
+call.errors$.subscribe(({ error, fatal, leg }) => {
+  if (leg === 'screenshare') {
+    toast('Screen share failed — you are still connected.');
+    return;
+  }
+  if (fatal) {
+    showCallEnded(error);
+  } else {
+    console.warn('Recoverable call error:', error);
+  }
 });
 ```
+
+## **See**
+
+- [`CallError`](/docs/browser-sdk/v4/reference/interfaces/call-error) — the emitted shape.
+- [`MediaAccessError`](/docs/browser-sdk/v4/reference/errors/media-access-error) — the most common non-fatal error to branch on.
