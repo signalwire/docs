@@ -74,7 +74,21 @@ client.isConnected$.subscribe((connected) => {
 
 **Causes:** Camera permissions denied, camera in use by another app, wrong camera selected, hardware issue.
 
+A denied or unavailable camera no longer fails the call: the SDK falls back to
+receive-only, so the call connects, remote video arrives, and only the local
+preview is empty. The reason is reported on `errors$` as a non-fatal
+[`MediaAccessError`](/docs/browser-sdk/v4/reference/errors/media-access-error) —
+check there first, since nothing throws:
+
 ```js
+import { MediaAccessError } from "@signalwire/js";
+
+call.errors$.subscribe(({ error }) => {
+  if (error instanceof MediaAccessError) {
+    console.log(error.media, error.denied ? "was denied" : "failed to open");
+  }
+});
+
 const permission = await navigator.permissions.query({ name: "camera" });
 console.log("Camera permission:", permission.state);
 
@@ -82,6 +96,9 @@ client.videoInputDevices$.subscribe((devices) => {
   console.log("Available cameras:", devices);
 });
 ```
+
+Pass `fallbackToReceiveOnly: false` to `dial()`/`answer()` if you would rather
+the call fail outright than connect without local media.
 
 ### No remote audio
 
@@ -140,7 +157,10 @@ try {
 **Causes:** Invalid destination, destination not reachable, network/firewall blocking.
 
 ```js
-call.errors$.subscribe((error) => console.error("Call error:", error));
+// errors$ emits a CallError envelope, not a bare Error.
+call.errors$.subscribe(({ error, fatal, leg }) => {
+  console.error("Call error:", error, { fatal, leg });
+});
 ```
 
 ### Call connects but no media flows

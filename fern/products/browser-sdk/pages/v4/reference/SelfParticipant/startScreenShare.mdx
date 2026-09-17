@@ -6,18 +6,59 @@ max-toc-depth: 3
 ---
 
 ```ts
-startScreenShare(): Promise<void>
+startScreenShare(options?): Promise<void>
 ```
-Starts sharing the local screen.
+Starts sharing the local screen. The browser shows its own surface picker; the promise settles once the share's leg is connected.
+
+A call carries at most one screen share. Read [`screenShareStatus`](/docs/browser-sdk/v4/reference/self-participant/screen-share-status$) before calling and treat `'starting'` and `'stopping'` as busy — starting a second share throws rather than replacing the live one.
+
+The call itself is unaffected when acquisition fails: a screen-share failure is never fatal.
+
+## **Parameters**
+
+<ParamField path="options" type="ScreenShareOptions" toc={true}>
+  Pass `{ audio: true }` to also request the shared surface's audio. Defaults to video only. See [`ScreenShareOptions`](/docs/browser-sdk/v4/reference/interfaces/screen-share-options).
+</ParamField>
 
 ## **Returns**
 
 `Promise<void>`
 
+## **Throws**
+
+- [`ScreenShareAlreadyActiveError`](/docs/browser-sdk/v4/reference/errors/screen-share-already-active-error) — this call is already sharing a screen. Call [`stopScreenShare`](/docs/browser-sdk/v4/reference/self-participant/stop-screen-share) before starting another.
+- [`AuxiliaryLegCancelledError`](/docs/browser-sdk/v4/reference/errors/auxiliary-leg-cancelled-error) — `stopScreenShare()` removed the share before its leg finished connecting.
+- [`AuxiliaryLegTimeoutError`](/docs/browser-sdk/v4/reference/errors/auxiliary-leg-timeout-error) — the leg did not connect within its budget. The picker is human time and sits outside that budget; only the connect that follows it is bounded.
+- The raw `getDisplayMedia` error. A dismissed picker or a permission denial rejects with a `NotAllowedError` `DOMException` — inspect `error.name` to tell benign cancels apart from real failures.
+
 ## **Examples**
 
 ```ts
 await selfParticipant.startScreenShare();
+```
+
+Sharing a tab together with its audio:
+
+```ts
+await selfParticipant.startScreenShare({ audio: true });
+```
+
+Distinguishing a dismissed picker from a real failure:
+
+```ts
+import { ScreenShareAlreadyActiveError } from '@signalwire/js';
+
+try {
+  await selfParticipant.startScreenShare({ audio: true });
+} catch (error) {
+  if (error instanceof ScreenShareAlreadyActiveError) {
+    await selfParticipant.stopScreenShare();
+  } else if (error.name === 'NotAllowedError') {
+    // The user dismissed the picker — nothing to report.
+  } else {
+    throw error;
+  }
+}
 ```
 
 ## **See**

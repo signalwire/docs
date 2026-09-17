@@ -57,6 +57,19 @@ promise rejects on cancel *and* on permission denial — you need to
 tell them apart to avoid showing a scary error toast for what was a
 deliberate user choice.
 
+A call carries at most one screen share. Starting a second one throws
+[`ScreenShareAlreadyActiveError`](/docs/browser-sdk/v4/reference/errors/screen-share-already-active-error)
+and leaves the live share untouched — stop the first one before replacing it.
+Read `screenShareStatus` before calling and treat `'starting'` and `'stopping'`
+as busy.
+
+A screen-share failure is never fatal: whatever goes wrong with the share,
+the call itself keeps running. The picker is human time and sits outside the
+SDK's connect budget, so a user who takes a minute to choose a window is not
+timed out; only the 15 seconds of negotiation that follow are bounded, with
+[`AuxiliaryLegTimeoutError`](/docs/browser-sdk/v4/reference/errors/auxiliary-leg-timeout-error)
+if they run out.
+
 ## Handling permission and cancel
 
 The browser surfaces both outcomes as a `DOMException` from
@@ -79,7 +92,20 @@ fuzzy across browsers, so the safest UX is: **silent on
 made an explicit choice.
 
 ```js
+import {
+  AuxiliaryLegCancelledError,
+  ScreenShareAlreadyActiveError,
+} from "@signalwire/js";
+
 function handleShareError(err) {
+  if (err instanceof AuxiliaryLegCancelledError) {
+    // Your own stopScreenShare() beat the leg to the finish — nothing to report.
+    return;
+  }
+  if (err instanceof ScreenShareAlreadyActiveError) {
+    showToast("Already sharing. Stop the current share first.");
+    return;
+  }
   if (err?.name === "NotAllowedError") {
     // Cancel or denied — don't surface a toast either way.
     return;
@@ -118,7 +144,7 @@ call.self?.capabilities.screenshare$.subscribe((canShare) => {
 "Stop sharing" in the browser bar, OS revoked permission, etc.):
 
 ```ts
-type ScreenShareStatus = 'idle' | 'starting' | 'started' | 'stopping';
+type ScreenShareStatus = 'none' | 'starting' | 'started' | 'stopping';
 ```
 
 ```js
@@ -146,18 +172,25 @@ const isSharing = call.self?.screenShareStatus === "started";
 
 ## Audio with the share
 
-`getDisplayMedia()` can capture system / tab audio on some platforms
-(Chromium-based browsers on macOS / Windows). The SDK forwards
-whatever the browser provides — there's no separate "share audio"
-toggle. If the user's browser doesn't support display audio, only
-the video is shared.
+Pass `{ audio: true }` to also request the shared surface's audio. The default
+is video only — the share never carries the local microphone, which stays on
+the main connection:
+
+```js
+await self.startScreenShare({ audio: true });
+```
+
+Whether audio is actually captured depends on the browser, the OS, and the
+surface the user picks. A share the user grants without audio yields a
+video-only stream, and the share still starts normally — so treat surface
+audio as best-effort, not a guarantee.
 
 In practice:
-- Chrome / Edge on macOS or Windows: works for tab audio, may work
-  for system audio depending on OS version.
+- Chrome / Edge: offered for tabs and windows; system audio depends on the OS
+  and version.
 - Firefox: video only.
-- Safari: video only (and screen sharing requires explicit
-  user-initiated permission per session).
+- Safari: video only (and screen sharing requires explicit user-initiated
+  permission per session).
 
 ## Browser quirks
 
@@ -175,7 +208,7 @@ In practice:
 
 The user can stop sharing from the browser's "Stop sharing" toolbar.
 When they do, the underlying track ends and the SDK transitions
-`screenShareStatus$` to `'idle'` automatically — no action required
+`screenShareStatus$` to `'none'` automatically — no action required
 on your side. Subscribe to `screenShareStatus$` and your UI will
 update without polling.
 
@@ -183,7 +216,7 @@ update without polling.
 
 - [`SelfParticipant.startScreenShare()`] — open picker, add the share track
 - [`SelfParticipant.stopScreenShare()`] — remove the share track
-- [`SelfParticipant.screenShareStatus$`] / [`screenShareStatus`] — reactive status (`'idle' | 'starting' | 'started' | 'stopping'`)
+- [`SelfParticipant.screenShareStatus$`] / [`screenShareStatus`] — reactive status (`'none' | 'starting' | 'started' | 'stopping'`)
 - [`SelfCapabilities.screenshare$`] — capability gate
 
 [`SelfParticipant.startScreenShare()`]: /docs/browser-sdk/v4/reference/self-participant/start-screen-share
