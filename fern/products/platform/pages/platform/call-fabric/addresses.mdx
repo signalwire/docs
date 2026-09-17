@@ -46,14 +46,14 @@ of [`connect`][swml-connect] in SWML, or the argument to `dial()` in the Browser
 
 ### Phone numbers
 
-A [phone number you've bought or ported][phone-numbers] is an address in the `External` context.
+A [phone number you've bought or ported][phone-numbers] is an address in the `external` context.
 It has two handlers, assigned independently: a call handler for inbound calls and a message
 handler for inbound messages. The Dashboard shows them as **Inbound Call Settings** and **Inbound
 Message Settings** on the number's **Edit Settings** page. A number with no call handler rings
 nobody; nothing happens on an inbound call until you assign a Resource.
 
-Any Resource that can take a call can be a number's call handler: a SWML Script, an AI Agent, a
-Call Flow, a Relay Application, a Subscriber, or a SIP Credential. Only messaging-capable
+Any Resource that can take a call can be a number's call handler, such as a SWML Script, an AI
+Agent, a Call Flow, a Relay Application, a Subscriber, or a SIP Credential. Only messaging-capable
 Resources can be its message handler.
 
 ### SIP addresses
@@ -81,8 +81,12 @@ at it; the [bring your own carrier][byoc] guide covers the full flow.
 
 An alias is a name in the form `/<context>/<name>`. SignalWire creates one from the Resource's
 name when you create the Resource, so a Subscriber named `john.doe` is reachable at
-`/private/john-doe` and an AI Agent named `Support Agent` at `/public/support-agent`. Names are
-lowercase letters, numbers, underscores, and dashes.
+`/private/john-doe` and an AI Agent named `Support Agent` at `/private/support-agent`. Names are
+lowercase letters, numbers, underscores, and dashes. Most types, including AI Agents, SWML
+Scripts, Call Flows, Relay Applications, and Subscribers, get their first alias in the `private`
+context; Video Rooms, SIP Credentials, SIP Gateways, cXML Scripts, and FreeSWITCH Connectors get a
+`public` one. Add a `public` alias yourself when unauthenticated callers need to reach a Resource
+that started out `private`.
 
 Add more aliases to expose the same Resource under other names, or to shape how it's reached:
 
@@ -93,10 +97,10 @@ Add more aliases to expose the same Resource under other names, or to shape how 
   directory: as an app, a room, a call, or a subscriber. A script that dispatches callers to
   your staff can present itself as a subscriber so callers feel they're dialing a person.
 
-An alias can be pointed at a different Resource later, which is the easiest way to swap a
-handler without changing anything that dials it. In the Dashboard, open the alias and change
-its assigned Resource. The REST API doesn't change an alias's Resource in place; delete the
-alias and [create a new one][rest-create-alias] with the new `resource_id`.
+An alias can't be moved to a different Resource in place, in the Dashboard or with the REST API.
+To swap the handler behind a name, [delete the alias][rest-delete-alias] and
+[create a new one][rest-create-alias] with the same `name` and `context` and the new
+`resource_id`. Nothing that dials the alias has to change.
 
 The Dashboard can also attach a WhatsApp business number to a Resource so it handles inbound
 WhatsApp calls and messages. It appears alongside the other types in the Add an Address menu.
@@ -110,7 +114,7 @@ An alias lives in a context, and the context decides who can reach it:
 - **`private`** addresses are reachable only by authenticated users, which makes them the home of
   [Subscribers][subscribers] and anything only your own users should dial.
 
-SIP addresses use the same contexts as their domain, and phone numbers sit in the `External`
+SIP addresses use the same contexts as their domain, and phone numbers sit in the `external`
 context. Your Space may show additional contexts in the Dashboard.
 
 <Tip>
@@ -153,8 +157,9 @@ channel. A support agent might carry:
 | `/public/support` | The click-to-call widget on your website |
 | `/private/support` | Staff dialing from the Browser SDK or a SIP phone |
 
-When you ship a new version of the agent, point the phone number and aliases at the new Resource.
-Every caller moves over, and nothing that dials `/public/support` changes.
+When you ship a new version of the agent, assign the phone number to the new Resource and
+re-create the aliases on it. Every caller moves over, and nothing that dials `/public/support`
+changes.
 
 ## Manage addresses
 
@@ -199,9 +204,9 @@ a number with no handler or to see which Resource an alias points at.
 ### In the Browser SDK
 
 A client authenticated with a [Subscriber token][subscriber-token] sees the addresses its user is
-allowed to reach through `client.directory`. Each entry exposes a ready-to-dial URI per channel,
-so the client dials what the directory returns instead of building `/context/name` strings by
-hand. See the [address book guide][browser-address-book] and [`defaultChannel`][browser-default-channel].
+allowed to reach through the `client.directory$` observable. Each entry exposes a ready-to-dial
+URI per channel, so the client dials what the directory returns instead of building
+`/context/name` strings by hand. See the [address book guide][browser-address-book] and [`defaultChannel`][browser-default-channel].
 
 ## Next steps
 
