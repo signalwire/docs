@@ -230,6 +230,16 @@ const PHONE_ROUTES_TAG_METADATA = #{
   },
 };
 
+const WHATSAPP_ROUTES_TAG = "WhatsApp Routes";
+
+const WHATSAPP_ROUTES_TAG_METADATA = #{
+  description: "Assign a Resource to handle the calls or messages a WhatsApp number receives.",
+  externalDocs: #{
+    url: "https://signalwire.com/docs/apis",
+    description: "Developer documentation on WhatsApp Routes, Fabric API endpoints",
+  },
+};
+
 const PHONE_NUMBER_ADDRESSES_TAG = "Phone Number Addresses";
 
 const PHONE_NUMBER_ADDRESSES_TAG_METADATA = #{
