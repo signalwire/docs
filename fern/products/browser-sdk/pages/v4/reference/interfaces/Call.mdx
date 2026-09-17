@@ -99,6 +99,18 @@ and control actions (hangup, mute, transfer, etc.).
   Observable of the per-track media direction state. See [`MediaDirections`](/docs/browser-sdk/v4/reference/interfaces/media-directions).
 </ParamField>
 
+<ParamField path="localAudioLevel$" type="Observable<number>" toc={true}>
+  Observable of the RMS audio level of the local microphone, 0..1. Engages the local audio pipeline on first subscription.
+</ParamField>
+
+<ParamField path="localMicrophoneGain$" type="Observable<number>" toc={true}>
+  Observable of the current local microphone gain (0..200, where 100 is unity).
+</ParamField>
+
+<ParamField path="localSpeaking$" type="Observable<boolean>" toc={true}>
+  Observable that is `true` while the local participant is speaking (RMS level above the VAD threshold, with hold time to avoid flicker).
+</ParamField>
+
 <ParamField path="mediaParamsUpdated$" type="Observable<MediaParamsEvent>" toc={true}>
   Observable that emits when media parameters are renegotiated. See [`MediaParamsEvent`](/docs/browser-sdk/v4/reference/interfaces/media-params-event).
 </ParamField>
@@ -135,6 +147,10 @@ and control actions (hangup, mute, transfer, etc.).
   Observable of the current recovery state. See [`RecoveryState`](/docs/browser-sdk/v4/reference/type-aliases/recovery-state).
 </ParamField>
 
+<ParamField path="remoteAudioLevel$" type="Observable<number>" toc={true}>
+  Observable of the aggregate remote audio level, 0..1 RMS. The server delivers a single mixed stream for all remote participants — this meter reports that mix.
+</ParamField>
+
 <ParamField path="remoteStream" type="MediaStream | null" toc={true}>
   Remote `MediaStream` for the call, or `null` if not yet available. See [`MediaStream`](https://developer.mozilla.org/en-US/docs/Web/API/MediaStream).
 </ParamField>
@@ -151,8 +167,8 @@ and control actions (hangup, mute, transfer, etc.).
   Local participant on the call, or `null` before join. See [`CallSelfParticipant`](/docs/browser-sdk/v4/reference/interfaces/call-self-participant).
 </ParamField>
 
-<ParamField path="self$" type="Observable<CallSelfParticipant | null>" toc={true}>
-  Observable of the local participant, or `null` before join. See [`CallSelfParticipant`](/docs/browser-sdk/v4/reference/interfaces/call-self-participant).
+<ParamField path="self$" type="Observable<CallSelfParticipant>" toc={true}>
+  Observable of the local participant. It withholds emission until self exists, so it never emits `null` — unlike `self`. See [`CallSelfParticipant`](/docs/browser-sdk/v4/reference/interfaces/call-self-participant).
 </ParamField>
 
 <ParamField path="signalingEvent$" type="Observable<Record<string, unknown>>" toc={true}>
@@ -257,6 +273,34 @@ answer(options?): void
 
 ***
 
+### disablePushToTalk()
+
+```ts
+disablePushToTalk(): void
+```
+
+Tears down the push-to-talk pipeline; microphone gain returns to its configured value. A no-op if push-to-talk was never enabled.
+
+#### Returns
+
+`void`
+
+***
+
+### enablePushToTalk()
+
+```ts
+enablePushToTalk(): void
+```
+
+Enables push-to-talk: while [`setPushToTalkActive`](#setpushtotalkactive) is `false` the microphone gain is forced to 0, and `true` restores the configured gain. No keyboard listener is installed — bind the key yourself.
+
+#### Returns
+
+`void`
+
+***
+
 ### execute()
 
 ```ts
@@ -300,7 +344,7 @@ executeMethod<T>(target, method, args): Promise<T>
 #### Parameters
 
 <ParamField path="target" type="string" required toc={true}>
-  Target identifier (member ID or destination URI) for the operation.
+  The **local** member's valid ID. 
 </ParamField>
 
 <ParamField path="method" type="string" required toc={true}>
@@ -383,6 +427,42 @@ sendDigits(digits): Promise<void>
 
 ***
 
+### setAutoGainControl()
+
+```ts
+setAutoGainControl(enabled): Promise<boolean>
+```
+
+#### Parameters
+
+<ParamField path="enabled" type="boolean" required toc={true}>
+  Whether automatic gain control should be enabled.
+</ParamField>
+
+#### Returns
+
+`Promise<boolean>` — whether the constraint reached the microphone.
+
+***
+
+### setEchoCancellation()
+
+```ts
+setEchoCancellation(enabled): Promise<boolean>
+```
+
+#### Parameters
+
+<ParamField path="enabled" type="boolean" required toc={true}>
+  Whether echo cancellation should be enabled.
+</ParamField>
+
+#### Returns
+
+`Promise<boolean>` — whether the constraint reached the microphone.
+
+***
+
 ### setLayout()
 
 ```ts
@@ -396,12 +476,30 @@ setLayout(layout, positions): Promise<void>
 </ParamField>
 
 <ParamField path="positions" type="Record<string, VideoPosition>" required toc={true}>
-  Map of member IDs to layout positions. See [`VideoPosition`](/docs/browser-sdk/v4/reference/type-aliases/video-position).
+  Map of member IDs to layout positions. Pass `{}` to change only the layout and let the server place members. See [`VideoPosition`](/docs/browser-sdk/v4/reference/type-aliases/video-position).
 </ParamField>
 
 #### Returns
 
 `Promise<void>`
+
+***
+
+### setLocalMicrophoneGain()
+
+```ts
+setLocalMicrophoneGain(value): void
+```
+
+#### Parameters
+
+<ParamField path="value" type="number" required toc={true}>
+  Gain as a percentage applied before transmission: `0` is silent, `100` is unity (the default), `200` is a 2× digital boost. Clamped to 0–200.
+</ParamField>
+
+#### Returns
+
+`void`
 
 ***
 
@@ -424,6 +522,44 @@ setMeta(meta): Promise<void>
 #### Inherited from
 
 [`CallState`](/docs/browser-sdk/v4/reference/interfaces/call-state).[`setMeta`](/docs/browser-sdk/v4/reference/interfaces/call-state#setmeta)
+
+***
+
+### setNoiseSuppression()
+
+```ts
+setNoiseSuppression(enabled): Promise<boolean>
+```
+
+#### Parameters
+
+<ParamField path="enabled" type="boolean" required toc={true}>
+  Whether noise suppression should be enabled.
+</ParamField>
+
+#### Returns
+
+`Promise<boolean>` — whether the constraint reached the microphone.
+
+***
+
+### setPushToTalkActive()
+
+```ts
+setPushToTalkActive(active): void
+```
+
+While push-to-talk is enabled, sets the talk state. A no-op if push-to-talk has not been enabled.
+
+#### Parameters
+
+<ParamField path="active" type="boolean" required toc={true}>
+  `true` while transmitting, `false` while silent.
+</ParamField>
+
+#### Returns
+
+`void`
 
 ***
 
