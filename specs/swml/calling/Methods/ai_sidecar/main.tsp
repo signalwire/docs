@@ -14,7 +14,7 @@ namespace SWML.Calling;
 @summary("AISidecarObject object")
 model AISidecarObject {
   @doc("""
-    The operator prompt that instructs the sidecar how to coach the agent. May be a plain string, a Prompt Object Model (POM), or a server-side file reference.
+    The operator prompt that instructs the sidecar how to coach the agent. May be a plain string or a Prompt Object Model (POM).
     SignalWire automatically adds built-in instructions for the sidecar's role, so your prompt only needs to describe the coaching behavior. When omitted, the sidecar uses a minimal default prompt, so setting one is strongly recommended.
     """)
   prompt?: AISidecarPrompt;
