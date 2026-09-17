@@ -1,7 +1,7 @@
 ---
 title: "Device Management"
 subtitle: "Pick the mic, camera, and speaker — before a call and on the fly"
-slug: /guides/device-management
+slug: guides/device-management
 sidebar-title: "Device Management"
 position: 4
 max-toc-depth: 3
@@ -191,6 +191,34 @@ client.dial("/private/alice").then((call) => {
   });
 });
 ```
+
+### When a mid-call switch fails
+
+A live swap acquires the new device *before* releasing the old one, so a
+failure — permission revoked, the device held by another application, a stale
+`deviceId` — leaves the call sending the device it was already using. The
+failure is reported on
+[`call.errors$`](/docs/browser-sdk/v4/reference/webrtc-call/errors$) rather
+than thrown, so subscribe there to reset the picker to the device still in use:
+
+```ts Browser
+import { MediaAccessError } from "@signalwire/js";
+
+activeCall.errors$.subscribe(({ error }) => {
+  if (error instanceof MediaAccessError) {
+    micSelect.value = client.selectedAudioInputDevice?.deviceId ?? "";
+    showToast(`Couldn't switch ${error.media}. Still using the previous device.`);
+  }
+});
+```
+
+Hardware that admits only one opener at a time — a phone's front and back
+cameras, typically — is the exception: the SDK releases the current capture,
+retries, and re-acquires the original device if the retry also fails. A stale
+`deviceId` falls back through progressively looser constraints rather than
+failing outright, so the switch may land on a different device than the one
+picked; read `selectedVideoInputDevice` after the switch if that matters to
+your UI.
 
 Speakers follow a slightly different path — see the next section.
 
