@@ -181,6 +181,11 @@ tags:
     externalDocs:
       url: https://signalwire.com/docs/apis
       description: Developer documentation on Phone Number Addresses, Fabric API endpoints
+  - name: WhatsApp Routes
+    description: Assign a Resource to handle the calls or messages a WhatsApp number receives.
+    externalDocs:
+      url: https://signalwire.com/docs/apis
+      description: Developer documentation on WhatsApp Routes, Fabric API endpoints
   - name: Phone Routes
     description: Endpoints related to managing Phone Routes
     externalDocs:
@@ -6990,6 +6995,59 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ResourceSipEndpointAssignRequest'
+  /api/fabric/resources/{id}/whatsapp_numbers:
+    post:
+      operationId: assign_resource_whatsapp_number
+      summary: Assign Resource to WhatsApp number
+      description: |-
+        Assigns an existing Resource as a WhatsApp number's calling or messaging handler, so every inbound call or message to the number runs that Resource. Find the number's ID with [List WhatsApp numbers](/docs/apis/rest/whatsapp/list-whatsapp-numbers). A number that already has an address for the chosen channel is re-pointed at the new Resource; an address it holds for the other channel is removed, because a WhatsApp number holds one address at a time. Calling also requires voice to be enabled on the number, as described in [Enable voice on a WhatsApp number](/docs/platform/voice/whatsapp/enable-voice).
+
+        #### Permissions
+
+        The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+        [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
+      parameters:
+        - $ref: '#/components/parameters/WhatsAppRoutePathID'
+      responses:
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WhatsAppRouteResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode404'
+        '422':
+          description: The request contains invalid parameters. See errors for details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WhatsAppRouteCreateStatusCode422'
+        '500':
+          description: An internal server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - WhatsApp Routes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WhatsAppRouteAssignRequest'
   /api/fabric/sip_addresses:
     get:
       operationId: list_sip_addresses
@@ -17838,6 +17896,13 @@ components:
       in: path
       required: true
       description: The SignalWire identifier of the WhatsApp number.
+      schema:
+        $ref: '#/components/schemas/uuid'
+    WhatsAppRoutePathID:
+      name: id
+      in: path
+      required: true
+      description: The unique identifier of the Resource.
       schema:
         $ref: '#/components/schemas/uuid'
     WhatsAppTemplatePathID:
@@ -59952,6 +60017,111 @@ components:
       unevaluatedProperties:
         not: {}
       description: Response containing a single WhatsApp number.
+    WhatsAppRouteAssignRequest:
+      type: object
+      required:
+        - whatsapp_number_id
+        - handler
+      properties:
+        whatsapp_number_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: The SignalWire ID of the WhatsApp number, as returned by [List WhatsApp numbers](/docs/apis/rest/whatsapp/list-whatsapp-numbers).
+          examples:
+            - 691af061-cd86-4893-a605-173f47afc4c2
+        handler:
+          allOf:
+            - $ref: '#/components/schemas/UsedForType'
+          description: Whether the Resource handles the number's `calling` or `messaging` traffic.
+          examples:
+            - calling
+      unevaluatedProperties:
+        not: {}
+    WhatsAppRouteCreateStatusCode422:
+      type: object
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Types.StatusCodes.RestApiErrorItem'
+          description: List of validation errors.
+      unevaluatedProperties:
+        not: {}
+      description: The request contains invalid parameters. See errors for details.
+      examples:
+        - statusCode: 422
+          errors:
+            - type: validation_error
+              code: invalid_resource_for_handler
+              message: is not valid for a calling handler
+              attribute: resource_id
+              url: https://signalwire.com/docs/apis/error-codes
+    WhatsAppRouteResponse:
+      type: object
+      required:
+        - id
+        - name
+        - display_name
+        - cover_url
+        - preview_url
+        - locked
+        - channels
+        - created_at
+        - type
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Unique ID of the Fabric Address.
+          examples:
+            - 691af061-cd86-4893-a605-173f47afc4c2
+        name:
+          type: string
+          description: Name of the Fabric Address.
+          examples:
+            - justice-league
+        display_name:
+          type: string
+          description: Display name of the Fabric Address.
+          examples:
+            - Justice League
+        cover_url:
+          type: string
+          description: Cover url of the Fabric Address.
+          examples:
+            - https://coverurl.com
+        preview_url:
+          type: string
+          description: Preview url of the Fabric Address.
+          examples:
+            - https://previewurl.com
+        locked:
+          type: boolean
+          description: Locks the Fabric Address. This is used to prevent the Fabric Address from accepting calls.
+          examples:
+            - true
+        channels:
+          allOf:
+            - $ref: '#/components/schemas/AddressChannel'
+          description: Channels of the Fabric Address.
+        created_at:
+          type: string
+          format: date-time
+          description: Fabric Address Creation Date.
+          examples:
+            - '2024-05-06T12:20:00Z'
+        type:
+          type: string
+          enum:
+            - app
+          description: The display type of a fabric address pointing to an application.
+          examples:
+            - app
+      unevaluatedProperties:
+        not: {}
+      title: Application Address
     WhatsAppTemplate:
       type: object
       required:
