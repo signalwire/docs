@@ -1,14 +1,18 @@
 ---
 title: "setLayout"
-slug: /reference/webrtc-call/set-layout
+slug: reference/webrtc-call/set-layout
 description: "Sets the call layout and participant positions."
 max-toc-depth: 3
 ---
 
 ```ts
-setLayout(layout, positions): Promise<void>
+setLayout(layout, positions?): Promise<void>
 ```
 Switches the call to a named video layout and (optionally) places specific members into reserved positions.
+
+The gateway's `call.layout.set` verb carries no positions of its own, so when `positions` is provided the SDK issues a `call.member.position.set` per member alongside it, each keyed by that member's own call context. **These operations are not atomic:** the layout is applied first, then each position sequentially, so members may briefly flash into their default slots before being moved.
+
+Targeted members are validated upfront, though — if any of them has no [member call context](/docs/browser-sdk/v4/reference/participant/target) yet, the whole call rejects before a single request is sent and the layout is left unchanged. A member ID that is not in the call at all is skipped with a warning.
 
 The set of valid layout names depends on the call's room configuration and is exposed reactively via [`layouts$`](/docs/browser-sdk/v4/reference/webrtc-call/layouts$). Member position values come from [`VideoPosition`](/docs/browser-sdk/v4/reference/type-aliases/video-position).
 
@@ -20,17 +24,18 @@ Requires the `setLayout` capability — inspect [`call.capabilities$`](/docs/bro
   Layout name. Must be one of the names emitted by [`layouts$`](/docs/browser-sdk/v4/reference/webrtc-call/layouts$).
 </ParamField>
 
-<ParamField path="positions" type="Record<string, VideoPosition>" required toc={true}>
-  Map of member IDs to [`VideoPosition`](/docs/browser-sdk/v4/reference/type-aliases/video-position) values. Pass an empty object to let the server assign positions automatically.
+<ParamField path="positions" type="Record<string, VideoPosition>" toc={true}>
+  Optional map of member IDs to [`VideoPosition`](/docs/browser-sdk/v4/reference/type-aliases/video-position) values. When omitted or empty, only the layout is changed and the server assigns positions automatically.
 </ParamField>
 
 ## **Returns**
 
-`Promise<void>` — resolves once the server has applied the layout.
+`Promise<void>` — resolves once the server has applied the layout and every requested position.
 
 ## **Throws**
 
-Rejects if `layout` is not in the call's available layouts.
+- `InvalidParams` — `layout` is not in the call's available layouts.
+- [`ParticipantNotReadyError`](/docs/browser-sdk/v4/reference/errors/participant-not-ready-error) — a targeted member's call context has not arrived yet. Thrown before any request is sent.
 
 ## **Examples**
 

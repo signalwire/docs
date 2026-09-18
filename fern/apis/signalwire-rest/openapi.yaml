@@ -181,6 +181,11 @@ tags:
     externalDocs:
       url: https://signalwire.com/docs/apis
       description: Developer documentation on Phone Number Addresses, Fabric API endpoints
+  - name: WhatsApp Routes
+    description: Assign a Resource to handle the calls or messages a WhatsApp number receives.
+    externalDocs:
+      url: https://signalwire.com/docs/apis
+      description: Developer documentation on WhatsApp Routes, Fabric API endpoints
   - name: Phone Routes
     description: Endpoints related to managing Phone Routes
     externalDocs:
@@ -548,7 +553,7 @@ paths:
         | `dial` | Create and initiate a new outbound call |
         | `update` | Modify an active call's dialplan in real-time |
         | `calling.end` | Terminate an active call immediately |
-        | `calling.transfer` | Transfer a call to a new destination (SIP URI, phone number, or inline SWML) |
+        | `calling.transfer` | Transfer a call to a new SWML destination (URL or inline document) |
         | `calling.disconnect` | Disconnect bridged calls without hanging up either leg |
         | `calling.play` | Play audio, TTS, silence, or ringtone to a call |
         | `calling.play.pause` | Pause active playback |
@@ -6896,8 +6901,8 @@ paths:
       parameters:
         - $ref: '#/components/parameters/PhoneRoutePathID'
       responses:
-        '200':
-          description: The request has succeeded.
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
           content:
             application/json:
               schema:
@@ -6990,6 +6995,59 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ResourceSipEndpointAssignRequest'
+  /api/fabric/resources/{id}/whatsapp_numbers:
+    post:
+      operationId: assign_resource_whatsapp_number
+      summary: Assign Resource to WhatsApp number
+      description: |-
+        Assigns an existing Resource as a WhatsApp number's calling or messaging handler, so every inbound call or message to the number runs that Resource. Find the number's ID with [List WhatsApp numbers](/docs/apis/rest/whatsapp/list-whatsapp-numbers). A number that already has an Address for the chosen channel is re-pointed at the new Resource; an Address it holds for the other channel is removed, because a WhatsApp number holds one Address at a time. Calling also requires voice to be enabled on the number, as described in [Enable voice on a WhatsApp number](/docs/platform/voice/whatsapp/enable-voice).
+
+        #### Permissions
+
+        The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+        [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
+      parameters:
+        - $ref: '#/components/parameters/WhatsAppRoutePathID'
+      responses:
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WhatsAppRouteResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode404'
+        '422':
+          description: The request contains invalid parameters. See errors for details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WhatsAppRouteAssignStatusCode422'
+        '500':
+          description: An internal server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - WhatsApp Routes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WhatsAppRouteAssignRequest'
   /api/fabric/sip_addresses:
     get:
       operationId: list_sip_addresses
@@ -15923,6 +15981,53 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Voice.LogListResponse'
+              examples:
+                Phone call:
+                  summary: Phone call
+                  description: An inbound call to one of your phone numbers.
+                  value:
+                    links:
+                      self: https://example.signalwire.com/api/voice/logs?page_number=0&page_size=50
+                      first: https://example.signalwire.com/api/voice/logs?page_size=50
+                    data:
+                      - id: b7182dc2-00f3-40e4-a5ce-20f164b329df
+                        from: '+12065551212'
+                        to: '+12065553434'
+                        source: realtime_api
+                        charge: 0.01
+                        charge_details: []
+                        created_at: '2024-05-06T12:20:00Z'
+                        type: relay_pstn_call
+                        url: null
+                        direction: inbound
+                        status: completed
+                        duration: 9
+                        duration_ms: 9638
+                        billing_ms: 60000
+                        parent_id: null
+                WhatsApp call:
+                  summary: WhatsApp call
+                  description: An inbound WhatsApp call. `to` is the business number with its `whatsapp:` prefix.
+                  value:
+                    links:
+                      self: https://example.signalwire.com/api/voice/logs?page_number=0&page_size=50
+                      first: https://example.signalwire.com/api/voice/logs?page_size=50
+                    data:
+                      - id: 7c1f6c1e-3b2a-4d9e-9f0b-2a6c8e5d4f31
+                        from: '+15551234567'
+                        to: whatsapp:+15557654321
+                        source: realtime_api
+                        charge: 0.01
+                        charge_details: []
+                        created_at: '2024-05-06T12:20:00Z'
+                        type: relay_pstn_call
+                        url: null
+                        direction: inbound
+                        status: completed
+                        duration: 42
+                        duration_ms: 42310
+                        billing_ms: 60000
+                        parent_id: null
         '400':
           description: The request is invalid.
           content:
@@ -17838,6 +17943,13 @@ components:
       in: path
       required: true
       description: The SignalWire identifier of the WhatsApp number.
+      schema:
+        $ref: '#/components/schemas/uuid'
+    WhatsAppRoutePathID:
+      name: id
+      in: path
+      required: true
+      description: The unique identifier of the Resource.
       schema:
         $ref: '#/components/schemas/uuid'
     WhatsAppTemplatePathID:
@@ -23869,14 +23981,14 @@ components:
                 - type: string
                 - type: object
                   unevaluatedProperties: {}
-              description: The destination to transfer the call to. Can be a SIP URI, phone number, SWML URL, or an inline [Calling SWML document](/docs/swml/reference/calling).
+              description: 'The destination to transfer the call to: a SWML URL or an inline [Calling SWML document](/docs/swml/reference/calling). To send the caller to a phone number or SIP endpoint, transfer to a document that uses `connect`.'
               examples:
                 - version: 1.0.0
                   sections:
                     main:
                       - play:
                           url: https://cdn.signalwire.com/swml/audio.mp3
-                - sip:destination@example.com
+                - https://example.com/swml
           required:
             - dest
           unevaluatedProperties:
@@ -36861,14 +36973,31 @@ components:
             - true
           default: false
         enable_turn_detection:
-          type: boolean
+          anyOf:
+            - type: string
+              enum:
+                - 'off'
+                - both
+                - punct_only
+                - acoustic_only
+            - type: boolean
           description: |-
-            Enables intelligent turn detection that monitors partial speech transcripts for sentence-ending
-            punctuation. When detected, the system can proactively finalize the speech recognition,
-            reducing latency before the AI responds. Works with `turn_detection_timeout`.
+            How the agent recognizes that the caller has finished speaking. Two signals feed the decision:
+            sentence-ending punctuation in the partial transcript, and an acoustic read of the caller's
+            intonation.
+            `both` uses both, so punctuation ends the turn while the acoustic signal can hold the turn open
+            for another word when the caller sounds mid-sentence, or end it when the caller trails off
+            without punctuation.
+            `punct_only` ends the turn on punctuation alone, and `acoustic_only` on the acoustic signal alone.
+            `off` uses neither signal, leaving the agent to wait out `end_of_speech_timeout` silence.
+            `true` is an alias for `both` and `false` for `off`, and this parameter is also accepted under the
+            name `turn_detection`.
+            The `both` and `punct_only` modes are tuned by `turn_detection_timeout` and
+            `turn_detection_min_length`; `acoustic_only` uses neither.
+            **Default:** `both`.
           examples:
-            - true
-          default: true
+            - both
+          default: both
         barge_match_string:
           type: string
           description: |-
@@ -37375,17 +37504,38 @@ components:
           examples:
             - true
           default: false
+        turn_detection_min_length:
+          type: integer
+          minimum: 0
+          maximum: 1000
+          description: |-
+            Minimum number of characters the transcript must contain before punctuation on its own can end
+            the caller's turn. Raise it so a back-channel the recognizer renders with a full stop — "Uh-huh."
+            while the agent is still being answered — does not end a turn the caller has not finished.
+            In `both` mode the acoustic signal overrides this: when it reads the caller as finished, the turn
+            ends whatever the length, so short complete replies like "Yes." still work. That leaves this a
+            filter on the punctuation path alone, and it has no effect when `enable_turn_detection` is `off`
+            or `acoustic_only`.
+            **Default:** `0`, which lets a transcript of any length end a turn.
+          examples:
+            - 4
+          default: 0
         turn_detection_timeout:
           type: integer
           minimum: 0
           maximum: 10000
           description: |-
-            Time in milliseconds to wait after detecting a potential end-of-turn before finalizing speech recognition.
-            A shorter timeout results in faster response times but may cut off the user if they pause mid-sentence.
-            Set to `0` to finalize immediately. Only used when `enable_turn_detection` is `true`.
+            Time in milliseconds the agent waits after deciding the caller's turn has ended before it
+            finalizes the transcript. A partial transcript arriving inside the window cancels the decision,
+            so this is a ceiling on how long a turn can hang rather than latency added to every turn. A
+            caller who has finished usually commits well inside it. Lowering it therefore doesn't make the
+            agent answer faster, and values below `500` degrade transcription accuracy on words the
+            recognizer needs the extra audio to disambiguate.
+            Set to `0` to use the default. Has no effect when `enable_turn_detection` is `off` or
+            `acoustic_only`.
+            **Default:** the value of `end_of_speech_timeout`.
           examples:
-            - 250
-          default: 250
+            - 700
         turn_filler_sources:
           type: string
           description: |-
@@ -37980,7 +38130,7 @@ components:
           allOf:
             - $ref: '#/components/schemas/SWML.Calling.AISidecarPrompt'
           description: |-
-            The operator prompt that instructs the sidecar how to coach the agent. May be a plain string, a Prompt Object Model (POM), or a server-side file reference.
+            The operator prompt that instructs the sidecar how to coach the agent. May be a plain string or a Prompt Object Model (POM).
             SignalWire automatically adds built-in instructions for the sidecar's role, so your prompt only needs to describe the coaching behavior. When omitted, the sidecar uses a minimal default prompt, so setting one is strongly recommended.
         lang:
           type: string
@@ -38267,21 +38417,7 @@ components:
         - type: string
         - $ref: '#/components/schemas/SWML.Calling.AISidecarPromptText'
         - $ref: '#/components/schemas/SWML.Calling.AISidecarPromptPom'
-        - $ref: '#/components/schemas/SWML.Calling.AISidecarPromptFile'
       title: AISidecarPrompt
-    SWML.Calling.AISidecarPromptFile:
-      type: object
-      required:
-        - file
-      properties:
-        file:
-          type: string
-          description: Path to a server-side file whose contents are used as the operator prompt.
-          examples:
-            - /etc/swml/sidecar_prompts/sales.md
-      unevaluatedProperties:
-        not: {}
-      title: AISidecarPromptFile object
     SWML.Calling.AISidecarPromptPom:
       type: object
       required:
@@ -59831,12 +59967,12 @@ components:
             - 3fa85f64-5717-4562-b3fc-2c963f66afa6
         voice_enabled:
           type: boolean
-          description: Whether SIP calling is enabled for this number.
+          description: Whether calling is enabled for this number. Turn it on from the **SIP Calling** column of the WhatsApp Numbers tab in your Dashboard, as described in [Enable voice on a WhatsApp number](/docs/platform/voice/whatsapp/enable-voice).
           examples:
             - false
         voice_capable:
           type: boolean
-          description: Whether this number can place and receive calls — true when a calling handler is configured and voice is enabled.
+          description: Whether this number can receive calls — true when `voice_enabled` is true and a calling handler is attached. See [Receive WhatsApp calls](/docs/platform/voice/whatsapp/receive-calls).
           examples:
             - false
         created_at:
@@ -59931,12 +60067,12 @@ components:
             - 3fa85f64-5717-4562-b3fc-2c963f66afa6
         voice_enabled:
           type: boolean
-          description: Whether SIP calling is enabled for this number.
+          description: Whether calling is enabled for this number. Turn it on from the **SIP Calling** column of the WhatsApp Numbers tab in your Dashboard, as described in [Enable voice on a WhatsApp number](/docs/platform/voice/whatsapp/enable-voice).
           examples:
             - false
         voice_capable:
           type: boolean
-          description: Whether this number can place and receive calls — true when a calling handler is configured and voice is enabled.
+          description: Whether this number can receive calls — true when `voice_enabled` is true and a calling handler is attached. See [Receive WhatsApp calls](/docs/platform/voice/whatsapp/receive-calls).
           examples:
             - false
         created_at:
@@ -59952,6 +60088,54 @@ components:
       unevaluatedProperties:
         not: {}
       description: Response containing a single WhatsApp number.
+    WhatsAppRouteAssignRequest:
+      type: object
+      required:
+        - whatsapp_number_id
+        - handler
+      properties:
+        whatsapp_number_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: The SignalWire ID of the WhatsApp number, as returned by [List WhatsApp numbers](/docs/apis/rest/whatsapp/list-whatsapp-numbers).
+          examples:
+            - 691af061-cd86-4893-a605-173f47afc4c2
+        handler:
+          allOf:
+            - $ref: '#/components/schemas/UsedForType'
+          description: Whether the Resource handles the number's `calling` or `messaging` traffic.
+          examples:
+            - calling
+      unevaluatedProperties:
+        not: {}
+    WhatsAppRouteAssignStatusCode422:
+      type: object
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Types.StatusCodes.RestApiErrorItem'
+          description: List of validation errors.
+      unevaluatedProperties:
+        not: {}
+      description: The request contains invalid parameters. See errors for details.
+      examples:
+        - statusCode: 422
+          errors:
+            - type: validation_error
+              code: invalid_resource_for_handler
+              message: is not valid for a calling handler
+              attribute: resource_id
+              url: https://signalwire.com/docs/apis/error-codes
+    WhatsAppRouteResponse:
+      oneOf:
+        - $ref: '#/components/schemas/FabricAddressApp'
+        - $ref: '#/components/schemas/FabricAddressRoom'
+        - $ref: '#/components/schemas/FabricAddressCall'
+      description: The Address created for the WhatsApp number on the Resource. Its `type` is `app` for most handlers, `room` for a Video Room, and `call` for a Resource that connects the call to a SIP endpoint or connector.
+      title: WhatsApp number Address
     WhatsAppTemplate:
       type: object
       required:
