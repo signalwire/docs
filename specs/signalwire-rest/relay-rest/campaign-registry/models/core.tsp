@@ -86,7 +86,7 @@ model Brand {
   @example("+18995551212")
   contact_phone?: string;
 
-  @doc("Email addresses SignalWire uses for registration correspondence about this brand and its campaigns. Defaults to the user who submitted the registration.")
+  @doc("Email addresses SignalWire uses for registration correspondence about this brand and its campaigns. Defaults to the first administrator on the account.")
   @example(#["brand_registrations@example.com"])
   signalwire_contact_emails?: string[];
 
@@ -239,7 +239,7 @@ model Campaign {
   @example("1231231")
   csp_campaign_reference?: string;
 
-  @doc("Email addresses SignalWire uses for registration correspondence about this campaign. Defaults to the brand's addresses, then the user who submitted the registration.")
+  @doc("Email addresses SignalWire uses for registration correspondence about this campaign. Defaults to the brand's addresses, then the first administrator on the account.")
   @example(#["campaign_registrations@example.com"])
   signalwire_contact_emails?: string[];
 

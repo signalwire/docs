@@ -87,7 +87,7 @@ model CreateManagedBrandRequest {
   @example("www.example.com")
   company_website: string;
 
-  @doc("Email addresses SignalWire uses for registration correspondence about this brand and its campaigns. Defaults to the user who submitted the registration.")
+  @doc("Email addresses SignalWire uses for registration correspondence about this brand and its campaigns. Defaults to the first administrator on the account.")
   @example(#["brand_registrations@example.com"])
   signalwire_contact_emails?: string[];
 
@@ -113,7 +113,7 @@ model CreateCspBrandRequest {
   @example("B123456")
   csp_brand_reference: string;
 
-  @doc("Email addresses SignalWire uses for registration correspondence about this brand and its campaigns. Defaults to the user who submitted the registration.")
+  @doc("Email addresses SignalWire uses for registration correspondence about this brand and its campaigns. Defaults to the first administrator on the account.")
   @example(#["brand_registrations@example.com"])
   signalwire_contact_emails?: string[];
 
@@ -125,7 +125,7 @@ model CreateCspBrandRequest {
 
 alias CreateBrandRequest = CreateManagedBrandRequest | CreateCspBrandRequest;
 
-@doc("Request body for updating a brand. Every field is optional; a field you omit keeps its current value. After the brand leaves the `unverified` state, only `signalwire_contact_emails` can still change.")
+@doc("Request body for updating a brand. Every field is optional; a field you omit keeps its current value. Only a brand in the `unverified` state accepts changes to fields other than `signalwire_contact_emails`.")
 model UpdateBrandRequest {
   @doc("Brand/Marketing/DBA name of the business.")
   @example("My Brand")
@@ -179,7 +179,7 @@ model UpdateBrandRequest {
   @example("B123456")
   csp_brand_reference?: string;
 
-  @doc("Email addresses SignalWire uses for registration correspondence about this brand and its campaigns. Defaults to the user who submitted the registration. Omit the field to keep the current list; send an empty list to clear it.")
+  @doc("Email addresses SignalWire uses for registration correspondence about this brand and its campaigns. Omit the field to keep the current list. Send an empty list to remove the addresses, after which correspondence goes to the first administrator on the account.")
   @example(#["brand_registrations@example.com"])
   signalwire_contact_emails?: string[];
 
@@ -305,7 +305,7 @@ model CreateManagedCampaignRequest {
   @example(true)
   terms_and_conditions: boolean;
 
-  @doc("Email addresses SignalWire uses for registration correspondence about this campaign. Defaults to the brand's addresses, then the user who submitted the registration.")
+  @doc("Email addresses SignalWire uses for registration correspondence about this campaign. Defaults to the brand's addresses, then the first administrator on the account.")
   @example(#["campaign_registrations@example.com"])
   signalwire_contact_emails?: string[];
 
@@ -331,7 +331,7 @@ model CreatePartnerCampaignRequest {
   @example("C123456")
   csp_campaign_reference: string;
 
-  @doc("Email addresses SignalWire uses for registration correspondence about this campaign. Defaults to the brand's addresses, then the user who submitted the registration.")
+  @doc("Email addresses SignalWire uses for registration correspondence about this campaign. Defaults to the brand's addresses, then the first administrator on the account.")
   @example(#["campaign_registrations@example.com"])
   signalwire_contact_emails?: string[];
 
@@ -351,7 +351,7 @@ model UpdateCampaignRequest {
   @maxLength(64)
   name?: string;
 
-  @doc("Email addresses SignalWire uses for registration correspondence about this campaign. Defaults to the brand's addresses, then the user who submitted the registration. Omit the field to keep the current list; send an empty list to clear it.")
+  @doc("Email addresses SignalWire uses for registration correspondence about this campaign. Omit the field to keep the current list. Send an empty list to remove the campaign's own addresses, after which correspondence falls back to the brand's addresses, then to the first administrator on the account.")
   @example(#["campaign_registrations@example.com"])
   signalwire_contact_emails?: string[];
 

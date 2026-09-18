@@ -67,7 +67,7 @@ namespace SignalWireAPI.RelayRest.RegistryBeta {
     @operationId("update_brand")
     @summary("Update brand")
     @doc("""
-      Changes the fields of an existing US 10-digit long code (10DLC) brand by ID. Fields you omit keep their current values. Once the brand leaves the `unverified` state, only `signalwire_contact_emails` can still change; a request that touches any other field is rejected with `invalid_state`.
+      Changes the fields of an existing US 10-digit long code (10DLC) brand by ID. Fields you omit keep their current values. A brand's details can only be changed while it is in the `unverified` state: on a `pending` or `completed` brand, only `signalwire_contact_emails` can change, and a request that touches any other field is rejected with `invalid_state`.
 
       ${tokenPermissions<"_Messaging_ and _Numbers_">}
       """)
