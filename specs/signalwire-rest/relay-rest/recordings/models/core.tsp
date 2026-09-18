@@ -41,12 +41,19 @@ model RecordingBase {
   @example("USD")
   price_unit: string;
 
-  @doc("Status of the recording.")
-  @example("completed")
+  @doc("Status of the recording. A finished recording reports `finished`; one that captured nothing reports `no_input`, and a failed one carries an `error_code`.")
+  @example("finished")
   status: string;
 
-  @doc("URL of the recording file.")
-  @example("https://example.com/recording.mp3")
+  @doc("""
+    Path to the recording resource, relative to your Space. Requesting it returns this JSON
+    metadata, not audio. Append a format suffix to download the media: `<url>.wav` or `<url>.mp3`.
+    Those suffixed paths are API routes and always require your API credentials, whatever the
+    project's Media URL protection setting. The recording's `calling.call.record` status callback
+    carries a second, direct URL on `files.signalwire.com`; that one is the URL Media URL protection
+    governs, and it is publicly fetchable while the setting is off.
+    """)
+  @example("/api/relay/rest/recordings/d369a402-7b43-4512-8735-9d5e1f387814")
   url: string;
 
   @doc("Indicates whether the recording is stereo.")
