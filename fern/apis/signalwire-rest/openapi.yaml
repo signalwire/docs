@@ -181,6 +181,11 @@ tags:
     externalDocs:
       url: https://signalwire.com/docs/apis
       description: Developer documentation on Phone Number Addresses, Fabric API endpoints
+  - name: WhatsApp Routes
+    description: Assign a Resource to handle the calls or messages a WhatsApp number receives.
+    externalDocs:
+      url: https://signalwire.com/docs/apis
+      description: Developer documentation on WhatsApp Routes, Fabric API endpoints
   - name: Phone Routes
     description: Endpoints related to managing Phone Routes
     externalDocs:
@@ -548,7 +553,7 @@ paths:
         | `dial` | Create and initiate a new outbound call |
         | `update` | Modify an active call's dialplan in real-time |
         | `calling.end` | Terminate an active call immediately |
-        | `calling.transfer` | Transfer a call to a new destination (SIP URI, phone number, or inline SWML) |
+        | `calling.transfer` | Transfer a call to a new SWML destination (URL or inline document) |
         | `calling.disconnect` | Disconnect bridged calls without hanging up either leg |
         | `calling.play` | Play audio, TTS, silence, or ringtone to a call |
         | `calling.play.pause` | Pause active playback |
@@ -6896,8 +6901,8 @@ paths:
       parameters:
         - $ref: '#/components/parameters/PhoneRoutePathID'
       responses:
-        '200':
-          description: The request has succeeded.
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
           content:
             application/json:
               schema:
@@ -6990,6 +6995,59 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ResourceSipEndpointAssignRequest'
+  /api/fabric/resources/{id}/whatsapp_numbers:
+    post:
+      operationId: assign_resource_whatsapp_number
+      summary: Assign Resource to WhatsApp number
+      description: |-
+        Assigns an existing Resource as a WhatsApp number's calling or messaging handler, so every inbound call or message to the number runs that Resource. Find the number's ID with [List WhatsApp numbers](/docs/apis/rest/whatsapp/list-whatsapp-numbers). A number that already has an Address for the chosen channel is re-pointed at the new Resource; an Address it holds for the other channel is removed, because a WhatsApp number holds one Address at a time. Calling also requires voice to be enabled on the number, as described in [Enable voice on a WhatsApp number](/docs/platform/voice/whatsapp/enable-voice).
+
+        #### Permissions
+
+        The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+        [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
+      parameters:
+        - $ref: '#/components/parameters/WhatsAppRoutePathID'
+      responses:
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WhatsAppRouteResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode404'
+        '422':
+          description: The request contains invalid parameters. See errors for details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WhatsAppRouteAssignStatusCode422'
+        '500':
+          description: An internal server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - WhatsApp Routes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WhatsAppRouteAssignRequest'
   /api/fabric/sip_addresses:
     get:
       operationId: list_sip_addresses
@@ -15923,6 +15981,53 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Voice.LogListResponse'
+              examples:
+                Phone call:
+                  summary: Phone call
+                  description: An inbound call to one of your phone numbers.
+                  value:
+                    links:
+                      self: https://example.signalwire.com/api/voice/logs?page_number=0&page_size=50
+                      first: https://example.signalwire.com/api/voice/logs?page_size=50
+                    data:
+                      - id: b7182dc2-00f3-40e4-a5ce-20f164b329df
+                        from: '+12065551212'
+                        to: '+12065553434'
+                        source: realtime_api
+                        charge: 0.01
+                        charge_details: []
+                        created_at: '2024-05-06T12:20:00Z'
+                        type: relay_pstn_call
+                        url: null
+                        direction: inbound
+                        status: completed
+                        duration: 9
+                        duration_ms: 9638
+                        billing_ms: 60000
+                        parent_id: null
+                WhatsApp call:
+                  summary: WhatsApp call
+                  description: An inbound WhatsApp call. `to` is the business number with its `whatsapp:` prefix.
+                  value:
+                    links:
+                      self: https://example.signalwire.com/api/voice/logs?page_number=0&page_size=50
+                      first: https://example.signalwire.com/api/voice/logs?page_size=50
+                    data:
+                      - id: 7c1f6c1e-3b2a-4d9e-9f0b-2a6c8e5d4f31
+                        from: '+15551234567'
+                        to: whatsapp:+15557654321
+                        source: realtime_api
+                        charge: 0.01
+                        charge_details: []
+                        created_at: '2024-05-06T12:20:00Z'
+                        type: relay_pstn_call
+                        url: null
+                        direction: inbound
+                        status: completed
+                        duration: 42
+                        duration_ms: 42310
+                        billing_ms: 60000
+                        parent_id: null
         '400':
           description: The request is invalid.
           content:
@@ -17838,6 +17943,13 @@ components:
       in: path
       required: true
       description: The SignalWire identifier of the WhatsApp number.
+      schema:
+        $ref: '#/components/schemas/uuid'
+    WhatsAppRoutePathID:
+      name: id
+      in: path
+      required: true
+      description: The unique identifier of the Resource.
       schema:
         $ref: '#/components/schemas/uuid'
     WhatsAppTemplatePathID:
@@ -23869,14 +23981,14 @@ components:
                 - type: string
                 - type: object
                   unevaluatedProperties: {}
-              description: The destination to transfer the call to. Can be a SIP URI, phone number, SWML URL, or an inline [Calling SWML document](/docs/swml/reference/calling).
+              description: 'The destination to transfer the call to: a SWML URL or an inline [Calling SWML document](/docs/swml/reference/calling). To send the caller to a phone number or SIP endpoint, transfer to a document that uses `connect`.'
               examples:
                 - version: 1.0.0
                   sections:
                     main:
                       - play:
                           url: https://cdn.signalwire.com/swml/audio.mp3
-                - sip:destination@example.com
+                - https://example.com/swml
           required:
             - dest
           unevaluatedProperties:
@@ -34386,7 +34498,7 @@ components:
           type: string
           description: The API token that can be used along with the project ID for basic authentication. It is returned only in this response and cannot be retrieved again; store it securely.
           examples:
-            - PT037258e533e87ac63174ee136ed0798dc85d4f4f9e6d7191
+            - swapi_0123456789ab0123456789ab0123456789ab
       unevaluatedProperties:
         not: {}
       title: Created API Token Response
@@ -59855,12 +59967,12 @@ components:
             - 3fa85f64-5717-4562-b3fc-2c963f66afa6
         voice_enabled:
           type: boolean
-          description: Whether SIP calling is enabled for this number.
+          description: Whether calling is enabled for this number. Turn it on from the **SIP Calling** column of the WhatsApp Numbers tab in your Dashboard, as described in [Enable voice on a WhatsApp number](/docs/platform/voice/whatsapp/enable-voice).
           examples:
             - false
         voice_capable:
           type: boolean
-          description: Whether this number can place and receive calls — true when a calling handler is configured and voice is enabled.
+          description: Whether this number can receive calls — true when `voice_enabled` is true and a calling handler is attached. See [Receive WhatsApp calls](/docs/platform/voice/whatsapp/receive-calls).
           examples:
             - false
         created_at:
@@ -59955,12 +60067,12 @@ components:
             - 3fa85f64-5717-4562-b3fc-2c963f66afa6
         voice_enabled:
           type: boolean
-          description: Whether SIP calling is enabled for this number.
+          description: Whether calling is enabled for this number. Turn it on from the **SIP Calling** column of the WhatsApp Numbers tab in your Dashboard, as described in [Enable voice on a WhatsApp number](/docs/platform/voice/whatsapp/enable-voice).
           examples:
             - false
         voice_capable:
           type: boolean
-          description: Whether this number can place and receive calls — true when a calling handler is configured and voice is enabled.
+          description: Whether this number can receive calls — true when `voice_enabled` is true and a calling handler is attached. See [Receive WhatsApp calls](/docs/platform/voice/whatsapp/receive-calls).
           examples:
             - false
         created_at:
@@ -59976,6 +60088,54 @@ components:
       unevaluatedProperties:
         not: {}
       description: Response containing a single WhatsApp number.
+    WhatsAppRouteAssignRequest:
+      type: object
+      required:
+        - whatsapp_number_id
+        - handler
+      properties:
+        whatsapp_number_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: The SignalWire ID of the WhatsApp number, as returned by [List WhatsApp numbers](/docs/apis/rest/whatsapp/list-whatsapp-numbers).
+          examples:
+            - 691af061-cd86-4893-a605-173f47afc4c2
+        handler:
+          allOf:
+            - $ref: '#/components/schemas/UsedForType'
+          description: Whether the Resource handles the number's `calling` or `messaging` traffic.
+          examples:
+            - calling
+      unevaluatedProperties:
+        not: {}
+    WhatsAppRouteAssignStatusCode422:
+      type: object
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Types.StatusCodes.RestApiErrorItem'
+          description: List of validation errors.
+      unevaluatedProperties:
+        not: {}
+      description: The request contains invalid parameters. See errors for details.
+      examples:
+        - statusCode: 422
+          errors:
+            - type: validation_error
+              code: invalid_resource_for_handler
+              message: is not valid for a calling handler
+              attribute: resource_id
+              url: https://signalwire.com/docs/apis/error-codes
+    WhatsAppRouteResponse:
+      oneOf:
+        - $ref: '#/components/schemas/FabricAddressApp'
+        - $ref: '#/components/schemas/FabricAddressRoom'
+        - $ref: '#/components/schemas/FabricAddressCall'
+      description: The Address created for the WhatsApp number on the Resource. Its `type` is `app` for most handlers, `room` for a Video Room, and `call` for a Resource that connects the call to a SIP endpoint or connector.
+      title: WhatsApp number Address
     WhatsAppTemplate:
       type: object
       required:
