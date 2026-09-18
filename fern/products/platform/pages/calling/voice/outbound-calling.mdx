@@ -66,26 +66,17 @@ Call a phone you can answer and play a short announcement.
 
 ### Choose how to place your call
 
-Choose the approach that fits how you want to control the call.
+Choose where the call starts and how your application follows it. Server call logic and browser
+participation can work together in the same flow.
 
-| What you want to do | Where to start |
-|---|---|
-| Give SignalWire call instructions over HTTP, supplied inline or returned by your webhook | [REST Calling API](#place-the-call), using a Server SDK or cURL |
-| Control the call in real time, asynchronously receiving events and sending commands over a persistent WebSocket connection | [WebSocket (Relay)](#place-the-call), using a Server SDK |
-| Let someone place and speak on a call from your web app | [Browser SDK](#place-the-call) |
+| Approach | Useful when | How you control and follow the call |
+|---|---|---|
+| [Server SDK — REST](#place-the-call) | A backend request or background job starts a call | Send a request with SWML instructions, receive progress at a webhook, and use the call ID for later commands. |
+| [Server SDK — WebSocket (Relay)](#place-the-call) | Your server makes decisions as call events arrive | Keep a Relay client running to receive events and send commands over its persistent connection. |
+| [Browser SDK](#place-the-call) | A user calls a person or Resource from your web app | Use the browser client for dialing, microphone and camera access, in-call controls, and live status updates in the page. |
 
-Each approach places the same call, but they differ in how you follow and control it afterward.
-
-| Function | REST | WebSocket (Relay) | Browser SDK |
-|---|---|---|---|
-| Place the call without holding a connection open | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> |
-| Place the call from a web page, with the user speaking on it | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
-| Command a call already in progress from any process, by its call ID | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> |
-| Follow the call's events in your own code, with no public webhook URL | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
-| Receive call progress as HTTP callbacks to a URL you host | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> |
-
-SWML doesn't place calls. It's the script the call runs once it connects, so you place the call
-with REST or Relay and pass SWML in the `swml` field.
+For the REST example, the SDK sends SWML instructions that SignalWire runs when the destination
+answers. The cURL alternative sends the same request directly over HTTP.
 
 ### Set your credentials and caller ID
 
@@ -117,8 +108,9 @@ For this walkthrough, choose a device you can answer and replace
 
 ### Place the call
 
-Use the REST Calling API with a SignalWire Server SDK or any server-side HTTP client. For
-WebSocket calling, use a Server SDK or the Browser SDK.
+Use a SignalWire Server SDK to call the REST Calling API. The examples show Python and
+TypeScript first, followed by cURL for direct HTTP access. For WebSocket calling, use a
+Server SDK or the Browser SDK.
 
 <Tabs groupId="outbound-api">
 <Tab title="REST">
@@ -300,7 +292,7 @@ try {
 </CodeBlock>
 <CodeBlock title="JavaScript — Browser SDK">
 ```javascript
-// Install: npm install @signalwire/js@latest rxjs
+// Install: npm install @signalwire/js@4.0.0-rc.2 rxjs@7.8.2
 // Run on HTTPS or localhost with these elements in your page:
 // <audio id="remote-audio" autoplay></audio>
 // <button id="call" type="button">Call</button>
@@ -552,7 +544,7 @@ try {
 </CodeBlock>
 <CodeBlock title="JavaScript — Browser SDK">
 ```javascript
-// Install: npm install @signalwire/js@latest rxjs
+// Install: npm install @signalwire/js@4.0.0-rc.2 rxjs@7.8.2
 // Run on HTTPS or localhost with these elements in your page:
 // <p id="status">Idle</p>
 // <audio id="remote-audio" autoplay></audio>
@@ -693,7 +685,8 @@ const client = new RestClient({
 
 const swml = new SwmlBuilder()
   .ai({
-    prompt: "Welcome the caller to SignalWire. Briefly explain that SignalWire provides APIs and SDKs for voice, messaging, video, and AI. Answer basic follow-up questions. If you are unsure, direct the caller to signalwire.com.",
+    // @ts-expect-error SDK 2.0.5 types omit SWML's { text } prompt form.
+    prompt: { text: "Welcome the caller to SignalWire. Briefly explain that SignalWire provides APIs and SDKs for voice, messaging, video, and AI. Answer basic follow-up questions. If you are unsure, direct the caller to signalwire.com." },
     params: {
       static_greeting: "Hello, welcome to SignalWire! This call uses an artificial voice.",
       static_greeting_no_barge: true,
@@ -846,12 +839,22 @@ Follow the consent and calling-hour requirements in the [TCPA guide][tcpa].
 #### Leave a voicemail via REST
 
 Use [`detect_machine`][swml-detect-machine] and `switch` to choose the live or voicemail message.
+Build each message with `say()`, then pass its `main` section to `switch`, which takes lists
+of instructions for its branches.
 
 <CodeBlocks>
 <CodeBlock title="Python — REST client">
 ```python
-voicemail = "say:Hello, welcome to SignalWire! Visit signalwire.com to learn more."
-live = "say:Hello, welcome to SignalWire!"
+voicemail = (
+    SWMLBuilder(SWMLService(name="voicemail-message"))
+    .say("Hello, welcome to SignalWire! Visit signalwire.com to learn more.")
+    .build()["sections"]["main"]
+)
+live = (
+    SWMLBuilder(SWMLService(name="live-message"))
+    .say("Hello, welcome to SignalWire!")
+    .build()["sections"]["main"]
+)
 
 swml = (
     SWMLBuilder(SWMLService(name="outbound-voicemail"))
@@ -863,14 +866,10 @@ swml = (
     .switch(
         variable="detect_result",
         case={
-            "machine": [{"play": {"url": voicemail}}],
-            "human": [{"play": {"url": live}}],
+            "machine": voicemail,
+            "human": live,
         },
-        default=[{
-            "play": {
-                "url": "say:Hello, welcome to SignalWire!"
-            }
-        }],
+        default=live,
     )
     .hangup()
     .build()
@@ -886,8 +885,12 @@ print(call["id"])
 </CodeBlock>
 <CodeBlock title="TypeScript — REST client">
 ```typescript
-const voicemail = "say:Hello, welcome to SignalWire! Visit signalwire.com to learn more.";
-const live = "say:Hello, welcome to SignalWire!";
+const voicemail = new SwmlBuilder()
+  .say("Hello, welcome to SignalWire! Visit signalwire.com to learn more.")
+  .document.sections.main;
+const live = new SwmlBuilder()
+  .say("Hello, welcome to SignalWire!")
+  .document.sections.main;
 
 const swml = new SwmlBuilder()
   .detect_machine({
@@ -898,14 +901,10 @@ const swml = new SwmlBuilder()
   .switch({
     variable: "detect_result",
     case: {
-      machine: [{ play: { url: voicemail } }],
-      human: [{ play: { url: live } }],
+      machine: voicemail,
+      human: live,
     },
-    default: [{
-      play: {
-        url: "say:Hello, welcome to SignalWire!",
-      },
-    }],
+    default: live,
   })
   .hangup()
   .build();
@@ -1107,11 +1106,16 @@ Play a private message to `<YOUR_AGENT_DESTINATION>`, then connect that call to
 #### Play a whisper via REST
 
 Use `connect.confirm` to play the [whisper][call-whisper] to the agent before bridging the calls.
+Build the whisper with `say()` and pass its `main` section as the confirmation instructions.
 
 <CodeBlocks>
 <CodeBlock title="Python — REST client">
 ```python
-whisper = "say:You are about to be connected to the caller."
+whisper = (
+    SWMLBuilder(SWMLService(name="whisper-message"))
+    .say("You are about to be connected to the caller.")
+    .build()["sections"]["main"]
+)
 
 swml = (
     SWMLBuilder(SWMLService(name="outbound-whisper"))
@@ -1119,7 +1123,7 @@ swml = (
     .connect(**{
         "from": "<YOUR_CALLER_ID>",
         "to": "<YOUR_AGENT_DESTINATION>",
-        "confirm": [{"play": {"url": whisper}}],
+        "confirm": whisper,
         "confirm_timeout": 20,
     })
     .build()
@@ -1135,14 +1139,16 @@ print(call["id"])
 </CodeBlock>
 <CodeBlock title="TypeScript — REST client">
 ```typescript
-const whisper = "say:You are about to be connected to the caller.";
+const whisper = new SwmlBuilder()
+  .say("You are about to be connected to the caller.")
+  .document.sections.main;
 
 const swml = new SwmlBuilder()
   .say("Hello, welcome to SignalWire!")
   .connect({
     from: "<YOUR_CALLER_ID>",
     to: "<YOUR_AGENT_DESTINATION>",
-    confirm: [{ play: { url: whisper } }],
+    confirm: whisper,
     confirm_timeout: 20,
   })
   .build();
@@ -1498,7 +1504,8 @@ Start [`stream`][swml-stream] in the background and send status events to your w
 <CodeBlocks>
 <CodeBlock title="Python — REST client">
 ```python
-# `stream` is not yet in the builder's bundled schema, so add it as raw SWML.
+# signalwire-sdk==3.4.1 has no stream() builder method in its bundled schema.
+# Add this verb directly; use the builder for the remaining instructions.
 swml_builder = SWMLBuilder(
     SWMLService(name="outbound-stream", schema_validation=False)
 )
@@ -1524,7 +1531,8 @@ print(call["id"])
 </CodeBlock>
 <CodeBlock title="TypeScript — REST client">
 ```typescript
-// `stream` is not yet in the builder's bundled schema, so add it as raw SWML.
+// @signalwire/sdk@2.0.5 has no stream() builder method in its bundled schema.
+// Add this verb directly; use the builder for the remaining instructions.
 const swmlBuilder = new SwmlBuilder();
 swmlBuilder.setValidation(false);
 swmlBuilder.addVerb("stream", {
@@ -1703,7 +1711,7 @@ Serve the page over HTTPS or `localhost` so the browser can access the microphon
 </CodeBlock>
 <CodeBlock title="call.js">
 ```javascript
-// Install: npm install @signalwire/js@latest rxjs
+// Install: npm install @signalwire/js@4.0.0-rc.2 rxjs@7.8.2
 // Save as call.js next to the page above.
 // GET /api/guest-token is your own endpoint: it creates a guest SAT with your
 // Project API token and returns it as {"token": "..."}.
@@ -1818,27 +1826,6 @@ directory, an `Address` exposes [`defaultChannel`][address-default-channel], a r
 you don't assemble the string yourself. To pin the microphone, camera, or speaker across
 every call instead of constraining each `dial()`, use the [device management APIs][device-management].
 
-#### When local media can't be captured
-
-If the local media can't be captured, the SDK falls back to receive-only: the call connects, remote media arrives on
-`remoteStream$`, and the reason is reported on [`errors$`][call-errors] as a non-fatal
-[`MediaAccessError`][media-access-error].
-
-```javascript
-import { MediaAccessError } from "@signalwire/js";
-
-call.errors$.subscribe(({ error, fatal }) => {
-  if (error instanceof MediaAccessError && !fatal) {
-    banner.textContent = error.denied
-      ? `You joined without ${error.media}. Grant access and rejoin to send it.`
-      : `Couldn't open your ${error.media}. You're receiving only.`;
-  }
-});
-```
-
-Set [`fallbackToReceiveOnly`][media-options] to `false` to make an acquisition failure fatal
-instead.
-
 #### Attach the media to the page
 
 The call exposes `localStream$` (what the user sends) and `remoteStream$` (what the user receives).
@@ -1869,3 +1856,24 @@ use [`transfer()`][browser-transfer] instead.
 
 For receiving calls in the browser, see the [inbound calls guide][browser-inbound]; for mute, hold,
 and other in-call controls, see [call controls][browser-call-controls].
+
+#### When local media can't be captured
+
+If the local media can't be captured, the SDK falls back to receive-only: the call connects, remote media arrives on
+`remoteStream$`, and the reason is reported on [`errors$`][call-errors] as a non-fatal
+[`MediaAccessError`][media-access-error].
+
+```javascript
+import { MediaAccessError } from "@signalwire/js";
+
+call.errors$.subscribe(({ error, fatal }) => {
+  if (error instanceof MediaAccessError && !fatal) {
+    banner.textContent = error.denied
+      ? `You joined without ${error.media}. Grant access and rejoin to send it.`
+      : `Couldn't open your ${error.media}. You're receiving only.`;
+  }
+});
+```
+
+Set [`fallbackToReceiveOnly`][media-options] to `false` to make an acquisition failure fatal
+instead.
