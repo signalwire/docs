@@ -18,7 +18,7 @@ namespace SignalWireAPI.Fabric.CXMLWebhook.Addresses {
     @operationId("list_cxml_webhook_addresses")
     @summary("List cXML webhook Addresses")
     @doc("""
-      This endpoint returns a list of addresses associated with a specific cXML Webhook.
+      Returns the project-scoped resource addresses assigned to one cXML Webhook. Use these callable handles to see how calls or messages can reach the server-backed cXML handler; use [List cXML webhooks](/docs/apis/rest/cxml-webhook/list-cxml-webhooks) for the resources themselves, or the cXML Script address operation for stored cXML handlers.
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)

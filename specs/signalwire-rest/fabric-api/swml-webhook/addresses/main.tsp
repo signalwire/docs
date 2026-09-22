@@ -18,7 +18,7 @@ namespace SignalWireAPI.Fabric.SWMLWebhookAddresses {
     @operationId("list_swml_webhook_addresses")
     @summary("List SWML webhook Addresses")
     @doc("""
-      This endpoint returns a list of addresses associated with a specific SWML webhook.
+      Returns the project-scoped resource addresses assigned to one SWML Webhook. Use these callable handles to see how calls or messages can reach the server-backed SWML handler; use [List SWML webhooks](/docs/apis/rest/swml-webhook/list-swml-webhooks) for the resources themselves, or the SWML Script address operation for stored SWML handlers.
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)

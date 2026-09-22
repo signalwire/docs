@@ -19,9 +19,15 @@ namespace SignalWireAPI.Project.Tokens {
     @operationId("create_token")
     @summary("Create API token")
     @doc("""
-      Generate an API Token for a project to be used to authenticate requests within the project.
+      Creates a project API token for server-side authentication to SignalWire REST APIs, with only the permission categories supplied in the request. Use it when a backend service needs durable project credentials; client applications should receive a service-specific token such as a [Chat Token](/docs/apis/rest/chat-tokens/create-chat-token), [PubSub Token](/docs/apis/rest/pubsub/create-token), [Room Token](/docs/apis/rest/video/room-tokens/create-room-token), or [Subscriber Token](/docs/apis/rest/subscribers/tokens/create-subscriber-token) instead. The token remains usable until you delete it or remove required permissions.
+
+      The Compatibility API exposes the same project tokens through its account-scoped route. Use [Generate a new API Token](/docs/compatibility-api/rest/tokens/create-token) for that request format.
+
+      The response is the only place the token secret is returned. Store it securely; no later request, including [Update API token](/docs/apis/rest/project-tokens/update-token), can read it back.
+
+      With a project API token, the new token belongs to the authenticated project, or to one of its subprojects when `subproject_id` is given; `project_id` is ignored. With a [Personal access token](/docs/apis/authorization#personal-access-tokens), `project_id` is required and names the project the token is created for, which is how a root project created with [Create a project](/docs/apis/rest/projects/create-subproject) gets its first credential.
       
-      ${tokenPermissions<"_Management_">}
+      ${tokenOrPatPermissions<"_Management_">}
       
       #### Token Permissions
       
@@ -33,7 +39,7 @@ namespace SignalWireAPI.Project.Tokens {
     create(...CreateTokenRequest):
       | {
           @statusCode statusCode: 200;
-          @body body: TokenResponse;
+          @body body: CreateTokenResponse;
         }
       | StatusCode401
       | TokenStatusCode422
@@ -42,9 +48,11 @@ namespace SignalWireAPI.Project.Tokens {
     @operationId("update_token")
     @summary("Update API token")
     @doc("""
-      Update an API Token's name or permissions.
+      Changes the name or enabled permission categories of an existing project API token. Use it to rotate a token's responsibilities without replacing its identifier; remove permissions that the token's server-side caller no longer needs. For the account-scoped Compatibility API route, use [Update an API Token](/docs/compatibility-api/rest/tokens/update-token).
+
+      The response contains the token's `id`, `name`, and `permissions` only. The token secret is returned once, by [Create API token](/docs/apis/rest/project-tokens/create-token), and cannot be retrieved afterwards.
       
-      ${tokenPermissions<"_Management_">}
+      ${tokenOrPatPermissions<"_Management_">}
       
       #### Token Permissions
       
@@ -73,9 +81,9 @@ namespace SignalWireAPI.Project.Tokens {
     @operationId("delete_token")
     @summary("Delete API token")
     @doc("""
-      Delete an API Token. This action cannot be undone.
+      Permanently revokes and deletes a project API token. Use it when a server-side credential has been exposed, retired, or replaced; clients using Chat, PubSub, Room, or Subscriber Tokens require the corresponding service-specific token lifecycle instead. For the account-scoped Compatibility API route, use [Delete an API Token](/docs/compatibility-api/rest/tokens/delete-token).
       
-      ${tokenPermissions<"_Management_">}
+      ${tokenOrPatPermissions<"_Management_">}
       """)
     @delete
     delete(

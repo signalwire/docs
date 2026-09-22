@@ -19,8 +19,7 @@ namespace SignalWireAPI.RelayRest.ShortCodes {
     @operationId("list_short_codes")
     @summary("List short codes")
     @doc("""
-      Returns a list of your short codes. The short codes are returned sorted
-      by creation date, with the most recent appearing first.
+      Lists the messaging Short Codes connected to your SignalWire project. These leased codes can send and receive high-volume messages through their configured handlers. Standard long-code phone numbers are available through [List phone numbers](/docs/apis/rest/phone-numbers/list-phone-numbers). Results are sorted by creation date, most recent first.
       
       ${tokenPermissions<"_Numbers_">}
       """)
@@ -33,7 +32,7 @@ namespace SignalWireAPI.RelayRest.ShortCodes {
     @operationId("retrieve_short_code")
     @summary("Get short code")
     @doc("""
-      Retrieves the details of a short code.
+      Retrieves one messaging Short Code connected to your SignalWire project. Use [List short codes](/docs/apis/rest/short-codes/list-short-codes) to find Short Codes, or [Get phone number](/docs/apis/rest/phone-numbers/retrieve-phone-number) for a standard long code.
       
       ${tokenPermissions<"_Numbers_">}
       """)
@@ -47,7 +46,7 @@ namespace SignalWireAPI.RelayRest.ShortCodes {
     @operationId("update_short_code")
     @summary("Update short code")
     @doc("""
-      Updates a short code's configuration.
+      Changes how a project Short Code is identified or routes inbound messages. It can route incoming traffic to a cXML webhook, cXML Application, or Relay handler. Standard project phone numbers use [Update phone number](/docs/apis/rest/phone-numbers/update-phone-number) instead.
       
       ${tokenPermissions<"_Numbers_">}
       """)

@@ -79,6 +79,15 @@ const PHONE_NUMBERS_TAG_METADATA = #{
   },
 };
 
+const CALLER_ID_NAME_TAG = "Caller ID Name";
+const CALLER_ID_NAME_TAG_METADATA = #{
+  description: "Manage caller ID names for project-owned phone numbers.",
+  externalDocs: #{
+    url: "https://signalwire.com/docs/apis",
+    description: "Developer documentation on SignalWire REST APIs",
+  },
+};
+
 const IMPORTED_PHONE_NUMBERS_TAG = "Imported Phone Numbers";
 const IMPORTED_PHONE_NUMBERS_TAG_METADATA = #{
   description: "Import and manage phone numbers from external providers.",

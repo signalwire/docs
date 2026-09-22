@@ -2706,7 +2706,7 @@
             "properties": {
                 "prompt": {
                     "$ref": "#/$defs/AISidecarPrompt",
-                    "description": "The operator prompt that instructs the sidecar how to coach the agent. May be a plain string, a Prompt Object Model (POM), or a server-side file reference.\nSignalWire automatically adds built-in instructions for the sidecar's role, so your prompt only needs to describe the coaching behavior. When omitted, the sidecar uses a minimal default prompt, so setting one is strongly recommended."
+                    "description": "The operator prompt that instructs the sidecar how to coach the agent. May be a plain string or a Prompt Object Model (POM).\nSignalWire automatically adds built-in instructions for the sidecar's role, so your prompt only needs to describe the coaching behavior. When omitted, the sidecar uses a minimal default prompt, so setting one is strongly recommended."
                 },
                 "lang": {
                     "anyOf": [
@@ -4258,7 +4258,7 @@
                     "examples": [
                         "b3877ee3-6f3c-4985-8066-6d24e3f65e12"
                     ],
-                    "description": "Coach accepts a call SID of a call that is currently connected to an in-progress conference.\nSpecifying a call SID that does not exist or is no longer connected will result in a failure."
+                    "description": "Joins the conference in coaching mode for the participant identified by the given call SID.\nThe coach hears the whole conference, but is heard only by the coached participant; the other participants cannot hear the coach.\nThe call SID must belong to a call that is currently connected to the in-progress conference. Specifying a call SID that does not exist or is no longer connected will result in a failure."
                 },
                 "status_callback_event": {
                     "type": "string",
@@ -5445,17 +5445,33 @@
                 "enable_turn_detection": {
                     "anyOf": [
                         {
+                            "type": "string",
+                            "const": "off"
+                        },
+                        {
+                            "type": "string",
+                            "const": "both"
+                        },
+                        {
+                            "type": "string",
+                            "const": "punct_only"
+                        },
+                        {
+                            "type": "string",
+                            "const": "acoustic_only"
+                        },
+                        {
                             "type": "boolean"
                         },
                         {
                             "$ref": "#/$defs/SWMLVar"
                         }
                     ],
-                    "default": true,
+                    "default": "both",
                     "examples": [
-                        true
+                        "both"
                     ],
-                    "description": "Enables intelligent turn detection that monitors partial speech transcripts for sentence-ending\npunctuation. When detected, the system can proactively finalize the speech recognition,\nreducing latency before the AI responds. Works with `turn_detection_timeout`."
+                    "description": "How the agent recognizes that the caller has finished speaking. Two signals feed the decision:\nsentence-ending punctuation in the partial transcript, and an acoustic read of the caller's\nintonation.\n`both` uses both, so punctuation ends the turn while the acoustic signal can hold the turn open\nfor another word when the caller sounds mid-sentence, or end it when the caller trails off\nwithout punctuation.\n`punct_only` ends the turn on punctuation alone, and `acoustic_only` on the acoustic signal alone.\n`off` uses neither signal, leaving the agent to wait out `end_of_speech_timeout` silence.\n`true` is an alias for `both` and `false` for `off`, and this parameter is also accepted under the\nname `turn_detection`.\nThe `both` and `punct_only` modes are tuned by `turn_detection_timeout` and\n`turn_detection_min_length`; `acoustic_only` uses neither.\n**Default:** `both`."
                 },
                 "barge_match_string": {
                     "type": "string",
@@ -6412,6 +6428,23 @@
                     ],
                     "description": "Pass a summary of a conversation from one AI agent to another. For example, transfer a call summary between support agents in two departments."
                 },
+                "turn_detection_min_length": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "default": 0,
+                    "examples": [
+                        4
+                    ],
+                    "minimum": 0,
+                    "maximum": 1000,
+                    "description": "Minimum number of characters the transcript must contain before punctuation on its own can end\nthe caller's turn. Raise it so a back-channel the recognizer renders with a full stop — \"Uh-huh.\"\nwhile the agent is still being answered — does not end a turn the caller has not finished.\nIn `both` mode the acoustic signal overrides this: when it reads the caller as finished, the turn\nends whatever the length, so short complete replies like \"Yes.\" still work. That leaves this a\nfilter on the punctuation path alone, and it has no effect when `enable_turn_detection` is `off`\nor `acoustic_only`.\n**Default:** `0`, which lets a transcript of any length end a turn."
+                },
                 "turn_detection_timeout": {
                     "anyOf": [
                         {
@@ -6421,13 +6454,12 @@
                             "$ref": "#/$defs/SWMLVar"
                         }
                     ],
-                    "default": 250,
                     "examples": [
-                        250
+                        700
                     ],
                     "minimum": 0,
                     "maximum": 10000,
-                    "description": "Time in milliseconds to wait after detecting a potential end-of-turn before finalizing speech recognition.\nA shorter timeout results in faster response times but may cut off the user if they pause mid-sentence.\nSet to `0` to finalize immediately. Only used when `enable_turn_detection` is `true`."
+                    "description": "Time in milliseconds the agent waits after deciding the caller's turn has ended before it\nfinalizes the transcript. A partial transcript arriving inside the window cancels the decision,\nso this is a ceiling on how long a turn can hang rather than latency added to every turn. A\ncaller who has finished usually commits well inside it. Lowering it therefore doesn't make the\nagent answer faster, and values below `500` degrade transcription accuracy on words the\nrecognizer needs the extra audio to disambiguate.\nSet to `0` to use the default. Has no effect when `enable_turn_detection` is `off` or\n`acoustic_only`.\n**Default:** the value of `end_of_speech_timeout`."
                 },
                 "turn_filler_sources": {
                     "anyOf": [
@@ -6742,9 +6774,6 @@
                 },
                 {
                     "$ref": "#/$defs/AISidecarPromptPom"
-                },
-                {
-                    "$ref": "#/$defs/AISidecarPromptFile"
                 }
             ],
             "title": "AISidecarPrompt"
@@ -7275,7 +7304,7 @@
                     "description": "An array of JSON objects to define functions that can be executed during the interaction with the Bedrock AI. Default is not set.\nThe fields of this object are the six following."
                 },
                 "defaults": {
-                    "$ref": "#/$defs/SWAIGDefaults",
+                    "$ref": "#/$defs/BedrockSWAIGDefaults",
                     "description": "Default settings for all SWAIG functions. If `defaults` is not set, settings may be set in each function object. Default is not set."
                 }
             },
@@ -10372,9 +10401,41 @@
                 "web_hook_url": {
                     "type": "string",
                     "examples": [
-                        "username:password@https://example.com"
+                        "https://username:password@example.com"
                     ],
-                    "description": "Default URL to send status callbacks and reports to. Authentication can also be set in the url in the format of `username:password@url.`"
+                    "description": "Default URL to send status callbacks and reports to. Authentication can also be set in the url in the format of `username:password@url`. Credentials embedded in the URL take precedence over `web_hook_auth_user` and `web_hook_auth_password`."
+                },
+                "web_hook_auth_user": {
+                    "type": "string",
+                    "examples": [
+                        "username"
+                    ],
+                    "description": "Default username for basic auth on the function webhook, for functions that don't set their own `web_hook_auth_user`."
+                },
+                "web_hook_auth_password": {
+                    "type": "string",
+                    "examples": [
+                        "password"
+                    ],
+                    "description": "Default password for basic auth on the function webhook, for functions that don't set their own `web_hook_auth_password`."
+                },
+                "meta_data": {
+                    "type": "object",
+                    "properties": {},
+                    "unevaluatedProperties": {},
+                    "examples": [
+                        {
+                            "customer_id": "cust_123"
+                        }
+                    ],
+                    "description": "Metadata shared by every SWAIG function. A function's own `meta_data` is merged over this, so a key set in both places takes the function's value."
+                },
+                "meta_data_token": {
+                    "type": "string",
+                    "examples": [
+                        "support_desk"
+                    ],
+                    "description": "Default scoping token for `meta_data`, for functions that don't set their own `meta_data_token`."
                 }
             },
             "unevaluatedProperties": {
@@ -10471,9 +10532,23 @@
                 "url": {
                     "type": "string",
                     "examples": [
-                        "username:password@https://example.com"
+                        "https://username:password@example.com"
                     ],
-                    "description": "URL to fetch remote functions and include in your AI application. Authentication can also be set in the url in the format of `username:password@url`."
+                    "description": "URL to fetch remote functions and include in your AI application. Authentication can also be set in the url in the format of `username:password@url`. Credentials embedded in the URL take precedence over `auth_user` and `auth_password`."
+                },
+                "auth_user": {
+                    "type": "string",
+                    "examples": [
+                        "username"
+                    ],
+                    "description": "Username for basic auth on the signature request to `url`."
+                },
+                "auth_password": {
+                    "type": "string",
+                    "examples": [
+                        "password"
+                    ],
+                    "description": "Password for basic auth on the signature request to `url`."
                 },
                 "meta_data": {
                     "type": "object",
@@ -10596,25 +10671,6 @@
             },
             "title": "AISidecarPromptPom object"
         },
-        "AISidecarPromptFile": {
-            "type": "object",
-            "properties": {
-                "file": {
-                    "type": "string",
-                    "examples": [
-                        "/etc/swml/sidecar_prompts/sales.md"
-                    ],
-                    "description": "Path to a server-side file whose contents are used as the operator prompt."
-                }
-            },
-            "required": [
-                "file"
-            ],
-            "unevaluatedProperties": {
-                "not": {}
-            },
-            "title": "AISidecarPromptFile object"
-        },
         "AISidecarSWAIGDefaults": {
             "type": "object",
             "properties": {
@@ -10623,21 +10679,21 @@
                     "examples": [
                         "https://example.com/sidecar/swaig"
                     ],
-                    "description": "Default webhook URL for functions that do not set their own `web_hook_url`. Basic auth can be embedded as `username:password@url`."
+                    "description": "Default webhook URL for functions that do not set their own `web_hook_url`. Authentication can also be set in the url in the format of `username:password@url`. Credentials embedded in the URL take precedence over `web_hook_auth_user` and `web_hook_auth_password`."
                 },
                 "web_hook_auth_user": {
                     "type": "string",
                     "examples": [
-                        "user"
+                        "username"
                     ],
-                    "description": "Default basic-auth username for the function webhook."
+                    "description": "Default username for basic auth on the function webhook, for functions that don't set their own `web_hook_auth_user`."
                 },
                 "web_hook_auth_password": {
                     "type": "string",
                     "examples": [
-                        "pass"
+                        "password"
                     ],
-                    "description": "Default basic-auth password for the function webhook."
+                    "description": "Default password for basic auth on the function webhook, for functions that don't set their own `web_hook_auth_password`."
                 }
             },
             "unevaluatedProperties": {
@@ -10678,21 +10734,21 @@
                     "examples": [
                         "https://example.com/sidecar/swaig"
                     ],
-                    "description": "Webhook URL for this function. Falls back to `defaults.web_hook_url`. Basic auth can be embedded as `username:password@url`."
+                    "description": "Webhook URL for this function. Falls back to `defaults.web_hook_url`. Authentication can also be set in the url in the format of `username:password@url`. Credentials embedded in the URL take precedence over `web_hook_auth_user` and `web_hook_auth_password`."
                 },
                 "web_hook_auth_user": {
                     "type": "string",
                     "examples": [
-                        "user"
+                        "username"
                     ],
-                    "description": "Basic-auth username for this function's webhook. Falls back to `defaults.web_hook_auth_user`."
+                    "description": "Username for basic auth on this function's webhook. Falls back to `defaults.web_hook_auth_user`."
                 },
                 "web_hook_auth_password": {
                     "type": "string",
                     "examples": [
-                        "pass"
+                        "password"
                     ],
-                    "description": "Basic-auth password for this function's webhook. Falls back to `defaults.web_hook_auth_password`."
+                    "description": "Password for basic auth on this function's webhook. Falls back to `defaults.web_hook_auth_password`."
                 }
             },
             "required": [
@@ -11278,9 +11334,9 @@
                         "web_hook_url": {
                             "type": "string",
                             "examples": [
-                                "username:password:https://statuscallback.com"
+                                "https://username:password@example.com"
                             ],
-                            "description": "Function-specific URL to send status callbacks and reports to. Takes precedence over a default setting. Authentication can also be set in the url in the format of `username:password@url.`"
+                            "description": "Function-specific URL to send status callbacks and reports to. Takes precedence over a default setting. Authentication can also be set in the url in the format of `username:password@url`. Credentials embedded in the URL take precedence over `web_hook_auth_user` and `web_hook_auth_password`."
                         },
                         "function": {
                             "type": "string",
@@ -11352,9 +11408,9 @@
                         "web_hook_url": {
                             "type": "string",
                             "examples": [
-                                "username:password:https://statuscallback.com"
+                                "https://username:password@example.com"
                             ],
-                            "description": "Function-specific URL to send status callbacks and reports to. Takes precedence over a default setting. Authentication can also be set in the url in the format of `username:password@url.`"
+                            "description": "Function-specific URL to send status callbacks and reports to. Takes precedence over a default setting. Authentication can also be set in the url in the format of `username:password@url`. Credentials embedded in the URL take precedence over `web_hook_auth_user` and `web_hook_auth_password`."
                         },
                         "function": {
                             "type": "string",
@@ -11424,9 +11480,9 @@
                         "web_hook_url": {
                             "type": "string",
                             "examples": [
-                                "username:password:https://statuscallback.com"
+                                "https://username:password@example.com"
                             ],
-                            "description": "Function-specific URL to send status callbacks and reports to. Takes precedence over a default setting. Authentication can also be set in the url in the format of `username:password@url.`"
+                            "description": "Function-specific URL to send status callbacks and reports to. Takes precedence over a default setting. Authentication can also be set in the url in the format of `username:password@url`. Credentials embedded in the URL take precedence over `web_hook_auth_user` and `web_hook_auth_password`."
                         },
                         "function": {
                             "type": "string",
@@ -11496,9 +11552,9 @@
                         "web_hook_url": {
                             "type": "string",
                             "examples": [
-                                "username:password:https://statuscallback.com"
+                                "https://username:password@example.com"
                             ],
-                            "description": "Function-specific URL to send status callbacks and reports to. Takes precedence over a default setting. Authentication can also be set in the url in the format of `username:password@url.`"
+                            "description": "Function-specific URL to send status callbacks and reports to. Takes precedence over a default setting. Authentication can also be set in the url in the format of `username:password@url`. Credentials embedded in the URL take precedence over `web_hook_auth_user` and `web_hook_auth_password`."
                         },
                         "function": {
                             "type": "string",
@@ -11518,6 +11574,22 @@
                     }
                 }
             ]
+        },
+        "BedrockSWAIGDefaults": {
+            "type": "object",
+            "properties": {
+                "web_hook_url": {
+                    "type": "string",
+                    "examples": [
+                        "https://username:password@example.com"
+                    ],
+                    "description": "Default URL to send status callbacks and reports to. Authentication can also be set in the url in the format of `username:password@url`. Credentials embedded in the URL take precedence over `web_hook_auth_user` and `web_hook_auth_password`."
+                }
+            },
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "title": "defaults"
         },
         "TranscribeSummarizeAction": {
             "type": "object",
@@ -11789,9 +11861,28 @@
                 "web_hook_url": {
                     "type": "string",
                     "examples": [
-                        "username:password:https://statuscallback.com"
+                        "https://username:password@example.com"
                     ],
-                    "description": "Function-specific URL to send status callbacks and reports to. Takes precedence over a default setting. Authentication can also be set in the url in the format of `username:password@url.`"
+                    "description": "Function-specific URL to send status callbacks and reports to. Takes precedence over a default setting. Authentication can also be set in the url in the format of `username:password@url`. Credentials embedded in the URL take precedence over `web_hook_auth_user` and `web_hook_auth_password`."
+                },
+                "web_hook_auth_user": {
+                    "type": "string",
+                    "examples": [
+                        "username"
+                    ],
+                    "description": "Username for basic auth on this function's webhook. Falls back to `defaults.web_hook_auth_user`."
+                },
+                "web_hook_auth_password": {
+                    "type": "string",
+                    "examples": [
+                        "password"
+                    ],
+                    "description": "Password for basic auth on this function's webhook. Falls back to `defaults.web_hook_auth_password`."
+                },
+                "web_hook_auth_pass": {
+                    "type": "string",
+                    "description": "Password for basic auth on this function's webhook.\nDeprecated. Use `web_hook_auth_password` instead.\nThis alias is read on individual functions only. The `ai` SWAIG `defaults` object does not accept it.",
+                    "deprecated": true
                 },
                 "wait_file": {
                     "type": "string",
@@ -11935,9 +12026,28 @@
                 "web_hook_url": {
                     "type": "string",
                     "examples": [
-                        "username:password:https://statuscallback.com"
+                        "https://username:password@example.com"
                     ],
-                    "description": "Function-specific URL to send status callbacks and reports to. Takes precedence over a default setting. Authentication can also be set in the url in the format of `username:password@url.`"
+                    "description": "Function-specific URL to send status callbacks and reports to. Takes precedence over a default setting. Authentication can also be set in the url in the format of `username:password@url`. Credentials embedded in the URL take precedence over `web_hook_auth_user` and `web_hook_auth_password`."
+                },
+                "web_hook_auth_user": {
+                    "type": "string",
+                    "examples": [
+                        "username"
+                    ],
+                    "description": "Username for basic auth on this function's webhook. Falls back to `defaults.web_hook_auth_user`."
+                },
+                "web_hook_auth_password": {
+                    "type": "string",
+                    "examples": [
+                        "password"
+                    ],
+                    "description": "Password for basic auth on this function's webhook. Falls back to `defaults.web_hook_auth_password`."
+                },
+                "web_hook_auth_pass": {
+                    "type": "string",
+                    "description": "Password for basic auth on this function's webhook.\nDeprecated. Use `web_hook_auth_password` instead.\nThis alias is read on individual functions only. The `ai` SWAIG `defaults` object does not accept it.",
+                    "deprecated": true
                 },
                 "wait_file": {
                     "type": "string",
@@ -12079,9 +12189,28 @@
                 "web_hook_url": {
                     "type": "string",
                     "examples": [
-                        "username:password:https://statuscallback.com"
+                        "https://username:password@example.com"
                     ],
-                    "description": "Function-specific URL to send status callbacks and reports to. Takes precedence over a default setting. Authentication can also be set in the url in the format of `username:password@url.`"
+                    "description": "Function-specific URL to send status callbacks and reports to. Takes precedence over a default setting. Authentication can also be set in the url in the format of `username:password@url`. Credentials embedded in the URL take precedence over `web_hook_auth_user` and `web_hook_auth_password`."
+                },
+                "web_hook_auth_user": {
+                    "type": "string",
+                    "examples": [
+                        "username"
+                    ],
+                    "description": "Username for basic auth on this function's webhook. Falls back to `defaults.web_hook_auth_user`."
+                },
+                "web_hook_auth_password": {
+                    "type": "string",
+                    "examples": [
+                        "password"
+                    ],
+                    "description": "Password for basic auth on this function's webhook. Falls back to `defaults.web_hook_auth_password`."
+                },
+                "web_hook_auth_pass": {
+                    "type": "string",
+                    "description": "Password for basic auth on this function's webhook.\nDeprecated. Use `web_hook_auth_password` instead.\nThis alias is read on individual functions only. The `ai` SWAIG `defaults` object does not accept it.",
+                    "deprecated": true
                 },
                 "wait_file": {
                     "type": "string",
@@ -12223,9 +12352,28 @@
                 "web_hook_url": {
                     "type": "string",
                     "examples": [
-                        "username:password:https://statuscallback.com"
+                        "https://username:password@example.com"
                     ],
-                    "description": "Function-specific URL to send status callbacks and reports to. Takes precedence over a default setting. Authentication can also be set in the url in the format of `username:password@url.`"
+                    "description": "Function-specific URL to send status callbacks and reports to. Takes precedence over a default setting. Authentication can also be set in the url in the format of `username:password@url`. Credentials embedded in the URL take precedence over `web_hook_auth_user` and `web_hook_auth_password`."
+                },
+                "web_hook_auth_user": {
+                    "type": "string",
+                    "examples": [
+                        "username"
+                    ],
+                    "description": "Username for basic auth on this function's webhook. Falls back to `defaults.web_hook_auth_user`."
+                },
+                "web_hook_auth_password": {
+                    "type": "string",
+                    "examples": [
+                        "password"
+                    ],
+                    "description": "Password for basic auth on this function's webhook. Falls back to `defaults.web_hook_auth_password`."
+                },
+                "web_hook_auth_pass": {
+                    "type": "string",
+                    "description": "Password for basic auth on this function's webhook.\nDeprecated. Use `web_hook_auth_password` instead.\nThis alias is read on individual functions only. The `ai` SWAIG `defaults` object does not accept it.",
+                    "deprecated": true
                 },
                 "wait_file": {
                     "type": "string",

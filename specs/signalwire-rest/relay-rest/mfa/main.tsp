@@ -17,7 +17,7 @@ namespace SignalWireAPI.RelayRest.Mfa {
     @operationId("request_mfa_sms")
     @summary("Request MFA token via SMS")
     @doc("""
-      Sends a multi-factor authentication code via SMS.
+      Creates a multi-factor authentication request and sends its code to the destination by SMS. Use it when an application must verify possession of a text-capable phone number; save the returned request ID and submit the code to [Verify MFA token](/docs/apis/rest/multi-factor-authentication/verify-mfa-token). Use the voice-call operation when the recipient cannot receive SMS.
       
       ${tokenPermissions<"_Management_">}
       """)
@@ -32,7 +32,7 @@ namespace SignalWireAPI.RelayRest.Mfa {
     @operationId("request_mfa_call")
     @summary("Request MFA token via call")
     @doc("""
-      Sends a multi-factor authentication code via voice call.
+      Creates a multi-factor authentication request and delivers its code in a voice call. Use it when the destination cannot receive SMS or voice delivery is preferred; save the returned request ID and submit the code to [Verify MFA token](/docs/apis/rest/multi-factor-authentication/verify-mfa-token). Use the SMS operation for text delivery.
       
       ${tokenPermissions<"_Management_">}
       """)
@@ -47,7 +47,7 @@ namespace SignalWireAPI.RelayRest.Mfa {
     @operationId("verify_mfa_token")
     @summary("Verify MFA token")
     @doc("""
-      Verifies a multi-factor authentication code.
+      Checks a submitted code against the multi-factor authentication request identified in the path. Use it after requesting delivery by SMS or voice call and before granting the user access. The request's configured lifetime and attempt limit determine whether further verification is allowed.
       
       ${tokenPermissions<"_Management_">}
       """)

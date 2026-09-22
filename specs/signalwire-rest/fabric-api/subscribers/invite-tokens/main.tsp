@@ -21,7 +21,9 @@ namespace SignalWireAPI.Fabric.SubscriberInviteTokens {
     @operationId("create_subscriber_invite_token")
     @summary("Create Subscriber invite token")
     @doc("""
-      Creates a [Subscriber](/docs/platform/subscribers) Invite Token for use with client-side API calls. Authenticate this request with a subscriber's SAT (Subscriber Access Token), not the project level Basic Auth.
+      Creates a temporary invitation token for a guest to reach one of the authenticated [Subscriber's](/docs/platform/subscribers) resource addresses. A subscriber client calls this operation with its Subscriber Access Token (SAT), then passes the returned invitation to the guest. Invitations expire after two hours by default.
+
+      Use [Create Subscriber guest token](/docs/apis/rest/subscribers/tokens/create-subscriber-guest-token) when your server grants guest access with a project API token instead. This endpoint requires the subscriber's SAT, not project-level Basic authentication.
 
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)

@@ -18,7 +18,7 @@ namespace SignalWireAPI.Fabric.SipGateways.Addresses {
     @operationId("list_sip_gateway_addresses")
     @summary("List SIP gateway Addresses")
     @doc("""
-      Returns a paginated list of Fabric Addresses associated with the specified SIP Gateway.
+      Returns the project-scoped resource addresses assigned to one SIP Gateway. Use these callable handles to see how calls can reach the gateway and continue to its external SIP destination; use [Get SIP gateway](/docs/apis/rest/sip-gateway/get-sip-gateway) for destination and media settings, or the SIP Credential address operation for a registering device.
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)

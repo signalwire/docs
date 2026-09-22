@@ -51,6 +51,10 @@ import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join, dirname, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Logger } from './utils/logger.js';
+import {
+  fetchWithRetry as sharedFetchWithRetry,
+  runPool,
+} from './utils/md-export.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = dirname(__dirname);
@@ -63,15 +67,6 @@ const log = new Logger();
 const DEFAULT_BASE_URL = 'https://signalwire.com/docs';
 const DEFAULT_CONCURRENCY = 8;
 const MAX_CONCURRENCY = 16;
-
-const RETRY_CONFIG = {
-  maxAttempts: 3,
-  initialDelayMs: 2000,
-  backoffMultiplier: 4, // 2s -> 8s
-  timeoutMs: 30000,
-};
-
-const USER_AGENT = 'signalwire-docs-md-export-audit';
 
 // Fern components we author with; any of these surviving in an export means the
 // renderer failed to process them.
@@ -91,57 +86,17 @@ const KNOWN_COMPONENTS = [
 // Fetching
 // ============================================
 
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 /**
  * Fetch a URL with retry on network errors, 429s, and 5xx.
  * Returns { status, body }; 4xx statuses are returned (not retried) so callers
  * can record hard 404s as findings.
  */
 async function fetchWithRetry(url) {
-  let delay = RETRY_CONFIG.initialDelayMs;
-  let lastError = null;
-
-  for (let attempt = 1; attempt <= RETRY_CONFIG.maxAttempts; attempt++) {
-    try {
-      const response = await fetch(url, {
-        signal: AbortSignal.timeout(RETRY_CONFIG.timeoutMs),
-        headers: { 'User-Agent': USER_AGENT },
-      });
-
-      if (response.status === 429 || response.status >= 500) {
-        lastError = new Error(`HTTP ${response.status}`);
-      } else {
-        return { status: response.status, body: await response.text() };
-      }
-    } catch (err) {
-      lastError = err;
-    }
-
-    if (attempt < RETRY_CONFIG.maxAttempts) {
-      log.debug(`  [${attempt}/${RETRY_CONFIG.maxAttempts}] Retrying ${url} (${lastError.message})`);
-      await sleep(delay);
-      delay *= RETRY_CONFIG.backoffMultiplier;
-    }
-  }
-
-  throw lastError;
-}
-
-/**
- * Run an async worker over items with bounded concurrency.
- */
-async function runPool(items, worker, concurrency) {
-  let index = 0;
-  const runners = Array.from({ length: Math.min(concurrency, items.length) }, async () => {
-    while (index < items.length) {
-      const i = index++;
-      await worker(items[i], i);
-    }
+  return sharedFetchWithRetry(url, {
+    onRetry({ attempt, maxAttempts, error }) {
+      log.debug(`  [${attempt}/${maxAttempts}] Retrying ${url} (${error.message})`);
+    },
   });
-  await Promise.all(runners);
 }
 
 // ============================================
@@ -175,6 +130,14 @@ async function discoverPages(baseUrl) {
   const visited = new Set();
   const queue = [`${baseUrl}/llms.txt`];
 
+  // The root llms.txt is hand-maintained (fern/llms.txt) and links to production
+  // hosts. On a preview, rebase those links so the crawl still reaches every
+  // product index.
+  const rebase = (url) =>
+    baseUrl !== DEFAULT_BASE_URL && url.startsWith(DEFAULT_BASE_URL)
+      ? `${baseUrl}${url.slice(DEFAULT_BASE_URL.length)}`
+      : url;
+
   while (queue.length > 0) {
     const indexUrl = queue.shift();
     if (visited.has(indexUrl)) continue;
@@ -198,14 +161,15 @@ async function discoverPages(baseUrl) {
     let listedIndexes = 0;
 
     for (const match of body.matchAll(INDEX_LINK_RE)) {
-      const childUrl = match[1];
+      const childUrl = rebase(match[1]);
       if (!childUrl.startsWith(baseUrl)) continue;
       listedIndexes++;
       if (!visited.has(childUrl)) queue.push(childUrl);
     }
 
     for (const match of body.matchAll(PAGE_LINK_RE)) {
-      const [, title, pageUrl] = match;
+      const [, title] = match;
+      const pageUrl = rebase(match[2]);
       if (!pageUrl.startsWith(baseUrl)) continue;
       listedPages++;
       if (!pages.has(pageUrl)) {
@@ -250,6 +214,14 @@ const TERM_RE = /^\*\*`[^`\n]+`\*\*/m;
 const PARAMS_HEADING_RE = /^#{2,4}\s+\**(Properties|Parameters|Attributes|Fields|Variables|Returns)\b/im;
 const HR_RE = /^\s*---\s*$/m;
 
+/** Remove a Fern page directive blockquote when it appears before the H1. */
+function stripLeadingPageDirective(body) {
+  return body.replace(
+    /^(?:[ \t]*\n)*(?:[ \t]*>[^\n]*(?:\n|$))+(?:[ \t]*\n)*(?=[ \t]*#\s)/,
+    '',
+  );
+}
+
 /**
  * Each check receives { body, stripped } and returns a message string (finding)
  * or null (clean). Severity tiers: error affects the exit code; warn is surfaced;
@@ -260,7 +232,7 @@ const CHECKS = [
     id: 'soft-404',
     severity: 'error',
     test({ body }) {
-      return body.trimStart().startsWith('# Page Not Found')
+      return stripLeadingPageDirective(body).trimStart().startsWith('# Page Not Found')
         ? 'listed in llms.txt but the .md export is a "Page Not Found" stub'
         : null;
     },
@@ -269,9 +241,9 @@ const CHECKS = [
     id: 'empty-body',
     severity: 'error',
     test({ body }) {
-      const content = body
+      const content = stripLeadingPageDirective(body)
         .split('\n')
-        .filter((l) => !/^>\s*For a complete index/.test(l) && !/^#\s/.test(l) && l.trim() !== '')
+        .filter((l) => !/^#\s/.test(l) && l.trim() !== '')
         .join('\n');
       return content.length < 80 ? `body is nearly empty (${content.length} chars of content)` : null;
     },

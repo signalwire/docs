@@ -1,0 +1,459 @@
+---
+title: Receive WhatsApp calls
+slug: voice/whatsapp/receive-calls
+sidebar-title: Receive calls
+description: Answer your first WhatsApp call with a hosted SWML Script, then assign the number from the Dashboard or the REST API, answer from your own code with Relay, read the caller's number in an AI Agent, and find the calls in your logs.
+max-toc-depth: 3
+---
+
+[onboarding]: /docs/platform/voice/whatsapp/onboarding
+[enable-voice]: /docs/platform/voice/whatsapp/enable-voice
+[supports]: /docs/platform/voice/whatsapp#what-whatsapp-calling-supports
+[enable-voice-failures]: /docs/platform/voice/whatsapp/enable-voice#if-calling-doesnt-turn-on
+[api-credentials]: /docs/platform/your-signalwire-api-space
+[resources]: /docs/platform/resources
+[list-numbers]: /docs/apis/rest/whatsapp/list-whatsapp-numbers
+[assign-ref]: /docs/apis/rest/whatsapp-routes/assign-resource-whatsapp-number
+[voice-logs-ref]: /docs/apis/rest/voice-logs/list-voice-logs
+[swml]: /docs/swml
+[relay]: /docs/platform/glossary#relay
+[relay-application]: /docs/platform/glossary#relay-application
+[calling-api]: /docs/apis/rest/calls/call-commands
+[browser-sdk]: /docs/browser-sdk
+[relay-app-ref]: /docs/apis/rest/relay-application/create-relay-application
+[cfb]: /docs/call-flow-builder
+[ai]: /docs/platform/ai
+[video-room]: /docs/platform/glossary#video-room
+[server-sdks]: /docs/server-sdks
+[mapping-numbers]: /docs/server-sdks/guides/mapping-numbers
+[py-dynamic-config]: /docs/server-sdks/reference/python/agents/agent-base/set-dynamic-config-callback
+[ts-dynamic-config]: /docs/server-sdks/reference/typescript/agents/agent-base/set-dynamic-config-callback
+[inbound-call-webhook]: /docs/apis/rest/webhooks/inbound-call-webhook
+
+Answer the calls your customers place to your WhatsApp business number and decide what happens when
+they connect. Start by pointing the number at a SWML Script hosted on SignalWire that plays a
+greeting, then assign the number from the Dashboard or the REST API, answer from your own code with
+Relay, read the caller's number in an AI Agent, and find the calls in your logs.
+
+## Pick the right product for WhatsApp calling
+
+A WhatsApp number can't answer on its own. You attach it to the [Resource][resources] that should
+answer, and every call to the number then runs that Resource.
+
+| Function | SWML | Relay | REST Calling API | Call Flow Builder |
+|---|---|---|---|---|
+| Answer the call and play a greeting | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
+| Hold a conversation with an AI Agent | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
+| Use the caller's number in the flow, or send it to your server | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
+| Forward the caller to a phone number | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
+| Record the call | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
+| Transcribe the call live | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> |
+| Control the call by its ID from a process that didn't answer it | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> |
+
+- [SWML][swml] is the document a SWML Script or AI Agent runs when the call connects. Author it with
+  the [Server SDKs][server-sdks], and deliver it as a script hosted on SignalWire or from your own
+  server.
+- [Relay][relay] hands the call to your Relay client over a WebSocket through a
+  [Relay Application][relay-application] Resource, so your code answers and controls the call as it
+  happens.
+- [REST Calling API][calling-api] commands a call that something else answered, by its ID: record,
+  transcribe, or hand it a new SWML document. It doesn't answer inbound calls and can't place calls
+  to WhatsApp users.
+- [Call Flow Builder][cfb] is the no-code canvas for the answering flow. Attach the Call Flow it
+  produces to the number.
+
+A [Video Room][video-room] can also answer, with the caller joining by audio only. The
+[Browser SDK][browser-sdk] can't answer a WhatsApp call today, because a WhatsApp number can't be
+attached to a Subscriber. Whichever answers, you attach the number to it from the Dashboard or with
+[Assign Resource to WhatsApp number][assign-ref].
+
+## Prepare for WhatsApp calling
+
+Have these values ready:
+
+- Your Space URL, such as `<YOUR_SPACE>.signalwire.com`.
+- Your Project ID and API token from the Dashboard's [API credentials][api-credentials] page. Enable
+  the token's **Voice** permission for the Resource endpoints below and **Numbers** to list your
+  WhatsApp numbers.
+- A WhatsApp business number that shows **Registered** in your Space, from
+  [Connect a WhatsApp business number][onboarding], with calling turned on from
+  [Enable voice on a WhatsApp number][enable-voice].
+- The number's SignalWire `id`, from [List WhatsApp numbers][list-numbers].
+- A phone with WhatsApp installed that can call the business number.
+
+<Warning title="Assignment doesn't check that voice is enabled">
+Neither the Dashboard picker nor the API checks that calling is turned on. A number you assign before
+[enabling voice][enable-voice] gets a handler but still can't take calls.
+</Warning>
+
+WhatsApp calls are audio only, can't be placed on hold, and only arrive inbound. The overview's
+[What WhatsApp calling supports][supports] lists what works and what doesn't before you build.
+
+## Answer your first WhatsApp call
+
+Point the number at a SWML Script Resource stored on SignalWire that plays a greeting, then call it
+from WhatsApp. Because SignalWire hosts the script, you need no public server for this first call.
+
+<Steps>
+
+### Set your credentials and WhatsApp number
+
+Replace these values in the code samples:
+
+| Value | Replace with |
+|---|---|
+| `<YOUR_SPACE>` | Your Space's subdomain in `<YOUR_SPACE>.signalwire.com` |
+| `<YOUR_PROJECT_ID>` | Your Project ID |
+| `<YOUR_API_TOKEN>` | Your API token |
+| `<YOUR_WHATSAPP_NUMBER_ID>` | The `id` of your WhatsApp number from [List WhatsApp numbers][list-numbers] |
+| `<YOUR_RESOURCE_ID>` | The `id` in the next step's response |
+| `<YOUR_TOPIC>` | The topic you give the Relay Application in [Answer the call from your own code with Relay](#answer-the-call-from-your-own-code-with-relay) |
+
+### Create a hosted script
+
+Create a SWML Script Resource whose document plays the greeting, with cURL or a Server SDK REST
+client. The SDK clients build the document and create the Resource in one program:
+
+<CodeBlocks>
+<CodeBlock title="cURL — REST API">
+```bash
+curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/fabric/resources/swml_scripts" \
+  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "WhatsApp greeting",
+    "contents": {
+      "version": "1.0.0",
+      "sections": {
+        "main": [
+          { "play": { "url": "say:Hello, welcome to SignalWire!" } }
+        ]
+      }
+    }
+  }'
+```
+</CodeBlock>
+<CodeBlock title="Python — REST client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as whatsapp_script.py and run: python whatsapp_script.py
+import json
+
+from signalwire import SWMLBuilder, SWMLService
+from signalwire.rest import RestClient
+
+client = RestClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    host="<YOUR_SPACE>.signalwire.com",
+)
+
+swml = (
+    SWMLBuilder(SWMLService(name="whatsapp-greeting"))
+    .say("Hello, welcome to SignalWire!")
+    .build()
+)
+
+script = client.fabric.swml_scripts.create(
+    name="WhatsApp greeting",
+    contents=json.dumps(swml),
+)
+print(script["id"])
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — REST client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as whatsapp-script.mjs,
+// then run: node whatsapp-script.mjs
+import { RestClient, SwmlBuilder } from "@signalwire/sdk";
+
+const client = new RestClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  host: "<YOUR_SPACE>.signalwire.com",
+});
+
+const swml = new SwmlBuilder()
+  .say("Hello, welcome to SignalWire!")
+  .build();
+
+const script = await client.fabric.swmlScripts.create({
+  name: "WhatsApp greeting",
+  contents: JSON.stringify(swml),
+});
+console.log(script.id);
+```
+</CodeBlock>
+</CodeBlocks>
+
+The cURL request sends the document as a JSON object and the SDK clients send it as a JSON string;
+the API accepts either form. The response carries the new Resource's `id`, which the SDK programs
+print. That is your `<YOUR_RESOURCE_ID>`.
+
+<EndpointResponseSnippet endpoint="POST /api/fabric/resources/swml_scripts" />
+
+### Attach the number to the script
+
+Assign the number to the Resource as its calling handler. The Server SDKs don't cover this endpoint
+yet, so this step calls it directly. Put `<YOUR_RESOURCE_ID>` in the path, `<YOUR_WHATSAPP_NUMBER_ID>`
+as `whatsapp_number_id`, and `calling` as the handler:
+
+<EndpointRequestSnippet endpoint="POST /api/fabric/resources/{id}/whatsapp_numbers" />
+
+The response is the Address SignalWire created for the number on that Resource:
+
+<EndpointResponseSnippet endpoint="POST /api/fabric/resources/{id}/whatsapp_numbers" />
+
+### Call the number from WhatsApp
+
+Open a chat with your business in WhatsApp and tap the call button. You hear "Hello, welcome to
+SignalWire!", then the call ends.
+
+If nothing answers, list your WhatsApp numbers and read two fields on yours:
+
+<EndpointRequestSnippet endpoint="GET /api/messaging/whatsapp/numbers" />
+
+`voice_capable` is true only when calling is enabled and a handler is attached. If it is false and
+`voice_enabled` is also false, calling was never turned on or Meta refused a renewal;
+[Enable voice on a WhatsApp number][enable-voice-failures] covers both. If `voice_enabled` is true,
+check `calling_handler_resource_id` in the same response. Null means the handler never attached, or
+its Address was deleted since: repeat the attach step and check that response for errors.
+
+</Steps>
+
+## Assign the number to a handler
+
+The number can point at an [AI Agent][ai], a [Call Flow][cfb], a [SWML Script][swml], a
+[Relay Application][relay-application], or a [Video Room][video-room]. Assign it from the Dashboard or
+the REST API.
+
+### Assign the WhatsApp number via the Dashboard
+
+In your [SignalWire Dashboard](https://my.signalwire.com/resources), open the Resource you want to
+answer the call and select its **Addresses & Phone Numbers** tab. Select **+ Add**, then
+**Assign a WhatsApp Phone Number**, and select **Add** beside the number.
+
+The picker lists **Registered** WhatsApp numbers that don't already have an Address in your Space,
+whether that Address is for calling or for messaging. To point a number at a different Resource,
+delete its existing Address first.
+
+### Assign the WhatsApp number via the REST API
+
+Put the Resource's `id` in the path, and in the body pass the WhatsApp number's `id` from
+[List WhatsApp numbers][list-numbers] with `calling` as the handler:
+
+<EndpointRequestSnippet endpoint="POST /api/fabric/resources/{id}/whatsapp_numbers" />
+
+Unlike the Dashboard picker, the API accepts a number that already has a calling Address and
+re-points it at the new Resource. A WhatsApp number holds one Address at a time, though, so
+assigning a calling handler removes any messaging Address the number had. The
+[Assign Resource to WhatsApp number][assign-ref] reference lists every field and error.
+
+## Answer the call from your own code with Relay
+
+A [Relay Application][relay-application] Resource hands each call to a Relay client you run, over a
+WebSocket, so your code answers and controls the call as it happens. Create the Resource with a
+`topic`, which is the context your client subscribes to, then attach the WhatsApp number to it the
+same way as in the first call. [Create Relay application][relay-app-ref] lists every field:
+
+<EndpointRequestSnippet endpoint="POST /api/fabric/resources/relay_applications" />
+
+### Answer the WhatsApp call via Relay
+
+Start the client before you call in. It subscribes to the Relay Application's topic, answers each
+call, plays a greeting, and hangs up:
+
+<CodeBlocks>
+<CodeBlock title="Python — Relay client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as whatsapp_relay.py and run: python whatsapp_relay.py
+from signalwire.relay import RelayClient
+
+client = RelayClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    host="<YOUR_SPACE>.signalwire.com",
+    contexts=["<YOUR_TOPIC>"],
+)
+
+
+@client.on_call
+async def answer_whatsapp_call(call):
+    await call.answer()
+
+    async def hang_up_after_playback(_event):
+        if call.state != "ended":
+            await call.hangup()
+
+    await call.play([{
+        "type": "tts",
+        "params": {"text": "Hello, welcome to SignalWire!"},
+    }], on_completed=hang_up_after_playback)
+
+
+client.run()
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — Relay client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as whatsapp-relay.mjs,
+// then run: node whatsapp-relay.mjs
+import { RelayClient } from "@signalwire/sdk";
+
+const client = new RelayClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  host: "<YOUR_SPACE>.signalwire.com",
+  contexts: ["<YOUR_TOPIC>"],
+});
+
+client.onCall(async (call) => {
+  await call.answer();
+  await call.play([
+    { type: "tts", text: "Hello, welcome to SignalWire!" },
+  ], {
+    onCompleted: async () => {
+      if (call.state !== "ended") await call.hangup();
+    },
+  });
+});
+
+await client.run();
+```
+</CodeBlock>
+</CodeBlocks>
+
+Call the number from WhatsApp while the client is running. You hear the greeting, then the call
+ends. If the call rings without an answer, the number isn't attached to the Relay Application or the
+client's `contexts` doesn't match the Resource's `topic`.
+
+## Read the caller and business numbers
+
+When SignalWire runs your Resource, it hands over the call with your business number as `to` and the
+caller's number as `from`. Your business number carries a `whatsapp:` prefix. The caller's number is
+plain E.164, the phone number their WhatsApp account is registered to, so you can look a customer up
+the same way you would on an inbound phone call.
+
+For an AI Agent or SWML Script served by the [Server SDKs][server-sdks], both numbers arrive in the
+JSON body SignalWire POSTs to your server before the call starts, nested under `call`. On a WhatsApp
+call, `call.to` is `whatsapp:+15557654321` and `call.from` is `+15551234567`. The
+[inbound call webhook][inbound-call-webhook] reference documents every field of that body:
+
+<llms-ignore>
+
+<WebhookPayloadSnippet webhook="inboundCallWebhook" />
+
+</llms-ignore>
+
+<llms-only>
+
+See the [inbound call webhook reference][inbound-call-webhook] for the complete request body. This
+guide uses `call.to` and `call.from`.
+
+</llms-only>
+
+### Read the caller's number via SWML
+
+Because the prefix only appears on `to`, one agent can serve both a phone number and a WhatsApp
+number and adjust to how the call came in. Register a dynamic configuration callback with
+[`set_dynamic_config_callback`][py-dynamic-config] in Python or
+[`setDynamicConfigCallback`][ts-dynamic-config] in TypeScript. It runs once per call with the request
+body and an ephemeral copy of the agent, so the WhatsApp-specific section applies to that call only:
+
+<CodeBlocks>
+<CodeBlock title="Python — Agents">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as whatsapp_agent.py and run: python whatsapp_agent.py
+from signalwire import AgentBase
+
+agent = AgentBase(name="ada", route="/ada")
+agent.set_prompt_text("You are Ada, the dispatcher at Bayview Taxi. Help callers book a ride.")
+
+
+def configure_for_channel(query_params, body_params, headers, agent_copy):
+    call = body_params.get("call", {})
+    if call.get("to", "").startswith("whatsapp:"):
+        agent_copy.prompt_add_section(
+            "Channel",
+            body=(
+                "The caller reached Bayview Taxi from WhatsApp. Thank them for calling on WhatsApp. "
+                "Hold isn't available on this call, so never offer to place them on hold."
+            ),
+        )
+
+
+agent.set_dynamic_config_callback(configure_for_channel)
+agent.serve()
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — Agents">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// Save as whatsapp-agent.mts and run: npx tsx whatsapp-agent.mts
+import { AgentBase } from "@signalwire/sdk";
+
+const agent = new AgentBase({ name: "ada", route: "/ada" });
+agent.setPromptText("You are Ada, the dispatcher at Bayview Taxi. Help callers book a ride.");
+
+agent.setDynamicConfigCallback((queryParams, bodyParams, headers, agentCopy) => {
+  const call = (bodyParams.call ?? {}) as { to?: string };
+  if (call.to?.startsWith("whatsapp:")) {
+    agentCopy.promptAddSection("Channel", {
+      body:
+        "The caller reached Bayview Taxi from WhatsApp. Thank them for calling on WhatsApp. " +
+        "Hold isn't available on this call, so never offer to place them on hold.",
+    });
+  }
+});
+
+await agent.serve();
+```
+</CodeBlock>
+</CodeBlocks>
+
+This agent runs on your own server, so SignalWire has to reach its URL. Create a SWML Script Resource
+that uses an **External URL** pointing at the agent, as the Server SDKs'
+[Mapping Numbers][mapping-numbers] guide shows, then attach the WhatsApp number to that Resource the
+same way as in the first call above.
+
+Past that point the call is an ordinary call. Recording, transcription, and the rest of SWML work as
+they do on a phone call, with the hold exception noted above.
+
+## Find the calls in your logs
+
+### Find WhatsApp calls via the Dashboard
+
+WhatsApp calls appear alongside the rest of your voice traffic in your
+[SignalWire Dashboard](https://my.signalwire.com) under **Logs → Voice**. The **To** column shows the
+`whatsapp:`-prefixed business number, which is the quickest way to pick them out.
+
+### Find WhatsApp calls via the Voice Logs API
+
+The same records come back from the Voice Logs API. A WhatsApp call is logged as a Relay PSTN call
+whose `to` is the `whatsapp:`-prefixed business number:
+
+<EndpointRequestSnippet endpoint="GET /api/voice/logs" />
+
+<EndpointResponseSnippet endpoint="GET /api/voice/logs" example="WhatsApp call" highlight={20} />
+
+The endpoint filters by date rather than by number, so request the window you need and match `to`
+against your business number. See [List voice logs][voice-logs-ref] for the date filters and every
+field.
+
+## Next steps
+
+<CardGroup>
+<Card title="Build an AI Agent" href="/docs/platform/ai">
+  Give WhatsApp callers a conversational agent that answers in natural language.
+</Card>
+<Card title="Mapping Numbers" href="/docs/server-sdks/guides/mapping-numbers">
+  Serve an agent from your own server and point a SWML Script Resource at it.
+</Card>
+<Card title="Assign Resource to WhatsApp number" href="/docs/apis/rest/whatsapp-routes/assign-resource-whatsapp-number">
+  Every field and error of the assignment endpoint, with the Address it returns.
+</Card>
+</CardGroup>

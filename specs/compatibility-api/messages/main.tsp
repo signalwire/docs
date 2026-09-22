@@ -19,7 +19,7 @@ namespace CompatibilityAPI.Messages {
     @operationId("list_messages")
     @summary("List all Messages")
     @doc("""
-      List all messages.
+      Lists the account's messages. Each message has a SID used for delivery inspection, redaction, deletion, or media access. The SignalWire REST [Messages API](/docs/apis/rest/messages/create-message) sends and redacts JSON requests, while [Message logs](/docs/apis/rest/message-logs/list-message-logs) provide a read-only history.
       
       ${tokenPermissions<"_Messaging_">}
       """)
@@ -82,7 +82,7 @@ namespace CompatibilityAPI.Messages {
     @operationId("create_message")
     @summary("Create a Message")
     @doc("""
-      Create and send a message.
+      Sends a message through the account and creates a Message resource for tracking its delivery. Use this form-encoded route for SID-based integrations; use SignalWire REST [Send a message](/docs/apis/rest/messages/create-message) for a JSON request.
       
       ${tokenPermissions<"_Messaging_">}
       """)
@@ -100,7 +100,7 @@ namespace CompatibilityAPI.Messages {
     @operationId("retrieve_message")
     @summary("Retrieve a Message")
     @doc("""
-      Retrieve a single message.
+      Retrieves one message by SID so you can inspect its content and delivery outcome. Use [List all Messages](/docs/compatibility-api/rest/messages/list-messages) to discover SIDs, or [Get message log](/docs/apis/rest/message-logs/get-message-log) for a SignalWire REST read-only log.
       
       ${tokenPermissions<"_Messaging_">}
       """)
@@ -114,7 +114,7 @@ namespace CompatibilityAPI.Messages {
     @operationId("update_message")
     @summary("Update a Message")
     @doc("""
-      Update a message body after it has been sent. Currently, the only supported update is redacting the message by setting the body to an empty string. Messages that are still in progress (queued or initiated status) cannot be updated.
+      Redacts a sent message by replacing its body with an empty string. No other message updates are supported, and messages in `queued` or `initiated` status cannot be redacted. Use native [Redact a message](/docs/apis/rest/messages/update-message) for the JSON API.
       
       ${tokenPermissions<"_Messaging_">}
       """)
@@ -135,7 +135,7 @@ namespace CompatibilityAPI.Messages {
     @operationId("delete_message")
     @summary("Delete a Message")
     @doc("""
-      Delete a message. Messages that are still in progress (queued status) cannot be deleted.
+      Deletes a message by SID. A message still in `queued` status cannot be deleted. This removes the managed message resource; SignalWire REST Message Logs are read-only history.
       
       ${tokenPermissions<"_Messaging_">}
       """)
@@ -156,7 +156,7 @@ namespace CompatibilityAPI.Messages {
     @operationId("list_media")
     @summary("List Message Media")
     @doc("""
-      List all media for a message.
+      Lists the MMS attachments associated with one message. Each attachment is a separate media resource that can be retrieved or deleted by SID. [Fax Media](/docs/compatibility-api/rest/fax-media/list-all-fax-media) contains fax documents and is a separate collection.
       
       ${tokenPermissions<"_Messaging_">}
       """)
@@ -205,7 +205,7 @@ namespace CompatibilityAPI.Messages {
     @operationId("retrieve_media")
     @summary("Retrieve Message Media")
     @doc("""
-      Retrieve media for a message.
+      Retrieves one MMS attachment by message SID and media SID. Use [List Message Media](/docs/compatibility-api/rest/message-media/list-media) to discover media SIDs; this endpoint does not retrieve fax documents or voice recordings.
       
       ${tokenPermissions<"_Messaging_">}
       """)
@@ -223,7 +223,7 @@ namespace CompatibilityAPI.Messages {
     @operationId("delete_message_media")
     @summary("Delete Message Media")
     @doc("""
-      Delete media for a message. Media cannot be deleted if the parent message is still in progress (initiated or queued status).
+      Deletes one MMS attachment from a message. Media cannot be deleted while the parent message is in `initiated` or `queued` status. This removes the attachment without deleting the message itself.
       
       ${tokenPermissions<"_Messaging_">}
       """)

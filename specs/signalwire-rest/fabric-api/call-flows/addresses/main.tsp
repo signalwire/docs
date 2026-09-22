@@ -17,7 +17,7 @@ namespace SignalWireAPI.Fabric.CallFlow.Addresses {
     @operationId("list_call_flow_addresses")
     @summary("List call flow Addresses")
     @doc("""
-      This endpoint returns a list of addresses associated with a specific Call Flow.
+      Returns the project-scoped resource addresses assigned to one Call Flow. Use these callable handles to see how calls can reach the deployed visual flow; use [List call flows](/docs/apis/rest/call-flows/list-call-flows) for the resources themselves, or the SWML Script address operation for directly authored stored SWML.
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)

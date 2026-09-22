@@ -118,7 +118,7 @@ namespace Types.StatusCodes {
   model StatusCode422 is RestApiValidationError;
 
   // ============================================================================
-  // Compatibility API Error Format (Twilio-compatible)
+  // Compatibility API error format
   // Used by: /api/laml
   // Format: { code, message, more_info, status } (flat, no array)
   // ============================================================================

@@ -18,7 +18,7 @@ namespace CompatibilityAPI.IncomingPhoneNumbers {
     @operationId("list_incoming_phone_numbers")
     @summary("List all Incoming Phone Numbers")
     @doc("""
-      List all incoming phone numbers.
+      Lists the Incoming Phone Number resources owned by the account. These numbers can route calls, messages, and faxes through the project. Use [Available Phone Numbers](/docs/compatibility-api/rest/available-phone-numbers/list-available-phone-number-resources) to search inventory, or SignalWire REST [List phone numbers](/docs/apis/rest/phone-numbers/list-phone-numbers) for JSON requests.
       
       ${tokenPermissions<"_Numbers_">}
       """)
@@ -61,7 +61,7 @@ namespace CompatibilityAPI.IncomingPhoneNumbers {
     @operationId("create_incoming_phone_number")
     @summary("Create an Incoming Phone Number")
     @doc("""
-      Purchase and provision a new incoming phone number.
+      Purchases an available number and provisions it as an Incoming Phone Number in the account. Search first with [Available Phone Numbers](/docs/compatibility-api/rest/available-phone-numbers/list-available-phone-number-resources), or use SignalWire REST [Purchase phone number](/docs/apis/rest/phone-numbers/purchase-phone-number) for a JSON request. To register a number you already own instead of purchasing inventory, use Imported Phone Numbers.
       
       ${tokenPermissions<"_Numbers_">}
       """)
@@ -79,7 +79,7 @@ namespace CompatibilityAPI.IncomingPhoneNumbers {
     @operationId("retrieve_incoming_phone_number")
     @summary("Retrieve an incoming phone number")
     @doc("""
-      Retrieve an incoming phone number.
+      Retrieves one account-owned phone number by Incoming Phone Number SID so you can inspect how it is used in the project. Use [List all Incoming Phone Numbers](/docs/compatibility-api/rest/incoming-phone-numbers/list-incoming-phone-numbers) to discover SIDs, or native [Get phone number](/docs/apis/rest/phone-numbers/retrieve-phone-number) when working with SignalWire resource IDs.
       
       ${tokenPermissions<"_Numbers_">}
       """)
@@ -93,7 +93,7 @@ namespace CompatibilityAPI.IncomingPhoneNumbers {
     @operationId("update_incoming_phone_number")
     @summary("Update an incoming phone number")
     @doc("""
-      Update an incoming phone number.
+      Changes how an account-owned phone number is identified or routes inbound calls, messages, and faxes. Use this operation for form-encoded configuration; use SignalWire REST [Update phone number](/docs/apis/rest/phone-numbers/update-phone-number) for JSON configuration.
       
       ${tokenPermissions<"_Numbers_">}
       """)
@@ -114,7 +114,7 @@ namespace CompatibilityAPI.IncomingPhoneNumbers {
     @operationId("delete_incoming_phone_number")
     @summary("Delete an incoming phone number")
     @doc("""
-      Release an incoming phone number. The number will be removed from your account.
+      Releases an Incoming Phone Number and removes it from the account. This is for numbers the account should no longer own; changing or deleting a handler does not release the number. Native phone-number resources use [Release phone number](/docs/apis/rest/phone-numbers/release-phone-number).
       
       Note: Numbers cannot be released within a cooldown period after purchase.
       

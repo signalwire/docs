@@ -21,7 +21,11 @@ namespace SignalWireAPI.Video.RoomRecordings {
   interface RoomRecordings {
     @operationId("list_room_recordings")
     @summary("List room recordings")
-    @doc("A list of all Room Recordings.\n\n${tokenPermissions<"_Video_">}")
+    @doc("""
+      Lists recordings produced by the project's Video Rooms across sessions. Returned media links use the requested `media_ttl` lifetime. Use [List room session recordings](/docs/apis/rest/video/room-sessions/list-room-session-recordings) when you already know the Room Session.
+
+      ${tokenPermissions<"_Video_">}
+      """)
     list(...ListRoomRecordingsRequest):
       | ListRoomRecordingsResponse
       | StatusCode400
@@ -31,7 +35,11 @@ namespace SignalWireAPI.Video.RoomRecordings {
 
     @operationId("get_room_recording")
     @summary("Get room recording")
-    @doc("A detailed summary of a particular Room Recording.\n\n${tokenPermissions<"_Video_">}")
+    @doc("""
+      Retrieves one Video Room recording by ID and returns a media link with the requested lifetime. Use it when you saved a recording ID or selected one from a recording list; voice-call recordings are available through the [Recordings API](/docs/apis/rest/recordings/list-call-recordings) instead.
+
+      ${tokenPermissions<"_Video_">}
+      """)
     @route("/{id}")
     read(
       ...RoomRecordingPathID,
@@ -51,7 +59,11 @@ namespace SignalWireAPI.Video.RoomRecordings {
 
     @operationId("delete_room_recording")
     @summary("Delete room recording")
-    @doc("Delete a Room Recording.\n\n${tokenPermissions<"_Video_">}")
+    @doc("""
+      Permanently deletes one Video Room recording by ID. Use it to remove recorded room media that is no longer needed; this operation does not delete the Room or its Room Session history.
+
+      ${tokenPermissions<"_Video_">}
+      """)
     @route("/{id}")
     @delete
     delete(
@@ -68,7 +80,11 @@ namespace SignalWireAPI.Video.RoomRecordings {
 
     @operationId("list_room_recording_events")
     @summary("List room recording events")
-    @doc("A list of Events for a particular Room Recording.\n\n${tokenPermissions<"_Video_">}")
+    @doc("""
+      Lists the event timeline for one Video Room recording. Use it to audit the recording lifecycle; use [List room session events](/docs/apis/rest/video/room-sessions/list-room-session-events) for the wider session timeline.
+
+      ${tokenPermissions<"_Video_">}
+      """)
     @route("/{id}/events")
     listEvents(
       ...RoomRecordingPathID,

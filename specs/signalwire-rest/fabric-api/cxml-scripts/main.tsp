@@ -22,7 +22,7 @@ namespace SignalWireAPI.Fabric.CXMLScripts {
     @operationId("list_cxml_scripts")
     @summary("List cXML Scripts")
     @doc("""
-      A list of cXML Scripts
+      Lists the project's addressable cXML Scripts, which store calling or messaging instructions in SignalWire. These are the same scripts the Compatibility API exposes as [LamlBins](/docs/compatibility-api/rest/cxml-scripts/list-cxml-scripts), addressed there by SID. Use [cXML Webhooks](/docs/apis/rest/cxml-webhook/list-cxml-webhooks) when your server must return cXML for each request, or [SWML Scripts](/docs/apis/rest/swml-scripts/list-swml-scripts) for SWML applications.
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
@@ -35,7 +35,7 @@ namespace SignalWireAPI.Fabric.CXMLScripts {
     @operationId("get_cxml_script")
     @summary("Get cXML Script")
     @doc("""
-      Returns a cXML Script by ID
+      Retrieves one stored cXML Script by resource ID. Use it when you know the Fabric resource ID; use [List cXML Scripts](/docs/apis/rest/cxml-scripts/list-cxml-scripts) to discover IDs. Integrations built around LamlBin SIDs can use Compatibility [Retrieve a cXML Script](/docs/compatibility-api/rest/cxml-scripts/retrieve-cxml-script).
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
@@ -51,7 +51,7 @@ namespace SignalWireAPI.Fabric.CXMLScripts {
     @operationId("create_cxml_script")
     @summary("Create cXML Script")
     @doc("""
-      Creates a cXML Script
+      Creates a resource that stores cXML instructions in SignalWire for a calling or messaging handler. Use it when the cXML can be managed as a Fabric resource; use [Create cXML webhook](/docs/apis/rest/cxml-webhook/create-cxml-webhook) when your server returns cXML per request, or Compatibility [Create a cXML Script](/docs/compatibility-api/rest/cxml-scripts/create-cxml-script) for a form-encoded LamlBin request.
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
@@ -69,7 +69,7 @@ namespace SignalWireAPI.Fabric.CXMLScripts {
     @operationId("update_cxml_script")
     @summary("Update cXML Script")
     @doc("""
-      Updates a cXML Script by ID
+      Changes a stored cXML Script while preserving its Fabric resource and addresses. The change is also visible through Compatibility [Update a cXML Script](/docs/compatibility-api/rest/cxml-scripts/update-cxml-script), which manages the same script by LamlBin SID. Use [Update cXML webhook](/docs/apis/rest/cxml-webhook/update-cxml-webhook) for a server-backed handler.
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
@@ -87,7 +87,7 @@ namespace SignalWireAPI.Fabric.CXMLScripts {
     @operationId("delete_cxml_script")
     @summary("Delete cXML Script")
     @doc("""
-      Deletes a cXML Script by ID
+      Deletes a stored cXML Script resource by ID, including its addresses and corresponding Compatibility API LamlBin. Use it when the cXML should no longer be available as a Fabric handler; delete a [cXML Webhook](/docs/apis/rest/cxml-webhook/delete-cxml-webhook) separately when the handler fetches cXML from your server.
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)

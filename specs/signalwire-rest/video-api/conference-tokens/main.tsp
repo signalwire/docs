@@ -19,7 +19,11 @@ namespace SignalWireAPI.Video.ConferenceTokensByConference {
   interface ConferenceTokensByConference {
     @operationId("list_conference_tokens")
     @summary("List conference tokens")
-    @doc("List conference tokens.\n\n${tokenPermissions<"_Video_">}")
+    @doc("""
+      Lists the guest and moderator access tokens issued for one managed Video Conference. These credentials grant access to the hosted conference experience; use [Create room token](/docs/apis/rest/video/room-tokens/create-room-token) for an SDK-based Video Room instead.
+
+      ${tokenPermissions<"_Video_">}
+      """)
     list(...ConferencePathID, ...ListConferenceTokensRequest):
       | ListConferenceTokensResponse
       | StatusCode400
@@ -37,7 +41,11 @@ namespace SignalWireAPI.Video.ConferenceTokens {
   interface ConferenceTokens {
     @operationId("get_conference_token")
     @summary("Get conference token")
-    @doc("Find a conference token by ID.\n\n${tokenPermissions<"_Video_">}")
+    @doc("""
+      Retrieves one Video Conference access token by ID. Use it after listing a conference's tokens when you need one specific guest or moderator credential; Room Tokens are issued through [Create room token](/docs/apis/rest/video/room-tokens/create-room-token) instead.
+
+      ${tokenPermissions<"_Video_">}
+      """)
     @route("/{id}")
     read(...ConferenceTokenPathID):
       | ConferenceTokenResponse
@@ -48,7 +56,11 @@ namespace SignalWireAPI.Video.ConferenceTokens {
 
     @operationId("reset_conference_token")
     @summary("Reset conference token")
-    @doc("Reset a conference token by ID.\n\n${tokenPermissions<"_Video_">}")
+    @doc("""
+      Replaces a Video Conference access token identified by ID, invalidating the previous token. The role and permissions carry over, but the response contains a new token value and a new token ID, so update any stored reference to either. Use it when a guest or moderator credential has been exposed or should no longer grant access; this operation does not reset Room Tokens.
+
+      ${tokenPermissions<"_Video_">}
+      """)
     @route("/{id}/reset")
     @post
     reset(...ConferenceTokenPathID):

@@ -17,7 +17,7 @@ namespace CompatibilityAPI.Recordings {
     @operationId("list_recordings")
     @summary("List all Recordings")
     @doc("""
-      List all recordings. Results are returned as a paginated list ordered by creation date (newest first).
+      Lists saved voice recordings across the account's calls and conferences. Each recording has a SID used to retrieve or delete its media. SignalWire REST [Recordings](/docs/apis/rest/recordings/list-call-recordings) provide JSON operations, while Video [Room Recordings](/docs/apis/rest/video/room-recordings/list-room-recordings) contain video-room media. Results are ordered by creation date, newest first.
       
       ${tokenPermissions<"_Voice_">}
       """)
@@ -75,7 +75,7 @@ namespace CompatibilityAPI.Recordings {
     @operationId("retrieve_recording")
     @summary("Retrieve a Recording")
     @doc("""
-      Retrieve a single recording media or its metadata.
+      Retrieves one voice recording as audio or metadata, depending on the requested extension. Use this account-level route for saved call or conference media; Video Room recordings are separate resources.
       
       This endpoint supports two different access methods with different authentication requirements:
       
@@ -129,7 +129,7 @@ namespace CompatibilityAPI.Recordings {
     @operationId("delete_recording")
     @summary("Delete a Recording.")
     @doc("""
-      Delete recording. If the delete is successful, a 204 response, with no body, will be returned.
+      Deletes one saved voice recording by SID and returns no body on success. This removes the recording media without deleting its call or conference record. SignalWire REST recordings and Video Room recordings have separate delete operations.
       
       ${tokenPermissions<"_Voice_">}
       """)

@@ -25,6 +25,8 @@ namespace SignalWireAPI.AI.Chat {
       conversation is a series of turns addressed by an `id` you choose. A turn is one user message
       and the agent's reply, including any tool calls made along the way. One request runs one turn.
 
+      Use this endpoint from a server when a text conversation should run against an AI agent's SWML and return each turn synchronously. It is separate from the channel-based Chat service: [Chat Tokens](/docs/apis/rest/chat-tokens/create-chat-token) authorize Chat clients but do not create or advance AI conversations.
+
       ## Methods
 
       | Method | Description |
