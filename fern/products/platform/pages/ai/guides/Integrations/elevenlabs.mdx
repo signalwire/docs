@@ -31,8 +31,8 @@ both directions. Set up the direction you need, or both.
 
 - A SignalWire account with at least one phone number ([sign up here][signup])
 - An [ElevenLabs][elevenlabs] account with an agent ready to take calls
-- For calls outside your country, [international outbound dialing][international] enabled on your
-  Space
+- [International outbound dialing][international] enabled on your Space, if the agent will call
+  numbers outside your country
 
 <Warning title="Use TLS on port 5061">
 Every SIP connection between ElevenLabs and SignalWire in this guide uses TLS on port 5061. Keep
@@ -42,14 +42,14 @@ that transport on both sides. Fall back to another transport only when both plat
 ## Inbound calls to your agent
 
 ElevenLabs answers a call when the number in the SIP request matches a phone number you have
-imported there. So SignalWire bridges each inbound call to ElevenLabs with the dialed number
-intact, and ElevenLabs hands the call to the agent assigned to that number.
+imported there. The inbound script therefore passes the dialed number through unchanged, and
+ElevenLabs hands the call to the agent assigned to that number.
 
 ### Create the inbound routing script
 
 In your SignalWire Dashboard, go to [**Resources**][resources], then **Add**, **Script**, and
-**SWML Script**. Name it so you can find it again, for example `Inbound to ElevenLabs`, and paste
-this document:
+**SWML Script**. Give the script a name you will recognize later, such as `Inbound to ElevenLabs`,
+then paste this document:
 
 ```yaml title="Inbound to ElevenLabs"
 version: 1.0.0
@@ -70,14 +70,14 @@ Every call to that number now reaches ElevenLabs.
 
 ## Outbound calls from your agent
 
-For outbound calls the roles reverse. SignalWire publishes a SIP address that ElevenLabs dials, and a
-second SWML script bridges each call onto the public telephone network with your SignalWire number
-as caller ID. ElevenLabs authenticates to that SIP address with a password you set in SignalWire.
+For outbound calls, the roles reverse. SignalWire publishes a SIP address that ElevenLabs dials, and
+a second SWML script bridges each call onto the public telephone network with your SignalWire number
+as the caller ID. ElevenLabs authenticates to that SIP address with a password you set in SignalWire.
 
 ### Create the outbound routing script
 
-Go to [**Resources**][resources], then **Add**, **Script**, and **SWML Script**. Name it, for example
-`Outbound via SignalWire`, and paste this document:
+Go to [**Resources**][resources], then **Add**, **Script**, and **SWML Script**. Give the script a
+name such as `Outbound via SignalWire`, then paste this document:
 
 ```yaml title="Outbound via SignalWire" {5}
 version: 1.0.0
@@ -91,8 +91,9 @@ sections:
 
 Replace `+15551234567` with a phone number from your Space in E.164 format. That number is the
 caller ID people see when your agent calls them. The `to` expression strips the SIP wrapping from
-the destination ElevenLabs sends, leaving the bare phone number to dial. With `answer_on_bridge`
-set, SignalWire answers the leg from ElevenLabs only once the called party picks up.
+the destination that ElevenLabs sends, leaving the bare phone number to dial. With
+`answer_on_bridge` set, SignalWire answers the leg from ElevenLabs only after the called party
+picks up.
 
 ### Add a SIP address to the outbound script
 
@@ -104,21 +105,21 @@ The script needs an address ElevenLabs can dial. A [SIP address][sip-addresses-g
 3. Under **SIP URI**, pick a **Domain** and leave **URI** empty. An empty URI accepts any user
    portion, which is where the destination number arrives.
 4. Enter a **Display Name**.
-5. Under **Password**, choose **Set Password** and enter a password twice. ElevenLabs uses it for
-   digest authentication.
+5. Under **Password**, choose **Set Password** and enter a password twice. ElevenLabs uses this
+   password for digest authentication.
 6. Leave **Encryption** at its default, **Optional**, which works with any **Media Encryption**
-   choice in ElevenLabs, and select **Create**.
+   choice in ElevenLabs. Select **Create**.
 
 Copy the SIP domain the Dashboard shows. It has the form `<your-space>-<domain>.dapp.signalwire.com`,
 for example `example-space-elevenlabs.dapp.signalwire.com`, and you'll enter it in ElevenLabs next.
 
 ## Import your number in ElevenLabs
 
-ElevenLabs holds both directions on one imported phone number. The ElevenLabs side follows
-ElevenLabs' own [SIP trunking guide][elevenlabs-sip-guide], with these SignalWire values.
+ElevenLabs holds both directions on one imported phone number. For the ElevenLabs steps, follow
+ElevenLabs' own [SIP trunking guide][elevenlabs-sip-guide] and use the SignalWire values below.
 
 In the [ElevenLabs][elevenlabs] dashboard, open **Phone Numbers**, choose **Import number**, and
-select **From SIP Trunk**. Then fill in the form:
+select **From SIP Trunk**. Then fill in the form with these values:
 
 | ElevenLabs field | Value |
 |---|---|
@@ -130,55 +131,58 @@ select **From SIP Trunk**. Then fill in the form:
 | **SIP Trunk Username** | Your SignalWire number in E.164 format |
 | **SIP Trunk Password** | The password you set on the SIP address |
 
-Skip the outbound fields if you set up inbound calls only. After the import, select the number and
-choose **Assign Agent** to attach the agent that takes the calls.
+If you set up inbound calls only, skip the outbound fields. After the import, select the number and
+choose **Assign Agent** to attach the agent that will take the calls.
 
 ## Test the integration
 
-Call your SignalWire number from any phone. Your ElevenLabs agent answers within a few seconds.
+To test the inbound direction, call your SignalWire number from any phone. Your ElevenLabs agent
+answers within a few seconds.
 
-Then place a test call from ElevenLabs using the imported number. The phone you call rings with
-your SignalWire number as caller ID. Both calls appear in the SignalWire Dashboard call logs, and
-ElevenLabs shows the agent conversation for each.
+To test the outbound direction, place a call from ElevenLabs using the imported number. The phone
+you call rings and shows your SignalWire number as the caller ID.
 
-If either call fails, the sections below cover the common causes, grouped by the SIP response code
-ElevenLabs reports.
+Both calls appear in the call logs of your SignalWire Dashboard, and ElevenLabs shows the agent's
+conversation for each one. If either call fails, the troubleshooting section below lists the common
+causes, grouped by the SIP response code that ElevenLabs reports.
 
-## Troubleshoot the ElevenLabs integration
+## Troubleshooting the ElevenLabs integration
 
 ### 603 Decline as soon as the call starts
 
 SignalWire rejected the call from ElevenLabs before routing it. The usual causes are a wrong
 username or password on the trunk, an **Address** that doesn't exactly match your SIP domain, a SIP
 address that isn't attached to the outbound script, or a `from` number that isn't in your Space.
-Re-enter the credentials, compare the domain character by character, open the outbound script and
-confirm the SIP address is listed under **Addresses & Phone Numbers**, and check the `from` value.
+To fix it, re-enter the credentials and compare the domain character by character. Then open the
+outbound script, confirm that the SIP address is listed under **Addresses & Phone Numbers**, and
+check the `from` value.
 
 ### 480 Temporarily Unavailable on some calls
 
-The destination or its carrier didn't accept the call this time. Confirm the destination is a
-valid number in E.164 format, retry after a short delay, and place the same call from SignalWire
-directly with the [outbound calling guide][outbound-calling] to isolate where it fails. If it keeps
-failing, open a Support ticket with the call IDs and timestamps.
+The destination, or its carrier, didn't accept the call on this attempt. Confirm that the
+destination is a valid number in E.164 format, then retry after a short delay. To isolate where the
+call fails, place the same call directly from SignalWire by following the
+[outbound calling guide][outbound-calling]. If the call keeps failing, open a Support ticket with
+the call IDs and timestamps.
 
 ### 408 Request Timeout
 
-ElevenLabs sent the request and heard nothing back. Confirm the **Address** points at your SIP
-domain on port 5061 with TLS, check that no firewall or TLS inspection on your network sits between
-the two platforms, and verify the domain resolves.
+ElevenLabs sent the request and heard nothing back. Confirm that the **Address** points at your SIP
+domain on port 5061 over TLS, verify that the domain resolves, and check that no firewall or TLS
+inspection on your network sits between the two platforms.
 
 ### Inbound calls never reach the agent
 
-Check that the inbound script is assigned to your number under **Inbound Call Settings** and that
+Check that the inbound script is assigned to your number under **Inbound Call Settings**, and that
 the **Phone Number** you imported in ElevenLabs matches the dialed number exactly, in E.164 format.
-An agent has to be assigned to the imported number.
+Also confirm that an agent is assigned to the imported number.
 
 ### What to send Support
 
 If you open a ticket with [SignalWire Support][support], include the direction of the failing calls,
-the destination number, the SIP response code ElevenLabs shows, and two or three call IDs or exact
-timestamps with a time zone. Leave passwords out of the ticket. Support can check the configuration
-on the SignalWire side and rotate the SIP address password if needed.
+the destination number, the SIP response code that ElevenLabs shows, and two or three call IDs or
+exact timestamps with a time zone. Leave passwords out of the ticket. Support can check the
+configuration on the SignalWire side and rotate the SIP address password if needed.
 
 ## Next steps
 
