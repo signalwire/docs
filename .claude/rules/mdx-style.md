@@ -6,14 +6,14 @@ paths:
 
 # Writing style — SignalWire docs
 
-How pages should read. Mechanics: `mdx-mechanics`; components: `mdx-components`; ParamField/reference patterns: `mdx-reference-pages`; what's generated vs editable: `docs-conventions`.
+How pages should read. Mechanics: `mdx-mechanics`; components: `mdx-components`; ParamField/reference patterns: `mdx-reference-pages`; multi-surface how-to skeleton: `mdx-capability-guides`; what's generated vs editable: `docs-conventions`.
 
 ## Page types (Diátaxis) [D]
 
 Pick by asking: is the reader **learning or working**, and do they need **action or understanding**?
 
 - **Tutorial** (learning + action; get-started paths): a lesson that guarantees a working result. One path, concrete steps, visible progress early. Voice: encouraging and steady — build the reader's confidence. Keep out: options, digressions, theory.
-- **How-to guide** (working + action): starts from a goal, assumes setup. Voice: direct. Verb-first title, conditions before instructions, only meaningful choices. Keep out: re-teaching basics (link them), exhaustive edge cases.
+- **How-to guide** (working + action): starts from a goal, assumes setup. Voice: direct. Verb-first title, conditions before instructions, only meaningful choices. Keep out: re-teaching basics (link them), exhaustive edge cases. A how-to that teaches one capability across several surfaces follows the `mdx-capability-guides` skeleton.
 - **Reference** (working + lookup): austere, neutral, factual, complete, structured like the product. Keep out: persuasion, instruction beyond usage notes.
 - **Explanation** (learning + understanding): why it works this way. Voice: discursive and reflective — the one place tradeoffs, background, and opinions belong. Keep out: step-by-step procedures.
 
@@ -35,7 +35,7 @@ Tutorials and how-tos give the reader a way to confirm the result — a command 
 - No "simply/easily/just" and no "please" in instructions. [G]
 - Em-dashes are a house device, not a default connector: one earns its place on a genuine break in thought or an appositive commas would muddle. Where a comma reads the same, write the comma. Never several per paragraph. [MS][SW] Aphorisms land at 2–3 per page, max. [SW] (judgment)
 - No emoji — not in headings, tab/card titles, or prose. Say good/bad in words. [SW]
-- Terminology: "Server SDKs" (never "Agents SDK"); tokens are *created*/*issued* (never *minted*); "resource addresses" (never "Fabric addresses"); expand every acronym at first use. [SW]
+- Terminology: canonical names are "Server SDKs" (never "Agents SDK") and "resource addresses" (never "Fabric addresses"). The published glossary at `/docs/platform/glossary` (`fern/products/platform/pages/platform/core/glossary.mdx`) is the source of truth for the full set of canonical names, aliases, and historical names — check it before naming a product or entity, and record a new decision there rather than here. Tokens are *created*/*issued* (never *minted*); expand every acronym at first use. [SW]
 
 ## Accessibility and inclusive language [G][MS]
 
@@ -49,12 +49,12 @@ Tutorials and how-tos give the reader a way to confirm the result — a command 
 - Customer-facing only: no internal implementation detail (backend endpoints, transports, engine-side params). Placeholder data only — no real names, emails, or domains.
 - Examples do real work: tool call → your server → system of record → response. No knowledge-trivia bots.
 - Examples run as written: real imports, every required parameter, and only placeholders the reader can obviously fill. Verify each against the spec or SDK source — and against an actual run when the page ships a whole flow.
-- A cluster of guides shares one running example, so cross-links compound instead of restarting context. The AI guides use Bayview Taxi and its dispatcher Ada across `platform/pages/ai/overview.mdx` and `platform/pages/ai/guides/**`; adopt a cluster's existing cast when you add a page to it, and introduce a new one only for a new cluster. [SW]
+- A cluster of guides shares one running example, so cross-links compound instead of restarting context. The AI guides use Bayview Taxi and its dispatcher Ada across `platform/pages/ai/overview.mdx` and `platform/pages/ai/guides/**`, and the calling guides under `platform/pages/calling/voice/` borrow the same cast whenever a scenario has a business voice; adopt a cluster's existing cast when you add a page to it, and introduce a new one only for a new cluster. [SW]
 - Don't cite other vendors' docs as authority; never disparage anyone's product.
 
 ## Modes
 
-- **New page**: pick the type above, then mirror the best sibling page of that type; frontmatter per `mdx-mechanics`.
+- **New page**: pick the type above. A multi-surface how-to follows the `mdx-capability-guides` skeleton and its exemplar; anything else mirrors the best sibling page of that type. Frontmatter per `mdx-mechanics`.
 - **Editing**: everything you write or rewrite follows these rules; leave untouched text alone and flag its violations in your summary instead. Preserve meaning, structure, and length unless asked. "Polish" means structural first — mental model, complete example — then sentences.
 - Legacy-page tells (strip from parts you rewrite; don't sweep the rest without an explicit cleanup task): `id:`/`x-custom`/`ported_from_readme` frontmatter, "In this guide…" intros, editorial "we", Title-Case headings. [SW]
 
