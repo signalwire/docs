@@ -30,8 +30,8 @@ model RecordingBase {
   @example(2)
   duration_in_seconds: int32;
 
-  @doc("Error code if the recording failed.")
-  error_code?: string;
+  @doc("Error code if the recording failed, and `null` otherwise.")
+  error_code?: string | null;
 
   @doc("Price of the recording.")
   @example(0.05)
@@ -41,12 +41,15 @@ model RecordingBase {
   @example("USD")
   price_unit: string;
 
-  @doc("Status of the recording.")
-  @example("completed")
+  @doc("Status of the recording. Can be `finished` or `no_input`")
+  @example("finished")
   status: string;
 
-  @doc("URL of the recording file.")
-  @example("https://example.com/recording.mp3")
+  @doc("""
+    URL to the recording metadata relative to your Space. Requesting it returns this JSON
+    metadata. Adding a format suffix lets you download the media: `<url>.wav` or `<url>.mp3`.
+    """)
+  @example("/api/relay/rest/recordings/d3444402-7b43-4512-8735-9d5e1f387814")
   url: string;
 
   @doc("Indicates whether the recording is stereo.")
