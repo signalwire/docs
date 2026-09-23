@@ -11,4 +11,5 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/api/project")
+@useAuth(SignalWireBasicAuth | SignalWirePersonalAccessTokenAuth)
 namespace SignalWireAPI.Project;

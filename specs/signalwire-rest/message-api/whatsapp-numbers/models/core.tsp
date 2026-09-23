@@ -45,11 +45,11 @@ model WhatsAppNumber {
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
   whatsapp_business_id: uuid;
 
-  @doc("Whether SIP calling is enabled for this number.")
+  @doc("Whether calling is enabled for this number. Turn it on from the **SIP Calling** column of the WhatsApp Numbers tab in your Dashboard, as described in [Enable voice on a WhatsApp number](/docs/platform/voice/whatsapp/enable-voice).")
   @example(false)
   voice_enabled: boolean;
 
-  @doc("Whether this number can place and receive calls — true when a calling handler is configured and voice is enabled.")
+  @doc("Whether this number can receive calls — true when `voice_enabled` is true and a calling handler is attached. See [Receive WhatsApp calls](/docs/platform/voice/whatsapp/receive-calls).")
   @example(false)
   voice_capable: boolean;
 
