@@ -46,7 +46,7 @@ model RecordingBase {
   status: string;
 
   @doc("""
-    URL to the recording metadata relative to your Space. Requesting it returns this JSON
+    Path to the recording, relative to your Space URL. Requesting it returns this JSON
     metadata. Adding a format suffix lets you download the media: `<url>.wav` or `<url>.mp3`.
     """)
   @example("/api/relay/rest/recordings/d3444402-7b43-4512-8735-9d5e1f387814")
