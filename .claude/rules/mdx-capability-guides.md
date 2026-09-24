@@ -102,7 +102,7 @@ Canonical names come from the glossary (`/docs/platform/glossary`); the ones thi
 
 - A `<Card>` on the parent overview (`fern/products/platform/pages/calling/voice/overview.mdx` for voice), and a fix for any FAQ or stale link there that the guide now answers.
 - The `fern/llms.txt` bullet: add or repoint, description copied from the page's frontmatter.
-- Redirects in `fern/docs.yml` only when the guide consolidates existing pages.
+- Redirects in `fern/redirects.yml` only when the guide consolidates existing pages.
 - No changelog entry (documentation work). A nav yml entry only where the folder isn't folder-driven (`platform.yml` lists `pages/calling/` pages explicitly).
 
 ## Before opening the PR
