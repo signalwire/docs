@@ -69,8 +69,8 @@ max-toc-depth: 3
 Place and answer voice calls with SignalWire, and choose what happens once the call connects.
 Start by dialing your own phone from your code, or by calling your SignalWire number, and hearing
 a short announcement. Then track call progress, and build one practical call in each direction:
-a [reminder that leaves a voicemail](#send-a-reminder-call-that-leaves-a-voicemail) and a
-[business line that forwards callers or takes a message](#forward-callers-to-a-dispatcher-or-take-a-voicemail).
+a [reminder that leaves a voicemail](#example-send-a-reminder-call-that-leaves-a-voicemail) and a
+[business line that forwards callers or takes a message](#example-forward-callers-to-a-dispatcher-or-take-a-voicemail).
 
 ## Prepare for your first call
 
@@ -89,13 +89,6 @@ Have these values ready:
   [Subscriber token][subscriber-token] issued by your backend for that Subscriber. A page that
   only places calls can use a [guest token][guest-token] instead.
 
-The examples later on this page use these additional values:
-
-| Value | Replace with |
-|---|---|
-| `<YOUR_AGENT_DESTINATION>` | The phone number, in E.164 format, of the person who answers forwarded calls |
-| `<YOUR_RECORDING_STATUS_URL>` | Your public HTTPS endpoint that receives the voicemail recording |
-
 <Warning title="Trial projects and international calls are restricted">
 A [trial project][trial-mode] can dial only numbers it has purchased or verified, cannot call
 internationally, and receives calls to its phone numbers only from phone numbers it has verified.
@@ -104,14 +97,19 @@ dial any number, but needs [international dialing enabled][international] before
 another country.
 </Warning>
 
-## Make an outbound call
+## Outbound calling
+
+Your code starts an outbound call: it dials a phone, SIP endpoint, Subscriber, or Resource, and
+chooses what happens when someone answers.
+
+### Make an outbound call
 
 Dial a phone you can answer from your code and play a short announcement. To receive calls
 instead, start with [Answer an inbound call](#answer-an-inbound-call).
 
 <Steps>
 
-### Choose how to place your call
+<Step title="Choose how to place your call" id="choose-how-to-place-your-call">
 
 Choose where the call starts and how your application follows it. Server call logic and browser
 participation can work together in the same flow.
@@ -122,7 +120,9 @@ participation can work together in the same flow.
 | [Server SDK — WebSocket (Relay)](#place-the-call) | Your server makes decisions as call events arrive | Keep a Relay client running to receive events and send commands over its persistent connection. |
 | [Browser SDK](#place-the-call) | A user calls a person or Resource from your web app | Use the browser client for dialing, microphone and camera access, in-call controls, and live status updates in the page. |
 
-### Set your credentials and caller ID
+</Step>
+
+<Step title="Set your credentials and caller ID" id="set-your-credentials-and-caller-id">
 
 Replace these values in the code sample you choose:
 
@@ -134,7 +134,9 @@ Replace these values in the code sample you choose:
 | `<YOUR_CALLER_ID>` | Your caller ID number |
 | `<YOUR_SUBSCRIBER_ACCESS_TOKEN>` | A [Subscriber token][subscriber-token] created by your backend, for the Browser SDK examples |
 
-### Choose a destination
+</Step>
+
+<Step title="Choose a destination" id="choose-a-destination">
 
 A call can reach a phone, a [SIP destination][sip-credentials], a [Subscriber][subscribers], or
 another [Resource][resources] in your SignalWire Space.
@@ -150,7 +152,9 @@ another [Resource][resources] in your SignalWire Space.
 For this walkthrough, choose a device you can answer and replace
 `<YOUR_DESTINATION>` with its address.
 
-### Place the call
+</Step>
+
+<Step title="Place the call" id="place-the-call">
 
 Open the tab for the approach you chose. The server examples show Python and TypeScript first,
 followed by cURL for direct HTTP access.
@@ -387,7 +391,9 @@ callButton.onclick = async () => {
 </Tab>
 </Tabs>
 
-### Answer your test call
+</Step>
+
+<Step title="Answer your test call" id="answer-your-test-call">
 
 Answer the destination phone. With a server example, you should hear "Hello, welcome to
 SignalWire!", then the call ends. With the browser example, allow
@@ -398,18 +404,598 @@ caller ID, and that a trial project has verified the destination. If the browser
 rejects with [`CallCreateError`][call-create-error], the token's scope doesn't reach the
 destination.
 
-Continue with [call tracking](#track-the-calls-progress) or the [outbound example](#send-a-reminder-call-that-leaves-a-voicemail).
+Continue with [tracking the call](#track-an-outbound-call) or the [outbound example](#example-send-a-reminder-call-that-leaves-a-voicemail).
+
+</Step>
 
 </Steps>
 
-## Answer an inbound call
+### Track an outbound call
+
+A REST `dial` reports progress to a webhook you name in the request. Relay and the Browser SDK
+deliver call state as events on their connection. Follow the section for the approach you used
+for your first call.
+
+#### Track an outbound call via the REST Calling API
+
+Add `status_url` and `status_events` to your first request to receive call progress callbacks.
+Keep the inline `swml` announcement. The examples below place another call with notifications
+for `ringing`, `answered`, and `ended`.
+
+Before running the request, replace `<YOUR_STATUS_WEBHOOK_URL>` with a webhook endpoint
+you control that SignalWire can reach. Your endpoint receives HTTP POST requests as the call
+reaches the selected states. See the [webhooks guide][webhooks] for endpoint setup and local testing.
+`status_events` accepts `created`, `ringing`, `answered`, and `ended`; if omitted, it defaults
+to `ended`.
+
+<CodeBlocks>
+<CodeBlock title="Python — REST client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as outbound_call.py and run: python outbound_call.py
+from signalwire import SWMLBuilder, SWMLService
+from signalwire.rest import RestClient
+
+client = RestClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    host="<YOUR_SPACE>.signalwire.com",
+)
+
+swml = (
+    SWMLBuilder(SWMLService(name="outbound-call"))
+    .say("Hello, welcome to SignalWire!")
+    .build()
+)
+
+call = client.calling.dial(
+    from_="<YOUR_CALLER_ID>",
+    to="<YOUR_DESTINATION>",
+    swml=swml,
+    status_url="<YOUR_STATUS_WEBHOOK_URL>",
+    status_events=["ringing", "answered", "ended"],
+)
+print(call["id"])
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — REST client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as outbound-call.mjs,
+// then run: node outbound-call.mjs
+import { RestClient, SwmlBuilder } from "@signalwire/sdk";
+
+const client = new RestClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  host: "<YOUR_SPACE>.signalwire.com",
+});
+
+const swml = new SwmlBuilder()
+  .say("Hello, welcome to SignalWire!")
+  .build();
+
+const call = await client.calling.dial({
+  from: "<YOUR_CALLER_ID>",
+  to: "<YOUR_DESTINATION>",
+  swml,
+  status_url: "<YOUR_STATUS_WEBHOOK_URL>",
+  status_events: ["ringing", "answered", "ended"],
+});
+console.log(call.id);
+```
+</CodeBlock>
+<CodeBlock title="cURL — REST Calling API">
+```bash
+curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
+  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "command": "dial",
+    "params": {
+      "from": "<YOUR_CALLER_ID>",
+      "to": "<YOUR_DESTINATION>",
+      "swml": {
+        "version": "1.0.0",
+        "sections": {
+          "main": [
+            { "play": {"url": "say:Hello, welcome to SignalWire!"} }
+          ]
+        }
+      },
+      "status_url": "<YOUR_STATUS_WEBHOOK_URL>",
+      "status_events": ["ringing", "answered", "ended"]
+    }
+  }'
+```
+</CodeBlock>
+</CodeBlocks>
+
+This flow shows a call with `ringing`, `answered`, and `ended` status events enabled:
+
+<llms-ignore>
+
+<img src="/assets/images/img/outbound-call-lifecycle-themed.svg" alt="Your code sends a dial request with from, to, and SWML. SignalWire returns the call id with status queued and rings the destination and reports status ringing. When the person answers, SignalWire reports status answered and runs your SWML. When the call finishes, SignalWire reports status ended." />
+
+</llms-ignore>
+
+<llms-only>
+
+```mermaid
+sequenceDiagram
+    participant App as Your code
+    participant SW as SignalWire
+    participant Dest as Destination
+
+    App->>SW: dial: from, to, SWML
+    SW-->>App: call id, status queued
+    SW->>Dest: rings
+    SW-->>App: status ringing
+    Dest->>SW: answers
+    SW-->>App: status answered
+    Note over SW,Dest: Your SWML runs
+    Note over SW,Dest: Call finishes
+    SW-->>App: status ended
+```
+
+</llms-only>
+
+#### Track an outbound call via Relay
+
+Relay exposes call state through `call.on()`. Register a `calling.call.state` listener to see
+states such as `answered`, `ending`, and `ended` as they happen, with the `end_reason` once the
+call finishes. Because `dial()` returns after the destination answers, the listener on an
+outbound call observes the later states, `ending` and `ended`. The sample extends the first-run
+Relay example.
+
+<CodeBlocks>
+<CodeBlock title="Python — Relay client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as outbound_relay.py and run: python outbound_relay.py
+import asyncio
+from signalwire.relay import RelayClient
+from signalwire.relay.event import CallStateEvent
+
+client = RelayClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    host="<YOUR_SPACE>.signalwire.com",
+    contexts=["default"],
+)
+
+async def main():
+    async with client:
+        call = await client.dial(
+            devices=[[{
+                "type": "phone",
+                "params": {
+                    "from_number": "<YOUR_CALLER_ID>",
+                    "to_number": "<YOUR_DESTINATION>",
+                    "timeout": 30,
+                },
+            }]],
+        )
+        def handle_state(event: CallStateEvent):
+            print(f"State: {event.call_state}, reason: {event.end_reason}")
+
+        call.on("calling.call.state", handle_state)
+        async def hang_up_after_playback(_event):
+            if call.state != "ended":
+                await call.hangup()
+
+        await call.play([{
+            "type": "tts",
+            "params": {"text": "Hello, welcome to SignalWire!"},
+        }], on_completed=hang_up_after_playback)
+        await call.wait_for_ended()
+
+asyncio.run(main())
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — Relay client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as outbound-relay.mjs,
+// then run: node outbound-relay.mjs
+import { RelayClient } from "@signalwire/sdk";
+
+const client = new RelayClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  host: "<YOUR_SPACE>.signalwire.com",
+  contexts: ["default"],
+});
+
+await client.connect();
+
+try {
+  const call = await client.dial([[{
+    type: "phone",
+    params: {
+      from_number: "<YOUR_CALLER_ID>",
+      to_number: "<YOUR_DESTINATION>",
+      timeout: 30,
+    },
+  }]]);
+  call.on("calling.call.state", (event) => {
+    console.log(`State: ${event.params.call_state}, reason: ${event.params.end_reason ?? ""}`);
+  });
+  await call.play([
+    { type: "tts", text: "Hello, welcome to SignalWire!" },
+  ], {
+    onCompleted: async () => {
+      if (call.state !== "ended") await call.hangup();
+    },
+  });
+  await call.waitForEnded();
+} finally {
+  await client.disconnect();
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+This flow shows the commands your code sends and the events SignalWire returns over the same
+persistent connection:
+
+<llms-ignore>
+
+<img src="/assets/images/img/outbound-call-relay-lifecycle-themed.svg" alt="Your code and SignalWire share one persistent WebSocket. Your code sends calling.dial; SignalWire reports created, ringing, and answered through calling.call.state. Your code sends calling.play; SignalWire reports playing and finished through calling.call.play. Your code sends calling.end; SignalWire reports ending and ended through calling.call.state." />
+
+</llms-ignore>
+
+<llms-only>
+
+```mermaid
+sequenceDiagram
+    participant App as Your code
+    participant SW as SignalWire
+
+    Note over App,SW: One persistent WebSocket, both directions
+    App->>SW: calling.dial
+    SW-->>App: calling.call.state: created, ringing, answered
+    App->>SW: calling.play
+    SW-->>App: calling.call.play: playing, then finished
+    App->>SW: calling.end
+    SW-->>App: calling.call.state: ending, then ended
+```
+
+</llms-only>
+
+#### Track an outbound call in the browser
+
+The Browser SDK exposes each call's status on `status$`. An outbound `dial()` returns a WebRTC
+`Call` while it is `ringing`. The call then moves through `connecting` and `connected`, and
+through `disconnecting`, `disconnected`, and `destroyed` once it ends. With `disconnected`,
+`failed`, and `destroyed` treated as final, one subscription can update the page for every
+outcome.
+
+To show the status on the page, add `<p id="status">Idle</p>` to the first-run browser example's
+page. Then add the lookup below and replace the example's `status$` subscription:
+
+```javascript title="JavaScript — Browser SDK"
+const statusLine = document.querySelector("#status");
+
+// Inside callButton.onclick, after dial() resolves:
+call.status$.subscribe((status) => {
+  statusLine.textContent = `Call: ${status}`;
+  if (status === "disconnected" || status === "failed" || status === "destroyed") {
+    remoteAudio.srcObject = null;
+    hangupButton.disabled = true;
+    callButton.disabled = false;
+  }
+});
+```
+
+### Example: send a reminder call that leaves a voicemail
+
+Call a customer with a reminder, and let answering machine detection (AMD) decide what they
+hear. A person hears the reminder as soon as they answer. A voicemail system gets a message
+after its greeting and beep. Here, Bayview Taxi confirms a rider's pickup at
+`<YOUR_DESTINATION>`. The example builds on your first outbound call and keeps its credentials.
+
+<Warning title="Prerecorded and artificial-voice calls are regulated">
+Follow the consent and calling-hour requirements in the [TCPA guide][tcpa].
+</Warning>
+
+#### Send the reminder via SWML
+
+Send a REST `dial` whose SWML runs [`detect_machine`][swml-detect-machine], then `switch`es on
+`detect_result` to play the live or voicemail message. Build each message with `say()` and pass
+its `main` section to `switch`, which takes lists of instructions for its branches.
+
+<CodeBlocks>
+<CodeBlock title="Python — REST client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as outbound_reminder.py and run: python outbound_reminder.py
+from signalwire import SWMLBuilder, SWMLService
+from signalwire.rest import RestClient
+
+client = RestClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    host="<YOUR_SPACE>.signalwire.com",
+)
+
+voicemail = (
+    SWMLBuilder(SWMLService(name="voicemail-message"))
+    .say("Hi, this is Bayview Taxi with a reminder that your ride is booked for 5:30 PM today. Call us back if you need to change it.")
+    .build()["sections"]["main"]
+)
+live = (
+    SWMLBuilder(SWMLService(name="live-message"))
+    .say("Hi, this is Bayview Taxi. Your ride is booked for 5:30 PM today. See you soon!")
+    .build()["sections"]["main"]
+)
+
+swml = (
+    SWMLBuilder(SWMLService(name="outbound-reminder"))
+    .detect_machine(
+        detectors="amd",
+        detect_message_end=True,
+        timeout=30,
+    )
+    .switch(
+        variable="detect_result",
+        case={
+            "machine": voicemail,
+            "human": live,
+        },
+        default=live,
+    )
+    .hangup()
+    .build()
+)
+
+call = client.calling.dial(
+    from_="<YOUR_CALLER_ID>",
+    to="<YOUR_DESTINATION>",
+    swml=swml,
+)
+print(call["id"])
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — REST client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as outbound-reminder.mjs,
+// then run: node outbound-reminder.mjs
+import { RestClient, SwmlBuilder } from "@signalwire/sdk";
+
+const client = new RestClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  host: "<YOUR_SPACE>.signalwire.com",
+});
+
+const voicemail = new SwmlBuilder()
+  .say("Hi, this is Bayview Taxi with a reminder that your ride is booked for 5:30 PM today. Call us back if you need to change it.")
+  .document.sections.main;
+const live = new SwmlBuilder()
+  .say("Hi, this is Bayview Taxi. Your ride is booked for 5:30 PM today. See you soon!")
+  .document.sections.main;
+
+const swml = new SwmlBuilder()
+  .detect_machine({
+    detectors: "amd",
+    detect_message_end: true,
+    timeout: 30,
+  })
+  .switch({
+    variable: "detect_result",
+    case: {
+      machine: voicemail,
+      human: live,
+    },
+    default: live,
+  })
+  .hangup()
+  .build();
+
+const call = await client.calling.dial({
+  from: "<YOUR_CALLER_ID>",
+  to: "<YOUR_DESTINATION>",
+  swml,
+});
+console.log(call.id);
+```
+</CodeBlock>
+<CodeBlock title="cURL — REST Calling API">
+```bash
+curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
+  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "command": "dial",
+    "params": {
+      "from": "<YOUR_CALLER_ID>",
+      "to": "<YOUR_DESTINATION>",
+      "swml": {
+        "version": "1.0.0",
+        "sections": {
+          "main": [
+            {
+              "detect_machine": {
+                "detectors": "amd",
+                "detect_message_end": true,
+                "timeout": 30
+              }
+            },
+            {
+              "switch": {
+                "variable": "detect_result",
+                "case": {
+                  "machine": [
+                    { "play": {"url": "say:Hi, this is Bayview Taxi with a reminder that your ride is booked for 5:30 PM today. Call us back if you need to change it."} }
+                  ],
+                  "human": [
+                    { "play": {"url": "say:Hi, this is Bayview Taxi. Your ride is booked for 5:30 PM today. See you soon!"} }
+                  ]
+                },
+                "default": [
+                  { "play": {"url": "say:Hi, this is Bayview Taxi. Your ride is booked for 5:30 PM today. See you soon!"} }
+                ]
+              }
+            },
+            { "hangup": {} }
+          ]
+        }
+      }
+    }
+  }'
+```
+</CodeBlock>
+</CodeBlocks>
+
+#### Send the reminder via Relay
+
+Dial the customer, then start `call.detect()`. Play the live message after `HUMAN` or
+`UNKNOWN`, or wait for `READY`, which arrives after a machine's greeting and beep.
+
+<CodeBlocks>
+<CodeBlock title="Python — Relay client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as outbound_reminder_relay.py and run: python outbound_reminder_relay.py
+import asyncio
+from signalwire.relay import RelayClient
+from signalwire.relay.event import DetectEvent
+
+VOICEMAIL = "Hi, this is Bayview Taxi with a reminder that your ride is booked for 5:30 PM today. Call us back if you need to change it."
+LIVE = "Hi, this is Bayview Taxi. Your ride is booked for 5:30 PM today. See you soon!"
+
+client = RelayClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    host="<YOUR_SPACE>.signalwire.com",
+    contexts=["default"],
+)
+
+def outcome(event: DetectEvent) -> str:
+    return event.detect.get("params", {}).get("event", "")
+
+async def main():
+    async with client:
+        call = await client.dial(
+            devices=[[{
+                "type": "phone",
+                "params": {
+                    "from_number": "<YOUR_CALLER_ID>",
+                    "to_number": "<YOUR_DESTINATION>",
+                    "timeout": 30,
+                },
+            }]],
+        )
+        async def hang_up_after_playback(_event):
+            if call.state != "ended":
+                await call.hangup()
+
+        announced = False
+
+        async def announce(event: DetectEvent):
+            nonlocal announced
+            if announced or call.state == "ended":
+                return
+            result = outcome(event)
+            if result == "READY":
+                # The voicemail greeting and its beep have finished.
+                announced = True
+                await call.play(
+                    [{"type": "tts", "params": {"text": VOICEMAIL}}],
+                    on_completed=hang_up_after_playback,
+                )
+            elif result in ("HUMAN", "UNKNOWN"):
+                announced = True
+                await call.play(
+                    [{"type": "tts", "params": {"text": LIVE}}],
+                    on_completed=hang_up_after_playback,
+                )
+            elif result == "finished":
+                await call.hangup()
+
+        call.on("calling.call.detect", announce)
+        await call.detect({"type": "machine", "params": {"detect_message_end": True}}, timeout=30)
+        await call.wait_for_ended()
+
+asyncio.run(main())
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — Relay client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// Save as outbound-reminder-relay.mts and run: npx tsx outbound-reminder-relay.mts
+import { RelayClient, DetectEvent, RelayEvent } from "@signalwire/sdk";
+
+const VOICEMAIL = "Hi, this is Bayview Taxi with a reminder that your ride is booked for 5:30 PM today. Call us back if you need to change it.";
+const LIVE = "Hi, this is Bayview Taxi. Your ride is booked for 5:30 PM today. See you soon!";
+
+const client = new RelayClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  host: "<YOUR_SPACE>.signalwire.com",
+  contexts: ["default"],
+});
+
+function outcome(event: RelayEvent): string {
+  const detect = (event as DetectEvent).detect?.params as { event?: string } | undefined;
+  return detect?.event ?? "";
+}
+
+await client.connect();
+
+try {
+  const call = await client.dial([[{
+    type: "phone",
+    params: {
+      from_number: "<YOUR_CALLER_ID>",
+      to_number: "<YOUR_DESTINATION>",
+      timeout: 30,
+    },
+  }]]);
+  const hangUpAfterPlayback = async () => {
+    if (call.state !== "ended") await call.hangup();
+  };
+  let announced = false;
+
+  call.on("calling.call.detect", async (event) => {
+    if (announced || call.state === "ended") return;
+    const result = outcome(event);
+    if (result === "READY") {
+      // The voicemail greeting and its beep have finished.
+      announced = true;
+      await call.play([{ type: "tts", text: VOICEMAIL }], { onCompleted: hangUpAfterPlayback });
+    } else if (result === "HUMAN" || result === "UNKNOWN") {
+      announced = true;
+      await call.play([{ type: "tts", text: LIVE }], { onCompleted: hangUpAfterPlayback });
+    } else if (result === "finished") {
+      await call.hangup();
+    }
+  });
+
+  await call.detect({ type: "machine", params: { detect_message_end: true } }, { timeout: 30 });
+  await call.waitForEnded();
+} finally {
+  await client.disconnect();
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+## Inbound calling
+
+SignalWire receives an inbound call at one of your addresses and hands it to the Resource you
+assigned, which decides what the caller hears.
+
+### Answer an inbound call
 
 Create a call handler, give it an address, and call that address to test it. The SWML and Relay
 examples play a short announcement; the browser example lets you answer and speak on the call.
 
 <Steps>
 
-### Choose how to handle your call
+<Step title="Choose how to handle your call" id="choose-how-to-handle-your-call">
 
 Choose where the instructions for an incoming call run. The approaches work together: a SWML
 or Relay handler on your company number can greet the caller and forward the call to an agent
@@ -428,7 +1014,9 @@ without running a server, use Hosted SWML. Whichever you choose, the handler is 
 or a Subscriber for the Browser SDK. An [address][addresses] tells SignalWire which Resource
 receives the call.
 
-### Set your credentials
+</Step>
+
+<Step title="Set your credentials" id="set-your-credentials">
 
 Replace the values used by your chosen example. Hosted SWML needs no credentials in the document.
 
@@ -443,7 +1031,9 @@ Replace the values used by your chosen example. Hosted SWML needs no credentials
 | `<YOUR_SWML_URL>` | Your HTTP server's public URL, including its basic-auth credentials, when you assign the number in code |
 | `<YOUR_PHONE_NUMBER_ID>` | The number's ID from its Dashboard page or [List phone numbers][rest-list-numbers], when you assign the number in code |
 
-### Choose how callers reach you
+</Step>
+
+<Step title="Choose how callers reach you" id="choose-how-callers-reach-you">
 
 For this walkthrough, use your SignalWire phone number and call it from your own phone.
 If you're testing from a SIP client or another SignalWire application, choose its address type
@@ -457,7 +1047,9 @@ instead. Each works with the handlers above.
 
 You'll attach or find this address after creating the handler.
 
-### Create your call handler
+</Step>
+
+<Step title="Create your call handler" id="create-your-call-handler">
 
 Open the tab for your approach. Complete its setup, then continue to **Give the Resource an address**.
 
@@ -824,7 +1416,9 @@ See the [SWML quickstart][swml-quickstart] for more on hosted scripts.
 </Tab>
 </Tabs>
 
-### Give the Resource an address
+</Step>
+
+<Step title="Give the Resource an address" id="give-the-resource-an-address">
 
 Use the Resource you just created as the address's **call handler**. For a phone number, the
 call handler is separate from its message handler.
@@ -975,7 +1569,9 @@ your `resource_id`, and a `context`. See the [Addresses guide][addresses] for ac
 </Tab>
 </Tabs>
 
-### Place your test call
+</Step>
+
+<Step title="Place your test call" id="place-your-test-call">
 
 Call the address you assigned:
 
@@ -995,290 +1591,19 @@ Relay, check that the client is running and its `contexts` value matches the Rel
 Application's topic. If the browser page never rings, check that the address reaches the
 Subscriber the token was issued for.
 
-Continue with [call tracking](#track-the-calls-progress) or the [inbound example](#forward-callers-to-a-dispatcher-or-take-a-voicemail).
+Continue with [tracking the call](#track-an-inbound-call) or the [inbound example](#example-forward-callers-to-a-dispatcher-or-take-a-voicemail).
+
+</Step>
 
 </Steps>
 
-## Track the call's progress
+### Track an inbound call
 
-Follow what happens after you dial, or after a call arrives. An outbound REST `dial` reports
-progress to a webhook you name in the request. An inbound call served over HTTP starts with a
-request that carries the caller's details. Relay and the Browser SDK deliver call state as events
-in both directions. Follow the section for the direction and approach of your first call.
+An inbound call served over HTTP starts with a request that carries the caller's details. Relay
+and the Browser SDK deliver call state as events on their connection. Follow the section for the
+handler you used for your first call.
 
-### Track an outbound call via the REST Calling API
-
-Add `status_url` and `status_events` to your first request to receive call progress callbacks.
-Keep the inline `swml` announcement. The examples below place another call with notifications
-for `ringing`, `answered`, and `ended`.
-
-Before running the request, replace `<YOUR_STATUS_WEBHOOK_URL>` with a webhook endpoint
-you control that SignalWire can reach. Your endpoint receives HTTP POST requests as the call
-reaches the selected states. See the [webhooks guide][webhooks] for endpoint setup and local testing.
-`status_events` accepts `created`, `ringing`, `answered`, and `ended`; if omitted, it defaults
-to `ended`.
-
-<CodeBlocks>
-<CodeBlock title="Python — REST client">
-```python
-# Install: python -m pip install signalwire-sdk==3.4.1
-# Save as outbound_call.py and run: python outbound_call.py
-from signalwire import SWMLBuilder, SWMLService
-from signalwire.rest import RestClient
-
-client = RestClient(
-    project="<YOUR_PROJECT_ID>",
-    token="<YOUR_API_TOKEN>",
-    host="<YOUR_SPACE>.signalwire.com",
-)
-
-swml = (
-    SWMLBuilder(SWMLService(name="outbound-call"))
-    .say("Hello, welcome to SignalWire!")
-    .build()
-)
-
-call = client.calling.dial(
-    from_="<YOUR_CALLER_ID>",
-    to="<YOUR_DESTINATION>",
-    swml=swml,
-    status_url="<YOUR_STATUS_WEBHOOK_URL>",
-    status_events=["ringing", "answered", "ended"],
-)
-print(call["id"])
-```
-</CodeBlock>
-<CodeBlock title="TypeScript — REST client">
-```typescript
-// Install: npm install @signalwire/sdk@2.0.5
-// This sample also runs as JavaScript: save as outbound-call.mjs,
-// then run: node outbound-call.mjs
-import { RestClient, SwmlBuilder } from "@signalwire/sdk";
-
-const client = new RestClient({
-  project: "<YOUR_PROJECT_ID>",
-  token: "<YOUR_API_TOKEN>",
-  host: "<YOUR_SPACE>.signalwire.com",
-});
-
-const swml = new SwmlBuilder()
-  .say("Hello, welcome to SignalWire!")
-  .build();
-
-const call = await client.calling.dial({
-  from: "<YOUR_CALLER_ID>",
-  to: "<YOUR_DESTINATION>",
-  swml,
-  status_url: "<YOUR_STATUS_WEBHOOK_URL>",
-  status_events: ["ringing", "answered", "ended"],
-});
-console.log(call.id);
-```
-</CodeBlock>
-<CodeBlock title="cURL — REST Calling API">
-```bash
-curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
-  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "command": "dial",
-    "params": {
-      "from": "<YOUR_CALLER_ID>",
-      "to": "<YOUR_DESTINATION>",
-      "swml": {
-        "version": "1.0.0",
-        "sections": {
-          "main": [
-            { "play": {"url": "say:Hello, welcome to SignalWire!"} }
-          ]
-        }
-      },
-      "status_url": "<YOUR_STATUS_WEBHOOK_URL>",
-      "status_events": ["ringing", "answered", "ended"]
-    }
-  }'
-```
-</CodeBlock>
-</CodeBlocks>
-
-This flow shows a call with `ringing`, `answered`, and `ended` status events enabled:
-
-<llms-ignore>
-
-<img src="/assets/images/img/outbound-call-lifecycle-themed.svg" alt="Your code sends a dial request with from, to, and SWML. SignalWire returns the call id with status queued and rings the destination and reports status ringing. When the person answers, SignalWire reports status answered and runs your SWML. When the call finishes, SignalWire reports status ended." />
-
-</llms-ignore>
-
-<llms-only>
-
-```mermaid
-sequenceDiagram
-    participant App as Your code
-    participant SW as SignalWire
-    participant Dest as Destination
-
-    App->>SW: dial: from, to, SWML
-    SW-->>App: call id, status queued
-    SW->>Dest: rings
-    SW-->>App: status ringing
-    Dest->>SW: answers
-    SW-->>App: status answered
-    Note over SW,Dest: Your SWML runs
-    Note over SW,Dest: Call finishes
-    SW-->>App: status ended
-```
-
-</llms-only>
-
-### Track an outbound call via Relay
-
-Relay exposes call state through `call.on()`. Register a `calling.call.state` listener to see
-states such as `answered`, `ending`, and `ended` as they happen, with the `end_reason` once the
-call finishes. Because `dial()` returns after the destination answers, the listener on an
-outbound call observes the later states, `ending` and `ended`. The sample extends the first-run
-Relay example.
-
-<CodeBlocks>
-<CodeBlock title="Python — Relay client">
-```python
-# Install: python -m pip install signalwire-sdk==3.4.1
-# Save as outbound_relay.py and run: python outbound_relay.py
-import asyncio
-from signalwire.relay import RelayClient
-from signalwire.relay.event import CallStateEvent
-
-client = RelayClient(
-    project="<YOUR_PROJECT_ID>",
-    token="<YOUR_API_TOKEN>",
-    host="<YOUR_SPACE>.signalwire.com",
-    contexts=["default"],
-)
-
-async def main():
-    async with client:
-        call = await client.dial(
-            devices=[[{
-                "type": "phone",
-                "params": {
-                    "from_number": "<YOUR_CALLER_ID>",
-                    "to_number": "<YOUR_DESTINATION>",
-                    "timeout": 30,
-                },
-            }]],
-        )
-        def handle_state(event: CallStateEvent):
-            print(f"State: {event.call_state}, reason: {event.end_reason}")
-
-        call.on("calling.call.state", handle_state)
-        async def hang_up_after_playback(_event):
-            if call.state != "ended":
-                await call.hangup()
-
-        await call.play([{
-            "type": "tts",
-            "params": {"text": "Hello, welcome to SignalWire!"},
-        }], on_completed=hang_up_after_playback)
-        await call.wait_for_ended()
-
-asyncio.run(main())
-```
-</CodeBlock>
-<CodeBlock title="TypeScript — Relay client">
-```typescript
-// Install: npm install @signalwire/sdk@2.0.5
-// This sample also runs as JavaScript: save as outbound-relay.mjs,
-// then run: node outbound-relay.mjs
-import { RelayClient } from "@signalwire/sdk";
-
-const client = new RelayClient({
-  project: "<YOUR_PROJECT_ID>",
-  token: "<YOUR_API_TOKEN>",
-  host: "<YOUR_SPACE>.signalwire.com",
-  contexts: ["default"],
-});
-
-await client.connect();
-
-try {
-  const call = await client.dial([[{
-    type: "phone",
-    params: {
-      from_number: "<YOUR_CALLER_ID>",
-      to_number: "<YOUR_DESTINATION>",
-      timeout: 30,
-    },
-  }]]);
-  call.on("calling.call.state", (event) => {
-    console.log(`State: ${event.params.call_state}, reason: ${event.params.end_reason ?? ""}`);
-  });
-  await call.play([
-    { type: "tts", text: "Hello, welcome to SignalWire!" },
-  ], {
-    onCompleted: async () => {
-      if (call.state !== "ended") await call.hangup();
-    },
-  });
-  await call.waitForEnded();
-} finally {
-  await client.disconnect();
-}
-```
-</CodeBlock>
-</CodeBlocks>
-
-This flow shows the commands your code sends and the events SignalWire returns over the same
-persistent connection:
-
-<llms-ignore>
-
-<img src="/assets/images/img/outbound-call-relay-lifecycle-themed.svg" alt="Your code and SignalWire share one persistent WebSocket. Your code sends calling.dial; SignalWire reports created, ringing, and answered through calling.call.state. Your code sends calling.play; SignalWire reports playing and finished through calling.call.play. Your code sends calling.end; SignalWire reports ending and ended through calling.call.state." />
-
-</llms-ignore>
-
-<llms-only>
-
-```mermaid
-sequenceDiagram
-    participant App as Your code
-    participant SW as SignalWire
-
-    Note over App,SW: One persistent WebSocket, both directions
-    App->>SW: calling.dial
-    SW-->>App: calling.call.state: created, ringing, answered
-    App->>SW: calling.play
-    SW-->>App: calling.call.play: playing, then finished
-    App->>SW: calling.end
-    SW-->>App: calling.call.state: ending, then ended
-```
-
-</llms-only>
-
-### Track an outbound call in the browser
-
-The Browser SDK exposes each call's status on `status$`. An outbound `dial()` returns a WebRTC
-`Call` while it is `ringing`. The call then moves through `connecting` and `connected`, and
-through `disconnecting`, `disconnected`, and `destroyed` once it ends. With `disconnected`,
-`failed`, and `destroyed` treated as final, one subscription can update the page for every
-outcome.
-
-To show the status on the page, add `<p id="status">Idle</p>` to the first-run browser example's
-page. Then add the lookup below and replace the example's `status$` subscription:
-
-```javascript title="JavaScript — Browser SDK"
-const statusLine = document.querySelector("#status");
-
-// Inside callButton.onclick, after dial() resolves:
-call.status$.subscribe((status) => {
-  statusLine.textContent = `Call: ${status}`;
-  if (status === "disconnected" || status === "failed" || status === "destroyed") {
-    remoteAudio.srcObject = null;
-    hangupButton.disabled = true;
-    callButton.disabled = false;
-  }
-});
-```
-
-### Track an inbound call via SWML
+#### Track an inbound call via SWML
 
 When SignalWire requests SWML from your server, the POST body's `call` object carries the
 `from` and `to` addresses, the `direction`, and the `call_id`. `from` is a phone number, a SIP
@@ -1386,7 +1711,7 @@ sequenceDiagram
 
 </llms-only>
 
-### Track an inbound call via Relay
+#### Track an inbound call via Relay
 
 Register the same `calling.call.state` listener as for an outbound call. The
 [`Call`][py-relay-call] object your handler receives carries the caller in `device`, together
@@ -1503,7 +1828,7 @@ For more event handlers, see
 [Event listeners in the Relay client guide](/docs/server-sdks/guides/relay-client#event-listeners)
 and the [events reference][py-relay-events].
 
-### Track an inbound call in the browser
+#### Track an inbound call in the browser
 
 Each entry in [`incomingCalls$`][browser-session-state] is a [`Call`][browser-call] with
 `direction` set to `inbound`. Read `from` for the caller's address, `fromName` for a display
@@ -1514,312 +1839,18 @@ After the user answers, `status$` follows the same path as an outbound call. A c
 `ringing` without reaching `connected` was declined or abandoned by the caller, so the same
 subscription can dismiss the ringing UI.
 
-## Examples
-
-Each example builds on the first call in its direction. Keep the credentials, Resource, and
-address you set up there. Replace the first-run program with the example, or, for a hosted
-SWML Script, paste the example's YAML or JSON.
-
-### Send a reminder call that leaves a voicemail
-
-Call a customer with a reminder, and let answering machine detection (AMD) decide what they
-hear. A person hears the reminder as soon as they answer. A voicemail system gets a message
-after its greeting and beep. Here, Bayview Taxi confirms a rider's pickup at
-`<YOUR_DESTINATION>`.
-
-<Warning title="Prerecorded and artificial-voice calls are regulated">
-Follow the consent and calling-hour requirements in the [TCPA guide][tcpa].
-</Warning>
-
-#### Send the reminder via SWML
-
-Send a REST `dial` whose SWML runs [`detect_machine`][swml-detect-machine], then `switch`es on
-`detect_result` to play the live or voicemail message. Build each message with `say()` and pass
-its `main` section to `switch`, which takes lists of instructions for its branches.
-
-<CodeBlocks>
-<CodeBlock title="Python — REST client">
-```python
-# Install: python -m pip install signalwire-sdk==3.4.1
-# Save as outbound_reminder.py and run: python outbound_reminder.py
-from signalwire import SWMLBuilder, SWMLService
-from signalwire.rest import RestClient
-
-client = RestClient(
-    project="<YOUR_PROJECT_ID>",
-    token="<YOUR_API_TOKEN>",
-    host="<YOUR_SPACE>.signalwire.com",
-)
-
-voicemail = (
-    SWMLBuilder(SWMLService(name="voicemail-message"))
-    .say("Hi, this is Bayview Taxi with a reminder that your ride is booked for 5:30 PM today. Call us back if you need to change it.")
-    .build()["sections"]["main"]
-)
-live = (
-    SWMLBuilder(SWMLService(name="live-message"))
-    .say("Hi, this is Bayview Taxi. Your ride is booked for 5:30 PM today. See you soon!")
-    .build()["sections"]["main"]
-)
-
-swml = (
-    SWMLBuilder(SWMLService(name="outbound-reminder"))
-    .detect_machine(
-        detectors="amd",
-        detect_message_end=True,
-        timeout=30,
-    )
-    .switch(
-        variable="detect_result",
-        case={
-            "machine": voicemail,
-            "human": live,
-        },
-        default=live,
-    )
-    .hangup()
-    .build()
-)
-
-call = client.calling.dial(
-    from_="<YOUR_CALLER_ID>",
-    to="<YOUR_DESTINATION>",
-    swml=swml,
-)
-print(call["id"])
-```
-</CodeBlock>
-<CodeBlock title="TypeScript — REST client">
-```typescript
-// Install: npm install @signalwire/sdk@2.0.5
-// This sample also runs as JavaScript: save as outbound-reminder.mjs,
-// then run: node outbound-reminder.mjs
-import { RestClient, SwmlBuilder } from "@signalwire/sdk";
-
-const client = new RestClient({
-  project: "<YOUR_PROJECT_ID>",
-  token: "<YOUR_API_TOKEN>",
-  host: "<YOUR_SPACE>.signalwire.com",
-});
-
-const voicemail = new SwmlBuilder()
-  .say("Hi, this is Bayview Taxi with a reminder that your ride is booked for 5:30 PM today. Call us back if you need to change it.")
-  .document.sections.main;
-const live = new SwmlBuilder()
-  .say("Hi, this is Bayview Taxi. Your ride is booked for 5:30 PM today. See you soon!")
-  .document.sections.main;
-
-const swml = new SwmlBuilder()
-  .detect_machine({
-    detectors: "amd",
-    detect_message_end: true,
-    timeout: 30,
-  })
-  .switch({
-    variable: "detect_result",
-    case: {
-      machine: voicemail,
-      human: live,
-    },
-    default: live,
-  })
-  .hangup()
-  .build();
-
-const call = await client.calling.dial({
-  from: "<YOUR_CALLER_ID>",
-  to: "<YOUR_DESTINATION>",
-  swml,
-});
-console.log(call.id);
-```
-</CodeBlock>
-<CodeBlock title="cURL — REST Calling API">
-```bash
-curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
-  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "command": "dial",
-    "params": {
-      "from": "<YOUR_CALLER_ID>",
-      "to": "<YOUR_DESTINATION>",
-      "swml": {
-        "version": "1.0.0",
-        "sections": {
-          "main": [
-            {
-              "detect_machine": {
-                "detectors": "amd",
-                "detect_message_end": true,
-                "timeout": 30
-              }
-            },
-            {
-              "switch": {
-                "variable": "detect_result",
-                "case": {
-                  "machine": [
-                    { "play": {"url": "say:Hi, this is Bayview Taxi with a reminder that your ride is booked for 5:30 PM today. Call us back if you need to change it."} }
-                  ],
-                  "human": [
-                    { "play": {"url": "say:Hi, this is Bayview Taxi. Your ride is booked for 5:30 PM today. See you soon!"} }
-                  ]
-                },
-                "default": [
-                  { "play": {"url": "say:Hi, this is Bayview Taxi. Your ride is booked for 5:30 PM today. See you soon!"} }
-                ]
-              }
-            },
-            { "hangup": {} }
-          ]
-        }
-      }
-    }
-  }'
-```
-</CodeBlock>
-</CodeBlocks>
-
-#### Send the reminder via Relay
-
-Dial the customer, then start `call.detect()`. Play the live message after `HUMAN` or
-`UNKNOWN`, or wait for `READY`, which arrives after a machine's greeting and beep.
-
-<CodeBlocks>
-<CodeBlock title="Python — Relay client">
-```python
-# Install: python -m pip install signalwire-sdk==3.4.1
-# Save as outbound_reminder_relay.py and run: python outbound_reminder_relay.py
-import asyncio
-from signalwire.relay import RelayClient
-from signalwire.relay.event import DetectEvent
-
-VOICEMAIL = "Hi, this is Bayview Taxi with a reminder that your ride is booked for 5:30 PM today. Call us back if you need to change it."
-LIVE = "Hi, this is Bayview Taxi. Your ride is booked for 5:30 PM today. See you soon!"
-
-client = RelayClient(
-    project="<YOUR_PROJECT_ID>",
-    token="<YOUR_API_TOKEN>",
-    host="<YOUR_SPACE>.signalwire.com",
-    contexts=["default"],
-)
-
-def outcome(event: DetectEvent) -> str:
-    return event.detect.get("params", {}).get("event", "")
-
-async def main():
-    async with client:
-        call = await client.dial(
-            devices=[[{
-                "type": "phone",
-                "params": {
-                    "from_number": "<YOUR_CALLER_ID>",
-                    "to_number": "<YOUR_DESTINATION>",
-                    "timeout": 30,
-                },
-            }]],
-        )
-        async def hang_up_after_playback(_event):
-            if call.state != "ended":
-                await call.hangup()
-
-        announced = False
-
-        async def announce(event: DetectEvent):
-            nonlocal announced
-            if announced or call.state == "ended":
-                return
-            result = outcome(event)
-            if result == "READY":
-                # The voicemail greeting and its beep have finished.
-                announced = True
-                await call.play(
-                    [{"type": "tts", "params": {"text": VOICEMAIL}}],
-                    on_completed=hang_up_after_playback,
-                )
-            elif result in ("HUMAN", "UNKNOWN"):
-                announced = True
-                await call.play(
-                    [{"type": "tts", "params": {"text": LIVE}}],
-                    on_completed=hang_up_after_playback,
-                )
-            elif result == "finished":
-                await call.hangup()
-
-        call.on("calling.call.detect", announce)
-        await call.detect({"type": "machine", "params": {"detect_message_end": True}}, timeout=30)
-        await call.wait_for_ended()
-
-asyncio.run(main())
-```
-</CodeBlock>
-<CodeBlock title="TypeScript — Relay client">
-```typescript
-// Install: npm install @signalwire/sdk@2.0.5
-// Save as outbound-reminder-relay.mts and run: npx tsx outbound-reminder-relay.mts
-import { RelayClient, DetectEvent, RelayEvent } from "@signalwire/sdk";
-
-const VOICEMAIL = "Hi, this is Bayview Taxi with a reminder that your ride is booked for 5:30 PM today. Call us back if you need to change it.";
-const LIVE = "Hi, this is Bayview Taxi. Your ride is booked for 5:30 PM today. See you soon!";
-
-const client = new RelayClient({
-  project: "<YOUR_PROJECT_ID>",
-  token: "<YOUR_API_TOKEN>",
-  host: "<YOUR_SPACE>.signalwire.com",
-  contexts: ["default"],
-});
-
-function outcome(event: RelayEvent): string {
-  const detect = (event as DetectEvent).detect?.params as { event?: string } | undefined;
-  return detect?.event ?? "";
-}
-
-await client.connect();
-
-try {
-  const call = await client.dial([[{
-    type: "phone",
-    params: {
-      from_number: "<YOUR_CALLER_ID>",
-      to_number: "<YOUR_DESTINATION>",
-      timeout: 30,
-    },
-  }]]);
-  const hangUpAfterPlayback = async () => {
-    if (call.state !== "ended") await call.hangup();
-  };
-  let announced = false;
-
-  call.on("calling.call.detect", async (event) => {
-    if (announced || call.state === "ended") return;
-    const result = outcome(event);
-    if (result === "READY") {
-      // The voicemail greeting and its beep have finished.
-      announced = true;
-      await call.play([{ type: "tts", text: VOICEMAIL }], { onCompleted: hangUpAfterPlayback });
-    } else if (result === "HUMAN" || result === "UNKNOWN") {
-      announced = true;
-      await call.play([{ type: "tts", text: LIVE }], { onCompleted: hangUpAfterPlayback });
-    } else if (result === "finished") {
-      await call.hangup();
-    }
-  });
-
-  await call.detect({ type: "machine", params: { detect_message_end: true } }, { timeout: 30 });
-  await call.waitForEnded();
-} finally {
-  await client.disconnect();
-}
-```
-</CodeBlock>
-</CodeBlocks>
-
-### Forward callers to a dispatcher, or take a voicemail
+### Example: forward callers to a dispatcher, or take a voicemail
 
 Greet callers on your business number, ring a person, and record a message if nobody picks up.
-Here, Bayview Taxi forwards callers to a dispatcher at `<YOUR_AGENT_DESTINATION>`. Keep the ring
-timeout shorter than that phone's own voicemail, or its voicemail answers first.
+The example replaces your first-run handler and keeps its Resource and address. For a hosted
+SWML Script, paste its YAML or JSON.
+Here, Bayview Taxi forwards callers to a dispatcher. Keep the ring timeout shorter than the
+dispatcher phone's own voicemail, or its voicemail answers first.
+
+| Value | Replace with |
+|---|---|
+| `<YOUR_AGENT_DESTINATION>` | The dispatcher's phone number, in E.164 format |
+| `<YOUR_RECORDING_STATUS_URL>` | Your public HTTPS endpoint that receives the voicemail recording |
 
 <Warning title="Recording consent is your responsibility">
 Confirm which parties must consent and announce the recording when required.
