@@ -150,8 +150,9 @@ model ConnectDeviceBase {
   call_state_url?: url;
 
   @doc("""
-    SWML to execute when the call leaves a queue it was connected to. Only applies when `to`
-    starts with `queue:`. When omitted, the call hangs up.
+    SWML to execute on this call after its bridge with the queued call ends. Only applies when
+    `to` starts with `queue:`. When omitted, the call hangs up when the bridge ends. Either way,
+    the script does not continue past `connect` for queue targets, so `result` never runs.
     Can be either:
     - A URL (http or https) that returns a SWML document
     - An inline SWML document (as a JSON string)

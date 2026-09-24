@@ -13,7 +13,10 @@ model EnterQueueObject {
   queue_name: string;
 
   @doc("""
-    SWML to execute when the call leaves the queue. When omitted, the call hangs up.
+    SWML to execute after the bridge with the agent ends. When omitted, the call hangs up when
+    the bridge ends. If the call leaves the queue without being bridged (`wait_time` expires or
+    the caller hangs up), this field is not used and the script continues with the next
+    instruction; check `queue_result`.
     Can be either:
     - A URL (http or https) that returns a SWML document
     - An inline SWML document (as a JSON string)
@@ -29,10 +32,10 @@ model EnterQueueObject {
   @example("https://example.com/queue-music.mp3")
   wait_url?: url | SWMLVar;
 
-  @doc("Maximum time in seconds to wait in the queue before timeout. Default `3600`")
+  @doc("Maximum time in seconds to wait in the queue before timeout. Default `180`")
   @minValue(1)
   @example(1800)
-  wait_time?: integer | SWMLVar = 3600;
+  wait_time?: integer | SWMLVar = 180;
 }
 
 @summary("enter_queue Method")
