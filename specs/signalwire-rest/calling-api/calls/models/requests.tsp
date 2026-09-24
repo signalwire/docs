@@ -2058,8 +2058,8 @@ model CallTransferRequest {
 
   @doc(paramsDescription)
   params: {
-    @doc("The destination to transfer the call to. Can be a SIP URI, phone number, SWML URL, or an inline [Calling SWML document](/docs/swml/reference/calling).")
-    @example("sip:destination@example.com")
+    @doc("The destination to transfer the call to: a SWML URL or an inline [Calling SWML document](/docs/swml/reference/calling). To send the caller to a phone number or SIP endpoint, transfer to a document that uses `connect`.")
+    @example("https://example.com/swml")
     @example(CallSWMLDocumentExample)
     dest: string | TypeSpec.Record<unknown>;
   };

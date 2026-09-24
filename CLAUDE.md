@@ -4,7 +4,7 @@ Fern-powered documentation site. Two sources of truth: MDX pages under `fern/pro
 
 ## Authoring rules
 
-`.claude/rules/` holds the binding conventions. They are path-scoped and fire when a matching file is read — so when you create a file from scratch, open the matching rule first: `mdx-style`, `mdx-mechanics`, `mdx-components`, `mdx-reference-pages`, `docs-conventions` for anything under `fern/`; `spec-conventions` for `specs/`. Rationale and depth behind the style rules: `.claude/docs/mdx-style-reference.md` (read on demand, never auto-loads).
+`.claude/rules/` holds the binding conventions. They are path-scoped and fire when a matching file is read — so when you create a file from scratch, open the matching rule first: `mdx-style`, `mdx-mechanics`, `mdx-components`, `mdx-reference-pages`, `docs-conventions` for anything under `fern/`; `mdx-capability-guides` for a how-to that covers one capability across several surfaces; `spec-conventions` for `specs/`. Rationale and depth behind the style rules: `.claude/docs/mdx-style-reference.md` (read on demand, never auto-loads).
 
 ## Root llms.txt is hand-maintained
 
@@ -58,7 +58,7 @@ Assume no prior knowledge, and never expose internal implementation detail — b
 | Change | Run |
 |---|---|
 | MDX pages | `yarn fern-md-check` |
-| Nav yml (`fern/docs.yml`, `fern/products/*/*.yml`) | `yarn fern-check` |
+| Nav yml (`fern/docs.yml`, `fern/products/*/*.yml`) or redirects (`fern/redirects.yml`) | `yarn fern-check` |
 | TypeSpec under `specs/` | `yarn build:specs` |
 
 CI runs `fern-check` and `fern-md-check` on every PR. No check covers `#anchor` fragments — verify by hand any link you touch.

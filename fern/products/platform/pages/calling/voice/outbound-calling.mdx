@@ -1,6 +1,6 @@
 ---
 title: Outbound calling
-slug: /voice/outbound-calling
+slug: voice/outbound-calling
 description: Place your first outbound phone call, track its progress, and add AI or browser calling to your application.
 max-toc-depth: 3
 ---
@@ -31,6 +31,9 @@ max-toc-depth: 3
 [ts-dial]: /docs/server-sdks/reference/typescript/rest/calling/dial
 [address-default-channel]: /docs/browser-sdk/v4/reference/address/default-channel
 [browser-transfer]: /docs/browser-sdk/v4/reference/webrtc-call/transfer
+[media-access-error]: /docs/browser-sdk/v4/reference/errors/media-access-error
+[call-errors]: /docs/browser-sdk/v4/reference/webrtc-call/errors$
+[media-options]: /docs/browser-sdk/v4/reference/interfaces/media-options
 
 Place an outbound phone call with SignalWire and choose what happens when the destination answers.
 Start by calling your own phone and playing a short announcement, then track the call's progress,
@@ -67,7 +70,7 @@ Choose the approach that fits how you want to control the call.
 
 | What you want to do | Where to start |
 |---|---|
-| Give SignalWire call instructions over HTTP, supplied inline or returned by your webhook | [REST Calling API](#place-the-call), using cURL or a Server SDK |
+| Give SignalWire call instructions over HTTP, supplied inline or returned by your webhook | [REST Calling API](#place-the-call), using a Server SDK or cURL |
 | Control the call in real time, asynchronously receiving events and sending commands over a persistent WebSocket connection | [WebSocket (Relay)](#place-the-call), using a Server SDK |
 | Let someone place and speak on a call from your web app | [Browser SDK](#place-the-call) |
 
@@ -114,7 +117,7 @@ For this walkthrough, choose a device you can answer and replace
 
 ### Place the call
 
-Use the REST Calling API with any server-side HTTP client or a SignalWire Server SDK. For
+Use the REST Calling API with a SignalWire Server SDK or any server-side HTTP client. For
 WebSocket calling, use a Server SDK or the Browser SDK.
 
 <Tabs groupId="outbound-api">
@@ -124,28 +127,6 @@ The request includes a SignalWire Markup Language (SWML) document in `swml`. Sig
 it when the destination answers, playing the announcement below.
 
 <CodeBlocks>
-<CodeBlock title="cURL — Calling API">
-```bash
-curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
-  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "command": "dial",
-    "params": {
-      "from": "<YOUR_CALLER_ID>",
-      "to": "<YOUR_DESTINATION>",
-      "swml": {
-        "version": "1.0.0",
-        "sections": {
-          "main": [
-            { "play": {"url": "say:Hello, welcome to SignalWire!"} }
-          ]
-        }
-      }
-    }
-  }'
-```
-</CodeBlock>
 <CodeBlock title="Python — REST client">
 ```python
 # Install: python -m pip install signalwire-sdk==3.4.1
@@ -196,6 +177,28 @@ const call = await client.calling.dial({
   swml,
 });
 console.log(call.id);
+```
+</CodeBlock>
+<CodeBlock title="cURL — Calling API">
+```bash
+curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
+  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "command": "dial",
+    "params": {
+      "from": "<YOUR_CALLER_ID>",
+      "to": "<YOUR_DESTINATION>",
+      "swml": {
+        "version": "1.0.0",
+        "sections": {
+          "main": [
+            { "play": {"url": "say:Hello, welcome to SignalWire!"} }
+          ]
+        }
+      }
+    }
+  }'
 ```
 </CodeBlock>
 </CodeBlocks>
@@ -366,30 +369,6 @@ reaches the selected states. See the [webhooks guide][webhooks] for endpoint set
 to `ended`.
 
 <CodeBlocks>
-<CodeBlock title="cURL — Calling API">
-```bash
-curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
-  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "command": "dial",
-    "params": {
-      "from": "<YOUR_CALLER_ID>",
-      "to": "<YOUR_DESTINATION>",
-      "swml": {
-        "version": "1.0.0",
-        "sections": {
-          "main": [
-            { "play": {"url": "say:Hello, welcome to SignalWire!"} }
-          ]
-        }
-      },
-      "status_url": "<YOUR_STATUS_WEBHOOK_URL>",
-      "status_events": ["ringing", "answered", "ended"]
-    }
-  }'
-```
-</CodeBlock>
 <CodeBlock title="Python — REST client">
 ```python
 swml = (
@@ -420,6 +399,30 @@ const call = await client.calling.dial({
   status_url: "<YOUR_STATUS_WEBHOOK_URL>",
   status_events: ["ringing", "answered", "ended"],
 });
+```
+</CodeBlock>
+<CodeBlock title="cURL — Calling API">
+```bash
+curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
+  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "command": "dial",
+    "params": {
+      "from": "<YOUR_CALLER_ID>",
+      "to": "<YOUR_DESTINATION>",
+      "swml": {
+        "version": "1.0.0",
+        "sections": {
+          "main": [
+            { "play": {"url": "say:Hello, welcome to SignalWire!"} }
+          ]
+        }
+      },
+      "status_url": "<YOUR_STATUS_WEBHOOK_URL>",
+      "status_events": ["ringing", "answered", "ended"]
+    }
+  }'
 ```
 </CodeBlock>
 </CodeBlocks>
@@ -642,38 +645,6 @@ See the [TCPA guide][tcpa] and [AI best practices][ai-best-practices].
 Send a `dial` request with an inline SWML [`ai` instruction][swml-ai] that starts when the call is answered.
 
 <CodeBlocks>
-<CodeBlock title="cURL — Calling API">
-```bash
-curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
-  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "command": "dial",
-    "params": {
-      "from": "<YOUR_CALLER_ID>",
-      "to": "<YOUR_DESTINATION>",
-      "swml": {
-        "version": "1.0.0",
-        "sections": {
-          "main": [
-            {
-              "ai": {
-                "params": {
-                  "static_greeting": "Hello, welcome to SignalWire! This call uses an artificial voice.",
-                  "static_greeting_no_barge": true
-                },
-                "prompt": {
-                  "text": "Welcome the caller to SignalWire. Briefly explain that SignalWire provides APIs and SDKs for voice, messaging, video, and AI. Answer basic follow-up questions. If you are unsure, direct the caller to signalwire.com."
-                }
-              }
-            }
-          ]
-        }
-      }
-    }
-  }'
-```
-</CodeBlock>
 <CodeBlock title="Python — REST client">
 ```python
 # Install: python -m pip install signalwire-sdk==3.4.1
@@ -736,6 +707,38 @@ const call = await client.calling.dial({
   swml,
 });
 console.log(call.id);
+```
+</CodeBlock>
+<CodeBlock title="cURL — Calling API">
+```bash
+curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
+  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "command": "dial",
+    "params": {
+      "from": "<YOUR_CALLER_ID>",
+      "to": "<YOUR_DESTINATION>",
+      "swml": {
+        "version": "1.0.0",
+        "sections": {
+          "main": [
+            {
+              "ai": {
+                "params": {
+                  "static_greeting": "Hello, welcome to SignalWire! This call uses an artificial voice.",
+                  "static_greeting_no_barge": true
+                },
+                "prompt": {
+                  "text": "Welcome the caller to SignalWire. Briefly explain that SignalWire provides APIs and SDKs for voice, messaging, video, and AI. Answer basic follow-up questions. If you are unsure, direct the caller to signalwire.com."
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }'
 ```
 </CodeBlock>
 </CodeBlocks>
@@ -845,51 +848,6 @@ Follow the consent and calling-hour requirements in the [TCPA guide][tcpa].
 Use [`detect_machine`][swml-detect-machine] and `switch` to choose the live or voicemail message.
 
 <CodeBlocks>
-<CodeBlock title="cURL — Calling API">
-```bash
-curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
-  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "command": "dial",
-    "params": {
-      "from": "<YOUR_CALLER_ID>",
-      "to": "<YOUR_DESTINATION>",
-      "swml": {
-        "version": "1.0.0",
-        "sections": {
-          "main": [
-            {
-              "detect_machine": {
-                "detectors": "amd",
-                "detect_message_end": true,
-                "timeout": 30
-              }
-            },
-            {
-              "switch": {
-                "variable": "detect_result",
-                "case": {
-                  "machine": [
-                    { "play": {"url": "say:Hello, welcome to SignalWire! Visit signalwire.com to learn more."} }
-                  ],
-                  "human": [
-                    { "play": {"url": "say:Hello, welcome to SignalWire!"} }
-                  ]
-                },
-                "default": [
-                  { "play": {"url": "say:Hello, welcome to SignalWire!"} }
-                ]
-              }
-            },
-            { "hangup": {} }
-          ]
-        }
-      }
-    }
-  }'
-```
-</CodeBlock>
 <CodeBlock title="Python — REST client">
 ```python
 voicemail = "say:Hello, welcome to SignalWire! Visit signalwire.com to learn more."
@@ -958,6 +916,51 @@ const call = await client.calling.dial({
   swml,
 });
 console.log(call.id);
+```
+</CodeBlock>
+<CodeBlock title="cURL — Calling API">
+```bash
+curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
+  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "command": "dial",
+    "params": {
+      "from": "<YOUR_CALLER_ID>",
+      "to": "<YOUR_DESTINATION>",
+      "swml": {
+        "version": "1.0.0",
+        "sections": {
+          "main": [
+            {
+              "detect_machine": {
+                "detectors": "amd",
+                "detect_message_end": true,
+                "timeout": 30
+              }
+            },
+            {
+              "switch": {
+                "variable": "detect_result",
+                "case": {
+                  "machine": [
+                    { "play": {"url": "say:Hello, welcome to SignalWire! Visit signalwire.com to learn more."} }
+                  ],
+                  "human": [
+                    { "play": {"url": "say:Hello, welcome to SignalWire!"} }
+                  ]
+                },
+                "default": [
+                  { "play": {"url": "say:Hello, welcome to SignalWire!"} }
+                ]
+              }
+            },
+            { "hangup": {} }
+          ]
+        }
+      }
+    }
+  }'
 ```
 </CodeBlock>
 </CodeBlocks>
@@ -1106,38 +1109,6 @@ Play a private message to `<YOUR_AGENT_DESTINATION>`, then connect that call to
 Use `connect.confirm` to play the [whisper][call-whisper] to the agent before bridging the calls.
 
 <CodeBlocks>
-<CodeBlock title="cURL — Calling API">
-```bash
-curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
-  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "command": "dial",
-    "params": {
-      "from": "<YOUR_CALLER_ID>",
-      "to": "<YOUR_DESTINATION>",
-      "swml": {
-        "version": "1.0.0",
-        "sections": {
-          "main": [
-            { "play": {"url": "say:Hello, welcome to SignalWire!"} },
-            {
-              "connect": {
-                "from": "<YOUR_CALLER_ID>",
-                "to": "<YOUR_AGENT_DESTINATION>",
-                "confirm": [
-                  { "play": {"url": "say:You are about to be connected to the caller."} }
-                ],
-                "confirm_timeout": 20
-              }
-            }
-          ]
-        }
-      }
-    }
-  }'
-```
-</CodeBlock>
 <CodeBlock title="Python — REST client">
 ```python
 whisper = "say:You are about to be connected to the caller."
@@ -1182,6 +1153,38 @@ const call = await client.calling.dial({
   swml,
 });
 console.log(call.id);
+```
+</CodeBlock>
+<CodeBlock title="cURL — Calling API">
+```bash
+curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
+  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "command": "dial",
+    "params": {
+      "from": "<YOUR_CALLER_ID>",
+      "to": "<YOUR_DESTINATION>",
+      "swml": {
+        "version": "1.0.0",
+        "sections": {
+          "main": [
+            { "play": {"url": "say:Hello, welcome to SignalWire!"} },
+            {
+              "connect": {
+                "from": "<YOUR_CALLER_ID>",
+                "to": "<YOUR_AGENT_DESTINATION>",
+                "confirm": [
+                  { "play": {"url": "say:You are about to be connected to the caller."} }
+                ],
+                "confirm_timeout": 20
+              }
+            }
+          ]
+        }
+      }
+    }
+  }'
 ```
 </CodeBlock>
 </CodeBlocks>
@@ -1301,37 +1304,6 @@ Confirm which parties must consent and announce the recording when required.
 Start [`record_call`][swml-record-call] in the background and receive the result at `status_url`.
 
 <CodeBlocks>
-<CodeBlock title="cURL — Calling API">
-```bash
-curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
-  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "command": "dial",
-    "params": {
-      "from": "<YOUR_CALLER_ID>",
-      "to": "<YOUR_DESTINATION>",
-      "swml": {
-        "version": "1.0.0",
-        "sections": {
-          "main": [
-            {
-              "record_call": {
-                "format": "mp3",
-                "direction": "both",
-                "stereo": true,
-                "beep": true,
-                "status_url": "<YOUR_RECORDING_STATUS_URL>"
-              }
-            },
-            { "play": {"url": "say:Hello, welcome to SignalWire!"} }
-          ]
-        }
-      }
-    }
-  }'
-```
-</CodeBlock>
 <CodeBlock title="Python — REST client">
 ```python
 swml = (
@@ -1374,6 +1346,37 @@ const call = await client.calling.dial({
   swml,
 });
 console.log(call.id);
+```
+</CodeBlock>
+<CodeBlock title="cURL — Calling API">
+```bash
+curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
+  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "command": "dial",
+    "params": {
+      "from": "<YOUR_CALLER_ID>",
+      "to": "<YOUR_DESTINATION>",
+      "swml": {
+        "version": "1.0.0",
+        "sections": {
+          "main": [
+            {
+              "record_call": {
+                "format": "mp3",
+                "direction": "both",
+                "stereo": true,
+                "beep": true,
+                "status_url": "<YOUR_RECORDING_STATUS_URL>"
+              }
+            },
+            { "play": {"url": "say:Hello, welcome to SignalWire!"} }
+          ]
+        }
+      }
+    }
+  }'
 ```
 </CodeBlock>
 </CodeBlocks>
@@ -1493,36 +1496,6 @@ Stream both sides of a live call to your secure WebSocket endpoint for real-time
 Start [`stream`][swml-stream] in the background and send status events to your webhook.
 
 <CodeBlocks>
-<CodeBlock title="cURL — Calling API">
-```bash
-curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
-  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "command": "dial",
-    "params": {
-      "from": "<YOUR_CALLER_ID>",
-      "to": "<YOUR_DESTINATION>",
-      "swml": {
-        "version": "1.0.0",
-        "sections": {
-          "main": [
-            {
-              "stream": {
-                "url": "<YOUR_AUDIO_STREAM_URL>",
-                "track": "both_tracks",
-                "codec": "PCMU",
-                "status_url": "<YOUR_STREAM_STATUS_URL>"
-              }
-            },
-            { "play": {"url": "say:Hello, welcome to SignalWire!"} }
-          ]
-        }
-      }
-    }
-  }'
-```
-</CodeBlock>
 <CodeBlock title="Python — REST client">
 ```python
 # `stream` is not yet in the builder's bundled schema, so add it as raw SWML.
@@ -1571,6 +1544,36 @@ const call = await client.calling.dial({
   swml,
 });
 console.log(call.id);
+```
+</CodeBlock>
+<CodeBlock title="cURL — Calling API">
+```bash
+curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
+  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "command": "dial",
+    "params": {
+      "from": "<YOUR_CALLER_ID>",
+      "to": "<YOUR_DESTINATION>",
+      "swml": {
+        "version": "1.0.0",
+        "sections": {
+          "main": [
+            {
+              "stream": {
+                "url": "<YOUR_AUDIO_STREAM_URL>",
+                "track": "both_tracks",
+                "codec": "PCMU",
+                "status_url": "<YOUR_STREAM_STATUS_URL>"
+              }
+            },
+            { "play": {"url": "say:Hello, welcome to SignalWire!"} }
+          ]
+        }
+      }
+    }
+  }'
 ```
 </CodeBlock>
 </CodeBlocks>
@@ -1814,6 +1817,27 @@ defaults, but options passed to `dial()` always win. If you're picking destinati
 directory, an `Address` exposes [`defaultChannel`][address-default-channel], a ready-to-dial URI, so
 you don't assemble the string yourself. To pin the microphone, camera, or speaker across
 every call instead of constraining each `dial()`, use the [device management APIs][device-management].
+
+#### When local media can't be captured
+
+If the local media can't be captured, the SDK falls back to receive-only: the call connects, remote media arrives on
+`remoteStream$`, and the reason is reported on [`errors$`][call-errors] as a non-fatal
+[`MediaAccessError`][media-access-error].
+
+```javascript
+import { MediaAccessError } from "@signalwire/js";
+
+call.errors$.subscribe(({ error, fatal }) => {
+  if (error instanceof MediaAccessError && !fatal) {
+    banner.textContent = error.denied
+      ? `You joined without ${error.media}. Grant access and rejoin to send it.`
+      : `Couldn't open your ${error.media}. You're receiving only.`;
+  }
+});
+```
+
+Set [`fallbackToReceiveOnly`][media-options] to `false` to make an acquisition failure fatal
+instead.
 
 #### Attach the media to the page
 

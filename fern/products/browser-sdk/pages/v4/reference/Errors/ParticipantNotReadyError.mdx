@@ -1,0 +1,58 @@
+---
+title: "ParticipantNotReadyError"
+slug: /reference/errors/participant-not-ready-error
+description: "Thrown when a member RPC is attempted before that participant's call context has arrived."
+max-toc-depth: 3
+---
+Every member RPC is routed by the *target member's own* `call_id`/`node_id`, not the local call's. Those arrive with the member's first full state event — `member.joined`, `member.updated`, or the `call.joined` roster. A participant first seen through a partial event such as `member.talking` has no call context yet, and an empty one can never address the member, so reading [`target`](/docs/browser-sdk/v4/reference/participant/target) throws rather than sending a doomed RPC.
+
+Readiness never regresses: once a participant's context has arrived, it stays.
+
+## **Extends**
+
+- `Error`
+
+## **Constructors**
+
+### Constructor
+
+```ts
+new ParticipantNotReadyError(memberId, options?): ParticipantNotReadyError
+```
+
+### Parameters
+
+<ParamField path="memberId" type="string" required toc={true}>
+  ID of the participant whose member state has not been received yet.
+</ParamField>
+
+<ParamField path="options" type="ErrorOptions" toc={true}>
+  Standard `ErrorOptions`, e.g. `{ cause }`.
+</ParamField>
+
+## **Properties**
+
+<ParamField path="memberId" type="string" required toc={true}>
+  ID of the participant whose member state has not been received yet.
+</ParamField>
+
+## **Examples**
+
+```ts
+import { ParticipantNotReadyError } from '@signalwire/js';
+
+try {
+  await participant.mute();
+} catch (error) {
+  if (error instanceof ParticipantNotReadyError) {
+    // Seen only via member.talking so far — retry once member.joined arrives.
+  }
+}
+```
+
+[`setLayout`](/docs/browser-sdk/v4/reference/webrtc-call/set-layout) validates every targeted member upfront and throws this before sending any request, leaving the layout unchanged.
+
+## **See**
+
+- [`Participant.target`](/docs/browser-sdk/v4/reference/participant/target) — reading it doubles as a readiness probe.
+- [`CallNotReadyError`](/docs/browser-sdk/v4/reference/errors/call-not-ready-error) — the same gate for the local leg.
