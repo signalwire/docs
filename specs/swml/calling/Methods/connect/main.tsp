@@ -150,15 +150,15 @@ model ConnectDeviceBase {
   call_state_url?: url;
 
   @doc("""
-    SWML to execute after the bridge completes. This defines what should happen after the call is connected and the bridge ends.
+    SWML to execute on this call after its bridge with the queued call ends. Only applies when
+    `to` starts with `queue:`. When omitted, the call hangs up when the bridge ends. Either way,
+    the script does not continue past `connect` for queue targets, so `result` never runs.
     Can be either:
     - A URL (http or https) that returns a SWML document
     - An inline SWML document (as a JSON string)
-
-    **Note:** This parameter is REQUIRED when connecting to a queue (when `to` starts with "queue:")
     """)
-  @example("https://example.com/after-bridge.swml")
-  transfer_after_bridge?: string | SWMLVar;
+  @example("https://example.com/after-queue.swml")
+  execute_after_queue?: string | SWMLVar;
 
   @doc("""
     An array of call state event names to be notified about.
