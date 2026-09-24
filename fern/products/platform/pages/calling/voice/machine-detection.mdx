@@ -8,8 +8,10 @@ max-toc-depth: 3
 [outbound-calling]: /docs/platform/voice/outbound-calling
 [api-credentials]: /docs/platform/your-signalwire-api-space
 [caller-id]: /docs/platform/voice/how-to-set-caller-id-or-cnam
+[trial-mode]: /docs/platform/trial-mode
 [tcpa]: /docs/platform/compliance/tcpa
 [webhooks]: /docs/platform/webhooks
+[fax]: /docs/platform/fax
 [inbound-voicemail]: /docs/swml/guides/voicemail
 [swml-detect-machine]: /docs/swml/reference/calling/detect-machine
 [swml-switch]: /docs/swml/reference/calling/switch
@@ -18,8 +20,13 @@ max-toc-depth: 3
 [swml-send-fax]: /docs/swml/reference/calling/send-fax
 [swml-receive-fax]: /docs/swml/reference/calling/receive-fax
 [swml-answer]: /docs/swml/reference/calling/answer
+[swml-webhook-security]: /docs/swml/guides/webhook-security
 [make-and-receive-calls]: /docs/swml/guides/make-and-receive-calls
-[swml-deployment]: /docs/swml/guides/deployment
+[py-swml-service]: /docs/server-sdks/reference/python/agents/swml-service
+[ts-swml-service]: /docs/server-sdks/reference/typescript/agents/swml-service
+[py-swml-builder]: /docs/server-sdks/reference/python/agents/swml-builder
+[ts-swml-builder]: /docs/server-sdks/reference/typescript/agents/swml-builder
+[ts-dial]: /docs/server-sdks/reference/typescript/rest/calling/dial
 [py-relay-receive-fax]: /docs/server-sdks/reference/python/relay/call/receive-fax
 [ts-relay-receive-fax]: /docs/server-sdks/reference/typescript/relay/call/receive-fax
 [ai-best-practices]: /docs/platform/ai/best-practices
@@ -39,23 +46,40 @@ max-toc-depth: 3
 
 Find out whether a person, an answering machine, or a fax machine is on the other end of a call,
 and choose what the call does next. Start by calling your own phone and hanging up on your
-voicemail, then leave a message after the beep, hand a live answer to an AI agent, send or receive
-a fax, or screen the calls your number receives.
+voicemail, then track detection events, tune the detector, and extend the flow to leave a message
+after the beep, hand a live answer to an AI agent, send or receive a fax, or screen the calls
+your number receives.
 
 ## Prepare for detection
 
 Have these values ready:
 
-- An outbound call that already works. The [outbound calling guide][outbound-calling] covers
-  credentials, caller ID, and destinations; this guide adds detection to that call.
 - Your Space URL, such as `<YOUR_SPACE>.signalwire.com`.
 - Your Project ID and API token from the Dashboard's [API credentials][api-credentials] page.
-  Enable the token's **Voice** permission for the Calling API.
+  Enable the token's **Voice** permission.
 - A voice-capable phone number in your Space or a [verified caller ID][caller-id].
 - A destination phone you can answer *and* send to voicemail. Declining the call is the quickest
   way to reach the greeting.
-- For the inbound examples, a phone number in your Space that runs a SWML script or reaches your
-  Relay client. The [make and receive calls guide][make-and-receive-calls] shows both setups.
+- For the inbound examples, a phone number in your Space that reaches your SWML server or Relay
+  client. The [make and receive calls guide][make-and-receive-calls] shows both setups.
+
+The tracking section and the examples later on this page use these additional values:
+
+| Value | Replace with |
+|---|---|
+| `<YOUR_STATUS_WEBHOOK_URL>` | Your public HTTPS endpoint for detection and fax callbacks |
+| `<YOUR_CALL_ID>` | The `id` of an answered call, returned when you place it or sent in its webhooks |
+| `<YOUR_FAX_DOCUMENT_URL>` | The public URL of a PDF that SignalWire can fetch and fax |
+| `<YOUR_BASIC_AUTH_PASSWORD>` | The password your SWML server requires, for the inbound SWML examples |
+| `<YOUR_PUBLIC_HOST>` | The public HTTPS host that reaches your SWML server on port 3000 |
+
+This guide adds detection to an outbound call. If you haven't placed one with SignalWire yet,
+start with the [outbound calling guide][outbound-calling].
+
+<Warning title="Trial projects can only dial verified numbers">
+A [trial project][trial-mode] can dial only numbers it has purchased or verified, and can't call
+internationally. Verify the phone you'll test with, or upgrade the project, before you dial.
+</Warning>
 
 <Warning title="Messages left by artificial voices are regulated">
 Prerecorded and synthesized voicemail messages fall under consent, do-not-call, and calling-hour
@@ -142,14 +166,14 @@ and which fax tone to expect.
 |---|---|---|
 | Who is classified | The party that answered | The caller |
 | When detection starts | After the destination answers | After you answer, with SWML [`answer`][swml-answer] or Relay `answer()` |
-| Where the instructions live | Inline `swml` in the `dial` request, or your Relay code after `dial()` | The SWML script or URL assigned to the number, or your Relay `on_call` handler |
+| Where the instructions live | The SWML your Server SDK sends in the `dial` request, or your Relay code after `dial()` | The SWML your server returns for the number, or your Relay call handler |
 | Fax tone to detect | `CED`, which the answering fax machine sends (the default `tone`) | `CNG`, which the calling fax machine sends; set `tone: "CNG"` |
 | What silence means | The greeting hasn't started; let `initial_timeout` run | A person waiting for your greeting; keep `initial_timeout` short and treat `unknown` as a person |
 | `detect_message_end` | Waits for the greeting and beep before you leave a message | Rarely useful; callers don't play greetings |
 | Typical next step | Leave a message, start an AI agent, or send a fax | Receive a fax, turn away automated callers, or greet the person |
 
-REST `calling.detect` behaves the same in both directions: once the call is `answered`, send the
-command by call ID and read the result at `status_url`.
+The REST `calling.detect` command behaves the same in both directions: once the call is
+`answered`, send the command by call ID and read the result at `status_url`.
 
 ## Detect who answered
 
@@ -159,30 +183,15 @@ Call a phone you can answer, greet the person, and hang up on the voicemail.
 
 ### Choose how to detect
 
-Choose the approach that fits how you want to act on the result. Detection runs on the server:
-the Browser SDK can't start it, so each approach runs from your backend or from SWML that
-SignalWire executes for you.
+Choose where the detection logic runs and how your application receives the result. Detection
+runs in server-side call logic, so a web app that needs it asks your backend to place the call.
 
-| What you want to do | Where to start |
-|---|---|
-| Detect in the same request that places the call, and branch inside the SWML document | [SWML `detect_machine`](#start-detection) in a REST `dial`, using cURL or a Server SDK |
-| Add detection to a call that is already answered, from any process that knows the call ID | [REST `calling.detect`](#detect-on-a-call-already-in-progress) |
-| Decide what happens next in your own code as results arrive | [WebSocket (Relay)](#start-detection), using a Server SDK |
-| Screen the calls your number receives, or route incoming faxes | [Detect on an inbound call](#detect-on-an-inbound-call) with SWML or Relay |
-
-Each approach runs the same detector, but they differ in where you branch on the result and how
-you receive it.
-
-| Function | SWML | REST `calling.detect` | WebSocket (Relay) |
-|---|---|---|---|
-| Start detection in the request that places the call | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> |
-| Add detection to a call that is already answered | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
-| Run on a call your number receives | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
-| Branch without writing code that runs during the call | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> |
-| Receive results as HTTP callbacks to a URL you host | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> |
-| Receive results as events in your own process, with no public URL | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
-| Stop detection early | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
-| Detect fax tones | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
+| Approach | Useful when | How you start detection and receive the result |
+|---|---|---|
+| [Server SDK — REST](#start-detection) | A backend request or background job places the call | Send `detect_machine` in the SWML of the `dial` request. SignalWire branches on `detect_result` during the call, and `status_url` reports each result to your webhook. |
+| [Server SDK — WebSocket (Relay)](#start-detection) | Your server decides what happens as results arrive | Start detection once `dial()` returns an answered call. Results arrive as events in your running client, so you don't need a public URL. |
+| [REST `calling.detect` command](#detect-on-a-call-already-in-progress) | A call is already answered, and any process that knows its ID should start detection | Send the command by call ID from a Server SDK or cURL. Results go to `status_url`, and `calling.detect.stop` ends detection early. |
+| [SWML server or Relay handler](#screen-an-inbound-call) | Your number receives the call | Answer first, then detect in the SWML your server returns or in your Relay call handler. |
 
 ### Set your credentials and destination
 
@@ -198,16 +207,112 @@ Replace these values in the code sample you choose:
 
 ### Start detection
 
+Open the tab for the approach you chose. The examples show Python and TypeScript first, followed
+by cURL for direct HTTP access.
+
 <Tabs groupId="outbound-api">
 <Tab title="REST">
 
-The `dial` request carries a SignalWire Markup Language (SWML) document. Its first instruction,
-[`detect_machine`][swml-detect-machine], blocks until a result is ready, then
-[`switch`][swml-switch] reads `detect_result` and picks a branch. Only the `amd` detector runs
-here; the fax example below adds the second one.
+The `dial` request carries a SignalWire Markup Language (SWML) document that SignalWire runs when
+the destination answers. Its first instruction, [`detect_machine`][swml-detect-machine], blocks
+until a result is ready. Then [`switch`][swml-switch] reads `detect_result` and picks a branch.
+Only the `amd` detector runs here; the fax example below adds the second one.
+
+The Server SDK examples build the document with the SDK's SWML builder
+([`SWMLBuilder`][py-swml-builder], [`SwmlBuilder`][ts-swml-builder]). Each branch of `switch` is
+a list of instructions, so the examples build each branch's message with `say()` and pass its
+`main` section to `switch`.
 
 <CodeBlocks>
-<CodeBlock title="cURL — Calling API">
+<CodeBlock title="Python — REST client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as detect_machine.py and run: python detect_machine.py
+from signalwire import SWMLBuilder, SWMLService
+from signalwire.rest import RestClient
+
+client = RestClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    host="<YOUR_SPACE>.signalwire.com",
+)
+
+live = (
+    SWMLBuilder(SWMLService(name="live-message"))
+    .say("Hello! Your Bayview Taxi ride is confirmed for 8 AM tomorrow.")
+    .build()["sections"]["main"]
+)
+hang_up = (
+    SWMLBuilder(SWMLService(name="hang-up"))
+    .hangup()
+    .build()["sections"]["main"]
+)
+
+swml = (
+    SWMLBuilder(SWMLService(name="detect-machine"))
+    .detect_machine(detectors="amd", timeout=30)
+    .switch(
+        variable="detect_result",
+        case={
+            "human": live,
+            "machine": hang_up,
+        },
+        default=live,
+    )
+    .hangup()
+    .build()
+)
+
+call = client.calling.dial(
+    from_="<YOUR_CALLER_ID>",
+    to="<YOUR_DESTINATION>",
+    swml=swml,
+)
+print(call["id"])
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — REST client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as detect-machine.mjs,
+// then run: node detect-machine.mjs
+import { RestClient, SwmlBuilder } from "@signalwire/sdk";
+
+const client = new RestClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  host: "<YOUR_SPACE>.signalwire.com",
+});
+
+const live = new SwmlBuilder()
+  .say("Hello! Your Bayview Taxi ride is confirmed for 8 AM tomorrow.")
+  .document.sections.main;
+const hangUp = new SwmlBuilder()
+  .hangup()
+  .document.sections.main;
+
+const swml = new SwmlBuilder()
+  .detect_machine({ detectors: "amd", timeout: 30 })
+  .switch({
+    variable: "detect_result",
+    case: {
+      human: live,
+      machine: hangUp,
+    },
+    default: live,
+  })
+  .hangup()
+  .build();
+
+const call = await client.calling.dial({
+  from: "<YOUR_CALLER_ID>",
+  to: "<YOUR_DESTINATION>",
+  swml,
+});
+console.log(call.id);
+```
+</CodeBlock>
+<CodeBlock title="cURL — REST Calling API">
 ```bash
 curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
   -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
@@ -251,81 +356,18 @@ curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
   }'
 ```
 </CodeBlock>
-<CodeBlock title="Python — REST client">
-```python
-# Install: python -m pip install signalwire-sdk==3.4.1
-# Save as detect_machine.py and run: python detect_machine.py
-from signalwire import SWMLBuilder, SWMLService
-from signalwire.rest import RestClient
-
-LIVE = "say:Hello! Your Bayview Taxi ride is confirmed for 8 AM tomorrow."
-
-client = RestClient(
-    project="<YOUR_PROJECT_ID>",
-    token="<YOUR_API_TOKEN>",
-    host="<YOUR_SPACE>.signalwire.com",
-)
-
-swml = (
-    SWMLBuilder(SWMLService(name="detect-machine"))
-    .detect_machine(detectors="amd", timeout=30)
-    .switch(
-        variable="detect_result",
-        case={
-            "human": [{"play": {"url": LIVE}}],
-            "machine": [{"hangup": {}}],
-        },
-        default=[{"play": {"url": LIVE}}],
-    )
-    .hangup()
-    .build()
-)
-
-call = client.calling.dial(
-    from_="<YOUR_CALLER_ID>",
-    to="<YOUR_DESTINATION>",
-    swml=swml,
-)
-print(call["id"])
-```
-</CodeBlock>
-<CodeBlock title="TypeScript — REST client">
-```typescript
-// Install: npm install @signalwire/sdk@2.0.5
-// This sample also runs as JavaScript: save as detect-machine.mjs,
-// then run: node detect-machine.mjs
-import { RestClient, SwmlBuilder } from "@signalwire/sdk";
-
-const LIVE = "say:Hello! Your Bayview Taxi ride is confirmed for 8 AM tomorrow.";
-
-const client = new RestClient({
-  project: "<YOUR_PROJECT_ID>",
-  token: "<YOUR_API_TOKEN>",
-  host: "<YOUR_SPACE>.signalwire.com",
-});
-
-const swml = new SwmlBuilder()
-  .detect_machine({ detectors: "amd", timeout: 30 })
-  .switch({
-    variable: "detect_result",
-    case: {
-      human: [{ play: { url: LIVE } }],
-      machine: [{ hangup: {} }],
-    },
-    default: [{ play: { url: LIVE } }],
-  })
-  .hangup()
-  .build();
-
-const call = await client.calling.dial({
-  from: "<YOUR_CALLER_ID>",
-  to: "<YOUR_DESTINATION>",
-  swml,
-});
-console.log(call.id);
-```
-</CodeBlock>
 </CodeBlocks>
+
+<Note title="TypeScript `dial()` signature depends on the SDK version">
+The TypeScript samples on this page pin `@signalwire/sdk@2.0.5`, whose `dial()` takes a single
+options object. The [TypeScript `dial` reference][ts-dial] documents the positional
+`dial(from, to, options)` form of a newer release. Match the form to the version you install.
+</Note>
+
+The REST API returns a call `id` and status `queued`. This confirms that SignalWire accepted the
+request; the call hasn't necessarily rung or been answered yet. Save the `id` to identify this call.
+
+<EndpointResponseSnippet endpoint="POST /api/calling/calls" />
 
 The `default` branch catches `unknown` and `error`, so a quiet person still hears the message.
 Prefer [`cond`][swml-cond] when a branch needs a compound condition, such as checking
@@ -335,8 +377,8 @@ Prefer [`cond`][swml-cond] when a branch needs a compound condition, such as che
 <Tab title="WebSocket (Relay)">
 
 Relay's `dial()` has no detection option, so detection is a separate step once the call is
-answered. In Python, [`detect_answering_machine()`][py-relay-amd] wraps the `machine` detector;
-in TypeScript, pass the detector to [`detect()`][ts-relay-detect] directly. Both return a
+answered. In Python, [`detect_answering_machine()`][py-relay-amd] wraps the `machine` detector.
+In TypeScript, pass the detector to [`detect()`][ts-relay-detect] directly. Both return a
 `DetectAction` ([Python][py-detect-action], [TypeScript][ts-detect-action]) whose `wait()`
 resolves on the first result.
 
@@ -344,7 +386,7 @@ resolves on the first result.
 <CodeBlock title="Python — Relay client">
 ```python
 # Install: python -m pip install signalwire-sdk==3.4.1
-# Save as detect_machine.py and run: python detect_machine.py
+# Save as detect_machine_relay.py and run: python detect_machine_relay.py
 import asyncio
 from signalwire.relay import RelayClient
 
@@ -397,7 +439,7 @@ asyncio.run(main())
 <CodeBlock title="TypeScript — Relay client">
 ```typescript
 // Install: npm install @signalwire/sdk@2.0.5
-// Save as detect-machine.mts and run: npx tsx detect-machine.mts
+// Save as detect-machine-relay.mts and run: npx tsx detect-machine-relay.mts
 import { RelayClient, RelayEvent } from "@signalwire/sdk";
 
 const LIVE = "Hello! Your Bayview Taxi ride is confirmed for 8 AM tomorrow.";
@@ -463,22 +505,23 @@ seconds into your greeting and leaves no message. With Relay, the console prints
 If the second run plays the message into your voicemail, the greeting was classified as `human`
 or `unknown`. A greeting that pauses after "Hi, you've reached…" looks like a person, and one that
 opens with silence longer than `initial_timeout` returns `unknown`. If the first run hangs up on
-you, you spoke past the voice threshold without pausing. The [tuning table](#tune-detection) maps
-each symptom to its setting.
+you, you spoke past the voice threshold without pausing. The
+[tuning table](#tune-detection-timeouts-thresholds-and-message-end) maps each symptom to its
+setting.
 
 </Steps>
 
 ## Track detection events
 
 Every detection result is also an event named `calling.call.detect`. Receive it as an HTTP
-callback with REST, or as a Relay event in your own process.
+callback from SWML or the REST `calling.detect` command, or as a Relay event in your own process.
 
-### Track detection events via REST
+### Track detection events via SWML
 
 Add `status_url` to `detect_machine` and SignalWire posts each detector event to that URL as
 JSON. The `params.detect.params.event` field carries the value, and `beep` appears only when a
-beep was heard. Point `<YOUR_STATUS_WEBHOOK_URL>` at an endpoint you control; the
-[webhooks guide][webhooks] covers setup and local testing.
+beep was heard. Point `<YOUR_STATUS_WEBHOOK_URL>` at an endpoint you control that SignalWire can
+reach; the [webhooks guide][webhooks] covers setup and local testing.
 
 ```json
 {
@@ -505,39 +548,100 @@ beep was heard. Point `<YOUR_STATUS_WEBHOOK_URL>` at an endpoint you control; th
 
 By default `detect_machine` waits for a result before the next SWML instruction runs. Set
 `wait: false` to keep the document moving while detection runs in the background, and handle
-the outcome at `status_url` instead. Asynchronous detection requires `status_url`.
+the outcome at `status_url` instead. Asynchronous detection requires `status_url`. The examples
+below place another call that plays the confirmation right away and reports the result to your
+webhook.
 
 <CodeBlocks>
-<CodeBlock title="YAML">
-```yaml
-version: 1.0.0
-sections:
-  main:
-    - detect_machine:
-        detectors: amd
-        wait: false
-        status_url: "<YOUR_STATUS_WEBHOOK_URL>"
-    - play:
-        url: "say:Hello! Your Bayview Taxi ride is confirmed for 8 AM tomorrow."
+<CodeBlock title="Python — REST client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as detect_async.py and run: python detect_async.py
+from signalwire import SWMLBuilder, SWMLService
+from signalwire.rest import RestClient
+
+client = RestClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    host="<YOUR_SPACE>.signalwire.com",
+)
+
+swml = (
+    SWMLBuilder(SWMLService(name="detect-async"))
+    .detect_machine(
+        detectors="amd",
+        wait=False,
+        status_url="<YOUR_STATUS_WEBHOOK_URL>",
+    )
+    .say("Hello! Your Bayview Taxi ride is confirmed for 8 AM tomorrow.")
+    .build()
+)
+
+call = client.calling.dial(
+    from_="<YOUR_CALLER_ID>",
+    to="<YOUR_DESTINATION>",
+    swml=swml,
+)
+print(call["id"])
 ```
 </CodeBlock>
-<CodeBlock title="JSON">
-```json
-{
-  "version": "1.0.0",
-  "sections": {
-    "main": [
-      {
-        "detect_machine": {
-          "detectors": "amd",
-          "wait": false,
-          "status_url": "<YOUR_STATUS_WEBHOOK_URL>"
+<CodeBlock title="TypeScript — REST client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as detect-async.mjs,
+// then run: node detect-async.mjs
+import { RestClient, SwmlBuilder } from "@signalwire/sdk";
+
+const client = new RestClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  host: "<YOUR_SPACE>.signalwire.com",
+});
+
+const swml = new SwmlBuilder()
+  .detect_machine({
+    detectors: "amd",
+    wait: false,
+    status_url: "<YOUR_STATUS_WEBHOOK_URL>",
+  })
+  .say("Hello! Your Bayview Taxi ride is confirmed for 8 AM tomorrow.")
+  .build();
+
+const call = await client.calling.dial({
+  from: "<YOUR_CALLER_ID>",
+  to: "<YOUR_DESTINATION>",
+  swml,
+});
+console.log(call.id);
+```
+</CodeBlock>
+<CodeBlock title="cURL — REST Calling API">
+```bash
+curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
+  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "command": "dial",
+    "params": {
+      "from": "<YOUR_CALLER_ID>",
+      "to": "<YOUR_DESTINATION>",
+      "swml": {
+        "version": "1.0.0",
+        "sections": {
+          "main": [
+            {
+              "detect_machine": {
+                "detectors": "amd",
+                "wait": false,
+                "status_url": "<YOUR_STATUS_WEBHOOK_URL>"
+              }
+            },
+            { "play": {"url": "say:Hello! Your Bayview Taxi ride is confirmed for 8 AM tomorrow."} }
+          ]
         }
-      },
-      { "play": {"url": "say:Hello! Your Bayview Taxi ride is confirmed for 8 AM tomorrow."} }
-    ]
-  }
-}
+      }
+    }
+  }'
 ```
 </CodeBlock>
 </CodeBlocks>
@@ -545,13 +649,13 @@ sections:
 The REST [`calling.detect`](#detect-on-a-call-already-in-progress) command delivers its results
 the same way, through its own `status_url`.
 
-### Track detection events via WebSocket
+### Track detection events via Relay
 
 Register a handler for `calling.call.detect` before starting detection. Each event arrives as a
 `DetectEvent` ([Python][py-relay-events], [TypeScript][ts-relay-events]) whose `detect` property
-holds the same `type` and `params` object as the callback payload. Unlike `wait()`, which returns once, the handler sees every event:
-`MACHINE` while the greeting is still playing, `READY` after the beep, and `finished` when the
-detector stops.
+holds the same `type` and `params` object as the callback payload. Unlike `wait()`, which returns
+once, the handler sees every event: `MACHINE` while the greeting is still playing, `READY` after
+the beep, and `finished` when the detector stops.
 
 <CodeBlocks>
 <CodeBlock title="Python — Relay client">
@@ -653,7 +757,203 @@ SWML, the REST command, and Relay share one detector but expose it differently.
 | `machine_ready_timeout` | Yes | Yes | Not on the Python helper; pass it to `detect()` |
 | `detect_interruptions` | No | Yes | Yes |
 
+## Tune detection: timeouts, thresholds, and message end
+
+The defaults suit most residential voicemail. Adjust them when a run misclassifies, and change
+one setting at a time so you can see its effect. Every setting below is a `detect_machine`
+property, a `detect.params` field in REST, and a keyword argument on the Python Relay helper.
+
+| Symptom | Setting | Default | Change |
+|---|---|---|---|
+| Greeting begins with silence and comes back `unknown` | `initial_timeout` | 4.5 s | Raise it |
+| A person who talks for a while is classified `machine` | `machine_voice_threshold` | 1.25 s | Raise it |
+| A short, scripted greeting is classified `human` | `machine_words_threshold` | 6 words | Lower it |
+| A person's pause after "Hello?" is too short to count as silence | `end_silence_timeout` | 1.0 s | Lower it |
+| The voicemail message starts before the beep | `machine_ready_timeout` | Same as `end_silence_timeout` | Raise it |
+| Long IVR menus never reach a result | `timeout` | 30 s | Raise it, or hang up on `machine` without waiting for `READY` |
+| Detection stops on the first thing it hears | `detect_message_end` | `false` in SWML, `true` in REST | Set it explicitly |
+| Callers to your number wait in silence, then come back `unknown` | `initial_timeout` | 4.5 s | Lower it on inbound calls, and greet `unknown` as a person |
+
+A greeting from a business often runs past the defaults. These examples extend
+[Leave a message after the beep](#leave-a-message-after-the-beep) and give the greeting more room;
+the highlighted lines are the changes.
+
+<CodeBlocks>
+<CodeBlock title="Python — REST client">
+```python {31-34}
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as tune_detection.py and run: python tune_detection.py
+from signalwire import SWMLBuilder, SWMLService
+from signalwire.rest import RestClient
+
+client = RestClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    host="<YOUR_SPACE>.signalwire.com",
+)
+
+live = (
+    SWMLBuilder(SWMLService(name="live-message"))
+    .say("Hello! Your Bayview Taxi ride is confirmed for 8 AM tomorrow.")
+    .build()["sections"]["main"]
+)
+voicemail = (
+    SWMLBuilder(SWMLService(name="voicemail-message"))
+    .say(
+        "This is Bayview Taxi. Your ride is confirmed for 8 AM tomorrow. "
+        "Reply to our text message if you need to change it."
+    )
+    .build()["sections"]["main"]
+)
+
+swml = (
+    SWMLBuilder(SWMLService(name="tune-detection"))
+    .detect_machine(
+        detectors="amd",
+        detect_message_end=True,
+        initial_timeout=6,
+        machine_voice_threshold=2,
+        machine_ready_timeout=2,
+        timeout=60,
+    )
+    .switch(
+        variable="detect_result",
+        case={
+            "human": live,
+            "machine": voicemail,
+        },
+        default=live,
+    )
+    .hangup()
+    .build()
+)
+
+call = client.calling.dial(
+    from_="<YOUR_CALLER_ID>",
+    to="<YOUR_DESTINATION>",
+    swml=swml,
+)
+print(call["id"])
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — REST client">
+```typescript {26-29}
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as tune-detection.mjs,
+// then run: node tune-detection.mjs
+import { RestClient, SwmlBuilder } from "@signalwire/sdk";
+
+const client = new RestClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  host: "<YOUR_SPACE>.signalwire.com",
+});
+
+const live = new SwmlBuilder()
+  .say("Hello! Your Bayview Taxi ride is confirmed for 8 AM tomorrow.")
+  .document.sections.main;
+const voicemail = new SwmlBuilder()
+  .say(
+    "This is Bayview Taxi. Your ride is confirmed for 8 AM tomorrow. " +
+      "Reply to our text message if you need to change it.",
+  )
+  .document.sections.main;
+
+const swml = new SwmlBuilder()
+  .detect_machine({
+    detectors: "amd",
+    detect_message_end: true,
+    initial_timeout: 6,
+    machine_voice_threshold: 2,
+    machine_ready_timeout: 2,
+    timeout: 60,
+  })
+  .switch({
+    variable: "detect_result",
+    case: {
+      human: live,
+      machine: voicemail,
+    },
+    default: live,
+  })
+  .hangup()
+  .build();
+
+const call = await client.calling.dial({
+  from: "<YOUR_CALLER_ID>",
+  to: "<YOUR_DESTINATION>",
+  swml,
+});
+console.log(call.id);
+```
+</CodeBlock>
+<CodeBlock title="cURL — REST Calling API">
+```bash {17-20}
+curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
+  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "command": "dial",
+    "params": {
+      "from": "<YOUR_CALLER_ID>",
+      "to": "<YOUR_DESTINATION>",
+      "swml": {
+        "version": "1.0.0",
+        "sections": {
+          "main": [
+            {
+              "detect_machine": {
+                "detectors": "amd",
+                "detect_message_end": true,
+                "initial_timeout": 6,
+                "machine_voice_threshold": 2,
+                "machine_ready_timeout": 2,
+                "timeout": 60
+              }
+            },
+            {
+              "switch": {
+                "variable": "detect_result",
+                "case": {
+                  "human": [
+                    { "play": {"url": "say:Hello! Your Bayview Taxi ride is confirmed for 8 AM tomorrow."} }
+                  ],
+                  "machine": [
+                    { "play": {"url": "say:This is Bayview Taxi. Your ride is confirmed for 8 AM tomorrow. Reply to our text message if you need to change it."} }
+                  ]
+                },
+                "default": [
+                  { "play": {"url": "say:Hello! Your Bayview Taxi ride is confirmed for 8 AM tomorrow."} }
+                ]
+              }
+            },
+            { "hangup": {} }
+          ]
+        }
+      }
+    }
+  }'
+```
+</CodeBlock>
+</CodeBlocks>
+
+Test against the destinations you'll dial in production, not only your own phone. Carrier
+voicemail, office phone systems, and mobile greetings each pause and speak differently.
+
 ## Examples
+
+The outbound examples extend your first run: keep the same credentials and placeholders, and run
+the SWML or Relay example in its place. The inbound examples replace the handler behind your
+phone number.
+
+| What you want to do | Example |
+|---|---|
+| Wait for the beep, then leave a voicemail | [Leave a message after the beep](#leave-a-message-after-the-beep) |
+| Start an AI agent only when a person answers | [Hand a live answer to an AI agent](#hand-a-live-answer-to-an-ai-agent) |
+| Deliver a document when a fax machine answers | [Send a fax when a fax machine answers](#send-a-fax-when-a-fax-machine-answers) |
+| Detect on a call your server already answered or connected | [Detect on a call already in progress](#detect-on-a-call-already-in-progress) |
+| Turn away automated callers to your number | [Screen an inbound call](#screen-an-inbound-call) |
+| Take faxes and voice calls on the same number | [Receive a fax on an inbound call](#receive-a-fax-on-an-inbound-call) |
 
 ### Leave a message after the beep
 
@@ -661,14 +961,108 @@ Wait for the voicemail greeting and beep to finish, then leave a message. Withou
 `detect_message_end`, a `machine` result arrives while the greeting is still playing, and anything
 you say then is lost. The [outbound calling guide][outbound-calling] has a shorter version of this flow.
 
-#### Leave a message via REST
+#### Leave a message via SWML
 
 Set `detect_message_end` so `detect_machine` returns after the beep. The `machine` branch then
 plays into the recording. `detect_machine_beep` records whether a beep was heard, and
 `detect_ms` how long detection took.
 
 <CodeBlocks>
-<CodeBlock title="cURL — Calling API">
+<CodeBlock title="Python — REST client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as leave_message.py and run: python leave_message.py
+from signalwire import SWMLBuilder, SWMLService
+from signalwire.rest import RestClient
+
+client = RestClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    host="<YOUR_SPACE>.signalwire.com",
+)
+
+live = (
+    SWMLBuilder(SWMLService(name="live-message"))
+    .say("Hello! Your Bayview Taxi ride is confirmed for 8 AM tomorrow.")
+    .build()["sections"]["main"]
+)
+voicemail = (
+    SWMLBuilder(SWMLService(name="voicemail-message"))
+    .say(
+        "This is Bayview Taxi. Your ride is confirmed for 8 AM tomorrow. "
+        "Reply to our text message if you need to change it."
+    )
+    .build()["sections"]["main"]
+)
+
+swml = (
+    SWMLBuilder(SWMLService(name="leave-a-message"))
+    .detect_machine(detectors="amd", detect_message_end=True, timeout=45)
+    .switch(
+        variable="detect_result",
+        case={
+            "human": live,
+            "machine": voicemail,
+        },
+        default=live,
+    )
+    .hangup()
+    .build()
+)
+
+call = client.calling.dial(
+    from_="<YOUR_CALLER_ID>",
+    to="<YOUR_DESTINATION>",
+    swml=swml,
+)
+print(call["id"])
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — REST client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as leave-message.mjs,
+// then run: node leave-message.mjs
+import { RestClient, SwmlBuilder } from "@signalwire/sdk";
+
+const client = new RestClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  host: "<YOUR_SPACE>.signalwire.com",
+});
+
+const live = new SwmlBuilder()
+  .say("Hello! Your Bayview Taxi ride is confirmed for 8 AM tomorrow.")
+  .document.sections.main;
+const voicemail = new SwmlBuilder()
+  .say(
+    "This is Bayview Taxi. Your ride is confirmed for 8 AM tomorrow. " +
+      "Reply to our text message if you need to change it.",
+  )
+  .document.sections.main;
+
+const swml = new SwmlBuilder()
+  .detect_machine({ detectors: "amd", detect_message_end: true, timeout: 45 })
+  .switch({
+    variable: "detect_result",
+    case: {
+      human: live,
+      machine: voicemail,
+    },
+    default: live,
+  })
+  .hangup()
+  .build();
+
+const call = await client.calling.dial({
+  from: "<YOUR_CALLER_ID>",
+  to: "<YOUR_DESTINATION>",
+  swml,
+});
+console.log(call.id);
+```
+</CodeBlock>
+<CodeBlock title="cURL — REST Calling API">
 ```bash
 curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
   -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
@@ -713,94 +1107,13 @@ curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
   }'
 ```
 </CodeBlock>
-<CodeBlock title="Python — REST client">
-```python
-# Install: python -m pip install signalwire-sdk==3.4.1
-# Save as leave_message.py and run: python leave_message.py
-from signalwire import SWMLBuilder, SWMLService
-from signalwire.rest import RestClient
-
-client = RestClient(
-    project="<YOUR_PROJECT_ID>",
-    token="<YOUR_API_TOKEN>",
-    host="<YOUR_SPACE>.signalwire.com",
-)
-
-LIVE = "say:Hello! Your Bayview Taxi ride is confirmed for 8 AM tomorrow."
-VOICEMAIL = (
-    "say:This is Bayview Taxi. Your ride is confirmed for 8 AM tomorrow. "
-    "Reply to our text message if you need to change it."
-)
-
-swml = (
-    SWMLBuilder(SWMLService(name="leave-a-message"))
-    .detect_machine(detectors="amd", detect_message_end=True, timeout=45)
-    .switch(
-        variable="detect_result",
-        case={
-            "human": [{"play": {"url": LIVE}}],
-            "machine": [{"play": {"url": VOICEMAIL}}],
-        },
-        default=[{"play": {"url": LIVE}}],
-    )
-    .hangup()
-    .build()
-)
-
-call = client.calling.dial(
-    from_="<YOUR_CALLER_ID>",
-    to="<YOUR_DESTINATION>",
-    swml=swml,
-)
-print(call["id"])
-```
-</CodeBlock>
-<CodeBlock title="TypeScript — REST client">
-```typescript
-// Install: npm install @signalwire/sdk@2.0.5
-// This sample also runs as JavaScript: save as leave-message.mjs,
-// then run: node leave-message.mjs
-import { RestClient, SwmlBuilder } from "@signalwire/sdk";
-
-const client = new RestClient({
-  project: "<YOUR_PROJECT_ID>",
-  token: "<YOUR_API_TOKEN>",
-  host: "<YOUR_SPACE>.signalwire.com",
-});
-
-const LIVE = "say:Hello! Your Bayview Taxi ride is confirmed for 8 AM tomorrow.";
-const VOICEMAIL =
-  "say:This is Bayview Taxi. Your ride is confirmed for 8 AM tomorrow. " +
-  "Reply to our text message if you need to change it.";
-
-const swml = new SwmlBuilder()
-  .detect_machine({ detectors: "amd", detect_message_end: true, timeout: 45 })
-  .switch({
-    variable: "detect_result",
-    case: {
-      human: [{ play: { url: LIVE } }],
-      machine: [{ play: { url: VOICEMAIL } }],
-    },
-    default: [{ play: { url: LIVE } }],
-  })
-  .hangup()
-  .build();
-
-const call = await client.calling.dial({
-  from: "<YOUR_CALLER_ID>",
-  to: "<YOUR_DESTINATION>",
-  swml,
-});
-console.log(call.id);
-```
-</CodeBlock>
 </CodeBlocks>
 
 The `timeout` is longer here because it now covers the whole greeting. `machine_ready_timeout`
 sets how much silence after the greeting counts as "ready"; it defaults to
 `end_silence_timeout`. Raise it for greetings that pause before the beep.
 
-#### Leave a message via WebSocket (Relay)
+#### Leave a message via Relay
 
 Use the event handler rather than `wait()`. With `detect_message_end` on, a `MACHINE` event
 arrives first, while the greeting is still playing; `READY` follows after the beep. Play the
@@ -810,7 +1123,7 @@ voicemail on `READY`, and the live message on `HUMAN` or `UNKNOWN`.
 <CodeBlock title="Python — Relay client">
 ```python
 # Install: python -m pip install signalwire-sdk==3.4.1
-# Save as leave_message.py and run: python leave_message.py
+# Save as leave_message_relay.py and run: python leave_message_relay.py
 import asyncio
 from signalwire.relay import RelayClient
 from signalwire.relay.event import DetectEvent
@@ -877,7 +1190,7 @@ asyncio.run(main())
 <CodeBlock title="TypeScript — Relay client">
 ```typescript
 // Install: npm install @signalwire/sdk@2.0.5
-// Save as leave-message.mts and run: npx tsx leave-message.mts
+// Save as leave-message-relay.mts and run: npx tsx leave-message-relay.mts
 import { RelayClient, DetectEvent } from "@signalwire/sdk";
 
 const LIVE = "Hello! Your Bayview Taxi ride is confirmed for 8 AM tomorrow.";
@@ -947,13 +1260,125 @@ Before dialing, follow consent, do-not-call, and calling-hour requirements for a
 See the [TCPA guide][tcpa] and [AI best practices][ai-best-practices].
 </Warning>
 
-#### Hand off to an AI agent via REST
+#### Hand off to an AI agent via SWML
 
 Put the [`ai`][swml-ai] instruction in the `human` branch and the voicemail message in the
-`machine` branch.
+`machine` branch. The Python builder's `ai()` takes the prompt as `prompt_text`; the TypeScript
+types in `@signalwire/sdk@2.0.5` omit the `{ text }` prompt form, so that line carries a
+`@ts-expect-error` comment.
 
 <CodeBlocks>
-<CodeBlock title="cURL — Calling API">
+<CodeBlock title="Python — REST client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as detect_then_ai.py and run: python detect_then_ai.py
+from signalwire import SWMLBuilder, SWMLService
+from signalwire.rest import RestClient
+
+client = RestClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    host="<YOUR_SPACE>.signalwire.com",
+)
+
+agent = (
+    SWMLBuilder(SWMLService(name="ada"))
+    .ai(
+        params={
+            "static_greeting": "Hi, this is Ada from Bayview Taxi calling about your ride tomorrow. This call uses an artificial voice.",
+            "static_greeting_no_barge": True,
+        },
+        prompt_text=(
+            "You are Ada, a dispatcher for Bayview Taxi. Confirm the rider still wants "
+            "their 8 AM pickup tomorrow. If they want to change the time, take the new "
+            "time and repeat it back. Keep answers short."
+        ),
+    )
+    .build()["sections"]["main"]
+)
+voicemail = (
+    SWMLBuilder(SWMLService(name="voicemail-message"))
+    .say("This is Bayview Taxi confirming your 8 AM ride tomorrow. Call us back if anything changes.")
+    .hangup()
+    .build()["sections"]["main"]
+)
+
+swml = (
+    SWMLBuilder(SWMLService(name="detect-then-ai"))
+    .detect_machine(detectors="amd", detect_message_end=True, timeout=45)
+    .switch(
+        variable="detect_result",
+        case={
+            "human": agent,
+            "machine": voicemail,
+        },
+        default=voicemail,
+    )
+    .build()
+)
+
+call = client.calling.dial(
+    from_="<YOUR_CALLER_ID>",
+    to="<YOUR_DESTINATION>",
+    swml=swml,
+)
+print(call["id"])
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — REST client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as detect-then-ai.mjs,
+// then run: node detect-then-ai.mjs
+import { RestClient, SwmlBuilder } from "@signalwire/sdk";
+
+const client = new RestClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  host: "<YOUR_SPACE>.signalwire.com",
+});
+
+const prompt =
+  "You are Ada, a dispatcher for Bayview Taxi. Confirm the rider still wants " +
+  "their 8 AM pickup tomorrow. If they want to change the time, take the new " +
+  "time and repeat it back. Keep answers short.";
+
+const agent = new SwmlBuilder()
+  .ai({
+    params: {
+      static_greeting: "Hi, this is Ada from Bayview Taxi calling about your ride tomorrow. This call uses an artificial voice.",
+      static_greeting_no_barge: true,
+    },
+    // @ts-expect-error SDK 2.0.5 types omit SWML's { text } prompt form.
+    prompt: { text: prompt },
+  })
+  .document.sections.main;
+const voicemail = new SwmlBuilder()
+  .say("This is Bayview Taxi confirming your 8 AM ride tomorrow. Call us back if anything changes.")
+  .hangup()
+  .document.sections.main;
+
+const swml = new SwmlBuilder()
+  .detect_machine({ detectors: "amd", detect_message_end: true, timeout: 45 })
+  .switch({
+    variable: "detect_result",
+    case: {
+      human: agent,
+      machine: voicemail,
+    },
+    default: voicemail,
+  })
+  .build();
+
+const call = await client.calling.dial({
+  from: "<YOUR_CALLER_ID>",
+  to: "<YOUR_DESTINATION>",
+  swml,
+});
+console.log(call.id);
+```
+</CodeBlock>
+<CodeBlock title="cURL — REST Calling API">
 ```bash
 curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
   -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
@@ -1009,110 +1434,9 @@ curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
   }'
 ```
 </CodeBlock>
-<CodeBlock title="Python — REST client">
-```python
-# Install: python -m pip install signalwire-sdk==3.4.1
-# Save as detect_then_ai.py and run: python detect_then_ai.py
-from signalwire import SWMLBuilder, SWMLService
-from signalwire.rest import RestClient
-
-client = RestClient(
-    project="<YOUR_PROJECT_ID>",
-    token="<YOUR_API_TOKEN>",
-    host="<YOUR_SPACE>.signalwire.com",
-)
-
-VOICEMAIL = "say:This is Bayview Taxi confirming your 8 AM ride tomorrow. Call us back if anything changes."
-AGENT = {
-    "ai": {
-        "params": {
-            "static_greeting": "Hi, this is Ada from Bayview Taxi calling about your ride tomorrow. This call uses an artificial voice.",
-            "static_greeting_no_barge": True,
-        },
-        "prompt": {
-            "text": (
-                "You are Ada, a dispatcher for Bayview Taxi. Confirm the rider still wants "
-                "their 8 AM pickup tomorrow. If they want to change the time, take the new "
-                "time and repeat it back. Keep answers short."
-            )
-        },
-    }
-}
-
-swml = (
-    SWMLBuilder(SWMLService(name="detect-then-ai"))
-    .detect_machine(detectors="amd", detect_message_end=True, timeout=45)
-    .switch(
-        variable="detect_result",
-        case={
-            "human": [AGENT],
-            "machine": [{"play": {"url": VOICEMAIL}}, {"hangup": {}}],
-        },
-        default=[{"play": {"url": VOICEMAIL}}, {"hangup": {}}],
-    )
-    .build()
-)
-
-call = client.calling.dial(
-    from_="<YOUR_CALLER_ID>",
-    to="<YOUR_DESTINATION>",
-    swml=swml,
-)
-print(call["id"])
-```
-</CodeBlock>
-<CodeBlock title="TypeScript — REST client">
-```typescript
-// Install: npm install @signalwire/sdk@2.0.5
-// This sample also runs as JavaScript: save as detect-then-ai.mjs,
-// then run: node detect-then-ai.mjs
-import { RestClient, SwmlBuilder } from "@signalwire/sdk";
-
-const client = new RestClient({
-  project: "<YOUR_PROJECT_ID>",
-  token: "<YOUR_API_TOKEN>",
-  host: "<YOUR_SPACE>.signalwire.com",
-});
-
-const VOICEMAIL = "say:This is Bayview Taxi confirming your 8 AM ride tomorrow. Call us back if anything changes.";
-const AGENT = {
-  ai: {
-    params: {
-      static_greeting: "Hi, this is Ada from Bayview Taxi calling about your ride tomorrow. This call uses an artificial voice.",
-      static_greeting_no_barge: true,
-    },
-    prompt: {
-      text:
-        "You are Ada, a dispatcher for Bayview Taxi. Confirm the rider still wants " +
-        "their 8 AM pickup tomorrow. If they want to change the time, take the new " +
-        "time and repeat it back. Keep answers short.",
-    },
-  },
-};
-
-const swml = new SwmlBuilder()
-  .detect_machine({ detectors: "amd", detect_message_end: true, timeout: 45 })
-  .switch({
-    variable: "detect_result",
-    case: {
-      human: [AGENT],
-      machine: [{ play: { url: VOICEMAIL } }, { hangup: {} }],
-    },
-    default: [{ play: { url: VOICEMAIL } }, { hangup: {} }],
-  })
-  .build();
-
-const call = await client.calling.dial({
-  from: "<YOUR_CALLER_ID>",
-  to: "<YOUR_DESTINATION>",
-  swml,
-});
-console.log(call.id);
-```
-</CodeBlock>
 </CodeBlocks>
 
-#### Hand off to an AI agent via WebSocket (Relay)
+#### Hand off to an AI agent via Relay
 
 Start the agent with `call.ai()` on `HUMAN`, and play the voicemail on `READY`.
 
@@ -1120,7 +1444,7 @@ Start the agent with `call.ai()` on `HUMAN`, and play the voicemail on `READY`.
 <CodeBlock title="Python — Relay client">
 ```python
 # Install: python -m pip install signalwire-sdk==3.4.1
-# Save as detect_then_ai.py and run: python detect_then_ai.py
+# Save as detect_then_ai_relay.py and run: python detect_then_ai_relay.py
 import asyncio
 from signalwire.relay import RelayClient
 from signalwire.relay.event import DetectEvent
@@ -1165,9 +1489,11 @@ async def main():
                         "static_greeting_no_barge": True,
                     },
                     prompt={
-                        "text": """You are Ada, a dispatcher for Bayview Taxi. Confirm the rider
-still wants their 8 AM pickup tomorrow. If they want to change the time, take
-the new time and repeat it back. Keep answers short."""
+                        "text": (
+                            "You are Ada, a dispatcher for Bayview Taxi. Confirm the rider still wants "
+                            "their 8 AM pickup tomorrow. If they want to change the time, take the new "
+                            "time and repeat it back. Keep answers short."
+                        )
                     },
                 )
             elif result == "READY":
@@ -1189,7 +1515,7 @@ asyncio.run(main())
 <CodeBlock title="TypeScript — Relay client">
 ```typescript
 // Install: npm install @signalwire/sdk@2.0.5
-// Save as detect-then-ai.mts and run: npx tsx detect-then-ai.mts
+// Save as detect-then-ai-relay.mts and run: npx tsx detect-then-ai-relay.mts
 import { RelayClient, DetectEvent } from "@signalwire/sdk";
 
 const VOICEMAIL = "This is Bayview Taxi confirming your 8 AM ride tomorrow. Call us back if anything changes.";
@@ -1226,9 +1552,10 @@ try {
           static_greeting_no_barge: true,
         },
         prompt: {
-          text: `You are Ada, a dispatcher for Bayview Taxi. Confirm the rider still
-  wants their 8 AM pickup tomorrow. If they want to change the time, take the
-  new time and repeat it back. Keep answers short.`,
+          text:
+            "You are Ada, a dispatcher for Bayview Taxi. Confirm the rider still wants " +
+            "their 8 AM pickup tomorrow. If they want to change the time, take the new " +
+            "time and repeat it back. Keep answers short.",
         },
       });
     } else if (result === "READY") {
@@ -1260,13 +1587,109 @@ default `tone`; a fax machine that calls you sends `CNG` instead, covered in
 [Receive a fax on an inbound call](#receive-a-fax-on-an-inbound-call). `<YOUR_FAX_DOCUMENT_URL>`
 must point at a PDF that SignalWire can fetch.
 
-#### Send a fax via REST
+#### Send a fax via SWML
 
 Enable both detectors with `detectors: "amd,fax"` and add a `fax` branch that runs
 [`send_fax`][swml-send-fax].
 
 <CodeBlocks>
-<CodeBlock title="cURL — Calling API">
+<CodeBlock title="Python — REST client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as detect_fax.py and run: python detect_fax.py
+from signalwire import SWMLBuilder, SWMLService
+from signalwire.rest import RestClient
+
+client = RestClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    host="<YOUR_SPACE>.signalwire.com",
+)
+
+send_receipt = (
+    SWMLBuilder(SWMLService(name="send-receipt"))
+    .send_fax(document="<YOUR_FAX_DOCUMENT_URL>", header_info="Bayview Taxi receipt")
+    .build()["sections"]["main"]
+)
+not_a_fax = (
+    SWMLBuilder(SWMLService(name="not-a-fax"))
+    .say("Hello, this is Bayview Taxi. We tried to fax your receipt. We will email it instead.")
+    .build()["sections"]["main"]
+)
+hang_up = (
+    SWMLBuilder(SWMLService(name="hang-up"))
+    .hangup()
+    .build()["sections"]["main"]
+)
+
+swml = (
+    SWMLBuilder(SWMLService(name="detect-fax"))
+    .detect_machine(detectors="amd,fax", timeout=30)
+    .switch(
+        variable="detect_result",
+        case={
+            "fax": send_receipt,
+            "human": not_a_fax,
+        },
+        default=hang_up,
+    )
+    .hangup()
+    .build()
+)
+
+call = client.calling.dial(
+    from_="<YOUR_CALLER_ID>",
+    to="<YOUR_DESTINATION>",
+    swml=swml,
+)
+print(call["id"])
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — REST client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as detect-fax.mjs,
+// then run: node detect-fax.mjs
+import { RestClient, SwmlBuilder } from "@signalwire/sdk";
+
+const client = new RestClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  host: "<YOUR_SPACE>.signalwire.com",
+});
+
+const sendReceipt = new SwmlBuilder()
+  .send_fax({ document: "<YOUR_FAX_DOCUMENT_URL>", header_info: "Bayview Taxi receipt" })
+  .document.sections.main;
+const notAFax = new SwmlBuilder()
+  .say("Hello, this is Bayview Taxi. We tried to fax your receipt. We will email it instead.")
+  .document.sections.main;
+const hangUp = new SwmlBuilder()
+  .hangup()
+  .document.sections.main;
+
+const swml = new SwmlBuilder()
+  .detect_machine({ detectors: "amd,fax", timeout: 30 })
+  .switch({
+    variable: "detect_result",
+    case: {
+      fax: sendReceipt,
+      human: notAFax,
+    },
+    default: hangUp,
+  })
+  .hangup()
+  .build();
+
+const call = await client.calling.dial({
+  from: "<YOUR_CALLER_ID>",
+  to: "<YOUR_DESTINATION>",
+  swml,
+});
+console.log(call.id);
+```
+</CodeBlock>
+<CodeBlock title="cURL — REST Calling API">
 ```bash
 curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
   -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
@@ -1315,105 +1738,22 @@ curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
   }'
 ```
 </CodeBlock>
-<CodeBlock title="Python — REST client">
-```python
-# Install: python -m pip install signalwire-sdk==3.4.1
-# Save as detect_fax.py and run: python detect_fax.py
-from signalwire import SWMLBuilder, SWMLService
-from signalwire.rest import RestClient
-
-client = RestClient(
-    project="<YOUR_PROJECT_ID>",
-    token="<YOUR_API_TOKEN>",
-    host="<YOUR_SPACE>.signalwire.com",
-)
-
-NOT_A_FAX = "say:Hello, this is Bayview Taxi. We tried to fax your receipt. We will email it instead."
-
-swml = (
-    SWMLBuilder(SWMLService(name="detect-fax"))
-    .detect_machine(detectors="amd,fax", timeout=30)
-    .switch(
-        variable="detect_result",
-        case={
-            "fax": [{
-                "send_fax": {
-                    "document": "<YOUR_FAX_DOCUMENT_URL>",
-                    "header_info": "Bayview Taxi receipt",
-                }
-            }],
-            "human": [{"play": {"url": NOT_A_FAX}}],
-        },
-        default=[{"hangup": {}}],
-    )
-    .hangup()
-    .build()
-)
-
-call = client.calling.dial(
-    from_="<YOUR_CALLER_ID>",
-    to="<YOUR_DESTINATION>",
-    swml=swml,
-)
-print(call["id"])
-```
-</CodeBlock>
-<CodeBlock title="TypeScript — REST client">
-```typescript
-// Install: npm install @signalwire/sdk@2.0.5
-// This sample also runs as JavaScript: save as detect-fax.mjs,
-// then run: node detect-fax.mjs
-import { RestClient, SwmlBuilder } from "@signalwire/sdk";
-
-const client = new RestClient({
-  project: "<YOUR_PROJECT_ID>",
-  token: "<YOUR_API_TOKEN>",
-  host: "<YOUR_SPACE>.signalwire.com",
-});
-
-const NOT_A_FAX = "say:Hello, this is Bayview Taxi. We tried to fax your receipt. We will email it instead.";
-
-const swml = new SwmlBuilder()
-  .detect_machine({ detectors: "amd,fax", timeout: 30 })
-  .switch({
-    variable: "detect_result",
-    case: {
-      fax: [{
-        send_fax: {
-          document: "<YOUR_FAX_DOCUMENT_URL>",
-          header_info: "Bayview Taxi receipt",
-        },
-      }],
-      human: [{ play: { url: NOT_A_FAX } }],
-    },
-    default: [{ hangup: {} }],
-  })
-  .hangup()
-  .build();
-
-const call = await client.calling.dial({
-  from: "<YOUR_CALLER_ID>",
-  to: "<YOUR_DESTINATION>",
-  swml,
-});
-console.log(call.id);
-```
-</CodeBlock>
 </CodeBlocks>
 
-#### Send a fax via WebSocket (Relay)
+#### Send a fax via Relay
 
 Relay runs one detector per operation. The `fax` detector ([`detect_fax()`][py-relay-fax] in
 Python, `detect()` with `type: "fax"` in TypeScript) listens only for a fax tone, so give it a
-short timeout: a fax machine answers with its tone within a second or two, and a person doesn't. When the action
-resolves with a `fax` result, send the document with `send_fax()` ([Python][py-relay-send-fax],
-[TypeScript][ts-relay-send-fax]); otherwise treat the answer as a person.
+short timeout: a fax machine answers with its tone within a second or two, and a person doesn't.
+When the action resolves with a `fax` result, send the document with `send_fax()`
+([Python][py-relay-send-fax], [TypeScript][ts-relay-send-fax]); otherwise treat the answer as a
+person.
 
 <CodeBlocks>
 <CodeBlock title="Python — Relay client">
 ```python
 # Install: python -m pip install signalwire-sdk==3.4.1
-# Save as detect_fax.py and run: python detect_fax.py
+# Save as detect_fax_relay.py and run: python detect_fax_relay.py
 import asyncio
 from signalwire.relay import RelayClient
 
@@ -1472,7 +1812,7 @@ asyncio.run(main())
 <CodeBlock title="TypeScript — Relay client">
 ```typescript
 // Install: npm install @signalwire/sdk@2.0.5
-// Save as detect-fax.mts and run: npx tsx detect-fax.mts
+// Save as detect-fax-relay.mts and run: npx tsx detect-fax-relay.mts
 import { RelayClient, RelayEvent } from "@signalwire/sdk";
 
 const NOT_A_FAX = "Hello, this is Bayview Taxi. We tried to fax your receipt. We will email it instead.";
@@ -1533,38 +1873,20 @@ Start detection on a call that is already answered, from any process that knows 
 suits calls placed with a `url` that your server answered, calls that changed hands, such as a leg
 you connected to a customer, and inbound calls your server is handling over HTTP.
 
-Send the [`calling.detect` command][call-commands] to the Calling API with the call's `id`, or
-call the REST client's `detect()` method ([Python][py-rest-detect], [TypeScript][ts-rest-detect]).
-The command returns at once; the result arrives at `status_url` as the same `calling.call.detect`
-payload shown above. `control_id` is required, and it's the only handle for stopping the detector
-early with `calling.detect.stop`. Note that this command defaults `detect_message_end` to `true`.
+#### Start detection on a live call via the REST Calling API
+
+Call the REST client's `detect()` method ([Python][py-rest-detect], [TypeScript][ts-rest-detect]),
+or send the [`calling.detect` command][call-commands] with the call's `id`. The command returns at
+once; the result arrives at `status_url` as the same `calling.call.detect` payload shown in
+[Track detection events via SWML](#track-detection-events-via-swml). `control_id` is required,
+and it's the only handle for stopping the detector early with `calling.detect.stop`. This command
+defaults `detect_message_end` to `true`.
 
 <CodeBlocks>
-<CodeBlock title="cURL — Calling API">
-```bash
-curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
-  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "id": "<YOUR_CALL_ID>",
-    "command": "calling.detect",
-    "params": {
-      "control_id": "amd-1",
-      "detect": {
-        "type": "machine",
-        "params": {
-          "detect_message_end": true
-        }
-      },
-      "timeout": 30,
-      "status_url": "<YOUR_STATUS_WEBHOOK_URL>"
-    }
-  }'
-```
-</CodeBlock>
 <CodeBlock title="Python — REST client">
 ```python
 # Install: python -m pip install signalwire-sdk==3.4.1
+# Save as detect_in_progress.py and run: python detect_in_progress.py
 from signalwire.rest import RestClient
 
 client = RestClient(
@@ -1589,6 +1911,8 @@ client.calling.detect_stop(call_id="<YOUR_CALL_ID>", control_id="amd-1")
 <CodeBlock title="TypeScript — REST client">
 ```typescript
 // Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as detect-in-progress.mjs,
+// then run: node detect-in-progress.mjs
 import { RestClient } from "@signalwire/sdk";
 
 const client = new RestClient({
@@ -1608,13 +1932,35 @@ await client.calling.detect("<YOUR_CALL_ID>", {
 await client.calling.detectStop("<YOUR_CALL_ID>", { control_id: "amd-1" });
 ```
 </CodeBlock>
+<CodeBlock title="cURL — REST Calling API">
+```bash
+curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
+  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": "<YOUR_CALL_ID>",
+    "command": "calling.detect",
+    "params": {
+      "control_id": "amd-1",
+      "detect": {
+        "type": "machine",
+        "params": {
+          "detect_message_end": true
+        }
+      },
+      "timeout": 30,
+      "status_url": "<YOUR_STATUS_WEBHOOK_URL>"
+    }
+  }'
+```
+</CodeBlock>
 </CodeBlocks>
 
 The call must be in the `answered` state. Sending the command to a call that is still ringing
 fails. To act on the result, have your webhook handler send another call command by the same
 `id`, such as `calling.play` for a voicemail message.
 
-### Detect on an inbound call
+### Screen an inbound call
 
 Run detection on calls your number receives. Two things differ from the outbound flow: you answer
 first, and a person who calls you waits for your greeting instead of speaking. Silence from a
@@ -1623,11 +1969,90 @@ person becomes `unknown` once `initial_timeout` expires, so keep that timeout sh
 
 #### Screen an inbound call via SWML
 
-Assign this document to your number as a SWML script, or serve it from your own URL; the
-[deployment guide][swml-deployment] covers both. [`answer`][swml-answer] runs first, then
-`detect_machine` listens for two seconds before the greeting plays.
+Run one of the servers below in place of the SWML server behind your number. Each serves the
+document at `/swml` with the SDK's `SWMLService` ([Python][py-swml-service],
+[TypeScript][ts-swml-service]), and requires basic-auth credentials in the URL you give
+SignalWire: `https://signalwire:<YOUR_BASIC_AUTH_PASSWORD>@<YOUR_PUBLIC_HOST>/swml`. Expose port
+3000 at that public HTTPS host; the [make and receive calls guide][make-and-receive-calls] covers
+assigning the URL to your number, and [webhook security][swml-webhook-security] covers verifying
+requests. For a hosted SWML Script, paste the YAML or JSON instead.
+
+[`answer`][swml-answer] runs first, then `detect_machine` listens for two seconds before the
+greeting plays.
 
 <CodeBlocks>
+<CodeBlock title="Python — SWML server">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as inbound_screen.py and run: python inbound_screen.py
+from signalwire import SWMLBuilder, SWMLService
+
+reject = (
+    SWMLBuilder(SWMLService(name="reject"))
+    .say("This line doesn't accept automated calls. Goodbye.")
+    .hangup()
+    .build()["sections"]["main"]
+)
+greeting = (
+    SWMLBuilder(SWMLService(name="greeting"))
+    .say("Thanks for calling Bayview Taxi. A dispatcher will be with you shortly.")
+    .build()["sections"]["main"]
+)
+
+service = SWMLService(
+    name="inbound-screen",
+    route="/swml",
+    port=3000,
+    basic_auth=("signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"),
+)
+(
+    SWMLBuilder(service)
+    .answer()
+    .detect_machine(detectors="amd", initial_timeout=2, timeout=10)
+    .switch(
+        variable="detect_result",
+        case={"machine": reject},
+        default=greeting,
+    )
+    .hangup()
+)
+service.serve()
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — SWML server">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as inbound-screen.mjs,
+// then run: node inbound-screen.mjs
+import { SWMLService, SwmlBuilder } from "@signalwire/sdk";
+
+const reject = new SwmlBuilder()
+  .say("This line doesn't accept automated calls. Goodbye.")
+  .hangup()
+  .document.sections.main;
+const greeting = new SwmlBuilder()
+  .say("Thanks for calling Bayview Taxi. A dispatcher will be with you shortly.")
+  .document.sections.main;
+
+const service = new SWMLService({
+  name: "inbound-screen",
+  route: "/swml",
+  port: 3000,
+  basicAuth: ["signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"],
+});
+service.getBuilder()
+  .answer()
+  .detect_machine({ detectors: "amd", initial_timeout: 2, timeout: 10 })
+  .switch({
+    variable: "detect_result",
+    case: { machine: reject },
+    default: greeting,
+  })
+  .hangup();
+
+await service.serve();
+```
+</CodeBlock>
 <CodeBlock title="YAML">
 ```yaml
 version: 1.0.0
@@ -1690,16 +2115,17 @@ sections:
 The `default` branch greets both `human` and `unknown`, so a quiet caller hears the greeting after
 a two-second pause. Add `status_url` to `detect_machine` to log each result.
 
-#### Screen an inbound call via WebSocket (Relay)
+#### Screen an inbound call via Relay
 
 Handle the call in `on_call` (Python) or `onCall` (TypeScript), answer it, then detect exactly as
-you would after a dial.
+you would after a dial. These examples listen on the `inbound-calling` topic; use the topic your
+number routes to.
 
 <CodeBlocks>
 <CodeBlock title="Python — Relay client">
 ```python
 # Install: python -m pip install signalwire-sdk==3.4.1
-# Save as inbound_detect.py and run: python inbound_detect.py
+# Save as inbound_screen_relay.py and run: python inbound_screen_relay.py
 from signalwire.relay import RelayClient
 
 GREETING = "Thanks for calling Bayview Taxi. A dispatcher will be with you shortly."
@@ -1709,7 +2135,7 @@ client = RelayClient(
     project="<YOUR_PROJECT_ID>",
     token="<YOUR_API_TOKEN>",
     host="<YOUR_SPACE>.signalwire.com",
-    contexts=["default"],
+    contexts=["inbound-calling"],
 )
 
 def outcome(event) -> str:
@@ -1733,7 +2159,7 @@ client.run()
 <CodeBlock title="TypeScript — Relay client">
 ```typescript
 // Install: npm install @signalwire/sdk@2.0.5
-// Save as inbound-detect.mts and run: npx tsx inbound-detect.mts
+// Save as inbound-screen-relay.mts and run: npx tsx inbound-screen-relay.mts
 import { RelayClient, RelayEvent } from "@signalwire/sdk";
 
 const GREETING = "Thanks for calling Bayview Taxi. A dispatcher will be with you shortly.";
@@ -1743,7 +2169,7 @@ const client = new RelayClient({
   project: "<YOUR_PROJECT_ID>",
   token: "<YOUR_API_TOKEN>",
   host: "<YOUR_SPACE>.signalwire.com",
-  contexts: ["default"],
+  contexts: ["inbound-calling"],
 });
 
 function outcome(event: RelayEvent): string {
@@ -1784,9 +2210,80 @@ Keep the timeout short so voice callers aren't left in silence.
 #### Receive a fax via SWML
 
 Set `detectors` to `fax` and `tone` to `CNG`. A `fax` result runs
-[`receive_fax`][swml-receive-fax]; anything else greets the caller.
+[`receive_fax`][swml-receive-fax]; anything else greets the caller. Run the server the same way
+as in [Screen an inbound call via SWML](#screen-an-inbound-call-via-swml).
 
 <CodeBlocks>
+<CodeBlock title="Python — SWML server">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as inbound_fax.py and run: python inbound_fax.py
+from signalwire import SWMLBuilder, SWMLService
+
+take_fax = (
+    SWMLBuilder(SWMLService(name="take-fax"))
+    .receive_fax(status_url="<YOUR_STATUS_WEBHOOK_URL>")
+    .build()["sections"]["main"]
+)
+greeting = (
+    SWMLBuilder(SWMLService(name="greeting"))
+    .say("Thanks for calling Bayview Taxi. A dispatcher will be with you shortly.")
+    .build()["sections"]["main"]
+)
+
+service = SWMLService(
+    name="inbound-fax",
+    route="/swml",
+    port=3000,
+    basic_auth=("signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"),
+)
+(
+    SWMLBuilder(service)
+    .answer()
+    .detect_machine(detectors="fax", tone="CNG", timeout=5)
+    .switch(
+        variable="detect_result",
+        case={"fax": take_fax},
+        default=greeting,
+    )
+    .hangup()
+)
+service.serve()
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — SWML server">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as inbound-fax.mjs,
+// then run: node inbound-fax.mjs
+import { SWMLService, SwmlBuilder } from "@signalwire/sdk";
+
+const takeFax = new SwmlBuilder()
+  .receive_fax({ status_url: "<YOUR_STATUS_WEBHOOK_URL>" })
+  .document.sections.main;
+const greeting = new SwmlBuilder()
+  .say("Thanks for calling Bayview Taxi. A dispatcher will be with you shortly.")
+  .document.sections.main;
+
+const service = new SWMLService({
+  name: "inbound-fax",
+  route: "/swml",
+  port: 3000,
+  basicAuth: ["signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"],
+});
+service.getBuilder()
+  .answer()
+  .detect_machine({ detectors: "fax", tone: "CNG", timeout: 5 })
+  .switch({
+    variable: "detect_result",
+    case: { fax: takeFax },
+    default: greeting,
+  })
+  .hangup();
+
+await service.serve();
+```
+</CodeBlock>
 <CodeBlock title="YAML">
 ```yaml
 version: 1.0.0
@@ -1846,7 +2343,7 @@ sections:
 
 `receive_fax` posts the finished document's details to its own `status_url`.
 
-#### Receive a fax via WebSocket (Relay)
+#### Receive a fax via Relay
 
 Detect the `CNG` tone with the `fax` detector, then call `receive_fax()`
 ([Python][py-relay-receive-fax], [TypeScript][ts-relay-receive-fax]) and wait for the document.
@@ -1855,7 +2352,7 @@ Detect the `CNG` tone with the `fax` detector, then call `receive_fax()`
 <CodeBlock title="Python — Relay client">
 ```python
 # Install: python -m pip install signalwire-sdk==3.4.1
-# Save as inbound_fax.py and run: python inbound_fax.py
+# Save as inbound_fax_relay.py and run: python inbound_fax_relay.py
 from signalwire.relay import RelayClient
 
 GREETING = "Thanks for calling Bayview Taxi. A dispatcher will be with you shortly."
@@ -1864,7 +2361,7 @@ client = RelayClient(
     project="<YOUR_PROJECT_ID>",
     token="<YOUR_API_TOKEN>",
     host="<YOUR_SPACE>.signalwire.com",
-    contexts=["default"],
+    contexts=["inbound-calling"],
 )
 
 def is_fax(event) -> bool:
@@ -1896,7 +2393,7 @@ client.run()
 <CodeBlock title="TypeScript — Relay client">
 ```typescript
 // Install: npm install @signalwire/sdk@2.0.5
-// Save as inbound-fax.mts and run: npx tsx inbound-fax.mts
+// Save as inbound-fax-relay.mts and run: npx tsx inbound-fax-relay.mts
 import { RelayClient, RelayEvent } from "@signalwire/sdk";
 
 const GREETING = "Thanks for calling Bayview Taxi. A dispatcher will be with you shortly.";
@@ -1905,7 +2402,7 @@ const client = new RelayClient({
   project: "<YOUR_PROJECT_ID>",
   token: "<YOUR_API_TOKEN>",
   host: "<YOUR_SPACE>.signalwire.com",
-  contexts: ["default"],
+  contexts: ["inbound-calling"],
 });
 
 function isFax(event: RelayEvent): boolean {
@@ -1938,92 +2435,24 @@ await client.run();
 </CodeBlock>
 </CodeBlocks>
 
-### Tune detection
+## Next steps
 
-The defaults suit most residential voicemail. Adjust them when a run misclassifies, and change
-one setting at a time so you can see its effect. Every setting below is a `detect_machine`
-property, a `detect.params` field in REST, and a keyword argument on the Relay helper.
+<CardGroup cols={2}>
 
-| Symptom | Setting | Default | Change |
-|---|---|---|---|
-| Greeting begins with silence and comes back `unknown` | `initial_timeout` | 4.5 s | Raise it |
-| A person who talks for a while is classified `machine` | `machine_voice_threshold` | 1.25 s | Raise it |
-| A short, scripted greeting is classified `human` | `machine_words_threshold` | 6 words | Lower it |
-| A person's pause after "Hello?" is too short to count as silence | `end_silence_timeout` | 1.0 s | Lower it |
-| The voicemail message starts before the beep | `machine_ready_timeout` | Same as `end_silence_timeout` | Raise it |
-| Long IVR menus never reach a result | `timeout` | 30 s | Raise it, or hang up on `machine` without waiting for `READY` |
-| Detection stops on the first thing it hears | `detect_message_end` | `false` in SWML, `true` in REST | Set it explicitly |
-| Callers to your number wait in silence, then come back `unknown` | `initial_timeout` | 4.5 s | Lower it on inbound calls, and greet `unknown` as a person |
+<Card title="detect_machine reference" href="/docs/swml/reference/calling/detect-machine" icon="regular file-code">
+  Every detector property, the variables it sets, and the status callback payload.
+</Card>
 
-A greeting from a business often runs past the defaults. This document gives it more room:
+<Card title="Relay detect() reference" href="/docs/server-sdks/reference/python/relay/call/detect" icon="regular server">
+  Run the machine, fax, and digit detectors from a Relay client and handle their events.
+</Card>
 
-<CodeBlocks>
-<CodeBlock title="YAML">
-```yaml
-version: 1.0.0
-sections:
-  main:
-    - detect_machine:
-        detectors: amd
-        detect_message_end: true
-        initial_timeout: 6
-        machine_voice_threshold: 2
-        machine_ready_timeout: 2
-        timeout: 60
-    - switch:
-        variable: detect_result
-        case:
-          human:
-            - play:
-                url: "say:Hello! Your Bayview Taxi ride is confirmed for 8 AM tomorrow."
-          machine:
-            - play:
-                url: "say:This is Bayview Taxi. Your ride is confirmed for 8 AM tomorrow."
-        default:
-          - play:
-              url: "say:Hello! Your Bayview Taxi ride is confirmed for 8 AM tomorrow."
-    - hangup: {}
-```
-</CodeBlock>
-<CodeBlock title="JSON">
-```json
-{
-  "version": "1.0.0",
-  "sections": {
-    "main": [
-      {
-        "detect_machine": {
-          "detectors": "amd",
-          "detect_message_end": true,
-          "initial_timeout": 6,
-          "machine_voice_threshold": 2,
-          "machine_ready_timeout": 2,
-          "timeout": 60
-        }
-      },
-      {
-        "switch": {
-          "variable": "detect_result",
-          "case": {
-            "human": [
-              { "play": {"url": "say:Hello! Your Bayview Taxi ride is confirmed for 8 AM tomorrow."} }
-            ],
-            "machine": [
-              { "play": {"url": "say:This is Bayview Taxi. Your ride is confirmed for 8 AM tomorrow."} }
-            ]
-          },
-          "default": [
-            { "play": {"url": "say:Hello! Your Bayview Taxi ride is confirmed for 8 AM tomorrow."} }
-          ]
-        }
-      },
-      { "hangup": {} }
-    ]
-  }
-}
-```
-</CodeBlock>
-</CodeBlocks>
+<Card title="Call commands reference" href="/docs/apis/rest/calls/call-commands" icon="regular code">
+  Send `calling.detect` and the other in-call commands to a live call by ID.
+</Card>
 
-Test against the destinations you'll dial in production, not only your own phone. Carrier
-voicemail, office phone systems, and mobile greetings each pause and speak differently.
+<Card title="Fax" href="/docs/platform/fax" icon="regular fax">
+  Send and receive faxes once detection finds a fax machine on the line.
+</Card>
+
+</CardGroup>
