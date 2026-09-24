@@ -34,7 +34,7 @@ model Token {
 model CreatedToken {
   ...Token;
 
-  @doc("Create response only. The API token value, used as the password in HTTP Basic auth alongside the project ID. Not returned by update and cannot be retrieved later; store it securely.")
+  @doc("The API token secret, used as the password in HTTP Basic auth alongside the project ID. Returned only in this response and cannot be retrieved again; store it securely.")
   @example("swapi_0123456789ab0123456789ab0123456789ab")
   token: string;
 }

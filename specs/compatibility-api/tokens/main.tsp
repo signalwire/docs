@@ -22,7 +22,7 @@ namespace CompatibilityAPI.Tokens {
       
       For the SignalWire REST API's project route, use [Create API token](/docs/apis/rest/project-tokens/create-token).
       
-      <Warning title="Save the token value now">The `token` value in the response is shown only once. No later request, including [Update an API Token](/docs/compatibility-api/rest/tokens/update-token), can read it back. If you lose it, delete the token and create a new one.</Warning>
+      <Warning title="Save the token secret now">The response is the only place the token secret is returned. No later request, including [Update an API Token](/docs/compatibility-api/rest/tokens/update-token), can read it back. If you lose it, delete the token and create a new one.</Warning>
       
       ${tokenPermissions<"_Management_">}
       """)
@@ -42,7 +42,9 @@ namespace CompatibilityAPI.Tokens {
     @doc("""
       Changes the name or enabled permission categories of an existing project API token. For the SignalWire REST API's project route, use [Update API token](/docs/apis/rest/project-tokens/update-token).
       
-      The response contains the token's `id`, `name`, and `permissions` only. The token value is returned once, by [Generate a new API Token](/docs/compatibility-api/rest/tokens/create-token), and cannot be retrieved afterwards. Updating a token does not rotate or reissue its value; the existing value keeps working after the update. Integrations that read `token` from this response must capture it at create time instead, or delete the token and create a new one.
+      The response contains the token's `id`, `name`, and `permissions` only. The token secret is returned once, by [Generate a new API Token](/docs/compatibility-api/rest/tokens/create-token), and cannot be retrieved afterwards.
+      
+      Updating a token does not rotate or reissue its secret. The existing secret keeps working after the update.
       
       ${tokenPermissions<"_Management_">}
       """)
