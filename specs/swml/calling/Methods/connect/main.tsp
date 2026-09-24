@@ -150,15 +150,14 @@ model ConnectDeviceBase {
   call_state_url?: url;
 
   @doc("""
-    SWML to execute after the bridge completes. This defines what should happen after the call is connected and the bridge ends.
+    SWML to execute when the call leaves a queue it was connected to. Only applies when `to`
+    starts with `queue:`. When omitted, the call hangs up.
     Can be either:
     - A URL (http or https) that returns a SWML document
     - An inline SWML document (as a JSON string)
-
-    **Note:** This parameter is REQUIRED when connecting to a queue (when `to` starts with "queue:")
     """)
-  @example("https://example.com/after-bridge.swml")
-  transfer_after_bridge?: string | SWMLVar;
+  @example("https://example.com/after-queue.swml")
+  execute_after_queue?: string | SWMLVar;
 
   @doc("""
     An array of call state event names to be notified about.
@@ -323,17 +322,7 @@ model ConnectDestination {
  * destination-only properties from ConnectDestination (using `Omit` to skip
  * the fields already present on ConnectDeviceBase, avoiding duplication).
  */
-// The `if`/`then` pair below is raw JSON Schema. TypeSpec cannot express
-// "required only when another property has a given shape", so the rule already
-// documented on `transfer_after_bridge` is injected as keywords the validator
-// can act on. A line comment rather than a doc comment: this is about the spec,
-// not about the object, and a doc comment would be published as its description.
 @summary("Single Destination")
-@extension(
-  "if",
-  #{ properties: #{ to: #{ pattern: "^queue:" } }, required: #["to"] }
-)
-@extension("then", #{ required: #["transfer_after_bridge"] })
 model ConnectDeviceSingle is ConnectDeviceBase {
   ...OmitProperties<ConnectDestination, "from" | "from_name" | "headers" | "codecs" | "webrtc_media" | "session_timeout" | "timeout" | "call_state_events" | "call_state_url" | "confirm" | "confirm_timeout" | "encryption">;
 }
