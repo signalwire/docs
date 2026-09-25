@@ -21,7 +21,7 @@
     <a href="https://signalwire.com/docs"><b>Get Started</b></a> &nbsp;&middot;&nbsp;
     <a href="https://signalwire.com/docs/apis"><b>API Reference</b></a> &nbsp;&middot;&nbsp;
     <a href="https://signalwire.com/docs/swml"><b>SWML</b></a> &nbsp;&middot;&nbsp;
-    <a href="https://signalwire.com/docs/agents-sdk"><b>Agents SDK</b></a> &nbsp;&middot;&nbsp;
+    <a href="https://signalwire.com/docs/server-sdks"><b>Server SDKs</b></a> &nbsp;&middot;&nbsp;
     <a href="https://github.com/signalwire/docs/issues/new/choose"><b>Report an Issue</b></a>
 </p>
 
@@ -60,8 +60,7 @@ This is the source repository for [signalwire.com/docs](https://signalwire.com/d
 
 | | Product | Description |
 |---|---|---|
-| | [Agents SDK](https://signalwire.com/docs/agents-sdk) | Build AI-powered voice agents |
-| | [Server SDK](https://signalwire.com/docs/server-sdk) | Control communications in real time |
+| | [Server SDKs](https://signalwire.com/docs/server-sdks) | Build AI agents, control calls, send messages, and more |
 | | [Browser SDK](https://signalwire.com/docs/browser-sdk) | Voice, video & chat in the browser |
 
 </td>
