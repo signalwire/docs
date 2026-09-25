@@ -1,6 +1,6 @@
 {/* Shared component: Resource Addresses */}
 
-Each **Resource** is uniquely identified by its **Address**, allowing for precise targeting and interaction within the Call Fabric ecosystem.
+Each **Resource** is uniquely identified by its **Address**, allowing for precise targeting and interaction on SignalWire.
 This simplifies the development process by providing a standardized way to handle different communication elements, and
 enhances flexibility, as developers can interact with a wide range of communication tools using a unified approach.
 
@@ -14,7 +14,7 @@ These addresses can be changed or deleted later as needed.
 
 ## Types
 
-Call Fabric supports multiple address types to accommodate different communication protocols and use cases:
+SignalWire supports multiple address types to accommodate different communication protocols and use cases:
 
 - **Phone numbers**: Traditional phone numbers in E.164 format (e.g., `+14155551234`) that can be mapped to resources for PSTN connectivity.
 - **SIP addresses**: SIP URIs for VoIP communications (e.g., `sip:user@domain.com`) enabling direct SIP endpoint connections.
@@ -24,20 +24,20 @@ Each address type follows the same context and naming conventions described belo
 
 Each **Resource Address** has two components:
 
-- **Context**: Identifies the path of the address. Currently can be `public` or `private`.
-- **Name**: By default the name of the address will be the name of the resource, however,
+- **Context**: Identifies the path of the address. Every Project starts with `public` and `private`, and you can add named contexts of either access type from the Dashboard's Contexts page.
+- **Name**: By default the name of the address will be the name of the resource in lowercase, however,
   a user can also change or add an `alias` of an address.
 
-For example, the address for an `AI Agent` resource named `Alice-AI` in the `public` context would be `/public/Alice-AI`.
-If you were to change the `alias` to `John-AI` the address would become `/public/John-AI`.
+For example, the address for an `AI Agent` resource named `Alice-AI` in the `public` context would be `/public/alice-ai`.
+If you were to change the `alias` to `john-ai` the address would become `/public/john-ai`.
 
 <Tip>
 If you are interacting with a resource from within the same context, you can omit the context from the address.
 For example, if you are interacting with a [Subscribers](/docs/platform/subscribers) resource named `Bob` from within the `private` context,
-you can use the address `/Bob` instead of `/private/Bob`.
+you can use the address `/bob` instead of `/private/bob`.
 </Tip>
 
-Once you have created a Resource, you can use the address to interact with it within the Call Fabric ecosystem.
+Once you have created a Resource, you can use the address to interact with it anywhere on SignalWire.
 Additionally, you can view the created resource in the `Resources` tab of the SignalWire Dashboard.
 Here, you can view the address, type, and other details of the resource.
 

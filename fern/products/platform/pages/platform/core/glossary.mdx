@@ -36,7 +36,7 @@ max-toc-depth: 3
 [video-token]: /docs/apis/rest/video/room-tokens/create-room-token
 [webhooks]: /docs/platform/webhooks
 
-This glossary defines each SignalWire term, with the aliases and historical names it answers to and the similar terms it should not be confused with.
+This glossary defines each SignalWire term, with the aliases and historical names it answers to and the similar terms it should not be confused with. An alias is listed only where it is still live in the product, such as a Dashboard label, an API path or field, an SDK parameter, or a package name, and each entry says where.
 
 ## Accounts and access
 
@@ -69,7 +69,7 @@ Each Project has its own Project ID and API tokens, so a Project is the unit of 
 
 A Project nested one level beneath a root Project. A Subproject is a full Project with its own Project ID and Resources, but Subprojects cannot contain other Subprojects.
 
-Subprojects can be created and deleted through the [Projects API][projects-api] with a Project's API token; creating or deleting a root Project through the API takes a [Personal access token](#personal-access-token). Note that a Project must release its phone numbers and remove its Subprojects before it can be deleted.
+Subprojects can be created and deleted through the [Projects API][projects-api] with a Project's API token; creating or deleting a root Project through the API takes a [Personal access token](#personal-access-token). A Project must release its phone numbers and remove its Subprojects before it can be deleted, and the last Project in a Space cannot be deleted.
 
 #### Project ID [#project-id]
 
@@ -79,7 +79,7 @@ In the Compatibility API, this is called the **Account SID** for compatibility w
 
 ### API token [#api-token]
 
-A Project-scoped credential used server-side, and the password half of HTTP Basic [authentication][authorization]. A Project can hold several tokens, each with its own scopes, and you create and revoke them from the Dashboard.
+A Project-scoped credential used server-side, and the password half of HTTP Basic [authentication][authorization]. A Project can hold several tokens, each with its own scopes, and you create and revoke them from the Dashboard or through the REST API.
 
 An API token does not belong in a browser; client-side credentials are created by calling an API endpoint with it.
 
@@ -98,23 +98,23 @@ The tokens at a glance:
 | [Chat token][chat-token] | Client-side credential for Chat, created with an API token. |
 | [Personal access token](#personal-access-token) | Per user, not per Project. Administers the Space over the API and downloads FreeSWITCH binaries. |
 
-## Call Fabric [#call-fabric]
+## Resources and Addresses [#resources-and-addresses]
 
-SignalWire's addressing model. Every communication entity — a user, a script, an AI agent, a SIP endpoint, a video room — is a [Resource][resources] reachable at an Address, so one dialing model reaches all of them and all of them are managed the same way.
+SignalWire's addressing model. Every communication entity — a user, a script, an AI agent, a SIP endpoint, a video room — is a [Resource][resources] reachable at an Address, so one dialing model reaches all of them and all of them are managed the same way. The Dashboard and the `/api/fabric/` REST paths still use the name **Call Fabric** for this model.
 
 ### Resource [#resource]
 
-A container object representing one communication entity. Every Resource has a **Type** — Subscriber, SWML Script, cXML Script, AI Agent, Call Flow, Relay Application, FreeSWITCH Connector, SIP, Video Room — and one or more [Addresses][addresses] that make it reachable. All types share the same addressing and management model.
+A container object representing one communication entity. Every Resource has a **Type** and one or more [Addresses][addresses] that make it reachable. The REST API defines fourteen types and reports each Resource's in the `type` field of its response: Subscriber, AI Agent, SWML Script, SWML Webhook, cXML Script, cXML Application, cXML Webhook, Call Flow, Relay Application, FreeSWITCH Connector, SIP Credential, whose `type` value is `sip_endpoint`, SIP Gateway, Dialogflow Agent, and Video Room. The Dashboard also offers Remote AI Agent, which has no REST API type. All types share the same addressing and management model.
 
 Capital-R Resource is not the generic "REST resource" of an API path. The REST namespace of the Server SDKs uses "resource" in that looser sense too.
 
 ### Resource Address [#resource-address]
 
-The path that reaches a Resource, in the form `/context/name`. The context is `public` or `private`, and the name defaults to the Resource's name. An AI agent named `Sigmond` in the public context is reachable at `/public/Sigmond`.
+The path that reaches a Resource, in the form `/context/name`. Every Project starts with a `public` and a `private` context, and you can add named contexts of either access type from the Dashboard. The name defaults to the Resource's name in lowercase. An AI agent named `Sigmond` in the public context is reachable at `/public/sigmond`.
 
-Addresses are mutable and a Resource can have several, including phone numbers and SIP URIs. When you're addressing a Resource from within its own context, you can omit the context: a Subscriber named `Bob` in the `private` context is reachable at `/private/Bob`, or, from within that context, just `/Bob`.
+Addresses are mutable and a Resource can have several, including phone numbers and SIP URIs. When you're addressing a Resource from within its own context, you can omit the context: a Subscriber named `Bob` in the `private` context is reachable at `/private/bob`, or, from within that context, just `/bob`.
 
-Some older pages say "Fabric Address"; it names the same thing.
+The REST API reference calls it a **Fabric Address**.
 
 ### Phone number [#phone-number]
 
@@ -128,11 +128,11 @@ A [Resource][subscribers] type representing a user in your communication system,
 
 A short-lived credential identifying one Subscriber and carrying the capabilities granted to them, sent as Bearer authentication. Also written **Subscriber Access Token** or **SAT**. Your backend creates one using your Project's API token and hands it to the browser, where the [Browser SDK][sat] uses it to open a session.
 
-Three variants exist for different levels of trust — the default SAT, a Guest SAT, and an Invite SAT — alongside a separate Embed token for public widgets.
+Three variants exist for different levels of trust: the default SAT for a signed-in Subscriber, a Guest SAT that your backend creates for a visitor and limits to a list of Addresses, and an Invite SAT that a signed-in Subscriber creates for one recipient and one Address. A separate Embed token serves public widgets.
 
 ### Relay Application [#relay-application]
 
-A Resource type representing your own server connected over [Relay](#relay). It carries a **context**, and calls addressed to the Resource are handed to whichever Relay client is subscribed to that context.
+A Resource type representing your own server connected over [Relay](#relay). It carries a **topic**, and calls addressed to the Resource are sent to whichever connected Relay client is subscribed to that topic. The Dashboard labels the field **Topic**. In the Server SDKs, `RelayClient` subscribes to it through its `contexts` parameter.
 
 A Relay Application is not the Relay namespace of the Server SDKs and not the Server SDKs themselves. It is the Dashboard-side Resource that routes a call to code you are already running.
 
@@ -154,13 +154,32 @@ The whole call as the person on the other end experiences it, from the moment it
 
 The relationship between two user agents. A call is made of one or more legs: forwarding an inbound call to a single SIP endpoint is two legs, and fanning it out to four endpoints is five.
 
-In SWML each leg has its own `call` object with its own `call_id`, and connecting to a new leg re-initializes that object with the new leg's data. A leg's `call_id` is the same identifier the logs show as its [Segment ID](#segment-id).
+In SWML each leg has its own `call` object with its own [Call ID](#call-id), and connecting to a new leg re-initializes that object with the new leg's data.
+
+### Call ID [#call-id]
+
+The UUID of one [leg](#call-leg), fixed from the moment the leg starts until it hangs up. In Calling SWML it is `call.call_id`. In the Relay namespace of the Server SDKs it is `call.id`. SWML status callbacks and AI webhooks send it as `call_id`. Connecting to a new leg gives that leg its own Call ID, which the first leg's webhooks report as `peer.call_id`.
 
 ### Segment ID [#segment-id]
 
-A UUID identifying one [leg](#call-leg) of a call — or one message or fax — in the logs, written **SID**. A call with several legs produces several segments, and each leg keeps its SID for its whole lifecycle. In Calling SWML, the same identifier appears as the leg's `call_id`.
+The UUID of a leg's log record, and the identifier to quote in a support ticket. A leg's first segment reuses its [Call ID](#call-id), so for an ordinary call the two are the same value. If SignalWire re-routes the leg to a new handler, such as a SIP REFER or a cXML transfer, a new segment begins on the same leg: the Segment ID changes and the Call ID does not. Messages and faxes have Segment IDs too.
 
-The REST APIs return it as `id`, and it is the identifier to quote when filing a support ticket. The [Segment IDs page][segment-ids] shows where to find them in the Dashboard.
+The Dashboard labels it **Segment ID** in every log's detail view, and the [Segment IDs page][segment-ids] shows where. The REST APIs return it as `id`, and Calling SWML exposes it as `call.segment_id`. The Compatibility API writes it **SID**, as in `CallSid`, and its Dashboard log pages use the same abbreviation.
+
+The identifiers at a glance:
+
+| Identifier | Identifies | Where you see it |
+|---|---|---|
+| [Call ID](#call-id) | One leg, for its whole life | `call_id` in SWML, status callbacks, and AI webhooks; `call.id` in the Relay namespace of the Server SDKs |
+| [Segment ID](#segment-id) | One leg's log record; a new one after a re-route | Dashboard logs; `id` in REST responses; `segment_id` in SWML and status callbacks |
+| `CallSid` | The leg's Segment ID, under the Compatibility API's name | Compatibility REST responses and every cXML request and status callback |
+| `ParentCallSid` | The Segment ID of the leg that created this one | Compatibility status callbacks; `parent_id` in the REST voice logs |
+| `AccountSid` | Your [Project ID](#project-id) | Compatibility API |
+| Message ID | One message's log record | `id` in REST responses; `message_id` in Relay events; `MessageSid` in Compatibility webhooks; **Message Segment ID** in the Dashboard |
+| `FaxSid` | One fax's log record | Compatibility API; **Fax Segment ID** in the Dashboard. `MediaSid` is the stored document, a different ID |
+| `ai_session_id` | One AI session on a leg | AI webhooks |
+
+The `conversation_id` in AI webhooks is the value you set in `ai.params`, not a platform identifier.
 
 ## SWML
 
@@ -172,7 +191,7 @@ Unqualified, "SWML" means [Calling SWML][swml-calling], the document type for vo
 
 #### Messaging SWML [#messaging-swml]
 
-The [document type][swml-messaging] for inbound SMS and MMS. A document can run up to 100 method steps per inbound message, and execution stops at that ceiling.
+The [document type][swml-messaging] for inbound SMS and MMS. A document can run up to 100 method steps and 10 `request` calls per inbound message, and execution stops at either ceiling.
 
 Messaging SWML is not Calling SWML with a smaller method set. It supports only plain variable substitution with `%{path.to.value}` — no JavaScript, no method calls, no operators. For dynamic behavior, use `switch` to branch and `request` to fetch computed values from your server. See the [expressions reference][expressions].
 
@@ -184,7 +203,7 @@ The SignalWire AI Gateway: a JSON protocol over HTTP by which an AI agent calls 
 
 A named capability you hand to the agent — a name, a description, and a JSON Schema describing its parameters. Each call is one HTTP POST answered by one JSON reply, with nothing held open in between. See the [tool calling guide][tool-calling].
 
-A SWAIG function is not an ordinary webhook, in four ways. The model decides when to call it, reading your description, rather than an event triggering it. The reply's `response` field is written into the agent's conversational context rather than spoken verbatim. A function declared via `SWAIG.includes` adds a discovery step — a function signature request — that enumerates available functions when the agent loads; a function declared inline needs no such request, since its signature is already in the document. And a `data_map` variant runs entirely on SignalWire's side, with no server of yours involved at all.
+A SWAIG function is not an ordinary webhook, in four ways. The model decides when to call it, reading your description, rather than an event triggering it. The reply's `response` field is written into the agent's conversational context rather than spoken verbatim. A function declared via `SWAIG.includes` adds a discovery step — a function signature request — that enumerates available functions when the agent loads; a function declared inline needs no such request, since its signature is already in the document. And a `data_map` variant runs on SignalWire's side, so it needs no webhook endpoint of yours, though it can still fetch from HTTP APIs you name.
 
 ### Webhook [#webhook]
 
@@ -206,13 +225,13 @@ The namespace that builds AI-driven call flows declaratively. Your agent runs an
 
 #### Relay namespace [#relay]
 
-SignalWire's real-time protocol for imperative call control — JSON-RPC 2.0 over a persistent WebSocket — and the SDK namespace that speaks it. Your code subscribes to contexts, reacts to events as they arrive, and issues commands: answer, play, collect digits, record, bridge, transfer. See the [Relay client guide][relay-client].
+SignalWire's real-time protocol for imperative call control — JSON-RPC 2.0 over a persistent WebSocket — and the SDK namespace that speaks it. Your code subscribes to topics, reacts to events as they arrive, and issues commands: answer, play, collect digits, record, bridge, transfer. See the [Relay client guide][relay-client].
 
 Reach for Relay when you need to react to a call as it unfolds. Reach for [SWML](#swml-document) when you can describe the whole flow up front.
 
-The persistent, authenticated WebSocket connection a `RelayClient` holds is its **Relay session**: over one session it subscribes to contexts, receives events, and carries every call and message it handles.
+The persistent, authenticated WebSocket connection a `RelayClient` holds is its **Relay session**: over one session it subscribes to topics, receives events, and carries every call and message it handles.
 
-You'll also see the all-caps spelling **RELAY** on older pages, along with the names **Realtime SDK** and **Relay Realtime SDK**. All three refer to this namespace; the capitalization carries no meaning.
+**Realtime SDK** and **Relay Realtime SDK** are the names of the Node.js package `@signalwire/realtime-api`, the earlier Relay client for JavaScript. Relay in either name means this namespace.
 
 Relay is not a [Relay Application](#relay-application), which is the Dashboard Resource that routes a call to your Relay client.
 
@@ -236,7 +255,7 @@ The Compatibility API is not the route to SignalWire AI. Use [SWML](#swml-docume
 
 Compatibility XML, the XML language for controlling calls, messages, and faxes through the Compatibility API. It is compatible with Twilio's TwiML, so existing TwiML documents work without modification. See the [cXML specification][cxml].
 
-**LaML** is the former name of cXML and of the Compatibility API. It is retired as a product name but still live as an identifier, so you will keep meeting it: in `/api/laml/` URL paths, in the `RestClient.LaML` SDK namespace, in the LAML Bins resource of the Compatibility API — not a Call Fabric [Resource](#resource) — and on Dashboard labels such as **cXML/LaML**. When you see LaML in a name or a URL, read cXML.
+**LaML** is the former name of cXML and of the Compatibility API. It is retired as a product name but still live as an identifier, so you will keep meeting it: in `/api/laml/` URL paths, in the `RestClient.LaML` SDK namespace, in the LAML Bins resource of the Compatibility API — not a [Resource](#resource) — and on Dashboard labels such as **cXML/LaML**. When you see LaML in a name or a URL, read cXML.
 
 ### Call Flow Builder [#call-flow-builder]
 
