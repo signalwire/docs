@@ -34,7 +34,7 @@ max-toc-depth: 3
 [video-token]: /docs/apis/rest/video/room-tokens/create-room-token
 [webhooks]: /docs/platform/webhooks
 
-This glossary defines each SignalWire term, with the aliases and historical names it answers to and the similar terms it should not be confused with.
+This glossary defines each SignalWire term, with the aliases and historical names it answers to and the similar terms it should not be confused with. An alias is listed only where it is still live in the product, such as a Dashboard label, an API path or field, an SDK parameter, or a package name, and each entry says where.
 
 ## Accounts and access
 
@@ -98,7 +98,7 @@ The tokens at a glance:
 
 ## Resources and addresses [#resources-and-addresses]
 
-SignalWire's addressing model. Every communication entity — a user, a script, an AI agent, a SIP endpoint, a video room — is a [Resource][resources] reachable at an address, so one dialing model reaches all of them and all of them are managed the same way. Older pages call this model **Call Fabric**; that name is retired.
+SignalWire's addressing model. Every communication entity — a user, a script, an AI agent, a SIP endpoint, a video room — is a [Resource][resources] reachable at an address, so one dialing model reaches all of them and all of them are managed the same way. The Dashboard and the `/api/fabric/` REST paths still use the name **Call Fabric** for this model.
 
 ### Resource [#resource]
 
@@ -112,7 +112,7 @@ The path that reaches a Resource, in the form `/context/name`. Every Project sta
 
 Addresses are mutable and a Resource can have several, including phone numbers and SIP URIs. When you're addressing a Resource from within its own context, you can omit the context: a Subscriber named `Bob` in the `private` context is reachable at `/private/bob`, or, from within that context, just `/bob`.
 
-Some older pages say "Fabric address"; it names the same thing.
+The REST API reference calls it a **Fabric address**.
 
 ### Phone number [#phone-number]
 
@@ -130,7 +130,7 @@ Three variants exist for different levels of trust: the default SAT for a signed
 
 ### Relay Application [#relay-application]
 
-A Resource type representing your own server connected over [Relay](#relay). It carries a **topic**, and calls addressed to the Resource are sent to whichever connected Relay client is subscribed to that topic. Older SDK pages call the same field a context.
+A Resource type representing your own server connected over [Relay](#relay). It carries a **topic**, and calls addressed to the Resource are sent to whichever connected Relay client is subscribed to that topic. The Dashboard labels the field **Topic**. In the Server SDKs, `RelayClient` subscribes to it through its `contexts` parameter.
 
 A Relay Application is not the Relay namespace of the Server SDKs and not the Server SDKs themselves. It is the Dashboard-side Resource that routes a call to code you are already running.
 
@@ -148,13 +148,32 @@ The whole call as the person on the other end experiences it, from the moment it
 
 The relationship between two user agents. A call is made of one or more legs: forwarding an inbound call to a single SIP endpoint is two legs, and fanning it out to four endpoints is five.
 
-In SWML each leg has its own `call` object with its own `call_id`, and connecting to a new leg re-initializes that object with the new leg's data. The leg's [Segment ID](#segment-id) is `call.segment_id`, and it matches the leg's `call_id`.
+In SWML each leg has its own `call` object with its own [Call ID](#call-id), and connecting to a new leg re-initializes that object with the new leg's data.
+
+### Call ID [#call-id]
+
+The UUID of one [leg](#call-leg), fixed from the moment the leg starts until it hangs up. In Calling SWML it is `call.call_id`. In the Relay namespace of the Server SDKs it is `call.id`. SWML status callbacks and AI webhooks send it as `call_id`. Connecting to a new leg gives that leg its own Call ID, which the first leg's webhooks report as `peer.call_id`.
 
 ### Segment ID [#segment-id]
 
-A UUID identifying one [leg](#call-leg) of a call — or one message or fax — in the logs, written **SID**. A call with several legs produces several segments, and each leg keeps its SID for its whole lifecycle. In Calling SWML it is `call.segment_id`, and it matches the leg's `call_id`.
+The UUID of a leg's log record, and the identifier to quote in a support ticket. A leg's first segment reuses its [Call ID](#call-id), so for an ordinary call the two are the same value. If SignalWire re-routes the leg to a new handler, such as a SIP REFER or a cXML transfer, a new segment begins on the same leg: the Segment ID changes and the Call ID does not. Messages and faxes have Segment IDs too.
 
-The REST APIs return it as `id`, and it is the identifier to quote when filing a support ticket. The [Segment IDs page][segment-ids] shows where to find them in the Dashboard.
+The Dashboard labels it **Segment ID** in every log's detail view, and the [Segment IDs page][segment-ids] shows where. The REST APIs return it as `id`, and Calling SWML exposes it as `call.segment_id`. The Compatibility API writes it **SID**, as in `CallSid`, and its Dashboard log pages use the same abbreviation.
+
+The identifiers at a glance:
+
+| Identifier | Identifies | Where you see it |
+|---|---|---|
+| [Call ID](#call-id) | One leg, for its whole life | `call_id` in SWML, status callbacks, and AI webhooks; `call.id` in the Relay namespace of the Server SDKs |
+| [Segment ID](#segment-id) | One leg's log record; a new one after a re-route | Dashboard logs; `id` in REST responses; `segment_id` in SWML and status callbacks |
+| `CallSid` | The leg's Segment ID, under the Compatibility API's name | Compatibility REST responses and every cXML request and status callback |
+| `ParentCallSid` | The Segment ID of the leg that created this one | Compatibility status callbacks; `parent_id` in the REST voice logs |
+| `AccountSid` | Your [Project ID](#project-id) | Compatibility API |
+| Message ID | One message's log record | `id` in REST responses; `message_id` in Relay events; `MessageSid` in Compatibility webhooks; **Message Segment ID** in the Dashboard |
+| `FaxSid` | One fax's log record | Compatibility API; **Fax Segment ID** in the Dashboard. `MediaSid` is the stored document, a different ID |
+| `ai_session_id` | One AI session on a leg | AI webhooks |
+
+The `conversation_id` in AI webhooks is the value you set in `ai.params`, not a platform identifier.
 
 ## SWML
 
@@ -206,7 +225,7 @@ Reach for Relay when you need to react to a call as it unfolds. Reach for [SWML]
 
 The persistent, authenticated WebSocket connection a `RelayClient` holds is its **Relay session**: over one session it subscribes to topics, receives events, and carries every call and message it handles.
 
-You'll also see the all-caps spelling **RELAY** on older pages, along with the names **Realtime SDK** and **Relay Realtime SDK**. All three refer to this namespace; the capitalization carries no meaning.
+**Realtime SDK** and **Relay Realtime SDK** are the names of the Node.js package `@signalwire/realtime-api`, the earlier Relay client for JavaScript. Relay in either name means this namespace.
 
 Relay is not a [Relay Application](#relay-application), which is the Dashboard Resource that routes a call to your Relay client.
 
