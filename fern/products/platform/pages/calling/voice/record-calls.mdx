@@ -53,7 +53,7 @@ If you can't yet, [your first agent][sdk-quickstart] is a great place to start.
 
 ## Pick the right product for call recording
 
-Recording is available across every product, but not all functionality is available in all cases.
+Recording is available across these products, but not every function is available on each.
 
 | Function | SWML | Relay | REST Calling API | Call Flow Builder | Recordings API |
 |---|---|---|---|---|---|
@@ -61,8 +61,8 @@ Recording is available across every product, but not all functionality is availa
 | Record a single message, wait until it ends | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> |
 | Stop a recording early | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> |
 | Pause and resume a recording | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> |
-| Record a conference | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> |
-| Get the recording's URL back in your own code, without a webhook | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
+| Record a conference | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> |
+| Get the recording's URL back in your own code, without a webhook | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
 | Find and delete recordings after the call | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
 
 - [SWML][swml-intro] is the document that describes how the call should flow. It is written with the Server SDKs' Agents namespace, but can be written by hand for simpler cases.
@@ -96,6 +96,7 @@ Replace these values in the code sample you choose:
 | `<YOUR_SPACE>` | Your Space's subdomain in `<YOUR_SPACE>.signalwire.com` |
 | `<YOUR_PROJECT_ID>` | Your Project ID |
 | `<YOUR_API_TOKEN>` | Your API token |
+| `<YOUR_CALLER_ID>` | Your caller ID number |
 | `<YOUR_DESTINATION>` | The address you're calling, such as a phone number in E.164 format |
 | `<YOUR_STATUS_WEBHOOK_URL>` | The HTTPS URL that receives recording status callbacks |
 | `<YOUR_CALL_ID>` | The `id` of the live call you're sending a REST command to |
@@ -214,9 +215,11 @@ it and saves it in the `${record_control_id}` variable, which you can pass to `s
 
 ### Record the whole call via Relay
 
+The cURL request sends the same `calling.record` command to a call that is already in progress.
+
 <CodeBlocks>
 
-```python title="Python — Relay client" {19-21}
+```python title="Python — Relay client" {17-19}
 # Install: python -m pip install signalwire-sdk==3.4.1
 # Save as record_whole_call_relay.py and run: python record_whole_call_relay.py
 from signalwire.relay import RelayClient
@@ -224,10 +227,8 @@ from signalwire.relay import RelayClient
 client = RelayClient(
     project="<YOUR_PROJECT_ID>",
     token="<YOUR_API_TOKEN>",
-    host="<YOUR_SPACE>.signalwire.com",
     contexts=["default"],
 )
-
 
 @client.on_call
 async def handle_call(call):
@@ -238,7 +239,7 @@ async def handle_call(call):
     action = await call.record(
         audio={"direction": "both", "format": "mp3", "stereo": True}
     )
-    await call.connect([[{"type": "phone", "params": {"to_number": "<YOUR_DESTINATION>", "timeout": 30}}]])
+    await call.connect([[{"type": "phone", "params": {"to_number": "<YOUR_DESTINATION>", "from_number": "<YOUR_CALLER_ID>", "timeout": 30}}]])
 
     event = await action.wait()
     p = event.params
@@ -248,7 +249,7 @@ async def handle_call(call):
 client.run()
 ```
 
-```typescript title="TypeScript — Relay client" {18}
+```typescript title="TypeScript — Relay client" {17}
 // Install: npm install @signalwire/sdk@2.0.5
 // This sample also runs as JavaScript: save as record-whole-call-relay.mjs,
 // then run: node record-whole-call-relay.mjs
@@ -257,7 +258,6 @@ import { RelayClient } from '@signalwire/sdk';
 const client = new RelayClient({
   project: '<YOUR_PROJECT_ID>',
   token: '<YOUR_API_TOKEN>',
-  host: '<YOUR_SPACE>.signalwire.com',
   contexts: ['default'],
 });
 
@@ -267,7 +267,7 @@ client.onCall(async (call) => {
   await playback.wait();
 
   const action = await call.record({ direction: 'both', format: 'mp3', stereo: true });
-  await call.connect([[{ type: 'phone', params: { to_number: '<YOUR_DESTINATION>', timeout: 30 } }]]);
+  await call.connect([[{ type: 'phone', params: { to_number: '<YOUR_DESTINATION>', from_number: '<YOUR_CALLER_ID>', timeout: 30 } }]]);
 
   const event = await action.wait();
   console.log(`Recording saved: ${event.params.url ?? ''}`);
@@ -276,10 +276,6 @@ client.onCall(async (call) => {
 
 await client.run();
 ```
-
-</CodeBlocks>
-
-The same command over REST, against a call that is already in progress:
 
 ```bash title="cURL — REST Calling API"
 curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
@@ -298,6 +294,8 @@ curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
   }'
 ```
 
+</CodeBlocks>
+
 The recording's URL is available as soon as it starts: SWML saves it in the `${record_call_url}` variable, and Relay
 reports it as `url` on the action's `params`. If you set a `status_url`, SignalWire also sends
 [status callbacks](#receive-recording-status-callbacks) as the recording changes state.
@@ -312,6 +310,7 @@ use the [Voicemail Recording][cfb-voicemail] node instead.
 
 You can check [Storage in your dashboard](#view-recordings-from-your-dashboard) for the file, or query recording details from
 the [Recordings API](#get-recordings-with-the-recordings-api) and confirm its `status` is `finished`.
+A `no_input` status means the recording captured no audio, and fetching its media returns 404.
 
 ## Recording options: format, stereo, and direction
 
@@ -361,7 +360,6 @@ agent.prompt_add_section(
     "If they decline, continue the call without recording.",
 )
 
-
 @agent.tool(name="start_recording", description="Start recording the call once the caller agrees")
 def start_recording(args, raw_data):
     return (
@@ -374,11 +372,9 @@ def start_recording(args, raw_data):
         )
     )
 
-
 @agent.tool(name="stop_recording", description="Stop recording the call")
 def stop_recording(args, raw_data):
     return FunctionResult("Recording has stopped.").stop_record_call(control_id="main")
-
 
 if __name__ == "__main__":
     agent.run()
@@ -428,7 +424,8 @@ await agent.run();
 ### Record after the caller agrees via Relay
 
 These handlers replace the one in [Record the whole call via Relay](#record-the-whole-call-via-relay);
-the client setup above them is unchanged.
+the client setup above them is unchanged. The cURL request sends the same start command once your
+application knows the caller agreed.
 
 <CodeBlocks>
 
@@ -446,13 +443,13 @@ async def handle_call(call):
     )
     event = await action.wait()
 
-    if event.params.get("result", {}).get("digits", "") == "1":
+    if event.params.get("result", {}).get("params", {}).get("digits", "") == "1":
         await call.record(audio={"direction": "both", "format": "mp3", "stereo": True})
 
-    await call.connect([[{"type": "phone", "params": {"to_number": "<YOUR_DESTINATION>", "timeout": 30}}]])
+    await call.connect([[{"type": "phone", "params": {"to_number": "<YOUR_DESTINATION>", "from_number": "<YOUR_CALLER_ID>", "timeout": 30}}]])
 ```
 
-```typescript title="TypeScript — Relay client" {13-15}
+```typescript title="TypeScript — Relay client" {12-14}
 // Without an AI agent, gate the recording on a keypress instead of a tool call.
 client.onCall(async (call) => {
   await call.answer();
@@ -464,18 +461,13 @@ client.onCall(async (call) => {
   );
   const event = await action.wait();
 
-  const result = (event.params.result ?? {}) as Record<string, unknown>;
-  if (result.digits === '1') {
+  if (event.params.result?.params?.digits === '1') {
     await call.record({ direction: 'both', format: 'mp3', stereo: true });
   }
 
-  await call.connect([[{ type: 'phone', params: { to_number: '<YOUR_DESTINATION>', timeout: 30 } }]]);
+  await call.connect([[{ type: 'phone', params: { to_number: '<YOUR_DESTINATION>', from_number: '<YOUR_CALLER_ID>', timeout: 30 } }]]);
 });
 ```
-
-</CodeBlocks>
-
-Over REST, send the same start command once your application knows the caller agreed:
 
 ```bash title="cURL — REST Calling API"
 curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
@@ -493,6 +485,8 @@ curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
     }
   }'
 ```
+
+</CodeBlocks>
 
 ## Stop recording the call
 
@@ -580,7 +574,8 @@ sections:
 
 ### Stop recording the call via Relay
 
-The handlers extend [Record the whole call via Relay](#record-the-whole-call-via-relay).
+The handlers extend [Record the whole call via Relay](#record-the-whole-call-via-relay). The cURL request
+sends the same command to a call that is already recording.
 
 <CodeBlocks>
 
@@ -598,7 +593,7 @@ async def handle_call(call):
     await prompt.wait()
 
     await action.stop()
-    await call.connect([[{"type": "phone", "params": {"to_number": "<YOUR_DESTINATION>", "timeout": 30}}]])
+    await call.connect([[{"type": "phone", "params": {"to_number": "<YOUR_DESTINATION>", "from_number": "<YOUR_CALLER_ID>", "timeout": 30}}]])
 ```
 
 ```typescript title="TypeScript — Relay client" {11}
@@ -613,13 +608,9 @@ client.onCall(async (call) => {
   await prompt.wait();
 
   await action.stop();
-  await call.connect([[{ type: 'phone', params: { to_number: '<YOUR_DESTINATION>', timeout: 30 } }]]);
+  await call.connect([[{ type: 'phone', params: { to_number: '<YOUR_DESTINATION>', from_number: '<YOUR_CALLER_ID>', timeout: 30 } }]]);
 });
 ```
-
-</CodeBlocks>
-
-The same command over REST, against any call that is already recording:
 
 ```bash title="cURL — REST Calling API"
 curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
@@ -632,6 +623,8 @@ curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
   }'
 ```
 
+</CodeBlocks>
+
 ## Pause and resume a recording
 
 Pausing and resuming act on a live call, so they come from a Relay call handler or the REST Calling API,
@@ -640,7 +633,8 @@ entirely; `silence` replaces it with silence, so the recording's timing still li
 
 ### Pause and resume a recording via Relay
 
-Both handlers extend [Record the whole call via Relay](#record-the-whole-call-via-relay).
+Both handlers extend [Record the whole call via Relay](#record-the-whole-call-via-relay). The cURL
+requests send the same two commands over REST.
 
 <CodeBlocks>
 
@@ -666,11 +660,7 @@ client.onCall(async (call) => {
 });
 ```
 
-</CodeBlocks>
-
-The same two commands over REST:
-
-```bash title="cURL — pause"
+```bash title="cURL — REST Calling API"
 curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
   -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
   -H "Content-Type: application/json" \
@@ -679,9 +669,7 @@ curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
     "id": "<YOUR_CALL_ID>",
     "params": { "control_id": "main", "behavior": "skip" }
   }'
-```
 
-```bash title="cURL — resume"
 curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
   -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
   -H "Content-Type: application/json" \
@@ -691,6 +679,8 @@ curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
     "params": { "control_id": "main" }
   }'
 ```
+
+</CodeBlocks>
 
 Reference: `pause()` and `resume()` on `RecordAction` ([Python][py-record-action],
 [TypeScript][ts-record-action]), and `calling.record.pause` and `calling.record.resume` in the REST Calling API's
@@ -713,7 +703,6 @@ from signalwire import AgentBase, FunctionResult
 
 agent = AgentBase(name="voicemail-agent", route="/agent")
 
-
 @agent.tool(name="take_voicemail", description="Record the caller's message. Call this exactly once.")
 def take_voicemail(args, raw_data):
     return FunctionResult("Please leave your message after the beep.").execute_swml({
@@ -733,7 +722,6 @@ def take_voicemail(args, raw_data):
             ]
         },
     })
-
 
 if __name__ == "__main__":
     agent.run()
@@ -847,8 +835,8 @@ async def handle_call(call):
     )
     event = await action.wait(timeout=180)
 
-    # no_input is terminal too, so a caller who never spoke lands here with no url
-    if event.params.get("state") == "finished" and event.params.get("url"):
+    # no_input is terminal too: a caller who never spoke still gets a url, but its media returns 404
+    if event.params.get("state") == "finished":
         print(f"Voicemail saved: {event.params['url']} ({event.params.get('duration')}s)")
     else:
         print(f"No voicemail recorded (state={event.params.get('state') or 'call gone'})")
@@ -868,9 +856,9 @@ client.onCall(async (call) => {
   });
   const event = await action.wait();
 
-  // no_input is terminal too, so a caller who never spoke lands here with no url
-  const url = event.params.url ?? '';
-  console.log(url ? `Voicemail saved: ${url}` : `No voicemail recorded (${event.params.state})`);
+  // no_input is terminal too: a caller who never spoke still gets a url, but its media returns 404
+  const { state, url } = event.params;
+  console.log(state === 'finished' ? `Voicemail saved: ${url}` : `No voicemail recorded (${state})`);
 
   await call.hangup();
 });
@@ -967,37 +955,6 @@ sections:
     ]
   }
 }
-```
-
-</CodeBlocks>
-
-### Record a conference via Relay
-
-The handlers extend [Record the whole call via Relay](#record-the-whole-call-via-relay).
-
-<CodeBlocks>
-
-```python title="Python — Relay client" {5-9}
-@client.on_call
-async def handle_call(call):
-    await call.answer()
-
-    await call.join_conference(
-        name="standup",
-        record="record-from-start",
-        recording_status_callback="<YOUR_STATUS_WEBHOOK_URL>",
-    )
-```
-
-```typescript title="TypeScript — Relay client" {4-7}
-client.onCall(async (call) => {
-  await call.answer();
-
-  await call.joinConference('standup', {
-    record: 'record-from-start',
-    recordingStatusCallback: '<YOUR_STATUS_WEBHOOK_URL>',
-  });
-});
 ```
 
 </CodeBlocks>
@@ -1125,9 +1082,9 @@ Media URLs contain randomly generated UUIDs, which makes them impractical to gue
 but they aren't access-gated by default. A dashboard setting can require
 [`project_id:api_token` basic auth][api-credentials] to access those recordings, just like the other REST endpoints.
 
-Under **Project Details** > **Settings**, the Media URL Protection Details panel has three
-independent toggles: Protect Recording Media URLs, Protect Message Media URLs, and Protect Fax
-Media URLs. They are all off by default.
+Open the project-name menu at the top of the Dashboard and select **Project Configuration**. Under
+**Settings** > **Media URL Protection Details**, there are three independent toggles: Protect Recording
+Media URLs, Protect Message Media URLs, and Protect Fax Media URLs. They are all off by default.
 
 Protection is set per project and per media type, so recordings can be protected independently of
 messages and faxes.
