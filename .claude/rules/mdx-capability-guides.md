@@ -5,7 +5,7 @@ paths:
 
 # Capability guides — one capability, every surface
 
-Applies to a how-to that teaches one platform capability across more than one surface (SWML, Relay, the REST Calling API, the Browser SDK, Call Flow Builder). Exemplars: `fern/products/platform/pages/calling/voice/outbound-calling.mdx` (first-run walkthrough, complete samples) and `fern/products/platform/pages/calling/record-calls.mdx` (task sections, merged Relay and REST blocks). A single-surface how-to or an integration guide (the Vapi page) follows `mdx-style` alone. Voice, grounding, and `## Next steps` come from `mdx-style`; this rule fixes the skeleton and the sample conventions so guides match each other.
+Applies to a how-to that teaches one platform capability across more than one surface (SWML, Relay, the REST Calling API, the Browser SDK, Call Flow Builder). Exemplars: `fern/products/platform/pages/calling/voice/outbound-calling.mdx` (first-run walkthrough, complete samples) and `fern/products/platform/pages/calling/voice/record-calls.mdx` (task sections, merged Relay and REST blocks). A single-surface how-to or an integration guide (the Vapi page) follows `mdx-style` alone. Voice, grounding, and `## Next steps` come from `mdx-style`; this rule fixes the skeleton and the sample conventions so guides match each other.
 
 ## Skeleton
 
