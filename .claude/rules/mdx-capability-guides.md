@@ -12,7 +12,7 @@ Applies to a how-to that teaches one platform capability across more than one su
 Every guide answers the same questions in the same order: which product, how to start, how to do the thing, how to know it worked, where to go next.
 
 ```text
-frontmatter: title = capability as a noun phrase ("Call streaming"); slug /<area>/<capability>;
+frontmatter: title = the task, verb first ("Record calls", "Stream call audio"); slug /<area>/<capability>;
              description = one sentence naming the first-run outcome, then each extension in page order
 [reference-style link definitions]
 intro, 2–3 sentences, no heading: what the reader does, then "Start by <smallest verifiable thing>, then <extensions in H2 order>."
@@ -46,7 +46,7 @@ intro, 2–3 sentences, no heading: what the reader does, then "Start by <smalle
 
 ## Capability matrix
 
-One table under `## Pick the right product`: `| Function | SWML | Relay | REST Calling API | Browser SDK | Call Flow Builder |`, keeping every column where the capability plausibly lives and adding an API-area column (`Recordings API`) when a REST resource is part of the story. Rows are things the reader wants to do ("Get the recording's URL back in your own code, without a webhook"), not feature names. Three cell states:
+One table under `## Pick the right product`: `| Function | SWML | WebSocket (Relay) | REST | Browser SDK | Call Flow Builder |`, keeping every column where the capability plausibly lives. The REST column covers both commands sent to a live call and REST resources such as the Recordings API, so a REST resource never gets its own column. Rows are things the reader wants to do ("Get the recording's URL back in your own code, without a webhook"), not feature names. Three cell states:
 
 - `<Icon icon="regular circle-check" color="var(--status-success)" />` shipped
 - `<Icon icon="regular circle-xmark" color="var(--status-error)" />` not available
@@ -56,18 +56,18 @@ Follow the table with one bullet per column: the surface's canonical name linked
 
 ## Surface names
 
-Canonical names come from the glossary (`/docs/platform/glossary`); the ones this rule uses are `SWML`, `Relay`, `REST Calling API`, `Server SDKs`, `Browser SDK`, `Call Flow Builder`. Never "Realtime SDK", "Agents SDK", "the WebSocket API", or "CFB". How specific to be depends on where the name sits:
+Canonical names come from the glossary (`/docs/platform/glossary`); the ones this rule uses are `SWML`, `Relay`, `REST Calling API`, `Server SDKs`, `Browser SDK`, `Call Flow Builder`. Prose uses these names. Matrix columns, headings, and tab titles name the two transports `WebSocket (Relay)` and `REST`. Never "Realtime SDK", "Agents SDK", "the WebSocket API", or "CFB". How specific to be depends on where the name sits:
 
-- **Headings** name the surface in full: `### Stop recording the call via Relay`, `### Place the call via the REST Calling API`. Two shapes: `<task> via <surface>` when the surface is a transport; `<task> from <place>` when it is a caller context ("Hold an AI chat conversation from a browser"). Every heading stands alone in a search result with no page title above it, so it carries the keywords: "Recording options: format, stereo, and direction", not "Recording options".
+- **Headings** name the surface: `### Stop recording the call via WebSocket (Relay)`, `### Place the call via REST`, `### Record the whole call via SWML`. Two shapes: `<task> via <surface>` when the surface is a transport; `<task> from <place>` when it is a caller context ("Hold an AI chat conversation from a browser"). Every heading stands alone in a search result with no page title above it, so it carries the keywords: "Recording options: format, stereo, and direction", not "Recording options".
 - **Tab titles** are short: `REST`, `WebSocket (Relay)`.
-- **Code block titles** are `<Language> — <client>`: `Python — Relay client`, `TypeScript — Relay client`, `cURL — REST Calling API`, `Python — Agents`, `TypeScript — Agents`, `Python — REST client`, `TypeScript — REST client`, `JavaScript — Browser SDK`, `YAML`, `JSON`.
+- **Code block titles** are `<Language> — <client>`: `Python — Relay client`, `TypeScript — Relay client`, `cURL — Calling API`, `Python — Agents`, `TypeScript — Agents`, `Python — REST client`, `TypeScript — REST client`, `JavaScript — Browser SDK`, `YAML`, `JSON`.
 
 ## Surfaces: headings by default, tabs only inside Steps
 
 - A task shows each surface under its own `###`, never in tabs. Headings appear in the table of contents, in search, and in the Markdown export; tab panes hide from all three.
 - Inside `<Steps>`, `###` is already the step heading, so a step that differs by surface uses `<Tabs groupId="…">` with `<Tab title="REST">` and `<Tab title="WebSocket (Relay)">`. That is the only place tabs belong. Guides under one overview share a single `groupId` so the reader's choice follows them between pages; the voice guides use `outbound-api`.
-- **Relay and the REST Calling API are the same commands over two transports.** When only the transport differs (pausing a recording, stopping a stream), one `### <task> via Relay` heading holds a single `<CodeBlocks>` of `Python — Relay client`, `TypeScript — Relay client`, and `cURL — REST Calling API`. Split them into separate headings only when the flow genuinely differs: placing a call over HTTP with inline SWML is not the same flow as dialing over a live socket.
-- **SWML is one surface, authored several ways and delivered several ways.** Under `### <task> via SWML`, show the document once, in the forms a reader authors it, in one `<CodeBlocks>`: `Python — Agents` and `TypeScript — Agents` (`AgentBase`) first, then `YAML`, then `JSON`. Don't encourage hand-writing SWML where the SDK covers the verb. How the document reaches the call (served from your server, stored as a hosted script resource, passed inline in a REST `dial`) is a delivery choice: cover it once per guide, in the first-run section, and don't repeat it under every task. A REST `dial` that carries inline SWML is SWML delivery, not the REST Calling API surface.
+- **Relay and the REST Calling API are the same commands over two transports.** When only the transport differs (pausing a recording, stopping a stream), one `### <task> via WebSocket (Relay)` heading holds a single `<CodeBlocks>` of `Python — Relay client`, `TypeScript — Relay client`, and `cURL — Calling API`. Split them into separate headings only when the flow genuinely differs: placing a call over HTTP with inline SWML is not the same flow as dialing over a live socket.
+- **SWML is one surface, authored several ways and delivered several ways.** Under `### <task> via SWML`, show the document once, in the forms a reader authors it, in one `<CodeBlocks>`: `Python — Agents` and `TypeScript — Agents` (`AgentBase`) first, then `YAML`, then `JSON`. Don't encourage hand-writing SWML where the SDK covers the verb. How the document reaches the call (served from your server, stored as a hosted script resource, passed inline in a REST `dial`) is a delivery choice: cover it once per guide, in the first-run section, and don't repeat it under every task. A REST `dial` that carries inline SWML is SWML delivery, not the REST surface.
 - Where the reference already documents a REST request, use `EndpointRequestSnippet` and `EndpointResponseSnippet` with a link to the reference page instead of hand-writing the request; describe only the fields the task needs. A first-run REST step that dials still ends with the "returns a call `id` and status `queued` … save the `id`" paragraph and `<EndpointResponseSnippet endpoint="POST /api/calling/calls" />`.
 
 ## Sample conventions
