@@ -1,6 +1,6 @@
 ---
 title: Glossary
-slug: /glossary
+slug: glossary
 description: One canonical definition per SignalWire term, with the aliases and historical names each one answers to.
 max-toc-depth: 3
 ---
@@ -17,10 +17,12 @@ max-toc-depth: 3
 [cfb]: /docs/call-flow-builder
 [chat-token]: /docs/apis/rest/chat-tokens/create-chat-token
 [compat-rest]: /docs/compatibility-api/rest
+[conference-room-ref]: /docs/apis/rest/conference-rooms/create-conference-room
 [cxml]: /docs/compatibility-api/cxml
 [expressions]: /docs/swml/reference/expressions
 [relay-client]: /docs/server-sdks/guides/relay-client
 [projects-api]: /docs/apis/rest/projects/create-subproject
+[space-api]: /docs/apis/rest/space/get-space
 [resources]: /docs/platform/resources
 [sat]: /docs/browser-sdk/v4/guides/authentication
 [segment-ids]: /docs/platform/what-is-a-sid
@@ -67,7 +69,7 @@ Each Project has its own Project ID and API tokens, so a Project is the unit of 
 
 A Project nested one level beneath a root Project. A Subproject is a full Project with its own Project ID and Resources, but Subprojects cannot contain other Subprojects.
 
-With an API token, the [Projects API][projects-api] creates and deletes Subprojects beneath that token's Project. With a [personal access token](#personal-access-token) it manages root Projects as well. A Project must release its phone numbers and hold no Subprojects before it can be deleted, and the last Project in a Space cannot be deleted.
+Subprojects can be created and deleted through the [Projects API][projects-api] with a Project's API token; creating or deleting a root Project through the API takes a [Personal access token](#personal-access-token). A Project must release its phone numbers and remove its Subprojects before it can be deleted, and the last Project in a Space cannot be deleted.
 
 #### Project ID [#project-id]
 
@@ -83,7 +85,7 @@ An API token does not belong in a browser; client-side credentials are created b
 
 ### Personal access token [#personal-access-token]
 
-A user-level Dashboard token, issued from the user menu rather than from a Project's API Credentials page. It authenticates you as a person rather than a Project, so it works where the caller is a user: the Projects and API token endpoints of the REST API, the Space-level API, and FreeSWITCH and FreeSWITCH Advantage binary downloads. It is not interchangeable with an API token.
+A user-level Dashboard token, issued from the user menu rather than from a Project's API Credentials page. It authenticates you as a person rather than a Project: it is prefixed `pat_`, has no scopes, and carries your owner or admin role in the Space. It is the credential for the [Space Administration API][space-api], and on the Projects and Project Tokens APIs it unlocks what a Project's API token can't do, such as creating or deleting a root Project. It also authorizes you to download FreeSWITCH and FreeSWITCH Advantage binaries. It is not interchangeable with an API token; see [Authorization][authorization] for how to send one.
 
 The tokens at a glance:
 
@@ -94,29 +96,29 @@ The tokens at a glance:
 | [Embed token][sat] | Lives in a public page, tied to one resource, for click-to-call widgets. |
 | [Video Room token][video-token] | Client-side credential for Video, created with an API token. |
 | [Chat token][chat-token] | Client-side credential for Chat, created with an API token. |
-| [Personal access token](#personal-access-token) | Per user, not per Project. Authenticates user-level REST calls and FreeSWITCH downloads. |
+| [Personal access token](#personal-access-token) | Per user, not per Project. Administers the Space over the API and downloads FreeSWITCH binaries. |
 
-## Resources and addresses [#resources-and-addresses]
+## Resources and Addresses [#resources-and-addresses]
 
-SignalWire's addressing model. Every communication entity — a user, a script, an AI agent, a SIP endpoint, a video room — is a [Resource][resources] reachable at an address, so one dialing model reaches all of them and all of them are managed the same way. The Dashboard and the `/api/fabric/` REST paths still use the name **Call Fabric** for this model.
+SignalWire's addressing model. Every communication entity — a user, a script, an AI agent, a SIP endpoint, a video room — is a [Resource][resources] reachable at an Address, so one dialing model reaches all of them and all of them are managed the same way. The Dashboard and the `/api/fabric/` REST paths still use the name **Call Fabric** for this model.
 
 ### Resource [#resource]
 
-A container object representing one communication entity. Every Resource has a **Type** and one or more [addresses][addresses] that make it reachable. The REST API defines fourteen types and returns each Resource's in its `type` field: Subscriber, AI Agent, SWML Script, SWML Webhook, cXML Script, cXML Application, cXML Webhook, Call Flow, Relay Application, FreeSWITCH Connector, SIP Credential, whose `type` value is `sip_endpoint`, SIP Gateway, Dialogflow Agent, and Video Room. The Dashboard also offers Remote AI Agent, which has no REST API type. All types share the same addressing and management model.
+A container object representing one communication entity. Every Resource has a **Type** and one or more [Addresses][addresses] that make it reachable. The REST API defines fourteen types and reports each Resource's in the `type` field of its response: Subscriber, AI Agent, SWML Script, SWML Webhook, cXML Script, cXML Application, cXML Webhook, Call Flow, Relay Application, FreeSWITCH Connector, SIP Credential, whose `type` value is `sip_endpoint`, SIP Gateway, Dialogflow Agent, and Video Room. The Dashboard also offers Remote AI Agent, which has no REST API type. All types share the same addressing and management model.
 
 Capital-R Resource is not the generic "REST resource" of an API path. The REST namespace of the Server SDKs uses "resource" in that looser sense too.
 
-### Resource address [#resource-address]
+### Resource Address [#resource-address]
 
 The path that reaches a Resource, in the form `/context/name`. Every Project starts with a `public` and a `private` context, and you can add named contexts of either access type from the Dashboard. The name defaults to the Resource's name in lowercase. An AI agent named `Sigmond` in the public context is reachable at `/public/sigmond`.
 
 Addresses are mutable and a Resource can have several, including phone numbers and SIP URIs. When you're addressing a Resource from within its own context, you can omit the context: a Subscriber named `Bob` in the `private` context is reachable at `/private/bob`, or, from within that context, just `/bob`.
 
-The REST API reference calls it a **Fabric address**.
+The REST API reference calls it a **Fabric Address**.
 
 ### Phone number [#phone-number]
 
-A number in <Tooltip tip="The international phone number format: a plus sign, country code, and number, such as `+14155551234`.">E.164</Tooltip> format on your Space. As an address type it maps to a Resource, which is how an inbound call to that number reaches your script, agent, or Subscriber.
+A number in <Tooltip tip="The international phone number format: a plus sign, country code, and number, such as `+14155551234`.">E.164</Tooltip> format on your Space. As an Address type it maps to a Resource, which is how an inbound call to that number reaches your script, agent, or Subscriber.
 
 ### Subscriber [#subscriber]
 
@@ -126,7 +128,7 @@ A [Resource][subscribers] type representing a user in your communication system,
 
 A short-lived credential identifying one Subscriber and carrying the capabilities granted to them, sent as Bearer authentication. Also written **Subscriber Access Token** or **SAT**. Your backend creates one using your Project's API token and hands it to the browser, where the [Browser SDK][sat] uses it to open a session.
 
-Three variants exist for different levels of trust: the default SAT for a signed-in Subscriber, a Guest SAT that your backend creates for a visitor and limits to a list of addresses, and an Invite SAT that a signed-in Subscriber creates for one recipient and one address. A separate Embed token serves public widgets.
+Three variants exist for different levels of trust: the default SAT for a signed-in Subscriber, a Guest SAT that your backend creates for a visitor and limits to a list of Addresses, and an Invite SAT that a signed-in Subscriber creates for one recipient and one Address. A separate Embed token serves public widgets.
 
 ### Relay Application [#relay-application]
 
@@ -136,7 +138,11 @@ A Relay Application is not the Relay namespace of the Server SDKs and not the Se
 
 ### Call Flow [#call-flow]
 
-A Resource type holding a call flow built visually in [Call Flow Builder](#call-flow-builder). Like any Resource, it has an address and can be dialed.
+A Resource type holding a call flow built visually in [Call Flow Builder](#call-flow-builder). Like any Resource, it has an Address and can be dialed.
+
+### Video Room [#video-room]
+
+A Resource type holding a room that several participants join at once, by audio or video, so an inbound call lands in a shared conversation instead of a one-to-one leg. A WhatsApp caller joins by audio only. Also written **Conference Room** in the [REST API reference][conference-room-ref] and the Dashboard Address picker; the Dashboard's Resource list and the platform docs say Video Room.
 
 ## Calls
 
@@ -263,7 +269,7 @@ The no-code visual tool in the Dashboard for building voice applications as a tr
 |---|---|
 | [SWML][ai-method] | The `ai` method: runs a conversation on a live call, joining speech recognition, a model, and text-to-speech. |
 | [The platform][ai-overview] | SignalWire AI as a capability: prompts, contexts, state, and tools. |
-| [The Dashboard][resources] | The AI Agent Resource type: configured in the Dashboard, reachable at an address like any Resource. |
+| [The Dashboard][resources] | The AI Agent Resource type: configured in the Dashboard, reachable at an Address like any Resource. |
 | [Server SDKs][agent-base] | An `AgentBase` application: your Python or TypeScript program that generates SWML at request time. |
 | [Call Flow Builder][cfb-ai-node] | The AI Agent node: one block in a visual call flow. |
 
