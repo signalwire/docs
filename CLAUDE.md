@@ -58,7 +58,7 @@ Assume no prior knowledge, and never expose internal implementation detail — b
 | Change | Run |
 |---|---|
 | MDX pages | `yarn fern-md-check` |
-| Nav yml (`fern/docs.yml`, `fern/products/*/*.yml`) | `yarn fern-check` |
+| Nav yml (`fern/docs.yml`, `fern/products/*/*.yml`) or redirects (`fern/redirects.yml`) | `yarn fern-check` |
 | TypeSpec under `specs/` | `yarn build:specs` |
 
 CI runs `fern-check` and `fern-md-check` on every PR. No check covers `#anchor` fragments — verify by hand any link you touch.
