@@ -38,6 +38,7 @@ max-toc-depth: 3
 [browser-session-state]: /docs/browser-sdk/v4/reference/interfaces/session-state
 [browser-call]: /docs/browser-sdk/v4/reference/interfaces/call
 [rest-update-number]: /docs/apis/rest/phone-numbers/update-phone-number
+[rest-call-commands]: /docs/apis/rest/calls/call-commands
 [rest-list-numbers]: /docs/apis/rest/phone-numbers/list-phone-numbers
 [rest-link-number]: /docs/apis/rest/phone-number-addresses/create-phone-number-address
 [rest-create-subscriber]: /docs/apis/rest/subscribers/create-subscriber
@@ -69,8 +70,8 @@ Have these values ready:
   Enable the token's **Voice** permission, and **Numbers** if you assign a phone number in code.
 - A voice-capable [phone number in your Space][phone-numbers], and a phone you can call it from
   and answer.
-- For the Browser SDK, a [Subscriber][subscribers] and a [Subscriber token][subscriber-token]
-  issued by your backend for it.
+- For the Browser SDK, a web page you can serve over HTTPS or `localhost`. The guide creates the
+  [Subscriber][subscribers] and its token for you.
 
 <Warning title="Trial projects only call and receive calls from verified numbers">
 A [trial project][trial-mode] can't call international numbers, and it only places calls to and
@@ -94,7 +95,26 @@ Replace these values in the samples you run:
 | `<YOUR_BASIC_AUTH_PASSWORD>` | A password you choose for your SWML server |
 | `<YOUR_PUBLIC_HOST>` | The public hostname of your SWML server or tunnel |
 | `<YOUR_STATUS_WEBHOOK_URL>` | An HTTPS endpoint you control that receives call progress |
-| `<YOUR_SUBSCRIBER_ACCESS_TOKEN>` | A Subscriber token issued by your backend |
+| `<YOUR_SUBSCRIBER_EMAIL>` | An email address to identify your test Subscriber |
+| `<YOUR_SUBSCRIBER_ACCESS_TOKEN>` | The Subscriber token from [Get a Subscriber token](#get-a-subscriber-token) |
+
+## How an incoming call reaches your code
+
+Placing a call only takes a request from your code. Answering one takes a little setup first,
+because SignalWire has to know where to send the call. Every phone number has one call handler: a
+[Resource][resources] you assign under the number's **Inbound Call Settings**. When someone dials
+the number, SignalWire hands the call to that Resource, and the Resource type decides what happens
+next:
+
+| Approach | Resource on the number | What happens when a call arrives |
+|---|---|---|
+| SWML | SWML Script | SignalWire runs the script's document, first fetching it from your server when the script points at a URL |
+| WebSocket (Relay) | Relay Application | SignalWire hands the call to the Relay client connected on the application's topic |
+| Browser SDK | Subscriber | SignalWire rings the Subscriber's signed-in clients, such as your web page |
+
+So each answering walkthrough below has the same three parts: build the handler, assign it to your
+number, and call the number to test it. If the number has no call handler, or still points at a
+different Resource, the call never reaches your code.
 
 ## Make and receive calls via SWML
 
@@ -192,6 +212,8 @@ curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
 `dial(from, to, options)` form.
 </Note>
 
+The cURL example sends the `dial` command to [Call commands][rest-call-commands].
+
 The REST API returns a call `id` and status `queued`. This confirms that SignalWire accepted the
 request; the call hasn't necessarily rung or been answered yet. Save the `id` to identify this call.
 
@@ -213,7 +235,36 @@ caller ID, and that a trial project has verified the destination.
 ### Answer a call via SWML
 
 When someone calls your number, SignalWire runs the SWML Script assigned to it. The script either
-fetches the document from your server on each call, or holds the document itself.
+fetches the document from your server on each call, or holds the document itself. Hosting it in
+SignalWire is the quickest way to hear your first call; serving it from your server lets your code
+build a different document for each caller.
+
+This flow shows a call handled by a script that fetches its document from your server:
+
+<llms-ignore>
+
+<img src="/assets/images/img/inbound-call-lifecycle-themed.svg" alt="A caller dials your number. SignalWire looks up the number's Resource and sends your server the call details: from, to, direction, and call id. Your server returns a SWML document. SignalWire answers the caller and runs your SWML. When the call finishes, the SWML session ends." />
+
+</llms-ignore>
+
+<llms-only>
+
+```mermaid
+sequenceDiagram
+    participant Caller
+    participant SW as SignalWire
+    participant Server as Your server
+
+    Caller->>SW: dials your number
+    Note over SW: Looks up the number's Resource
+    SW->>Server: POST call details: from, to, direction, call id
+    Server-->>SW: SWML document
+    SW->>Caller: answers
+    Note over Caller,SW: Your SWML runs
+    Note over Caller,SW: Call finishes
+```
+
+</llms-only>
 
 <Steps>
 
@@ -222,8 +273,12 @@ fetches the document from your server on each call, or holds the document itself
 <Tabs groupId="swml-delivery">
 <Tab title="From your server">
 
-Run either server below, then expose port 3000 at a public HTTPS URL. A tunnel such as
-[ngrok](https://ngrok.com/) works for development.
+SignalWire must reach your server over the internet, so this tab has four parts: run the
+server, give it a public URL, check the URL, then create the script that points at it.
+
+Run either server below. It answers requests on port 3000 at `/swml`, but only when they carry
+the username `signalwire` and the password you set. SignalWire sends those credentials from the
+URL you give it, so no one else can fetch your call instructions.
 
 <CodeBlocks>
 <CodeBlock title="Python — SWML builder">
@@ -268,7 +323,28 @@ await service.serve();
 </CodeBlocks>
 
 The [Server SDKs][server-sdks] serve the document with `SWMLService` and add the instructions
-through its SWML builder. See [webhook security][swml-webhook-security] to verify incoming requests.
+through its SWML builder.
+
+While you develop, give the server a public HTTPS URL with a tunnel such as
+[ngrok](https://ngrok.com/). In a second terminal, run:
+
+```bash
+ngrok http 3000
+```
+
+ngrok prints an `https://` **Forwarding** URL. Its hostname is your `<YOUR_PUBLIC_HOST>`. Keep
+both the server and ngrok running while you test. A new tunnel usually means a new hostname, so
+update the script's URL whenever it changes.
+
+Check that the document is reachable before you point a number at it:
+
+```bash
+curl -u "signalwire:<YOUR_BASIC_AUTH_PASSWORD>" "https://<YOUR_PUBLIC_HOST>/swml"
+```
+
+The response is the SWML document, starting with `{"version": "1.0.0"`. A `401` means the password
+doesn't match the one in your server. See [webhook security][swml-webhook-security] to also verify
+that requests come from SignalWire.
 
 Then create the script in the Dashboard:
 
@@ -278,7 +354,8 @@ Then create the script in the Dashboard:
    `https://signalwire:<YOUR_BASIC_AUTH_PASSWORD>@<YOUR_PUBLIC_HOST>/swml` in **Primary Script URL**.
 4. Select **Create** and keep the server running.
 
-To skip these steps, assign the number in code in the next step; that creates the script too.
+You can skip the Dashboard steps: **Assign the number in code** in the next step creates the
+script and assigns it in one request.
 
 </Tab>
 <Tab title="Hosted in SignalWire">
@@ -382,8 +459,9 @@ curl -X PUT "https://<YOUR_SPACE>.signalwire.com/api/relay/rest/phone_numbers/<Y
 </CodeBlock>
 </CodeBlocks>
 
-The cURL example calls [Update phone number][rest-update-number]. To attach an existing hosted
-script by its ID, use [Create a phone number address][rest-link-number] with
+The cURL example calls [Update phone number][rest-update-number].
+
+To attach an existing hosted script by its ID, use [Create a phone number address][rest-link-number] with
 `handler_type: "calling"`; this endpoint is in beta and requires the number to have no call
 handler yet.
 
@@ -399,9 +477,14 @@ To reach the script from a SIP client or another SignalWire app instead, give it
 Call your SignalWire number from your phone. You hear "Hello, welcome to SignalWire!", then the
 call ends.
 
-If you hear an error or silence, SignalWire couldn't run the script. For a script served from your
-server, check that the server is reachable at the URL you entered, including its basic-auth
-credentials. In a trial project, call from a verified number.
+If it doesn't work, check the symptom:
+
+- **You hear an error or silence.** SignalWire reached your number but couldn't run the script. For
+  a script served from your server, rerun the `curl` check with the exact URL in the script, and
+  confirm the server and ngrok are still running.
+- **You hear a different greeting, or the number's old behavior.** The number still points at
+  another Resource. Open it under **Phone Numbers** and check **Inbound Call Settings**.
+- **The call doesn't connect at all.** In a trial project, call from a verified number.
 
 </Step>
 
@@ -641,15 +724,18 @@ caller ID, and that a trial project has verified the destination.
 
 ### Answer a call via WebSocket (Relay)
 
-A Relay client receives calls for the topics in its `contexts`. A Relay Application Resource on
-your phone number sends the number's calls to one topic.
+A Relay handler is a program on your server that stays connected to SignalWire, so it needs no
+public URL. It subscribes to one or more topics, names you choose and list in `contexts`. A Relay
+Application is the Resource that ties your phone number to one topic: calls to the number go to
+whichever Relay client is subscribed to that topic.
 
 <Steps>
 
 <Step title="Run the call handler" id="run-the-relay-call-handler">
 
-Run either handler below and leave it running while you test. It receives calls on the
-`inbound-calling` topic, answers, plays the message, and hangs up.
+Run either handler below and leave it running while you test. It subscribes to the
+`inbound-calling` topic, then waits. When a call arrives, it answers, plays the message, and hangs
+up, and goes back to waiting for the next call.
 
 <CodeBlocks>
 <CodeBlock title="Python — Relay client">
@@ -776,6 +862,8 @@ curl -X PUT "https://<YOUR_SPACE>.signalwire.com/api/relay/rest/phone_numbers/<Y
 </CodeBlock>
 </CodeBlocks>
 
+The cURL example calls [Update phone number][rest-update-number].
+
 </Accordion>
 
 To reach the handler from a SIP client or another SignalWire app instead, give the Relay
@@ -788,9 +876,14 @@ Application a [SIP Address][sip-addresses] or use its [Alias][aliases].
 Call your SignalWire number from your phone. You hear "Hello, welcome to SignalWire!", then the
 call ends.
 
-If the call fails or never reaches your code, check that the client is still running and that its
-`contexts` value matches the Relay Application's topic. In a trial project, call from a verified
-number.
+If it doesn't work, check the symptom:
+
+- **The handler logs connection errors and keeps retrying.** It can't sign in. Check the Project
+  ID and API token, and that the token has the **Voice** permission.
+- **The call never reaches your handler.** Check that the handler is still running, that its
+  `contexts` value matches the Relay Application's **Topic** exactly, and that the number's
+  **Inbound Call Settings** point at that Relay Application.
+- **The call doesn't connect at all.** In a trial project, call from a verified number.
 
 </Step>
 
@@ -859,8 +952,78 @@ For more handlers, see
 
 The Browser SDK signs a web page in as a [Subscriber][subscribers], so a person places and answers
 calls from the page with their own microphone and speakers. The page authenticates with a
-[Subscriber token][subscriber-token] from your backend, never your API token; the
-[authentication guide][browser-auth] shows how to fetch one.
+[Subscriber token][subscriber-token] from your backend, never your API token.
+
+### Get a Subscriber token
+
+A Subscriber is the Resource for one person in your app, identified by a `reference` such as their
+email. Run this program on your server once to create a test Subscriber and print a token for it.
+Paste the token in place of `<YOUR_SUBSCRIBER_ACCESS_TOKEN>` in the pages below.
+
+<CodeBlocks>
+<CodeBlock title="Python — REST client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as subscriber_token.py and run: python subscriber_token.py
+from signalwire.rest import RestClient
+
+client = RestClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    host="<YOUR_SPACE>.signalwire.com",
+)
+
+# Create the Subscriber once. Later, run only the token request for a fresh token.
+client.fabric.subscribers.create(email="<YOUR_SUBSCRIBER_EMAIL>")
+
+sat = client.fabric.tokens.create_subscriber_token(reference="<YOUR_SUBSCRIBER_EMAIL>")
+print(sat["token"])
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — REST client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as subscriber-token.mjs,
+// then run: node subscriber-token.mjs
+import { RestClient } from "@signalwire/sdk";
+
+const client = new RestClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  host: "<YOUR_SPACE>.signalwire.com",
+});
+
+// Create the Subscriber once. Later, run only the token request for a fresh token.
+await client.fabric.subscribers.create({ email: "<YOUR_SUBSCRIBER_EMAIL>" });
+
+const sat = await client.fabric.tokens.createSubscriberToken({
+  reference: "<YOUR_SUBSCRIBER_EMAIL>",
+});
+console.log(sat.token);
+```
+</CodeBlock>
+<CodeBlock title="cURL — Subscribers API">
+```bash
+# Create the Subscriber once.
+curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/fabric/resources/subscribers" \
+  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{ "email": "<YOUR_SUBSCRIBER_EMAIL>" }'
+
+# Issue a token for it. The response's "token" is the Subscriber token.
+curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/fabric/subscribers/tokens" \
+  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{ "reference": "<YOUR_SUBSCRIBER_EMAIL>" }'
+```
+</CodeBlock>
+</CodeBlocks>
+
+The cURL requests call [Create Subscriber][rest-create-subscriber], then
+[Create Subscriber token][subscriber-token] with the Subscriber's email as `reference`.
+
+A token lasts two hours by default, so run the token request again when the page stops signing in. In production, your backend issues a token each time
+a user signs in, as the [authentication guide][browser-auth] shows.
 
 ### Place a call from a browser
 
@@ -935,9 +1098,7 @@ that Subscriber.
 
 <Step title="Run the page" id="run-the-answering-page">
 
-Create a Subscriber with the [Server SDKs][server-sdks] or the
-[Subscribers REST endpoint][rest-create-subscriber],
-then issue a Subscriber token with that Subscriber's `reference`.
+Use the token from [Get a Subscriber token](#get-a-subscriber-token).
 
 <Warning title="Receiving calls in the browser requires a Subscriber token">
 Guest and embed tokens only place calls. The page must sign in as the Subscriber that receives
@@ -1012,11 +1173,14 @@ hangupButton.onclick = () => {
 };
 ```
 
-Awaiting [`register()`][browser-register] puts the page online. Keep it open while you test.
+Awaiting [`register()`][browser-register] signs the page in and marks the Subscriber online, so
+the page shows **Online**. Keep it open while you test: calls ring only while it's online.
 
 </Step>
 
 <Step title="Assign the Subscriber to your phone number" id="assign-the-subscriber-to-your-number">
+
+The Subscriber you created is listed under **My Resources**, so you can pick it like any other Resource.
 
 <Markdown src="/snippets/common/dashboard/_assign-resource-to-number.mdx" />
 
@@ -1027,8 +1191,15 @@ Awaiting [`register()`][browser-register] puts the page online. Keep it open whi
 Call your SignalWire number from your phone. The page shows the incoming call. Select **Answer**,
 allow microphone access, and select **Hang up** when you finish.
 
-If the page never rings, check that the number is assigned to the Subscriber the token was issued
-for, and that the page still shows **Online**.
+If it doesn't work, check the symptom:
+
+- **The page never shows Online.** `register()` failed, most often because the token expired.
+  Issue a new token and reload the page.
+- **The page is Online but never rings.** Check that the number's **Inbound Call Settings** point
+  at the same Subscriber the token was issued for.
+- **The call connects but you can't hear each other.** Allow microphone access, and serve the page
+  over HTTPS or `localhost`.
+- **The call doesn't connect at all.** In a trial project, call from a verified number.
 
 </Step>
 
