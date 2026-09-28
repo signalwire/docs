@@ -1,0 +1,367 @@
+---
+title: Forward calls
+slug: voice/forward-calls
+description: Greet callers on your business number, ring a dispatcher, and record a voicemail when nobody answers, using SWML or Relay.
+max-toc-depth: 3
+---
+
+[make-calls]: /docs/platform/voice/make-and-receive-calls
+[answer-swml]: /docs/platform/voice/make-and-receive-calls#answer-a-call-via-swml
+[answer-relay]: /docs/platform/voice/make-and-receive-calls#answer-a-call-via-websocket-relay
+[swml-intro]: /docs/swml
+[swml-connect]: /docs/swml/reference/calling/connect
+[swml-record]: /docs/swml/reference/calling/record
+[swml-switch]: /docs/swml/reference/calling/switch
+[relay-guide]: /docs/server-sdks/guides/relay-client
+[compliance]: /docs/platform/compliance
+
+Greet callers on your business number, ring a person, and record a message if nobody picks up.
+Here, Bayview Taxi forwards callers to a dispatcher. Start from the call handler you built in
+[Make and receive calls][make-calls]; this guide replaces its greeting and keeps its Resource and
+phone number.
+
+## Pick the right product for call forwarding
+
+| Function | SWML | WebSocket (Relay) |
+|---|---|---|
+| Ring a phone number and bridge the caller | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
+| Record a voicemail when nobody answers | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
+| Run with no server of your own, hosted in SignalWire | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> |
+
+- [SWML][swml-intro] rings the dispatcher with [`connect`][swml-connect] and records with
+  [`record`][swml-record], served from your server or hosted in SignalWire.
+- [WebSocket (Relay)][relay-guide] bridges the call from your running handler and records when the
+  bridge fails.
+
+## Prepare for call forwarding
+
+Have a working call handler from [Answer a call via SWML][answer-swml] or
+[Answer a call via WebSocket (Relay)][answer-relay], assigned to your phone number, and a second
+phone to act as the dispatcher. Replace these values too:
+
+| Value | Replace with |
+|---|---|
+| `<YOUR_AGENT_DESTINATION>` | The dispatcher's phone number, in E.164 format |
+| `<YOUR_RECORDING_STATUS_URL>` | An HTTPS endpoint you control that receives the voicemail recording, for SWML |
+
+Keep the ring timeout shorter than the dispatcher phone's own voicemail, or its voicemail answers
+first.
+
+<Warning title="Recording consent is your responsibility">
+Confirm which parties must consent and announce the recording when required. See
+[Compliance][compliance].
+</Warning>
+
+## Forward the call via SWML
+
+[`connect`][swml-connect] rings the dispatcher for up to 20 seconds and sets `connect_result` to
+`connected` or `failed`. When nobody answers, [`switch`][swml-switch] runs the voicemail branch:
+`record` waits for the message and posts the recording to `status_url`. Run the server example in
+place of your first server, on the same URL, or paste the YAML or JSON into a hosted SWML Script.
+
+<CodeBlocks>
+<CodeBlock title="Python — SWML builder">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as inbound_forward.py and run: python inbound_forward.py
+from signalwire import SWMLBuilder, SWMLService
+
+voicemail = (
+    SWMLBuilder(SWMLService(name="inbound-forward-voicemail"))
+    .say("Our dispatcher is busy. Leave your name and pickup address after the beep, then press pound.")
+    .record(
+        format="mp3",
+        beep=True,
+        end_silence_timeout=3,
+        terminators="#",
+        status_url="<YOUR_RECORDING_STATUS_URL>",
+    )
+    .say("Thanks. We will call you back shortly.")
+    .build()["sections"]["main"]
+)
+
+service = SWMLService(
+    name="inbound-forward",
+    route="/swml",
+    port=3000,
+    basic_auth=("signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"),
+)
+(
+    SWMLBuilder(service)
+    .say("Thanks for calling Bayview Taxi. Connecting you to a dispatcher.")
+    .connect(
+        to="<YOUR_AGENT_DESTINATION>",
+        timeout=20,
+    )
+    .switch(
+        variable="connect_result",
+        case={"failed": voicemail},
+    )
+    .hangup()
+)
+service.serve()
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — SWML builder">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as inbound-forward.mjs,
+// then run: node inbound-forward.mjs
+import { SWMLService, SwmlBuilder } from "@signalwire/sdk";
+
+const voicemail = new SwmlBuilder()
+  .say("Our dispatcher is busy. Leave your name and pickup address after the beep, then press pound.")
+  .record({
+    format: "mp3",
+    beep: true,
+    end_silence_timeout: 3,
+    terminators: "#",
+    status_url: "<YOUR_RECORDING_STATUS_URL>",
+  })
+  .say("Thanks. We will call you back shortly.")
+  .document.sections.main;
+
+const service = new SWMLService({
+  name: "inbound-forward",
+  route: "/swml",
+  port: 3000,
+  basicAuth: ["signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"],
+});
+service.getBuilder()
+  .say("Thanks for calling Bayview Taxi. Connecting you to a dispatcher.")
+  .connect({
+    to: "<YOUR_AGENT_DESTINATION>",
+    timeout: 20,
+  })
+  .switch({
+    variable: "connect_result",
+    case: { failed: voicemail },
+  })
+  .hangup();
+
+await service.serve();
+```
+</CodeBlock>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - play:
+        url: 'say:Thanks for calling Bayview Taxi. Connecting you to a dispatcher.'
+    - connect:
+        to: '<YOUR_AGENT_DESTINATION>'
+        timeout: 20
+    - switch:
+        variable: connect_result
+        case:
+          failed:
+            - play:
+                url: 'say:Our dispatcher is busy. Leave your name and pickup address after the beep, then press pound.'
+            - record:
+                format: mp3
+                beep: true
+                end_silence_timeout: 3
+                terminators: '#'
+                status_url: '<YOUR_RECORDING_STATUS_URL>'
+            - play:
+                url: 'say:Thanks. We will call you back shortly.'
+    - hangup: {}
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      { "play": { "url": "say:Thanks for calling Bayview Taxi. Connecting you to a dispatcher." } },
+      { "connect": { "to": "<YOUR_AGENT_DESTINATION>", "timeout": 20 } },
+      {
+        "switch": {
+          "variable": "connect_result",
+          "case": {
+            "failed": [
+              { "play": { "url": "say:Our dispatcher is busy. Leave your name and pickup address after the beep, then press pound." } },
+              {
+                "record": {
+                  "format": "mp3",
+                  "beep": true,
+                  "end_silence_timeout": 3,
+                  "terminators": "#",
+                  "status_url": "<YOUR_RECORDING_STATUS_URL>"
+                }
+              },
+              { "play": { "url": "say:Thanks. We will call you back shortly." } }
+            ]
+          }
+        }
+      },
+      { "hangup": {} }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+Call your number and answer on the dispatcher phone: the two calls are bridged. Call again and let
+the dispatcher phone ring: after 20 seconds you hear the voicemail prompt, and the recording
+arrives at `<YOUR_RECORDING_STATUS_URL>` once you press pound or stop speaking. `connect` also
+accepts a SIP URI or a Subscriber's Address as `to`.
+
+## Forward the call via WebSocket (Relay)
+
+Listen for `calling.call.connect` before you bridge. A `failed` state means nobody answered, so the
+handler plays the voicemail prompt and records the caller. A `disconnected` state means the
+dispatcher hung up after the conversation, so the handler ends the call. The recording's completion
+callback prints its URL and plays a goodbye. Run it in place of your first Relay handler, on the
+same `inbound-calling` topic.
+
+<CodeBlocks>
+<CodeBlock title="Python — Relay client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as inbound_forward_relay.py and run: python inbound_forward_relay.py
+from signalwire.relay import RelayClient
+from signalwire.relay.event import ConnectEvent, RecordEvent
+
+client = RelayClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    contexts=["inbound-calling"],
+)
+
+@client.on_call
+async def handle_call(call):
+    async def hang_up_after_playback(_event):
+        if call.state != "ended":
+            await call.hangup()
+
+    async def say_goodbye(event: RecordEvent):
+        print(f"Voicemail: {event.url}")
+        await call.play(
+            [{"type": "tts", "params": {"text": "Thanks. We will call you back shortly."}}],
+            on_completed=hang_up_after_playback,
+        )
+
+    async def record_voicemail(_event):
+        if call.state != "ended":
+            await call.record(
+                audio={"format": "mp3", "beep": True, "end_silence_timeout": 3, "terminators": "#"},
+                on_completed=say_goodbye,
+            )
+
+    async def handle_connect(event: ConnectEvent):
+        if call.state == "ended":
+            return
+        if event.connect_state == "failed":
+            # Nobody answered: take a voicemail instead.
+            await call.play(
+                [{"type": "tts", "params": {"text": "Our dispatcher is busy. Leave your name and pickup address after the beep, then press pound."}}],
+                on_completed=record_voicemail,
+            )
+        elif event.connect_state == "disconnected":
+            # The dispatcher hung up after the conversation.
+            await call.hangup()
+
+    call.on("calling.call.connect", handle_connect)
+
+    await call.answer()
+    greeting = await call.play([{
+        "type": "tts",
+        "params": {"text": "Thanks for calling Bayview Taxi. Connecting you to a dispatcher."},
+    }])
+    await greeting.wait()
+    await call.connect(
+        devices=[[{
+            "type": "phone",
+            "params": {"to_number": "<YOUR_AGENT_DESTINATION>", "timeout": 20},
+        }]],
+        ringback=[{"type": "ringtone", "params": {"name": "us"}}],
+    )
+    await call.wait_for_ended()
+
+client.run()
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — Relay client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// Save as inbound-forward-relay.mts and run: npx tsx inbound-forward-relay.mts
+import { ConnectEvent, RecordEvent, RelayClient, RelayEvent } from "@signalwire/sdk";
+
+const client = new RelayClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  contexts: ["inbound-calling"],
+});
+
+client.onCall(async (call) => {
+  const hangUpAfterPlayback = async () => {
+    if (call.state !== "ended") await call.hangup();
+  };
+  const sayGoodbye = async (event: RelayEvent) => {
+    console.log(`Voicemail: ${(event as RecordEvent).url}`);
+    await call.play(
+      [{ type: "tts", text: "Thanks. We will call you back shortly." }],
+      { onCompleted: hangUpAfterPlayback },
+    );
+  };
+  const recordVoicemail = async () => {
+    if (call.state === "ended") return;
+    await call.record(
+      { format: "mp3", beep: true, end_silence_timeout: 3, terminators: "#" },
+      { onCompleted: sayGoodbye },
+    );
+  };
+
+  call.on("calling.call.connect", async (event) => {
+    if (call.state === "ended") return;
+    const { connectState } = event as ConnectEvent;
+    if (connectState === "failed") {
+      // Nobody answered: take a voicemail instead.
+      await call.play(
+        [{ type: "tts", text: "Our dispatcher is busy. Leave your name and pickup address after the beep, then press pound." }],
+        { onCompleted: recordVoicemail },
+      );
+    } else if (connectState === "disconnected") {
+      // The dispatcher hung up after the conversation.
+      await call.hangup();
+    }
+  });
+
+  await call.answer();
+  const greeting = await call.play([
+    { type: "tts", text: "Thanks for calling Bayview Taxi. Connecting you to a dispatcher." },
+  ]);
+  await greeting.wait();
+  await call.connect(
+    [[{ type: "phone", params: { to_number: "<YOUR_AGENT_DESTINATION>", timeout: 20 } }]],
+    { ringback: [{ type: "ringtone", name: "us" }] },
+  );
+  await call.waitForEnded();
+});
+
+await client.run();
+```
+</CodeBlock>
+</CodeBlocks>
+
+Call your number and answer on the dispatcher phone: you hear ringback, then the two calls are
+bridged. Call again and let it ring: after 20 seconds you hear the voicemail prompt, and the handler
+prints the recording URL once you press pound or stop speaking.
+
+## Next steps
+
+<CardGroup cols={2}>
+
+<Card title="Record calls" href="/docs/platform/voice/record-calls" icon="regular microphone">
+  Record whole calls, stop and pause recordings, and manage the files.
+</Card>
+
+<Card title="connect reference" href="/docs/swml/reference/calling/connect" icon="regular file-code">
+  Serial and parallel dialing, ringback, caller ID, and status callbacks.
+</Card>
+
+</CardGroup>
