@@ -5,11 +5,18 @@ paths:
 
 # Capability guides — one capability, every surface
 
-Applies to a how-to that teaches one platform capability across more than one surface (SWML, Relay, the REST Calling API, the Browser SDK, Call Flow Builder). Exemplars: `fern/products/platform/pages/calling/voice/make-and-receive-calls.mdx` (first-run walkthrough, complete samples) and `fern/products/platform/pages/calling/voice/record-calls.mdx` (task sections, merged Relay and REST blocks). A single-surface how-to or an integration guide (the Vapi page) follows `mdx-style` alone. Voice, grounding, and `## Next steps` come from `mdx-style`; this rule fixes the skeleton and the sample conventions so guides match each other.
+Applies to a how-to that teaches one platform capability across more than one surface (SWML, Relay, the REST Calling API, the Browser SDK, Call Flow Builder). Exemplars: `fern/products/platform/pages/calling/voice/record-calls.mdx` (task-first layout: capability matrix, task sections, merged Relay and REST blocks) and `fern/products/platform/pages/calling/voice/make-and-receive-calls.mdx` (approach-first layout: one section per approach, first-run walkthroughs, complete samples). A single-surface how-to or an integration guide (the Vapi page) follows `mdx-style` alone. Voice, grounding, and `## Next steps` come from `mdx-style`; this rule fixes the skeleton and the sample conventions so guides match each other.
 
 ## Skeleton
 
 Every guide answers the same questions in the same order: which product, how to start, how to do the thing, how to know it worked, where to go next.
+
+Pick one of two layouts:
+
+- **Task-first** (the default). Use it when the surfaces differ in what they can do, or when a reader can mix them for one task (start a recording over SWML, stop it over REST). The body is task sections, each with one `###` per surface.
+- **Approach-first**. Use it when every approach can do every task in the guide, but the approaches don't mix: each needs its own code and its own kind of Resource, so a reader follows one of them start to finish (placing and answering calls with SWML, Relay, or the Browser SDK). The body is one `##` per approach, each with its own tasks beneath it. A task-first layout here would interleave three unrelated code paths under every heading and invite readers to switch between them.
+
+Task-first:
 
 ```text
 frontmatter: title = the task, verb first ("Record calls", "Stream call audio"); slug /<area>/<capability>;
@@ -34,25 +41,40 @@ intro, 2–3 sentences, no heading: what the reader does, then "Start by <smalle
    </Steps>
 ## <Task>                                one per task the guide must cover
    ### <Task> via <surface>              one per surface that supports it
-## Examples
+## Examples                             (optional)
    ### <Verb phrase>
    #### <Verb phrase> via <surface>
 ## Next steps
 ```
 
-- **Pick the right product.** The first job of the page is to show which surface can do what, so the reader chooses before reading further. See "Capability matrix" below.
+Approach-first:
+
+```text
+frontmatter, link definitions, intro as above
+## Choose an approach                    one paragraph saying the approaches don't mix, then one bullet per approach
+## Prepare for <X>                       one placeholder table for every approach
+## How <X> works                         (optional — the model every approach shares, such as how a call reaches your code)
+## <Capability> via <surface>            one per approach, in SDK-first order: SWML, then WebSocket (Relay), then the browser
+   ### <Task> via <surface>              the same tasks, in the same order, under every approach
+       <Steps> … </Steps>                first-run tasks are walkthroughs ending in a verification step
+## Next steps
+```
+
+- **Pick the right product** (task-first). The first job of the page is to show which surface can do what, so the reader chooses before reading further. See "Capability matrix" below.
+- **Choose an approach** (approach-first). Say plainly that the approaches are separate ways to build the app and that the sections don't build on each other, then give one bullet per approach: its canonical name linked to its reference, what it is, and when to choose it. No matrix: when every approach can do every task, it would be a grid of check marks that doesn't help the reader choose.
 - **Prepare.** "Have these values ready:" then bullets: Space URL, Project ID and API token with the **Voice** permission, a purchased number or verified caller ID, a destination the reader can answer, then topic-specific items. Hard constraints follow as titled `<Warning>`s (trial and international limits, `wss://` only, TCPA). Add one pointer sentence when a reader might want a sibling guide instead.
 - **How it works.** Put it before the first run only when the reader can't interpret the result without the model (machine detection's outcome table). Otherwise conceptual depth goes after the first run, as its own `##` ("Handle the audio stream").
 - **First run.** A `<Steps>` walkthrough is for a reader starting from zero: a first call, a first stream. A guide that picks up mid-stream (recording assumes you can already place a call) skips `<Steps>` and opens with its first task section. The walkthrough targets the smallest thing the reader can confirm alone, usually calling their own phone: one code block per surface, no options, no error handling.
-- **Verification step** closes the `<Steps>`: what the reader hears or sees on success, then the likeliest failure and what it means. A guide without `<Steps>` puts the same check at the end of its first task section. Never skip it.
-- **Task sections** are the body of the guide. Name each `##` after what the reader wants ("Record the whole call"), never after the API surface that provides it ("The record_call verb"). One `###` per surface beneath it, surface named in the heading. Options get their own `##` after the task that introduces them ("Recording options: format, stereo, and direction").
+- **Verification step** closes the `<Steps>`: what the reader hears or sees on success, then the likeliest failure and what it means. When several failures are common, list them by symptom. A guide without `<Steps>` puts the same check at the end of its first task section. Never skip it.
+- **Task sections** are the body of a task-first guide. Name each `##` after what the reader wants ("Record the whole call"), never after the API surface that provides it ("The record_call verb"). One `###` per surface beneath it, surface named in the heading. Options get their own `##` after the task that introduces them ("Recording options: format, stereo, and direction").
 - **Track and control** is a task section like any other: REST gets `status_url`/`status_events` and a JSON callback payload; Relay gets `call.on(…)` handlers. One lifecycle diagram per surface family, themed SVG in `<llms-ignore>` with an `<llms-only>` mermaid `sequenceDiagram` twin (`mdx-diagrams`). Add `### Compare the surfaces` when defaults or parameter names differ by surface.
+- **Approach sections** are the body of an approach-first guide. Each `##` covers one approach end to end, and each `###` beneath it is a task named with its surface (`### Place a call via SWML`, `### Answer a call in a browser`), so every heading still stands alone in search. Keep the tasks in the same order under every approach. Setup shared by every approach (credentials, placeholders, the mental model) goes once above the approach sections, never repeated inside them.
 - **Examples** hold the variations you could delete and still have a guide. If removing a section would leave a hole in the main path, it is a task section and belongs above `## Examples`. Each example is `### <Verb phrase>`: one-sentence goal, a titled `<Warning>` when compliance applies, then a `####` per surface.
 - **Next steps** is required here as on every guide (`mdx-style`). Cards deepen this capability only.
 
 ## Capability matrix
 
-One table under `## Pick the right product`: `| Function | SWML | WebSocket (Relay) | REST | Browser SDK | Call Flow Builder |`, keeping every column where the capability plausibly lives. The REST column covers both commands sent to a live call and REST resources such as the Recordings API, so a REST resource never gets its own column. Rows are things the reader wants to do ("Get the recording's URL back in your own code, without a webhook"), not feature names. Three cell states:
+Task-first guides only. One table under `## Pick the right product`: `| Function | SWML | WebSocket (Relay) | REST | Browser SDK | Call Flow Builder |`, keeping every column where the capability plausibly lives. The REST column covers both commands sent to a live call and REST resources such as the Recordings API, so a REST resource never gets its own column. Rows are things the reader wants to do ("Get the recording's URL back in your own code, without a webhook"), not feature names. Three cell states:
 
 - `<Icon icon="regular circle-check" color="var(--status-success)" />` shipped
 - `<Icon icon="regular circle-xmark" color="var(--status-error)" />` not available

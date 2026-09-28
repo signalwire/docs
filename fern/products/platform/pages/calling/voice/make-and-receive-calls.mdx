@@ -42,6 +42,7 @@ max-toc-depth: 3
 [rest-list-numbers]: /docs/apis/rest/phone-numbers/list-phone-numbers
 [rest-link-number]: /docs/apis/rest/phone-number-addresses/create-phone-number-address
 [rest-create-subscriber]: /docs/apis/rest/subscribers/create-subscriber
+[rest-create-script]: /docs/apis/rest/swml-scripts/create-swml-script
 
 Place calls to phones and answer calls to your SignalWire number with SWML, Relay, or the Browser
 SDK. Each section below takes one of them from a first test call on your own phone through
@@ -392,7 +393,87 @@ sections:
 </CodeBlock>
 </CodeBlocks>
 
-To create a hosted script in code instead, use the [Server SDKs][server-sdks].
+<Accordion title="Create the hosted script in code">
+
+The [Server SDKs][server-sdks] can build the SWML and create the hosted script in one program,
+in place of the Dashboard steps above. Each program prints the script's ID; assign that script to
+your number in the next step.
+
+<CodeBlocks>
+<CodeBlock title="Python — REST client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as inbound_script.py and run: python inbound_script.py
+from signalwire import SWMLBuilder, SWMLService
+from signalwire.rest import RestClient
+
+client = RestClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    host="<YOUR_SPACE>.signalwire.com",
+)
+
+swml = (
+    SWMLBuilder(SWMLService(name="inbound-welcome"))
+    .say("Hello, welcome to SignalWire!")
+    .build()
+)
+
+script = client.fabric.swml_scripts.create(
+    name="Inbound welcome",
+    contents=swml,
+)
+print(script["id"])
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — REST client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as inbound-script.mjs,
+// then run: node inbound-script.mjs
+import { RestClient, SwmlBuilder } from "@signalwire/sdk";
+
+const client = new RestClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  host: "<YOUR_SPACE>.signalwire.com",
+});
+
+const swml = new SwmlBuilder()
+  .say("Hello, welcome to SignalWire!")
+  .build();
+
+const script = await client.fabric.swmlScripts.create({
+  name: "Inbound welcome",
+  contents: swml,
+});
+console.log(script.id);
+```
+</CodeBlock>
+<CodeBlock title="cURL — SWML Scripts API">
+```bash
+curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/fabric/resources/swml_scripts" \
+  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Inbound welcome",
+    "contents": {
+      "version": "1.0.0",
+      "sections": {
+        "main": [
+          { "play": { "url": "say:Hello, welcome to SignalWire!" } }
+        ]
+      }
+    }
+  }'
+```
+</CodeBlock>
+</CodeBlocks>
+
+Each example sends `contents` as a JSON object. The cURL example calls
+[Create SWML Script][rest-create-script].
+
+</Accordion>
 
 </Tab>
 </Tabs>
@@ -919,7 +1000,7 @@ call.on("calling.call.state", (event) => {
 On an inbound call, the `Call` object also carries the caller's number in `device.params.from_number`,
 with `direction` and `call_id`.
 
-This flow shows an outbound call's commands and events on the shared connection:
+This flow shows every message an outbound call exchanges on the connection. The `created`, `ringing`, and `answered` states arrive before `dial()` returns, so a listener you add afterward sees only `ending` and `ended`:
 
 <llms-ignore>
 
