@@ -26,6 +26,8 @@ max-toc-depth: 3
 [messaging-chat]: /docs/platform/chat
 [webhooks]: /docs/platform/webhooks
 [swml-reply]: /docs/swml/reference/messaging/reply
+[error-codes]: /docs/apis/error-codes
+[handoff-router]: /docs/server-sdks/reference/python/agents/handoff-router
 
 An AI agent you built for voice can also hold a text conversation. Each turn is one HTTP request:
 you send the user's message, and the agent's reply comes back in the response. Start by sending two
@@ -61,7 +63,8 @@ Have these values ready:
 - Your Project ID and an API token from the Dashboard's [API credentials][api-credentials] page,
   with the token's **Chat** permission enabled.
 - An agent: a SWML document with an [`ai`][ai-reference] method, served at a URL SignalWire can
-  fetch. The first run below saves one in your Space.
+  fetch from the public internet. The first run below saves
+  one in your Space.
 - For text messages, a messaging-capable [phone number][phone-numbers] in your Space.
 - For tool calls, summaries, text messages, and the web page gateway, a publicly reachable HTTPS URL
   for your application.
@@ -206,10 +209,18 @@ curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/ai/chat" \
 
 ### Read the reply
 
-A working turn returns the agent's reply in `result.response`, usually within a few seconds. An HTTP
-`401 Unauthorized` means the credentials are wrong or the token lacks the **Chat** permission. A
-JSON-RPC error `-32001`, `Conversation not found`, means the ID doesn't match a live conversation:
-check its spelling, or create the conversation again if it ended or sat idle past its timeout.
+A working turn returns the agent's reply in `result.response`, usually within a few seconds. Check
+the HTTP status first. An HTTP `401 Unauthorized` means the credentials are wrong or the token lacks
+the **Chat** permission, and an HTTP `400` with an HTML body means the request wasn't valid JSON.
+
+Errors from AI chat itself arrive with HTTP `200` and an `error` object in place of `result`:
+
+- `-32001`, `Conversation not found`: the ID doesn't match a live conversation. Check its spelling,
+  or create the conversation again if it ended or sat idle past its timeout.
+- `-32002`, `Configuration error`: SignalWire couldn't fetch your agent from `config_url`. Check the
+  agent ID at the end of the URL.
+
+The [error codes][error-codes] page lists the AI chat codes.
 
 </Steps>
 
@@ -222,7 +233,8 @@ including any tool calls the agent makes along the way.
 A conversation ID keeps only letters, digits, `_`, `-`, `.`, and `:`. Any other character is dropped
 without an error, so `rider~2` is stored as `rider2`; use `.` when you compose IDs. A conversation
 ends when you end or delete it, or after it sits idle past its `conversation_timeout`, 3600 seconds
-unless you set one on `create_conversation`.
+unless you set one on `create_conversation`. An ended conversation can't be reopened: a later `chat`
+that passes `config_url` under the same ID starts a new conversation with no memory of the old one.
 
 ## Hold an AI chat conversation
 
@@ -264,8 +276,10 @@ curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/ai/chat" \
 
 ### Hold an AI chat conversation via the Server SDKs
 
-[`AIChatClient`][chat-client] sends the same methods from Python and raises typed exceptions for
-JSON-RPC errors, such as `ConversationNotFoundError` for `-32001`.
+[`AIChatClient`][chat-client] sends the same methods from Python and raises typed exceptions, all
+subclasses of `AIChatError`: `ConversationNotFoundError` for `-32001`, `RateLimitError`,
+`ChatInProgressError` when a turn is already running on the conversation, `AuthenticationError`,
+and `SummaryError` when `summarize` fails. Any other code raises `AIChatError` itself.
 
 ```python title="Python — AIChatClient"
 # Install: python -m pip install signalwire-sdk==3.4.1
@@ -398,8 +412,9 @@ and every later request sends it back as `handle`. See the [gateway router refer
 | `end` | `{"method": "end", "handle"}` | `{"status": "ended"}` |
 
 A key copied from your page lets someone talk to your agent, and every turn is billed to your
-project. The gateway caps new conversations at 60 a minute and turns at 200 per conversation by
-default; lower them with `max_new_conversations` and `max_turns`.
+project. The origin allowlist stops the key working in someone else's page, but not in a script,
+which can leave out the `Origin` header. The gateway caps new conversations at 60 a minute and turns
+at 200 per conversation by default; lower them with `max_new_conversations` and `max_turns`.
 
 ```mermaid
 flowchart LR
@@ -412,6 +427,10 @@ flowchart LR
     SW -->|"the agent's reply"| Gateway
     Gateway -->|"JSON response"| Browser
 ```
+
+To move a web chat onto a phone call and back, mount [`HandoffRouter`][handoff-router] beside the
+gateway at the same prefix. It adds `/handoff`, `/escalate`, and `/say` routes, and waits for your
+code to record each leg of the conversation before the next one starts.
 
 ### Hold an AI chat conversation from a phone number
 
