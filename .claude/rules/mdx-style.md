@@ -35,7 +35,7 @@ Tutorials and how-tos give the reader a way to confirm the result — a command 
 - No "simply/easily/just" and no "please" in instructions. [G]
 - Em-dashes are a house device, not a default connector: one earns its place on a genuine break in thought or an appositive commas would muddle. Where a comma reads the same, write the comma. Never several per paragraph. [MS][SW] Aphorisms land at 2–3 per page, max. [SW] (judgment)
 - No emoji — not in headings, tab/card titles, or prose. Say good/bad in words. [SW]
-- Terminology: canonical names are "Server SDKs" (never "Agents SDK") and "resource addresses" (never "Fabric addresses"). The published glossary at `/docs/platform/glossary` (`fern/products/platform/pages/platform/core/glossary.mdx`) is the source of truth for the full set of canonical names, aliases, and historical names — check it before naming a product or entity, and record a new decision there rather than here. Tokens are *created*/*issued* (never *minted*); expand every acronym at first use. [SW]
+- Terminology: canonical names are "Server SDKs" (never "Agents SDK") and "Resource Addresses" (never "Fabric Addresses"). The published glossary at `/docs/platform/glossary` (`fern/products/platform/pages/platform/core/glossary.mdx`) is the source of truth for the full set of canonical names, aliases, and historical names — check it before naming a product or entity, and record a new decision there rather than here. Tokens are *created*/*issued* (never *minted*); expand every acronym at first use. [SW]
 
 ## Accessibility and inclusive language [G][MS]
 
@@ -49,6 +49,7 @@ Tutorials and how-tos give the reader a way to confirm the result — a command 
 - Customer-facing only: no internal implementation detail (backend endpoints, transports, engine-side params). Placeholder data only — no real names, emails, or domains.
 - Examples do real work: tool call → your server → system of record → response. No knowledge-trivia bots.
 - Examples run as written: real imports, every required parameter, and only placeholders the reader can obviously fill. Verify each against the spec or SDK source — and against an actual run when the page ships a whole flow.
+- In tutorials and how-to guides, explain API usage through the supported SDK first. Show Python and TypeScript SDK examples first, then the direct HTTP alternative: an `EndpointRequestSnippet` when a reference example matches the request, otherwise a cURL block. Use SWML builders for supported instructions; put equivalent YAML and JSON after the SDK examples. Explain any SDK/version gap that requires a raw request or verb. See `mdx-capability-guides` for the example ordering template.
 - A cluster of guides shares one running example, so cross-links compound instead of restarting context. The AI guides use Bayview Taxi and its dispatcher Ada across `platform/pages/ai/overview.mdx` and `platform/pages/ai/guides/**`, and the calling guides under `platform/pages/calling/voice/` borrow the same cast whenever a scenario has a business voice; adopt a cluster's existing cast when you add a page to it, and introduce a new one only for a new cluster. [SW]
 - Don't cite other vendors' docs as authority; never disparage anyone's product.
 
