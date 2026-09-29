@@ -4533,6 +4533,8 @@ paths:
 
         For the SignalWire REST API's project route, use [Create API token](/docs/apis/rest/project-tokens/create-token).
 
+        <Warning title="Save the token secret now">The response is the only place the token secret is returned. No later request, including [Update an API Token](/docs/compatibility-api/rest/tokens/update-token), can read it back. If you lose it, delete the token and create a new one.</Warning>
+
         #### Permissions
 
         The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Management_.
@@ -4546,7 +4548,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TokenResponse'
+                $ref: '#/components/schemas/CreateTokenResponse'
         '400':
           description: The request was invalid or cannot be processed. Check the error details for more information.
           content:
@@ -4579,6 +4581,10 @@ paths:
       summary: Update an API Token
       description: |-
         Changes the name or enabled permission categories of an existing project API token. For the SignalWire REST API's project route, use [Update API token](/docs/apis/rest/project-tokens/update-token).
+
+        The response contains the token's `id`, `name`, and `permissions` only. The token secret is returned once, by [Generate a new API Token](/docs/compatibility-api/rest/tokens/create-token), and cannot be retrieved afterwards.
+
+        Updating a token does not rotate or reissue its secret. The existing secret keeps working after the update.
 
         #### Permissions
 
@@ -8565,6 +8571,43 @@ components:
       unevaluatedProperties:
         not: {}
       description: Request body for creating an API token.
+    CreateTokenResponse:
+      type: object
+      required:
+        - id
+        - name
+        - permissions
+        - token
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: The unique identifier of the API Token.
+          examples:
+            - ea14556a-984f-11ee-b9d1-0242ac120002
+        name:
+          type: string
+          minLength: 1
+          description: The name of the API Token.
+          examples:
+            - John Doe's Token
+        permissions:
+          type: array
+          items:
+            type: string
+          description: The permissions enabled for this token.
+          examples:
+            - - calling
+              - fax
+              - messaging
+        token:
+          type: string
+          description: The API token secret, used as the password in HTTP Basic auth alongside the project ID. Returned only in this response and cannot be retrieved again; store it securely.
+          examples:
+            - swapi_0123456789ab0123456789ab0123456789ab
+      unevaluatedProperties:
+        not: {}
+      description: Response returned when a token is created. This is the only response that includes the token secret.
     CxmlScript:
       type: object
       required:
@@ -11661,18 +11704,17 @@ components:
         - id
         - name
         - permissions
-        - token
       properties:
         id:
           allOf:
             - $ref: '#/components/schemas/uuid'
-          description: The unique identifier of the created API Token.
+          description: The unique identifier of the API Token.
           examples:
             - ea14556a-984f-11ee-b9d1-0242ac120002
         name:
           type: string
           minLength: 1
-          description: The name of the created API Token.
+          description: The name of the API Token.
           examples:
             - John Doe's Token
         permissions:
@@ -11684,11 +11726,6 @@ components:
             - - calling
               - fax
               - messaging
-        token:
-          type: string
-          description: The API token that can be used along with the project ID for basic authentication.
-          examples:
-            - swapi_0123456789ab0123456789ab0123456789ab
       unevaluatedProperties:
         not: {}
       description: Response containing a single token.
