@@ -14,6 +14,8 @@ max-toc-depth: 3
 [client-chat]: /docs/server-sdks/reference/python/agents/ai-chat-client/chat
 [client-log]: /docs/server-sdks/reference/python/agents/ai-chat-client/log
 [client-end]: /docs/server-sdks/reference/python/agents/ai-chat-client/end
+[client-summarize]: /docs/server-sdks/reference/python/agents/ai-chat-client/summarize
+[client-delete]: /docs/server-sdks/reference/python/agents/ai-chat-client/delete
 [swaig-webhook]: /docs/apis/rest/webhooks/ai-swaig-tool-webhook
 [post-prompt-webhook]: /docs/apis/rest/webhooks/ai-post-prompt-callback
 [inbound-message-webhook]: /docs/apis/rest/webhooks/inbound-message-webhook
@@ -27,13 +29,17 @@ max-toc-depth: 3
 [messaging-chat]: /docs/platform/chat
 [webhooks]: /docs/platform/webhooks
 [swml-reply]: /docs/swml/reference/messaging/reply
-[error-codes]: /docs/apis/error-codes
 [handoff-router]: /docs/server-sdks/reference/python/agents/handoff-router
 
 The [AI agent you built][ai-quickstart] for voice can also hold a text conversation. Each turn is
 one HTTP request: you send the user's message, and the agent's reply comes back in the response.
 Start by sending two requests to an agent saved in your Space, then hold conversations from your
 server, from a web page, and from a phone number.
+
+<Note title="AI chat is not the Chat API">
+AI chat is the [`ai`][ai-reference] method, or a Server SDKs agent, reached over text instead of voice.
+The [Chat API][messaging-chat] is a separate messaging product.
+</Note>
 
 ## Pick the right product for AI chat
 
@@ -49,13 +55,8 @@ server, from a web page, and from a phone number.
 - The [Server SDKs][chat-client] add [`AIChatClient`][chat-client] for your server and
   [`ChatGateway`][chat-gateway], which lets a web page chat while your server keeps the API token.
   Both are Python only.
-- The Browser SDK has no direct AI chat support. However, the `ChatGateway` created in the server allows you to hold browser conversations through the REST API without leaking SignalWire Credentials.
-
-<Note title="AI chat is not the Chat API">
-AI chat is the [`ai`][ai-reference] method, or a Server SDKs agent, reached over text instead of voice.
-The [Chat API][messaging-chat] is a separate messaging product.
-</Note>
-
+- The Browser SDK has no AI chat support. A web page chats through `ChatGateway` on your server,
+  which keeps your API token out of the page.
 
 ## Prepare for AI chat
 
@@ -65,8 +66,7 @@ Have these values ready:
 - Your Project ID and an API token from the Dashboard's [API credentials][api-credentials] page,
   with the token's **Chat** permission enabled.
 - An agent: a SWML document with an [`ai`][ai-reference] method, served at a URL SignalWire can
-  fetch from the public internet. The first run below saves
-  one in your Space.
+  fetch from the public internet. The first run below saves one in your Space.
 - For text messages, a messaging-capable [phone number][phone-numbers] in your Space.
 - For tool calls, summaries, text messages, and the web page gateway, a publicly reachable HTTPS URL
   for your application.
@@ -222,7 +222,7 @@ Errors from AI chat itself arrive with HTTP `200` and an `error` object in place
 - `-32002`, `Configuration error`: SignalWire couldn't fetch your agent from `config_url`. Check the
   agent ID at the end of the URL.
 
-The [error codes][error-codes] page lists the AI chat codes.
+The [AI chat REST API reference][chat-endpoint] lists the other error codes.
 
 </Steps>
 
@@ -430,9 +430,11 @@ flowchart LR
     Gateway -->|"JSON response"| Browser
 ```
 
-To move a web chat onto a phone call and back, mount [`HandoffRouter`][handoff-router] beside the
-gateway at the same prefix. It adds `/handoff`, `/escalate`, and `/say` routes, and waits for your
-code to record each leg of the conversation before the next one starts.
+To move a conversation between the web page and a phone call, mount [`HandoffRouter`][handoff-router]
+beside the gateway at the same prefix. It adds three routes: `/escalate` moves the chat onto a call,
+`/handoff` moves the call back to chat, and `/say` types into the live call. Your code puts a
+`handoff_nonce` in the user variables of each call it places and registers it with the router, and
+saves each leg's transcript; the router waits for that before the next leg starts.
 
 ### Hold an AI chat conversation from a phone number
 
@@ -465,8 +467,8 @@ if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=3000)
 ```
 
-Point your number's messaging handler at `https://<your-app>/sms` as a SWML webhook in the
-[phone number's settings][phone-numbers]. Passing `config_url` on `chat` creates the conversation on
+Then set your number to handle incoming messages with this server's `/sms` URL; the
+[phone numbers][phone-numbers] page covers the number's settings. Passing `config_url` on `chat` creates the conversation on
 the first message from a sender and continues it after that, keyed on the sender's number.
 
 ## AI chat methods: create, chat, read, summarize, end, and delete
@@ -476,9 +478,9 @@ the first message from a sender and continues it after that, keyed on the sender
 | [`create_conversation`][client-create] | Creates a conversation | Returns `initial_message`, so the agent speaks first. On an ID that is already live it returns `status: "exists"` and no greeting; pass `reinit: true` to start it over |
 | [`chat`][client-chat] | Sends a message and returns the reply | With `config_url`, it creates the conversation if needed, but you never get `initial_message` |
 | [`chat_log`][client-log] | Reads the conversation back | Changes nothing |
-| `summarize` | Summarizes the conversation on demand | Takes an optional `summary_prompt` |
+| [`summarize`][client-summarize] | Summarizes the conversation on demand | Takes an optional `summary_prompt` |
 | [`end_conversation`][client-end] | Ends the conversation and starts post-processing | Triggers the summary to your `post_prompt_url` |
-| `delete` | Removes the conversation and its messages | Nothing is post-processed and no webhook fires |
+| [`delete`][client-delete] | Removes the conversation and its messages | Nothing is post-processed and no webhook fires |
 
 Messages take a `role` of `user` or `system`. A `system` message steers the agent without appearing
 as something the user said.
