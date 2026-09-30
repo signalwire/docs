@@ -1,7 +1,7 @@
 ---
 title: Detect voicemail and fax machines
 slug: voice/machine-detection
-description: Pick SWML or Relay, then learn whether a person, voicemail, or fax machine is on a call you place or receive, track each result, and leave a message, hand off to an AI agent, or send or receive a fax.
+description: Detect people, voicemail, and fax machines, then act on the result with SWML, Relay, or REST.
 max-toc-depth: 3
 ---
 
@@ -16,58 +16,34 @@ max-toc-depth: 3
 [tcpa]: /docs/platform/compliance/tcpa
 [webhooks]: /docs/platform/webhooks
 [server-sdks]: /docs/server-sdks
-[relay-guide]: /docs/server-sdks/guides/relay-client
 [swml-detect-machine]: /docs/swml/reference/calling/detect-machine
 [swml-switch]: /docs/swml/reference/calling/switch
 [swml-cond]: /docs/swml/reference/calling/cond
 [swml-ai]: /docs/swml/reference/calling/ai
 [swml-send-fax]: /docs/swml/reference/calling/send-fax
 [swml-receive-fax]: /docs/swml/reference/calling/receive-fax
-[swml-answer]: /docs/swml/reference/calling/answer
 [ai-best-practices]: /docs/platform/ai/best-practices
 [call-commands]: /docs/apis/rest/calls/call-commands
-[compat-create-call]: /docs/compatibility-api/rest/calls/create-a-call
 
-Find out whether a person, an answering machine, or a fax machine is on a call, and choose what
-the call does next. Each approach below starts by calling your own phone and hanging up on your
-voicemail, then screens the calls your number receives and tracks each result. The examples
-leave a message after the beep, hand a live answer to an AI agent, and send or receive a fax.
+Detect whether a person, voicemail, or a fax machine answers. Use the result to screen callers,
+leave a message after the beep, start an AI agent, or send and receive faxes.
 
 ## Choose an approach
 
-Detection runs inside the call logic you already use to place and answer calls, so pick the
-approach your app uses and follow only its section. The sections don't build on each other.
+Follow the section for your app's approach:
 
-- [SWML][swml-detect-machine] adds a `detect_machine` instruction to the document that runs the
-  call. SignalWire branches on the result during the call and can post each result to your
-  webhook. Choose it when you place calls with a REST `dial` request or answer them with a SWML
-  Script.
-- [WebSocket (Relay)][relay-guide] starts detection from your Relay client once the call is
-  answered. Each result arrives as an event in your code, so you don't need a public URL.
-- The [REST Calling API][call-commands] starts detection with the `calling.detect` command, by
-  call ID, on a call that's already answered, from any process. Choose it when detection is
-  decided after the call starts; see
-  [Detect on a call already in progress via REST](#detect-on-a-call-already-in-progress-via-rest).
-
-Detection runs in server-side call logic, so a Browser SDK page that needs it asks your backend to
-place the call. A Compatibility API app turns on detection with `MachineDetection` when it
-[creates a call][compat-create-call], and reads the result in `AnsweredBy`; this guide doesn't
-cover that API.
+- [SWML](#detect-machines-via-swml): add `detect_machine` to your call document and branch on
+  the result. Optionally send events to a webhook.
+- [WebSocket (Relay)](#detect-machines-via-websocket-relay): start detection on an answered call
+  and handle events in your code. No public URL is needed.
+- [REST](#detect-on-a-call-already-in-progress-via-rest): start detection by call ID from any
+  process and receive results at a webhook.
 
 ## Prepare for detection
 
-This guide adds detection to calls you already place and answer. If you haven't done that yet,
-start with [Make and receive calls][make-and-receive-calls]: it covers credentials, placing a
-call, and pointing your number at a SWML server or Relay client.
-
-Have these values ready:
-
-- The Space URL, Project ID, API token, and phone number from
-  [Prepare for your first call][prepare-calls].
-- A destination phone you can answer *and* send to voicemail. Declining the call is the quickest
-  way to reach the greeting.
-- To screen the calls your number receives, a number whose calls already reach your SWML server or
-  Relay client.
+Start with working call setup from [Make and receive calls][make-and-receive-calls]. Test with a
+phone you can answer or send to voicemail. For screening, your SignalWire number should already
+route calls to your SWML server or Relay client.
 
 <Warning title="Trial projects only call and receive calls from verified numbers">
 A [trial project][trial-mode] only places calls to and receives calls from numbers you've
@@ -97,22 +73,16 @@ Replace these values in the samples you run:
 
 ## How detection works
 
-Detection starts when the call is answered. SignalWire listens for the first voice activity,
-then classifies what it hears:
+On an answered call, the `amd` detector distinguishes short human greetings from longer voicemail
+greetings and IVR menus. The separate `fax` detector listens for a fax tone.
 
-- **Human.** A short greeting followed by silence, the way a person says "Hello?" and waits.
-- **Machine.** Continuous speech longer than a threshold, or a single utterance with more words
-  than a person's greeting usually has. Voicemail greetings and IVR menus both land here.
-- **Fax.** A fax tone instead of speech. This takes the `fax` detector, which listens for one
-  tone, separately from the `amd` detector that classifies speech.
-- **Unknown.** No decision yet. An `UNKNOWN` event means nothing was heard before
-  `initial_timeout`, but it doesn't end detection, which keeps listening until it reaches a
-  decision or the overall `timeout` expires. Only then is the result `unknown`.
+`HUMAN` ends detection. `MACHINE` also ends it unless `detect_message_end` is on; then the
+detector waits for a beep or a pause of `machine_ready_timeout` and reports `READY`. Start your
+voicemail message on `READY`. A beep triggers `READY` even with `detect_message_end` off.
 
-A `HUMAN` result ends detection. A `MACHINE` result ends it too, unless `detect_message_end` is
-on. Then detection keeps listening until the greeting ends, either with a beep or with a pause of
-`machine_ready_timeout`, and reports `READY`. That is the moment to start a voicemail message.
-`READY` also fires whenever the detector hears a beep, even with `detect_message_end` off.
+`UNKNOWN` means nothing was heard before `initial_timeout`. It doesn't stop detection: the
+detector keeps listening until it decides or `timeout` expires. In SWML, only that final timeout
+produces an `unknown` result.
 
 <llms-ignore>
 
@@ -152,48 +122,27 @@ sequenceDiagram
 
 </llms-only>
 
-Each outcome surfaces in two forms: a lowercase value in the SWML `detect_result` variable, and an
-uppercase event in status callbacks and Relay events.
+SWML uses lowercase `detect_result` values; callbacks and Relay use uppercase result events.
 
 | `detect_result` | Event | What SignalWire heard | Typical action |
 |---|---|---|---|
 | `human` | `HUMAN` | A short greeting, then silence | Play your message, start an AI agent, or connect an agent |
-| `machine` | `MACHINE` | Speech longer than the voice threshold, or more words than the words threshold | Hang up, or wait for `READY` and leave a message |
+| `machine` | `MACHINE` | Speech exceeds the voice or word threshold | Hang up, or wait for `READY` and leave a message |
 | `machine` | `READY` | A beep, or the end of the greeting when `detect_message_end` is on | Play the voicemail message |
 | (none) | `NOT_READY` | The greeting started again after `READY` (REST and Relay, with `detect_interruptions`) | Wait for the next `READY` |
 | `fax` | `CED` or `CNG` | The fax tone you set in `tone` | Send or receive a fax, or hang up |
 | `unknown` | `UNKNOWN` | No decision before `timeout`; the event fires earlier, at `initial_timeout` | Treat as a person, or retry later |
 | `detecting` | (none) | `wait: false` is set, so detection is still running in the background | Handle the result at `status_url` |
-| `failed` | (none) | Detection couldn't start, such as a misspelled property, `wait: false` without `status_url`, or another detection already running on the call | Log it and choose a default |
+| `failed` | (none) | Invalid settings, missing `status_url` with `wait: false`, or detection already running | Log it and choose a default |
 
-Machine events report `detect.type` as `machine`, and fax events report it as `fax`, with the tone
-as the event. Every detection ends with a `finished` event. `READY`, `NOT_READY`, and `finished`
-appear in callbacks and Relay events but are never assigned to `detect_result`. The
-[`detect_machine` reference][swml-detect-machine] lists every field.
-
-REST and Relay also offer a `digit` detector. It reports each key the caller presses, not who
-answered, so this guide doesn't cover it.
-
-### Outbound and inbound calls
-
-The detector is the same in both directions. What changes is who it listens to, when it starts,
-and which fax tone to expect.
-
-| | Outbound call you place | Inbound call your number receives |
-|---|---|---|
-| Who is classified | The party that answered | The caller |
-| When detection starts | After the destination answers | After you answer, with SWML [`answer`][swml-answer] or Relay `answer()`. `detect_machine` answers the call itself if you haven't |
-| Fax tone to detect | `CED`, which the answering fax machine sends (the default `tone`) | `CNG`, which the calling fax machine sends; set `tone: "CNG"` |
-| What silence means | The greeting hasn't started; let `initial_timeout` run | A person waiting for your greeting; keep `initial_timeout` and `timeout` short, and treat `unknown` as a person |
-| `detect_message_end` | Waits for the greeting and beep before you leave a message | Rarely useful; callers don't play greetings |
-| Typical next step | Leave a message, start an AI agent, or send a fax | Receive a fax, turn away automated callers, or greet the person |
+Events use `detect.type: machine` or `detect.type: fax`. `READY`, `NOT_READY`, and `finished`
+are events only, never `detect_result` values. See [Track detection results via SWML](#track-detection-results-via-swml)
+for event order and the [`detect_machine` reference][swml-detect-machine] for every field.
 
 ## Detect machines via SWML
 
-[`detect_machine`][swml-detect-machine] listens once the call is answered and, by default, holds
-the document until it has a result. The next instruction, usually [`switch`][swml-switch], reads
-`detect_result` and picks a branch. The document reaches the call the same way any SWML does, so
-this section changes only the document.
+[`detect_machine`][swml-detect-machine] waits for a result by default. Use
+[`switch`][swml-switch] to branch on `detect_result`.
 
 ### Detect who answers a call you place via SWML
 
@@ -205,8 +154,7 @@ adds the second one.
 
 <Step title="Place the call with detection" id="place-the-call-with-detection-via-swml">
 
-The [Server SDKs][server-sdks] build each branch of `switch` as its own list of instructions: the
-samples build a branch's message with `say()` and pass its `main` section to `switch`.
+The [Server SDKs][server-sdks] build each branch separately and pass its `main` section to `switch`.
 
 <CodeBlocks>
 <CodeBlock title="Python — REST client">
@@ -347,10 +295,6 @@ The `default` branch catches `unknown` and `failed`, so a quiet person still hea
 Prefer [`cond`][swml-cond] when a branch needs a compound condition, such as checking
 `detect_machine_beep` as well.
 
-Everything outside `detect_machine` and `switch` places the call exactly as in
-[Place a call via SWML][place-swml], which also covers the `dial()` response and the signature
-change in newer SDK releases.
-
 </Step>
 
 <Step title="Answer, then send it to voicemail" id="answer-then-send-to-voicemail-via-swml">
@@ -377,22 +321,19 @@ to its setting.
 
 ### Screen a call to your number via SWML
 
-Turn away automated callers and greet everyone else. Two things differ from a call you place: you
-[`answer`][swml-answer] first, and a person who calls you waits for your greeting instead of
-speaking. Silence from a person becomes `unknown` once `initial_timeout` expires, so keep that
-timeout short and treat `unknown` as a person.
+Reject automated callers and greet everyone else. Callers often wait silently for your greeting,
+so use a short timeout and treat `unknown` as a person. For incoming faxes, use `CNG` as in
+[Receive a fax on an inbound call](#receive-a-fax-on-an-inbound-call).
 
 <Steps>
 
 <Step title="Serve the screening document" id="serve-the-screening-document">
 
-Run either server below in place of the one from [Answer a call via SWML][answer-swml]. It serves
-the same `/swml` route with the same credentials, so the number's SWML Script doesn't change. For
-a hosted SWML Script, paste the YAML or JSON into the script instead.
+Replace the server from [Answer a call via SWML][answer-swml] with either sample below, using the
+same `/swml` route and credentials. For a hosted SWML Script, paste the YAML or JSON instead.
 
-`answer` runs first, then `detect_machine` listens for up to five seconds before the greeting
-plays. In SWML, a caller who stays silent comes back `unknown` only when `timeout` expires, so
-`timeout` sets how long a quiet caller waits.
+The document runs `answer`, then listens for up to five seconds. A silent caller waits for
+`timeout` to expire before hearing the greeting.
 
 <CodeBlocks>
 <CodeBlock title="Python — SWML builder">
@@ -617,8 +558,7 @@ testing.
 }
 ```
 
-Callbacks arrive in the order the detector reaches each state, and every run ends with
-`finished`:
+Callbacks follow these sequences unless the call hangs up during detection:
 
 | Outcome | Callbacks, in order |
 |---|---|
@@ -632,10 +572,8 @@ Callbacks arrive in the order the detector reaches each state, and every run end
 If the call hangs up while detection is running, the final `finished` callback isn't sent, so
 don't wait for it before you clean up.
 
-By default `detect_machine` waits for a result before the next instruction runs. Set
-`wait: false` to keep the document moving while detection runs in the background, and handle
-the outcome at `status_url` instead; asynchronous detection requires `status_url`. This document
-plays the confirmation right away and reports the result to your webhook:
+Set `wait: false` to continue the document during detection. This requires `status_url` to handle
+the result. This example plays the confirmation immediately and reports detection to your webhook:
 
 <CodeBlocks>
 <CodeBlock title="Python — SWML builder">
@@ -708,9 +646,8 @@ Inside the document, `detect_machine` sets three variables you can branch on:
 
 ## Detect machines via WebSocket (Relay)
 
-A Relay client's `dial()` has no detection option, so detection is its own command once the call
-is answered: `detect()` with the `machine` detector. It returns an action whose `wait()` resolves
-on the first result. On a call your number receives, answer first, then detect the same way.
+On an answered call, use `detect()` with the `machine` detector. The returned action's `wait()`
+resolves on the first result; use an event handler to follow later results.
 
 ### Detect who answers a call you place via WebSocket (Relay)
 
@@ -826,9 +763,6 @@ try {
 </CodeBlock>
 </CodeBlocks>
 
-The `fax` and `digit` detectors take the same `{"type": ..., "params": {...}}` shape in
-`detect()`.
-
 </Step>
 
 <Step title="Answer, then send it to voicemail" id="answer-then-send-to-voicemail-via-relay">
@@ -855,17 +789,15 @@ to its setting.
 
 ### Screen a call to your number via WebSocket (Relay)
 
-Turn away automated callers and greet everyone else. Answer the call in your handler, then detect
-with a short `initial_timeout`: a person who calls you waits for your greeting, so silence
-returns `UNKNOWN`, and the handler greets it as a person.
+Answer in your handler, then detect with a short `initial_timeout`. Greet `UNKNOWN` callers:
+they may be people waiting silently for your greeting.
 
 <Steps>
 
 <Step title="Run the screening handler" id="run-the-screening-handler">
 
-Stop the handler from [Answer a call via WebSocket (Relay)][answer-relay] and run either one below
-in its place. It subscribes to the same `inbound-calling` topic, so the number's Relay Application
-doesn't change.
+Replace the handler from [Answer a call via WebSocket (Relay)][answer-relay] with either sample
+below. Both use the same `inbound-calling` topic.
 
 <CodeBlocks>
 <CodeBlock title="Python — Relay client">
@@ -996,25 +928,18 @@ call.on("calling.call.detect", (event) => {
 </CodeBlock>
 </CodeBlocks>
 
-Each event holds the same `type` and `params` object as the SWML callback payload. The handler
-sees `MACHINE` while the greeting is still playing, `READY` after the beep when detection runs
-with `detect_message_end`, and `finished` when the detector stops. The programs above hang up on
-the first `MACHINE` result, so to watch the full sequence, follow
-[Leave a message via WebSocket (Relay)](#leave-a-message-via-websocket-relay), which acts on
-`READY`.
+Events use the same `type` and `params` as the [SWML callbacks](#track-detection-results-via-swml).
+The programs above hang up on `MACHINE`. To follow detection through `READY`, use
+[Leave a message via WebSocket (Relay)](#leave-a-message-via-websocket-relay).
 
 ## Detect on a call already in progress via REST
 
-Start detection on a call that is already answered, from any process that knows the call ID. This
-suits calls placed with a `url` that your server answered, calls that changed hands, such as a leg
-you connected to a customer, and inbound calls your server is handling over HTTP.
+From any process that knows an answered call's ID, use the REST client's `detect()` method or
+send [`calling.detect`][call-commands]. It returns immediately; results arrive at `status_url`
+as [detection callbacks](#track-detection-results-via-swml).
 
-Call the REST client's `detect()` method in the [Server SDKs][server-sdks], or send the
-[`calling.detect` command][call-commands] with the call's `id`. The command returns at once; the
-result arrives at `status_url` as the same `calling.call.detect` payload shown in
-[Track detection results via SWML](#track-detection-results-via-swml). `control_id` is required,
-and it's the only handle for stopping the detector early with `calling.detect.stop`. This command
-defaults `detect_message_end` to `true`.
+`control_id` is required; use it to stop detection with `calling.detect.stop`.
+`detect_message_end` defaults to `true`.
 
 <CodeBlocks>
 <CodeBlock title="Python — REST client">
@@ -1095,17 +1020,15 @@ curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
 `detect()` and `detectStop()`. Newer releases take positional arguments.
 </Note>
 
-Send the command once the call is answered, since detection listens to the call's audio. A call
-runs one detector of each type at a time, so a second `machine` detection on the same call fails
-until the first finishes or you stop it. To act on the result, have your webhook handler send
-another call command by the same `id`, such as `calling.play` for a voicemail message.
+A call runs one detector of each type at a time; a second `machine` detection fails until the
+first stops. To act on a result, send another command from your webhook handler using the same
+call ID, such as `calling.play` for a voicemail message.
 
 ## Tune detection: timeouts, thresholds, and message end
 
-The defaults suit most residential voicemail. Adjust them when a run misclassifies, and change
-one setting at a time so you can see its effect. Every setting below is a `detect_machine`
-property in SWML. In REST and Relay, `timeout` is its own argument and the rest go in the
-detector's `params`.
+Change one setting at a time when detection misclassifies a call. In SWML, these are
+`detect_machine` properties. In REST and Relay, `timeout` is a separate argument; other supported
+settings go in the detector's `params`.
 
 | Symptom | Setting | Default | Change |
 |---|---|---|---|
@@ -1119,9 +1042,8 @@ detector's `params`.
 | The greeting pauses, `READY` fires, then the greeting continues over your message | `detect_interruptions` (REST and Relay only) | `false` | Set it to `true`, and wait for the next `READY` after a `NOT_READY` event |
 | Callers to your number wait in silence, then come back `unknown` | `timeout` and `initial_timeout` | 30 s and 4.5 s | Lower both on inbound calls, and greet `unknown` as a person. In SWML, `timeout` sets how long a silent caller waits |
 
-A greeting from a business often runs past the defaults. To give it more room, change the
-`detect_machine` instruction in
-[Leave a message via SWML](#leave-a-message-via-swml); the highlighted lines are the changes.
+For longer business greetings, adjust [Leave a message via SWML](#leave-a-message-via-swml)
+with the highlighted settings:
 
 <CodeBlocks>
 <CodeBlock title="Python — SWML builder">
@@ -1195,21 +1117,11 @@ SWML, the REST command, and Relay share one detector but expose it differently.
 
 ## Examples
 
-Each example is a complete program that uses the placeholders above. The outbound examples place
-the call the same way the first runs do, and the inbound examples replace your screening handler.
-
-| What you want to do | Example |
-|---|---|
-| Wait for the beep, then leave a voicemail | [Leave a message after the beep](#leave-a-message-after-the-beep) |
-| Start an AI agent only when a person answers | [Hand a live answer to an AI agent](#hand-a-live-answer-to-an-ai-agent) |
-| Deliver a document when a fax machine answers | [Send a fax when a fax machine answers](#send-a-fax-when-a-fax-machine-answers) |
-| Take faxes and voice calls on the same number | [Receive a fax on an inbound call](#receive-a-fax-on-an-inbound-call) |
+These complete examples use the placeholders above.
 
 ### Leave a message after the beep
 
-Wait for the voicemail greeting and beep to finish, then leave a message. Without
-`detect_message_end`, a `machine` result arrives while the greeting is still playing, and anything
-you say then is lost.
+Enable `detect_message_end` to wait for the greeting to end before playing your message.
 
 #### Leave a message via SWML
 
@@ -1364,9 +1276,8 @@ sets how much silence after the greeting counts as "ready"; it defaults to
 
 #### Leave a message via WebSocket (Relay)
 
-Use the event handler rather than `wait()`. With `detect_message_end` on, a `MACHINE` event
-arrives first, while the greeting is still playing; `READY` follows after the beep. Play the
-voicemail on `READY`, and the live message on `HUMAN` or `UNKNOWN`.
+Use an event handler: `wait()` returns on `MACHINE`, before the greeting ends. Play the voicemail
+on `READY` and the live message on `HUMAN` or `UNKNOWN`.
 
 <CodeBlocks>
 <CodeBlock title="Python — Relay client">
@@ -1825,18 +1736,14 @@ try {
 
 ### Send a fax when a fax machine answers
 
-Detect a fax machine on the other end and send it a document, or speak to the person who
-answered instead. A fax machine that answers a call sends a `CED` tone, which is the detector's
-default `tone`; a fax machine that calls you sends `CNG` instead, covered in
-[Receive a fax on an inbound call](#receive-a-fax-on-an-inbound-call). `<YOUR_FAX_DOCUMENT_URL>`
-must point at a PDF that SignalWire can fetch.
+Listen for `CED`, the default fax tone, then send a PDF from `<YOUR_FAX_DOCUMENT_URL>`.
+Use a spoken message for voice callers.
 
 #### Send a fax via SWML
 
-Enable both detectors with `detectors: "amd,fax"` and add a `fax` branch that runs
-[`send_fax`][swml-send-fax]. A fax tone can sound like a beep to the `amd` detector, so when it
-decides first, SignalWire waits a moment longer for the `fax` detector. If that detector hears
-its tone, the result is `fax`.
+Use `detectors: "amd,fax"` and run [`send_fax`][swml-send-fax] in the `fax` branch. A fax tone
+can resemble a voicemail beep, so if `amd` decides first, SignalWire briefly waits for the fax
+detector. A detected fax tone takes priority.
 
 <CodeBlocks>
 <CodeBlock title="Python — REST client">
@@ -1988,11 +1895,9 @@ curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
 
 #### Send a fax via WebSocket (Relay)
 
-Relay runs one detector per operation. The `fax` detector listens only for a fax tone, so give it
-a short timeout: a fax machine answers with its tone within a second or two, and a person doesn't.
-When the action resolves with a `CED` event, send the document with `send_fax()` and read the
-outcome from the `calling.call.fax` event whose `fax.type` is `finished`. Any other result means a
-person answered.
+Use the `fax` detector with a short timeout. On `CED`, send the document with `send_fax()`;
+otherwise, play the spoken message. Read the fax outcome from the `calling.call.fax` event with
+`fax.type: finished`.
 
 <CodeBlocks>
 <CodeBlock title="Python — Relay client">
@@ -2124,9 +2029,8 @@ try {
 
 ### Receive a fax on an inbound call
 
-Let one number take both voice calls and faxes. A fax machine that dials you sends a `CNG` tone as
-soon as you answer, so listen for that tone and hand the call to `receive_fax` when it appears.
-Keep the timeout short so voice callers aren't left in silence.
+Listen for `CNG` to accept faxes and voice calls on the same number. Keep the timeout short so
+voice callers aren't left in silence.
 
 #### Receive a fax via SWML
 
