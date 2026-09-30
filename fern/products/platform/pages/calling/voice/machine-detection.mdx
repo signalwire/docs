@@ -96,9 +96,9 @@ Use [`switch`][swml-switch] to choose the next action.
 `detect_machine_beep` is `true` when the result is `machine` and a beep was heard; otherwise it
 is `false`. `detect_ms` holds the elapsed milliseconds, or `-1` with `wait: false`.
 
-### Leave a message via SWML
+### Detect voicemail via SWML
 
-This AMD example plays a confirmation to a person and leaves a voicemail for a machine.
+Use AMD to distinguish a person from voicemail, then branch on the result.
 `detect_message_end: true` waits for a beep or a pause of `machine_ready_timeout` before the
 `machine` branch plays. The `default` branch also greets `unknown` and `failed` results.
 
@@ -268,10 +268,11 @@ the greeting; tune the silence threshold below if playback starts before the bee
 To reject voicemail instead, set `detect_message_end: false` and use `hangup` in the `machine`
 branch. An AI handoff can use [`ai`][swml-ai] in the `human` branch.
 
-### Send a fax via SWML
+### Detect a fax machine via SWML
 
-Enable both detectors with `detectors: "amd,fax"`. The `fax` branch sends a PDF, the `human`
-branch plays a spoken message, and the default branch hangs up.
+Detect whether a fax machine or a person answers with `detectors: "amd,fax"`.
+The `fax` branch sends a PDF, the `human` branch plays a spoken message, and the default
+branch hangs up.
 
 `CED` is the default tone, sent by an answering fax machine. A fax tone can resemble a voicemail
 beep, so if `amd` decides first, SignalWire briefly waits for the fax detector. A detected fax
@@ -522,11 +523,12 @@ stops on `MACHINE`. A beep still triggers `READY` regardless of that setting.
 detection. Once a beep is heard, `event.detect.params.beep` is `true` on that and later machine
 events; fax events don't carry it. Call the action's `stop()` to stop detection early.
 
-### Leave a message via WebSocket (Relay)
+### Detect voicemail via WebSocket (Relay)
 
-This AMD example plays a live confirmation on `HUMAN` or `UNKNOWN`, waits for `READY` before
-leaving voicemail, and hangs up if detection finishes without a usable result. The `announced`
-flag prevents later events from starting a second message.
+Use AMD events to distinguish a person from voicemail and detect when the greeting ends.
+The handler plays a live confirmation on `HUMAN` or `UNKNOWN`, leaves voicemail on `READY`,
+and hangs up if detection finishes without a usable result. The `announced` flag prevents
+later events from starting a second message.
 
 Call setup follows [Place a call via WebSocket (Relay)][place-relay].
 
@@ -664,10 +666,10 @@ Test once by answering with "Hello?" and once by sending the call to voicemail. 
 sequence, log `event.detect` in the handler. To reject machines, hang up on `MACHINE` instead;
 to hand a person to an AI agent, call `call.ai()` on `HUMAN`.
 
-### Send a fax via WebSocket (Relay)
+### Detect a fax machine via WebSocket (Relay)
 
-Listen for `CED`, the default tone from an answering fax machine. This example sends the PDF
-when it detects that tone and plays a spoken fallback otherwise. Unlike AMD, this detector
+Detect a fax machine by listening for `CED`, the default tone from an answering fax machine.
+On detection, send the PDF; otherwise, play a spoken fallback. Unlike AMD, this detector
 only decides whether it heard the fax tone; the fallback isn't a human classification.
 
 Listen for `calling.call.fax` with `fax.type: finished` to read `fax.params.success` and
