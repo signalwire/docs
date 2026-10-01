@@ -1,5 +1,6 @@
 import "./core.tsp";
 import "../../../_globally_shared/enums.tsp";
+import "../../_shared/enums.tsp";
 import "../enums.tsp";
 
 model SipAddressCreateRequest {
@@ -32,9 +33,9 @@ model SipAddressCreateRequest {
   ip_auth?: string[] = #[];
 
   @doc("Non-empty subset of enabled codecs.")
-  @example(#[SipAddressCodec.OPUS])
+  @example(#[AddressCodec.OPUS])
   @minItems(1)
-  codecs?: SipAddressCodec[] = #[SipAddressCodec.PCMU, SipAddressCodec.PCMA];
+  codecs?: AddressCodec[] = #[AddressCodec.PCMU, AddressCodec.PCMA];
 
   @doc("Non-empty subset of enabled SRTP ciphers.")
   @example(#[Ciphers.AES_256_CM_HMAC_SHA1_80])
@@ -82,9 +83,9 @@ model SipAddressUpdateRequest {
   ip_auth?: string[];
 
   @doc("Non-empty subset of enabled codecs.")
-  @example(#[SipAddressCodec.OPUS])
+  @example(#[AddressCodec.OPUS])
   @minItems(1)
-  codecs?: SipAddressCodec[];
+  codecs?: AddressCodec[];
 
   @doc("Non-empty subset of enabled SRTP ciphers.")
   @example(#[Ciphers.AES_256_CM_HMAC_SHA1_80])

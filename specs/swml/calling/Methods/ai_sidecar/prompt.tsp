@@ -21,13 +21,6 @@ model AISidecarPromptPom {
   pom: POM[];
 }
 
-@summary("AISidecarPromptFile object")
-model AISidecarPromptFile {
-  @doc("Path to a server-side file whose contents are used as the operator prompt.")
-  @example("/etc/swml/sidecar_prompts/sales.md")
-  file: string;
-}
-
 @oneOf
 @summary("AISidecarPrompt")
 union AISidecarPrompt {
@@ -36,5 +29,4 @@ union AISidecarPrompt {
 
   AISidecarPromptText,
   AISidecarPromptPom,
-  AISidecarPromptFile,
 }
