@@ -1,86 +1,122 @@
 ---
-id: 433c67ea-43de-4fcb-9e83-a2a110ef2dd0
 title: Resources
-position: 1
-description: Learn about Resources on the SignalWire platform - what they are, how they work, and how to manage them in the Dashboard.
 slug: resources
-Author: Devon White
-x-custom:
-  tags:
-    - product:signalwire_space
+description: What a Resource is on the SignalWire platform, which Resource types exist, how Resources relate to Addresses, and how to create, edit, and delete them.
+max-toc-depth: 3
 ---
 
+[addresses]: /docs/platform/addresses
+[aliases]: /docs/platform/addresses#aliases
+[manage-addresses]: /docs/platform/addresses#manage-addresses
+[ai]: /docs/platform/ai
+[cfb]: /docs/call-flow-builder
+[relay-client]: /docs/server-sdks/guides/relay-client
+[swml]: /docs/swml
+[sip-credentials]: /docs/platform/voice/sip/sip-credentials
+[sip-gateways]: /docs/platform/voice/sip#sip-gateways
+[subscribers]: /docs/platform/subscribers
+[video]: /docs/platform/video
+[rest-list-resources]: /docs/apis/rest/resources/list-resources
+[rest-get-resource]: /docs/apis/rest/resources/get-resource
+[rest-delete-resource]: /docs/apis/rest/resources/delete-resource
+[rest-list-addresses]: /docs/apis/rest/addresses/list-resource-addresses
+[rest-create-swml-script]: /docs/apis/rest/swml-scripts/create-swml-script
 
-Resources are the core building blocks of the SignalWire ecosystem. 
-They are container objects that represent your choice of communication entity. 
-This can be anything from a SignalWire AI Agent or a SWML script, to a Subscriber that can be created, addressed and called within your SignalWire Space. 
+A Resource is whatever answers when someone reaches your Space: an AI Agent that holds a
+conversation, a SWML Script that runs call logic, a Subscriber whose devices ring, or a room that
+several people join. Every Resource has a type, and the type decides what happens to a call or
+message the Resource receives.
 
-Every Resource has a **Type** and one or more **Addresses** that make it reachable, and all Resources share the same addressing and management model.
-No matter what Resource you need you can create, configure, and call them all in the same consistent way.
+Callers never dial a Resource directly. They reach it through an [Address][addresses], such as a
+phone number, a SIP URI, or an alias like `/public/support`. Every type is reached and managed the
+same way, so you can put a different Resource behind an Address without changing anything on the
+caller's side.
 
 ## Resource types
 
-SignalWire supports several Resource types. Some of the most common are:
+Create a Resource by picking its type in the Dashboard's Resource picker. Some types are grouped
+under a category, shown in the second column.
 
-<CardGroup cols={3}>
-  <Card title="Subscribers" href="/docs/platform/subscribers">
-    Users in your communication system, with built-in authentication and communication endpoints.
-  </Card>
-  <Card title="AI Agents" href="#in-the-dashboard">
-    Conversational AI agents that can answer and place calls. Create one from the Dashboard.
-  </Card>
-  <Card title="SWML Scripts" href="/docs/swml">
-    Programmable call logic written in SWML (JSON or YAML).
-  </Card>
-  <Card title="cXML Scripts" href="/docs/compatibility-api/cxml">
-    Twilio-compatible call logic for migrating existing applications.
-  </Card>
-  <Card title="SIP Credentials" href="/docs/platform/voice/sip/sip-credentials">
-    Register SIP devices and softphones to your Space.
-  </Card>
-  <Card title="Video Rooms" href="/docs/platform/video">
-    Programmable video conference rooms.
-  </Card>
-</CardGroup>
+| Type | Picker | What it does |
+|---|---|---|
+| [AI Agent][ai] | **AI Agent** | Holds automated conversations with your callers, using a prompt, voice, and functions you configure in the Dashboard |
+| [Call Flow][cfb] | **Call Flow** | Routes calls with logic you build in the visual Call Flow Builder |
+| FreeSWITCH Connector | **FreeSWITCH Connector** | Sends traffic from SignalWire to your own FreeSWITCH infrastructure |
+| [Relay Application][relay-client] | **Relay Application** | Hands calls and messages to your own server over a real-time WebSocket connection from the Server SDKs |
+| [SWML Script][swml] | **Script** | Controls calls and messages with a SWML document in JSON or YAML, stored in your Space or served from your own URL |
+| [SIP Credential][sip-credentials] | **SIP** | Gives your SIP phones and softphones a username and password to register with and place calls from |
+| [SIP Gateway][sip-gateways] | **SIP** | Connects to an external SIP network so calls can be sent out to it |
+| [Subscriber][subscribers] | **Subscriber** | Represents a user of your application, with sign-in credentials and devices that ring when the user is called |
+| [Video Room][video] | **Video Room** | Gives participants a shared room to join by video, audio, or both |
 
-Each of these Resource types use the same addressing and management patterns described below.
+## Resources and Addresses
 
-## Resource Addresses
+A Resource and its Addresses are separate objects. The Resource holds the logic, and each Address
+is one way in. A Resource can carry any number of Addresses, and each Address hands its calls to
+one Resource, called its **handler**. A phone number is the one case with two handlers, one for
+calls and one for messages.
 
-Callers never dial a Resource directly. They dial one of its **Addresses**: a phone number, a SIP
-Address, or an alias such as `/private/john-doe`, and SignalWire hands the call to the Resource.
-SignalWire creates one alias from the Resource's name when you create it, and you can add more
-Addresses of any type. The [Addresses guide](/docs/platform/addresses) covers each type,
-contexts, and how to add and assign Addresses in the Dashboard and the REST API.
+SignalWire gives every new Resource one [alias][aliases] so it's reachable right away. The alias
+name is a URL-safe form of the Resource name, so an AI Agent named `Support Agent` is reachable at
+`/private/support-agent`. If that name is already taken in the alias's context, SignalWire adds a
+short random suffix. Renaming the Resource later keeps the alias it already has.
+
+You can add more Addresses in either of two places:
+
+- On the Resource itself, from its **Addresses & Phone Numbers** tab.
+- On the **Addresses** page in the left sidebar, which lists every Address in your project. You
+  create the Address there and assign it to a Resource in the same form.
+
+Phone numbers and SIP Addresses can be moved to a different Resource later, so the number or SIP
+URI your callers use stays the same when you change the logic behind it. The
+[Addresses guide][addresses] covers each Address type, contexts, and every way to add, move, and
+remove an Address.
 
 ## Manage Resources
 
 ### With the REST API
 
-Use the Resources endpoints to work with any Resource programmatically, regardless of type. 
-The generic Resources endpoint lets you [list](/docs/apis/rest/resources/list-resources) all Resources,
- [retrieve](/docs/apis/rest/resources/get-resource) or [delete](/docs/apis/rest/resources/delete-resource) a Resource by
-ID, and [list a Resource's Addresses](/docs/apis/rest/addresses/list-resource-addresses).
+The generic Resources endpoints work with every Resource type. Use them to
+[list Resources][rest-list-resources], [retrieve][rest-get-resource] or
+[delete][rest-delete-resource] one by ID, and [list a Resource's Addresses][rest-list-addresses]
+when you don't know its type in advance.
 
-To **create** or **update** a Resource, use the endpoint for its specific type. 
-For example, if you wanted to create a new SWML Script you would utilize the [Create SWML Script](/docs/apis/rest/swml-scripts/create-swml-script) endpoint.
+To create or update a Resource, use the endpoints for its type. For example, create a SWML Script
+with [Create SWML Script][rest-create-swml-script].
 
 ### In the Dashboard
 
-The [SignalWire Dashboard](https://my.signalwire.com/resources) can also be used as your unified command center for your SignalWire Resources.
-You can create, manage, edit, delete, and test your Space's Resources all from your web browser.
+The [SignalWire Dashboard](https://my.signalwire.com/resources) lists every Resource in your
+project under **My Resources**, where you can create, edit, and delete them.
+
+<Info title="No My Resources page?">
+If the left sidebar doesn't show **My Resources**, your Space is on the Legacy Dashboard.
+[Contact Support](https://support.signalwire.com/) to move your Space to the current Dashboard.
+</Info>
 
 #### Create
 
 <Steps>
-  <Step title="Navigate to Resources">
-    To create a Resource in your SignalWire Space, click on the **My Resources** tab in the left-hand navigation menu.
+<Step title="Open the Resource picker">
 
-    From there, you can select the type of Resource you would like to create by clicking on the <kbd>+ Add</kbd> button.
-  </Step>
-  <Step title="Configure the Resource">
-    Choose the type, fill in its form, and select **Create**. The fields depend on the type.
-  </Step>
+Select **My Resources** in the left sidebar, then select <kbd>+ Add</kbd>. You can also start
+from a type's own page under **My Resources**, such as **AI Agents** or **Scripts**, or from the
+shortcuts on the Dashboard home page.
+
+</Step>
+<Step title="Choose a type">
+
+Pick the Resource type. **Script** asks you to choose **SWML Script**, **AI Agent** offers a custom
+agent or a Google Dialogflow agent, and **SIP** asks you to choose **SIP Credential** or
+**SIP Gateway**.
+
+</Step>
+<Step title="Configure it">
+
+Fill in the form for that type and select <kbd>Create</kbd>. The fields depend on the type. The
+new Resource's alias appears on its **Addresses & Phone Numbers** tab.
+
+</Step>
 </Steps>
 
 <llms-ignore>
@@ -89,51 +125,31 @@ You can create, manage, edit, delete, and test your Space's Resources all from y
   ![Create a new Resource from the Dashboard.](/assets/images/dashboard/home/home-resources-marked.webp)
 </Frame>
 
-</llms-ignore>
-
-<llms-only>
-
-Open **My Resources** in the Dashboard's left sidebar. Resources are grouped as **AI Agents**, **Call Flows**, **FreeSWITCH Connectors**, **Relay Applications**, **Scripts**, **SIP**, **Subscribers**, and **Video Rooms**; select **+ Add** to create one.
-
-</llms-only>
-
-Click the **Add** button to select from the grid of available Resource types.
-
-<llms-ignore>
-
-<Frame caption="The Resource selection menu">
-  ![Select a Resource in the Signalwire Dashboard.](/assets/images/dashboard/resources/add-new-resource.webp)
+<Frame caption="The Resource picker">
+  ![Select a Resource in the SignalWire Dashboard.](/assets/images/dashboard/resources/add-new-resource.webp)
 </Frame>
 
 </llms-ignore>
 
 <llms-only>
 
-The Resource picker offers **Script**, **AI Agent**, **Video Room**, **Relay Application**, **Subscriber**, **FreeSWITCH Connector**, **Call Flow**, and **SIP**. **Script** asks for a SWML or cXML Script, **AI Agent** for a Custom or Google DialogFlow Agent, and **SIP** for a SIP Credential or SIP Gateway.
+The **My Resources** sidebar group contains **AI Agents**, **Call Flows**, **FreeSWITCH Connectors**, **Relay Applications**, **Scripts**, **SIP**, **Subscribers**, and **Video Rooms**. The Resource picker opened by **+ Add** offers **Script**, **AI Agent**, **Video Room**, **Relay Application**, **Subscriber**, **FreeSWITCH Connector**, **Call Flow**, and **SIP**.
 
 </llms-only>
-
-Alternatively, you can create new Resources from their subpages in the sidebar menu, or using the shortcuts on the Dashboard homepage.
-
-After selecting a Resource, enter the details for the Resource on a new page, and select <kbd>Create</kbd> to confirm.
 
 #### Give it an Address
 
 A new Resource is reachable at the alias SignalWire creates from its name. To take calls from the
-phone network, assign it as a phone number's call handler, or add a SIP Address or another alias
-from the Resource's **Addresses & Phone Numbers** tab. The [Addresses guide](/docs/platform/addresses#manage-addresses)
-walks through each.
-
-<Info title="No Resources tab?">
-If you don't see the **My Resources** tab, your SignalWire Space is on the **Legacy Dashboard**,
-which does not support the Resources experience. [Contact Support](https://support.signalwire.com/)
-to upgrade your Space to the new UI.
-</Info>
+phone network or from SIP systems outside SignalWire, open the Resource, select its **Addresses &
+Phone Numbers** tab, select <kbd>+ Add</kbd>, and choose **Assign a Phone Number**, **Assign a SIP
+Address**, or **Add an Alias**. You can also start from the **Addresses** page and pick this
+Resource there. [Manage Addresses][manage-addresses] walks through each path.
 
 #### Modify or delete
 
-From the Resources page in your SignalWire Dashboard, select the desired Resource to open a detailed view.
-Here, by selecting the `Edit` button, you can alter the specifics of the Resource.
+Select a Resource on the **My Resources** page to open it. Its **Configuration** tab holds the
+settings for its type, and its **Addresses & Phone Numbers** tab lists every Address that reaches
+it. Some types add their own tabs, such as **SIP Endpoints** on a Subscriber.
 
 <llms-ignore>
 
@@ -145,20 +161,29 @@ Here, by selecting the `Edit` button, you can alter the specifics of the Resourc
 
 <llms-only>
 
-The **My Resources** page lists each Resource's name, type, and last update time. Use its search and type filters to find a Resource, then select it to modify or delete it.
+The **My Resources** page lists each Resource's name, type, and last update time. Use its search and **Filter** controls to find a Resource, then select it to open it.
 
 </llms-only>
+
+To delete a Resource, open it, select **Delete**, and confirm. Calls already in progress continue,
+and the Resource's aliases are deleted along with it.
+
+A Resource stays in place while it's assigned as a handler: the call or message handler of a phone
+number or WhatsApp number, the handler of a SIP Address, or the Resource a SIP Credential sends its
+calls to. Deleting it then fails with the message that a resource currently assigned as a call or
+message handler can't be deleted. Assign those to another Resource, or remove this Resource from
+them, and then delete it.
 
 ## Next steps
 
 <CardGroup cols={2}>
-  <Card title="Subscribers" href="/docs/platform/subscribers">
-    Manage the users in your communication system via subscribers.
+  <Card title="Addresses" icon="regular at" href="/docs/platform/addresses">
+    Phone numbers, SIP Addresses, and aliases: how a Resource is reached, and how to add and move them.
   </Card>
-  <Card title="Addresses" href="/docs/platform/addresses">
-    Phone numbers, SIP Addresses, and aliases: how a Resource is reached and how to assign them.
+  <Card title="Subscribers" icon="regular users" href="/docs/platform/subscribers">
+    The Resource type for the users of your application.
   </Card>
-  <Card title="Resources REST API" href="/docs/apis/rest/resources/list-resources">
+  <Card title="Resources REST API" icon="regular code" href="/docs/apis/rest/resources/list-resources">
     List, retrieve, and delete Resources programmatically.
   </Card>
 </CardGroup>
