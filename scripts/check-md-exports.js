@@ -674,7 +674,7 @@ Usage: node scripts/check-md-exports.js [options]
 Options:
   --base-url <url>     Docs base URL (default: ${DEFAULT_BASE_URL}) — use for previews
   --product <names>    Comma-separated product filter (swml,apis,server-sdks,browser-sdk,
-                       compatibility-api,platform,call-flow-builder,home)
+                       compatibility-api,platform,call-flow-builder)
   --limit <n>          Audit only the first N discovered pages (after filtering)
   --url <page.md>      Audit a single explicit URL (skips discovery; testing aid)
   --concurrency <n>    Parallel fetches (default: ${DEFAULT_CONCURRENCY}, max: ${MAX_CONCURRENCY})
