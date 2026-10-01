@@ -17,7 +17,8 @@ max-toc-depth: 3
 [swml-stop-stream]: /docs/swml/reference/calling/stop-stream
 [swml-connect]: /docs/swml/reference/calling/connect
 [swml-sleep]: /docs/swml/reference/calling/sleep
-[swml-join-conference]: /docs/swml/reference/calling/join-conference
+[stream-messages]: /docs/platform/voice/process-streamed-audio#read-the-stream-messages
+[play-audio]: /docs/platform/voice/process-streamed-audio#play-your-own-audio-into-the-call
 
 Call streaming sends the audio of a live call to a WebSocket server you run, so your app can
 transcribe, analyze, record, or answer it in near real time. This guide shows two flows: save both
@@ -67,7 +68,8 @@ sequenceDiagram
 
 ## Choose an approach
 
-Follow the section for your app's approach:
+Choose one approach for call control; each uses the same audio server below. If you're starting
+fresh, use [Save call audio via SWML](#save-call-audio-via-swml).
 
 - [SWML](#stream-call-audio-via-swml): add `stream` to your call document and stop it with
   `stop_stream`, or `connect` the call to your server for a bidirectional stream. Optionally send
@@ -75,7 +77,7 @@ Follow the section for your app's approach:
 - [WebSocket (Relay)](#stream-call-audio-via-websocket-relay): start and stop a stream from code
   that holds a connection to the call. Stream events arrive in your code, so no webhook is needed.
 - [REST](#stream-a-call-already-in-progress-via-rest): start and stop a stream by call ID from
-  any process.
+  any process. The stream command is one-way; use SWML or Relay `connect` for the two-way examples.
 
 ## Prepare for streaming
 
@@ -101,69 +103,26 @@ Replace these values in the samples you run:
 |---|---|
 | `<YOUR_SPACE>` | Your Space's subdomain in `<YOUR_SPACE>.signalwire.com` |
 | `<YOUR_PROJECT_ID>` | Your Project ID |
-| `<YOUR_API_TOKEN>` | Your API token, used only in server code |
+| `<YOUR_API_TOKEN>` | Your API token with the Voice permission, used only in server code |
 | `<YOUR_CALLER_ID>` | Your SignalWire phone number, or a [verified caller ID][caller-id], in E.164 format |
 | `<YOUR_DESTINATION>` | The phone you'll answer, in E.164 format |
 | `<YOUR_AUDIO_STREAM_URL>` | The public `wss://` URL of your WebSocket server |
 
 ## Receive the stream on your server
 
-SignalWire delivers a stream as JSON text messages over a single WebSocket connection. Your server
-reads them, decodes the audio, and decides what to do with it.
+Run one of the servers below, expose port `8080` through your TLS tunnel, and keep it running
+while you run a call program. Use the save-audio server for the one-way examples, or the echo
+server for the bidirectional examples. Both use `PCMU`, the default 8 kHz G.711 µ-law codec.
 
-### Read the messages
-
-Every message has an `event` field that tells you its type. Messages that carry audio or a sequence
-also carry a `sequenceNumber`, a string counter that starts at `"1"` and increments with each message
-on the connection.
-
-| `event` | When | What to read |
-|---|---|---|
-| `connected` | Right after the WebSocket opens | `protocol` is `Call` and `version` is the protocol version, currently `0.2.0` |
-| `start` | Once, before any audio | `start.streamSid`, `start.callSid`, `start.tracks`, `start.mediaFormat`, and `start.customParameters` when you set any |
-| `media` | Repeatedly while the call runs | `media.track` is `inbound` or `outbound`; `media.chunk` counts frames on that track from `"1"`; `media.timestamp` is milliseconds since the stream began; `media.payload` is the base64-encoded audio |
-| `dtmf` | When a key is pressed on the call | `dtmf.digit`, one of `0` to `9`, `*`, `#`, or `A` to `D`, and `dtmf.duration` in milliseconds |
-| `mark` | Only on a bidirectional stream, after audio you queued has played | `mark.name`, echoing the name you sent |
-| `stop` | Once, when the stream stops or the call ends | Nothing further arrives on this connection |
-
-```json
-{
-  "event": "start",
-  "sequenceNumber": "1",
-  "start": {
-    "streamSid": "7d56cc11-536d-4a45-b4fb-ed3d55be843b",
-    "callSid": "76ac3c36-56da-4a3e-a0d6-b5f8df6da9ad",
-    "tracks": ["inbound", "outbound"],
-    "customParameters": {"session_id": "abc123"},
-    "mediaFormat": {"encoding": "audio/x-mulaw", "sampleRate": 8000, "channels": 1}
-  }
-}
-```
-
-```json
-{
-  "event": "media",
-  "sequenceNumber": "42",
-  "media": {
-    "track": "inbound",
-    "chunk": "41",
-    "timestamp": "820",
-    "payload": "<BASE64_AUDIO>"
-  }
-}
-```
-
-Decode `media.payload` from base64 to get raw audio bytes with no file header. The `start` message's
-`mediaFormat` tells you how to interpret them: `encoding` names the codec, `sampleRate` is in hertz,
-and `channels` is always `1`.
+The `start` message identifies the stream and audio format. Each `media` message carries a
+base64-encoded payload and an `inbound` or `outbound` track. Decode the payload to get raw audio
+bytes; keep the tracks separate. See [Read the stream messages][stream-messages] for the full format.
 
 ### Save call audio to a file
 
-This server collects each track in memory and writes it to its own WAV file when the stream stops.
-The files play in any audio player, and the only dependency is the WebSocket library. Run it, expose
-port `8080` over TLS, and use the resulting `wss://` URL as `<YOUR_AUDIO_STREAM_URL>`.
-
-The WAV header written here describes G.711 µ-law audio, the default `PCMU` codec.
+This server writes each track to a separate WAV file as audio arrives. It finalizes the headers
+when the stream stops or the connection closes. The `inbound` file contains the caller's voice;
+the `outbound` file contains what they hear.
 
 <CodeBlocks>
 <CodeBlock title="Python — websockets">
@@ -177,37 +136,46 @@ import struct
 
 from websockets.asyncio.server import serve
 
+HEADER_BYTES = 46
 
-def write_wav(path, audio, sample_rate):
+
+def wav_header(data_length, sample_rate):
     # WAV header for 8-bit G.711 µ-law (format tag 7), one channel.
-    header = struct.pack(
+    return struct.pack(
         "<4sI4s4sIHHIIHHH4sI",
-        b"RIFF", 38 + len(audio), b"WAVE",
+        b"RIFF", 38 + data_length, b"WAVE",
         b"fmt ", 18, 7, 1, sample_rate, sample_rate, 1, 8, 0,
-        b"data", len(audio),
+        b"data", data_length,
     )
-    with open(path, "wb") as output:
-        output.write(header + audio)
 
 
 async def handle(websocket):
-    audio = {}
-    stream_sid = None
+    files = {}
     sample_rate = 8000
-    async for message in websocket:
-        event = json.loads(message)
-        if event["event"] == "start":
-            stream_sid = event["start"]["streamSid"]
-            sample_rate = event["start"]["mediaFormat"]["sampleRate"]
-            audio = {track: bytearray() for track in event["start"]["tracks"]}
-            print(f"Recording stream {stream_sid}")
-        elif event["event"] == "media":
-            audio[event["media"]["track"]] += base64.b64decode(event["media"]["payload"])
-        elif event["event"] == "stop":
-            for track, data in audio.items():
-                path = f"{stream_sid}-{track}.wav"
-                write_wav(path, bytes(data), sample_rate)
-                print(f"Saved {path}, {len(data) / sample_rate:.1f} seconds")
+    try:
+        async for message in websocket:
+            event = json.loads(message)
+            if event["event"] == "start":
+                stream_sid = event["start"]["streamSid"]
+                sample_rate = event["start"]["mediaFormat"]["sampleRate"]
+                for track in event["start"]["tracks"]:
+                    output = open(f"{stream_sid}-{track}.wav", "wb")
+                    output.write(wav_header(0, sample_rate))
+                    files[track] = output
+                print(f"Recording stream {stream_sid}")
+            elif event["event"] == "media":
+                audio = base64.b64decode(event["media"]["payload"])
+                files[event["media"]["track"]].write(audio)
+            elif event["event"] == "stop":
+                break
+    finally:
+        # Runs on stop or a dropped connection, so every file gets its final sizes.
+        for output in files.values():
+            data_length = output.tell() - HEADER_BYTES
+            output.seek(0)
+            output.write(wav_header(data_length, sample_rate))
+            output.close()
+            print(f"Saved {output.name}, {data_length / sample_rate:.1f} seconds")
 
 
 async def main():
@@ -223,14 +191,16 @@ asyncio.run(main())
 ```javascript
 // Install: npm install ws
 // Save as save-audio.mjs and run: node save-audio.mjs
-import { writeFileSync } from "node:fs";
+import { closeSync, openSync, writeSync } from "node:fs";
 import { WebSocketServer } from "ws";
 
-function writeWav(path, audio, sampleRate) {
+const HEADER_BYTES = 46;
+
+function wavHeader(dataLength, sampleRate) {
   // WAV header for 8-bit G.711 µ-law (format tag 7), one channel.
-  const header = Buffer.alloc(46);
+  const header = Buffer.alloc(HEADER_BYTES);
   header.write("RIFF", 0);
-  header.writeUInt32LE(38 + audio.length, 4);
+  header.writeUInt32LE(38 + dataLength, 4);
   header.write("WAVE", 8);
   header.write("fmt ", 12);
   header.writeUInt32LE(18, 16);
@@ -242,69 +212,66 @@ function writeWav(path, audio, sampleRate) {
   header.writeUInt16LE(8, 34);
   header.writeUInt16LE(0, 36);
   header.write("data", 38);
-  header.writeUInt32LE(audio.length, 42);
-  writeFileSync(path, Buffer.concat([header, audio]));
+  header.writeUInt32LE(dataLength, 42);
+  return header;
 }
 
 const server = new WebSocketServer({ port: 8080 });
 console.log("Listening on port 8080");
 
 server.on("connection", (socket) => {
-  const chunks = new Map();
-  let streamSid;
+  const files = new Map();
   let sampleRate = 8000;
+
+  // Runs on stop or a dropped connection, so every file gets its final sizes.
+  const finish = () => {
+    for (const file of files.values()) {
+      writeSync(file.fd, wavHeader(file.bytes, sampleRate), 0, HEADER_BYTES, 0);
+      closeSync(file.fd);
+      console.log(`Saved ${file.path}, ${(file.bytes / sampleRate).toFixed(1)} seconds`);
+    }
+    files.clear();
+  };
 
   socket.on("message", (data) => {
     const event = JSON.parse(data.toString());
     if (event.event === "start") {
-      streamSid = event.start.streamSid;
-      sampleRate = event.start.mediaFormat.sampleRate;
-      for (const track of event.start.tracks) chunks.set(track, []);
+      const { streamSid, mediaFormat, tracks } = event.start;
+      sampleRate = mediaFormat.sampleRate;
+      for (const track of tracks) {
+        const path = `${streamSid}-${track}.wav`;
+        const fd = openSync(path, "w");
+        writeSync(fd, wavHeader(0, sampleRate));
+        files.set(track, { fd, path, bytes: 0 });
+      }
       console.log(`Recording stream ${streamSid}`);
     } else if (event.event === "media") {
-      chunks.get(event.media.track).push(Buffer.from(event.media.payload, "base64"));
+      const file = files.get(event.media.track);
+      const audio = Buffer.from(event.media.payload, "base64");
+      writeSync(file.fd, audio);
+      file.bytes += audio.length;
     } else if (event.event === "stop") {
-      for (const [track, parts] of chunks) {
-        const audio = Buffer.concat(parts);
-        const path = `${streamSid}-${track}.wav`;
-        writeWav(path, audio, sampleRate);
-        console.log(`Saved ${path}, ${(audio.length / sampleRate).toFixed(1)} seconds`);
-      }
+      finish();
     }
   });
+  socket.on("close", finish);
 });
 ```
 </CodeBlock>
 </CodeBlocks>
 
-If you request an `L16` codec instead, change the header to format tag `1`, 16 bits per sample,
-a block align of `2`, and a byte rate of twice the sample rate.
+With the server running, run [Save call audio via SWML](#save-call-audio-via-swml) or
+[via WebSocket (Relay)](#save-call-audio-via-websocket-relay) to call your phone and record the stream.
 
 ### Send audio back into the call
 
-On a bidirectional stream, your server sends these messages to SignalWire on the same connection.
-Each carries the `streamSid` from the `start` message.
+A bidirectional stream lets your server receive the caller's audio and send audio back on the
+same WebSocket. Each outgoing `media` message needs the `streamSid` from `start` and a base64
+payload in the stream's codec, without a file header.
 
-| `event` | What it does |
-|---|---|
-| `media` | Plays `media.payload`, base64 raw audio in the stream's codec, into the call. Messages queue and play in order |
-| `mark` | Asks SignalWire to send a `mark` message with the same `mark.name` back once everything queued before it has played |
-| `clear` | Stops playback and empties the queue, so you can interrupt what the caller hears. Pending marks come back at once |
-| `dtmf` | Sends `dtmf.digit` into the call as a key press |
-
-```json
-{
-  "event": "media",
-  "streamSid": "<STREAM_SID_FROM_START>",
-  "media": { "payload": "<BASE64_AUDIO>" }
-}
-```
-
-Send raw audio only. A payload that includes a file header, such as a WAV header, plays as noise.
-
-The echo server below returns each `media` payload unchanged, so the caller hears their own voice
-a moment later. It confirms that audio flows in both directions before you plug in a real speech
-pipeline. Run it in place of the save-audio server.
+This server returns each payload unchanged, so you can hear your own voice. Start it, then run
+[Echo the caller's voice via SWML](#echo-the-callers-voice-via-swml) or
+[via WebSocket (Relay)](#echo-the-callers-voice-via-websocket-relay).
 
 <CodeBlocks>
 <CodeBlock title="Python — websockets">
@@ -375,33 +342,8 @@ server.on("connection", (socket) => {
 </CodeBlock>
 </CodeBlocks>
 
-### Choose a codec and track
-
-Set `codec` when you start the stream. The default is `PCMU`, 8 kHz G.711 µ-law, and it is always
-available. For speech models that expect linear PCM, request `L16` with a sample rate modifier
-instead. A bidirectional stream also accepts `PCMA` and `G722`, and a packet-time modifier such as
-`PCMU@40i`; see the [`connect` reference][swml-connect] for the accepted forms.
-
-| `codec` | `mediaFormat.encoding` | `mediaFormat.sampleRate` |
-|---|---|---|
-| `PCMU` (default) | `audio/x-mulaw` | 8000 |
-| `PCMA` | `audio/x-alaw` | 8000 |
-| `L16@16000h` | `audio/x-L16` | 16000 |
-| `L16@24000h` | `audio/x-L16` | 24000 |
-
-`track` selects which side of the conversation a one-way stream sends. `inbound_track`, the default,
-is what the person on the call says; `outbound_track` is what they hear; `both_tracks` sends both,
-labeled per `media` message. A bidirectional stream sends only the `inbound` track.
-
-### Identify the call on your server
-
-Two settings connect a WebSocket to the rest of your application:
-
-- `custom_parameters` is an object you set when you start the stream. Its keys arrive as
-  `start.customParameters`, so pass your own session or customer IDs here rather than in the URL,
-  which accepts no query string.
-- `authorization_bearer_token` is sent as `Authorization: Bearer <token>` on the WebSocket
-  handshake. Reject connections that don't carry the token you expect.
+Once the echo works, [play your own audio][play-audio] to send a prompt, wait for playback to
+finish with `mark`, and interrupt it with `clear`.
 
 ## Stream call audio via SWML
 
@@ -427,7 +369,7 @@ don't include `stream` and `stop_stream` yet, so the programs add those two meth
 The YAML and JSON tabs contain the equivalent complete document.
 
 <CodeBlocks>
-<CodeBlock title="Python — REST client">
+<CodeBlock title="Python — SWML builder">
 ```python
 # Install: python -m pip install signalwire-sdk==3.4.1
 # Save as stream_call.py and run: python stream_call.py
@@ -464,7 +406,7 @@ call = client.calling.dial(
 print(call["id"])
 ```
 </CodeBlock>
-<CodeBlock title="TypeScript — REST client">
+<CodeBlock title="TypeScript — SWML builder">
 ```typescript
 // Install: npm install @signalwire/sdk@2.0.5
 // This sample also runs as JavaScript: save as stream-call.mjs,
@@ -554,16 +496,14 @@ to receive the stream's events even when the WebSocket never connects.
 
 ### Echo the caller's voice via SWML
 
-Play an announcement, then connect the call to the [echo server](#send-audio-back-into-the-call).
-Set `to` to your WebSocket URL with a `stream:` prefix; the stream properties `codec`, `realtime`,
-`name`, `status_url`, `authorization_bearer_token`, and `custom_parameters` sit alongside it.
-
-Set `realtime` to `true` when your server responds conversationally. SignalWire then manages packet
-timing and bursts for a live exchange, instead of buffering the audio you send and playing it out
-with a delay.
+Play an announcement, connect the call to the [echo server](#send-audio-back-into-the-call), and
+hang up once your server closes the connection. Set `to` to your `wss://` URL with a `stream:` prefix.
+The examples use `realtime: true` to limit playback delay; audio sent too far ahead can be dropped.
+The echo server sends each frame as it arrives. See [Pace outgoing audio][play-audio] when sending
+a file or generated speech.
 
 <CodeBlocks>
-<CodeBlock title="Python — REST client">
+<CodeBlock title="Python — SWML builder">
 ```python
 # Install: python -m pip install signalwire-sdk==3.4.1
 # Save as echo_call.py and run: python echo_call.py
@@ -587,6 +527,7 @@ swml = (
         realtime=True,
         name="echo",
     )
+    .hangup()
     .build()
 )
 
@@ -598,7 +539,7 @@ call = client.calling.dial(
 print(call["id"])
 ```
 </CodeBlock>
-<CodeBlock title="TypeScript — REST client">
+<CodeBlock title="TypeScript — SWML builder">
 ```typescript
 // Install: npm install @signalwire/sdk@2.0.5
 // This sample also runs as JavaScript: save as echo-call.mjs,
@@ -619,6 +560,7 @@ const swml = new SwmlBuilder()
     realtime: true,
     name: "echo",
   })
+  .hangup()
   .build();
 
 const call = await client.calling.dial({
@@ -641,6 +583,7 @@ sections:
         codec: PCMU
         realtime: true
         name: echo
+    - hangup: {}
 ```
 </CodeBlock>
 <CodeBlock title="JSON">
@@ -657,7 +600,8 @@ sections:
           "realtime": true,
           "name": "echo"
         }
-      }
+      },
+      { "hangup": {} }
     ]
   }
 }
@@ -672,9 +616,8 @@ uses `connect`, since a stream started with `stream` ignores anything you send b
 
 A stream can't be the `to` of a `dial`, so an outbound bidirectional stream always dials the person
 first and runs `connect` when they answer. When your server closes the connection, `connect`
-finishes and the document continues with the next method. To stream a whole conference in both
-directions, give [`join_conference`][swml-join-conference] a `stream` object with the same
-properties.
+finishes and the document continues with the next method, here `hangup`; put a `play` or any other
+method there to keep the call going instead.
 
 ### Track a stream via SWML
 
@@ -843,7 +786,8 @@ seconds, and the save-audio server writes one WAV file per track. If the program
 
 Dial, play the announcement, then connect the call to the
 [echo server](#send-audio-back-into-the-call) through a `stream` device. `connect()` returns as soon as
-SignalWire accepts the request, so the program waits for the call to end before disconnecting the client.
+SignalWire accepts the request, so the program follows the bridge through `calling.call.connect`
+events, hangs up when the bridge ends, and waits for the call to end before disconnecting the client.
 
 <CodeBlocks>
 <CodeBlock title="Python — Relay client">
@@ -873,8 +817,11 @@ async def main():
             }]],
         )
 
-        def on_connect(event: ConnectEvent):
+        async def on_connect(event: ConnectEvent):
             print(f"Stream bridge: {event.connect_state}")
+            # The bridge ends when your server closes the connection.
+            if event.connect_state in ("disconnected", "failed") and call.state != "ended":
+                await call.hangup()
 
         call.on("calling.call.connect", on_connect)
         announcement = await call.play([{
@@ -924,8 +871,13 @@ try {
     },
   }]]);
 
-  call.on("calling.call.connect", (event) => {
-    console.log(`Stream bridge: ${event.params.connect_state}`);
+  call.on("calling.call.connect", async (event) => {
+    const state = event.params.connect_state;
+    console.log(`Stream bridge: ${state}`);
+    // The bridge ends when your server closes the connection.
+    if ((state === "disconnected" || state === "failed") && call.state !== "ended") {
+      await call.hangup();
+    }
   });
   const announcement = await call.play([
     { type: "tts", text: "You are connected to the echo server. Speak, and you will hear yourself." },
@@ -951,7 +903,8 @@ try {
 Answer and speak to hear your voice echoed back. The program prints `connected` while audio flows,
 then `disconnected` when you hang up. A `failed` state means SignalWire couldn't reach your URL.
 The call stays bridged until your server closes the connection, the call ends, or you call
-`call.disconnect()`, which unbridges the call and lets it continue.
+`call.disconnect()`, which unbridges the call and lets it continue. To keep the call going after
+the bridge ends, play audio or connect it elsewhere instead of hanging up.
 
 ## Stream a call already in progress via REST
 
@@ -972,3 +925,17 @@ it needs. Add `status_url` to receive the `calling.call.stream` events described
 A bidirectional stream has no `control_id`, so `calling.stream.stop` doesn't apply to it. End it by
 closing the WebSocket from your server, or send `calling.disconnect` to unbridge the call and let it
 continue.
+
+## Next steps
+
+<CardGroup cols={2}>
+
+<Card title="Process streamed audio" href="/docs/platform/voice/process-streamed-audio" icon="regular waveform-lines">
+  Buffer audio for processing, play your own prompts, and interrupt playback.
+</Card>
+
+<Card title="Streaming options" href="/docs/swml/reference/calling/stream" icon="regular code">
+  Configure tracks, codecs, custom parameters, and status callbacks.
+</Card>
+
+</CardGroup>

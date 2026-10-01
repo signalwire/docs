@@ -1,0 +1,466 @@
+---
+title: Process streamed audio
+slug: voice/process-streamed-audio
+description: Buffer streamed call audio for processing, then play and interrupt your own audio on a bidirectional stream.
+max-toc-depth: 3
+---
+
+[call-streaming]: /docs/platform/voice/call-streaming
+[swml-connect]: /docs/swml/reference/calling/connect
+[save-audio]: /docs/platform/voice/call-streaming#save-call-audio-to-a-file
+[echo-swml]: /docs/platform/voice/call-streaming#echo-the-callers-voice-via-swml
+[echo-relay]: /docs/platform/voice/call-streaming#echo-the-callers-voice-via-websocket-relay
+
+Turn call audio into processing windows, or send your own audio back to the caller. Start with
+a working stream from [Stream call audio][call-streaming], then replace its server with one of
+the examples below. Each server runs on port `8080`; run one at a time behind your existing TLS tunnel.
+
+## Read the stream messages
+
+Every message has an `event` field that tells you its type. Messages that carry audio or a sequence
+also carry a `sequenceNumber`, a string counter that starts at `"1"` and increments with each message
+on the connection.
+
+| `event` | When | What to read |
+|---|---|---|
+| `connected` | Right after the WebSocket opens | `protocol` is `Call` and `version` is the protocol version, currently `0.2.0` |
+| `start` | Once, before any audio | `start.streamSid`, `start.callSid`, `start.tracks`, `start.mediaFormat`, and `start.customParameters` when you set any |
+| `media` | Repeatedly while the call runs | `media.track` is `inbound` or `outbound`; `media.chunk` counts frames on that track from `"1"`; `media.timestamp` is milliseconds since the stream began; `media.payload` is the base64-encoded audio |
+| `dtmf` | When a key is pressed on the call | `dtmf.digit`, one of `0` to `9`, `*`, `#`, or `A` to `D`, and `dtmf.duration` in milliseconds |
+| `mark` | On a bidirectional stream, after earlier audio has played or been cleared | `mark.name`, echoing the name you sent |
+| `stop` | Once, when the stream stops or the call ends | Nothing further arrives on this connection |
+
+```json
+{
+  "event": "start",
+  "sequenceNumber": "1",
+  "start": {
+    "streamSid": "7d56cc11-536d-4a45-b4fb-ed3d55be843b",
+    "callSid": "76ac3c36-56da-4a3e-a0d6-b5f8df6da9ad",
+    "tracks": ["inbound", "outbound"],
+    "customParameters": {"session_id": "abc123"},
+    "mediaFormat": {"encoding": "audio/x-mulaw", "sampleRate": 8000, "channels": 1}
+  }
+}
+```
+
+```json
+{
+  "event": "media",
+  "sequenceNumber": "42",
+  "media": {
+    "track": "inbound",
+    "chunk": "41",
+    "timestamp": "820",
+    "payload": "<BASE64_AUDIO>"
+  }
+}
+```
+
+Decode `media.payload` from base64 to get raw audio bytes with no file header. The `start` message's
+`mediaFormat` tells you how to interpret them: `encoding` names the codec, `sampleRate` is in hertz,
+and `channels` is always `1`. `L16` audio is 16-bit signed samples in little-endian byte order.
+
+Each `media` message carries one frame of audio for one track, 20 ms by default: 160 bytes of
+`PCMU`, or 640 bytes of `L16` at 16 kHz. With `both_tracks`, frames for the two tracks arrive
+interleaved, so keep a separate buffer per track.
+
+### Choose a codec and track
+
+Set `codec` when you start the stream. The default is `PCMU`, 8 kHz G.711 µ-law, and it is always
+available. For speech models that expect linear PCM, request `L16` with a sample rate modifier
+instead. A bidirectional stream also accepts `PCMA` and `G722`, and a packet-time modifier such as
+`PCMU@40i`; see the [`connect` reference][swml-connect] for the accepted forms.
+
+| `codec` | `mediaFormat.encoding` | `mediaFormat.sampleRate` |
+|---|---|---|
+| `PCMU` (default) | `audio/x-mulaw` | 8000 |
+| `PCMA` | `audio/x-alaw` | 8000 |
+| `L16@16000h` | `audio/x-L16` | 16000 |
+| `L16@24000h` | `audio/x-L16` | 24000 |
+
+`track` selects which side of the conversation a one-way stream sends. `inbound_track`, the default,
+is what the person on the call says; `outbound_track` is what they hear; `both_tracks` sends both,
+labeled per `media` message. A bidirectional stream sends only the `inbound` track.
+
+## Buffer audio for processing
+
+Speech-to-text services, voice agents, and analytics usually want audio in fixed-size pieces rather
+than one `media` message at a time. Buffer each track by bytes, not by message count, and cut a
+window whenever the buffer holds enough audio. The `start` message's `sampleRate` tells you how many
+bytes make up a window: with `PCMU`, one byte is one sample, so a one-second window is `sampleRate`
+bytes.
+
+This server measures each window's loudness and estimates talk time using a volume threshold.
+Replace `analyze` with your processing. It queues at most five windows and drops new windows with
+a log message if processing falls behind, keeping memory and delay bounded. Use the
+[save-audio server][save-audio] when you need to retain every frame.
+
+Await network requests in the worker so the receive loop can keep reading. An async function
+still runs CPU work on the event loop; move expensive computation to a worker thread or process.
+
+<CodeBlocks>
+<CodeBlock title="Python — websockets">
+```python
+# Install: python -m pip install websockets
+# Save as process_audio.py and run: python process_audio.py
+import asyncio
+import base64
+import json
+import math
+
+from websockets.asyncio.server import serve
+
+WINDOW_MS = 1000
+SPEECH_DBFS = -45
+MAX_PENDING_WINDOWS = 5
+
+
+def mulaw_to_linear(value):
+    # Decode one G.711 µ-law byte to a 16-bit sample.
+    value = ~value & 0xFF
+    exponent = (value >> 4) & 0x07
+    sample = ((((value & 0x0F) << 3) + 0x84) << exponent) - 0x84
+    return -sample if value & 0x80 else sample
+
+
+async def analyze(windows):
+    talk_ms = {}
+    while (item := await windows.get()) is not None:
+        track, window = item
+        samples = [mulaw_to_linear(value) for value in window]
+        rms = math.sqrt(sum(sample * sample for sample in samples) / len(samples))
+        level = 20 * math.log10(max(rms, 1) / 32768)
+        if level > SPEECH_DBFS:
+            talk_ms[track] = talk_ms.get(track, 0) + WINDOW_MS
+        print(f"{track}: {level:.0f} dBFS, talking for {talk_ms.get(track, 0) / 1000:.0f} s")
+
+
+async def handle(websocket):
+    windows = asyncio.Queue(maxsize=MAX_PENDING_WINDOWS)
+    worker = asyncio.create_task(analyze(windows))
+    buffers = {}
+    window_bytes = 8000
+    try:
+        async for message in websocket:
+            event = json.loads(message)
+            if event["event"] == "start":
+                window_bytes = event["start"]["mediaFormat"]["sampleRate"] * WINDOW_MS // 1000
+                buffers = {track: bytearray() for track in event["start"]["tracks"]}
+            elif event["event"] == "media":
+                track = event["media"]["track"]
+                buffer = buffers[track]
+                buffer += base64.b64decode(event["media"]["payload"])
+                while len(buffer) >= window_bytes:
+                    if windows.full():
+                        print(f"Processing behind: dropped {track} window")
+                    else:
+                        windows.put_nowait((track, bytes(buffer[:window_bytes])))
+                    del buffer[:window_bytes]
+            elif event["event"] == "stop":
+                break
+    finally:
+        await windows.put(None)
+        await worker
+
+
+async def main():
+    async with serve(handle, "0.0.0.0", 8080):
+        print("Listening on port 8080")
+        await asyncio.get_running_loop().create_future()
+
+
+asyncio.run(main())
+```
+</CodeBlock>
+<CodeBlock title="JavaScript — ws">
+```javascript
+// Install: npm install ws
+// Save as process-audio.mjs and run: node process-audio.mjs
+import { WebSocketServer } from "ws";
+
+const WINDOW_MS = 1000;
+const SPEECH_DBFS = -45;
+const MAX_PENDING_WINDOWS = 5;
+
+function mulawToLinear(byte) {
+  // Decode one G.711 µ-law byte to a 16-bit sample.
+  const value = ~byte & 0xff;
+  const exponent = (value >> 4) & 0x07;
+  const sample = ((((value & 0x0f) << 3) + 0x84) << exponent) - 0x84;
+  return value & 0x80 ? -sample : sample;
+}
+
+const server = new WebSocketServer({ port: 8080 });
+console.log("Listening on port 8080");
+
+server.on("connection", (socket) => {
+  const buffers = new Map();
+  const talkMs = new Map();
+  let windowBytes = 8000;
+  let pending = 0;
+  // Process windows in order, with a bounded backlog.
+  let processing = Promise.resolve();
+
+  async function analyze(track, window) {
+    let sum = 0;
+    for (const byte of window) sum += mulawToLinear(byte) ** 2;
+    const rms = Math.sqrt(sum / window.length);
+    const level = 20 * Math.log10(Math.max(rms, 1) / 32768);
+    if (level > SPEECH_DBFS) talkMs.set(track, (talkMs.get(track) ?? 0) + WINDOW_MS);
+    console.log(`${track}: ${level.toFixed(0)} dBFS, talking for ${((talkMs.get(track) ?? 0) / 1000).toFixed(0)} s`);
+  }
+
+  socket.on("message", (data) => {
+    const event = JSON.parse(data.toString());
+    if (event.event === "start") {
+      windowBytes = (event.start.mediaFormat.sampleRate * WINDOW_MS) / 1000;
+      for (const track of event.start.tracks) buffers.set(track, Buffer.alloc(0));
+    } else if (event.event === "media") {
+      const track = event.media.track;
+      let buffer = Buffer.concat([buffers.get(track), Buffer.from(event.media.payload, "base64")]);
+      while (buffer.length >= windowBytes) {
+        const window = buffer.subarray(0, windowBytes);
+        if (pending >= MAX_PENDING_WINDOWS) {
+          console.log(`Processing behind: dropped ${track} window`);
+        } else {
+          pending += 1;
+          processing = processing
+            .then(() => analyze(track, window))
+            .catch((error) => console.error("Processing failed:", error))
+            .finally(() => { pending -= 1; });
+        }
+        buffer = buffer.subarray(windowBytes);
+      }
+      buffers.set(track, buffer);
+    }
+  });
+});
+```
+</CodeBlock>
+</CodeBlocks>
+
+Run either save-audio call program from [Stream call audio][call-streaming] with this server and
+speak. The server prints a line per second for each track, with the level rising while that side
+talks. The decoder assumes the default `PCMU`
+codec. `L16` audio is already linear 16-bit PCM, so skip the decoding and read two bytes per sample;
+a window then holds twice as many bytes.
+
+The example processes complete windows and discards the final partial window. It keeps the tracks
+separate; to align or mix them, use `media.timestamp` rather than their arrival order.
+
+## Control bidirectional playback
+
+On a bidirectional stream, your server sends JSON messages to SignalWire on the same connection.
+Every message carries the `streamSid` from the `start` message.
+
+| `event` | What it does |
+|---|---|
+| `media` | Plays `media.payload`, base64 raw audio in the stream's codec, into the call. SignalWire queues these messages and plays them in order |
+| `mark` | Asks SignalWire to send a `mark` message with the same `mark.name` back once everything queued before it has played, or at once if nothing is queued |
+| `clear` | Stops playback and empties the queue, so you can interrupt what the caller hears. Marks still waiting in the queue come back at once |
+| `dtmf` | Sends `dtmf.digit`, one of `0` to `9`, `*`, `#`, or `A` to `D`, into the call as a key press. Add `dtmf.duration` in milliseconds to set how long the key is held |
+
+```json
+{ "event": "media", "streamSid": "<STREAM_SID_FROM_START>", "media": { "payload": "<BASE64_AUDIO>" } }
+```
+
+```json
+{ "event": "mark", "streamSid": "<STREAM_SID_FROM_START>", "mark": { "name": "prompt-done" } }
+```
+
+```json
+{ "event": "clear", "streamSid": "<STREAM_SID_FROM_START>" }
+```
+
+```json
+{ "event": "dtmf", "streamSid": "<STREAM_SID_FROM_START>", "dtmf": { "digit": "1" } }
+```
+
+Send raw audio only, in the stream's codec. A payload that includes a file header, such as a WAV
+header, plays as noise. Key presses on the call arrive as `dtmf` messages, which on a bidirectional
+stream also carry the `streamSid`.
+
+How fast you can send depends on the stream's `realtime` setting:
+
+- `realtime: false` (the default): SignalWire buffers audio and plays it in order. Sending faster
+  than playback builds a backlog and delays later audio.
+- `realtime: true`: SignalWire limits playback delay by dropping new audio when its queue backs
+  up. Pace your sends at the audio's playback rate.
+
+Use small chunks and pace long prompts in either mode. Buffering is limited; sending an entire
+file at once can exceed message or playback-buffer limits and end the stream or call.
+After sending `clear`, treat returned marks as acknowledgments of cleared audio, not proof that
+the caller heard it.
+
+## Play your own audio into the call
+
+To play audio your server produces, such as a recorded prompt or text-to-speech output, convert it
+to the stream's codec, split it into frames, and send each frame as a `media` message. This server
+plays a prompt when the stream starts, lets the caller skip it with any key, and closes the
+connection once the prompt has finished or been skipped.
+
+The server sends 160-byte frames of 8 kHz µ-law audio about every 20 ms. After the final frame,
+it sends a `mark` and waits for the acknowledgment before closing. On a key press, it stops
+sending, sends `clear`, and closes. This keeps receiving active while audio plays.
+
+Convert your prompt to raw 8 kHz µ-law with no header first, for example with
+`ffmpeg -i prompt.mp3 -ar 8000 -ac 1 -f mulaw prompt.ulaw`, and save `prompt.ulaw` next to the server.
+
+<CodeBlocks>
+<CodeBlock title="Python — websockets">
+```python
+# Install: python -m pip install websockets
+# Save as play_audio.py next to prompt.ulaw and run: python play_audio.py
+import asyncio
+import base64
+import json
+
+from websockets.asyncio.server import serve
+
+FRAME_BYTES = 160  # 20 ms of 8 kHz µ-law audio
+SAMPLE_RATE = 8000
+
+with open("prompt.ulaw", "rb") as prompt_file:
+    PROMPT = prompt_file.read()
+
+
+async def play(websocket, stream_sid, audio):
+    for offset in range(0, len(audio), FRAME_BYTES):
+        frame = audio[offset:offset + FRAME_BYTES]
+        await websocket.send(json.dumps({
+            "event": "media",
+            "streamSid": stream_sid,
+            "media": {"payload": base64.b64encode(frame).decode()},
+        }))
+        # Pace each frame; don't send a catch-up burst if processing was delayed.
+        await asyncio.sleep(len(frame) / SAMPLE_RATE)
+    # SignalWire sends this mark back once everything before it has played.
+    await websocket.send(json.dumps({
+        "event": "mark",
+        "streamSid": stream_sid,
+        "mark": {"name": "prompt-done"},
+    }))
+
+
+async def handle(websocket):
+    stream_sid = None
+    player = None
+    try:
+        async for message in websocket:
+            event = json.loads(message)
+            if event["event"] == "start":
+                stream_sid = event["start"]["streamSid"]
+                player = asyncio.create_task(play(websocket, stream_sid, PROMPT))
+            elif event["event"] == "dtmf" and player:
+                # Any key skips the prompt: stop sending, then drop what is queued.
+                player.cancel()
+                await websocket.send(json.dumps({"event": "clear", "streamSid": stream_sid}))
+                print(f"Prompt skipped with {event['dtmf']['digit']}")
+                await websocket.close()
+            elif event["event"] == "mark" and event["mark"]["name"] == "prompt-done":
+                print("Prompt finished")
+                await websocket.close()
+    finally:
+        if player:
+            player.cancel()
+
+
+async def main():
+    async with serve(handle, "0.0.0.0", 8080):
+        print("Listening on port 8080")
+        await asyncio.get_running_loop().create_future()
+
+
+asyncio.run(main())
+```
+</CodeBlock>
+<CodeBlock title="JavaScript — ws">
+```javascript
+// Install: npm install ws
+// Save as play-audio.mjs next to prompt.ulaw and run: node play-audio.mjs
+import { readFileSync } from "node:fs";
+import { WebSocketServer } from "ws";
+
+const FRAME_BYTES = 160; // 20 ms of 8 kHz µ-law audio
+const FRAME_MS = 20;
+const PROMPT = readFileSync("prompt.ulaw");
+
+const server = new WebSocketServer({ port: 8080 });
+console.log("Listening on port 8080");
+
+server.on("connection", (socket) => {
+  let streamSid;
+  let timer;
+
+  function play(audio) {
+    let offset = 0;
+    const sendDue = () => {
+      if (offset < audio.length) {
+        socket.send(JSON.stringify({
+          event: "media",
+          streamSid,
+          media: { payload: audio.subarray(offset, offset + FRAME_BYTES).toString("base64") },
+        }));
+        offset += FRAME_BYTES;
+        // Pace each frame; don't send a catch-up burst after a delay.
+        timer = setTimeout(sendDue, FRAME_MS);
+        return;
+      }
+      // SignalWire sends this mark back once everything before it has played.
+      socket.send(JSON.stringify({ event: "mark", streamSid, mark: { name: "prompt-done" } }));
+    };
+    sendDue();
+  }
+
+  socket.on("message", (data) => {
+    const event = JSON.parse(data.toString());
+    if (event.event === "start") {
+      streamSid = event.start.streamSid;
+      play(PROMPT);
+    } else if (event.event === "dtmf") {
+      // Any key skips the prompt: stop sending, then drop what is queued.
+      clearTimeout(timer);
+      socket.send(JSON.stringify({ event: "clear", streamSid }));
+      console.log(`Prompt skipped with ${event.dtmf.digit}`);
+      socket.close();
+    } else if (event.event === "mark" && event.mark.name === "prompt-done") {
+      console.log("Prompt finished");
+      socket.close();
+    }
+  });
+  socket.on("close", () => clearTimeout(timer));
+});
+```
+</CodeBlock>
+</CodeBlocks>
+
+Start the call with the echo programs under [Echo the caller's voice via SWML][echo-swml]
+or [via WebSocket (Relay)][echo-relay]; they connect the call to
+whichever server is running. You hear the announcement, then your prompt. Let it finish, or press a
+key to cut it short; either way the server prints the outcome and closes the connection, and the
+program hangs up. If the prompt plays as loud static, the file has a header or isn't 8 kHz µ-law.
+
+## Identify the call on your server
+
+Two settings connect a WebSocket to the rest of your application:
+
+- `custom_parameters` is an object you set when you start the stream. Its keys arrive as
+  `start.customParameters`, so pass your own session or customer IDs here rather than in the URL,
+  which accepts no query string.
+- `authorization_bearer_token` is sent as `Authorization: Bearer <token>` on the WebSocket
+  handshake. Reject connections that don't carry the token you expect.
+
+## Next steps
+
+<CardGroup cols={2}>
+
+<Card title="Stream call audio" href="/docs/platform/voice/call-streaming" icon="regular phone">
+  Start and stop streams with SWML, Relay, or REST.
+</Card>
+
+<Card title="Bidirectional stream options" href="/docs/swml/reference/calling/connect" icon="regular code">
+  Configure the stream connection for your audio server.
+</Card>
+
+</CardGroup>
