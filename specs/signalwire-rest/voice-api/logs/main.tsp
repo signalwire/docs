@@ -6,6 +6,7 @@ import "./models/core.tsp";
 import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "./models/errors.tsp";
+import "./models/examples.tsp";
 import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
@@ -19,6 +20,27 @@ namespace SignalWireAPI.Voice.Logs {
   interface Logs {
     @operationId("list_voice_logs")
     @summary("List voice logs")
+    @opExample(
+      #{
+        returnType: #{
+          links: VOICE_LOG_LINKS_EXAMPLE,
+          data: #[VOICE_LOG_WHATSAPP_CALL_EXAMPLE],
+        },
+      },
+      #{
+        title: "WhatsApp call",
+        description: "An inbound WhatsApp call. `to` is the business number with its `whatsapp:` prefix.",
+      }
+    )
+    @opExample(
+      #{
+        returnType: #{
+          links: VOICE_LOG_LINKS_EXAMPLE,
+          data: #[VOICE_LOG_PHONE_CALL_EXAMPLE],
+        },
+      },
+      #{ title: "Phone call", description: "An inbound call to one of your phone numbers." }
+    )
     @doc("""
       Lists historical voice activity in the project across supported call types. Use it for usage reporting, billing review, and troubleshooting, not live call control. Place or control calls through [Send call commands](/docs/apis/rest/calls/call-commands) or the Compatibility Calls API instead.
       
