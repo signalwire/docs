@@ -1,5 +1,5 @@
 ---
-title: Detect Machines
+title: Detect machines
 slug: voice/machine-detection
 description: Detect people, voicemail, and fax machines, then act on the result with SWML, Relay, or REST.
 max-toc-depth: 3
@@ -33,12 +33,6 @@ If there isn't enough audio to decide, your app needs a fallback for the uncerta
 
 Voicemail detection can also wait for the greeting to end before you leave a message. The
 sections below explain how to handle these results in each approach.
-
-<llms-ignore>
-
-<img src="/assets/images/img/machine-detection-flow-themed.svg" alt="Machine detection flow: after the destination answers, SignalWire listens. A short greeting followed by silence identifies a person, and the app plays its live message. For voicemail, detection waits through the greeting and beep before the app leaves a message." />
-
-</llms-ignore>
 
 ## Choose an approach
 
@@ -93,8 +87,9 @@ Use [`switch`][swml-switch] to choose the next action.
 | `failed` | Invalid settings, missing `status_url` with `wait: false`, or detection already running | Log the failure and use a fallback |
 | `detecting` | Background detection is running with `wait: false` | Handle events at `status_url` |
 
-`detect_machine_beep` is `true` when the result is `machine` and a beep was heard; otherwise it
-is `false`. `detect_ms` holds the elapsed milliseconds, or `-1` with `wait: false`.
+`detect_machine_beep` is `true` when the machine detector heard a beep; otherwise it is `false`.
+With `detectors: amd,fax`, a fax tone can register as a beep, so a `fax` result can also report
+`true`. `detect_ms` holds the elapsed milliseconds, or `-1` with `wait: false`.
 
 ### Detect voicemail via SWML
 
@@ -463,13 +458,14 @@ events; the document still branches on `detect_result`.
 | A person answers | `HUMAN`, `finished` |
 | A machine answers, `detect_message_end` off | `MACHINE`, `finished`, with `READY` between them if the line is already silent |
 | A machine answers, `detect_message_end` on | `MACHINE`, `READY` when the greeting ends, `finished` |
-| A beep is heard | `MACHINE` if not already sent, then `READY`, then `finished`, regardless of `detect_message_end` |
+| A beep is heard before `MACHINE` | `MACHINE`, then `READY`, then `finished`, regardless of `detect_message_end` |
 | No decision | `UNKNOWN` at `initial_timeout`, then `finished` at `timeout` |
 | A fax tone is heard | `CED` or `CNG`, then `finished` |
 
 `UNKNOWN` doesn't stop detection or resume the document. A silent call waits until `timeout`
-before `detect_result` becomes `unknown`. If the call hangs up during detection, no final
-`finished` callback is sent. Once set, `beep: true` remains on later machine events.
+before `detect_result` becomes `unknown`. If the call hangs up during machine detection, no
+final `finished` callback is sent; fax detection still sends `finished`. Once set, `beep: true`
+remains on later machine events.
 
 For background detection, set `wait: false` and supply `status_url`. The document continues
 immediately with `detect_result: detecting`; act on the webhook events instead. See the
@@ -497,9 +493,8 @@ The [`detect_machine` reference][swml-detect-machine] lists all properties, incl
 
 ## Detect machines via WebSocket (Relay)
 
-Start detection on an answered call with `detect()` and a `machine` or `fax` detector. Python
-also provides `detect_answering_machine()` and `detect_fax()` shortcuts. Each operation runs one
-detector, and a call can run only one detector of each type at a time.
+Start detection on an answered call with `detect()` and a `machine` or `fax` detector. Each
+operation runs one detector, and a call can run only one detector of each type at a time.
 
 Register a `calling.call.detect` handler before starting detection. Read `event.detect.type`
 for the detector and `event.detect.params.event` for its result:
@@ -516,12 +511,14 @@ for the detector and `event.detect.params.event` for its result:
 
 An action's `wait()` returns on the first result. To leave voicemail, follow events through
 `MACHINE` to `READY` instead. `detect_message_end` defaults to `true`; setting it to `false`
-stops on `MACHINE`. A beep still triggers `READY` regardless of that setting.
+stops on `MACHINE`. A beep heard before `MACHINE` triggers `MACHINE` and then `READY` with
+either setting; with `false`, detection has already stopped by the time a later beep plays, so
+it's usually missed.
 
 `UNKNOWN` doesn't stop the detector: it keeps listening until it decides or `timeout` expires.
-`finished` normally follows the final result, but isn't sent if the call hangs up during
-detection. Once a beep is heard, `event.detect.params.beep` is `true` on that and later machine
-events; fax events don't carry it. Call the action's `stop()` to stop detection early.
+`finished` follows the final result, including when the call hangs up during detection. Once a
+beep is heard, `event.detect.params.beep` is `true` on that and later machine events; fax events
+don't carry it. Call the action's `stop()` to stop detection early.
 
 ### Detect voicemail via WebSocket (Relay)
 
@@ -593,7 +590,9 @@ async def main():
                 await call.hangup()
 
         call.on("calling.call.detect", on_detect)
-        await call.detect_answering_machine(detect_message_end=True, timeout=45)
+        await call.detect(
+            {"type": "machine", "params": {"detect_message_end": True}}, timeout=45
+        )
         await call.wait_for_ended()
 
 asyncio.run(main())
@@ -709,7 +708,7 @@ async def main():
                 },
             }]],
         )
-        action = await call.detect_fax(tone="CED", timeout=8)
+        action = await call.detect({"type": "fax", "params": {"tone": "CED"}}, timeout=8)
         event = await action.wait()
 
         if is_fax(event):
@@ -812,8 +811,6 @@ setup, see [Answer a call via WebSocket (Relay)][answer-relay].
 ### Tune Relay detection
 
 Pass `timeout` separately to `detect()`; put the other settings in the detector's `params`.
-Use `detect()` when you need `machine_ready_timeout`, which the Python AMD shortcut doesn't
-accept.
 
 | Setting | Default | When to change it |
 |---|---|---|
