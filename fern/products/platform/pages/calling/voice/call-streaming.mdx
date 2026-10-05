@@ -80,54 +80,25 @@ Replace these values in the samples you run:
 
 ## How call streaming works
 
-When a stream starts, SignalWire opens a WebSocket connection to your `wss://` URL and sends JSON
-messages on it: `connected`, then `start` with the audio format, then a `media` message for each
-frame of audio, and `stop` when the stream ends. Each stream gets its own connection. The messages
-are the same whichever approach starts the stream.
+When a stream starts, SignalWire opens a WebSocket connection to your server and sends it the
+call's audio as the call happens, in 20 ms frames. What happens to the audio next is up to your
+server. It can:
 
-<llms-ignore>
+- [Save it to a file](#save-call-audio-to-a-file), as a recording you control.
+- [Forward it to another service](#buffer-audio-for-processing), such as a speech-to-text or
+  sentiment API, and act on what comes back.
+- [Send audio back into the call](#send-audio-back-on-a-bidirectional-stream), such as a recorded
+  prompt or the output of a voice agent.
 
-<img src="/assets/images/img/call-stream-lifecycle-themed.svg" alt="Your code starts a stream with a WebSocket URL, track, and codec. SignalWire opens a WebSocket to your server and sends connected, then start with the stream ID, tracks, and media format. While the call runs, SignalWire sends media messages with a track and base64 payload, and dtmf messages with a digit and duration. When your code stops the stream or the call ends, SignalWire sends stop and closes the WebSocket." />
+Sending audio back needs a bidirectional stream. A one-way stream gives your server a copy of the
+call's audio while the call carries on as normal, and anything your server sends is ignored. A
+bidirectional stream connects the call to your server as if the server were the other party: the
+caller hears what your server sends, and the call stays connected to your server until your server
+closes the connection or the call ends.
 
-</llms-ignore>
-
-<llms-only>
-
-```mermaid
-sequenceDiagram
-    participant App as Your code
-    participant SW as SignalWire
-    participant Srv as Your server
-
-    App->>SW: stream: wss:// URL, track, codec
-    SW->>Srv: WebSocket opens
-    SW->>Srv: connected
-    SW->>Srv: start: streamSid, tracks, mediaFormat
-    loop While the call runs
-        SW->>Srv: media: track, base64 payload
-        SW->>Srv: dtmf: digit, duration
-    end
-    App->>SW: stop_stream, or the call ends
-    SW->>Srv: stop
-    Note over SW,Srv: WebSocket closes
-```
-
-</llms-only>
-
-Every stream is one of two types. A one-way stream sends a copy of the call's audio while the call
-carries on as normal; use it for recording, transcription, and analytics. A bidirectional stream
-connects the call to your server as if the server were the other party, so the caller hears what
-your server sends back; use it for your own speech pipeline or a third-party voice agent.
-
-| | One-way stream | Bidirectional stream |
-|---|---|---|
-| Your server receives | A copy of the tracks you choose | The caller's audio, on the `inbound` track |
-| Your server sends | Nothing; anything sent is ignored | Audio, marks, `clear`, and key presses |
-| Start it with | SWML `stream`, Relay `call.stream()`, or the REST `calling.stream` command | SWML `connect`, or Relay `call.connect()`, with a stream as the destination |
-| It ends when | You stop it, or the call ends | Your server closes the connection, or the call ends |
-
-A call can run several one-way streams at once, each with its own `control_id` and URL. Two
-streams on one call can't share a `control_id`.
+SignalWire sends the same messages whichever approach starts the stream, so one server works with
+all of them. A call can run several one-way streams at once, each with its
+own `control_id`.
 
 ## Run a WebSocket server
 
