@@ -7,6 +7,7 @@ max-toc-depth: 3
 
 [make-and-receive-calls]: /docs/platform/voice/make-and-receive-calls
 [prepare-calls]: /docs/platform/voice/make-and-receive-calls#prepare-for-your-first-call
+[answer-swml]: /docs/platform/voice/make-and-receive-calls#answer-a-call-via-swml
 [place-relay]: /docs/platform/voice/make-and-receive-calls#place-a-call-via-websocket-relay
 [caller-id]: /docs/platform/voice/how-to-set-caller-id-or-cnam
 [trial-mode]: /docs/platform/trial-mode
@@ -34,9 +35,9 @@ Each approach starts and stops streams in its own way. All of them stream to the
 WebSocket server, so the server code on this page works with every approach. Follow the section for
 your app's approach:
 
-- [SWML][swml-intro]: add `stream` to your call document and stop it with `stop_stream`, or
-  `connect` the call to your server for a bidirectional stream. Optionally send stream events to a
-  webhook.
+- [SWML][swml-intro]: answer calls to your number with a document your server serves. Add `stream`
+  for a one-way stream, or `connect` the call to your server for a bidirectional stream. Optionally
+  send stream events to a webhook.
 - [WebSocket (Relay)][relay-guide]: start and stop a stream from code that holds a connection to
   the call. Stream events arrive in your code, so no webhook is needed.
 - [REST](#stream-a-call-already-in-progress-via-rest): start and stop a one-way stream by call ID
@@ -49,10 +50,9 @@ values ready:
 
 - Your Space URL, such as `<YOUR_SPACE>.signalwire.com`.
 - Your Project ID and an API token with the **Voice** permission.
-- A phone number in your Space, or a [verified caller ID][caller-id].
-- A phone you can answer and speak into.
-- A machine that can run a small WebSocket server, and a tunnel such as
-  [ngrok](https://ngrok.com/) that gives it a public URL.
+- A phone number in your Space, and a phone you can call it from and answer.
+- A machine that can run a small server, and a tunnel such as [ngrok](https://ngrok.com/) that
+  gives it a public URL.
 
 <Warning title="Stream URLs must use wss://">
 SignalWire connects to your server over a secure WebSocket only, and rejects a plain `ws://` URL.
@@ -60,10 +60,10 @@ During development, run the server locally and put a TLS tunnel in front of it, 
 [Run a WebSocket server](#run-a-websocket-server) shows.
 </Warning>
 
-<Warning title="Trial projects only call verified numbers">
-A [trial project][trial-mode] only places calls to numbers you've purchased or verified, and
-can't call internationally. [Prepare for your first call][prepare-calls] shows how to verify the
-phone you'll test with.
+<Warning title="Trial projects only call and receive calls from verified numbers">
+A [trial project][trial-mode] only places calls to and receives calls from numbers you've
+purchased or verified, and can't call internationally. [Prepare for your first call][prepare-calls]
+shows how to verify the phone you'll test with.
 </Warning>
 
 Replace these values in the samples you run:
@@ -73,10 +73,12 @@ Replace these values in the samples you run:
 | `<YOUR_SPACE>` | Your Space's subdomain in `<YOUR_SPACE>.signalwire.com` |
 | `<YOUR_PROJECT_ID>` | Your Project ID |
 | `<YOUR_API_TOKEN>` | Your API token with the Voice permission, used only in server code |
-| `<YOUR_CALLER_ID>` | Your SignalWire phone number, or a [verified caller ID][caller-id], in E.164 format |
-| `<YOUR_DESTINATION>` | The phone you'll answer, in E.164 format |
-| `<YOUR_AUDIO_STREAM_URL>` | The public `wss://` URL of your WebSocket server |
-| `<YOUR_CALL_ID>` | The `id` of a live call, when you start a stream over REST |
+| `<YOUR_PUBLIC_HOST>` | The public hostname of your server's tunnel |
+| `<YOUR_AUDIO_STREAM_URL>` | Your server's stream URL, `wss://<YOUR_PUBLIC_HOST>/stream` |
+| `<YOUR_BASIC_AUTH_PASSWORD>` | A password you choose for the SWML your server serves |
+| `<YOUR_CALLER_ID>` | Your SignalWire phone number, or a [verified caller ID][caller-id], in E.164 format, when Relay places the call |
+| `<YOUR_DESTINATION>` | The phone you'll answer, in E.164 format, when Relay places the call |
+| `<YOUR_CALL_ID>` | The ID of a live call, when you start a stream over REST |
 
 ## How call streaming works
 
@@ -102,37 +104,40 @@ own `control_id`.
 
 ## Run a WebSocket server
 
-Every stream in this guide connects to a server you run. Start with one that prints what arrives,
-so you can see a stream working before you write any processing code.
+Every stream in this guide connects to a server you run, at the `/stream` path. Start with one that
+prints what arrives, so you can see a stream working before you write any processing code.
 
 <Steps>
 
 <Step title="Run the stream server" id="run-the-stream-server">
 
-This server prints the stream's format when it starts, then a line for each second of audio it
-receives on each track.
+This server prints the call's ID and the stream's format when the stream starts, then a line for
+each second of audio it receives on each track.
 
 <CodeBlocks>
-<CodeBlock title="Python — websockets">
+<CodeBlock title="Python — FastAPI">
 ```python
-# Install: python -m pip install websockets
+# Install: python -m pip install fastapi "uvicorn[standard]"
 # Save as stream_server.py and run: python stream_server.py
-import asyncio
 import json
 
-from websockets.asyncio.server import serve
+import uvicorn
+from fastapi import FastAPI, WebSocket
 
+app = FastAPI()
 FRAMES_PER_SECOND = 50  # each media message carries 20 ms of audio
 
 
-async def handle(websocket):
+@app.websocket("/stream")
+async def stream(websocket: WebSocket):
+    await websocket.accept()
     frames = {}
-    async for message in websocket:
+    async for message in websocket.iter_text():
         event = json.loads(message)
         if event["event"] == "start":
             start = event["start"]
             media_format = start["mediaFormat"]
-            print(f"Stream {start['streamSid']} started: tracks {start['tracks']}, "
+            print(f"Stream started for call {start['callSid']}: tracks {start['tracks']}, "
                   f"{media_format['encoding']} at {media_format['sampleRate']} Hz")
         elif event["event"] == "media":
             track = event["media"]["track"]
@@ -143,13 +148,7 @@ async def handle(websocket):
             print("Stream stopped")
 
 
-async def main():
-    async with serve(handle, "0.0.0.0", 8080):
-        print("Listening on port 8080")
-        await asyncio.get_running_loop().create_future()
-
-
-asyncio.run(main())
+uvicorn.run(app, host="0.0.0.0", port=8080)
 ```
 </CodeBlock>
 <CodeBlock title="JavaScript — ws">
@@ -160,17 +159,17 @@ import { WebSocketServer } from "ws";
 
 const FRAMES_PER_SECOND = 50; // each media message carries 20 ms of audio
 
-const server = new WebSocketServer({ port: 8080 });
+const streams = new WebSocketServer({ port: 8080, path: "/stream" });
 console.log("Listening on port 8080");
 
-server.on("connection", (socket) => {
+streams.on("connection", (socket) => {
   const frames = new Map();
 
   socket.on("message", (data) => {
     const event = JSON.parse(data.toString());
     if (event.event === "start") {
-      const { streamSid, tracks, mediaFormat } = event.start;
-      console.log(`Stream ${streamSid} started: tracks ${tracks}, ` +
+      const { callSid, tracks, mediaFormat } = event.start;
+      console.log(`Stream started for call ${callSid}: tracks ${tracks}, ` +
         `${mediaFormat.encoding} at ${mediaFormat.sampleRate} Hz`);
     } else if (event.event === "media") {
       const track = event.media.track;
@@ -190,7 +189,7 @@ server.on("connection", (socket) => {
 
 </Step>
 
-<Step title="Give the server a public wss:// URL" id="give-the-server-a-public-wss-url">
+<Step title="Give the server a public URL" id="give-the-server-a-public-url">
 
 In a second terminal, put a tunnel in front of port `8080`:
 
@@ -198,8 +197,8 @@ In a second terminal, put a tunnel in front of port `8080`:
 ngrok http 8080
 ```
 
-ngrok prints an `https://` **Forwarding** URL. Replace `https://` with `wss://` to get your
-`<YOUR_AUDIO_STREAM_URL>`, such as `wss://example.ngrok-free.app`. Keep the server and the tunnel
+ngrok prints an `https://` **Forwarding** URL. Its hostname is your `<YOUR_PUBLIC_HOST>`, and your
+`<YOUR_AUDIO_STREAM_URL>` is `wss://<YOUR_PUBLIC_HOST>/stream`. Keep the server and the tunnel
 running while you test; a new tunnel usually means a new hostname.
 
 </Step>
@@ -214,25 +213,29 @@ directions before you plug in a real speech pipeline. Run it in place of the str
 same port and tunnel, when you reach a "Talk back" section.
 
 <CodeBlocks>
-<CodeBlock title="Python — websockets">
+<CodeBlock title="Python — FastAPI">
 ```python
-# Install: python -m pip install websockets
+# Install: python -m pip install fastapi "uvicorn[standard]"
 # Save as echo_server.py and run: python echo_server.py
-import asyncio
 import json
 
-from websockets.asyncio.server import serve
+import uvicorn
+from fastapi import FastAPI, WebSocket
+
+app = FastAPI()
 
 
-async def handle(websocket):
+@app.websocket("/stream")
+async def stream(websocket: WebSocket):
+    await websocket.accept()
     stream_sid = None
-    async for message in websocket:
+    async for message in websocket.iter_text():
         event = json.loads(message)
         if event["event"] == "start":
             stream_sid = event["start"]["streamSid"]
             print(f"Echoing stream {stream_sid}")
         elif event["event"] == "media":
-            await websocket.send(json.dumps({
+            await websocket.send_text(json.dumps({
                 "event": "media",
                 "streamSid": stream_sid,
                 "media": {"payload": event["media"]["payload"]},
@@ -241,13 +244,7 @@ async def handle(websocket):
             print("Stream stopped")
 
 
-async def main():
-    async with serve(handle, "0.0.0.0", 8080):
-        print("Listening on port 8080")
-        await asyncio.get_running_loop().create_future()
-
-
-asyncio.run(main())
+uvicorn.run(app, host="0.0.0.0", port=8080)
 ```
 </CodeBlock>
 <CodeBlock title="JavaScript — ws">
@@ -256,10 +253,10 @@ asyncio.run(main())
 // Save as echo-server.mjs and run: node echo-server.mjs
 import { WebSocketServer } from "ws";
 
-const server = new WebSocketServer({ port: 8080 });
+const streams = new WebSocketServer({ port: 8080, path: "/stream" });
 console.log("Listening on port 8080");
 
-server.on("connection", (socket) => {
+streams.on("connection", (socket) => {
   let streamSid;
 
   socket.on("message", (data) => {
@@ -284,142 +281,183 @@ server.on("connection", (socket) => {
 
 ## Stream call audio via SWML
 
-SWML offers two ways to stream. [`stream`][swml-stream] starts a one-way stream and moves on to the
-next method at once, so the rest of the document runs while audio streams.
-[`connect`][swml-connect] with `to` set to `stream:<URL>` bridges the call to your server for a
-bidirectional stream, and the document waits there until the stream ends.
+SWML has two ways to stream a call, one for each type of stream:
+
+- To record, transcribe, or analyze a call while it carries on as normal, use
+  [`stream`][swml-stream]. It starts a one-way stream and moves on to the next method at once, so
+  the rest of the document runs while audio streams.
+- To put your own voice agent or speech pipeline on the call, use [`connect`][swml-connect] with
+  `to` set to `stream:<URL>`. It bridges the call to your server for a bidirectional stream, and
+  the document waits there until the stream ends.
 
 ### Stream a call via SWML
 
-Send a REST `dial` request with a SWML document that starts a stream, then keeps the call open
-while you talk. SignalWire runs the document when you answer.
+When someone calls your number, SignalWire fetches the call's SWML from your server and runs it.
+Your server can serve that document and accept the stream on the same port, so the one tunnel from
+[Run a WebSocket server](#run-a-websocket-server) covers both.
 
 <Steps>
 
-<Step title="Place the call" id="place-the-call-via-swml">
+<Step title="Serve the SWML from your server" id="serve-the-swml-from-your-server">
+
+Stop the stream server and run this one in its place. It's the same stream server, plus a SWML
+document at its root URL that streams the call, keeps it open for twenty seconds while you talk,
+and says goodbye. The document is served only to requests that carry the username `signalwire`
+and the password you set.
 
 <CodeBlocks>
-<CodeBlock title="Python — REST client">
+<CodeBlock title="Python — SWML builder">
 ```python
 # Install: python -m pip install signalwire-sdk==3.4.1
-# Save as stream_call.py and run: python stream_call.py
+# Save as stream_app.py and run: python stream_app.py
+import json
+
+import uvicorn
+from fastapi import FastAPI, WebSocket
 from signalwire import SWMLBuilder, SWMLService
-from signalwire.rest import RestClient
 
-client = RestClient(
-    project="<YOUR_PROJECT_ID>",
-    token="<YOUR_API_TOKEN>",
-    host="<YOUR_SPACE>.signalwire.com",
+service = SWMLService(
+    name="stream-call",
+    basic_auth=("signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"),
+    schema_validation=False,
 )
+swml = SWMLBuilder(service)
+service.add_verb("stream", {"url": "<YOUR_AUDIO_STREAM_URL>"})
+swml.say("Your call is being streamed. Say a few words.").sleep(20000).say("Goodbye.")
 
-swml_builder = SWMLBuilder(SWMLService(name="stream-call", schema_validation=False))
-swml_builder.service.add_verb("stream", {"url": "<YOUR_AUDIO_STREAM_URL>"})
-swml = (
-    swml_builder
-    .say("Your call is being streamed. Say a few words.")
-    .sleep(20000)
-    .say("Goodbye.")
-    .build()
-)
+app = FastAPI()
+# SignalWire fetches the call's SWML from the server's root URL.
+app.include_router(service.as_router())
 
-call = client.calling.dial(
-    from_="<YOUR_CALLER_ID>",
-    to="<YOUR_DESTINATION>",
-    swml=swml,
-)
-print(call["id"])
+FRAMES_PER_SECOND = 50  # each media message carries 20 ms of audio
+
+
+# SignalWire streams the call's audio to /stream.
+@app.websocket("/stream")
+async def stream(websocket: WebSocket):
+    await websocket.accept()
+    frames = {}
+    async for message in websocket.iter_text():
+        event = json.loads(message)
+        if event["event"] == "start":
+            start = event["start"]
+            media_format = start["mediaFormat"]
+            print(f"Stream started for call {start['callSid']}: tracks {start['tracks']}, "
+                  f"{media_format['encoding']} at {media_format['sampleRate']} Hz")
+        elif event["event"] == "media":
+            track = event["media"]["track"]
+            frames[track] = frames.get(track, 0) + 1
+            if frames[track] % FRAMES_PER_SECOND == 0:
+                print(f"{track}: {frames[track] // FRAMES_PER_SECOND} s of audio")
+        elif event["event"] == "stop":
+            print("Stream stopped")
+
+
+uvicorn.run(app, host="0.0.0.0", port=8080)
 ```
 </CodeBlock>
-<CodeBlock title="TypeScript — REST client">
-```typescript
-// Install: npm install @signalwire/sdk@2.0.5
-// This sample also runs as JavaScript: save as stream-call.mjs,
-// then run: node stream-call.mjs
-import { RestClient, SwmlBuilder } from "@signalwire/sdk";
+<CodeBlock title="JavaScript — SWML builder">
+```javascript
+// Install: npm install @signalwire/sdk@2.0.5 @hono/node-server ws
+// Save as stream-app.mjs and run: node stream-app.mjs
+import { serve } from "@hono/node-server";
+import { SWMLService } from "@signalwire/sdk";
+import { WebSocketServer } from "ws";
 
-const client = new RestClient({
-  project: "<YOUR_PROJECT_ID>",
-  token: "<YOUR_API_TOKEN>",
-  host: "<YOUR_SPACE>.signalwire.com",
+const service = new SWMLService({
+  name: "stream-call",
+  basicAuth: ["signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"],
 });
+const swml = service.getBuilder();
+swml.addVerb("stream", { url: "<YOUR_AUDIO_STREAM_URL>" });
+swml.say("Your call is being streamed. Say a few words.").sleep(20000).say("Goodbye.");
 
-const swmlBuilder = new SwmlBuilder();
-swmlBuilder.addVerb("stream", { url: "<YOUR_AUDIO_STREAM_URL>" });
-const swml = swmlBuilder
-  .say("Your call is being streamed. Say a few words.")
-  .sleep(20000)
-  .say("Goodbye.")
-  .build();
+// SignalWire fetches the call's SWML from the server's root URL.
+const server = serve({ fetch: service.getApp().fetch, port: 8080 });
+console.log("Listening on port 8080");
 
-const call = await client.calling.dial({
-  from: "<YOUR_CALLER_ID>",
-  to: "<YOUR_DESTINATION>",
-  swml,
-});
-console.log(call.id);
-```
-</CodeBlock>
-<CodeBlock title="cURL — Calling API">
-```bash
-curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
-  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "command": "dial",
-    "params": {
-      "from": "<YOUR_CALLER_ID>",
-      "to": "<YOUR_DESTINATION>",
-      "swml": {
-        "version": "1.0.0",
-        "sections": {
-          "main": [
-            { "stream": { "url": "<YOUR_AUDIO_STREAM_URL>" } },
-            { "play": { "url": "say:Your call is being streamed. Say a few words." } },
-            { "sleep": 20000 },
-            { "play": { "url": "say:Goodbye." } }
-          ]
-        }
+const FRAMES_PER_SECOND = 50; // each media message carries 20 ms of audio
+
+// SignalWire streams the call's audio to /stream.
+const streams = new WebSocketServer({ server, path: "/stream" });
+
+streams.on("connection", (socket) => {
+  const frames = new Map();
+
+  socket.on("message", (data) => {
+    const event = JSON.parse(data.toString());
+    if (event.event === "start") {
+      const { callSid, tracks, mediaFormat } = event.start;
+      console.log(`Stream started for call ${callSid}: tracks ${tracks}, ` +
+        `${mediaFormat.encoding} at ${mediaFormat.sampleRate} Hz`);
+    } else if (event.event === "media") {
+      const track = event.media.track;
+      const count = (frames.get(track) ?? 0) + 1;
+      frames.set(track, count);
+      if (count % FRAMES_PER_SECOND === 0) {
+        console.log(`${track}: ${count / FRAMES_PER_SECOND} s of audio`);
       }
+    } else if (event.event === "stop") {
+      console.log("Stream stopped");
     }
-  }'
+  });
+});
 ```
 </CodeBlock>
 </CodeBlocks>
 
-The cURL example sends the `dial` command to [Call commands][call-commands]. The REST API returns a
-call `id` and status `queued`, which confirms that SignalWire accepted the request. Save the `id`
-to identify this call.
+The [Server SDKs][server-sdks] build the document with the SWML builder and serve it through
+`SWMLService`, which your app mounts next to its `/stream` route. Check that the document is
+reachable through the tunnel:
 
-<EndpointResponseSnippet endpoint="POST /api/calling/calls" />
+```bash
+curl -u "signalwire:<YOUR_BASIC_AUTH_PASSWORD>" "https://<YOUR_PUBLIC_HOST>/"
+```
+
+The response is the SWML document, starting with `{"version": "1.0.0"`. A `401` means the password
+doesn't match the one in your server.
 
 </Step>
 
-<Step title="Answer and speak" id="answer-and-speak-via-swml">
+<Step title="Point your phone number at the server" id="point-your-phone-number-at-the-server">
 
-Answer your phone and say a few words. The server prints a `started` line as you answer, then a line
-for each second of audio:
+Create a SWML Script that fetches the document from your server:
+
+1. Open **My Resources**, select **+ Add**, then **Script**, then **SWML Script**.
+2. Name it **Stream call** and leave **Used For** set to **Calling**.
+3. Under **Handle Calls Using**, choose **External URL** and enter
+   `https://signalwire:<YOUR_BASIC_AUTH_PASSWORD>@<YOUR_PUBLIC_HOST>/` in **Primary Script URL**.
+4. Select **Create**.
+
+Then assign the script to your phone number:
+
+<Markdown src="/snippets/common/dashboard/_assign-resource-to-number.mdx" />
+
+To do both in code, see [Answer a call via SWML][answer-swml].
+
+</Step>
+
+<Step title="Call your number and speak" id="call-your-number-and-speak-via-swml">
+
+Call your SignalWire number from your phone and say a few words. The server prints a `started`
+line as the call connects, then a line for each second of audio:
 
 ```text
-Stream 7d56cc11-536d-4a45-b4fb-ed3d55be843b started: tracks ['inbound'], audio/x-mulaw at 8000 Hz
+Stream started for call 76ac3c36-56da-4a3e-a0d6-b5f8df6da9ad: tracks ['inbound'], audio/x-mulaw at 8000 Hz
 inbound: 1 s of audio
 inbound: 2 s of audio
 ```
 
 After twenty seconds you hear "Goodbye.", the call ends, and the server prints `Stream stopped`.
 The stream carries only the `inbound` track, your voice, until you
-[choose other tracks](#stream-options-track-and-custom-parameters).
-
-- **The call plays normally but the server prints nothing.** SignalWire couldn't reach your URL,
-  and the call carried on without a stream. Check that the URL begins with `wss://`, and that the
-  tunnel is running and points at port `8080`.
-- **The phone never rings.** Check that `<YOUR_CALLER_ID>` is a number in your Space or a verified
-  caller ID, and that a trial project has verified the destination.
+[choose other tracks](#stream-options-track-and-custom-parameters). If it doesn't work, see
+[Troubleshoot call streaming](#troubleshoot-call-streaming).
 
 </Step>
 
 </Steps>
 
-The same document in YAML, for a hosted SWML Script or your own SWML server:
+The same document in YAML, to paste into a hosted SWML Script instead:
 
 ```yaml
 version: 1.0.0
@@ -436,80 +474,32 @@ sections:
 
 ### Talk back on a bidirectional stream via SWML
 
-Run the [echo server](#run-an-echo-server-for-bidirectional-streams) instead of the stream server.
-This document plays an announcement, connects the call to your server, and hangs up once your
-server closes the connection. Set `to` to your `wss://` URL with a `stream:` prefix. The stream's
-settings, such as `codec`, `realtime`, and `name`, sit alongside `to`.
+This document plays an announcement, connects the call to your server's `/stream` route, and hangs
+up once your server closes the connection. In your SWML server, replace the document with this one,
+and the `/stream` handler with the [echo server's](#run-an-echo-server-for-bidirectional-streams).
+Set `to` to your stream URL with a `stream:` prefix. The stream's settings, such as `codec`,
+`realtime`, and `name`, sit alongside `to`.
 
 <CodeBlocks>
-<CodeBlock title="Python — SWML builder">
-```python
-# Install: python -m pip install signalwire-sdk==3.4.1
-# Save as echo_call.py and run: python echo_call.py
-from signalwire import SWMLBuilder, SWMLService
-from signalwire.rest import RestClient
 
-client = RestClient(
-    project="<YOUR_PROJECT_ID>",
-    token="<YOUR_API_TOKEN>",
-    host="<YOUR_SPACE>.signalwire.com",
-)
-
-swml = (
-    SWMLBuilder(SWMLService(name="echo-call", schema_validation=False))
-    .say("You are connected to the echo server. Speak, and you will hear yourself.")
-    .connect(
-        to="stream:<YOUR_AUDIO_STREAM_URL>",
-        codec="PCMU",
-        realtime=True,
-        name="echo",
-    )
+```python title="Python — SWML builder"
+swml = SWMLBuilder(service)
+(
+    swml.say("You are connected to the echo server. Speak, and you will hear yourself.")
+    .connect(to="stream:<YOUR_AUDIO_STREAM_URL>", codec="PCMU", realtime=True, name="echo")
     .hangup()
-    .build()
 )
-
-call = client.calling.dial(
-    from_="<YOUR_CALLER_ID>",
-    to="<YOUR_DESTINATION>",
-    swml=swml,
-)
-print(call["id"])
 ```
-</CodeBlock>
-<CodeBlock title="TypeScript — SWML builder">
-```typescript
-// Install: npm install @signalwire/sdk@2.0.5
-// This sample also runs as JavaScript: save as echo-call.mjs,
-// then run: node echo-call.mjs
-import { RestClient, SwmlBuilder } from "@signalwire/sdk";
 
-const client = new RestClient({
-  project: "<YOUR_PROJECT_ID>",
-  token: "<YOUR_API_TOKEN>",
-  host: "<YOUR_SPACE>.signalwire.com",
-});
-
-const swml = new SwmlBuilder()
+```javascript title="JavaScript — SWML builder"
+const swml = service.getBuilder();
+swml
   .say("You are connected to the echo server. Speak, and you will hear yourself.")
-  .connect({
-    to: "stream:<YOUR_AUDIO_STREAM_URL>",
-    codec: "PCMU",
-    realtime: true,
-    name: "echo",
-  })
-  .hangup()
-  .build();
-
-const call = await client.calling.dial({
-  from: "<YOUR_CALLER_ID>",
-  to: "<YOUR_DESTINATION>",
-  swml,
-});
-console.log(call.id);
+  .connect({ to: "stream:<YOUR_AUDIO_STREAM_URL>", codec: "PCMU", realtime: true, name: "echo" })
+  .hangup();
 ```
-</CodeBlock>
-<CodeBlock title="YAML">
-```yaml
+
+```yaml title="YAML"
 version: 1.0.0
 sections:
   main:
@@ -522,9 +512,8 @@ sections:
         name: echo
     - hangup: {}
 ```
-</CodeBlock>
-<CodeBlock title="JSON">
-```json
+
+```json title="JSON"
 {
   "version": "1.0.0",
   "sections": {
@@ -543,43 +532,38 @@ sections:
   }
 }
 ```
-</CodeBlock>
+
 </CodeBlocks>
 
-Answer the call and speak. You hear the announcement, then your own voice echoed back a moment
-after you say each word. Hang up to end the call; the server prints `Stream stopped`. If you hear
-silence, check that the document uses `connect` rather than `stream`, since a one-way stream
-ignores anything your server sends.
+Call your number and speak. You hear the announcement, then your own voice echoed back a moment
+after you say each word. Hang up to end the call; the server prints `Stream stopped`.
 
-A stream can't be the `to` of a `dial`, so an outbound bidirectional stream always dials the person
-first and runs `connect` when they answer. When your server closes the connection, `connect`
-finishes and the document continues with the next method, here `hangup`. Put a `play` or any other
-method there to keep the call going instead.
-
+When your server closes the connection, `connect` finishes and the document continues with the
+next method, here `hangup`. Put a `play` or any other method there to keep the call going instead.
 To stream a whole conference in both directions, give [`join_conference`][swml-join-conference] a
 `stream` object; its reference lists the settings it accepts.
 
 ### Stop a stream via SWML
 
 A one-way stream runs until the call ends unless you stop it. Give `stream` a `control_id`, and
-run [`stop_stream`][swml-stop-stream] with the same value when your server has what it needs. This
-version of the [Stream a call via SWML](#stream-a-call-via-swml) document stops the stream after
-twenty seconds and keeps the call open:
+run [`stop_stream`][swml-stop-stream] with the same value when your server has what it needs. In
+your SWML server, replace the document lines with these to stop the stream after twenty seconds and
+keep the call open:
 
 <CodeBlocks>
 
 ```python title="Python — SWML builder" {1,3}
-swml_builder.service.add_verb("stream", {"url": "<YOUR_AUDIO_STREAM_URL>", "control_id": "my-stream"})
-swml_builder.say("Your call is being streamed. Say a few words.").sleep(20000)
-swml_builder.service.add_verb("stop_stream", {"control_id": "my-stream"})
-swml = swml_builder.say("The stream has stopped. Goodbye.").build()
+service.add_verb("stream", {"url": "<YOUR_AUDIO_STREAM_URL>", "control_id": "my-stream"})
+swml.say("Your call is being streamed. Say a few words.").sleep(20000)
+service.add_verb("stop_stream", {"control_id": "my-stream"})
+swml.say("The stream has stopped. Goodbye.")
 ```
 
-```typescript title="TypeScript — SWML builder" {1,3}
-swmlBuilder.addVerb("stream", { url: "<YOUR_AUDIO_STREAM_URL>", control_id: "my-stream" });
-swmlBuilder.say("Your call is being streamed. Say a few words.").sleep(20000);
-swmlBuilder.addVerb("stop_stream", { control_id: "my-stream" });
-const swml = swmlBuilder.say("The stream has stopped. Goodbye.").build();
+```javascript title="JavaScript — SWML builder" {1,3}
+swml.addVerb("stream", { url: "<YOUR_AUDIO_STREAM_URL>", control_id: "my-stream" });
+swml.say("Your call is being streamed. Say a few words.").sleep(20000);
+swml.addVerb("stop_stream", { control_id: "my-stream" });
+swml.say("The stream has stopped. Goodbye.");
 ```
 
 ```yaml title="YAML" {6,10-11}
@@ -769,10 +753,8 @@ try {
 
 Answer your phone and say a few words. The stream server prints a `started` line, then a line for
 each second of `inbound` audio. After twenty seconds you hear "Goodbye.", the call ends, and the
-server prints `Stream stopped`.
-
-If the call plays normally but the server prints nothing, SignalWire couldn't reach your URL.
-Check that it begins with `wss://` and that the tunnel points at port `8080`.
+server prints `Stream stopped`. If it doesn't work, see
+[Troubleshoot call streaming](#troubleshoot-call-streaming).
 
 </Step>
 
@@ -897,7 +879,7 @@ try {
 </CodeBlocks>
 
 Answer and speak to hear your voice echoed back. The program prints `connected` while audio flows,
-then `disconnected` when you hang up. A `failed` state means SignalWire couldn't reach your URL.
+then `disconnected` when you hang up, or `failed` if SignalWire couldn't reach your URL.
 
 The call stays bridged to your server until your server closes the connection or the call ends.
 This program hangs up when the bridge ends; to keep the call going instead, play audio or connect
@@ -974,8 +956,8 @@ accepted the connection.
 When a process that doesn't hold the call needs to stream it, send the `calling.stream` command
 with the answered call's ID, a `control_id`, and the stream's `url`. The call ID is the `id` from
 the `dial` response, or the `call_id` delivered to your SWML endpoint or status webhook. To try it,
-start the [Stream a call via SWML](#stream-a-call-via-swml) program, and run this one with the `id`
-it prints while the call is up. The [Server SDKs][server-sdks] wrap both commands; this program
+make a call from the [first run](#stream-a-call-via-swml), and while it's up, run this program with
+the call ID your stream server printed. The [Server SDKs][server-sdks] wrap both commands; this program
 streams the call for ten seconds, then sends `calling.stream.stop` with the same `control_id`:
 
 <CodeBlocks>
@@ -1045,8 +1027,9 @@ closes the WebSocket.
 
 The stream server prints what arrives; a real app decodes it. This section covers the messages in
 full, the stream settings that shape the audio, and two servers you can swap in for the stream
-server: one saves the audio and one processes it as it arrives. Both work with the call programs
-above unchanged.
+server: one saves the audio and one processes it as it arrives. Both work with the calls above
+unchanged. If your server also serves your SWML, keep its SWML lines and replace only the `/stream`
+handler.
 
 ### Messages your server receives
 
@@ -1166,25 +1149,29 @@ Two more settings connect a WebSocket to the rest of your application:
 
 This server writes each track to its own file as audio arrives, so memory use stays flat on a long
 call. It closes the files when the stream stops or the connection drops. Run it in place of the
-stream server, then rerun your Stream a call program. Add `track: both_tracks` to the stream to get
+stream server, then make the call from your first run again. Add `track: both_tracks` to the stream to get
 a second file with what the caller hears.
 
 <CodeBlocks>
-<CodeBlock title="Python — websockets">
+<CodeBlock title="Python — FastAPI">
 ```python
-# Install: python -m pip install websockets
+# Install: python -m pip install fastapi "uvicorn[standard]"
 # Save as save_audio.py and run: python save_audio.py
-import asyncio
 import base64
 import json
 
-from websockets.asyncio.server import serve
+import uvicorn
+from fastapi import FastAPI, WebSocket
+
+app = FastAPI()
 
 
-async def handle(websocket):
+@app.websocket("/stream")
+async def stream(websocket: WebSocket):
+    await websocket.accept()
     files = {}
     try:
-        async for message in websocket:
+        async for message in websocket.iter_text():
             event = json.loads(message)
             if event["event"] == "start":
                 stream_sid = event["start"]["streamSid"]
@@ -1203,13 +1190,7 @@ async def handle(websocket):
             print(f"Saved {file.name}")
 
 
-async def main():
-    async with serve(handle, "0.0.0.0", 8080):
-        print("Listening on port 8080")
-        await asyncio.get_running_loop().create_future()
-
-
-asyncio.run(main())
+uvicorn.run(app, host="0.0.0.0", port=8080)
 ```
 </CodeBlock>
 <CodeBlock title="JavaScript — ws">
@@ -1219,7 +1200,7 @@ asyncio.run(main())
 import { createWriteStream } from "node:fs";
 import { WebSocketServer } from "ws";
 
-const server = new WebSocketServer({ port: 8080 });
+const server = new WebSocketServer({ port: 8080, path: "/stream" });
 console.log("Listening on port 8080");
 
 server.on("connection", (socket) => {
@@ -1272,16 +1253,18 @@ This server cuts one-second windows and measures each one's loudness. Replace `a
 processing, such as a request to a speech-to-text API.
 
 <CodeBlocks>
-<CodeBlock title="Python — websockets">
+<CodeBlock title="Python — FastAPI">
 ```python
-# Install: python -m pip install websockets
+# Install: python -m pip install fastapi "uvicorn[standard]"
 # Save as process_audio.py and run: python process_audio.py
-import asyncio
 import base64
 import json
 import math
 
-from websockets.asyncio.server import serve
+import uvicorn
+from fastapi import FastAPI, WebSocket
+
+app = FastAPI()
 
 
 def mulaw_to_linear(value):
@@ -1299,10 +1282,12 @@ def analyze(track, window):
     print(f"{track}: {level:.0f} dBFS")
 
 
-async def handle(websocket):
+@app.websocket("/stream")
+async def stream(websocket: WebSocket):
+    await websocket.accept()
     buffers = {}
     window_bytes = 8000
-    async for message in websocket:
+    async for message in websocket.iter_text():
         event = json.loads(message)
         if event["event"] == "start":
             window_bytes = event["start"]["mediaFormat"]["sampleRate"]
@@ -1316,13 +1301,7 @@ async def handle(websocket):
                 del buffer[:window_bytes]
 
 
-async def main():
-    async with serve(handle, "0.0.0.0", 8080):
-        print("Listening on port 8080")
-        await asyncio.get_running_loop().create_future()
-
-
-asyncio.run(main())
+uvicorn.run(app, host="0.0.0.0", port=8080)
 ```
 </CodeBlock>
 <CodeBlock title="JavaScript — ws">
@@ -1347,7 +1326,7 @@ function analyze(track, window) {
   console.log(`${track}: ${level.toFixed(0)} dBFS`);
 }
 
-const server = new WebSocketServer({ port: 8080 });
+const server = new WebSocketServer({ port: 8080, path: "/stream" });
 console.log("Listening on port 8080");
 
 server.on("connection", (socket) => {
@@ -1374,7 +1353,7 @@ server.on("connection", (socket) => {
 </CodeBlock>
 </CodeBlocks>
 
-Run it in place of the stream server, rerun your Stream a call program, and speak. The server prints
+Run it in place of the stream server, make the call from your first run again, and speak. The server prints
 a line per second for each track, in dBFS, and the number rises toward zero while that side talks.
 
 `analyze` runs inside the receive loop, which suits quick work like this. For slow work such as a
@@ -1478,18 +1457,19 @@ Convert your prompt to raw 8 kHz µ-law with no header first, for example with
 `ffmpeg -i prompt.mp3 -ar 8000 -ac 1 -f mulaw prompt.ulaw`, and save `prompt.ulaw` next to the server.
 
 <CodeBlocks>
-<CodeBlock title="Python — websockets">
+<CodeBlock title="Python — FastAPI">
 ```python
-# Install: python -m pip install websockets
+# Install: python -m pip install fastapi "uvicorn[standard]"
 # Save as play_audio.py next to prompt.ulaw and run: python play_audio.py
 import asyncio
 import base64
 import json
 
-from websockets.asyncio.server import serve
+import uvicorn
+from fastapi import FastAPI, WebSocket
 
+app = FastAPI()
 FRAME_BYTES = 160  # 20 ms of 8 kHz µ-law audio
-SAMPLE_RATE = 8000
 
 with open("prompt.ulaw", "rb") as prompt_file:
     PROMPT = prompt_file.read()
@@ -1498,26 +1478,28 @@ with open("prompt.ulaw", "rb") as prompt_file:
 async def play(websocket, stream_sid, audio):
     for offset in range(0, len(audio), FRAME_BYTES):
         frame = audio[offset:offset + FRAME_BYTES]
-        await websocket.send(json.dumps({
+        await websocket.send_text(json.dumps({
             "event": "media",
             "streamSid": stream_sid,
             "media": {"payload": base64.b64encode(frame).decode()},
         }))
         # Send one frame every 20 ms, the rate it plays.
-        await asyncio.sleep(len(frame) / SAMPLE_RATE)
+        await asyncio.sleep(0.02)
     # SignalWire sends this mark back once everything before it has played.
-    await websocket.send(json.dumps({
+    await websocket.send_text(json.dumps({
         "event": "mark",
         "streamSid": stream_sid,
         "mark": {"name": "prompt-done"},
     }))
 
 
-async def handle(websocket):
+@app.websocket("/stream")
+async def stream(websocket: WebSocket):
+    await websocket.accept()
     stream_sid = None
     player = None
     try:
-        async for message in websocket:
+        async for message in websocket.iter_text():
             event = json.loads(message)
             if event["event"] == "start":
                 stream_sid = event["start"]["streamSid"]
@@ -1525,24 +1507,19 @@ async def handle(websocket):
             elif event["event"] == "dtmf" and player:
                 # Any key skips the prompt: stop sending, then drop what is queued.
                 player.cancel()
-                await websocket.send(json.dumps({"event": "clear", "streamSid": stream_sid}))
+                await websocket.send_text(json.dumps({"event": "clear", "streamSid": stream_sid}))
                 print(f"Prompt skipped with {event['dtmf']['digit']}")
-                await websocket.close()
+                break
             elif event["event"] == "mark" and event["mark"]["name"] == "prompt-done":
                 print("Prompt finished")
-                await websocket.close()
+                break
     finally:
         if player:
             player.cancel()
+    await websocket.close()
 
 
-async def main():
-    async with serve(handle, "0.0.0.0", 8080):
-        print("Listening on port 8080")
-        await asyncio.get_running_loop().create_future()
-
-
-asyncio.run(main())
+uvicorn.run(app, host="0.0.0.0", port=8080)
 ```
 </CodeBlock>
 <CodeBlock title="JavaScript — ws">
@@ -1556,7 +1533,7 @@ const FRAME_BYTES = 160; // 20 ms of 8 kHz µ-law audio
 const FRAME_MS = 20;
 const PROMPT = readFileSync("prompt.ulaw");
 
-const server = new WebSocketServer({ port: 8080 });
+const server = new WebSocketServer({ port: 8080, path: "/stream" });
 console.log("Listening on port 8080");
 
 server.on("connection", (socket) => {
@@ -1601,7 +1578,28 @@ server.on("connection", (socket) => {
 </CodeBlock>
 </CodeBlocks>
 
-Run it in place of the echo server, then rerun your Talk back program. You hear the announcement,
+Run it in place of the echo server, then make your Talk back call again. You hear the announcement,
 then your prompt. Let it finish, or press a key to cut it short; either way the server prints the
-outcome and closes the connection, and the program hangs up. If the prompt plays as loud static,
-the file has a header or isn't 8 kHz µ-law.
+outcome and closes the connection, and the call hangs up.
+
+## Troubleshoot call streaming
+
+Find the symptom you see:
+
+- **The call plays normally, but your server prints nothing.** SignalWire couldn't reach your stream
+  URL, and the call carried on without a stream. Check that the URL begins with `wss://` and ends
+  with `/stream`, and that the tunnel is running and points at port `8080`. A Relay program reports
+  the same problem on a bidirectional stream as the `failed` connect state.
+- **You hear an error or silence when you call your number.** SignalWire couldn't fetch your SWML.
+  Rerun the `curl` check with the exact URL in the SWML Script, and confirm that the server and the
+  tunnel are still running. A `401` means the password in the URL doesn't match the server's.
+- **You hear your number's old behavior.** The number still points at another Resource. Open it
+  under **Phone Numbers** and check **Inbound Call Settings**.
+- **The phone never rings, or the call doesn't connect.** Check that `<YOUR_CALLER_ID>` is a number
+  in your Space or a verified caller ID. A trial project only calls and receives calls from verified
+  numbers.
+- **You hear silence on a bidirectional stream.** Check that the call uses `connect`, or a `stream`
+  device in Relay, rather than a one-way `stream`, which ignores anything your server sends.
+- **Your prompt plays as loud static.** The audio has a file header, or isn't in the stream's codec.
+  Convert it to raw 8 kHz µ-law, as [Play your own audio into the call](#play-your-own-audio-into-the-call)
+  shows.
