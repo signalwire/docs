@@ -36,6 +36,7 @@ export function VoiceWidget({
   groupBy: initialGroup = "provider",
   pageSize = DEFAULT_PAGE_SIZE,
   provider: lockedProvider,
+  excludeProviders,
   voiceIds,
   filters,
 }: VoiceWidgetProps) {
@@ -46,6 +47,9 @@ export function VoiceWidget({
   const voiceIdsKey = voiceIds && voiceIds.length
     ? voiceIds.map((s) => s.trim().toLowerCase()).filter(Boolean).sort().join("|")
     : "";
+  // Normalized provider denylist, keyed the same way as voiceIdsKey.
+  const excludeKey = excludeProviders?.map((s) => s.trim().toLowerCase()).filter(Boolean).sort().join("|") ?? "";
+  const excluded = useMemo(() => new Set(excludeKey ? excludeKey.split("|") : []), [excludeKey]);
   const idAllowlist = useMemo(
     () => (voiceIdsKey ? new Set(voiceIdsKey.split("|")) : null),
     [voiceIdsKey]
@@ -91,7 +95,7 @@ export function VoiceWidget({
     return () => { alive = false; };
   }, [catalogUrl, manifestUrl]);
 
-  // Static narrowing: the allowlist (voiceIds) and provider lock can't change at runtime, so apply
+  // Static narrowing: the allowlist (voiceIds), provider lock, and denylist can't change at runtime, so apply
   // them once here. Also drops no-preview voices (missing/errored clip) so every visible row is
   // auditionable.
   const baseRows = useMemo(() => {
@@ -103,8 +107,9 @@ export function VoiceWidget({
         idAllowlist.has(r.key.toLowerCase()) ||
         idAllowlist.has(modelKeyOf(r).toLowerCase()) ||
         idAllowlist.has(r.display_name.toLowerCase())) &&
-      (!lock || r.provider.toLowerCase() === lock || r.engine.toLowerCase() === lock));
-  }, [allRows, idAllowlist, lock]);
+      (!lock || r.provider.toLowerCase() === lock || r.engine.toLowerCase() === lock) &&
+      !excluded.has(r.provider.toLowerCase()) && !excluded.has(r.engine.toLowerCase()));
+  }, [allRows, idAllowlist, lock, excluded]);
 
   // Dropdown options derive from the narrowed set, so a provider-locked page lists only that
   // provider's languages.
