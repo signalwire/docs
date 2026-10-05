@@ -231,7 +231,7 @@ async def handle(websocket):
         if event["event"] == "start":
             stream_sid = event["start"]["streamSid"]
             print(f"Echoing stream {stream_sid}")
-        elif event["event"] == "media" and stream_sid:
+        elif event["event"] == "media":
             await websocket.send(json.dumps({
                 "event": "media",
                 "streamSid": stream_sid,
@@ -267,7 +267,7 @@ server.on("connection", (socket) => {
     if (event.event === "start") {
       streamSid = event.start.streamSid;
       console.log(`Echoing stream ${streamSid}`);
-    } else if (event.event === "media" && streamSid) {
+    } else if (event.event === "media") {
       socket.send(JSON.stringify({
         event: "media",
         streamSid,
@@ -1164,10 +1164,10 @@ Two more settings connect a WebSocket to the rest of your application:
 
 ### Save call audio to a file
 
-This server writes each track to its own WAV file as audio arrives, so memory use stays flat on a
-long call. It fills in the WAV header's sizes when the stream stops, or when the connection drops
-without a `stop` message. Run it in place of the stream server, then rerun your Stream a call
-program. Add `track: both_tracks` to the stream to get a second file with what the caller hears.
+This server writes each track to its own file as audio arrives, so memory use stays flat on a long
+call. It closes the files when the stream stops or the connection drops. Run it in place of the
+stream server, then rerun your Stream a call program. Add `track: both_tracks` to the stream to get
+a second file with what the caller hears.
 
 <CodeBlocks>
 <CodeBlock title="Python — websockets">
@@ -1177,36 +1177,19 @@ program. Add `track: both_tracks` to the stream to get a second file with what t
 import asyncio
 import base64
 import json
-import struct
 
 from websockets.asyncio.server import serve
-
-HEADER_BYTES = 46
-
-
-def wav_header(data_length, sample_rate):
-    # WAV header for 8-bit G.711 µ-law (format tag 7), one channel.
-    return struct.pack(
-        "<4sI4s4sIHHIIHHH4sI",
-        b"RIFF", 38 + data_length, b"WAVE",
-        b"fmt ", 18, 7, 1, sample_rate, sample_rate, 1, 8, 0,
-        b"data", data_length,
-    )
 
 
 async def handle(websocket):
     files = {}
-    sample_rate = 8000
     try:
         async for message in websocket:
             event = json.loads(message)
             if event["event"] == "start":
                 stream_sid = event["start"]["streamSid"]
-                sample_rate = event["start"]["mediaFormat"]["sampleRate"]
                 for track in event["start"]["tracks"]:
-                    output = open(f"{stream_sid}-{track}.wav", "wb")
-                    output.write(wav_header(0, sample_rate))
-                    files[track] = output
+                    files[track] = open(f"{stream_sid}-{track}.ulaw", "wb")
                 print(f"Recording stream {stream_sid}")
             elif event["event"] == "media":
                 audio = base64.b64decode(event["media"]["payload"])
@@ -1214,13 +1197,10 @@ async def handle(websocket):
             elif event["event"] == "stop":
                 break
     finally:
-        # Runs on stop or a dropped connection, so every file gets its final sizes.
-        for output in files.values():
-            data_length = output.tell() - HEADER_BYTES
-            output.seek(0)
-            output.write(wav_header(data_length, sample_rate))
-            output.close()
-            print(f"Saved {output.name}, {data_length / sample_rate:.1f} seconds")
+        # Runs when the stream stops or the connection drops.
+        for file in files.values():
+            file.close()
+            print(f"Saved {file.name}")
 
 
 async def main():
@@ -1236,96 +1216,60 @@ asyncio.run(main())
 ```javascript
 // Install: npm install ws
 // Save as save-audio.mjs and run: node save-audio.mjs
-import { closeSync, openSync, writeSync } from "node:fs";
+import { createWriteStream } from "node:fs";
 import { WebSocketServer } from "ws";
-
-const HEADER_BYTES = 46;
-
-function wavHeader(dataLength, sampleRate) {
-  // WAV header for 8-bit G.711 µ-law (format tag 7), one channel.
-  const header = Buffer.alloc(HEADER_BYTES);
-  header.write("RIFF", 0);
-  header.writeUInt32LE(38 + dataLength, 4);
-  header.write("WAVE", 8);
-  header.write("fmt ", 12);
-  header.writeUInt32LE(18, 16);
-  header.writeUInt16LE(7, 20);
-  header.writeUInt16LE(1, 22);
-  header.writeUInt32LE(sampleRate, 24);
-  header.writeUInt32LE(sampleRate, 28);
-  header.writeUInt16LE(1, 32);
-  header.writeUInt16LE(8, 34);
-  header.writeUInt16LE(0, 36);
-  header.write("data", 38);
-  header.writeUInt32LE(dataLength, 42);
-  return header;
-}
 
 const server = new WebSocketServer({ port: 8080 });
 console.log("Listening on port 8080");
 
 server.on("connection", (socket) => {
   const files = new Map();
-  let sampleRate = 8000;
-
-  // Runs on stop or a dropped connection, so every file gets its final sizes.
-  const finish = () => {
-    for (const file of files.values()) {
-      writeSync(file.fd, wavHeader(file.bytes, sampleRate), 0, HEADER_BYTES, 0);
-      closeSync(file.fd);
-      console.log(`Saved ${file.path}, ${(file.bytes / sampleRate).toFixed(1)} seconds`);
-    }
-    files.clear();
-  };
 
   socket.on("message", (data) => {
     const event = JSON.parse(data.toString());
     if (event.event === "start") {
-      const { streamSid, mediaFormat, tracks } = event.start;
-      sampleRate = mediaFormat.sampleRate;
+      const { streamSid, tracks } = event.start;
       for (const track of tracks) {
-        const path = `${streamSid}-${track}.wav`;
-        const fd = openSync(path, "w");
-        writeSync(fd, wavHeader(0, sampleRate));
-        files.set(track, { fd, path, bytes: 0 });
+        files.set(track, createWriteStream(`${streamSid}-${track}.ulaw`));
       }
       console.log(`Recording stream ${streamSid}`);
     } else if (event.event === "media") {
-      const file = files.get(event.media.track);
-      const audio = Buffer.from(event.media.payload, "base64");
-      writeSync(file.fd, audio);
-      file.bytes += audio.length;
-    } else if (event.event === "stop") {
-      finish();
+      files.get(event.media.track).write(Buffer.from(event.media.payload, "base64"));
     }
   });
-  socket.on("close", finish);
+
+  // Runs when the stream stops or the connection drops.
+  socket.on("close", () => {
+    for (const file of files.values()) {
+      file.end();
+      console.log(`Saved ${file.path}`);
+    }
+  });
 });
 ```
 </CodeBlock>
 </CodeBlocks>
 
-When the call ends, the server prints `Saved` with each file's length; play the file to hear your
-side of the call. Audio from the moment before your server accepts the connection isn't streamed,
-so a file can start a fraction of a second into the call.
+When the call ends, the server prints `Saved` with each file's name. The files hold raw `PCMU`
+audio with no header. Convert one to WAV with [ffmpeg](https://ffmpeg.org/) to play it:
 
-The WAV header describes G.711 µ-law, the default `PCMU` codec. For `L16`, change the header to
-format tag `1`, 16 bits per sample, a block align of `2`, and a byte rate of twice the sample rate.
+```bash
+ffmpeg -f mulaw -ar 8000 -ac 1 -i <STREAM_SID>-inbound.ulaw inbound.wav
+```
+
+For an `L16` stream, use `-f s16le` and the stream's sample rate, such as `-ar 16000`. Audio from
+the moment before your server accepts the connection isn't streamed, so a file can start a fraction
+of a second into the call.
 
 ### Buffer audio for processing
 
 Speech-to-text services, voice agents, and analytics usually want audio in fixed-size pieces rather
-than one `media` message at a time. Buffer each track by bytes, not by message count, and cut a
-window whenever the buffer holds enough audio. With `PCMU`, one byte is one sample, so a one-second
-window is `sampleRate` bytes.
+than one `media` message at a time. Buffer each track by bytes, and hand a window to your processing
+whenever the buffer holds enough audio. With `PCMU`, one byte is one sample, so a one-second window
+is `sampleRate` bytes.
 
-This server measures each window's loudness and estimates talk time using a volume threshold.
-Replace `analyze` with your processing. It queues at most five windows and drops new windows with
-a log message if processing falls behind, keeping memory and delay bounded. Use the
-[save-audio server](#save-call-audio-to-a-file) when you need to retain every frame.
-
-Await network requests in the worker so the receive loop can keep reading. An async function
-still runs CPU work on the event loop; move expensive computation to a worker thread or process.
+This server cuts one-second windows and measures each one's loudness. Replace `analyze` with your
+processing, such as a request to a speech-to-text API.
 
 <CodeBlocks>
 <CodeBlock title="Python — websockets">
@@ -1339,10 +1283,6 @@ import math
 
 from websockets.asyncio.server import serve
 
-WINDOW_MS = 1000
-SPEECH_DBFS = -45
-MAX_PENDING_WINDOWS = 5
-
 
 def mulaw_to_linear(value):
     # Decode one G.711 µ-law byte to a 16-bit sample.
@@ -1352,44 +1292,28 @@ def mulaw_to_linear(value):
     return -sample if value & 0x80 else sample
 
 
-async def analyze(windows):
-    talk_ms = {}
-    while (item := await windows.get()) is not None:
-        track, window = item
-        samples = [mulaw_to_linear(value) for value in window]
-        rms = math.sqrt(sum(sample * sample for sample in samples) / len(samples))
-        level = 20 * math.log10(max(rms, 1) / 32768)
-        if level > SPEECH_DBFS:
-            talk_ms[track] = talk_ms.get(track, 0) + WINDOW_MS
-        print(f"{track}: {level:.0f} dBFS, talking for {talk_ms.get(track, 0) / 1000:.0f} s")
+def analyze(track, window):
+    samples = [mulaw_to_linear(value) for value in window]
+    rms = math.sqrt(sum(sample * sample for sample in samples) / len(samples))
+    level = 20 * math.log10(max(rms, 1) / 32768)
+    print(f"{track}: {level:.0f} dBFS")
 
 
 async def handle(websocket):
-    windows = asyncio.Queue(maxsize=MAX_PENDING_WINDOWS)
-    worker = asyncio.create_task(analyze(windows))
     buffers = {}
     window_bytes = 8000
-    try:
-        async for message in websocket:
-            event = json.loads(message)
-            if event["event"] == "start":
-                window_bytes = event["start"]["mediaFormat"]["sampleRate"] * WINDOW_MS // 1000
-                buffers = {track: bytearray() for track in event["start"]["tracks"]}
-            elif event["event"] == "media":
-                track = event["media"]["track"]
-                buffer = buffers[track]
-                buffer += base64.b64decode(event["media"]["payload"])
-                while len(buffer) >= window_bytes:
-                    if windows.full():
-                        print(f"Processing behind: dropped {track} window")
-                    else:
-                        windows.put_nowait((track, bytes(buffer[:window_bytes])))
-                    del buffer[:window_bytes]
-            elif event["event"] == "stop":
-                break
-    finally:
-        await windows.put(None)
-        await worker
+    async for message in websocket:
+        event = json.loads(message)
+        if event["event"] == "start":
+            window_bytes = event["start"]["mediaFormat"]["sampleRate"]
+            buffers = {track: bytearray() for track in event["start"]["tracks"]}
+        elif event["event"] == "media":
+            track = event["media"]["track"]
+            buffer = buffers[track]
+            buffer += base64.b64decode(event["media"]["payload"])
+            if len(buffer) >= window_bytes:
+                analyze(track, bytes(buffer[:window_bytes]))
+                del buffer[:window_bytes]
 
 
 async def main():
@@ -1407,10 +1331,6 @@ asyncio.run(main())
 // Save as process-audio.mjs and run: node process-audio.mjs
 import { WebSocketServer } from "ws";
 
-const WINDOW_MS = 1000;
-const SPEECH_DBFS = -45;
-const MAX_PENDING_WINDOWS = 5;
-
 function mulawToLinear(byte) {
   // Decode one G.711 µ-law byte to a 16-bit sample.
   const value = ~byte & 0xff;
@@ -1419,45 +1339,31 @@ function mulawToLinear(byte) {
   return value & 0x80 ? -sample : sample;
 }
 
+function analyze(track, window) {
+  let sum = 0;
+  for (const byte of window) sum += mulawToLinear(byte) ** 2;
+  const rms = Math.sqrt(sum / window.length);
+  const level = 20 * Math.log10(Math.max(rms, 1) / 32768);
+  console.log(`${track}: ${level.toFixed(0)} dBFS`);
+}
+
 const server = new WebSocketServer({ port: 8080 });
 console.log("Listening on port 8080");
 
 server.on("connection", (socket) => {
   const buffers = new Map();
-  const talkMs = new Map();
   let windowBytes = 8000;
-  let pending = 0;
-  // Process windows in order, with a bounded backlog.
-  let processing = Promise.resolve();
-
-  async function analyze(track, window) {
-    let sum = 0;
-    for (const byte of window) sum += mulawToLinear(byte) ** 2;
-    const rms = Math.sqrt(sum / window.length);
-    const level = 20 * Math.log10(Math.max(rms, 1) / 32768);
-    if (level > SPEECH_DBFS) talkMs.set(track, (talkMs.get(track) ?? 0) + WINDOW_MS);
-    console.log(`${track}: ${level.toFixed(0)} dBFS, talking for ${((talkMs.get(track) ?? 0) / 1000).toFixed(0)} s`);
-  }
 
   socket.on("message", (data) => {
     const event = JSON.parse(data.toString());
     if (event.event === "start") {
-      windowBytes = (event.start.mediaFormat.sampleRate * WINDOW_MS) / 1000;
+      windowBytes = event.start.mediaFormat.sampleRate;
       for (const track of event.start.tracks) buffers.set(track, Buffer.alloc(0));
     } else if (event.event === "media") {
       const track = event.media.track;
       let buffer = Buffer.concat([buffers.get(track), Buffer.from(event.media.payload, "base64")]);
-      while (buffer.length >= windowBytes) {
-        const window = buffer.subarray(0, windowBytes);
-        if (pending >= MAX_PENDING_WINDOWS) {
-          console.log(`Processing behind: dropped ${track} window`);
-        } else {
-          pending += 1;
-          processing = processing
-            .then(() => analyze(track, window))
-            .catch((error) => console.error("Processing failed:", error))
-            .finally(() => { pending -= 1; });
-        }
+      if (buffer.length >= windowBytes) {
+        analyze(track, buffer.subarray(0, windowBytes));
         buffer = buffer.subarray(windowBytes);
       }
       buffers.set(track, buffer);
@@ -1469,10 +1375,13 @@ server.on("connection", (socket) => {
 </CodeBlocks>
 
 Run it in place of the stream server, rerun your Stream a call program, and speak. The server prints
-a line per second for each track, with the level rising while that side talks. The decoder assumes
-the default `PCMU` codec. `L16` audio is already linear 16-bit PCM, so skip the decoding and read
-two bytes per sample; a window then holds twice as many bytes. The example discards the final
-partial window.
+a line per second for each track, in dBFS, and the number rises toward zero while that side talks.
+
+`analyze` runs inside the receive loop, which suits quick work like this. For slow work such as a
+network request, hand each window to a background task, so the server keeps reading audio while it
+waits. The decoder assumes the default `PCMU` codec. `L16` audio is already linear 16-bit PCM, so
+skip the decoding and read two bytes per sample; a one-second window then holds `sampleRate * 2`
+bytes.
 
 ## Send audio back on a bidirectional stream
 
@@ -1594,7 +1503,7 @@ async def play(websocket, stream_sid, audio):
             "streamSid": stream_sid,
             "media": {"payload": base64.b64encode(frame).decode()},
         }))
-        # Pace each frame; don't send a catch-up burst if processing was delayed.
+        # Send one frame every 20 ms, the rate it plays.
         await asyncio.sleep(len(frame) / SAMPLE_RATE)
     # SignalWire sends this mark back once everything before it has played.
     await websocket.send(json.dumps({
@@ -1656,22 +1565,18 @@ server.on("connection", (socket) => {
 
   function play(audio) {
     let offset = 0;
-    const sendDue = () => {
-      if (offset < audio.length) {
-        socket.send(JSON.stringify({
-          event: "media",
-          streamSid,
-          media: { payload: audio.subarray(offset, offset + FRAME_BYTES).toString("base64") },
-        }));
-        offset += FRAME_BYTES;
-        // Pace each frame; don't send a catch-up burst after a delay.
-        timer = setTimeout(sendDue, FRAME_MS);
+    // Send one frame every 20 ms, the rate it plays.
+    timer = setInterval(() => {
+      if (offset >= audio.length) {
+        clearInterval(timer);
+        // SignalWire sends this mark back once everything before it has played.
+        socket.send(JSON.stringify({ event: "mark", streamSid, mark: { name: "prompt-done" } }));
         return;
       }
-      // SignalWire sends this mark back once everything before it has played.
-      socket.send(JSON.stringify({ event: "mark", streamSid, mark: { name: "prompt-done" } }));
-    };
-    sendDue();
+      const frame = audio.subarray(offset, offset + FRAME_BYTES);
+      socket.send(JSON.stringify({ event: "media", streamSid, media: { payload: frame.toString("base64") } }));
+      offset += FRAME_BYTES;
+    }, FRAME_MS);
   }
 
   socket.on("message", (data) => {
@@ -1681,7 +1586,7 @@ server.on("connection", (socket) => {
       play(PROMPT);
     } else if (event.event === "dtmf") {
       // Any key skips the prompt: stop sending, then drop what is queued.
-      clearTimeout(timer);
+      clearInterval(timer);
       socket.send(JSON.stringify({ event: "clear", streamSid }));
       console.log(`Prompt skipped with ${event.dtmf.digit}`);
       socket.close();
@@ -1690,7 +1595,7 @@ server.on("connection", (socket) => {
       socket.close();
     }
   });
-  socket.on("close", () => clearTimeout(timer));
+  socket.on("close", () => clearInterval(timer));
 });
 ```
 </CodeBlock>
