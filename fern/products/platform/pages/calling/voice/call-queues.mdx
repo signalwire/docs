@@ -21,8 +21,10 @@ max-toc-depth: 2
 [swml-connect]: /docs/swml/reference/calling/connect
 [swml-switch]: /docs/swml/reference/calling/switch
 [call-commands]: /docs/apis/rest/calls/call-commands
+[paging]: /docs/apis/paging
 [rest-create-queue]: /docs/apis/rest/queues/create-queue
 [rest-list-queues]: /docs/apis/rest/queues/list-queues
+[rest-get-queue]: /docs/apis/rest/queues/get-queue
 [rest-update-queue]: /docs/apis/rest/queues/update-queue
 [rest-delete-queue]: /docs/apis/rest/queues/delete-queue
 [rest-list-members]: /docs/apis/rest/queue-members/list-queue-members
@@ -760,19 +762,92 @@ same events at a webhook instead, pass `status_url` to `queue_enter()` or `statu
 
 ## Monitor and manage queues via REST
 
-The REST API reads and changes the queues that both approaches use. Use it for a wallboard, to
-pick a caller to remove, or to clean up a queue you no longer need. The [Server SDKs][server-sdks]
-cover each operation:
+The REST API reads and changes the same queues that SWML and Relay calls use. Calls reach a queue
+by name, and the REST API addresses it by ID. Use it to build a wallboard, decide which caller to
+handle next, or rename and clean up queues. The [Server SDKs][server-sdks] cover each operation:
 
 | Task | Python | TypeScript | REST API |
 |---|---|---|---|
-| List queues with their current size and average wait | `client.queues.list()` | `client.queues.list()` | [List queues][rest-list-queues] |
+| Create a queue | `client.queues.create(name=…)` | `client.queues.create({ name })` | [Create queue][rest-create-queue] |
+| List queues | `client.queues.list()` | `client.queues.list()` | [List queues][rest-list-queues] |
+| Get one queue | `client.queues.get(queue_id)` | `client.queues.get(queueId)` | [Get queue][rest-get-queue] |
 | List the callers waiting in a queue | `client.queues.list_members(queue_id)` | `client.queues.listMembers(queueId)` | [List queue members][rest-list-members] |
 | Get one waiting caller | `client.queues.get_member(queue_id, call_id)` | `client.queues.getMember(queueId, callId)` | [Get queue member][rest-get-member] |
 | Rename a queue or change its `max_size` | `client.queues.update(queue_id, name=…)` | `client.queues.update(queueId, { name })` | [Update queue][rest-update-queue] |
 | Delete an empty queue | `client.queues.delete(queue_id)` | `client.queues.delete(queueId)` | [Delete queue][rest-delete-queue] |
 
-This program prints each caller waiting in a queue, with their position and how long they've waited:
+### Get a queue's size and wait time via REST
+
+This program lists your project's queues with their IDs, how many callers each holds, and how
+long those callers have waited on average. Use it to find the ID of a queue that a call created by
+name:
+
+<CodeBlocks>
+<CodeBlock title="Python — REST client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as list_queues.py and run: python list_queues.py
+from signalwire.rest import RestClient
+
+client = RestClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    host="<YOUR_SPACE>.signalwire.com",
+)
+
+for queue in client.queues.list()["data"]:
+    print(
+        f"{queue['friendly_name']} ({queue['id']}): {queue['current_size']} waiting, "
+        f"average wait {queue['average_wait_time']} s"
+    )
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — REST client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as list-queues.mjs,
+// then run: node list-queues.mjs
+import { RestClient } from "@signalwire/sdk";
+
+const client = new RestClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  host: "<YOUR_SPACE>.signalwire.com",
+});
+
+const queues = await client.queues.list();
+for (const queue of queues.data) {
+  console.log(
+    `${queue.friendly_name} (${queue.id}): ${queue.current_size} waiting, ` +
+      `average wait ${queue.average_wait_time} s`,
+  );
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+To read one queue whose ID you know, use `get` or [Get queue][rest-get-queue]:
+
+<EndpointRequestSnippet endpoint="GET /api/relay/rest/queues/{id}" />
+
+Each queue has these fields:
+
+| Field | Value |
+|---|---|
+| `id` | The queue's ID, used in every REST request about the queue |
+| `friendly_name` | The queue's name, which calls use to reach it |
+| `current_size` | The number of callers waiting now |
+| `average_wait_time` | How long, in seconds, the callers waiting now have waited on average; `0` when the queue is empty |
+| `max_size` | The `max_size` you set, or `null` |
+| `date_created`, `date_updated` | When the queue was created and last changed |
+
+List queues returns your newest queues first, 50 to a page. Follow `links.next` in the response for
+the next page, as [Paging][paging] describes.
+
+### List the callers waiting in a queue via REST
+
+This program prints each caller waiting in a queue, with their position and how long they've
+waited:
 
 <CodeBlocks>
 <CodeBlock title="Python — REST client">
@@ -815,12 +890,75 @@ for (const member of members.data) {
 
 <EndpointRequestSnippet endpoint="GET /api/relay/rest/queues/{queue_id}/members" />
 
-Each member's `call_id` is the caller's call ID, which you can pass to `calling.end` to remove
-them. A queue's `average_wait_time` is the average time its current callers have waited so far.
+Each waiting caller has these fields:
 
-Calls find a queue by name, so renaming a queue doesn't move its callers' documents along with it:
-the next call that uses the old name creates a new queue with that name. A queue must be empty
-before you can delete it.
+| Field | Value |
+|---|---|
+| `call_id` | The caller's call ID, which you can pass to `calling.end` to [remove them](#take-a-caller-out-of-a-queue-via-swml) |
+| `position` | The caller's place in line; `1` has waited longest and is the next caller an agent's call connects to |
+| `wait_time` | How long the caller has waited, in seconds |
+| `date_enqueued` | When the caller entered the queue |
+| `queue_id` | The queue's ID |
+
+The list returns the most recent callers first, 50 to a page, so the caller at position `1` is the
+last one on the last page. To check a single caller, such as one named by a
+[queue event](#track-a-queue-via-swml), pass their call ID to `get_member` in Python, `getMember`
+in TypeScript, or [Get queue member][rest-get-member]:
+
+<EndpointRequestSnippet endpoint="GET /api/relay/rest/queues/{queue_id}/members/{id}" />
+
+### Update or delete a queue via REST
+
+Update a queue to rename it or change its `max_size`. Every update must include `name`, even when
+the name stays the same:
+
+<CodeBlocks>
+<CodeBlock title="Python — REST client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as update_queue.py and run: python update_queue.py
+from signalwire.rest import RestClient
+
+client = RestClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    host="<YOUR_SPACE>.signalwire.com",
+)
+
+queue = client.queues.update("<YOUR_QUEUE_ID>", name="dispatch", max_size=50)
+print(queue["friendly_name"], queue["max_size"])
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — REST client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as update-queue.mjs,
+// then run: node update-queue.mjs
+import { RestClient } from "@signalwire/sdk";
+
+const client = new RestClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  host: "<YOUR_SPACE>.signalwire.com",
+});
+
+const queue = await client.queues.update("<YOUR_QUEUE_ID>", { name: "dispatch", max_size: 50 });
+console.log(queue.friendly_name, queue.max_size);
+```
+</CodeBlock>
+</CodeBlocks>
+
+<EndpointRequestSnippet endpoint="PUT /api/relay/rest/queues/{id}" />
+
+A new name must be unique among your project's queues. Renaming doesn't change the documents and
+programs that use the old name: the next call that enters or connects to the old name creates a new
+queue with it.
+
+To delete a queue, replace the `update` call in that program with `client.queues.delete(…)`, or
+use [Delete queue][rest-delete-queue]. The queue must be empty: a queue with callers waiting
+returns `400 Bad Request` and stays in place.
+
+<EndpointRequestSnippet endpoint="DELETE /api/relay/rest/queues/{id}" />
 
 ## Next steps
 
