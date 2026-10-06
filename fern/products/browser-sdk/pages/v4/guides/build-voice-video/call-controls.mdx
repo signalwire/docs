@@ -137,6 +137,40 @@ call.status$
 For interactive dialpads (digits sent as the user presses), wire
 the button click directly — by that point the call is connected.
 
+## Receive user events from the call
+
+Your server can push custom JSON to a browser that's on a call. The
+SWML [`user_event`][swml-user-event] method, the Server SDKs'
+[`swml_user_event`][fr-user-event] tool action, and the REST
+[`calling.user_event`][call-commands] command each fire a `user_event`
+on the call. Subscribe to it with [`subscribe`]:
+
+```js
+call.subscribe("user_event").subscribe((event) => {
+  const { driver, plate } = event.params;
+  driverName.textContent = driver;
+  plateNumber.textContent = plate;
+});
+```
+
+Your fields are sent in `event.params`, alongside SignalWire-added fields
+like `call_id`.  The event
+`{ "driver": "Sam", "plate": "BAY-123" }` reaches the browser as:
+
+```json
+{
+  "event_type": "user_event",
+  "params": {
+    "driver": "Sam",
+    "plate": "BAY-123",
+    "call_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+  }
+}
+```
+
+The browser's `call.id` is the same ID the REST API takes, so your
+backend can target the call directly.
+
 ## Moderation — check the capability first
 
 Methods on other participants exist (`participant.mute()`,
@@ -245,7 +279,7 @@ per-class reference:
 
 - [`Participant`] — mute, deaf, hand raise, audio processing, server-mixed volumes; also the surface for moderation actions on other members ([`remove`], [`end`], [`setPosition`]).
 - [`SelfParticipant`] — adds [`enableStudioAudio`] / [`disableStudioAudio`] on top of `Participant`.
-- [`WebRTCCall`] — session-level controls: [`hangup`], [`sendDigits`], [`toggleLock`], [`toggleHold`], [`transfer`], local-mic pipeline ([`setLocalMicrophoneGain`], [`localAudioLevel$`], [`localSpeaking$`], [`enablePushToTalk`], [`setPushToTalkActive`]).
+- [`WebRTCCall`] — session-level controls: [`hangup`], [`sendDigits`], [`toggleLock`], [`toggleHold`], [`transfer`], custom events ([`subscribe`]), local-mic pipeline ([`setLocalMicrophoneGain`], [`localAudioLevel$`], [`localSpeaking$`], [`enablePushToTalk`], [`setPushToTalkActive`]).
 - [`SelfCapabilities`] — server-authoritative flags for gating moderation UI; see [Capabilities](/docs/browser-sdk/v4/guides/capabilities).
 
 [reference]: /docs/browser-sdk/v4/reference
@@ -280,6 +314,10 @@ per-class reference:
 [`toggleLock`]: /docs/browser-sdk/v4/reference/webrtc-call/toggle-lock
 [`toggleHold`]: /docs/browser-sdk/v4/reference/webrtc-call/toggle-hold
 [`transfer`]: /docs/browser-sdk/v4/reference/webrtc-call/transfer
+[`subscribe`]: /docs/browser-sdk/v4/reference/webrtc-call/subscribe
+[swml-user-event]: /docs/swml/reference/calling/user-event
+[fr-user-event]: /docs/server-sdks/reference/python/agents/function-result/swml-user-event
+[call-commands]: /docs/apis/rest/calls/call-commands
 [`setLocalMicrophoneGain`]: /docs/browser-sdk/v4/reference/webrtc-call/set-local-microphone-gain
 [`enablePushToTalk`]: /docs/browser-sdk/v4/reference/webrtc-call/enable-push-to-talk
 [`setPushToTalkActive`]: /docs/browser-sdk/v4/reference/webrtc-call/set-push-to-talk-active
