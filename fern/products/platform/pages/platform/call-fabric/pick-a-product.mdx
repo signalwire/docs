@@ -3,7 +3,6 @@ title: Pick the right SignalWire product
 sidebar-title: Pick a product
 subtitle: What each product does, when to use it, and how they work together
 slug: pick-a-product
-position: 0
 description: Compare SignalWire's products (SWML through the Server SDKs, the REST APIs, the Browser SDK, and Relay), see which one fits each use case, and combine them with phone numbers, Resources, tools, and Datasphere.
 max-toc-depth: 3
 ---
@@ -49,17 +48,15 @@ max-toc-depth: 3
 [api-credentials]: /docs/platform/your-signalwire-api-space
 [tool-calling]: /docs/platform/ai/tool-calling
 
-SignalWire helps you create powerful and flexible communication apps that span channels from the PSTN
-to the web browser, and integrate AI agents, payments, and backend hooks. You can build them with several
-products and SDK surfaces. This page walks you through each one and helps you pick the right one for your
-use case.
+A SignalWire app can answer phone calls with an AI agent, put calls and chat in a web page, and text
+your customers. You build those pieces with a handful of products (SWML, the REST APIs, the Browser
+SDK, and Relay), and most apps combine more than one. Start with the recommended path, then use the
+tables below to match each part of your app to a product.
 
 ## The recommended path
 
-We recommend that you use the Server SDKs' Agents namespace to create AI agents or a SWML dialplan, and
-use its REST namespace to send commands to a live call and to manage your resources.
-This path is the easiest to get up and running, and gives you a production-ready scalable system with the least
-amount of work.
+Write your AI agents and call flows as SWML with the Agents namespace of the Server SDKs, and use its
+REST namespace to send commands to live calls and manage your Resources.
 
 A SWML script defines the dialplan: a set of rules that describes how you want the call to proceed.
 This can include forwarding the call, recording a voicemail, or running a full IVR system.
@@ -77,17 +74,25 @@ and webhook support, so you can let AI handle most of the communication and keep
 
 ```mermaid
 flowchart LR
-    Caller["Caller<br/>phone · SIP · browser"] --> Address["Phone number<br/>or Address"]
-    Address --> Resource["Resource<br/>SWML Script · external URL"]
+    Caller["Caller<br/>phone · SIP · browser"]
+    subgraph SignalWire["SignalWire"]
+        Address["Phone number<br/>or Address"]
+        Resource["Resource<br/>SWML Script · external URL"]
+        Call(("Live call"))
+        Platform["Space configuration"]
+    end
     subgraph Stack["Your stack"]
+        Systems["Your systems<br/>data · rules"]
         Agent["SWML<br/>Server SDKs · Agents"]
         Backend["REST API<br/>Server SDKs · REST"]
     end
-    Resource -- "fetches SWML" --> Agent
-    Agent -- "SWAIG tool calls" --> Systems["Your systems<br/>data · rules"]
-    Backend -- "call commands over HTTP" --> Call(("Live call"))
+    Caller --> Address
+    Address --> Resource
     Resource --> Call
-    Backend -- "numbers · Resources · tokens" --> Platform["Space configuration"]
+    Resource -- "fetches SWML" --> Agent
+    Agent -- "SWAIG tool calls" --> Systems
+    Backend -- "call commands over HTTP" --> Call
+    Backend -- "numbers · Resources · tokens" --> Platform
 ```
 
 </llms-only>
@@ -258,7 +263,7 @@ ID of the call to end.
 
 | Product | What you write | Runs on | Use it for |
 |---|---|---|---|
-| SWML | The call flow, as a document | Your web server, or hosted by SignalWire | Handling calls and AI agents. Start here. |
+| SWML | The call flow, as a document | Served from your web server, or hosted by SignalWire | Handling calls and AI agents. Start here. |
 | REST APIs | One request per action | Anywhere | Setup, outbound calls and messages, live call commands |
 | Browser SDK | A calling client | The user's browser | Calls and chat from a web page |
 | WebSocket (Relay) | Code that drives each call | Your always-on process | Step-by-step, event-driven call control |
@@ -268,7 +273,7 @@ ID of the call to end.
 
 [SWML][swml] (SignalWire Markup Language) describes how a call should go: answer, play a greeting,
 run an AI agent, record, transfer. With the Agents namespace of the [Server SDKs][server-sdks], you
-subclass [`AgentBase`][agent-base] in Python or TypeScript, give it a prompt and tools, and run it as
+create an [`AgentBase`][agent-base] in Python or TypeScript, give it a prompt and tools, and run it as
 a web server.
 
 Use it for any call your code handles, with or without AI. For a fixed flow with no server of your
@@ -304,6 +309,8 @@ agent.define_tool(
 
 agent.run()
 ```
+
+`rides.lookup` stands in for your booking system.
 
 ### REST APIs
 
@@ -375,10 +382,10 @@ The **Click-to-Test** button lets you test the call straight from the Dashboard.
 
 | You're building | Use |
 |---|---|
-| An AI agent that answers your phone number | Server SDK (Agents namespace) |
-| A phone menu or call forwarding | Server SDK (Agents namespace) |
-| An agent that answers from your documents | Server SDK (Agents namespace) with the [`datasphere` skill][datasphere-skill] |
-| Outbound reminder or survey calls | REST `dial`, running your Server SDK (Agents namespace) flow |
+| An AI agent that answers your phone number | Server SDKs (Agents namespace) |
+| A phone menu or call forwarding | Server SDKs (Agents namespace) |
+| An agent that answers from your documents | Server SDKs (Agents namespace) with the [`datasphere` skill][datasphere-skill] |
+| Outbound reminder or survey calls | REST `dial`, running your Server SDKs (Agents namespace) flow |
 | Buttons that record, transfer, or hold a live call | [REST call commands][call-commands] |
 | Text notifications and confirmations | [REST messages][create-message] |
 | A "call us" button on a web page | [Click-to-call widget][click-to-call] |
