@@ -11,8 +11,6 @@ max-toc-depth: 3
 [list-participants]: /docs/compatibility-api/rest/conference-participants/list-all-participants
 [call-commands]: /docs/apis/rest/calls/call-commands
 [create-a-call]: /docs/compatibility-api/rest/calls/create-a-call
-[sdk-py-update]: /docs/server-sdks/reference/python/rest/compat/conferences/update-participant
-[sdk-ts-update]: /docs/server-sdks/reference/typescript/rest/compat/conferences/update-participant
 [sdk-py-dial]: /docs/server-sdks/reference/python/rest/calling/dial
 [sdk-ts-dial]: /docs/server-sdks/reference/typescript/rest/calling/dial
 [sid]: /docs/platform/what-is-a-sid
@@ -22,7 +20,7 @@ max-toc-depth: 3
 [stream]: /docs/swml/reference/calling/stream
 [tap]: /docs/swml/reference/calling/tap
 
-A supervisor on a contact-centre floor needs three things from a live call: to hear it without being heard, to coach the agent without the customer hearing, and to step into the conversation outright. SignalWire supports all three on any call that runs inside a conference, and a supervisor console can move between them mid-call with one REST request per switch.
+A supervisor on a contact-center floor needs three things from a live call: to hear it without being heard, to coach the agent without the customer hearing, and to step into the conversation outright. SignalWire supports all three on any call that runs inside a conference, and a supervisor console can move between them mid-call with one REST request per switch.
 
 Monitoring works on conference participants only. The agent's call must already be in a SignalWire conference before a supervisor can hear it, so route agent calls through [`join_conference`][join-conference] in SWML or [`<Conference>`][conference-noun] in cXML rather than a plain two-party connect. There is no way to listen to, whisper into, or barge a call that is bridged directly to another call.
 
@@ -111,17 +109,18 @@ The only reader this split inconveniences is a supervisor dialing in from a hand
 
 ### End to end with the Server SDKs
 
-The Server SDKs cover both halves: [`dial`][sdk-py-dial] on the Calling API places the supervisor's call with inline SWML, and [`update_participant`][sdk-py-update] on the Compatibility API changes its state. The TypeScript equivalents are [`dial`][sdk-ts-dial] and [`updateParticipant`][sdk-ts-update]. The agent's call ID and the conference SID come from the conference's `join` status callback.
+The Server SDKs place the supervisor's call: [`dial`][sdk-py-dial] on the Calling API accepts inline SWML, so the supervisor leg joins the conference muted without a hosted document. The SDKs have no client for the Compatibility REST API, so the mode switch is one form-encoded HTTP request authenticated with the project ID and API token. The agent's call ID and the conference SID come from the conference's `join` status callback.
 
 <CodeBlocks>
-```python {14-22,26-32,35}
+```python title="Python" {15-22,36,39}
+import requests
 from signalwire.rest import RestClient
 
-client = RestClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="your-space.signalwire.com",
-)
+PROJECT_ID = "your-project-id"
+API_TOKEN = "your-api-token"
+SPACE = "your-space.signalwire.com"
+
+client = RestClient(project=PROJECT_ID, token=API_TOKEN, host=SPACE)
 
 # Both values arrive on the conference's `join` status callback for the agent's call.
 conference_sid = "e2a5f5c3-0b6d-4d7f-9c2a-1f3b4c5d6e7f"
@@ -138,27 +137,32 @@ supervisor = client.calling.dial(
 )
 supervisor_call_id = supervisor["id"]
 
-# 2. Whisper: unmute and coach the agent in one request.
-client.compat.conferences.update_participant(
-    conference_sid,
-    supervisor_call_id,
-    Muted=False,
-    Coaching=True,
-    CallSidToCoach=agent_call_id,
+participant_url = (
+    f"https://{SPACE}/api/laml/2010-04-01/Accounts/{PROJECT_ID}"
+    f"/Conferences/{conference_sid}/Participants/{supervisor_call_id}"
 )
 
+def set_mode(**fields):
+    response = requests.post(participant_url, auth=(PROJECT_ID, API_TOKEN), data=fields)
+    response.raise_for_status()
+    return response.json()
+
+# 2. Whisper: unmute and coach the agent in one request.
+set_mode(Muted="false", Coaching="true", CallSidToCoach=agent_call_id)
+
 # 3. Barge: stop coaching, and everyone hears the supervisor.
-client.compat.conferences.update_participant(conference_sid, supervisor_call_id, Coaching=False)
+set_mode(Coaching="false")
 ```
 
-```typescript {14-22,26-30,33}
+```typescript title="TypeScript" {15-22,43,46}
+// Install: npm install @signalwire/sdk@2.0.5
 import { RestClient } from "@signalwire/sdk";
 
-const client = new RestClient({
-  project: "your-project-id",
-  token: "your-api-token",
-  host: "your-space.signalwire.com",
-});
+const PROJECT_ID = "your-project-id";
+const API_TOKEN = "your-api-token";
+const SPACE = "your-space.signalwire.com";
+
+const client = new RestClient({ project: PROJECT_ID, token: API_TOKEN, host: SPACE });
 
 // Both values arrive on the conference's `join` status callback for the agent's call.
 const conferenceSid = "e2a5f5c3-0b6d-4d7f-9c2a-1f3b4c5d6e7f";
@@ -175,17 +179,34 @@ const supervisor = await client.calling.dial({
 });
 const supervisorCallId = supervisor.id;
 
+const participantUrl =
+  `https://${SPACE}/api/laml/2010-04-01/Accounts/${PROJECT_ID}` +
+  `/Conferences/${conferenceSid}/Participants/${supervisorCallId}`;
+
+async function setMode(fields: Record<string, string>) {
+  const response = await fetch(participantUrl, {
+    method: "POST",
+    headers: {
+      Authorization: "Basic " + Buffer.from(`${PROJECT_ID}:${API_TOKEN}`).toString("base64"),
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams(fields),
+  });
+  if (!response.ok) throw new Error(`Participant update failed: ${response.status}`);
+  return response.json();
+}
+
 // 2. Whisper: unmute and coach the agent in one request.
-await client.compat.conferences.updateParticipant(conferenceSid, supervisorCallId, {
-  Muted: false,
-  Coaching: true,
-  CallSidToCoach: agentCallId,
-});
+await setMode({ Muted: "false", Coaching: "true", CallSidToCoach: agentCallId });
 
 // 3. Barge: stop coaching, and everyone hears the supervisor.
-await client.compat.conferences.updateParticipant(conferenceSid, supervisorCallId, { Coaching: false });
+await setMode({ Coaching: "false" });
 ```
 </CodeBlocks>
+
+<Note title="TypeScript `dial()` signature depends on the SDK version">
+The TypeScript sample pins `@signalwire/sdk@2.0.5`, whose `dial()` takes a single options object. The [TypeScript `dial` reference][sdk-ts-dial] documents the positional `dial(from, to, options)` form of a newer release. Match the form to the version you install.
+</Note>
 
 To confirm the switch took effect, retrieve the supervisor's participant record. `coaching` is `true` and `call_sid_to_coach` holds the agent's call ID while whispering, and `muted` is `true` while listening in. If the update returns error 16002, `Coaching` was `true` without a `CallSidToCoach`, or the call ID in `CallSidToCoach` is not in that conference.
 
@@ -232,7 +253,7 @@ Several features share this vocabulary and do something else:
   <Card title="Update a Participant" href="/docs/compatibility-api/rest/conference-participants/update-participant" icon="regular rectangle-api">
     The REST request that switches a participant between modes.
   </Card>
-  <Card title="Server SDK update_participant" href="/docs/server-sdks/reference/python/rest/compat/conferences/update-participant" icon="regular server">
-    The same request from Python, with a TypeScript twin.
+  <Card title="Server SDK dial" href="/docs/server-sdks/reference/python/rest/calling/dial" icon="regular server">
+    Place the supervisor's call with inline SWML from Python, with a TypeScript twin.
   </Card>
 </CardGroup>
