@@ -47,16 +47,17 @@ max-toc-depth: 3
 [webhooks]: /docs/platform/webhooks
 [api-credentials]: /docs/platform/your-signalwire-api-space
 [tool-calling]: /docs/platform/ai/tool-calling
+[make-receive-calls]: /docs/platform/voice/make-and-receive-calls
 
-A SignalWire app can answer phone calls with an AI agent,
+A SignalWire app can [make and receive phone calls][make-receive-calls] with an AI agent,
 put calls and chat in a web page,
 and text your customers.
 You build those pieces with a handful of products (SWML, the REST APIs, the Browser SDK, and Relay),
 and most apps combine more than one.
-Start with the recommended path,
+Start with how most SignalWire apps are built,
 then use the tables below to match each part of your app to a product.
 
-## The recommended path
+## How most SignalWire apps are built
 
 Write your AI agents and call flows as SWML with the Agents namespace of the Server SDKs,
 and use its REST namespace to send commands to live calls and manage your Resources.
@@ -73,7 +74,7 @@ and keep track of the call while it happens.
 
 <llms-ignore>
 
-<img src="/assets/images/img/recommended-path-themed.svg" alt="A caller on a phone, SIP, or a browser reaches a phone number or Address, which points at a SWML Script Resource set to an external URL. The Resource fetches SWML from your stack, written with the Server SDKs Agents namespace, and SignalWire runs the live call. The SWML makes SWAIG tool calls to your systems. From the same stack, the REST API, used through the Server SDKs REST namespace, sends call commands over HTTP to the live call, and manages numbers, Resources, and tokens in your Space configuration." />
+<img src="/assets/images/img/how-apps-are-built-themed.svg" alt="A caller on a phone, SIP, or a browser reaches a phone number or Address, which points at a SWML Script Resource set to an external URL. The Resource fetches SWML from your stack, written with the Server SDKs Agents namespace, and SignalWire runs the live call. The SWML makes SWAIG tool calls to your systems. From the same stack, the REST API, used through the Server SDKs REST namespace, sends call commands over HTTP to the live call, and manages numbers, Resources, and tokens in your Space configuration." />
 
 </llms-ignore>
 
@@ -132,7 +133,17 @@ The Python code and the SWML it generates are shown below.
 ```python title="Python — Agents"
 from signalwire import SWMLService
 
-bayview = SWMLService(name="bayview-taxi", route="/bayview")
+# to be used in the injecting call command example below
+active_calls = {}
+
+
+class BayviewTaxi(SWMLService):
+    def on_request(self, request_data=None, callback_path=None):
+        call = (request_data or {}).get("call", {})
+        active_calls[call.get("call_id")] = call.get("from")
+
+
+bayview = BayviewTaxi(name="bayview-taxi", route="/bayview")
 
 bayview.answer()
 bayview.prompt(
@@ -199,15 +210,11 @@ sections:
 </CodeBlocks>
 
 The Server SDKs protect your server with basic auth.
-Set `SWML_BASIC_AUTH_USER` and `SWML_BASIC_AUTH_PASSWORD` before you start it,
+Set `SWML_BASIC_AUTH_USER` and `SWML_BASIC_AUTH_PASSWORD` environment variables,
 and put the same credentials in the SWML Script Resource's URL,
 as in `https://user:pass@your-server.com/bayview`.
-Without them, the server generates a random password at startup
-and rejects SignalWire's requests.
 
-Step 4 in practice:
-before a maintenance window,
-your backend can transfer each live call to a short inline SWML document that apologizes and hangs up:
+The following Calling API command sent asynchronously will end the targeted live call with a message.
 
 <CodeBlocks>
 
@@ -216,18 +223,19 @@ from signalwire.rest import RestClient
 
 client = RestClient(project="<YOUR_PROJECT_ID>", token="<YOUR_API_TOKEN>", host="<YOUR_SPACE>.signalwire.com")
 
-client.calling.transfer(
-    "<YOUR_CALL_ID>",
-    dest={
-        "version": "1.0.0",
-        "sections": {
-            "main": [
-                {"play": {"url": "say:Sorry, we need to end this call for server maintenance. Please call back in 20 minutes."}},
-                {"hangup": {}},
-            ]
+for call_id in active_calls:
+    client.calling.transfer(
+        call_id,
+        dest={
+            "version": "1.0.0",
+            "sections": {
+                "main": [
+                    {"play": {"url": "say:Sorry, we need to end this call for server maintenance. Please call back in 20 minutes."}},
+                    {"hangup": {}},
+                ]
+            },
         },
-    },
-)
+    )
 ```
 
 ```typescript title="TypeScript — REST client"
