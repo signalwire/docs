@@ -484,10 +484,10 @@ caller who left without reaching an agent waited.
 
 ## Run a call queue via WebSocket (Relay)
 
-`queue_enter()` in Python or `queueEnter()` in TypeScript places an answered call in a queue. To
-connect an agent, call `connect()` on the agent's call with a `queue` device. The caller's code
-must play its own hold music and decide when the caller has waited too long: in Relay,
-SignalWire plays no hold audio and doesn't apply a wait limit.
+With Relay, your code places an answered call in a queue, then connects an agent's call to the
+queue with a `queue` device. The caller's code must play its own hold music and decide when the
+caller has waited too long: in Relay, SignalWire plays no hold audio and doesn't apply a wait
+limit.
 
 ### Put a caller in a queue via WebSocket (Relay)
 
@@ -606,11 +606,11 @@ handler logs `Queue: enqueue, position 1`. Stay on the line for the next section
 
 If you hear silence instead of music, check that `<YOUR_HOLD_MUSIC_URL>` is a public audio file.
 If no `Queue:` line appears, check that the handler registers its `calling.call.queue` listener
-before it calls `queue_enter()`.
+before the call enters the queue.
 
 ### Connect an agent to a waiting caller via WebSocket (Relay)
 
-Dial the agent, then call `connect()` with a `queue` device that names the queue. SignalWire takes
+Dial the agent, then connect the agent's call with a `queue` device that names the queue. SignalWire takes
 the caller who has waited longest and bridges the two calls. Watch `calling.call.connect` events on
 the agent's call to learn the outcome. The call is placed as in
 [Place a call via WebSocket (Relay)][place-relay].
@@ -725,16 +725,17 @@ announcement, the program logs `Connect: connecting`, then `Connect: connected`.
 handler logs `Queue: dequeue`, stops the hold music, and the two phones can talk. Hang up either phone to end both calls.
 
 If the agent hears "No callers are waiting." and the program logs `Connect: failed`, the queue was empty:
-`connect()` doesn't wait for a caller to arrive. Check that the caller is still on hold and that
+connecting doesn't wait for a caller to arrive. Check that the caller is still on hold and that
 both programs use the same queue name, including case.
 
 ### Take a caller out of a queue via WebSocket (Relay)
 
-`queue_leave()` in Python or `queueLeave()` in TypeScript removes the caller from the queue and
-sends a `leave` event. The call stays up, so your code decides what the caller hears next. In
+Leaving the queue removes the caller and sends a `leave` event. The call stays up, so your code
+decides what the caller hears next. In
 [Put a caller in a queue via WebSocket (Relay)](#put-a-caller-in-a-queue-via-websocket-relay), the
-handler calls it when the caller's two minutes run out, then plays the busy message. Call it the
-same way to offer a callback, send the caller to voicemail, or move them to another queue.
+handler leaves the queue when the caller's two minutes run out, then plays the busy message. Leave
+the queue the same way to offer a callback, send the caller to voicemail, or move them to another
+queue.
 
 A caller who hangs up leaves the queue on their own, and also sends a `leave` event. To remove a
 caller from a process that doesn't hold their call, end the call with the REST `calling.end`
@@ -742,21 +743,12 @@ command, as in [Take a caller out of a queue via SWML](#take-a-caller-out-of-a-q
 
 ### Track a queue via WebSocket (Relay)
 
-Register a `calling.call.queue` handler on the caller's call before `queue_enter()`, as the
-caller's handler does. The event carries the same statuses as the
-[SWML webhooks](#track-a-queue-via-swml): `enqueue`, `dequeue`, and `leave`.
-
-| Python | TypeScript | Value |
-|---|---|---|
-| `event.status` | `event.status` | `enqueue`, `dequeue`, or `leave` |
-| `event.queue_id` | `event.queueId` | The queue's ID |
-| `event.queue_name` | `event.queueName` | The queue's name |
-| `event.position` | `event.position` | The caller's position in the queue |
-| `event.size` | `event.size` | The number of callers in the queue |
-
-The full payload, including `avg_time` and the timestamps, is in `event.params`. To receive the
-same events at a webhook instead, pass `status_url` to `queue_enter()` or `statusUrl` to
-`queueEnter()`. The [Relay client guide][relay-guide] covers event listeners in depth.
+Register a `calling.call.queue` handler on the caller's call before the call enters the queue, as
+the caller's handler does. The event carries the same fields as the
+[SWML webhooks](#track-a-queue-via-swml): its `status` is `enqueue`, `dequeue`, or `leave`, and it
+reports the queue's ID and name, the caller's position, and the queue's size. To receive the same
+events at a webhook instead, pass a status URL when the call enters the queue. The
+[Relay client guide][relay-guide] covers event listeners in depth.
 
 ## Monitor and manage queues via REST
 
@@ -764,15 +756,15 @@ The REST API reads and changes the same queues that SWML and Relay calls use. Ca
 by name, and the REST API addresses it by ID. Use it to build a wallboard, decide which caller to
 handle next, or rename and clean up queues. The [Server SDKs][server-sdks] cover each operation:
 
-| Task | Python | TypeScript | REST API |
-|---|---|---|---|
-| Create a queue | `client.queues.create(name=…)` | `client.queues.create({ name })` | [Create queue][rest-create-queue] |
-| List queues | `client.queues.list()` | `client.queues.list()` | [List queues][rest-list-queues] |
-| Get one queue | `client.queues.get(queue_id)` | `client.queues.get(queueId)` | [Get queue][rest-get-queue] |
-| List the callers waiting in a queue | `client.queues.list_members(queue_id)` | `client.queues.listMembers(queueId)` | [List queue members][rest-list-members] |
-| Get one waiting caller | `client.queues.get_member(queue_id, call_id)` | `client.queues.getMember(queueId, callId)` | [Get queue member][rest-get-member] |
-| Rename a queue or change its `max_size` | `client.queues.update(queue_id, name=…)` | `client.queues.update(queueId, { name })` | [Update queue][rest-update-queue] |
-| Delete an empty queue | `client.queues.delete(queue_id)` | `client.queues.delete(queueId)` | [Delete queue][rest-delete-queue] |
+| Task | REST API |
+|---|---|
+| Create a queue | [Create queue][rest-create-queue] |
+| List queues | [List queues][rest-list-queues] |
+| Get one queue | [Get queue][rest-get-queue] |
+| List the callers waiting in a queue | [List queue members][rest-list-members] |
+| Get one waiting caller | [Get queue member][rest-get-member] |
+| Rename a queue or change its `max_size` | [Update queue][rest-update-queue] |
+| Delete an empty queue | [Delete queue][rest-delete-queue] |
 
 ### Get a queue's size and wait time via REST
 
@@ -900,8 +892,8 @@ Each waiting caller has these fields:
 
 The list returns the most recent callers first, 50 to a page, so the caller at position `1` is the
 last one on the last page. To check a single caller, such as one named by a
-[queue event](#track-a-queue-via-swml), pass their call ID to `get_member` in Python, `getMember`
-in TypeScript, or [Get queue member][rest-get-member]:
+[queue event](#track-a-queue-via-swml), pass their call ID to
+[Get queue member][rest-get-member]:
 
 <EndpointRequestSnippet endpoint="GET /api/relay/rest/queues/{queue_id}/members/{id}" />
 
@@ -952,9 +944,22 @@ A new name must be unique among your project's queues. Renaming doesn't change t
 programs that use the old name: the next call that enters or connects to the old name creates a new
 queue with it.
 
-To delete a queue, replace the `update` call in that program with `client.queues.delete(…)`, or
-use [Delete queue][rest-delete-queue]. The queue must be empty: a queue with callers waiting
-returns `400 Bad Request` and stays in place.
+To delete a queue, replace the last two lines of that program with the line below, or use
+[Delete queue][rest-delete-queue]. The queue must be empty: a queue with callers waiting returns
+`400 Bad Request` and stays in place.
+
+<CodeBlocks>
+<CodeBlock title="Python — REST client">
+```python
+client.queues.delete("<YOUR_QUEUE_ID>")
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — REST client">
+```typescript
+await client.queues.delete("<YOUR_QUEUE_ID>");
+```
+</CodeBlock>
+</CodeBlocks>
 
 <EndpointRequestSnippet endpoint="DELETE /api/relay/rest/queues/{id}" />
 
