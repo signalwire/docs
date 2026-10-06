@@ -2,7 +2,7 @@
 title: Coach live calls with an AI sidecar
 sidebar-title: AI sidecar
 slug: guides/ai-sidecar
-description: Attach an AI sidecar that listens to a live call and sends your server one line of advice for the agent after each customer turn, with a tool that looks up facts on your server.
+description: Attach an AI sidecar with SWML that listens to a live call and sends your server one line of advice for the agent after each customer turn, then attach and stop one on a call in progress with REST.
 max-toc-depth: 3
 ---
 
@@ -12,6 +12,8 @@ max-toc-depth: 3
 [callback-types]: /docs/swml/reference/calling/ai-sidecar#callback-types
 [call-commands]: /docs/apis/rest/calls/call-commands
 [connect]: /docs/swml/reference/calling/connect
+[swml-intro]: /docs/swml
+[api-credentials]: /docs/platform/your-signalwire-api-space
 [server-sdks]: /docs/server-sdks
 [make-and-receive-calls]: /docs/platform/voice/make-and-receive-calls
 [prepare-calls]: /docs/platform/voice/make-and-receive-calls#prepare-for-your-first-call
@@ -21,8 +23,26 @@ max-toc-depth: 3
 
 An AI sidecar listens to a live call between a customer and your agent, and after each customer
 turn it sends your server one line of advice for the agent. It never speaks on the call, so the
-customer hears only your agent. Attach one with the [`ai_sidecar`][ai-sidecar] method, give it a
-tool that looks up facts on your server, and print its advice as it arrives.
+customer hears only your agent. Start by coaching a call between two phones you own with SWML, then
+attach and stop a sidecar on a call that's already in progress with REST.
+
+## Pick the right product for AI sidecar
+
+You can run a sidecar with SWML or the REST Calling API, but not every function is available on
+each.
+
+| Function | SWML | REST |
+|---|---|---|
+| Attach a sidecar as your SWML handles a call | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> |
+| Attach a sidecar to a call that's already in progress | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
+| Give the sidecar tools that run on your server | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
+| Receive the sidecar's advice at a webhook | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
+| Stop the sidecar while the call continues | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
+
+- [SWML][swml-intro] is the document that describes how a call should flow. The
+  [`ai_sidecar`][ai-sidecar] method attaches the sidecar as part of that flow.
+- The [REST Calling API][call-commands] sends commands to a live call by its ID, from any process.
+  It takes the same sidecar settings as the SWML method.
 
 ## How the sidecar works
 
@@ -33,13 +53,16 @@ built-in `sidecar_skip` tool to stay quiet. SignalWire posts each of these steps
 callback.
 
 `ai_sidecar` starts the sidecar and the document moves straight on, usually to a
-[`connect`][connect] that bridges the customer to your agent. The sidecar runs until the call ends.
+[`connect`][connect] that bridges the customer to your agent. The sidecar runs until the call ends
+or you stop it.
 
 ## Prepare for AI sidecar
 
 Start with working call setup from [Make and receive calls][make-and-receive-calls]. Have these
 ready:
 
+- Your Project ID and an API token with the **Voice** permission, from the Dashboard's
+  [API credentials][api-credentials] page, if you'll use REST.
 - A phone number in your Space.
 - Two phones you can answer: one plays the customer and one plays the agent.
 - A machine that can run a small server, and a tunnel such as [ngrok](https://ngrok.com/) that
@@ -357,6 +380,27 @@ that says what happened. The same URL also receives transcription events that ha
 
 The sidecar runs one evaluation as soon as it attaches, so a `skip` or `insight` can arrive before
 anyone speaks. The [callback catalog][callback-types] lists every type and field.
+
+## Attach and stop a sidecar on a call in progress
+
+To coach a call that's already connected, such as one your agent picked up from a queue, attach the
+sidecar by the call's ID. You can also stop a sidecar while the call carries on.
+
+### Attach and stop a sidecar via REST
+
+The Server SDKs' REST client doesn't include the sidecar commands in this version, so send them to
+[Call commands][call-commands] directly. To attach a sidecar, send `calling.ai_sidecar` with the
+same settings as the SWML method in `params`. Point `url` and the SWAIG `web_hook_url` at your
+server, as in the first call:
+
+<EndpointRequestSnippet endpoint="POST /api/calling/calls" example="calling.ai_sidecar" />
+
+To stop it, send `calling.ai_sidecar.stop`. The sidecar sends its `final` callback with
+`stop_reason: api_stop`, and the call stays connected:
+
+<EndpointRequestSnippet endpoint="POST /api/calling/calls" example="calling.ai_sidecar.stop" />
+
+A call runs one sidecar at a time, so attaching a second one returns an error.
 
 ## Write a prompt that coaches well
 
