@@ -55,16 +55,55 @@ use case.
 
 ## The recommended path
 
-The recommended path uses the Server SDKs' Agents namespace to create a SWML dialplan.
-A dialplan is a set of rules that describes how you want the call to proceed. This can include forwarding the
-call, recording a voicemail, or running a full IVR system.
+We recommend that you use the Server SDKs' Agents namespace to create AI agents or a SWML dialplan, and
+use its REST namespace to send commands to a live call and to manage your resources.
+This path is the easiest to get up and running, and gives you a production-ready scalable system with the least
+amount of work.
 
-SWML is SignalWire's native dialplan script. It is a JSON or YAML document, but you should compose it with the
-Server SDKs' Agents namespace for easier maintenance and better validation. SWML has deep AI integrations
-and webhook support, so you can keep track of the call while it happens.
+A SWML script defines the dialplan: a set of rules that describes how you want the call to proceed.
+This can include forwarding the call, recording a voicemail, or running a full IVR system.
+SWML is a JSON or YAML document, and the Agents namespace generates it for you with easier maintenance
+and better validation than writing it by hand. SWML has deep AI integrations
+and webhook support, so you can let AI handle most of the communication and keep track of the call while it happens.
+
+<llms-ignore>
+
+<img src="/assets/images/img/recommended-path-themed.svg" alt="A caller on a phone, SIP, or a browser reaches a phone number or Address, which points at a SWML Script Resource set to an external URL. The Resource fetches SWML from your stack, written with the Server SDKs Agents namespace, and SignalWire runs the live call. The SWML makes SWAIG tool calls to your systems. From the same stack, the REST API, used through the Server SDKs REST namespace, sends call commands over HTTP to the live call, and manages numbers, Resources, and tokens in your Space configuration." />
+
+</llms-ignore>
+
+<llms-only>
+
+```mermaid
+flowchart LR
+    Caller["Caller<br/>phone · SIP · browser"] --> Address["Phone number<br/>or Address"]
+    Address --> Resource["Resource<br/>SWML Script · external URL"]
+    subgraph Stack["Your stack"]
+        Agent["SWML<br/>Server SDKs · Agents"]
+        Backend["REST API<br/>Server SDKs · REST"]
+    end
+    Resource -- "fetches SWML" --> Agent
+    Agent -- "SWAIG tool calls" --> Systems["Your systems<br/>data · rules"]
+    Backend -- "call commands over HTTP" --> Call(("Live call"))
+    Resource --> Call
+    Backend -- "numbers · Resources · tokens" --> Platform["Space configuration"]
+```
+
+</llms-only>
+
+1. A phone number or [Address][addresses] points at a [Resource][resources]. For a call you build
+   in code, that Resource is a SWML Script set to an external URL that points at the agent running on your server.
+2. When a call arrives, SignalWire sends your server a POST request with the call context, and
+   runs the SWML document your server returns: answering,
+   speaking, listening, recording, and running the AI conversation.
+3. When the AI needs data or permission, it calls a tool on your server through SWAIG (the
+   SignalWire AI Gateway). The reply can steer the conversation and trigger actions on the call.
+4. At any point, your backend can send the call a command through the REST APIs: inject a message
+   into the conversation, start a recording, play audio, or transfer the call.
 
 For example, this dialplan for Bayview Taxi asks the caller to press 1 for Ada, the AI dispatcher, or 2
-for a person, then routes the call. The Python code and the SWML it generates are shown below.
+for a person, then routes the call. When Ada's conversation ends, her `post_prompt` asks the AI for a
+summary, and SignalWire posts it to the `post_prompt_url` on your server. The Python code and the SWML it generates are shown below.
 
 <CodeBlocks>
 
@@ -90,6 +129,8 @@ bayview.switch(
 bayview.add_section("ada")
 bayview.add_verb_to_section("ada", "ai", {
     "prompt": {"text": "You are Ada, the dispatcher for Bayview Taxi. Help the caller book a ride."},
+    "post_prompt": {"text": "Summarize the call in two sentences, including the pickup address."},
+    "post_prompt_url": "https://example.com/call-summary",
 })
 
 bayview.add_section("person")
@@ -125,6 +166,9 @@ sections:
       prompt:
         text: You are Ada, the dispatcher for Bayview Taxi. Help the caller book a
           ride.
+      post_prompt:
+        text: Summarize the call in two sentences, including the pickup address.
+      post_prompt_url: https://example.com/call-summary
   person:
   - connect:
       to: '+15551234567'
@@ -132,44 +176,77 @@ sections:
 
 </CodeBlocks>
 
-When the call ends, the SWML can send a call summary to your server through a webhook. The Server SDKs
-also send REST commands and receive webhooks from the same codebase, so in practice a single backend
-manages your entire call flow.
+Step 4 in practice: before a maintenance window, your backend can transfer each live call to a short
+inline SWML document that apologizes and hangs up:
 
-<llms-ignore>
+<CodeBlocks>
 
-<img src="/assets/images/img/recommended-path-themed.svg" alt="A caller on a phone, SIP, or a browser reaches a phone number or Address, which points at an External SWML script Resource. The Resource fetches SWML from your stack, written with the Server SDKs Agents namespace, and SignalWire runs the live call. The SWML makes SWAIG tool calls to your systems. From the same stack, the REST API, used through the Server SDKs REST namespace, sends call commands over HTTP to the live call, and manages numbers, Resources, and tokens in your Space configuration." />
+```python title="Python — REST client"
+from signalwire.rest import RestClient
 
-</llms-ignore>
+client = RestClient(project="<YOUR_PROJECT_ID>", token="<YOUR_API_TOKEN>", host="<YOUR_SPACE>.signalwire.com")
 
-<llms-only>
-
-```mermaid
-flowchart LR
-    Caller["Caller<br/>phone · SIP · browser"] --> Address["Phone number<br/>or Address"]
-    Address --> Resource["Resource<br/>External SWML script"]
-    subgraph Stack["Your stack"]
-        Agent["SWML<br/>Server SDKs · Agents"]
-        Backend["REST API<br/>Server SDKs · REST"]
-    end
-    Resource -- "fetches SWML" --> Agent
-    Agent -- "SWAIG tool calls" --> Systems["Your systems<br/>data · rules"]
-    Backend -- "call commands over HTTP" --> Call(("Live call"))
-    Resource --> Call
-    Backend -- "numbers · Resources · tokens" --> Platform["Space configuration"]
+client.calling.transfer(
+    "<YOUR_CALL_ID>",
+    dest={
+        "version": "1.0.0",
+        "sections": {
+            "main": [
+                {"play": {"url": "say:Sorry, we need to end this call for server maintenance. Please call back in 20 minutes."}},
+                {"hangup": {}},
+            ]
+        },
+    },
+)
 ```
 
-</llms-only>
+```typescript title="TypeScript — REST client"
+import { RestClient } from '@signalwire/sdk';
 
-1. A phone number or [Address][addresses] points at a [Resource][resources]. For a call you build
-   in code, that Resource is an External SWML script whose URL is your server.
-2. When a call arrives, SignalWire sends your server a POST request with the call context, and
-   runs the SWML document your server returns: answering,
-   speaking, listening, recording, and running the AI conversation.
-3. When the AI needs data or permission, it calls a tool on your server through SWAIG (the
-   SignalWire AI Gateway). The reply can steer the conversation and trigger actions on the call.
-4. At any point, your backend can send the call a command through the REST APIs: inject a message
-   into the conversation, start a recording, play audio, or transfer the call.
+const client = new RestClient({
+  project: '<YOUR_PROJECT_ID>',
+  token: '<YOUR_API_TOKEN>',
+  host: '<YOUR_SPACE>.signalwire.com',
+});
+
+await client.calling.transfer('<YOUR_CALL_ID>', {
+  dest: {
+    version: '1.0.0',
+    sections: {
+      main: [
+        { play: { url: 'say:Sorry, we need to end this call for server maintenance. Please call back in 20 minutes.' } },
+        { hangup: {} },
+      ],
+    },
+  },
+});
+```
+
+```bash title="cURL — Calling API"
+curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
+  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": "<YOUR_CALL_ID>",
+    "command": "calling.transfer",
+    "params": {
+      "dest": {
+        "version": "1.0.0",
+        "sections": {
+          "main": [
+            { "play": { "url": "say:Sorry, we need to end this call for server maintenance. Please call back in 20 minutes." } },
+            { "hangup": {} }
+          ]
+        }
+      }
+    }
+  }'
+```
+
+</CodeBlocks>
+
+Replace the placeholders with the values from your [API credentials][api-credentials] page and the
+ID of the call to end.
 
 ## The products
 
@@ -179,6 +256,7 @@ flowchart LR
 | REST APIs | One request per action | Anywhere | Setup, outbound calls and messages, live call commands |
 | Browser SDK | A calling client | The user's browser | Calls and chat from a web page |
 | WebSocket (Relay) | Code that drives each call | Your always-on process | Step-by-step, event-driven call control |
+| Call Flow Builder | Nothing: you draw the flow in the Dashboard | SignalWire | Simple voice flows without code |
 
 ### SWML
 
@@ -198,23 +276,27 @@ agent. This one gives Ada a tool that looks up a ride:
 ```python title="Python — Agents"
 from signalwire import AgentBase, FunctionResult
 
-
-class Ada(AgentBase):
-    def __init__(self):
-        super().__init__(name="ada", route="/ada")
-        self.prompt_add_section("Role", body="You are Ada, the dispatcher for Bayview Taxi. Help callers check on their ride.")
-
-    @AgentBase.tool(
-        name="check_ride",
-        description="Look up a ride by its booking ID",
-        parameters={"booking_id": {"type": "string", "description": "The booking ID"}},
-    )
-    def check_ride(self, args, raw_data):
-        ride = rides.lookup(args["booking_id"])
-        return FunctionResult(f"The driver arrives in {ride.eta} minutes.")
+agent = AgentBase(name="ada", route="/agent")
+agent.prompt_add_section("Role", body="You are Ada, the dispatcher for Bayview Taxi. Help callers check on their ride.")
 
 
-Ada().run()
+def check_ride(args, raw_data):
+    ride = rides.lookup(args["booking_id"])
+    return FunctionResult(f"The driver arrives in {ride.eta} minutes.")
+
+
+agent.define_tool(
+    name="check_ride",
+    description="Look up a ride by its booking ID",
+    parameters={
+        "type": "object",
+        "properties": {"booking_id": {"type": "string", "description": "The booking ID"}},
+        "required": ["booking_id"],
+    },
+    handler=check_ride,
+)
+
+agent.run()
 ```
 
 ### REST APIs
@@ -279,7 +361,7 @@ happens and reacts to it directly, without the webhook layer.
 [Call Flow Builder][cfb] lets you draw a dialplan, one node per
 step. An [AI Agent Resource][resources-dashboard] configures an agent's prompt, voice, and tools in
 the Dashboard. Both produce Resources that you point a phone number at, with no code at all.
-The click to test button helps you test the call straight from the Space dashboard.
+The **Click-to-Test** button lets you test the call straight from the Dashboard.
 
 </Accordion>
 
@@ -310,8 +392,8 @@ The click to test button helps you test the call straight from the Space dashboa
 
 ## How the pieces work together
 
-Each pattern below combines a product with a building block or with another product. The running
-example is Bayview Taxi, whose AI dispatcher Ada answers the phone.
+Each pattern below combines a product with a building block or with another product, and continues
+the Bayview Taxi example, whose AI dispatcher Ada answers the phone.
 
 ### Steer a running agent from your backend with REST commands
 
@@ -481,8 +563,8 @@ something outside the conversation does, like the driver accepting.
 
 ### Point a phone number, or a browser, at the same agent
 
-An agent is reachable at an Address once it's behind a Resource. Create an External SWML script Resource
-whose URL is your agent, then give it the Addresses callers use: a phone number for the phone
+An agent is reachable at an Address once it's behind a Resource. Create a SWML Script Resource
+set to an external URL that points at the agent running on your server, then give it the Addresses callers use: a phone number for the phone
 network, and an alias such as `/public/bayview-dispatch` for everything else. The
 [Mapping numbers guide][mapping-numbers] walks through it.
 
