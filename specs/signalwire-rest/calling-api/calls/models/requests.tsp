@@ -516,8 +516,10 @@ model CallCreateParamsBase {
   @minValue(0)
   max_price_per_minute?: float64;
 
-  @doc("DTMF digits to send after the call is answered. Allowed characters: `0-9`, `A-D`, `*`, `#`, `w` (wait), `,` (pause).")
+  @doc("DTMF digits to send after the call is answered, at most 98 characters. Allowed characters: `0-9`, `A-D`, `*`, `#`, and the pauses `w` (0.5 seconds), `W` (1 second), and `,` (0.5 seconds). SignalWire waits 0.5 seconds after answer before sending the first digit.")
   @example("1234#")
+  @pattern("^[0-9A-Da-d*#wW,]{1,98}$")
+  @maxLength(98)
   send_digits?: string;
 
   @doc("Preferred FreeSWITCH region(s) for call routing. Must be drawn from the project's available regions. Accepts a single region or a priority-ordered array.")
@@ -2058,8 +2060,8 @@ model CallTransferRequest {
 
   @doc(paramsDescription)
   params: {
-    @doc("The destination to transfer the call to. Can be a SIP URI, phone number, SWML URL, or an inline [Calling SWML document](/docs/swml/reference/calling).")
-    @example("sip:destination@example.com")
+    @doc("The destination to transfer the call to: a SWML URL or an inline [Calling SWML document](/docs/swml/reference/calling). To send the caller to a phone number or SIP endpoint, transfer to a document that uses `connect`.")
+    @example("https://example.com/swml")
     @example(CallSWMLDocumentExample)
     dest: string | TypeSpec.Record<unknown>;
   };

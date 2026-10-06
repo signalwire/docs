@@ -27,7 +27,7 @@ namespace SignalWireAPI.Fabric.PhoneRoutes {
     @post
     assign(...PhoneRoutePathID, @body request: PhoneRouteAssignRequest):
       | {
-          @statusCode statusCode: 200;
+          @statusCode statusCode: 201;
           @body phone_route: PhoneRouteResponse;
         }
       | StatusCode401

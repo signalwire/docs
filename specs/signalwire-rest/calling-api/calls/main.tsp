@@ -34,7 +34,7 @@ namespace SignalWireAPI.Calling.Calls {
       | `dial` | Create and initiate a new outbound call |
       | `update` | Modify an active call's dialplan in real-time |
       | `calling.end` | Terminate an active call immediately |
-      | `calling.transfer` | Transfer a call to a new destination (SIP URI, phone number, or inline SWML) |
+      | `calling.transfer` | Transfer a call to a new SWML destination (URL or inline document) |
       | `calling.disconnect` | Disconnect bridged calls without hanging up either leg |
       | `calling.play` | Play audio, TTS, silence, or ringtone to a call |
       | `calling.play.pause` | Pause active playback |

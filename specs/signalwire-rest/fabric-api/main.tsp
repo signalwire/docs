@@ -22,6 +22,7 @@ import "./swml-scripts";
 import "./swml-webhook";
 import "./domain-applications";
 import "./phone-routes";
+import "./whatsapp-routes";
 import "./phone-number-addresses";
 import "../_globally_shared/const.tsp";
 import "../../_shared/auth.tsp";
