@@ -89,20 +89,41 @@ A sidecar runs alongside the call without taking part in it:
 
 ## Run the sidecar server
 
-Both approaches use one server, which prints the sidecar's callbacks as they arrive at `/events`.
+Both approaches use one server, which answers the sidecar's tool calls at `/swaig` and prints its
+callbacks as they arrive at `/events`.
 
-The [Server SDKs][server-sdks] receive the callbacks with `SWMLService`:
+The [Server SDKs][server-sdks] handle both with `SWMLService`:
 
 <CodeBlocks>
 <CodeBlock title="Python — SWMLService">
 ```python
 # Install: python -m pip install signalwire-sdk==3.4.1
-# Save as sidecar_events.py and run: python sidecar_events.py
-from signalwire import SWMLService
+# Save as sidecar_server.py and run: python sidecar_server.py
+from signalwire import FunctionResult, SWMLService
 
 service = SWMLService(
-    name="sidecar-events",
+    name="sidecar-server",
     basic_auth=("signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"),
+)
+
+# Stands in for your CRM.
+ACCOUNTS = {"4417": "Globex: 120 seats, renews in 30 days, currently comparing ACME."}
+
+
+# The sidecar calls lookup_account on /swaig.
+def lookup_account(args, raw_data):
+    return FunctionResult(ACCOUNTS.get(args["customer_id"], "No account matches that ID."))
+
+
+service.define_tool(
+    name="lookup_account",
+    description="Look up an account record.",
+    parameters={
+        "type": "object",
+        "properties": {"customer_id": {"type": "string"}},
+        "required": ["customer_id"],
+    },
+    handler=lookup_account,
 )
 
 
@@ -111,6 +132,8 @@ def on_event(body, headers):
     event = body.get("sidecar_event", {})  # transcription events have none
     if event.get("type") == "start":
         print(f"Sidecar started on call {event['channel_data']['call_id']}")
+    elif event.get("type") == "tool_call" and event["name"] != "sidecar_skip":
+        print(f"Tool call: {event['name']} {event.get('arguments', '')}")
     elif event.get("type") == "insight":
         print(f"Tip: {event['raw']}")
     elif event.get("type") == "final":
@@ -124,19 +147,38 @@ service.serve(host="0.0.0.0", port=8080)
 <CodeBlock title="TypeScript — SWMLService">
 ```typescript
 // Install: npm install @signalwire/sdk@2.0.5
-// Save as sidecar-events.mts and run: npx tsx sidecar-events.mts
-import { SWMLService } from "@signalwire/sdk";
+// Save as sidecar-server.mts and run: npx tsx sidecar-server.mts
+import { FunctionResult, SWMLService } from "@signalwire/sdk";
 
 interface SidecarEvent {
   type: string;
   channel_data: { call_id: string };
+  name?: string;
+  arguments?: string;
   raw?: string;
   stop_reason?: string;
 }
 
 const service = new SWMLService({
-  name: "sidecar-events",
+  name: "sidecar-server",
   basicAuth: ["signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"],
+});
+
+// Stands in for your CRM.
+const ACCOUNTS = new Map([["4417", "Globex: 120 seats, renews in 30 days, currently comparing ACME."]]);
+
+// The sidecar calls lookup_account on /swaig. Return a plain object, which the
+// SDK sends back as the tool's reply.
+service.defineTool({
+  name: "lookup_account",
+  description: "Look up an account record.",
+  parameters: {
+    type: "object",
+    properties: { customer_id: { type: "string" } },
+    required: ["customer_id"],
+  },
+  handler: (args) =>
+    new FunctionResult(ACCOUNTS.get(String(args.customer_id)) ?? "No account matches that ID.").toDict(),
 });
 
 // The sidecar posts its callbacks to /events. Return null to acknowledge each
@@ -145,6 +187,8 @@ service.registerRoutingCallback((body) => {
   const event = body.sidecar_event as SidecarEvent | undefined; // transcription events have none
   if (event?.type === "start") {
     console.log(`Sidecar started on call ${event.channel_data.call_id}`);
+  } else if (event?.type === "tool_call" && event.name !== "sidecar_skip") {
+    console.log(`Tool call: ${event.name} ${event.arguments ?? ""}`);
   } else if (event?.type === "insight") {
     console.log(`Tip: ${event.raw}`);
   } else if (event?.type === "final") {
@@ -167,6 +211,7 @@ skips those. The main types are:
 | `type` | Sent when | Field |
 |---|---|---|
 | `start` | The sidecar attaches to the call | `channel_data.call_id` |
+| `tool_call` | The model calls one of your tools | `name`, `arguments` |
 | `insight` | The sidecar has a tip for the agent | `raw` |
 | `skip` | The sidecar stays quiet because no tip is needed | `reason` |
 | `final` | The sidecar stops | `stop_reason` |
@@ -181,7 +226,7 @@ For a full list of callback types, see the [callback catalog][callback-types].
 ### Attach a sidecar via SWML
 
 Create a SWML Script that holds this document, so SignalWire runs it for calls to your number. The
-support agent is being coached from the moment the call is answered:
+sales agent is being coached from the moment the call is answered:
 
 1. Open **My Resources**, select **+ Add**, then **Script**, then **SWML Script**.
 2. Name it **AI sidecar** and leave **Used For** set to **Calling**.
@@ -194,15 +239,30 @@ support agent is being coached from the moment the call is answered:
 version: 1.0.0
 sections:
   main:
+    - answer: {}
     - ai_sidecar:
-        prompt: >-
-          You coach a support agent. After each customer turn, give the agent
-          one short tip, or call sidecar_skip if no tip is needed.
-        lang: en-US
-        url: 'https://signalwire:<YOUR_BASIC_AUTH_PASSWORD>@<YOUR_PUBLIC_HOST>/events'
+        prompt: "You are a real-time sales copilot. After each customer turn, give the agent one concise piece of advice or call sidecar_skip if no advice is needed."
+        lang: "en-US"
+        url: "https://signalwire:<YOUR_BASIC_AUTH_PASSWORD>@<YOUR_PUBLIC_HOST>/events"
+        hints: ["ACME", "Globex", "FedRAMP", "SOC 2"]
+        SWAIG:
+          defaults:
+            web_hook_url: "https://signalwire:<YOUR_BASIC_AUTH_PASSWORD>@<YOUR_PUBLIC_HOST>/swaig"
+          functions:
+            - function: lookup_account
+              description: "Look up an account record."
+              parameters:
+                type: object
+                properties:
+                  customer_id:
+                    type: string
+                required:
+                  - customer_id
     - connect:
-        to: '<YOUR_AGENT_NUMBER>'
-        from: '<YOUR_CALLER_ID>'
+        from: "<YOUR_CALLER_ID>"
+        to: "<YOUR_AGENT_NUMBER>"
+        answer_on_bridge: true
+    - hangup: {}
 ```
 </CodeBlock>
 <CodeBlock title="JSON">
@@ -212,13 +272,46 @@ sections:
   "sections": {
     "main": [
       {
+        "answer": {}
+      },
+      {
         "ai_sidecar": {
-          "prompt": "You coach a support agent. After each customer turn, give the agent one short tip, or call sidecar_skip if no tip is needed.",
+          "prompt": "You are a real-time sales copilot. After each customer turn, give the agent one concise piece of advice or call sidecar_skip if no advice is needed.",
           "lang": "en-US",
-          "url": "https://signalwire:<YOUR_BASIC_AUTH_PASSWORD>@<YOUR_PUBLIC_HOST>/events"
+          "url": "https://signalwire:<YOUR_BASIC_AUTH_PASSWORD>@<YOUR_PUBLIC_HOST>/events",
+          "hints": ["ACME", "Globex", "FedRAMP", "SOC 2"],
+          "SWAIG": {
+            "defaults": {
+              "web_hook_url": "https://signalwire:<YOUR_BASIC_AUTH_PASSWORD>@<YOUR_PUBLIC_HOST>/swaig"
+            },
+            "functions": [
+              {
+                "function": "lookup_account",
+                "description": "Look up an account record.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "customer_id": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["customer_id"]
+                }
+              }
+            ]
+          }
         }
       },
-      { "connect": { "to": "<YOUR_AGENT_NUMBER>", "from": "<YOUR_CALLER_ID>" } }
+      {
+        "connect": {
+          "from": "<YOUR_CALLER_ID>",
+          "to": "<YOUR_AGENT_NUMBER>",
+          "answer_on_bridge": true
+        }
+      },
+      {
+        "hangup": {}
+      }
     ]
   }
 }
@@ -228,10 +321,11 @@ sections:
 
 4. Select **Create**.
 
-`ai_sidecar` answers the call if nothing has answered it yet, and `lang` is its only required
-setting. Place it before `connect` so the sidecar hears the whole conversation. To let the sidecar
-look things up on your server before it gives a tip, add tools with the method's
-[`SWAIG`][ai-sidecar-swaig] setting.
+`lang` is the only required setting. Place `ai_sidecar` before `connect` so the sidecar hears the
+whole conversation. `hints` help speech recognition catch the company and product names the customer
+is likely to say. The [`SWAIG`][ai-sidecar-swaig] setting gives the sidecar a `lookup_account` tool:
+when the customer gives their customer ID, the model calls the tool, SignalWire posts the request to
+your server's `/swaig` route, and the account record shapes the sidecar's tip.
 
 Then assign the script to your phone number:
 
@@ -240,12 +334,13 @@ Then assign the script to your phone number:
 To do both in code, see [Answer a call via SWML][answer-swml].
 
 Call your number from the customer phone, and answer on the agent phone. As the customer, say "Hi,
-I was charged twice for my last order" and pause. The server prints the call's ID and the sidecar's
-tip:
+this is Globex, customer ID 4417. We're also looking at ACME." and pause. The server prints the
+call's ID, the tool call, and the sidecar's tip:
 
 ```text
 Sidecar started on call 3a1f6b2e-8c4d-4e7a-9b1f-5d2c7e8a9f10
-Tip: Apologize for the double charge and ask for the order number to look it up.
+Tool call: lookup_account {"customer_id":"4417"}
+Tip: Globex renews 120 seats in 30 days and is comparing ACME, so ask what they need to stay.
 ```
 
 When you hang up, the server prints `Sidecar finished: transcribe_close`.
@@ -257,9 +352,9 @@ The [REST Calling API][call-commands] controls a sidecar by the call's ID.
 ### Attach a sidecar via REST
 
 Send `calling.ai_sidecar` with the call's ID to attach a sidecar to a call that's already connected.
-`params` takes the same settings as the SWML method: copy `prompt`, `lang`, and `url` from the
-document in [Attach a sidecar via SWML](#attach-a-sidecar-via-swml), so the sidecar reports to your
-server.
+`params` takes the same settings as the SWML method: copy `prompt`, `lang`, `url`, `hints`, and
+`SWAIG` from the document in [Attach a sidecar via SWML](#attach-a-sidecar-via-swml), so the sidecar
+reports to your server and can call your tool.
 
 <EndpointRequestSnippet endpoint="POST /api/calling/calls" example="calling.ai_sidecar" />
 
