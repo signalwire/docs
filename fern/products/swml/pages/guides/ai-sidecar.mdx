@@ -2,7 +2,7 @@
 title: Coach live calls with an AI sidecar
 sidebar-title: AI sidecar
 slug: guides/ai-sidecar
-description: Attach an AI sidecar that listens to a live call and sends your server one line of advice for the agent after each customer turn, with SWML when the call starts or with REST on a call in progress.
+description: Attach an AI sidecar that listens to a live call and sends your server one short tip for the agent after each customer turn, with SWML when the call starts or with REST on a call in progress.
 max-toc-depth: 3
 ---
 
@@ -12,16 +12,15 @@ max-toc-depth: 3
 [caller-id]: /docs/platform/voice/how-to-set-caller-id-or-cnam
 [trial-mode]: /docs/platform/trial-mode
 [server-sdks]: /docs/server-sdks
-[swml-intro]: /docs/swml
 [ai-sidecar]: /docs/swml/reference/calling/ai-sidecar
+[ai-sidecar-swaig]: /docs/swml/reference/calling/ai-sidecar/swaig
 [callback-types]: /docs/swml/reference/calling/ai-sidecar#callback-types
 [swml-connect]: /docs/swml/reference/calling/connect
 [call-commands]: /docs/apis/rest/calls/call-commands
 
 An AI sidecar listens to a live call between a customer and your agent, and after each customer turn
-it sends your server one line of advice for the agent. It never speaks on the call, so the customer
-hears only your agent. This guide coaches Ada, a dispatcher at Bayview Taxi: when a customer reads
-out a booking code, the sidecar looks up the booking on your server and tells Ada what it found.
+it sends your server one short tip for the agent. It never speaks on the call, so the customer hears
+only your agent. This guide attaches a sidecar to a support call and prints its tips as they arrive.
 
 ## Pick the right product for AI sidecar
 
@@ -33,7 +32,7 @@ each.
 | Attach a sidecar as your SWML handles a call | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> |
 | Attach a sidecar to a call that's already in progress | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
 | Give the sidecar tools that run on your server | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
-| Receive the sidecar's advice at a webhook | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
+| Receive the sidecar's tips at a webhook | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
 | Stop the sidecar while the call continues | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
 
 - [SWML](#coach-a-call-via-swml): the call's document attaches the sidecar with
@@ -43,7 +42,7 @@ each.
   sidecar to a live call by its ID, from any process, and stops it while the call carries on. Use it
   to coach a call that's already connected, such as one your agent picked up from a queue.
 
-Both send their advice and tool calls to the same [coaching server](#run-the-coaching-server).
+Both send their tips to the same [server](#run-the-sidecar-server).
 
 ## Prepare for AI sidecar
 
@@ -66,7 +65,7 @@ Replace these values in the samples you run:
 | `<YOUR_PROJECT_ID>` | Your Project ID |
 | `<YOUR_API_TOKEN>` | Your API token with the **Voice** permission, used only in server code |
 | `<YOUR_PUBLIC_HOST>` | The public hostname of your server's tunnel, such as `abc123.ngrok.app` |
-| `<YOUR_BASIC_AUTH_PASSWORD>` | A password you choose for your server, letters and digits only, because it appears inside URLs |
+| `<YOUR_BASIC_AUTH_PASSWORD>` | A password you choose for your server, letters and digits only, because it appears inside a URL |
 | `<YOUR_CALLER_ID>` | Your SignalWire phone number, or a [verified caller ID][caller-id], in E.164 format |
 | `<YOUR_AGENT_NUMBER>` | The phone the agent answers, in E.164 format |
 | `<YOUR_CALL_ID>` | The ID of a live call, which your server prints when a sidecar starts |
@@ -78,20 +77,19 @@ A sidecar runs alongside the call without taking part in it:
 1. **The sidecar attaches to the call.** It hears both sides, and the call carries on as normal.
    A call runs one sidecar at a time.
 2. **The customer finishes a turn.** The sidecar sends the conversation so far to an AI model,
-   together with your prompt and your tools. The model writes one line of advice for the agent,
-   calls one of your tools first to look something up, or calls the built-in `sidecar_skip` tool to
-   stay quiet.
-3. **SignalWire posts each step to your server.** Advice, tool calls, and skips each arrive as a
-   callback at the URL you set.
+   together with your prompt. The model writes one tip for the agent, or calls the built-in
+   `sidecar_skip` tool to stay quiet when no tip is needed.
+3. **SignalWire posts each step to your server.** Tips, skips, and the sidecar's other steps each
+   arrive as a callback at the URL you set.
 4. **The sidecar stops.** It stops when the call ends or when you stop it, and sends a last callback
    with a record of the session.
 
-## Run the coaching server
+## Run the sidecar server
 
-Both approaches use one server. It answers the sidecar's tool calls at `/swaig` and prints the
-sidecar's callbacks as they arrive at `/events`. For the SWML approach, it also serves the call's
-SWML document at its root URL. Every route requires the username `signalwire` and your password,
-and the document passes the same credentials inside the URLs it gives the sidecar.
+Both approaches use one server. It prints the sidecar's callbacks as they arrive at `/events`, and,
+for the SWML approach, serves the call's SWML document at its root URL. Both routes require the
+username `signalwire` and your password, and the document passes the same credentials in the URL it
+gives the sidecar.
 
 The [Server SDKs][server-sdks] build the document with the SWML builder and serve it through
 `SWMLService`:
@@ -100,174 +98,74 @@ The [Server SDKs][server-sdks] build the document with the SWML builder and serv
 <CodeBlock title="Python — SWML builder">
 ```python
 # Install: python -m pip install signalwire-sdk==3.4.1
-# Save as dispatch_coach.py and run: python dispatch_coach.py
-from signalwire import FunctionResult, SWMLBuilder, SWMLService
+# Save as sidecar.py and run: python sidecar.py
+from signalwire import SWMLBuilder, SWMLService
 
 PASSWORD = "<YOUR_BASIC_AUTH_PASSWORD>"
-BASE_URL = f"https://signalwire:{PASSWORD}@<YOUR_PUBLIC_HOST>"
 
-# Stands in for Bayview Taxi's booking system.
-BOOKINGS = {"BT1042": "Driver Sam, silver Prius, 6 minutes from 200 Harbor Avenue."}
-
-PROMPT = (
-    "You coach Ada, a Bayview Taxi dispatcher, during a live call with a customer. "
-    "Speak to Ada in one short sentence. When the customer gives a booking code, "
-    "call lookup_booking and pass on what it returns. If Ada needs no help, call "
-    "sidecar_skip instead of giving advice."
-)
-
-LOOKUP_DESCRIPTION = "Look up a ride booking by its confirmation code."
-LOOKUP_PARAMETERS = {
-    "type": "object",
-    "properties": {
-        "confirmation": {"type": "string", "description": "The code, such as BT1042."},
-    },
-    "required": ["confirmation"],
-}
-
-service = SWMLService(name="dispatch-coach", basic_auth=("signalwire", PASSWORD))
+service = SWMLService(name="sidecar", basic_auth=("signalwire", PASSWORD))
 swml = SWMLBuilder(service)
-swml.answer()
 swml.ai_sidecar(
-    prompt=PROMPT,
+    prompt="You coach a support agent. After each customer turn, give the agent "
+    "one short tip, or call sidecar_skip if no tip is needed.",
     lang="en-US",
-    url=f"{BASE_URL}/events",
-    SWAIG={
-        "defaults": {"web_hook_url": f"{BASE_URL}/swaig"},
-        "functions": [
-            {
-                "function": "lookup_booking",
-                "description": LOOKUP_DESCRIPTION,
-                "parameters": LOOKUP_PARAMETERS,
-            },
-        ],
-    },
+    url=f"https://signalwire:{PASSWORD}@<YOUR_PUBLIC_HOST>/events",
 )
 # "from" is a Python keyword, so it's passed in a dictionary.
 swml.connect(to="<YOUR_AGENT_NUMBER>", **{"from": "<YOUR_CALLER_ID>"})
 
 
-# The sidecar calls this tool on your server's /swaig route.
-def lookup_booking(args, raw_data):
-    code = args["confirmation"].replace(" ", "").upper()
-    return FunctionResult(BOOKINGS.get(code, f"No booking matches {code}."))
-
-
-service.define_tool(
-    name="lookup_booking",
-    description=LOOKUP_DESCRIPTION,
-    parameters=LOOKUP_PARAMETERS,
-    handler=lookup_booking,
-)
-
-
 # The sidecar posts its callbacks to /events.
 def on_event(body, headers):
-    event = body.get("sidecar_event")
-    if event is None:
-        return None  # a transcription event, which shares the URL
-    if event["type"] == "start":
+    event = body.get("sidecar_event", {})  # transcription events have none
+    if event.get("type") == "start":
         print(f"Sidecar started on call {event['channel_data']['call_id']}")
-    elif event["type"] == "insight":
-        print(f"Advice: {event['raw']}")
-    elif event["type"] == "tool_call" and event["name"] != "sidecar_skip":
-        print(f"Tool call: {event['name']} {event.get('arguments', '')}")
-    elif event["type"] == "final":
+    elif event.get("type") == "insight":
+        print(f"Tip: {event['raw']}")
+    elif event.get("type") == "final":
         print(f"Sidecar finished: {event['stop_reason']}")
-    return None
 
 
 service.register_routing_callback(on_event, path="/events")
-
 service.serve(host="0.0.0.0", port=8080)
 ```
 </CodeBlock>
 <CodeBlock title="TypeScript — SWML builder">
 ```typescript
 // Install: npm install @signalwire/sdk@2.0.5
-// Save as dispatch-coach.mts and run: npx tsx dispatch-coach.mts
-import { FunctionResult, SWMLService } from "@signalwire/sdk";
+// Save as sidecar.mts and run: npx tsx sidecar.mts
+import { SWMLService } from "@signalwire/sdk";
 
 const PASSWORD = "<YOUR_BASIC_AUTH_PASSWORD>";
-const BASE_URL = `https://signalwire:${PASSWORD}@<YOUR_PUBLIC_HOST>`;
-
-// Stands in for Bayview Taxi's booking system.
-const BOOKINGS = new Map([["BT1042", "Driver Sam, silver Prius, 6 minutes from 200 Harbor Avenue."]]);
-
-const PROMPT =
-  "You coach Ada, a Bayview Taxi dispatcher, during a live call with a customer. " +
-  "Speak to Ada in one short sentence. When the customer gives a booking code, " +
-  "call lookup_booking and pass on what it returns. If Ada needs no help, call " +
-  "sidecar_skip instead of giving advice.";
-
-const LOOKUP_DESCRIPTION = "Look up a ride booking by its confirmation code.";
-const LOOKUP_PARAMETERS = {
-  type: "object",
-  properties: {
-    confirmation: { type: "string", description: "The code, such as BT1042." },
-  },
-  required: ["confirmation"],
-};
 
 interface SidecarEvent {
   type: string;
   channel_data: { call_id: string };
   raw?: string;
-  name?: string;
-  arguments?: string;
   stop_reason?: string;
 }
 
-const service = new SWMLService({
-  name: "dispatch-coach",
-  basicAuth: ["signalwire", PASSWORD],
-});
+const service = new SWMLService({ name: "sidecar", basicAuth: ["signalwire", PASSWORD] });
 const swml = service.getBuilder();
-swml.answer();
 // This SDK version's builder has no ai_sidecar method, so the verb is added by name.
 swml.addVerb("ai_sidecar", {
-  prompt: PROMPT,
+  prompt:
+    "You coach a support agent. After each customer turn, give the agent " +
+    "one short tip, or call sidecar_skip if no tip is needed.",
   lang: "en-US",
-  url: `${BASE_URL}/events`,
-  SWAIG: {
-    defaults: { web_hook_url: `${BASE_URL}/swaig` },
-    functions: [
-      {
-        function: "lookup_booking",
-        description: LOOKUP_DESCRIPTION,
-        parameters: LOOKUP_PARAMETERS,
-      },
-    ],
-  },
+  url: `https://signalwire:${PASSWORD}@<YOUR_PUBLIC_HOST>/events`,
 });
 swml.connect({ to: "<YOUR_AGENT_NUMBER>", from: "<YOUR_CALLER_ID>" });
-
-// The sidecar calls this tool on your server's /swaig route. Return a plain
-// object, which the SDK sends back as the tool's reply.
-service.defineTool({
-  name: "lookup_booking",
-  description: LOOKUP_DESCRIPTION,
-  parameters: LOOKUP_PARAMETERS,
-  handler: (args) => {
-    const code = String(args.confirmation).replace(/\s/g, "").toUpperCase();
-    return new FunctionResult(BOOKINGS.get(code) ?? `No booking matches ${code}.`).toDict();
-  },
-});
 
 // The sidecar posts its callbacks to /events. Return null to acknowledge each
 // one: any other value tells the SDK to redirect the request.
 service.registerRoutingCallback((body) => {
-  const event = body.sidecar_event as SidecarEvent | undefined;
-  if (event === undefined) {
-    return null; // a transcription event, which shares the URL
-  }
-  if (event.type === "start") {
+  const event = body.sidecar_event as SidecarEvent | undefined; // transcription events have none
+  if (event?.type === "start") {
     console.log(`Sidecar started on call ${event.channel_data.call_id}`);
-  } else if (event.type === "insight") {
-    console.log(`Advice: ${event.raw}`);
-  } else if (event.type === "tool_call" && event.name !== "sidecar_skip") {
-    console.log(`Tool call: ${event.name} ${event.arguments ?? ""}`);
-  } else if (event.type === "final") {
+  } else if (event?.type === "insight") {
+    console.log(`Tip: ${event.raw}`);
+  } else if (event?.type === "final") {
     console.log(`Sidecar finished: ${event.stop_reason}`);
   }
   return null;
@@ -289,13 +187,12 @@ The response is the SWML document. A `401` means the password doesn't match the 
 
 Each callback carries its event under a `sidecar_event` key, with a `type` that says what happened.
 The same URL also receives transcription events that have no `sidecar_event` key, so the server
-checks for it before it reads `type`. The server prints these types:
+skips those. The server prints these types:
 
 | `type` | Sent when | Field the server prints |
 |---|---|---|
 | `start` | The sidecar attaches to the call | `channel_data.call_id`, the call's ID |
-| `tool_call` | The model calls one of your tools | `name` and `arguments` |
-| `insight` | The sidecar has advice for the agent | `raw`, the advice |
+| `insight` | The sidecar has a tip for the agent | `raw`, the tip |
 | `final` | The sidecar stops | `stop_reason`, why it stopped |
 
 The [callback catalog][callback-types] lists every type, including `skip`, which arrives with the
@@ -308,8 +205,8 @@ model's `reason` each time it stays quiet.
 
 ### Attach a sidecar via SWML
 
-The coaching server serves this document. Customers who call your number are coached from the moment
-the call is answered:
+The server serves this document. Customers who call your number are coached from the moment the call
+is answered:
 
 <CodeBlocks>
 <CodeBlock title="YAML">
@@ -317,29 +214,12 @@ the call is answered:
 version: 1.0.0
 sections:
   main:
-    - answer: {}
     - ai_sidecar:
         prompt: >-
-          You coach Ada, a Bayview Taxi dispatcher, during a live call with a customer.
-          Speak to Ada in one short sentence. When the customer gives a booking code,
-          call lookup_booking and pass on what it returns. If Ada needs no help, call
-          sidecar_skip instead of giving advice.
+          You coach a support agent. After each customer turn, give the agent
+          one short tip, or call sidecar_skip if no tip is needed.
         lang: en-US
         url: 'https://signalwire:<YOUR_BASIC_AUTH_PASSWORD>@<YOUR_PUBLIC_HOST>/events'
-        SWAIG:
-          defaults:
-            web_hook_url: 'https://signalwire:<YOUR_BASIC_AUTH_PASSWORD>@<YOUR_PUBLIC_HOST>/swaig'
-          functions:
-            - function: lookup_booking
-              description: Look up a ride booking by its confirmation code.
-              parameters:
-                type: object
-                properties:
-                  confirmation:
-                    type: string
-                    description: The code, such as BT1042.
-                required:
-                  - confirmation
     - connect:
         to: '<YOUR_AGENT_NUMBER>'
         from: '<YOUR_CALLER_ID>'
@@ -351,30 +231,11 @@ sections:
   "version": "1.0.0",
   "sections": {
     "main": [
-      { "answer": {} },
       {
         "ai_sidecar": {
-          "prompt": "You coach Ada, a Bayview Taxi dispatcher, during a live call with a customer. Speak to Ada in one short sentence. When the customer gives a booking code, call lookup_booking and pass on what it returns. If Ada needs no help, call sidecar_skip instead of giving advice.",
+          "prompt": "You coach a support agent. After each customer turn, give the agent one short tip, or call sidecar_skip if no tip is needed.",
           "lang": "en-US",
-          "url": "https://signalwire:<YOUR_BASIC_AUTH_PASSWORD>@<YOUR_PUBLIC_HOST>/events",
-          "SWAIG": {
-            "defaults": {
-              "web_hook_url": "https://signalwire:<YOUR_BASIC_AUTH_PASSWORD>@<YOUR_PUBLIC_HOST>/swaig"
-            },
-            "functions": [
-              {
-                "function": "lookup_booking",
-                "description": "Look up a ride booking by its confirmation code.",
-                "parameters": {
-                  "type": "object",
-                  "properties": {
-                    "confirmation": { "type": "string", "description": "The code, such as BT1042." }
-                  },
-                  "required": ["confirmation"]
-                }
-              }
-            ]
-          }
+          "url": "https://signalwire:<YOUR_BASIC_AUTH_PASSWORD>@<YOUR_PUBLIC_HOST>/events"
         }
       },
       { "connect": { "to": "<YOUR_AGENT_NUMBER>", "from": "<YOUR_CALLER_ID>" } }
@@ -385,10 +246,11 @@ sections:
 </CodeBlock>
 </CodeBlocks>
 
-`lang` is the only required setting. Place `ai_sidecar` before `connect` so the sidecar hears the
-whole conversation. The prompt describes the coaching: the sidecar already knows that it's a silent
-coach whose advice goes only to the agent. Tell the model to call `sidecar_skip` when no advice is
-needed, or it tends to offer advice on every turn.
+`ai_sidecar` answers the call if nothing has answered it yet, and `lang` is its only required
+setting. Place it before `connect` so the sidecar hears the whole conversation. The prompt describes
+the coaching; tell the model to call `sidecar_skip` when no tip is needed, or it tends to offer one
+on every turn. To let the sidecar look things up on your server before it gives a tip, add tools
+with the method's `SWAIG` setting, as the [AI sidecar SWAIG reference][ai-sidecar-swaig] shows.
 
 To have SignalWire fetch the document, create a SWML Script with **Handle Calls Using** set to
 **External URL** and `https://signalwire:<YOUR_BASIC_AUTH_PASSWORD>@<YOUR_PUBLIC_HOST>/` as its
@@ -396,13 +258,12 @@ To have SignalWire fetch the document, create a SWML Script with **Handle Calls 
 [Answer a call via SWML][answer-swml] shows.
 
 Call your number from the customer phone, and answer on the agent phone. As the customer, say "Hi,
-my booking code is BT1042, where's my driver?" and pause. The server prints the call's ID, the tool
-call, and the sidecar's advice, in wording that changes from call to call:
+I was charged twice for my last order" and pause. The server prints the call's ID and the sidecar's
+tip, in wording that changes from call to call:
 
 ```text
 Sidecar started on call 3a1f6b2e-8c4d-4e7a-9b1f-5d2c7e8a9f10
-Tool call: lookup_booking {"confirmation":"BT1042"}
-Advice: Driver Sam is 6 minutes away in a silver Prius, pickup at 200 Harbor Avenue.
+Tip: Apologize for the double charge and ask for the order number to look it up.
 ```
 
 Stay on the call for the next section, or hang up and the server prints
@@ -411,7 +272,7 @@ Stay on the call for the next section, or hang up and the server prints
 If the call connects but the server prints nothing, the sidecar couldn't start or couldn't reach
 your `/events` URL. A sidecar that fails to start doesn't stop the document, so the call still
 connects. Check that the document sets `lang`, that the tunnel points at port `8080`, and that the
-password in the URLs matches your server's.
+password in the URL matches your server's.
 
 ## Coach a call in progress via REST
 
@@ -432,15 +293,14 @@ printed.
 ### Attach a sidecar via REST
 
 Send `calling.ai_sidecar` to attach a sidecar to a call that's already connected. `params` takes the
-same settings as the SWML method: copy `prompt`, `lang`, `url`, and `SWAIG` from the document in
-[Attach a sidecar via SWML](#attach-a-sidecar-via-swml), so the new sidecar reports to your coaching
-server.
+same settings as the SWML method: copy `prompt`, `lang`, and `url` from the document in
+[Attach a sidecar via SWML](#attach-a-sidecar-via-swml), so the new sidecar reports to your server.
 
 <EndpointRequestSnippet endpoint="POST /api/calling/calls" example="calling.ai_sidecar" />
 
 To try it, send the command for the call you stopped the sidecar on. The server prints
-`Sidecar started` again, and the next booking code you read out as the customer brings new advice.
-A call runs one sidecar at a time, so the request fails while another sidecar is still attached.
+`Sidecar started` again, and tips resume after the customer's next turn. A call runs one sidecar at
+a time, so the request fails while another sidecar is still attached.
 
 ## Next steps
 
@@ -455,7 +315,7 @@ A call runs one sidecar at a time, so the request fails while another sidecar is
 </Card>
 
 <Card title="AI sidecar SWAIG" href="/docs/swml/reference/calling/ai-sidecar/swaig" icon="regular wrench">
-  Declare more tools and connect MCP servers.
+  Give the sidecar tools and connect MCP servers.
 </Card>
 
 <Card title="Call commands" href="/docs/apis/rest/calls/call-commands" icon="regular rectangle-api">
