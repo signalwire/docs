@@ -2,29 +2,26 @@
 title: Coach live calls with an AI sidecar
 sidebar-title: AI sidecar
 slug: guides/ai-sidecar
-description: Attach an AI sidecar with SWML that listens to a live call and sends your server one line of advice for the agent after each customer turn, then attach and stop one on a call in progress with REST.
+description: Attach an AI sidecar that listens to a live call and sends your server one line of advice for the agent after each customer turn, with SWML when the call starts or with REST on a call in progress.
 max-toc-depth: 3
 ---
 
-[ai-sidecar]: /docs/swml/reference/calling/ai-sidecar
-[ai-sidecar-params]: /docs/swml/reference/calling/ai-sidecar/params
-[ai-sidecar-swaig]: /docs/swml/reference/calling/ai-sidecar/swaig
-[callback-types]: /docs/swml/reference/calling/ai-sidecar#callback-types
-[call-commands]: /docs/apis/rest/calls/call-commands
-[connect]: /docs/swml/reference/calling/connect
-[swml-intro]: /docs/swml
-[api-credentials]: /docs/platform/your-signalwire-api-space
-[server-sdks]: /docs/server-sdks
 [make-and-receive-calls]: /docs/platform/voice/make-and-receive-calls
 [prepare-calls]: /docs/platform/voice/make-and-receive-calls#prepare-for-your-first-call
 [answer-swml]: /docs/platform/voice/make-and-receive-calls#answer-a-call-via-swml
 [caller-id]: /docs/platform/voice/how-to-set-caller-id-or-cnam
 [trial-mode]: /docs/platform/trial-mode
+[server-sdks]: /docs/server-sdks
+[swml-intro]: /docs/swml
+[ai-sidecar]: /docs/swml/reference/calling/ai-sidecar
+[callback-types]: /docs/swml/reference/calling/ai-sidecar#callback-types
+[swml-connect]: /docs/swml/reference/calling/connect
+[call-commands]: /docs/apis/rest/calls/call-commands
 
-An AI sidecar listens to a live call between a customer and your agent, and after each customer
-turn it sends your server one line of advice for the agent. It never speaks on the call, so the
-customer hears only your agent. Start by coaching a call between two phones you own with SWML, then
-attach and stop a sidecar on a call that's already in progress with REST.
+An AI sidecar listens to a live call between a customer and your agent, and after each customer turn
+it sends your server one line of advice for the agent. It never speaks on the call, so the customer
+hears only your agent. This guide coaches Ada, a dispatcher at Bayview Taxi: when a customer reads
+out a booking code, the sidecar looks up the booking on your server and tells Ada what it found.
 
 ## Pick the right product for AI sidecar
 
@@ -39,64 +36,65 @@ each.
 | Receive the sidecar's advice at a webhook | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
 | Stop the sidecar while the call continues | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
 
-- [SWML][swml-intro] is the document that describes how a call should flow. The
-  [`ai_sidecar`][ai-sidecar] method attaches the sidecar as part of that flow.
-- The [REST Calling API][call-commands] sends commands to a live call by its ID, from any process.
-  It takes the same sidecar settings as the SWML method.
+- [SWML](#coach-a-call-via-swml): the call's document attaches the sidecar with
+  [`ai_sidecar`][ai-sidecar], then bridges the customer to your agent. Use it when every call to a
+  number should be coached from the start.
+- [REST](#coach-a-call-in-progress-via-rest): the [REST Calling API][call-commands] attaches a
+  sidecar to a live call by its ID, from any process, and stops it while the call carries on. Use it
+  to coach a call that's already connected, such as one your agent picked up from a queue.
 
-## How the sidecar works
-
-The sidecar hears both sides of the call. Each time the customer finishes speaking, it sends the
-conversation so far to an AI model, together with your prompt and your tools. The model then writes
-one line of advice for the agent, calls one of your tools first to look something up, or calls the
-built-in `sidecar_skip` tool to stay quiet. SignalWire posts each of these steps to your server as a
-callback.
-
-`ai_sidecar` starts the sidecar and the document moves straight on, usually to a
-[`connect`][connect] that bridges the customer to your agent. The sidecar runs until the call ends
-or you stop it.
+Both send their advice and tool calls to the same [coaching server](#run-the-coaching-server).
 
 ## Prepare for AI sidecar
 
-Start with working call setup from [Make and receive calls][make-and-receive-calls]. Have these
-ready:
-
-- Your Project ID and an API token with the **Voice** permission, from the Dashboard's
-  [API credentials][api-credentials] page, if you'll use REST.
-- A phone number in your Space.
-- Two phones you can answer: one plays the customer and one plays the agent.
-- A machine that can run a small server, and a tunnel such as [ngrok](https://ngrok.com/) that
-  gives it a public HTTPS URL.
+Start with working call setup from [Make and receive calls][make-and-receive-calls]. To test a
+sidecar you need two phones: one to call in as the customer, and one to answer as the agent. You also
+need a machine that can run a small server, and a tunnel such as [ngrok](https://ngrok.com/) that
+gives it a public HTTPS URL.
 
 <Warning title="Trial projects only call and receive calls from verified numbers">
 A [trial project][trial-mode] only places calls to and receives calls from numbers you've
-purchased or verified. Verify both phones before you start, as
-[Prepare for your first call][prepare-calls] shows.
+purchased or verified. [Prepare for your first call][prepare-calls] shows how to verify the
+phones you'll test with.
 </Warning>
 
-Replace these values in the samples:
+Replace these values in the samples you run:
 
 | Value | Replace with |
 |---|---|
+| `<YOUR_SPACE>` | Your Space's subdomain in `<YOUR_SPACE>.signalwire.com` |
+| `<YOUR_PROJECT_ID>` | Your Project ID |
+| `<YOUR_API_TOKEN>` | Your API token with the **Voice** permission, used only in server code |
 | `<YOUR_PUBLIC_HOST>` | The public hostname of your server's tunnel, such as `abc123.ngrok.app` |
 | `<YOUR_BASIC_AUTH_PASSWORD>` | A password you choose for your server, letters and digits only, because it appears inside URLs |
 | `<YOUR_CALLER_ID>` | Your SignalWire phone number, or a [verified caller ID][caller-id], in E.164 format |
-| `<YOUR_DESTINATION>` | The phone that plays the agent, in E.164 format |
+| `<YOUR_AGENT_NUMBER>` | The phone the agent answers, in E.164 format |
+| `<YOUR_CALL_ID>` | The ID of a live call, which your server prints when a sidecar starts |
 
-## Coach your first call
+## How the AI sidecar works
 
-This walkthrough coaches a dispatcher at Bayview Taxi, a fictional cab company. When the customer
-reads out a booking code, the sidecar looks the booking up on your server and tells the dispatcher
-what it found.
+A sidecar runs alongside the call without taking part in it:
 
-<Steps>
+1. **The sidecar attaches to the call.** It hears both sides, and the call carries on as normal.
+   A call runs one sidecar at a time.
+2. **The customer finishes a turn.** The sidecar sends the conversation so far to an AI model,
+   together with your prompt and your tools. The model writes one line of advice for the agent,
+   calls one of your tools first to look something up, or calls the built-in `sidecar_skip` tool to
+   stay quiet.
+3. **SignalWire posts each step to your server.** Advice, tool calls, and skips each arrive as a
+   callback at the URL you set.
+4. **The sidecar stops.** It stops when the call ends or when you stop it, and sends a last callback
+   with a record of the session.
 
-<Step title="Run the coaching server" id="run-the-coaching-server">
+## Run the coaching server
 
-This server serves the call's SWML document at its root URL, answers the sidecar's tool calls at
-`/swaig`, and prints the sidecar's advice from the callbacks it receives at `/events`. Every route
-requires the username `signalwire` and your password, and the document passes the same credentials
-inside the URLs it gives the sidecar.
+Both approaches use one server. It answers the sidecar's tool calls at `/swaig` and prints the
+sidecar's callbacks as they arrive at `/events`. For the SWML approach, it also serves the call's
+SWML document at its root URL. Every route requires the username `signalwire` and your password,
+and the document passes the same credentials inside the URLs it gives the sidecar.
+
+The [Server SDKs][server-sdks] build the document with the SWML builder and serve it through
+`SWMLService`:
 
 <CodeBlocks>
 <CodeBlock title="Python — SWML builder">
@@ -112,10 +110,10 @@ BASE_URL = f"https://signalwire:{PASSWORD}@<YOUR_PUBLIC_HOST>"
 BOOKINGS = {"BT1042": "Driver Sam, silver Prius, 6 minutes from 200 Harbor Avenue."}
 
 PROMPT = (
-    "You coach a Bayview Taxi dispatcher during a live call with a customer. "
-    "Speak to the dispatcher in one short sentence. When the customer gives a "
-    "booking code, call lookup_booking and pass on what it returns. If the "
-    "dispatcher needs no help, call sidecar_skip instead of giving advice."
+    "You coach Ada, a Bayview Taxi dispatcher, during a live call with a customer. "
+    "Speak to Ada in one short sentence. When the customer gives a booking code, "
+    "call lookup_booking and pass on what it returns. If Ada needs no help, call "
+    "sidecar_skip instead of giving advice."
 )
 
 LOOKUP_DESCRIPTION = "Look up a ride booking by its confirmation code."
@@ -146,7 +144,7 @@ swml.ai_sidecar(
     },
 )
 # "from" is a Python keyword, so it's passed in a dictionary.
-swml.connect(to="<YOUR_DESTINATION>", **{"from": "<YOUR_CALLER_ID>"})
+swml.connect(to="<YOUR_AGENT_NUMBER>", **{"from": "<YOUR_CALLER_ID>"})
 
 
 # The sidecar calls this tool on your server's /swaig route.
@@ -168,7 +166,9 @@ def on_event(body, headers):
     event = body.get("sidecar_event")
     if event is None:
         return None  # a transcription event, which shares the URL
-    if event["type"] == "insight":
+    if event["type"] == "start":
+        print(f"Sidecar started on call {event['channel_data']['call_id']}")
+    elif event["type"] == "insight":
         print(f"Advice: {event['raw']}")
     elif event["type"] == "tool_call" and event["name"] != "sidecar_skip":
         print(f"Tool call: {event['name']} {event.get('arguments', '')}")
@@ -195,10 +195,10 @@ const BASE_URL = `https://signalwire:${PASSWORD}@<YOUR_PUBLIC_HOST>`;
 const BOOKINGS = new Map([["BT1042", "Driver Sam, silver Prius, 6 minutes from 200 Harbor Avenue."]]);
 
 const PROMPT =
-  "You coach a Bayview Taxi dispatcher during a live call with a customer. " +
-  "Speak to the dispatcher in one short sentence. When the customer gives a " +
-  "booking code, call lookup_booking and pass on what it returns. If the " +
-  "dispatcher needs no help, call sidecar_skip instead of giving advice.";
+  "You coach Ada, a Bayview Taxi dispatcher, during a live call with a customer. " +
+  "Speak to Ada in one short sentence. When the customer gives a booking code, " +
+  "call lookup_booking and pass on what it returns. If Ada needs no help, call " +
+  "sidecar_skip instead of giving advice.";
 
 const LOOKUP_DESCRIPTION = "Look up a ride booking by its confirmation code.";
 const LOOKUP_PARAMETERS = {
@@ -211,6 +211,7 @@ const LOOKUP_PARAMETERS = {
 
 interface SidecarEvent {
   type: string;
+  channel_data: { call_id: string };
   raw?: string;
   name?: string;
   arguments?: string;
@@ -239,7 +240,7 @@ swml.addVerb("ai_sidecar", {
     ],
   },
 });
-swml.connect({ to: "<YOUR_DESTINATION>", from: "<YOUR_CALLER_ID>" });
+swml.connect({ to: "<YOUR_AGENT_NUMBER>", from: "<YOUR_CALLER_ID>" });
 
 // The sidecar calls this tool on your server's /swaig route. Return a plain
 // object, which the SDK sends back as the tool's reply.
@@ -260,7 +261,9 @@ service.registerRoutingCallback((body) => {
   if (event === undefined) {
     return null; // a transcription event, which shares the URL
   }
-  if (event.type === "insight") {
+  if (event.type === "start") {
+    console.log(`Sidecar started on call ${event.channel_data.call_id}`);
+  } else if (event.type === "insight") {
     console.log(`Advice: ${event.raw}`);
   } else if (event.type === "tool_call" && event.name !== "sidecar_skip") {
     console.log(`Tool call: ${event.name} ${event.arguments ?? ""}`);
@@ -275,9 +278,8 @@ await service.run({ port: 8080 });
 </CodeBlock>
 </CodeBlocks>
 
-The [Server SDKs][server-sdks] build the document with the SWML builder and serve it through
-`SWMLService`. Start a tunnel to port `8080`, such as `ngrok http 8080`, and check that the document
-is reachable through it:
+Start a tunnel to port `8080`, such as `ngrok http 8080`, and check that the server is reachable
+through it:
 
 ```bash
 curl -u "signalwire:<YOUR_BASIC_AUTH_PASSWORD>" "https://<YOUR_PUBLIC_HOST>/"
@@ -285,51 +287,32 @@ curl -u "signalwire:<YOUR_BASIC_AUTH_PASSWORD>" "https://<YOUR_PUBLIC_HOST>/"
 
 The response is the SWML document. A `401` means the password doesn't match the one in your server.
 
-</Step>
+Each callback carries its event under a `sidecar_event` key, with a `type` that says what happened.
+The same URL also receives transcription events that have no `sidecar_event` key, so the server
+checks for it before it reads `type`. The server prints these types:
 
-<Step title="Point your phone number at the server" id="point-your-phone-number-at-the-server">
+| `type` | Sent when | Field the server prints |
+|---|---|---|
+| `start` | The sidecar attaches to the call | `channel_data.call_id`, the call's ID |
+| `tool_call` | The model calls one of your tools | `name` and `arguments` |
+| `insight` | The sidecar has advice for the agent | `raw`, the advice |
+| `final` | The sidecar stops | `stop_reason`, why it stopped |
 
-Create a SWML Script that fetches the document from your server:
+The [callback catalog][callback-types] lists every type, including `skip`, which arrives with the
+model's `reason` each time it stays quiet.
 
-1. Open **My Resources**, select **+ Add**, then **Script**, then **SWML Script**.
-2. Name it **Dispatch coach** and leave **Used For** set to **Calling**.
-3. Under **Handle Calls Using**, choose **External URL** and enter
-   `https://signalwire:<YOUR_BASIC_AUTH_PASSWORD>@<YOUR_PUBLIC_HOST>/` in **Primary Script URL**.
-4. Select **Create**.
+## Coach a call via SWML
 
-Then assign the script to your phone number:
+[`ai_sidecar`][ai-sidecar] attaches the sidecar and the document moves straight on, here to a
+[`connect`][swml-connect] that bridges the customer to the agent.
 
-<Markdown src="/snippets/common/dashboard/_assign-resource-to-number.mdx" />
+### Attach a sidecar via SWML
 
-To do both in code, see [Answer a call via SWML][answer-swml].
+The coaching server serves this document. Customers who call your number are coached from the moment
+the call is answered:
 
-</Step>
-
-<Step title="Call your number and talk" id="call-your-number-and-talk">
-
-From the phone that plays the customer, call your SignalWire number, and answer on the phone that
-plays the dispatcher. As the customer, say "Hi, my booking code is BT1042, where's my driver?" and
-pause. The server prints the tool call and the sidecar's advice, in wording that changes from call
-to call:
-
-```text
-Tool call: lookup_booking {"confirmation":"BT1042"}
-Advice: Driver Sam is 6 minutes away in a silver Prius, pickup at 200 Harbor Avenue.
-```
-
-When you hang up, the server prints `Sidecar finished: transcribe_close`.
-
-If the call connects but the server prints nothing, the sidecar couldn't start or couldn't reach
-your `/events` URL. A sidecar that fails to start doesn't stop the document, so the call still
-connects. Check that the document sets `lang`, that the tunnel points at port `8080`, and that the
-password in the URLs matches your server's.
-
-</Step>
-
-</Steps>
-
-The server serves this document, shown here in YAML:
-
+<CodeBlocks>
+<CodeBlock title="YAML">
 ```yaml
 version: 1.0.0
 sections:
@@ -337,10 +320,10 @@ sections:
     - answer: {}
     - ai_sidecar:
         prompt: >-
-          You coach a Bayview Taxi dispatcher during a live call with a customer.
-          Speak to the dispatcher in one short sentence. When the customer gives a
-          booking code, call lookup_booking and pass on what it returns. If the
-          dispatcher needs no help, call sidecar_skip instead of giving advice.
+          You coach Ada, a Bayview Taxi dispatcher, during a live call with a customer.
+          Speak to Ada in one short sentence. When the customer gives a booking code,
+          call lookup_booking and pass on what it returns. If Ada needs no help, call
+          sidecar_skip instead of giving advice.
         lang: en-US
         url: 'https://signalwire:<YOUR_BASIC_AUTH_PASSWORD>@<YOUR_PUBLIC_HOST>/events'
         SWAIG:
@@ -358,57 +341,106 @@ sections:
                 required:
                   - confirmation
     - connect:
-        to: '<YOUR_DESTINATION>'
+        to: '<YOUR_AGENT_NUMBER>'
         from: '<YOUR_CALLER_ID>'
 ```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      { "answer": {} },
+      {
+        "ai_sidecar": {
+          "prompt": "You coach Ada, a Bayview Taxi dispatcher, during a live call with a customer. Speak to Ada in one short sentence. When the customer gives a booking code, call lookup_booking and pass on what it returns. If Ada needs no help, call sidecar_skip instead of giving advice.",
+          "lang": "en-US",
+          "url": "https://signalwire:<YOUR_BASIC_AUTH_PASSWORD>@<YOUR_PUBLIC_HOST>/events",
+          "SWAIG": {
+            "defaults": {
+              "web_hook_url": "https://signalwire:<YOUR_BASIC_AUTH_PASSWORD>@<YOUR_PUBLIC_HOST>/swaig"
+            },
+            "functions": [
+              {
+                "function": "lookup_booking",
+                "description": "Look up a ride booking by its confirmation code.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "confirmation": { "type": "string", "description": "The code, such as BT1042." }
+                  },
+                  "required": ["confirmation"]
+                }
+              }
+            ]
+          }
+        }
+      },
+      { "connect": { "to": "<YOUR_AGENT_NUMBER>", "from": "<YOUR_CALLER_ID>" } }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
 
 `lang` is the only required setting. Place `ai_sidecar` before `connect` so the sidecar hears the
-whole conversation.
+whole conversation. The prompt describes the coaching: the sidecar already knows that it's a silent
+coach whose advice goes only to the agent. Tell the model to call `sidecar_skip` when no advice is
+needed, or it tends to offer advice on every turn.
 
-## Read the sidecar's callbacks
+To have SignalWire fetch the document, create a SWML Script with **Handle Calls Using** set to
+**External URL** and `https://signalwire:<YOUR_BASIC_AUTH_PASSWORD>@<YOUR_PUBLIC_HOST>/` as its
+**Primary Script URL**, then assign it to your phone number, as
+[Answer a call via SWML][answer-swml] shows.
 
-Each callback is a `POST` to your `url`, with the event under a `sidecar_event` key and a `type`
-that says what happened. The same URL also receives transcription events that have no
-`sidecar_event` key, so check for it before you read `type`. The types a basic app needs:
+Call your number from the customer phone, and answer on the agent phone. As the customer, say "Hi,
+my booking code is BT1042, where's my driver?" and pause. The server prints the call's ID, the tool
+call, and the sidecar's advice, in wording that changes from call to call:
 
-| `type` | When it arrives | Field to read |
-|---|---|---|
-| `insight` | The sidecar has advice for the agent | `raw`, the advice |
-| `skip` | The model chose to stay quiet this turn | `reason` |
-| `tool_call` | The model called a tool | `name`, `arguments` |
-| `final` | The sidecar stopped, usually because the call ended | `stop_reason`, plus a record of the session |
+```text
+Sidecar started on call 3a1f6b2e-8c4d-4e7a-9b1f-5d2c7e8a9f10
+Tool call: lookup_booking {"confirmation":"BT1042"}
+Advice: Driver Sam is 6 minutes away in a silver Prius, pickup at 200 Harbor Avenue.
+```
 
-The sidecar runs one evaluation as soon as it attaches, so a `skip` or `insight` can arrive before
-anyone speaks. The [callback catalog][callback-types] lists every type and field.
+Stay on the call for the next section, or hang up and the server prints
+`Sidecar finished: transcribe_close`.
 
-## Attach and stop a sidecar on a call in progress
+If the call connects but the server prints nothing, the sidecar couldn't start or couldn't reach
+your `/events` URL. A sidecar that fails to start doesn't stop the document, so the call still
+connects. Check that the document sets `lang`, that the tunnel points at port `8080`, and that the
+password in the URLs matches your server's.
 
-To coach a call that's already connected, such as one your agent picked up from a queue, attach the
-sidecar by the call's ID. You can also stop a sidecar while the call carries on.
+## Coach a call in progress via REST
 
-### Attach and stop a sidecar via REST
+The [REST Calling API][call-commands] controls a sidecar by the call's ID. The Server SDKs' REST
+client doesn't include the sidecar commands in this version, so send them to Call commands directly.
 
-The Server SDKs' REST client doesn't include the sidecar commands in this version, so send them to
-[Call commands][call-commands] directly. To attach a sidecar, send `calling.ai_sidecar` with the
-same settings as the SWML method in `params`. Point `url` and the SWAIG `web_hook_url` at your
-server, as in the first call:
+### Stop a sidecar via REST
 
-<EndpointRequestSnippet endpoint="POST /api/calling/calls" example="calling.ai_sidecar" />
-
-To stop it, send `calling.ai_sidecar.stop`. The sidecar sends its `final` callback with
-`stop_reason: api_stop`, and the call stays connected:
+With the call from [Attach a sidecar via SWML](#attach-a-sidecar-via-swml) still connected, send
+`calling.ai_sidecar.stop` with the ID the server printed:
 
 <EndpointRequestSnippet endpoint="POST /api/calling/calls" example="calling.ai_sidecar.stop" />
 
-A call runs one sidecar at a time, so attaching a second one returns an error.
+The server prints `Sidecar finished: api_stop`, and the two phones stay connected. If the request
+returns an error, check that the call is still live and that the ID matches the one the server
+printed.
 
-## Write a prompt that coaches well
+### Attach a sidecar via REST
 
-Your prompt describes the coaching. The sidecar already knows that it's a silent coach and that its
-advice goes only to the agent. Tell the model to call `sidecar_skip` when no advice is needed;
-without that line, it tends to offer advice on every turn. Ask for one short sentence, because the
-agent reads it mid-conversation, and tie each tool to a trigger, such as "When the customer gives a
-booking code, call lookup_booking".
+Send `calling.ai_sidecar` to attach a sidecar to a call that's already connected. `params` takes the
+same settings as the SWML method: copy `prompt`, `lang`, `url`, and `SWAIG` from the document in
+[Attach a sidecar via SWML](#attach-a-sidecar-via-swml), so the new sidecar reports to your coaching
+server.
+
+<EndpointRequestSnippet endpoint="POST /api/calling/calls" example="calling.ai_sidecar" />
+
+To try it, send the command for the call you stopped the sidecar on. The server prints
+`Sidecar started` again, and the next booking code you read out as the customer brings new advice.
+A call runs one sidecar at a time, so the request fails while another sidecar is still attached.
 
 ## Next steps
 
@@ -427,7 +459,7 @@ booking code, call lookup_booking".
 </Card>
 
 <Card title="Call commands" href="/docs/apis/rest/calls/call-commands" icon="regular rectangle-api">
-  Attach, question, or stop a sidecar on a call in progress over REST.
+  Ask a sidecar a question or prompt it to evaluate the call right away.
 </Card>
 
 </CardGroup>
