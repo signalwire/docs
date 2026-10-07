@@ -91,28 +91,19 @@ A sidecar runs alongside the call without taking part in it:
 
 Both approaches use one server, which prints the sidecar's callbacks as they arrive at `/events`.
 
-The [Server SDKs][server-sdks] build the document with the SWML builder and serve it through
-`SWMLService`:
+The [Server SDKs][server-sdks] receive the callbacks with `SWMLService`:
 
 <CodeBlocks>
-<CodeBlock title="Python — SWML builder">
+<CodeBlock title="Python — SWMLService">
 ```python
 # Install: python -m pip install signalwire-sdk==3.4.1
-# Save as sidecar.py and run: python sidecar.py
-from signalwire import SWMLBuilder, SWMLService
+# Save as sidecar_events.py and run: python sidecar_events.py
+from signalwire import SWMLService
 
-PASSWORD = "<YOUR_BASIC_AUTH_PASSWORD>"
-
-service = SWMLService(name="sidecar", basic_auth=("signalwire", PASSWORD))
-swml = SWMLBuilder(service)
-swml.ai_sidecar(
-    prompt="You coach a support agent. After each customer turn, give the agent "
-    "one short tip, or call sidecar_skip if no tip is needed.",
-    lang="en-US",
-    url=f"https://signalwire:{PASSWORD}@<YOUR_PUBLIC_HOST>/events",
+service = SWMLService(
+    name="sidecar-events",
+    basic_auth=("signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"),
 )
-# "from" is a Python keyword, so it's passed in a dictionary.
-swml.connect(to="<YOUR_AGENT_NUMBER>", **{"from": "<YOUR_CALLER_ID>"})
 
 
 # The sidecar posts its callbacks to /events.
@@ -130,13 +121,11 @@ service.register_routing_callback(on_event, path="/events")
 service.serve(host="0.0.0.0", port=8080)
 ```
 </CodeBlock>
-<CodeBlock title="TypeScript — SWML builder">
+<CodeBlock title="TypeScript — SWMLService">
 ```typescript
 // Install: npm install @signalwire/sdk@2.0.5
-// Save as sidecar.mts and run: npx tsx sidecar.mts
+// Save as sidecar-events.mts and run: npx tsx sidecar-events.mts
 import { SWMLService } from "@signalwire/sdk";
-
-const PASSWORD = "<YOUR_BASIC_AUTH_PASSWORD>";
 
 interface SidecarEvent {
   type: string;
@@ -145,17 +134,10 @@ interface SidecarEvent {
   stop_reason?: string;
 }
 
-const service = new SWMLService({ name: "sidecar", basicAuth: ["signalwire", PASSWORD] });
-const swml = service.getBuilder();
-// This SDK version's builder has no ai_sidecar method, so the verb is added by name.
-swml.addVerb("ai_sidecar", {
-  prompt:
-    "You coach a support agent. After each customer turn, give the agent " +
-    "one short tip, or call sidecar_skip if no tip is needed.",
-  lang: "en-US",
-  url: `https://signalwire:${PASSWORD}@<YOUR_PUBLIC_HOST>/events`,
+const service = new SWMLService({
+  name: "sidecar-events",
+  basicAuth: ["signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"],
 });
-swml.connect({ to: "<YOUR_AGENT_NUMBER>", from: "<YOUR_CALLER_ID>" });
 
 // The sidecar posts its callbacks to /events. Return null to acknowledge each
 // one: any other value tells the SDK to redirect the request.
@@ -176,12 +158,7 @@ await service.run({ port: 8080 });
 </CodeBlock>
 </CodeBlocks>
 
-Start a tunnel to port `8080`, such as `ngrok http 8080`, and check that the server is reachable
-through it:
-
-```bash
-curl -u "signalwire:<YOUR_BASIC_AUTH_PASSWORD>" "https://<YOUR_PUBLIC_HOST>/"
-```
+Start a tunnel to port `8080`, such as `ngrok http 8080`, so SignalWire can reach the server.
 
 Each callback carries its event under a `sidecar_event` key, with a `type` that says what happened.
 The same URL also receives transcription events that have no `sidecar_event` key, so the server
@@ -203,8 +180,14 @@ For a full list of callback types, see the [callback catalog][callback-types].
 
 ### Attach a sidecar via SWML
 
-The server serves this document. The support agent is being coached from the moment the call is
-answered:
+Create a SWML Script that holds this document, so SignalWire runs it for calls to your number. The
+support agent is being coached from the moment the call is answered:
+
+1. Open **My Resources**, select **+ Add**, then **Script**, then **SWML Script**.
+2. Name it **AI sidecar** and leave **Used For** set to **Calling**.
+3. Under **Handle Calls Using**, choose **Hosted Script** and paste this document into
+   **Primary Script**.
+4. Select **Create**.
 
 <CodeBlocks>
 <CodeBlock title="YAML">
@@ -248,16 +231,6 @@ sections:
 setting. Place it before `connect` so the sidecar hears the whole conversation. To let the sidecar
 look things up on your server before it gives a tip, add tools with the method's
 [`SWAIG`][ai-sidecar-swaig] setting.
-
-Your server returns the document at its root URL. To have SignalWire fetch it for calls to your
-number, create a SWML Script that points there:
-
-1. Open **My Resources**, select **+ Add**, then **Script**, then **SWML Script**.
-2. Name it **AI sidecar** and leave **Used For** set to **Calling**.
-3. Under **Handle Calls Using**, choose **External URL** and enter
-   `https://signalwire:<YOUR_BASIC_AUTH_PASSWORD>@<YOUR_PUBLIC_HOST>/` in **Primary Script URL**.
-   The username and password in the URL let SignalWire sign in to your server.
-4. Select **Create**.
 
 Then assign the script to your phone number:
 
