@@ -40,27 +40,15 @@ max-toc-depth: 3
 The [AI agent you built][ai-quickstart] for voice can also hold a text conversation. 
 Each HTTP request-response cycle represents one exchange between the user and the AI.
 You send the user's message as a HTTP request, and the agent's reply comes back in the response.
+An ongoing text conversation can be escalated to voice and back to text with no loss of conversation context.
 
-Start by sending two requests to an agent saved in your Space, then hold conversations from your
+Start by sending two requests to an agent saved in your Space through HTTP, then hold conversations from your
 server, from a web page, and over SMS text messages.
 
 <Note title="AI chat is not the Chat API">
 AI chat is the [`ai`][ai-reference] method, or a Server SDKs agent, reached over text instead of voice.
 The [Chat API][messaging-chat] is a separate messaging product.
 </Note>
-
-## Pick the right product for AI chat
-
-- The [AI chat REST API][chat-endpoint] is JSON-RPC 2.0 over `POST /api/ai/chat`, authenticated with
-  your project's API token, so any language with an HTTP client can use it from a server.
-- The [Server SDKs][chat-client] wrap the same methods in [`AIChatClient`][chat-client], with typed
-  errors, and add [`ChatGateway`][chat-gateway], which lets a web page chat while your server keeps
-  the API token. Both are Python only.
-- The Browser SDK has no AI chat client. A web page chats through `ChatGateway` on your server.
-
-Try the agent with the REST API first, since a working `curl` is the fastest check of your
-credentials and agent. Then use `AIChatClient` if your server runs Python, or keep calling the REST
-API from any other language. Whichever you choose, a web page never calls AI chat directly.
 
 ## Prepare for AI chat
 
@@ -239,6 +227,39 @@ The [AI chat REST API reference][chat-endpoint] lists the other error codes.
 Your agent is the SWML document at `config_url`. A conversation is a series of turns under an ID you
 choose, and IDs are scoped to your project. A turn is one user message and the agent's reply,
 including any tool calls the agent makes along the way.
+
+<llms-ignore>
+
+<img src="/assets/images/img/ai-chat-rest-flow-themed.svg" alt="Your server sends create_conversation with an id and config_url. SignalWire fetches your agent's SWML document from config_url and returns the agent's greeting as initial_message. On each turn, your server sends chat with the id and message; if the agent calls a tool, SignalWire posts the tool call to your web_hook_url and your server returns the result, then SignalWire returns the agent's reply as response. Your server sends end_conversation, SignalWire returns status ended, then posts the summary to your post_prompt_url." />
+
+</llms-ignore>
+
+<llms-only>
+
+```mermaid
+sequenceDiagram
+    participant App as Your server
+    participant SW as SignalWire
+    participant Agent as Your agent
+
+    App->>SW: create_conversation: id, config_url
+    SW->>Agent: fetch agent
+    Agent-->>SW: SWML document
+    SW-->>App: initial_message: the agent's greeting
+    loop Each turn
+        App->>SW: chat: id, message
+        opt The agent calls a tool
+            SW->>App: tool call to web_hook_url
+            App-->>SW: result
+        end
+        SW-->>App: response: the agent's reply
+    end
+    App->>SW: end_conversation: id
+    SW-->>App: status: ended
+    SW->>App: summary to post_prompt_url
+```
+
+</llms-only>
 
 A conversation ID keeps only letters, digits, `_`, `-`, `.`, and `:`. Any other character is dropped
 without an error, so `rider~2` is stored as `rider2`; use `.` when you compose IDs. A conversation
