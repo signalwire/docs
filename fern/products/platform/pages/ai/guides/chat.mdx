@@ -1,7 +1,7 @@
 ---
 title: Chat with an AI agent
 slug: ai/chat
-description: Hold your first text conversation with an AI agent over HTTP, then chat from your server with the Python SDK, from a web page through a gateway, or over text messages, move a conversation onto a phone call and back, and receive tool calls and summaries.
+description: Hold your first text conversation with an AI agent over HTTP, then chat from your server with the Server SDKs, from a web page through a gateway, or over text messages, move a conversation onto a phone call and back, and receive tool calls and summaries.
 subtitle: Reach the same AI agent by text instead of a phone call
 max-toc-depth: 3
 ---
@@ -36,14 +36,16 @@ max-toc-depth: 3
 [dial-options]: /docs/browser-sdk/v4/reference/interfaces/dial-options
 [rest-dial]: /docs/server-sdks/reference/python/rest/calling/dial
 [call-commands]: /docs/apis/rest/calls/call-commands
+[verify-signature]: /docs/platform/webhooks#verify-webhook-signature
 
-The [AI agent you built][ai-quickstart] for voice can also hold a text conversation. 
+The [AI agent you built][ai-quickstart] for voice can also hold a text conversation.
 Each HTTP request-response cycle represents one exchange between the user and the AI.
-You send the user's message as a HTTP request, and the agent's reply comes back in the response.
+You send the user's message as an HTTP request, and the agent's reply comes back in the response.
 An ongoing text conversation can be escalated to voice and back to text with no loss of conversation context.
 
 Start by sending two requests to an agent saved in your Space through HTTP, then hold conversations from your
-server, from a web page, and over SMS text messages.
+server, from a web page, and over SMS text messages, move one onto a phone call and back, and receive
+the agent's tool calls and summaries.
 
 <Note title="AI chat is not the Chat API">
 AI chat is the [`ai`][ai-reference] method, or a Server SDKs agent, reached over text instead of voice.
@@ -103,6 +105,16 @@ address AI chat fetches your agent from. The same resource also answers voice ca
 
 <CodeBlocks>
 
+```yaml title="YAML"
+version: 1.0.0
+sections:
+  main:
+    - answer: {}
+    - ai:
+        prompt:
+          text: You are Ada, the dispatcher for Bayview Taxi. Answer questions about booking a ride. Keep replies to one or two sentences.
+```
+
 ```json title="JSON"
 {
   "version": "1.0.0",
@@ -121,7 +133,7 @@ address AI chat fetches your agent from. The same resource also answers voice ca
 }
 ```
 
-```bash title="cURL — REST API"
+```bash title="cURL — SWML Scripts API"
 curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/fabric/resources/swml_scripts" \
   -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
   -H "Content-Type: application/json" \
@@ -209,7 +221,7 @@ curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/ai/chat" \
 
 A working turn returns the agent's reply in `result.response`, usually within a few seconds. Check
 the HTTP status first. An HTTP `401 Unauthorized` means the credentials are wrong or the token lacks
-the **Chat** permission, and an HTTP `400` with an HTML body means the request wasn't valid JSON.
+the **Chat** permission, and an HTTP `400` means the request body wasn't valid JSON.
 
 Errors from AI chat itself arrive with HTTP `200` and an `error` object in place of `result`:
 
@@ -271,43 +283,9 @@ that passes `config_url` under the same ID starts a new conversation with no mem
 
 The [AI chat REST API reference][chat-endpoint] documents every method, parameter, and error code.
 
-### Hold an AI chat conversation via REST
-
-Read the conversation back with `chat_log`, then end it with `end_conversation`. Ending starts
-post-processing, such as the summary sent to your `post_prompt_url`.
-
-<CodeBlocks>
-
-```bash title="cURL — AI Chat API"
-curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/ai/chat" \
-  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "jsonrpc": "2.0",
-    "id": "req-3",
-    "method": "chat_log",
-    "params": { "id": "chat-demo-1" }
-  }'
-
-curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/ai/chat" \
-  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "jsonrpc": "2.0",
-    "id": "req-4",
-    "method": "end_conversation",
-    "params": { "id": "chat-demo-1" }
-  }'
-```
-
-</CodeBlocks>
-
-`chat_log` returns every entry in `result.chat_log`, and `end_conversation` returns
-`{"status": "ended"}`.
-
 ### Hold an AI chat conversation via the Server SDKs
 
-[`AIChatClient`][chat-client] sends the same methods from Python and raises typed exceptions, all
+[`AIChatClient`][chat-client] sends the same methods from the Server SDKs and raises typed exceptions, all
 subclasses of `AIChatError`: `ConversationNotFoundError` for `-32001`, `RateLimitError`,
 `ChatInProgressError` when a turn is already running on the conversation, `AuthenticationError`,
 and `SummaryError` when `summarize` fails. Any other code raises `AIChatError` itself.
@@ -343,12 +321,58 @@ async def main():
 asyncio.run(main())
 ```
 
+### Hold an AI chat conversation via REST
+
+Read the conversation back with `chat_log`, then end it with `end_conversation`. Ending starts
+post-processing, such as the summary sent to your `post_prompt_url`.
+
+<CodeBlocks>
+
+```bash title="cURL — AI Chat API"
+curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/ai/chat" \
+  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": "req-3",
+    "method": "chat_log",
+    "params": { "id": "chat-demo-1" }
+  }'
+
+curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/ai/chat" \
+  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": "req-4",
+    "method": "end_conversation",
+    "params": { "id": "chat-demo-1" }
+  }'
+```
+
+</CodeBlocks>
+
+`chat_log` returns every entry in `result.chat_log`, and `end_conversation` returns
+`{"status": "ended"}`.
+
 ### Hold an AI chat conversation from a web page
 
 [`ChatGateway`][chat-gateway] runs inside your web application and forwards a page's messages to AI
 chat. Your server holds the API token and the `config_url`. The page holds only the gateway's URL
 and a publishable key, which can reach this one agent and nothing else, because the gateway injects
 `config_url` itself and never accepts it from the page.
+
+```mermaid
+flowchart LR
+    Browser["Web page<br/>gateway URL + publishable key"]
+    Gateway["Your application<br/>ChatGateway"]
+    SW["SignalWire<br/>AI chat"]
+
+    Browser -->|"publishable key"| Gateway
+    Gateway -->|"project + API token"| SW
+    SW -->|"the agent's reply"| Gateway
+    Gateway -->|"JSON response"| Browser
+```
 
 The server below serves the chat page and mounts the gateway at `/chat/`. Localhost is always
 allowed, so it runs locally unconfigured; list your production origin in `allowed_origins`.
@@ -447,17 +471,47 @@ project. The origin allowlist stops the key working in someone else's page, but 
 which can leave out the `Origin` header. The gateway caps new conversations at 60 a minute and turns
 at 200 per conversation by default; lower them with `max_new_conversations` and `max_turns`.
 
-```mermaid
-flowchart LR
-    Browser["Web page<br/>gateway URL + publishable key"]
-    Gateway["Your application<br/>ChatGateway"]
-    SW["SignalWire<br/>AI chat"]
+### Hold an AI chat conversation over SMS text messages
 
-    Browser -->|"publishable key"| Gateway
-    Gateway -->|"project + API token"| SW
-    SW -->|"the agent's reply"| Gateway
-    Gateway -->|"JSON response"| Browser
+Answer text messages to your number with the agent. When a message arrives, SignalWire posts the
+[inbound message webhook][inbound-message-webhook] to your server, which sends the text to AI chat and
+returns a messaging SWML document whose [`reply`][swml-reply] carries the agent's answer.
+
+```python title="Python — AIChatClient"
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as chat_sms.py and run: python chat_sms.py
+import uvicorn
+from fastapi import FastAPI, Request
+from signalwire.ai_chat import AIChatClient
+
+CONFIG_URL = "https://<YOUR_SPACE>.signalwire.com/relay-bins/<YOUR_AGENT_ID>"
+
+client = AIChatClient(project="<YOUR_PROJECT_ID>", token="<YOUR_API_TOKEN>", space="<YOUR_SPACE>")
+app = FastAPI()
+
+
+@app.post("/sms")
+async def sms(request: Request):
+    message = (await request.json())["message"]
+    conversation_id = "sms." + message["from"].lstrip("+")
+    reply = await client.chat(conversation_id, message["body"], config_url=CONFIG_URL)
+    return {"version": "1.0.0", "sections": {"main": [{"reply": reply.text}]}}
+
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=3000)
 ```
+
+Then route your number's messages to this server. Create a SWML Webhook [resource][resources] whose
+URL is your server's public `/sms` URL, then assign it to your number under **Inbound Message
+Settings**, as the [webhooks][webhooks] page shows. Over the REST API, [create the SWML
+webhook][create-swml-webhook] with `used_for` set to `messaging`, then [assign it to the
+number][assign-phone-route] with `handler` set to `messaging`.
+
+Passing `config_url` on `chat` creates the conversation on the first message from a sender and
+continues it after that, keyed on the sender's number. Anyone who can reach `/sms` can run turns
+billed to your project, so in production [verify the webhook signature][verify-signature] on
+each request before acting on it.
 
 ### Move an AI chat conversation onto a phone call and back
 
@@ -531,52 +585,16 @@ The phone rings, and Ada already knows what was typed. Hang up, and a few second
 prints Ada's reply to the call; the next `chat` on `chat-demo-3` picks up from there. If the chat
 doesn't know about the call, SignalWire couldn't reach `/post_prompt`. If the conversation
 sits idle past its `conversation_timeout` during the call, it ends, and the call has nowhere to
-write back to. `/call`
-places calls on your bill, so only your own backend should reach it.
+write back to.
+
+`/call` places calls on your bill, so only your own backend should reach it. `/post_prompt` writes
+into whichever conversation its query string names, so anyone who reaches it can slip a `system`
+message into a conversation whose ID they know or guess. In production,
+[verify the webhook signature][verify-signature] on each request before acting on it.
 
 A web page can move its conversation into a call in the browser instead: mount
 [`HandoffRouter`][handoff-router] beside the gateway, and place the call with the Browser SDK's
 [`dial()`][browser-dial], passing the chat handle and a nonce in [`userVariables`][dial-options].
-
-### Hold an AI chat conversation over SMS text messages
-
-Answer text messages to your number with the agent. When a message arrives, SignalWire posts the
-[inbound message webhook][inbound-message-webhook] to your server, which sends the text to AI chat and
-returns a messaging SWML document whose [`reply`][swml-reply] carries the agent's answer.
-
-```python title="Python — AIChatClient"
-# Install: python -m pip install signalwire-sdk==3.4.1
-# Save as chat_sms.py and run: python chat_sms.py
-import uvicorn
-from fastapi import FastAPI, Request
-from signalwire.ai_chat import AIChatClient
-
-CONFIG_URL = "https://<YOUR_SPACE>.signalwire.com/relay-bins/<YOUR_AGENT_ID>"
-
-client = AIChatClient(project="<YOUR_PROJECT_ID>", token="<YOUR_API_TOKEN>", space="<YOUR_SPACE>")
-app = FastAPI()
-
-
-@app.post("/sms")
-async def sms(request: Request):
-    message = (await request.json())["message"]
-    conversation_id = "sms." + message["from"].lstrip("+")
-    reply = await client.chat(conversation_id, message["body"], config_url=CONFIG_URL)
-    return {"version": "1.0.0", "sections": {"main": [{"reply": reply.text}]}}
-
-
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=3000)
-```
-
-Then route your number's messages to this server. Create a SWML Webhook [resource][resources] whose
-URL is your server's public `/sms` URL, then assign it to your number under **Inbound Message
-Settings**, as the [webhooks][webhooks] page shows. Over the REST API, [create the SWML
-webhook][create-swml-webhook] with `used_for` set to `messaging`, then [assign it to the
-number][assign-phone-route] with `handler` set to `messaging`.
-
-Passing `config_url` on `chat` creates the conversation on the first message from a sender and
-continues it after that, keyed on the sender's number.
 
 ## AI chat methods: create, chat, read, summarize, end, and delete
 
