@@ -1,7 +1,7 @@
 ---
 title: Speak text on a call
 slug: voice/speak-text
-description: Speak text on a call with SWML, Relay, or REST. Pick a voice, speak a message to your own phone, speak a menu and collect a key press, then stop or track speech as it plays.
+description: Speak text on a call with SWML, Relay, or REST. Pick a TTS voice, speak a message to your own phone, and control or track the speech as it plays.
 max-toc-depth: 3
 ---
 
@@ -23,15 +23,13 @@ max-toc-depth: 3
 [swml-play]: /docs/swml/reference/calling/play
 [swml-prompt]: /docs/swml/reference/calling/prompt
 [swml-set]: /docs/swml/reference/calling/set
-[swml-switch]: /docs/swml/reference/calling/switch
 [swml-ai-languages]: /docs/swml/reference/calling/ai/languages#use-voice-strings
 [browser-migrate]: /docs/browser-sdk/v4/guides/migrate-from-v3
 [call-commands]: /docs/apis/rest/calls/call-commands
 
 Text-to-speech (TTS) turns text into speech on a live call, so your app can read out a
-confirmation, a menu, or an update the moment it has the words. Start by calling your own phone
-and hearing a message in the voice you pick, then speak a menu and collect a key press, and stop
-or track speech while it plays.
+confirmation or an update the moment it has the words. Pick a voice, then follow the section for
+your approach to call your own phone and hear a message in that voice.
 
 ## How text-to-speech works on a call
 
@@ -115,8 +113,6 @@ Replace these values in the samples you run:
 
 [`play`][swml-play] speaks any URL that starts with `say:`. Set `say_voice` on the same `play` to
 choose the voice. The SDK's SWML builder has a `say()` method that writes this `play` for you.
-
-### Speak a message via SWML
 
 This program places a call as in [Place a call via SWML][place-swml]. When you answer, SignalWire
 speaks a ride confirmation in the ElevenLabs Rachel voice, then hangs up.
@@ -222,190 +218,10 @@ To speak to people who call your number, serve the same document as in
 [Answer a call via SWML][answer-swml]. To play several clips in a row, list them in `urls`
 instead of `url`; `say:` text, audio file URLs, and `silence:` pauses can mix in one list.
 
-### Speak a menu and collect input via SWML
-
-[`prompt`][swml-prompt] speaks its `play` text, then waits for key presses or speech. It stores
-the input in `prompt_value` and the outcome in `prompt_result`; [`switch`][swml-switch] branches
-on either.
-
-This document sets the voice once with [`set`][swml-set]. Every `play` and `prompt` after it reads
-`say_voice` from the document, so the menu and each reply share one voice without repeating it.
-
-<CodeBlocks>
-<CodeBlock title="Python — REST client">
-```python
-# Install: python -m pip install signalwire-sdk==3.4.1
-# Save as ride_menu.py and run: python ride_menu.py
-from signalwire import SWMLBuilder, SWMLService
-from signalwire.rest import RestClient
-
-client = RestClient(
-    project="<YOUR_PROJECT_ID>",
-    token="<YOUR_API_TOKEN>",
-    host="<YOUR_SPACE>.signalwire.com",
-)
-
-confirmed = (
-    SWMLBuilder(SWMLService(name="ride-confirmed"))
-    .say("Your ride is confirmed. See you at 8 AM.")
-    .build()["sections"]["main"]
-)
-canceled = (
-    SWMLBuilder(SWMLService(name="ride-canceled"))
-    .say("Your ride is canceled.")
-    .build()["sections"]["main"]
-)
-no_choice = (
-    SWMLBuilder(SWMLService(name="no-choice"))
-    .say("We didn't get a choice, so your ride is still booked.")
-    .build()["sections"]["main"]
-)
-
-swml = (
-    SWMLBuilder(SWMLService(name="ride-menu"))
-    .set(say_voice="elevenlabs.rachel")
-    .prompt(
-        play=["say:This is Bayview Taxi. Press 1 to confirm your 8 AM ride, or 2 to cancel it."],
-        max_digits=1,
-    )
-    .switch(
-        variable="prompt_value",
-        case={
-            "1": confirmed,
-            "2": canceled,
-        },
-        default=no_choice,
-    )
-    .hangup()
-    .build()
-)
-
-call = client.calling.dial(
-    from_="<YOUR_CALLER_ID>",
-    to="<YOUR_DESTINATION>",
-    swml=swml,
-)
-print(call["id"])
-```
-</CodeBlock>
-<CodeBlock title="TypeScript — REST client">
-```typescript
-// Install: npm install @signalwire/sdk@2.0.5
-// This sample also runs as JavaScript: save as ride-menu.mjs,
-// then run: node ride-menu.mjs
-import { RestClient, SwmlBuilder } from "@signalwire/sdk";
-
-const client = new RestClient({
-  project: "<YOUR_PROJECT_ID>",
-  token: "<YOUR_API_TOKEN>",
-  host: "<YOUR_SPACE>.signalwire.com",
-});
-
-const confirmed = new SwmlBuilder()
-  .say("Your ride is confirmed. See you at 8 AM.")
-  .document.sections.main;
-const canceled = new SwmlBuilder()
-  .say("Your ride is canceled.")
-  .document.sections.main;
-const noChoice = new SwmlBuilder()
-  .say("We didn't get a choice, so your ride is still booked.")
-  .document.sections.main;
-
-const swml = new SwmlBuilder()
-  .set({ say_voice: "elevenlabs.rachel" })
-  .prompt({
-    play: ["say:This is Bayview Taxi. Press 1 to confirm your 8 AM ride, or 2 to cancel it."],
-    max_digits: 1,
-  })
-  .switch({
-    variable: "prompt_value",
-    case: {
-      "1": confirmed,
-      "2": canceled,
-    },
-    default: noChoice,
-  })
-  .hangup()
-  .build();
-
-const call = await client.calling.dial({
-  from: "<YOUR_CALLER_ID>",
-  to: "<YOUR_DESTINATION>",
-  swml,
-});
-console.log(call.id);
-```
-</CodeBlock>
-<CodeBlock title="YAML">
-```yaml
-version: 1.0.0
-sections:
-  main:
-    - set:
-        say_voice: elevenlabs.rachel
-    - prompt:
-        play:
-          - "say:This is Bayview Taxi. Press 1 to confirm your 8 AM ride, or 2 to cancel it."
-        max_digits: 1
-    - switch:
-        variable: prompt_value
-        case:
-          "1":
-            - play:
-                url: "say:Your ride is confirmed. See you at 8 AM."
-          "2":
-            - play:
-                url: "say:Your ride is canceled."
-        default:
-          - play:
-              url: "say:We didn't get a choice, so your ride is still booked."
-    - hangup: {}
-```
-</CodeBlock>
-<CodeBlock title="JSON">
-```json
-{
-  "version": "1.0.0",
-  "sections": {
-    "main": [
-      { "set": { "say_voice": "elevenlabs.rachel" } },
-      {
-        "prompt": {
-          "play": [
-            "say:This is Bayview Taxi. Press 1 to confirm your 8 AM ride, or 2 to cancel it."
-          ],
-          "max_digits": 1
-        }
-      },
-      {
-        "switch": {
-          "variable": "prompt_value",
-          "case": {
-            "1": [
-              { "play": { "url": "say:Your ride is confirmed. See you at 8 AM." } }
-            ],
-            "2": [
-              { "play": { "url": "say:Your ride is canceled." } }
-            ]
-          },
-          "default": [
-            { "play": { "url": "say:We didn't get a choice, so your ride is still booked." } }
-          ]
-        }
-      },
-      { "hangup": {} }
-    ]
-  }
-}
-```
-</CodeBlock>
-</CodeBlocks>
-
-Answer and press 1 to hear the confirmation, then run it again and press 2. If you press nothing,
-`prompt_result` is `no_input`, no case matches, and the `default` branch answers. A `say_voice`
-set on a single `play` or `prompt` overrides the document's voice for that verb only. To accept
-spoken answers as well as key presses, add the speech settings, such as `speech_hints`, from the
-[`prompt` reference][swml-prompt].
+To use one voice for every `play` and `prompt` in a document, set `say_voice` once with
+[`set`][swml-set]; a `say_voice` on a single verb overrides it. To speak a menu and collect key
+presses or speech, put the `say:` text in [`prompt`][swml-prompt], which stores the caller's input
+in `prompt_value`.
 
 ## Speak text on a call via WebSocket (Relay)
 
@@ -414,8 +230,6 @@ and, optionally, `voice`, `language`, and `gender`. `play()` returns an action o
 accepts the command: wait on it, or pass a completion callback, to act when the speech ends. Call
 setup follows [Place a call via WebSocket (Relay)][place-relay]; for calls to your number, see
 [Answer a call via WebSocket (Relay)][answer-relay].
-
-### Speak a message via WebSocket (Relay)
 
 This program dials your phone, speaks the ride confirmation once you answer, and hangs up when
 the speech finishes.
@@ -508,245 +322,15 @@ Run the program and answer your phone. You hear the confirmation in the Rachel v
 call ends. If the voice isn't the one you set, check the string against the
 [voice catalog][tts-voices].
 
-The TypeScript client also accepts the nested `{ type: "tts", params: { text } }` form the Python
-sample uses. Pass several media items to `play()` to speak them in order; `audio`, `silence`, and
+Pass several media items to `play()` to speak them in order; `audio`, `silence`, and
 `ringtone` items mix with `tts` items in one list.
 
-### Speak a menu and collect input via WebSocket (Relay)
-
-`play_and_collect()` in Python, or `playAndCollect()` in TypeScript, speaks the media and collects
-input in one operation, with one `control_id` for both. Its action resolves
-with the collect result: `result.type` is `digit`, `speech`, `no_input`, or `no_match`, and a
-`digit` result carries the key presses in `result.params.digits`.
-
-<CodeBlocks>
-<CodeBlock title="Python — Relay client">
-```python
-# Install: python -m pip install signalwire-sdk==3.4.1
-# Save as ride_menu_relay.py and run: python ride_menu_relay.py
-import asyncio
-from signalwire.relay import RelayClient
-
-VOICE = "elevenlabs.rachel"
-
-client = RelayClient(
-    project="<YOUR_PROJECT_ID>",
-    token="<YOUR_API_TOKEN>",
-    contexts=["default"],
-)
-
-def tts(text: str) -> dict:
-    return {"type": "tts", "params": {"text": text, "voice": VOICE}}
-
-async def main():
-    async with client:
-        call = await client.dial(
-            devices=[[{
-                "type": "phone",
-                "params": {
-                    "from_number": "<YOUR_CALLER_ID>",
-                    "to_number": "<YOUR_DESTINATION>",
-                    "timeout": 30,
-                },
-            }]],
-        )
-        menu = await call.play_and_collect(
-            [tts("This is Bayview Taxi. Press 1 to confirm your 8 AM ride, or 2 to cancel it.")],
-            {"digits": {"max": 1, "digit_timeout": 5}},
-        )
-        event = await menu.wait()
-        if call.state == "ended":
-            return
-
-        result = event.params.get("result", {})
-        digits = result.get("params", {}).get("digits", "")
-        if digits == "1":
-            reply = "Your ride is confirmed. See you at 8 AM."
-        elif digits == "2":
-            reply = "Your ride is canceled."
-        else:
-            reply = "We didn't get a choice, so your ride is still booked."
-
-        async def hang_up_after_playback(_event):
-            if call.state != "ended":
-                await call.hangup()
-
-        await call.play([tts(reply)], on_completed=hang_up_after_playback)
-        await call.wait_for_ended()
-
-asyncio.run(main())
-```
-</CodeBlock>
-<CodeBlock title="TypeScript — Relay client">
-```typescript
-// Install: npm install @signalwire/sdk@2.0.5
-// Save as ride-menu-relay.mts and run: npx tsx ride-menu-relay.mts
-import { RelayClient } from "@signalwire/sdk";
-
-const VOICE = "elevenlabs.rachel";
-
-const client = new RelayClient({
-  project: "<YOUR_PROJECT_ID>",
-  token: "<YOUR_API_TOKEN>",
-  contexts: ["default"],
-});
-
-const tts = (text: string) => ({ type: "tts", text, voice: VOICE });
-
-await client.connect();
-
-try {
-  const call = await client.dial([[{
-    type: "phone",
-    params: {
-      from_number: "<YOUR_CALLER_ID>",
-      to_number: "<YOUR_DESTINATION>",
-      timeout: 30,
-    },
-  }]]);
-  const menu = await call.playAndCollect(
-    [tts("This is Bayview Taxi. Press 1 to confirm your 8 AM ride, or 2 to cancel it.")],
-    { digits: { max: 1, digit_timeout: 5 } },
-  );
-  const event = await menu.wait();
-
-  if (call.state !== "ended") {
-    const result = event.params.result as { params?: { digits?: string } } | undefined;
-    const digits = result?.params?.digits ?? "";
-    const reply =
-      digits === "1" ? "Your ride is confirmed. See you at 8 AM."
-      : digits === "2" ? "Your ride is canceled."
-      : "We didn't get a choice, so your ride is still booked.";
-
-    await call.play([tts(reply)], {
-      onCompleted: async () => {
-        if (call.state !== "ended") await call.hangup();
-      },
-    });
-    await call.waitForEnded();
-  }
-} finally {
-  await client.disconnect();
-}
-```
-</CodeBlock>
-</CodeBlocks>
-
-Answer and press 1, then run it again and press 2. If you press nothing, the result is
-`no_input` and the program keeps the booking. To accept speech, add a `speech` object beside
-`digits` in the collect settings; a `speech` result carries the words in `result.params.text`.
-
-### Stop, pause, or resume speech via WebSocket (Relay)
-
 The action that `play()` returns controls the speech while it plays: `stop()` ends it, `pause()`
-and `resume()` hold and continue it, and `volume()` changes its level in decibels, from -40
-to 40.
-
-This program repeats a hold message with `loop` set to `0`, which plays the list until you stop
-it. After a stand-in for your own lookup, it stops the hold message and speaks the result.
-
-<CodeBlocks>
-<CodeBlock title="Python — Relay client">
-```python
-# Install: python -m pip install signalwire-sdk==3.4.1
-# Save as hold_message_relay.py and run: python hold_message_relay.py
-import asyncio
-from signalwire.relay import RelayClient
-
-VOICE = "elevenlabs.rachel"
-
-client = RelayClient(
-    project="<YOUR_PROJECT_ID>",
-    token="<YOUR_API_TOKEN>",
-    contexts=["default"],
-)
-
-def tts(text: str) -> dict:
-    return {"type": "tts", "params": {"text": text, "voice": VOICE}}
-
-async def main():
-    async with client:
-        call = await client.dial(
-            devices=[[{
-                "type": "phone",
-                "params": {
-                    "from_number": "<YOUR_CALLER_ID>",
-                    "to_number": "<YOUR_DESTINATION>",
-                    "timeout": 30,
-                },
-            }]],
-        )
-        hold = await call.play(
-            [tts("Please hold while Bayview Taxi finds your driver."), {"type": "silence", "params": {"duration": 2}}],
-            loop=0,
-        )
-        await asyncio.sleep(15)  # Stand-in for your dispatch lookup
-        await hold.stop()
-
-        async def hang_up_after_playback(_event):
-            if call.state != "ended":
-                await call.hangup()
-
-        await call.play(
-            [tts("Your driver is five minutes away. Goodbye.")],
-            on_completed=hang_up_after_playback,
-        )
-        await call.wait_for_ended()
-
-asyncio.run(main())
-```
-</CodeBlock>
-<CodeBlock title="TypeScript — Relay client">
-```typescript
-// Install: npm install @signalwire/sdk@2.0.5
-// Save as hold-message-relay.mts and run: npx tsx hold-message-relay.mts
-import { RelayClient } from "@signalwire/sdk";
-
-const VOICE = "elevenlabs.rachel";
-
-const client = new RelayClient({
-  project: "<YOUR_PROJECT_ID>",
-  token: "<YOUR_API_TOKEN>",
-  contexts: ["default"],
-});
-
-const tts = (text: string) => ({ type: "tts", text, voice: VOICE });
-
-await client.connect();
-
-try {
-  const call = await client.dial([[{
-    type: "phone",
-    params: {
-      from_number: "<YOUR_CALLER_ID>",
-      to_number: "<YOUR_DESTINATION>",
-      timeout: 30,
-    },
-  }]]);
-  const hold = await call.play(
-    [tts("Please hold while Bayview Taxi finds your driver."), { type: "silence", duration: 2 }],
-    { loop: 0 },
-  );
-  await new Promise((resolve) => setTimeout(resolve, 15_000)); // Stand-in for your dispatch lookup
-  await hold.stop();
-
-  await call.play([tts("Your driver is five minutes away. Goodbye.")], {
-    onCompleted: async () => {
-      if (call.state !== "ended") await call.hangup();
-    },
-  });
-  await call.waitForEnded();
-} finally {
-  await client.disconnect();
-}
-```
-</CodeBlock>
-</CodeBlocks>
-
-Answer and listen: the hold message repeats for about 15 seconds, then the driver update plays
-and the call ends. To follow playback without holding an action, register a handler for
-`calling.call.play` events; each one reports the play's `control_id` and a `state` of `playing`,
-`paused`, `finished`, or `error`.
+and `resume()` hold and continue it, and `volume()` changes its level in decibels, from -40 to 40.
+Each `calling.call.play` event reports the play's `control_id` and a `state` of `playing`,
+`paused`, `finished`, or `error`. To speak a menu and collect input in one operation, use the
+Relay client's play-and-collect method, which takes the same media items plus the digit or speech
+settings to collect.
 
 ## Speak text on a call already in progress via REST
 
@@ -838,54 +422,11 @@ The command returns as soon as SignalWire accepts it. Your webhook then receives
 `control_id` and its `state`: `playing` when speech starts, then `finished`, or `error` if
 playback failed. See the [webhooks guide][webhooks] to set up and test the endpoint.
 
-`direction` chooses who hears the speech:
-`listen`, the default, plays it only to the caller; `speak` plays it only to the called party;
-`both` plays it to both. `loop` repeats the whole list, and `0` repeats it until you stop it.
+`direction` chooses who hears the speech: `listen`, the default, plays it only to the caller;
+`speak` plays it only to the called party; `both` plays it to both. `loop` repeats the whole list, and `0` repeats it until you stop it.
 
-### Stop, pause, or resume speech via REST
-
-Address the playback by its `control_id`. `calling.play.stop` ends it and sends `finished` to its
-`status_url`. `calling.play.pause` and `calling.play.resume` hold and continue it, and
-`calling.play.volume` changes its level in decibels, from -40 to 40.
-
-<CodeBlocks>
-<CodeBlock title="Python — REST client">
-```python
-# Install: python -m pip install signalwire-sdk==3.4.1
-# Save as stop_rest.py and run: python stop_rest.py
-from signalwire.rest import RestClient
-
-client = RestClient(
-    project="<YOUR_PROJECT_ID>",
-    token="<YOUR_API_TOKEN>",
-    host="<YOUR_SPACE>.signalwire.com",
-)
-
-client.calling.play_stop("<YOUR_CALL_ID>", control_id="driver-update")
-```
-</CodeBlock>
-<CodeBlock title="TypeScript — REST client">
-```typescript
-// Install: npm install @signalwire/sdk@2.0.5
-// This sample also runs as JavaScript: save as stop-rest.mjs,
-// then run: node stop-rest.mjs
-import { RestClient } from "@signalwire/sdk";
-
-const client = new RestClient({
-  project: "<YOUR_PROJECT_ID>",
-  token: "<YOUR_API_TOKEN>",
-  host: "<YOUR_SPACE>.signalwire.com",
-});
-
-await client.calling.playStop("<YOUR_CALL_ID>", { control_id: "driver-update" });
-```
-</CodeBlock>
-</CodeBlocks>
-
-To call the REST API directly, send `calling.play.stop` to [Call commands][call-commands]:
-
-<EndpointRequestSnippet endpoint="POST /api/calling/calls" example="calling.play.stop" />
-
-The REST Calling API has no command that speaks and collects input in one step. To speak a menu
-over REST, start the call with the SWML [`prompt`](#speak-a-menu-and-collect-input-via-swml)
-document, or control it from a Relay client.
+To control the speech, send `calling.play.stop`, `calling.play.pause`, `calling.play.resume`, or
+`calling.play.volume` with the same `control_id`. Stopping it sends `finished` to its
+`status_url`. The REST Calling API has no command that speaks and collects input in one step, so
+to speak a menu, start the call with a SWML [`prompt`][swml-prompt] or control it from a Relay
+client.
