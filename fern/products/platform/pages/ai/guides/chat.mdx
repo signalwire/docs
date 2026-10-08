@@ -276,7 +276,7 @@ sequenceDiagram
 A conversation ID keeps only letters, digits, `_`, `-`, `.`, and `:`. Any other character is dropped
 without an error, so `rider~2` is stored as `rider2`; use `.` when you compose IDs. A conversation
 ends when you end or delete it, or after it sits idle past its `conversation_timeout`, 3600 seconds
-unless you set one on `create_conversation`. An ended conversation can't be reopened: a later `chat`
+unless you set one on the request that creates it. An ended conversation can't be reopened: a later `chat`
 that passes `config_url` under the same ID starts a new conversation with no memory of the old one.
 
 ## Hold an AI chat conversation
@@ -285,10 +285,10 @@ The [AI chat REST API reference][chat-endpoint] documents every method, paramete
 
 ### Hold an AI chat conversation via the Server SDKs
 
-[`AIChatClient`][chat-client] sends the same methods from the Server SDKs and raises typed exceptions, all
-subclasses of `AIChatError`: `ConversationNotFoundError` for `-32001`, `RateLimitError`,
-`ChatInProgressError` when a turn is already running on the conversation, `AuthenticationError`,
-and `SummaryError` when `summarize` fails. Any other code raises `AIChatError` itself.
+[`AIChatClient`][chat-client] sends the same methods from the Server SDKs and turns errors into
+exceptions you can catch, such as `ConversationNotFoundError` when the conversation has ended or
+never existed. They all subclass `AIChatError`, as listed in the 
+[`AIChatClient` reference](/docs/server-sdks/reference/python/agents/ai-chat-client#exceptions).
 
 ```python title="Python — AIChatClient"
 # Install: python -m pip install signalwire-sdk==3.4.1
@@ -352,8 +352,8 @@ curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/ai/chat" \
 
 </CodeBlocks>
 
-`chat_log` returns every entry in `result.chat_log`, and `end_conversation` returns
-`{"status": "ended"}`.
+`chat_log` returns every entry in `result.chat_log`. `end_conversation` returns the conversation's
+`id` with `status: "ended"`, or `status: "not_found"` when no conversation has that ID.
 
 ### Hold an AI chat conversation from a web page
 
@@ -429,7 +429,12 @@ async function send(body) {
     body: JSON.stringify({ ...body, handle }),
   });
   handle = res.headers.get("X-Chat-Handle") ?? handle;
-  return res.json();
+  const text = await res.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { error: text || `HTTP ${res.status}` };
+  }
 }
 
 function show(who, text) {
@@ -439,7 +444,8 @@ function show(who, text) {
 }
 
 const start = await send({ method: "start" });
-show("Ada", start.greeting);
+const greeting = start.greeting ?? start.error;
+if (greeting) show("Ada", greeting);
 
 document.getElementById("form").addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -448,7 +454,7 @@ document.getElementById("form").addEventListener("submit", async (event) => {
   input.value = "";
   show("You", text);
   const reply = await send({ method: "chat", message: text });
-  show("Ada", reply.result?.response ?? reply.error?.message);
+  show("Ada", reply.result?.response ?? reply.error?.message ?? reply.error);
 });
 </script>
 ```
@@ -493,6 +499,8 @@ app = FastAPI()
 @app.post("/sms")
 async def sms(request: Request):
     message = (await request.json())["message"]
+    if not message.get("body"):
+        return {"version": "1.0.0", "sections": {"main": [{"reply": "Please send your question as text."}]}}
     conversation_id = "sms." + message["from"].lstrip("+")
     reply = await client.chat(conversation_id, message["body"], config_url=CONFIG_URL)
     return {"version": "1.0.0", "sections": {"main": [{"reply": reply.text}]}}
@@ -572,7 +580,7 @@ if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=3000)
 ```
 
-Create a conversation as in the [first run](#create-the-conversation), under the ID
+Create a conversation as in the [first run](#hold-your-first-ai-chat-conversation), under the ID
 `chat-demo-3`, and send it a message or two. Then ask your server to move it onto the rider's phone:
 
 ```bash title="cURL"
@@ -592,15 +600,19 @@ into whichever conversation its query string names, so anyone who reaches it can
 message into a conversation whose ID they know or guess. In production,
 [verify the webhook signature][verify-signature] on each request before acting on it.
 
-A web page can move its conversation into a call in the browser instead: mount
-[`HandoffRouter`][handoff-router] beside the gateway, and place the call with the Browser SDK's
-[`dial()`][browser-dial], passing the chat handle and a nonce in [`userVariables`][dial-options].
+A web page can move its conversation into a call in the browser instead, through
+[`HandoffRouter`][handoff-router] mounted beside the gateway. The page places the call with the
+Browser SDK's [`dial()`][browser-dial], passing the chat handle and a nonce in
+[`userVariables`][dial-options]. Your application registers that nonce with `register` when
+SignalWire fetches the call's configuration, and supplies the `capture_leg` and `end_call` callbacks
+that record each leg and hang up the call. This path ends the text leg when the call starts, so
+returning to text continues under a new ID, `<id>.1`.
 
 ## AI chat methods: create, chat, read, summarize, end, and delete
 
 | Method | What it does | Worth knowing |
 |---|---|---|
-| [`create_conversation`][client-create] | Creates a conversation | Returns `initial_message`, so the agent speaks first. On an ID that is already live it returns `status: "exists"` and no greeting; pass `reinit: true` to start it over |
+| [`create_conversation`][client-create] | Creates a conversation | Returns `initial_message` when the agent speaks first. On an ID that is already live it returns `status: "exists"` and no greeting; pass `reinit: true` to start it over |
 | [`chat`][client-chat] | Sends a message and returns the reply | With `config_url`, it creates the conversation if needed, but you never get `initial_message` |
 | [`chat_log`][client-log] | Reads the conversation back | Changes nothing |
 | [`summarize`][client-summarize] | Summarizes the conversation on demand | Takes an optional `summary_prompt` |
@@ -679,7 +691,7 @@ gateway's `log` already does.
 </Card>
 
 <Card title="AIChatClient" href="/docs/server-sdks/reference/python/agents/ai-chat-client" icon="brands python">
-  The Python client, with every method and return type.
+  The Server SDKs chat client, with every method and return type.
 </Card>
 
 <Card title="ChatGateway" href="/docs/server-sdks/reference/python/agents/chat-gateway" icon="regular globe">
