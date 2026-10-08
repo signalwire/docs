@@ -36,11 +36,20 @@ model LanguagesBase {
   @example("fr-FR")
   listen_language?: string | string[];
 
+  // hidden 2026-10-05
+  // @doc("""
+  //   Voice to use for the language. String format: `<engine id>.<voice id>`, with an optional
+  //   `:<model id>` suffix for engines that offer a choice of model.
+  //   Select engine from `gcloud`, `polly`, `amazon`, `azure`, `openai`, `elevenlabs`, `cartesia`, `deepgram`, `rime`,
+  //   `inworld`, `minimax`, `groq-tts`, `mistral`, `grok`, `smallest`, `fish`, or `speechify`.
+  //   For example, `gcloud.fr-FR-Neural2-B` or `elevenlabs.rachel:eleven_flash_v2_5`.
+  //   Always name the engine: a bare voice id resolves against a default engine that can change.
+  //   """)
   @doc("""
     Voice to use for the language. String format: `<engine id>.<voice id>`, with an optional
     `:<model id>` suffix for engines that offer a choice of model.
     Select engine from `gcloud`, `polly`, `amazon`, `azure`, `openai`, `elevenlabs`, `cartesia`, `deepgram`, `rime`,
-    `inworld`, `minimax`, `groq-tts`, `mistral`, `grok`, `smallest`, `fish`, or `speechify`.
+    `inworld`, `groq-tts`, `mistral`, `grok`, `smallest`, or `fish`.
     For example, `gcloud.fr-FR-Neural2-B` or `elevenlabs.rachel:eleven_flash_v2_5`.
     Always name the engine: a bare voice id resolves against a default engine that can change.
     """)
@@ -55,20 +64,35 @@ model LanguagesBase {
   @example("coda")
   `model`?: string;
 
+  // hidden 2026-10-05
+  // @doc("""
+  //   Lets the AI vary its emotion as it speaks. A global emotion, or specific emotions for certain
+  //   topics, can be set within the prompt of the AI.
+  //   IMPORTANT: Only works with the [`Cartesia`](/docs/platform/voice/tts/cartesia) and [`MiniMax`](/docs/platform/voice/tts/minimax) TTS engines.
+  //   For a fixed (non-automatic) MiniMax emotion, use [`params.emotion`](#paramsemotion) instead.
+  //   """)
   @doc("""
     Lets the AI vary its emotion as it speaks. A global emotion, or specific emotions for certain
     topics, can be set within the prompt of the AI.
-    IMPORTANT: Only works with the [`Cartesia`](/docs/platform/voice/tts/cartesia) and [`MiniMax`](/docs/platform/voice/tts/minimax) TTS engines.
-    For a fixed (non-automatic) MiniMax emotion, use [`params.emotion`](#paramsemotion) instead.
+    IMPORTANT: Only works with the [`Cartesia`](/docs/platform/voice/tts/cartesia) TTS engine.
     """)
   @example(true)
   auto_emotion?: boolean = false;
 
+  // hidden 2026-10-05
+  // @doc("""
+  //   Lets the AI vary its speaking speed during the conversation. The speed behavior can be defined
+  //   in the prompt of the AI.
+  //   IMPORTANT: Only works with the [`Cartesia`](/docs/platform/voice/tts/cartesia),
+  //   [`ElevenLabs`](/docs/platform/voice/tts/elevenlabs), [`MiniMax`](/docs/platform/voice/tts/minimax),
+  //   [`Rime`](/docs/platform/voice/tts/rime), [`Inworld`](/docs/platform/voice/tts/inworld),
+  //   [`Smallest`](/docs/platform/voice/tts/smallest), and [`Fish`](/docs/platform/voice/tts/fish) TTS engines.
+  //   """)
   @doc("""
     Lets the AI vary its speaking speed during the conversation. The speed behavior can be defined
     in the prompt of the AI.
     IMPORTANT: Only works with the [`Cartesia`](/docs/platform/voice/tts/cartesia),
-    [`ElevenLabs`](/docs/platform/voice/tts/elevenlabs), [`MiniMax`](/docs/platform/voice/tts/minimax),
+    [`ElevenLabs`](/docs/platform/voice/tts/elevenlabs),
     [`Rime`](/docs/platform/voice/tts/rime), [`Inworld`](/docs/platform/voice/tts/inworld),
     [`Smallest`](/docs/platform/voice/tts/smallest), and [`Fish`](/docs/platform/voice/tts/fish) TTS engines.
     """)
@@ -110,28 +134,29 @@ model LanguageParams {
   @maxValue(2.0)
   temperature?: float | SWMLVar = 1.0;
 
-  @doc("How quickly the voice speaks. Values below `1.0` slow the voice down; values above `1.0` speed it up. IMPORTANT: Only works with the MiniMax TTS engine.")
-  @minValue(0.5)
-  @maxValue(2.0)
-  speed?: float | SWMLVar = 1.0;
-
-  @doc("The speaking volume. Lower values are quieter. IMPORTANT: Only works with the MiniMax TTS engine.")
-  @minValue(0.1)
-  @maxValue(1.0)
-  vol?: float | SWMLVar = 1.0;
-
-  @doc("The pitch shift in semitones. Negative values lower the pitch; positive values raise it. IMPORTANT: Only works with the MiniMax TTS engine.")
-  @minValue(-12)
-  @maxValue(12)
-  pitch?: int32 | SWMLVar = 0;
-
-  @doc("""
-    A fixed emotional tone for the generated speech.
-    To vary the emotion automatically during a conversation, use [`languages[].auto_emotion`](#languagesauto_emotion) instead.
-    IMPORTANT: Only works with the MiniMax TTS engine.
-    """)
-  @example("happy")
-  emotion?: "happy" | "sad" | "angry" | "fearful" | "disgusted" | "surprised" | "neutral";
+  // hidden 2026-10-05
+  // @doc("How quickly the voice speaks. Values below `1.0` slow the voice down; values above `1.0` speed it up. IMPORTANT: Only works with the MiniMax TTS engine.")
+  // @minValue(0.5)
+  // @maxValue(2.0)
+  // speed?: float | SWMLVar = 1.0;
+  //
+  // @doc("The speaking volume. Lower values are quieter. IMPORTANT: Only works with the MiniMax TTS engine.")
+  // @minValue(0.1)
+  // @maxValue(1.0)
+  // vol?: float | SWMLVar = 1.0;
+  //
+  // @doc("The pitch shift in semitones. Negative values lower the pitch; positive values raise it. IMPORTANT: Only works with the MiniMax TTS engine.")
+  // @minValue(-12)
+  // @maxValue(12)
+  // pitch?: int32 | SWMLVar = 0;
+  //
+  // @doc("""
+  //   A fixed emotional tone for the generated speech.
+  //   To vary the emotion automatically during a conversation, use [`languages[].auto_emotion`](#languagesauto_emotion) instead.
+  //   IMPORTANT: Only works with the MiniMax TTS engine.
+  //   """)
+  // @example("happy")
+  // emotion?: "happy" | "sad" | "angry" | "fearful" | "disgusted" | "surprised" | "neutral";
 }
 
 // One model rather than the two-variant union this used to be. The union made `fillers` and
