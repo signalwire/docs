@@ -1,5 +1,5 @@
 ---
-title: Call queues
+title: Queue calls
 slug: voice/call-queues
 description: Hold callers in a queue and connect each one to the next free agent with SWML or Relay, then track, remove, and manage waiting callers.
 max-toc-depth: 2
@@ -147,9 +147,6 @@ To call the REST API directly, use [Create queue][rest-create-queue]:
 The response's `id` is the queue's ID, and `friendly_name` is the name that calls use to reach it.
 A request with a name that's already in use fails with a validation error.
 
-`max_size` sets how many callers the queue may hold. [NEEDS SOURCE: what happens to a caller who
-enters a queue that has reached max_size]
-
 ## Run a call queue via SWML
 
 [`enter_queue`][swml-enter-queue] places the caller in a queue, and [`connect`][swml-connect]
@@ -178,6 +175,7 @@ service = SWMLService(
     basic_auth=("signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"),
     # signalwire-sdk 3.4.1 validates enter_queue against an outdated schema
     # that rejects every valid document, so validation is off for this service.
+    # https://github.com/signalwire/signalwire-python/issues/112
     schema_validation=False,
 )
 (
@@ -248,7 +246,8 @@ sections:
 </CodeBlock>
 </CodeBlocks>
 
-Call your number from the caller phone. You hear the greeting, then hold music. Stay on the line
+From the phone you're using as the caller, call your SignalWire number. You hear the greeting,
+then hold music. Stay on the line
 for the next section, or wait two minutes to hear the busy message.
 
 If you hear the busy message right after the greeting, the caller couldn't enter the queue. When
@@ -453,6 +452,17 @@ setup and local testing.
         status_url: <YOUR_STATUS_WEBHOOK_URL>
 ```
 </CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "enter_queue": {
+    "queue_name": "dispatch",
+    "wait_time": 120,
+    "status_url": "<YOUR_STATUS_WEBHOOK_URL>"
+  }
+}
+```
+</CodeBlock>
 </CodeBlocks>
 
 Each webhook has `event_type: calling.call.queue` and reports what happened in `params.status`:
@@ -485,7 +495,7 @@ caller who left without reaching an agent waited.
 ## Run a call queue via WebSocket (Relay)
 
 With Relay, your code places an answered call in a queue, then connects an agent's call to the
-queue with a `queue` device. The caller's code must play its own hold music and decide when the
+queue with a `queue` device. Your server code must play the hold music and decide when the
 caller has waited too long: in Relay, SignalWire plays no hold audio and doesn't apply a wait
 limit.
 
@@ -601,8 +611,8 @@ await client.run();
 </CodeBlock>
 </CodeBlocks>
 
-Call your number from the caller phone. You hear the greeting, then your hold music, and the
-handler logs `Queue: enqueue, position 1`. Stay on the line for the next section.
+From the phone you're using as the caller, call your SignalWire number. You hear the greeting,
+then your hold music, and the handler logs `Queue: enqueue, position 1`. Stay on the line for the next section.
 
 If you hear silence instead of music, check that `<YOUR_HOLD_MUSIC_URL>` is a public audio file.
 If no `Queue:` line appears, check that the handler registers its `calling.call.queue` listener
@@ -820,16 +830,11 @@ To read one queue whose ID you know, use `get` or [Get queue][rest-get-queue]:
 
 <EndpointRequestSnippet endpoint="GET /api/relay/rest/queues/{id}" />
 
-Each queue has these fields:
+<EndpointResponseSnippet endpoint="GET /api/relay/rest/queues/{id}" />
 
-| Field | Value |
-|---|---|
-| `id` | The queue's ID, used in every REST request about the queue |
-| `friendly_name` | The queue's name, which calls use to reach it |
-| `current_size` | The number of callers waiting now |
-| `average_wait_time` | How long, in seconds, the callers waiting now have waited on average; `0` when the queue is empty |
-| `max_size` | The `max_size` you set, or `null` |
-| `date_created`, `date_updated` | When the queue was created and last changed |
+`friendly_name` is the name that calls use to reach the queue, and `id` is what every REST request
+about it uses. `current_size` counts the callers waiting now, and `average_wait_time` is how long,
+in seconds, those callers have waited on average: `0` when the queue is empty.
 
 List queues returns your newest queues first, 50 to a page. Follow `links.next` in the response for
 the next page, as [Paging][paging] describes.
@@ -880,15 +885,11 @@ for (const member of members.data) {
 
 <EndpointRequestSnippet endpoint="GET /api/relay/rest/queues/{queue_id}/members" />
 
-Each waiting caller has these fields:
+<EndpointResponseSnippet endpoint="GET /api/relay/rest/queues/{queue_id}/members" />
 
-| Field | Value |
-|---|---|
-| `call_id` | The caller's call ID, which you can pass to `calling.end` to [remove them](#take-a-caller-out-of-a-queue-via-swml) |
-| `position` | The caller's place in line; `1` has waited longest and is the next caller an agent's call connects to |
-| `wait_time` | How long the caller has waited, in seconds |
-| `date_enqueued` | When the caller entered the queue |
-| `queue_id` | The queue's ID |
+A caller at `position` `1` has waited longest and is the next caller an agent's call connects to.
+`wait_time` is how long the caller has waited, in seconds, and `call_id` is the ID you pass to
+`calling.end` to [remove them](#take-a-caller-out-of-a-queue-via-swml).
 
 The list returns the most recent callers first, 50 to a page, so the caller at position `1` is the
 last one on the last page. To check a single caller, such as one named by a
