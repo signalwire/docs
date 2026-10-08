@@ -102,8 +102,9 @@ a call to your number to your second phone.
 
 <Step title="Build the forwarding document" id="build-the-forwarding-document">
 
-The document rings the destination for up to twenty seconds with `connect`, which shows the
-caller's number by default. If nobody answers, the document continues and plays a message.
+The document rings the destination for up to twenty seconds with `connect`. It sets `from` to
+`${call.from}`, the number of the person calling you, so the forwarded call shows who's calling. If
+nobody answers, the document continues and plays a message.
 
 <CodeBlocks>
 <CodeBlock title="Python — SWML builder">
@@ -120,7 +121,8 @@ service = SWMLService(
 )
 (
     SWMLBuilder(service)
-    .connect(to="<YOUR_DESTINATION>", timeout=20)
+    # from is a Python keyword, so pass the connect settings as a dict.
+    .connect(**{"to": "<YOUR_DESTINATION>", "from": "${call.from}", "timeout": 20})
     .say("Sorry, nobody at Bayview Taxi can take your call right now. Please call back later.")
 )
 
@@ -143,7 +145,7 @@ const service = new SWMLService({
   basicAuth: ["signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"],
 });
 service.getBuilder()
-  .connect({ to: "<YOUR_DESTINATION>", timeout: 20 })
+  .connect({ to: "<YOUR_DESTINATION>", from: "${call.from}", timeout: 20 })
   .say("Sorry, nobody at Bayview Taxi can take your call right now. Please call back later.");
 
 // Serves the document at /swml. Put the credentials in the URL you give
@@ -158,6 +160,7 @@ sections:
   main:
     - connect:
         to: <YOUR_DESTINATION>
+        from: '${call.from}'
         timeout: 20
     - play:
         url: say:Sorry, nobody at Bayview Taxi can take your call right now. Please call back later.
@@ -172,6 +175,7 @@ sections:
       {
         "connect": {
           "to": "<YOUR_DESTINATION>",
+          "from": "${call.from}",
           "timeout": 20
         }
       },
@@ -189,8 +193,7 @@ The [Server SDKs][server-sdks] build the document with the SWML builder and serv
 [Answer a call via SWML][answer-swml] shows. To skip the server, create a SWML Script with
 **Hosted Script** and paste the YAML or JSON into **Primary Script** instead.
 
-To show your SignalWire number instead of the caller's, add `from` set to `<YOUR_CALLER_ID>`
-alongside `to`. The message also plays if the destination hangs up before the caller does; to play it
+To show your SignalWire number instead of the caller's, set `from` to `<YOUR_CALLER_ID>`. The message also plays if the destination hangs up before the caller does; to play it
 only when nobody answers, branch on the `connect_result` variable, which `connect` sets to
 `connected` or `failed`.
 
@@ -418,7 +421,8 @@ client = RestClient(
 
 swml = (
     SWMLBuilder(SWMLService(name="forward-in-progress"))
-    .connect(to="<YOUR_DESTINATION>", timeout=20)
+    # from is a Python keyword, so pass the connect settings as a dict.
+    .connect(**{"to": "<YOUR_DESTINATION>", "from": "${call.from}", "timeout": 20})
     .say("Sorry, nobody at Bayview Taxi can take your call right now. Please call back later.")
     .build()
 )
@@ -440,7 +444,7 @@ const client = new RestClient({
 });
 
 const swml = new SwmlBuilder()
-  .connect({ to: "<YOUR_DESTINATION>", timeout: 20 })
+  .connect({ to: "<YOUR_DESTINATION>", from: "${call.from}", timeout: 20 })
   .say("Sorry, nobody at Bayview Taxi can take your call right now. Please call back later.")
   .build();
 await client.calling.transfer("<YOUR_CALL_ID>", { dest: swml });
@@ -460,7 +464,7 @@ curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
         "version": "1.0.0",
         "sections": {
           "main": [
-            { "connect": { "to": "<YOUR_DESTINATION>", "timeout": 20 } },
+            { "connect": { "to": "<YOUR_DESTINATION>", "from": "${call.from}", "timeout": 20 } },
             { "play": { "url": "say:Sorry, nobody at Bayview Taxi can take your call right now. Please call back later." } }
           ]
         }
