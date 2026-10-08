@@ -45,7 +45,7 @@ Tutorials and how-tos give the reader a way to confirm the result — a command 
 
 ## Grounding [SW]
 
-- Every fact traces to specs, source, the dashboard, or a ticket. Can't verify? Write `[NEEDS SOURCE: what's missing]` — never guess. Never invent params, endpoints, components, or behavior.
+- Every fact traces to specs, source, the dashboard, or a ticket. Can't verify? Leave it out of the page and flag it in the PR's `## Notes for reviewers` — never guess, and never leave a placeholder or TODO in page text. Never invent params, endpoints, components, or behavior.
 - Customer-facing only: no internal implementation detail (backend endpoints, transports, engine-side params). Placeholder data only — no real names, emails, or domains.
 - Examples do real work: tool call → your server → system of record → response. No knowledge-trivia bots.
 - Examples run as written: real imports, every required parameter, and only placeholders the reader can obviously fill. Verify each against the spec or SDK source — and against an actual run when the page ships a whole flow.
