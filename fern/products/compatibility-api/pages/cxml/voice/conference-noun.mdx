@@ -79,7 +79,7 @@ puts response.to_s
 </ParamField>
 
 <ParamField path="coach" type="string" toc={true}>
-  Coach accepts a call [SID](/docs/platform/what-is-a-sid) of a call that is currently connected to an in-progress conference. Specifying a call SID that does not exist or is no longer connected to the conference will result in the call failing to the action URL and throwing a 13240 error.
+  The call [SID](/docs/platform/what-is-a-sid) of a participant already in the conference to coach. This call becomes the coach: only the coached participant hears it, and its audio stays out of the main conference mix. If the SID is not a current participant, the join fails and `<Dial>` completes with a `DialCallStatus` of `busy`. A muted coach is heard by nobody. See [Supervisor call monitoring](/docs/platform/voice/supervisor-call-monitoring) for listen-in, whisper, and barge workflows.
 </ParamField>
 
 <ParamField path="endConferenceOnExit" type="boolean" default="false" toc={true}>
@@ -539,9 +539,11 @@ end
 puts response.to_s
 ```
 </CodeBlocks>
-Participants who enter a conference call muted can hear the other participants in the call who are unmuted. However, the unmuted participants cannot hear the muted callers. Muting and unmuting can be enabled and disabled in real-time via a REST API.
+Participants who enter a conference call muted can hear the other participants in the call who are unmuted. However, the unmuted participants cannot hear the muted callers. Muting and unmuting can be enabled and disabled in real-time via a REST API. For a supervisor workflow that moves between silent monitoring, coaching, and speaking, see [Supervisor call monitoring](/docs/platform/voice/supervisor-call-monitoring).
 
 ### Coaching a conference call
+
+The `coach` attribute makes the joining call a coach for the participant whose call SID it names. The coach hears the whole conference, and only the coached participant hears the coach. Everyone else, including a customer on the line, hears nothing from the coach. The coached participant must already be in the conference, and a coach who is also muted is heard by nobody.
 
 <CodeBlocks>
 ```xml
@@ -577,7 +579,7 @@ class Example
         var response = new VoiceResponse();
         var dial = new Dial();
         dial.Conference("Example-Room",
-            coach: 'AgentCallSid');
+            coach: "AgentCallSid");
 
         response.Append(dial);
         Console.WriteLine(response.ToString());;
@@ -601,7 +603,7 @@ require 'signalwire/sdk'
 
 response = Signalwire::Sdk::VoiceResponse.new do |response|
   response.dial do |dial|
-    dial.conference('Example-Room', coach: '')
+    dial.conference('Example-Room', coach: 'AgentCallSid')
   end
 end
 
