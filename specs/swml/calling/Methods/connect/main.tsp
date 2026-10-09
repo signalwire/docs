@@ -150,15 +150,15 @@ model ConnectDeviceBase {
   call_state_url?: url;
 
   @doc("""
-    SWML to execute after the bridge completes. This defines what should happen after the call is connected and the bridge ends.
+    SWML to execute on this call after its bridge with the queued call ends. Only applies when
+    `to` starts with `queue:`. When omitted, the call hangs up when the bridge ends. Either way,
+    the script does not continue past `connect` for queue targets, so `result` never runs.
     Can be either:
     - A URL (http or https) that returns a SWML document
     - An inline SWML document (as a JSON string)
-
-    **Note:** This parameter is REQUIRED when connecting to a queue (when `to` starts with "queue:")
     """)
-  @example("https://example.com/after-bridge.swml")
-  transfer_after_bridge?: string | SWMLVar;
+  @example("https://example.com/after-queue.swml")
+  execute_after_queue?: string | SWMLVar;
 
   @doc("""
     An array of call state event names to be notified about.
@@ -331,14 +331,20 @@ model ConnectDeviceSingle is ConnectDeviceBase {
 @summary("Serial Dialing")
 @doc("Dial destinations one at a time in sequence. If the first destination does not answer, the next destination in the array is tried, and so on.")
 model ConnectDeviceSerial is ConnectDeviceBase {
-  @doc("Array of destination objects to dial in order. Each destination is tried sequentially — if the current destination does not answer, the next one in the array is attempted.")
+  @doc("""
+    Array of destination objects to dial in order. Each destination is tried sequentially — if the current destination does not answer, the next one in the array is attempted.
+    Up to 20 destinations are tried. Any destination after the 20th is skipped without an error.
+    """)
   serial: ConnectDestination[];
 }
 
 @summary("Parallel Dialing")
 @doc("Dial multiple destinations simultaneously. All destinations in the array ring at the same time — the first to answer is bridged and the remaining calls are cancelled.")
 model ConnectDeviceParallel is ConnectDeviceBase {
-  @doc("Array of destination objects to dial simultaneously. All destinations ring at the same time — the first to answer is bridged and the remaining calls are cancelled.")
+  @doc("""
+    Array of destination objects to dial simultaneously. All destinations ring at the same time — the first to answer is bridged and the remaining calls are cancelled.
+    Up to 20 destinations are dialed. Any destination after the 20th is skipped without an error.
+    """)
   parallel: ConnectDestination[];
 }
 
@@ -350,6 +356,7 @@ model ConnectDeviceSerialParallel is ConnectDeviceBase {
     The outer array is the **serial** dimension — each element is a group tried in order.
     Each inner array is the **parallel** dimension — all destinations in that group are dialed simultaneously.
     If no destination in the current group answers, the next group is attempted.
+    Up to 20 destinations are dialed in total, counted across all groups rather than per group. Any destination after the 20th is skipped without an error.
     """)
   serial_parallel: ConnectDestination[][];
 }

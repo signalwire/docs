@@ -51,14 +51,14 @@ Entries are customer-facing, so everything under "Everything here is customer-fa
 
 ## Everything here is customer-facing
 
-Assume no prior knowledge, and never expose internal implementation detail — backend endpoints, transports, engine-side params. Every fact traces to source, a spec, the dashboard, or a ticket; if you can't verify one, write `[NEEDS SOURCE: what's missing]` instead of guessing.
+Assume no prior knowledge, and never expose internal implementation detail — backend endpoints, transports, engine-side params. Every fact traces to source, a spec, the dashboard, or a ticket. If you can't verify one, leave it out of the page and flag it in the PR's notes for reviewers: never guess, and never leave a placeholder or TODO in page text.
 
 ## Verify
 
 | Change | Run |
 |---|---|
 | MDX pages | `yarn fern-md-check` |
-| Nav yml (`fern/docs.yml`, `fern/products/*/*.yml`) | `yarn fern-check` |
+| Nav yml (`fern/docs.yml`, `fern/products/*/*.yml`) or redirects (`fern/redirects.yml`) | `yarn fern-check` |
 | TypeSpec under `specs/` | `yarn build:specs` |
 
 CI runs `fern-check` and `fern-md-check` on every PR. No check covers `#anchor` fragments — verify by hand any link you touch.

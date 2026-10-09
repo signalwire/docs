@@ -16,11 +16,11 @@ model TokenIdPath {
 
 @doc("API Token model.")
 model Token {
-  @doc("The unique identifier of the created API Token.")
+  @doc("The unique identifier of the API Token.")
   @example("ea14556a-984f-11ee-b9d1-0242ac120002")
   id: uuid;
 
-  @doc("The name of the created API Token.")
+  @doc("The name of the API Token.")
   @example("John Doe's Token")
   @minLength(1)
   name: string;
@@ -28,8 +28,13 @@ model Token {
   @doc("The permissions enabled for this token.")
   @example(#["calling", "fax", "messaging"])
   permissions: string[];
+}
 
-  @doc("The API token that can be used along with the project ID for basic authentication.")
+@doc("API Token model as returned when the token is created, including the token secret.")
+model CreatedToken {
+  ...Token;
+
+  @doc("The API token secret, used as the password in HTTP Basic auth alongside the project ID. Returned only in this response and cannot be retrieved again; store it securely.")
   @example("swapi_0123456789ab0123456789ab0123456789ab")
   token: string;
 }
