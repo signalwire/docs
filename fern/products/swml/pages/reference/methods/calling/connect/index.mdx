@@ -216,6 +216,10 @@ Dial multiple destinations simultaneously — the first to answer is bridged and
 
 <ParamField path="connect.parallel" type="object[]" required={true} toc={true}>
   Array of destination objects to dial simultaneously. The first destination to answer is bridged and the rest are cancelled.
+
+  <Warning title="20-destination limit">
+  Up to 20 destinations are dialed. Any destination after the 20th never rings, and `connect` reports no error for it. To reach more, see [Dial more than 20 destinations](#dial-more-than-20-destinations).
+  </Warning>
 </ParamField>
 
 <Indent>
@@ -418,6 +422,10 @@ Dial destinations in sequence — each destination is tried one at a time, movin
 
 <ParamField path="connect.serial" type="object[]" required={true} toc={true}>
   Array of destination objects to dial in order. Each destination is tried sequentially — if the first fails, the next is attempted.
+
+  <Warning title="20-destination limit">
+  Up to 20 destinations are tried. Any destination after the 20th never rings, and `connect` reports no error for it. To reach more, see [Dial more than 20 destinations](#dial-more-than-20-destinations).
+  </Warning>
 </ParamField>
 
 <Indent>
@@ -622,6 +630,10 @@ Combine both strategies. The outer array is the **serial** dimension — groups 
   Array of arrays combining both strategies. The outer array is the **serial** dimension — each element is a group tried in order. Each inner array is the **parallel** dimension — all destinations in that group are dialed simultaneously. If no destination in the current group answers, the next group is attempted.
 
   In the `[][]` notation below, the first `[]` is the serial (group) index and the second `[]` is the parallel (destination) index within that group.
+
+  <Warning title="20-destination limit">
+  Up to 20 destinations are dialed in total, counted across all groups rather than per group. With three groups of eight destinations, the first two groups ring in full (16 destinations), the third group rings only its first four, and its last four never ring. `connect` reports no error for skipped destinations. To reach more, see [Dial more than 20 destinations](#dial-more-than-20-destinations).
+  </Warning>
 </ParamField>
 
 <Indent>
@@ -1299,6 +1311,78 @@ sections:
               "to": "+15553214321"
             }
           ]
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### Dial more than 20 destinations
+
+To reach more than 20 destinations, split them into batches of up to 20 and start the next batch from the `result` block when `connect_result` is `failed`. The batches ring one after another: the second batch starts only after the first batch's `timeout` expires with no answer. Put the destinations most likely to answer in the first batch.
+
+This example shows two destinations per batch to keep it short. Each `parallel` array can hold up to 20.
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - connect:
+        timeout: 20
+        parallel:
+          - to: "+15551110001"
+          - to: "+15551110002"
+        result:
+          case:
+            failed:
+              - connect:
+                  timeout: 20
+                  parallel:
+                    - to: "+15551110021"
+                    - to: "+15551110022"
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "connect": {
+          "timeout": 20,
+          "parallel": [
+            {
+              "to": "+15551110001"
+            },
+            {
+              "to": "+15551110002"
+            }
+          ],
+          "result": {
+            "case": {
+              "failed": [
+                {
+                  "connect": {
+                    "timeout": 20,
+                    "parallel": [
+                      {
+                        "to": "+15551110021"
+                      },
+                      {
+                        "to": "+15551110022"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
         }
       }
     ]
