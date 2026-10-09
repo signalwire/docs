@@ -388,7 +388,7 @@ line, and `no_match` catches everything else.
 
 <CodeBlocks>
 <CodeBlock title="Python — Agents">
-```python {7-25}
+```python
 # Install: python -m pip install signalwire-sdk==3.4.1
 # Save as call_routing.py and run: python call_routing.py
 from signalwire import SWMLService
@@ -429,7 +429,7 @@ if __name__ == "__main__":
 ```
 </CodeBlock>
 <CodeBlock title="TypeScript — Agents">
-```typescript {8-20}
+```typescript
 // Install: npm install @signalwire/sdk@2.0.5
 // This sample also runs as JavaScript: save as call-routing.mjs,
 // then run: node call-routing.mjs
@@ -464,7 +464,7 @@ await service.serve();
 ```
 </CodeBlock>
 <CodeBlock title="YAML">
-```yaml {5-19}
+```yaml
 version: 1.0.0
 sections:
   main:
@@ -501,7 +501,7 @@ sections:
 ```
 </CodeBlock>
 <CodeBlock title="JSON">
-```json {6-20}
+```json
 {
   "version": "1.0.0",
   "sections": {
@@ -565,7 +565,7 @@ return value.
 
 <CodeBlocks>
 <CodeBlock title="Python — Relay client">
-```python {14-36}
+```python
 # Install: python -m pip install signalwire-sdk==3.4.1
 # Save as call_routing.py and run: python call_routing.py
 from signalwire.relay import RelayClient
@@ -615,7 +615,7 @@ client.run()
 ```
 </CodeBlock>
 <CodeBlock title="TypeScript — Relay client">
-```typescript {13-32}
+```typescript
 // Install: npm install @signalwire/sdk@2.0.5
 // Save as call-routing.mts and run: npx tsx call-routing.mts
 import { RelayClient } from "@signalwire/sdk";
@@ -849,6 +849,30 @@ The POST body for a recognized reply looks like this. `params.result.type` is `n
 
 The [`prompt` reference][swml-prompt] documents every field.
 
+<llms-ignore>
+
+<img src="/assets/images/img/collect-webhook-lifecycle-themed.svg" alt="SignalWire plays the prompt to the caller. The caller says dispatch. SignalWire stores dispatch in prompt_value and switch runs the dispatch branch. SignalWire posts a calling.call.collect event to your status_url with result type speech, the text, and a confidence score. Your server returns 200 OK. The dispatch branch plays to the caller." />
+
+</llms-ignore>
+
+<llms-only>
+
+```mermaid
+sequenceDiagram
+    participant Caller
+    participant SW as SignalWire
+    participant Srv as Your server
+
+    SW->>Caller: prompt plays: say booking or dispatch
+    Caller->>SW: says "dispatch"
+    Note over SW: prompt_value is dispatch, switch runs the dispatch branch
+    SW->>Srv: POST status_url: calling.call.collect, type speech, text, confidence
+    Srv-->>SW: 200 OK
+    SW->>Caller: dispatch branch plays
+```
+
+</llms-only>
+
 ### Receive the result via Relay
 
 The Relay client already holds the result: it is the event that `action.wait()` returned. To log
@@ -872,6 +896,32 @@ starting the prompt. The [Relay events reference][relay-events] lists the payloa
 ```
 </CodeBlock>
 </CodeBlocks>
+
+<llms-ignore>
+
+<img src="/assets/images/img/collect-relay-lifecycle-themed.svg" alt="The caller dials the resource. SignalWire hands the call to your Relay client on the default topic. Your client answers and sends play_and_collect. SignalWire plays the prompt and the caller says dispatch. SignalWire sends your client a calling.call.collect event with result type speech and the text. wait() returns and your code picks the branch, then plays the reply and hangs up." />
+
+</llms-ignore>
+
+<llms-only>
+
+```mermaid
+sequenceDiagram
+    participant Caller
+    participant SW as SignalWire
+    participant App as Your Relay client
+
+    Caller->>SW: calls the resource address
+    SW->>App: call arrives on topic default
+    App->>SW: answer, play_and_collect
+    SW->>Caller: prompt plays: say booking or dispatch
+    Caller->>SW: says "dispatch"
+    SW-->>App: calling.call.collect: type speech, text
+    Note over App: wait() returns, your code branches
+    App->>SW: play reply, then hangup
+```
+
+</llms-only>
 
 ### Compare the surfaces
 
@@ -904,28 +954,143 @@ words at once, and treat "press 1" and "say booking" as the same answer.
 
 #### Accept a keypad digit as well as speech via SWML
 
-Setting one digit parameter alongside the speech parameters enables both inputs. Add `max_digits`
-to the prompt and the digit keys to the switch.
+Setting one digit parameter alongside the speech parameters enables both inputs. `max_digits`
+joins the prompt, and the digit keys join the switch.
 
 <CodeBlocks>
+<CodeBlock title="Python — Agents">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as call_routing.py and run: python call_routing.py
+from signalwire import SWMLService
+
+service = SWMLService(name="call-routing")
+
+service.add_verb("answer", {})
+service.add_verb(
+    "prompt",
+    {
+        "play": "say:Thanks for calling Bayview Taxi. Say booking or press 1. Say dispatch or press 2.",
+        "max_digits": 1,
+        "speech_hints": ["booking", "dispatch"],
+    },
+)
+service.add_verb(
+    "switch",
+    {
+        "variable": "prompt_value",
+        "case": {
+            "booking": [{"transfer": {"dest": "booking"}}],
+            "1": [{"transfer": {"dest": "booking"}}],
+            "dispatch": [{"transfer": {"dest": "dispatch"}}],
+            "2": [{"transfer": {"dest": "dispatch"}}],
+        },
+        "default": [{"transfer": {"dest": "no_match"}}],
+    },
+)
+
+service.add_verb_to_section("booking", "play", {"url": "say:You said booking."})
+service.add_verb_to_section("booking", "hangup", {})
+
+service.add_verb_to_section("dispatch", "play", {"url": "say:You said dispatch."})
+service.add_verb_to_section("dispatch", "hangup", {})
+
+service.add_verb_to_section("no_match", "play", {"url": "say:Sorry, I didn't catch that. Goodbye."})
+service.add_verb_to_section("no_match", "hangup", {})
+
+if __name__ == "__main__":
+    service.serve()
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — Agents">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as call-routing.mjs,
+// then run: node call-routing.mjs
+import { SWMLService } from "@signalwire/sdk";
+
+const service = new SWMLService({ name: "call-routing" });
+
+service.addVerb("answer", {});
+service.addVerb("prompt", {
+  play: "say:Thanks for calling Bayview Taxi. Say booking or press 1. Say dispatch or press 2.",
+  max_digits: 1,
+  speech_hints: ["booking", "dispatch"],
+});
+service.addVerb("switch", {
+  variable: "prompt_value",
+  case: {
+    booking: [{ transfer: { dest: "booking" } }],
+    "1": [{ transfer: { dest: "booking" } }],
+    dispatch: [{ transfer: { dest: "dispatch" } }],
+    "2": [{ transfer: { dest: "dispatch" } }],
+  },
+  default: [{ transfer: { dest: "no_match" } }],
+});
+
+service.addVerbToSection("booking", "play", { url: "say:You said booking." });
+service.addVerbToSection("booking", "hangup", {});
+
+service.addVerbToSection("dispatch", "play", { url: "say:You said dispatch." });
+service.addVerbToSection("dispatch", "hangup", {});
+
+service.addVerbToSection("no_match", "play", { url: "say:Sorry, I didn't catch that. Goodbye." });
+service.addVerbToSection("no_match", "hangup", {});
+
+await service.serve();
+```
+</CodeBlock>
 <CodeBlock title="YAML">
-```yaml {3,5,9-11}
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - answer: {}
     - prompt:
         play: "say:Thanks for calling Bayview Taxi. Say booking or press 1. Say dispatch or press 2."
         max_digits: 1
-        speech_hints: [booking, dispatch]
+        speech_hints:
+          - booking
+          - dispatch
     - switch:
         variable: prompt_value
         case:
-          booking: [{ transfer: { dest: booking } }]
-          "1": [{ transfer: { dest: booking } }]
-          dispatch: [{ transfer: { dest: dispatch } }]
-          "2": [{ transfer: { dest: dispatch } }]
-        default: [{ transfer: { dest: no_match } }]
+          booking:
+            - transfer:
+                dest: booking
+          "1":
+            - transfer:
+                dest: booking
+          dispatch:
+            - transfer:
+                dest: dispatch
+          "2":
+            - transfer:
+                dest: dispatch
+        default:
+          - transfer:
+              dest: no_match
+  booking:
+    - play:
+        url: "say:You said booking."
+    - hangup: {}
+  dispatch:
+    - play:
+        url: "say:You said dispatch."
+    - hangup: {}
+  no_match:
+    - play:
+        url: "say:Sorry, I didn't catch that. Goodbye."
+    - hangup: {}
 ```
 </CodeBlock>
 <CodeBlock title="JSON">
-```json {4,12-13}
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      { "answer": {} },
       {
         "prompt": {
           "play": "say:Thanks for calling Bayview Taxi. Say booking or press 1. Say dispatch or press 2.",
@@ -945,21 +1110,51 @@ to the prompt and the digit keys to the switch.
           "default": [{ "transfer": { "dest": "no_match" } }]
         }
       }
+    ],
+    "booking": [
+      { "play": { "url": "say:You said booking." } },
+      { "hangup": {} }
+    ],
+    "dispatch": [
+      { "play": { "url": "say:You said dispatch." } },
+      { "hangup": {} }
+    ],
+    "no_match": [
+      { "play": { "url": "say:Sorry, I didn't catch that. Goodbye." } },
+      { "hangup": {} }
+    ]
+  }
+}
 ```
 </CodeBlock>
 </CodeBlocks>
 
-In the Server SDK samples, add `"max_digits": 1` to the prompt config and the `"1"` and `"2"` keys
-to the `case` object.
-
 #### Accept a keypad digit as well as speech via Relay
 
-Pass both `digits` and `speech` in the collect config, then read `params.digits` when the result
-type is `digit`.
+Pass both `digits` and `speech` in the collect config. A keypad reply comes back with type
+`digit` and the pressed key in `params.digits`, so the code maps keys to the same words.
 
 <CodeBlocks>
 <CodeBlock title="Python — Relay client">
-```python {3,9-10}
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as call_routing.py and run: python call_routing.py
+from signalwire.relay import RelayClient
+
+client = RelayClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    host="<YOUR_SPACE>.signalwire.com",
+    contexts=["default"],
+)
+
+BY_KEY = {"1": "booking", "2": "dispatch"}
+
+
+@client.on_call
+async def handle_call(call):
+    await call.answer()
+
     action = await call.play_and_collect(
         media=[{"type": "tts", "params": {"text": "Thanks for calling Bayview Taxi. Say booking or press 1. Say dispatch or press 2."}}],
         collect={"digits": {"max": 1}, "speech": {"hints": ["booking", "dispatch"], "language": "en-US"}},
@@ -969,13 +1164,49 @@ type is `digit`.
 
     heard = ""
     if result.get("type") == "digit":
-        heard = {"1": "booking", "2": "dispatch"}.get(result.get("params", {}).get("digits", ""), "")
+        heard = BY_KEY.get(result.get("params", {}).get("digits", ""), "")
     elif result.get("type") == "speech":
         heard = result.get("params", {}).get("text", "").lower()
+
+    if "booking" in heard:
+        reply = "You said booking."
+    elif "dispatch" in heard:
+        reply = "You said dispatch."
+    else:
+        reply = "Sorry, I didn't catch that. Goodbye."
+
+    async def hang_up_after_playback(_event):
+        if call.state != "ended":
+            await call.hangup()
+
+    await call.play(
+        [{"type": "tts", "params": {"text": reply}}],
+        on_completed=hang_up_after_playback,
+    )
+    await call.wait_for_ended()
+
+
+client.run()
 ```
 </CodeBlock>
 <CodeBlock title="TypeScript — Relay client">
-```typescript {3,10-12}
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// Save as call-routing.mts and run: npx tsx call-routing.mts
+import { RelayClient } from "@signalwire/sdk";
+
+const client = new RelayClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  host: "<YOUR_SPACE>.signalwire.com",
+  contexts: ["default"],
+});
+
+const byKey: Record<string, string> = { "1": "booking", "2": "dispatch" };
+
+client.onCall(async (call) => {
+  await call.answer();
+
   const action = await call.playAndCollect(
     [{ type: "tts", text: "Thanks for calling Bayview Taxi. Say booking or press 1. Say dispatch or press 2." }],
     { digits: { max: 1 }, speech: { hints: ["booking", "dispatch"], language: "en-US" } },
@@ -985,10 +1216,24 @@ type is `digit`.
     type?: string;
     params?: { text?: string; digits?: string };
   };
-  const byKey: Record<string, string> = { "1": "booking", "2": "dispatch" };
+
   let heard = "";
   if (result.type === "digit") heard = byKey[result.params?.digits ?? ""] ?? "";
   else if (result.type === "speech") heard = (result.params?.text ?? "").toLowerCase();
+
+  let reply = "Sorry, I didn't catch that. Goodbye.";
+  if (heard.includes("booking")) reply = "You said booking.";
+  else if (heard.includes("dispatch")) reply = "You said dispatch.";
+
+  await call.play([{ type: "tts", text: reply }], {
+    onCompleted: async () => {
+      if (call.state !== "ended") await call.hangup();
+    },
+  });
+  await call.waitForEnded();
+});
+
+await client.run();
 ```
 </CodeBlock>
 </CodeBlocks>
@@ -1011,55 +1256,262 @@ or verified.
 
 #### Hand the call to a phone via SWML
 
-Replace the spoken line in the `dispatch` section with [`connect`][swml-connect].
+The `dispatch` section announces the hand-off, then [`connect`][swml-connect] dials the
+destination. The caller's own number is presented as caller ID unless you set `from`.
 
 <CodeBlocks>
+<CodeBlock title="Python — Agents">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as call_routing.py and run: python call_routing.py
+from signalwire import SWMLService
+
+service = SWMLService(name="call-routing")
+
+service.add_verb("answer", {})
+service.add_verb(
+    "prompt",
+    {
+        "play": "say:Thanks for calling Bayview Taxi. Say booking or dispatch.",
+        "speech_hints": ["booking", "dispatch"],
+    },
+)
+service.add_verb(
+    "switch",
+    {
+        "variable": "prompt_value",
+        "case": {
+            "booking": [{"transfer": {"dest": "booking"}}],
+            "dispatch": [{"transfer": {"dest": "dispatch"}}],
+        },
+        "default": [{"transfer": {"dest": "no_match"}}],
+    },
+)
+
+service.add_verb_to_section("booking", "play", {"url": "say:You said booking."})
+service.add_verb_to_section("booking", "hangup", {})
+
+service.add_verb_to_section("dispatch", "play", {"url": "say:Connecting you to dispatch."})
+service.add_verb_to_section("dispatch", "connect", {"to": "<YOUR_DESTINATION>"})
+service.add_verb_to_section("dispatch", "hangup", {})
+
+service.add_verb_to_section("no_match", "play", {"url": "say:Sorry, I didn't catch that. Goodbye."})
+service.add_verb_to_section("no_match", "hangup", {})
+
+if __name__ == "__main__":
+    service.serve()
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — Agents">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as call-routing.mjs,
+// then run: node call-routing.mjs
+import { SWMLService } from "@signalwire/sdk";
+
+const service = new SWMLService({ name: "call-routing" });
+
+service.addVerb("answer", {});
+service.addVerb("prompt", {
+  play: "say:Thanks for calling Bayview Taxi. Say booking or dispatch.",
+  speech_hints: ["booking", "dispatch"],
+});
+service.addVerb("switch", {
+  variable: "prompt_value",
+  case: {
+    booking: [{ transfer: { dest: "booking" } }],
+    dispatch: [{ transfer: { dest: "dispatch" } }],
+  },
+  default: [{ transfer: { dest: "no_match" } }],
+});
+
+service.addVerbToSection("booking", "play", { url: "say:You said booking." });
+service.addVerbToSection("booking", "hangup", {});
+
+service.addVerbToSection("dispatch", "play", { url: "say:Connecting you to dispatch." });
+service.addVerbToSection("dispatch", "connect", { to: "<YOUR_DESTINATION>" });
+service.addVerbToSection("dispatch", "hangup", {});
+
+service.addVerbToSection("no_match", "play", { url: "say:Sorry, I didn't catch that. Goodbye." });
+service.addVerbToSection("no_match", "hangup", {});
+
+await service.serve();
+```
+</CodeBlock>
 <CodeBlock title="YAML">
-```yaml {4-5}
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - answer: {}
+    - prompt:
+        play: "say:Thanks for calling Bayview Taxi. Say booking or dispatch."
+        speech_hints:
+          - booking
+          - dispatch
+    - switch:
+        variable: prompt_value
+        case:
+          booking:
+            - transfer:
+                dest: booking
+          dispatch:
+            - transfer:
+                dest: dispatch
+        default:
+          - transfer:
+              dest: no_match
+  booking:
+    - play:
+        url: "say:You said booking."
+    - hangup: {}
   dispatch:
     - play:
         url: "say:Connecting you to dispatch."
     - connect:
         to: "<YOUR_DESTINATION>"
     - hangup: {}
+  no_match:
+    - play:
+        url: "say:Sorry, I didn't catch that. Goodbye."
+    - hangup: {}
 ```
 </CodeBlock>
 <CodeBlock title="JSON">
-```json {3}
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      { "answer": {} },
+      {
+        "prompt": {
+          "play": "say:Thanks for calling Bayview Taxi. Say booking or dispatch.",
+          "speech_hints": ["booking", "dispatch"]
+        }
+      },
+      {
+        "switch": {
+          "variable": "prompt_value",
+          "case": {
+            "booking": [{ "transfer": { "dest": "booking" } }],
+            "dispatch": [{ "transfer": { "dest": "dispatch" } }]
+          },
+          "default": [{ "transfer": { "dest": "no_match" } }]
+        }
+      }
+    ],
+    "booking": [
+      { "play": { "url": "say:You said booking." } },
+      { "hangup": {} }
+    ],
     "dispatch": [
       { "play": { "url": "say:Connecting you to dispatch." } },
       { "connect": { "to": "<YOUR_DESTINATION>" } },
       { "hangup": {} }
+    ],
+    "no_match": [
+      { "play": { "url": "say:Sorry, I didn't catch that. Goodbye." } },
+      { "hangup": {} }
     ]
+  }
+}
 ```
 </CodeBlock>
 </CodeBlocks>
 
-In the Server SDK samples, add `service.add_verb_to_section("dispatch", "connect", {"to": "<YOUR_DESTINATION>"})`
-between the play and hangup lines, or the `addVerbToSection` equivalent.
-
 #### Hand the call to a phone via Relay
 
 [`connect`][relay-connect] takes a list of device groups; each inner list rings at once and the
-outer list rings in turn. Replace the dispatch reply with a bridge to one phone.
+outer list rings in turn. The dispatch branch bridges to one phone and then waits for the call to
+end.
 
 <CodeBlocks>
 <CodeBlock title="Python — Relay client">
-```python {1-9}
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as call_routing.py and run: python call_routing.py
+from signalwire.relay import RelayClient
+
+client = RelayClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    host="<YOUR_SPACE>.signalwire.com",
+    contexts=["default"],
+)
+
+
+@client.on_call
+async def handle_call(call):
+    await call.answer()
+
+    action = await call.play_and_collect(
+        media=[{"type": "tts", "params": {"text": "Thanks for calling Bayview Taxi. Say booking or dispatch."}}],
+        collect={"speech": {"hints": ["booking", "dispatch"], "language": "en-US"}},
+    )
+    event = await action.wait()
+    result = event.params.get("result", {})
+
+    heard = ""
+    if result.get("type") == "speech":
+        heard = result.get("params", {}).get("text", "").lower()
+
     if "dispatch" in heard:
-        await call.play([{"type": "tts", "params": {"text": "Connecting you to dispatch."}}])
+        announce = await call.play([{"type": "tts", "params": {"text": "Connecting you to dispatch."}}])
+        await announce.wait()
         await call.connect([[{
             "type": "phone",
             "params": {"to_number": "<YOUR_DESTINATION>", "from_number": "<YOUR_CALLER_ID>", "timeout": 30},
         }]])
         await call.wait_for_ended()
         return
+
+    reply = "You said booking." if "booking" in heard else "Sorry, I didn't catch that. Goodbye."
+
+    async def hang_up_after_playback(_event):
+        if call.state != "ended":
+            await call.hangup()
+
+    await call.play(
+        [{"type": "tts", "params": {"text": reply}}],
+        on_completed=hang_up_after_playback,
+    )
+    await call.wait_for_ended()
+
+
+client.run()
 ```
 </CodeBlock>
 <CodeBlock title="TypeScript — Relay client">
-```typescript {1-9}
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// Save as call-routing.mts and run: npx tsx call-routing.mts
+import { RelayClient } from "@signalwire/sdk";
+
+const client = new RelayClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  host: "<YOUR_SPACE>.signalwire.com",
+  contexts: ["default"],
+});
+
+client.onCall(async (call) => {
+  await call.answer();
+
+  const action = await call.playAndCollect(
+    [{ type: "tts", text: "Thanks for calling Bayview Taxi. Say booking or dispatch." }],
+    { speech: { hints: ["booking", "dispatch"], language: "en-US" } },
+  );
+  const event = await action.wait();
+  const result = (event.params.result ?? {}) as {
+    type?: string;
+    params?: { text?: string };
+  };
+  const heard = result.type === "speech" ? (result.params?.text ?? "").toLowerCase() : "";
+
   if (heard.includes("dispatch")) {
-    await call.play([{ type: "tts", text: "Connecting you to dispatch." }]);
+    const announce = await call.play([{ type: "tts", text: "Connecting you to dispatch." }]);
+    await announce.wait();
     await call.connect([[{
       type: "phone",
       params: { to_number: "<YOUR_DESTINATION>", from_number: "<YOUR_CALLER_ID>", timeout: 30 },
@@ -1067,6 +1519,17 @@ outer list rings in turn. Replace the dispatch reply with a bridge to one phone.
     await call.waitForEnded();
     return;
   }
+
+  const reply = heard.includes("booking") ? "You said booking." : "Sorry, I didn't catch that. Goodbye.";
+  await call.play([{ type: "tts", text: reply }], {
+    onCompleted: async () => {
+      if (call.state !== "ended") await call.hangup();
+    },
+  });
+  await call.waitForEnded();
+});
+
+await client.run();
 ```
 </CodeBlock>
 </CodeBlocks>
@@ -1084,27 +1547,59 @@ up.
 #### Ask again when the caller says nothing via SWML
 
 [`goto`][swml-goto] jumps to a label within the same section, and its `when` condition and `max`
-count keep the loop bounded. Place a label before the prompt and a conditional `goto` after it.
+count keep the loop bounded. A `label` before the prompt and a conditional `goto` after it repeat
+the question once. The Server SDKs can emit the `goto` step but not `label`, whose value is a bare
+string rather than an object, so this variation is for a hosted or hand-written document. The
+[control flow guide][control-flow] compares `goto` with `execute` and `transfer`.
 
 <CodeBlocks>
 <CodeBlock title="YAML">
-```yaml {2,6-9}
+```yaml
+version: 1.0.0
+sections:
   main:
     - answer: {}
     - label: ask
     - prompt:
         play: "say:Thanks for calling Bayview Taxi. Say booking or dispatch."
-        speech_hints: [booking, dispatch]
+        speech_hints:
+          - booking
+          - dispatch
     - goto:
         label: ask
         when: "prompt_result == 'no_input'"
         max: 1
     - switch:
         variable: prompt_value
+        case:
+          booking:
+            - transfer:
+                dest: booking
+          dispatch:
+            - transfer:
+                dest: dispatch
+        default:
+          - transfer:
+              dest: no_match
+  booking:
+    - play:
+        url: "say:You said booking."
+    - hangup: {}
+  dispatch:
+    - play:
+        url: "say:You said dispatch."
+    - hangup: {}
+  no_match:
+    - play:
+        url: "say:Sorry, I didn't catch that. Goodbye."
+    - hangup: {}
 ```
 </CodeBlock>
 <CodeBlock title="JSON">
-```json {3,10-16}
+```json
+{
+  "version": "1.0.0",
+  "sections": {
     "main": [
       { "answer": {} },
       { "label": "ask" },
@@ -1123,26 +1618,57 @@ count keep the loop bounded. Place a label before the prompt and a conditional `
       },
       {
         "switch": {
-          "variable": "prompt_value"
+          "variable": "prompt_value",
+          "case": {
+            "booking": [{ "transfer": { "dest": "booking" } }],
+            "dispatch": [{ "transfer": { "dest": "dispatch" } }]
+          },
+          "default": [{ "transfer": { "dest": "no_match" } }]
         }
       }
+    ],
+    "booking": [
+      { "play": { "url": "say:You said booking." } },
+      { "hangup": {} }
+    ],
+    "dispatch": [
+      { "play": { "url": "say:You said dispatch." } },
+      { "hangup": {} }
+    ],
+    "no_match": [
+      { "play": { "url": "say:Sorry, I didn't catch that. Goodbye." } },
+      { "hangup": {} }
     ]
+  }
+}
 ```
 </CodeBlock>
 </CodeBlocks>
 
-The Server SDKs can emit the `goto` step but not `label`, whose value is a bare string rather
-than an object, so this variation is for a hosted or hand-written document. In code, use the Relay
-loop below instead. The [control flow guide][control-flow] compares `goto` with `execute` and
-`transfer`.
-
 #### Ask again when the caller says nothing via Relay
 
-Wrap the prompt in a loop that exits on the first reply.
+A loop around the prompt exits on the first reply of any kind and gives up after two silent
+attempts.
 
 <CodeBlocks>
 <CodeBlock title="Python — Relay client">
-```python {1-10}
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as call_routing.py and run: python call_routing.py
+from signalwire.relay import RelayClient
+
+client = RelayClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    host="<YOUR_SPACE>.signalwire.com",
+    contexts=["default"],
+)
+
+
+@client.on_call
+async def handle_call(call):
+    await call.answer()
+
     result = {}
     for _attempt in range(2):
         action = await call.play_and_collect(
@@ -1153,20 +1679,79 @@ Wrap the prompt in a loop that exits on the first reply.
         result = event.params.get("result", {})
         if result.get("type") != "no_input":
             break
+
+    heard = ""
+    if result.get("type") == "speech":
+        heard = result.get("params", {}).get("text", "").lower()
+
+    if "booking" in heard:
+        reply = "You said booking."
+    elif "dispatch" in heard:
+        reply = "You said dispatch."
+    elif result.get("type") == "no_input":
+        reply = "I didn't hear anything. Goodbye."
+    else:
+        reply = "I didn't understand that. Goodbye."
+
+    async def hang_up_after_playback(_event):
+        if call.state != "ended":
+            await call.hangup()
+
+    await call.play(
+        [{"type": "tts", "params": {"text": reply}}],
+        on_completed=hang_up_after_playback,
+    )
+    await call.wait_for_ended()
+
+
+client.run()
 ```
 </CodeBlock>
 <CodeBlock title="TypeScript — Relay client">
-```typescript {1-10}
-  let result: { type?: string; params?: { text?: string } } = {};
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// Save as call-routing.mts and run: npx tsx call-routing.mts
+import { RelayClient } from "@signalwire/sdk";
+
+const client = new RelayClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  host: "<YOUR_SPACE>.signalwire.com",
+  contexts: ["default"],
+});
+
+type CollectResult = { type?: string; params?: { text?: string } };
+
+client.onCall(async (call) => {
+  await call.answer();
+
+  let result: CollectResult = {};
   for (let attempt = 0; attempt < 2; attempt++) {
     const action = await call.playAndCollect(
       [{ type: "tts", text: "Thanks for calling Bayview Taxi. Say booking or dispatch." }],
       { speech: { hints: ["booking", "dispatch"], language: "en-US" } },
     );
     const event = await action.wait();
-    result = (event.params.result ?? {}) as typeof result;
+    result = (event.params.result ?? {}) as CollectResult;
     if (result.type !== "no_input") break;
   }
+
+  const heard = result.type === "speech" ? (result.params?.text ?? "").toLowerCase() : "";
+
+  let reply = "I didn't understand that. Goodbye.";
+  if (heard.includes("booking")) reply = "You said booking.";
+  else if (heard.includes("dispatch")) reply = "You said dispatch.";
+  else if (result.type === "no_input") reply = "I didn't hear anything. Goodbye.";
+
+  await call.play([{ type: "tts", text: reply }], {
+    onCompleted: async () => {
+      if (call.state !== "ended") await call.hangup();
+    },
+  });
+  await call.waitForEnded();
+});
+
+await client.run();
 ```
 </CodeBlock>
 </CodeBlocks>
