@@ -1,0 +1,432 @@
+---
+title: Text-to-speech on a call
+slug: voice/speak-text
+description: Speak text on a call with SWML, Relay, or REST. Pick a TTS voice, speak a message to your own phone, and control or track the speech as it plays.
+max-toc-depth: 3
+---
+
+[make-and-receive-calls]: /docs/platform/voice/make-and-receive-calls
+[prepare-calls]: /docs/platform/voice/make-and-receive-calls#prepare-for-your-first-call
+[place-swml]: /docs/platform/voice/make-and-receive-calls#place-a-call-via-swml
+[answer-swml]: /docs/platform/voice/make-and-receive-calls#answer-a-call-via-swml
+[place-relay]: /docs/platform/voice/make-and-receive-calls#place-a-call-via-websocket-relay
+[answer-relay]: /docs/platform/voice/make-and-receive-calls#answer-a-call-via-websocket-relay
+[caller-id]: /docs/platform/voice/how-to-set-caller-id-or-cnam
+[trial-mode]: /docs/platform/trial-mode
+[tcpa]: /docs/platform/compliance/tcpa
+[webhooks]: /docs/platform/webhooks
+[tts-voices]: /docs/platform/voice/tts
+[tts-voice-strings]: /docs/platform/voice/tts#use-voice-identifier-strings
+[tts-custom]: /docs/platform/voice/tts#custom-and-cloned-voices
+[server-sdks]: /docs/server-sdks
+[sdk-voice-language]: /docs/server-sdks/guides/voice-language
+[swml-play]: /docs/swml/reference/calling/play
+[swml-prompt]: /docs/swml/reference/calling/prompt
+[swml-set]: /docs/swml/reference/calling/set
+[swml-ai-languages]: /docs/swml/reference/calling/ai/languages#use-voice-strings
+[browser-migrate]: /docs/browser-sdk/v4/guides/migrate-from-v3
+[call-commands]: /docs/apis/rest/calls/call-commands
+
+Text-to-speech (TTS) turns text into speech on a live call, so your app can read out a
+confirmation or an update the moment it has the words. Pick a voice, then follow the section for
+your approach to call your own phone and hear a message in that voice.
+
+## How text-to-speech works on a call
+
+You send SignalWire the text and a voice. SignalWire synthesizes the speech with that voice's
+engine and plays it into the call, where the people on the call hear it.
+
+A voice is a string in the form `engine.voice:model`, such as `elevenlabs.rachel` or
+`gcloud.en-US-Neural2-A`. The engine is the TTS provider that synthesizes the speech, such as
+ElevenLabs, Google Cloud, or Amazon Polly. To learn about each provider SignalWire offers, audition
+its voices, and compare providers by language and SSML support, see
+[TTS providers, voices, and languages][tts-voices]. [Voice identifier strings][tts-voice-strings]
+explains the format.
+
+<Warning title="Always name the voice and its engine">
+Default voices and engines can change. A voice string without an engine resolves against the
+current default engine, and a call that sets no voice uses the current default voice. Set a full
+`engine.voice` string in every request so the call keeps sounding the same.
+</Warning>
+
+The approaches name the same settings differently:
+
+| Setting | SWML | WebSocket (Relay) and REST |
+|---|---|---|
+| Text to speak | A `say:` URL, such as `say:Hello`, in `play` or `prompt` | `text` in a `tts` media item |
+| Voice | `say_voice` | `voice` |
+| Language | `say_language` | `language` |
+| Gender | `say_gender` | `gender` |
+
+Google Cloud and Amazon Polly voices also accept SSML (Speech Synthesis Markup Language) as text
+wrapped in `<speak>` tags. An AI agent picks its voice in its [`languages`][swml-ai-languages]
+settings instead; see [Voice and language][sdk-voice-language] in the Server SDKs.
+
+## Choose an approach
+
+Each approach is a separate way to put speech on a call, so follow the section for the one your
+app uses:
+
+- [SWML](#speak-text-on-a-call-via-swml) is a document of call instructions that SignalWire runs.
+  Add `say:` text to `play` or `prompt` when you know the words before the call starts, or when
+  you already answer calls with SWML.
+- [WebSocket (Relay)](#speak-text-on-a-call-via-websocket-relay) is a Relay client in the
+  [Server SDKs][server-sdks]. Your code speaks on a live call as it progresses, waits for the
+  speech to finish, and reads the caller's input. It needs no public URL.
+- [REST](#speak-text-on-a-call-already-in-progress-via-rest) sends a `calling.play` command by
+  call ID from any process, such as a backend job that announces an update. Playback progress
+  arrives at a webhook.
+
+The Browser SDK has no method that speaks text; [Migrate from v3][browser-migrate] lists playback
+as not implemented and points to SWML. A call placed from a browser hears speech from the SWML,
+Relay, or REST commands applied to it. In Call Flow Builder, use the **Play Audio or TTS** node.
+
+## Prepare to speak text on a call
+
+Start with working call setup from [Make and receive calls][make-and-receive-calls]. Test with a
+phone you can answer.
+
+<Warning title="Trial projects only call and receive calls from verified numbers">
+A [trial project][trial-mode] only places calls to and receives calls from numbers you've
+purchased or verified. [Prepare for your first call][prepare-calls] shows how to verify the phone
+you'll test with.
+</Warning>
+
+<Warning title="Calls that use an artificial voice are regulated">
+Synthesized speech on a call counts as an artificial voice under consent, do-not-call, and
+calling-hour rules. Read the [TCPA guide][tcpa] before you dial anyone but yourself.
+</Warning>
+
+Replace these values in the samples you run:
+
+| Value | Replace with |
+|---|---|
+| `<YOUR_SPACE>` | Your Space's subdomain in `<YOUR_SPACE>.signalwire.com` |
+| `<YOUR_PROJECT_ID>` | Your Project ID |
+| `<YOUR_API_TOKEN>` | Your API token, used only in server code |
+| `<YOUR_CALLER_ID>` | Your SignalWire phone number, or a [verified caller ID][caller-id], in E.164 format |
+| `<YOUR_DESTINATION>` | The phone number you'll call, in E.164 format |
+| `<YOUR_CALL_ID>` | The ID of an answered call, for the REST commands |
+| `<YOUR_STATUS_WEBHOOK_URL>` | An HTTPS endpoint you control that receives playback progress |
+
+## Speak text on a call via SWML
+
+[`play`][swml-play] speaks any URL that starts with `say:`. Set `say_voice` on the same `play` to
+choose the voice. The SDK's SWML builder has a `say()` method that writes this `play` for you.
+
+This program places a call as in [Place a call via SWML][place-swml]. When you answer, SignalWire
+speaks a ride confirmation in the ElevenLabs Rachel voice, then hangs up.
+
+<CodeBlocks>
+<CodeBlock title="Python — REST client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as speak_message.py and run: python speak_message.py
+from signalwire import SWMLBuilder, SWMLService
+from signalwire.rest import RestClient
+
+client = RestClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    host="<YOUR_SPACE>.signalwire.com",
+)
+
+swml = (
+    SWMLBuilder(SWMLService(name="speak-message"))
+    .say(
+        "Hello from Bayview Taxi. Your ride is confirmed for 8 AM tomorrow.",
+        voice="elevenlabs.rachel",
+    )
+    .hangup()
+    .build()
+)
+
+call = client.calling.dial(
+    from_="<YOUR_CALLER_ID>",
+    to="<YOUR_DESTINATION>",
+    swml=swml,
+)
+print(call["id"])
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — REST client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as speak-message.mjs,
+// then run: node speak-message.mjs
+import { RestClient, SwmlBuilder } from "@signalwire/sdk";
+
+const client = new RestClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  host: "<YOUR_SPACE>.signalwire.com",
+});
+
+const swml = new SwmlBuilder()
+  .say("Hello from Bayview Taxi. Your ride is confirmed for 8 AM tomorrow.", {
+    voice: "elevenlabs.rachel",
+  })
+  .hangup()
+  .build();
+
+const call = await client.calling.dial({
+  from: "<YOUR_CALLER_ID>",
+  to: "<YOUR_DESTINATION>",
+  swml,
+});
+console.log(call.id);
+```
+</CodeBlock>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - play:
+        url: "say:Hello from Bayview Taxi. Your ride is confirmed for 8 AM tomorrow."
+        say_voice: elevenlabs.rachel
+    - hangup: {}
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "play": {
+          "url": "say:Hello from Bayview Taxi. Your ride is confirmed for 8 AM tomorrow.",
+          "say_voice": "elevenlabs.rachel"
+        }
+      },
+      { "hangup": {} }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+Run the program and answer your phone. You hear the confirmation in the Rachel voice, then the
+call ends. If the phone never rings, check that `<YOUR_CALLER_ID>` is a number in your Space or a
+verified caller ID. If the voice isn't the one you set, check the string against the
+[voice catalog][tts-voices]: a voice ID from outside SignalWire's catalog, such as a
+[custom voice][tts-custom] from your own provider account, falls back to a default voice.
+
+To speak to people who call your number, serve the same document as in
+[Answer a call via SWML][answer-swml]. To play several clips in a row, list them in `urls`
+instead of `url`; `say:` text, audio file URLs, and `silence:` pauses can mix in one list.
+
+To use one voice for every `play` and `prompt` in a document, set `say_voice` once with
+[`set`][swml-set]; a `say_voice` on a single verb overrides it. To speak a menu and collect key
+presses or speech, put the `say:` text in [`prompt`][swml-prompt], which stores the caller's input
+in `prompt_value`.
+
+## Speak text on a call via WebSocket (Relay)
+
+A Relay client speaks with `play()` and a list of media items. A `tts` item carries the `text`
+and, optionally, `voice`, `language`, and `gender`. `play()` returns an action once SignalWire
+accepts the command: wait on it, or pass a completion callback, to act when the speech ends. Call
+setup follows [Place a call via WebSocket (Relay)][place-relay]; for calls to your number, see
+[Answer a call via WebSocket (Relay)][answer-relay].
+
+This program dials your phone, speaks the ride confirmation once you answer, and hangs up when
+the speech finishes.
+
+<CodeBlocks>
+<CodeBlock title="Python — Relay client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as speak_message_relay.py and run: python speak_message_relay.py
+import asyncio
+from signalwire.relay import RelayClient
+
+client = RelayClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    contexts=["default"],
+)
+
+async def main():
+    async with client:
+        call = await client.dial(
+            devices=[[{
+                "type": "phone",
+                "params": {
+                    "from_number": "<YOUR_CALLER_ID>",
+                    "to_number": "<YOUR_DESTINATION>",
+                    "timeout": 30,
+                },
+            }]],
+        )
+
+        async def hang_up_after_playback(_event):
+            if call.state != "ended":
+                await call.hangup()
+
+        await call.play([{
+            "type": "tts",
+            "params": {
+                "text": "Hello from Bayview Taxi. Your ride is confirmed for 8 AM tomorrow.",
+                "voice": "elevenlabs.rachel",
+            },
+        }], on_completed=hang_up_after_playback)
+        await call.wait_for_ended()
+
+asyncio.run(main())
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — Relay client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as speak-message-relay.mjs,
+// then run: node speak-message-relay.mjs
+import { RelayClient } from "@signalwire/sdk";
+
+const client = new RelayClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  contexts: ["default"],
+});
+
+await client.connect();
+
+try {
+  const call = await client.dial([[{
+    type: "phone",
+    params: {
+      from_number: "<YOUR_CALLER_ID>",
+      to_number: "<YOUR_DESTINATION>",
+      timeout: 30,
+    },
+  }]]);
+  await call.play([{
+    type: "tts",
+    text: "Hello from Bayview Taxi. Your ride is confirmed for 8 AM tomorrow.",
+    voice: "elevenlabs.rachel",
+  }], {
+    onCompleted: async () => {
+      if (call.state !== "ended") await call.hangup();
+    },
+  });
+  await call.waitForEnded();
+} finally {
+  await client.disconnect();
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+Run the program and answer your phone. You hear the confirmation in the Rachel voice, then the
+call ends. If the voice isn't the one you set, check the string against the
+[voice catalog][tts-voices].
+
+Pass several media items to `play()` to speak them in order; `audio`, `silence`, and
+`ringtone` items mix with `tts` items in one list.
+
+The action that `play()` returns controls the speech while it plays: `stop()` ends it, `pause()`
+and `resume()` hold and continue it, and `volume()` changes its level in decibels, from -40 to 40.
+Each `calling.call.play` event reports the play's `control_id` and a `state` of `playing`,
+`paused`, `finished`, or `error`. To speak a menu and collect input in one operation, use the
+Relay client's play-and-collect method, which takes the same media items plus the digit or speech
+settings to collect.
+
+## Speak text on a call already in progress via REST
+
+When another process controls the call, send [`calling.play`][call-commands] with the answered
+call's ID. The `play` list takes the same media items as Relay, with each item's settings in
+`params`, and `control_id` names the operation so later commands can address it. Set
+`status_url` to follow playback.
+
+<CodeBlocks>
+<CodeBlock title="Python — REST client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as speak_rest.py and run: python speak_rest.py
+from signalwire.rest import RestClient
+
+client = RestClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    host="<YOUR_SPACE>.signalwire.com",
+)
+
+client.calling.play(
+    "<YOUR_CALL_ID>",
+    control_id="driver-update",
+    play=[{
+        "type": "tts",
+        "params": {
+            "text": "Your Bayview Taxi driver is five minutes away.",
+            "voice": "elevenlabs.rachel",
+        },
+    }],
+    status_url="<YOUR_STATUS_WEBHOOK_URL>",
+)
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — REST client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as speak-rest.mjs,
+// then run: node speak-rest.mjs
+import { RestClient } from "@signalwire/sdk";
+
+const client = new RestClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  host: "<YOUR_SPACE>.signalwire.com",
+});
+
+await client.calling.play("<YOUR_CALL_ID>", {
+  control_id: "driver-update",
+  play: [{
+    type: "tts",
+    params: {
+      text: "Your Bayview Taxi driver is five minutes away.",
+      voice: "elevenlabs.rachel",
+    },
+  }],
+  status_url: "<YOUR_STATUS_WEBHOOK_URL>",
+});
+```
+</CodeBlock>
+<CodeBlock title="cURL — Calling API">
+```bash
+curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
+  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "command": "calling.play",
+    "id": "<YOUR_CALL_ID>",
+    "params": {
+      "control_id": "driver-update",
+      "play": [
+        {
+          "type": "tts",
+          "params": {
+            "text": "Your Bayview Taxi driver is five minutes away.",
+            "voice": "elevenlabs.rachel"
+          }
+        }
+      ],
+      "status_url": "<YOUR_STATUS_WEBHOOK_URL>"
+    }
+  }'
+```
+</CodeBlock>
+</CodeBlocks>
+
+The command returns as soon as SignalWire accepts it. Your webhook then receives the play's
+`control_id` and its `state`: `playing` when speech starts, then `finished`, or `error` if
+playback failed. See the [webhooks guide][webhooks] to set up and test the endpoint.
+
+`direction` chooses who hears the speech: `listen`, the default, plays it only to the caller;
+`speak` plays it only to the called party; `both` plays it to both. `loop` repeats the whole list, and `0` repeats it until you stop it.
+
+To control the speech, send `calling.play.stop`, `calling.play.pause`, `calling.play.resume`, or
+`calling.play.volume` with the same `control_id`. Stopping it sends `finished` to its
+`status_url`. The REST Calling API has no command that speaks and collects input in one step, so
+to speak a menu, start the call with a SWML [`prompt`][swml-prompt] or control it from a Relay
+client.
