@@ -120,6 +120,6 @@ Canonical names come from the glossary (`/docs/platform/glossary`); the ones thi
 
 Extract every fenced block and validate it against the pinned SDKs: JSON and YAML parse; bash syntax (`bash -n`); Python `py_compile` and `pyflakes`; TypeScript `tsc --strict` against the installed `@signalwire/sdk`; every SDK method, parameter, and event field checked against the installed package, not only the reference pages. Run each SWML builder chain and diff its output against the hand-written JSON sample beside it. Confirm every internal link against the target's `slug:` and every `#anchor` by hand. Then `yarn fern-md-check`.
 
-PR body sections: `## Summary` (bullets), `## Notes for reviewers` (cross-PR link dependencies, upstream SDK or doc inconsistencies worked around), `## Verification` (the checks above, stated as run), and the preview URLs of every page changed.
+PR body sections: `## Summary` (bullets), `## Notes for reviewers` (cross-PR link dependencies, upstream SDK or doc inconsistencies worked around), `## Verification` (the checks above, stated as run), and the preview URLs of every page changed. The docs repo is public: describe behavior in the PR, but don't cite internal repositories, branches, commits, or file paths as its source.
 
 *Sources: PRs #640 (write-guides template, record calls, AI chat), #660, #692, #693 (2026-09), reconciled 2026-09-16. [SW]*
