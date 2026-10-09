@@ -87,7 +87,7 @@ model VoiceStatusCallbackPayload {
     | `ringing` | The call is ringing. |
     | `in-progress` | The call was answered and is in progress. |
     | `queued` | The call is ready and in line to initiate. |
-    | `failed` | The call could not be completed. Usually occurs when the phone number does not exist. |
+    | `failed` | The call could not be completed. Usually occurs when the phone number does not exist. SignalWire also stops a call created through the REST API before dialing it when its caller ID is on the Do Not Originate registry, a spam rule blocks it, it exceeds the outbound call rate limit (`ErrorCode` `20429`), no endpoint is registered to receive it, or a temporary platform error interrupts it. Retrying usually succeeds after a temporary error. |
     | `busy` | The caller encountered a busy signal. |
     | `no-answer` | The call ended without an answer. |
     | `completed` | The call was answered and ended normally. |
@@ -104,6 +104,14 @@ model VoiceStatusCallbackPayload {
     """)
   @example("outbound-api")
   Direction: "outbound-dial" | "outbound-api" | "inbound";
+
+  @doc("The code for why the call failed, when SignalWire has one. `20429` means the call exceeded the outbound call rate limit. See [Error codes](/docs/compatibility-api/rest/error-codes#20429).")
+  @example("20429")
+  ErrorCode?: string;
+
+  @doc("The description of `ErrorCode`.")
+  @example("Your call was temporarily rate limited due to recent activity. Please reduce your call attempt rate, or contact Support to raise the limits on your account.")
+  ErrorMessage?: string;
 
   @doc("The number this call was forwarded from.")
   @example("+15550001111")
