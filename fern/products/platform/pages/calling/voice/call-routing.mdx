@@ -1,8 +1,7 @@
 ---
-title: Call routing
-slug: /voice/call-routing
+title: Route calls
+slug: voice/call-routing
 description: Answer a call and speak from a flow you host or serve, then collect what the caller says, branch on it, handle silence, and read the result in the call log or your own code.
-position: 1
 max-toc-depth: 3
 ---
 
@@ -17,12 +16,9 @@ max-toc-depth: 3
 [cfb-version]: /docs/call-flow-builder/guides/version
 [control-flow]: /docs/swml/guides/goto-execute-transfer-disambiguation
 [create-call]: /docs/apis/rest/calls/call-commands
-[outbound]: /docs/platform/voice/outbound-calling
+[make-receive]: /docs/platform/voice/make-and-receive-calls
 [phone-numbers]: /docs/platform/phone-numbers
 [relay-client]: /docs/server-sdks/guides/relay-client
-[relay-collect]: /docs/server-sdks/reference/python/relay/call/play-and-collect
-[relay-connect]: /docs/server-sdks/reference/python/relay/call/connect
-[relay-events]: /docs/server-sdks/reference/python/relay/events
 [resources]: /docs/platform/resources
 [rest-calling]: /docs/apis/rest/calls/call-commands
 [server-sdks]: /docs/server-sdks
@@ -40,9 +36,9 @@ whether the call arrived on a phone number, a SIP address, or a browser. Start b
 and speaking one line, then collect speech and branch on it, handle silence and unmatched replies,
 and track what the flow heard.
 
-## Pick the right product for call routing
+## Pick the right product for routing calls
 
-| Function | SWML | Relay | REST Calling API | Browser SDK | Call Flow Builder |
+| Function | SWML | WebSocket (Relay) | REST | Browser SDK | Call Flow Builder |
 |---|---|---|---|---|---|
 | Answer the call and speak without running a server | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
 | Collect speech or keypad digits and branch on the result | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
@@ -60,25 +56,27 @@ and track what the flow heard.
 - The [Browser SDK][browser-sdk] places and receives calls from a web page. It is the caller or the
   callee, never the flow.
 - [Call Flow Builder][cfb] is a visual editor in the Dashboard. You connect nodes and SignalWire
-  hosts the result as a Call Flow resource.
+  hosts the result as a Call Flow Resource.
 
-## Prepare for call routing
+## Prepare for routing calls
 
 Have these values ready:
 
 - Your Space URL, such as `<YOUR_SPACE>.signalwire.com`.
-- For the Relay and REST Calling API paths, your Project ID and an API token from the Dashboard's
+- For the Relay and REST paths, your Project ID and an API token from the Dashboard's
   [API credentials][api-credentials] page, with the **Voice** permission enabled. A hosted SWML
   script or a Call Flow needs no credentials.
 - For SWML served from your own server, Python 3 or Node.js and [ngrok](https://ngrok.com/download).
-- For the hand-off example, a phone number you can answer.
+- For the hand-off example, a phone number you can answer, and a number in your Space or a verified
+  caller ID to present when the flow dials it.
 
 <Warning title="Trial projects can connect only to verified numbers">
 A [trial project][trial-mode] can hand a call to a number it has purchased or verified, and cannot
 reach international numbers at all. Every other step in this guide works on a trial project.
 </Warning>
 
-This guide receives calls. To place them, start with [Outbound calling][outbound].
+This guide picks up once a call reaches your flow. To place calls, or to point a phone number at a
+flow, start with [Make and receive calls][make-receive].
 
 ## Answer a call and speak
 
@@ -97,7 +95,9 @@ them.
 | `<YOUR_SPACE>` | Your Space's subdomain in `<YOUR_SPACE>.signalwire.com` |
 | `<YOUR_PROJECT_ID>` | Your Project ID |
 | `<YOUR_API_TOKEN>` | Your API token |
-| `<YOUR_CALL_ID>` | The ID of a call in progress, for the REST Calling API samples |
+| `<YOUR_BASIC_AUTH_PASSWORD>` | A password you choose; SignalWire presents it when it fetches a served SWML document |
+| `<YOUR_PUBLIC_HOST>` | The hostname of the tunnel in front of your served SWML document |
+| `<YOUR_CALL_ID>` | The ID of a call in progress, for the REST samples |
 | `<YOUR_STATUS_WEBHOOK_URL>` | A public HTTPS URL on your server that accepts POST requests |
 | `<YOUR_DESTINATION>` | A phone number you can answer, in E.164 format |
 | `<YOUR_CALLER_ID>` | A number in your Space, or a verified caller ID |
@@ -107,41 +107,47 @@ them.
 <Tabs groupId="inbound-flow">
 <Tab title="SWML">
 
-The document below answers the call, speaks, and hangs up. The Server SDK classes build the same
-document from code and serve it over HTTP; the YAML and JSON forms are what you paste into the
-Dashboard. `SWMLService` is the non-AI base of the Server SDK's agent classes and validates every
-verb against the SWML schema as you add it.
+The document below answers the call, speaks, and hangs up. The [Server SDKs][server-sdks] build
+it from code with the SWML builder and serve it over HTTP; the YAML and JSON forms are what you
+paste into the Dashboard.
 
 <CodeBlocks>
-<CodeBlock title="Python — Agents">
+<CodeBlock title="Python — SWML builder">
 ```python
 # Install: python -m pip install signalwire-sdk==3.4.1
-# Save as call_routing.py and run: python call_routing.py
-from signalwire import SWMLService
+# Save as route_calls.py and run: python route_calls.py
+from signalwire import SWMLBuilder, SWMLService
 
-service = SWMLService(name="call-routing")
+service = SWMLService(
+    name="route-calls",
+    route="/swml",
+    port=3000,
+    basic_auth=("signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"),
+)
+SWMLBuilder(service).answer().say("Thanks for calling Bayview Taxi. Your flow is running.").hangup()
 
-service.add_verb("answer", {})
-service.add_verb("play", {"url": "say:Thanks for calling Bayview Taxi. Your flow is running."})
-service.add_verb("hangup", {})
-
-if __name__ == "__main__":
-    service.serve()
+# Serves the document at /swml. Put the credentials in the URL you give
+# SignalWire: https://signalwire:<YOUR_BASIC_AUTH_PASSWORD>@<YOUR_PUBLIC_HOST>/swml
+service.serve()
 ```
 </CodeBlock>
-<CodeBlock title="TypeScript — Agents">
+<CodeBlock title="TypeScript — SWML builder">
 ```typescript
 // Install: npm install @signalwire/sdk@2.0.5
-// This sample also runs as JavaScript: save as call-routing.mjs,
-// then run: node call-routing.mjs
+// This sample also runs as JavaScript: save as route-calls.mjs,
+// then run: node route-calls.mjs
 import { SWMLService } from "@signalwire/sdk";
 
-const service = new SWMLService({ name: "call-routing" });
+const service = new SWMLService({
+  name: "route-calls",
+  route: "/swml",
+  port: 3000,
+  basicAuth: ["signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"],
+});
+service.getBuilder().answer().say("Thanks for calling Bayview Taxi. Your flow is running.").hangup();
 
-service.addVerb("answer", {});
-service.addVerb("play", { url: "say:Thanks for calling Bayview Taxi. Your flow is running." });
-service.addVerb("hangup", {});
-
+// Serves the document at /swml. Put the credentials in the URL you give
+// SignalWire: https://signalwire:<YOUR_BASIC_AUTH_PASSWORD>@<YOUR_PUBLIC_HOST>/swml
 await service.serve();
 ```
 </CodeBlock>
@@ -174,19 +180,20 @@ sections:
 
 Execution starts at the `main` section, which every document must have. Each section is an
 ordered list of methods. `answer` picks up the call, `play` speaks the text after the `say:`
-prefix, and `hangup` ends the call.
+prefix, and `hangup` ends the call. The builder's `say` is shorthand for a `play` with a `say:`
+URL, and every builder method validates its method against the SWML schema before adding it.
 
 </Tab>
 <Tab title="WebSocket (Relay)">
 
-A Relay client stays connected to SignalWire and receives every call routed to its context. The
+A Relay client stays connected to SignalWire and receives every call routed to its topic. The
 handler answers, speaks, and hangs up when playback completes.
 
 <CodeBlocks>
 <CodeBlock title="Python — Relay client">
 ```python
 # Install: python -m pip install signalwire-sdk==3.4.1
-# Save as call_routing.py and run: python call_routing.py
+# Save as route_calls_relay.py and run: python route_calls_relay.py
 from signalwire.relay import RelayClient
 
 client = RelayClient(
@@ -218,8 +225,8 @@ client.run()
 <CodeBlock title="TypeScript — Relay client">
 ```typescript
 // Install: npm install @signalwire/sdk@2.0.5
-// This sample also runs as JavaScript: save as call-routing.mjs,
-// then run: node call-routing.mjs
+// This sample also runs as JavaScript: save as route-calls-relay.mjs,
+// then run: node route-calls-relay.mjs
 import { RelayClient } from "@signalwire/sdk";
 
 const client = new RelayClient({
@@ -246,7 +253,7 @@ await client.run();
 </CodeBlock>
 </CodeBlocks>
 
-`contexts` names the topic the client listens on. The Relay Application resource you create in the
+`contexts` names the topic the client listens on. The Relay Application Resource you create in the
 next step uses the same name, so SignalWire knows which running client gets the call. `run()`
 blocks until you stop the process, reconnecting if the connection drops.
 
@@ -269,9 +276,9 @@ how deployed and draft versions relate.
 </Tab>
 </Tabs>
 
-### Give the flow a resource
+### Give the flow a Resource
 
-SignalWire routes calls to [resources][resources]. This step makes your flow one, and it is the
+SignalWire routes calls to [Resources][resources]. This step makes your flow one, and it is the
 only place in this guide where delivery differs by surface. Every later task changes the flow's
 contents, not how it reaches the call.
 
@@ -282,20 +289,20 @@ Choose where the document lives.
 
 #### Host it in your Space
 
-<Markdown src="/snippets/common/dashboard/create-swml-script.mdx" />
+1. Open **My Resources**, select **+ Add**, then **Script**, then **SWML Script**.
+2. Name it **Route calls**.
+3. Under **Handle Calls Using**, choose **Hosted Script**, paste the YAML or JSON form of the
+   document into **Primary Script**, and save.
 
-Name the script, paste the YAML or JSON form of the document, and save it. It appears in
-**Resources** as a SWML Script. Return here to replace its contents in each later task.
+The script is listed under **My Resources**. Return here to replace its contents in each later
+task.
 
 #### Serve it from your server
 
-Start the flow from the Server SDK sample, with credentials you choose so the URL survives a
-restart:
+Start the flow from the SWML builder sample:
 
 ```bash
-export SWML_BASIC_AUTH_USER="signalwire"
-export SWML_BASIC_AUTH_PASSWORD="replace-with-a-long-random-password"
-python call_routing.py
+python route_calls.py
 ```
 
 In a second terminal, open a tunnel to port 3000 and keep it running:
@@ -304,29 +311,28 @@ In a second terminal, open a tunnel to port 3000 and keep it running:
 ngrok http 3000
 ```
 
-Confirm the document is reachable through the tunnel:
+ngrok prints an `https://` **Forwarding** URL. Its hostname is your `<YOUR_PUBLIC_HOST>`. Confirm
+the document is reachable through the tunnel:
 
 ```bash
 curl --fail \
-  --user "signalwire:replace-with-a-long-random-password" \
-  "https://abc123.ngrok-free.app/" \
+  --user "signalwire:<YOUR_BASIC_AUTH_PASSWORD>" \
+  "https://<YOUR_PUBLIC_HOST>/swml" \
   | python -m json.tool
 ```
 
-A working flow returns a JSON document with `"version": "1.0.0"` and a `sections.main` array. A
-`401` response means the credentials in the request differ from the ones you exported before
-starting the flow.
+A working flow returns a JSON document with `"version": "1.0.0"` and a `sections.main` array.
 
-Then create the resource. Open the [SignalWire Dashboard](https://my.signalwire.com), select
-**Script**, and then **External URL**. Set the Primary Script URL to the tunnel URL with the
-credentials embedded, and select **Create**:
+Then create the Resource:
 
-```text
-https://signalwire:replace-with-a-long-random-password@abc123.ngrok-free.app/
-```
+1. Open **My Resources**, select **+ Add**, then **Script**, then **SWML Script**.
+2. Name it **Route calls**.
+3. Under **Handle Calls Using**, choose **External URL**, enter
+   `https://signalwire:<YOUR_BASIC_AUTH_PASSWORD>@<YOUR_PUBLIC_HOST>/swml` in
+   **Primary Script URL**, and save.
 
-The resource appears in **Resources**. Later tasks change `call_routing.py` and restart it; the
-resource keeps pointing at the tunnel.
+Later tasks change `route_calls.py` and restart it; the Resource keeps pointing at the tunnel. A
+new tunnel usually means a new hostname, so update the Resource whenever it changes.
 
 </Tab>
 <Tab title="WebSocket (Relay)">
@@ -334,36 +340,40 @@ resource keeps pointing at the tunnel.
 Start the client and leave it running:
 
 ```bash
-python call_routing.py
+python route_calls_relay.py
 ```
 
-In the Dashboard, open **Resources**, select **+ Add New**, and choose **Relay Application**. Set
-**Name** to anything you like and **Topic** to `default`, the value in the client's `contexts`,
-then save. Calls to this resource reach whichever connected client listens on that topic.
+In the Dashboard, open **My Resources**, select **+ Add**, then **Relay Application**. Name it and
+enter `default` as the **Topic**, the value in the client's `contexts`, then save. Calls to this
+Resource reach whichever connected client listens on that topic.
 
 </Tab>
 <Tab title="Call Flow Builder">
 
-A deployed Call Flow is already a resource. Open **Resources** and find it under **Call Flows**.
+A deployed Call Flow is already a Resource, listed under **My Resources**.
 
 </Tab>
 </Tabs>
 
 ### Call it and listen
 
-Open the resource in **Resources** and select **Click-to-Test**, under the resource's name. A new
-tab opens, shows "Connecting", and places a browser call to the resource. Allow microphone access
-if the browser asks.
+Open the Resource under **My Resources** and select **Click-to-Test**, under the Resource's name. A
+new tab opens, shows "Connecting", and places a browser call to the Resource. Allow microphone
+access if the browser asks.
 
 You hear "Thanks for calling Bayview Taxi. Your flow is running." and the call ends.
 
-If the call connects but stays silent, the flow never ran. For a served SWML document, repeat the
-`curl` request to confirm the tunnel still answers, then check that the External URL resource
-carries the same URL and credentials. For a hosted script, reopen it and confirm the document
-saved with a `main` section. For Relay, check that the client process is still running and that
-the resource's **Topic** matches its `contexts`. **Click-to-Test** appears only on resources that
-handle calls; if it is disabled, the resource has no address, so open its **Addresses** and add an
-alias.
+If it doesn't, match the symptom:
+
+- **The call connects but stays silent.** The flow never ran. For a served document, repeat the
+  `curl` request to confirm the tunnel still answers, then check that the External URL Resource
+  carries the same URL and password. For a hosted script, reopen it and confirm the document saved
+  with a `main` section. For Relay, check that the client process is still running and that the
+  Resource's **Topic** matches its `contexts`.
+- **`curl` returns 401.** The password in the request differs from the one in the sample's
+  `basic_auth`.
+- **Click-to-Test is disabled.** It appears only on Resources that handle calls and have an
+  address. Open the Resource's **Addresses** and add an alias.
 
 </Steps>
 
@@ -384,37 +394,40 @@ text lands in the `prompt_value` variable and the outcome in `prompt_result`.
 return.
 
 Replace the flow with this version. The `booking` and `dispatch` sections each speak a different
-line, and `no_match` catches everything else.
+line, and `no_match` catches everything else. The builder's methods append to `main`; the named
+sections go through the service.
 
 <CodeBlocks>
-<CodeBlock title="Python — Agents">
+<CodeBlock title="Python — SWML builder">
 ```python
 # Install: python -m pip install signalwire-sdk==3.4.1
-# Save as call_routing.py and run: python call_routing.py
-from signalwire import SWMLService
+# Save as route_calls.py and run: python route_calls.py
+from signalwire import SWMLBuilder, SWMLService
 
-service = SWMLService(name="call-routing")
-
-service.add_verb("answer", {})
-service.add_verb(
-    "prompt",
-    {
-        "play": "say:Thanks for calling Bayview Taxi. Say booking or dispatch.",
-        "speech_hints": ["booking", "dispatch"],
-    },
+service = SWMLService(
+    name="route-calls",
+    route="/swml",
+    port=3000,
+    basic_auth=("signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"),
 )
-service.add_verb(
-    "switch",
-    {
-        "variable": "prompt_value",
-        "case": {
+(
+    SWMLBuilder(service)
+    .answer()
+    .prompt(
+        play=["say:Thanks for calling Bayview Taxi. Say booking or dispatch."],
+        speech_hints=["booking", "dispatch"],
+    )
+    .switch(
+        variable="prompt_value",
+        case={
             "booking": [{"transfer": {"dest": "booking"}}],
             "dispatch": [{"transfer": {"dest": "dispatch"}}],
         },
-        "default": [{"transfer": {"dest": "no_match"}}],
-    },
+        default=[{"transfer": {"dest": "no_match"}}],
+    )
 )
 
+# The builder appends to the main section. Named sections go through the service.
 service.add_verb_to_section("booking", "play", {"url": "say:You said booking."})
 service.add_verb_to_section("booking", "hangup", {})
 
@@ -424,41 +437,48 @@ service.add_verb_to_section("dispatch", "hangup", {})
 service.add_verb_to_section("no_match", "play", {"url": "say:Sorry, I didn't catch that. Goodbye."})
 service.add_verb_to_section("no_match", "hangup", {})
 
-if __name__ == "__main__":
-    service.serve()
+service.serve()
 ```
 </CodeBlock>
-<CodeBlock title="TypeScript — Agents">
+<CodeBlock title="TypeScript — SWML builder">
 ```typescript
 // Install: npm install @signalwire/sdk@2.0.5
-// This sample also runs as JavaScript: save as call-routing.mjs,
-// then run: node call-routing.mjs
+// This sample also runs as JavaScript: save as route-calls.mjs,
+// then run: node route-calls.mjs
 import { SWMLService } from "@signalwire/sdk";
 
-const service = new SWMLService({ name: "call-routing" });
-
-service.addVerb("answer", {});
-service.addVerb("prompt", {
-  play: "say:Thanks for calling Bayview Taxi. Say booking or dispatch.",
-  speech_hints: ["booking", "dispatch"],
+const service = new SWMLService({
+  name: "route-calls",
+  route: "/swml",
+  port: 3000,
+  basicAuth: ["signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"],
 });
-service.addVerb("switch", {
-  variable: "prompt_value",
-  case: {
-    booking: [{ transfer: { dest: "booking" } }],
-    dispatch: [{ transfer: { dest: "dispatch" } }],
-  },
-  default: [{ transfer: { dest: "no_match" } }],
-});
+const swml = service.getBuilder();
 
-service.addVerbToSection("booking", "play", { url: "say:You said booking." });
-service.addVerbToSection("booking", "hangup", {});
+swml
+  .answer()
+  .prompt({
+    play: ["say:Thanks for calling Bayview Taxi. Say booking or dispatch."],
+    speech_hints: ["booking", "dispatch"],
+  })
+  .switch({
+    variable: "prompt_value",
+    case: {
+      booking: [{ transfer: { dest: "booking" } }],
+      dispatch: [{ transfer: { dest: "dispatch" } }],
+    },
+    default: [{ transfer: { dest: "no_match" } }],
+  });
 
-service.addVerbToSection("dispatch", "play", { url: "say:You said dispatch." });
-service.addVerbToSection("dispatch", "hangup", {});
+// The builder's verb methods append to the main section. Named sections use addVerbToSection.
+swml.addVerbToSection("booking", "play", { url: "say:You said booking." });
+swml.addVerbToSection("booking", "hangup", {});
 
-service.addVerbToSection("no_match", "play", { url: "say:Sorry, I didn't catch that. Goodbye." });
-service.addVerbToSection("no_match", "hangup", {});
+swml.addVerbToSection("dispatch", "play", { url: "say:You said dispatch." });
+swml.addVerbToSection("dispatch", "hangup", {});
+
+swml.addVerbToSection("no_match", "play", { url: "say:Sorry, I didn't catch that. Goodbye." });
+swml.addVerbToSection("no_match", "hangup", {});
 
 await service.serve();
 ```
@@ -470,7 +490,8 @@ sections:
   main:
     - answer: {}
     - prompt:
-        play: "say:Thanks for calling Bayview Taxi. Say booking or dispatch."
+        play:
+          - "say:Thanks for calling Bayview Taxi. Say booking or dispatch."
         speech_hints:
           - booking
           - dispatch
@@ -509,7 +530,7 @@ sections:
       { "answer": {} },
       {
         "prompt": {
-          "play": "say:Thanks for calling Bayview Taxi. Say booking or dispatch.",
+          "play": ["say:Thanks for calling Bayview Taxi. Say booking or dispatch."],
           "speech_hints": ["booking", "dispatch"]
         }
       },
@@ -542,32 +563,34 @@ sections:
 </CodeBlock>
 </CodeBlocks>
 
-`add_verb_to_section` creates a section on first use and appends to it after that. `switch`
-compares the whole value exactly, so a case key must match the recognized text character for
-character. SWML also has a `cond` method that branches on a JavaScript expression, but the Server
-SDKs cannot emit it yet, so this guide uses `switch` throughout.
+`add_verb_to_section` and `addVerbToSection` create a section on first use and append to it after
+that. `switch` compares the whole value exactly. SignalWire lowercases recognized speech and strips
+its punctuation before storing it in `prompt_value`, so "Booking." still matches the `booking`
+case, but "booking please" does not. SWML also has a `cond` method that branches on a JavaScript
+expression; the Python SDK cannot emit it, because `add_verb` takes only object-valued methods and
+`cond` takes a list, so this guide branches with `switch` on every surface.
 
-Restart the served flow, or paste the new document into the hosted script, then call the resource
+Restart the served flow, or paste the new document into the hosted script, then call the Resource
 three times: say "booking", say "dispatch", and say nothing. You hear a different line each time.
 If every call ends in `no_match`, the recognized text did not equal a case key; the tracking
 section below shows what the flow heard.
 
-### Collect speech and branch via Relay
+### Collect speech and branch via WebSocket (Relay)
 
-[`play_and_collect`][relay-collect] plays the prompt and resolves when input arrives, times out,
-or fails. The result carries a `type` of `speech`, `digit`, `no_input`, or `no_match`, and for
-speech the recognized `text` with a `confidence` score. Your code compares the text and continues.
+The [Server SDKs][server-sdks] expose the prompt as `play_and_collect` on the call. It plays the
+prompt and resolves when input arrives, times out, or fails. The result carries a `type` of
+`speech`, `digit`, `no_input`, or `no_match`, and for speech the recognized `text` with a
+`confidence` score. Your code compares the text and continues.
 
-Over the REST Calling API the same collect command runs against a call you already hold the ID
-for, so the request needs the call to exist first, for example a call your Relay client or a hosted
-script answered. The result arrives at `status_url` as a `calling.call.collect` event instead of a
-return value.
+Over REST the same collect command runs against a call you already hold the ID for, so the request
+needs the call to exist first, for example a call your Relay client or a hosted script answered.
+The result arrives at `status_url` as a `calling.call.collect` event instead of a return value.
 
 <CodeBlocks>
 <CodeBlock title="Python — Relay client">
 ```python
 # Install: python -m pip install signalwire-sdk==3.4.1
-# Save as call_routing.py and run: python call_routing.py
+# Save as route_calls_relay.py and run: python route_calls_relay.py
 from signalwire.relay import RelayClient
 
 client = RelayClient(
@@ -617,7 +640,7 @@ client.run()
 <CodeBlock title="TypeScript — Relay client">
 ```typescript
 // Install: npm install @signalwire/sdk@2.0.5
-// Save as call-routing.mts and run: npx tsx call-routing.mts
+// Save as route-calls-relay.mts and run: npx tsx route-calls-relay.mts
 import { RelayClient } from "@signalwire/sdk";
 
 const client = new RelayClient({
@@ -657,7 +680,7 @@ client.onCall(async (call) => {
 await client.run();
 ```
 </CodeBlock>
-<CodeBlock title="cURL — REST Calling API">
+<CodeBlock title="cURL — Calling API">
 ```bash
 # Runs against a call that is already answered; play the question first with calling.play.
 curl --request POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
@@ -676,21 +699,24 @@ curl --request POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
 </CodeBlock>
 </CodeBlocks>
 
+The [Calling API reference][rest-calling] documents every `calling.collect` field.
+
 Because the comparison runs in your code, you can match loosely: `"booking" in heard` accepts
-"booking please" as well as "booking". Restart the client and call the resource three times to hear
+"booking please" as well as "booking". Restart the client and call the Resource three times to hear
 the three outcomes. If the client logs an authentication error at startup, the project, token, and
 Space do not belong together.
 
 ### Collect speech and branch via Call Flow Builder
 
-Replace the **Play Audio or TTS** node with a [**Gather Input**][cfb-gather] node. Set its Text to
-Speech to "Thanks for calling Bayview Taxi. Say booking or dispatch.", choose speech input, and add
-two input options, `booking` and `dispatch`. The node grows one output connector per option, plus
-**Unknown** and **No Input**.
+Replace the **Play Audio or TTS** node with a [**Gather Input**][cfb-gather] node and set its Text
+to Speech to "Thanks for calling Bayview Taxi. Say booking or dispatch." Every input option pairs a
+key with a word: add one option with **Caller presses** `1` and **Or says** `booking`, and a second
+with `2` and `dispatch`. The node grows one output connector per option, plus **Unknown** and
+**No Input**.
 
 Connect each option to its own **Play Audio or TTS** node with the matching line, and each of
 those to a **Hangup Call** node. Leave **Unknown** and **No Input** for the next task. Select
-**Deploy**, then call the resource three times.
+**Deploy**, then call the Resource three times.
 
 ## Handle silence and unmatched speech
 
@@ -699,13 +725,13 @@ Each surface reports the two cases separately, so the flow can say something dif
 
 ### Handle silence and unmatched speech via SWML
 
-After `prompt`, `prompt_result` is `match_speech`, `no_input`, or `no_match`. The `default` case
-already routes both failure results to `no_match`; this change makes that section say which one
-happened, using a JavaScript expression inside the spoken text. Only the `no_match` section
-changes.
+After `prompt`, `prompt_result` is `match_speech`, `no_input`, `no_match`, or `failed`, and
+`match_digits` once keypad input is enabled. The `default` case already routes everything but a
+match to `no_match`; this change makes that section say which one happened, using a JavaScript
+expression inside the spoken text. Only the `no_match` section changes.
 
 <CodeBlocks>
-<CodeBlock title="Python — Agents">
+<CodeBlock title="Python — SWML builder">
 ```python {1-6}
 service.add_verb_to_section(
     "no_match",
@@ -715,12 +741,12 @@ service.add_verb_to_section(
 service.add_verb_to_section("no_match", "hangup", {})
 ```
 </CodeBlock>
-<CodeBlock title="TypeScript — Agents">
+<CodeBlock title="TypeScript — SWML builder">
 ```typescript {1-4}
-service.addVerbToSection("no_match", "play", {
+swml.addVerbToSection("no_match", "play", {
   url: "say:${prompt_result == 'no_input' ? \"I didn't hear anything.\" : \"I didn't understand that.\"} Goodbye.",
 });
-service.addVerbToSection("no_match", "hangup", {});
+swml.addVerbToSection("no_match", "hangup", {});
 ```
 </CodeBlock>
 <CodeBlock title="YAML">
@@ -744,7 +770,7 @@ service.addVerbToSection("no_match", "hangup", {});
 The wait for input before `no_input` is five seconds by default; `prompt.initial_timeout` changes
 it.
 
-### Handle silence and unmatched speech via Relay
+### Handle silence and unmatched speech via WebSocket (Relay)
 
 The collect result's `type` is `no_input` when the caller stayed silent and `no_match` when speech
 arrived but matched nothing. Replace the reply selection in the Relay sample:
@@ -797,14 +823,33 @@ itself, use one of the two paths below.
 ### Receive the result via SWML
 
 Add a `status_url` to the `prompt` method. SignalWire sends a `calling.call.collect` event to that
-URL when input arrives. The same event reaches the `status_url` on a REST Calling API `calling.collect`
+URL when input arrives. The same event reaches the `status_url` on a REST `calling.collect`
 command.
 
 <CodeBlocks>
+<CodeBlock title="Python — SWML builder">
+```python {4}
+    .prompt(
+        play=["say:Thanks for calling Bayview Taxi. Say booking or dispatch."],
+        speech_hints=["booking", "dispatch"],
+        status_url="<YOUR_STATUS_WEBHOOK_URL>",
+    )
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — SWML builder">
+```typescript {4}
+  .prompt({
+    play: ["say:Thanks for calling Bayview Taxi. Say booking or dispatch."],
+    speech_hints: ["booking", "dispatch"],
+    status_url: "<YOUR_STATUS_WEBHOOK_URL>",
+  })
+```
+</CodeBlock>
 <CodeBlock title="YAML">
-```yaml {4}
+```yaml {5}
     - prompt:
-        play: "say:Thanks for calling Bayview Taxi. Say booking or dispatch."
+        play:
+          - "say:Thanks for calling Bayview Taxi. Say booking or dispatch."
         speech_hints: [booking, dispatch]
         status_url: "<YOUR_STATUS_WEBHOOK_URL>"
 ```
@@ -813,7 +858,7 @@ command.
 ```json {5}
       {
         "prompt": {
-          "play": "say:Thanks for calling Bayview Taxi. Say booking or dispatch.",
+          "play": ["say:Thanks for calling Bayview Taxi. Say booking or dispatch."],
           "speech_hints": ["booking", "dispatch"],
           "status_url": "<YOUR_STATUS_WEBHOOK_URL>"
         }
@@ -873,11 +918,11 @@ sequenceDiagram
 
 </llms-only>
 
-### Receive the result via Relay
+### Receive the result via WebSocket (Relay)
 
 The Relay client already holds the result: it is the event that `action.wait()` returned. To log
 every collect event as it happens, including partial ones, register a handler on the call before
-starting the prompt. The [Relay events reference][relay-events] lists the payload fields.
+starting the prompt. The [Server SDKs][server-sdks] document the fields of every call event.
 
 <CodeBlocks>
 <CodeBlock title="Python — Relay client">
@@ -899,7 +944,7 @@ starting the prompt. The [Relay events reference][relay-events] lists the payloa
 
 <llms-ignore>
 
-<img src="/assets/images/img/collect-relay-lifecycle-themed.svg" alt="The caller dials the resource. SignalWire hands the call to your Relay client on the default topic. Your client answers and sends play_and_collect. SignalWire plays the prompt and the caller says dispatch. SignalWire sends your client a calling.call.collect event with result type speech and the text. wait() returns and your code picks the branch, then plays the reply and hangs up." />
+<img src="/assets/images/img/collect-relay-lifecycle-themed.svg" alt="The caller dials the Resource. SignalWire hands the call to your Relay client on the default topic. Your client answers and sends play_and_collect. SignalWire plays the prompt and the caller says dispatch. SignalWire sends your client a calling.call.collect event with result type speech and the text. wait() returns and your code picks the branch, then plays the reply and hangs up." />
 
 </llms-ignore>
 
@@ -911,7 +956,7 @@ sequenceDiagram
     participant SW as SignalWire
     participant App as Your Relay client
 
-    Caller->>SW: calls the resource address
+    Caller->>SW: calls the Resource address
     SW->>App: call arrives on topic default
     App->>SW: answer, play_and_collect
     SW->>Caller: prompt plays: say booking or dispatch
@@ -928,8 +973,8 @@ sequenceDiagram
 | Surface | Where the recognized text shows up | How silence and no match are reported |
 |---|---|---|
 | SWML | `prompt_value` inside the document; the `status_url` webhook | `prompt_result` is `no_input` or `no_match` |
-| Relay | The `result` on the event `action.wait()` returns; `call.on` handlers | `result.type` is `no_input` or `no_match` |
-| REST Calling API | The `status_url` webhook only | `params.result.type` is `no_input` or `no_match` |
+| WebSocket (Relay) | The `result` on the event `action.wait()` returns; `call.on` handlers | `result.type` is `no_input` or `no_match` |
+| REST | The `status_url` webhook only | `params.result.type` is `no_input` or `no_match` |
 | Call Flow Builder | Not exposed; the flow branches on the matched option | The **No Input** and **Unknown** connectors |
 
 The Dashboard's call log shows the Collect step and its outcome for every surface, but never the
@@ -938,18 +983,18 @@ text.
 ## Reach the same flow from any channel
 
 The flow you wrote does not know where the call came from. The Dashboard reached it through
-**Click-to-Test**. A [phone number][phone-numbers] assigned to the same resource runs the identical
-flow, and so does a SIP address, a browser call to the resource's [address][addresses], or an
-outbound call you place with the [REST Calling API][create-call] and point at the resource.
-Direction and channel are routing details on the resource; the flow is the same program. That is
-also why delivery was a single step above: once a resource exists, every task in this guide edits
+**Click-to-Test**. A [phone number][phone-numbers] assigned to the same Resource runs the identical
+flow, and so does a SIP address, a browser call to the Resource's [address][addresses], or an
+outbound call you place with the [REST Calling API][create-call] and point at the Resource.
+Direction and channel are routing details on the Resource; the flow is the same program. That is
+also why delivery was a single step above: once a Resource exists, every task in this guide edits
 the flow and leaves the routing alone.
 
 ## Examples
 
 ### Accept a keypad digit as well as speech
 
-Some callers are in a noisy place or on a handset with no microphone to speak of. Offer keys and
+Some callers are in a noisy place or on a handset that makes speaking awkward. Offer keys and
 words at once, and treat "press 1" and "say booking" as the same answer.
 
 #### Accept a keypad digit as well as speech via SWML
@@ -958,37 +1003,39 @@ Setting one digit parameter alongside the speech parameters enables both inputs.
 joins the prompt, and the digit keys join the switch.
 
 <CodeBlocks>
-<CodeBlock title="Python — Agents">
+<CodeBlock title="Python — SWML builder">
 ```python
 # Install: python -m pip install signalwire-sdk==3.4.1
-# Save as call_routing.py and run: python call_routing.py
-from signalwire import SWMLService
+# Save as route_calls.py and run: python route_calls.py
+from signalwire import SWMLBuilder, SWMLService
 
-service = SWMLService(name="call-routing")
-
-service.add_verb("answer", {})
-service.add_verb(
-    "prompt",
-    {
-        "play": "say:Thanks for calling Bayview Taxi. Say booking or press 1. Say dispatch or press 2.",
-        "max_digits": 1,
-        "speech_hints": ["booking", "dispatch"],
-    },
+service = SWMLService(
+    name="route-calls",
+    route="/swml",
+    port=3000,
+    basic_auth=("signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"),
 )
-service.add_verb(
-    "switch",
-    {
-        "variable": "prompt_value",
-        "case": {
+(
+    SWMLBuilder(service)
+    .answer()
+    .prompt(
+        play=["say:Thanks for calling Bayview Taxi. Say booking or press 1. Say dispatch or press 2."],
+        max_digits=1,
+        speech_hints=["booking", "dispatch"],
+    )
+    .switch(
+        variable="prompt_value",
+        case={
             "booking": [{"transfer": {"dest": "booking"}}],
             "1": [{"transfer": {"dest": "booking"}}],
             "dispatch": [{"transfer": {"dest": "dispatch"}}],
             "2": [{"transfer": {"dest": "dispatch"}}],
         },
-        "default": [{"transfer": {"dest": "no_match"}}],
-    },
+        default=[{"transfer": {"dest": "no_match"}}],
+    )
 )
 
+# The builder appends to the main section. Named sections go through the service.
 service.add_verb_to_section("booking", "play", {"url": "say:You said booking."})
 service.add_verb_to_section("booking", "hangup", {})
 
@@ -998,44 +1045,51 @@ service.add_verb_to_section("dispatch", "hangup", {})
 service.add_verb_to_section("no_match", "play", {"url": "say:Sorry, I didn't catch that. Goodbye."})
 service.add_verb_to_section("no_match", "hangup", {})
 
-if __name__ == "__main__":
-    service.serve()
+service.serve()
 ```
 </CodeBlock>
-<CodeBlock title="TypeScript — Agents">
+<CodeBlock title="TypeScript — SWML builder">
 ```typescript
 // Install: npm install @signalwire/sdk@2.0.5
-// This sample also runs as JavaScript: save as call-routing.mjs,
-// then run: node call-routing.mjs
+// This sample also runs as JavaScript: save as route-calls.mjs,
+// then run: node route-calls.mjs
 import { SWMLService } from "@signalwire/sdk";
 
-const service = new SWMLService({ name: "call-routing" });
-
-service.addVerb("answer", {});
-service.addVerb("prompt", {
-  play: "say:Thanks for calling Bayview Taxi. Say booking or press 1. Say dispatch or press 2.",
-  max_digits: 1,
-  speech_hints: ["booking", "dispatch"],
+const service = new SWMLService({
+  name: "route-calls",
+  route: "/swml",
+  port: 3000,
+  basicAuth: ["signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"],
 });
-service.addVerb("switch", {
-  variable: "prompt_value",
-  case: {
-    booking: [{ transfer: { dest: "booking" } }],
-    "1": [{ transfer: { dest: "booking" } }],
-    dispatch: [{ transfer: { dest: "dispatch" } }],
-    "2": [{ transfer: { dest: "dispatch" } }],
-  },
-  default: [{ transfer: { dest: "no_match" } }],
-});
+const swml = service.getBuilder();
 
-service.addVerbToSection("booking", "play", { url: "say:You said booking." });
-service.addVerbToSection("booking", "hangup", {});
+swml
+  .answer()
+  .prompt({
+    play: ["say:Thanks for calling Bayview Taxi. Say booking or press 1. Say dispatch or press 2."],
+    max_digits: 1,
+    speech_hints: ["booking", "dispatch"],
+  })
+  .switch({
+    variable: "prompt_value",
+    case: {
+      booking: [{ transfer: { dest: "booking" } }],
+      "1": [{ transfer: { dest: "booking" } }],
+      dispatch: [{ transfer: { dest: "dispatch" } }],
+      "2": [{ transfer: { dest: "dispatch" } }],
+    },
+    default: [{ transfer: { dest: "no_match" } }],
+  });
 
-service.addVerbToSection("dispatch", "play", { url: "say:You said dispatch." });
-service.addVerbToSection("dispatch", "hangup", {});
+// The builder's verb methods append to the main section. Named sections use addVerbToSection.
+swml.addVerbToSection("booking", "play", { url: "say:You said booking." });
+swml.addVerbToSection("booking", "hangup", {});
 
-service.addVerbToSection("no_match", "play", { url: "say:Sorry, I didn't catch that. Goodbye." });
-service.addVerbToSection("no_match", "hangup", {});
+swml.addVerbToSection("dispatch", "play", { url: "say:You said dispatch." });
+swml.addVerbToSection("dispatch", "hangup", {});
+
+swml.addVerbToSection("no_match", "play", { url: "say:Sorry, I didn't catch that. Goodbye." });
+swml.addVerbToSection("no_match", "hangup", {});
 
 await service.serve();
 ```
@@ -1047,7 +1101,8 @@ sections:
   main:
     - answer: {}
     - prompt:
-        play: "say:Thanks for calling Bayview Taxi. Say booking or press 1. Say dispatch or press 2."
+        play:
+          - "say:Thanks for calling Bayview Taxi. Say booking or press 1. Say dispatch or press 2."
         max_digits: 1
         speech_hints:
           - booking
@@ -1093,7 +1148,7 @@ sections:
       { "answer": {} },
       {
         "prompt": {
-          "play": "say:Thanks for calling Bayview Taxi. Say booking or press 1. Say dispatch or press 2.",
+          "play": ["say:Thanks for calling Bayview Taxi. Say booking or press 1. Say dispatch or press 2."],
           "max_digits": 1,
           "speech_hints": ["booking", "dispatch"]
         }
@@ -1129,7 +1184,7 @@ sections:
 </CodeBlock>
 </CodeBlocks>
 
-#### Accept a keypad digit as well as speech via Relay
+#### Accept a keypad digit as well as speech via WebSocket (Relay)
 
 Pass both `digits` and `speech` in the collect config. A keypad reply comes back with type
 `digit` and the pressed key in `params.digits`, so the code maps keys to the same words.
@@ -1138,7 +1193,7 @@ Pass both `digits` and `speech` in the collect config. A keypad reply comes back
 <CodeBlock title="Python — Relay client">
 ```python
 # Install: python -m pip install signalwire-sdk==3.4.1
-# Save as call_routing.py and run: python call_routing.py
+# Save as route_calls_relay.py and run: python route_calls_relay.py
 from signalwire.relay import RelayClient
 
 client = RelayClient(
@@ -1192,7 +1247,7 @@ client.run()
 <CodeBlock title="TypeScript — Relay client">
 ```typescript
 // Install: npm install @signalwire/sdk@2.0.5
-// Save as call-routing.mts and run: npx tsx call-routing.mts
+// Save as route-calls-relay.mts and run: npx tsx route-calls-relay.mts
 import { RelayClient } from "@signalwire/sdk";
 
 const client = new RelayClient({
@@ -1240,8 +1295,9 @@ await client.run();
 
 #### Accept a keypad digit as well as speech via Call Flow Builder
 
-The **Gather Input** node accepts keypad digits and speech together. Add `1` and `2` as further
-input options and connect each to the same node as its spoken twin.
+The flow you built already accepts both, because every **Gather Input** option carries a
+**Caller presses** key as well as an **Or says** word. Change the prompt text to mention the keys
+and select **Deploy**.
 
 ### Hand the call to a phone
 
@@ -1260,34 +1316,36 @@ The `dispatch` section announces the hand-off, then [`connect`][swml-connect] di
 destination. The caller's own number is presented as caller ID unless you set `from`.
 
 <CodeBlocks>
-<CodeBlock title="Python — Agents">
+<CodeBlock title="Python — SWML builder">
 ```python
 # Install: python -m pip install signalwire-sdk==3.4.1
-# Save as call_routing.py and run: python call_routing.py
-from signalwire import SWMLService
+# Save as route_calls.py and run: python route_calls.py
+from signalwire import SWMLBuilder, SWMLService
 
-service = SWMLService(name="call-routing")
-
-service.add_verb("answer", {})
-service.add_verb(
-    "prompt",
-    {
-        "play": "say:Thanks for calling Bayview Taxi. Say booking or dispatch.",
-        "speech_hints": ["booking", "dispatch"],
-    },
+service = SWMLService(
+    name="route-calls",
+    route="/swml",
+    port=3000,
+    basic_auth=("signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"),
 )
-service.add_verb(
-    "switch",
-    {
-        "variable": "prompt_value",
-        "case": {
+(
+    SWMLBuilder(service)
+    .answer()
+    .prompt(
+        play=["say:Thanks for calling Bayview Taxi. Say booking or dispatch."],
+        speech_hints=["booking", "dispatch"],
+    )
+    .switch(
+        variable="prompt_value",
+        case={
             "booking": [{"transfer": {"dest": "booking"}}],
             "dispatch": [{"transfer": {"dest": "dispatch"}}],
         },
-        "default": [{"transfer": {"dest": "no_match"}}],
-    },
+        default=[{"transfer": {"dest": "no_match"}}],
+    )
 )
 
+# The builder appends to the main section. Named sections go through the service.
 service.add_verb_to_section("booking", "play", {"url": "say:You said booking."})
 service.add_verb_to_section("booking", "hangup", {})
 
@@ -1298,42 +1356,49 @@ service.add_verb_to_section("dispatch", "hangup", {})
 service.add_verb_to_section("no_match", "play", {"url": "say:Sorry, I didn't catch that. Goodbye."})
 service.add_verb_to_section("no_match", "hangup", {})
 
-if __name__ == "__main__":
-    service.serve()
+service.serve()
 ```
 </CodeBlock>
-<CodeBlock title="TypeScript — Agents">
+<CodeBlock title="TypeScript — SWML builder">
 ```typescript
 // Install: npm install @signalwire/sdk@2.0.5
-// This sample also runs as JavaScript: save as call-routing.mjs,
-// then run: node call-routing.mjs
+// This sample also runs as JavaScript: save as route-calls.mjs,
+// then run: node route-calls.mjs
 import { SWMLService } from "@signalwire/sdk";
 
-const service = new SWMLService({ name: "call-routing" });
-
-service.addVerb("answer", {});
-service.addVerb("prompt", {
-  play: "say:Thanks for calling Bayview Taxi. Say booking or dispatch.",
-  speech_hints: ["booking", "dispatch"],
+const service = new SWMLService({
+  name: "route-calls",
+  route: "/swml",
+  port: 3000,
+  basicAuth: ["signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"],
 });
-service.addVerb("switch", {
-  variable: "prompt_value",
-  case: {
-    booking: [{ transfer: { dest: "booking" } }],
-    dispatch: [{ transfer: { dest: "dispatch" } }],
-  },
-  default: [{ transfer: { dest: "no_match" } }],
-});
+const swml = service.getBuilder();
 
-service.addVerbToSection("booking", "play", { url: "say:You said booking." });
-service.addVerbToSection("booking", "hangup", {});
+swml
+  .answer()
+  .prompt({
+    play: ["say:Thanks for calling Bayview Taxi. Say booking or dispatch."],
+    speech_hints: ["booking", "dispatch"],
+  })
+  .switch({
+    variable: "prompt_value",
+    case: {
+      booking: [{ transfer: { dest: "booking" } }],
+      dispatch: [{ transfer: { dest: "dispatch" } }],
+    },
+    default: [{ transfer: { dest: "no_match" } }],
+  });
 
-service.addVerbToSection("dispatch", "play", { url: "say:Connecting you to dispatch." });
-service.addVerbToSection("dispatch", "connect", { to: "<YOUR_DESTINATION>" });
-service.addVerbToSection("dispatch", "hangup", {});
+// The builder's verb methods append to the main section. Named sections use addVerbToSection.
+swml.addVerbToSection("booking", "play", { url: "say:You said booking." });
+swml.addVerbToSection("booking", "hangup", {});
 
-service.addVerbToSection("no_match", "play", { url: "say:Sorry, I didn't catch that. Goodbye." });
-service.addVerbToSection("no_match", "hangup", {});
+swml.addVerbToSection("dispatch", "play", { url: "say:Connecting you to dispatch." });
+swml.addVerbToSection("dispatch", "connect", { to: "<YOUR_DESTINATION>" });
+swml.addVerbToSection("dispatch", "hangup", {});
+
+swml.addVerbToSection("no_match", "play", { url: "say:Sorry, I didn't catch that. Goodbye." });
+swml.addVerbToSection("no_match", "hangup", {});
 
 await service.serve();
 ```
@@ -1345,7 +1410,8 @@ sections:
   main:
     - answer: {}
     - prompt:
-        play: "say:Thanks for calling Bayview Taxi. Say booking or dispatch."
+        play:
+          - "say:Thanks for calling Bayview Taxi. Say booking or dispatch."
         speech_hints:
           - booking
           - dispatch
@@ -1386,7 +1452,7 @@ sections:
       { "answer": {} },
       {
         "prompt": {
-          "play": "say:Thanks for calling Bayview Taxi. Say booking or dispatch.",
+          "play": ["say:Thanks for calling Bayview Taxi. Say booking or dispatch."],
           "speech_hints": ["booking", "dispatch"]
         }
       },
@@ -1420,17 +1486,16 @@ sections:
 </CodeBlock>
 </CodeBlocks>
 
-#### Hand the call to a phone via Relay
+#### Hand the call to a phone via WebSocket (Relay)
 
-[`connect`][relay-connect] takes a list of device groups; each inner list rings at once and the
-outer list rings in turn. The dispatch branch bridges to one phone and then waits for the call to
-end.
+`connect` takes a list of device groups; each inner list rings at once and the outer list rings in
+turn. The dispatch branch bridges to one phone and then waits for the call to end.
 
 <CodeBlocks>
 <CodeBlock title="Python — Relay client">
 ```python
 # Install: python -m pip install signalwire-sdk==3.4.1
-# Save as call_routing.py and run: python call_routing.py
+# Save as route_calls_relay.py and run: python route_calls_relay.py
 from signalwire.relay import RelayClient
 
 client = RelayClient(
@@ -1485,7 +1550,7 @@ client.run()
 <CodeBlock title="TypeScript — Relay client">
 ```typescript
 // Install: npm install @signalwire/sdk@2.0.5
-// Save as call-routing.mts and run: npx tsx call-routing.mts
+// Save as route-calls-relay.mts and run: npx tsx route-calls-relay.mts
 import { RelayClient } from "@signalwire/sdk";
 
 const client = new RelayClient({
@@ -1548,11 +1613,57 @@ up.
 
 [`goto`][swml-goto] jumps to a label within the same section, and its `when` condition and `max`
 count keep the loop bounded. A `label` before the prompt and a conditional `goto` after it repeat
-the question once. The Server SDKs can emit the `goto` step but not `label`, whose value is a bare
-string rather than an object, so this variation is for a hosted or hand-written document. The
-[control flow guide][control-flow] compares `goto` with `execute` and `transfer`.
+the question once. The TypeScript builder has a `label` method; the Python SDK cannot emit
+`label`, whose value is a bare string rather than an object, so from Python paste the YAML or JSON
+form into a hosted script. The [control flow guide][control-flow] compares `goto` with `execute`
+and `transfer`.
 
 <CodeBlocks>
+<CodeBlock title="TypeScript — SWML builder">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as route-calls.mjs,
+// then run: node route-calls.mjs
+import { SWMLService } from "@signalwire/sdk";
+
+const service = new SWMLService({
+  name: "route-calls",
+  route: "/swml",
+  port: 3000,
+  basicAuth: ["signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"],
+});
+const swml = service.getBuilder();
+
+swml
+  .answer()
+  .label("ask")
+  .prompt({
+    play: ["say:Thanks for calling Bayview Taxi. Say booking or dispatch."],
+    speech_hints: ["booking", "dispatch"],
+  })
+  .goto({ label: "ask", when: "prompt_result == 'no_input'", max: 1 })
+  .switch({
+    variable: "prompt_value",
+    case: {
+      booking: [{ transfer: { dest: "booking" } }],
+      dispatch: [{ transfer: { dest: "dispatch" } }],
+    },
+    default: [{ transfer: { dest: "no_match" } }],
+  });
+
+// The builder's verb methods append to the main section. Named sections use addVerbToSection.
+swml.addVerbToSection("booking", "play", { url: "say:You said booking." });
+swml.addVerbToSection("booking", "hangup", {});
+
+swml.addVerbToSection("dispatch", "play", { url: "say:You said dispatch." });
+swml.addVerbToSection("dispatch", "hangup", {});
+
+swml.addVerbToSection("no_match", "play", { url: "say:Sorry, I didn't catch that. Goodbye." });
+swml.addVerbToSection("no_match", "hangup", {});
+
+await service.serve();
+```
+</CodeBlock>
 <CodeBlock title="YAML">
 ```yaml
 version: 1.0.0
@@ -1561,7 +1672,8 @@ sections:
     - answer: {}
     - label: ask
     - prompt:
-        play: "say:Thanks for calling Bayview Taxi. Say booking or dispatch."
+        play:
+          - "say:Thanks for calling Bayview Taxi. Say booking or dispatch."
         speech_hints:
           - booking
           - dispatch
@@ -1605,7 +1717,7 @@ sections:
       { "label": "ask" },
       {
         "prompt": {
-          "play": "say:Thanks for calling Bayview Taxi. Say booking or dispatch.",
+          "play": ["say:Thanks for calling Bayview Taxi. Say booking or dispatch."],
           "speech_hints": ["booking", "dispatch"]
         }
       },
@@ -1645,7 +1757,7 @@ sections:
 </CodeBlock>
 </CodeBlocks>
 
-#### Ask again when the caller says nothing via Relay
+#### Ask again when the caller says nothing via WebSocket (Relay)
 
 A loop around the prompt exits on the first reply of any kind and gives up after two silent
 attempts.
@@ -1654,7 +1766,7 @@ attempts.
 <CodeBlock title="Python — Relay client">
 ```python
 # Install: python -m pip install signalwire-sdk==3.4.1
-# Save as call_routing.py and run: python call_routing.py
+# Save as route_calls_relay.py and run: python route_calls_relay.py
 from signalwire.relay import RelayClient
 
 client = RelayClient(
@@ -1710,7 +1822,7 @@ client.run()
 <CodeBlock title="TypeScript — Relay client">
 ```typescript
 // Install: npm install @signalwire/sdk@2.0.5
-// Save as call-routing.mts and run: npx tsx call-routing.mts
+// Save as route-calls-relay.mts and run: npx tsx route-calls-relay.mts
 import { RelayClient } from "@signalwire/sdk";
 
 const client = new RelayClient({
@@ -1760,17 +1872,17 @@ await client.run();
 
 <CardGroup cols={2}>
 
-<Card title="Outbound calling" href="/docs/platform/voice/outbound-calling" icon="regular phone-arrow-up-right">
-  Place the call yourself, then run this flow on the far end once the destination answers.
+<Card title="Make and receive calls" href="/docs/platform/voice/make-and-receive-calls" icon="regular phone">
+  Point a phone number at this flow, or place the call yourself and run the flow once the
+  destination answers.
 </Card>
 
 <Card title="Simple IVR" href="/docs/swml/guides/ivr" icon="regular phone-office">
   A recorded, multi-department menu in hosted SWML that connects each branch to a real number.
 </Card>
 
-<Card title="SWMLService reference" href="/docs/server-sdks/reference/python/agents/swml-service" icon="regular server">
-  Serve a different document per call, add routing callbacks, and secure the endpoint for
-  production.
+<Card title="Expose your server to the internet" href="/docs/server-sdks/guides/exposing-agents" icon="regular server">
+  Move a served SWML document from a tunnel to a production host.
 </Card>
 
 <Card title="Call Flow Builder" href="/docs/call-flow-builder" icon="regular diagram-project">
