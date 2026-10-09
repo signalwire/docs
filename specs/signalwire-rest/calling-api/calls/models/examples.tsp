@@ -311,6 +311,7 @@ const detectCallExample = #{
     id: callId,
     params: #{
       control_id: "detect-control-1",
+      status_url: "https://example.com/webhooks/detection",
       detect: #{
         type: DetectType.machine,
         params: #{ initial_timeout: 4.5, end_silence_timeout: 1.0 },
