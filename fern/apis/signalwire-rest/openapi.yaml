@@ -35866,6 +35866,50 @@ components:
               message: webhook_url must be a valid URL
               attribute: webhook_url
               url: https://signalwire.com/docs/apis/error-codes
+    RemoteAIAgent:
+      type: object
+      required:
+        - id
+        - name
+        - primary_request_url
+        - fallback_request_url
+        - status_callback_url
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Unique ID of the Remote AI Agent.
+          examples:
+            - b2a4c6e8-1f3d-4a5b-9c7e-0d2f4a6b8c1e
+        name:
+          type: string
+          description: Name of the Remote AI Agent.
+          examples:
+            - Support Agent
+        primary_request_url:
+          type: string
+          format: uri
+          description: URL of the agent you host. SignalWire requests the SWML document for each call from this URL.
+          examples:
+            - https://agent.example.com/swml
+        fallback_request_url:
+          anyOf:
+            - type: string
+              format: uri
+            - type: 'null'
+          description: URL SignalWire requests the SWML document from if the primary URL cannot be reached or fails.
+          examples:
+            - https://agent.example.com/fallback
+        status_callback_url:
+          anyOf:
+            - type: string
+              format: uri
+            - type: 'null'
+          description: URL that receives a JSON event when a call to this agent completes, with details of the finished call.
+          examples:
+            - https://agent.example.com/status
+      unevaluatedProperties:
+        not: {}
     RequestUrlMethodType:
       type: string
       enum:
@@ -35973,6 +36017,7 @@ components:
     ResourceResponse:
       oneOf:
         - $ref: '#/components/schemas/ResourceResponseAI'
+        - $ref: '#/components/schemas/ResourceResponseRemoteAIAgent'
         - $ref: '#/components/schemas/ResourceResponseCallFlow'
         - $ref: '#/components/schemas/ResourceResponseCXMLWebhook'
         - $ref: '#/components/schemas/ResourceResponseCXMLScript'
@@ -36472,6 +36517,60 @@ components:
       unevaluatedProperties:
         not: {}
       title: Relay Application
+    ResourceResponseRemoteAIAgent:
+      type: object
+      required:
+        - id
+        - project_id
+        - display_name
+        - created_at
+        - updated_at
+        - type
+        - remote_ai_agent
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Unique ID of the Resource.
+          examples:
+            - 993ed018-9e79-4e50-b97b-984bd5534095
+        project_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Unique ID of the Project.
+          examples:
+            - 1313fe58-5e14-4c11-bbe7-6fdfa11fe780
+        display_name:
+          type: string
+          description: Display name of the Resource
+          examples:
+            - My Resource
+        created_at:
+          type: string
+          format: date-time
+          description: Date and time when the resource was created.
+          examples:
+            - '2024-05-06T12:20:00Z'
+        updated_at:
+          type: string
+          format: date-time
+          description: Date and time when the resource was updated.
+          examples:
+            - '2024-05-06T12:20:00Z'
+        type:
+          type: string
+          enum:
+            - remote_ai_agent
+          description: The type of Resource
+          examples:
+            - remote_ai_agent
+        remote_ai_agent:
+          allOf:
+            - $ref: '#/components/schemas/RemoteAIAgent'
+          description: An object containing the response data of the Remote AI Agent
+      unevaluatedProperties:
+        not: {}
+      title: Remote AI Agent
     ResourceResponseSWMLScript:
       type: object
       required:
@@ -40123,7 +40222,9 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SWML.Calling.ConnectDestination'
-          description: Array of destination objects to dial simultaneously. All destinations ring at the same time — the first to answer is bridged and the remaining calls are cancelled.
+          description: |-
+            Array of destination objects to dial simultaneously. All destinations ring at the same time — the first to answer is bridged and the remaining calls are cancelled.
+            Up to 20 destinations are dialed. Any destination after the 20th is skipped without an error.
       unevaluatedProperties:
         not: {}
       description: Dial multiple destinations simultaneously. All destinations in the array ring at the same time — the first to answer is bridged and the remaining calls are cancelled.
@@ -40293,7 +40394,9 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SWML.Calling.ConnectDestination'
-          description: Array of destination objects to dial in order. Each destination is tried sequentially — if the current destination does not answer, the next one in the array is attempted.
+          description: |-
+            Array of destination objects to dial in order. Each destination is tried sequentially — if the current destination does not answer, the next one in the array is attempted.
+            Up to 20 destinations are tried. Any destination after the 20th is skipped without an error.
       unevaluatedProperties:
         not: {}
       description: Dial destinations one at a time in sequence. If the first destination does not answer, the next destination in the array is tried, and so on.
@@ -40470,6 +40573,7 @@ components:
             The outer array is the **serial** dimension — each element is a group tried in order.
             Each inner array is the **parallel** dimension — all destinations in that group are dialed simultaneously.
             If no destination in the current group answers, the next group is attempted.
+            Up to 20 destinations are dialed in total, counted across all groups rather than per group. Any destination after the 20th is skipped without an error.
       unevaluatedProperties:
         not: {}
       description: Combine both serial and parallel strategies using a two-dimensional array. The outer array is the serial dimension — each element is a group tried one at a time, in order. Each inner array is the parallel dimension — all destinations in that group are dialed simultaneously. If no destination in the current group answers, the next group is attempted.
@@ -42527,41 +42631,6 @@ components:
           maximum: 2
           description: 'Controls the randomness and expressiveness of the generated speech. Lower values produce a more consistent, predictable delivery; higher values introduce more variation. IMPORTANT: Only works with the Inworld TTS engine.'
           default: 1
-        speed:
-          type: number
-          minimum: 0.5
-          maximum: 2
-          description: 'How quickly the voice speaks. Values below `1.0` slow the voice down; values above `1.0` speed it up. IMPORTANT: Only works with the MiniMax TTS engine.'
-          default: 1
-        vol:
-          type: number
-          minimum: 0.1
-          maximum: 1
-          description: 'The speaking volume. Lower values are quieter. IMPORTANT: Only works with the MiniMax TTS engine.'
-          default: 1
-        pitch:
-          type: integer
-          format: int32
-          minimum: -12
-          maximum: 12
-          description: 'The pitch shift in semitones. Negative values lower the pitch; positive values raise it. IMPORTANT: Only works with the MiniMax TTS engine.'
-          default: 0
-        emotion:
-          type: string
-          enum:
-            - happy
-            - sad
-            - angry
-            - fearful
-            - disgusted
-            - surprised
-            - neutral
-          description: |-
-            A fixed emotional tone for the generated speech.
-            To vary the emotion automatically during a conversation, use [`languages[].auto_emotion`](#languagesauto_emotion) instead.
-            IMPORTANT: Only works with the MiniMax TTS engine.
-          examples:
-            - happy
       unevaluatedProperties:
         not: {}
       title: LanguageParams
@@ -42615,7 +42684,7 @@ components:
             Voice to use for the language. String format: `<engine id>.<voice id>`, with an optional
             `:<model id>` suffix for engines that offer a choice of model.
             Select engine from `gcloud`, `polly`, `amazon`, `azure`, `openai`, `elevenlabs`, `cartesia`, `deepgram`, `rime`,
-            `inworld`, `minimax`, `groq-tts`, `mistral`, `grok`, `smallest`, `fish`, or `speechify`.
+            `inworld`, `groq-tts`, `mistral`, `grok`, `smallest`, or `fish`.
             For example, `gcloud.fr-FR-Neural2-B` or `elevenlabs.rachel:eleven_flash_v2_5`.
             Always name the engine: a bare voice id resolves against a default engine that can change.
           examples:
@@ -42633,8 +42702,7 @@ components:
           description: |-
             Lets the AI vary its emotion as it speaks. A global emotion, or specific emotions for certain
             topics, can be set within the prompt of the AI.
-            IMPORTANT: Only works with the [`Cartesia`](/docs/platform/voice/tts/cartesia) and [`MiniMax`](/docs/platform/voice/tts/minimax) TTS engines.
-            For a fixed (non-automatic) MiniMax emotion, use [`params.emotion`](#paramsemotion) instead.
+            IMPORTANT: Only works with the [`Cartesia`](/docs/platform/voice/tts/cartesia) TTS engine.
           examples:
             - true
           default: false
@@ -42644,7 +42712,7 @@ components:
             Lets the AI vary its speaking speed during the conversation. The speed behavior can be defined
             in the prompt of the AI.
             IMPORTANT: Only works with the [`Cartesia`](/docs/platform/voice/tts/cartesia),
-            [`ElevenLabs`](/docs/platform/voice/tts/elevenlabs), [`MiniMax`](/docs/platform/voice/tts/minimax),
+            [`ElevenLabs`](/docs/platform/voice/tts/elevenlabs),
             [`Rime`](/docs/platform/voice/tts/rime), [`Inworld`](/docs/platform/voice/tts/inworld),
             [`Smallest`](/docs/platform/voice/tts/smallest), and [`Fish`](/docs/platform/voice/tts/fish) TTS engines.
           examples:
@@ -42930,7 +42998,7 @@ components:
             Voice to use for the language. String format: `<engine id>.<voice id>`, with an optional
             `:<model id>` suffix for engines that offer a choice of model.
             Select engine from `gcloud`, `polly`, `amazon`, `azure`, `openai`, `elevenlabs`, `cartesia`, `deepgram`, `rime`,
-            `inworld`, `minimax`, `groq-tts`, `mistral`, `grok`, `smallest`, `fish`, or `speechify`.
+            `inworld`, `groq-tts`, `mistral`, `grok`, `smallest`, or `fish`.
             For example, `gcloud.fr-FR-Neural2-B` or `elevenlabs.rachel:eleven_flash_v2_5`.
             Always name the engine: a bare voice id resolves against a default engine that can change.
           examples:
