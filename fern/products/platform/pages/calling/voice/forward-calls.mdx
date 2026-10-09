@@ -1,0 +1,480 @@
+---
+title: Forward calls
+slug: voice/forward-calls
+description: Forward calls to your SignalWire number to another phone with SWML or Relay, play a message when nobody answers, and forward a call already in progress over REST.
+max-toc-depth: 3
+---
+
+[make-and-receive-calls]: /docs/platform/voice/make-and-receive-calls
+[prepare-calls]: /docs/platform/voice/make-and-receive-calls#prepare-for-your-first-call
+[answer-swml]: /docs/platform/voice/make-and-receive-calls#answer-a-call-via-swml
+[answer-relay]: /docs/platform/voice/make-and-receive-calls#answer-a-call-via-websocket-relay
+[caller-id]: /docs/platform/voice/how-to-set-caller-id-or-cnam
+[trial-mode]: /docs/platform/trial-mode
+[server-sdks]: /docs/server-sdks
+[swml-intro]: /docs/swml
+[swml-connect]: /docs/swml/reference/calling/connect
+[call-commands]: /docs/apis/rest/calls/call-commands
+[cfb-forward]: /docs/call-flow-builder/reference/forward-to-phone
+[addresses]: /docs/platform/addresses
+
+Call forwarding sends calls to your SignalWire number on to another phone, so a caller reaches a
+person wherever they are. Each section below forwards a call to your number to a second phone, and
+plays a message to the caller when nobody answers.
+
+## Choose an approach
+
+Each approach forwards calls with its own code and its own kind of Resource on your phone number, so
+pick one and follow only its section. All of them dial the destination and connect it to the caller
+the same way, so the destinations, timeouts, and caller ID rules on this page apply to each.
+
+- [SWML][swml-intro]: answer calls to your number with a document that SignalWire runs, served from
+  your server or hosted in SignalWire. `connect` forwards the call, and the next instructions in the
+  document run if nobody answers.
+- WebSocket (Relay): answer calls with the [Server SDKs][server-sdks] in code that holds a
+  connection to SignalWire, and forward them with a connect command. Forwarding events arrive in your
+  code, so no webhook is needed.
+- [REST](#forward-a-call-already-in-progress-via-rest): forward a call that's already in progress,
+  such as one an AI agent is handling, by call ID from any process.
+
+To forward calls without code, use the [Forward to Phone][cfb-forward] node in Call Flow Builder.
+
+## Prepare for call forwarding
+
+Start with working call setup from [Make and receive calls][make-and-receive-calls]. Have these
+values ready:
+
+- Your Space URL, such as `<YOUR_SPACE>.signalwire.com`.
+- Your Project ID and an API token with the **Voice** permission.
+- A phone number in your Space.
+- Two phones you can answer: one to call your number from, and one that receives the forwarded
+  call.
+
+<Warning title="Trial projects only call and receive calls from verified numbers">
+A [trial project][trial-mode] only places calls to and receives calls from numbers you've purchased
+or verified, and can't call internationally. Verify both phones you'll test with, as
+[Prepare for your first call][prepare-calls] shows.
+</Warning>
+
+Replace these values in the samples you run:
+
+| Value | Replace with |
+|---|---|
+| `<YOUR_SPACE>` | Your Space's subdomain in `<YOUR_SPACE>.signalwire.com` |
+| `<YOUR_PROJECT_ID>` | Your Project ID |
+| `<YOUR_API_TOKEN>` | Your API token with the Voice permission, used only in server code |
+| `<YOUR_DESTINATION>` | The phone that receives forwarded calls, in E.164 format, such as `+12025550123` |
+| `<YOUR_CALLER_ID>` | Your SignalWire phone number, or a [verified caller ID][caller-id], in E.164 format, when the forwarded call shows it instead of the caller's number |
+| `<YOUR_BASIC_AUTH_PASSWORD>` | A password you choose for the SWML your server serves |
+| `<YOUR_PUBLIC_HOST>` | The public hostname of your SWML server or tunnel |
+| `<YOUR_CALL_ID>` | The ID of a live call, when you forward it over REST |
+
+## How call forwarding works
+
+A forwarded call is two calls joined together. The caller's call to your number is the first.
+SignalWire then places a second call to the destination, and when the destination answers, bridges
+the two so the caller and the destination hear each other. The forward ends when either side hangs
+up. If the destination doesn't answer, is busy, or declines, the forward fails, and your code decides
+what the caller hears next.
+
+Two settings shape every forward:
+
+- **Timeout.** How long the destination rings before the forward fails. A voicemail system that
+  answers counts as an answer, so keep the timeout shorter than the time the destination's phone
+  takes to send calls to its own voicemail if you want your own message to play instead.
+- **Caller ID.** The number the destination's phone shows. Show the caller's number so the person
+  answering knows who's calling, or show your SignalWire number so they know the call came through
+  your business line.
+
+A destination can be a phone number, a SIP URI such as `sip:ada@example.com`, or a
+[Resource Address][addresses] such as `/private/support-rep`. The samples on this page forward to a
+phone number.
+
+## Forward a call via SWML
+
+[`connect`][swml-connect] places the call to the destination and bridges it to the caller. The
+document waits at `connect` until the forward ends, then moves on to the next instruction.
+
+Bayview Taxi forwards calls to its business number to Ada, its dispatcher. This walkthrough forwards
+a call to your number to your second phone.
+
+<Steps>
+
+<Step title="Build the forwarding document" id="build-the-forwarding-document">
+
+The document rings the destination for up to twenty seconds with `connect`. It sets `from` to
+`${call.from}`, the number of the person calling you, so the forwarded call shows who's calling. If
+nobody answers, the document continues and plays a message.
+
+<CodeBlocks>
+<CodeBlock title="Python — SWML builder">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as forward_calls.py and run: python forward_calls.py
+from signalwire import SWMLBuilder, SWMLService
+
+service = SWMLService(
+    name="forward-calls",
+    route="/swml",
+    port=3000,
+    basic_auth=("signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"),
+)
+(
+    SWMLBuilder(service)
+    # from is a Python keyword, so pass the connect settings as a dict.
+    .connect(**{"to": "<YOUR_DESTINATION>", "from": "${call.from}", "timeout": 20})
+    .say("Sorry, nobody at Bayview Taxi can take your call right now. Please call back later.")
+)
+
+# Serves the document at /swml. Put the credentials in the URL you give
+# SignalWire: https://signalwire:<YOUR_BASIC_AUTH_PASSWORD>@<YOUR_PUBLIC_HOST>/swml
+service.serve()
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — SWML builder">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as forward-calls.mjs,
+// then run: node forward-calls.mjs
+import { SWMLService } from "@signalwire/sdk";
+
+const service = new SWMLService({
+  name: "forward-calls",
+  route: "/swml",
+  port: 3000,
+  basicAuth: ["signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"],
+});
+service.getBuilder()
+  .connect({ to: "<YOUR_DESTINATION>", from: "${call.from}", timeout: 20 })
+  .say("Sorry, nobody at Bayview Taxi can take your call right now. Please call back later.");
+
+// Serves the document at /swml. Put the credentials in the URL you give
+// SignalWire: https://signalwire:<YOUR_BASIC_AUTH_PASSWORD>@<YOUR_PUBLIC_HOST>/swml
+await service.serve();
+```
+</CodeBlock>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - connect:
+        to: <YOUR_DESTINATION>
+        from: '${call.from}'
+        timeout: 20
+    - play:
+        url: say:Sorry, nobody at Bayview Taxi can take your call right now. Please call back later.
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "connect": {
+          "to": "<YOUR_DESTINATION>",
+          "from": "${call.from}",
+          "timeout": 20
+        }
+      },
+      { "play": { "url": "say:Sorry, nobody at Bayview Taxi can take your call right now. Please call back later." } }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+The [Server SDKs][server-sdks] build the document and serve it from your server. Run the server,
+give it a public URL, and create a SWML Script with
+**External URL** set to `https://signalwire:<YOUR_BASIC_AUTH_PASSWORD>@<YOUR_PUBLIC_HOST>/swml`, as
+[Answer a call via SWML][answer-swml] shows. To skip the server, create a SWML Script with
+**Hosted Script** and paste the YAML or JSON into **Primary Script** instead.
+
+To show your SignalWire number instead of the caller's, set `from` to `<YOUR_CALLER_ID>`. The message also plays if the destination hangs up before the caller does; to play it
+only when nobody answers, branch on the `connect_result` variable, which `connect` sets to
+`connected` or `failed`.
+
+</Step>
+
+<Step title="Assign the script to your phone number" id="assign-the-forwarding-script">
+
+<Markdown src="/snippets/common/dashboard/_assign-resource-to-number.mdx" />
+
+To assign it in code, see [Answer a call via SWML][answer-swml].
+
+</Step>
+
+<Step title="Call your number" id="call-your-number-via-swml">
+
+Call your SignalWire number from your first phone. You hear ringing while your second phone rings,
+and the second phone shows your first phone's number. Answer it and talk: each phone hears the
+other. Hang up either phone to end the call.
+
+Call again and let the second phone ring without answering. After twenty seconds you hear the
+message, then the call ends.
+
+If it doesn't work, check the symptom:
+
+- **The call ends right away, or you hear an error.** SignalWire couldn't run the document. If your
+  server serves it, check that the server and tunnel are running and that the URL's password
+  matches the server's.
+- **You hear your number's old behavior.** The number still points at another Resource. Open it
+  under **Phone Numbers** and check **Inbound Call Settings**.
+- **The second phone never rings, and the call ends after the timeout.** Check that
+  `<YOUR_DESTINATION>` is in E.164 format, and in a trial project, that it's a verified number.
+
+</Step>
+
+</Steps>
+
+## Forward a call via WebSocket (Relay)
+
+Answer the call, then send a connect command with the destination to dial. The command returns as
+soon as SignalWire accepts it, so the program follows the forward through
+`calling.call.connect` events: `connecting`, then `connected` while the two phones talk and
+`disconnected` when one hangs up, or `failed` if nobody answers.
+
+This walkthrough forwards a call to your number to your second phone, showing the caller's number.
+
+<Steps>
+
+<Step title="Run the forwarding handler" id="run-the-forwarding-handler">
+
+Run the handler and leave it running while you test. It subscribes to the `forward-calls`
+topic. When a call arrives, it answers, plays a ringtone to the caller, and rings your second phone
+for up to twenty seconds. If nobody answers, it plays a message, then hangs up; when the forward
+ends, it hangs up.
+
+<CodeBlocks>
+<CodeBlock title="Python — Relay client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as forward_relay.py and run: python forward_relay.py
+from signalwire.relay import ConnectEvent, RelayClient
+
+client = RelayClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    contexts=["forward-calls"],
+)
+
+@client.on_call
+async def handle_call(call):
+    caller = call.device.get("params", {}).get("from_number")
+
+    async def hang_up_after_playback(_event):
+        if call.state != "ended":
+            await call.hangup()
+
+    async def on_connect(event: ConnectEvent):
+        print(f"Forward: {event.connect_state}")
+        if call.state == "ended":
+            return
+        if event.connect_state == "failed":
+            # Nobody answered, the line was busy, or the call was declined.
+            await call.play_tts(
+                "Sorry, nobody at Bayview Taxi can take your call right now. Please call back later.",
+                on_completed=hang_up_after_playback,
+            )
+        elif event.connect_state == "disconnected":
+            await call.hangup()
+
+    call.on("calling.call.connect", on_connect)
+    await call.answer()
+    await call.connect(
+        devices=[[{
+            "type": "phone",
+            "params": {
+                "to_number": "<YOUR_DESTINATION>",
+                "from_number": caller,
+                "timeout": 20,
+            },
+        }]],
+        ringback=[{"type": "ringtone", "params": {"name": "us"}}],
+    )
+    await call.wait_for_ended()
+
+client.run()
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — Relay client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as forward-relay.mjs,
+// then run: node forward-relay.mjs
+import { RelayClient } from "@signalwire/sdk";
+
+const client = new RelayClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  contexts: ["forward-calls"],
+});
+
+client.onCall(async (call) => {
+  const caller = call.device.params?.from_number;
+
+  call.on("calling.call.connect", async (event) => {
+    const state = event.params.connect_state;
+    console.log(`Forward: ${state}`);
+    if (call.state === "ended") return;
+    if (state === "failed") {
+      // Nobody answered, the line was busy, or the call was declined.
+      await call.play([{ type: "tts", text: "Sorry, nobody at Bayview Taxi can take your call right now. Please call back later." }], {
+        onCompleted: async () => {
+          if (call.state !== "ended") await call.hangup();
+        },
+      });
+    } else if (state === "disconnected") {
+      await call.hangup();
+    }
+  });
+  await call.answer();
+  await call.connect(
+    [[{
+      type: "phone",
+      params: {
+        to_number: "<YOUR_DESTINATION>",
+        from_number: caller,
+        timeout: 20,
+      },
+    }]],
+    { ringback: [{ type: "ringtone", name: "us" }] },
+  );
+  await call.waitForEnded();
+});
+
+await client.run();
+```
+</CodeBlock>
+</CodeBlocks>
+
+The handler sets the forwarded call's caller ID to the caller's number, read from the incoming call.
+To show your SignalWire number instead, use `<YOUR_CALLER_ID>`. The [Server SDKs][server-sdks]
+document every connect option.
+
+</Step>
+
+<Step title="Assign the topic to your phone number" id="assign-the-forwarding-topic">
+
+Create a Relay Application for the topic:
+
+1. Open **My Resources**, select **+ Add**, then **Relay Application**.
+2. Name it **Forward calls** and enter `forward-calls` as the **Topic**. It must match the
+   `contexts` value in your code.
+3. Select **Create**.
+
+<Markdown src="/snippets/common/dashboard/_assign-resource-to-number.mdx" />
+
+To assign it in code, see [Answer a call via WebSocket (Relay)][answer-relay].
+
+</Step>
+
+<Step title="Call your number" id="call-your-number-via-relay">
+
+Call your SignalWire number from your first phone. You hear a ringtone while your second phone
+rings, and the handler prints `Forward: connecting`. Answer the second phone: it shows your first
+phone's number, the handler prints `Forward: connected`, and each phone hears the other. Hang up
+either phone; the handler prints `Forward: disconnected` and ends the call.
+
+Call again and let the second phone ring without answering. After twenty seconds the handler prints
+`Forward: failed`, you hear the message, and the call ends.
+
+If it doesn't work, check the symptom:
+
+- **The call never reaches your handler.** Check that the handler is still running, that its
+  `contexts` value matches the Relay Application's **Topic** exactly, and that the number's
+  **Inbound Call Settings** point at that Relay Application.
+- **The handler prints `Forward: failed` right away, and the second phone never rings.** Check that
+  `<YOUR_DESTINATION>` is in E.164 format, and in a trial project, that it's a verified number.
+
+</Step>
+
+</Steps>
+
+## Forward a call already in progress via REST
+
+When a process that doesn't hold the call needs to forward it, such as a dashboard where a
+dispatcher reroutes a caller, send the `calling.transfer` command with the call's ID and a SWML
+document that uses `connect`. Whatever the call is doing stops, and the document takes over: the
+destination rings, and when it answers, the caller is connected to it. If nobody answers, the
+caller hears the message. The call ID is the `id` from
+a `dial` response, or the `call_id` that SignalWire sends your SWML server or status webhook.
+
+The [Server SDKs][server-sdks] wrap the command:
+
+<CodeBlocks>
+<CodeBlock title="Python — REST client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as forward_rest.py and run: python forward_rest.py
+from signalwire import SWMLBuilder, SWMLService
+from signalwire.rest import RestClient
+
+client = RestClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    host="<YOUR_SPACE>.signalwire.com",
+)
+
+swml = (
+    SWMLBuilder(SWMLService(name="forward-in-progress"))
+    # from is a Python keyword, so pass the connect settings as a dict.
+    .connect(**{"to": "<YOUR_DESTINATION>", "from": "${call.from}", "timeout": 20})
+    .say("Sorry, nobody at Bayview Taxi can take your call right now. Please call back later.")
+    .build()
+)
+client.calling.transfer("<YOUR_CALL_ID>", dest=swml)
+print("Forwarding")
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — REST client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as forward-rest.mjs,
+// then run: node forward-rest.mjs
+import { RestClient, SwmlBuilder } from "@signalwire/sdk";
+
+const client = new RestClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  host: "<YOUR_SPACE>.signalwire.com",
+});
+
+const swml = new SwmlBuilder()
+  .connect({ to: "<YOUR_DESTINATION>", from: "${call.from}", timeout: 20 })
+  .say("Sorry, nobody at Bayview Taxi can take your call right now. Please call back later.")
+  .build();
+await client.calling.transfer("<YOUR_CALL_ID>", { dest: swml });
+console.log("Forwarding");
+```
+</CodeBlock>
+<CodeBlock title="cURL — Calling API">
+```bash
+curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
+  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "command": "calling.transfer",
+    "id": "<YOUR_CALL_ID>",
+    "params": {
+      "dest": {
+        "version": "1.0.0",
+        "sections": {
+          "main": [
+            { "connect": { "to": "<YOUR_DESTINATION>", "from": "${call.from}", "timeout": 20 } },
+            { "play": { "url": "say:Sorry, nobody at Bayview Taxi can take your call right now. Please call back later." } }
+          ]
+        }
+      }
+    }
+  }'
+```
+</CodeBlock>
+</CodeBlocks>
+
+The cURL example calls [Call commands][call-commands]. The command returns as soon as SignalWire
+accepts it, and the call keeps the same ID. `dest` also takes the URL of a SWML document your server
+serves.
