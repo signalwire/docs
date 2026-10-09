@@ -874,6 +874,7 @@ paths:
                   id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
                   params:
                     control_id: detect-control-1
+                    status_url: https://example.com/webhooks/detection
                     detect:
                       type: machine
                       params:
@@ -22155,7 +22156,9 @@ components:
             - 0.05
         send_digits:
           type: string
-          description: 'DTMF digits to send after the call is answered. Allowed characters: `0-9`, `A-D`, `*`, `#`, `w` (wait), `,` (pause).'
+          maxLength: 98
+          pattern: ^[0-9A-Da-d*#wW,]{1,98}$
+          description: 'DTMF digits to send after the call is answered, at most 98 characters. Allowed characters: `0-9`, `A-D`, `*`, `#`, and the pauses `w` (0.5 seconds), `W` (1 second), and `,` (0.5 seconds). SignalWire waits 0.5 seconds after answer before sending the first digit.'
           examples:
             - 1234#
         region:
@@ -22293,7 +22296,9 @@ components:
             - 0.05
         send_digits:
           type: string
-          description: 'DTMF digits to send after the call is answered. Allowed characters: `0-9`, `A-D`, `*`, `#`, `w` (wait), `,` (pause).'
+          maxLength: 98
+          pattern: ^[0-9A-Da-d*#wW,]{1,98}$
+          description: 'DTMF digits to send after the call is answered, at most 98 characters. Allowed characters: `0-9`, `A-D`, `*`, `#`, and the pauses `w` (0.5 seconds), `W` (1 second), and `,` (0.5 seconds). SignalWire waits 0.5 seconds after answer before sending the first digit.'
           examples:
             - 1234#
         region:
@@ -22442,7 +22447,9 @@ components:
             - 0.05
         send_digits:
           type: string
-          description: 'DTMF digits to send after the call is answered. Allowed characters: `0-9`, `A-D`, `*`, `#`, `w` (wait), `,` (pause).'
+          maxLength: 98
+          pattern: ^[0-9A-Da-d*#wW,]{1,98}$
+          description: 'DTMF digits to send after the call is answered, at most 98 characters. Allowed characters: `0-9`, `A-D`, `*`, `#`, and the pauses `w` (0.5 seconds), `W` (1 second), and `,` (0.5 seconds). SignalWire waits 0.5 seconds after answer before sending the first digit.'
           examples:
             - 1234#
         region:
@@ -26273,6 +26280,7 @@ components:
         - created_at
         - updated_at
         - duration_in_seconds
+        - error_code
         - price
         - price_unit
         - status
@@ -26308,8 +26316,10 @@ components:
           examples:
             - 2
         error_code:
-          type: string
-          description: Error code if the recording failed.
+          anyOf:
+            - type: string
+            - type: 'null'
+          description: Error code if the recording failed, and `null` otherwise.
         price:
           type: number
           format: double
@@ -26323,14 +26333,19 @@ components:
             - USD
         status:
           type: string
-          description: Status of the recording.
+          description: |-
+            Status of the recording. One of `recording`, `paused`, `finished`, or `no_input`.
+            `no_input` means audio wasn't detected before the timeout.
+            The media is only downloadable once the status is `finished`.
           examples:
-            - completed
+            - finished
         url:
           type: string
-          description: URL of the recording file.
+          description: |-
+            Path to the recording, relative to your Space URL. The full URL returns the recording's JSON metadata.
+            Add a format suffix to download the recording: `<url>.wav` or `<url>.mp3`.
           examples:
-            - https://example.com/recording.mp3
+            - /api/relay/rest/recordings/d3444402-7b43-4512-8735-9d5e1f387814
         stereo:
           type: boolean
           description: Indicates whether the recording is stereo.
@@ -35077,6 +35092,7 @@ components:
         - created_at
         - updated_at
         - duration_in_seconds
+        - error_code
         - price
         - price_unit
         - status
@@ -35112,8 +35128,10 @@ components:
           examples:
             - 2
         error_code:
-          type: string
-          description: Error code if the recording failed.
+          anyOf:
+            - type: string
+            - type: 'null'
+          description: Error code if the recording failed, and `null` otherwise.
         price:
           type: number
           format: double
@@ -35127,14 +35145,19 @@ components:
             - USD
         status:
           type: string
-          description: Status of the recording.
+          description: |-
+            Status of the recording. One of `recording`, `paused`, `finished`, or `no_input`.
+            `no_input` means audio wasn't detected before the timeout.
+            The media is only downloadable once the status is `finished`.
           examples:
-            - completed
+            - finished
         url:
           type: string
-          description: URL of the recording file.
+          description: |-
+            Path to the recording, relative to your Space URL. The full URL returns the recording's JSON metadata.
+            Add a format suffix to download the recording: `<url>.wav` or `<url>.mp3`.
           examples:
-            - https://example.com/recording.mp3
+            - /api/relay/rest/recordings/d3444402-7b43-4512-8735-9d5e1f387814
         stereo:
           type: boolean
           description: Indicates whether the recording is stereo.
@@ -35843,6 +35866,50 @@ components:
               message: webhook_url must be a valid URL
               attribute: webhook_url
               url: https://signalwire.com/docs/apis/error-codes
+    RemoteAIAgent:
+      type: object
+      required:
+        - id
+        - name
+        - primary_request_url
+        - fallback_request_url
+        - status_callback_url
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Unique ID of the Remote AI Agent.
+          examples:
+            - b2a4c6e8-1f3d-4a5b-9c7e-0d2f4a6b8c1e
+        name:
+          type: string
+          description: Name of the Remote AI Agent.
+          examples:
+            - Support Agent
+        primary_request_url:
+          type: string
+          format: uri
+          description: URL of the agent you host. SignalWire requests the SWML document for each call from this URL.
+          examples:
+            - https://agent.example.com/swml
+        fallback_request_url:
+          anyOf:
+            - type: string
+              format: uri
+            - type: 'null'
+          description: URL SignalWire requests the SWML document from if the primary URL cannot be reached or fails.
+          examples:
+            - https://agent.example.com/fallback
+        status_callback_url:
+          anyOf:
+            - type: string
+              format: uri
+            - type: 'null'
+          description: URL that receives a JSON event when a call to this agent completes, with details of the finished call.
+          examples:
+            - https://agent.example.com/status
+      unevaluatedProperties:
+        not: {}
     RequestUrlMethodType:
       type: string
       enum:
@@ -35950,6 +36017,7 @@ components:
     ResourceResponse:
       oneOf:
         - $ref: '#/components/schemas/ResourceResponseAI'
+        - $ref: '#/components/schemas/ResourceResponseRemoteAIAgent'
         - $ref: '#/components/schemas/ResourceResponseCallFlow'
         - $ref: '#/components/schemas/ResourceResponseCXMLWebhook'
         - $ref: '#/components/schemas/ResourceResponseCXMLScript'
@@ -36449,6 +36517,60 @@ components:
       unevaluatedProperties:
         not: {}
       title: Relay Application
+    ResourceResponseRemoteAIAgent:
+      type: object
+      required:
+        - id
+        - project_id
+        - display_name
+        - created_at
+        - updated_at
+        - type
+        - remote_ai_agent
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Unique ID of the Resource.
+          examples:
+            - 993ed018-9e79-4e50-b97b-984bd5534095
+        project_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Unique ID of the Project.
+          examples:
+            - 1313fe58-5e14-4c11-bbe7-6fdfa11fe780
+        display_name:
+          type: string
+          description: Display name of the Resource
+          examples:
+            - My Resource
+        created_at:
+          type: string
+          format: date-time
+          description: Date and time when the resource was created.
+          examples:
+            - '2024-05-06T12:20:00Z'
+        updated_at:
+          type: string
+          format: date-time
+          description: Date and time when the resource was updated.
+          examples:
+            - '2024-05-06T12:20:00Z'
+        type:
+          type: string
+          enum:
+            - remote_ai_agent
+          description: The type of Resource
+          examples:
+            - remote_ai_agent
+        remote_ai_agent:
+          allOf:
+            - $ref: '#/components/schemas/RemoteAIAgent'
+          description: An object containing the response data of the Remote AI Agent
+      unevaluatedProperties:
+        not: {}
+      title: Remote AI Agent
     ResourceResponseSWMLScript:
       type: object
       required:
@@ -40063,17 +40185,17 @@ components:
           description: Webhook URL to send call status change notifications to. Authentication can also be set in the URL in the format of `username:password@url`.
           examples:
             - https://example.com/call-status
-        transfer_after_bridge:
+        execute_after_queue:
           type: string
           description: |-
-            SWML to execute after the bridge completes. This defines what should happen after the call is connected and the bridge ends.
+            SWML to execute on this call after its bridge with the queued call ends. Only applies when
+            `to` starts with `queue:`. When omitted, the call hangs up when the bridge ends. Either way,
+            the script does not continue past `connect` for queue targets, so `result` never runs.
             Can be either:
             - A URL (http or https) that returns a SWML document
             - An inline SWML document (as a JSON string)
-
-            **Note:** This parameter is REQUIRED when connecting to a queue (when `to` starts with "queue:")
           examples:
-            - https://example.com/after-bridge.swml
+            - https://example.com/after-queue.swml
         call_state_events:
           type: array
           items:
@@ -40100,7 +40222,9 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SWML.Calling.ConnectDestination'
-          description: Array of destination objects to dial simultaneously. All destinations ring at the same time — the first to answer is bridged and the remaining calls are cancelled.
+          description: |-
+            Array of destination objects to dial simultaneously. All destinations ring at the same time — the first to answer is bridged and the remaining calls are cancelled.
+            Up to 20 destinations are dialed. Any destination after the 20th is skipped without an error.
       unevaluatedProperties:
         not: {}
       description: Dial multiple destinations simultaneously. All destinations in the array ring at the same time — the first to answer is bridged and the remaining calls are cancelled.
@@ -40233,17 +40357,17 @@ components:
           description: Webhook URL to send call status change notifications to. Authentication can also be set in the URL in the format of `username:password@url`.
           examples:
             - https://example.com/call-status
-        transfer_after_bridge:
+        execute_after_queue:
           type: string
           description: |-
-            SWML to execute after the bridge completes. This defines what should happen after the call is connected and the bridge ends.
+            SWML to execute on this call after its bridge with the queued call ends. Only applies when
+            `to` starts with `queue:`. When omitted, the call hangs up when the bridge ends. Either way,
+            the script does not continue past `connect` for queue targets, so `result` never runs.
             Can be either:
             - A URL (http or https) that returns a SWML document
             - An inline SWML document (as a JSON string)
-
-            **Note:** This parameter is REQUIRED when connecting to a queue (when `to` starts with "queue:")
           examples:
-            - https://example.com/after-bridge.swml
+            - https://example.com/after-queue.swml
         call_state_events:
           type: array
           items:
@@ -40270,7 +40394,9 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SWML.Calling.ConnectDestination'
-          description: Array of destination objects to dial in order. Each destination is tried sequentially — if the current destination does not answer, the next one in the array is attempted.
+          description: |-
+            Array of destination objects to dial in order. Each destination is tried sequentially — if the current destination does not answer, the next one in the array is attempted.
+            Up to 20 destinations are tried. Any destination after the 20th is skipped without an error.
       unevaluatedProperties:
         not: {}
       description: Dial destinations one at a time in sequence. If the first destination does not answer, the next destination in the array is tried, and so on.
@@ -40403,17 +40529,17 @@ components:
           description: Webhook URL to send call status change notifications to. Authentication can also be set in the URL in the format of `username:password@url`.
           examples:
             - https://example.com/call-status
-        transfer_after_bridge:
+        execute_after_queue:
           type: string
           description: |-
-            SWML to execute after the bridge completes. This defines what should happen after the call is connected and the bridge ends.
+            SWML to execute on this call after its bridge with the queued call ends. Only applies when
+            `to` starts with `queue:`. When omitted, the call hangs up when the bridge ends. Either way,
+            the script does not continue past `connect` for queue targets, so `result` never runs.
             Can be either:
             - A URL (http or https) that returns a SWML document
             - An inline SWML document (as a JSON string)
-
-            **Note:** This parameter is REQUIRED when connecting to a queue (when `to` starts with "queue:")
           examples:
-            - https://example.com/after-bridge.swml
+            - https://example.com/after-queue.swml
         call_state_events:
           type: array
           items:
@@ -40447,6 +40573,7 @@ components:
             The outer array is the **serial** dimension — each element is a group tried in order.
             Each inner array is the **parallel** dimension — all destinations in that group are dialed simultaneously.
             If no destination in the current group answers, the next group is attempted.
+            Up to 20 destinations are dialed in total, counted across all groups rather than per group. Any destination after the 20th is skipped without an error.
       unevaluatedProperties:
         not: {}
       description: Combine both serial and parallel strategies using a two-dimensional array. The outer array is the serial dimension — each element is a group tried one at a time, in order. Each inner array is the parallel dimension — all destinations in that group are dialed simultaneously. If no destination in the current group answers, the next group is attempted.
@@ -40579,17 +40706,17 @@ components:
           description: Webhook URL to send call status change notifications to. Authentication can also be set in the URL in the format of `username:password@url`.
           examples:
             - https://example.com/call-status
-        transfer_after_bridge:
+        execute_after_queue:
           type: string
           description: |-
-            SWML to execute after the bridge completes. This defines what should happen after the call is connected and the bridge ends.
+            SWML to execute on this call after its bridge with the queued call ends. Only applies when
+            `to` starts with `queue:`. When omitted, the call hangs up when the bridge ends. Either way,
+            the script does not continue past `connect` for queue targets, so `result` never runs.
             Can be either:
             - A URL (http or https) that returns a SWML document
             - An inline SWML document (as a JSON string)
-
-            **Note:** This parameter is REQUIRED when connecting to a queue (when `to` starts with "queue:")
           examples:
-            - https://example.com/after-bridge.swml
+            - https://example.com/after-queue.swml
         call_state_events:
           type: array
           items:
@@ -41180,7 +41307,8 @@ components:
             Place the current call in a named queue where it will wait to be connected to an available agent or resource.
             While waiting, callers will hear music or custom audio.
             When an agent connects to the queue (using the connect method), the caller and agent are bridged together.
-            After the bridge completes, execution continues with the SWML script specified in transfer_after_bridge.
+            After the bridge completes, execution continues with the SWML script specified in execute_after_queue,
+            or the call hangs up if none was given.
           title: enter_queue
       unevaluatedProperties:
         not: {}
@@ -41189,17 +41317,19 @@ components:
       type: object
       required:
         - queue_name
-        - transfer_after_bridge
       properties:
         queue_name:
           type: string
           description: Name of the queue to enter. If a queue with this name does not exist, it will be automatically created.
           examples:
             - support-queue
-        transfer_after_bridge:
+        execute_after_queue:
           type: string
           description: |-
-            SWML to execute after the bridge completes. This defines what should happen after the call is connected to an agent and the bridge ends.
+            SWML to execute after the bridge with the agent ends. When omitted, the call hangs up when
+            the bridge ends. If the call leaves the queue without being bridged (`wait_time` expires or
+            the caller hangs up), this field is not used and the script continues with the next
+            instruction; check `queue_result`.
             Can be either:
             - A URL (http or https) that returns a SWML document
             - An inline SWML document (as a JSON string)
@@ -41220,10 +41350,10 @@ components:
         wait_time:
           type: integer
           minimum: 1
-          description: Maximum time in seconds to wait in the queue before timeout. Default `3600`
+          description: Maximum time in seconds to wait in the queue before timeout. Default `180`
           examples:
             - 1800
-          default: 3600
+          default: 180
       unevaluatedProperties:
         not: {}
       title: EnterQueueObject object
@@ -42501,41 +42631,6 @@ components:
           maximum: 2
           description: 'Controls the randomness and expressiveness of the generated speech. Lower values produce a more consistent, predictable delivery; higher values introduce more variation. IMPORTANT: Only works with the Inworld TTS engine.'
           default: 1
-        speed:
-          type: number
-          minimum: 0.5
-          maximum: 2
-          description: 'How quickly the voice speaks. Values below `1.0` slow the voice down; values above `1.0` speed it up. IMPORTANT: Only works with the MiniMax TTS engine.'
-          default: 1
-        vol:
-          type: number
-          minimum: 0.1
-          maximum: 1
-          description: 'The speaking volume. Lower values are quieter. IMPORTANT: Only works with the MiniMax TTS engine.'
-          default: 1
-        pitch:
-          type: integer
-          format: int32
-          minimum: -12
-          maximum: 12
-          description: 'The pitch shift in semitones. Negative values lower the pitch; positive values raise it. IMPORTANT: Only works with the MiniMax TTS engine.'
-          default: 0
-        emotion:
-          type: string
-          enum:
-            - happy
-            - sad
-            - angry
-            - fearful
-            - disgusted
-            - surprised
-            - neutral
-          description: |-
-            A fixed emotional tone for the generated speech.
-            To vary the emotion automatically during a conversation, use [`languages[].auto_emotion`](#languagesauto_emotion) instead.
-            IMPORTANT: Only works with the MiniMax TTS engine.
-          examples:
-            - happy
       unevaluatedProperties:
         not: {}
       title: LanguageParams
@@ -42589,7 +42684,7 @@ components:
             Voice to use for the language. String format: `<engine id>.<voice id>`, with an optional
             `:<model id>` suffix for engines that offer a choice of model.
             Select engine from `gcloud`, `polly`, `amazon`, `azure`, `openai`, `elevenlabs`, `cartesia`, `deepgram`, `rime`,
-            `inworld`, `minimax`, `groq-tts`, `mistral`, `grok`, `smallest`, `fish`, or `speechify`.
+            `inworld`, `groq-tts`, `mistral`, `grok`, `smallest`, or `fish`.
             For example, `gcloud.fr-FR-Neural2-B` or `elevenlabs.rachel:eleven_flash_v2_5`.
             Always name the engine: a bare voice id resolves against a default engine that can change.
           examples:
@@ -42607,8 +42702,7 @@ components:
           description: |-
             Lets the AI vary its emotion as it speaks. A global emotion, or specific emotions for certain
             topics, can be set within the prompt of the AI.
-            IMPORTANT: Only works with the [`Cartesia`](/docs/platform/voice/tts/cartesia) and [`MiniMax`](/docs/platform/voice/tts/minimax) TTS engines.
-            For a fixed (non-automatic) MiniMax emotion, use [`params.emotion`](#paramsemotion) instead.
+            IMPORTANT: Only works with the [`Cartesia`](/docs/platform/voice/tts/cartesia) TTS engine.
           examples:
             - true
           default: false
@@ -42618,7 +42712,7 @@ components:
             Lets the AI vary its speaking speed during the conversation. The speed behavior can be defined
             in the prompt of the AI.
             IMPORTANT: Only works with the [`Cartesia`](/docs/platform/voice/tts/cartesia),
-            [`ElevenLabs`](/docs/platform/voice/tts/elevenlabs), [`MiniMax`](/docs/platform/voice/tts/minimax),
+            [`ElevenLabs`](/docs/platform/voice/tts/elevenlabs),
             [`Rime`](/docs/platform/voice/tts/rime), [`Inworld`](/docs/platform/voice/tts/inworld),
             [`Smallest`](/docs/platform/voice/tts/smallest), and [`Fish`](/docs/platform/voice/tts/fish) TTS engines.
           examples:
@@ -42904,7 +42998,7 @@ components:
             Voice to use for the language. String format: `<engine id>.<voice id>`, with an optional
             `:<model id>` suffix for engines that offer a choice of model.
             Select engine from `gcloud`, `polly`, `amazon`, `azure`, `openai`, `elevenlabs`, `cartesia`, `deepgram`, `rime`,
-            `inworld`, `minimax`, `groq-tts`, `mistral`, `grok`, `smallest`, `fish`, or `speechify`.
+            `inworld`, `groq-tts`, `mistral`, `grok`, `smallest`, or `fish`.
             For example, `gcloud.fr-FR-Neural2-B` or `elevenlabs.rachel:eleven_flash_v2_5`.
             Always name the engine: a bare voice id resolves against a default engine that can change.
           examples:
@@ -49193,6 +49287,7 @@ components:
         - created_at
         - updated_at
         - duration_in_seconds
+        - error_code
         - price
         - price_unit
         - status
@@ -49228,8 +49323,10 @@ components:
           examples:
             - 2
         error_code:
-          type: string
-          description: Error code if the recording failed.
+          anyOf:
+            - type: string
+            - type: 'null'
+          description: Error code if the recording failed, and `null` otherwise.
         price:
           type: number
           format: double
@@ -49243,14 +49340,19 @@ components:
             - USD
         status:
           type: string
-          description: Status of the recording.
+          description: |-
+            Status of the recording. One of `recording`, `paused`, `finished`, or `no_input`.
+            `no_input` means audio wasn't detected before the timeout.
+            The media is only downloadable once the status is `finished`.
           examples:
-            - completed
+            - finished
         url:
           type: string
-          description: URL of the recording file.
+          description: |-
+            Path to the recording, relative to your Space URL. The full URL returns the recording's JSON metadata.
+            Add a format suffix to download the recording: `<url>.wav` or `<url>.mp3`.
           examples:
-            - https://example.com/recording.mp3
+            - /api/relay/rest/recordings/d3444402-7b43-4512-8735-9d5e1f387814
         stereo:
           type: boolean
           description: Indicates whether the recording is stereo.
@@ -56570,6 +56672,7 @@ components:
         - created_at
         - updated_at
         - duration_in_seconds
+        - error_code
         - price
         - price_unit
         - status
@@ -56605,8 +56708,10 @@ components:
           examples:
             - 2
         error_code:
-          type: string
-          description: Error code if the recording failed.
+          anyOf:
+            - type: string
+            - type: 'null'
+          description: Error code if the recording failed, and `null` otherwise.
         price:
           type: number
           format: double
@@ -56620,14 +56725,19 @@ components:
             - USD
         status:
           type: string
-          description: Status of the recording.
+          description: |-
+            Status of the recording. One of `recording`, `paused`, `finished`, or `no_input`.
+            `no_input` means audio wasn't detected before the timeout.
+            The media is only downloadable once the status is `finished`.
           examples:
-            - completed
+            - finished
         url:
           type: string
-          description: URL of the recording file.
+          description: |-
+            Path to the recording, relative to your Space URL. The full URL returns the recording's JSON metadata.
+            Add a format suffix to download the recording: `<url>.wav` or `<url>.mp3`.
           examples:
-            - https://example.com/recording.mp3
+            - /api/relay/rest/recordings/d3444402-7b43-4512-8735-9d5e1f387814
         stereo:
           type: boolean
           description: Indicates whether the recording is stereo.
