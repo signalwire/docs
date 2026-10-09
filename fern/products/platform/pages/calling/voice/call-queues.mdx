@@ -75,14 +75,15 @@ Replace these values in the samples you run:
 | `<YOUR_HOLD_MUSIC_URL>` | The public URL of an audio file to play while callers wait (Relay only) |
 | `<YOUR_STATUS_WEBHOOK_URL>` | An HTTPS endpoint you control that receives queue events |
 | `<YOUR_QUEUE_ID>` | A queue's ID, from [Create a queue](#create-a-queue) or [List queues][rest-list-queues] |
-| `<YOUR_CALL_ID>` | The call ID of a waiting caller, from a queue event or [List queue members][rest-list-members] |
+| `<YOUR_CALL_ID>` | The call ID of a waiting caller, from a [queue event](#track-a-queue-via-swml) |
 
 ## How call queues work
 
 A queue is a named waiting line in your project. Two calls take part in every connection:
 
-1. **The caller's call enters the queue.** SignalWire records the caller's position and plays
-   hold audio. A caller can wait in only one queue at a time.
+1. **The caller's call enters the queue.** SignalWire records the caller's position. With SWML,
+   SignalWire also plays hold audio while the caller waits; with Relay, your code plays it. A
+   caller can wait in only one queue at a time.
 2. **The agent's call connects to the queue.** This is a separate call: an agent dialing in, or a
    call you place to the agent. When it connects to the queue, SignalWire takes the caller who
    has waited longest and bridges the two calls.
@@ -382,9 +383,9 @@ any caller who leaves without reaching an agent. To give a different message per
 [`switch`][swml-switch] on `queue_result` after `enter_queue`.
 
 To remove a caller before their wait runs out, end their call with the `calling.end`
-[call command][call-commands], from any process. Get the caller's call ID from a queue event or
-the [member list](#monitor-and-manage-queues-via-rest). The [Server SDKs][server-sdks] send the
-command with `end`:
+[call command][call-commands], from any process. Get the caller's call ID from a
+[queue event](#track-a-queue-via-swml). The [Server SDKs][server-sdks] send the command with
+`end`:
 
 <CodeBlocks>
 <CodeBlock title="Python — REST client">
@@ -773,7 +774,7 @@ handle next, or rename and clean up queues. The [Server SDKs][server-sdks] cover
 | Get one queue | [Get queue][rest-get-queue] |
 | List the callers waiting in a queue | [List queue members][rest-list-members] |
 | Get one waiting caller | [Get queue member][rest-get-member] |
-| Rename a queue or change its `max_size` | [Update queue][rest-update-queue] |
+| Rename a queue | [Update queue][rest-update-queue] |
 | Delete an empty queue | [Delete queue][rest-delete-queue] |
 
 ### Get a queue's size and wait time via REST
@@ -841,14 +842,18 @@ the next page, as [Paging][paging] describes.
 
 ### List the callers waiting in a queue via REST
 
-This program prints each caller waiting in a queue, with their position and how long they've
-waited:
+This program prints every caller waiting in a queue, next caller first, with their position and
+how long they've waited. The list returns the most recent callers first, 50 to a page, so the
+program follows `links.next` through every page, as [Paging][paging] describes, then sorts by
+position:
 
 <CodeBlocks>
 <CodeBlock title="Python — REST client">
 ```python
 # Install: python -m pip install signalwire-sdk==3.4.1
 # Save as list_waiting.py and run: python list_waiting.py
+from urllib.parse import parse_qsl, urlsplit
+
 from signalwire.rest import RestClient
 
 client = RestClient(
@@ -857,9 +862,18 @@ client = RestClient(
     host="<YOUR_SPACE>.signalwire.com",
 )
 
-members = client.queues.list_members("<YOUR_QUEUE_ID>")
-for member in members["data"]:
-    print(f"{member['position']}: call {member['call_id']}, waiting {member['wait_time']} s")
+members = []
+params = {}
+while True:
+    page = client.queues.list_members("<YOUR_QUEUE_ID>", **params)
+    members.extend(page["data"])
+    next_url = page.get("links", {}).get("next")
+    if not next_url:
+        break
+    params = dict(parse_qsl(urlsplit(next_url).query))
+
+for member in sorted(members, key=lambda m: m["position"]):
+    print(f"{member['position']}: waiting {member['wait_time']} s")
 ```
 </CodeBlock>
 <CodeBlock title="TypeScript — REST client">
@@ -875,9 +889,19 @@ const client = new RestClient({
   host: "<YOUR_SPACE>.signalwire.com",
 });
 
-const members = await client.queues.listMembers("<YOUR_QUEUE_ID>");
-for (const member of members.data) {
-  console.log(`${member.position}: call ${member.call_id}, waiting ${member.wait_time} s`);
+const members = [];
+let params = {};
+while (true) {
+  const page = await client.queues.listMembers("<YOUR_QUEUE_ID>", params);
+  members.push(...page.data);
+  const nextUrl = page.links?.next;
+  if (!nextUrl) break;
+  params = Object.fromEntries(new URLSearchParams(nextUrl.split("?")[1]));
+}
+
+members.sort((a, b) => a.position - b.position);
+for (const member of members) {
+  console.log(`${member.position}: waiting ${member.wait_time} s`);
 }
 ```
 </CodeBlock>
@@ -888,20 +912,17 @@ for (const member of members.data) {
 <EndpointResponseSnippet endpoint="GET /api/relay/rest/queues/{queue_id}/members" />
 
 A caller at `position` `1` has waited longest and is the next caller an agent's call connects to.
-`wait_time` is how long the caller has waited, in seconds, and `call_id` is the ID you pass to
-`calling.end` to [remove them](#take-a-caller-out-of-a-queue-via-swml).
+`wait_time` is how long the caller has waited, in seconds.
 
-The list returns the most recent callers first, 50 to a page, so the caller at position `1` is the
-last one on the last page. To check a single caller, such as one named by a
-[queue event](#track-a-queue-via-swml), pass their call ID to
-[Get queue member][rest-get-member]:
+A member's `call_id` identifies them in this API only: it isn't the call ID that queue events
+report or that `calling.end` takes. To check one member again later, pass the `call_id` from the
+list to [Get queue member][rest-get-member]:
 
 <EndpointRequestSnippet endpoint="GET /api/relay/rest/queues/{queue_id}/members/{id}" />
 
 ### Update or delete a queue via REST
 
-Update a queue to rename it or change its `max_size`. Every update must include `name`, even when
-the name stays the same:
+Update a queue to rename it:
 
 <CodeBlocks>
 <CodeBlock title="Python — REST client">
@@ -916,8 +937,8 @@ client = RestClient(
     host="<YOUR_SPACE>.signalwire.com",
 )
 
-queue = client.queues.update("<YOUR_QUEUE_ID>", name="dispatch", max_size=50)
-print(queue["friendly_name"], queue["max_size"])
+queue = client.queues.update("<YOUR_QUEUE_ID>", name="airport-dispatch")
+print(queue["friendly_name"])
 ```
 </CodeBlock>
 <CodeBlock title="TypeScript — REST client">
@@ -933,8 +954,8 @@ const client = new RestClient({
   host: "<YOUR_SPACE>.signalwire.com",
 });
 
-const queue = await client.queues.update("<YOUR_QUEUE_ID>", { name: "dispatch", max_size: 50 });
-console.log(queue.friendly_name, queue.max_size);
+const queue = await client.queues.update("<YOUR_QUEUE_ID>", { name: "airport-dispatch" });
+console.log(queue.friendly_name);
 ```
 </CodeBlock>
 </CodeBlocks>
