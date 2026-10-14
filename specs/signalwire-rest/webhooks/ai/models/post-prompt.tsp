@@ -204,6 +204,20 @@ model AiPostPromptCallbackPayload {
   swaig_log?: AISwaigLogEntry[];
 
   @doc("""
+    The functions the post-prompt agent called that a
+    [semantic gate](/docs/swml/reference/calling/ai/swaig/functions/gates) blocked. Included only
+    when there were any.
+    """)
+  semantic_gates_blocked?: AISemanticGateBlockedCall[];
+
+  @doc("""
+    A tally of the call's [semantic gate](/docs/swml/reference/calling/ai/swaig/functions/gates)
+    checks. Included when any gated function was called, even with gates turned off, whether or not
+    accounting is on.
+    """)
+  semantic_gates?: AISemanticGateTally;
+
+  @doc("""
     The number of billable minutes, rounded up to at least one. Included when you enable
     [`enable_accounting`](/docs/swml/reference/calling/ai/params#paramsenable_accounting).
     """)
