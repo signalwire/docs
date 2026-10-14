@@ -24,9 +24,10 @@ plays a message to the caller when nobody answers.
 
 ## Choose an approach
 
-Each approach forwards calls with its own code and its own kind of Resource on your phone number, so
-pick one and follow only its section. All of them dial the destination and connect it to the caller
-the same way, so the destinations, timeouts, and caller ID rules on this page apply to each.
+SWML and Relay each forward calls to your number with their own code and their own kind of Resource
+on the number, so pick one and follow only its section. REST works on any live call, however it was
+answered. All three dial the destination and connect it to the caller the same way, so the timeout
+and caller ID rules on this page apply to each.
 
 - [SWML][swml-intro]: answer calls to your number with a document that SignalWire runs, served from
   your server or hosted in SignalWire. `connect` forwards the call, and the next instructions in the
@@ -86,14 +87,16 @@ Two settings shape every forward:
   answering knows who's calling, or show your SignalWire number so they know the call came through
   your business line.
 
-A destination can be a phone number, a SIP URI such as `sip:ada@example.com`, or a
-[Resource Address][addresses] such as `/private/support-rep`. The samples on this page forward to a
-phone number.
+A destination can be a phone number or a SIP URI such as `sip:ada@example.com`. SWML, and so REST,
+can also forward to a [Resource Address][addresses] such as `/public/support`. The samples on this
+page forward to a phone number.
 
-## Forward a call via SWML
+## Forward calls via SWML
 
 [`connect`][swml-connect] places the call to the destination and bridges it to the caller. The
 document waits at `connect` until the forward ends, then moves on to the next instruction.
+
+### Forward an incoming call via SWML
 
 Bayview Taxi forwards calls to its business number to Ada, its dispatcher. This walkthrough forwards
 a call to your number to your second phone.
@@ -121,7 +124,7 @@ service = SWMLService(
 )
 (
     SWMLBuilder(service)
-    # from is a Python keyword, so pass the connect settings as a dict.
+    # from is a Python keyword, so unpack the connect settings from a dict.
     .connect(**{"to": "<YOUR_DESTINATION>", "from": "${call.from}", "timeout": 20})
     .say("Sorry, nobody at Bayview Taxi can take your call right now. Please call back later.")
 )
@@ -230,12 +233,14 @@ If it doesn't work, check the symptom:
 
 </Steps>
 
-## Forward a call via WebSocket (Relay)
+## Forward calls via WebSocket (Relay)
 
 Answer the call, then send a connect command with the destination to dial. The command returns as
 soon as SignalWire accepts it, so the program follows the forward through
 `calling.call.connect` events: `connecting`, then `connected` while the two phones talk and
 `disconnected` when one hangs up, or `failed` if nobody answers.
+
+### Forward an incoming call via WebSocket (Relay)
 
 This walkthrough forwards a call to your number to your second phone, showing the caller's number.
 
@@ -421,7 +426,7 @@ client = RestClient(
 
 swml = (
     SWMLBuilder(SWMLService(name="forward-in-progress"))
-    # from is a Python keyword, so pass the connect settings as a dict.
+    # from is a Python keyword, so unpack the connect settings from a dict.
     .connect(**{"to": "<YOUR_DESTINATION>", "from": "${call.from}", "timeout": 20})
     .say("Sorry, nobody at Bayview Taxi can take your call right now. Please call back later.")
     .build()
