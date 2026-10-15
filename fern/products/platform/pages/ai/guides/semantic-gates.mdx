@@ -1,0 +1,549 @@
+---
+title: Semantic gates
+slug: ai/semantic-gates
+description: Require a yes/no check on the conversation before your AI agent can run a SWAIG function, so it never cancels, refunds, or shares data on a guess.
+max-toc-depth: 3
+---
+
+[tool-calling]: /docs/platform/ai/tool-calling
+[gates-ref]: /docs/swml/reference/calling/ai/swaig/functions/gates
+[params-ref]: /docs/swml/reference/calling/ai/params#paramssemantic_gates_enabled
+[defaults-ref]: /docs/swml/reference/calling/ai/swaig#defaultsfillers_at_gates
+[post-prompt]: /docs/apis/rest/webhooks/ai-post-prompt-callback
+[server-sdks]: /docs/server-sdks
+[state-management]: /docs/server-sdks/guides/state-management
+
+Bayview Taxi's dispatcher agent, Ada, can cancel a booked ride. A caller who asks "What happens if I
+cancel?" hasn't asked her to cancel, but a language model can read it that way and call
+`cancel_ride` anyway. A line in the prompt makes that less likely. It doesn't make it impossible.
+
+A semantic gate closes the gap. It's a yes/no question about the call, such as "Has the caller
+explicitly asked to cancel their ride?", that you attach to a SWAIG function. When the agent calls
+the function, a decision model answers the question before the function runs. Unless the answer
+comes out yes, the function doesn't run, and the agent gets a response you wrote instead. Use gates
+for any action you don't want taken on a guess: cancelling, refunding, sharing account details,
+moving money, or anything that needs the caller's explicit consent.
+
+This guide assumes you already have an agent with SWAIG functions. If you don't, start with
+[tool calling][tool-calling].
+
+## How a gate works
+
+A gate sits between the agent's decision to call a function and the function itself. When the agent
+calls a gated function, the platform holds the call and sends the decision model what it needs to
+answer each of the function's questions. The model returns, for each question, the probability that
+the answer is yes, and each gate compares that to the threshold you set.
+
+- **Every gate passes:** the function runs as usual. Your webhook is called, or the `data_map` runs.
+- **Any gate fails:** the function doesn't run. The agent gets the failing gate's `on_fail` response
+  as the function's result, and answers the caller from it.
+
+All of a function's gates are checked at once, and a function can have up to eight. When more than
+one fails, the first failing gate in your list decides what the agent gets. A check that can't be
+completed, because it ran out of time or the agent's arguments were missing or not valid JSON, blocks
+the function too.
+
+## Gate a function
+
+Ada's `cancel_ride` function gets one gate. It asks whether the caller explicitly asked to cancel,
+and spells out the near miss in `criteria`: asking about cancelling isn't asking to cancel. The
+threshold is high because a cancelled ride is hard to undo.
+
+The [Server SDKs][server-sdks] check your gates by the platform's rules when you define the tool,
+and raise an error rather than send a function the platform would refuse.
+
+<CodeBlocks>
+<CodeBlock title="Server SDK (Python)">
+```python
+from signalwire import AgentBase, FunctionResult, SemanticGate
+
+
+def cancel_booking(caller_number):
+    # Stand-in for your booking system
+    return True
+
+
+class DispatchAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="dispatch-agent")
+        self.add_language("English", "en-US", "rime.spore:coda")
+        self.prompt_add_section(
+            "Role",
+            "You are Ada, the dispatcher for Bayview Taxi. You book and cancel rides.",
+        )
+
+        self.define_tool(
+            name="cancel_ride",
+            description="Cancel the caller's booked ride.",
+            parameters={
+                "type": "object",
+                "properties": {
+                    "reason": {"type": "string", "description": "Why the caller is cancelling."}
+                },
+            },
+            handler=self.cancel_ride,
+            gates=[
+                SemanticGate(
+                    "Has the caller explicitly asked to cancel their ride in `conversation`?",
+                    threshold=0.95,
+                    on_fail=FunctionResult(
+                        tool_result="cancel_ride was not run.",
+                        tool_prompt="Ask the caller whether they want to cancel the ride.",
+                    ),
+                    id="explicit_request",
+                    true_means="The caller says they want to cancel the ride.",
+                    false_means="The caller asked about cancelling, or said something else.",
+                )
+            ],
+            gate_fillers={"default": ["Let me check that."]},
+        )
+
+    def cancel_ride(self, args, raw_data):
+        # Runs only after every gate passed
+        cancel_booking(raw_data.get("caller_id_num"))
+        return FunctionResult("The ride is cancelled.")
+
+
+agent = DispatchAgent()
+
+if __name__ == "__main__":
+    agent.run()
+```
+</CodeBlock>
+<CodeBlock title="Server SDK (TypeScript)">
+```typescript
+import { AgentBase, FunctionResult, SemanticGate } from '@signalwire/sdk';
+
+function cancelBooking(callerNumber: unknown): boolean {
+  // Stand-in for your booking system
+  return true;
+}
+
+const agent = new AgentBase({ name: 'dispatch-agent' });
+agent.addLanguage({ name: 'English', code: 'en-US', voice: 'rime.spore:coda' });
+agent.promptAddSection('Role', {
+  body: 'You are Ada, the dispatcher for Bayview Taxi. You book and cancel rides.',
+});
+
+agent.defineTool({
+  name: 'cancel_ride',
+  description: "Cancel the caller's booked ride.",
+  parameters: {
+    reason: { type: 'string', description: 'Why the caller is cancelling.' },
+  },
+  handler: (args, rawData) => {
+    // Runs only after every gate passed
+    cancelBooking(rawData['caller_id_num']);
+    return new FunctionResult('The ride is cancelled.');
+  },
+  gates: [
+    new SemanticGate(
+      'Has the caller explicitly asked to cancel their ride in `conversation`?',
+      0.95,
+      new FunctionResult().setToolResponse(
+        'cancel_ride was not run.',
+        'Ask the caller whether they want to cancel the ride.',
+      ),
+      {
+        id: 'explicit_request',
+        trueMeans: 'The caller says they want to cancel the ride.',
+        falseMeans: 'The caller asked about cancelling, or said something else.',
+      },
+    ),
+  ],
+  gateFillers: { default: ['Let me check that.'] },
+});
+
+agent.run();
+```
+</CodeBlock>
+<CodeBlock title="SWML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - ai:
+        prompt:
+          text: You are Ada, the dispatcher for Bayview Taxi. You book and cancel rides.
+        SWAIG:
+          functions:
+            - function: cancel_ride
+              description: Cancel the caller's booked ride.
+              web_hook_url: https://example.com/swaig
+              parameters:
+                type: object
+                properties:
+                  reason:
+                    type: string
+                    description: Why the caller is cancelling.
+              gate_fillers:
+                default:
+                  - Let me check that.
+              gates:
+                - id: explicit_request
+                  question: Has the caller explicitly asked to cancel their ride in `conversation`?
+                  criteria:
+                    "true": The caller says they want to cancel the ride.
+                    "false": The caller asked about cancelling, or said something else.
+                  threshold: 0.95
+                  on_fail:
+                    response:
+                      tool_result: cancel_ride was not run.
+                      tool_prompt: Ask the caller whether they want to cancel the ride.
+```
+</CodeBlock>
+</CodeBlocks>
+
+The [`gates` reference][gates-ref] lists every gate property and its limits.
+
+## Write questions the decision model can answer
+
+The decision model reads the question literally and answers only it, so the question does most of
+the work. It reads these inputs, under these names, and nothing else:
+
+| Name | What it holds |
+|---|---|
+| `conversation` | The most recent part of the call, oldest first: the caller's turns, the agent's replies, and what the agent was told to say outside its replies, such as `say` actions and fillers. 20 entries by default. |
+| `semantic_state` | Whatever your application stored in `global_data.semantic_state`, or `{}`. See [Rely on what your application recorded](#rely-on-what-your-application-recorded). |
+| `proposed_function` | The function's name, its description, and the arguments the agent is calling it with. |
+| `visual_input` | The caller's newest video frames, when a gate asks for them. See [Look at the caller's video](#look-at-the-callers-video). |
+
+### Name the input in backticks
+
+End or anchor each question with the name of the input it's about, in backticks: "Has the caller
+explicitly asked to cancel their ride in `conversation`?" The backticks tell the decision model to
+look in the input it was handed under that name, rather than read "conversation" as an ordinary
+English word.
+
+The names aren't variables. Nothing replaces `` `conversation` `` with the transcript, and the
+platform passes the backticks through as written; they're a convention for the decision model. The
+only text substituted in a question is a `${...}` variable from `global_data`, such as
+`${global_data.pickup_address}`, expanded when the check runs. `@{...}` functions aren't run.
+
+### Keep each question to one thing
+
+- **Ask one thing per question.** Split "Did the caller confirm the pickup address and the time?"
+  into two gates, so each answer is a clean yes or no.
+- **Use `criteria` for the near misses.** Say what counts as yes and what counts as no, especially
+  where the two sound alike: "asked about cancelling" isn't "asked to cancel".
+- **Don't ask the decision model to calculate or compare dates.** Work the answer out in your
+  application, store it in `semantic_state`, and ask about that.
+- **Keep it short.** A question can be up to 8 KB, but that's a ceiling, not a target. Most good
+  questions are one sentence.
+
+Thresholds run from just above 0 to 1, and higher is stricter. Start at 0.9 or above for actions
+that are hard to undo, then test against real conversations, including the near misses you wrote
+into `criteria`, before you settle on a value.
+
+## Rely on what your application recorded
+
+A caller can say "I already confirmed all that". Whether they did is something your application
+knows, not something the conversation proves. Gates read `global_data.semantic_state` as
+`semantic_state`, and that's where your application records the facts a gate should rely on: a
+ride it looked up, an identity it verified, a refund it worked out the caller is eligible for.
+
+When Ada looks up a trip, the handler stores what the booking system says about it. The
+`refund_fare` function then carries two gates: one asks about the recorded fact, the other about
+the caller's agreement to the amount the agent is about to refund.
+
+<CodeBlocks>
+<CodeBlock title="Server SDK (Python)">
+```python
+    def look_up_ride(self, args, raw_data):
+        # Your booking system worked out the refund; the gate only reads the result
+        ride = {"id": "R-1042", "fare": 38.60, "refund_eligible": True}
+        return FunctionResult(
+            f"Ride {ride['id']} cost ${ride['fare']:.2f} and can be refunded."
+        ).set_semantic_state({"ride": ride})
+```
+</CodeBlock>
+<CodeBlock title="Server SDK (TypeScript)">
+```typescript
+agent.defineTool({
+  name: 'look_up_ride',
+  description: "Look up the caller's most recent ride.",
+  parameters: {},
+  handler: () => {
+    // Your booking system worked out the refund; the gate only reads the result
+    const ride = { id: 'R-1042', fare: 38.6, refund_eligible: true };
+    return new FunctionResult(`Ride ${ride.id} cost $38.60 and can be refunded.`).setSemanticState({
+      ride,
+    });
+  },
+});
+```
+</CodeBlock>
+<CodeBlock title="SWML">
+```json
+{
+  "response": "Ride R-1042 cost $38.60 and can be refunded.",
+  "action": [
+    {
+      "set_global_data": {
+        "semantic_state": {
+          "ride": { "id": "R-1042", "fare": 38.6, "refund_eligible": true }
+        }
+      }
+    }
+  ]
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+<CodeBlocks>
+<CodeBlock title="Server SDK (Python)">
+```python
+refund_gates = [
+    SemanticGate(
+        "Does `semantic_state` show the ride as eligible for a refund?",
+        threshold=0.9,
+        on_fail="refund_fare was not run. Look up the ride first.",
+        id="eligible",
+    ),
+    SemanticGate(
+        "Has the caller agreed to the refund amount in `proposed_function` in `conversation`?",
+        threshold=0.9,
+        on_fail="refund_fare was not run. Confirm the amount with the caller first.",
+        id="amount_agreed",
+    ),
+]
+```
+</CodeBlock>
+<CodeBlock title="Server SDK (TypeScript)">
+```typescript
+const refundGates = [
+  new SemanticGate(
+    'Does `semantic_state` show the ride as eligible for a refund?',
+    0.9,
+    'refund_fare was not run. Look up the ride first.',
+    { id: 'eligible' },
+  ),
+  new SemanticGate(
+    'Has the caller agreed to the refund amount in `proposed_function` in `conversation`?',
+    0.9,
+    'refund_fare was not run. Confirm the amount with the caller first.',
+    { id: 'amount_agreed' },
+  ),
+];
+```
+</CodeBlock>
+<CodeBlock title="SWML">
+```yaml
+gates:
+  - id: eligible
+    question: Does `semantic_state` show the ride as eligible for a refund?
+    threshold: 0.9
+    on_fail:
+      response: refund_fare was not run. Look up the ride first.
+  - id: amount_agreed
+    question: Has the caller agreed to the refund amount in `proposed_function` in `conversation`?
+    threshold: 0.9
+    on_fail:
+      response: refund_fare was not run. Confirm the amount with the caller first.
+```
+</CodeBlock>
+</CodeBlocks>
+
+Each write of `semantic_state` replaces the whole object, so to change one field, send the whole
+state with that field changed. Send `{}` to clear it. The state lasts for the call, and carries over
+to later `ai` methods in the same call while `persist_global_data` is on, which it is by default.
+Nothing else in `global_data` reaches the decision model. If you set the `swaig_set_global_data`
+param to `false`, functions can't write `semantic_state` either.
+
+Keep `semantic_state` to what your application established, never what the caller claimed. For how
+`global_data` works more broadly, see [state management][state-management].
+
+## Write the response a blocked call returns
+
+`on_fail` is what the agent gets instead of the function's result. It's shaped like any SWAIG
+function result: a `response`, plus optional `action` and `post_process`. The response is required,
+because a blocked function must never read as a success to the agent.
+
+The object form splits the result in two. `tool_result` is what the agent sees as the function's
+result ("cancel_ride was not run."), and `tool_prompt` is an instruction placed right after it ("Ask
+the caller whether they want to cancel the ride."). Realtime (speech-to-speech) agents don't use
+`tool_prompt`, so for those, put everything the agent needs into `tool_result` or a plain string.
+
+Actions in `on_fail` run as you wrote them, such as a `set_global_data` that records the attempt.
+`${...}` variables in them aren't expanded, though a `SWML` action resolves the variables in its own
+document when it runs. `action` must be an array, even for a single action.
+
+## Choose what the caller hears during the check
+
+The check takes a moment, and what fills it depends on the function's settings. A gated function's
+`wait_file` plays only once its gates pass, so a blocked call never plays it.
+
+| Function settings | During the check | After the gates pass |
+|---|---|---|
+| Default: `fillers_at_gates` on, no `gate_fillers` | The function's `fillers`, or the agent's general fillers when it has none | They keep playing |
+| `gate_fillers` set | One of the `gate_fillers` | The function's own `fillers`, if it has any |
+| `fillers_at_gates: false`, no `gate_fillers` | Nothing | The function's `fillers`, or the agent's general fillers when it has none |
+
+With the default, the caller hears the function's fillers even when a gate then blocks it, and on
+standard agents those fillers become part of the `conversation` the gates read. So if a function's
+fillers announce the action, such as "OK, cancelling your ride now", give it neutral `gate_fillers`
+like "Let me check that", as Ada's `cancel_ride` does, or set `fillers_at_gates` to `false`.
+Set it for every function at once in [`SWAIG.defaults`][defaults-ref]; a function's own setting wins.
+
+On standard agents, a function with `wait_for_fillers: true` still waits for its fillers. With the
+default, they play first and the gates are checked after them, which adds to the wait; `gate_fillers`
+are never waited for before the check. With `semantic_gates_enabled: false`, fillers and the wait
+file behave as they do for any function.
+
+The Server SDKs take `gate_fillers` as a tool option. They have no dedicated option for
+`fillers_at_gates`, so pass it through as an extra function field:
+
+<CodeBlocks>
+<CodeBlock title="Server SDK (Python)">
+```python
+self.define_tool(
+    name="cancel_ride",
+    # ... description, parameters, handler, and gates as above ...
+    fillers={"default": ["OK, cancelling your ride now."]},
+    fillers_at_gates=False,  # these fillers announce the action: say them only after a pass
+)
+```
+</CodeBlock>
+<CodeBlock title="Server SDK (TypeScript)">
+```typescript
+agent.defineTool({
+  name: 'cancel_ride',
+  // ... description, parameters, handler, and gates as above ...
+  fillers: { default: ['OK, cancelling your ride now.'] },
+  // These fillers announce the action: say them only after a pass
+  extraFields: { fillers_at_gates: false },
+});
+```
+</CodeBlock>
+<CodeBlock title="SWML">
+```yaml
+- function: cancel_ride
+  # ... description, web_hook_url, parameters, and gates as above ...
+  fillers:
+    default:
+      - OK, cancelling your ride now.
+  fillers_at_gates: false
+```
+</CodeBlock>
+</CodeBlocks>
+
+## Look at the caller's video
+
+On a video call, a gate can look at the caller's camera. Set `visual_input` on the gate to the
+number of newest frames it should see, up to 5, and name `` `visual_input` `` in the question:
+
+```yaml
+gates:
+  - id: id_shown
+    question: Is the caller holding a photo ID up to the camera in `visual_input`?
+    threshold: 0.9
+    visual_input: 1
+    on_fail:
+      response: verify_identity was not run. Ask the caller to hold their ID up to the camera.
+```
+
+Frames are taken when the check starts, at most one per second and none older than 8 seconds. If
+the call has no video frame to show, the gate fails without being asked, so a gate with
+`visual_input` always fails when the post-prompt agent calls the function after the call. A
+function's own `visual_input` sends frames to your webhook too, taken at the moment its gates were
+checked and never later.
+
+On a video call without avatar clips, capturing frames shows the caller a still image, black by
+default. Set the
+[`video_blank_image`](/docs/swml/reference/calling/ai/params#paramsvideo_blank_image) param to a PNG
+URL to show your own image instead.
+
+<Note>
+The Python Server SDK accepts `visual_input` on a gate from version 3.7.1. The TypeScript Server SDK
+doesn't accept it yet, so define video gates in SWML.
+</Note>
+
+## Tune or turn off gates for a call
+
+Three [`ai.params`][params-ref] control checking for the whole call:
+
+| Param | Default | What it does |
+|---|---|---|
+| `semantic_gates_enabled` | `true` | `false` turns checks off, and gated functions run without being checked. |
+| `semantic_gate_timeout_ms` | `2500` | How long one check may take, from 500 to 10000 milliseconds. A check that runs out of time blocks the function. |
+| `semantic_gate_history` | `20` | How many recent conversation entries the decision model reads, from 0 to 100. |
+
+<CodeBlocks>
+<CodeBlock title="Server SDK (Python)">
+```python
+agent.set_semantic_gates(timeout_ms=3000, history=30)
+```
+</CodeBlock>
+<CodeBlock title="Server SDK (TypeScript)">
+```typescript
+agent.setSemanticGates({ timeoutMs: 3000, history: 30 });
+```
+</CodeBlock>
+<CodeBlock title="SWML">
+```yaml
+- ai:
+    params:
+      semantic_gate_timeout_ms: 3000
+      semantic_gate_history: 30
+```
+</CodeBlock>
+</CodeBlocks>
+
+## Check that your gates work
+
+Call your agent and ask about cancelling without asking to cancel ("What happens if I cancel my
+ride?"). Ada should answer the question and leave the booking alone. Then ask her to cancel it: the
+function should run.
+
+Every checked call records what happened. Its entry in the `swaig_log`, which arrives in the
+[post-prompt callback][post-prompt] and the `calling.ai.swaig` event, carries a `semantic_gates`
+object: the `outcome`, whether the function ran (`dispatched`), and each gate's `confidence`
+against its `threshold`.
+
+```json
+"semantic_gates": {
+  "evaluation_id": "d7b5c0f2-6a1e-4c8b-9f3d-2b7e1a0c5d44",
+  "phase": "text",
+  "attempts": 1,
+  "latency_ms": 212,
+  "outcome": "fail",
+  "dispatched": false,
+  "gates": [
+    { "id": "explicit_request", "threshold": 0.95, "confidence": 0.41, "pass": false }
+  ]
+}
+```
+
+If a function runs when it shouldn't, compare its gate's `confidence` to the threshold, and tighten
+the question or its `criteria` before raising the threshold. If a function never runs, look at the
+`outcome`:
+
+- `fail` means a gate answered under its threshold. Check that the question names the right input,
+  and that the conversation or `semantic_state` actually holds what the gate needs.
+- `timeout` means the check ran out of time. Raise `semantic_gate_timeout_ms`.
+- `invalid_arguments` means the agent's arguments were missing or weren't a valid JSON object.
+- The function is missing from the agent altogether: a gate is invalid, so the platform didn't add
+  the function. A `calling.error` event with `error_reason` `invalid_semantic_gate` names the
+  function and the broken rule.
+
+Any outcome other than a pass, a fail, or gates turned off also fires a `calling.error` event. The
+post-prompt callback adds `semantic_gates_blocked`, the functions the post-prompt agent was blocked
+from running, and a `semantic_gates` tally for the whole call.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="gates reference" icon="regular list" href="/docs/swml/reference/calling/ai/swaig/functions/gates">
+    Every gate property, its limits, and the functions that can't carry gates.
+  </Card>
+  <Card title="Tool calling" icon="regular wrench" href="/docs/platform/ai/tool-calling">
+    Validate in code and keep validated state in `global_data`, the patterns gates build on.
+  </Card>
+  <Card title="Handling sensitive content" icon="regular shield" href="/docs/platform/ai/content-redaction">
+    Keep sensitive values out of the agent's context and records.
+  </Card>
+  <Card title="Post-prompt callback" icon="regular file-lines" href="/docs/apis/rest/webhooks/ai-post-prompt-callback">
+    The `swaig_log` and gate tally your server receives after the call.
+  </Card>
+</CardGroup>

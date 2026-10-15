@@ -464,6 +464,33 @@ model AIParams {
   @example(true)
   save_conversation?: boolean | SWMLVar;
 
+  @doc("""
+    Whether the call checks the [semantic gates](/docs/swml/reference/calling/ai/swaig/functions/gates)
+    on its SWAIG functions. Set it to `false` to turn gate checks off for the call: gated functions
+    then run without being checked. **Default:** `true`.
+    """)
+  @example(false)
+  semantic_gates_enabled?: boolean | SWMLVar = true;
+
+  @doc("""
+    How long one semantic gate check may take in total, in milliseconds. A check that runs
+    out of time blocks the function. Allowed values from `500` to `10,000`; a value outside the range
+    is clamped to it. **Default:** `2500` ms.
+    """)
+  @minValue(500)
+  @maxValue(10000)
+  @example(3000)
+  semantic_gate_timeout_ms?: integer | SWMLVar = 2500;
+
+  @doc("""
+    How many recent conversation entries a semantic gate check reads. Allowed values from `0` to
+    `100`; a value outside the range is clamped to it. **Default:** `20`.
+    """)
+  @minValue(0)
+  @maxValue(100)
+  @example(30)
+  semantic_gate_history?: integer | SWMLVar = 20;
+
   @doc("Amount of time, in ms, to wait for a speech event. Allowed values from `0` - `10,000`. **Default:** `1400` ms.")
   @minValue(0)
   @maxValue(10000)
@@ -655,6 +682,17 @@ model AIParams {
   @example(true)
   verbose_logs?: boolean | SWMLVar = false;
 
+  @doc("""
+    What the caller sees on a video call without avatar clips (no `video_talking_file`): an
+    `http://` or `https://` URL to a PNG, shown as a still image. The image can be up to 4 MB and
+    3840 x 2160 pixels, and is scaled to fit within 1280 x 720. Any other value is ignored. Without
+    it, the still is black. The still shows when the call captures the caller's video frames, through
+    `enable_vision` or a gate's or function's `visual_input`, or when this param is set.
+    """)
+  @pattern("^https?://")
+  @example("https://example.com/still.png")
+  video_blank_image?: url;
+
   @doc("URL of a video file to play when AI is listening to the user speak. Only works for calls that support video.")
   @example("https://example.com/listening.mp4")
   video_listening_file?: url;
@@ -670,6 +708,15 @@ model AIParams {
   @doc("The model to use for the AI's vision capabilities. Allowed values are `gpt-4o-mini`, `gpt-4.1-mini`, and `gpt-4.1-nano`.")
   @example("gpt-4o-mini")
   vision_model?: SupportedAIModels;
+
+  @doc("""
+    How many of the caller's newest video frames `get_visual_input` sends, oldest first, taken at most
+    one per second: `true` is `1`, or a whole number from `1` to `5`. Any other value keeps the
+    default. This doesn't affect the `visual_input` of a semantic gate or a SWAIG function, which
+    each set their own count. **Default:** `1`.
+    """)
+  @example(3)
+  visual_input?: boolean | VisualInputFrameCount = 1;
 
   @doc("""
     Configures Silero Voice Activity Detection (VAD) settings. Format: `"threshold"` or `"threshold:frame_ms"`.
@@ -707,3 +754,10 @@ model AIParams {
 
   ...TypeSpec.Record<unknown>;
 }
+
+// `params.visual_input` reads 1 to 5; unlike a gate's count, 0 is not "none" here, it keeps the default.
+@summary("Frame count")
+@doc("A number of the caller's newest video frames, from `1` to `5`.")
+@minValue(1)
+@maxValue(5)
+scalar VisualInputFrameCount extends integer;
