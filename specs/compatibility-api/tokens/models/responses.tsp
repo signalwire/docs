@@ -6,3 +6,8 @@ using TypeSpec.Http;
 model TokenResponse {
   ...Token;
 }
+
+@doc("Response returned when a token is created. This is the only response that includes the token secret.")
+model CreateTokenResponse {
+  ...CreatedToken;
+}

@@ -1,0 +1,843 @@
+---
+title: Detect machines
+slug: voice/machine-detection
+description: Detect people, voicemail, and fax machines, then act on the result with SWML, Relay, or REST.
+max-toc-depth: 3
+---
+
+[make-and-receive-calls]: /docs/platform/voice/make-and-receive-calls
+[prepare-calls]: /docs/platform/voice/make-and-receive-calls#prepare-for-your-first-call
+[place-swml]: /docs/platform/voice/make-and-receive-calls#place-a-call-via-swml
+[answer-swml]: /docs/platform/voice/make-and-receive-calls#answer-a-call-via-swml
+[place-relay]: /docs/platform/voice/make-and-receive-calls#place-a-call-via-websocket-relay
+[answer-relay]: /docs/platform/voice/make-and-receive-calls#answer-a-call-via-websocket-relay
+[caller-id]: /docs/platform/voice/how-to-set-caller-id-or-cnam
+[trial-mode]: /docs/platform/trial-mode
+[tcpa]: /docs/platform/compliance/tcpa
+[webhooks]: /docs/platform/webhooks
+[swml-detect-machine]: /docs/swml/reference/calling/detect-machine
+[swml-switch]: /docs/swml/reference/calling/switch
+[swml-ai]: /docs/swml/reference/calling/ai
+[swml-receive-fax]: /docs/swml/reference/calling/receive-fax
+[call-commands]: /docs/apis/rest/calls/call-commands
+
+Machine detection lets SignalWire identify whether a person, voicemail, or a fax machine is on
+the call so your app can choose what happens next. This guide shows two flows: greet a person
+or leave a voicemail, and send a document when a fax machine answers.
+
+## How detection works
+
+SignalWire listens to audio on an answered call. A short greeting followed by silence suggests a
+person; longer speech suggests voicemail or an IVR menu. Fax detection listens for a fax tone.
+If there isn't enough audio to decide, your app needs a fallback for the uncertain result.
+
+Voicemail detection can also wait for the greeting to end before you leave a message. The
+sections below explain how to handle these results in each approach.
+
+## Choose an approach
+
+Follow the section for your app's approach:
+
+- [SWML](#detect-machines-via-swml): add `detect_machine` to your call document and branch on
+  the result. Optionally send events to a webhook.
+- [WebSocket (Relay)](#detect-machines-via-websocket-relay): start detection on an answered call
+  and handle events in your code. No public URL is needed.
+- [REST](#detect-on-a-call-already-in-progress-via-rest): start detection by call ID from any
+  process and receive results at a webhook.
+
+## Prepare for detection
+
+Start with working call setup from [Make and receive calls][make-and-receive-calls]. Test AMD
+(answering machine detection) with a phone you can answer or send to voicemail. To test fax
+detection, use a fax destination and a publicly accessible PDF.
+
+<Warning title="Trial projects only call and receive calls from verified numbers">
+A [trial project][trial-mode] only places calls to and receives calls from numbers you've
+purchased or verified. [Prepare for your first call][prepare-calls] shows how to verify the phone
+you'll test with.
+</Warning>
+
+<Warning title="Messages left by artificial voices are regulated">
+Prerecorded and synthesized voicemail messages fall under consent, do-not-call, and calling-hour
+rules. Read the [TCPA guide][tcpa] before you dial anyone but yourself.
+</Warning>
+
+Replace these values in the samples you run:
+
+| Value | Replace with |
+|---|---|
+| `<YOUR_SPACE>` | Your Space's subdomain in `<YOUR_SPACE>.signalwire.com` |
+| `<YOUR_PROJECT_ID>` | Your Project ID |
+| `<YOUR_API_TOKEN>` | Your API token, used only in server code |
+| `<YOUR_CALLER_ID>` | Your SignalWire phone number, or a [verified caller ID][caller-id], in E.164 format |
+| `<YOUR_DESTINATION>` | The phone or fax number you'll call, in E.164 format |
+| `<YOUR_FAX_DOCUMENT_URL>` | The public URL of a PDF that SignalWire can fetch and fax |
+
+## Detect machines via SWML
+
+[`detect_machine`][swml-detect-machine] pauses the document by default, then sets `detect_result`.
+Use [`switch`][swml-switch] to choose the next action.
+
+| `detect_result` | Meaning | Typical action |
+|---|---|---|
+| `human` | A short greeting followed by silence | Play a message or connect an agent |
+| `machine` | Speech exceeds the voice or word threshold, or a beep is heard | Leave voicemail if you waited for the greeting to end; otherwise hang up |
+| `fax` | The configured fax tone was detected | Send or receive a fax |
+| `unknown` | No decision before `timeout` | Greet the caller or use another fallback |
+| `failed` | Invalid settings, missing `status_url` with `wait: false`, or detection already running | Log the failure and use a fallback |
+| `detecting` | Background detection is running with `wait: false` | Handle events at `status_url` |
+
+`detect_machine_beep` is `true` when the machine detector heard a beep; otherwise it is `false`.
+With `detectors: amd,fax`, a fax tone can register as a beep, so a `fax` result can also report
+`true`. `detect_ms` holds the elapsed milliseconds, or `-1` with `wait: false`.
+
+### Detect voicemail via SWML
+
+Use AMD to distinguish a person from voicemail, then branch on the result.
+`detect_message_end: true` waits for a beep or a pause of `machine_ready_timeout` before the
+`machine` branch plays. The `default` branch also greets `unknown` and `failed` results.
+
+The SDK programs place the call as in [Place a call via SWML][place-swml]. Each branch is built
+with the SDK's SWML builder. The YAML and JSON tabs contain the equivalent complete document.
+
+<CodeBlocks>
+<CodeBlock title="Python — REST client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as leave_message.py and run: python leave_message.py
+from signalwire import SWMLBuilder, SWMLService
+from signalwire.rest import RestClient
+
+client = RestClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    host="<YOUR_SPACE>.signalwire.com",
+)
+
+live = (
+    SWMLBuilder(SWMLService(name="live-message"))
+    .say("Hello! Your Bayview Taxi ride is confirmed for 8 AM tomorrow.")
+    .build()["sections"]["main"]
+)
+voicemail = (
+    SWMLBuilder(SWMLService(name="voicemail-message"))
+    .say(
+        "This is Bayview Taxi. Your ride is confirmed for 8 AM tomorrow. "
+        "Reply to our text message if you need to change it."
+    )
+    .build()["sections"]["main"]
+)
+
+swml = (
+    SWMLBuilder(SWMLService(name="leave-a-message"))
+    .detect_machine(detectors="amd", detect_message_end=True, timeout=45)
+    .switch(
+        variable="detect_result",
+        case={
+            "human": live,
+            "machine": voicemail,
+        },
+        default=live,
+    )
+    .hangup()
+    .build()
+)
+
+call = client.calling.dial(
+    from_="<YOUR_CALLER_ID>",
+    to="<YOUR_DESTINATION>",
+    swml=swml,
+)
+print(call["id"])
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — REST client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as leave-message.mjs,
+// then run: node leave-message.mjs
+import { RestClient, SwmlBuilder } from "@signalwire/sdk";
+
+const client = new RestClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  host: "<YOUR_SPACE>.signalwire.com",
+});
+
+const live = new SwmlBuilder()
+  .say("Hello! Your Bayview Taxi ride is confirmed for 8 AM tomorrow.")
+  .document.sections.main;
+const voicemail = new SwmlBuilder()
+  .say(
+    "This is Bayview Taxi. Your ride is confirmed for 8 AM tomorrow. " +
+      "Reply to our text message if you need to change it.",
+  )
+  .document.sections.main;
+
+const swml = new SwmlBuilder()
+  .detect_machine({ detectors: "amd", detect_message_end: true, timeout: 45 })
+  .switch({
+    variable: "detect_result",
+    case: {
+      human: live,
+      machine: voicemail,
+    },
+    default: live,
+  })
+  .hangup()
+  .build();
+
+const call = await client.calling.dial({
+  from: "<YOUR_CALLER_ID>",
+  to: "<YOUR_DESTINATION>",
+  swml,
+});
+console.log(call.id);
+```
+</CodeBlock>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - detect_machine:
+        detectors: amd
+        detect_message_end: true
+        timeout: 45
+    - switch:
+        variable: detect_result
+        case:
+          human:
+            - play:
+                url: say:Hello! Your Bayview Taxi ride is confirmed for 8 AM tomorrow.
+          machine:
+            - play:
+                url: say:This is Bayview Taxi. Your ride is confirmed for 8 AM tomorrow. Reply to our text message if you need to change it.
+        default:
+          - play:
+              url: say:Hello! Your Bayview Taxi ride is confirmed for 8 AM tomorrow.
+    - hangup: {}
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "detect_machine": {
+          "detectors": "amd",
+          "detect_message_end": true,
+          "timeout": 45
+        }
+      },
+      {
+        "switch": {
+          "variable": "detect_result",
+          "case": {
+            "human": [
+              { "play": { "url": "say:Hello! Your Bayview Taxi ride is confirmed for 8 AM tomorrow." } }
+            ],
+            "machine": [
+              { "play": { "url": "say:This is Bayview Taxi. Your ride is confirmed for 8 AM tomorrow. Reply to our text message if you need to change it." } }
+            ]
+          },
+          "default": [
+            { "play": { "url": "say:Hello! Your Bayview Taxi ride is confirmed for 8 AM tomorrow." } }
+          ]
+        }
+      },
+      { "hangup": {} }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+Run the example and answer with "Hello?" to hear the live confirmation. Run it again and send the
+call to voicemail to test the message after the greeting. The 45-second timeout allows time for
+the greeting; tune the silence threshold below if playback starts before the beep.
+
+To reject voicemail instead, set `detect_message_end: false` and use `hangup` in the `machine`
+branch. An AI handoff can use [`ai`][swml-ai] in the `human` branch.
+
+### Detect a fax machine via SWML
+
+Detect whether a fax machine or a person answers with `detectors: "amd,fax"`.
+The `fax` branch sends a PDF, the `human` branch plays a spoken message, and the default
+branch hangs up.
+
+`CED` is the default tone, sent by an answering fax machine. A fax tone can resemble a voicemail
+beep, so if `amd` decides first, SignalWire briefly waits for the fax detector. A detected fax
+tone takes priority.
+
+<CodeBlocks>
+<CodeBlock title="Python — REST client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as detect_fax.py and run: python detect_fax.py
+from signalwire import SWMLBuilder, SWMLService
+from signalwire.rest import RestClient
+
+client = RestClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    host="<YOUR_SPACE>.signalwire.com",
+)
+
+send_receipt = (
+    SWMLBuilder(SWMLService(name="send-receipt"))
+    .send_fax(document="<YOUR_FAX_DOCUMENT_URL>", header_info="Bayview Taxi receipt")
+    .build()["sections"]["main"]
+)
+not_a_fax = (
+    SWMLBuilder(SWMLService(name="not-a-fax"))
+    .say("Hello, this is Bayview Taxi. We tried to fax your receipt. We will email it instead.")
+    .build()["sections"]["main"]
+)
+hang_up = (
+    SWMLBuilder(SWMLService(name="hang-up"))
+    .hangup()
+    .build()["sections"]["main"]
+)
+
+swml = (
+    SWMLBuilder(SWMLService(name="detect-fax"))
+    .detect_machine(detectors="amd,fax", timeout=30)
+    .switch(
+        variable="detect_result",
+        case={
+            "fax": send_receipt,
+            "human": not_a_fax,
+        },
+        default=hang_up,
+    )
+    .hangup()
+    .build()
+)
+
+call = client.calling.dial(
+    from_="<YOUR_CALLER_ID>",
+    to="<YOUR_DESTINATION>",
+    swml=swml,
+)
+print(call["id"])
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — REST client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as detect-fax.mjs,
+// then run: node detect-fax.mjs
+import { RestClient, SwmlBuilder } from "@signalwire/sdk";
+
+const client = new RestClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  host: "<YOUR_SPACE>.signalwire.com",
+});
+
+const sendReceipt = new SwmlBuilder()
+  .send_fax({ document: "<YOUR_FAX_DOCUMENT_URL>", header_info: "Bayview Taxi receipt" })
+  .document.sections.main;
+const notAFax = new SwmlBuilder()
+  .say("Hello, this is Bayview Taxi. We tried to fax your receipt. We will email it instead.")
+  .document.sections.main;
+const hangUp = new SwmlBuilder()
+  .hangup()
+  .document.sections.main;
+
+const swml = new SwmlBuilder()
+  .detect_machine({ detectors: "amd,fax", timeout: 30 })
+  .switch({
+    variable: "detect_result",
+    case: {
+      fax: sendReceipt,
+      human: notAFax,
+    },
+    default: hangUp,
+  })
+  .hangup()
+  .build();
+
+const call = await client.calling.dial({
+  from: "<YOUR_CALLER_ID>",
+  to: "<YOUR_DESTINATION>",
+  swml,
+});
+console.log(call.id);
+```
+</CodeBlock>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - detect_machine:
+        detectors: amd,fax
+        timeout: 30
+    - switch:
+        variable: detect_result
+        case:
+          fax:
+            - send_fax:
+                document: <YOUR_FAX_DOCUMENT_URL>
+                header_info: Bayview Taxi receipt
+          human:
+            - play:
+                url: say:Hello, this is Bayview Taxi. We tried to fax your receipt. We will email it instead.
+        default:
+          - hangup: {}
+    - hangup: {}
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "detect_machine": {
+          "detectors": "amd,fax",
+          "timeout": 30
+        }
+      },
+      {
+        "switch": {
+          "variable": "detect_result",
+          "case": {
+            "fax": [
+              {
+                "send_fax": {
+                  "document": "<YOUR_FAX_DOCUMENT_URL>",
+                  "header_info": "Bayview Taxi receipt"
+                }
+              }
+            ],
+            "human": [
+              { "play": { "url": "say:Hello, this is Bayview Taxi. We tried to fax your receipt. We will email it instead." } }
+            ]
+          },
+          "default": [
+            { "hangup": {} }
+          ]
+        }
+      },
+      { "hangup": {} }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+Test with a fax number to confirm document delivery, then with a phone to hear the spoken
+fallback. For a fax machine calling you, use `tone: "CNG"` and
+[`receive_fax`][swml-receive-fax] instead; its `status_url` receives the document details.
+Inbound call setup is covered in [Answer a call via SWML][answer-swml].
+
+### Track detection results via SWML
+
+Add `status_url` to `detect_machine` to receive JSON webhooks. These report intermediate detector
+events; the document still branches on `detect_result`.
+
+| Webhook field | Value |
+|---|---|
+| `event_type` | `calling.call.detect` |
+| `params.call_id` | The call ID |
+| `params.control_id` | The detection operation's ID |
+| `params.detect.type` | `machine` or `fax` |
+| `params.detect.params.event` | The detector event listed below |
+| `params.detect.params.beep` | `true` once a beep has been heard; absent from fax events |
+
+| Outcome | Callbacks, in order |
+|---|---|
+| A person answers | `HUMAN`, `finished` |
+| A machine answers, `detect_message_end` off | `MACHINE`, `finished`, with `READY` between them if the line is already silent |
+| A machine answers, `detect_message_end` on | `MACHINE`, `READY` when the greeting ends, `finished` |
+| A beep is heard before `MACHINE` | `MACHINE`, then `READY`, then `finished`, regardless of `detect_message_end` |
+| No decision | `UNKNOWN` at `initial_timeout`, then `finished` at `timeout` |
+| A fax tone is heard | `CED` or `CNG`, then `finished` |
+
+`UNKNOWN` doesn't stop detection or resume the document. A silent call waits until `timeout`
+before `detect_result` becomes `unknown`. If the call hangs up during machine detection, no
+final `finished` callback is sent; fax detection still sends `finished`. Once set, `beep: true`
+remains on later machine events.
+
+For background detection, set `wait: false` and supply `status_url`. The document continues
+immediately with `detect_result: detecting`; act on the webhook events instead. See the
+[webhooks guide][webhooks] for endpoint setup and testing.
+
+### Tune SWML detection
+
+Set these properties on `detect_machine`. Change one at a time and test with the destinations
+you expect to call.
+
+| Setting | Default | When to change it |
+|---|---|---|
+| `initial_timeout` | 4.5 s | Raise it for greetings that start with silence |
+| `machine_voice_threshold` | 1.25 s | Raise it if longer human greetings are classified as machines |
+| `machine_words_threshold` | 6 words | Lower it if short recorded greetings are classified as people |
+| `end_silence_timeout` | 1.0 s | Lower it if a person's pause after "Hello?" isn't recognized |
+| `machine_ready_timeout` | Same as `end_silence_timeout` | Raise it for voicemail greetings that pause before the beep |
+| `timeout` | 30 s | Raise it for long greetings; lower it for inbound callers waiting silently |
+| `detect_message_end` | `false` | Set to `true` to wait through a voicemail greeting |
+
+For inbound screening, greet `unknown` callers and keep `timeout` short: they may be waiting
+for you to speak. `detect_interruptions` is unsupported in SWML and makes detection fail.
+The [`detect_machine` reference][swml-detect-machine] lists all properties, including the
+`detectors` selector, which defaults to both `amd` and `fax`.
+
+## Detect machines via WebSocket (Relay)
+
+Start detection on an answered call with `detect()` and a `machine` or `fax` detector. Each
+operation runs one detector, and a call can run only one detector of each type at a time.
+
+Register a `calling.call.detect` handler before starting detection. Read `event.detect.type`
+for the detector and `event.detect.params.event` for its result:
+
+| Event | Meaning | Typical action |
+|---|---|---|
+| `HUMAN` | A short greeting followed by silence | Play a message or connect an agent |
+| `MACHINE` | A recorded greeting or beep was detected | Wait for `READY` to leave voicemail, or hang up |
+| `READY` | A beep or the end of the greeting | Play the voicemail message |
+| `NOT_READY` | Speech resumed after `READY`, with `detect_interruptions` enabled | Wait for the next `READY` |
+| `UNKNOWN` | Nothing heard before `initial_timeout` | Greet the caller or keep waiting |
+| `CED` or `CNG` | The configured fax tone | Send or receive a fax |
+| `finished` | Detection ended | Clean up if no action has been taken |
+
+An action's `wait()` returns on the first result. To leave voicemail, follow events through
+`MACHINE` to `READY` instead. `detect_message_end` defaults to `true`; setting it to `false`
+stops on `MACHINE`. A beep heard before `MACHINE` triggers `MACHINE` and then `READY` with
+either setting; with `false`, detection has already stopped by the time a later beep plays, so
+it's usually missed.
+
+`UNKNOWN` doesn't stop the detector: it keeps listening until it decides or `timeout` expires.
+`finished` follows the final result, including when the call hangs up during detection. Once a
+beep is heard, `event.detect.params.beep` is `true` on that and later machine events; fax events
+don't carry it. Call the action's `stop()` to stop detection early.
+
+### Detect voicemail via WebSocket (Relay)
+
+Use AMD events to distinguish a person from voicemail and detect when the greeting ends.
+The handler plays a live confirmation on `HUMAN` or `UNKNOWN`, leaves voicemail on `READY`,
+and hangs up if detection finishes without a usable result. The `announced` flag prevents
+later events from starting a second message.
+
+Call setup follows [Place a call via WebSocket (Relay)][place-relay].
+
+<CodeBlocks>
+<CodeBlock title="Python — Relay client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as leave_message_relay.py and run: python leave_message_relay.py
+import asyncio
+from signalwire.relay import RelayClient
+from signalwire.relay.event import DetectEvent
+
+LIVE = "Hello! Your Bayview Taxi ride is confirmed for 8 AM tomorrow."
+VOICEMAIL = (
+    "This is Bayview Taxi. Your ride is confirmed for 8 AM tomorrow. "
+    "Reply to our text message if you need to change it."
+)
+
+client = RelayClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    contexts=["default"],
+)
+
+async def main():
+    async with client:
+        call = await client.dial(
+            devices=[[{
+                "type": "phone",
+                "params": {
+                    "from_number": "<YOUR_CALLER_ID>",
+                    "to_number": "<YOUR_DESTINATION>",
+                    "timeout": 30,
+                },
+            }]],
+        )
+        announced = False
+
+        async def hang_up_after_playback(_event):
+            if call.state != "ended":
+                await call.hangup()
+
+        async def speak(text: str):
+            nonlocal announced
+            announced = True
+            await call.play(
+                [{"type": "tts", "params": {"text": text}}],
+                on_completed=hang_up_after_playback,
+            )
+
+        async def on_detect(event: DetectEvent):
+            if announced or call.state == "ended":
+                return
+            result = event.detect.get("params", {}).get("event", "")
+            if result == "READY":
+                # The greeting and its beep have finished.
+                await speak(VOICEMAIL)
+            elif result in ("HUMAN", "UNKNOWN"):
+                await speak(LIVE)
+            elif result == "finished":
+                # Detection timed out without a usable result.
+                await call.hangup()
+
+        call.on("calling.call.detect", on_detect)
+        await call.detect(
+            {"type": "machine", "params": {"detect_message_end": True}}, timeout=45
+        )
+        await call.wait_for_ended()
+
+asyncio.run(main())
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — Relay client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// Save as leave-message-relay.mts and run: npx tsx leave-message-relay.mts
+import { RelayClient, DetectEvent } from "@signalwire/sdk";
+
+const LIVE = "Hello! Your Bayview Taxi ride is confirmed for 8 AM tomorrow.";
+const VOICEMAIL =
+  "This is Bayview Taxi. Your ride is confirmed for 8 AM tomorrow. " +
+  "Reply to our text message if you need to change it.";
+
+const client = new RelayClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  contexts: ["default"],
+});
+
+await client.connect();
+
+try {
+  const call = await client.dial([[{
+    type: "phone",
+    params: {
+      from_number: "<YOUR_CALLER_ID>",
+      to_number: "<YOUR_DESTINATION>",
+      timeout: 30,
+    },
+  }]]);
+  let announced = false;
+
+  const speak = async (text: string) => {
+    announced = true;
+    await call.play([{ type: "tts", text }], {
+      onCompleted: async () => {
+        if (call.state !== "ended") await call.hangup();
+      },
+    });
+  };
+
+  call.on("calling.call.detect", async (event) => {
+    if (announced || call.state === "ended") return;
+    const detect = (event as DetectEvent).detect as { params?: { event?: string } };
+    const result = detect.params?.event ?? "";
+    if (result === "READY") {
+      // The greeting and its beep have finished.
+      await speak(VOICEMAIL);
+    } else if (result === "HUMAN" || result === "UNKNOWN") {
+      await speak(LIVE);
+    } else if (result === "finished") {
+      // Detection timed out without a usable result.
+      await call.hangup();
+    }
+  });
+
+  await call.detect({ type: "machine", params: { detect_message_end: true } }, { timeout: 45 });
+  await call.waitForEnded();
+} finally {
+  await client.disconnect();
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+Test once by answering with "Hello?" and once by sending the call to voicemail. To observe the
+sequence, log `event.detect` in the handler. To reject machines, hang up on `MACHINE` instead;
+to hand a person to an AI agent, call `call.ai()` on `HUMAN`.
+
+### Detect a fax machine via WebSocket (Relay)
+
+Detect a fax machine by listening for `CED`, the default tone from an answering fax machine.
+On detection, send the PDF; otherwise, play a spoken fallback. Unlike AMD, this detector
+only decides whether it heard the fax tone; the fallback isn't a human classification.
+
+Listen for `calling.call.fax` with `fax.type: finished` to read `fax.params.success` and
+`fax.params.pages`. These SDK versions don't complete `fax.wait()` for that payload, so the
+example handles the event directly.
+
+<CodeBlocks>
+<CodeBlock title="Python — Relay client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as detect_fax_relay.py and run: python detect_fax_relay.py
+import asyncio
+from signalwire.relay import RelayClient
+from signalwire.relay.event import FaxEvent
+
+NOT_A_FAX = "Hello, this is Bayview Taxi. We tried to fax your receipt. We will email it instead."
+
+client = RelayClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    contexts=["default"],
+)
+
+def is_fax(event) -> bool:
+    detect = event.params.get("detect", {})
+    return detect.get("params", {}).get("event") in ("CED", "CNG")
+
+async def main():
+    async with client:
+        call = await client.dial(
+            devices=[[{
+                "type": "phone",
+                "params": {
+                    "from_number": "<YOUR_CALLER_ID>",
+                    "to_number": "<YOUR_DESTINATION>",
+                    "timeout": 30,
+                },
+            }]],
+        )
+        action = await call.detect({"type": "fax", "params": {"tone": "CED"}}, timeout=8)
+        event = await action.wait()
+
+        if is_fax(event):
+            async def on_fax(fax_event: FaxEvent):
+                if fax_event.fax.get("type") != "finished":
+                    return
+                result = fax_event.fax.get("params", {})
+                print(f"Fax sent: {result.get('success')}, {result.get('pages', 0)} pages")
+                if call.state != "ended":
+                    await call.hangup()
+
+            call.on("calling.call.fax", on_fax)
+            await call.send_fax(
+                document="<YOUR_FAX_DOCUMENT_URL>",
+                header_info="Bayview Taxi receipt",
+            )
+            await call.wait_for_ended()
+            return
+
+        async def hang_up_after_playback(_event):
+            if call.state != "ended":
+                await call.hangup()
+
+        await call.play(
+            [{"type": "tts", "params": {"text": NOT_A_FAX}}],
+            on_completed=hang_up_after_playback,
+        )
+        await call.wait_for_ended()
+
+asyncio.run(main())
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — Relay client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// Save as detect-fax-relay.mts and run: npx tsx detect-fax-relay.mts
+import { RelayClient, RelayEvent, FaxEvent } from "@signalwire/sdk";
+
+const NOT_A_FAX = "Hello, this is Bayview Taxi. We tried to fax your receipt. We will email it instead.";
+
+const client = new RelayClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  contexts: ["default"],
+});
+
+function isFax(event: RelayEvent): boolean {
+  const detect = event.params.detect as { params?: { event?: string } } | undefined;
+  return ["CED", "CNG"].includes(detect?.params?.event ?? "");
+}
+
+await client.connect();
+
+try {
+  const call = await client.dial([[{
+    type: "phone",
+    params: {
+      from_number: "<YOUR_CALLER_ID>",
+      to_number: "<YOUR_DESTINATION>",
+      timeout: 30,
+    },
+  }]]);
+  const action = await call.detect({ type: "fax", params: { tone: "CED" } }, { timeout: 8 });
+  const event = await action.wait();
+
+  if (isFax(event)) {
+    call.on("calling.call.fax", async (faxEvent) => {
+      const fax = (faxEvent as FaxEvent).fax as {
+        type?: string;
+        params?: { success?: boolean; pages?: number };
+      };
+      if (fax.type !== "finished") return;
+      console.log(`Fax sent: ${fax.params?.success}, ${fax.params?.pages ?? 0} pages`);
+      if (call.state !== "ended") await call.hangup();
+    });
+    await call.sendFax("<YOUR_FAX_DOCUMENT_URL>", {
+      headerInfo: "Bayview Taxi receipt",
+    });
+    await call.waitForEnded();
+  } else {
+    await call.play([{ type: "tts", text: NOT_A_FAX }], {
+      onCompleted: async () => {
+        if (call.state !== "ended") await call.hangup();
+      },
+    });
+    await call.waitForEnded();
+  }
+} finally {
+  await client.disconnect();
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+Test with a fax destination, then with a phone to check the fallback. For incoming faxes,
+listen for `CNG` and use `receive_fax()` in Python or `receiveFax()` in TypeScript. The finished
+fax event also includes the stored document URL in `fax.params.document`. For inbound call
+setup, see [Answer a call via WebSocket (Relay)][answer-relay].
+
+### Tune Relay detection
+
+Pass `timeout` separately to `detect()`; put the other settings in the detector's `params`.
+
+| Setting | Default | When to change it |
+|---|---|---|
+| `initial_timeout` | 4.5 s | Raise it for delayed greetings; lower it to greet silent inbound callers sooner |
+| `machine_voice_threshold` | 1.25 s | Raise it if longer human greetings are classified as machines |
+| `machine_words_threshold` | 6 words | Lower it if short recorded greetings are classified as people |
+| `end_silence_timeout` | 1.0 s | Lower it if a person's pause after "Hello?" isn't recognized |
+| `machine_ready_timeout` | Same as `end_silence_timeout` | Raise it for voicemail greetings that pause before the beep |
+| `timeout` | 30 s | Raise it for long greetings; keep fax checks short for voice callers |
+| `detect_message_end` | `true` | Set explicitly; use `false` when you only need the initial classification |
+| `detect_interruptions` | `false` | Enable it to receive `NOT_READY` if speech resumes after `READY` |
+
+Change one setting at a time. For inbound screening, greet `UNKNOWN` callers: they may be
+waiting silently for you to speak. If you enable interruptions, handle `NOT_READY` and wait
+for the next `READY` before resuming your message.
+
+## Detect on a call already in progress via REST
+
+If another process needs to start detection, send [`calling.detect`][call-commands] with the
+answered call's ID, a required `control_id`, a `detect` object, and `status_url`. Use
+`detect.type: machine` for AMD or `detect.type: fax` for fax tones; pass settings in
+`detect.params` and `timeout` separately. `detect_message_end` defaults to `true`, and fax
+`tone` defaults to `CED` (use `CNG` for incoming faxes).
+
+<EndpointRequestSnippet endpoint="POST /api/calling/calls" example="calling.detect" />
+
+The command returns immediately. Your webhook receives `calling.call.detect` events with the
+result in `params.detect.params.event`. Have the handler send the next call command, such as
+`calling.play` on `READY` for voicemail. Use `calling.detect.stop` with the same `control_id`
+to stop early. Only one detector of each type can run on a call at a time.

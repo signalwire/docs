@@ -68,6 +68,7 @@ and the strict MDX v3 syntax rules are all documented in the repo's authoring gu
 - [`.claude/rules/mdx-mechanics.md`](.claude/rules/mdx-mechanics.md) — frontmatter, structure, links, the LLM view, and MDX rules that break the build.
 - [`.claude/rules/mdx-components.md`](.claude/rules/mdx-components.md) — the component catalog (house set, custom components, what not to use).
 - [`.claude/rules/mdx-reference-pages.md`](.claude/rules/mdx-reference-pages.md) — reference-page patterns (`ParamField`, section names, examples).
+- [`.claude/rules/mdx-capability-guides.md`](.claude/rules/mdx-capability-guides.md) — guide template and SDK-first examples, with cURL after the SDKs.
 - [`.claude/rules/docs-conventions.md`](.claude/rules/docs-conventions.md) — which docs are hand-authored vs. generated.
 
 These are the single source of truth (and double as the guardrails your AI editor loads automatically), so follow them rather than any summary here.

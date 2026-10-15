@@ -13,13 +13,16 @@ model EnterQueueObject {
   queue_name: string;
 
   @doc("""
-    SWML to execute after the bridge completes. This defines what should happen after the call is connected to an agent and the bridge ends.
+    SWML to execute after the bridge with the agent ends. When omitted, the call hangs up when
+    the bridge ends. If the call leaves the queue without being bridged (`wait_time` expires or
+    the caller hangs up), this field is not used and the script continues with the next
+    instruction; check `queue_result`.
     Can be either:
     - A URL (http or https) that returns a SWML document
     - An inline SWML document (as a JSON string)
     """)
   @example("https://example.com/post-call-survey")
-  transfer_after_bridge: string | SWMLVar;
+  execute_after_queue?: string | SWMLVar;
 
   @doc("HTTP or HTTPS URL to deliver queue status events. Default not set")
   @example("https://example.com/queue-status")
@@ -29,10 +32,10 @@ model EnterQueueObject {
   @example("https://example.com/queue-music.mp3")
   wait_url?: url | SWMLVar;
 
-  @doc("Maximum time in seconds to wait in the queue before timeout. Default `3600`")
+  @doc("Maximum time in seconds to wait in the queue before timeout. Default `180`")
   @minValue(1)
   @example(1800)
-  wait_time?: integer | SWMLVar = 3600;
+  wait_time?: integer | SWMLVar = 180;
 }
 
 @summary("enter_queue Method")
@@ -41,7 +44,8 @@ model EnterQueue {
     Place the current call in a named queue where it will wait to be connected to an available agent or resource.
     While waiting, callers will hear music or custom audio.
     When an agent connects to the queue (using the connect method), the caller and agent are bridged together.
-    After the bridge completes, execution continues with the SWML script specified in transfer_after_bridge.
+    After the bridge completes, execution continues with the SWML script specified in execute_after_queue,
+    or the call hangs up if none was given.
     """)
   @summary("enter_queue")
   enter_queue: EnterQueueObject;

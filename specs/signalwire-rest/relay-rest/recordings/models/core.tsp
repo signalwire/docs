@@ -30,8 +30,8 @@ model RecordingBase {
   @example(2)
   duration_in_seconds: int32;
 
-  @doc("Error code if the recording failed.")
-  error_code?: string;
+  @doc("Error code if the recording failed, and `null` otherwise.")
+  error_code: string | null;
 
   @doc("Price of the recording.")
   @example(0.05)
@@ -41,12 +41,19 @@ model RecordingBase {
   @example("USD")
   price_unit: string;
 
-  @doc("Status of the recording.")
-  @example("completed")
+  @doc("""
+    Status of the recording. One of `recording`, `paused`, `finished`, or `no_input`.
+    `no_input` means audio wasn't detected before the timeout.
+    The media is only downloadable once the status is `finished`.
+    """)
+  @example("finished")
   status: string;
 
-  @doc("URL of the recording file.")
-  @example("https://example.com/recording.mp3")
+  @doc("""
+    Path to the recording, relative to your Space URL. The full URL returns the recording's JSON metadata.
+    Add a format suffix to download the recording: `<url>.wav` or `<url>.mp3`.
+    """)
+  @example("/api/relay/rest/recordings/d3444402-7b43-4512-8735-9d5e1f387814")
   url: string;
 
   @doc("Indicates whether the recording is stereo.")
