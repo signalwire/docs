@@ -69,7 +69,7 @@ model AiPostPromptCallbackPayload {
   @example("voice")
   conversation_type: "voice" | "chat";
 
-  @doc("The ID of the call. On a chat conversation this carries the conversation id instead.")
+  @doc("The ID of the call. On a chat conversation this is a separate ID, not your conversation ID; use `conversation_id` to match the summary to the conversation.")
   @example("2e1e66e5-5d07-413d-9668-55542992eec0")
   call_id: string;
 
