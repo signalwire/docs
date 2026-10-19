@@ -160,6 +160,12 @@ export interface VoiceWidgetProps {
    */
   provider?: string;
   /**
+   * Hide these providers' voices. Each entry matches a provider label or engine id,
+   * case-insensitive (e.g. "MiniMax" or "minimax"). For providers the catalog carries but the
+   * docs don't list.
+   */
+  excludeProviders?: string[];
+  /**
    * Show only these specific voices (an allowlist). Each entry matches a voice's `voice_id`, its
    * `<engine>/<voice_id>` key, its `<engine>/<voice_id>:<model>` key (to disambiguate a voice that
    * exists under multiple models), or its display name — case-insensitive. When unset, all voices

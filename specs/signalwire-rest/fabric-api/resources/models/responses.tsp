@@ -55,6 +55,16 @@ model ResourceResponseAI is ResourceResponseBase {
   ai_agent: AIAgent;
 }
 
+@summary("Remote AI Agent")
+model ResourceResponseRemoteAIAgent is ResourceResponseBase {
+  @doc(RESPONSE_TYPE_DESC)
+  @example(FabricResponseType.RemoteAiAgent)
+  type: FabricResponseType.RemoteAiAgent;
+
+  @doc("An object containing the response data of the Remote AI Agent")
+  remote_ai_agent: RemoteAIAgent;
+}
+
 @summary("Call Flow")
 model ResourceResponseCallFlow is ResourceResponseBase {
   @doc(RESPONSE_TYPE_DESC)
@@ -188,6 +198,7 @@ model ResourceResponseConferenceRoom is ResourceResponseBase {
 @oneOf
 union ResourceResponse {
   ResourceResponseAI,
+  ResourceResponseRemoteAIAgent,
   ResourceResponseCallFlow,
   ResourceResponseCXMLWebhook,
   ResourceResponseCXMLScript,
