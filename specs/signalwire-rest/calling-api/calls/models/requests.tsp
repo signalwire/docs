@@ -505,6 +505,16 @@ model CallCreateParamsBase {
   ])
   codecs?: OutboundCallCodec[] | string;
 
+  @doc("""
+    Transport for SIP signaling to the destination. Only valid when `to` is a SIP URI (`sip:` or `sips:`) for a host outside SignalWire; for any other destination the request returns 422.
+
+    Setting `transport` has the same effect as adding `;transport=` to the `to` URI. If `to` already sets a transport, either with `;transport=` or by being a `sips:` URI (which means `tls`), the two must match or the request returns 422. When neither sets one, SignalWire chooses the transport from the destination's DNS records (NAPTR, then SRV) and falls back to `udp`.
+
+    The transport also decides media encryption. With `udp` or `tcp`, media is sent as unencrypted RTP. With `tls`, or with no transport set, SignalWire offers SRTP and accepts RTP if the destination declines it.
+    """)
+  @example("tls")
+  transport?: "udp" | "tcp" | "tls";
+
   @doc("Ring timeout in seconds. Must be between 1 and 600.")
   @example(30)
   @minValue(1)
