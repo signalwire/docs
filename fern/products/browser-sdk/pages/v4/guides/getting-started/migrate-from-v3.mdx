@@ -64,30 +64,32 @@ If your application depends on recording, streaming, playback, room locking, met
 
 ## Installation
 
-The package name is unchanged. Upgrade to the v4 major release:
+The package name is unchanged. Upgrade to the v4 major release, and add RxJS, which v4 takes as a peer dependency:
 
 ```bash
-npm install @signalwire/js@latest
-```
-
-For the browser build:
-
-```html
-<script src="https://cdn.jsdelivr.net/npm/@signalwire/js/dist/browser.umd.js"></script>
-```
-
-v4 ships as an ES module. If you bundled v3 as a CDN global, switch to module imports:
-
-```html
-<!-- v3: CDN global -->
-<script src="https://unpkg.com/@signalwire/client@dev"></script>
-
-<!-- v4: bundled ES module -->
-<script type="module" src="/src/main.js"></script>
+npm install @signalwire/js@latest rxjs
 ```
 
 ```js
 import { SignalWire, StaticCredentialProvider } from "@signalwire/js";
+```
+
+If you loaded v3 from a CDN with a plain `<script>` tag, v4 has a drop-in replacement: a self-contained browser build, RxJS included, that exposes a `SignalWire` global. The SDK's exports hang off that global, so the client class is `SignalWire.SignalWire`:
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/@signalwire/js@4.0.0-rc.5/dist/browser.umd.js"></script>
+<script>
+  const { SignalWire: Client, StaticCredentialProvider } = window.SignalWire;
+  const client = new Client(new StaticCredentialProvider({ token: "<YOUR_SAT>" }));
+</script>
+```
+
+To use module syntax without a bundler, import from a CDN that serves ES modules instead:
+
+```html
+<script type="module">
+  import { SignalWire, StaticCredentialProvider } from "https://esm.sh/@signalwire/js@4.0.0-rc.5";
+</script>
 ```
 
 ## Authentication
@@ -161,9 +163,9 @@ By default, the client connects and registers automatically on construction. Pas
 v3 had no separate connection observable — the factory was the connect call. v4 exposes connection state reactively:
 
 ```js
-client.isConnected$.subscribe((connected) => { /* ... */ });
+client.isConnected$.subscribe((connected) => { /* connect() / disconnect(); stays true through automatic reconnects */ });
 client.isRegistered$.subscribe((registered) => { /* ... */ });
-client.ready$.subscribe((ready) => { /* connected + authenticated */ });
+client.ready$.subscribe((ready) => { /* connected + authenticated; false while reconnecting */ });
 ```
 
 ## Outbound calls

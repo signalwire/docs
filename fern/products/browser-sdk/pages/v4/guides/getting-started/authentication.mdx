@@ -128,6 +128,11 @@ Once the SAT is in the browser, the next decision is **whether the session needs
 
 SATs are short-lived (two hours by default), which limits the damage if one ever leaks. When a SAT expires, the SDK's WebSocket session ends with it unless a fresh SAT is supplied first. **Refreshing** is the process of swapping in a fresh SAT before the current one expires, so the session continues uninterrupted: the user stays connected, ongoing calls aren't dropped, and they don't need to re-authenticate.
 
+When a connection drops due to network issues, the SDK attempts a reconnect. If
+SignalWire refuses it, the SDK asks the credential provider for a fresh SAT and 
+tries one lase time. If that also fails, SDK stops trying to reconnect and
+the error is reported on [`errors$`](/docs/browser-sdk/v4/reference/signalwire/errors$) and the client is disconnected.
+
 There are two ways to refresh a SAT, depending on where the rotation logic should live.
 
 ### Server-side refresh
@@ -309,8 +314,11 @@ const client = new SignalWire(credentialProvider, {
   skipRegister: true,
 });
 
-await client.connect();    // open the WebSocket when the user opts in
-await client.register();   // come online for inbound calls
+// Later, when the user opts in:
+goOnlineButton.addEventListener("click", async () => {
+  await client.connect();    // open the WebSocket
+  await client.register();   // come online for inbound calls
+});
 ```
 
 With `persistSession: true` a Client Bound SAT survives a page reload: the SDK persists the token alongside its DPoP key pair in IndexedDB and re-binds on the new page rather than degrading the session to an unbound refresh token. The stored token is useless without the key, so the binding itself is the theft protection. If the persisted credential has expired by the time the page reloads, the SDK re-mints it through your credential provider before the session and its attach records are restored.
@@ -369,7 +377,7 @@ Copy the returned `token`, save the page below as `auth-demo.html`, and open it 
     <pre id="log"></pre>
 
     <script type="module">
-      import { SignalWire, StaticCredentialProvider } from "https://esm.sh/@signalwire/js@dev";
+      import { SignalWire, StaticCredentialProvider } from "https://esm.sh/@signalwire/js@4.0.0-rc.5";
 
       const log = (msg) =>
         (document.getElementById("log").textContent += msg + "\n");
@@ -405,7 +413,8 @@ Copy the returned `token`, save the page below as `auth-demo.html`, and open it 
 
 </Accordion>
 
-You should see `Authenticated — WebSocket open.` in the log. If you see `Failed: InvalidCredentialsError`, the SAT is expired, malformed, or issued for a different SignalWire space than the SDK is connecting to. Create a fresh one and try again.
+You should see `Authenticated — WebSocket open.` in the log. If you see `Failed: InvalidCredentialsError`, the string you pasted isn't a well-formed token. If you see `Failed: UnexpectedError — Unexpected Error at Error fetching user information`, SignalWire refused the SAT: it's expired, revoked, or issued for a different SignalWire space than the SDK is connecting to. 
+Double check the credentials, create a fresh one and try again.
 
 ## Next steps
 

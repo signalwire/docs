@@ -12,10 +12,9 @@ Establishes the WebSocket connection and authenticates the session.
 
 ## Reconnection behavior
 
-After a successful connection the underlying WebSocketController
-automatically attempts to reconnect whenever the socket closes
-unexpectedly (e.g. network change, server restart). Reconnection uses an
-**exponential back-off** strategy:
+After a successful connection the SDK automatically reconnects whenever
+the socket closes unexpectedly (e.g. network change, server restart).
+Reconnection uses an **exponential back-off** strategy:
 
 - First retry after `reconnectDelayMin` (default **0.1 s**).
 - Each subsequent retry doubles the delay up to `reconnectDelayMax`
@@ -24,14 +23,38 @@ unexpectedly (e.g. network change, server restart). Reconnection uses an
 - A per-attempt `connectionTimeout` (default **10 s**) aborts the
   attempt and schedules the next retry if the server does not respond.
 
-Calling [disconnect](#disconnect) stops the reconnection loop entirely.
+The SDK also replaces a connection that has gone silent without closing.
+If the server's keepalive pings stop for 15 seconds, the SDK pings the
+server itself. When that ping goes unanswered for 10 seconds, the SDK
+drops the socket and reconnects.
+
+An active call survives a short drop. Once the session re-authenticates,
+the SDK resumes the call's keepalive, so the server doesn't end the call
+over a reply lost during the drop.
+
+Calling [`disconnect()`](/docs/browser-sdk/v4/reference/signalwire/disconnect)
+stops the reconnection loop entirely.
+
+### When the server refuses the credential
+
+A reconnect that can't resume the previous session authenticates from
+scratch with the current credential. If the server refuses it, the SDK
+re-issues the credential through your
+[`CredentialProvider`](/docs/browser-sdk/v4/reference/interfaces/credential-provider)
+and retries once. A second refusal is final: the SDK emits the error on
+[`errors$`](/docs/browser-sdk/v4/reference/signalwire/errors$), stops
+reconnecting, and disconnects the client, so
+[`isConnected$`](/docs/browser-sdk/v4/reference/signalwire/is-connected$)
+emits `false`. Call `connect()` again once a valid credential is
+available.
 
 ## Message handling during temporary disconnections
 
-While the socket is not in the `connected` state, **outgoing messages
-are queued** in an internal buffer. Once the connection is
-re-established the queue is flushed in order so no outgoing RPC call is
-lost.
+While the socket is down, **outgoing requests are held**. The SDK sends
+them in order once the session re-authenticates on the new socket, so
+no outgoing RPC call is lost. A held request that has already failed
+for its caller, for example by timing out, is discarded instead of being
+sent late. Calling `disconnect()` discards every held request.
 
 **Incoming** server-to-client messages that arrive while the socket is
 down are *not* buffered by the SDK — they are expected to be
@@ -40,9 +63,12 @@ Active RPC calls that were awaiting a response will time out
 (default **5 s**) and reject with an `RPCTimeoutError`; callers should
 handle this and retry if appropriate.
 
-The connection status can be observed via the `status$` observable on
-the transport layer, which emits `'connecting'`, `'connected'`,
-`'reconnecting'`, `'disconnecting'`, or `'disconnected'`.
+To follow the connection from your app, subscribe to
+[`ready$`](/docs/browser-sdk/v4/reference/signalwire/ready$). It emits
+`false` while the SDK reconnects and `true` once the session has
+re-authenticated. `isConnected$` changes only when you call `connect()`
+or `disconnect()`, or when the SDK disconnects after a refused
+credential.
 
 ## **Returns**
 

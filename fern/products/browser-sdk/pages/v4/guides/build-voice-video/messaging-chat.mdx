@@ -247,8 +247,8 @@ same conversation).
     <pre id="log"></pre>
 
     <script type="module">
-      import { SignalWire, StaticCredentialProvider } from "https://esm.sh/@signalwire/js@dev?bundle-deps";
-      import { firstValueFrom, filter } from "https://esm.sh/rxjs@7.8.2?bundle-deps";
+      import { SignalWire, StaticCredentialProvider } from "https://esm.sh/@signalwire/js@4.0.0-rc.5?bundle-deps";
+      import { firstValueFrom, filter, map, merge } from "https://esm.sh/rxjs@7.8.2?bundle-deps";
 
       const $ = (id) => document.getElementById(id);
       const log = (msg) => ($("log").textContent += msg + "\n");
@@ -263,7 +263,14 @@ same conversation).
 
         client = new SignalWire(new StaticCredentialProvider({ token }));
         try {
-          await firstValueFrom(client.ready$.pipe(filter((r) => r)));
+          // ready$ never errors: a refused token arrives on errors$ instead,
+          // so wait for whichever comes first.
+          await firstValueFrom(
+            merge(
+              client.ready$.pipe(filter((r) => r)),
+              client.errors$.pipe(map((err) => { throw err; }))
+            )
+          );
         } catch (err) {
           log("Failed: " + (err.message || err));
           $("connect").disabled = false;
