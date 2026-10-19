@@ -3,13 +3,12 @@ title: Pick the right SignalWire product
 sidebar-title: Pick a product
 subtitle: What each product does, when to use it, and how they work together
 slug: pick-a-product
-description: Compare SignalWire's products (SWML through the Server SDKs, the REST APIs, the Browser SDK, and Relay), see which one fits each calling, messaging, or fax use case, and combine them with phone numbers, Resources, tools, and Datasphere.
+description: Compare SignalWire's products (SWML through the Server SDKs, the REST APIs, the Browser SDK, and Relay), see which one fits each calling, AI chat, messaging, or fax use case, and combine them with phone numbers, Resources, tools, and Datasphere.
 max-toc-depth: 3
 ---
 
 [swml]: /docs/swml
 [swml-send-sms]: /docs/swml/reference/calling/send-sms
-[swml-user-event]: /docs/swml/reference/calling/user-event
 [swml-send-fax]: /docs/swml/reference/calling/send-fax
 [swml-receive-fax]: /docs/swml/reference/calling/receive-fax
 [swml-messaging]: /docs/swml/reference/messaging
@@ -17,12 +16,8 @@ max-toc-depth: 3
 [sdk-quickstart]: /docs/server-sdks/guides/quickstart
 [agent-base]: /docs/server-sdks/guides/agent-base
 [result-actions]: /docs/server-sdks/guides/result-actions
-[function-result]: /docs/server-sdks/reference/python/agents/function-result
 [fr-send-sms]: /docs/server-sdks/reference/python/agents/function-result/send-sms
-[fr-user-event]: /docs/server-sdks/reference/python/agents/function-result/swml-user-event
-[fr-rpc-ai-message]: /docs/server-sdks/reference/python/agents/function-result/rpc-ai-message
 [datasphere-skill]: /docs/server-sdks/reference/python/agents/skills/datasphere
-[mapping-numbers]: /docs/server-sdks/guides/mapping-numbers
 [rest-client]: /docs/server-sdks/guides/rest-client
 [py-rest-calling]: /docs/server-sdks/reference/python/rest/calling
 [ts-rest-calling]: /docs/server-sdks/reference/typescript/rest/calling
@@ -41,7 +36,6 @@ max-toc-depth: 3
 [browser-auth]: /docs/browser-sdk/v4/guides/authentication
 [browser-inbound]: /docs/browser-sdk/v4/guides/inbound-calls
 [click-to-call]: /docs/browser-sdk/v4/guides/click-to-call-widget
-[browser-user-events]: /docs/browser-sdk/v4/guides/call-controls#receive-user-events-from-the-call
 [cfb]: /docs/call-flow-builder
 [resources]: /docs/platform/resources
 [resources-dashboard]: /docs/platform/resources#in-the-dashboard
@@ -54,6 +48,11 @@ max-toc-depth: 3
 [make-receive-calls]: /docs/platform/voice/make-and-receive-calls
 [hipaa]: /docs/platform/compliance/hipaa
 [fax]: /docs/platform/fax
+[ai-chat]: /docs/platform/ai/chat
+[ai-chat-sms]: /docs/platform/ai/chat#hold-an-ai-chat-conversation-over-sms-text-messages
+[chat-api]: /docs/apis/rest/ai-chat/chat-methods
+[chat-client]: /docs/server-sdks/reference/python/agents/ai-chat-client
+[chat-gateway]: /docs/server-sdks/reference/python/agents/chat-gateway
 
 SignalWire helps you build communications apps of any size,
 from an AI voicemail assistant to a [HIPAA-compliant][hipaa] telehealth platform.
@@ -63,7 +62,8 @@ and text your customers.
 You compose your app from a handful of products (SWML, the REST APIs, the Browser SDK, and Relay)
 and most apps combine more than one.
 Calls are where the products differ most, so most of this page is about calls.
-[Messaging and fax](#messaging-and-fax) covers texting and faxing.
+[Text conversations with an AI agent](#text-conversations-with-an-ai-agent) covers AI chat,
+and [Messaging and fax](#messaging-and-fax) covers texting and faxing.
 
 ## How most SignalWire apps are built
 
@@ -82,7 +82,7 @@ and keep track of the call while it happens.
 
 <llms-ignore>
 
-<img src="/assets/images/img/how-apps-are-built-themed.svg" alt="A caller on a phone, SIP, or a browser reaches a phone number or Address, which points at a SWML Script Resource set to an external URL. The Resource fetches SWML from the agent in your server application, built with the Server SDKs Agents namespace, and SignalWire runs the live call. During the call, SignalWire calls SWAIG tools on the agent, which looks up data in your business logic. The REST client in the same application, built with the Server SDKs REST namespace, sends call commands over HTTP to the live call and provisions numbers, Resources, and Subscribers in your Space." />
+<img src="/assets/images/img/how-apps-are-built-themed.svg" alt="A caller on a phone, SIP, or a browser reaches a phone number or Address, which points at a SWML Script Resource set to an external URL. Your server application uses the Server SDKs. The Resource fetches SWML from the agent, built with the Agents namespace, and SignalWire runs the live call. During the call, SignalWire calls SWAIG tools on the agent, which looks up data in your business logic. The REST client, built with the REST namespace of the same Server SDKs, sends call commands over HTTP to the live call and provisions numbers, Resources, and Subscribers in your Space." />
 
 </llms-ignore>
 
@@ -99,8 +99,10 @@ flowchart LR
     end
     subgraph App["Your server application"]
         Systems["Your business logic<br/>bookings · data · rules"]
-        Agent["Agent<br/>Server SDKs · Agents"]
-        Backend["REST client<br/>Server SDKs · REST"]
+        subgraph SDKs["Server SDKs"]
+            Agent["Agent<br/>Agents namespace"]
+            Backend["REST client<br/>REST namespace"]
+        end
     end
     Caller --> Address
     Address --> Resource
@@ -439,6 +441,49 @@ Both produce Resources that you point a phone number at, with no code at all.
 
 </Accordion>
 
+## Text conversations with an AI agent
+
+The agent that answers your phone can also hold a [text conversation][ai-chat]
+through the [AI Chat API][chat-api].
+Each turn is one HTTP request:
+you send the user's message, and the agent's reply comes back in the response.
+The conversation uses the agent's prompt, state, and SWAIG tools, as a call does.
+Each SWAIG request tells your server whether the conversation is `voice` or `chat`.
+
+From your server, the Server SDKs' [`AIChatClient`][chat-client] sends each turn.
+A web page reaches the agent through [`ChatGateway`][chat-gateway] running in your web application,
+which keeps the API token on your server.
+To answer SMS with the agent,
+your [inbound message webhook passes each text to AI chat][ai-chat-sms]
+and replies with Messaging SWML.
+
+```python title="Python — AIChatClient"
+import asyncio
+
+from signalwire.ai_chat import AIChatClient
+
+CONFIG_URL = "https://<YOUR_SPACE>.signalwire.com/relay-bins/<YOUR_AGENT_ID>"
+
+
+async def main():
+    async with AIChatClient(
+        project="<YOUR_PROJECT_ID>", token="<YOUR_API_TOKEN>", space="<YOUR_SPACE>"
+    ) as client:
+        info = await client.create_conversation("rider-1", config_url=CONFIG_URL)
+        print("Ada:", info.initial_message)
+
+        reply = await client.chat("rider-1", "I need a ride to the airport.")
+        print("Ada:", reply.text)
+
+        await client.end("rider-1")
+
+
+asyncio.run(main())
+```
+
+`CONFIG_URL` is the request URL of a SWML Script that holds your agent,
+and the API token needs the **Chat** permission.
+
 ## Messaging and fax
 
 Messaging and fax use the same products as calls.
@@ -475,6 +520,7 @@ and Relay has `send_fax` and `receive_fax` on its call object.
 | Buttons that record, transfer, or hold a live call | [REST call commands][call-commands] |
 | Text notifications and confirmations | [REST messages][create-message] |
 | Two-way texting or automatic replies | [Messaging SWML][swml-messaging] or Relay |
+| An AI agent customers chat with on your website or over SMS | [AI Chat API][chat-api] with [`AIChatClient`][chat-client] or [`ChatGateway`][chat-gateway] |
 | Sending or receiving faxes | Server SDKs (Agents namespace) with [`send_fax`][swml-send-fax] and [`receive_fax`][swml-receive-fax] |
 | A "call us" button on a web page | [Click-to-call widget][click-to-call] |
 | Voice or video calling between your users | [Browser SDK][browser-sdk] |
@@ -493,9 +539,6 @@ and Relay has `send_fax` and `receive_fax` on its call object.
 
 ## How the pieces work together
 
-These patterns continue the Bayview Taxi example,
-whose AI dispatcher Ada answers the phone.
-
 ### Steer a running agent from your backend with REST commands
 
 Every SWAIG request your agent receives carries the call's `call_id`,
@@ -505,34 +548,6 @@ your dispatch system sends [`calling.ai_message`][call-commands] to that call th
 Ada receives it as a system instruction the caller doesn't hear,
 and tells the caller their driver is on the way.
 See the [Python][py-rest-calling] and [TypeScript][ts-rest-calling] REST client references for every command.
-
-### Let a tool act on the call
-
-A tool's [reply][function-result] can carry actions on the call as well as text.
-Ada's `book_ride` tool can [text the caller a confirmation][fr-send-sms],
-start a recording,
-transfer the call to a person,
-or [send a message to the agent on another call][fr-rpc-ai-message].
-Use tool actions when the conversation decides what happens next,
-and REST commands when something outside the conversation does, like a driver accepting.
-
-### Reach the same agent from a phone or a browser
-
-Give the agent's SWML Script Resource two Addresses:
-a phone number for callers on the phone network,
-and an alias such as `/public/bayview-dispatch` for Browser SDK users.
-Both reach the same agent.
-The [Mapping numbers guide][mapping-numbers] walks through it.
-
-### Update a browser from inside the call
-
-When the caller is in a browser,
-your server can push JSON to the page during the call
-with the SWML [`user_event`][swml-user-event] method,
-the [`swml_user_event`][fr-user-event] tool action,
-or the [`calling.user_event`][call-commands] REST command.
-The Browser SDK [receives it on the call object][browser-user-events],
-so Ada can put the driver's name and plate on screen while she says them.
 
 ## Next steps
 
@@ -548,5 +563,14 @@ so Ada can put the driver's name and plate on screen while she says them.
   </Card>
   <Card title="Browser SDK" icon="regular browser" href="/docs/browser-sdk/v4/guides/overview">
     Place and receive calls from a web page.
+  </Card>
+  <Card title="One Resource, many Addresses" icon="regular signs-post" href="/docs/platform/addresses#one-resource-many-addresses">
+    Reach the same agent from a phone number, SIP, and the browser.
+  </Card>
+  <Card title="Chat with an AI agent" icon="regular comments" href="/docs/platform/ai/chat">
+    Reach your agent by text, and move a conversation onto a phone call and back.
+  </Card>
+  <Card title="Receive user events in the browser" icon="regular bolt" href="/docs/browser-sdk/v4/guides/call-controls#receive-user-events-from-the-call">
+    Update a web page from inside the call.
   </Card>
 </CardGroup>
