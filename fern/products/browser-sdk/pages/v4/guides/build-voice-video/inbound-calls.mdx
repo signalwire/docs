@@ -280,13 +280,17 @@ Leave the page open — when the call arrives, the **Caller** line populates and
         const client = new SignalWire(new StaticCredentialProvider({ token }));
 
         // Session-level failures, such as a token SignalWire refuses,
-        // arrive on errors$ rather than as a rejected promise.
-        client.errors$.subscribe((err) =>
-          log("Error: " + (err.name || "Error") + " — " + err.message)
-        );
+        // arrive on errors$ rather than as a rejected promise, and
+        // register() never settles. Re-enable the button so the user can retry.
+        let online = false;
+        client.errors$.subscribe((err) => {
+          log("Error: " + (err.name || "Error") + " — " + err.message);
+          if (!online) $("online").disabled = false;
+        });
 
         try {
           await client.register();
+          online = true;
           log("Online — ready for inbound calls.");
         } catch (err) {
           log("Failed: " + (err.name || "Error") + " — " + err.message);

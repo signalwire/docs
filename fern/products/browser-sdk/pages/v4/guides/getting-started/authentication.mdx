@@ -128,11 +128,6 @@ Once the SAT is in the browser, the next decision is **whether the session needs
 
 SATs are short-lived (two hours by default), which limits the damage if one ever leaks. When a SAT expires, the SDK's WebSocket session ends with it unless a fresh SAT is supplied first. **Refreshing** is the process of swapping in a fresh SAT before the current one expires, so the session continues uninterrupted: the user stays connected, ongoing calls aren't dropped, and they don't need to re-authenticate.
 
-When a connection drops due to network issues, the SDK attempts a reconnect. If
-SignalWire refuses it, the SDK asks the credential provider for a fresh SAT and
-tries one last time. If that also fails, the SDK stops trying to reconnect,
-reports the error on [`errors$`](/docs/browser-sdk/v4/reference/signalwire/errors$), and disconnects the client.
-
 There are two ways to refresh a SAT, depending on where the rotation logic should live.
 
 ### Server-side refresh
@@ -298,6 +293,28 @@ client.warnings$.subscribe((warning) => {
 });
 ```
 
+### When SignalWire refuses the SAT on a reconnect
+
+On a dropped connection, the SDK automatically reconnects and
+picks up the same session. When it can't, it signs in again with the SAT it
+holds. If SignalWire refuses that SAT, for example because it expired while the
+connection was down, the SDK gets a fresh SAT and tries once more.
+
+The fresh SAT comes from your refresh path. For a Client Bound SAT, the SDK
+calls your provider's
+[`authenticate()`](/docs/browser-sdk/v4/reference/interfaces/credential-provider#authenticate)
+again; otherwise it calls your provider's
+[`refresh()`](/docs/browser-sdk/v4/reference/interfaces/credential-provider#refresh).
+A provider with neither, such as
+[`StaticCredentialProvider`](/docs/browser-sdk/v4/reference/credential-providers/static-credential-provider),
+has no way to supply a new SAT, so the SDK retries with the old one.
+
+If the second attempt is refused too, the SDK stops reconnecting, reports the
+error on [`errors$`](/docs/browser-sdk/v4/reference/signalwire/errors$), and
+disconnects the client. Once your provider can return a valid SAT, call
+[`connect()`](/docs/browser-sdk/v4/reference/signalwire/connect) again. With
+`StaticCredentialProvider`, create a new client with a fresh SAT instead.
+
 ## Connection lifecycle
 
 Constructing [`SignalWire`](/docs/browser-sdk/v4/reference/signalwire) runs three steps in sequence: authenticate the SAT, open the WebSocket, and register the user as online. Each step runs by default, and each can be deferred with a constructor option in [`SignalWireOptions`](/docs/browser-sdk/v4/reference/interfaces/signalwire-options) so your UI can drive it later.
@@ -315,7 +332,7 @@ const client = new SignalWire(credentialProvider, {
 });
 
 // Later, when the user opts in:
-goOnlineButton.addEventListener("click", async () => {
+document.getElementById("go-online").addEventListener("click", async () => {
   await client.connect();    // open the WebSocket
   await client.register();   // come online for inbound calls
 });
