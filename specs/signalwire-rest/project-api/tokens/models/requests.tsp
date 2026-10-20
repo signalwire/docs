@@ -1,4 +1,7 @@
+import "@typespec/http";
 import "./core.tsp";
+
+using TypeSpec.Http;
 
 namespace SignalWireAPI.Project;
 
@@ -45,4 +48,27 @@ model UpdateTokenRequest {
     TokenPermission.messaging
   ])
   permissions?: TokenPermission[];
+}
+
+@doc("Query parameters for listing API tokens.")
+model ListTokensQuery {
+  @doc("Only return tokens that belong to this project. A project the caller cannot reach returns an empty list rather than an error.")
+  @query
+  @example("4d5e6f70-8192-4a3b-8c4d-5e6f70819234")
+  project_id?: uuid;
+
+  @doc("The number of results per page.")
+  @query
+  @minValue(1)
+  @maxValue(1000)
+  page_size?: int32 = 50;
+
+  @doc("Cursor token for paging, taken from the `next` or `prev` link of a previous response.")
+  @query
+  page_token?: string;
+
+  @doc("The page index. A value above 0 requires `page_token`.")
+  @query
+  @minValue(0)
+  page_number?: int32 = 0;
 }
