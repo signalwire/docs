@@ -18,6 +18,7 @@ max-toc-depth: 3
 [list-numbers]: /docs/apis/rest/whatsapp/list-whatsapp-numbers
 [list-resources]: /docs/apis/rest/resources/list-resources
 [assign-ref]: /docs/apis/rest/whatsapp-routes/assign-resource-whatsapp-number
+[relay-app-ref]: /docs/apis/rest/relay-application/create-relay-application
 [voice-logs-ref]: /docs/apis/rest/voice-logs/list-voice-logs
 [relay-application]: /docs/platform/glossary#relay-application
 [cfb]: /docs/call-flow-builder
@@ -33,7 +34,7 @@ way as a call to a phone number. Follow [Make and receive calls][make-receive] t
 handler, either [via SWML][answer-swml] or [via WebSocket (Relay)][answer-relay], with the
 differences on this page:
 
-- Every handler except the Browser SDK can answer.
+- Every handler that runs on a Resource can answer.
 - You connect the WhatsApp number to the handler from the Resource, not from **Phone Numbers**.
 - You test from the WhatsApp app, and check the number's voice fields if nothing answers.
 - Your business number arrives with a `whatsapp:` prefix.
@@ -45,8 +46,8 @@ You need a WhatsApp business number that shows **Registered** in your Space, fro
 [Enable voice on a WhatsApp number][enable-voice]. To test, you also need a phone with WhatsApp
 installed that can call the business number.
 
-To connect the number in code, you also need the number's SignalWire `id` from
-[List WhatsApp numbers][list-numbers], and an API token from the Dashboard's
+To connect the number in code, you also need your Space URL, the number's SignalWire `id` from
+[List WhatsApp numbers][list-numbers], and a Project ID and API token from the Dashboard's
 [API credentials][api-credentials] page with the **Voice** permission, plus **Numbers** to list your
 WhatsApp numbers.
 
@@ -65,7 +66,15 @@ Subscriber. The REST Calling API can't answer one either, and can't place calls 
 
 Build the handler in Make and receive calls up to its assign step, then come back here. That guide's
 assign steps, including the **Assign the number in code** samples, connect a phone number and don't
-apply to a WhatsApp number.
+apply to a WhatsApp number, with two catches:
+
+- **Relay Application.** The **Assign the topic to your phone number** step also creates the Relay
+  Application. Follow its Dashboard steps to create it, then skip the phone number assignment. To
+  create it in code instead, see
+  [Connect the WhatsApp number via the REST API](#connect-the-whatsapp-number-via-the-rest-api).
+- **SWML Script served from your server.** The **From your server** tab says you can skip its
+  Dashboard steps because **Assign the number in code** creates the script. That doesn't hold for a
+  WhatsApp number, so create the script with the tab's Dashboard steps.
 
 ## Connect the WhatsApp number to the handler
 
@@ -91,7 +100,15 @@ delete its existing Address first.
 
 The Server SDKs don't cover this endpoint yet, so call it directly. Put the Resource's `id` in the
 path. The **Create the hosted script in code** samples print it; for any other Resource, find it with
-[List Resources][list-resources]. In the body, pass the WhatsApp number's `id` as
+[List Resources][list-resources].
+
+To create a Relay Application in code, send a `topic` that matches the `contexts` value in your
+Relay client. The response's `id` goes in the path. [Create Relay application][relay-app-ref] lists
+every field:
+
+<EndpointRequestSnippet endpoint="POST /api/fabric/resources/relay_applications" />
+
+In the body of the assign request, pass the WhatsApp number's `id` as
 `whatsapp_number_id` with `calling` as the handler:
 
 <EndpointRequestSnippet endpoint="POST /api/fabric/resources/{id}/whatsapp_numbers" />
@@ -121,7 +138,10 @@ check `calling_handler_resource_id` in the same response. Null means the handler
 its Address was deleted since: connect the number again and check that response for errors.
 
 If both fields are true and the call still fails, the handler itself is the problem. Use the
-troubleshooting in the matching section of [Make and receive calls][make-receive].
+troubleshooting in the matching section of [Make and receive calls][make-receive], but skip its
+checks of the number's **Inbound Call Settings**, which a WhatsApp number doesn't have. For a Relay
+Application, check instead that the WhatsApp number is attached to it and that your client's
+`contexts` matches the Resource's `topic`.
 
 ## Read the caller and business numbers
 
