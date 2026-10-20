@@ -52,7 +52,7 @@ model UpdateTokenRequest {
 
 @doc("Query parameters for listing API tokens.")
 model ListTokensQuery {
-  @doc("Only return tokens that belong to this project. A project the caller cannot reach returns an empty list rather than an error.")
+  @doc("Only return tokens that belong to this project. A project the caller cannot reach, or a value that is not a valid project ID, returns an empty list rather than an error.")
   @query
   @example("4d5e6f70-8192-4a3b-8c4d-5e6f70819234")
   project_id?: uuid;

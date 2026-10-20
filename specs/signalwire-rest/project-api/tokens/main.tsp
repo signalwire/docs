@@ -69,7 +69,7 @@ namespace SignalWireAPI.Project.Tokens {
     @operationId("update_token")
     @summary("Update API token")
     @doc("""
-      Changes the name or enabled permission categories of an existing project API token. Use it to rotate a token's responsibilities without replacing its identifier; remove permissions that the token's server-side caller no longer needs. For the account-scoped Compatibility API route, use [Update an API Token](/docs/compatibility-api/rest/tokens/update-token).
+      Changes the name or enabled permission categories of an existing project API token. Use it to change a token's permissions without replacing its identifier; remove permissions that the token's server-side caller no longer needs. For the account-scoped Compatibility API route, use [Update an API Token](/docs/compatibility-api/rest/tokens/update-token).
 
       Updating a token does not change its value. The response omits the token secret, which is returned only by [Create API token](/docs/apis/rest/project-tokens/create-token) and [Regenerate API token](/docs/apis/rest/project-tokens/regenerate-token).
       
@@ -128,6 +128,8 @@ namespace SignalWireAPI.Project.Tokens {
       The previous value stops working immediately, on every API that accepts a project API token. Anything still using it receives `401 Unauthorized` until you give it the new value.
 
       The response is the only place the new value is returned; store it securely. If you lose it, regenerate the token again.
+
+      The new value always uses the current token format: 42 characters beginning with `swapi_`. A token issued in the legacy format, 50 characters beginning with `PT`, changes format and length when regenerated, so update anything that validates or stores token values by length or prefix.
 
       You can regenerate the token you are authenticating with. The request succeeds, but the value you sent is no longer valid once it does, so save the new value from the response before making any further request.
 

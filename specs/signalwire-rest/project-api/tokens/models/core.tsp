@@ -39,7 +39,7 @@ model TokenResponse {
   @example(UTC_TIME_EXAMPLE)
   last_used_at: utcDateTime | null;
 
-  @doc("The date and time the token's value was revoked. `null` if it has not been revoked. [Regenerate API token](/docs/apis/rest/project-tokens/regenerate-token) clears it.")
+  @doc("The date and time SignalWire revoked the token's value, for example after detecting that the value was exposed. `null` if it has not been revoked. A revoked token keeps its `id` and still appears in [List API tokens](/docs/apis/rest/project-tokens/list-tokens), but its previous value no longer authenticates and no replacement value has been issued to you. To get a working value, [regenerate the token](/docs/apis/rest/project-tokens/regenerate-token), which also clears `revoked_at`.")
   @example(null)
   revoked_at: utcDateTime | null;
 }
