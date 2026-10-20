@@ -6132,6 +6132,51 @@
                     ],
                     "description": "Send a summary of the conversation after the call ends.\nThis requires a `post_url` to be set in the ai parameters and the `conversation_id` defined below.\nThis eliminates the need for a `post_prompt` in the ai parameters."
                 },
+                "semantic_gates_enabled": {
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "default": true,
+                    "examples": [
+                        false
+                    ],
+                    "description": "Whether the call checks the [semantic gates](/docs/swml/reference/calling/ai/swaig/functions/gates)\non its SWAIG functions. Set it to `false` to turn gate checks off for the call: gated functions\nthen run without being checked. **Default:** `true`."
+                },
+                "semantic_gate_timeout_ms": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "default": 2500,
+                    "examples": [
+                        3000
+                    ],
+                    "description": "How long one semantic gate check may take in total, in milliseconds. A check that runs\nout of time blocks the function. Allowed values from `500` to `10,000`; a value outside the range\nis clamped to it. **Default:** `2500` ms."
+                },
+                "semantic_gate_history": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "default": 20,
+                    "examples": [
+                        30
+                    ],
+                    "description": "How many recent conversation entries a semantic gate check reads. Allowed values from `0` to\n`100`; a value outside the range is clamped to it. **Default:** `20`."
+                },
                 "speech_event_timeout": {
                     "anyOf": [
                         {
@@ -6539,6 +6584,15 @@
                     ],
                     "description": "Enable verbose logging."
                 },
+                "video_blank_image": {
+                    "type": "string",
+                    "format": "uri",
+                    "examples": [
+                        "https://example.com/still.png"
+                    ],
+                    "pattern": "^https?://",
+                    "description": "What the caller sees on a video call without avatar clips (no `video_talking_file`): an\n`http://` or `https://` URL to a PNG, shown as a still image. The image can be up to 4 MB and\n3840 x 2160 pixels, and is scaled to fit within 1280 x 720. Any other value is ignored. Without\nit, the still is black. The still shows when the call captures the caller's video frames, through\n`enable_vision` or a gate's or function's `visual_input`, or when this param is set."
+                },
                 "video_listening_file": {
                     "type": "string",
                     "format": "uri",
@@ -6585,6 +6639,21 @@
                         "gpt-4o-mini"
                     ],
                     "description": "The model to use for the AI's vision capabilities. Allowed values are `gpt-4o-mini`, `gpt-4.1-mini`, and `gpt-4.1-nano`."
+                },
+                "visual_input": {
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "$ref": "#/$defs/VisualInputFrameCount"
+                        }
+                    ],
+                    "default": 1,
+                    "examples": [
+                        3
+                    ],
+                    "description": "How many of the caller's newest video frames `get_visual_input` sends, oldest first, taken at most\none per second: `true` is `1`, or a whole number from `1` to `5`. Any other value keeps the\ndefault. This doesn't affect the `visual_input` of a semantic gate or a SWAIG function, which\neach set their own count. **Default:** `1`."
                 },
                 "vad_config": {
                     "type": "string",
@@ -9848,6 +9917,13 @@
             ],
             "title": "Direction enum"
         },
+        "VisualInputFrameCount": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5,
+            "description": "A number of the caller's newest video frames, from `1` to `5`.",
+            "title": "Frame count"
+        },
         "AIPostPromptText": {
             "type": "object",
             "properties": {
@@ -10355,6 +10431,21 @@
                         "support_desk"
                     ],
                     "description": "Default scoping token for `meta_data`, for functions that don't set their own `meta_data_token`."
+                },
+                "fillers_at_gates": {
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "default": true,
+                    "examples": [
+                        false
+                    ],
+                    "description": "Default `fillers_at_gates` for gated functions that don't set their own: whether a gated\nfunction's `fillers` play while its semantic gates are checked (`true`) or only after they pass\n(`false`). **Default:** `true`."
                 }
             },
             "unevaluatedProperties": {
@@ -11846,6 +11937,73 @@
                         "get_weather"
                     ],
                     "description": "A unique name for the function. This can be any user-defined string or can reference a reserved function. Reserved functions are SignalWire functions that will be executed at certain points in the conversation."
+                },
+                "gates": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/SemanticGate"
+                    },
+                    "examples": [
+                        [
+                            {
+                                "id": "explicit_request",
+                                "question": "Has the caller explicitly asked to cancel their account in `conversation`?",
+                                "criteria": {
+                                    "true": "The caller says they want to cancel.",
+                                    "false": "The caller asked about cancelling, or said something else."
+                                },
+                                "threshold": 0.95,
+                                "on_fail": {
+                                    "response": {
+                                        "tool_result": "cancel_account was not run.",
+                                        "tool_prompt": "Ask the caller to confirm that they want to cancel."
+                                    }
+                                }
+                            }
+                        ]
+                    ],
+                    "minItems": 1,
+                    "maxItems": 8,
+                    "description": "Semantic gates: 1 to 8 yes/no questions that must all pass before the function runs. When any\nfails, the function does not run and the agent gets the first failing gate's `on_fail` instead.\nA gated function needs a `description` and a `web_hook_url` (its own or from\n`SWAIG.defaults`) or a `data_map`. If any gate is invalid, the function is not added to the\nagent at all."
+                },
+                "gate_fillers": {
+                    "$ref": "#/$defs/FunctionFillers",
+                    "examples": [
+                        {
+                            "default": [
+                                "Let me check that."
+                            ]
+                        }
+                    ],
+                    "description": "What the agent says while the gates are checked, shaped like `fillers`. Ignored on a function\nwithout `gates`."
+                },
+                "fillers_at_gates": {
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "examples": [
+                        false
+                    ],
+                    "description": "For a gated function without `gate_fillers`, whether its `fillers` play as soon as the agent\ncalls it, during the gate check (`true`), or only after the gates pass (`false`). When unset,\nthe function inherits `SWAIG.defaults.fillers_at_gates`, which is `true` unless you change it."
+                },
+                "visual_input": {
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "$ref": "#/$defs/SemanticGateFrameCount"
+                        }
+                    ],
+                    "examples": [
+                        1
+                    ],
+                    "description": "How many of the caller's newest video frames your `web_hook_url` receives with the function\ncall, as `visual_input`: `true` is `1`, a whole number from `0` to `5`, and `false` or `0` is\nnone. On a gated function, the frames are taken when the gates are checked, never later.\nIgnored on a `data_map` function."
                 }
             },
             "required": [
@@ -12649,6 +12807,91 @@
             },
             "title": "DataMap object"
         },
+        "SemanticGate": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "examples": [
+                        "explicit_request"
+                    ],
+                    "pattern": "^[A-Za-z0-9_]{1,64}$",
+                    "description": "A name for the gate, reported in the call records: 1 to 64 letters, digits, or underscores,\nunique within the function. Defaults to `gate_1`, `gate_2`, and so on, by position."
+                },
+                "question": {
+                    "type": "string",
+                    "examples": [
+                        "Has the caller explicitly asked to cancel their account in `conversation`?"
+                    ],
+                    "minLength": 1,
+                    "maxLength": 8192,
+                    "description": "The yes/no question, at most 8 KB. Name what it's about with the names of the inputs the gate\nreads, in backticks: `conversation`, `semantic_state`, `proposed_function`, and\n`visual_input`. `${...}` variables from `global_data` are expanded when the check runs."
+                },
+                "criteria": {
+                    "$ref": "#/$defs/SemanticGateCriteria",
+                    "examples": [
+                        {
+                            "true": "The caller says they want to cancel.",
+                            "false": "The caller asked about cancelling, or said something else."
+                        }
+                    ],
+                    "minProperties": 1,
+                    "description": "What counts as yes and what counts as no, for the near misses the question alone leaves open."
+                },
+                "threshold": {
+                    "type": "number",
+                    "examples": [
+                        0.95
+                    ],
+                    "exclusiveMinimum": 0,
+                    "maximum": 1,
+                    "description": "The gate passes when the probability that the answer is yes is at or above this value. Above\n`0` and at most `1`. Higher is stricter."
+                },
+                "on_fail": {
+                    "$ref": "#/$defs/SemanticGateOnFail",
+                    "examples": [
+                        {
+                            "response": {
+                                "tool_result": "cancel_account was not run.",
+                                "tool_prompt": "Ask the caller to confirm that they want to cancel."
+                            }
+                        }
+                    ],
+                    "description": "What the agent gets instead of the function's result when this is the first gate that fails."
+                },
+                "visual_input": {
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "$ref": "#/$defs/SemanticGateFrameCount"
+                        }
+                    ],
+                    "examples": [
+                        1
+                    ],
+                    "description": "How many of the caller's newest video frames the gate looks at, as `visual_input`: `true` is\n`1`, a whole number from `0` to `5`, and `false` or `0` is none. If the call has no video frame\nto show, the gate fails without being asked, so a gate with `visual_input` always fails when\nthe post-prompt agent calls the function after the call."
+                }
+            },
+            "required": [
+                "question",
+                "threshold",
+                "on_fail"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "description": "A yes/no question about the call that must come out yes before the function runs. A key not\nlisted here is an error, not an ignored setting.",
+            "title": "gate"
+        },
+        "SemanticGateFrameCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 5,
+            "description": "A number of the caller's newest video frames, from `0` (none) to `5`.",
+            "title": "Frame count"
+        },
         "AISidecarParamProperty": {
             "oneOf": [
                 {
@@ -13294,6 +13537,85 @@
                 "not": {}
             },
             "title": "Webhook object"
+        },
+        "SemanticGateCriteria": {
+            "type": "object",
+            "properties": {
+                "true": {
+                    "type": "string",
+                    "examples": [
+                        "The caller says they want to cancel."
+                    ],
+                    "minLength": 1,
+                    "maxLength": 2048,
+                    "description": "What a yes answer means. A non-empty string of at most 2 KB."
+                },
+                "false": {
+                    "type": "string",
+                    "examples": [
+                        "The caller asked about cancelling, or said something else."
+                    ],
+                    "minLength": 1,
+                    "maxLength": 2048,
+                    "description": "What a no answer means. A non-empty string of at most 2 KB."
+                }
+            },
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "description": "What counts as yes and what counts as no. Set `true`, `false`, or both.",
+            "title": "criteria"
+        },
+        "SemanticGateOnFail": {
+            "type": "object",
+            "properties": {
+                "response": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/SemanticGateResponseText"
+                        },
+                        {
+                            "$ref": "#/$defs/SemanticGateToolResult"
+                        }
+                    ],
+                    "examples": [
+                        "cancel_account was not run. Ask the caller to confirm that they want to cancel."
+                    ],
+                    "description": "What the function returns to the agent. A non-empty string, or an object with `tool_result` and\nan optional `tool_prompt`. Realtime (speech-to-speech) agents don't use `tool_prompt`, so on\nthose put everything the agent needs in `tool_result`."
+                },
+                "action": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/Action"
+                    },
+                    "examples": [
+                        [
+                            {
+                                "set_global_data": {
+                                    "cancel_attempted": true
+                                }
+                            }
+                        ]
+                    ],
+                    "description": "Actions to run, as a function's response would. Must be an array, even for one action."
+                },
+                "post_process": {
+                    "type": "boolean",
+                    "default": false,
+                    "examples": [
+                        true
+                    ],
+                    "description": "Hold the actions until after the agent has spoken its reply, rather than running them\nimmediately. **Default:** `false`."
+                }
+            },
+            "required": [
+                "response"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "description": "What the agent gets when this is the first gate that fails, shaped like a\n[`data_map` output](/docs/swml/reference/calling/ai/swaig/functions/data-map). At most\n8 KB as compact JSON. Its actions run as written: `${...}` variables in them are not expanded,\nthough a `SWML` action resolves the variables in its own document when it runs.",
+            "title": "on_fail"
         },
         "AISidecarStringParam": {
             "type": "object",
@@ -14117,6 +14439,40 @@
             },
             "description": "Splits the result into the data half and the steering half.\n\n`tool_result` becomes the tool message the agent reads. `tool_prompt` is injected as a separate\nsystem message immediately after it, to steer what the agent does with that data. Use the split\nwhen the two are genuinely different things — you know which half is data and which half is\ninstruction; the agent does not.\n\nRead only by [`ai`](/docs/swml/reference/calling/ai) agents.",
             "title": "SWAIG tool result"
+        },
+        "SemanticGateResponseText": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The function's result as plain text. Must not be empty, and should say the function did not run.",
+            "title": "Response text"
+        },
+        "SemanticGateToolResult": {
+            "type": "object",
+            "properties": {
+                "tool_result": {
+                    "type": "string",
+                    "examples": [
+                        "cancel_account was not run."
+                    ],
+                    "minLength": 1,
+                    "description": "What the agent sees as the function's result. Must say that the function did not run."
+                },
+                "tool_prompt": {
+                    "type": "string",
+                    "examples": [
+                        "Tell the caller their order is delayed and offer to text updates."
+                    ],
+                    "description": "The steering half — injected as a system message right after the tool message."
+                }
+            },
+            "required": [
+                "tool_result"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "description": "The object form of an `on_fail` response. `tool_result` is what the agent sees as the function's\nresult, and `tool_prompt` is an instruction placed right after it.",
+            "title": "Semantic gate tool result"
         },
         "StringFormat": {
             "type": "string",

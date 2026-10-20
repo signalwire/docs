@@ -37917,6 +37917,32 @@ components:
             This eliminates the need for a `post_prompt` in the ai parameters.
           examples:
             - true
+        semantic_gates_enabled:
+          type: boolean
+          description: |-
+            Whether the call checks the [semantic gates](/docs/swml/reference/calling/ai/swaig/functions/gates)
+            on its SWAIG functions. Set it to `false` to turn gate checks off for the call: gated functions
+            then run without being checked. **Default:** `true`.
+          examples:
+            - false
+          default: true
+        semantic_gate_timeout_ms:
+          type: integer
+          description: |-
+            How long one semantic gate check may take in total, in milliseconds. A check that runs
+            out of time blocks the function. Allowed values from `500` to `10,000`; a value outside the range
+            is clamped to it. **Default:** `2500` ms.
+          examples:
+            - 3000
+          default: 2500
+        semantic_gate_history:
+          type: integer
+          description: |-
+            How many recent conversation entries a semantic gate check reads. Allowed values from `0` to
+            `100`; a value outside the range is clamped to it. **Default:** `20`.
+          examples:
+            - 30
+          default: 20
         speech_event_timeout:
           type: integer
           minimum: 0
@@ -38164,6 +38190,18 @@ components:
           examples:
             - true
           default: false
+        video_blank_image:
+          type: string
+          format: uri
+          pattern: ^https?://
+          description: |-
+            What the caller sees on a video call without avatar clips (no `video_talking_file`): an
+            `http://` or `https://` URL to a PNG, shown as a still image. The image can be up to 4 MB and
+            3840 x 2160 pixels, and is scaled to fit within 1280 x 720. Any other value is ignored. Without
+            it, the still is black. The still shows when the call captures the caller's video frames, through
+            `enable_vision` or a gate's or function's `visual_input`, or when this param is set.
+          examples:
+            - https://example.com/still.png
         video_listening_file:
           type: string
           format: uri
@@ -38193,6 +38231,18 @@ components:
           description: The model to use for the AI's vision capabilities. Allowed values are `gpt-4o-mini`, `gpt-4.1-mini`, and `gpt-4.1-nano`.
           examples:
             - gpt-4o-mini
+        visual_input:
+          anyOf:
+            - type: boolean
+            - $ref: '#/components/schemas/SWML.Calling.VisualInputFrameCount'
+          description: |-
+            How many of the caller's newest video frames `get_visual_input` sends, oldest first, taken at most
+            one per second: `true` is `1`, or a whole number from `1` to `5`. Any other value keeps the
+            default. This doesn't affect the `visual_input` of a semantic gate or a SWAIG function, which
+            each set their own count. **Default:** `1`.
+          examples:
+            - 3
+          default: 1
         vad_config:
           type: string
           description: |-
@@ -44728,6 +44778,15 @@ components:
           description: Default scoping token for `meta_data`, for functions that don't set their own `meta_data_token`.
           examples:
             - support_desk
+        fillers_at_gates:
+          type: boolean
+          description: |-
+            Default `fillers_at_gates` for gated functions that don't set their own: whether a gated
+            function's `fillers` play while its semantic gates are checked (`true`) or only after they pass
+            (`false`). **Default:** `true`.
+          examples:
+            - false
+          default: true
       unevaluatedProperties:
         not: {}
       title: defaults
@@ -44969,6 +45028,166 @@ components:
         items:
           $ref: '#/components/schemas/SWML.Calling.SWMLMethod'
       title: SWML section
+    SWML.Calling.SemanticGate:
+      type: object
+      required:
+        - question
+        - threshold
+        - on_fail
+      properties:
+        id:
+          type: string
+          pattern: ^[A-Za-z0-9_]{1,64}$
+          description: |-
+            A name for the gate, reported in the call records: 1 to 64 letters, digits, or underscores,
+            unique within the function. Defaults to `gate_1`, `gate_2`, and so on, by position.
+          examples:
+            - explicit_request
+        question:
+          type: string
+          minLength: 1
+          maxLength: 8192
+          description: |-
+            The yes/no question, at most 8 KB. Name what it's about with the names of the inputs the gate
+            reads, in backticks: `conversation`, `semantic_state`, `proposed_function`, and
+            `visual_input`. `${...}` variables from `global_data` are expanded when the check runs.
+          examples:
+            - Has the caller explicitly asked to cancel their account in `conversation`?
+        criteria:
+          allOf:
+            - $ref: '#/components/schemas/SWML.Calling.SemanticGateCriteria'
+          minProperties: 1
+          description: What counts as yes and what counts as no, for the near misses the question alone leaves open.
+          examples:
+            - 'true': The caller says they want to cancel.
+              'false': The caller asked about cancelling, or said something else.
+        threshold:
+          type: number
+          maximum: 1
+          description: |-
+            The gate passes when the probability that the answer is yes is at or above this value. Above
+            `0` and at most `1`. Higher is stricter.
+          exclusiveMinimum: 0
+          examples:
+            - 0.95
+        on_fail:
+          allOf:
+            - $ref: '#/components/schemas/SWML.Calling.SemanticGateOnFail'
+          description: What the agent gets instead of the function's result when this is the first gate that fails.
+          examples:
+            - response:
+                tool_result: cancel_account was not run.
+                tool_prompt: Ask the caller to confirm that they want to cancel.
+        visual_input:
+          anyOf:
+            - type: boolean
+            - $ref: '#/components/schemas/SWML.Calling.SemanticGateFrameCount'
+          description: |-
+            How many of the caller's newest video frames the gate looks at, as `visual_input`: `true` is
+            `1`, a whole number from `0` to `5`, and `false` or `0` is none. If the call has no video frame
+            to show, the gate fails without being asked, so a gate with `visual_input` always fails when
+            the post-prompt agent calls the function after the call.
+          examples:
+            - 1
+      unevaluatedProperties:
+        not: {}
+      description: |-
+        A yes/no question about the call that must come out yes before the function runs. A key not
+        listed here is an error, not an ignored setting.
+      title: gate
+    SWML.Calling.SemanticGateCriteria:
+      type: object
+      properties:
+        'true':
+          type: string
+          minLength: 1
+          maxLength: 2048
+          description: What a yes answer means. A non-empty string of at most 2 KB.
+          examples:
+            - The caller says they want to cancel.
+        'false':
+          type: string
+          minLength: 1
+          maxLength: 2048
+          description: What a no answer means. A non-empty string of at most 2 KB.
+          examples:
+            - The caller asked about cancelling, or said something else.
+      unevaluatedProperties:
+        not: {}
+      description: What counts as yes and what counts as no. Set `true`, `false`, or both.
+      title: criteria
+    SWML.Calling.SemanticGateFrameCount:
+      type: integer
+      minimum: 0
+      maximum: 5
+      description: A number of the caller's newest video frames, from `0` (none) to `5`.
+      title: Frame count
+    SWML.Calling.SemanticGateOnFail:
+      type: object
+      required:
+        - response
+      properties:
+        response:
+          anyOf:
+            - $ref: '#/components/schemas/SWML.Calling.SemanticGateResponseText'
+            - $ref: '#/components/schemas/SWML.Calling.SemanticGateToolResult'
+          description: |-
+            What the function returns to the agent. A non-empty string, or an object with `tool_result` and
+            an optional `tool_prompt`. Realtime (speech-to-speech) agents don't use `tool_prompt`, so on
+            those put everything the agent needs in `tool_result`.
+          examples:
+            - cancel_account was not run. Ask the caller to confirm that they want to cancel.
+        action:
+          type: array
+          items:
+            $ref: '#/components/schemas/SWML.Calling.Action'
+          description: Actions to run, as a function's response would. Must be an array, even for one action.
+          examples:
+            - - set_global_data:
+                  cancel_attempted: true
+        post_process:
+          type: boolean
+          description: |-
+            Hold the actions until after the agent has spoken its reply, rather than running them
+            immediately. **Default:** `false`.
+          examples:
+            - true
+          default: false
+      unevaluatedProperties:
+        not: {}
+      description: |-
+        What the agent gets when this is the first gate that fails, shaped like a
+        [`data_map` output](/docs/swml/reference/calling/ai/swaig/functions/data-map). At most
+        8 KB as compact JSON. Its actions run as written: `${...}` variables in them are not expanded,
+        though a `SWML` action resolves the variables in its own document when it runs.
+      title: on_fail
+    SWML.Calling.SemanticGateResponseText:
+      type: string
+      minLength: 1
+      description: The function's result as plain text. Must not be empty, and should say the function did not run.
+      title: Response text
+    SWML.Calling.SemanticGateToolResult:
+      type: object
+      required:
+        - tool_result
+      properties:
+        tool_result:
+          type: string
+          minLength: 1
+          description: What the agent sees as the function's result. Must say that the function did not run.
+          examples:
+            - cancel_account was not run.
+        tool_prompt:
+          type: string
+          description: The steering half — injected as a system message right after the tool message.
+          examples:
+            - Tell the caller their order is delayed and offer to text updates.
+      unevaluatedProperties:
+        not: {}
+      description: |-
+        The object form of an `on_fail` response. `tool_result` is what the agent sees as the function's
+        result, and `tool_prompt` is an instruction placed right after it.
+      title: Semantic gate tool result
     SWML.Calling.SendDigits:
       type: object
       required:
@@ -46862,6 +47081,57 @@ components:
           description: A unique name for the function. This can be any user-defined string or can reference a reserved function. Reserved functions are SignalWire functions that will be executed at certain points in the conversation.
           examples:
             - get_weather
+        gates:
+          type: array
+          items:
+            $ref: '#/components/schemas/SWML.Calling.SemanticGate'
+          minItems: 1
+          maxItems: 8
+          description: |-
+            Semantic gates: 1 to 8 yes/no questions that must all pass before the function runs. When any
+            fails, the function does not run and the agent gets the first failing gate's `on_fail` instead.
+            A gated function needs a `description` and a `web_hook_url` (its own or from
+            `SWAIG.defaults`) or a `data_map`. If any gate is invalid, the function is not added to the
+            agent at all.
+          examples:
+            - - id: explicit_request
+                question: Has the caller explicitly asked to cancel their account in `conversation`?
+                criteria:
+                  'true': The caller says they want to cancel.
+                  'false': The caller asked about cancelling, or said something else.
+                threshold: 0.95
+                on_fail:
+                  response:
+                    tool_result: cancel_account was not run.
+                    tool_prompt: Ask the caller to confirm that they want to cancel.
+        gate_fillers:
+          allOf:
+            - $ref: '#/components/schemas/SWML.Calling.FunctionFillers'
+          description: |-
+            What the agent says while the gates are checked, shaped like `fillers`. Ignored on a function
+            without `gates`.
+          examples:
+            - default:
+                - Let me check that.
+        fillers_at_gates:
+          type: boolean
+          description: |-
+            For a gated function without `gate_fillers`, whether its `fillers` play as soon as the agent
+            calls it, during the gate check (`true`), or only after the gates pass (`false`). When unset,
+            the function inherits `SWAIG.defaults.fillers_at_gates`, which is `true` unless you change it.
+          examples:
+            - false
+        visual_input:
+          anyOf:
+            - type: boolean
+            - $ref: '#/components/schemas/SWML.Calling.SemanticGateFrameCount'
+          description: |-
+            How many of the caller's newest video frames your `web_hook_url` receives with the function
+            call, as `visual_input`: `true` is `1`, a whole number from `0` to `5`, and `false` or `0` is
+            none. On a gated function, the frames are taken when the gates are checked, never later.
+            Ignored on a `data_map` function.
+          examples:
+            - 1
       unevaluatedProperties:
         not: {}
       title: SWAIG Function
@@ -46884,6 +47154,12 @@ components:
         - $ref: '#/components/schemas/SWML.Calling.SendSMS'
         - $ref: '#/components/schemas/SWML.Calling.Denoise'
         - $ref: '#/components/schemas/SWML.Calling.StopDenoise'
+    SWML.Calling.VisualInputFrameCount:
+      type: integer
+      minimum: 1
+      maximum: 5
+      description: A number of the caller's newest video frames, from `1` to `5`.
+      title: Frame count
     SWML.Calling.Webhook:
       type: object
       required:
@@ -57413,6 +57689,227 @@ components:
       unevaluatedProperties:
         not: {}
       description: Timing and token counts for one generated reply.
+    Webhooks.AI.AISemanticGateBlockedCall:
+      type: object
+      required:
+        - function
+        - outcome
+      properties:
+        function:
+          type: string
+          description: The name of the blocked function.
+          examples:
+            - refund
+        outcome:
+          type: string
+          enum:
+            - fail
+            - timeout
+            - provider_error
+            - invalid_response
+            - invalid_arguments
+            - config_error
+            - aborted
+          description: The check's `outcome`.
+          examples:
+            - fail
+      unevaluatedProperties:
+        not: {}
+      description: A function the post-prompt agent called that a semantic gate blocked.
+    Webhooks.AI.AISemanticGateRecord:
+      type: object
+      required:
+        - evaluation_id
+        - phase
+        - latency_ms
+        - outcome
+        - dispatched
+        - gates
+      properties:
+        evaluation_id:
+          type: string
+          description: A unique ID for the check.
+          examples:
+            - d7b5c0f2-6a1e-4c8b-9f3d-2b7e1a0c5d44
+        phase:
+          type: string
+          enum:
+            - text
+            - oart
+            - post
+          description: |-
+            Where the check ran: `text` for a standard agent, `oart` for a realtime (speech-to-speech)
+            agent, or `post` for the post-prompt agent after the call.
+          examples:
+            - text
+        attempts:
+          type: integer
+          description: How many attempts the check made. Present once the check was sent.
+          examples:
+            - 1
+        latency_ms:
+          type: integer
+          description: How long the check took, in milliseconds.
+          examples:
+            - 212
+        outcome:
+          type: string
+          enum:
+            - pass
+            - disabled
+            - fail
+            - timeout
+            - provider_error
+            - invalid_response
+            - invalid_arguments
+            - config_error
+            - aborted
+          description: |-
+            How the check ended:
+
+            - `pass`: every gate passed, and the function ran.
+            - `disabled`: gates are turned off for the call (`semantic_gates_enabled: false`), and the
+              function ran.
+            - `fail`: a gate answered under its threshold or had no video frame to look at.
+            - `timeout`: the check ran out of time (`semantic_gate_timeout_ms`).
+            - `provider_error`: the decision model refused or failed.
+            - `invalid_response`: the decision model's answer could not be used.
+            - `invalid_arguments`: the agent's arguments for the function were missing or not a valid JSON
+              object.
+            - `config_error`: the check could not be set up, for example a request too large to send.
+            - `aborted`: the call ended during the check.
+
+            The function runs only on `pass` and `disabled`.
+          examples:
+            - fail
+        dispatched:
+          type: boolean
+          description: Whether the function ran.
+          examples:
+            - false
+        error:
+          type: string
+          description: A short description of the error. Present when `outcome` is an error.
+          examples:
+            - the call went away
+        frames:
+          type: integer
+          description: |-
+            How many of the caller's video frames the check took. Present when a gate has `visual_input` and
+            the check got as far as taking frames.
+          examples:
+            - 1
+        conversation_dropped:
+          type: integer
+          description: |-
+            How many of the oldest conversation entries were left out so the check would fit. Present only
+            when any were.
+          examples:
+            - 4
+        gates:
+          type: array
+          items:
+            $ref: '#/components/schemas/Webhooks.AI.AISemanticGateResult'
+          description: Each gate's result, in the order the gates are listed.
+          examples:
+            - - id: explicit_request
+                threshold: 0.95
+                confidence: 0.98
+                pass: true
+              - id: understands_terms
+                threshold: 0.9
+                confidence: 0.41
+                pass: false
+      unevaluatedProperties:
+        not: {}
+      description: |-
+        The record of one semantic gate check. Some fields appear only when the check got far enough to
+        have them.
+    Webhooks.AI.AISemanticGateResult:
+      type: object
+      required:
+        - id
+        - threshold
+      properties:
+        id:
+          type: string
+          description: The gate's `id`, or `gate_1`, `gate_2`, and so on when it has none.
+          examples:
+            - explicit_request
+        threshold:
+          type: number
+          description: The gate's `threshold`.
+          examples:
+            - 0.95
+        confidence:
+          type: number
+          description: |-
+            The probability that the answer is yes. Present once the decision model answered for the gate;
+            a gate that failed for lack of a video frame has `reason` instead.
+          examples:
+            - 0.98
+        pass:
+          type: boolean
+          description: Whether the gate passed. Present once the gate was decided.
+          examples:
+            - true
+        reason:
+          type: string
+          description: '`no_frame` when the gate failed because the call had no video frame to show it.'
+          examples:
+            - no_frame
+      unevaluatedProperties:
+        not: {}
+      description: One gate's result within a semantic gate check, in the order the gates are listed.
+    Webhooks.AI.AISemanticGateTally:
+      type: object
+      required:
+        - evaluations
+        - pass
+        - fail
+        - error
+        - disabled
+        - latency_ms_total
+        - latency_ms_max
+      properties:
+        evaluations:
+          type: integer
+          description: How many checks were recorded, including `disabled` ones.
+          examples:
+            - 3
+        pass:
+          type: integer
+          description: How many checks passed.
+          examples:
+            - 1
+        fail:
+          type: integer
+          description: How many checks failed because a gate answered no or had no video frame.
+          examples:
+            - 1
+        error:
+          type: integer
+          description: How many checks ended in an error, such as a timeout.
+          examples:
+            - 0
+        disabled:
+          type: integer
+          description: How many checks were skipped because gates are turned off for the call.
+          examples:
+            - 1
+        latency_ms_total:
+          type: integer
+          description: The total time spent on checks, in milliseconds.
+          examples:
+            - 540
+        latency_ms_max:
+          type: integer
+          description: The longest single check, in milliseconds.
+          examples:
+            - 310
+      unevaluatedProperties:
+        not: {}
+      description: The semantic gate checks across the whole call.
     Webhooks.AI.AISidecarCallbackPayload:
       type: object
       required:
@@ -57635,9 +58132,67 @@ components:
           description: Always `true` when present, meaning the MCP call failed.
           examples:
             - true
+        semantic_gates:
+          allOf:
+            - $ref: '#/components/schemas/Webhooks.AI.AISemanticGateRecord'
+          description: |-
+            The result of checking the function's
+            [semantic gates](/docs/swml/reference/calling/ai/swaig/functions/gates). Present only on a call
+            to a gated function. When the function was blocked, `post_response` holds what the agent got
+            instead of a reply from your server: the failing gate's `on_fail` output, or the temporary-problem
+            message when the check ended in an error. An `on_fail` with `post_process: true` and actions is
+            in `delayed_post_response` instead.
+        visual_input_frames:
+          type: integer
+          description: |-
+            How many of the caller's video frames were sent to your server with the call. Present only when
+            a function with its own `visual_input` called your server. The frames themselves are never in
+            the log.
+          examples:
+            - 1
       unevaluatedProperties:
         not: {}
       description: One tool call the agent made, in the order it was made.
+    Webhooks.AI.AIVisualInputFrame:
+      type: object
+      required:
+        - mime
+        - width
+        - height
+        - captured_at
+        - data
+      properties:
+        mime:
+          type: string
+          description: The frame's media type.
+          examples:
+            - image/jpeg
+        width:
+          type: integer
+          description: The frame's width, in pixels.
+          examples:
+            - 640
+        height:
+          type: integer
+          description: The frame's height, in pixels.
+          examples:
+            - 360
+        captured_at:
+          type: integer
+          format: int64
+          description: When the frame was captured, as a Unix timestamp in microseconds.
+          examples:
+            - 1694541297950440
+        data:
+          type: string
+          description: The image, base64-encoded.
+          examples:
+            - /9j/4AAQSkZJRgABAQAAAQABAAD...
+      unevaluatedProperties:
+        not: {}
+      description: |-
+        One video frame from the caller, as a JPEG at most 640 pixels on its longer side. Frames are taken
+        at most one per second, and none is older than 8 seconds.
     Webhooks.AI.AiDebugWebhookPayload:
       type: object
       required:
@@ -58991,6 +59546,21 @@ components:
           items:
             $ref: '#/components/schemas/Webhooks.AI.AISwaigLogEntry'
           description: Every tool call the agent made, in order. Included when `action` is `post_conversation`.
+        semantic_gates_blocked:
+          type: array
+          items:
+            $ref: '#/components/schemas/Webhooks.AI.AISemanticGateBlockedCall'
+          description: |-
+            The functions the post-prompt agent called that a
+            [semantic gate](/docs/swml/reference/calling/ai/swaig/functions/gates) blocked. Included only
+            when there were any.
+        semantic_gates:
+          allOf:
+            - $ref: '#/components/schemas/Webhooks.AI.AISemanticGateTally'
+          description: |-
+            A tally of the call's [semantic gate](/docs/swml/reference/calling/ai/swaig/functions/gates)
+            checks. Included when any gated function was called, even with gates turned off, whether or not
+            accounting is on.
         total_minutes:
           type: integer
           description: |-
@@ -59259,6 +59829,23 @@ components:
           items:
             $ref: '#/components/schemas/Webhooks.AI.AICallLogEntry'
           description: The full, unredacted conversation so far. Included when you enable `swaig_post_conversation`.
+        visual_input:
+          type: array
+          items:
+            $ref: '#/components/schemas/Webhooks.AI.AIVisualInputFrame'
+          description: |-
+            The caller's newest video frames, oldest first, up to the function's
+            [`visual_input`](/docs/swml/reference/calling/ai/swaig/functions#functionsvisual_input) count.
+            Included only for a function that sets `visual_input`; an empty array when the call has no video,
+            and for functions called after the call ends. On a gated function, the frames are taken when its
+            gates are checked, never later.
+        visual_input_evaluation_id:
+          type: string
+          description: |-
+            The `evaluation_id` of the semantic gate check that judged the frames in `visual_input`. Included
+            when one of the function's gates looked at them.
+          examples:
+            - d7b5c0f2-6a1e-4c8b-9f3d-2b7e1a0c5d44
       unevaluatedProperties:
         not: {}
     Webhooks.AI.BedrockPostPromptCallbackPayload:
