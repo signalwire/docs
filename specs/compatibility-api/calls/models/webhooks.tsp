@@ -14,53 +14,53 @@ model VoiceStatusCallbackPayload {
 
   @doc("The average time between packets for the inbound stream.")
   @example(20)
-  AudioInAveragePtime: int32;
+  AudioInAveragePtime?: int32;
 
   @doc("The number of DTMF packets in the inbound media stream.")
   @example(0)
-  AudioInDtmfPacketCount: int32;
+  AudioInDtmfPacketCount?: int32;
 
   @doc("""
     The number of incoming packets removed from the jitter buffer due to buffer overflow or underflow,
     causing these packets to be discarded or lost.
     """)
   @example(2)
-  AudioInFlushPacketCount: int32;
+  AudioInFlushPacketCount?: int32;
 
   @doc("The maximum variance of jitter for incoming audio RTP packets.")
   @example(8)
-  AudioInJitterMaxVariance: int32;
+  AudioInJitterMaxVariance?: int32;
 
   @doc("The minimum variance of jitter for incoming audio RTP packets.")
   @example(1)
-  AudioInJitterMinVariance: int32;
+  AudioInJitterMinVariance?: int32;
 
   @doc("The largest jitter buffer size recorded for incoming audio RTP packets during the session.")
   @example(4)
-  AudioInLargestJbSize: int32;
+  AudioInLargestJbSize?: int32;
 
   @doc("A mean opinion score on a scale of 1–5 that helps determine audio quality.")
   @example("4.3")
-  AudioInMos: string;
+  AudioInMos?: string;
 
   @doc("The number of audio packets received in the inbound media stream.")
   @example(1842)
-  AudioInMediaPacketCount: int32;
+  AudioInMediaPacketCount?: int32;
 
   @doc("""
     Increased with every packet not received at a given ptime.
     Increases with every lost packet from the inbound stream.
     """)
   @example(1)
-  AudioInSkipPacketCount: int32;
+  AudioInSkipPacketCount?: int32;
 
   @doc("The total number of DTMF packets generated in the outbound media stream.")
   @example(0)
-  AudioOutDtmfPacketCount: int32;
+  AudioOutDtmfPacketCount?: int32;
 
   @doc("The number of audio packets sent in the outbound media stream.")
   @example(1840)
-  AudioOutMediaPacketCount: int32;
+  AudioOutMediaPacketCount?: int32;
 
   @doc("The source of the status callback.")
   @example("call-progress-events")
