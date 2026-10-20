@@ -8165,6 +8165,63 @@ paths:
       tags:
         - WhatsApp Templates
   /api/project/tokens:
+    get:
+      operationId: list_tokens
+      summary: List API tokens
+      description: |-
+        Lists the project API tokens the caller can manage, newest first. Use it to find the `id` of a token before you [update](/docs/apis/rest/project-tokens/update-token), [regenerate](/docs/apis/rest/project-tokens/regenerate-token), or [delete](/docs/apis/rest/project-tokens/delete-token) it, or to check when each token last authenticated a request.
+
+        Token values are never returned. A token's value appears only in the response that issued it: [Create API token](/docs/apis/rest/project-tokens/create-token) or [Regenerate API token](/docs/apis/rest/project-tokens/regenerate-token).
+
+        With a project API token, the list covers the tokens of the authenticated project and its subprojects. With a [Personal access token](/docs/apis/authorization#personal-access-tokens), it covers the tokens of every project the token holder is enabled for, plus their subprojects. Pass `project_id` to narrow the list to one project.
+
+        #### Permissions
+
+        With a project API token, the token must have the following scope(s) enabled to make a successful request: _Management_.
+
+        With a [Personal access token](/docs/apis/authorization#personal-access-tokens) there are no scopes. The token holder must be an owner or admin of the space, and the request reaches only the projects the holder is enabled for, plus their subprojects.
+
+        [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
+      parameters:
+        - $ref: '#/components/parameters/Project.ListTokensQuery.project_id'
+        - $ref: '#/components/parameters/Project.ListTokensQuery.page_size'
+        - $ref: '#/components/parameters/Project.ListTokensQuery.page_token'
+        - $ref: '#/components/parameters/Project.ListTokensQuery.page_number'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project.TokenListResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '422':
+          description: |-
+            A pagination parameter is invalid. A `page_token` that is not a cursor from a previous
+            response returns `page_token_is_invalid`, and a `page_number` above 0 without a
+            `page_token` returns `page_token_required_for_next_page`. A `page_size` outside 1 to
+            1000, a `page_number` that is negative or not an integer, or a `project_id` that is
+            not a single value returns `invalid_parameter`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project.ListTokensStatusCode422'
+        '500':
+          description: An internal server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - Project Tokens
+      security:
+        - SignalWireBasicAuth: []
+        - SignalWirePersonalAccessTokenAuth: []
     post:
       operationId: create_token
       summary: Create API token
@@ -8173,7 +8230,7 @@ paths:
 
         The Compatibility API exposes the same project tokens through its account-scoped route. Use [Generate a new API Token](/docs/compatibility-api/rest/tokens/create-token) for that request format.
 
-        The response is the only place the token secret is returned. Store it securely; no later request, including [Update API token](/docs/apis/rest/project-tokens/update-token), can read it back.
+        The response is the only place the token secret is returned. Store it securely; no later request, including [Update API token](/docs/apis/rest/project-tokens/update-token) and [List API tokens](/docs/apis/rest/project-tokens/list-tokens), can read it back. If you lose it, [Regenerate API token](/docs/apis/rest/project-tokens/regenerate-token) issues a new value for the same token.
 
         With a project API token, the new token belongs to the authenticated project, or to one of its subprojects when `subproject_id` is given; `project_id` is ignored. With a [Personal access token](/docs/apis/authorization#personal-access-tokens), `project_id` is required and names the project the token is created for, which is how a root project created with [Create a project](/docs/apis/rest/projects/create-subproject) gets its first credential.
 
@@ -8236,9 +8293,9 @@ paths:
       operationId: update_token
       summary: Update API token
       description: |-
-        Changes the name or enabled permission categories of an existing project API token. Use it to rotate a token's responsibilities without replacing its identifier; remove permissions that the token's server-side caller no longer needs. For the account-scoped Compatibility API route, use [Update an API Token](/docs/compatibility-api/rest/tokens/update-token).
+        Changes the name or enabled permission categories of an existing project API token. Use it to change a token's permissions without replacing its identifier; remove permissions that the token's server-side caller no longer needs. For the account-scoped Compatibility API route, use [Update an API Token](/docs/compatibility-api/rest/tokens/update-token).
 
-        The response contains the token's `id`, `name`, and `permissions` only. The token secret is returned once, by [Create API token](/docs/apis/rest/project-tokens/create-token), and cannot be retrieved afterwards.
+        Updating a token does not change its value. The response omits the token secret, which is returned only by [Create API token](/docs/apis/rest/project-tokens/create-token) and [Regenerate API token](/docs/apis/rest/project-tokens/regenerate-token).
 
         #### Permissions
 
@@ -8329,6 +8386,67 @@ paths:
       responses:
         '204':
           description: 'There is no content to send for this request, but the headers may be useful. '
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode404'
+        '500':
+          description: An internal server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - Project Tokens
+      security:
+        - SignalWireBasicAuth: []
+        - SignalWirePersonalAccessTokenAuth: []
+  /api/project/tokens/{token_id}/regenerate:
+    post:
+      operationId: regenerate_token
+      summary: Regenerate API token
+      description: |-
+        Replaces a project API token's value and returns the new value. Use it to rotate a credential on a schedule, after it has been exposed, or when its value has been lost. The token keeps its `id`, `name`, and `permissions`, so there is nothing to re-enter; to change those, use [Update API token](/docs/apis/rest/project-tokens/update-token).
+
+        The previous value stops working immediately, on every API that accepts a project API token. Anything still using it receives `401 Unauthorized` until you give it the new value.
+
+        The response is the only place the new value is returned; store it securely. If you lose it, regenerate the token again.
+
+        The new value always uses the current token format: 42 characters beginning with `swapi_`. A token issued in the legacy format, 50 characters beginning with `PT`, changes format and length when regenerated, so update anything that validates or stores token values by length or prefix.
+
+        You can regenerate the token you are authenticating with. The request succeeds, but the value you sent is no longer valid once it does, so save the new value from the response before making any further request.
+
+        A token the caller cannot reach returns `404 Not Found`. Use [List API tokens](/docs/apis/rest/project-tokens/list-tokens) to find the `id` of each token you can manage.
+
+        #### Permissions
+
+        With a project API token, the token must have the following scope(s) enabled to make a successful request: _Management_.
+
+        With a [Personal access token](/docs/apis/authorization#personal-access-tokens) there are no scopes. The token holder must be an owner or admin of the space, and the request reaches only the projects the holder is enabled for, plus their subprojects.
+
+        [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
+      parameters:
+        - name: token_id
+          in: path
+          required: true
+          description: The unique identifier of the token to regenerate.
+          schema:
+            $ref: '#/components/schemas/uuid'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project.CreateTokenResponse'
         '401':
           description: Access is unauthorized.
           content:
@@ -17126,6 +17244,45 @@ components:
       description: The unique identifier of the Resource.
       schema:
         $ref: '#/components/schemas/uuid'
+    Project.ListTokensQuery.page_number:
+      name: page_number
+      in: query
+      required: false
+      description: The page index. A value above 0 requires `page_token`.
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+        default: 0
+      explode: false
+    Project.ListTokensQuery.page_size:
+      name: page_size
+      in: query
+      required: false
+      description: The number of results per page.
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 1000
+        default: 50
+      explode: false
+    Project.ListTokensQuery.page_token:
+      name: page_token
+      in: query
+      required: false
+      description: Cursor token for paging, taken from the `next` or `prev` link of a previous response.
+      schema:
+        type: string
+      explode: false
+    Project.ListTokensQuery.project_id:
+      name: project_id
+      in: query
+      required: false
+      description: Only return tokens that belong to this project. A project the caller cannot reach, or a value that is not a valid project ID, returns an empty list rather than an error.
+      schema:
+        $ref: '#/components/schemas/uuid'
+      explode: false
     Projects.ListProjectsQuery.name:
       name: name
       in: query
@@ -18349,10 +18506,13 @@ components:
         - -32005
         - -32006
         - -32007
+        - -32008
+        - -32009
         - -32600
         - -32601
         - -32602
         - -32603
+        - -32700
       description: |-
         Why a method failed. `-32600` and below are the standard JSON-RPC codes; the rest are specific to
         AI chat. See [API error codes](/docs/apis/error-codes) for the codes callers should handle
@@ -18472,7 +18632,7 @@ components:
           properties:
             response:
               type: string
-              description: The agent's reply. When this call created the conversation, this is the agent's opening message.
+              description: The agent's reply to `message`.
               examples:
                 - Order A-771 shipped on Tuesday and is out for delivery today.
             user_event:
@@ -22139,6 +22299,20 @@ components:
               - G729
               - VP8
               - PCMA
+        transport:
+          type: string
+          enum:
+            - udp
+            - tcp
+            - tls
+          description: |-
+            Transport for SIP signaling to the destination. Only valid when `to` is a SIP URI (`sip:` or `sips:`) for a host outside SignalWire; for any other destination the request returns 422.
+
+            Setting `transport` has the same effect as adding `;transport=` to the `to` URI. If `to` already sets a transport, either with `;transport=` or by being a `sips:` URI (which means `tls`), the two must match or the request returns 422. When neither sets one, SignalWire chooses the transport from the destination's DNS records (NAPTR, then SRV) and falls back to `udp`.
+
+            The transport also decides media encryption. With `udp` or `tcp`, media is sent as unencrypted RTP. With `tls`, or with no transport set, SignalWire offers SRTP and accepts RTP if the destination declines it.
+          examples:
+            - tls
         timeout:
           type: integer
           format: int32
@@ -22279,6 +22453,20 @@ components:
               - G729
               - VP8
               - PCMA
+        transport:
+          type: string
+          enum:
+            - udp
+            - tcp
+            - tls
+          description: |-
+            Transport for SIP signaling to the destination. Only valid when `to` is a SIP URI (`sip:` or `sips:`) for a host outside SignalWire; for any other destination the request returns 422.
+
+            Setting `transport` has the same effect as adding `;transport=` to the `to` URI. If `to` already sets a transport, either with `;transport=` or by being a `sips:` URI (which means `tls`), the two must match or the request returns 422. When neither sets one, SignalWire chooses the transport from the destination's DNS records (NAPTR, then SRV) and falls back to `udp`.
+
+            The transport also decides media encryption. With `udp` or `tcp`, media is sent as unencrypted RTP. With `tls`, or with no transport set, SignalWire offers SRTP and accepts RTP if the destination declines it.
+          examples:
+            - tls
         timeout:
           type: integer
           format: int32
@@ -22430,6 +22618,20 @@ components:
               - G729
               - VP8
               - PCMA
+        transport:
+          type: string
+          enum:
+            - udp
+            - tcp
+            - tls
+          description: |-
+            Transport for SIP signaling to the destination. Only valid when `to` is a SIP URI (`sip:` or `sips:`) for a host outside SignalWire; for any other destination the request returns 422.
+
+            Setting `transport` has the same effect as adding `;transport=` to the `to` URI. If `to` already sets a transport, either with `;transport=` or by being a `sips:` URI (which means `tls`), the two must match or the request returns 422. When neither sets one, SignalWire chooses the transport from the destination's DNS records (NAPTR, then SRV) and falls back to `udp`.
+
+            The transport also decides media encryption. With `udp` or `tcp`, media is sent as unencrypted RTP. With `tls`, or with no transport set, SignalWire offers SRTP and accepts RTP if the destination declines it.
+          examples:
+            - tls
         timeout:
           type: integer
           format: int32
@@ -25645,9 +25847,11 @@ components:
             - calling
           default: calling
         contents:
-          type: object
-          unevaluatedProperties: {}
-          description: The calling SWML document. Uses [calling SWML methods](/docs/swml/reference/calling).
+          anyOf:
+            - type: object
+              unevaluatedProperties: {}
+            - type: string
+          description: The calling SWML document, as a JSON object or as a string of JSON or YAML. Uses [calling SWML methods](/docs/swml/reference/calling).
           examples:
             - version: 1.0.0
               sections:
@@ -25681,9 +25885,11 @@ components:
             - calling
           default: calling
         contents:
-          type: object
-          unevaluatedProperties: {}
-          description: The calling SWML document. Uses [calling SWML methods](/docs/swml/reference/calling).
+          anyOf:
+            - type: object
+              unevaluatedProperties: {}
+            - type: string
+          description: The calling SWML document, as a JSON object or as a string of JSON or YAML. Uses [calling SWML methods](/docs/swml/reference/calling).
           examples:
             - version: 1.0.0
               sections:
@@ -32844,9 +33050,11 @@ components:
           examples:
             - messaging
         contents:
-          type: object
-          unevaluatedProperties: {}
-          description: The messaging SWML document. Uses [messaging SWML methods](/docs/swml/reference/messaging).
+          anyOf:
+            - type: object
+              unevaluatedProperties: {}
+            - type: string
+          description: The messaging SWML document, as a JSON object or as a string of JSON or YAML. Uses [messaging SWML methods](/docs/swml/reference/messaging).
           examples:
             - version: 1.0.0
               sections:
@@ -32872,9 +33080,11 @@ components:
           examples:
             - messaging
         contents:
-          type: object
-          unevaluatedProperties: {}
-          description: The messaging SWML document. Uses [messaging SWML methods](/docs/swml/reference/messaging).
+          anyOf:
+            - type: object
+              unevaluatedProperties: {}
+            - type: string
+          description: The messaging SWML document, as a JSON object or as a string of JSON or YAML. Uses [messaging SWML methods](/docs/swml/reference/messaging).
           examples:
             - version: 1.0.0
               sections:
@@ -34595,6 +34805,8 @@ components:
         - id
         - name
         - permissions
+        - last_used_at
+        - revoked_at
         - token
       properties:
         id:
@@ -34604,8 +34816,10 @@ components:
           examples:
             - ea14556a-984f-11ee-b9d1-0242ac120002
         name:
-          type: string
-          description: The name of the API Token.
+          anyOf:
+            - type: string
+            - type: 'null'
+          description: The name of the API Token. `null` when the token has no name.
           examples:
             - John Doe's Token
         permissions:
@@ -34617,14 +34831,107 @@ components:
             - - calling
               - fax
               - messaging
+        last_used_at:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+          description: The date and time the token last authenticated a request. `null` if it never has.
+          examples:
+            - '2024-05-06T12:20:00Z'
+        revoked_at:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+          description: The date and time SignalWire revoked the token's value, for example after detecting that the value was exposed. `null` if it has not been revoked. A revoked token keeps its `id` and still appears in [List API tokens](/docs/apis/rest/project-tokens/list-tokens), but its previous value no longer authenticates and no replacement value has been issued to you. To get a working value, [regenerate the token](/docs/apis/rest/project-tokens/regenerate-token), which also clears `revoked_at`.
+          examples:
+            - null
         token:
           type: string
-          description: The API token that can be used along with the project ID for basic authentication. It is returned only in this response and cannot be retrieved again; store it securely.
+          description: The API token that can be used along with the project ID for basic authentication. It is returned only when the token is created or regenerated and cannot be retrieved again; store it securely.
           examples:
             - swapi_0123456789ab0123456789ab0123456789ab
       unevaluatedProperties:
         not: {}
       title: Created API Token Response
+    Project.ListTokensStatusCode422:
+      type: object
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Types.StatusCodes.RestApiErrorItem'
+          description: List of validation errors.
+      unevaluatedProperties:
+        not: {}
+      description: |-
+        A pagination parameter is invalid. A `page_token` that is not a cursor from a previous
+        response returns `page_token_is_invalid`, and a `page_number` above 0 without a
+        `page_token` returns `page_token_required_for_next_page`. A `page_size` outside 1 to
+        1000, a `page_number` that is negative or not an integer, or a `project_id` that is
+        not a single value returns `invalid_parameter`.
+      examples:
+        - statusCode: 422
+          errors:
+            - type: validation_error
+              code: page_token_is_invalid
+              message: The provided page token is not valid.
+              attribute: page_token
+              url: https://signalwire.com/docs/apis/error-codes#page_token_is_invalid
+    Project.TokenListResponse:
+      type: object
+      required:
+        - links
+        - data
+      properties:
+        links:
+          allOf:
+            - $ref: '#/components/schemas/Project.TokenPaginationLinks'
+          description: Pagination links for the list of tokens.
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Project.TokenResponse'
+          description: The tokens on this page. Token values are never included.
+      unevaluatedProperties:
+        not: {}
+      description: A page of API tokens.
+    Project.TokenPaginationLinks:
+      type: object
+      required:
+        - self
+        - first
+      properties:
+        self:
+          type: string
+          format: uri
+          description: The link to the current page.
+          examples:
+            - https://example-space.signalwire.com/api/project/tokens?page_number=0&page_size=50
+        first:
+          type: string
+          format: uri
+          description: The link to the first page.
+          examples:
+            - https://example-space.signalwire.com/api/project/tokens?page_size=50
+        next:
+          type: string
+          format: uri
+          description: The link to the next page. Only present when more results exist.
+          examples:
+            - https://example-space.signalwire.com/api/project/tokens?page_number=1&page_size=50&page_token=PAea14556a-984f-11ee-b9d1-0242ac120002
+        prev:
+          type: string
+          format: uri
+          description: The link to the previous page. Only present when a previous page exists.
+          examples:
+            - https://example-space.signalwire.com/api/project/tokens?page_number=0&page_size=50&page_token=PBea14556a-984f-11ee-b9d1-0242ac120002
+      unevaluatedProperties:
+        not: {}
+      description: Pagination links for a list of API tokens.
     Project.TokenPermission:
       type: string
       enum:
@@ -34646,6 +34953,8 @@ components:
         - id
         - name
         - permissions
+        - last_used_at
+        - revoked_at
       properties:
         id:
           allOf:
@@ -34654,8 +34963,10 @@ components:
           examples:
             - ea14556a-984f-11ee-b9d1-0242ac120002
         name:
-          type: string
-          description: The name of the API Token.
+          anyOf:
+            - type: string
+            - type: 'null'
+          description: The name of the API Token. `null` when the token has no name.
           examples:
             - John Doe's Token
         permissions:
@@ -34667,6 +34978,22 @@ components:
             - - calling
               - fax
               - messaging
+        last_used_at:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+          description: The date and time the token last authenticated a request. `null` if it never has.
+          examples:
+            - '2024-05-06T12:20:00Z'
+        revoked_at:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+          description: The date and time SignalWire revoked the token's value, for example after detecting that the value was exposed. `null` if it has not been revoked. A revoked token keeps its `id` and still appears in [List API tokens](/docs/apis/rest/project-tokens/list-tokens), but its previous value no longer authenticates and no replacement value has been issued to you. To get a working value, [regenerate the token](/docs/apis/rest/project-tokens/regenerate-token), which also clears `revoked_at`.
+          examples:
+            - null
       unevaluatedProperties:
         not: {}
       title: API Token Response
@@ -37601,8 +37928,6 @@ components:
           default: true
         semantic_gate_timeout_ms:
           type: integer
-          minimum: 500
-          maximum: 10000
           description: |-
             How long one semantic gate check may take in total, in milliseconds. A check that runs
             out of time blocks the function. Allowed values from `500` to `10,000`; a value outside the range
@@ -37612,8 +37937,6 @@ components:
           default: 2500
         semantic_gate_history:
           type: integer
-          minimum: 0
-          maximum: 100
           description: |-
             How many recent conversation entries a semantic gate check reads. Allowed values from `0` to
             `100`; a value outside the range is clamped to it. **Default:** `20`.
@@ -46794,11 +47117,10 @@ components:
           type: boolean
           description: |-
             For a gated function without `gate_fillers`, whether its `fillers` play as soon as the agent
-            calls it, during the gate check (`true`), or only after the gates pass (`false`). Falls back to
-            `SWAIG.defaults.fillers_at_gates`. **Default:** `true`.
+            calls it, during the gate check (`true`), or only after the gates pass (`false`). When unset,
+            the function inherits `SWAIG.defaults.fillers_at_gates`, which is `true` unless you change it.
           examples:
             - false
-          default: true
         visual_input:
           anyOf:
             - type: boolean
@@ -59064,7 +59386,7 @@ components:
             - voice
         call_id:
           type: string
-          description: The ID of the call. On a chat conversation this carries the conversation id instead.
+          description: The ID of the call. On a chat conversation this is a separate ID, not your conversation ID; use `conversation_id` to match the summary to the conversation.
           examples:
             - 2e1e66e5-5d07-413d-9668-55542992eec0
         app_name:

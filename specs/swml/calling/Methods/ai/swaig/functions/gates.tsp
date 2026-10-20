@@ -182,11 +182,11 @@ model SemanticGateFunctionFields {
 
   @doc("""
     For a gated function without `gate_fillers`, whether its `fillers` play as soon as the agent
-    calls it, during the gate check (`true`), or only after the gates pass (`false`). Falls back to
-    `SWAIG.defaults.fillers_at_gates`. **Default:** `true`.
+    calls it, during the gate check (`true`), or only after the gates pass (`false`). When unset,
+    the function inherits `SWAIG.defaults.fillers_at_gates`, which is `true` unless you change it.
     """)
   @example(false)
-  fillers_at_gates?: boolean | SWMLVar = true;
+  fillers_at_gates?: boolean | SWMLVar;
 
   @doc("""
     How many of the caller's newest video frames your `web_hook_url` receives with the function

@@ -15,9 +15,9 @@ model CallingSwmlScriptCreateRequest {
   @example("calling")
   script_type?: "calling" = "calling";
 
-  @doc("The calling SWML document. Uses [calling SWML methods](/docs/swml/reference/calling).")
+  @doc("The calling SWML document, as a JSON object or as a string of JSON or YAML. Uses [calling SWML methods](/docs/swml/reference/calling).")
   @example(SWML_CONTENTS_EXAMPLE)
-  contents: TypeSpec.Record<unknown>;
+  contents: TypeSpec.Record<unknown> | string;
 
   @doc("URL that receives status callbacks for messages sent or calls made by this script.")
   @example("https://example.com/status")
@@ -36,9 +36,9 @@ model MessagingSwmlScriptCreateRequest {
   @example("messaging")
   script_type?: "messaging";
 
-  @doc("The messaging SWML document. Uses [messaging SWML methods](/docs/swml/reference/messaging).")
+  @doc("The messaging SWML document, as a JSON object or as a string of JSON or YAML. Uses [messaging SWML methods](/docs/swml/reference/messaging).")
   @example(SWML_MESSAGING_CONTENTS_EXAMPLE)
-  contents: TypeSpec.Record<unknown>;
+  contents: TypeSpec.Record<unknown> | string;
 }
 
 @summary("Create SWML Script")
@@ -60,9 +60,9 @@ model CallingSwmlScriptUpdateRequest {
   @example("calling")
   script_type?: "calling" = "calling";
 
-  @doc("The calling SWML document. Uses [calling SWML methods](/docs/swml/reference/calling).")
+  @doc("The calling SWML document, as a JSON object or as a string of JSON or YAML. Uses [calling SWML methods](/docs/swml/reference/calling).")
   @example(SWML_CONTENTS_EXAMPLE)
-  contents?: TypeSpec.Record<unknown>;
+  contents?: TypeSpec.Record<unknown> | string;
 
   @doc("URL that receives status callbacks for messages sent or calls made by this script.")
   @example("https://example.com/status")
@@ -81,9 +81,9 @@ model MessagingSwmlScriptUpdateRequest {
   @example("messaging")
   script_type?: "messaging";
 
-  @doc("The messaging SWML document. Uses [messaging SWML methods](/docs/swml/reference/messaging).")
+  @doc("The messaging SWML document, as a JSON object or as a string of JSON or YAML. Uses [messaging SWML methods](/docs/swml/reference/messaging).")
   @example(SWML_MESSAGING_CONTENTS_EXAMPLE)
-  contents?: TypeSpec.Record<unknown>;
+  contents?: TypeSpec.Record<unknown> | string;
 }
 
 @summary("Update SWML Script")

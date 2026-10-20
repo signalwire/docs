@@ -477,8 +477,6 @@ model AIParams {
     out of time blocks the function. Allowed values from `500` to `10,000`; a value outside the range
     is clamped to it. **Default:** `2500` ms.
     """)
-  @minValue(500)
-  @maxValue(10000)
   @example(3000)
   semantic_gate_timeout_ms?: integer | SWMLVar = 2500;
 
@@ -486,8 +484,6 @@ model AIParams {
     How many recent conversation entries a semantic gate check reads. Allowed values from `0` to
     `100`; a value outside the range is clamped to it. **Default:** `20`.
     """)
-  @minValue(0)
-  @maxValue(100)
   @example(30)
   semantic_gate_history?: integer | SWMLVar = 20;
 
