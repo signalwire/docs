@@ -27,4 +27,12 @@ model SWAIGDefaults {
   @doc("Default scoping token for `meta_data`, for functions that don't set their own `meta_data_token`.")
   @example("support_desk")
   meta_data_token?: string;
+
+  @doc("""
+    Default `fillers_at_gates` for gated functions that don't set their own: whether a gated
+    function's `fillers` play while its semantic gates are checked (`true`) or only after they pass
+    (`false`). **Default:** `true`.
+    """)
+  @example(false)
+  fillers_at_gates?: boolean | SWMLVar = true;
 }

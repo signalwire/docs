@@ -1,0 +1,49 @@
+---
+title: "gate_fillers"
+slug: reference/python/agents/data-map/gate-fillers
+description: Set what the AI says while the DataMap function's semantic gates are checked.
+max-toc-depth: 3
+---
+
+[ref-datamap]: /docs/server-sdks/reference/python/agents/data-map
+[gate]: /docs/server-sdks/reference/python/agents/data-map/gate
+[to-swaig-function]: /docs/server-sdks/reference/python/agents/data-map/to-swaig-function
+
+Set what the AI says while this function's semantic gates are checked. Only for a
+function with gates: [`to_swaig_function()`][to-swaig-function] raises `ValueError`
+when gate fillers are set and no [`gate()`][gate] was added.
+
+## Parameters
+
+<ParamField path="fillers" type="dict[str, list[str | list[str]]]" required={true} toc={true}>
+  Phrases keyed by language code (`"en-US"`), `"auto"` (translated into the call's
+  language on first use), or `"default"`. Shaped like a function's `fillers`: each
+  entry is a phrase, or a list of phrases spoken one at a time while the call
+  waits.
+</ParamField>
+
+## Returns
+
+[`DataMap`][ref-datamap] -- Self for method chaining.
+
+## Examples
+
+```python {14}
+from signalwire import DataMap, FunctionResult, SemanticGate
+
+cancel_order = (
+    DataMap("cancel_order")
+    .purpose("Cancel one of the caller's open orders")
+    .parameter("order_id", "string", "The order number", required=True)
+    .gate(
+        SemanticGate(
+            "Has the caller asked in `conversation` to cancel the order in `proposed_function`?",
+            threshold=0.9,
+            on_fail="cancel_order was not run. Ask the caller which order to cancel.",
+        )
+    )
+    .gate_fillers({"en-US": ["Let me check that.", "One moment."]})
+    .webhook("POST", "https://api.example.com/orders/${enc:args.order_id}/cancel")
+    .output(FunctionResult("The order is cancelled. Tell the caller."))
+)
+```

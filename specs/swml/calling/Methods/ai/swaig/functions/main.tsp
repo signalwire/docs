@@ -3,6 +3,7 @@ import "./data_map";
 import "../../../../../Shared/Types";
 import "./parameters.tsp";
 import "../../_shared/fillers.tsp";
+import "./gates.tsp";
 
 using TypeSpec.JsonSchema;
 
@@ -117,6 +118,9 @@ model UserSWAIGFunction is SWAIGFunctionBase {
   @doc("${functionDescription}")
   @example("get_weather")
   function: string;
+
+  // Gates are refused on the hook names, so they're declared on user functions only.
+  ...SemanticGateFunctionFields;
 }
 
 @summary("startup_hook Function")
