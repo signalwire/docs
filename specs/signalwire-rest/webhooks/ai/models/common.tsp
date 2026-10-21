@@ -82,6 +82,182 @@ model AISwaigLogEntry {
   @doc("Always `true` when present, meaning the MCP call failed.")
   @example(true)
   mcp_error?: boolean;
+
+  @doc("""
+    The result of checking the function's
+    [semantic gates](/docs/swml/reference/calling/ai/swaig/functions/gates). Present only on a call
+    to a gated function. When the function was blocked, `post_response` holds what the agent got
+    instead of a reply from your server: the failing gate's `on_fail` output, or the temporary-problem
+    message when the check ended in an error. An `on_fail` with `post_process: true` and actions is
+    in `delayed_post_response` instead.
+    """)
+  semantic_gates?: AISemanticGateRecord;
+
+  @doc("""
+    How many of the caller's video frames were sent to your server with the call. Present only when
+    a function with its own `visual_input` called your server. The frames themselves are never in
+    the log.
+    """)
+  @example(1)
+  visual_input_frames?: integer;
+}
+
+@doc("One gate's result within a semantic gate check, in the order the gates are listed.")
+model AISemanticGateResult {
+  @doc("The gate's `id`, or `gate_1`, `gate_2`, and so on when it has none.")
+  @example("explicit_request")
+  id: string;
+
+  @doc("The gate's `threshold`.")
+  @example(0.95)
+  threshold: float;
+
+  @doc("""
+    The probability that the answer is yes. Present once the decision model answered for the gate;
+    a gate that failed for lack of a video frame has `reason` instead.
+    """)
+  @example(0.98)
+  confidence?: float;
+
+  @doc("Whether the gate passed. Present once the gate was decided.")
+  @example(true)
+  pass?: boolean;
+
+  @doc("`no_frame` when the gate failed because the call had no video frame to show it.")
+  @example("no_frame")
+  reason?: string;
+}
+
+@doc("""
+  The record of one semantic gate check. Some fields appear only when the check got far enough to
+  have them.
+  """)
+model AISemanticGateRecord {
+  @doc("A unique ID for the check.")
+  @example("d7b5c0f2-6a1e-4c8b-9f3d-2b7e1a0c5d44")
+  evaluation_id: string;
+
+  @doc("""
+    Where the check ran: `text` for a standard agent, `oart` for a realtime (speech-to-speech)
+    agent, or `post` for the post-prompt agent after the call.
+    """)
+  @example("text")
+  phase: "text" | "oart" | "post";
+
+  @doc("How many attempts the check made. Present once the check was sent.")
+  @example(1)
+  attempts?: integer;
+
+  @doc("How long the check took, in milliseconds.")
+  @example(212)
+  latency_ms: integer;
+
+  @doc("""
+    How the check ended:
+
+    - `pass`: every gate passed, and the function ran.
+    - `disabled`: gates are turned off for the call (`semantic_gates_enabled: false`), and the
+      function ran.
+    - `fail`: a gate answered under its threshold or had no video frame to look at.
+    - `timeout`: the check ran out of time (`semantic_gate_timeout_ms`).
+    - `provider_error`: the decision model refused or failed.
+    - `invalid_response`: the decision model's answer could not be used.
+    - `invalid_arguments`: the agent's arguments for the function were missing or not a valid JSON
+      object.
+    - `config_error`: the check could not be set up, for example a request too large to send.
+    - `aborted`: the call ended during the check.
+
+    The function runs only on `pass` and `disabled`.
+    """)
+  @example("fail")
+  outcome:
+    | "pass"
+    | "disabled"
+    | "fail"
+    | "timeout"
+    | "provider_error"
+    | "invalid_response"
+    | "invalid_arguments"
+    | "config_error"
+    | "aborted";
+
+  @doc("Whether the function ran.")
+  @example(false)
+  dispatched: boolean;
+
+  @doc("A short description of the error. Present when `outcome` is an error.")
+  @example("the call went away")
+  error?: string;
+
+  @doc("""
+    How many of the caller's video frames the check took. Present when a gate has `visual_input` and
+    the check got as far as taking frames.
+    """)
+  @example(1)
+  frames?: integer;
+
+  @doc("""
+    How many of the oldest conversation entries were left out so the check would fit. Present only
+    when any were.
+    """)
+  @example(4)
+  conversation_dropped?: integer;
+
+  @doc("Each gate's result, in the order the gates are listed.")
+  @example(#[
+    #{ id: "explicit_request", threshold: 0.95, confidence: 0.98, pass: true },
+    #{ id: "understands_terms", threshold: 0.9, confidence: 0.41, pass: false }
+  ])
+  gates: AISemanticGateResult[];
+}
+
+@doc("A function the post-prompt agent called that a semantic gate blocked.")
+model AISemanticGateBlockedCall {
+  @doc("The name of the blocked function.")
+  @example("refund")
+  function: string;
+
+  @doc("The check's `outcome`.")
+  @example("fail")
+  outcome:
+    | "fail"
+    | "timeout"
+    | "provider_error"
+    | "invalid_response"
+    | "invalid_arguments"
+    | "config_error"
+    | "aborted";
+}
+
+@doc("The semantic gate checks across the whole call.")
+model AISemanticGateTally {
+  @doc("How many checks were recorded, including `disabled` ones.")
+  @example(3)
+  evaluations: integer;
+
+  @doc("How many checks passed.")
+  @example(1)
+  pass: integer;
+
+  @doc("How many checks failed because a gate answered no or had no video frame.")
+  @example(1)
+  fail: integer;
+
+  @doc("How many checks ended in an error, such as a timeout.")
+  @example(0)
+  error: integer;
+
+  @doc("How many checks were skipped because gates are turned off for the call.")
+  @example(1)
+  disabled: integer;
+
+  @doc("The total time spent on checks, in milliseconds.")
+  @example(540)
+  latency_ms_total: integer;
+
+  @doc("The longest single check, in milliseconds.")
+  @example(310)
+  latency_ms_max: integer;
 }
 
 @doc("Timing and token counts for one generated reply.")
