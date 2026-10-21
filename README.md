@@ -18,6 +18,7 @@
 
 <!-- Quick Links -->
 <p align="center">
+    <a href="https://signalwire.com/signup"><b>Sign Up</b></a> &nbsp;&middot;&nbsp;
     <a href="https://signalwire.com/docs"><b>Get Started</b></a> &nbsp;&middot;&nbsp;
     <a href="https://signalwire.com/docs/apis"><b>API Reference</b></a> &nbsp;&middot;&nbsp;
     <a href="https://signalwire.com/docs/swml"><b>SWML</b></a> &nbsp;&middot;&nbsp;
