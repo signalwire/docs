@@ -111,7 +111,7 @@ model LiveTranscribeUtterance {
   @example(1840)
   silence_before_ms?: integer;
 
-  @doc("The speech engine's confidence in the transcription, from `0` to `1`. Omitted when the speech engine didn't report one.")
+  @doc("The speech engine's confidence in the transcription, from `0` to `1`. Omitted when it's `0` or the speech engine didn't report one.")
   @example(0.97)
   confidence?: float64;
 }
@@ -126,7 +126,7 @@ model LiveTranscribeLogEntry {
   @example("Hi, I'd like to book a ride to the airport.")
   content: string;
 
-  @doc("The speech engine's confidence in the transcription, from `0` to `1`. Omitted when the speech engine didn't report one.")
+  @doc("The speech engine's confidence in the transcription, from `0` to `1`. Omitted when it's `0` or the speech engine didn't report one.")
   @example(0.97)
   confidence?: float64;
 
@@ -135,41 +135,41 @@ model LiveTranscribeLogEntry {
   language?: string;
 }
 
-@doc("Totals for the whole session. Empty when nothing was transcribed.")
+@doc("Totals for the whole session. The counts are `0` when nothing was transcribed.")
 model LiveTranscribeMetrics {
   @doc("The number of utterances transcribed.")
   @example(14)
-  total_utterances?: integer;
+  total_utterances: integer;
 
-  @doc("When the first utterance was transcribed, as a Unix timestamp in microseconds.")
+  @doc("When the first utterance was transcribed, as a Unix timestamp in microseconds. Omitted when nothing was transcribed.")
   @example(1777565701562391)
   first_utterance_ts?: int64;
 
-  @doc("When the last utterance was transcribed, as a Unix timestamp in microseconds.")
+  @doc("When the last utterance was transcribed, as a Unix timestamp in microseconds. Omitted when nothing was transcribed.")
   @example(1777565788902114)
   last_utterance_ts?: int64;
 
   @doc("The number of utterances from the `remote-caller` side.")
   @example(8)
-  remote_caller_turns?: integer;
+  remote_caller_turns: integer;
 
   @doc("The number of utterances from the `local-caller` side.")
   @example(6)
-  local_caller_turns?: integer;
+  local_caller_turns: integer;
 
   @doc("The number of words spoken on the `remote-caller` side.")
   @example(96)
-  remote_caller_words?: integer;
+  remote_caller_words: integer;
 
   @doc("The number of words spoken on the `local-caller` side.")
   @example(71)
-  local_caller_words?: integer;
+  local_caller_words: integer;
 
-  @doc("The average confidence on the `remote-caller` side. Omitted when the speech engine reported none.")
+  @doc("The average confidence on the `remote-caller` side. Omitted when no utterance on that side had a confidence above `0`.")
   @example(0.95)
   remote_caller_avg_confidence?: float64;
 
-  @doc("The average confidence on the `local-caller` side. Omitted when the speech engine reported none.")
+  @doc("The average confidence on the `local-caller` side. Omitted when no utterance on that side had a confidence above `0`.")
   @example(0.96)
   local_caller_avg_confidence?: float64;
 }
@@ -178,7 +178,7 @@ model LiveTranscribeUtteranceWebhookPayload {
   @doc("Identifies the call. `project_id` and `space_id` are included when available.")
   call_info: SignalWireAPI.Webhooks.AI.AICallInfo;
 
-  @doc("The same value as `utterance.confidence`, or `null` when the speech engine didn't report one.")
+  @doc("The speech engine's confidence for this utterance, or `null` when it didn't report one. Unlike `utterance.confidence`, it is included when the confidence is `0`.")
   @example(0.97)
   confidence: float64 | null;
 
