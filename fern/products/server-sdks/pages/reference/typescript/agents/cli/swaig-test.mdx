@@ -6,49 +6,72 @@ max-toc-depth: 3
 ---
 
 [ref-datamap]: /docs/server-sdks/reference/typescript/agents/data-map
+[ref-sw-tsdocs]: /docs/server-sdks/reference/typescript/agents/cli/sw-tsdocs
 
 The `swaig-test` command loads an agent file and lets you render its SWML, list
-its SWAIG functions, execute a function, and simulate serverless environments,
-all without deploying. It supports both webhook and [DataMap][ref-datamap]
-functions.
+its SWAIG functions, call a function, and simulate serverless environments, all
+without deploying. It supports webhook functions, [DataMap][ref-datamap]
+functions, and functions that point at an external webhook URL.
 
 ```bash
-npx swaig-test <agent-path> [options]
+npx swaig-test <agent-file> [options]
 ```
+
+`swaig-test` sends its requests through the agent's own HTTP app, the way
+SignalWire would. It fetches the agent's SWML with a simulated call, so basic
+auth, signature checks, the dynamic configuration callback, and function tokens
+all run as they do on a server. The callback runs once for `--dump-swml`.
+`--exec` reads the function from that SWML and calls it at the `web_hook_url`
+the SWML gives it. A DataMap function runs in a local DataMap simulator, and a
+function whose URL points elsewhere is called at that URL.
+
+The agent file can be `.ts`, `.js`, `.mjs`, or `.mts`. The command picks the
+agent to test in this order:
+
+1. The export named by `--agent-class`, either an instance or a class to
+   instantiate.
+2. With `--route`, the service whose route matches.
+3. The export named `agent`, then the default export, then any exported
+   instance, then any exported class.
+4. An agent the file creates without exporting it, as in the quickstart.
 
 <Note>
 One action flag is required. A target with no action exits with
 `Error: one of --dump-swml, --list-tools, or --exec is required`. The one
 exception is `--simulate-serverless`, which renders SWML for the platform on
-its own.
+its own. Running `swaig-test` with no arguments prints the help text.
 </Note>
+
+Options accept both `--name value` and `--name=value`. For `-h`, `--help`,
+`--help-platforms`, `--help-examples`, and `--parse-only`, see
+[Help and validation](#help-and-validation).
 
 ## Actions
 
 Choose one action per invocation:
 
 <ParamField path="--list-tools" type="flag" toc={true}>
-  List all SWAIG functions registered on the agent, with their parameters.
+  List the agent's SWAIG functions with their parameters. Each function is
+  labeled `LOCAL webhook` or `EXTERNAL webhook` (with its URL); a DataMap
+  function carries no label. With `--raw` or `--format-json`, prints a
+  JSON array of `name`, `description`, `parameters`, and `type`.
 </ParamField>
 
 <ParamField path="--list-agents" type="flag" toc={true}>
-  List all agents exported from the file. Useful for multi-agent files.
+  List the agents and services exported from the file, with each instance's
+  name and route. Useful for multi-agent files. Exits `1` when the file has
+  none. With `--raw` or `--format-json`, prints JSON.
 </ParamField>
 
 <ParamField path="--dump-swml" type="flag" toc={true}>
-  Generate and output the full SWML document. Combine with `--raw` for
-  machine-readable JSON.
+  Print the SWML document the agent serves, as indented JSON. Combine with
+  `--raw` for compact JSON that suppresses logs.
 </ParamField>
 
 <ParamField path="--exec NAME" type="string" toc={true}>
-  Execute a SWAIG function by name. Pass arguments with `--arg key=value`.
-</ParamField>
-
-<ParamField path="--parse-only" type="flag" toc={true}>
-  Validate the command-line arguments, print `parse OK`, and exit without
-  loading the agent file, touching the filesystem, or making network requests.
-  `--dry-run` is an alias. Accepted anywhere on the command line, including
-  after `--exec`.
+  Call a SWAIG function by name. Everything after the function name belongs to
+  the function, so put `swaig-test`'s own options before `--exec`. Pass
+  arguments as `--name value` (see [Function arguments](#function-arguments)).
 </ParamField>
 
 ## Common options
@@ -57,34 +80,64 @@ Choose one action per invocation:
   Output raw JSON only, suppressing all logs. Designed for piping to `jq`.
 </ParamField>
 
-<ParamField path="--verbose" type="flag" toc={true}>
-  Enable verbose output with debug information.
+<ParamField path="-v, --verbose" type="flag" toc={true}>
+  Enable verbose output with debug information: the request being sent, the
+  function's arguments, and, for `--list-tools`, each function's full
+  configuration.
 </ParamField>
 
 <ParamField path="--format-json" type="flag" toc={true}>
-  Format output as indented JSON.
+  Print the result as indented JSON.
 </ParamField>
 
 <ParamField path="--agent-class" type="string" toc={true}>
-  Name of the agent class to use when the file exports several.
+  Name of the exported agent class or instance to use. Cannot be combined with
+  `--route`.
 </ParamField>
 
 <ParamField path="--route" type="string" toc={true}>
-  Override the agent's route.
+  Use the service with this route, such as `/sales`. Cannot be combined with
+  `--agent-class`.
 </ParamField>
+
+## Function arguments
+
+After `--exec <function>`, pass each argument as `--name value`. `swaig-test`
+types the value by the function's parameter schema and converts dashes in the
+name to underscores.
+
+| Parameter type | How the value is read |
+|---|---|
+| `string` | Used as given |
+| `integer` | Parsed as an integer; anything else is an error |
+| `number` | Parsed as a number; anything else is an error |
+| `array` | Split on commas |
+| `boolean` | `true` or `false` after the name, or the bare flag for `true` |
+
+`--arg name=value` also works: the value is parsed as JSON, and falls back to a
+string. An argument the function doesn't declare is still passed to the
+function, with a warning. A `swaig-test` option placed after `--exec`, such as
+`--verbose`, is read as a function argument; put it before `--exec`.
 
 ## Function execution options
 
-<ParamField path="--arg KEY=VALUE" type="string" toc={true}>
-  A function argument. Repeat for each argument.
+<ParamField path="--minimal" type="flag" toc={true}>
+  Send the smallest function request: the call ID and the arguments.
 </ParamField>
 
-<ParamField path="--override KEY=VALUE" type="string" toc={true}>
-  Override a top-level field in the mock call data (e.g.,
-  `--override call_state=answered`). Repeatable.
+<ParamField path="--fake-full-data" type="flag" toc={true}>
+  Send a request with every key SignalWire may send. This is the default.
 </ParamField>
 
-## SWML generation options
+<ParamField path="--custom-data" type="string" toc={true}>
+  A JSON object merged into the function request. For a DataMap function, it
+  supplies the call data the simulator reads, such as `global_data`. Without a
+  `global_data` key, the simulator uses the `global_data` in the agent's SWML.
+</ParamField>
+
+## Call and request options
+
+These apply to `--dump-swml`, `--list-tools`, and `--exec`.
 
 <ParamField path="--call-type" type="string" default="webrtc" toc={true}>
   Simulated call type: `sip` or `webrtc`.
@@ -94,28 +147,73 @@ Choose one action per invocation:
   Simulated call direction: `inbound` or `outbound`.
 </ParamField>
 
-<ParamField path="--call-state" type="string" default="active" toc={true}>
-  Simulated call state: `active`, `ringing`, or `hold`.
+<ParamField path="--call-state" type="string" default="created" toc={true}>
+  Call state, set as `call.state`.
 </ParamField>
 
 <ParamField path="--call-id" type="string" toc={true}>
-  Override the call ID in the mock data.
+  The `call_id` the simulated request carries.
+</ParamField>
+
+<ParamField path="--project-id" type="string" toc={true}>
+  Sets `call.project_id`.
+</ParamField>
+
+<ParamField path="--space-id" type="string" toc={true}>
+  Sets `call.space_id`.
 </ParamField>
 
 <ParamField path="--from-number" type="string" toc={true}>
-  Override the caller's number in the mock data.
+  Sets `call.from`, the caller's address.
 </ParamField>
 
 <ParamField path="--to-extension" type="string" toc={true}>
-  Override the destination extension in the mock data.
+  Sets `call.to`, the destination.
 </ParamField>
 
-## Serverless simulation
+<ParamField path="--user-vars" type="string" toc={true}>
+  A JSON object set as `vars.userVariables`.
+</ParamField>
+
+<ParamField path="--query-params" type="string" toc={true}>
+  A JSON object of query parameters for the SWML request. They are also added
+  to `vars.userVariables`. Use this to test a dynamic configuration callback
+  that reads the query string.
+</ParamField>
+
+<ParamField path="--header NAME=VALUE" type="string" toc={true}>
+  A request header. Repeatable.
+</ParamField>
+
+<ParamField path="--method" type="string" default="POST" toc={true}>
+  Method of the SWML request: `POST` or `GET`. A `GET` request carries the call
+  ID and query parameters in the query string.
+</ParamField>
+
+<ParamField path="--body" type="string" toc={true}>
+  A JSON object of extra fields merged into the SWML request body.
+</ParamField>
+
+<ParamField path="--override PATH=VALUE" type="string" toc={true}>
+  Set a value in the simulated request by dotted path, such as
+  `call.state=answered`. The value is read as `null`, `true`, `false`, a
+  number, JSON, or a string, in that order. Repeatable. A path the simulated
+  request doesn't contain adds a key and prints a warning.
+</ParamField>
+
+<ParamField path="--override-json PATH=JSON" type="string" toc={true}>
+  Like `--override`, but the value must be JSON. Repeatable.
+</ParamField>
+
+## Environment and serverless simulation
 
 <ParamField path="--simulate-serverless" type="string" toc={true}>
-  Render SWML as the agent would on a serverless platform. Valid values:
-  `lambda`, `gcf`, `azure`, and `cgi`. Any other value exits with an error
-  naming the supported set.
+  Run with a serverless platform's environment, so the SWML's webhook URLs are
+  the platform's. Valid values are `lambda`, `cgi`, `gcf`, and `azure`;
+  `cloud_function` and `azure_function` are accepted as aliases. Any other
+  value exits with an error naming the supported set. The simulated
+  environment replaces other platforms' variables set in your shell, and your
+  shell's variables are restored afterward.
 </ParamField>
 
 <ParamField path="--env KEY=VALUE" type="string" toc={true}>
@@ -123,59 +221,241 @@ Choose one action per invocation:
 </ParamField>
 
 <ParamField path="--env-file" type="string" toc={true}>
-  Load environment variables from a file (one `KEY=VALUE` per line).
+  Load environment variables from a file, one `KEY=VALUE` per line. Blank lines
+  and lines starting with `#` are skipped, and matching quotes around a value
+  are removed.
+</ParamField>
+
+### AWS Lambda
+
+Use with `--simulate-serverless lambda`.
+
+<ParamField path="--aws-function-name" type="string" toc={true}>
+  Function name (`AWS_LAMBDA_FUNCTION_NAME`).
+</ParamField>
+
+<ParamField path="--aws-function-url" type="string" toc={true}>
+  Function URL (`AWS_LAMBDA_FUNCTION_URL`).
+</ParamField>
+
+<ParamField path="--aws-region" type="string" toc={true}>
+  Region (`AWS_REGION`).
+</ParamField>
+
+<ParamField path="--aws-api-gateway-id" type="string" toc={true}>
+  Serve at an API Gateway URL, `https://ID.execute-api.REGION.amazonaws.com/STAGE`.
+  Ignored, with a warning, when `--aws-function-url` is set.
+</ParamField>
+
+<ParamField path="--aws-stage" type="string" default="prod" toc={true}>
+  API Gateway stage. Applies only with `--aws-api-gateway-id`.
+</ParamField>
+
+### CGI
+
+Use with `--simulate-serverless cgi`.
+
+<ParamField path="--cgi-host" type="string" required={true} toc={true}>
+  Server host name. Required with `--simulate-serverless cgi`.
+</ParamField>
+
+<ParamField path="--cgi-script-name" type="string" toc={true}>
+  Script path (`SCRIPT_NAME`).
+</ParamField>
+
+<ParamField path="--cgi-https" type="flag" toc={true}>
+  Serve over HTTPS.
+</ParamField>
+
+<ParamField path="--cgi-path-info" type="string" toc={true}>
+  `PATH_INFO`.
+</ParamField>
+
+### Google Cloud Functions
+
+Use with `--simulate-serverless gcf`.
+
+<ParamField path="--gcp-project" type="string" toc={true}>
+  Project (`GOOGLE_CLOUD_PROJECT`).
+</ParamField>
+
+<ParamField path="--gcp-function-url" type="string" toc={true}>
+  Function URL (`FUNCTION_URL`).
+</ParamField>
+
+<ParamField path="--gcp-region" type="string" toc={true}>
+  Region (`GOOGLE_CLOUD_REGION`).
+</ParamField>
+
+<ParamField path="--gcp-service" type="string" toc={true}>
+  Service name (`K_SERVICE`).
+</ParamField>
+
+### Azure Functions
+
+Use with `--simulate-serverless azure`.
+
+<ParamField path="--azure-env" type="string" toc={true}>
+  Environment (`AZURE_FUNCTIONS_ENVIRONMENT`).
+</ParamField>
+
+<ParamField path="--azure-function-url" type="string" toc={true}>
+  Function URL (`AZURE_FUNCTION_URL`).
+</ParamField>
+
+## Help and validation
+
+<ParamField path="--parse-only" type="flag" toc={true}>
+  Validate the command-line arguments, print `parse OK`, and exit without
+  loading the agent file, touching the filesystem, or making network requests.
+  `--dry-run` is an alias. Accepted anywhere on the command line, including
+  after `--exec`.
+</ParamField>
+
+<ParamField path="-h, --help" type="flag" toc={true}>
+  Print the help text. It ends with a pointer to [`sw-tsdocs`][ref-sw-tsdocs].
+</ParamField>
+
+<ParamField path="--help-platforms" type="flag" toc={true}>
+  Print the serverless platform options.
+</ParamField>
+
+<ParamField path="--help-examples" type="flag" toc={true}>
+  Print usage examples.
 </ParamField>
 
 ## Examples
 
-### List tools and generate SWML
+The examples below run against this agent:
+
+```typescript title="agent.ts"
+import { AgentBase, FunctionResult } from '@signalwire/sdk';
+
+export const agent = new AgentBase({ name: 'ride-desk', route: '/' });
+
+agent.setPromptText('You are a dispatcher for a taxi company.');
+agent.addLanguage({ name: 'English', code: 'en-US', voice: 'rachel' });
+
+agent.defineTool({
+  name: 'book_ride',
+  description: 'Book a taxi',
+  parameters: {
+    type: 'object',
+    properties: {
+      pickup: { type: 'string', description: 'Pickup address' },
+      passengers: { type: 'integer', description: 'Number of passengers' },
+    },
+    required: ['pickup'],
+  },
+  handler: (args) =>
+    new FunctionResult(`Booked a ride from ${args.pickup} for ${args.passengers ?? 1}.`),
+});
+```
+
+### List tools
 
 ```bash
-# List all registered SWAIG functions
-npx swaig-test src/agent.ts --list-tools
+npx swaig-test agent.ts --list-tools
+```
 
-# Generate the SWML document
+```text
+Available SWAIG functions:
+  book_ride - Book a taxi (LOCAL webhook)
+    Parameters:
+      pickup (string) (required): Pickup address
+      passengers (integer): Number of passengers
+```
+
+### Generate SWML
+
+```bash
+# Print the SWML document
 npx swaig-test src/agent.ts --dump-swml
 
-# Generate raw JSON for piping
-npx swaig-test src/agent.ts --dump-swml --raw | jq '.'
+# Compact JSON for piping
+npx swaig-test src/agent.ts --dump-swml --raw | jq '.sections.main'
 
-# Validate the arguments without loading the agent
-npx swaig-test src/agent.ts --parse-only
+# Render the SWML a dynamic agent serves for a request
+npx swaig-test src/agent.ts --dump-swml \
+  --query-params '{"tier":"premium"}' \
+  --header "X-Customer-ID=12345"
 ```
 
 ### Execute functions
 
 ```bash
-# Execute with arguments
-npx swaig-test src/agent.ts --exec search --arg query="AI agents" --arg limit=5
+npx swaig-test agent.ts --exec book_ride --pickup "123 Gough Street" --passengers 2
+```
 
-# Execute with verbose debug output and an overridden caller number
-npx swaig-test src/agent.ts --verbose --exec book_ride \
-  --arg pickup="123 Gough Street" \
-  --override from=+15551234567
+```text
+RESULT:
+Response: Booked a ride from 123 Gough Street for 2.
+```
+
+```bash
+# Options for swaig-test go before --exec
+npx swaig-test src/agent.ts --verbose --exec search --query test --limit 5
+
+# Change the simulated call
+npx swaig-test src/agent.ts --call-type sip --call-state answered \
+  --exec transfer --dest sales
+
+# Set a value by dotted path
+npx swaig-test src/agent.ts --override call.project_id=my-project --dump-swml
+
+# The older --arg form still works
+npx swaig-test src/agent.ts --exec search --arg query="AI agents"
 ```
 
 ### Multi-agent files
 
 ```bash
-# Discover agents in the file
-npx swaig-test src/agents.ts --list-agents
+npx swaig-test multi-agent.ts --list-agents
+```
 
-# Target a specific agent by class name
+```text
+Agents found in multi-agent.ts:
+  sales (instance)
+    Name: sales
+    Route: /sales
+  support (instance)
+    Name: support
+    Route: /support
+```
+
+```bash
+# Target a service by route
+npx swaig-test multi-agent.ts --route /sales --list-tools
+
+# Or target an export by name
 npx swaig-test src/agents.ts --agent-class SalesAgent --list-tools
 ```
 
 ### Serverless simulation
 
 ```bash
-# AWS Lambda
-npx swaig-test src/agent.ts --simulate-serverless lambda
+# AWS Lambda in a chosen region
+npx swaig-test src/agent.ts --simulate-serverless lambda \
+  --aws-region us-west-2 --dump-swml
+
+# CGI over HTTPS
+npx swaig-test src/agent.ts --simulate-serverless cgi \
+  --cgi-host example.com --cgi-https --exec my_function
 
 # Google Cloud Functions, with environment variables
 npx swaig-test src/agent.ts --simulate-serverless gcf \
   --env SWML_BASIC_AUTH_USER=user \
-  --env-file .env
+  --env-file .env --dump-swml
+```
+
+### Validate arguments only
+
+```bash
+npx swaig-test src/agent.ts --parse-only
+```
+
+```text
+parse OK
 ```
 
 ## Exit codes
@@ -183,4 +463,5 @@ npx swaig-test src/agent.ts --simulate-serverless gcf \
 | Code | Meaning |
 |------|---------|
 | `0` | Success |
-| `1` | Error (file not found, invalid arguments, execution failure) |
+| `1` | Runtime failure: the agent file didn't load, the function wasn't found, an argument didn't fit its type, or the function call returned a non-2xx status |
+| `2` | Usage error: an unknown option, a missing value or agent file, conflicting options, or no action given |
