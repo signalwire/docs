@@ -358,7 +358,7 @@ uvicorn.run(app, host="0.0.0.0", port=8080)
 </CodeBlock>
 <CodeBlock title="JavaScript — SWML builder">
 ```javascript
-// Install: npm install @signalwire/sdk@2.0.5 @hono/node-server ws
+// Install: npm install @signalwire/sdk@3.7.1 @hono/node-server ws
 // Save as stream-app.mjs and run: node stream-app.mjs
 import { serve } from "@hono/node-server";
 import { SWMLService } from "@signalwire/sdk";
@@ -369,7 +369,8 @@ const service = new SWMLService({
   basicAuth: ["signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"],
 });
 const swml = service.getBuilder();
-swml.addVerb("stream", { url: "<YOUR_AUDIO_STREAM_URL>" });
+// The SDK's SWML schema has no stream verb, so skip validation for that verb only.
+swml.addVerb("stream", { url: "<YOUR_AUDIO_STREAM_URL>" }, { skipValidation: true });
 swml.say("Your call is being streamed. Say a few words.").sleep(20000).say("Goodbye.");
 
 // SignalWire fetches the call's SWML from the server's root URL.
@@ -493,10 +494,14 @@ swml = SWMLBuilder(service)
 
 ```javascript title="JavaScript — SWML builder"
 const swml = service.getBuilder();
-swml
-  .say("You are connected to the echo server. Speak, and you will hear yourself.")
-  .connect({ to: "stream:<YOUR_AUDIO_STREAM_URL>", codec: "PCMU", realtime: true, name: "echo" })
-  .hangup();
+swml.say("You are connected to the echo server. Speak, and you will hear yourself.");
+// The SDK's SWML schema lacks connect's stream settings, so skip validation for this verb only.
+swml.addVerb(
+  "connect",
+  { to: "stream:<YOUR_AUDIO_STREAM_URL>", codec: "PCMU", realtime: true, name: "echo" },
+  { skipValidation: true },
+);
+swml.hangup();
 ```
 
 ```yaml title="YAML"
@@ -560,9 +565,9 @@ swml.say("The stream has stopped. Goodbye.")
 ```
 
 ```javascript title="JavaScript — SWML builder" {1,3}
-swml.addVerb("stream", { url: "<YOUR_AUDIO_STREAM_URL>", control_id: "my-stream" });
+swml.addVerb("stream", { url: "<YOUR_AUDIO_STREAM_URL>", control_id: "my-stream" }, { skipValidation: true });
 swml.say("Your call is being streamed. Say a few words.").sleep(20000);
-swml.addVerb("stop_stream", { control_id: "my-stream" });
+swml.addVerb("stop_stream", { control_id: "my-stream" }, { skipValidation: true });
 swml.say("The stream has stopped. Goodbye.");
 ```
 
@@ -703,7 +708,7 @@ asyncio.run(main())
 </CodeBlock>
 <CodeBlock title="TypeScript — Relay client">
 ```typescript
-// Install: npm install @signalwire/sdk@2.0.5
+// Install: npm install @signalwire/sdk@3.7.1
 // This sample also runs as JavaScript: save as stream-call-relay.mjs,
 // then run: node stream-call-relay.mjs
 import { RelayClient } from "@signalwire/sdk";
@@ -822,7 +827,7 @@ asyncio.run(main())
 </CodeBlock>
 <CodeBlock title="TypeScript — Relay client">
 ```typescript
-// Install: npm install @signalwire/sdk@2.0.5
+// Install: npm install @signalwire/sdk@3.7.1
 // This sample also runs as JavaScript: save as echo-call-relay.mjs,
 // then run: node echo-call-relay.mjs
 import { RelayClient } from "@signalwire/sdk";
@@ -983,7 +988,7 @@ print("Stream stopped")
 </CodeBlock>
 <CodeBlock title="TypeScript — REST client">
 ```typescript
-// Install: npm install @signalwire/sdk@2.0.5
+// Install: npm install @signalwire/sdk@3.7.1
 // This sample also runs as JavaScript: save as stream-rest.mjs,
 // then run: node stream-rest.mjs
 import { RestClient } from "@signalwire/sdk";
@@ -994,12 +999,11 @@ const client = new RestClient({
   host: "<YOUR_SPACE>.signalwire.com",
 });
 
-await client.calling.stream("<YOUR_CALL_ID>", {
-  url: "<YOUR_AUDIO_STREAM_URL>",
+await client.calling.stream("<YOUR_CALL_ID>", "<YOUR_AUDIO_STREAM_URL>", {
   control_id: "rest-stream",
 });
 await new Promise((resolve) => setTimeout(resolve, 10_000));
-await client.calling.streamStop("<YOUR_CALL_ID>", { control_id: "rest-stream" });
+await client.calling.streamStop("<YOUR_CALL_ID>", "rest-stream");
 console.log("Stream stopped");
 ```
 </CodeBlock>
