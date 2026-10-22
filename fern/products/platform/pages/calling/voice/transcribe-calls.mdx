@@ -27,6 +27,7 @@ max-toc-depth: 3
 [summary-webhook]: /docs/apis/rest/webhooks/live-transcribe-summary-webhook
 [conversation-log-webhook]: /docs/apis/rest/webhooks/live-transcribe-conversation-log-webhook
 [transcript-status-callback]: /docs/apis/rest/webhooks/transcribe-status-callback
+[verify-signature]: /docs/platform/webhooks#verify-webhook-signature
 [call-streaming]: /docs/platform/voice/call-streaming
 [record-calls]: /docs/platform/voice/record-calls
 
@@ -611,13 +612,16 @@ reference:
 The summary you request mid-call has the same `conversation_log` and `conversation_summary` fields,
 without `metrics`. See the [Live transcription summary webhook][summary-webhook] reference.
 
-SignalWire sends each event once and doesn't retry, so answer quickly with any `2xx` status and do
-slow work after you respond.
+Answer each request with a `2xx` status within 10 seconds, and do slow work after you respond.
+When your server can't be reached or answers with a `5xx` status, SignalWire retries the request,
+so the same utterance can arrive more than once. Use `utterance.utterance_id` to ignore repeats.
 
-<Tip title="Protect your webhook">
-Put a username and password in the webhook URL, as in
-`https://<USERNAME>:<PASSWORD>@<YOUR_PUBLIC_HOST>/transcripts`, and SignalWire sends them as HTTP
-Basic authentication on every event. Check them in your server before you trust a request.
+<Tip title="Protect your webhooks">
+Every request carries an `X-SignalWire-Signature` header, so your server can confirm it came from
+SignalWire, as [Verify webhook signature][verify-signature] shows. You can also put a username and
+password in the webhook URL, as in `https://<USERNAME>:<PASSWORD>@<YOUR_PUBLIC_HOST>/transcripts`,
+and SignalWire sends them as HTTP Basic authentication. Both work for the post-call `status_url`
+too.
 </Tip>
 
 ## Live transcription options: language, direction, and speech engine
@@ -1017,6 +1021,10 @@ the call couldn't be transcribed. `params.text` is omitted when nobody spoke. Th
 <WebhookPayloadSnippet webhook="transcribeStatusCallback" />
 
 </llms-ignore>
+
+SignalWire retries the request when your server doesn't answer with a `2xx` status, so the same
+transcript can arrive more than once. Use `params.id` to ignore repeats. The request is signed like
+the live events, as [Protect your webhooks](#read-transcript-events-on-your-webhook) describes.
 
 ## Watch the live transcript with an AI sidecar
 
