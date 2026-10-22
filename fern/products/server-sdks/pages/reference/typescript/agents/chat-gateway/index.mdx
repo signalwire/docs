@@ -1,0 +1,339 @@
+---
+title: "ChatGateway"
+slug: reference/typescript/agents/chat-gateway
+description: Browser-facing proxy that lets a page chat with an AI agent without holding a SignalWire API token.
+max-toc-depth: 3
+---
+
+[aichatclient]: /docs/server-sdks/reference/typescript/agents/ai-chat-client
+[rawpost]: /docs/server-sdks/reference/typescript/agents/ai-chat-client/raw-post
+[router]: /docs/server-sdks/reference/typescript/agents/chat-gateway/router
+[minthandle]: /docs/server-sdks/reference/typescript/agents/chat-gateway/mint-handle
+[readhandle]: /docs/server-sdks/reference/typescript/agents/chat-gateway/read-handle
+[prepare]: /docs/server-sdks/reference/typescript/agents/chat-gateway/prepare
+[visiblemessages]: /docs/server-sdks/reference/typescript/agents/chat-gateway/visible-messages
+[lastactivity]: /docs/server-sdks/reference/typescript/agents/chat-gateway/last-activity
+[close]: /docs/server-sdks/reference/typescript/agents/chat-gateway/close
+[handoffrouter]: /docs/server-sdks/reference/typescript/agents/handoff-router
+
+A chat widget in a page can't hold a SignalWire API token: the token carries the whole project, and
+every visitor could read it. `ChatGateway` mounts inside a web application you already run, holds
+the credentials on the server, and forwards on the widget's behalf.
+
+The browser learns two things, the gateway's URL and a publishable key. It doesn't learn the
+project, the Space, the token, or which agent runs, because the gateway sends `config_url` itself
+and a key only reaches the one agent it was issued for.
+
+```typescript
+import { AgentBase, ChatGateway } from '@signalwire/sdk';
+
+const agent = new AgentBase({ name: 'dispatch', route: '/dispatch' });
+agent.setPromptText('You are Ada, the dispatcher for Bayview Taxi.');
+
+const gateway = new ChatGateway({
+  configUrl: 'https://bayview-taxi.example.com/dispatch', // never leaves the server
+  key: '<YOUR_PUBLISHABLE_KEY>', // safe in the page
+  allowedOrigins: ['https://bayviewtaxi.example.com'],
+  secret: process.env.SIGNALWIRE_CHAT_GATEWAY_SECRET,
+  conversationTimeout: 1800,
+  maxNewConversations: 60,
+  maxTurns: 200,
+});
+
+agent.mount(gateway.router(), { prefix: '/chat' });
+
+await agent.serve();
+```
+
+<Markdown src="/snippets/server-sdks/npm-install.mdx" />
+
+An agent already serves a Hono app, so `agent.mount()` hosts the gateway with no new
+infrastructure. [`router()`][router] returns a standard Hono app, so `app.route()` works on any
+other Hono server.
+
+<Note>
+The SignalWire address widget also calls `/handoff`, `/escalate`, and `/say` at the same URL to
+move a conversation between chat and a phone call. [`HandoffRouter`][handoffrouter] serves those
+three routes; mount it at the same prefix as the gateway.
+</Note>
+
+## Parameters
+
+The constructor takes one options object, `ChatGatewayOptions`. It throws an `Error` when
+`configUrl` is empty.
+
+<ParamField path="configUrl" type="string" required={true} toc={true}>
+  The agent this key may talk to. Sent on every call and never taken from the request, so whoever
+  holds a key can't choose which agent runs.
+</ParamField>
+
+<ParamField path="key" type="string" toc={true}>
+  The publishable key the widget carries. Falls back to `SIGNALWIRE_CHAT_GATEWAY_KEY`, then to a
+  generated `pk_` value, which is useful only to a process that also serves the page and can embed
+  it.
+</ParamField>
+
+<ParamField path="allowedOrigins" type="readonly string[]" toc={true}>
+  Origins allowed to use this key, stored without trailing slashes. Localhost is always allowed so
+  local development works unconfigured; any other origin must be listed.
+</ParamField>
+
+<ParamField path="client" type="AIChatClient" toc={true}>
+  The [`AIChatClient`][aichatclient] to forward with. Built from the environment when omitted, and
+  then closed by [`close()`][close]. A client you pass in is yours to close.
+</ParamField>
+
+<ParamField path="secret" type="string | Uint8Array" toc={true}>
+  HMAC key for signing handles. Falls back to `SIGNALWIRE_CHAT_GATEWAY_SECRET`, then to a random
+  per-process value.
+</ParamField>
+
+<ParamField path="handleTtl" type="number" default="86400" toc={true}>
+  Seconds a handle stays valid: long enough to outlive a page refresh, short enough that a session
+  left open overnight expires.
+</ParamField>
+
+<ParamField path="conversationTimeout" type="number | null" toc={true}>
+  Idle seconds before the service ends a conversation, sent on every create. Omit it for the
+  service default of 3600. Set it here rather than in the page: the service's responses don't
+  expose the deadline, so the gateway reports it to the widget on `start` and `log`.
+</ParamField>
+
+<ParamField path="maxNewConversations" type="number" default="60" toc={true}>
+  New conversations allowed per `windowSeconds`. The cap that matters most: a leaked key is used
+  to open many one-turn conversations, each billed for its opening turn.
+</ParamField>
+
+<ParamField path="maxTurns" type="number" default="200" toc={true}>
+  Turns one conversation may run, in total.
+</ParamField>
+
+<ParamField path="windowSeconds" type="number" default="60" toc={true}>
+  The window `maxNewConversations` counts over, in seconds.
+</ParamField>
+
+<Warning>
+  Set `secret` explicitly if you run more than one replica or restart often. A random per-process
+  secret invalidates outstanding handles on restart, and a handle signed by one replica is refused
+  by another.
+</Warning>
+
+## Properties
+
+<ParamField path="configUrl" type="string" toc={true}>
+  The agent config sent on every call. Read-only.
+</ParamField>
+
+<ParamField path="key" type="string" toc={true}>
+  The publishable key the browser presents, whether you passed one or the gateway generated it.
+  Read-only.
+</ParamField>
+
+<ParamField path="allowedOrigins" type="ReadonlySet<string>" toc={true}>
+  The listed origins, without trailing slashes. Read-only.
+</ParamField>
+
+<ParamField path="handleTtl" type="number" toc={true}>
+  Seconds a handle stays valid.
+</ParamField>
+
+<ParamField path="conversationTimeout" type="number | null" toc={true}>
+  Idle seconds before the service ends a conversation, or `null` for the service default.
+</ParamField>
+
+<ParamField path="maxNewConversations" type="number" toc={true}>
+  New conversations allowed per window.
+</ParamField>
+
+<ParamField path="maxTurns" type="number" toc={true}>
+  Turns allowed per conversation.
+</ParamField>
+
+<ParamField path="windowSeconds" type="number" toc={true}>
+  Window for `maxNewConversations`, in seconds.
+</ParamField>
+
+<ParamField path="effectiveTimeout" type="number" toc={true}>
+  The idle timeout reported to the widget. Never `null`: it falls back to the service default of
+  3600, so the widget is never asked to warn about a deadline it wasn't told. Read-only.
+</ParamField>
+
+## Exports
+
+All of these are importable from `@signalwire/sdk`.
+
+<ParamField path="GatewayRejection" type="class extends Error" toc={true}>
+  A request the gateway refused. Carries `status`, the HTTP status to return (400, 401, 403, 413 or
+  429), and `reason`, a short explanation that is safe to show the browser. Reasons name a category
+  and nothing finer, because anything finer would let a caller map the caps and the allowlist by
+  probing.
+</ParamField>
+
+<ParamField path="ChatGatewayOptions" type="interface" toc={true}>
+  The constructor's options object, described under Parameters.
+</ParamField>
+
+<ParamField path="MAX_REQUEST_BODY_BYTES" type="number" toc={true}>
+  `65536` (64 KiB). The largest request body the router accepts. A larger body is answered with
+  `413` before it is parsed.
+</ParamField>
+
+<ParamField path="MAX_MESSAGE_BYTES" type="number" toc={true}>
+  `8192` (8 KiB of UTF-8). The largest chat message, refused with `413` before a conversation is
+  created or a turn is counted. [`HandoffRouter`][handoffrouter] applies the same limit to the
+  text of `/say`.
+</ParamField>
+
+<ParamField path="MAX_USER_METADATA_BYTES" type="number" toc={true}>
+  `8192` (8 KiB). The largest `user_meta_data` object, measured serialized, refused with `413`.
+</ParamField>
+
+## The browser-facing wire
+
+One endpoint: `POST /` on the router, with the key in `Authorization: Bearer`. Mounted at
+`/chat`, the path is `/chat/`. A preflight `OPTIONS /` is answered for allowed origins. The
+body is JSON with a `method` of `start`, `chat`, `log`, or `end`; `method` defaults to `chat`.
+
+| Method | Body fields | Returns |
+|---|---|---|
+| `start` | `handle?`, `user_meta_data?` | `{ greeting, status, timeout }` |
+| `chat` | `handle?`, `message`, `user_meta_data?` | The service's JSON-RPC response, streamed through |
+| `log` | `handle` | `{ messages, timeout, last_activity }` |
+| `end` | `handle` | `{ status: 'ended' }` |
+
+A `start` or `chat` with no handle creates a conversation and returns its handle in the
+`X-Chat-Handle` response header. `start` opens the conversation with no user message, so the
+agent speaks first. `log` and `end` require a handle. Any other `method` is a `400`.
+
+Rejections return `{ error: reason }` with the status: `400` malformed request or handle, `401`
+bad key, `403` origin not allowed or a bad or expired handle, `413` a request, message, or
+metadata over its limit, `429` a cap was reached. A failure reaching the chat service before any
+reply is sent returns `502` with `{ error: 'chat service error' }`.
+
+### Page context
+
+`user_meta_data` is the one field forwarded rather than replaced: the page context a widget
+collects about itself, such as URL, title, referrer, locale, and viewport. It reaches the agent's
+config request as `params.user_meta_data`, so a chat agent can tailor its greeting.
+
+The service reads it when it creates a conversation, which is the `start` call or whichever `chat`
+auto-creates one. Metadata sent on later turns is accepted and unused. The browser writes it, so
+treat it as the visitor's claim about themselves, never as authority; a page can put anything in it,
+including text aimed at your prompt.
+
+## What a leaked key can do
+
+A publishable key is public by definition, so design for it being taken.
+
+A key alone can't read a conversation. The full `chat_log` isn't exposed, and handles are signed by
+the gateway, so they can't be forged, guessed, or enumerated. `log` returns only the user and
+assistant turns.
+
+It can start and continue conversations, and every turn is billed. `maxNewConversations` and
+`maxTurns` bound that: the first limits conversations created per window, the second limits turns
+in each. The caps are counted in the serving process. Behind several replicas each keeps its own, so
+the effective cap multiplies by the replica count; set them with that in mind, or put a shared
+limiter in front.
+
+The origin allowlist stops a key pasted into someone else's page, because a browser sends that
+page's origin and the gateway refuses it. It doesn't stop a script that sends no origin or a false
+one. Treat it as leak containment, not access control.
+
+To rotate a key, construct the gateway with a new `key` and redeploy. Change `secret` at the same
+time to invalidate outstanding handles too.
+
+## Methods
+
+<CardGroup cols={3}>
+  <Card title="router" href="/docs/server-sdks/reference/typescript/agents/chat-gateway/router">
+    The Hono app to mount on your server.
+  </Card>
+  <Card title="mintHandle" href="/docs/server-sdks/reference/typescript/agents/chat-gateway/mint-handle">
+    Issue a signed handle server-side.
+  </Card>
+  <Card title="readHandle" href="/docs/server-sdks/reference/typescript/agents/chat-gateway/read-handle">
+    Verify a handle and return its conversation id.
+  </Card>
+  <Card title="prepare" href="/docs/server-sdks/reference/typescript/agents/chat-gateway/prepare">
+    Validate a browser request without the router.
+  </Card>
+  <Card title="visibleMessages" href="/docs/server-sdks/reference/typescript/agents/chat-gateway/visible-messages">
+    The transcript a browser may redraw.
+  </Card>
+  <Card title="lastActivity" href="/docs/server-sdks/reference/typescript/agents/chat-gateway/last-activity">
+    Epoch seconds of the newest message.
+  </Card>
+  <Card title="close" href="/docs/server-sdks/reference/typescript/agents/chat-gateway/close">
+    Close the client, when the gateway built it.
+  </Card>
+</CardGroup>
+
+### checkKey
+
+Verifies the publishable key a request presented, comparing in constant time.
+[`router()`][router] and [`prepare()`][prepare] call it for you.
+
+<ParamField path="presented" type="string | null | undefined" required={true} toc={true}>
+  The key from the request, or `null` or `undefined` when absent.
+</ParamField>
+
+Returns `void`. Throws `GatewayRejection` with status `401` and reason `bad key` when the key is
+missing or wrong.
+
+### checkOrigin
+
+Allows localhost and listed origins, and refuses any other. A missing `Origin` is allowed:
+browsers send one on the cross-origin requests this serves, so its absence means a caller that isn't
+a browser, and refusing it would break server-side use without stopping an attacker.
+
+<ParamField path="origin" type="string | null | undefined" required={true} toc={true}>
+  The request's `Origin` header, or `null` or `undefined` when absent.
+</ParamField>
+
+Returns `void`. Throws `GatewayRejection` with status `403` and reason `origin not allowed` for an
+origin that isn't allowed.
+
+### readUserMetadata
+
+Validates the `user_meta_data` field of a browser request. Absent, `null`, and empty all yield
+`null`.
+
+<ParamField path="body" type={"Record<string, unknown>"} required={true} toc={true}>
+  The browser's request body.
+</ParamField>
+
+Returns `Record<string, unknown> | null`. Throws `GatewayRejection` with status `400` when the field
+isn't a JSON object or can't be serialized, and `413` when it is larger than
+`MAX_USER_METADATA_BYTES` serialized.
+
+## Example
+
+Checking a request's key and origin by hand, and reading its page context, in a handler you wrote
+yourself:
+
+```typescript
+import { ChatGateway, GatewayRejection } from '@signalwire/sdk';
+
+const gateway = new ChatGateway({
+  configUrl: 'https://bayview-taxi.example.com/dispatch',
+  key: '<YOUR_PUBLISHABLE_KEY>',
+  allowedOrigins: ['https://bayviewtaxi.example.com'],
+});
+
+export function guard(origin: string | undefined, authorization: string | undefined): void {
+  const key = authorization?.startsWith('Bearer ') ? authorization.slice(7) : null;
+  try {
+    gateway.checkKey(key);
+    gateway.checkOrigin(origin);
+  } catch (err) {
+    if (err instanceof GatewayRejection) {
+      console.warn(err.status, err.reason); // 401 bad key, 403 origin not allowed
+    }
+    throw err;
+  }
+}
+
+export function pageContext(body: Record<string, unknown>) {
+  return gateway.readUserMetadata(body); // Record<string, unknown> | null
+}
+```
