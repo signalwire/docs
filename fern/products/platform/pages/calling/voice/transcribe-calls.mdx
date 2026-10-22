@@ -613,8 +613,9 @@ The summary you request mid-call has the same `conversation_log` and `conversati
 without `metrics`. See the [Live transcription summary webhook][summary-webhook] reference.
 
 Answer each request with a `2xx` status within 10 seconds, and do slow work after you respond.
-When your server can't be reached or answers with a `5xx` status, SignalWire retries the request,
-so the same utterance can arrive more than once. Use `utterance.utterance_id` to ignore repeats.
+SignalWire retries a request that fails to connect, times out, or gets a `5xx` status, so a slow
+handler can receive the same utterance more than once. Use `utterance.utterance_id` to ignore
+repeats. A `4xx` status isn't retried, and redirects aren't followed, so that event is lost.
 
 <Tip title="Protect your webhooks">
 Every request carries an `X-SignalWire-Signature` header, so your server can confirm it came from
@@ -695,8 +696,9 @@ The transcription server prints the summary on a `Summary:` line after the call 
 ### Summarize a call in progress via SWML
 
 Send the `summarize` action while transcription is running to get a summary of the conversation so
-far, and keep transcribing. Its `prompt` and `webhook` are optional, and an empty `summarize`
-object uses the prompt and webhook from `start`. In the first run's document, add it after the
+far, and keep transcribing. Its `prompt` and `webhook` are optional. An empty `summarize`
+object sends the summary to the webhook from `start` and uses the default summary prompt, since
+`ai_summary_prompt` applies only to the summary sent when the session ends. In the first run's document, add it after the
 `sleep`, so the summary arrives before the goodbye:
 
 <CodeBlocks>
@@ -890,18 +892,20 @@ background and, after the call ends, posts the text to your `status_url` as a
 ### Transcribe the whole call via SWML
 
 Add `transcribe` with a `status_url` where the transcription should start. The Server SDKs' SWML
-builder has no `transcribe` method yet, so the builder samples add the verb by name with schema
-validation off:
+builder has no `transcribe` method yet, so the builder samples add the verb by name. The Python
+sample also turns schema validation off, which the Python SDK allows only for the whole service:
 
 <CodeBlocks>
 <CodeBlock title="Python — SWML builder">
-```python {6,10}
+```python {6-8,12}
 from signalwire import SWMLBuilder, SWMLService
 
 service = SWMLService(
     name="transcribe-whole-call",
     basic_auth=("signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"),
-    schema_validation=False,  # the schema has no transcribe verb yet
+    # The schema has no transcribe verb yet, and validation can only be
+    # turned off for the whole service, not for one verb.
+    schema_validation=False,
 )
 swml = SWMLBuilder(service)
 swml.answer()
