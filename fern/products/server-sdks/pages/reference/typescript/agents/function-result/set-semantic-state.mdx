@@ -1,0 +1,77 @@
+---
+title: "setSemanticState"
+slug: reference/typescript/agents/function-result/set-semantic-state
+description: Set the semantic state that the call's semantic gates read.
+max-toc-depth: 3
+---
+
+[functionresult]: /docs/server-sdks/reference/typescript/agents/function-result
+[semanticgate]: /docs/server-sdks/reference/typescript/agents/semantic-gate
+[update-global-data]: /docs/server-sdks/reference/typescript/agents/function-result/update-global-data
+
+Set the semantic state that [semantic gates][semanticgate] read as
+`semantic_state`, alongside the conversation. The state is stored at
+`global_data.semantic_state`.
+
+Each call replaces the whole state. To change one field, send the whole state with
+that field changed; send `{}` to reset it. Keep it to what your application has
+established, such as a total it computed or an order the caller confirmed, rather
+than what the caller claims. No other global data reaches the decision model as
+state, though a gate question can still bring in a value with a `${global_data...}`
+variable.
+
+This is shorthand for [`updateGlobalData({ semantic_state: state })`][update-global-data].
+
+## Parameters
+
+<ParamField path="state" type={"Record<string, unknown>"} required={true} toc={true}>
+  The new semantic state.
+</ParamField>
+
+## Returns
+
+[`FunctionResult`][functionresult] -- `this`, for chaining.
+
+## Examples
+
+```typescript {21}
+import { AgentBase, FunctionResult, SemanticGate } from '@signalwire/sdk';
+
+const agent = new AgentBase({ name: 'pizza-agent', route: '/pizza' });
+agent.setPromptText('You take pizza orders. Quote the total before placing the order.');
+
+const PRICES = { small: 12, medium: 15, large: 18 };
+
+agent.defineTool({
+  name: 'quote_order',
+  description: 'Quote the total for a pizza order',
+  parameters: {
+    size: { type: 'string', enum: ['small', 'medium', 'large'] },
+    quantity: { type: 'integer' },
+  },
+  required: ['size', 'quantity'],
+  handler: async (args) => {
+    const total = `$${(PRICES[args.size] * args.quantity).toFixed(2)}`;
+    return new FunctionResult(
+      `The total is ${total}. Read it to the caller and ask them to confirm.`,
+    )
+      .setSemanticState({ quoted_total: total });
+  },
+});
+
+agent.defineTool({
+  name: 'place_order',
+  description: 'Place the quoted pizza order',
+  gates: [
+    new SemanticGate(
+      'Has the caller agreed in `conversation` to pay the total in `semantic_state`?',
+      0.9,
+      'place_order was not run. Read the total to the caller and ask them to confirm it.',
+    ),
+  ],
+  handler: async () =>
+    new FunctionResult('The order is placed. Tell the caller it will be ready in 20 minutes.'),
+});
+
+await agent.serve();
+```

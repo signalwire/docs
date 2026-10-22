@@ -1,0 +1,286 @@
+---
+slug: reference/calling/ai/swaig/functions/gates
+title: gates
+description: Semantic gates, yes/no questions about the call that must pass before a SWAIG function runs.
+max-toc-depth: 3
+---
+
+[functions]: /docs/swml/reference/calling/ai/swaig/functions
+[data-map]: /docs/swml/reference/calling/ai/swaig/functions/data-map
+[actions]: /docs/swml/reference/calling/ai/swaig/functions/data-map#list-of-valid-actions
+[history]: /docs/swml/reference/calling/ai/params#paramssemantic_gate_history
+[guide]: /docs/platform/ai/semantic-gates
+[post-prompt]: /docs/apis/rest/webhooks/ai-post-prompt-callback
+
+`functions[].gates` attaches semantic gates to a [SWAIG function][functions]. A semantic gate is a
+yes/no question about the call that must come out yes before the function runs. When the AI calls
+the function, a decision model reads the conversation and answers each of the function's questions
+first. If every gate passes, the function runs as usual. If any gate fails, the function doesn't run,
+and the AI gets the response you wrote for that gate in `on_fail` instead.
+
+For when to use gates and how to write good questions, see the [semantic gates guide][guide].
+
+## Properties
+
+<ParamField path="functions[].gates" type="object[]" toc={true}>
+  An array of 1 to 8 gates. Every gate is checked at once, and all must pass. When more than one fails, the first failing gate in the array supplies the `on_fail` response. A key not listed below is an error, not an ignored setting.
+</ParamField>
+
+<Indent>
+
+<ParamField path="gates[].question" type="string" required={true} toc={true}>
+  The yes/no question, at most 8 KB. Name what it's about with the names of the inputs the decision model reads, in backticks: `` `conversation` ``, `` `semantic_state` ``, `` `proposed_function` ``, or `` `visual_input` `` (see [What a gate reads](#what-a-gate-reads)). `${...}` variables from `global_data` are expanded when the check runs; `@{...}` functions are not run.
+</ParamField>
+
+<ParamField path="gates[].threshold" type="number" required={true} toc={true}>
+  The gate passes when the probability that the answer is yes is at or above this value. Above `0` and at most `1`. Higher is stricter; use `0.9` or above for actions that are hard to undo.
+</ParamField>
+
+<ParamField path="gates[].on_fail" type="object" required={true} toc={true}>
+  What the AI gets instead of the function's result when this is the first gate that fails. Shaped like a [`data_map` output][data-map], at most 8 KB.
+</ParamField>
+
+<Indent>
+
+<ParamField path="on_fail.response" type="string | object" required={true} toc={true}>
+  What the function returns to the AI. A non-empty string, or an object with `tool_result` (required, non-empty), what the AI sees as the function's result, and `tool_prompt` (optional), an instruction placed right after it. Write it so the AI knows the action didn't happen. Realtime (speech-to-speech) agents don't use `tool_prompt`; on those, put everything the AI needs in `tool_result`.
+</ParamField>
+
+<ParamField path="on_fail.action" type="object[]" toc={true}>
+  [Actions][actions] to run, as a function's response would. Must be an array, even for one action. The actions run as written: `${...}` variables in them are not expanded, though a `SWML` action resolves the variables in its own document when it runs.
+</ParamField>
+
+<ParamField path="on_fail.post_process" type="boolean" default="false" toc={true}>
+  Lets the AI take its turn before the actions run.
+</ParamField>
+
+</Indent>
+
+<ParamField path="gates[].id" type="string" default="gate_1, gate_2, … by position" toc={true}>
+  A name for the gate, reported in the call records: 1 to 64 letters, digits, or underscores, unique within the function.
+</ParamField>
+
+<ParamField path="gates[].criteria" type="object" toc={true}>
+  What counts as yes and what counts as no, for the near misses the question alone leaves open. Set `true`, `false`, or both, each a non-empty string of at most 2 KB.
+</ParamField>
+
+<ParamField path="gates[].visual_input" type="boolean | integer" toc={true}>
+  How many of the caller's newest video frames the gate looks at: `true` is `1`, a whole number from `0` to `5`, and `false` or `0` is none. Frames are taken when the check starts, at most one per second and none older than 8 seconds. A function's gates are checked together, so each sees as many frames as the gate that asks for the most. If the call has no video frame to show, the gate fails without being asked, so a gate with `visual_input` always fails when the post-prompt AI calls the function after the call.
+</ParamField>
+
+</Indent>
+
+Sizes are bytes of UTF-8 text. If any gate breaks a rule on this page, the function isn't added to
+the agent at all, and the rest of the agent works without it. A `calling.error` event with
+`error_reason` `invalid_semantic_gate` names the function and the reason. For the rest of that `ai`
+method, no other definition of that name and no MCP tool with that name is used either, so the
+function can never run without its gates.
+
+When a function name is defined more than once, the first definition wins, gates included. Functions
+from `includes` load before `SWAIG.functions`, so an included definition of a name wins over an
+inline one.
+
+## What a gate reads
+
+The decision model reads these inputs, under these names, and nothing else:
+
+| Name | What it holds |
+|---|---|
+| `conversation` | The most recent part of the call, oldest first: [`semantic_gate_history`][history] entries, 20 by default. It holds the caller's turns, the agent's replies, and what the agent was told to say outside its replies, such as `say` actions. An agent reply the caller cut off is included without its text. |
+| `semantic_state` | Whatever you've stored in `global_data.semantic_state`, or `{}`. Nothing else from `global_data` is sent. |
+| `proposed_function` | The function's name, its description, and the arguments the AI is calling it with. |
+| `visual_input` | The caller's video frames, when a gate sets `visual_input`. |
+
+The backticked names in a question aren't variables, and nothing replaces them. They tell the
+decision model which input to read, so that "in `conversation`" means the conversation it was
+given, not the ordinary word. What a gate reads is captured when the check starts: something the
+caller says while it runs doesn't change the result.
+
+## When a function is blocked
+
+A blocked function doesn't run: your webhook isn't called, the `data_map` doesn't run, and nothing
+is sent to an MCP server. The function's `wait_file` doesn't play, and the call doesn't use up its
+`active` count. If the AI keeps making the same blocked call, it's refused on the third try.
+
+When the check can't be completed, because it timed out, the decision model failed or gave no usable
+answer, or the AI's arguments were missing or weren't valid JSON, the function is blocked too, and
+the AI gets `There is a temporary problem and this could not be completed right now.` Every outcome
+other than a pass, a fail, or gates turned off also fires a `calling.error` event:
+
+```json
+{
+  "error": "ai: Semantic gate error\n",
+  "function": "cancel_account",
+  "error_reason": "timeout",
+  "evaluation_id": "d7b5c0f2-6a1e-4c8b-9f3d-2b7e1a0c5d44",
+  "fatal": false
+}
+```
+
+`error_reason` is the check's outcome, and `evaluation_id` matches the record in the call's
+`swaig_log`.
+
+Each checked call adds a `semantic_gates` record to its `swaig_log` entry, and the
+[post-prompt callback][post-prompt] adds `semantic_gates_blocked` and a `semantic_gates` tally for
+the call. When the post-prompt AI was blocked and wrote no summary, `post_prompt_data` reads
+"`<function>` was not run." for each blocked call.
+
+## Where gates apply
+
+Gates work on webhook functions, `data_map` functions, and functions returned by `includes`. A
+function you also serve from an MCP server keeps its gates.
+Functions the post-prompt AI calls after the call ends are gated too.
+
+These names can't have gates: `startup_hook`, `hangup_hook`, `check_for_input`, `end_call`,
+`hangup`, `check_time`, `wait_for_user`, `wait_seconds`, `adjust_response_latency`, `next_step`,
+`change_context`, `gather_submit`, `get_visual_input`, `get_ideal_strategy`, and
+`pause_conversation`. Built-in functions and MCP tools you haven't defined yourself are never gated.
+The [`amazon_bedrock`](/docs/swml/reference/calling/amazon-bedrock) and
+[`ai_sidecar`](/docs/swml/reference/calling/ai-sidecar) methods don't check gates.
+
+## Examples
+
+### Require an explicit request
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - ai:
+        prompt:
+          text: You help callers manage their account.
+        SWAIG:
+          functions:
+            - function: cancel_account
+              description: Cancel the caller's account.
+              web_hook_url: https://example.com/swaig
+              parameters:
+                type: object
+                properties:
+                  reason:
+                    type: string
+                    description: Why the caller is cancelling.
+              gate_fillers:
+                default:
+                  - Let me check that.
+              gates:
+                - id: explicit_request
+                  question: Has the caller explicitly asked to cancel their account in `conversation`?
+                  criteria:
+                    "true": The caller says they want to cancel.
+                    "false": The caller asked about cancelling, or said something else.
+                  threshold: 0.95
+                  on_fail:
+                    response:
+                      tool_result: cancel_account was not run.
+                      tool_prompt: Ask the caller to confirm that they want to cancel.
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "ai": {
+          "prompt": {
+            "text": "You help callers manage their account."
+          },
+          "SWAIG": {
+            "functions": [
+              {
+                "function": "cancel_account",
+                "description": "Cancel the caller's account.",
+                "web_hook_url": "https://example.com/swaig",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "reason": {
+                      "type": "string",
+                      "description": "Why the caller is cancelling."
+                    }
+                  }
+                },
+                "gate_fillers": {
+                  "default": ["Let me check that."]
+                },
+                "gates": [
+                  {
+                    "id": "explicit_request",
+                    "question": "Has the caller explicitly asked to cancel their account in `conversation`?",
+                    "criteria": {
+                      "true": "The caller says they want to cancel.",
+                      "false": "The caller asked about cancelling, or said something else."
+                    },
+                    "threshold": 0.95,
+                    "on_fail": {
+                      "response": {
+                        "tool_result": "cancel_account was not run.",
+                        "tool_prompt": "Ask the caller to confirm that they want to cancel."
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### Check a recorded fact and the caller's video
+
+A gate can ask about what your application stored in `global_data.semantic_state`, and another can
+look at the caller's camera.
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+gates:
+  - id: identity_verified
+    question: Does `semantic_state` show the caller's identity as verified?
+    threshold: 0.9
+    on_fail:
+      response: release_records was not run. Verify the caller's identity first.
+  - id: id_shown
+    question: Is the caller holding a photo ID up to the camera in `visual_input`?
+    threshold: 0.9
+    visual_input: 1
+    on_fail:
+      response: release_records was not run. Ask the caller to hold their ID up to the camera.
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "gates": [
+    {
+      "id": "identity_verified",
+      "question": "Does `semantic_state` show the caller's identity as verified?",
+      "threshold": 0.9,
+      "on_fail": {
+        "response": "release_records was not run. Verify the caller's identity first."
+      }
+    },
+    {
+      "id": "id_shown",
+      "question": "Is the caller holding a photo ID up to the camera in `visual_input`?",
+      "threshold": 0.9,
+      "visual_input": 1,
+      "on_fail": {
+        "response": "release_records was not run. Ask the caller to hold their ID up to the camera."
+      }
+    }
+  ]
+}
+```
+</CodeBlock>
+</CodeBlocks>
