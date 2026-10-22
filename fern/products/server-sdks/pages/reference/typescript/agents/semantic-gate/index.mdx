@@ -1,0 +1,136 @@
+---
+title: "SemanticGate"
+slug: reference/typescript/agents/semantic-gate
+description: A yes/no question about the call that must pass before a SWAIG function runs.
+max-toc-depth: 3
+---
+
+[define-tool]: /docs/server-sdks/reference/typescript/agents/agent-base/define-tool
+[define-typed-tool]: /docs/server-sdks/reference/typescript/agents/agent-base/define-typed-tool
+[datamap-gate]: /docs/server-sdks/reference/typescript/agents/data-map/gate
+[functionresult]: /docs/server-sdks/reference/typescript/agents/function-result
+[set-semantic-state]: /docs/server-sdks/reference/typescript/agents/function-result/set-semantic-state
+[set-semantic-gates]: /docs/server-sdks/reference/typescript/agents/agent-base/set-semantic-gates
+[swml-gates]: /docs/swml/reference/calling/ai/swaig/functions/gates
+[semantic-gates-guide]: /docs/platform/ai/semantic-gates
+
+A semantic gate is a yes/no question about the call that must pass before a SWAIG
+function runs. Attach gates with the `gates` option on [`defineTool()`][define-tool]
+or [`defineTypedTool()`][define-typed-tool], or with
+[`DataMap.gate()`][datamap-gate]. A function takes 1 to 8 gates. A decision model
+checks all of them together right before the function would run. If any gate
+fails, the function doesn't run, and the AI gets the `on_fail` output of the first
+failing gate in list order.
+
+The decision model reads `conversation` (the recent dialogue), `semantic_state`
+(the call's `global_data.semantic_state`, or `{}`), and `proposed_function` (the
+function's name, description, and the arguments the AI is calling it with). Name
+what each question is about with those names in backticks. They label what the
+decision model reads; nothing is substituted. The decision model reads literally
+and doesn't do arithmetic or compare dates, so put a computed result in the state
+with [`setSemanticState()`][set-semantic-state] instead of asking for it.
+
+<Info>
+Gates map to the SWML [gate object][swml-gates]. For how to write questions and
+pick thresholds, see the [semantic gates guide][semantic-gates-guide]. Call-wide
+settings are on [`setSemanticGates()`][set-semantic-gates].
+</Info>
+
+<Note>
+The SDK checks gates when the tool is defined, and again when the SWML is rendered,
+and throws for anything the platform would refuse. That includes gates on these
+function names: `startup_hook`, `hangup_hook`, `check_for_input`, `end_call`,
+`hangup`, `check_time`, `wait_for_user`, `wait_seconds`, `adjust_response_latency`,
+`next_step`, `change_context`, `gather_submit`, `get_visual_input`,
+`get_ideal_strategy`, `pause_conversation`.
+</Note>
+
+<Warning title="No visual_input on gates">
+The TypeScript SDK has no `visual_input` option on a gate, and it throws on a gate
+object with a `visual_input` key. To gate a function on the caller's video, write
+the function in SWML with the [gate object][swml-gates].
+</Warning>
+
+## Parameters
+
+<ParamField path="question" type="string" required={true} toc={true}>
+  The yes/no question, at most 8 KB (UTF-8). `${...}` variables from the call's
+  global data are expanded when the gate is checked; `@{...}` functions are not.
+</ParamField>
+
+<ParamField path="threshold" type="number" required={true} toc={true}>
+  Above 0 and at most 1. The gate passes when the decision model's probability of
+  "yes" is at or above this value.
+</ParamField>
+
+<ParamField path="onFail" type={"string | FunctionResult | Record<string, unknown>"} required={true} toc={true}>
+  What the AI gets when this is the first gate that fails, at most 8 KB. A string
+  is the response text. A [`FunctionResult`][functionresult] contributes its
+  response, actions, and `postProcess`. An object is used as written, in the
+  `data_map` output shape (`response`, optional `action`). Say that the function
+  didn't run: the constructor throws when there's no response. Actions run as
+  written, without `${...}` expansion. Realtime (speech-to-speech) agents don't use
+  `tool_prompt`, so put everything in `tool_result` for them.
+</ParamField>
+
+<ParamField path="opts" type="SemanticGateOptions" toc={true}>
+  Optional settings.
+</ParamField>
+
+<Indent>
+
+<ParamField path="opts.id" type="string" toc={true}>
+  1 to 64 letters, digits, or underscores, unique within the function. Defaults
+  to `gate_1`, `gate_2`, and so on, by position.
+</ParamField>
+
+<ParamField path="opts.trueMeans" type="string" toc={true}>
+  What "yes" means, at most 2 KB. Sent as `criteria.true`.
+</ParamField>
+
+<ParamField path="opts.falseMeans" type="string" toc={true}>
+  What "no" means, at most 2 KB. Sent as `criteria.false`.
+</ParamField>
+
+</Indent>
+
+## Methods
+
+<CardGroup cols={3}>
+  <Card title="toDict" href="/docs/server-sdks/reference/typescript/agents/semantic-gate/to-dict">
+    Return the gate as the object sent in the function definition.
+  </Card>
+</CardGroup>
+
+## Examples
+
+```typescript {6-18,23-24}
+import { AgentBase, FunctionResult, SemanticGate } from '@signalwire/sdk';
+
+const agent = new AgentBase({ name: 'account-agent', route: '/account' });
+agent.setPromptText('You help callers manage their account.');
+
+const explicitRequest = new SemanticGate(
+  'Has the caller explicitly asked to cancel their account in `conversation`?',
+  0.95,
+  new FunctionResult({
+    tool_result: 'cancel_account was not run.',
+    tool_prompt: 'Ask the caller to confirm that they want to cancel.',
+  }),
+  {
+    id: 'explicit_request',
+    trueMeans: 'The caller says they want to cancel.',
+    falseMeans: 'The caller asked about cancelling, or said something else.',
+  },
+);
+
+agent.defineTool({
+  name: 'cancel_account',
+  description: "Cancel the caller's account",
+  gates: [explicitRequest],
+  gateFillers: { 'en-US': ['One moment.'] },
+  handler: async () => new FunctionResult('The account is cancelled. Tell the caller.'),
+});
+
+await agent.serve();
+```

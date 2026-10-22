@@ -14,53 +14,53 @@ model VoiceStatusCallbackPayload {
 
   @doc("The average time between packets for the inbound stream.")
   @example(20)
-  AudioInAveragePtime: int32;
+  AudioInAveragePtime?: int32;
 
   @doc("The number of DTMF packets in the inbound media stream.")
   @example(0)
-  AudioInDtmfPacketCount: int32;
+  AudioInDtmfPacketCount?: int32;
 
   @doc("""
     The number of incoming packets removed from the jitter buffer due to buffer overflow or underflow,
     causing these packets to be discarded or lost.
     """)
   @example(2)
-  AudioInFlushPacketCount: int32;
+  AudioInFlushPacketCount?: int32;
 
   @doc("The maximum variance of jitter for incoming audio RTP packets.")
   @example(8)
-  AudioInJitterMaxVariance: int32;
+  AudioInJitterMaxVariance?: int32;
 
   @doc("The minimum variance of jitter for incoming audio RTP packets.")
   @example(1)
-  AudioInJitterMinVariance: int32;
+  AudioInJitterMinVariance?: int32;
 
   @doc("The largest jitter buffer size recorded for incoming audio RTP packets during the session.")
   @example(4)
-  AudioInLargestJbSize: int32;
+  AudioInLargestJbSize?: int32;
 
   @doc("A mean opinion score on a scale of 1–5 that helps determine audio quality.")
   @example("4.3")
-  AudioInMos: string;
+  AudioInMos?: string;
 
   @doc("The number of audio packets received in the inbound media stream.")
   @example(1842)
-  AudioInMediaPacketCount: int32;
+  AudioInMediaPacketCount?: int32;
 
   @doc("""
     Increased with every packet not received at a given ptime.
     Increases with every lost packet from the inbound stream.
     """)
   @example(1)
-  AudioInSkipPacketCount: int32;
+  AudioInSkipPacketCount?: int32;
 
   @doc("The total number of DTMF packets generated in the outbound media stream.")
   @example(0)
-  AudioOutDtmfPacketCount: int32;
+  AudioOutDtmfPacketCount?: int32;
 
   @doc("The number of audio packets sent in the outbound media stream.")
   @example(1840)
-  AudioOutMediaPacketCount: int32;
+  AudioOutMediaPacketCount?: int32;
 
   @doc("The source of the status callback.")
   @example("call-progress-events")
@@ -87,7 +87,7 @@ model VoiceStatusCallbackPayload {
     | `ringing` | The call is ringing. |
     | `in-progress` | The call was answered and is in progress. |
     | `queued` | The call is ready and in line to initiate. |
-    | `failed` | The call could not be completed. Usually occurs when the phone number does not exist. |
+    | `failed` | The call could not be completed. Usually occurs when the phone number does not exist. SignalWire also stops a call created through the REST API before dialing it when its caller ID is on the Do Not Originate registry, a spam rule blocks it, it exceeds the outbound call rate limit (`ErrorCode` `20429`), no endpoint is registered to receive it, or a temporary platform error interrupts it. Retrying usually succeeds after a temporary error. |
     | `busy` | The caller encountered a busy signal. |
     | `no-answer` | The call ended without an answer. |
     | `completed` | The call was answered and ended normally. |
@@ -104,6 +104,14 @@ model VoiceStatusCallbackPayload {
     """)
   @example("outbound-api")
   Direction: "outbound-dial" | "outbound-api" | "inbound";
+
+  @doc("The code for why the call failed, when SignalWire has one. `20429` means the call exceeded the outbound call rate limit. See [Error codes](/docs/compatibility-api/rest/error-codes#20429).")
+  @example("20429")
+  ErrorCode?: string;
+
+  @doc("The description of `ErrorCode`.")
+  @example("Your call was temporarily rate limited due to recent activity. Please reduce your call attempt rate, or contact Support to raise the limits on your account.")
+  ErrorMessage?: string;
 
   @doc("The number this call was forwarded from.")
   @example("+15550001111")
