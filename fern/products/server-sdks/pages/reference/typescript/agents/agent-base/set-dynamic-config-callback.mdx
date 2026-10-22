@@ -6,25 +6,47 @@ max-toc-depth: 3
 ---
 
 [ref-agentbase]: /docs/server-sdks/reference/typescript/agents/agent-base
+[add-per-call-config]: /docs/server-sdks/reference/typescript/agents/agent-base/add-per-call-config
+[define-tool]: /docs/server-sdks/reference/typescript/agents/agent-base/define-tool
+[on-summary]: /docs/server-sdks/reference/typescript/agents/agent-base/on-summary
 
-Set a callback that runs on every incoming SWML request, receiving an ephemeral copy
-of the agent so you can dynamically configure **any** aspect of it -- prompts,
-parameters, languages, tools, global data, etc. -- based on the request's query
-parameters, body, or headers.
+Set a callback that configures a per-request copy of the agent, so you can
+dynamically configure **any** aspect of it -- prompts, parameters, languages,
+tools, global data, etc. -- based on the request's query parameters, body, or
+headers.
+
+On each request that renders SWML, runs a SWAIG function, or delivers a summary,
+the SDK makes a copy of the agent, calls the callback with the request's query
+parameters, body, and headers (credential-bearing headers removed) and the copy,
+and handles the request with the copy. Tool handlers receive the copy as their
+third argument (see [`defineTool()`][define-tool]), and
+[`onSummary()`][on-summary] runs on it.
 
 This is the primary mechanism for multi-tenant or per-caller customization.
+Setting it replaces every callback registered so far, including those from
+[`addPerCallConfig()`][add-per-call-config], which adds a callback instead.
 
 <Note>
-The `agent` argument is an **ephemeral copy** of the base agent — changes made
-inside the callback apply only to the current request and do not persist to the
-base agent or affect other requests.
+The `agent` argument is an **ephemeral copy** of the base agent. It has its own
+prompt, tools, skills list, hints, languages, pronunciations, params, global data,
+function includes, LLM params, fillers, call-flow verbs, SWAIG query params, native
+functions, MCP servers, SIP usernames, routing callbacks, and contexts, so changing
+any of them affects only the current request. Anything else is shared with the
+base agent and every request in flight, such as a field a subclass adds, a skill
+instance, or an object that isn't plain data (a `URL`, a class instance): assigning
+a new value on the copy is safe, mutating a shared object in place is not.
 </Note>
+
+A handler that captured the base agent (an arrow function, or a method bound with
+`.bind(this)`) still sees the base agent, not the copy; read per-call configuration
+from the handler's third argument. A subclass's JavaScript `#private` fields aren't
+on the copy, so methods that read them throw there; use TypeScript `private` fields.
 
 ## **Parameters**
 
 <ParamField path="cb" type="DynamicConfigCallback" required={true} toc={true}>
   A function with the signature
-  `(queryParams: Record<string, string>, bodyParams: Record<string, unknown>, headers: Record<string, string>, agent: AgentBase) => void | Promise<void>`.
+  `(queryParams: Record<string, string>, bodyParams: SwmlRequestData, headers: Record<string, string>, agent: AgentBase) => void | Promise<void>`.
   Use the `agent` argument to call any configuration method on the ephemeral copy.
 </ParamField>
 
