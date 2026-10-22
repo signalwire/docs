@@ -1,0 +1,520 @@
+---
+title: Send and receive faxes
+slug: fax/send-and-receive-faxes
+description: Send and receive faxes with SWML or Relay, track results, and stop a fax in progress with REST.
+max-toc-depth: 3
+---
+
+[make-and-receive-calls]: /docs/platform/voice/make-and-receive-calls
+[prepare-calls]: /docs/platform/voice/make-and-receive-calls#prepare-for-your-first-call
+[place-swml]: /docs/platform/voice/make-and-receive-calls#place-a-call-via-swml
+[answer-swml]: /docs/platform/voice/make-and-receive-calls#answer-a-call-via-swml
+[place-relay]: /docs/platform/voice/make-and-receive-calls#place-a-call-via-websocket-relay
+[answer-relay]: /docs/platform/voice/make-and-receive-calls#answer-a-call-via-websocket-relay
+[caller-id]: /docs/platform/voice/how-to-set-caller-id-or-cnam
+[trial-mode]: /docs/platform/trial-mode
+[webhooks]: /docs/platform/webhooks
+[machine-detection]: /docs/platform/voice/machine-detection
+[swml-send-fax]: /docs/swml/reference/calling/send-fax
+[swml-receive-fax]: /docs/swml/reference/calling/receive-fax
+[swml-switch]: /docs/swml/reference/calling/switch
+[call-commands]: /docs/apis/rest/calls/call-commands
+
+SignalWire sends and receives faxes over phone calls. This guide shows two flows: send a PDF to a
+fax machine, and receive a fax on your SignalWire number.
+
+## How faxing works
+
+A fax travels over a call. Once the call is answered, SignalWire and the fax machine on the other
+end negotiate a connection and transfer the document page by page. To send, SignalWire fetches a
+PDF from a URL you provide. To receive, SignalWire stores the incoming pages as a PDF and gives you
+its URL.
+
+When a fax finishes, your app can read whether it succeeded, how many pages were transferred,
+and a description of the result. For received faxes, it can also read the PDF's URL. A call
+carries one fax at a time. The sections below explain how to handle these results in each approach.
+
+## Choose an approach
+
+Follow the section for your app's approach:
+
+- [SWML](#send-and-receive-faxes-via-swml): add `send_fax` or `receive_fax` to your call document
+  and branch on the result. Optionally send events to a webhook.
+- [WebSocket (Relay)](#send-and-receive-faxes-via-websocket-relay): start the fax on an answered
+  call and handle events in your code. No public webhook URL is needed.
+- [REST](#stop-a-fax-in-progress-via-rest): stop a fax by call ID from any process.
+
+## Prepare for faxing
+
+Start with working call setup from [Make and receive calls][make-and-receive-calls]. To test, use
+a fax machine or online fax service that can send and receive faxes, and a publicly accessible PDF.
+
+<Warning title="Trial projects only call and receive calls from verified numbers">
+A [trial project][trial-mode] only places calls to and receives calls from numbers you've
+purchased or verified. This also applies to fax calls. [Prepare for your first call][prepare-calls] shows how
+to verify the fax number you'll test with.
+</Warning>
+
+Replace these values in the samples you run:
+
+| Value | Replace with |
+|---|---|
+| `<YOUR_SPACE>` | Your Space's subdomain in `<YOUR_SPACE>.signalwire.com` |
+| `<YOUR_PROJECT_ID>` | Your Project ID |
+| `<YOUR_API_TOKEN>` | Your API token, used only in server code |
+| `<YOUR_CALLER_ID>` | Your SignalWire phone number, or a [verified caller ID][caller-id], in E.164 format |
+| `<YOUR_DESTINATION>` | The fax number you'll send to, in E.164 format |
+| `<YOUR_FAX_DOCUMENT_URL>` | The public URL of a PDF that SignalWire can fetch and fax |
+
+## Send and receive faxes via SWML
+
+[`send_fax`][swml-send-fax] and [`receive_fax`][swml-receive-fax] answer the call if it isn't
+answered yet and pause the document until the fax finishes. Each then sets variables prefixed
+with `send_fax_` or `receive_fax_`. Use [`switch`][swml-switch] to choose the next action.
+
+| Variable | Meaning | Typical action |
+|---|---|---|
+| `send_fax_result`, `receive_fax_result` | `success` or `failed` | Branch on the outcome |
+| `send_fax_document`, `receive_fax_document` | The URL of the PDF you sent, or of the PDF received | Save or forward a received fax |
+| `send_fax_pages`, `receive_fax_pages` | The number of pages transferred | Check that every page arrived |
+| `send_fax_result_text`, `receive_fax_result_text` | A description of the result, such as why the fax failed | Log the failure and retry or notify someone |
+| `send_fax_result_code`, `receive_fax_result_code` | The numeric fax result code | Log it with the description |
+
+`send_fax_identity` and `receive_fax_identity` hold the station ID SignalWire reported.
+`send_fax_remote_identity` and `receive_fax_remote_identity` hold the receiving or sending
+machine's station ID.
+
+### Send a fax via SWML
+
+Send a PDF to a fax machine with `send_fax`. `header_info` sets the text in the header line at the
+top of each page.
+
+The SDK programs place the call as in [Place a call via SWML][place-swml], with the document built
+by the SDK's SWML builder. The YAML and JSON tabs contain the equivalent complete document.
+
+<CodeBlocks>
+<CodeBlock title="Python — REST client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as send_fax.py and run: python send_fax.py
+from signalwire import SWMLBuilder, SWMLService
+from signalwire.rest import RestClient
+
+client = RestClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    host="<YOUR_SPACE>.signalwire.com",
+)
+
+swml = (
+    SWMLBuilder(SWMLService(name="send-fax"))
+    .send_fax(document="<YOUR_FAX_DOCUMENT_URL>", header_info="Bayview Taxi receipt")
+    .build()
+)
+
+call = client.calling.dial(
+    from_="<YOUR_CALLER_ID>",
+    to="<YOUR_DESTINATION>",
+    swml=swml,
+)
+print(call["id"])
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — REST client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as send-fax.mjs,
+// then run: node send-fax.mjs
+import { RestClient, SwmlBuilder } from "@signalwire/sdk";
+
+const client = new RestClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  host: "<YOUR_SPACE>.signalwire.com",
+});
+
+const swml = new SwmlBuilder()
+  .send_fax({ document: "<YOUR_FAX_DOCUMENT_URL>", header_info: "Bayview Taxi receipt" })
+  .build();
+
+const call = await client.calling.dial({
+  from: "<YOUR_CALLER_ID>",
+  to: "<YOUR_DESTINATION>",
+  swml,
+});
+console.log(call.id);
+```
+</CodeBlock>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - send_fax:
+        document: <YOUR_FAX_DOCUMENT_URL>
+        header_info: Bayview Taxi receipt
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "send_fax": {
+          "document": "<YOUR_FAX_DOCUMENT_URL>",
+          "header_info": "Bayview Taxi receipt"
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+Run the example and check the fax machine for the document, with "Bayview Taxi receipt" in the
+header line.
+
+If a person or voicemail might answer instead of a fax machine, check first with
+[machine detection][machine-detection] and run `send_fax` only in the `fax` branch.
+
+### Receive a fax via SWML
+
+Receive a fax on your SignalWire number with `receive_fax`. The SDK programs build the document
+and save it as a hosted SWML Script, then print the script's ID. The YAML and JSON tabs contain the
+same document, ready to paste into a hosted script in the Dashboard.
+
+<CodeBlocks>
+<CodeBlock title="Python — REST client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as receive_fax_script.py and run: python receive_fax_script.py
+from signalwire import SWMLBuilder, SWMLService
+from signalwire.rest import RestClient
+
+client = RestClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    host="<YOUR_SPACE>.signalwire.com",
+)
+
+swml = (
+    SWMLBuilder(SWMLService(name="receive-faxes"))
+    .receive_fax()
+    .build()
+)
+
+script = client.fabric.swml_scripts.create(
+    name="Receive faxes",
+    contents=swml,
+)
+print(script["id"])
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — REST client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as receive-fax-script.mjs,
+// then run: node receive-fax-script.mjs
+import { RestClient, SwmlBuilder } from "@signalwire/sdk";
+
+const client = new RestClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  host: "<YOUR_SPACE>.signalwire.com",
+});
+
+const swml = new SwmlBuilder()
+  .receive_fax()
+  .build();
+
+const script = await client.fabric.swmlScripts.create({
+  name: "Receive faxes",
+  contents: swml,
+});
+console.log(script.id);
+```
+</CodeBlock>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - receive_fax: {}
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      { "receive_fax": {} }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+Assign the script to your phone number as in [Answer a call via SWML][answer-swml], then send a
+test fax to the number. When it finishes, open **Logs**, then **Calling**, select the fax call, and
+open the URL in its **Document** field to view the PDF.
+
+### Track fax results via SWML
+
+Add `status_url` to `send_fax` or `receive_fax` to receive JSON webhooks. These report the fax's
+progress; use the variables above to branch in your document after the fax finishes.
+
+| Webhook field | Value |
+|---|---|
+| `event_type` | `calling.call.fax` |
+| `params.call_id` | The call ID |
+| `params.control_id` | The fax operation's ID |
+| `params.fax.type` | `page` or `finished` |
+| `params.fax.params.direction` | `send` or `receive` |
+| `params.fax.params.number` | On `page`, the number of pages transferred so far |
+| `params.fax.params.success` | On `finished`, `true` or `false` |
+| `params.fax.params.pages` | On `finished`, the number of pages transferred |
+| `params.fax.params.document` | On `finished`, the URL of the PDF sent or received |
+| `params.fax.params.result_text` | On `finished`, a description of the result |
+
+| Outcome | Callbacks, in order |
+|---|---|
+| The fax succeeds | `page` for each page, then `finished` with `success: true` |
+| The fax fails partway | `page` for each page transferred, then `finished` with `success: false` |
+| The fax fails before the first page | `finished` with `success: false` |
+
+A received fax's PDF is in `document` on the `finished` callback when `success` is `true`. The
+[`receive_fax` reference][swml-receive-fax] shows the full payload, and the
+[webhooks guide][webhooks] covers endpoint setup and testing.
+
+### Set SWML fax options
+
+Set these properties on `send_fax`. `receive_fax` takes only `status_url`.
+
+| Setting | Default | When to change it |
+|---|---|---|
+| `document` | Required | The public URL of the PDF to send |
+| `header_info` | The destination number | Print your business name or a reference in the header line on each page |
+| `identity` | The number you call from | Report a different station ID to the receiving machine |
+| `status_url` | None | Receive fax events at your webhook |
+
+The [`send_fax` reference][swml-send-fax] lists every property and the variables it sets.
+
+## Send and receive faxes via WebSocket (Relay)
+
+Start a fax on an answered call, after registering a `calling.call.fax` handler. Read
+`event.fax.type` for the kind of event and `event.fax.params` for its details:
+
+| `event.fax.type` | Meaning | Typical action |
+|---|---|---|
+| `page` | A page was transferred; `params.number` holds the pages so far | Log progress |
+| `finished` | The fax ended; `params.success` says whether it succeeded | Read `pages` and `document`, or `result_text` on failure, then hang up |
+
+A failed fax still ends with `finished`, with `success` set to `false`. Handle completion in
+the `calling.call.fax` event handler, then hang up as shown below. Call the fax action's `stop()`
+to stop a fax early.
+
+### Send a fax via WebSocket (Relay)
+
+Dial the fax number, then send the PDF once the call is answered. The handler prints the result
+from the `finished` event and hangs up. The header and station ID settings work as in
+[Set SWML fax options](#set-swml-fax-options).
+
+Call setup follows [Place a call via WebSocket (Relay)][place-relay].
+
+<CodeBlocks>
+<CodeBlock title="Python — Relay client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as send_fax_relay.py and run: python send_fax_relay.py
+import asyncio
+from signalwire.relay import RelayClient
+from signalwire.relay.event import FaxEvent
+
+client = RelayClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    contexts=["default"],
+)
+
+async def main():
+    async with client:
+        call = await client.dial(
+            devices=[[{
+                "type": "phone",
+                "params": {
+                    "from_number": "<YOUR_CALLER_ID>",
+                    "to_number": "<YOUR_DESTINATION>",
+                    "timeout": 30,
+                },
+            }]],
+        )
+
+        async def on_fax(event: FaxEvent):
+            if event.fax.get("type") != "finished":
+                return
+            result = event.fax.get("params", {})
+            if result.get("success"):
+                print(f"Fax sent: {result.get('pages', 0)} pages")
+            else:
+                print(f"Fax failed: {result.get('result_text')}")
+            if call.state != "ended":
+                await call.hangup()
+
+        call.on("calling.call.fax", on_fax)
+        await call.send_fax(
+            document="<YOUR_FAX_DOCUMENT_URL>",
+            header_info="Bayview Taxi receipt",
+        )
+        await call.wait_for_ended()
+
+asyncio.run(main())
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — Relay client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// Save as send-fax-relay.mts and run: npx tsx send-fax-relay.mts
+import { RelayClient, FaxEvent } from "@signalwire/sdk";
+
+const client = new RelayClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  contexts: ["default"],
+});
+
+await client.connect();
+
+try {
+  const call = await client.dial([[{
+    type: "phone",
+    params: {
+      from_number: "<YOUR_CALLER_ID>",
+      to_number: "<YOUR_DESTINATION>",
+      timeout: 30,
+    },
+  }]]);
+
+  call.on("calling.call.fax", async (event) => {
+    const fax = (event as FaxEvent).fax as {
+      type?: string;
+      params?: { success?: boolean; pages?: number; result_text?: string };
+    };
+    if (fax.type !== "finished") return;
+    if (fax.params?.success) {
+      console.log(`Fax sent: ${fax.params.pages ?? 0} pages`);
+    } else {
+      console.log(`Fax failed: ${fax.params?.result_text}`);
+    }
+    if (call.state !== "ended") await call.hangup();
+  });
+
+  await call.sendFax("<YOUR_FAX_DOCUMENT_URL>", {
+    headerInfo: "Bayview Taxi receipt",
+  });
+  await call.waitForEnded();
+} finally {
+  await client.disconnect();
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+Test with a fax destination and check the fax machine for the document.
+
+### Receive a fax via WebSocket (Relay)
+
+Answer each call to your number, receive the fax, and print the stored PDF's URL from the
+`finished` event. The handler subscribes to the `inbound-fax` topic.
+
+<CodeBlocks>
+<CodeBlock title="Python — Relay client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as receive_fax_relay.py and run: python receive_fax_relay.py
+from signalwire.relay import RelayClient
+from signalwire.relay.event import FaxEvent
+
+client = RelayClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    contexts=["inbound-fax"],
+)
+
+@client.on_call
+async def handle_call(call):
+    async def on_fax(event: FaxEvent):
+        if event.fax.get("type") != "finished":
+            return
+        result = event.fax.get("params", {})
+        if result.get("success"):
+            print(f"Received {result.get('pages', 0)} pages: {result.get('document')}")
+        else:
+            print(f"Fax failed: {result.get('result_text')}")
+        if call.state != "ended":
+            await call.hangup()
+
+    call.on("calling.call.fax", on_fax)
+    await call.answer()
+    await call.receive_fax()
+    await call.wait_for_ended()
+
+client.run()
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — Relay client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// Save as receive-fax-relay.mts and run: npx tsx receive-fax-relay.mts
+import { RelayClient, FaxEvent } from "@signalwire/sdk";
+
+const client = new RelayClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  contexts: ["inbound-fax"],
+});
+
+client.onCall(async (call) => {
+  call.on("calling.call.fax", async (event) => {
+    const fax = (event as FaxEvent).fax as {
+      type?: string;
+      params?: { success?: boolean; pages?: number; document?: string; result_text?: string };
+    };
+    if (fax.type !== "finished") return;
+    if (fax.params?.success) {
+      console.log(`Received ${fax.params.pages ?? 0} pages: ${fax.params.document}`);
+    } else {
+      console.log(`Fax failed: ${fax.params?.result_text}`);
+    }
+    if (call.state !== "ended") await call.hangup();
+  });
+
+  await call.answer();
+  await call.receiveFax();
+  await call.waitForEnded();
+});
+
+await client.run();
+```
+</CodeBlock>
+</CodeBlocks>
+
+Assign a Relay Application with the `inbound-fax` topic to your number as in
+[Answer a call via WebSocket (Relay)][answer-relay], then send a test fax and open the printed
+URL.
+
+## Stop a fax in progress via REST
+
+If another process needs to stop a fax, send [`calling.send_fax.stop`][call-commands] or
+`calling.receive_fax.stop` with the call's ID and the fax's `control_id`. Both IDs arrive in the
+fax's events. The REST Calling API can't start a fax; to send one over HTTP, use the `dial`
+request from [Send a fax via SWML](#send-a-fax-via-swml).
+
+<EndpointRequestSnippet endpoint="POST /api/calling/calls" example="calling.send_fax.stop" />
+
+The command returns immediately. Only one fax can run on a call at a time, so the same
+`control_id` identifies it until it finishes.
