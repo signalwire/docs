@@ -1,21 +1,27 @@
 ---
 title: "NativeVectorSearchSkill"
 slug: reference/typescript/agents/skills/native-vector-search
-description: Vector + keyword document search against a local .swsearch index, an in-memory document array, or a remote search server.
+description: Keyword document search over an in-memory document array or a remote search server.
 ---
 
 [add-skill]: /docs/server-sdks/reference/typescript/agents/agent-base/add-skill
 
-Search documents using vector similarity and keyword matching. Supports three
-modes:
+Search documents by keyword scoring or through a remote search server. Supports
+two modes:
 
 - **In-memory (TF-IDF)** — supply a `documents` array in config; the skill
   tokenizes and indexes at startup (TypeScript-specific fast path).
-- **Local (SQLite)** — point `index_file` at a `.swsearch` index, or set
-  `build_index: true` and `source_dir` to index at startup.
 - **Remote (network)** — point `remote_url` at a search server and optionally
   name the index via `index_name`. Validated by the SSRF guard before each
   request; health check uses a 5-second timeout.
+
+<Note>
+The Python SDK's local-index parameters (`index_file`, `build_index`,
+`backend`, and the rest) are accepted so a Python configuration still loads,
+but this skill doesn't use them. Only `index_file` has an effect, as part of
+the instance key. The `search_stats.backend` value the skill writes to global
+data is `remote` with `remote_url` and `memory` otherwise.
+</Note>
 
 **Class:** `NativeVectorSearchSkill`
 
@@ -47,7 +53,10 @@ modes:
 
 <ParamField path="remote_url" type="string" toc={true}>
   URL of a remote search server (network mode). Validated by the SSRF guard —
-  private, loopback, and cloud-metadata endpoints are rejected.
+  private, loopback, and cloud-metadata endpoints are rejected. Every request,
+  and every redirect it follows, is checked the same way. Credentials in the
+  URL (`https://user:password@host`) are sent as basic auth and kept out of
+  logs.
 </ParamField>
 
 <ParamField path="index_name" type="string" default="default" toc={true}>
@@ -71,13 +80,14 @@ modes:
 </ParamField>
 
 <ParamField path="keyword_weight" type="number" toc={true}>
-  Manual keyword weight in the hybrid TF-IDF + keyword score
-  (range `0.0-1.0`). Overrides the automatic default of `0.3`.
+  In-memory mode only: how much keyword overlap counts against TF-IDF in the
+  score (range `0.0-1.0`, default `0.3`). Has no effect with `remote_url`,
+  where the server ranks results, and logs a warning there.
 </ParamField>
 
 <ParamField path="model_name" type="string" default="mini" toc={true}>
-  Embedding model for remote/SQLite modes. Shortcuts: `"mini"` (fastest,
-  384 dims), `"base"` or `"large"` (768 dims). Full model names also accepted.
+  Accepted for compatibility with the Python SDK, and has no effect: in-memory
+  mode ranks with TF-IDF, and a remote server uses its index's own model.
 </ParamField>
 
 ## Content Parameters
