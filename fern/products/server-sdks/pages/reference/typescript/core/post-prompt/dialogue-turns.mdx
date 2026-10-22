@@ -1,0 +1,77 @@
+---
+title: "dialogueTurns"
+slug: reference/typescript/core/post-prompt/dialogue-turns
+description: "Extract the user and assistant turns from a call log, dropping tool traffic and the summary echo."
+max-toc-depth: 3
+---
+
+[ref-post-prompt]: /docs/server-sdks/reference/typescript/core/post-prompt
+
+Extract the real dialogue from a call log. Drops everything that is machinery rather than speech:
+entries whose role isn't in `roles`, entries carrying `tool_calls`, and entries with empty or
+non-string content. The `system`, `system-log`, `tool`, and `assistant-manual` roles are all
+excluded by default.
+
+`dropEcho` handles one engine behavior. The chat engine appends its own post-prompt output to
+`call_log` as a bare `role: assistant` entry, indistinguishable by role from real speech. Replayed
+into another medium, the agent would narrate a summary of itself. It is identifiable only by
+content, being identical to `post_prompt_data.raw`, which is what this option compares against.
+
+```typescript {1-4}
+dialogueTurns(
+  callLog: unknown,
+  opts?: { roles?: readonly string[]; dropEcho?: string | null },
+): DialogueTurn[]
+```
+
+## Parameters
+
+<ParamField path="callLog" type="unknown" required={true} toc={true}>
+  The log, as delivered in `call_log`, `raw_call_log`, or `raw_messages`. A non-array value yields
+  `[]`.
+</ParamField>
+
+<ParamField path="opts" type="{ roles?: readonly string[]; dropEcho?: string | null }" default="{}" toc={true}>
+  Filtering options.
+</ParamField>
+
+<Indent>
+<ParamField path="opts.roles" type="readonly string[]" default="DIALOGUE_ROLES" toc={true}>
+  Roles to keep. `DIALOGUE_ROLES` is `['user', 'assistant']`.
+</ParamField>
+
+<ParamField path="opts.dropEcho" type="string | null" toc={true}>
+  Exact content to treat as the summary echo and drop. Compared after trimming whitespace.
+</ParamField>
+</Indent>
+
+## Returns
+
+`DialogueTurn[]` -- `{ role, content }` pairs, in order.
+
+## Examples
+
+```typescript {13}
+import { dialogueTurns } from '@signalwire/sdk';
+
+const rawSummary = '{"intent":"book_ride"}';
+const callLog = [
+  { role: 'system', content: 'You are Ada.' },
+  { role: 'user', content: 'I need a cab to the ferry building.' },
+  { role: 'assistant', content: '', tool_calls: [{ id: 't1' }] },
+  { role: 'tool', content: 'ride booked' },
+  { role: 'assistant', content: 'Booked. Your driver arrives in 6 minutes.' },
+  { role: 'assistant', content: rawSummary },
+];
+
+for (const turn of dialogueTurns(callLog, { dropEcho: rawSummary })) {
+  console.log(turn.role, turn.content);
+}
+// user I need a cab to the ferry building.
+// assistant Booked. Your driver arrives in 6 minutes.
+
+console.log(dialogueTurns(callLog, { roles: ['user'] }));
+// [ { role: 'user', content: 'I need a cab to the ferry building.' } ]
+```
+
+Part of the [post-prompt normalization][ref-post-prompt] helpers.

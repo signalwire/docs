@@ -1,0 +1,98 @@
+---
+title: "validateWebhookSignatureSha256"
+slug: reference/typescript/core/security/validate-webhook-signature-sha256
+description: "Verify a SignalWire webhook against the SHA-256 signature header."
+max-toc-depth: 3
+---
+
+[validate-webhook-signature]: /docs/server-sdks/reference/typescript/core/security/validate-webhook-signature
+[security]: /docs/server-sdks/reference/typescript/core/security
+
+Verify a webhook against the `X-SignalWire-Sha256-Signature` header. SignalWire sends it alongside
+the SHA-1 `X-SignalWire-Signature` header on signed webhooks. The signature is the hex HMAC-SHA256 of
+the full URL followed by the raw request body, keyed with your Signing Key. Prefer it when the header
+is present.
+
+Only RELAY, SWML, and JSON webhooks are signed this way. Form-encoded cXML webhooks stay on the SHA-1
+signature, which [`validateWebhookSignature()`][validate-webhook-signature] checks.
+
+```typescript {1}
+validateWebhookSignatureSha256(signingKey: string, signature: string, url: string, rawBody: string): boolean
+```
+
+<Warning>
+`rawBody` must be the raw request body as a string, before any JSON or form parsing. Passing a
+parsed object throws a `TypeError`.
+</Warning>
+
+## Parameters
+
+<ParamField path="signingKey" type="string" required={true} toc={true}>
+  Your SignalWire Signing Key. An empty or non-string value throws an `Error`.
+</ParamField>
+
+<ParamField path="signature" type="string" required={true} toc={true}>
+  The `X-SignalWire-Sha256-Signature` header value, a 64-character lowercase hex string. A missing
+  or empty value returns `false`.
+</ParamField>
+
+<ParamField path="url" type="string" required={true} toc={true}>
+  The full public URL SignalWire POSTed to, exactly as the platform saw it when it computed the
+  signature.
+</ParamField>
+
+<ParamField path="rawBody" type="string" required={true} toc={true}>
+  The raw request body, before any parsing.
+</ParamField>
+
+## Returns
+
+`boolean` -- `true` when the SHA-256 signature matches; `false` otherwise. The comparison is
+constant-time.
+
+## Examples
+
+Check the SHA-256 header when it is present, and fall back to the SHA-1 header otherwise:
+
+```typescript {13-15}
+import { validateWebhookSignature, validateWebhookSignatureSha256 } from '@signalwire/sdk';
+import { Hono } from 'hono';
+
+const app = new Hono();
+const signingKey = process.env['SIGNALWIRE_SIGNING_KEY'] ?? '';
+
+app.post('/webhook', async (c) => {
+  const rawBody = await c.req.text();
+  const url = c.req.url;
+  const sha256 = c.req.header('x-signalwire-sha256-signature');
+  const sha1 = c.req.header('x-signalwire-signature') ?? '';
+
+  const ok = sha256
+    ? validateWebhookSignatureSha256(signingKey, sha256, url, rawBody)
+    : validateWebhookSignature(signingKey, sha1, url, rawBody);
+  if (!ok) return c.text('Forbidden', 403);
+
+  return c.json({ received: JSON.parse(rawBody) });
+});
+```
+
+To see the check in isolation, sign a body yourself:
+
+```typescript {8}
+import { createHmac } from 'node:crypto';
+import { validateWebhookSignatureSha256 } from '@signalwire/sdk';
+
+const key = 'PSK_example';
+const url = 'https://dispatch.example.com/webhook';
+const body = '{"event":"call.state","state":"ended"}';
+const header = createHmac('sha256', key).update(url + body).digest('hex');
+console.log(validateWebhookSignatureSha256(key, header, url, body));
+// true
+console.log(validateWebhookSignatureSha256(key, header, url, body + ' '));
+// false
+console.log(validateWebhookSignatureSha256(key, '', url, body));
+// false
+```
+
+Part of [webhook signature validation][security]. `SIGNALWIRE_SHA256_SIGNATURE_HEADER` holds the
+lowercase header name.
