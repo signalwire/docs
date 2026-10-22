@@ -1,0 +1,58 @@
+---
+title: "rpcAiGlobalData"
+slug: reference/typescript/agents/function-result/rpc-ai-global-data
+description: Merge data into another call's global data without adding a conversation turn.
+max-toc-depth: 3
+---
+
+[functionresult]: /docs/server-sdks/reference/typescript/agents/function-result
+[rpcaimessage]: /docs/server-sdks/reference/typescript/agents/function-result/rpc-ai-message
+
+Merge data into another call's global data without injecting a conversation turn.
+A thin wrapper over [`rpcAiMessage()`][rpcaimessage] with only `globalData` set.
+Use it when the other call needs a value rather than an instruction; that call's
+prompt reads it back with `${global_data.key}`.
+
+## Parameters
+
+<ParamField path="callId" type="string" required={true} toc={true}>
+  Call ID of the target call.
+</ParamField>
+
+<ParamField path="data" type={"Record<string, unknown>"} required={true} toc={true}>
+  Object merged into that call's global data.
+</ParamField>
+
+## Returns
+
+[`FunctionResult`][functionresult] -- `this`, for chaining.
+
+## Example
+
+```typescript {20-22}
+import { AgentBase, FunctionResult } from '@signalwire/sdk';
+
+const agent = new AgentBase({ name: 'dispatch', route: '/dispatch' });
+agent.setPromptText('You are Ada, the dispatcher for Bayview Taxi.');
+
+agent.defineTool({
+  name: 'share_eta',
+  description: 'Send the ETA to the waiting caller',
+  parameters: {
+    type: 'object',
+    properties: {
+      waiting_call_id: { type: 'string', description: 'Call ID of the waiting caller' },
+      eta_minutes: { type: 'integer', description: 'Minutes until pickup' },
+    },
+  },
+  required: ['waiting_call_id', 'eta_minutes'],
+  handler: (args) => {
+    const waitingCallId = String(args.waiting_call_id);
+    return new FunctionResult('Tell the driver the passenger has been updated.')
+      .rpcAiGlobalData(waitingCallId, { eta_minutes: args.eta_minutes })
+      .rpcAiUnhold(waitingCallId);
+  },
+});
+
+await agent.serve();
+```

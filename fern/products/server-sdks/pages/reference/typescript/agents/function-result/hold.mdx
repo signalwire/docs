@@ -1,31 +1,73 @@
 ---
 title: "hold"
 slug: reference/typescript/agents/function-result/hold
-description: Put the call on hold with an optional timeout.
+description: Put the call on hold, optionally announcing it and choosing the step the call resumes in.
 max-toc-depth: 3
 ---
 
 [functionresult]: /docs/server-sdks/reference/typescript/agents/function-result
+[settoolresponse]: /docs/server-sdks/reference/typescript/agents/function-result/set-tool-response
+[swmlchangestep]: /docs/server-sdks/reference/typescript/agents/function-result/swml-change-step
 
-Put the call on hold. The caller hears hold music until the hold is released
-or the timeout expires.
+Put the call on hold. The caller hears hold music until the hold is released or
+the timeout expires.
 
-## **Parameters**
+During a hold, speech detection is paused and the agent doesn't respond, so
+anything the caller needs to hear must be said before the hold takes effect.
+Passing `prompt` does that: it becomes the structured response's `tool_prompt`
+(with `tool_result: "status: on hold"`, see [`setToolResponse()`][settoolresponse])
+and turns on `postProcess`, so the model takes one more turn, and can tell the
+caller, before the hold runs.
+
+`step` and `timeoutStep` move the call to a step when the hold ends: `step` when
+the call is taken off hold, `timeoutStep` when the hold times out. Unlike
+[`swmlChangeStep()`][swmlchangestep], which applies at once, they wait for the
+hold to end. Omit one, and a hold that ends that way resumes in the current step.
+With neither, the action is the bare timeout (`{ hold: 300 }`); with either, it's
+`{ hold: { timeout, step, timeout_step } }`.
+
+## Parameters
+
+<ParamField path="prompt" type="string | number" toc={true}>
+  Instruction for the model to act on before the hold. A number here is taken as
+  `timeout`, so `hold(120)` sets a 120-second hold.
+</ParamField>
 
 <ParamField path="timeout" type="number" default="300" toc={true}>
   Maximum hold duration in seconds. Clamped to the range 0--900 (15 minutes max).
 </ParamField>
 
-## **Returns**
+<ParamField path="step" type="string" toc={true}>
+  Step to move to when the call is taken off hold.
+</ParamField>
+
+<ParamField path="timeoutStep" type="string" toc={true}>
+  Step to move to when the hold times out.
+</ParamField>
+
+## Returns
 
 [`FunctionResult`][functionresult] -- `this`, for chaining.
 
-## **Example**
+## Examples
 
-```typescript {5}
+### Default 300-second hold
+
+```typescript {3}
 import { FunctionResult } from '@signalwire/sdk';
 
-// Default 300-second hold
-const result = new FunctionResult('Please hold.')
-  .hold();
+const result = new FunctionResult('Please hold.').hold();
+```
+
+### Announce the hold and route what happens next
+
+```typescript {3-8}
+import { FunctionResult } from '@signalwire/sdk';
+
+const result = new FunctionResult().hold(
+  'Tell the caller you are checking whether a dispatcher is available.',
+  300,
+  'back_with_dispatcher',
+  'take_a_message',
+);
 ```
