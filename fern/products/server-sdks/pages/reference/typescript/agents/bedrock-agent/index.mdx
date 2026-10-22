@@ -32,7 +32,7 @@ import { BedrockAgent } from '@signalwire/sdk';
 
 const agent = new BedrockAgent({
   systemPrompt: 'You are a helpful voice assistant.',
-  voiceId: 'joanna',
+  voiceId: 'tiffany',
 });
 ```
 
@@ -56,20 +56,22 @@ The `createBedrockAgent(config)` factory function returns the same instance as
 </ParamField>
 
 <ParamField path="voiceId" type="string" default="matthew" toc={true}>
-  Bedrock voice identifier (e.g., `"matthew"`, `"joanna"`).
+  Bedrock voice identifier (`"tiffany"`, `"matthew"`, `"amy"`, `"lupe"`, or `"carlos"`).
 </ParamField>
 
-<ParamField path="temperature" type="number" default="0.7" toc={true}>
-  Generation temperature. Range: 0 to 1.
+<ParamField path="temperature" type="number | string" default="0.7" toc={true}>
+  Generation temperature. Range: 0 to 1. A numeric string is converted, and a SWML
+  variable reference such as `'${temperature}'` is kept; anything else throws.
 </ParamField>
 
-<ParamField path="topP" type="number" default="0.9" toc={true}>
-  Nucleus sampling parameter. Range: 0 to 1.
+<ParamField path="topP" type="number | string" default="0.9" toc={true}>
+  Nucleus sampling parameter. Range: 0 to 1. A numeric string is converted, and a
+  SWML variable reference is kept; anything else throws.
 </ParamField>
 
-<ParamField path="maxTokens" type="number" default="1024" toc={true}>
-  Maximum tokens to generate per response. Accepted for compatibility with the
-  Python SDK. Not currently applied to the call.
+<ParamField path="maxTokens" type="number | string" default="1024" toc={true}>
+  Maximum tokens to generate per response, an integer or a numeric string. Sent in
+  the prompt as `max_tokens`, but the platform's Bedrock session doesn't apply it.
 </ParamField>
 
 <ParamField path="agentOptions" type={"Partial<AgentOptions>"} toc={true}>
@@ -97,13 +99,15 @@ voice-to-voice model:
 |--------|----------|
 | `setLlmModel()` | Logs a warning and does nothing. Bedrock uses a fixed voice-to-voice model. |
 | `setLlmTemperature()` | Redirects to `setInferenceParams(temperature)`. |
-| `setPromptLlmParams()` | Logs a warning. Use `setInferenceParams()` instead. |
+| `setPromptLlmParams()` | `temperature`, `top_p`, and `max_tokens` update the inference settings, as `setInferenceParams()` does. Any other setting, such as `confidence`, `presence_penalty`, or `barge_confidence`, is ignored with a warning. |
 | `setPostPromptLlmParams()` | Logs a warning. The Bedrock post-prompt uses the LLM configured in the platform. |
 
 <Warning>
-Parameters specific to text-based LLMs (`barge_confidence`, `presence_penalty`,
-`frequency_penalty`) are filtered out during SWML rendering and have no effect
-on Bedrock agents.
+The `amazon_bedrock` verb carries the prompt, SWAIG functions, params, global data,
+and post-prompt settings. Speech hints, languages, pronunciation rules, multilingual
+settings, and contexts aren't part of it, so they're left out of the SWML, with one
+warning per agent for each. The platform's Bedrock session reads only the prompt's
+text, `voice_id`, `temperature`, and `top_p`.
 </Warning>
 
 Prompt methods (`setPromptText()`, `setPromptPom()`, `promptAddSection()`, and
@@ -124,7 +128,7 @@ import { BedrockAgent, FunctionResult } from '@signalwire/sdk';
 const agent = new BedrockAgent({
   name: 'bedrock-assistant',
   route: '/assistant',
-  voiceId: 'joanna',
+  voiceId: 'tiffany',
   temperature: 0.5,
 });
 
