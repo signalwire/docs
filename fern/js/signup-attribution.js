@@ -4,11 +4,15 @@
  * unmodified attribution build, the same one the marketing site, /landing and
  * /developers/demos run. To update, replace the build below with a new copy; do not
  * edit it here. To turn the script off, set rollout to "off".
+ *
+ * consent "termly": ad click ids (gclid and the like) are kept only for visitors whose
+ * Termly advertising consent is granted. The docs do not run Termly, so the script reads
+ * the decision the visitor made on signalwire.com.
  */
-window.SW_ATTR_CONFIG = {"consent":"session","rollout":"on"};
+window.SW_ATTR_CONFIG = {"consent":"termly","rollout":"on"};
 
 /*!
- * SignalWire signup attribution v1.0.0 (payload schema v1)
+ * SignalWire signup attribution v1.1.0 (payload schema v1)
  * Adds one first-party parameter, sw_attr, to SignalWire signup links.
  * Source of truth: attribution/src/signup-attribution.js. Built by attribution/build.py.
  * Spec: signalwire-framer-signup-attribution-plan.md.
@@ -24,7 +28,7 @@ window.SW_ATTR_CONFIG = {"consent":"session","rollout":"on"};
 })(typeof window !== 'undefined' ? window : this, function () {
   'use strict';
 
-  var VERSION = '1.0.0';
+  var VERSION = '1.1.0';
   var PAYLOAD_VERSION = 1;
 
   var DEFAULTS = {
@@ -36,7 +40,10 @@ window.SW_ATTR_CONFIG = {"consent":"session","rollout":"on"};
     ],
     payloadParameter: 'sw_attr',
     ctaParameter: 'cta',
+    // gad_source / gad_campaignid are Google Ads auto-tagging parameters. They name the ad source and
+    // campaign, not the visitor, so unlike the click ids below they are kept in every consent mode.
     campaignKeys: ['utm_source', 'utm_medium', 'utm_campaign', 'utm_id', 'utm_content', 'utm_term',
+      'gad_source', 'gad_campaignid',
       'gclid', 'gbraid', 'wbraid', 'msclkid', 'fbclid', 'li_fat_id', 'twclid'],
     clickIdKeys: ['gclid', 'gbraid', 'wbraid', 'msclkid', 'fbclid', 'li_fat_id', 'twclid'],
     firstTouchTtlDays: 30,
@@ -51,7 +58,10 @@ window.SW_ATTR_CONFIG = {"consent":"session","rollout":"on"};
     redactPathPatterns: [],
     rollout: 'canary',          // 'off' | 'canary' | 'on'
     canaryFlag: 'sw_attr_canary',
-    consent: 'session',         // 'session' | 'persistent' | name of a window function returning true when persistent storage is allowed
+    // 'session' | 'persistent' | 'termly' | name of a window function returning true when persistent
+    // storage is allowed. Persistent storage is also what lets ad click ids into the payload.
+    consent: 'session',
+    termlyCategory: 'advertising', // the Termly consent category that 'termly' mode reads
     debug: false
   };
 
@@ -350,8 +360,34 @@ window.SW_ATTR_CONFIG = {"consent":"session","rollout":"on"};
     };
   }
 
-  function persistenceAllowed(win, cfg) {
+  // The visitor's Termly decision for one category. Termly's own API wins when its banner script is
+  // on the page. Pages without it (landing, demos, docs) share the origin's localStorage, so a decision
+  // made on a page that runs Termly is still readable there; that cache is Termly's internal format,
+  // so anything unexpected reads as "no". `state` is a consentState object from Termly's consent event.
+  function termlyConsent(win, category, state) {
+    try {
+      if (state && typeof state[category] === 'boolean') return state[category];
+      var T = win.Termly;
+      if (T && typeof T.getConsentState === 'function') {
+        var live = T.getConsentState();
+        if (live && typeof live[category] === 'boolean') return live[category];
+      }
+    } catch (e) { /* fall through to the stored decision */ }
+    try {
+      var raw = win.localStorage.getItem('TERMLY_API_CACHE');
+      var cache = raw ? JSON.parse(raw) : null;
+      var entry = cache && cache.TERMLY_COOKIE_CONSENT;
+      var value = entry && entry.value;
+      if (typeof value === 'string') value = JSON.parse(value);
+      return !!(value && value[category] === true);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function persistenceAllowed(win, cfg, termlyState) {
     if (cfg.consent === 'persistent') return true;
+    if (cfg.consent === 'termly') return termlyConsent(win, cfg.termlyCategory, termlyState);
     if (cfg.consent && cfg.consent !== 'session') {
       try { var f = win[cfg.consent]; return typeof f === 'function' && f() === true; } catch (e) { return false; }
     }
@@ -473,6 +509,80 @@ window.SW_ATTR_CONFIG = {"consent":"session","rollout":"on"};
       log('touch ' + kind, redactForLog({ first: rec.first, last_non_direct: rec.last_non_direct }, cfg));
     }
 
+    // Consent can arrive (or be withdrawn) after the page loaded: a click on the banner, implied
+    // consent on scroll, or a decision made in another tab. On a grant, the click ids in the current
+    // URL belong to this visit (Framer carries them onto internal URLs), so they are added to the
+    // touches recorded in this session, and the record moves to localStorage. On a withdrawal, click
+    // ids are stripped and the persistent copy is deleted.
+    function eachTouchOf(rec, fn) {
+      var seen = [];
+      var list = [rec.first, rec.last_non_direct];
+      for (var i = 0; i < list.length; i++) {
+        if (list[i] && seen.indexOf(list[i]) === -1) { seen.push(list[i]); fn(list[i]); }
+      }
+    }
+
+    function adoptClickIds(rec, now) {
+      var u = parseHttpUrl(loc.href);
+      var c = u ? readCampaign(u.search, cfg, false) : {};
+      var ids = {};
+      var any = false;
+      for (var i = 0; i < cfg.clickIdKeys.length; i++) {
+        var k = cfg.clickIdKeys[i];
+        if (c[k]) { ids[k] = c[k]; any = true; }
+      }
+      if (!any) return;
+      var started = loadSession(now).started_at;
+      eachTouchOf(rec, function (t) {
+        if (!t.at || (started && t.at < started)) return; // an earlier visit's touch: not this click
+        t.campaign = t.campaign || {};
+        for (var key in ids) if (HAS.call(ids, key) && !t.campaign[key]) t.campaign[key] = ids[key];
+      });
+    }
+
+    function stripClickIds(rec) {
+      eachTouchOf(rec, function (t) {
+        if (!t.campaign) return;
+        for (var i = 0; i < cfg.clickIdKeys.length; i++) delete t.campaign[cfg.clickIdKeys[i]];
+        var empty = true;
+        for (var key in t.campaign) if (HAS.call(t.campaign, key)) { empty = false; break; }
+        if (empty) delete t.campaign;
+      });
+    }
+
+    // Touches from earlier visits exist only because the visitor had consented; keep this visit's.
+    function forgetEarlierVisits(rec, now) {
+      var started = loadSession(now).started_at;
+      var current = function (t) { return t && t.at && (!started || t.at >= started); };
+      if (!current(rec.last_non_direct)) delete rec.last_non_direct;
+      if (!current(rec.first)) {
+        if (rec.last_non_direct) rec.first = rec.last_non_direct;
+        else delete rec.first;
+      }
+    }
+
+    function refreshConsent(reason, termlyState) {
+      var allowed = persistenceAllowed(win, cfg, termlyState) && local.ok;
+      if (allowed === persistent) return;
+      var now = Date.now();
+      var rec = loadRecord(now); // from the store in use until now
+      persistent = allowed;
+      recStore = persistent ? local : sess;
+      if (persistent) {
+        adoptClickIds(rec, now);
+      } else {
+        stripClickIds(rec);
+        forgetEarlierVisits(rec, now);
+        local.del(cfg.storageKey);
+      }
+      if (!rec.expires_at) rec.expires_at = iso(now + cfg.firstTouchTtlDays * 86400000);
+      saveRecord(rec);
+      if (persistent && sess.ok) sess.del(cfg.storageKey);
+      log('consent ' + (persistent ? 'granted' : 'withdrawn') + ' (' + reason + ')',
+        redactForLog({ first: rec.first, last_non_direct: rec.last_non_direct }, cfg));
+      try { redecorateAll(); } catch (e) { /* links are also refreshed at click time */ }
+    }
+
     function clickContext(cta) {
       var now = Date.now();
       var s = loadSession(now);
@@ -524,6 +634,14 @@ window.SW_ATTR_CONFIG = {"consent":"session","rollout":"on"};
       var list = doc.querySelectorAll(selector);
       for (var i = 0; i < list.length; i++) {
         try { decorateAnchor(list[i], false); } catch (e) { /* keep going */ }
+      }
+    }
+
+    // After a consent change: rewrite links already decorated with the old payload.
+    function redecorateAll() {
+      var list = doc.querySelectorAll(selector);
+      for (var i = 0; i < list.length; i++) {
+        try { decorateAnchor(list[i], true); } catch (e) { /* keep going */ }
       }
     }
 
@@ -598,7 +716,33 @@ window.SW_ATTR_CONFIG = {"consent":"session","rollout":"on"};
       }).observe(doc.documentElement, { subtree: true, childList: true, attributes: true, attributeFilter: ['href'] });
     }
     decorateAll();
-    log('ready', { rollout: cfg.rollout, active: active(), persistent: persistent });
+
+    if (cfg.consent === 'termly') {
+      // Termly may load after this script; give it up to ten seconds to appear. Pages without it
+      // still hear about a decision made in another tab through the storage event.
+      var hooked = false;
+      var hookTermly = function () {
+        var T = win.Termly;
+        if (hooked || !T || typeof T.on !== 'function') return hooked;
+        try {
+          T.on('consent', function (d) { refreshConsent('termly', d && d.consentState); });
+          hooked = true;
+        } catch (e) { return false; }
+        refreshConsent('termly ready');
+        return true;
+      };
+      if (!hookTermly() && typeof win.setInterval === 'function') {
+        var tries = 0;
+        var timer = win.setInterval(function () {
+          if (hookTermly() || ++tries >= 40) win.clearInterval(timer);
+        }, 250);
+      }
+      win.addEventListener('storage', function (e) {
+        if (!e || e.key === null || e.key === 'TERMLY_API_CACHE') refreshConsent('storage');
+      });
+    }
+
+    log('ready', { rollout: cfg.rollout, active: active(), persistent: persistent, consent: cfg.consent });
   }
 
   return {
@@ -621,6 +765,8 @@ window.SW_ATTR_CONFIG = {"consent":"session","rollout":"on"};
     fitPayload: fitPayload,
     buildPayload: buildPayload,
     makeTouch: makeTouch,
+    termlyConsent: termlyConsent,
+    persistenceAllowed: persistenceAllowed,
     boot: boot
   };
 });
