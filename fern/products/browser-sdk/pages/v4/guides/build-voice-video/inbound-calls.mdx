@@ -279,13 +279,21 @@ Leave the page open — when the call arrives, the **Caller** line populates and
 
         const client = new SignalWire(new StaticCredentialProvider({ token }));
 
-        // Session-level failures, such as a token SignalWire refuses,
-        // arrive on errors$ rather than as a rejected promise, and
-        // register() never settles. Re-enable the button so the user can retry.
+        client.errors$.subscribe((err) =>
+          log("Error: " + (err.name || "Error") + " — " + err.message)
+        );
+
+        // Once online, the client can go offline on its own: SignalWire
+        // refuses to register it again after a reconnect, usually because
+        // the token expired. isRegistered$ emits false when that happens.
         let online = false;
-        client.errors$.subscribe((err) => {
-          log("Error: " + (err.name || "Error") + " — " + err.message);
-          if (!online) $("online").disabled = false;
+        client.isRegistered$.subscribe((registered) => {
+          if (online && !registered) {
+            online = false;
+            client.disconnect(); // so a retry doesn't leave two clients behind
+            log("Offline — paste a fresh token to come back online.");
+            $("online").disabled = false;
+          }
         });
 
         try {
@@ -294,6 +302,7 @@ Leave the page open — when the call arrives, the **Caller** line populates and
           log("Online — ready for inbound calls.");
         } catch (err) {
           log("Failed: " + (err.name || "Error") + " — " + err.message);
+          client.disconnect();
           $("online").disabled = false;
           return;
         }

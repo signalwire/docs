@@ -296,22 +296,40 @@ client.warnings$.subscribe((warning) => {
 ### When SignalWire refuses the SAT on a reconnect
 
 On a dropped connection, the SDK automatically reconnects and
-picks up the same session. When it can't, it signs in again with the SAT it
-holds. If SignalWire refuses that SAT, for example because it expired while the
-connection was down, the SDK gets a fresh SAT and tries once more.
+picks up the same session. That can succeed even after the SAT has expired,
+but the SDK then registers the client again, and SignalWire refuses to
+register an expired SAT. The SDK reports an `InvalidCredentialsError` on
+[`errors$`](/docs/browser-sdk/v4/reference/signalwire/errors$) and
+[`isRegistered$`](/docs/browser-sdk/v4/reference/signalwire/is-registered$)
+emits `false`: the client is still connected, but it no longer receives
+inbound calls. To avoid this, give the client a fresh SAT before the old one
+expires; a provider with
+[`refresh()`](/docs/browser-sdk/v4/reference/interfaces/credential-provider#refresh)
+or a Client Bound SAT does this for you.
 
-The fresh SAT comes from your refresh path. For a Client Bound SAT, the SDK
-calls your provider's
+When the SDK can't pick up the session, it signs in again from scratch, which
+needs a SAT that SignalWire still accepts. A fresh SAT comes from your refresh
+path: for a Client Bound SAT, the SDK calls your provider's
 [`authenticate()`](/docs/browser-sdk/v4/reference/interfaces/credential-provider#authenticate)
 again; otherwise it calls your provider's
 [`refresh()`](/docs/browser-sdk/v4/reference/interfaces/credential-provider#refresh).
-A provider with neither, such as
-[`StaticCredentialProvider`](/docs/browser-sdk/v4/reference/credential-providers/static-credential-provider),
-has no way to supply a new SAT, so the SDK retries with the old one.
 
-If the second attempt is refused too, the SDK stops reconnecting, reports the
+When the session is Client Bound, or the credential your provider returned has
+passed its `expiry_at`, the SDK gets a fresh SAT before it signs in. If
+SignalWire refuses that SAT, the SDK doesn't try again.
+
+Otherwise the SDK signs in with the SAT it holds. If SignalWire refuses it,
+the SDK gets a fresh SAT and tries once more.
+
+A provider that always returns the same SAT, such as
+[`StaticCredentialProvider`](/docs/browser-sdk/v4/reference/credential-providers/static-credential-provider),
+can't supply a new one, so the SDK signs in with the old one.
+
+When the last attempt is refused, the SDK stops reconnecting, reports the
 error on [`errors$`](/docs/browser-sdk/v4/reference/signalwire/errors$), and
-disconnects the client. Once your provider can return a valid SAT, call
+disconnects the client, so
+[`isConnected$`](/docs/browser-sdk/v4/reference/signalwire/is-connected$) emits
+`false`. Once your provider can return a valid SAT, call
 [`connect()`](/docs/browser-sdk/v4/reference/signalwire/connect) again. With
 `StaticCredentialProvider`, create a new client with a fresh SAT instead.
 
@@ -394,7 +412,12 @@ Copy the returned `token`, save the page below as `auth-demo.html`, and open it 
     <pre id="log"></pre>
 
     <script type="module">
-      import { SignalWire, StaticCredentialProvider } from "https://esm.sh/@signalwire/js@4.0.0-rc.5";
+      import {
+        SignalWire,
+        StaticCredentialProvider,
+        InvalidCredentialsError,
+        UnexpectedError,
+      } from "https://esm.sh/@signalwire/js@4.0.0-rc.5";
 
       const log = (msg) =>
         (document.getElementById("log").textContent += msg + "\n");
@@ -414,13 +437,22 @@ Copy the returned `token`, save the page below as `auth-demo.html`, and open it 
           if (ready) {
             log("Authenticated — WebSocket open.");
             readySub.unsubscribe(); // one-shot: stop after the first ready signal
+            errorsSub.unsubscribe();
           }
         });
 
+        // A malformed or refused SAT arrives on errors$. Other errors there,
+        // such as a device that can't be read, don't stop the connect.
         const errorsSub = client.errors$.subscribe((err) => {
-          log("Failed: " + (err.name || "Error") + " — " + err.message);
+          if (!(err instanceof InvalidCredentialsError || err instanceof UnexpectedError)) {
+            log("Warning: " + (err.name || "Error") + " — " + err.message);
+            return;
+          }
+          log("Failed: " + err.name + " — " + err.message);
+          readySub.unsubscribe();
+          errorsSub.unsubscribe();
+          client.disconnect(); // so a retry doesn't leave two clients behind
           button.disabled = false;
-          errorsSub.unsubscribe(); // when you're done
         });
       });
     </script>

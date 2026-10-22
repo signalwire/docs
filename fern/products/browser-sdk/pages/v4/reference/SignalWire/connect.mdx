@@ -38,11 +38,19 @@ stops the reconnection loop entirely.
 ### When the server refuses the credential
 
 A reconnect that can't resume the previous session authenticates from
-scratch with the current credential. If the server refuses it, the SDK
-retries once. Before the retry it re-issues the credential through your
-[`CredentialProvider`](/docs/browser-sdk/v4/reference/interfaces/credential-provider)
-when the provider implements `refresh` or the session is Client Bound;
-otherwise it retries with the same credential. A second refusal is final: the SDK emits the error on
+scratch. A fresh credential comes from your
+[`CredentialProvider`](/docs/browser-sdk/v4/reference/interfaces/credential-provider):
+`authenticate()` when the session is Client Bound, otherwise `refresh()`
+when the provider implements it. Without either, the SDK reuses the
+current credential.
+
+- **Client Bound session, or a credential past its `expiry_at`:** the SDK
+  gets a fresh credential before authenticating. A refusal is final.
+- **Any other session:** the SDK authenticates with the current
+  credential. If the server refuses it, the SDK gets a fresh credential
+  and retries once. A second refusal is final.
+
+On a final refusal the SDK emits the error on
 [`errors$`](/docs/browser-sdk/v4/reference/signalwire/errors$), stops
 reconnecting, and disconnects the client, so
 [`isConnected$`](/docs/browser-sdk/v4/reference/signalwire/is-connected$)
