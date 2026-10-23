@@ -136,7 +136,7 @@ if __name__ == "__main__":
 ```
 
 ```typescript title="TypeScript — Agents" {9-11}
-// Install: npm install @signalwire/sdk@2.0.5
+// Install: npm install @signalwire/sdk@3.7.1
 // This sample also runs as JavaScript: save as record-whole-call.mjs,
 // then run: node record-whole-call.mjs
 import { AgentBase } from '@signalwire/sdk';
@@ -249,7 +249,7 @@ client.run()
 ```
 
 ```typescript title="TypeScript — Relay client" {17}
-// Install: npm install @signalwire/sdk@2.0.5
+// Install: npm install @signalwire/sdk@3.7.1
 // This sample also runs as JavaScript: save as record-whole-call-relay.mjs,
 // then run: node record-whole-call-relay.mjs
 import { RelayClient } from '@signalwire/sdk';
@@ -380,7 +380,7 @@ if __name__ == "__main__":
 ```
 
 ```typescript title="TypeScript — Agents" {21-26}
-// Install: npm install @signalwire/sdk@2.0.5
+// Install: npm install @signalwire/sdk@3.7.1
 // This sample also runs as JavaScript: save as recording-consent.mjs,
 // then run: node recording-consent.mjs
 import { AgentBase, FunctionResult } from '@signalwire/sdk';
@@ -448,7 +448,7 @@ async def handle_call(call):
     await call.connect([[{"type": "phone", "params": {"to_number": "<YOUR_DESTINATION>", "from_number": "<YOUR_CALLER_ID>", "timeout": 30}}]])
 ```
 
-```typescript title="TypeScript — Relay client" {12-14}
+```typescript title="TypeScript — Relay client" {11-16}
 // Without an AI agent, gate the recording on a keypress instead of a tool call.
 client.onCall(async (call) => {
   await call.answer();
@@ -459,8 +459,10 @@ client.onCall(async (call) => {
     { digits: { max: 1, digit_timeout: 5, terminators: '#' } }
   );
   const event = await action.wait();
+  // A keypress result is { type: 'digit', params: { digits, terminator } }.
+  const digits = Object(event.params.result).params?.digits;
 
-  if (event.params.result?.params?.digits === '1') {
+  if (digits === '1') {
     await call.record({ direction: 'both', format: 'mp3', stereo: true });
   }
 
@@ -727,7 +729,7 @@ if __name__ == "__main__":
 ```
 
 ```typescript title="TypeScript — Agents" {13-27}
-// Install: npm install @signalwire/sdk@2.0.5
+// Install: npm install @signalwire/sdk@3.7.1
 // This sample also runs as JavaScript: save as voicemail-agent.mjs,
 // then run: node voicemail-agent.mjs
 import { AgentBase, FunctionResult } from '@signalwire/sdk';
@@ -850,9 +852,9 @@ client.onCall(async (call) => {
   const prompt = await call.play([{ type: 'tts', text: 'Leave a message after the beep.' }]);
   await prompt.wait(); // play returns as soon as the command is accepted
 
-  const action = await call.record({
-    beep: true, end_silence_timeout: 3, terminators: '#', max_length: 120,
-  });
+  // The SDK's record() type doesn't list max_length yet; passing a variable sends it unchanged.
+  const audio = { beep: true, end_silence_timeout: 3, terminators: '#', max_length: 120 };
+  const action = await call.record(audio);
   const event = await action.wait();
 
   // no_input is terminal too: a caller who never spoke still gets a url, but its media returns 404

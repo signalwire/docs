@@ -1,0 +1,135 @@
+---
+title: "Post-prompt normalization"
+slug: reference/typescript/core/post-prompt
+description: "Read voice and chat post-prompt bodies as one shape, with the summary parsed and the dialogue extracted."
+max-toc-depth: 3
+---
+
+[on-summary]: /docs/server-sdks/reference/typescript/agents/agent-base/on-summary
+[normalize]: /docs/server-sdks/reference/typescript/core/post-prompt/normalize-post-prompt
+[dialogue]: /docs/server-sdks/reference/typescript/core/post-prompt/dialogue-turns
+[on-call-end]: /docs/server-sdks/reference/typescript/agents/agent-base/on-call-end
+
+One conversation can run over voice and over text chat, and both produce a post-prompt body, but not
+the same shape. The post-prompt helpers absorb that divergence so your application sees one result
+regardless of which engine finished the conversation.
+
+| Field | Voice | Chat |
+|---|---|---|
+| `app_name` | `"swml app"` | `"ai_chat"` |
+| `conversation_id` | absent | present at top level |
+| Full log | `raw_call_log` | `raw_messages` |
+| Summary arrives as | a `summarize_conversation` tool call | a bare `role: assistant` turn inside `call_log` |
+| `post_prompt_data` | parsed object | `{ "raw": "<fenced JSON string>" }` |
+
+`conversation_type` is a reliable top-level discriminator on both. The voice engine can also
+deliver `post_prompt_data` as `{ "parsed": [ {...} ], "raw": "..." }`, an object wrapped in a
+list, which passes structural checks and misses every field lookup. The parser unwraps it.
+
+The helpers don't decide what a summary should contain. The schema is whatever your post-prompt
+text asked the model to produce, so parsing is schema-agnostic and returns the object as found.
+Nothing here throws: the conversation that produced the body is already over.
+
+```typescript
+import {
+  normalizePostPrompt,
+  NormalizedPostPrompt,
+  parsePostPromptData,
+  dialogueTurns,
+  stripJsonFence,
+  DIALOGUE_ROLES,
+} from '@signalwire/sdk';
+import type { DialogueTurn } from '@signalwire/sdk';
+```
+
+## Properties
+
+`NormalizedPostPrompt` is one finished conversation leg in a shape that doesn't vary by engine. Its
+properties are `readonly`, and [`normalizePostPrompt()`][normalize] returns a frozen instance. You can
+also construct one directly with `new NormalizedPostPrompt(fields)`, where `fields` is a
+`Partial<NormalizedPostPrompt>`; any property you leave out takes the default shown here.
+
+<ParamField path="medium" type="string" default="''" toc={true}>
+  `conversation_type` as reported, such as `'voice'` or `'chat'`. Empty when the engine didn't say.
+</ParamField>
+
+<ParamField path="conversationId" type="string | null" default="null" toc={true}>
+  Present on chat, absent on voice. When `null`, fall back to your own key from global data or
+  the call ID rather than treating this as authoritative.
+</ParamField>
+
+<ParamField path="summary" type="Record<string, unknown>" default="{}" toc={true}>
+  The parsed `post_prompt_data`, with whatever keys your post-prompt asked for. `{}` when there was
+  none or it couldn't be parsed. A model that answered in prose instead of JSON yields
+  `{ summary: '<the prose>' }`.
+</ParamField>
+
+<ParamField path="dialogue" type="readonly DialogueTurn[]" default="[]" toc={true}>
+  `user` and `assistant` turns only, as `{ role, content }` pairs, with tool calls and the chat
+  engine's summary echo removed.
+</ParamField>
+
+<ParamField path="callId" type="string | null" default="null" toc={true}>
+  The platform call ID, when present.
+</ParamField>
+
+<ParamField path="raw" type="Record<string, unknown>" default="{}" toc={true}>
+  The complete request body, untouched.
+</ParamField>
+
+## Constants and types
+
+<ParamField path="DIALOGUE_ROLES" type="readonly string[]" toc={true}>
+  The roles that count as dialogue: `['user', 'assistant']`. Frozen. It is the default for the `roles`
+  option of [`dialogueTurns()`][dialogue]. Everything else in a call log is machinery: `system` is
+  the prompt, `system-log` is lifecycle and step tracing, `tool` is function output, and
+  `assistant-manual` is filler speech.
+</ParamField>
+
+<ParamField path="DialogueTurn" type="Record<'role' | 'content', string>" toc={true}>
+  One user or assistant turn: `{ role, content }`. Exported as a type.
+</ParamField>
+
+## Functions
+
+<CardGroup cols={2}>
+  <Card title="normalizePostPrompt" href="/docs/server-sdks/reference/typescript/core/post-prompt/normalize-post-prompt">
+    Normalize a post-prompt body from either engine.
+  </Card>
+  <Card title="parsePostPromptData" href="/docs/server-sdks/reference/typescript/core/post-prompt/parse-post-prompt-data">
+    Return post_prompt_data as a plain object, whichever shape it arrived in.
+  </Card>
+  <Card title="dialogueTurns" href="/docs/server-sdks/reference/typescript/core/post-prompt/dialogue-turns">
+    Extract the user and assistant turns from a call log.
+  </Card>
+  <Card title="stripJsonFence" href="/docs/server-sdks/reference/typescript/core/post-prompt/strip-json-fence">
+    Unwrap a fenced JSON code block.
+  </Card>
+</CardGroup>
+
+## Examples
+
+Store every finished leg the same way, whether it arrives through
+[`onSummary()`][on-summary] or from an [`onCallEnd()`][on-call-end] handler:
+
+```typescript {11-14}
+import { AgentBase, normalizePostPrompt } from '@signalwire/sdk';
+
+class DispatchAgent extends AgentBase {
+  constructor() {
+    super({ name: 'dispatch', route: '/dispatch' });
+    this.setPromptText('You are Ada, the dispatcher for Bayview Taxi.');
+    this.setPostPrompt('Summarize the call as JSON with keys intent and resolved.');
+  }
+
+  override onSummary(_summary: unknown, rawData: unknown): void {
+    const leg = normalizePostPrompt(rawData);
+    if (leg.dialogue.length > 0) {
+      // Write to your system of record.
+      console.log(leg.medium, leg.conversationId ?? leg.callId, leg.summary);
+    }
+  }
+}
+
+await new DispatchAgent().serve();
+```

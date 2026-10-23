@@ -1,0 +1,64 @@
+---
+title: "rawPost"
+slug: reference/typescript/agents/ai-chat-client/raw-post
+description: Send one JSON-RPC call and get the response with its body unread.
+max-toc-depth: 3
+---
+
+[ref-aichatclient]: /docs/server-sdks/reference/typescript/agents/ai-chat-client
+[chatgateway]: /docs/server-sdks/reference/typescript/agents/chat-gateway
+[error-codes]: /docs/apis/error-codes
+
+Posts one JSON-RPC call and returns the `Response` before the SDK reads its body. Use it in a proxy
+that has to stream the body through rather than buffer it. [`ChatGateway`][chatgateway] uses it to
+relay a chat reply.
+
+The service pads a slow response with keepalive whitespace so that intermediaries don't close the
+connection mid-turn. A proxy that waits for the whole body holds that padding back and brings back
+the timeout it's there to prevent. Pass `response.body` on as it arrives.
+
+Prefer the typed methods unless you are relaying bytes.
+
+<Warning>
+  You own interpreting the result. A JSON-RPC error arrives under HTTP `200`, so check the status
+  first, then look for an `error` member in the body and compare its code with
+  [AI chat errors][error-codes]. Read the body to the end or cancel it, so the connection is
+  released. The client's `readIdleTimeoutSeconds` applies to each read.
+</Warning>
+
+## Parameters
+
+<ParamField path="method" type="string" required={true} toc={true}>
+  The JSON-RPC method, for example `chat`.
+</ParamField>
+
+<ParamField path="params" type={"Record<string, unknown>"} required={true} toc={true}>
+  The method's parameters, sent as they are. The client wraps them in the JSON-RPC envelope and
+  supplies the request `id`.
+</ParamField>
+
+## Returns
+
+`Promise<Response>` -- the response, with its body unread.
+
+## Examples
+
+```typescript
+import { serve } from '@hono/node-server';
+import { Hono } from 'hono';
+import { AIChatClient } from '@signalwire/sdk';
+
+const client = new AIChatClient({ space: 'your-space' });
+const app = new Hono();
+
+app.post('/chat', async (c) => {
+  const { id, message } = await c.req.json<{ id: string; message: string }>();
+  const upstream = await client.rawPost('chat', { id, message });
+  return new Response(upstream.body, {
+    status: upstream.status,
+    headers: { 'Content-Type': 'application/json' },
+  });
+});
+
+serve({ fetch: app.fetch, port: 3000 });
+```

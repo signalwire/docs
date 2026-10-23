@@ -35,12 +35,22 @@ const agent = new AgentBase({ name: 'my-agent' });
 
 <ParamField path="SWML_BASIC_AUTH_USER" type="string" toc={true}>
   Username for HTTP Basic Authentication on all agent webhook endpoints.
-  When unset, the username falls back to the agent's `name`.
+  When a password is set without a user, the user is `signalwire`. When the
+  password is generated, the user falls back to the agent's `name`.
 </ParamField>
 
 <ParamField path="SWML_BASIC_AUTH_PASSWORD" type="string" toc={true}>
-  Password for HTTP Basic Authentication. If not set, a random password is
-  auto-generated on each startup and printed to the console.
+  Password for HTTP Basic Authentication. Credentials resolve from the
+  constructor's `basicAuth`, then the config file, then these variables. If none
+  is set, a random password is generated on each startup; it exists only in that
+  process, and the agent logs a warning.
+</ParamField>
+
+<ParamField path="SIGNALWIRE_SWAIG_SECRET" type="string" toc={true}>
+  Secret that signs per-call SWAIG function tokens, used when the agent's
+  `swaigSecret` option isn't set. Set the same value on every replica, and keep
+  it across restarts, so a token issued by one process validates on another.
+  Treat it as a secret.
 </ParamField>
 
 <Warning>
@@ -54,7 +64,9 @@ until you update the credentials in your SignalWire dashboard.
 ## SSL / TLS
 
 <ParamField path="SWML_SSL_ENABLED" type="boolean" default="false" toc={true}>
-  Enable HTTPS. Only the string `"true"` is accepted (strict equality check).
+  Enable HTTPS for `serve()` and `AgentServer.run()`. Accepts `true`, `1`, or
+  `yes`. Webhook URLs then use `https`, on `SWML_SSL_DOMAIN` when it's set. When
+  the certificate or key file is missing, the agent warns and serves HTTP.
 </ParamField>
 
 <ParamField path="SWML_SSL_CERT_PATH" type="string" toc={true}>
@@ -80,6 +92,14 @@ until you update the credentials in your SignalWire dashboard.
 
 <ParamField path="SWML_PROXY_DEBUG" type="boolean" default="false" toc={true}>
   Enable proxy request debug logging. Only the string `"true"` is accepted.
+</ParamField>
+
+<ParamField path="SWML_URL_FETCH_USE_PROXY" type="boolean" toc={true}>
+  The SDK's outbound URL fetches (the spider and web_search skills, for example)
+  connect directly, ignoring any environment proxy, so each connection can be
+  checked for private and internal addresses. When set, a request that Node's
+  global `fetch` would send through a proxy goes through it instead, where that
+  check can't apply. Use a proxy that restricts destinations itself.
 </ParamField>
 
 <ParamField path="SWML_TRUST_PROXY_HEADERS" type="boolean" default="false" toc={true}>
@@ -115,15 +135,15 @@ for webhook URL generation.
 ## Security
 
 <ParamField path="SWML_ALLOWED_HOSTS" type="string" toc={true}>
-  Comma-separated list of allowed `Host` header values. When unset, no host
-  check is applied. When set, requests with a `Host` header not in the list
+  Comma-separated list of allowed `Host` header values. When unset, or when the
+  list includes `*`, no host check is applied. When set, requests with a `Host` header not in the list
   are rejected with HTTP 403. Set to specific domain(s) in production
   (e.g., `"agent.example.com,api.example.com"`).
 </ParamField>
 
 <ParamField path="SWML_CORS_ORIGINS" type="string" default="*" toc={true}>
-  Comma-separated list of allowed CORS origins. Restrict to trusted origins in
-  production.
+  Comma-separated list of allowed CORS origins. A list that includes `*` allows
+  every origin. Restrict to trusted origins in production.
 </ParamField>
 
 <ParamField path="SWML_CSRF_PROTECTION" type="boolean" default="false" toc={true}>
@@ -138,9 +158,11 @@ for webhook URL generation.
 </ParamField>
 
 <ParamField path="SWML_RATE_LIMIT" type="number" toc={true}>
-  Rate limit in requests per minute per client IP. When unset, no rate limit
+  Rate limit in requests per minute per client. When unset, no rate limit
   is applied. When set to a positive integer, clients exceeding the limit
-  receive HTTP 429.
+  receive HTTP 429. Each client is keyed by its connection address, by the
+  forwarded address when `SWML_TRUST_PROXY_HEADERS` is set, or on a serverless
+  platform by the address the platform reports.
 </ParamField>
 
 ## Logging
@@ -172,6 +194,21 @@ for webhook URL generation.
 <ParamField path="SIGNALWIRE_LOG_COLOR" type="boolean" toc={true}>
   Force colored text output on (`"true"`) or off (`"false"`). When unset, color
   is enabled only when writing to a terminal.
+</ParamField>
+
+## AI Chat gateway
+
+<ParamField path="SIGNALWIRE_CHAT_GATEWAY_KEY" type="string" toc={true}>
+  Publishable key a `ChatGateway` accepts from the browser widget, used when the
+  gateway's `key` option isn't set. Without either, the gateway generates a key,
+  which is only useful to a process that also serves the page.
+</ParamField>
+
+<ParamField path="SIGNALWIRE_CHAT_GATEWAY_SECRET" type="string" toc={true}>
+  Key that signs a `ChatGateway`'s conversation handles, used when the gateway's
+  `secret` option isn't set. Without either, each process generates its own, and
+  outstanding handles stop working on restart and across replicas. Treat it as a
+  secret.
 </ParamField>
 
 ## Skills
@@ -285,7 +322,13 @@ You typically do not set these manually -- they are provided by the platform run
 </ParamField>
 
 <ParamField path="K_SERVICE" type="string" default="unknown" toc={true}>
-  Knative/Cloud Run service name.
+  Knative/Cloud Run service name. Cloud Run sets it without `FUNCTION_TARGET`; a
+  server there isn't taken for a Cloud Function.
+</ParamField>
+
+<ParamField path="FUNCTION_URL" type="string" toc={true}>
+  The function's URL. When set, webhook URLs use it. Otherwise they are built from
+  the project, region, and service.
 </ParamField>
 
 ### Azure Functions
@@ -296,6 +339,20 @@ You typically do not set these manually -- they are provided by the platform run
 
 <ParamField path="AZURE_FUNCTIONS_ENVIRONMENT" type="string" toc={true}>
   Azure Functions environment name.
+</ParamField>
+
+<ParamField path="AZURE_FUNCTION_URL" type="string" toc={true}>
+  The function's URL. When set, webhook URLs use it.
+</ParamField>
+
+<ParamField path="WEBSITE_SITE_NAME" type="string" toc={true}>
+  Function app name. With `AZURE_FUNCTION_NAME`, builds the webhook URL
+  `https://<app>.azurewebsites.net/api/<function>` when `AZURE_FUNCTION_URL`
+  isn't set.
+</ParamField>
+
+<ParamField path="AZURE_FUNCTION_NAME" type="string" default="unknown" toc={true}>
+  Function name used in the built webhook URL.
 </ParamField>
 
 ### CGI

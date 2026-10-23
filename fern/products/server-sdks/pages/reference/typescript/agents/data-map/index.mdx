@@ -52,14 +52,23 @@ full specification.
 
 ## **Variable Substitution Patterns**
 
+What a template can read depends on where it is. A webhook's `url` and `params`,
+the top-level expressions, and the fallback output read the call data, where an
+argument is `${args.city}`. A webhook's `output`, `expressions`, and `foreach` read
+that webhook's response instead: a JSON object's fields from the root (`${temp}`),
+a JSON array under `array` (`${array[0].joke}`), and the call data under `input`,
+so an argument there is `${input.args.city}`; `${args.city}` expands to nothing.
+Header values are sent as written, with no templates expanded.
+
 | Pattern | Description |
 |---------|-------------|
-| `${args.param}` | Function argument value |
+| `${args.param}` | Function argument value, in a webhook's `url` and `params`, top-level expressions, and the fallback output |
+| `${input.args.param}` | Function argument value, in a webhook's `output`, `expressions`, and `foreach` |
 | `${enc:args.param}` | URL-encoded argument (use in webhook URLs) |
 | `${lc:args.param}` | Lowercase argument value |
 | `${fmt_ph:args.phone}` | Format as phone number |
-| `${response.field}` | API response field |
-| `${response.arr[0]}` | Array element in response |
+| `${field}` | Field of the webhook's JSON response, read from the root |
+| `${array[0].field}` | Element of a webhook response that is a JSON array |
 | `${global_data.key}` | Global session data |
 | `${meta_data.key}` | Call metadata |
 | `${this.field}` | Current item in foreach |
@@ -145,7 +154,7 @@ const dm = new DataMap('get_weather');
 dm.purpose('Look up current weather for a location');
 dm.parameter('city', 'string', 'City name', { required: true });
 dm.webhook('GET', 'https://api.weather.com/v1/current?q=${args.city}');
-dm.output(new FunctionResult('Weather in ${args.city}: ${response.current.condition.text}, ${response.current.temp_f}F'));
+dm.output(new FunctionResult('Weather in ${input.args.city}: ${current.condition.text}, ${current.temp_f}F'));
 ```
 
 ### Expression-based control

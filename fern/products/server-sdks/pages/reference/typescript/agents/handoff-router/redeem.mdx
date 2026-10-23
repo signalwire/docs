@@ -1,0 +1,50 @@
+---
+title: "redeem"
+slug: reference/typescript/agents/handoff-router/redeem
+description: Exchange a handoff nonce for a chat handle, once.
+max-toc-depth: 3
+---
+
+[handoffrouter]: /docs/server-sdks/reference/typescript/agents/handoff-router
+[register]: /docs/server-sdks/reference/typescript/agents/handoff-router/register
+[minthandle]: /docs/server-sdks/reference/typescript/agents/chat-gateway/mint-handle
+
+Exchanges a nonce for a chat handle. It ends the call, waits for your `captureLeg` callback to write
+the call's record, and only then issues a handle for a new leg of the same conversation, so the chat
+leg starts with the call's history.
+
+The nonce is used up as soon as `redeem()` accepts it, even if what follows fails: a nonce is one
+attempt. The `/handoff` route calls this method. A throwing `endCall` or `captureLeg`, or a capture
+that outlasts `captureTimeout`, is logged and the handle is still issued.
+
+## Parameters
+
+<ParamField path="nonce" type="string" required={true} toc={true}>
+  The nonce the browser presented, registered earlier with [`register()`][register].
+</ParamField>
+
+## Returns
+
+`Promise<string | null>` -- the handle, or `null` for a nonce that is unknown, expired, or already
+used. The three can't be told apart. The new leg's conversation id comes from `nextConversationId`.
+
+## Examples
+
+```typescript
+import { ChatGateway, HandoffRouter } from '@signalwire/sdk';
+
+const gateway = new ChatGateway({ configUrl: 'https://bayview-taxi.example.com/dispatch' });
+const handoff = new HandoffRouter({
+  gateway,
+  captureLeg: async () => true,
+  endCall: async () => undefined,
+});
+handoff.register('n_7f3a91c2', { conversationId: 'chat-8f21', callId: 'call-1' });
+
+const handle = await handoff.redeem('n_7f3a91c2');
+if (handle === null) {
+  console.log('Unknown, expired, or already used');
+} else {
+  console.log(gateway.readHandle(handle)); // chat-8f21.1
+}
+```

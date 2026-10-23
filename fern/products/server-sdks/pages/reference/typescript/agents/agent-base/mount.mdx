@@ -1,0 +1,65 @@
+---
+title: "mount"
+slug: reference/typescript/agents/agent-base/mount
+description: Serve another Hono app or fetch handler alongside the agent's own routes.
+max-toc-depth: 3
+---
+
+[ref-agentbase]: /docs/server-sdks/reference/typescript/agents/agent-base
+[get-app]: /docs/server-sdks/reference/typescript/agents/agent-base/get-app
+[chat-gateway]: /docs/server-sdks/reference/typescript/agents/chat-gateway
+
+Mount another Hono app, or a fetch handler, alongside this agent's routes. Use
+it instead of adding routes to the app from [`getApp()`][get-app] by hand: the
+agent rebuilds its app when its routes change (when you register a routing
+callback, for example), and a mount is replayed on every build.
+
+A mounted app answers its own CORS preflights, since the agent's CORS and CSRF
+middleware don't apply to it. It also sets its own security headers and isn't
+behind the agent's basic auth. Mount before calling `serve()`.
+
+## Parameters
+
+<ParamField path="appOrRouter" type="Hono | ((req: Request) => Response | Promise<Response>)" required={true} toc={true}>
+  A Hono app, whose routes are added under `prefix`, or a fetch handler, which is
+  mounted at `prefix` and doesn't see it.
+</ParamField>
+
+<ParamField path="opts" type="{ prefix?: string; name?: string }" toc={true}>
+  Mount options.
+</ParamField>
+
+<Indent>
+
+<ParamField path="opts.prefix" type="string" toc={true}>
+  Path to mount at, from the host root. A trailing slash is dropped. Defaults to
+  the root.
+</ParamField>
+
+<ParamField path="opts.name" type="string" toc={true}>
+  Accepted so code written for the Python SDK works. It has no effect.
+</ParamField>
+
+</Indent>
+
+## Returns
+
+[`AgentBase`][ref-agentbase] -- Returns `this` for method chaining.
+
+## Example
+
+```typescript {10}
+import { AgentBase, AIChatClient, ChatGateway } from '@signalwire/sdk';
+
+const agent = new AgentBase({ name: 'dispatch', route: '/dispatch' });
+const gateway = new ChatGateway({
+  client: new AIChatClient(),
+  configUrl: 'https://bayview-taxi.example.com/dispatch',
+  key: '<YOUR_PUBLISHABLE_KEY>',
+});
+
+agent.mount(gateway.router(), { prefix: '/chat' });
+await agent.serve();
+```
+
+See [`ChatGateway`][chat-gateway] for what the mounted router serves.

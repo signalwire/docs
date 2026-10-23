@@ -11,14 +11,17 @@ The skill connects to the gateway at load time, enumerates the configured
 services and tools, and registers each as a SWAIG function on the agent.
 
 The gateway URL is validated by an SSRF guard — private, loopback, and
-cloud-metadata endpoints are rejected. Requests use retry semantics with
-`retry_attempts` and a per-request timeout of `request_timeout` seconds.
+cloud-metadata endpoints are rejected. Every later request, and every redirect
+it follows, is checked the same way, so a gateway that redirects to a private or
+internal address, or a hostname that later resolves to one, is refused. A tool
+call is tried up to `retry_attempts` times in total, with a per-request timeout
+of `request_timeout` seconds. It's tried again after a connection error, a
+timeout, a refused address, or an HTTP 5xx response, but not after a 4xx
+response or a `200` whose body isn't JSON.
 
 **Class:** `McpGatewaySkill`
 
 **Tools:** Dynamically registered from the gateway (prefixed by `tool_prefix`)
-
-**Required packages:** `undici`
 
 **Env vars:** `MCP_GATEWAY_AUTH_TOKEN`, `MCP_GATEWAY_AUTH_USER`,
 `MCP_GATEWAY_AUTH_PASSWORD`
@@ -61,7 +64,7 @@ cloud-metadata endpoints are rejected. Requests use retry semantics with
 </ParamField>
 
 <ParamField path="retry_attempts" type="integer" default="3" toc={true}>
-  Number of retry attempts for failed requests.
+  Total attempts per tool call, including the first.
 </ParamField>
 
 <ParamField path="request_timeout" type="integer" default="30" toc={true}>
@@ -76,7 +79,8 @@ cloud-metadata endpoints are rejected. Requests use retry semantics with
 
 <ParamField path="allow_insecure_tls" type="boolean" default="false" toc={true}>
   Explicit opt-in that, together with `verify_ssl: false`, disables TLS
-  certificate verification.
+  certificate verification. Only the certificate check is skipped: the address
+  checks still apply.
 </ParamField>
 
 <Warning title="Disabling TLS verification accepts any certificate">

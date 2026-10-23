@@ -1,0 +1,62 @@
+---
+title: "parsePostPromptData"
+slug: reference/typescript/core/post-prompt/parse-post-prompt-data
+description: "Return post_prompt_data as a plain object, whichever shape it arrived in."
+max-toc-depth: 3
+---
+
+[ref-post-prompt]: /docs/server-sdks/reference/typescript/core/post-prompt
+[strip]: /docs/server-sdks/reference/typescript/core/post-prompt/strip-json-fence
+
+Return `post_prompt_data` as a plain object, whichever shape it arrived in. A malformed summary
+degrades to `{}` rather than failing the request that delivered it.
+
+The function handles these shapes, in order:
+
+1. An object, or a list of objects, under `parsed` (`{ parsed: [ {...} ], raw: '...' }`): the object,
+   or the first non-empty one in the list, is returned.
+2. A flat object with real keys already present, ignoring `raw` and `parsed`.
+3. A `raw` string: unfenced with [`stripJsonFence()`][strip], then parsed as JSON. A JSON object is
+   returned as is. Prose, or any other JSON value, is returned as `{ summary: '<text>' }`.
+
+```typescript {1}
+parsePostPromptData(data: unknown): Record<string, unknown>
+```
+
+## Parameters
+
+<ParamField path="data" type="unknown" required={true} toc={true}>
+  The `post_prompt_data` value from a post-prompt body.
+</ParamField>
+
+## Returns
+
+`Record<string, unknown>` -- The summary object, or `{}` when there's nothing usable.
+
+## Examples
+
+```typescript {4}
+import { parsePostPromptData } from '@signalwire/sdk';
+
+// Voice, already parsed
+console.log(parsePostPromptData({ intent: 'book_ride', resolved: true }));
+// { intent: 'book_ride', resolved: true }
+
+// Voice, wrapped in a list
+console.log(parsePostPromptData({ parsed: [{ intent: 'book_ride' }], raw: '...' }));
+// { intent: 'book_ride' }
+
+// Chat, fenced JSON
+console.log(parsePostPromptData({ raw: '```json\n{"intent":"book_ride"}\n```' }));
+// { intent: 'book_ride' }
+
+// Prose instead of JSON
+console.log(parsePostPromptData({ raw: 'Caller booked a ride to the ferry building.' }));
+// { summary: 'Caller booked a ride to the ferry building.' }
+
+// Nothing usable
+console.log(parsePostPromptData(undefined));
+// {}
+```
+
+Part of the [post-prompt normalization][ref-post-prompt] helpers.

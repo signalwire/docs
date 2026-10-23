@@ -140,7 +140,7 @@ service.serve()
 </CodeBlock>
 <CodeBlock title="TypeScript — SWML builder">
 ```typescript
-// Install: npm install @signalwire/sdk@2.0.5
+// Install: npm install @signalwire/sdk@3.7.1
 // This sample also runs as JavaScript: save as forward-calls.mjs,
 // then run: node forward-calls.mjs
 import { SWMLService } from "@signalwire/sdk";
@@ -311,9 +311,8 @@ client.run()
 </CodeBlock>
 <CodeBlock title="TypeScript — Relay client">
 ```typescript
-// Install: npm install @signalwire/sdk@2.0.5
-// This sample also runs as JavaScript: save as forward-relay.mjs,
-// then run: node forward-relay.mjs
+// Install: npm install @signalwire/sdk@3.7.1
+// Save as forward-relay.mts and run: npx tsx forward-relay.mts
 import { RelayClient } from "@signalwire/sdk";
 
 const client = new RelayClient({
@@ -323,7 +322,9 @@ const client = new RelayClient({
 });
 
 client.onCall(async (call) => {
-  const caller = call.device.params?.from_number;
+  // An inbound phone call's device carries the caller's number in params.from_number.
+  const { params } = call.device as { params?: { from_number?: string } };
+  const caller = params?.from_number;
 
   call.on("calling.call.connect", async (event) => {
     const state = event.params.connect_state;
@@ -350,7 +351,7 @@ client.onCall(async (call) => {
         timeout: 20,
       },
     }]],
-    { ringback: [{ type: "ringtone", name: "us" }] },
+    { ringback: [{ type: "ringtone", params: { name: "us" } }] },
   );
   await call.waitForEnded();
 });
@@ -441,7 +442,7 @@ print("Forwarding")
 </CodeBlock>
 <CodeBlock title="TypeScript — REST client">
 ```typescript
-// Install: npm install @signalwire/sdk@2.0.5
+// Install: npm install @signalwire/sdk@3.7.1
 // This sample also runs as JavaScript: save as forward-rest.mjs,
 // then run: node forward-rest.mjs
 import { RestClient, SwmlBuilder } from "@signalwire/sdk";
@@ -455,8 +456,8 @@ const client = new RestClient({
 const swml = new SwmlBuilder()
   .connect({ to: "<YOUR_DESTINATION>", from: "${call.from}", timeout: 20 })
   .say("Sorry, nobody at Bayview Taxi can take your call right now. Please call back later.")
-  .build();
-await client.calling.transfer("<YOUR_CALL_ID>", { dest: swml });
+  .render(); // JSON text; parse it to pass the document object to transfer()
+await client.calling.transfer("<YOUR_CALL_ID>", JSON.parse(swml));
 console.log("Forwarding");
 ```
 </CodeBlock>

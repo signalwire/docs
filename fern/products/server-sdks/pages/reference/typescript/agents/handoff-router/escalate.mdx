@@ -1,0 +1,45 @@
+---
+title: "escalate"
+slug: reference/typescript/agents/handoff-router/escalate
+description: End a chat leg and wait for its record before a call is placed.
+max-toc-depth: 3
+---
+
+[handoffrouter]: /docs/server-sdks/reference/typescript/agents/handoff-router
+[readhandle]: /docs/server-sdks/reference/typescript/agents/chat-gateway/read-handle
+
+Ends a chat leg and waits for your `captureLeg` callback to write its record, so a voice leg started
+right after finds the text leg already recorded. The browser waits for this before it places the
+call. The `/escalate` route calls this method.
+
+The wait is bounded by `captureTimeout`. If `captureLeg` throws or runs past the timeout, the
+failure is logged and `escalate()` still returns `true`.
+
+## Parameters
+
+<ParamField path="handle" type="string" required={true} toc={true}>
+  The chat leg's handle.
+</ParamField>
+
+## Returns
+
+`Promise<boolean>` -- `false` when the handle doesn't verify, `true` otherwise.
+
+## Examples
+
+```typescript
+import { ChatGateway, HandoffRouter } from '@signalwire/sdk';
+
+const gateway = new ChatGateway({ configUrl: 'https://bayview-taxi.example.com/dispatch' });
+const handoff = new HandoffRouter({
+  gateway,
+  captureLeg: async (conversationId, medium) => {
+    console.log(`saving ${medium} leg of ${conversationId}`);
+    return true;
+  },
+});
+
+const ok = await handoff.escalate(gateway.mintHandle('chat-8f21'));
+console.log(ok); // true
+console.log(await handoff.escalate('not-a-handle')); // false
+```

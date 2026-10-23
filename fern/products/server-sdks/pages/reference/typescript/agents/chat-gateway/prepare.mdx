@@ -1,0 +1,95 @@
+---
+title: "prepare"
+slug: reference/typescript/agents/chat-gateway/prepare
+description: Validate a browser request and build the call to the chat service.
+max-toc-depth: 3
+---
+
+[chatgateway]: /docs/server-sdks/reference/typescript/agents/chat-gateway
+[rawpost]: /docs/server-sdks/reference/typescript/agents/ai-chat-client/raw-post
+[router]: /docs/server-sdks/reference/typescript/agents/chat-gateway/router
+[readhandle]: /docs/server-sdks/reference/typescript/agents/chat-gateway/read-handle
+
+Validates a browser request and builds the call to forward. [`router()`][router] uses it; call it
+yourself to serve the gateway from a framework other than Hono. It checks the key, then the origin.
+
+Everything the browser could use to widen its own access is refused or replaced here: `method` must
+be one of `start`, `chat`, `log`, or `end` (default `chat`), the conversation comes from a signed
+handle, and `config_url` is the gateway's. The one field forwarded is `user_meta_data`, after the
+checks described under [`ChatGateway`][chatgateway]. A chat message over 8 KiB of UTF-8 is refused
+with `413` before a conversation is created or a turn is counted.
+
+`prepare()` doesn't check the size of the request body. [`router()`][router] limits it to 64 KiB
+before parsing; apply a limit of your own when you call `prepare()` directly.
+
+A `log` or `end` request needs a handle. A `start` or `chat` without one creates a conversation,
+which counts against `maxNewConversations`; a `chat` counts against `maxTurns`.
+
+## Parameters
+
+<ParamField path="body" type={"Record<string, unknown>"} required={true} toc={true}>
+  The browser's request body: `{ method?, handle?, message?, user_meta_data? }`.
+</ParamField>
+
+<ParamField path="opts" type={"{ origin?: string | null; key?: string | null }"} required={true} toc={true}>
+  The request's credentials.
+</ParamField>
+
+<Indent>
+
+<ParamField path="opts.origin" type="string | null" toc={true}>
+  The `Origin` header.
+</ParamField>
+
+<ParamField path="opts.key" type="string | null" toc={true}>
+  The presented publishable key.
+</ParamField>
+
+</Indent>
+
+## Returns
+
+`[string, Record<string, unknown>, string | null]` -- a tuple of `[method, params, mintedHandle]`.
+
+`method` is the service method to call: `create_conversation` for `start`, `chat` for `chat`,
+`chat_log` for `log`, and `end_conversation` for `end`. `params` are its parameters. `mintedHandle`
+is the new handle when this call created the conversation, and `null` otherwise; return it to the
+browser. Send the call with [`rawPost()`][rawpost].
+
+## Throws
+
+`GatewayRejection` when the request is refused: `401` for a bad key, `403` for a disallowed origin
+or a bad handle, `400` for a malformed request, `413` for an oversized message or metadata, and
+`429` when a cap was reached.
+
+## Examples
+
+```typescript
+import { AIChatClient, ChatGateway, GatewayRejection } from '@signalwire/sdk';
+
+const gateway = new ChatGateway({
+  configUrl: 'https://bayview-taxi.example.com/dispatch',
+  key: '<YOUR_PUBLISHABLE_KEY>',
+  allowedOrigins: ['https://bayviewtaxi.example.com'],
+});
+const client = new AIChatClient({ space: 'your-space' });
+
+export async function relay(
+  body: Record<string, unknown>,
+  origin: string | null,
+  key: string | null,
+): Promise<Response> {
+  try {
+    const [method, params, minted] = gateway.prepare(body, { origin, key });
+    const upstream = await client.rawPost(method, params);
+    const headers = new Headers({ 'Content-Type': 'application/json' });
+    if (minted) headers.set('X-Chat-Handle', minted);
+    return new Response(upstream.body, { status: 200, headers });
+  } catch (err) {
+    if (err instanceof GatewayRejection) {
+      return Response.json({ error: err.reason }, { status: err.status });
+    }
+    throw err;
+  }
+}
+```
