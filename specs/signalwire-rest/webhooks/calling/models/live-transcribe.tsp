@@ -175,7 +175,11 @@ model LiveTranscribeMetrics {
 }
 
 model LiveTranscribeUtteranceWebhookPayload {
-  @doc("Identifies the call. `project_id` and `space_id` are included when available.")
+  @doc("""
+    Identifies the call. `project_id` and `space_id` are included when available. Its
+    `content_disposition` is always `post_data`; read `channel_data.content_disposition` to tell the
+    events apart.
+    """)
   call_info: SignalWireAPI.Webhooks.AI.AICallInfo;
 
   @doc("The speech engine's confidence for this utterance, or `null` when it didn't report one. Unlike `utterance.confidence`, it is included when the confidence is `0`.")
@@ -190,7 +194,11 @@ model LiveTranscribeUtteranceWebhookPayload {
 }
 
 model LiveTranscribeSummaryWebhookPayload {
-  @doc("Identifies the call. `project_id` and `space_id` are included when available.")
+  @doc("""
+    Identifies the call. `project_id` and `space_id` are included when available. Its
+    `content_disposition` is always `post_data`; read `channel_data.content_disposition` to tell the
+    events apart.
+    """)
   call_info: SignalWireAPI.Webhooks.AI.AICallInfo;
 
   @doc("Identifies the call and the event. `content_disposition` is `transcribe.live_summarize`.")
@@ -205,7 +213,11 @@ model LiveTranscribeSummaryWebhookPayload {
 }
 
 model LiveTranscribeConversationLogWebhookPayload {
-  @doc("Identifies the call. `project_id` and `space_id` are included when available.")
+  @doc("""
+    Identifies the call. `project_id` and `space_id` are included when available. Its
+    `content_disposition` is always `post_data`; read `channel_data.content_disposition` to tell the
+    events apart.
+    """)
   call_info: SignalWireAPI.Webhooks.AI.AICallInfo;
 
   @doc("Identifies the call and the event. `content_disposition` is `transcribe.conversation_log`.")
