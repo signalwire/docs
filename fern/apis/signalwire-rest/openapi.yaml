@@ -60615,6 +60615,364 @@ components:
             - department: sales
       unevaluatedProperties:
         not: {}
+    Webhooks.Calling.LiveTranscribeChannelData:
+      type: object
+      required:
+        - content_type
+        - content_disposition
+        - call_id
+      properties:
+        project_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Your project ID. Included when available.
+          examples:
+            - 4d0d6f16-5881-4fcc-92a4-02c51a91954d
+        space_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Your Space ID. Included when available.
+          examples:
+            - 451ed9ff-e568-4222-8af9-4f9ab7428d09
+        content_type:
+          type: string
+          enum:
+            - text/json
+          description: The content type of the POST body. Always `text/json`.
+          examples:
+            - text/json
+        content_disposition:
+          type: string
+          enum:
+            - transcribe.utterance
+            - transcribe.live_summarize
+            - transcribe.conversation_log
+          description: |-
+            Which event this is:
+
+            - `transcribe.utterance`: one utterance was transcribed.
+            - `transcribe.live_summarize`: the summary you requested with the `summarize` action.
+            - `transcribe.conversation_log`: the transcription session ended.
+          examples:
+            - transcribe.utterance
+        call_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: ID of the call being transcribed.
+          examples:
+            - 2e1e66e5-5d07-413d-9668-55542992eec0
+        call_start_date:
+          type: integer
+          format: int64
+          description: When the call was created, as a Unix timestamp in microseconds.
+          examples:
+            - 1777565690123456
+        call_answer_date:
+          type: integer
+          format: int64
+          description: When the call was answered, as a Unix timestamp in microseconds. `0` if it hasn't been answered.
+          examples:
+            - 1777565691234567
+        call_end_date:
+          type: integer
+          format: int64
+          description: When the call ended, as a Unix timestamp in microseconds. `0` while the call is still up.
+          examples:
+            - 0
+        caller_id_name:
+          type: string
+          description: The caller's name. Included when the call has one.
+          examples:
+            - Jane Doe
+        caller_id_number:
+          type: string
+          description: The caller's number. Included when the call has one.
+          examples:
+            - '+15555550100'
+        SWMLVars:
+          type: object
+          unevaluatedProperties: {}
+          description: SWML variables for the call. Included when the call carries SWML state.
+        SWMLCall:
+          type: object
+          unevaluatedProperties: {}
+          description: SWML call state. Included when the call carries SWML state.
+      unevaluatedProperties:
+        not: {}
+      description: |-
+        Identifies the call and the event. Read `content_disposition` to tell the three live
+        transcription events apart, since they all arrive at the same `webhook` URL.
+    Webhooks.Calling.LiveTranscribeConversationLogWebhookPayload:
+      type: object
+      required:
+        - call_info
+        - channel_data
+        - conversation_log
+        - metrics
+      properties:
+        call_info:
+          allOf:
+            - $ref: '#/components/schemas/Webhooks.AI.AICallInfo'
+          description: |-
+            Identifies the call. `project_id` and `space_id` are included when available. Its
+            `content_disposition` is always `post_data`; read `channel_data.content_disposition` to tell the
+            events apart.
+        channel_data:
+          allOf:
+            - $ref: '#/components/schemas/Webhooks.Calling.LiveTranscribeChannelData'
+          description: Identifies the call and the event. `content_disposition` is `transcribe.conversation_log`.
+        conversation_log:
+          type: array
+          items:
+            $ref: '#/components/schemas/Webhooks.Calling.LiveTranscribeLogEntry'
+          description: Every utterance transcribed in the session, in order.
+        conversation_summary:
+          type: string
+          description: |-
+            The AI summary of the whole conversation. Included when you started the session with
+            `ai_summary` set to `true` and a summary was produced.
+          examples:
+            - The caller booked a ride to the airport for 6 AM tomorrow from 120 Harbor Street.
+        metrics:
+          allOf:
+            - $ref: '#/components/schemas/Webhooks.Calling.LiveTranscribeMetrics'
+          description: Totals for the session.
+      unevaluatedProperties:
+        not: {}
+    Webhooks.Calling.LiveTranscribeLogEntry:
+      type: object
+      required:
+        - role
+        - content
+      properties:
+        role:
+          type: string
+          enum:
+            - remote-caller
+            - local-caller
+          description: Which side of the call spoke.
+          examples:
+            - remote-caller
+        content:
+          type: string
+          description: The transcribed text.
+          examples:
+            - Hi, I'd like to book a ride to the airport.
+        confidence:
+          type: number
+          format: double
+          description: The speech engine's confidence in the transcription, from `0` to `1`. Omitted when it's `0` or the speech engine didn't report one.
+          examples:
+            - 0.97
+        language:
+          type: string
+          description: The transcription language.
+          examples:
+            - en-US
+      unevaluatedProperties:
+        not: {}
+      description: One utterance in the conversation log, in the order it was spoken.
+    Webhooks.Calling.LiveTranscribeMetrics:
+      type: object
+      required:
+        - total_utterances
+        - remote_caller_turns
+        - local_caller_turns
+        - remote_caller_words
+        - local_caller_words
+      properties:
+        total_utterances:
+          type: integer
+          description: The number of utterances transcribed.
+          examples:
+            - 14
+        first_utterance_ts:
+          type: integer
+          format: int64
+          description: When the first utterance was transcribed, as a Unix timestamp in microseconds. Omitted when nothing was transcribed.
+          examples:
+            - 1777565701562391
+        last_utterance_ts:
+          type: integer
+          format: int64
+          description: When the last utterance was transcribed, as a Unix timestamp in microseconds. Omitted when nothing was transcribed.
+          examples:
+            - 1777565788902114
+        remote_caller_turns:
+          type: integer
+          description: The number of utterances from the `remote-caller` side.
+          examples:
+            - 8
+        local_caller_turns:
+          type: integer
+          description: The number of utterances from the `local-caller` side.
+          examples:
+            - 6
+        remote_caller_words:
+          type: integer
+          description: The number of words spoken on the `remote-caller` side.
+          examples:
+            - 96
+        local_caller_words:
+          type: integer
+          description: The number of words spoken on the `local-caller` side.
+          examples:
+            - 71
+        remote_caller_avg_confidence:
+          type: number
+          format: double
+          description: The average confidence on the `remote-caller` side. Omitted when no utterance on that side had a confidence above `0`.
+          examples:
+            - 0.95
+        local_caller_avg_confidence:
+          type: number
+          format: double
+          description: The average confidence on the `local-caller` side. Omitted when no utterance on that side had a confidence above `0`.
+          examples:
+            - 0.96
+      unevaluatedProperties:
+        not: {}
+      description: Totals for the whole session. The counts are `0` when nothing was transcribed.
+    Webhooks.Calling.LiveTranscribeSummaryWebhookPayload:
+      type: object
+      required:
+        - call_info
+        - channel_data
+        - conversation_log
+        - conversation_summary
+      properties:
+        call_info:
+          allOf:
+            - $ref: '#/components/schemas/Webhooks.AI.AICallInfo'
+          description: |-
+            Identifies the call. `project_id` and `space_id` are included when available. Its
+            `content_disposition` is always `post_data`; read `channel_data.content_disposition` to tell the
+            events apart.
+        channel_data:
+          allOf:
+            - $ref: '#/components/schemas/Webhooks.Calling.LiveTranscribeChannelData'
+          description: Identifies the call and the event. `content_disposition` is `transcribe.live_summarize`.
+        conversation_log:
+          type: array
+          items:
+            $ref: '#/components/schemas/Webhooks.Calling.LiveTranscribeLogEntry'
+          description: Every utterance transcribed so far, in order.
+        conversation_summary:
+          type: string
+          description: The AI summary of the conversation so far. `Error creating summary` when no summary could be produced.
+          examples:
+            - The caller asked to book a ride to the airport at 6 AM tomorrow and confirmed the pickup address.
+      unevaluatedProperties:
+        not: {}
+    Webhooks.Calling.LiveTranscribeUtterance:
+      type: object
+      required:
+        - role
+        - content
+        - lang
+        - tokens
+        - timestamp
+        - utterance_id
+        - char_count
+        - word_count
+      properties:
+        role:
+          type: string
+          enum:
+            - remote-caller
+            - local-caller
+          description: |-
+            Which side of the call spoke, matching the `direction` values you passed to `start`.
+            `remote-caller` is the audio SignalWire receives from the call, and `local-caller` is the
+            audio SignalWire sends to it.
+          examples:
+            - remote-caller
+        content:
+          type: string
+          description: The transcribed text.
+          examples:
+            - Hi, I'd like to book a ride to the airport.
+        lang:
+          type: string
+          description: The transcription language.
+          examples:
+            - en-US
+        tokens:
+          type: integer
+          description: An estimate of the number of tokens in `content`.
+          examples:
+            - 11
+        timestamp:
+          type: integer
+          format: int64
+          description: When the utterance was transcribed, as a Unix timestamp in microseconds.
+          examples:
+            - 1777565701562391
+        utterance_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Unique ID for this utterance.
+          examples:
+            - 9b3c1f0e-7a52-4c8e-b0d4-3f6a2e1d9c57
+        char_count:
+          type: integer
+          description: The number of characters in `content`.
+          examples:
+            - 43
+        word_count:
+          type: integer
+          description: The number of words in `content`.
+          examples:
+            - 9
+        silence_before_ms:
+          type: integer
+          description: |-
+            Milliseconds since the previous utterance from the same side of the call. Omitted on that
+            side's first utterance.
+          examples:
+            - 1840
+        confidence:
+          type: number
+          format: double
+          description: The speech engine's confidence in the transcription, from `0` to `1`. Omitted when it's `0` or the speech engine didn't report one.
+          examples:
+            - 0.97
+      unevaluatedProperties:
+        not: {}
+      description: One transcribed utterance, as sent in a `transcribe.utterance` event.
+    Webhooks.Calling.LiveTranscribeUtteranceWebhookPayload:
+      type: object
+      required:
+        - call_info
+        - confidence
+        - channel_data
+        - utterance
+      properties:
+        call_info:
+          allOf:
+            - $ref: '#/components/schemas/Webhooks.AI.AICallInfo'
+          description: |-
+            Identifies the call. `project_id` and `space_id` are included when available. Its
+            `content_disposition` is always `post_data`; read `channel_data.content_disposition` to tell the
+            events apart.
+        confidence:
+          anyOf:
+            - type: number
+              format: double
+            - type: 'null'
+          description: The speech engine's confidence for this utterance, or `null` when it didn't report one. Unlike `utterance.confidence`, it is included when the confidence is `0`.
+          examples:
+            - 0.97
+        channel_data:
+          allOf:
+            - $ref: '#/components/schemas/Webhooks.Calling.LiveTranscribeChannelData'
+          description: Identifies the call and the event. `content_disposition` is `transcribe.utterance`.
+        utterance:
+          allOf:
+            - $ref: '#/components/schemas/Webhooks.Calling.LiveTranscribeUtterance'
+          description: The utterance that was transcribed.
+      unevaluatedProperties:
+        not: {}
     Webhooks.Calling.StreamStatusCallbackPayload:
       type: object
       required:
@@ -61948,6 +62306,75 @@ webhooks:
           application/json:
             schema:
               $ref: '#/components/schemas/Webhooks.Messaging.InboundMessageWebhookPayload'
+      security:
+        - {}
+  liveTranscribeConversationLogWebhook:
+    post:
+      operationId: live_transcribe_conversation_log_webhook
+      summary: Live transcription conversation log webhook
+      description: |-
+        Sent once to the `webhook` URL of a [`live_transcribe`](/docs/swml/reference/calling/live-transcribe)
+        `start` action when the session ends, whether you stopped it or the call ended. It carries the
+        full transcript, session totals, and the AI summary when `ai_summary` is `true`.
+        `channel_data.content_disposition` is `transcribe.conversation_log`.
+      parameters: []
+      responses:
+        '200':
+          description: Webhook received
+      tags:
+        - Calling Webhooks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Webhooks.Calling.LiveTranscribeConversationLogWebhookPayload'
+      security:
+        - {}
+  liveTranscribeSummaryWebhook:
+    post:
+      operationId: live_transcribe_summary_webhook
+      summary: Live transcription summary webhook
+      description: |-
+        Sent when you request a summary with the [`live_transcribe`](/docs/swml/reference/calling/live-transcribe)
+        `summarize` action while transcription is running. It goes to the `webhook` URL on `summarize`,
+        or to the one on `start` when `summarize` has none. `channel_data.content_disposition` is
+        `transcribe.live_summarize`.
+      parameters: []
+      responses:
+        '200':
+          description: Webhook received
+      tags:
+        - Calling Webhooks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Webhooks.Calling.LiveTranscribeSummaryWebhookPayload'
+      security:
+        - {}
+  liveTranscribeUtteranceWebhook:
+    post:
+      operationId: live_transcribe_utterance_webhook
+      summary: Live transcription utterance webhook
+      description: |-
+        Sent to the `webhook` URL of a [`live_transcribe`](/docs/swml/reference/calling/live-transcribe)
+        `start` action each time an utterance is transcribed, when `live_events` is `true`. Each side of
+        the call you listed in `direction` sends its own events. `channel_data.content_disposition` is
+        `transcribe.utterance`.
+      parameters: []
+      responses:
+        '200':
+          description: Webhook received
+      tags:
+        - Calling Webhooks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Webhooks.Calling.LiveTranscribeUtteranceWebhookPayload'
       security:
         - {}
   messageStatusCallback:
