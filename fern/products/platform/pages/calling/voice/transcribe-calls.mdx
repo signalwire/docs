@@ -570,7 +570,8 @@ console.log("Transcription started");
 To try it, run the program while a call that isn't already being transcribed is up, such as one from
 [Make and receive calls][make-and-receive-calls]. The transcription server starts printing
 utterances as soon as the command succeeds. To call the REST API directly, send this request to
-[Call commands][call-commands]:
+[Call commands][call-commands]. The reference example also turns on an AI summary and sets the speech
+engine; leave out `ai_summary`, `ai_summary_prompt`, and `speech_engine` to match the program above:
 
 <EndpointRequestSnippet endpoint="POST /api/calling/calls" example="calling.live_transcribe" />
 
@@ -654,11 +655,41 @@ when the session ends or whenever you ask while the call is up.
 Add `ai_summary: true` to `start`, and optionally `ai_summary_prompt` to say what the summary should
 contain. The event sent when the session ends then includes `conversation_summary`. This change
 to the [first run's](#transcribe-a-call-in-real-time-via-swml) `start` action works the same way in
-every product:
+every product, and in Relay and REST too:
 
 <CodeBlocks>
+<CodeBlock title="Python — SWML builder">
+```python {7-8}
+swml.answer().live_transcribe(action={
+    "start": {
+        "lang": "en-US",
+        "direction": ["remote-caller", "local-caller"],
+        "webhook": "<YOUR_TRANSCRIPT_WEBHOOK_URL>",
+        "live_events": True,
+        "ai_summary": True,
+        "ai_summary_prompt": "List the pickup address, the destination, and the pickup time.",
+    }
+})
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — SWML builder">
+```typescript {8-9}
+swml.answer().live_transcribe({
+  action: {
+    start: {
+      lang: "en-US",
+      direction: ["remote-caller", "local-caller"],
+      webhook: "<YOUR_TRANSCRIPT_WEBHOOK_URL>",
+      live_events: true,
+      ai_summary: true,
+      ai_summary_prompt: "List the pickup address, the destination, and the pickup time.",
+    },
+  },
+});
+```
+</CodeBlock>
 <CodeBlock title="YAML">
-```yaml {9-10}
+```yaml {10-11}
 - live_transcribe:
     action:
       start:
@@ -667,21 +698,23 @@ every product:
           - remote-caller
           - local-caller
         webhook: <YOUR_TRANSCRIPT_WEBHOOK_URL>
+        live_events: true
         ai_summary: true
         ai_summary_prompt: List the pickup address, the destination, and the pickup time.
 ```
 </CodeBlock>
 <CodeBlock title="JSON">
-```json {7-8}
+```json {9-10}
 {
   "live_transcribe": {
     "action": {
       "start": {
         "lang": "en-US",
         "direction": ["remote-caller", "local-caller"],
+        "webhook": "<YOUR_TRANSCRIPT_WEBHOOK_URL>",
+        "live_events": true,
         "ai_summary": true,
-        "ai_summary_prompt": "List the pickup address, the destination, and the pickup time.",
-        "webhook": "<YOUR_TRANSCRIPT_WEBHOOK_URL>"
+        "ai_summary_prompt": "List the pickup address, the destination, and the pickup time."
       }
     }
   }
@@ -1006,7 +1039,34 @@ at your `status_url` afterward.
 
 Over REST, send `calling.transcribe` with a `control_id` you choose, and `calling.transcribe.stop`
 with the same `control_id` to end it. The REST client in the [Server SDKs][server-sdks] wraps both
-commands. To call the REST API directly, send these requests to [Call commands][call-commands]:
+commands:
+
+<CodeBlocks>
+<CodeBlock title="Python — REST client">
+```python
+client.calling.transcribe(
+    "<YOUR_CALL_ID>",
+    control_id="whole-call",
+    status_url="<YOUR_TRANSCRIPT_STATUS_URL>",
+)
+# ... later, to end it before the call does:
+client.calling.transcribe_stop("<YOUR_CALL_ID>", control_id="whole-call")
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — REST client">
+```typescript
+await client.calling.transcribe("<YOUR_CALL_ID>", {
+  control_id: "whole-call",
+  status_url: "<YOUR_TRANSCRIPT_STATUS_URL>",
+});
+// ... later, to end it before the call does:
+await client.calling.transcribeStop("<YOUR_CALL_ID>", { control_id: "whole-call" });
+```
+</CodeBlock>
+</CodeBlocks>
+
+`client` is the REST client from [Start live transcription on a call in progress via REST](#start-live-transcription-on-a-call-in-progress-via-rest).
+To call the REST API directly, send these requests to [Call commands][call-commands]:
 
 <EndpointRequestSnippet endpoint="POST /api/calling/calls" example="calling.transcribe" />
 
@@ -1039,8 +1099,6 @@ prompt and tools. It never speaks on the call. It posts advice, transcript updat
 results to your webhook, so it suits coaching a human agent, flagging compliance issues, or pulling
 data out of the call while it happens. Its [callback types][sidecar-callbacks] include the running
 transcript.
-
-The sidecar runs its own transcription, so it can run on a call alongside `live_transcribe`.
 
 ## Alternatives: run your own speech-to-text
 
