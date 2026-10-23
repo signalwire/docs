@@ -203,17 +203,14 @@ const service = new SWMLService({
   route: "/swml",
   port: 3000,
   basicAuth: ["signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"],
-  // @signalwire/sdk 3.7.1 validates enter_queue against an outdated schema
-  // that rejects every valid document, so validation is off for this service.
-  schemaValidation: false,
 });
-service
-  .getBuilder()
-  .say("Thanks for calling Bayview Taxi. A dispatcher will be with you shortly.")
-  .enter_queue({ queue_name: "dispatch", wait_time: 120 })
-  // Runs only if the caller leaves the queue without reaching an agent.
-  .say("All our dispatchers are busy. Please call back in a few minutes.")
-  .hangup();
+const swml = service.getBuilder();
+swml.say("Thanks for calling Bayview Taxi. A dispatcher will be with you shortly.");
+// The SDK's SWML schema requires transfer_after_bridge on enter_queue, which the
+// platform treats as optional, so skip validation for this verb only.
+swml.addVerb("enter_queue", { queue_name: "dispatch", wait_time: 120 }, { skipValidation: true });
+// Runs only if the caller leaves the queue without reaching an agent.
+swml.say("All our dispatchers are busy. Please call back in a few minutes.").hangup();
 
 await service.serve();
 ```
@@ -443,7 +440,11 @@ setup and local testing.
 </CodeBlock>
 <CodeBlock title="TypeScript — SWML builder">
 ```typescript
-  .enter_queue({ queue_name: "dispatch", wait_time: 120, status_url: "<YOUR_STATUS_WEBHOOK_URL>" })
+swml.addVerb(
+  "enter_queue",
+  { queue_name: "dispatch", wait_time: 120, status_url: "<YOUR_STATUS_WEBHOOK_URL>" },
+  { skipValidation: true },
+);
 ```
 </CodeBlock>
 <CodeBlock title="YAML">
