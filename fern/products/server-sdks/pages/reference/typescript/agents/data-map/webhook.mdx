@@ -6,20 +6,22 @@ max-toc-depth: 3
 ---
 
 [ref-datamap]: /docs/server-sdks/reference/typescript/agents/data-map
+[ref-fallback-output]: /docs/server-sdks/reference/typescript/agents/data-map/fallback-output
 
-Add an API call. Multiple webhooks can be chained -- they execute in order, and
-if earlier webhooks fail, later ones act as fallbacks.
+Add an API call. Multiple webhooks can be chained. The platform tries them in
+order, skipping any whose `requireArgs` are all absent, and the first webhook it
+requests decides the result: if that request fails, the
+[fallback output][ref-fallback-output]
+is used and no later webhook is tried.
 
 ## **Parameters**
 
 <ParamField path="method" type="string" required={true} toc={true}>
-  HTTP method for the request.
+  HTTP method for the request: `"GET"` or `"POST"`. It is uppercased.
 
-  - `"GET"` -- retrieve a resource
-  - `"POST"` -- create a resource or submit data
-  - `"PUT"` -- replace a resource
-  - `"DELETE"` -- remove a resource
-  - `"PATCH"` -- partially update a resource
+  The platform sends GET and POST requests only. A webhook is sent as a POST when
+  `method` is `"POST"` or when it has params, and as a GET otherwise, so `"PUT"`,
+  `"PATCH"`, and `"DELETE"` are sent as GET.
 </ParamField>
 
 <ParamField path="url" type="string" required={true} toc={true}>
@@ -45,7 +47,8 @@ if earlier webhooks fail, later ones act as fallbacks.
 </ParamField>
 
 <ParamField path="opts.requireArgs" type="string[]" toc={true}>
-  Only execute this webhook if all listed arguments are present.
+  Skip this webhook, without a request, unless at least one of the listed
+  arguments is present.
 </ParamField>
 </Indent>
 
@@ -70,18 +73,21 @@ weather
 console.log(weather.toSwaigFunction());
 ```
 
-Chained webhooks act as fallbacks -- if the first webhook fails, the second is tried:
+Chain webhooks with `requireArgs` to pick an endpoint by the arguments the caller
+gave. A failed request isn't retried on the next webhook; it gives the fallback
+output:
 
-```typescript {7,9}
+```typescript {8-11}
 import { DataMap, FunctionResult } from '@signalwire/sdk';
 
-const search = new DataMap('search');
-search
-  .purpose('Search across multiple providers')
-  .parameter('query', 'string', 'Search query', { required: true })
-  .webhook('GET', 'https://primary-api.example.com/search?q=${enc:args.query}')
-  .output(new FunctionResult('Primary: ${result}'))
-  .webhook('GET', 'https://backup-api.example.com/search?q=${enc:args.query}')
-  .output(new FunctionResult('Backup: ${result}'))
-  .fallbackOutput(new FunctionResult('All search providers are unavailable.'));
+const lookup = new DataMap('find_order');
+lookup
+  .purpose('Find an order by order number or by email')
+  .parameter('order_id', 'string', 'Order number')
+  .parameter('email', 'string', 'Email address on the order')
+  .webhook('GET', 'https://api.example.com/orders/${enc:args.order_id}', { requireArgs: ['order_id'] })
+  .output(new FunctionResult('Order ${id} is ${status}.'))
+  .webhook('GET', 'https://api.example.com/orders?email=${enc:args.email}', { requireArgs: ['email'] })
+  .output(new FunctionResult('The latest order for that email is ${status}.'))
+  .fallbackOutput(new FunctionResult('I could not look up that order.'));
 ```
