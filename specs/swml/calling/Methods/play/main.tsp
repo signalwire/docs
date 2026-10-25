@@ -5,12 +5,15 @@ using TypeSpec.JsonSchema;
 
 namespace SWML.Calling;
 
-@pattern("^(http://.*|https://.*|ring: ?[0-9.]*: ?[a-zA-Z]{2}|say: ?.*|silence: ?[0-9.]*|ring: ?[a-zA-Z]{2})$")
+@pattern("^(http://.*|https://.*|ring: ?[0-9.]*: ?([a-zA-Z]{2}|bong)|say: ?.*|silence: ?[0-9.]*|ring: ?([a-zA-Z]{2}|bong))$")
 scalar play_url extends string;
 
 @summary("PlayBase object")
 model PlayBase {
-  @doc("If `true`, the call will automatically answer as the sound is playing. If `false`, you will start playing the audio during early media. Default `true`.")
+  @doc("""
+    If `true`, the call is answered before the audio plays. Default `true`.
+    The property is accepted, but setting it to `false` does not currently prevent the call from being answered.
+    """)
   @example(true)
   auto_answer?: boolean | SWMLVar = true;
 
@@ -24,21 +27,43 @@ model PlayBase {
   @example(10)
   volume?: float | SWMLVar = 0;
 
-  @doc("The voice to use for the text to speech.")
-  @example("Polly.Joanna")
-  say_voice?: string = "Polly.Salli";
+  @doc("""
+    Number of times to play the full list of sounds.
+    Default is `1`.
+    Set to `0` to repeat the list continuously. The list only repeats while at least one of its sounds can be played.
+    """)
+  @minValue(0)
+  @example(2)
+  loop?: integer | SWMLVar = 1;
 
-  @doc("The language to use for the text to speech.")
+  @doc("""
+    The voice to use for `say:` text to speech.
+    When not set, the `say_voice` SWML variable is used if it is set.
+    Otherwise, a voice is selected based on the text-to-speech language and gender.
+    """)
+  @example("Polly.Joanna")
+  say_voice?: string;
+
+  @doc("""
+    The language to use for `say:` text to speech.
+    When not set, the `say_language` SWML variable is used if it is set, otherwise `en-US`.
+    """)
   @example("en-US")
   say_language?: string = "en-US";
 
-  @doc("Gender to use for the text to speech.")
+  @doc("""
+    The gender to use for `say:` text to speech.
+    When not set, the `say_gender` SWML variable is used if it is set, otherwise `female`.
+    """)
   @example("female")
   say_gender?: string = "female";
 
-  @doc("http or https URL to deliver play status events")
+  @doc("""
+    HTTP or HTTPS URL to deliver play status events.
+    A SWML variable must resolve to an HTTP or HTTPS URL.
+    """)
   @example("https://example.com/play-status")
-  status_url?: url;
+  status_url?: url | SWMLVar;
 }
 
 @summary("Single URL")
@@ -49,7 +74,7 @@ model PlayWithURL is PlayBase {
     Required if `urls` is not present.
     Allowed URLs are:
         - http:// or https:// - audio file to GET
-        - ring:[duration:]<country code> - ring tone to play. For example: ring:us to play single ring or ring:20.0:us to play ring for 20 seconds.
+        - ring:[duration:]<ringtone> - ring tone to play, named by country code or `bong`. For example: ring:us to play single ring or ring:20.0:us to play ring for 20 seconds.
         - say:<text to speak> - Sentence to say
         - silence: <duration> - seconds of silence to play
     """)
@@ -60,11 +85,12 @@ model PlayWithURL is PlayBase {
 @summary("Multiple URLs")
 model PlayWithURLS is PlayBase {
   @doc("""
-    Array of URLs to play.
+    Array of URLs to play, in order.
     Required if `url` is not present.
+    Each entry can be a playable URL or a SWML variable that resolves to one.
     Allowed URLs are:
         - http:// or https:// - audio file to GET
-        - ring:[duration:]<country code> - ring tone to play. For example: ring:us to play single ring or ring:20.0:us to play ring for 20 seconds.
+        - ring:[duration:]<ringtone> - ring tone to play, named by country code or `bong`. For example: ring:us to play single ring or ring:20.0:us to play ring for 20 seconds.
         - say:<text to speak> - Sentence to say
         - silence: <duration> - seconds of silence to play
     """)
@@ -73,7 +99,7 @@ model PlayWithURLS is PlayBase {
     "say:Welcome to our service",
     "silence:2"
   ])
-  urls: play_url[] | SWMLVar[];
+  urls: (play_url | SWMLVar)[];
 }
 
 alias PlayUnion = PlayWithURL | PlayWithURLS;
