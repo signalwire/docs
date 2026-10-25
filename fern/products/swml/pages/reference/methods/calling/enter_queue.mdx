@@ -55,6 +55,16 @@ After the bridge completes (when the agent or caller hangs up), execution contin
   Maximum time in seconds to wait in the queue before timeout.
 </ParamField>
 
+
+<ParamField path="enter_queue.whisper_url" type="string" toc={true}>
+  SWML to run on the queued caller's call when the caller is pulled from the queue, before the caller is bridged with the agent.
+  Use it to play a message to the caller, for example. The connection to the agent continues once the whisper SWML finishes.
+
+  Can be either:
+  - A URL (http or https) that returns a SWML document
+  - An inline SWML document (as a JSON string)
+</ParamField>
+
 </Indent>
 
 ## **Queue Status Callbacks**
@@ -103,10 +113,10 @@ When you provide a `status_url`, SignalWire will send HTTP POST requests to that
   **Possible Values**: 
   - `enqueue` - Caller added to queue
   - `leave` - Caller left without being bridged
-  - `dequeue` - Caller pulled from queue and bridged
+  - `dequeue` - Caller pulled from the queue to be connected. Sent before the bridge is attempted, so it doesn't confirm that the bridge succeeded
 
 <ParamField path="params.id" type="string" toc={true}>
-  Unique queue entry identifier (UUID format).
+  The queue identifier (UUID format). Every entry in the same queue has the same `id`; use `call_id` to identify the call.
 </ParamField>
 
 
@@ -228,7 +238,8 @@ Sent when a caller leaves the queue without being bridged to another call (e.g.,
 
 #### `dequeue` Event
 
-Sent when a caller is pulled out of the queue and bridged with another caller.
+Sent when a caller is pulled out of the queue to be connected with another call.
+It's sent before the bridge is attempted, so it doesn't confirm that the bridge succeeded.
 
 ```json
 {
@@ -260,16 +271,16 @@ Sent when a caller is pulled out of the queue and bridged with another caller.
 Set by the method:
 
 - **queue_result:** (out) The result of the queue operation. **Possible Values**:
-  - `entering` - Call is entering the queue
-  - `connecting` - Call is in the process of connecting to an agent
   - `connected` - Successfully connected to an agent
-  - `leaving` - Call is leaving the queue
   - `timeout` - Waited too long and timed out
   - `hangup` - Caller hung up while waiting
   - `failed` - Queue operation failed due to an error
-- **wait_time:** (out) Time in seconds the caller waited in the queue. Set to -1 if not available.
-- **entry_position:** (out) The caller's position in the queue when they entered. Set to -1 if not available.
-- **entry_size:** (out) The total size of the queue when the caller entered. Set to -1 if not available.
+- **wait_time:** (out) Time in seconds the caller waited in the queue, as a string. Set to `-1` if not available.
+- **entry_position:** (out) The caller's position in the queue when they entered, as a string. Set to `-1` if not available.
+- **entry_size:** (out) The total size of the queue when the caller entered, as a string. Set to `-1` if not available.
+
+`wait_time`, `entry_position`, and `entry_size` are set only when the queue operation returns results.
+When `queue_result` is `failed`, they may be unset or still hold values from an earlier `enter_queue`, so check `queue_result` before using them.
 
 ## **Examples**
 
@@ -331,6 +342,40 @@ sections:
           "queue_name": "sales_queue",
           "status_url": "https://example.com/queue-status",
           "wait_time": 1800,
+          "execute_after_queue": "https://example.com/post-call-swml"
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### Queue with a caller whisper
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - enter_queue:
+        queue_name: "support_queue"
+        whisper_url: "https://example.com/caller-whisper-swml"
+        execute_after_queue: "https://example.com/post-call-swml"
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "enter_queue": {
+          "queue_name": "support_queue",
+          "whisper_url": "https://example.com/caller-whisper-swml",
           "execute_after_queue": "https://example.com/post-call-swml"
         }
       }

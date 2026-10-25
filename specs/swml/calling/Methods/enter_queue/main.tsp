@@ -26,7 +26,7 @@ model EnterQueueObject {
 
   @doc("HTTP or HTTPS URL to deliver queue status events. Default not set")
   @example("https://example.com/queue-status")
-  status_url?: url;
+  status_url?: url | SWMLVar;
 
   @doc("URL for media to play while waiting in the queue. Default hold music will be played if not set")
   @example("https://example.com/queue-music.mp3")
@@ -36,6 +36,17 @@ model EnterQueueObject {
   @minValue(1)
   @example(1800)
   wait_time?: integer | SWMLVar = 180;
+
+  @doc("""
+    SWML to run on the queued caller's call when the caller is pulled from the queue, before the caller is
+    bridged with the agent. Use it to play a message to the caller, for example. The connection to the agent
+    continues once the whisper SWML finishes.
+    Can be either:
+    - A URL (http or https) that returns a SWML document
+    - An inline SWML document (as a JSON string)
+    """)
+  @example("https://example.com/caller-whisper")
+  whisper_url?: string | SWMLVar;
 }
 
 @summary("enter_queue Method")
