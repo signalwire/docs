@@ -18,6 +18,7 @@ Start live translation of the call. The translation will be sent to the specifie
 
 <ParamField path="live_translate.action" type="string | object" required={true} toc={true}>
   The action to perform. See [actions](#actions) below.
+  Also accepts a [SWML variable](/docs/swml/reference/variables) reference that resolves to one of the supported actions.
 </ParamField>
 
 </Indent>
@@ -25,6 +26,8 @@ Start live translation of the call. The translation will be sent to the specifie
 ## **Actions**
 
 The `action` property controls the translation session. Use `start` to begin translating with configuration options, `stop` to end an active session, `summarize` to request an on-demand AI summary mid-session, or `inject` to insert a translated message into the conversation.
+
+Properties that take a fixed set of values (`start.direction` and its items, `start.speech_engine`, `start.filter_from`, `start.filter_to`, and `inject.direction`) also accept a [SWML variable](/docs/swml/reference/variables) reference. The value it resolves to must be one of the listed values.
 
 <Tabs>
 <Tab title="start">
@@ -43,27 +46,27 @@ The `action` property controls the translation session. Use `start` to begin tra
 </ParamField>
 
 <ParamField path="start.from_lang" type="string" required={true} toc={true}>
-  The language to translate from.
-  See [supported voices & languages](/docs/platform/voice/tts).
+  One of the two languages in the translation. The first direction in `direction` is translated into this language; a second direction is translated from it.
+  See [direction order](#direction-order) and [supported voices & languages](/docs/platform/voice/tts).
 </ParamField>
 
 <ParamField path="start.to_lang" type="string" required={true} toc={true}>
-  The language to translate to.
+  The other language in the translation. The first direction in `direction` is translated from this language; a second direction is translated into it.
+  See [direction order](#direction-order) and [supported voices & languages](/docs/platform/voice/tts).
+</ParamField>
+
+<ParamField path="start.from_voice" type="string" default="azure.en-US-RyanMultilingualNeural" toc={true}>
+  The TTS voice that speaks translations into `from_lang` (the first direction in `direction`).
   See [supported voices & languages](/docs/platform/voice/tts).
 </ParamField>
 
-<ParamField path="start.from_voice" type="string" default="elevenlabs.josh" toc={true}>
-  The TTS voice to use for the source language.
-  See [supported voices & languages](/docs/platform/voice/tts).
-</ParamField>
-
-<ParamField path="start.to_voice" type="string" default="elevenlabs.josh" toc={true}>
-  The TTS voice to use for the target language.
+<ParamField path="start.to_voice" type="string" default="azure.en-US-RyanMultilingualNeural" toc={true}>
+  The TTS voice that speaks translations into `to_lang` (a second direction in `direction`).
   See [supported voices & languages](/docs/platform/voice/tts).
 </ParamField>
 
 <ParamField path="start.filter_from" type="string" toc={true}>
-  Translation filter to apply to the source language direction.
+  Translation filter for translations into `to_lang` (a second direction in `direction`).
   Adjusts the tone or style of translated speech.
 
   Preset values: `polite` (removes insults, maintains sentiment), `rude` (adds insults, maintains sentiment),
@@ -73,7 +76,7 @@ The `action` property controls the translation session. Use `start` to begin tra
 </ParamField>
 
 <ParamField path="start.filter_to" type="string" toc={true}>
-  Translation filter to apply to the target language direction.
+  Translation filter for translations into `from_lang` (the first direction in `direction`).
   Adjusts the tone or style of translated speech.
 
   Preset values: `polite`, `rude`, `professional`, `shakespeare`, `gen-z`.
@@ -94,9 +97,9 @@ The `action` property controls the translation session. Use `start` to begin tra
   The timeout for speech recognition in milliseconds. Minimum value: `1500`.
 </ParamField>
 
-<ParamField path="start.vad_silence_ms" type="integer" default="300 | 500" toc={true}>
+<ParamField path="start.vad_silence_ms" type="integer" default="700 | 500" toc={true}>
   Voice activity detection silence time in milliseconds.
-  Default depends on the speech engine: `300` for Deepgram, `500` for Google. Minimum value: `1`.
+  Default depends on the speech engine: `700` for Deepgram, `500` for Google. Omitting the value or setting it to `0` uses the engine default. Minimum value: `1`.
 </ParamField>
 
 <ParamField path="start.vad_thresh" type="integer" default="400" toc={true}>
@@ -105,10 +108,13 @@ The `action` property controls the translation session. Use `start` to begin tra
 
 <ParamField path="start.debug_level" type="integer" default="0" toc={true}>
   Debug level for logging.
+  Only takes effect when debugging is enabled for the translation service; otherwise the value is ignored.
 </ParamField>
 
 <ParamField path="start.direction" type="string[]" required={true} toc={true}>
-  The direction of the call that should be translated. Possible values: `remote-caller`, `local-caller`.
+  The call directions to translate, as an ordered array. Possible values: `remote-caller`, `local-caller`.
+  At least one direction is required.
+  The order of the array decides how `from_lang`, `to_lang`, the voices, and the filters are assigned; see [direction order](#direction-order).
 </ParamField>
 
 <ParamField path="start.speech_engine" type="string" default="deepgram" toc={true}>
@@ -133,6 +139,10 @@ or include it in a SWML section executed via [`transfer`](/docs/swml/reference/c
 
 </Tab>
 <Tab title="summarize">
+
+Set `action` to the string `"summarize"` to request a summary that uses the webhook set in `start` and the default summarization prompt.
+Pass a `summarize` object instead to override the webhook or the prompt.
+Either form requires an active translation session.
 
 <ParamField path="action.summarize" type="object" required={true} toc={true}>
   <Tip title="ai_summary vs summarize">
@@ -176,7 +186,7 @@ or include it in a SWML section executed via [`transfer`](/docs/swml/reference/c
   The message to be injected.
 </ParamField>
 
-<ParamField path="inject.direction" type="string" required={true} default="local-caller" toc={true}>
+<ParamField path="inject.direction" type="string" required={true} toc={true}>
   The direction of the message. Possible values: `remote-caller`, `local-caller`.
 </ParamField>
 
@@ -184,6 +194,17 @@ or include it in a SWML section executed via [`transfer`](/docs/swml/reference/c
 
 </Tab>
 </Tabs>
+
+## Direction order
+
+`start.direction` is an ordered array, and the order decides how the language, voice, and filter settings are applied to each direction:
+
+| Position in `direction` | Translated from | Translated into | Voice | Filter |
+|---|---|---|---|---|
+| First | `to_lang` | `from_lang` | `from_voice` | `filter_to` |
+| Second, if present | `from_lang` | `to_lang` | `to_voice` | `filter_from` |
+
+For example, with `from_lang: en-US`, `to_lang: es-ES`, and `direction: [remote-caller, local-caller]`, the `remote-caller` direction is translated from Spanish into English and spoken with `from_voice`, and the `local-caller` direction is translated from English into Spanish and spoken with `to_voice`. Listing `local-caller` first swaps these assignments.
 
 ## Action usage context
 
@@ -283,6 +304,28 @@ live_translate:
 
   </Tab>
   <Tab title="Summarize">
+
+Request a summary with the session's webhook and the default prompt:
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+live_translate:
+  action: summarize
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "live_translate": {
+    "action": "summarize"
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+Override the webhook and prompt:
 
 <CodeBlocks>
 <CodeBlock title="YAML">
