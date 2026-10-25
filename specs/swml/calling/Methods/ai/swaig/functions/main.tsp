@@ -96,7 +96,7 @@ model SWAIGFunctionBase {
   @doc("""
     Password for basic auth on this function's webhook.
     Deprecated. Use `web_hook_auth_password` instead.
-    This alias is read on individual functions only. The `ai` SWAIG `defaults` object does not accept it.
+    The alias is used only when `web_hook_auth_password` is not set. The same fallback applies on the `ai` SWAIG `defaults` object.
     """)
   web_hook_auth_pass?: string;
 
@@ -125,13 +125,13 @@ model UserSWAIGFunction is SWAIGFunctionBase {
 
 @summary("startup_hook Function")
 model StartUpHookSWAIGFunction is SWAIGFunctionBase {
-  @doc("${functionDescription} For the start_hook function, the function name is 'start_hook'.")
+  @doc("${functionDescription} The reserved `startup_hook` function runs when the conversation starts.")
   function: "startup_hook";
 }
 
 @summary("hangup_hook Function")
 model HangUpHookSWAIGFunction is SWAIGFunctionBase {
-  @doc("${functionDescription} For the stop_hook function, the function name is 'stop_hook'.")
+  @doc("${functionDescription} The reserved `hangup_hook` function runs when the conversation ends.")
   function: "hangup_hook";
 }
 
