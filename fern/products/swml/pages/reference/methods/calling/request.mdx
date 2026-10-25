@@ -22,12 +22,18 @@ Send a GET, POST, PUT, or DELETE request to a remote URL.
 
 
 <ParamField path="request.method" type="string" required={true} toc={true}>
-  Request type. `GET`\|`POST`\|`PUT`\|`DELETE`
+  Request type. `GET`\|`POST`\|`PUT`\|`DELETE`. A SWML variable reference is also accepted; it must resolve to one of these methods.
 </ParamField>
 
 
 <ParamField path="request.headers" type="object" toc={true}>
-  Object containing HTTP headers to set. Valid header values are `Accept`, `Authorization`, `Content-Type`, `Range`, and custom `X-` headers
+  Object mapping HTTP header names to string values. Valid header names are `Accept`, `Authorization`, `Content-Type`, and
+  `Range` (case-insensitive), and custom headers that start with `X-` (or `x-`) followed by one or more ASCII letters, digits,
+  hyphens, or underscores.
+
+  Header values support variable substitution. After substitution, a value must be non-empty and contain only printable ASCII
+  characters (spaces included) other than the backslash; tabs, line breaks, and non-ASCII characters aren't allowed. Entries
+  with an invalid name, a non-string value, or an invalid value are skipped with a warning, and the request is still sent.
 </ParamField>
 
 
@@ -36,13 +42,15 @@ Send a GET, POST, PUT, or DELETE request to a remote URL.
 </ParamField>
 
 
-<ParamField path="request.connect_timeout" type="number" default="0" toc={true}>
-  Maximum time in seconds to wait for a connection. Default is `0` (no timeout).
+<ParamField path="request.connect_timeout" type="number" default="5" toc={true}>
+  Maximum time in seconds to wait for a connection, applied in whole seconds. A value of `0` uses the default, and values
+  above `30` are capped at 30 seconds.
 </ParamField>
 
 
-<ParamField path="request.timeout" type="number" default="0" toc={true}>
-  Maximum time in seconds to wait for a response. Default is `0` (no timeout).
+<ParamField path="request.timeout" type="number" default="5" toc={true}>
+  Maximum time in seconds to wait for a response, applied in whole seconds. A value of `0` uses the default, and values above
+  `30` are capped at 30 seconds.
 </ParamField>
 
 
@@ -57,12 +65,16 @@ Send a GET, POST, PUT, or DELETE request to a remote URL.
 Set by the method:
 
 - **request_url:** (out) URL the request was sent to.
-- **request_result:** (out) `success` | `failed`.
-- **return_value:** (out) The same value as the `request_result`.
+- **request_result:** (out) `success` when the HTTP response code is from 200 to 299, otherwise `failed`, including when no
+  response code is received. This result is based only on the response code, not on whether the body parses as JSON. A `failed`
+  result doesn't by itself stop the document; execution continues with the next method.
 - **request_response_code:** (out) HTTP response code from the request.
-- **request_response_headers.`<header name lowercase>`:** (out) HTTP response headers. Header names should be normalized to lowercase and trimmed of whitespace. A maximum of 64 headers are saved. Ex: `${request_response_headers.content-type}`.
+- **request_response_headers.`<header name lowercase>`:** (out) HTTP response headers. Header names are converted to lowercase,
+  and header values are trimmed of surrounding whitespace. Ex: `${request_response_headers.content-type}`.
 - **request_response_body:** (out) Raw HTTP response body. This is limited to 64KB.
 - **request_response.`<object_field>`:** (out) Variables saved from the response if `save_variables` is true and parsed as JSON.
+  The parsed response can nest objects and arrays at most 62 levels deep, counting the outermost object or array. A deeper
+  response isn't saved, and a [`relay_script_nested_too_deep`](/docs/swml/reference/errors) error is reported.
 
 For example, if the server responds with the following JSON:
 
