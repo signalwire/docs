@@ -21,7 +21,7 @@ To stop call recordings started with `record_call`, use the [`stop_record_call`]
 <Indent>
 
 <ParamField path="record_call.control_id" type="string" default="Auto-generated, saved to record_control_id variable" toc={true}>
-  Identifier for this recording, to use with [`stop_record_call`](/docs/swml/reference/calling/stop-record-call)
+  Identifier for this recording, to use with [`stop_record_call`](/docs/swml/reference/calling/stop-record-call). After variable expansion, the identifier can't contain `{`, `}`, commas, semicolons, apostrophes, backslashes, or ASCII control characters; if it does, the recording fails to start.
 </ParamField>
 
 
@@ -46,12 +46,12 @@ To stop call recordings started with `record_call`, use the [`stop_record_call`]
 
 
 <ParamField path="record_call.beep" type="boolean" default="false" toc={true}>
-  Whether to play a beep before recording
+  Whether to play a beep when recording starts. Recording starts at the same time as the beep, so the beep can be included in the recording.
 </ParamField>
 
 
 <ParamField path="record_call.input_sensitivity" type="number" default="44.0" toc={true}>
-  How sensitive the recording voice activity detector is to background noise? A larger value is more sensitive. Allowed values from `0.0` to `100.0`.
+  How sensitive the recording voice activity detector is to background noise? A larger value is more sensitive. Allowed values from `0.0` to `100.0`. Only used when `initial_timeout` or `end_silence_timeout` is greater than `0`; with both at their default of `0`, the recording is continuous and this setting is ignored.
 </ParamField>
 
 
@@ -65,8 +65,8 @@ To stop call recordings started with `record_call`, use the [`stop_record_call`]
 </ParamField>
 
 
-<ParamField path="record_call.max_length" type="number" toc={true}>
-  Maximum length of the recording in seconds.
+<ParamField path="record_call.max_length" type="number" default="0" toc={true}>
+  Maximum length of the recording in seconds. `0` sets no maximum length; the recording can still end for other reasons, such as a terminator digit or [`stop_record_call`](/docs/swml/reference/calling/stop-record-call).
 </ParamField>
 
 
@@ -83,15 +83,16 @@ Set by the method:
 - **record_call_url:** (out) the URL of the newly started recording.
 - **record_call_result:** (out) `success` | `failed`.
 - **record_control_id:** (out) control ID of this recording.
+- **record_call_start:** (out) Unix timestamp, in microseconds, of when the recording start was acknowledged. Set only when the recording starts successfully; a failed attempt leaves any previous value unchanged. It can be slightly earlier than the first recorded audio frame, which the status callback reports as `params.first_frame_time`.
 
 ## **StatusCallbacks**
 
 <Markdown src="/snippets/common/_status-callback-advisory.mdx" />
 
-A POST request will be sent to `status_url` with a JSON payload like the following:
+A POST request will be sent to `status_url` with a JSON payload like the following for each recording state change:
 
 <ParamField path="event_type" type="string" toc={true}>
-  The type of event. Always `calling.call.record` for this method.
+  The type of event. `calling.call.record` for recording state notifications.
 </ParamField>
 
 
@@ -137,7 +138,7 @@ A POST request will be sent to `status_url` with a JSON payload like the followi
 
 
 <ParamField path="params.state" type="string" toc={true}>
-  The current recording state. **Valid values:** `recording`, `paused`, `finished`, `no_input`, `error`.
+  The current recording state. **Valid values:** `recording`, `paused`, `finished`, `no_input`. Request errors arrive as a separate `calling.error` event; see [error notifications](#error-notifications).
 </ParamField>
 
 
@@ -172,7 +173,7 @@ A POST request will be sent to `status_url` with a JSON payload like the followi
 
 
 <ParamField path="params.first_frame_time" type="number" toc={true}>
-  Unix timestamp (float) of the first recorded audio frame. Present when state is `finished`.
+  Unix timestamp (float) of the first recorded audio frame. Can be present when the recording ends (`finished` or `no_input`) and the first-frame time is available.
 </ParamField>
 
 
@@ -192,19 +193,27 @@ A POST request will be sent to `status_url` with a JSON payload like the followi
 
 <Indent>
 
-<ParamField path="record.audio.format" type="string" toc={true}>
+<ParamField path="params.record.audio" type="object" toc={true}>
+  The audio settings the recording ran with.
+</ParamField>
+
+<Indent>
+
+<ParamField path="params.record.audio.format" type="string" toc={true}>
   Recording format. **Valid values:** `wav`, `mp3`, `mp4`.
 </ParamField>
 
 
-<ParamField path="record.audio.direction" type="string" toc={true}>
+<ParamField path="params.record.audio.direction" type="string" toc={true}>
   Direction of the audio recorded. **Valid values:** `speak`, `listen`, `both`.
 </ParamField>
 
 
-<ParamField path="record.audio.stereo" type="boolean" toc={true}>
+<ParamField path="params.record.audio.stereo" type="boolean" toc={true}>
   Whether the recording was made in stereo mode.
 </ParamField>
+
+</Indent>
 
 </Indent>
 
@@ -242,6 +251,10 @@ A POST request will be sent to `status_url` with a JSON payload like the followi
   }
 }
 ```
+
+### Error notifications
+
+When the recording request itself fails, `status_url` can also receive a separate event with `event_type` set to `calling.error` instead of a recording state. Its `params.error` object carries the error `code` and `message`. Not every failure produces this event.
 
 ---
 
