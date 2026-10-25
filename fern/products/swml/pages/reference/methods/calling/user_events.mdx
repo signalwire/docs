@@ -11,7 +11,10 @@ max-toc-depth: 3
 
 Allows the user to set and send events to the connected client on the call. This is useful for triggering actions on the client side.
 Commonly used with the [browser-sdk][browser-sdk].
-Accepts an object mapping event names to values. The event object can be any valid JSON object.
+Each `user_event` method sends one event, whose payload is the `event` object.
+
+On an unanswered inbound call, `user_event` first attempts to answer the call before sending the event. Outbound calls and
+calls that are already answered aren't answered again.
 
 <ParamField path="user_event" type="object" required={true} toc={true}>
   An object that accepts the following properties.
@@ -20,15 +23,23 @@ Accepts an object mapping event names to values. The event object can be any val
 
 ## **Properties**
 
-<ParamField path="user_event.event" type="any" required={true} toc={true}>
-  An object mapping event names to values. The event object can be any valid JSON object.
+<ParamField path="user_event.event" type="object | string" required={true} toc={true}>
+  The payload of one custom event: an object that can contain any JSON values. Instead of an object, you can pass a SWML
+  variable reference, such as `'${my_event}'`, that resolves to an event object.
 </ParamField>
 
 
 ## **Event Object**
 
-The `event` parameter can be any valid JSON object. 
-Any key-value pair in the object is sent to the client as an event type called: `user_event`.
+The `event` object is sent to the client as the payload of a single event of type `user_event`. To send several events, use
+several `user_event` methods.
+
+String values in the payload, including those inside nested objects and arrays, are expanded as SWML variables before the
+event is sent. Object keys aren't expanded.
+
+SignalWire adds call details such as `call_id`, `node_id`, and `segment_id` at the top level of the payload, so top-level
+fields aren't guaranteed to arrive unchanged. Put your custom data under your own key, as in the examples below, to avoid
+name collisions.
 
 The client can listen for these events using the [on-method][on-method].
 ## **Examples**
@@ -73,7 +84,9 @@ sections:
 </CodeBlock>
 </CodeBlocks>
 
-### Send multiple events with different payloads
+### Send one event with multiple payload fields
+
+The `eventA` and `eventB` fields below are both part of a single event's payload.
 
 <CodeBlocks>
 <CodeBlock title="YAML">
@@ -89,7 +102,7 @@ sections:
             count: 42
             active: true
     - play:
-        url: 'say: Multiple events sent.'
+        url: 'say: Event sent.'
 ```
 </CodeBlock>
 <CodeBlock title="JSON">
@@ -113,7 +126,54 @@ sections:
       },
       {
         "play": {
-          "url": "say: Multiple events sent."
+          "url": "say: Event sent."
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### Send an event payload stored in a variable
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - set:
+        order_update:
+          order:
+            id: '1234'
+            status: shipped
+            caller: '${call.from}'
+    - user_event:
+        event: '${order_update}'
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "set": {
+          "order_update": {
+            "order": {
+              "id": "1234",
+              "status": "shipped",
+              "caller": "${call.from}"
+            }
+          }
+        }
+      },
+      {
+        "user_event": {
+          "event": "${order_update}"
         }
       }
     ]
