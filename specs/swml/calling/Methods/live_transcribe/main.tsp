@@ -37,11 +37,17 @@ model TranscribeStartAction {
     @example(30000)
     speech_timeout?: integer | SWMLVar = 60000;
 
-    @doc("Voice activity detection silence time in milliseconds. Default depends on speech engine: `300` for Deepgram, `500` for Google.")
+    @doc("""
+      Voice activity detection silence time in milliseconds. Default depends on the speech engine: `700` for Deepgram, `500` for Google.
+      Omitting the value or setting it to `0` uses the engine default.
+      """)
     @example(500)
-    vad_silence_ms?: integer | SWMLVar = 300;
+    vad_silence_ms?: integer | SWMLVar = 700;
 
-    @doc("Voice activity detection threshold (0-1800).")
+    @doc("""
+      Voice activity detection threshold (0-1800).
+      Omitting the value or setting it to `0` uses the default of `400`; `0` does not set a zero threshold.
+      """)
     @example(400)
     vad_thresh?: integer | SWMLVar = 400;
 
@@ -49,16 +55,29 @@ model TranscribeStartAction {
     @example(0)
     debug_level?: integer | SWMLVar = 0;
 
-    @doc("The direction of the call that should be transcribed.")
-    direction: TranscribeDirection[];
+    @doc("""
+      The direction of the call that should be transcribed.
+      Accepts a SWML variable reference for the whole array or for each item; resolved values must be `remote-caller` or `local-caller`.
+      """)
+    direction: (TranscribeDirection | SWMLVar)[] | SWMLVar;
 
-    @doc("The speech engine to use for speech recognition.")
+    @doc("""
+      The speech engine to use for speech recognition.
+      Accepts a SWML variable reference that resolves to `deepgram` or `google`.
+      """)
     @example(SpeechEngine.google)
-    speech_engine?: SpeechEngine = SpeechEngine.deepgram;
+    speech_engine?: SpeechEngine | SWMLVar = SpeechEngine.deepgram;
 
     @doc("The AI prompt that instructs how to summarize the conversation when `ai_summary` is enabled.")
     @example("Summarize the key points of this conversation.")
     ai_summary_prompt?: string;
+
+    @doc("""
+      Words or phrases that help speech recognition pick out specific terms, such as product names or industry jargon.
+      Each hint is a plain string; empty strings are ignored.
+      """)
+    @example(#["SignalWire", "SWML"])
+    hints?: string[] | SWMLVar;
   };
 }
 
