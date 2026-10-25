@@ -55,13 +55,18 @@ model AIPromptBase {
   frequency_penalty?: float | SWMLVar = 0;
 }
 
+const aiPromptStepsDescription: string = """
+  An array of steps for a conversation that needs only one context. It works like the `steps` of a
+  `default` context. Ignored when `contexts` is set.
+  """;
+
 @summary("Prompt with POM")
 model AIPromptPom is AIPromptBase {
   @doc("""
     Prompt Object Model (POM) is a structured data format for composing, organizing, and rendering prompt instructions for AI agents.
     POM ensures that the prompt is structured in a way that is best for the AI agent to understand and execute.
-    The first item in the array MUST be FirstPOMSection (with optional title).
-    All subsequent items MUST be PomSection (with required title and body).
+    Each section in the array, at any position, has an optional `title` and needs a `body`, `bullets`, or both;
+    sections can nest further sections under `subsections`.
     """)
   @minItems(1)
   pom: POM[];
@@ -72,6 +77,9 @@ model AIPromptPom is AIPromptBase {
     Additionally, more context steps can be defined as any other key in the object.
     """)
   contexts?: Contexts;
+
+  @doc(aiPromptStepsDescription)
+  steps?: ContextSteps[];
 }
 
 @summary("Prompt with Text")
@@ -86,6 +94,9 @@ model AIPromptText is AIPromptBase {
     Additionally, more context steps can be defined as any other key in the object.
     """)
   contexts?: Contexts;
+
+  @doc(aiPromptStepsDescription)
+  steps?: ContextSteps[];
 }
 
 @summary("Post-Prompt with Text")

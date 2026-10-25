@@ -17,11 +17,11 @@ model PomSectionBase {
 
   @doc("Whether to number the section")
   @example(true)
-  numbered?: boolean | SWMLVar;
+  numbered?: boolean;
 
   @doc("Whether to number the bullets")
   @example(false)
-  numberedBullets?: boolean | SWMLVar;
+  numberedBullets?: boolean;
 }
 
 @summary("Section with Body")

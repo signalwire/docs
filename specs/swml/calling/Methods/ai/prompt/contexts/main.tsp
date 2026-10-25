@@ -14,10 +14,57 @@ model Contexts {
   ...TypeSpec.Record<ContextsObject>;
 }
 
+@summary("Context history mode")
+union ContextHistoryMode {
+  @doc("Hide the instructions of earlier steps, but keep the conversation.")
+  "default",
+
+  @doc("Keep the instructions of earlier steps and the conversation.")
+  "keep",
+
+  @doc("Hide the instructions of earlier steps and the earlier conversation, including function calls and their results.")
+  "hide",
+}
+
 model ContextObjectBase {
   @summary("steps")
   @doc("An array of step objects that define the conversation flow for this context. Steps execute sequentially unless otherwise specified.")
   steps: ContextSteps[];
+
+  @doc("""
+    The name of the step to start at when this context is entered, matched case-insensitively.
+    When omitted, or when no step has that name, the context starts at its first step.
+    """)
+  @example("collect_details")
+  initial_step?: string;
+
+  @doc("""
+    How much of the earlier conversation the AI sees when it moves from one step to the next in this context.
+    **Default:** `default`.
+    """)
+  @example("hide")
+  history?: ContextHistoryMode;
+
+  @doc("""
+    Steps the AI can move to when it switches to this context, before the current step's own
+    `valid_steps` apply. Include `next` to allow the following step.
+    """)
+  @example(#["collect_details", "next"])
+  valid_steps?: string[];
+
+  @doc("""
+    Contexts the AI can switch to when it switches to this context, before the current step's own
+    `valid_contexts` apply.
+    """)
+  @example(#["support"])
+  valid_contexts?: string[];
+
+  @doc("""
+    A post-prompt for the end-of-call summary. When the AI switches to this context, it replaces
+    `ai.post_prompt` until the AI switches to a context without one. Takes the same properties as
+    `ai.post_prompt`.
+    """)
+  post_prompt?: AIPostPrompt;
 
   @doc("When `true`, resets conversation history to only the system prompt when entering this context. Useful for focused tasks that shouldn't be influenced by previous conversation. **Default:** `false`.")
   @example(true)
@@ -32,15 +79,16 @@ model ContextObjectBase {
 
 @summary("ContextsPOMObject")
 model ContextsPOMObject is ContextObjectBase {
-  @doc("An array of objects that define the POM for the context. POM is the Post-Prompt Object Model, which is used to define the flow of the conversation.")
+  @doc("Instructions for this context as a Prompt Object Model (POM). They are added before the instructions of each step in the context.")
   @minItems(1)
   pom?: POM[];
 }
 
+@summary("ContextsTextObject")
 model ContextsTextObject is ContextObjectBase {
-  @doc("The text to send to the agent.")
+  @doc("Instructions for this context. They are added before the instructions of each step in the context.")
   @example("You are now helping the customer with their order.")
-  text?: string;
+  prompt?: string;
 }
 
 union ContextsObject {

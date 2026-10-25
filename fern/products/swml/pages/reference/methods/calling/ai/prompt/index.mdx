@@ -78,7 +78,7 @@ The `prompt` property accepts one of the following objects:
 
 
 <ParamField path="prompt.pom" type="object[]" required={true} toc={true}>
-  An array of objects that defines the prompt object model (POM) for the AI. The POM is a structured data format for organizing and rendering prompts that are clearly structured and easy to understand. By breaking prompts into sections, users can manage each section independently and then combine them into a single cohesive prompt. SignalWire renders the POM into a markdown document before sending it to the LLM. If the `text` parameter is present while using `pom`, the `pom` prompt will be used instead of `text`.
+  An array of objects that defines the prompt object model (POM) for the AI. The POM is a structured data format for organizing and rendering prompts that are clearly structured and easy to understand. By breaking prompts into sections, users can manage each section independently and then combine them into a single cohesive prompt. SignalWire renders the POM into a markdown document before sending it to the LLM. Set either `pom` or `text`, not both.
 </ParamField>
 
 <Indent>
@@ -89,7 +89,7 @@ The `prompt` property accepts one of the following objects:
 
 <ParamField path="pom[].body" type="string" toc={true}>
   The body of the section. This will be a paragraph in the rendered prompt.
-  Required if `bullets` is not present.
+  Required if `bullets` is not present. Every section, at any position or depth, needs a `body`, `bullets`, or both.
 </ParamField>
 
 <ParamField path="pom[].bullets" type="string[]" toc={true}>
@@ -161,7 +161,39 @@ The `prompt` property accepts one of the following objects:
 <Indent>
 
 <ParamField path="*.steps" type="object[]" required={true} toc={true}>
-  An array of step objects that define the conversation flow for this context. Steps execute sequentially unless otherwise specified. Each step contains either a `text` string or a `pom` array to provide prompt instructions.
+  An array of step objects that define the conversation flow for this context. Steps execute sequentially unless otherwise specified. See [steps](#steps) for the properties of each step.
+</ParamField>
+
+<ParamField path="*.prompt" type="string" toc={true}>
+  Instructions for this context. They are added before the instructions of each step in the context.
+</ParamField>
+
+<ParamField path="*.pom" type="object[]" toc={true}>
+  Instructions for this context as a POM, used instead of `prompt`. Sections take the same properties as [`prompt.pom`](#promptpom).
+</ParamField>
+
+<ParamField path="*.initial_step" type="string" toc={true}>
+  The name of the step to start at when this context is entered, matched case-insensitively. When omitted, or when no step has that name, the context starts at its first step.
+</ParamField>
+
+<ParamField path="*.history" type="string" default="default" toc={true}>
+  How much of the earlier conversation the AI sees when it moves from one step to the next in this context:
+
+  - `default` hides the instructions of earlier steps but keeps the conversation.
+  - `keep` keeps the instructions of earlier steps and the conversation.
+  - `hide` hides the instructions of earlier steps and the earlier conversation, including function calls and their results.
+</ParamField>
+
+<ParamField path="*.valid_steps" type="string[]" toc={true}>
+  Steps the AI can move to when it switches to this context, before the current step's own `valid_steps` apply. Include `next` to allow the following step.
+</ParamField>
+
+<ParamField path="*.valid_contexts" type="string[]" toc={true}>
+  Contexts the AI can switch to when it switches to this context, before the current step's own `valid_contexts` apply.
+</ParamField>
+
+<ParamField path="*.post_prompt" type="object" toc={true}>
+  A post-prompt for the end-of-call summary. When the AI switches to this context, it replaces [`ai.post_prompt`](/docs/swml/reference/calling/ai#aipost_prompt) until the AI switches to a context without one. Takes the same properties as `ai.post_prompt`.
 </ParamField>
 
 <ParamField path="*.isolated" type="boolean" default="false" toc={true}>
@@ -187,6 +219,142 @@ The `prompt` property accepts one of the following objects:
 </ParamField>
 
 </Indent>
+
+</Indent>
+
+<ParamField path="prompt.steps" type="object[]" toc={true}>
+  An array of steps for a conversation that needs only one context. It works like the `steps` of a `default` context, with the properties described in [steps](#steps). Ignored when `prompt.contexts` is set.
+</ParamField>
+
+### Steps
+
+Each entry in a context's `steps`, or in `prompt.steps`, is a step object. A step gives its instructions in `text` or `pom`; a step with `reset` or `gather_info` doesn't need either.
+
+<ParamField path="steps[].name" type="string" required={true} toc={true}>
+  The name of the step, unique within its context. It can't be `next`, which refers to the following step.
+</ParamField>
+
+<ParamField path="steps[].text" type="string" toc={true}>
+  The instructions for this step. Required unless the step sets `pom`, `reset`, or `gather_info`. Set either `text` or `pom`, not both.
+</ParamField>
+
+<ParamField path="steps[].pom" type="object[]" toc={true}>
+  The instructions for this step as a POM. Sections take the same properties as [`prompt.pom`](#promptpom).
+</ParamField>
+
+<ParamField path="steps[].step_criteria" type="string" toc={true}>
+  The criteria that must be met before the AI moves on from this step, given to the AI as an instruction. Custom criteria are highly recommended to get the intended behavior.
+</ParamField>
+
+<ParamField path="steps[].functions" type="string[]" toc={true}>
+  Names of the SWAIG functions the AI can call during this step.
+</ParamField>
+
+<ParamField path="steps[].valid_steps" type="string[]" toc={true}>
+  Names of the steps the AI can move to from this step. Include `next` to allow the following step. When omitted, the AI can move to the next step in the context. An empty array means the AI isn't offered a move to another step from this one; a `change_step` action returned by a SWAIG function still works.
+</ParamField>
+
+<ParamField path="steps[].valid_contexts" type="string[]" toc={true}>
+  Names of the contexts the AI can switch to from this step. Each must be a context defined in `prompt.contexts`.
+</ParamField>
+
+<ParamField path="steps[].skip_user_turn" type="boolean" default="false" toc={true}>
+  If `true`, the AI responds to this step's instructions without waiting for the caller to speak first. It doesn't move to the next step on its own; set `skip_to_next_step` as well for that.
+</ParamField>
+
+<ParamField path="steps[].skip_to_next_step" type="boolean" default="false" toc={true}>
+  Used together with `skip_user_turn`: after the AI's response, the conversation moves to the next step. Has no effect on its own.
+</ParamField>
+
+<ParamField path="steps[].end" type="boolean" default="false" toc={true}>
+  If `true`, this is the last step in the context. Can't be used together with `valid_steps`.
+</ParamField>
+
+<ParamField path="steps[].reset" type="object" toc={true}>
+  Starts a new conversation context when this step becomes active, and makes this the last step in the context, like `end`.
+</ParamField>
+
+<Indent>
+
+<ParamField path="reset.system_prompt" type="string" toc={true}>
+  Instructions for the new context. Prompt variables are expanded, as in `prompt.text`.
+</ParamField>
+
+<ParamField path="reset.user_prompt" type="string" toc={true}>
+  A message added as if the caller had said it, to open the new context. When `consolidate` is not `true`, defaults to `hello`.
+</ParamField>
+
+<ParamField path="reset.consolidate" type="boolean" default="false" toc={true}>
+  If `true`, the conversation so far is summarized and the summary is carried into the new context.
+</ParamField>
+
+<ParamField path="reset.full_reset" type="boolean" default="false" toc={true}>
+  If `true`, `system_prompt` replaces the agent's original prompt. Otherwise the conversation is cleared and `system_prompt` is added as a new instruction.
+</ParamField>
+
+</Indent>
+
+<ParamField path="steps[].gather_info" type="object" toc={true}>
+  Asks the caller a list of questions and stores the answers in [`global_data`](/docs/swml/reference/calling/ai#aiglobal_data). While questions remain, the AI asks them one at a time and doesn't move to another step.
+</ParamField>
+
+<Indent>
+
+<ParamField path="gather_info.questions" type="object[]" required={true} toc={true}>
+  The questions to ask, in order. At least one is required.
+</ParamField>
+
+<Indent>
+
+<ParamField path="questions[].key" type="string" required={true} toc={true}>
+  The key the answer is stored under in `global_data`, or under `output_key` when it is set.
+</ParamField>
+
+<ParamField path="questions[].question" type="string" required={true} toc={true}>
+  The question the AI asks the caller.
+</ParamField>
+
+<ParamField path="questions[].type" type="string" default="string" toc={true}>
+  The type of the answer, as a JSON Schema type such as `string`, `number`, `integer`, or `boolean`.
+</ParamField>
+
+<ParamField path="questions[].confirm" type="boolean" default="false" toc={true}>
+  If `true`, the AI reads the answer back and gets the caller's confirmation before accepting it.
+</ParamField>
+
+<ParamField path="questions[].prompt" type="string" toc={true}>
+  Extra instructions for this question, added after the question.
+</ParamField>
+
+<ParamField path="questions[].functions" type="string[]" toc={true}>
+  Names of SWAIG functions the AI can call while asking this question. Other functions are unavailable during the question.
+</ParamField>
+
+<ParamField path="questions[].isolated" type="boolean" toc={true}>
+  If `true`, the answers to the other questions in this gather are hidden from the AI while it asks this one, so it must ask rather than work out the answer. Defaults to the `isolated` value of `gather_info`.
+</ParamField>
+
+</Indent>
+
+<ParamField path="gather_info.prompt" type="string" toc={true}>
+  Instructions added before the first question.
+</ParamField>
+
+<ParamField path="gather_info.pom" type="object[]" toc={true}>
+  Instructions added before the first question, as a POM. Used when `prompt` is not set.
+</ParamField>
+
+<ParamField path="gather_info.output_key" type="string" toc={true}>
+  A `global_data` key to store all the answers under, as an object keyed by each question's `key`. When omitted, each answer is stored directly in `global_data` under its `key`.
+</ParamField>
+
+<ParamField path="gather_info.completion_action" type="string" toc={true}>
+  What to do after the last question is answered: `next_step` moves to the following step, and any other value is the name of the step to move to. When omitted, the conversation stays on the current step.
+</ParamField>
+
+<ParamField path="gather_info.isolated" type="boolean" default="false" toc={true}>
+  If `true`, the answers to the other questions are hidden from the AI while it asks each question. A question's own `isolated` overrides this.
+</ParamField>
 
 </Indent>
 
@@ -246,7 +414,6 @@ sections:
   main:
     - ai:
         prompt:
-          text: "Prompt is defined in pom"
           pom:
             - title: "Agent Personality"
               body: "You are a friendly and engaging assistant. Keep the conversation light and fun."
@@ -279,7 +446,6 @@ sections:
       {
         "ai": {
           "prompt": {
-            "text": "Prompt is defined in pom",
             "pom": [
               {
                 "title": "Agent Personality",
