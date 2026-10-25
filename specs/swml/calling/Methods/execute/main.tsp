@@ -36,7 +36,11 @@ model Execute {
     @example("https://example.com/swml-handler")
     dest: string;
 
-    @doc("Named parameters to send to section or URL")
+    @doc("""
+      Named parameters to send to section or URL.
+      After variable expansion, `params` can nest objects and arrays at most 63 levels deep, counting the `params` object itself.
+      If `params` is nested deeper, the section or URL is not executed.
+      """)
     @example(#{ caller_id: "+15551234567", language: "en-US" })
     params?: {
       ...TypeSpec.Record<unknown>;
@@ -52,8 +56,10 @@ model Execute {
     on_return?: SWMLMethod[];
 
     @doc("""
-      Action to take based on the result of the call. This will run once the peer leg of the call has ended.
-      Will use the switch method when the return_value is an object, and will use the cond method when the return_value is an array.
+      Instructions to run based on the value returned by the executed section or URL.
+      `result` is processed after the section or URL returns and before `on_return`, and only when the section or URL set a `return_value` (for example, with the return method).
+      An object-shaped `result` is handled like the switch method: its `case` keys are matched against `return_value`.
+      An array-shaped `result` is handled like the cond method: a list of conditions checked in order.
       """)
     result?: ExecuteSwitch | Cond.cond;
   };
