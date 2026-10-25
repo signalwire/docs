@@ -14,8 +14,10 @@ the matching `label`.
 
 ## **Properties**
 
-<ParamField path="goto" type="object" required={true} toc={true}>
-  An object that accepts the following properties.
+<ParamField path="goto" type="string | object" required={true} toc={true}>
+  Either a label name (shorthand) or an object that accepts the properties below. The shorthand
+  jumps to the label exactly as written, without variable expansion, with the default `max` of
+  100.
 </ParamField>
 
 <Indent>
@@ -25,9 +27,27 @@ the matching `label`.
 </ParamField>
 
 
-<ParamField path="goto.max" type="integer" default="100" toc={true}>
-  Maximum number of times this `goto` can jump to its label. Once the limit is reached, the
-  section ends without running any further steps.
+<ParamField path="goto.max" type="integer | string" default="100" toc={true}>
+  Maximum number of jumps to `label`. Accepts an integer or a `%{...}` variable reference, such as
+  `%{params.max_retries}`; a reference is expanded and then converted to an integer. A reference
+  that doesn't resolve allows no jumps — it does not fall back to 100.
+
+  Jumps are counted per target label for the whole run, not per `goto` step. Every `goto` that
+  targets the same label name shares one count, including `goto` steps in other sections and in
+  documents reached through [`execute`](/docs/swml/reference/messaging/execute) or
+  [`transfer`](/docs/swml/reference/messaging/transfer). Each jump attempt adds one to the count
+  and is allowed while the count is at most this step's `max`.
+
+  When an attempt exceeds `max`, the jump doesn't happen and the steps array that contains the
+  label ends without running its remaining steps. Execution continues with whatever ran that array.
+  A `goto` inside a `switch` case that targets a label in the enclosing section ends that section;
+  a label inside the same case array ends only the case, and the steps after the `switch` still
+  run.
+
+  `max` cannot raise the document's limit of 100 steps, which counts every step including each
+  `label` passed. That limit can stop execution before `max` jumps are reached, and if it is
+  reached while a jump is pending, the run can end with a `swml_goto_label_not_found`
+  [error](/docs/swml/reference/errors).
 </ParamField>
 
 </Indent>
@@ -117,3 +137,145 @@ sections:
 </CodeBlock>
 </CodeBlocks>
 
+
+### Read the retry limit from a variable
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - execute:
+        dest: lookup
+        params:
+          max_retries: 2
+    - reply: "Lookup finished with result: %{request_result}"
+  lookup:
+    - label: try_lookup
+    - request:
+        url: "https://api.example.com/lookup"
+        body:
+          phone: "%{message.from}"
+    - switch:
+        variable: request_result
+        case:
+          timeout:
+            - goto:
+                label: try_lookup
+                max: "%{params.max_retries}"
+        default: []
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "execute": {
+          "dest": "lookup",
+          "params": {
+            "max_retries": 2
+          }
+        }
+      },
+      {
+        "reply": "Lookup finished with result: %{request_result}"
+      }
+    ],
+    "lookup": [
+      {
+        "label": "try_lookup"
+      },
+      {
+        "request": {
+          "url": "https://api.example.com/lookup",
+          "body": {
+            "phone": "%{message.from}"
+          }
+        }
+      },
+      {
+        "switch": {
+          "variable": "request_result",
+          "case": {
+            "timeout": [
+              {
+                "goto": {
+                  "label": "try_lookup",
+                  "max": "%{params.max_retries}"
+                }
+              }
+            ]
+          },
+          "default": []
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### Jump forward with the shorthand
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - switch:
+        variable: message.body
+        transform: lowercase_trim
+        case:
+          help:
+            - goto: help
+        default: []
+    - reply: "Thanks for your message!"
+    - return: null
+    - label: help
+    - reply: "Reply STOP to unsubscribe."
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "switch": {
+          "variable": "message.body",
+          "transform": "lowercase_trim",
+          "case": {
+            "help": [
+              {
+                "goto": "help"
+              }
+            ]
+          },
+          "default": []
+        }
+      },
+      {
+        "reply": "Thanks for your message!"
+      },
+      {
+        "return": null
+      },
+      {
+        "label": "help"
+      },
+      {
+        "reply": "Reply STOP to unsubscribe."
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
