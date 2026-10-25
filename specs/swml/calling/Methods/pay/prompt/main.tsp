@@ -1,38 +1,63 @@
 import "@typespec/json-schema";
+import "../../../../Shared/Types/main.tsp";
 import "./actions.tsp";
+import "./play.tsp";
 
 using TypeSpec.JsonSchema;
 
 namespace SWML.Calling;
 
 model PayPrompts {
-  @doc("Array of action objects to execute for this prompt. These actions can either play an audio file or speak a phrase.")
-  actions: PayPromptAction[];
+  @doc("""
+    Array of action objects to execute for this prompt. These actions can either play an audio file or speak a phrase.
+    Ignored when `play` is set. A prompt with neither `play` nor a non-empty `actions` array doesn't replace the default prompt.
+    """)
+  actions?: PayPromptAction[];
 
   @doc("""
-    The payment step this prompt is for. See Payment Steps for a list of available steps.
+    Array of media items to play for this prompt: audio files, text-to-speech, silence, or ringtones.
+    When `play` is present it takes precedence and `actions` is ignored, even if `play` is empty.
+    """)
+  play?: PayPromptPlayItem[];
+
+  @doc("""
+    The payment step this prompt is for.
     
     - `payment-card-number`: Collect the payment card number.
     - `expiration-date`: Collect the payment card expiration date.
     - `security-code`: Collect the payment card security code.
     - `postal-code`: Collect the payment card postal code.
+    - `bank-routing-number`: Collect the bank routing number.
+    - `bank-account-number`: Collect the bank account number.
     - `payment-processing`: The step used during the payment processing.
-    - `payment-completed`: The step used when the payment is completed.
-    - `payment-failed`: The step used when the payment fails.
-    - `payment-cancelled`: The step used when the payment is cancelled.
+    - `payment-completed`: The step used when the payment connector responds with HTTP `200`.
+    - `payment-failed`: The step used when collection fails or the payment connector responds with another HTTP status.
+    - `payment-canceled`: The step used when the payment is canceled.
     """)
   @example("payment-card-number")
-  for: string;
+  for:
+    | "payment-card-number"
+    | "expiration-date"
+    | "security-code"
+    | "postal-code"
+    | "bank-routing-number"
+    | "bank-account-number"
+    | "payment-processing"
+    | "payment-completed"
+    | "payment-failed"
+    | "payment-canceled"
+    | SWMLVar;
 
   @doc("""
-    Specifies which payment attempt(s) this prompt applies to. The value increments when a payment fails.
-     Use a single number (e.g., "1") or space-separated numbers (e.g., "2 3") to target the specific attempts.
+    Space-separated list of the attempts (`1`, `2`, or `3`) this prompt applies to, such as `"1"` or `"2 3"`.
+    Attempts count per payment detail being collected, not per payment: each detail starts again at attempt `1`.
     """)
   @example("1 2")
-  attempts?: string;
+  attempt?: string = "1 2 3";
 
   @doc("""
-    Space-seperated list of card types that are allowed to be used for this prompt.
+    Space-separated list of card types this prompt applies to. Unrecognized values are ignored;
+    if no value is recognized, the prompt applies to every card type.
     
     Supported card types:
         - `visa`
@@ -40,7 +65,6 @@ model PayPrompts {
         - `amex`
         - `maestro`
         - `discover`
-        - `optima`
         - `jcb`
         - `diners-club`
     """)
@@ -59,9 +83,10 @@ model PayPrompts {
         - `invalid-postal-code` - Invalid postal code format
         - `invalid-bank-routing-number` - Invalid bank routing number
         - `invalid-bank-account-number` - Invalid bank account number
-        - `input-matching-failed` - Input matching failed
-        - `session-in-progress` - Concurrent session attempt
+        - `input-matching-failed` - Input matching failed (accepted as a filter value)
         - `card-declined` - Payment declined
+        - `bank-account-declined` - Bank account payment declined
+        - `invalid-bank-account-type` - Unsupported bank account type
     """)
   @example("timeout invalid-card-number")
   error_type?: string;
