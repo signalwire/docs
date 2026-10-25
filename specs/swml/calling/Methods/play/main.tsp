@@ -21,7 +21,7 @@ model PlayBase {
   auto_answer?: boolean | SWMLVar = true;
 
   @doc("""
-    Volume level for the audio file.
+    Volume adjustment for playback, in decibels (dB). Applies to every sound in the list.
     Default is `0`.
     Valid range is -40 to 40.
     """)

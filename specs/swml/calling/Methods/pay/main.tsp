@@ -46,8 +46,8 @@ model Pay {
 
     @doc("""
       Total number of attempts the caller gets to enter each payment detail, such as the card number or expiration date.
-      Each detail has its own attempts. Values from `1` to `3` take effect; any other value keeps the default `1`,
-      which means the caller gets no retry after a failed entry.
+      Each detail has its own attempts. Set a value from `1` to `3`.
+      The default `1` means the caller gets no retry after a failed entry.
       """)
     @example(3)
     max_attempts?: integer | SWMLVar = 1;

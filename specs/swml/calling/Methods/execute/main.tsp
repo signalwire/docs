@@ -39,7 +39,8 @@ model Execute {
     @doc("""
       Named parameters to send to section or URL.
       After variable expansion, `params` can nest objects and arrays at most 63 levels deep, counting the `params` object itself.
-      If `params` is nested deeper, the section or URL is not executed.
+      If `params` is nested deeper, the section or URL is not executed, a `relay_script_nested_too_deep` warning is reported,
+      and the methods after `execute` in the current section don't run.
       """)
     @example(#{ caller_id: "+15551234567", language: "en-US" })
     params?: {

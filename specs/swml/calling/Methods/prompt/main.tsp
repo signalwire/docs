@@ -2,6 +2,10 @@ import "../..";
 
 namespace SWML.Calling;
 
+// The say_* and status_url constraints below are applied to `prompt` only. `play` reads the same
+// fields through the same path, but extending these constraints to `play` is an open engineering
+// question in the SWML audit (play N5), so `play` keeps plain types until that is settled.
+
 // Literal text-to-speech voice name: no whitespace, double quotes, or the characters ,{}()[]<>=/;!@#$%^&*+|~?`
 @pattern("^[^,\\s\"{}()=<>\\[\\]/;!@#$%^&*+|~`?]+$")
 scalar PromptSayVoice extends string;

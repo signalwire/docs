@@ -37,13 +37,10 @@ union ValidConfirmMethods {
 // Confirm-only re-typing of CondReg: same `when`, but branches are limited to ValidConfirmMethods.
 @summary("Confirm condition with When/Then")
 model ConfirmCondReg {
-  ...OmitProperties<CondReg, "then" | "else">;
+  ...OmitProperties<CondReg, "then">;
 
   @doc("Sequence of methods to execute when the condition evaluates to true. Only methods allowed in `confirm` can be used.")
   then: ValidConfirmMethods[];
-
-  @doc("Sequence of methods to execute when none of the other conditions evaluate to true. Only methods allowed in `confirm` can be used.")
-  `else`?: ValidConfirmMethods[];
 }
 
 @summary("Confirm else fallback")
@@ -62,7 +59,15 @@ union ConfirmCondParams {
 @summary("cond method inside confirm")
 model ConfirmCond {
   @summary("cond")
-  @doc("Execute a sequence of instructions depending on the value of a JavaScript condition. Only methods allowed in `confirm` can be used in the branches.")
+  @doc("""
+    Execute a sequence of instructions depending on the value of a JavaScript condition. Only methods allowed in `confirm` can be used in the branches.
+    Conditions are checked in array order. The first condition whose `when` evaluates to true runs its `then` instructions,
+    and the remaining conditions are skipped. The `else` entry runs only when no condition evaluates to true.
+    At most one `else` entry is allowed, and it doesn't have to be the last entry.
+    """)
+  @contains(ConfirmCondElse)
+  @minContains(0)
+  @maxContains(1)
   cond: ConfirmCondParams[];
 }
 

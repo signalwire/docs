@@ -2,9 +2,11 @@ import "../../../Shared/Types/main.tsp";
 
 namespace SWML.Calling;
 
-// Literal recording control ID: no `{`, `}`, comma, semicolon, apostrophe, backslash,
-// or control characters U+0001-U+001F and U+007F. Empty means auto-generated.
-@pattern("^[^{},;'\\\\\\u0001-\\u001f\\u007f]*$")
+// Recording control ID: no `{`, `}`, comma, semicolon, apostrophe, backslash,
+// or control characters U+0001-U+001F and U+007F. Embedded `${...}` / `%{...}`
+// variable references are allowed because the rule applies to the expanded value.
+// Empty means auto-generated.
+@pattern("^(?:[^{},;'\\\\$%\\u0001-\\u001f\\u007f]|[$%](?!\\{)|[$%]\\{[^{}]*\\})*$")
 scalar RecordCallControlId extends string;
 
 @summary("record_call Method")

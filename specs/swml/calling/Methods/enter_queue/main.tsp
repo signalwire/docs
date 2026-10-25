@@ -40,7 +40,7 @@ model EnterQueueObject {
   @doc("""
     SWML to run on the queued caller's call when the caller is pulled from the queue, before the caller is
     bridged with the agent. Use it to play a message to the caller, for example. The connection to the agent
-    continues once the whisper SWML finishes.
+    waits for the whisper SWML to finish, for up to about one minute, and then proceeds.
     Can be either:
     - A URL (http or https) that returns a SWML document
     - An inline SWML document (as a JSON string)
