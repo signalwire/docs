@@ -10,6 +10,8 @@ max-toc-depth: 3
 
 Start background call tap. Media is streamed over Websocket or RTP to customer controlled URI.
 
+For an inbound call that hasn't been answered and isn't ending, the method attempts to answer it before starting the tap.
+
 ## **Properties**
 
 <ParamField path="tap" type="object" required={true} toc={true}>
@@ -19,7 +21,8 @@ Start background call tap. Media is streamed over Websocket or RTP to customer c
 <Indent>
 
 <ParamField path="tap.uri" type="string" required={true} toc={true}>
-  Destination of the tap media stream: `rtp://IP:port`, `ws://example.com`, or `wss://example.com`
+  Destination of the tap media stream: `rtp://IP:port`, `ws://example.com`, or `wss://example.com`.
+  For RTP, `IP` must be a public IPv4 address followed by a port; hostnames, private addresses, and IPv6 addresses aren't accepted.
 </ParamField>
 
 
@@ -28,20 +31,22 @@ Start background call tap. Media is streamed over Websocket or RTP to customer c
 </ParamField>
 
 
-<ParamField path="tap.direction" type="string" toc={true}>
-  speak``
-  Direction of the audio to tap: `speak` for what party says, `listen` for what party hears, `both` for what party hears and says
+<ParamField path="tap.direction" type="string" default="speak" toc={true}>
+  Direction of the audio to tap: `speak` for what party says, `listen` for what party hears, `both` for what party hears and says.
+  Also accepts a [SWML variable](/docs/swml/reference/variables) reference that resolves to one of these values.
 </ParamField>
 
 
-<ParamField path="tap.codec" type="string" toc={true}>
-  PCMU``
-  `PCMU` or `PCMA`
+<ParamField path="tap.codec" type="string" default="PCMU" toc={true}>
+  `PCMU` or `PCMA`.
+  Also accepts a [SWML variable](/docs/swml/reference/variables) reference that resolves to one of these values.
 </ParamField>
 
 
-<ParamField path="tap.rtp_ptime" type="integer" default="20 ms" toc={true}>
+<ParamField path="tap.rtp_ptime" type="integer | string" default="20 ms" toc={true}>
   If using a `rtp://` URI, this optional parameter can set the packetization time of the media in milliseconds. Optional. Default 20 ms.
+  Must be a multiple of 10 from `10` to `120`. A literal value is validated even when `uri` is a WebSocket URI, where it has no effect.
+  Also accepts a [SWML variable](/docs/swml/reference/variables) reference string.
 </ParamField>
 
 
@@ -61,18 +66,18 @@ Set by the method:
 - **tap_control_id:** (out) Control ID of this tap.
 - **tap_rtp_src_addr:** (out) If RTP, source address of the tap stream.
 - **tap_rtp_src_port:** (out) If RTP, source port of the tap stream.
-- **tap_ptime:** (out) Packetization time of the tap stream.
+- **tap_ptime:** (out) Packetization time, in milliseconds, of the tapped call's audio when the tap started. This isn't necessarily the packetization time of the tap stream; for RTP destinations, `rtp_ptime` sets that separately.
 - **tap_codec:** (out) Codec in the tap stream.
-- **tap_rate:** (out) Sample rate in the tap stream.
+- **tap_rate:** (out) Sample rate of the tapped call's audio when the tap started. This isn't necessarily the sample rate of the tap stream.
 
 ## **StatusCallbacks**
 
 <Markdown src="/snippets/common/_status-callback-advisory.mdx" />
 
-A POST request will be sent to `status_url` with a JSON payload like the following:
+A POST request will be sent to `status_url` when the tap changes state, with a JSON payload like the following:
 
 <ParamField path="event_type" type="string" toc={true}>
-  The type of event. Always `calling.call.tap` for this method.
+  The type of event. `calling.call.tap` for tap state notifications.
 </ParamField>
 
 
@@ -138,12 +143,12 @@ A POST request will be sent to `status_url` with a JSON payload like the followi
 
 <Indent>
 
-<ParamField path="tap.type" type="string" toc={true}>
+<ParamField path="params.tap.type" type="string" toc={true}>
   The type of media being tapped (e.g., `audio`).
 </ParamField>
 
 
-<ParamField path="tap.params.direction" type="string" toc={true}>
+<ParamField path="params.tap.params.direction" type="string" toc={true}>
   The direction of audio being tapped.
 </ParamField>
 
@@ -156,32 +161,32 @@ A POST request will be sent to `status_url` with a JSON payload like the followi
 
 <Indent>
 
-<ParamField path="device.type" type="string" toc={true}>
+<ParamField path="params.device.type" type="string" toc={true}>
   The type of device (e.g., `rtp`, `ws`).
 </ParamField>
 
 
-<ParamField path="device.params.addr" type="string" toc={true}>
-  The destination address for the tap stream.
+<ParamField path="params.device.params.addr" type="string" toc={true}>
+  The destination address for the tap stream: the public IPv4 address from your `rtp://` URI.
 </ParamField>
 
 
-<ParamField path="device.params.port" type="number" toc={true}>
+<ParamField path="params.device.params.port" type="number" toc={true}>
   The destination port for the tap stream.
 </ParamField>
 
 
-<ParamField path="device.params.codec" type="string" toc={true}>
+<ParamField path="params.device.params.codec" type="string" toc={true}>
   The audio codec used for the tap stream (e.g., `PCMU`, `PCMA`).
 </ParamField>
 
 
-<ParamField path="device.params.ptime" type="number" toc={true}>
+<ParamField path="params.device.params.ptime" type="number" toc={true}>
   The packetization time in milliseconds. Present for RTP taps only.
 </ParamField>
 
 
-<ParamField path="device.params.uri" type="string" toc={true}>
+<ParamField path="params.device.params.uri" type="string" toc={true}>
   The WebSocket destination URI. Present for WebSocket taps only.
 </ParamField>
 
@@ -189,7 +194,11 @@ A POST request will be sent to `status_url` with a JSON payload like the followi
 
 </Indent>
 
+If a tap command fails, SignalWire can instead POST a `calling.error` event to `status_url`, with the error details in `params.error`. Not every failure produces this event.
+
 ### Raw JSON example
+
+In this example, `x.x.x.x` stands for the public IPv4 address from the tap's `rtp://` URI.
 
 ```json
 {
@@ -213,7 +222,7 @@ A POST request will be sent to `status_url` with a JSON payload like the followi
     "device": {
       "type": "rtp",
       "params": {
-        "addr": "192.168.1.100",
+        "addr": "x.x.x.x",
         "port": 12345,
         "codec": "PCMU",
         "ptime": 20
