@@ -5,7 +5,10 @@ namespace SWML.Calling;
 @summary("stream Method")
 model Stream {
   @summary("stream")
-  @doc("Start a background audio stream from the call to a WebSocket endpoint. Runs alongside the call as an independent operation.")
+  @doc("""
+    Start a background audio stream from the call to a WebSocket endpoint. Runs alongside the call as an independent operation.
+    For an inbound call that has not been answered and is not ending, the method attempts to answer it before starting the stream.
+    """)
   stream: {
     @doc("Secure WebSocket URI (wss://) to stream the call audio to.")
     @example("wss://example.com/audio-stream")
@@ -25,9 +28,14 @@ model Stream {
           `outbound_track` for what the caller hears,
           `both_tracks` for both.
           Default is `"inbound_track"`.
+          Accepts a SWML variable reference that resolves to one of these values.
       """)
     @example("both_tracks")
-    track?: "inbound_track" | "outbound_track" | "both_tracks" = "inbound_track";
+    track?:
+      | "inbound_track"
+      | "outbound_track"
+      | "both_tracks"
+      | SWMLVar = "inbound_track";
 
     @doc("""
       Codec to use for the streamed audio. Freeform and endpoint-specific.
@@ -36,16 +44,21 @@ model Stream {
     @example("PCMU")
     codec?: string;
 
-    @doc("HTTP or HTTPS URL to deliver stream status events.")
+    @doc("""
+      HTTP or HTTPS URL to deliver stream status events.
+      Accepts a SWML variable reference that resolves to an HTTP or HTTPS URL.
+      """)
     @example("https://example.com/stream-status")
-    status_url?: url;
+    status_url?: url | SWMLVar;
 
     @doc("""
       HTTP method used to deliver stream status events to `status_url`.
       Possible Values: [`GET`, `POST`]. Default is `"POST"`.
+      `calling.call.stream` status events are always delivered with POST, regardless of this setting.
+      Accepts a SWML variable reference that resolves to one of these values.
       """)
     @example("POST")
-    status_url_method?: "GET" | "POST" = "POST";
+    status_url_method?: "GET" | "POST" | SWMLVar = "POST";
 
     @doc("Bearer token sent as an `Authorization` header during the WebSocket handshake.")
     @example("my-secret-token")
