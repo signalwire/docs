@@ -38,25 +38,29 @@ Dial a single destination directly using the `to` property.
 </ParamField>
 
 <ParamField path="connect.call_state_events" type="string[]" default="['ended']" toc={true}>
-  An array of call state event names to be notified about. Allowed event names are `created`, `ringing`, `answered`, and `ended`.
+  An array of call state event names to be notified about. Allowed event names are `created`, `ringing`, `answered`, and `ended`. Each item can also be a SWML variable that resolves to one of these names.
 </ParamField>
 
 <ParamField path="connect.call_state_url" type="string" toc={true}>
   Webhook url to send call status change notifications to. Authentication can also be set in the url in the format of `username:password@url`. Learn more about [status callbacks][statuscallbacks].
+
+  Applies only to phone, SIP, and Resource Address destinations. When `to` starts with `queue:` or `stream:`, `call_state_url` and `call_state_events` aren't allowed. Queue events go to the `status_url` of [`enter_queue`](/docs/swml/reference/calling/enter-queue), and stream events go to `status_url`.
 </ParamField>
 
-<ParamField path="connect.codecs" type="string" default="Based on SignalWire settings" toc={true}>
-  Comma-separated string of codecs to offer. Has no effect on calls to phone numbers.
+<ParamField path="connect.codecs" type="string | string[]" default="Based on SignalWire settings" toc={true}>
+  Codecs to offer, as a comma-separated string (`"PCMU,PCMA"`) or an array of strings (`["PCMU", "PCMA"]`). Supported codecs are `PCMU`, `PCMA`, `OPUS`, `G722`, `G729`, `AMR-WB`, `VP8`, and `H264`. Has no effect on calls to phone numbers.
 </ParamField>
 
 <ParamField path="connect.confirm" type="string | object[]" toc={true}>
   Confirmation to execute when the call is connected. Can be either:
   - A URL (string) that returns a SWML document
   - An array of SWML methods to execute inline
+
+  Only these methods are allowed, including inside `cond` and `switch` branches: `cond`, `switch`, `set`, `unset`, `hangup`, `play`, `prompt`, `record`, `record_call`, `stop_record_call`, `tap`, `stop_tap`, `stream`, `stop_stream`, `transcribe`, `transcribe_stop`, `send_digits`, `send_sms`, `denoise`, `stop_denoise`, and `user_event`.
 </ParamField>
 
 <ParamField path="connect.confirm_timeout" type="integer" default="Inherits from timeout" toc={true}>
-  The amount of time, in seconds, to wait for the `confirm` script to execute.
+  Time, in seconds, allowed for the `confirm` SWML to run on the answered destination, whether it is fetched from a URL or given inline.
 </ParamField>
 
 <ParamField path="connect.encryption" type="string" default="optional" toc={true}>
@@ -68,7 +72,7 @@ Dial a single destination directly using the `to` property.
 </ParamField>
 
 <ParamField path="connect.from_name" type="string" toc={true}>
-  The caller ID name shown to the person you're calling, displayed alongside the `from` number (sometimes called CNAM). Applies to SIP calls only — it has no effect on calls to phone numbers.
+  The caller ID name shown to the person you're calling, displayed alongside the `from` number (sometimes called CNAM). Applies to SIP calls only — it has no effect on calls to phone numbers. Use 1 to 70 characters: letters, digits, spaces, and `_`, `.`, `-`, `+`, or `,`.
 </ParamField>
 
 <ParamField path="connect.headers" type="object[]" toc={true}>
@@ -78,11 +82,11 @@ Dial a single destination directly using the `to` property.
 <Indent>
 
 <ParamField path="headers[].name" type="string" required={true} toc={true}>
-  The name of the header.
+  The name of the header. Must be a valid SIP header name, 3 to 256 characters long, that either starts with `X-` or is one of `Privacy`, `P-Asserted-Identity`, or `User-to-User`. Names starting with `SignalWire`, `X-SignalWire`, `X-CID`, or `X-SW-Xregion` are reserved and can't be set. A `Privacy` header takes effect only with the value `id`, which hides the caller's number.
 </ParamField>
 
 <ParamField path="headers[].value" type="string" required={true} toc={true}>
-  The value of the header.
+  The value of the header. Can't be empty or contain line breaks.
 </ParamField>
 
 </Indent>
@@ -92,7 +96,7 @@ Dial a single destination directly using the `to` property.
 </ParamField>
 
 <ParamField path="connect.password" type="string" toc={true}>
-  SIP authentication password (`sip_auth_password`) for the outbound leg. **Only applies to [SIP URI](/docs/platform/voice/sip) targets** — ignored for phone, Resource Address, queue, and stream destinations.
+  SIP authentication password for the outbound leg. **Only applies to [SIP URI](/docs/platform/voice/sip) targets** — ignored for phone, Resource Address, queue, and stream destinations.
 </ParamField>
 
 <ParamField path="connect.result" type="object | object[]" toc={true}>
@@ -102,12 +106,15 @@ Dial a single destination directly using the `to` property.
   See [Variables](#variables) for details.
 </ParamField>
 
-<ParamField path="connect.ringback" type="string[]" default="Plays audio from the provider" toc={true}>
-  Array of `play` URIs to play as ringback tone.
+<ParamField path="connect.ringback" type="boolean | string | string[]" default="A standard ringback tone" toc={true}>
+  Ringback to play to the caller while phone, SIP, and Resource Address destinations ring. Can be:
+  - A `play` URI, or an array of `play` URIs, to play as the ringback tone
+  - `false` to turn off SignalWire's ringback tone and pass the destination's early media (for example, its own ringback or announcements) through to the caller
+  - `true` to keep the default ringback tone
 </ParamField>
 
 <ParamField path="connect.session_timeout" type="integer" default="Based on SignalWire settings" toc={true}>
-  Time, in seconds, to set the SIP `Session-Expires` header in INVITE. Must be a positive, non-zero number. Has no effect on calls to phone numbers.
+  Time, in seconds, to set the SIP `Session-Expires` header in INVITE. Must be a positive, non-zero number. Values from 1 to 15000 take effect; a larger value is accepted but no `Session-Expires` override is applied. Has no effect on calls to phone numbers.
 </ParamField>
 
 <ParamField path="connect.status_url" type="string" toc={true}>
@@ -116,6 +123,14 @@ Dial a single destination directly using the `to` property.
 
 <ParamField path="connect.status_url_method" type="string" default="POST" toc={true}>
   HTTP method for the status webhook. Possible values: `GET`, `POST`. **Stream destinations only.**
+</ParamField>
+
+<ParamField path="connect.stop_all_on_reject" type="boolean | string[]" default="false" toc={true}>
+  Stop ringing and disconnect the caller when a destination rejects the call. Can be either:
+  - `true` to stop when a destination is busy or declines the call
+  - A non-empty array of the reasons to stop on: `busy`, `decline`, `noAnswer`
+
+  When a destination rejects the call with a matching reason, the destinations ringing alongside it stop ringing. If `connect` then fails with that reason, the `result` block runs first, and then the caller is disconnected.
 </ParamField>
 
 <ParamField path="connect.timeout" type="integer" default="60 seconds" toc={true}>
@@ -129,11 +144,13 @@ Dial a single destination directly using the `to` property.
   - A URL (http or https) that returns a SWML document
   - An inline SWML document (as a JSON string)
 
-  When omitted, the call hangs up when the bridge ends. Either way, the script does not continue past `connect` for queue targets, so `result` never runs.
+  When omitted, the call hangs up when the bridge ends. Either way, the script does not continue past `connect` once a queued call has been bridged.
+
+  If no queued call is bridged (for example, the queue is empty or doesn't exist), `connect` fails, `connect_result` is set to `failed`, and `result` runs.
 </ParamField>
 
 <ParamField path="connect.username" type="string" toc={true}>
-  SIP authentication username (`sip_auth_username`) for the outbound leg. **Only applies to [SIP URI](/docs/platform/voice/sip) targets** — ignored for phone, Resource Address, queue, and stream destinations.
+  SIP authentication username for the outbound leg. **Only applies to [SIP URI](/docs/platform/voice/sip) targets** — ignored for phone, Resource Address, queue, and stream destinations.
 </ParamField>
 
 <ParamField path="connect.webrtc_media" type="boolean" default="false" toc={true}>
@@ -217,6 +234,8 @@ Dial multiple destinations simultaneously — the first to answer is bridged and
 <ParamField path="connect.parallel" type="object[]" required={true} toc={true}>
   Array of destination objects to dial simultaneously. The first destination to answer is bridged and the rest are cancelled.
 
+  Must contain at least one destination. A `queue:` destination can't be combined with any other destination, and a `stream:` destination can't be combined with a phone, SIP, Resource Address, or queue destination: `connect` fails in either case. If several `stream:` destinations are listed, only the first is used. To connect to a queue or a stream, use a single `to` instead (see the **Single** tab).
+
   <Warning title="20-destination limit">
   Up to 20 destinations are dialed. Any destination after the 20th never rings, and `connect` reports no error for it. To reach more, see [Dial more than 20 destinations](#dial-more-than-20-destinations).
   </Warning>
@@ -238,40 +257,96 @@ Dial multiple destinations simultaneously — the first to answer is bridged and
 </ParamField>
 
 <ParamField path="parallel[].from_name" type="string" toc={true}>
-  The caller ID name shown to this destination. Overrides the top-level `from_name`. Applies to SIP calls only.
+  The caller ID name shown to this destination. Overrides the top-level `from_name`. Applies to SIP calls only. Use 1 to 70 characters: letters, digits, spaces, and `_`, `.`, `-`, `+`, or `,`.
 </ParamField>
 
 <ParamField path="parallel[].username" type="string" toc={true}>
-  SIP authentication username (`sip_auth_username`) for this destination. **Only applies to SIP URI targets.**
+  SIP authentication username for this destination. **Only applies to SIP URI targets.**
 </ParamField>
 
 <ParamField path="parallel[].password" type="string" toc={true}>
-  SIP authentication password (`sip_auth_password`) for this destination. **Only applies to SIP URI targets.**
+  SIP authentication password for this destination. **Only applies to SIP URI targets.**
 </ParamField>
 
-<ParamField path="parallel[].timeout" type="integer" default="60 seconds" toc={true}>
-  Maximum time, in seconds, to wait for this destination to answer.
+<ParamField path="parallel[].timeout" type="integer" default="Inherits the top-level timeout, then 60 seconds" toc={true}>
+  Maximum time, in seconds, to wait for this destination to answer. Overrides the top-level `timeout`.
 </ParamField>
 
-<ParamField path="parallel[].call_state_events" type="string[]" default="['ended']" toc={true}>
-  An array of call state event names to be notified about. Overrides the top-level `call_state_events`.
+<ParamField path="parallel[].call_state_events" type="string[]" default="Inherits the top-level call_state_events, then ['ended']" toc={true}>
+  An array of call state event names to be notified about. Overrides the top-level `call_state_events`. Each item can also be a SWML variable that resolves to one of these names. Not allowed when `to` starts with `queue:` or `stream:`.
 </ParamField>
 
 <ParamField path="parallel[].call_state_url" type="string" toc={true}>
-  Webhook url to send call state change notifications to for this destination. Overrides the top-level `call_state_url`.
+  Webhook url to send call state change notifications to for this destination. Overrides the top-level `call_state_url`. Not allowed when `to` starts with `queue:` or `stream:`.
 </ParamField>
 
 <ParamField path="parallel[].confirm" type="string | object[]" toc={true}>
-  Confirmation script to execute on this destination when answered. Overrides the top-level `confirm`.
+  Confirmation script to execute on this destination when answered. Overrides the top-level `confirm`. An inline array is limited to the same methods as the top-level `confirm`.
 </ParamField>
 
 <ParamField path="parallel[].confirm_timeout" type="integer" toc={true}>
-  Seconds to wait for the `confirm` script to execute on this destination. Overrides the top-level `confirm_timeout`.
+  Seconds allowed for the `confirm` SWML to run on this destination. Overrides the top-level `confirm_timeout`. When neither is set, this destination's `timeout` is used.
 </ParamField>
 
 <ParamField path="parallel[].encryption" type="string" toc={true}>
-  Media encryption (SRTP) for this destination. Overrides the top-level `encryption`. **Applies to SIP destinations only.**
+  Media encryption (SRTP) for this destination. Overrides the top-level `encryption`, which is used when this is not set. **Applies to SIP destinations only.**
   Possible values: `mandatory`, `optional`, `forbidden`.
+</ParamField>
+
+<ParamField path="parallel[].headers" type="object[]" toc={true}>
+  Custom SIP headers to add to INVITE for this destination. Replaces the top-level `headers` for this destination. **Applies to SIP destinations only.**
+</ParamField>
+
+<Indent>
+
+<ParamField path="parallel[].headers[].name" type="string" required={true} toc={true}>
+  The name of the header. Must be a valid SIP header name, 3 to 256 characters long, that either starts with `X-` or is one of `Privacy`, `P-Asserted-Identity`, or `User-to-User`. Names starting with `SignalWire`, `X-SignalWire`, `X-CID`, or `X-SW-Xregion` are reserved and can't be set. A `Privacy` header takes effect only with the value `id`, which hides the caller's number.
+</ParamField>
+
+<ParamField path="parallel[].headers[].value" type="string" required={true} toc={true}>
+  The value of the header. Can't be empty or contain line breaks.
+</ParamField>
+
+</Indent>
+
+<ParamField path="parallel[].codecs" type="string | string[]" toc={true}>
+  Codecs to offer to this destination, as a comma-separated string or an array of strings, using the same codec names as the top-level `codecs`. Overrides the top-level `codecs`. **Applies to SIP destinations only.**
+</ParamField>
+
+<ParamField path="parallel[].webrtc_media" type="boolean" toc={true}>
+  If true, WebRTC media is offered to this destination. Overrides the top-level `webrtc_media`, which is used when this is not set. **Applies to SIP destinations only.**
+</ParamField>
+
+<ParamField path="parallel[].session_timeout" type="integer" toc={true}>
+  Time, in seconds, to set the SIP `Session-Expires` header in INVITE for this destination. Must be a positive, non-zero number. Values from 1 to 15000 take effect; a larger value is accepted but no `Session-Expires` override is applied. The top-level `session_timeout` is not used in this mode, so set it on each SIP destination that needs it. **Applies to SIP destinations only.**
+</ParamField>
+
+<ParamField path="parallel[].name" type="string" toc={true}>
+  Stream name identifier. **Applies to stream destinations only.**
+</ParamField>
+
+<ParamField path="parallel[].codec" type="string" toc={true}>
+  Audio codec for the stream. Takes the same values as `connect.codec` on a single stream destination. **Applies to stream destinations only.**
+</ParamField>
+
+<ParamField path="parallel[].status_url" type="string" toc={true}>
+  HTTPS URL to receive status notifications for this stream. See [Stream Status Callbacks](#stream-status-callbacks). **Applies to stream destinations only.**
+</ParamField>
+
+<ParamField path="parallel[].status_url_method" type="string" toc={true}>
+  HTTP method for the stream status webhook. Possible values: `GET`, `POST`. **Applies to stream destinations only.**
+</ParamField>
+
+<ParamField path="parallel[].realtime" type="boolean" toc={true}>
+  Realtime mode for the stream, as with `connect.realtime` on a single stream destination. **Applies to stream destinations only.**
+</ParamField>
+
+<ParamField path="parallel[].authorization_bearer_token" type="string" toc={true}>
+  Bearer token for the stream's WebSocket connection, as with `connect.authorization_bearer_token` on a single stream destination. **Applies to stream destinations only.**
+</ParamField>
+
+<ParamField path="parallel[].custom_parameters" type="object" toc={true}>
+  Custom key-value pairs for the stream, as with `connect.custom_parameters` on a single stream destination. Every value must be a string. **Applies to stream destinations only.**
 </ParamField>
 
 </Indent>
@@ -281,25 +356,29 @@ Dial multiple destinations simultaneously — the first to answer is bridged and
 </ParamField>
 
 <ParamField path="connect.call_state_events" type="string[]" default="['ended']" toc={true}>
-  An array of call state event names to be notified about. Allowed event names are `created`, `ringing`, `answered`, and `ended`. Can be overwritten on each destination.
+  An array of call state event names to be notified about. Allowed event names are `created`, `ringing`, `answered`, and `ended`. Each item can also be a SWML variable that resolves to one of these names. Can be overwritten on each destination.
 </ParamField>
 
 <ParamField path="connect.call_state_url" type="string" toc={true}>
-  Webhook url to send call status change notifications to for all legs. Can be overwritten on each destination. Authentication can also be set in the url in the format of `username:password@url`. Learn more about [status callbacks][statuscallbacks].
+  Webhook url to send call status change notifications to for every phone, SIP, and Resource Address destination. Can be overwritten on each destination. Authentication can also be set in the url in the format of `username:password@url`. Learn more about [status callbacks][statuscallbacks].
+
+  It is not sent to destinations whose `to` starts with `queue:` or `stream:`, and those destinations can't set their own `call_state_url` or `call_state_events`.
 </ParamField>
 
-<ParamField path="connect.codecs" type="string" default="Based on SignalWire settings" toc={true}>
-  Comma-separated string of codecs to offer. Has no effect on calls to phone numbers.
+<ParamField path="connect.codecs" type="string | string[]" default="Based on SignalWire settings" toc={true}>
+  Codecs to offer, as a comma-separated string (`"PCMU,PCMA"`) or an array of strings (`["PCMU", "PCMA"]`). Supported codecs are `PCMU`, `PCMA`, `OPUS`, `G722`, `G729`, `AMR-WB`, `VP8`, and `H264`. Has no effect on calls to phone numbers. Each SIP destination uses these codecs unless it sets its own `codecs`.
 </ParamField>
 
 <ParamField path="connect.confirm" type="string | object[]" toc={true}>
   Confirmation to execute when the call is connected. Can be either:
   - A URL (string) that returns a SWML document
   - An array of SWML methods to execute inline
+
+  Only these methods are allowed, including inside `cond` and `switch` branches: `cond`, `switch`, `set`, `unset`, `hangup`, `play`, `prompt`, `record`, `record_call`, `stop_record_call`, `tap`, `stop_tap`, `stream`, `stop_stream`, `transcribe`, `transcribe_stop`, `send_digits`, `send_sms`, `denoise`, `stop_denoise`, and `user_event`.
 </ParamField>
 
 <ParamField path="connect.confirm_timeout" type="integer" default="Inherits from timeout" toc={true}>
-  The amount of time, in seconds, to wait for the `confirm` script to execute.
+  Time, in seconds, allowed for the `confirm` SWML to run on the answered destination, whether it is fetched from a URL or given inline.
 </ParamField>
 
 <ParamField path="connect.encryption" type="string" default="optional" toc={true}>
@@ -311,21 +390,21 @@ Dial multiple destinations simultaneously — the first to answer is bridged and
 </ParamField>
 
 <ParamField path="connect.from_name" type="string" toc={true}>
-  The caller ID name shown to the person you're calling, displayed alongside the `from` number (sometimes called CNAM). Applies to SIP calls only — it has no effect on calls to phone numbers. Can be overridden on each destination.
+  The caller ID name shown to the person you're calling, displayed alongside the `from` number (sometimes called CNAM). Applies to SIP calls only — it has no effect on calls to phone numbers. Use 1 to 70 characters: letters, digits, spaces, and `_`, `.`, `-`, `+`, or `,`. Can be overridden on each destination.
 </ParamField>
 
 <ParamField path="connect.headers" type="object[]" toc={true}>
-  Custom SIP headers to add to INVITE. Has no effect on calls to phone numbers.
+  Custom SIP headers to add to INVITE. Has no effect on calls to phone numbers. Each SIP destination uses these headers unless it sets its own `headers`.
 </ParamField>
 
 <Indent>
 
 <ParamField path="headers[].name" type="string" required={true} toc={true}>
-  The name of the header.
+  The name of the header. Must be a valid SIP header name, 3 to 256 characters long, that either starts with `X-` or is one of `Privacy`, `P-Asserted-Identity`, or `User-to-User`. Names starting with `SignalWire`, `X-SignalWire`, `X-CID`, or `X-SW-Xregion` are reserved and can't be set. A `Privacy` header takes effect only with the value `id`, which hides the caller's number.
 </ParamField>
 
 <ParamField path="headers[].value" type="string" required={true} toc={true}>
-  The value of the header.
+  The value of the header. Can't be empty or contain line breaks.
 </ParamField>
 
 </Indent>
@@ -341,16 +420,27 @@ Dial multiple destinations simultaneously — the first to answer is bridged and
   See [Variables](#variables) for details.
 </ParamField>
 
-<ParamField path="connect.ringback" type="string[]" default="Plays audio from the provider" toc={true}>
-  Array of `play` URIs to play as ringback tone.
+<ParamField path="connect.ringback" type="boolean | string | string[]" default="A standard ringback tone" toc={true}>
+  Ringback to play to the caller while phone, SIP, and Resource Address destinations ring. Can be:
+  - A `play` URI, or an array of `play` URIs, to play as the ringback tone
+  - `false` to turn off SignalWire's ringback tone and pass the destination's early media (for example, its own ringback or announcements) through to the caller
+  - `true` to keep the default ringback tone
 </ParamField>
 
-<ParamField path="connect.session_timeout" type="integer" default="Based on SignalWire settings" toc={true}>
-  Time, in seconds, to set the SIP `Session-Expires` header in INVITE. Must be a positive, non-zero number. Has no effect on calls to phone numbers.
+<ParamField path="connect.session_timeout" type="integer" toc={true}>
+  SIP `Session-Expires` time, in seconds. Has no effect in this mode: SIP destinations don't use the top-level `session_timeout`, so set `session_timeout` on each SIP destination instead.
 </ParamField>
 
 <ParamField path="connect.status_url" type="string" toc={true}>
   Webhook URL to deliver status events. Reports the connect operation status (connecting, connected, failed, disconnected). See [Connect Status Callbacks](#connect-status-callbacks).
+</ParamField>
+
+<ParamField path="connect.stop_all_on_reject" type="boolean | string[]" default="false" toc={true}>
+  Stop ringing and disconnect the caller when a destination rejects the call. Can be either:
+  - `true` to stop when a destination is busy or declines the call
+  - A non-empty array of the reasons to stop on: `busy`, `decline`, `noAnswer`
+
+  When a destination rejects the call with a matching reason, the destinations ringing alongside it stop ringing. If `connect` then fails with that reason, the `result` block runs first, and then the caller is disconnected.
 </ParamField>
 
 <ParamField path="connect.timeout" type="integer" default="60 seconds" toc={true}>
@@ -358,7 +448,7 @@ Dial multiple destinations simultaneously — the first to answer is bridged and
 </ParamField>
 
 <ParamField path="connect.webrtc_media" type="boolean" default="false" toc={true}>
-  If true, WebRTC media is offered to the SIP endpoint. Has no effect on calls to phone numbers.
+  If true, WebRTC media is offered to the SIP endpoint. Has no effect on calls to phone numbers. Can be overwritten on each destination.
 </ParamField>
 
 </Indent>
@@ -423,6 +513,8 @@ Dial destinations in sequence — each destination is tried one at a time, movin
 <ParamField path="connect.serial" type="object[]" required={true} toc={true}>
   Array of destination objects to dial in order. Each destination is tried sequentially — if the first fails, the next is attempted.
 
+  Must contain at least one destination. A `queue:` destination can't be combined with any other destination, and a `stream:` destination can't be combined with a phone, SIP, Resource Address, or queue destination: `connect` fails in either case. If several `stream:` destinations are listed, only the first is used. To connect to a queue or a stream, use a single `to` instead (see the **Single** tab).
+
   <Warning title="20-destination limit">
   Up to 20 destinations are tried. Any destination after the 20th never rings, and `connect` reports no error for it. To reach more, see [Dial more than 20 destinations](#dial-more-than-20-destinations).
   </Warning>
@@ -444,40 +536,96 @@ Dial destinations in sequence — each destination is tried one at a time, movin
 </ParamField>
 
 <ParamField path="serial[].from_name" type="string" toc={true}>
-  The caller ID name shown to this destination. Overrides the top-level `from_name`. Applies to SIP calls only.
+  The caller ID name shown to this destination. Overrides the top-level `from_name`. Applies to SIP calls only. Use 1 to 70 characters: letters, digits, spaces, and `_`, `.`, `-`, `+`, or `,`.
 </ParamField>
 
 <ParamField path="serial[].username" type="string" toc={true}>
-  SIP authentication username (`sip_auth_username`) for this destination. **Only applies to SIP URI targets.**
+  SIP authentication username for this destination. **Only applies to SIP URI targets.**
 </ParamField>
 
 <ParamField path="serial[].password" type="string" toc={true}>
-  SIP authentication password (`sip_auth_password`) for this destination. **Only applies to SIP URI targets.**
+  SIP authentication password for this destination. **Only applies to SIP URI targets.**
 </ParamField>
 
-<ParamField path="serial[].timeout" type="integer" default="60 seconds" toc={true}>
-  Maximum time, in seconds, to wait for this destination to answer.
+<ParamField path="serial[].timeout" type="integer" default="Inherits the top-level timeout, then 60 seconds" toc={true}>
+  Maximum time, in seconds, to wait for this destination to answer. Overrides the top-level `timeout`.
 </ParamField>
 
-<ParamField path="serial[].call_state_events" type="string[]" default="['ended']" toc={true}>
-  An array of call state event names to be notified about. Overrides the top-level `call_state_events`.
+<ParamField path="serial[].call_state_events" type="string[]" default="Inherits the top-level call_state_events, then ['ended']" toc={true}>
+  An array of call state event names to be notified about. Overrides the top-level `call_state_events`. Each item can also be a SWML variable that resolves to one of these names. Not allowed when `to` starts with `queue:` or `stream:`.
 </ParamField>
 
 <ParamField path="serial[].call_state_url" type="string" toc={true}>
-  Webhook url to send call state change notifications to for this destination. Overrides the top-level `call_state_url`.
+  Webhook url to send call state change notifications to for this destination. Overrides the top-level `call_state_url`. Not allowed when `to` starts with `queue:` or `stream:`.
 </ParamField>
 
 <ParamField path="serial[].confirm" type="string | object[]" toc={true}>
-  Confirmation script to execute on this destination when answered. Overrides the top-level `confirm`.
+  Confirmation script to execute on this destination when answered. Overrides the top-level `confirm`. An inline array is limited to the same methods as the top-level `confirm`.
 </ParamField>
 
 <ParamField path="serial[].confirm_timeout" type="integer" toc={true}>
-  Seconds to wait for the `confirm` script to execute on this destination. Overrides the top-level `confirm_timeout`.
+  Seconds allowed for the `confirm` SWML to run on this destination. Overrides the top-level `confirm_timeout`. When neither is set, this destination's `timeout` is used.
 </ParamField>
 
 <ParamField path="serial[].encryption" type="string" toc={true}>
-  Media encryption (SRTP) for this destination. Overrides the top-level `encryption`. **Applies to SIP destinations only.**
+  Media encryption (SRTP) for this destination. Overrides the top-level `encryption`, which is used when this is not set. **Applies to SIP destinations only.**
   Possible values: `mandatory`, `optional`, `forbidden`.
+</ParamField>
+
+<ParamField path="serial[].headers" type="object[]" toc={true}>
+  Custom SIP headers to add to INVITE for this destination. Replaces the top-level `headers` for this destination. **Applies to SIP destinations only.**
+</ParamField>
+
+<Indent>
+
+<ParamField path="serial[].headers[].name" type="string" required={true} toc={true}>
+  The name of the header. Must be a valid SIP header name, 3 to 256 characters long, that either starts with `X-` or is one of `Privacy`, `P-Asserted-Identity`, or `User-to-User`. Names starting with `SignalWire`, `X-SignalWire`, `X-CID`, or `X-SW-Xregion` are reserved and can't be set. A `Privacy` header takes effect only with the value `id`, which hides the caller's number.
+</ParamField>
+
+<ParamField path="serial[].headers[].value" type="string" required={true} toc={true}>
+  The value of the header. Can't be empty or contain line breaks.
+</ParamField>
+
+</Indent>
+
+<ParamField path="serial[].codecs" type="string | string[]" toc={true}>
+  Codecs to offer to this destination, as a comma-separated string or an array of strings, using the same codec names as the top-level `codecs`. Overrides the top-level `codecs`. **Applies to SIP destinations only.**
+</ParamField>
+
+<ParamField path="serial[].webrtc_media" type="boolean" toc={true}>
+  If true, WebRTC media is offered to this destination. Overrides the top-level `webrtc_media`, which is used when this is not set. **Applies to SIP destinations only.**
+</ParamField>
+
+<ParamField path="serial[].session_timeout" type="integer" toc={true}>
+  Time, in seconds, to set the SIP `Session-Expires` header in INVITE for this destination. Must be a positive, non-zero number. Values from 1 to 15000 take effect; a larger value is accepted but no `Session-Expires` override is applied. The top-level `session_timeout` is not used in this mode, so set it on each SIP destination that needs it. **Applies to SIP destinations only.**
+</ParamField>
+
+<ParamField path="serial[].name" type="string" toc={true}>
+  Stream name identifier. **Applies to stream destinations only.**
+</ParamField>
+
+<ParamField path="serial[].codec" type="string" toc={true}>
+  Audio codec for the stream. Takes the same values as `connect.codec` on a single stream destination. **Applies to stream destinations only.**
+</ParamField>
+
+<ParamField path="serial[].status_url" type="string" toc={true}>
+  HTTPS URL to receive status notifications for this stream. See [Stream Status Callbacks](#stream-status-callbacks). **Applies to stream destinations only.**
+</ParamField>
+
+<ParamField path="serial[].status_url_method" type="string" toc={true}>
+  HTTP method for the stream status webhook. Possible values: `GET`, `POST`. **Applies to stream destinations only.**
+</ParamField>
+
+<ParamField path="serial[].realtime" type="boolean" toc={true}>
+  Realtime mode for the stream, as with `connect.realtime` on a single stream destination. **Applies to stream destinations only.**
+</ParamField>
+
+<ParamField path="serial[].authorization_bearer_token" type="string" toc={true}>
+  Bearer token for the stream's WebSocket connection, as with `connect.authorization_bearer_token` on a single stream destination. **Applies to stream destinations only.**
+</ParamField>
+
+<ParamField path="serial[].custom_parameters" type="object" toc={true}>
+  Custom key-value pairs for the stream, as with `connect.custom_parameters` on a single stream destination. Every value must be a string. **Applies to stream destinations only.**
 </ParamField>
 
 </Indent>
@@ -487,25 +635,29 @@ Dial destinations in sequence — each destination is tried one at a time, movin
 </ParamField>
 
 <ParamField path="connect.call_state_events" type="string[]" default="['ended']" toc={true}>
-  An array of call state event names to be notified about. Allowed event names are `created`, `ringing`, `answered`, and `ended`. Can be overwritten on each destination.
+  An array of call state event names to be notified about. Allowed event names are `created`, `ringing`, `answered`, and `ended`. Each item can also be a SWML variable that resolves to one of these names. Can be overwritten on each destination.
 </ParamField>
 
 <ParamField path="connect.call_state_url" type="string" toc={true}>
-  Webhook url to send call status change notifications to for all legs. Can be overwritten on each destination. Authentication can also be set in the url in the format of `username:password@url`. Learn more about [status callbacks][statuscallbacks].
+  Webhook url to send call status change notifications to for every phone, SIP, and Resource Address destination. Can be overwritten on each destination. Authentication can also be set in the url in the format of `username:password@url`. Learn more about [status callbacks][statuscallbacks].
+
+  It is not sent to destinations whose `to` starts with `queue:` or `stream:`, and those destinations can't set their own `call_state_url` or `call_state_events`.
 </ParamField>
 
-<ParamField path="connect.codecs" type="string" default="Based on SignalWire settings" toc={true}>
-  Comma-separated string of codecs to offer. Has no effect on calls to phone numbers.
+<ParamField path="connect.codecs" type="string | string[]" default="Based on SignalWire settings" toc={true}>
+  Codecs to offer, as a comma-separated string (`"PCMU,PCMA"`) or an array of strings (`["PCMU", "PCMA"]`). Supported codecs are `PCMU`, `PCMA`, `OPUS`, `G722`, `G729`, `AMR-WB`, `VP8`, and `H264`. Has no effect on calls to phone numbers. Each SIP destination uses these codecs unless it sets its own `codecs`.
 </ParamField>
 
 <ParamField path="connect.confirm" type="string | object[]" toc={true}>
   Confirmation to execute when the call is connected. Can be either:
   - A URL (string) that returns a SWML document
   - An array of SWML methods to execute inline
+
+  Only these methods are allowed, including inside `cond` and `switch` branches: `cond`, `switch`, `set`, `unset`, `hangup`, `play`, `prompt`, `record`, `record_call`, `stop_record_call`, `tap`, `stop_tap`, `stream`, `stop_stream`, `transcribe`, `transcribe_stop`, `send_digits`, `send_sms`, `denoise`, `stop_denoise`, and `user_event`.
 </ParamField>
 
 <ParamField path="connect.confirm_timeout" type="integer" default="Inherits from timeout" toc={true}>
-  The amount of time, in seconds, to wait for the `confirm` script to execute.
+  Time, in seconds, allowed for the `confirm` SWML to run on the answered destination, whether it is fetched from a URL or given inline.
 </ParamField>
 
 <ParamField path="connect.encryption" type="string" default="optional" toc={true}>
@@ -517,21 +669,21 @@ Dial destinations in sequence — each destination is tried one at a time, movin
 </ParamField>
 
 <ParamField path="connect.from_name" type="string" toc={true}>
-  The caller ID name shown to the person you're calling, displayed alongside the `from` number (sometimes called CNAM). Applies to SIP calls only — it has no effect on calls to phone numbers. Can be overridden on each destination.
+  The caller ID name shown to the person you're calling, displayed alongside the `from` number (sometimes called CNAM). Applies to SIP calls only — it has no effect on calls to phone numbers. Use 1 to 70 characters: letters, digits, spaces, and `_`, `.`, `-`, `+`, or `,`. Can be overridden on each destination.
 </ParamField>
 
 <ParamField path="connect.headers" type="object[]" toc={true}>
-  Custom SIP headers to add to INVITE. Has no effect on calls to phone numbers.
+  Custom SIP headers to add to INVITE. Has no effect on calls to phone numbers. Each SIP destination uses these headers unless it sets its own `headers`.
 </ParamField>
 
 <Indent>
 
 <ParamField path="headers[].name" type="string" required={true} toc={true}>
-  The name of the header.
+  The name of the header. Must be a valid SIP header name, 3 to 256 characters long, that either starts with `X-` or is one of `Privacy`, `P-Asserted-Identity`, or `User-to-User`. Names starting with `SignalWire`, `X-SignalWire`, `X-CID`, or `X-SW-Xregion` are reserved and can't be set. A `Privacy` header takes effect only with the value `id`, which hides the caller's number.
 </ParamField>
 
 <ParamField path="headers[].value" type="string" required={true} toc={true}>
-  The value of the header.
+  The value of the header. Can't be empty or contain line breaks.
 </ParamField>
 
 </Indent>
@@ -547,16 +699,27 @@ Dial destinations in sequence — each destination is tried one at a time, movin
   See [Variables](#variables) for details.
 </ParamField>
 
-<ParamField path="connect.ringback" type="string[]" default="Plays audio from the provider" toc={true}>
-  Array of `play` URIs to play as ringback tone.
+<ParamField path="connect.ringback" type="boolean | string | string[]" default="A standard ringback tone" toc={true}>
+  Ringback to play to the caller while phone, SIP, and Resource Address destinations ring. Can be:
+  - A `play` URI, or an array of `play` URIs, to play as the ringback tone
+  - `false` to turn off SignalWire's ringback tone and pass the destination's early media (for example, its own ringback or announcements) through to the caller
+  - `true` to keep the default ringback tone
 </ParamField>
 
-<ParamField path="connect.session_timeout" type="integer" default="Based on SignalWire settings" toc={true}>
-  Time, in seconds, to set the SIP `Session-Expires` header in INVITE. Must be a positive, non-zero number. Has no effect on calls to phone numbers.
+<ParamField path="connect.session_timeout" type="integer" toc={true}>
+  SIP `Session-Expires` time, in seconds. Has no effect in this mode: SIP destinations don't use the top-level `session_timeout`, so set `session_timeout` on each SIP destination instead.
 </ParamField>
 
 <ParamField path="connect.status_url" type="string" toc={true}>
   Webhook URL to deliver status events. Reports the connect operation status (connecting, connected, failed, disconnected). See [Connect Status Callbacks](#connect-status-callbacks).
+</ParamField>
+
+<ParamField path="connect.stop_all_on_reject" type="boolean | string[]" default="false" toc={true}>
+  Stop ringing and disconnect the caller when a destination rejects the call. Can be either:
+  - `true` to stop when a destination is busy or declines the call
+  - A non-empty array of the reasons to stop on: `busy`, `decline`, `noAnswer`
+
+  When a destination rejects the call with a matching reason, the destinations ringing alongside it stop ringing. If `connect` then fails with that reason, the `result` block runs first, and then the caller is disconnected.
 </ParamField>
 
 <ParamField path="connect.timeout" type="integer" default="60 seconds" toc={true}>
@@ -564,7 +727,7 @@ Dial destinations in sequence — each destination is tried one at a time, movin
 </ParamField>
 
 <ParamField path="connect.webrtc_media" type="boolean" default="false" toc={true}>
-  If true, WebRTC media is offered to the SIP endpoint. Has no effect on calls to phone numbers.
+  If true, WebRTC media is offered to the SIP endpoint. Has no effect on calls to phone numbers. Can be overwritten on each destination.
 </ParamField>
 
 </Indent>
@@ -631,6 +794,8 @@ Combine both strategies. The outer array is the **serial** dimension — groups 
 
   In the `[][]` notation below, the first `[]` is the serial (group) index and the second `[]` is the parallel (destination) index within that group.
 
+  Must contain at least one destination. A `queue:` destination can't be combined with any other destination, and a `stream:` destination can't be combined with a phone, SIP, Resource Address, or queue destination: `connect` fails in either case. If several `stream:` destinations are listed, only the first is used. To connect to a queue or a stream, use a single `to` instead (see the **Single** tab).
+
   <Warning title="20-destination limit">
   Up to 20 destinations are dialed in total, counted across all groups rather than per group. With three groups of eight destinations, the first two groups ring in full (16 destinations), the third group rings only its first four, and its last four never ring. `connect` reports no error for skipped destinations. To reach more, see [Dial more than 20 destinations](#dial-more-than-20-destinations).
   </Warning>
@@ -652,40 +817,96 @@ Combine both strategies. The outer array is the **serial** dimension — groups 
 </ParamField>
 
 <ParamField path="serial_parallel[][].from_name" type="string" toc={true}>
-  The caller ID name shown to this destination. Overrides the top-level `from_name`. Applies to SIP calls only.
+  The caller ID name shown to this destination. Overrides the top-level `from_name`. Applies to SIP calls only. Use 1 to 70 characters: letters, digits, spaces, and `_`, `.`, `-`, `+`, or `,`.
 </ParamField>
 
 <ParamField path="serial_parallel[][].username" type="string" toc={true}>
-  SIP authentication username (`sip_auth_username`) for this destination. **Only applies to SIP URI targets.**
+  SIP authentication username for this destination. **Only applies to SIP URI targets.**
 </ParamField>
 
 <ParamField path="serial_parallel[][].password" type="string" toc={true}>
-  SIP authentication password (`sip_auth_password`) for this destination. **Only applies to SIP URI targets.**
+  SIP authentication password for this destination. **Only applies to SIP URI targets.**
 </ParamField>
 
-<ParamField path="serial_parallel[][].timeout" type="integer" default="60 seconds" toc={true}>
-  Maximum time, in seconds, to wait for this destination to answer.
+<ParamField path="serial_parallel[][].timeout" type="integer" default="Inherits the top-level timeout, then 60 seconds" toc={true}>
+  Maximum time, in seconds, to wait for this destination to answer. Overrides the top-level `timeout`.
 </ParamField>
 
-<ParamField path="serial_parallel[][].call_state_events" type="string[]" default="['ended']" toc={true}>
-  An array of call state event names to be notified about. Overrides the top-level `call_state_events`.
+<ParamField path="serial_parallel[][].call_state_events" type="string[]" default="Inherits the top-level call_state_events, then ['ended']" toc={true}>
+  An array of call state event names to be notified about. Overrides the top-level `call_state_events`. Each item can also be a SWML variable that resolves to one of these names. Not allowed when `to` starts with `queue:` or `stream:`.
 </ParamField>
 
 <ParamField path="serial_parallel[][].call_state_url" type="string" toc={true}>
-  Webhook url to send call state change notifications to for this destination. Overrides the top-level `call_state_url`.
+  Webhook url to send call state change notifications to for this destination. Overrides the top-level `call_state_url`. Not allowed when `to` starts with `queue:` or `stream:`.
 </ParamField>
 
 <ParamField path="serial_parallel[][].confirm" type="string | object[]" toc={true}>
-  Confirmation script to execute on this destination when answered. Overrides the top-level `confirm`.
+  Confirmation script to execute on this destination when answered. Overrides the top-level `confirm`. An inline array is limited to the same methods as the top-level `confirm`.
 </ParamField>
 
 <ParamField path="serial_parallel[][].confirm_timeout" type="integer" toc={true}>
-  Seconds to wait for the `confirm` script to execute on this destination. Overrides the top-level `confirm_timeout`.
+  Seconds allowed for the `confirm` SWML to run on this destination. Overrides the top-level `confirm_timeout`. When neither is set, this destination's `timeout` is used.
 </ParamField>
 
 <ParamField path="serial_parallel[][].encryption" type="string" toc={true}>
-  Media encryption (SRTP) for this destination. Overrides the top-level `encryption`. **Applies to SIP destinations only.**
+  Media encryption (SRTP) for this destination. Overrides the top-level `encryption`, which is used when this is not set. **Applies to SIP destinations only.**
   Possible values: `mandatory`, `optional`, `forbidden`.
+</ParamField>
+
+<ParamField path="serial_parallel[][].headers" type="object[]" toc={true}>
+  Custom SIP headers to add to INVITE for this destination. Replaces the top-level `headers` for this destination. **Applies to SIP destinations only.**
+</ParamField>
+
+<Indent>
+
+<ParamField path="serial_parallel[][].headers[].name" type="string" required={true} toc={true}>
+  The name of the header. Must be a valid SIP header name, 3 to 256 characters long, that either starts with `X-` or is one of `Privacy`, `P-Asserted-Identity`, or `User-to-User`. Names starting with `SignalWire`, `X-SignalWire`, `X-CID`, or `X-SW-Xregion` are reserved and can't be set. A `Privacy` header takes effect only with the value `id`, which hides the caller's number.
+</ParamField>
+
+<ParamField path="serial_parallel[][].headers[].value" type="string" required={true} toc={true}>
+  The value of the header. Can't be empty or contain line breaks.
+</ParamField>
+
+</Indent>
+
+<ParamField path="serial_parallel[][].codecs" type="string | string[]" toc={true}>
+  Codecs to offer to this destination, as a comma-separated string or an array of strings, using the same codec names as the top-level `codecs`. Overrides the top-level `codecs`. **Applies to SIP destinations only.**
+</ParamField>
+
+<ParamField path="serial_parallel[][].webrtc_media" type="boolean" toc={true}>
+  If true, WebRTC media is offered to this destination. Overrides the top-level `webrtc_media`, which is used when this is not set. **Applies to SIP destinations only.**
+</ParamField>
+
+<ParamField path="serial_parallel[][].session_timeout" type="integer" toc={true}>
+  Time, in seconds, to set the SIP `Session-Expires` header in INVITE for this destination. Must be a positive, non-zero number. Values from 1 to 15000 take effect; a larger value is accepted but no `Session-Expires` override is applied. The top-level `session_timeout` is not used in this mode, so set it on each SIP destination that needs it. **Applies to SIP destinations only.**
+</ParamField>
+
+<ParamField path="serial_parallel[][].name" type="string" toc={true}>
+  Stream name identifier. **Applies to stream destinations only.**
+</ParamField>
+
+<ParamField path="serial_parallel[][].codec" type="string" toc={true}>
+  Audio codec for the stream. Takes the same values as `connect.codec` on a single stream destination. **Applies to stream destinations only.**
+</ParamField>
+
+<ParamField path="serial_parallel[][].status_url" type="string" toc={true}>
+  HTTPS URL to receive status notifications for this stream. See [Stream Status Callbacks](#stream-status-callbacks). **Applies to stream destinations only.**
+</ParamField>
+
+<ParamField path="serial_parallel[][].status_url_method" type="string" toc={true}>
+  HTTP method for the stream status webhook. Possible values: `GET`, `POST`. **Applies to stream destinations only.**
+</ParamField>
+
+<ParamField path="serial_parallel[][].realtime" type="boolean" toc={true}>
+  Realtime mode for the stream, as with `connect.realtime` on a single stream destination. **Applies to stream destinations only.**
+</ParamField>
+
+<ParamField path="serial_parallel[][].authorization_bearer_token" type="string" toc={true}>
+  Bearer token for the stream's WebSocket connection, as with `connect.authorization_bearer_token` on a single stream destination. **Applies to stream destinations only.**
+</ParamField>
+
+<ParamField path="serial_parallel[][].custom_parameters" type="object" toc={true}>
+  Custom key-value pairs for the stream, as with `connect.custom_parameters` on a single stream destination. Every value must be a string. **Applies to stream destinations only.**
 </ParamField>
 
 </Indent>
@@ -695,25 +916,29 @@ Combine both strategies. The outer array is the **serial** dimension — groups 
 </ParamField>
 
 <ParamField path="connect.call_state_events" type="string[]" default="['ended']" toc={true}>
-  An array of call state event names to be notified about. Allowed event names are `created`, `ringing`, `answered`, and `ended`. Can be overwritten on each destination.
+  An array of call state event names to be notified about. Allowed event names are `created`, `ringing`, `answered`, and `ended`. Each item can also be a SWML variable that resolves to one of these names. Can be overwritten on each destination.
 </ParamField>
 
 <ParamField path="connect.call_state_url" type="string" toc={true}>
-  Webhook url to send call status change notifications to for all legs. Can be overwritten on each destination. Authentication can also be set in the url in the format of `username:password@url`. Learn more about [status callbacks][statuscallbacks].
+  Webhook url to send call status change notifications to for every phone, SIP, and Resource Address destination. Can be overwritten on each destination. Authentication can also be set in the url in the format of `username:password@url`. Learn more about [status callbacks][statuscallbacks].
+
+  It is not sent to destinations whose `to` starts with `queue:` or `stream:`, and those destinations can't set their own `call_state_url` or `call_state_events`.
 </ParamField>
 
-<ParamField path="connect.codecs" type="string" default="Based on SignalWire settings" toc={true}>
-  Comma-separated string of codecs to offer. Has no effect on calls to phone numbers.
+<ParamField path="connect.codecs" type="string | string[]" default="Based on SignalWire settings" toc={true}>
+  Codecs to offer, as a comma-separated string (`"PCMU,PCMA"`) or an array of strings (`["PCMU", "PCMA"]`). Supported codecs are `PCMU`, `PCMA`, `OPUS`, `G722`, `G729`, `AMR-WB`, `VP8`, and `H264`. Has no effect on calls to phone numbers. Each SIP destination uses these codecs unless it sets its own `codecs`.
 </ParamField>
 
 <ParamField path="connect.confirm" type="string | object[]" toc={true}>
   Confirmation to execute when the call is connected. Can be either:
   - A URL (string) that returns a SWML document
   - An array of SWML methods to execute inline
+
+  Only these methods are allowed, including inside `cond` and `switch` branches: `cond`, `switch`, `set`, `unset`, `hangup`, `play`, `prompt`, `record`, `record_call`, `stop_record_call`, `tap`, `stop_tap`, `stream`, `stop_stream`, `transcribe`, `transcribe_stop`, `send_digits`, `send_sms`, `denoise`, `stop_denoise`, and `user_event`.
 </ParamField>
 
 <ParamField path="connect.confirm_timeout" type="integer" default="Inherits from timeout" toc={true}>
-  The amount of time, in seconds, to wait for the `confirm` script to execute.
+  Time, in seconds, allowed for the `confirm` SWML to run on the answered destination, whether it is fetched from a URL or given inline.
 </ParamField>
 
 <ParamField path="connect.encryption" type="string" default="optional" toc={true}>
@@ -725,21 +950,21 @@ Combine both strategies. The outer array is the **serial** dimension — groups 
 </ParamField>
 
 <ParamField path="connect.from_name" type="string" toc={true}>
-  The caller ID name shown to the person you're calling, displayed alongside the `from` number (sometimes called CNAM). Applies to SIP calls only — it has no effect on calls to phone numbers. Can be overridden on each destination.
+  The caller ID name shown to the person you're calling, displayed alongside the `from` number (sometimes called CNAM). Applies to SIP calls only — it has no effect on calls to phone numbers. Use 1 to 70 characters: letters, digits, spaces, and `_`, `.`, `-`, `+`, or `,`. Can be overridden on each destination.
 </ParamField>
 
 <ParamField path="connect.headers" type="object[]" toc={true}>
-  Custom SIP headers to add to INVITE. Has no effect on calls to phone numbers.
+  Custom SIP headers to add to INVITE. Has no effect on calls to phone numbers. Each SIP destination uses these headers unless it sets its own `headers`.
 </ParamField>
 
 <Indent>
 
 <ParamField path="headers[].name" type="string" required={true} toc={true}>
-  The name of the header.
+  The name of the header. Must be a valid SIP header name, 3 to 256 characters long, that either starts with `X-` or is one of `Privacy`, `P-Asserted-Identity`, or `User-to-User`. Names starting with `SignalWire`, `X-SignalWire`, `X-CID`, or `X-SW-Xregion` are reserved and can't be set. A `Privacy` header takes effect only with the value `id`, which hides the caller's number.
 </ParamField>
 
 <ParamField path="headers[].value" type="string" required={true} toc={true}>
-  The value of the header.
+  The value of the header. Can't be empty or contain line breaks.
 </ParamField>
 
 </Indent>
@@ -755,16 +980,27 @@ Combine both strategies. The outer array is the **serial** dimension — groups 
   See [Variables](#variables) for details.
 </ParamField>
 
-<ParamField path="connect.ringback" type="string[]" default="Plays audio from the provider" toc={true}>
-  Array of `play` URIs to play as ringback tone.
+<ParamField path="connect.ringback" type="boolean | string | string[]" default="A standard ringback tone" toc={true}>
+  Ringback to play to the caller while phone, SIP, and Resource Address destinations ring. Can be:
+  - A `play` URI, or an array of `play` URIs, to play as the ringback tone
+  - `false` to turn off SignalWire's ringback tone and pass the destination's early media (for example, its own ringback or announcements) through to the caller
+  - `true` to keep the default ringback tone
 </ParamField>
 
-<ParamField path="connect.session_timeout" type="integer" default="Based on SignalWire settings" toc={true}>
-  Time, in seconds, to set the SIP `Session-Expires` header in INVITE. Must be a positive, non-zero number. Has no effect on calls to phone numbers.
+<ParamField path="connect.session_timeout" type="integer" toc={true}>
+  SIP `Session-Expires` time, in seconds. Has no effect in this mode: SIP destinations don't use the top-level `session_timeout`, so set `session_timeout` on each SIP destination instead.
 </ParamField>
 
 <ParamField path="connect.status_url" type="string" toc={true}>
   Webhook URL to deliver status events. Reports the connect operation status (connecting, connected, failed, disconnected). See [Connect Status Callbacks](#connect-status-callbacks).
+</ParamField>
+
+<ParamField path="connect.stop_all_on_reject" type="boolean | string[]" default="false" toc={true}>
+  Stop ringing and disconnect the caller when a destination rejects the call. Can be either:
+  - `true` to stop when a destination is busy or declines the call
+  - A non-empty array of the reasons to stop on: `busy`, `decline`, `noAnswer`
+
+  When a destination rejects the call with a matching reason, the destinations ringing alongside it stop ringing. If `connect` then fails with that reason, the `result` block runs first, and then the caller is disconnected.
 </ParamField>
 
 <ParamField path="connect.timeout" type="integer" default="60 seconds" toc={true}>
@@ -772,7 +1008,7 @@ Combine both strategies. The outer array is the **serial** dimension — groups 
 </ParamField>
 
 <ParamField path="connect.webrtc_media" type="boolean" default="false" toc={true}>
-  If true, WebRTC media is offered to the SIP endpoint. Has no effect on calls to phone numbers.
+  If true, WebRTC media is offered to the SIP endpoint. Has no effect on calls to phone numbers. Can be overwritten on each destination.
 </ParamField>
 
 </Indent>
@@ -856,10 +1092,14 @@ Set by the method:
 <Markdown src="/snippets/common/_status-callback-advisory.mdx" />
 
 A POST request will be sent to `call_state_url` with a JSON payload when the call state changes.
-Only events listed in `call_state_events` will be sent (default: `ended`).
+Only call state events listed in `call_state_events` will be sent (default: `ended`).
+
+A call state URL can also receive a `calling.call.connect` event. When the call that runs `connect` has its own call state URL, for example because it was itself dialed with a `call_state_url`, and the `connect` fails, SignalWire also sends that URL a `calling.call.connect` event with `connect_state` set to `failed`, regardless of `call_state_events`. That event has the shape described in [Connect Status Callbacks](#connect-status-callbacks).
+
+The fields below describe the `calling.call.state` payload.
 
 <ParamField path="event_type" type="string" toc={true}>
-  The type of event. Always `calling.call.state` for this method.
+  The type of event: `calling.call.state` for call state changes.
 </ParamField>
 
 
@@ -899,10 +1139,56 @@ Only events listed in `call_state_events` will be sent (default: `ended`).
 </ParamField>
 
 
+<ParamField path="params.segment_id" type="string" toc={true}>
+  The segment ID for the call leg. Present when a segment ID has been assigned.
+</ParamField>
+
+
+<ParamField path="params.tag" type="string" toc={true}>
+  The tag associated with the call. Present when a tag has been set.
+</ParamField>
+
+
 <ParamField path="params.call_state" type="string" toc={true}>
   The current call state. **Valid values:** `created`, `ringing`, `answered`, `ended`.
 </ParamField>
 
+
+<ParamField path="params.parent" type="object" toc={true}>
+  The leg's parent call. Present when the leg has a parent call.
+</ParamField>
+
+<Indent>
+
+<ParamField path="parent.device_type" type="string" toc={true}>
+  The device type of the parent call.
+</ParamField>
+
+<ParamField path="parent.call_id" type="string" toc={true}>
+  The parent call's ID.
+</ParamField>
+
+<ParamField path="parent.node_id" type="string" toc={true}>
+  The node handling the parent call.
+</ParamField>
+
+</Indent>
+
+<ParamField path="params.peer" type="object" toc={true}>
+  The leg's peer call. Present when the leg has a peer.
+</ParamField>
+
+<Indent>
+
+<ParamField path="peer.call_id" type="string" toc={true}>
+  The peer call's ID.
+</ParamField>
+
+<ParamField path="peer.node_id" type="string" toc={true}>
+  The node handling the peer call.
+</ParamField>
+
+</Indent>
 
 <ParamField path="params.direction" type="string" toc={true}>
   The direction of the call leg (e.g., `outbound`).
@@ -916,23 +1202,115 @@ Only events listed in `call_state_events` will be sent (default: `ended`).
 <Indent>
 
 <ParamField path="device.type" type="string" toc={true}>
-  The type of device (e.g., `phone`, `sip`).
+  The type of device: `phone`, `sip`, or `webrtc`.
 </ParamField>
 
 
 <ParamField path="device.params.from_number" type="string" toc={true}>
-  The originating phone number.
+  The originating phone number. Present for `phone` devices.
 </ParamField>
 
 
 <ParamField path="device.params.to_number" type="string" toc={true}>
-  The destination phone number.
+  The destination phone number. Present for `phone` devices.
+</ParamField>
+
+
+<ParamField path="device.params.from" type="string" toc={true}>
+  The originating address. Present for `sip` and `webrtc` devices.
+</ParamField>
+
+
+<ParamField path="device.params.to" type="string" toc={true}>
+  The destination address. Present for `sip` and `webrtc` devices.
+</ParamField>
+
+
+<ParamField path="device.params.headers" type="object[]" toc={true}>
+  SIP headers recorded for the device, each with a `name` and a `value`. Present for some `phone` and `sip` devices.
 </ParamField>
 
 </Indent>
 
 <ParamField path="params.end_reason" type="string" toc={true}>
-  The reason the call ended (only present when `call_state` is `ended`). **Valid values:** `hangup`, `busy`, `no_answer`, `cancel`, `declined`, `error`.
+  The reason the call ended (only present when `call_state` is `ended`). Possible values include `hangup`, `cancel`, `busy`, `noAnswer`, `decline`, `error`, `abandoned`, `maxDuration`, and `notFound`; which ones occur depends on how the call ended.
+</ParamField>
+
+
+<ParamField path="params.end_source" type="string" toc={true}>
+  Which side ended the call: `inbound`, `outbound`, or `none`. Present together with `end_reason`.
+</ParamField>
+
+
+<ParamField path="params.dial_winner" type="string" toc={true}>
+  The string `"true"` when this leg was the destination that answered a dial. Absent otherwise.
+</ParamField>
+
+
+<ParamField path="params.sip_data" type="object" toc={true}>
+  SIP details for the leg. Present for `sip` devices while SIP information is available. Each field is present only when its value is known.
+</ParamField>
+
+<Indent>
+
+<ParamField path="sip_data.sip_req_user" type="string" toc={true}>
+  User part of the SIP Request-URI. `sip_data.sip_req_uri` and `sip_data.sip_req_host` hold the full Request-URI and its host.
+</ParamField>
+
+<ParamField path="sip_data.sip_from_user" type="string" toc={true}>
+  User part of the SIP `From` header. `sip_data.sip_from_uri` and `sip_data.sip_from_host` hold the full URI and its host.
+</ParamField>
+
+<ParamField path="sip_data.sip_to_user" type="string" toc={true}>
+  User part of the SIP `To` header. `sip_data.sip_to_uri` and `sip_data.sip_to_host` hold the full URI and its host.
+</ParamField>
+
+<ParamField path="sip_data.sip_contact_user" type="string" toc={true}>
+  User part of the SIP `Contact` header. `sip_data.sip_contact_uri`, `sip_data.sip_contact_host`, and `sip_data.sip_contact_port` hold the full URI, its host, and its port (as a string).
+</ParamField>
+
+<ParamField path="sip_data.sip_p_asserted_identity" type="string" toc={true}>
+  The SIP `P-Asserted-Identity` header value.
+</ParamField>
+
+<ParamField path="sip_data.sip_from_params" type="object" toc={true}>
+  Parameters of the SIP `From` header, as string key-value pairs. `sip_data.sip_to_params`, `sip_data.sip_contact_params`, and `sip_data.sip_req_params` hold the parameters of the `To` header, the `Contact` header, and the Request-URI.
+</ParamField>
+
+</Indent>
+
+<ParamField path="params.address_id" type="string" toc={true}>
+  The ID of the Resource Address involved in the call. Present when known.
+</ParamField>
+
+
+<ParamField path="params.subscriber_id" type="string" toc={true}>
+  The ID of the subscriber involved in the call. Present when known.
+</ParamField>
+
+
+<ParamField path="params.subscriber_name" type="string" toc={true}>
+  The name of the subscriber involved in the call. Present when known.
+</ParamField>
+
+
+<ParamField path="params.start_time" type="number" toc={true}>
+  When the call leg was created, in milliseconds since the Unix epoch. `0` when not available.
+</ParamField>
+
+
+<ParamField path="params.answer_time" type="number" toc={true}>
+  When the call leg was answered, in milliseconds since the Unix epoch. `0` when not available.
+</ParamField>
+
+
+<ParamField path="params.end_time" type="number" toc={true}>
+  When the call leg ended, in milliseconds since the Unix epoch. `0` when not available.
+</ParamField>
+
+
+<ParamField path="params.audio_in_mos" type="number" toc={true}>
+  Estimated audio quality (mean opinion score) of the audio received on the leg. Present when available.
 </ParamField>
 
 </Indent>
@@ -958,7 +1336,9 @@ Only events listed in `call_state_events` will be sent (default: `ended`).
         "to_number": "+15553214321"
       }
     },
-    "end_reason": null
+    "start_time": 1640000000000,
+    "answer_time": 1640000005000,
+    "end_time": 0
   }
 }
 ```
@@ -1029,12 +1409,12 @@ When you provide a top-level `status_url`, SignalWire sends HTTP POST requests r
 </ParamField>
 
 <ParamField path="params.failed_reason" type="string" toc={true}>
-  The reason the connection failed. Only present when `connect_state` is `failed`.
+  The reason the connection failed. Only present when `connect_state` is `failed`. Uses the same values as the call state `end_reason`, for example `busy`, `decline`, `noAnswer`, `notFound` (the queue is empty or doesn't exist), or `error`.
 </ParamField>
 
 
 <ParamField path="params.peer" type="object" toc={true}>
-  Details about the connected peer. Present when `connect_state` is `connected`.
+  Details about the peer. Present whenever peer information is available, which includes `connected` events and can include `disconnected` events.
 </ParamField>
 
 <Indent>
@@ -1113,7 +1493,7 @@ When you provide a top-level `status_url`, SignalWire sends HTTP POST requests r
     "call_id": "xxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
     "node_id": "xxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
     "connect_state": "failed",
-    "failed_reason": "no_answer"
+    "failed_reason": "noAnswer"
   }
 }
 ```
@@ -1155,6 +1535,26 @@ When connecting to a WebSocket stream destination with a `status_url`, SignalWir
 
 <Indent>
 
+<ParamField path="params.call_id" type="string" toc={true}>
+  The call ID.
+</ParamField>
+
+
+<ParamField path="params.node_id" type="string" toc={true}>
+  The node handling the call.
+</ParamField>
+
+
+<ParamField path="params.segment_id" type="string" toc={true}>
+  The segment ID for the call leg. Present when a segment ID has been assigned.
+</ParamField>
+
+
+<ParamField path="params.tag" type="string" toc={true}>
+  The tag associated with the call. Present when a tag has been set.
+</ParamField>
+
+
 <ParamField path="params.control_id" type="string" toc={true}>
   The control identifier for the stream.
 </ParamField>
@@ -1187,6 +1587,8 @@ When connecting to a WebSocket stream destination with a `status_url`, SignalWir
   "project_id": "xxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
   "space_id": "xxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
   "params": {
+    "call_id": "xxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "node_id": "xxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
     "control_id": "xxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
     "state": "streaming",
     "url": "wss://example.com/audio",
