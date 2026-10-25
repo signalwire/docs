@@ -5,9 +5,18 @@ using TypeSpec.JsonSchema;
 
 namespace SWML.Calling;
 
-@minValue(10000)
+@minValue(1000)
 @maxValue(600000)
 scalar AttentionTimeout extends integer;
+
+@minValue(10000)
+@maxValue(3600000)
+scalar InactivityTimeout extends integer;
+
+@summary("Positive count")
+@doc("A whole number greater than `0`.")
+@minValue(1)
+scalar PositiveCount extends integer;
 
 @summary("Direction enum")
 enum Direction {
@@ -47,9 +56,13 @@ model ConversationMessage {
 
 @summary("params object")
 model AIParams {
-  @doc("Instructs the agent to acknowledge crosstalk and confirm user input when the user speaks over the agent.")
+  @doc("""
+    Instructs the agent to acknowledge crosstalk and confirm user input when the user speaks over the agent.
+    `true` acknowledges up to one interruption; a positive whole number sets the maximum number of
+    interruptions to acknowledge. `false` turns it off. **Default:** `false`.
+    """)
   @example(true)
-  acknowledge_interruptions?: boolean | SWMLVar;
+  acknowledge_interruptions?: boolean | PositiveCount;
 
   @doc("The model to use for the AI. Allowed values are `gpt-4o-mini`, `gpt-4.1-mini`, and `gpt-4.1-nano`.")
   @example("gpt-4o-mini")
@@ -63,7 +76,7 @@ model AIParams {
   @minValue(-50)
   @maxValue(50)
   @example(0)
-  ai_volume?: integer | SWMLVar = 0;
+  ai_volume?: integer = 0;
 
   @doc("A custom identifier for the AI application instance. This name is included in webhook payloads, allowing backend systems to identify which AI configuration made the request.")
   @example("customer-support-bot")
@@ -75,11 +88,11 @@ model AIParams {
     **Default:** `false`
     """)
   @example(true)
-  asr_smart_format?: boolean | SWMLVar;
+  asr_smart_format?: boolean;
 
-  @doc("Amount of time, in ms, to wait before prompting the user to respond. Allowed values from `10,000` - `600,000`. Set to `0` to disable. **Default:** `5000` ms (note: user-configurable values must be `0` or within the `10,000` - `600,000` range).")
+  @doc("Amount of time, in ms, to wait before prompting the user to respond. Allowed values: `0` (to disable) or `1,000` - `600,000`. **Default:** `5000` ms.")
   @example(30000)
-  attention_timeout?: AttentionTimeout | 0 | SWMLVar;
+  attention_timeout?: AttentionTimeout | 0;
 
   @doc("A custom prompt that is fed into the AI when the attention_timeout is reached.")
   @example("Ask if the user would like you to repeat yourself, or if they need more time to respond.")
@@ -92,7 +105,7 @@ model AIParams {
     **Default:** `false`
     """)
   @example(true)
-  asr_diarize?: boolean | SWMLVar;
+  asr_diarize?: boolean;
 
   @doc("""
     If true, will force the AI Agent to only respond to the speaker who reesponds to the AI Agent first.
@@ -100,15 +113,15 @@ model AIParams {
     **Default:** `false`
     """)
   @example(true)
-  asr_speaker_affinity?: boolean | SWMLVar;
+  asr_speaker_affinity?: boolean;
 
   @doc("If `true`, the AI will announce the function that is being executed on the call. **Default:** `false`.")
   @example(false)
-  audible_debug?: boolean | SWMLVar = false;
+  audible_debug?: boolean = false;
 
   @doc("If `true`, the AI will announce latency information during the call. Useful for debugging. **Default:** `false`.")
   @example(false)
-  audible_latency?: boolean | SWMLVar = false;
+  audible_latency?: boolean = false;
 
   @doc("URL of audio file to play in the background while AI plays in foreground.")
   @example("https://cdn.signalwire.com/default-music/welcome.mp3")
@@ -116,20 +129,20 @@ model AIParams {
 
   @doc("Maximum number of times to loop playing the background file. `undefined` means loop indefinitely.")
   @example(5)
-  background_file_loops?: integer | null | SWMLVar;
+  background_file_loops?: integer | null;
 
   @doc("Defines background_file volume within a range of `-50` to `50`. **Default:** `0`.")
   @minValue(-50)
   @maxValue(50)
   @example(-10)
-  background_file_volume?: integer | SWMLVar = 0;
+  background_file_volume?: integer = 0;
 
   @doc("""
     Controls the barge behavior. Allowed values are `"complete"`, `"partial"`, `"all"`, or boolean.
     **Default:** `"complete,partial"`
     """)
   @example("complete,partial")
-  enable_barge?: string | boolean | SWMLVar = string("complete,partial");
+  enable_barge?: string | boolean = string("complete,partial");
 
   @doc("""
     Enables the inner dialog feature, which runs a separate AI process in the background
@@ -137,7 +150,7 @@ model AIParams {
     This gives the agent a form of "internal thought process" that can help it make better decisions.
     """)
   @example(true)
-  enable_inner_dialog?: boolean | SWMLVar = false;
+  enable_inner_dialog?: boolean = false;
 
   @doc("""
     Enables the pause/resume functionality for the AI agent. When enabled, a `pause_conversation`
@@ -146,7 +159,7 @@ model AIParams {
     name (set via `ai_name`) to resume. Cannot be used together with `speak_when_spoken_to`.
     """)
   @example(true)
-  enable_pause?: boolean | SWMLVar = false;
+  enable_pause?: boolean = false;
 
   @doc("""
     How the agent recognizes that the caller has finished speaking. Two signals feed the decision:
@@ -169,8 +182,7 @@ model AIParams {
     | "both"
     | "punct_only"
     | "acoustic_only"
-    | boolean
-    | SWMLVar = "both";
+    | boolean = "both";
 
   @doc("""
     Takes a string, including a regular expression, defining barge behavior.
@@ -183,15 +195,15 @@ model AIParams {
   @minValue(1)
   @maxValue(99)
   @example(3)
-  barge_min_words?: integer | SWMLVar;
+  barge_min_words?: integer;
 
-  @doc("If `true`, allows functions to be executed while the AI is being interrupted. **Default:** `true`.")
+  @doc("If `true`, allows functions to be executed while the AI is being interrupted. **Default:** `false`.")
   @example(true)
-  barge_functions?: boolean | SWMLVar = true;
+  barge_functions?: boolean = false;
 
   @doc("If `true`, enables response caching for improved performance. **Default:** `false`.")
   @example(true)
-  cache_mode?: boolean | SWMLVar = false;
+  cache_mode?: boolean = false;
 
   @doc("Sets the prompt which binds the agent to its purpose.")
   @example("Place an order")
@@ -206,13 +218,13 @@ model AIParams {
 
   @doc("Sets the size of the sliding window for conversation history. This limits how much conversation history is sent to the AI model.")
   @example(20)
-  conversation_sliding_window?: integer | SWMLVar;
+  conversation_sliding_window?: integer;
 
   @doc("Enables debugging to the set URL. Allowed values from `0` - `2`. Default is `1` if url is set.")
   @minValue(0)
   @maxValue(2)
   @example(1)
-  debug_webhook_level?: integer | SWMLVar;
+  debug_webhook_level?: integer;
 
   @doc("Each interaction between the AI and end user is posted in real time to the established URL.")
   @example("https://example.com")
@@ -220,31 +232,31 @@ model AIParams {
 
   @doc("Enables debug mode for the AI session. When enabled, additional diagnostic information is logged including turn detection events, speech processing details, and internal state changes.")
   @example(true)
-  debug?: boolean | integer | SWMLVar;
+  debug?: boolean | integer;
 
   @doc("Forces the direction of the call to the assistant. Valid values are `inbound` and `outbound`.")
-  @example("inbound")
-  direction?: Direction | SWMLVar;
+  @example(Direction.inbound)
+  direction?: Direction;
 
   @doc("DTMF digit, as a string, to signal the end of input (ex: '#')")
   @example("#")
   digit_terminators?: string;
 
-  @doc("Time, in ms, at the end of digit input to detect end of input. Allowed values from `0` - `30,000`. **Default:** `3000` ms.")
-  @minValue(0)
-  @maxValue(30000)
+  @doc("Time, in ms, at the end of digit input to detect end of input. Allowed values from `1` - `29,999`; any other value keeps the default. **Default:** `3000` ms.")
+  @minValue(1)
+  @maxValue(29999)
   @example(3000)
-  digit_timeout?: integer | SWMLVar = 3000;
+  digit_timeout?: integer = 3000;
 
-  @doc("Amount of silence, in ms, at the end of an utterance to detect end of speech. Allowed values from `250` - `10,000`. **Default:** `700` ms.")
-  @minValue(250)
+  @doc("Amount of silence, in ms, at the end of an utterance to detect end of speech. Allowed values from `0` - `10,000`. **Default:** `700` ms.")
+  @minValue(0)
   @maxValue(10000)
   @example(700)
-  end_of_speech_timeout?: integer | SWMLVar = 700;
+  end_of_speech_timeout?: integer = 700;
 
   @doc("If `true`, enables usage accounting. The default is `false`.")
   @example(true)
-  enable_accounting?: boolean | SWMLVar;
+  enable_accounting?: boolean;
 
   @doc("""
     Enables thinking output for the AI Agent.
@@ -252,7 +264,7 @@ model AIParams {
     **Important**: This may introduce a little bit of latency as the AI will use an additional turn in the conversation to think about the query.
     """)
   @example(true)
-  enable_thinking?: boolean | SWMLVar = false;
+  enable_thinking?: boolean = false;
 
   @doc("""
     Converts numbers, currency, dates, and similar values between their written and spoken forms so the AI understands callers more accurately and speaks its responses more naturally.
@@ -281,7 +293,7 @@ model AIParams {
     **Default:** `false`.
     """)
   @example(true)
-  auto_correct?: boolean | SWMLVar = false;
+  auto_correct?: boolean = false;
 
   @doc("""
     A plain-language description of sensitive content to redact from everything the platform records or transmits about the call — logs, events, webhook payloads, the call timeline, and the post-conversation `call_log` and `raw_call_log`. For example: `"credit card numbers, social security numbers, and full names"`. Redacted content is replaced with `----`. Set this parameter to enable redaction; omit it to leave redaction off.
@@ -295,19 +307,19 @@ model AIParams {
     When set to `true`, the AI Agent will be able to utilize visual processing capabilities, while leveraging the `get_visual_input` function.
     """)
   @example(true)
-  enable_vision?: boolean | SWMLVar = false;
+  enable_vision?: boolean = false;
 
   @doc("Amount of energy necessary for bot to hear you (in dB). Allowed values from `0.0` - `100.0`. **Default:** `52.0` dB.")
   @minValue(0.0)
   @maxValue(100.0)
   @example(52.0)
-  energy_level?: float | SWMLVar = 52.0;
+  energy_level?: float = 52.0;
 
   @doc("Amount of time, in ms, to wait for the first word after speech is detected. Allowed values from `0` - `10,000`. **Default:** `1000` ms.")
   @minValue(0)
   @maxValue(10000)
   @example(1000)
-  first_word_timeout?: integer | SWMLVar = 1000;
+  first_word_timeout?: integer = 1000;
 
   @doc("""
     If `true`, the AI will wait for any `filler` to finish playing before executing a function.
@@ -315,11 +327,11 @@ model AIParams {
     **Default:** `false`.
     """)
   @example(true)
-  function_wait_for_talking?: boolean | SWMLVar = false;
+  function_wait_for_talking?: boolean = false;
 
   @doc("If `true`, functions can be executed when there is no user response after a timeout. **Default:** `false`.")
   @example(true)
-  functions_on_no_response?: boolean | SWMLVar = false;
+  functions_on_no_response?: boolean = false;
 
   @doc("""
     A final prompt that is fed into the AI when the `hard_stop_time` is reached.
@@ -328,18 +340,18 @@ model AIParams {
   hard_stop_prompt?: string = "Explain to the user in the current language that you have run out of time to continue the conversation and you will have someone contact them soon.";
 
   @doc("""
-    Specifies the maximum duration fopr the AI Agent to remain active before it exists the session.
-    After the timeout, the AI will stop responding, and will proceed with the next SWML instruction.
+    The maximum time the AI Agent stays active. Once it has passed, the next time the agent is waiting
+    for the caller it receives `hard_stop_prompt` as a final instruction for its last reply, and then
+    the conversation ends. The stop is not exact and does not cut off speech in progress.
     
-    **Time Format:**
-      - Seconds Format: `30s`
-      - Minutes Format: `2m`
-      - Hours Format: `1h`
-      - Combined Format: `1h45m30s`
+    **Time Format:** `HH:MM:SS`, `MM:SS`, or a whole number of seconds. For example, `30:00` and `1800`
+    are both 30 minutes. In the colon forms, minutes and seconds go up to `59`.
+    Unit suffixes such as `30m` or `1h` are not converted: the letters are ignored, so `30m` is read as
+    30 seconds.
     """)
-  @pattern("^(?:\\d+h)?(?:\\d+m)?(?:\\d+s)?$")
-  @example("30m")
-  hard_stop_time?: string | SWMLVar;
+  @pattern("^\\d+(?::\\d+){0,2}$")
+  @example("30:00")
+  hard_stop_time?: string;
 
   @doc("A URL for the hold music to play, accepting WAV, mp3, and FreeSWITCH tone_stream.")
   @example("https://cdn.signalwire.com/default-music/welcome.mp3")
@@ -347,13 +359,11 @@ model AIParams {
 
   @doc("Enables hold music during SWAIG processing.")
   @example(true)
-  hold_on_process?: boolean | SWMLVar = false;
+  hold_on_process?: boolean = false;
 
-  @doc("Amount of time, in ms, to wait before exiting the app due to inactivity. Allowed values from `10,000` - `3,600,000`. **Default:** `600000` ms (10 minutes).")
-  @minValue(10000)
-  @maxValue(3600000)
+  @doc("Amount of time, in ms, to wait before exiting the app due to inactivity. Allowed values: `0` (to disable) or `10,000` - `3,600,000`. **Default:** `600000` ms (10 minutes).")
   @example(600000)
-  inactivity_timeout?: integer | SWMLVar = 600000;
+  inactivity_timeout?: InactivityTimeout | 0 = 600000;
 
   @doc("Specifies the AI model to use for the inner dialog feature. Can be set to a different (often smaller/faster) model than the main conversation model. Only used when `enable_inner_dialog` is `true`.")
   @example("gpt-4.1-nano")
@@ -367,20 +377,14 @@ model AIParams {
   @example("Analyze the conversation and provide insights to help the agent respond better.")
   inner_dialog_prompt?: string = "The assistant is intelligent and straightforward, does its job well and is not excessively polite.";
 
-  @doc("""
-    When enabled, synchronizes the inner dialog with the main conversation flow.
-    This ensures the inner dialog AI waits for the main conversation turn to complete
-    before providing its analysis, rather than running fully asynchronously.
-    Only used when `enable_inner_dialog` is `true`.
-    """)
-  @example(true)
-  inner_dialog_synced?: boolean | SWMLVar = false;
+  @doc("Has no effect and can be omitted. Setting it does not change how the inner dialog runs.")
+  inner_dialog_synced?: boolean;
 
   @doc("Amount of time, in ms, to wait before starting the conversation. Allowed values from `0` - `300,000`.")
   @minValue(0)
   @maxValue(300000)
   @example(1000)
-  initial_sleep_ms?: integer | SWMLVar = 0;
+  initial_sleep_ms?: integer = 0;
 
   @doc("""
     Check for input function with check_for_input.
@@ -391,11 +395,11 @@ model AIParams {
   @minValue(1000)
   @maxValue(10000)
   @example(2000)
-  input_poll_freq?: integer | SWMLVar = 2000;
+  input_poll_freq?: integer = 2000;
 
-  @doc("When enabled, barges agent upon any sound interruption longer than 1 second.")
+  @doc("When enabled, barges agent upon any sound interruption longer than 1 second. The length of sound needed is fixed. **Default:** `false`.")
   @example(true)
-  interrupt_on_noise?: boolean | SWMLVar;
+  interrupt_on_noise?: boolean;
 
   @doc("Provide a prompt for the agent to handle crosstalk.")
   @example("Inform user that you can't hear anything")
@@ -407,7 +411,7 @@ model AIParams {
     to `false` does not disable one. The separate `multilingual` object is likewise switched on by
     being set.
     """)
-  languages_enabled?: boolean | SWMLVar;
+  languages_enabled?: boolean;
 
   @doc("The local timezone setting for the AI. Value should use `IANA TZ ID`")
   @example("America/Ensenada")
@@ -420,19 +424,13 @@ model AIParams {
     **Default:** `false`
     """)
   @example(true)
-  llm_diarize_aware?: boolean | SWMLVar;
+  llm_diarize_aware?: boolean;
 
-  @doc("Sets the maximum emotion intensity for the AI voice. Allowed values from `1` - `30`. **Default:** `30`.")
-  @minValue(1)
-  @maxValue(30)
-  @example(15)
-  max_emotion?: integer | SWMLVar = 30;
+  @doc("Has no effect and can be omitted. Setting it does not change the voice.")
+  max_emotion?: integer;
 
-  @doc("Sets the maximum number of tokens the AI model can generate in a single response. Lower values produce shorter responses and reduce latency.")
-  @minValue(1)
-  @maxValue(16384)
-  @example(1024)
-  max_response_tokens?: integer | SWMLVar;
+  @doc("Has no effect and can be omitted. Setting it does not limit the length of the AI's responses.")
+  max_response_tokens?: integer;
 
   @doc("The ASR (Automatic Speech Recognition) engine to use. Common values include `deepgram:nova-2` and `deepgram:nova-3`.")
   @example("deepgram:nova-3")
@@ -442,7 +440,7 @@ model AIParams {
   @minValue(10000)
   @maxValue(600000)
   @example(120000)
-  outbound_attention_timeout?: integer | SWMLVar = 120000;
+  outbound_attention_timeout?: integer = 120000;
 
   @doc("""
     When enabled, the `global_data` object is automatically saved to a channel variable
@@ -450,7 +448,7 @@ model AIParams {
     across multiple AI agent invocations within the same call.
     """)
   @example(true)
-  persist_global_data?: boolean | SWMLVar = true;
+  persist_global_data?: boolean = true;
 
   @doc("Specifies the output format for structured prompts when using the `pom` array in prompt definitions. Valid values are `markdown` or `xml`.")
   @example("markdown")
@@ -458,11 +456,13 @@ model AIParams {
 
   @doc("""
     Send a summary of the conversation after the call ends.
-    This requires a `post_url` to be set in the ai parameters and the `conversation_id` defined below.
+    This requires `ai.post_prompt_url` to be set and the `conversation_id` defined below.
     This eliminates the need for a `post_prompt` in the ai parameters.
+    Separately from that end-of-call report, an agent that starts with the same `conversation_id`
+    requests the stored summary from `ai.post_prompt_url` so it can resume the conversation.
     """)
   @example(true)
-  save_conversation?: boolean | SWMLVar;
+  save_conversation?: boolean;
 
   @doc("""
     Whether the call checks the [semantic gates](/docs/swml/reference/calling/ai/swaig/functions/gates)
@@ -470,7 +470,7 @@ model AIParams {
     then run without being checked. **Default:** `true`.
     """)
   @example(false)
-  semantic_gates_enabled?: boolean | SWMLVar = true;
+  semantic_gates_enabled?: boolean = true;
 
   @doc("""
     How long one semantic gate check may take in total, in milliseconds. A check that runs
@@ -478,32 +478,29 @@ model AIParams {
     is clamped to it. **Default:** `2500` ms.
     """)
   @example(3000)
-  semantic_gate_timeout_ms?: integer | SWMLVar = 2500;
+  semantic_gate_timeout_ms?: integer = 2500;
 
   @doc("""
     How many recent conversation entries a semantic gate check reads. Allowed values from `0` to
     `100`; a value outside the range is clamped to it. **Default:** `20`.
     """)
   @example(30)
-  semantic_gate_history?: integer | SWMLVar = 20;
+  semantic_gate_history?: integer = 20;
 
-  @doc("Amount of time, in ms, to wait for a speech event. Allowed values from `0` - `10,000`. **Default:** `1400` ms.")
+  @doc("Amount of time, in ms, to wait for a speech event. Allowed values from `0` - `10,000`. `0`, or leaving it unset, lets speech recognition set this timing itself. **Default:** `0`.")
   @minValue(0)
   @maxValue(10000)
   @example(1400)
-  speech_event_timeout?: integer | SWMLVar = 1400;
+  speech_event_timeout?: integer = 0;
 
   @doc("Number of quick stops to generate for speech. Allowed values from `0` - `10`. **Default:** `3`.")
   @minValue(0)
   @maxValue(10)
   @example(3)
-  speech_gen_quick_stops?: integer | SWMLVar = 3;
+  speech_gen_quick_stops?: integer = 3;
 
-  @doc("Overall speech timeout, in ms. Allowed values from `0` - `600,000`. **Default:** `60000` ms.")
-  @minValue(0)
-  @maxValue(600000)
-  @example(60000)
-  speech_timeout?: integer | SWMLVar = 60000;
+  @doc("Reserved for SignalWire internal use. Setting it has no effect on your calls.")
+  speech_timeout?: integer;
 
   @doc("""
     When enabled, the AI agent remains silent until directly addressed by name (using `ai_name`).
@@ -512,7 +509,7 @@ model AIParams {
     Cannot be used together with `enable_pause`.
     """)
   @example(true)
-  speak_when_spoken_to?: boolean | SWMLVar = false;
+  speak_when_spoken_to?: boolean = false;
 
   @doc("""
     When enabled, the AI agent starts in a paused state and will not respond until the user
@@ -520,7 +517,7 @@ model AIParams {
     This is useful for scenarios where you want the agent to wait for explicit activation.
     """)
   @example(true)
-  start_paused?: boolean | SWMLVar = false;
+  start_paused?: boolean = false;
 
   @doc("The static greeting to play when the call is answered. This will always play at the beginning of the call.")
   @example("Hello! Welcome to our customer service. How can I help you today?")
@@ -528,27 +525,34 @@ model AIParams {
 
   @doc("If `true`, the static greeting will not be interrupted by the user if they speak over the greeting. If `false`, the static greeting can be interrupted by the user if they speak over the greeting.")
   @example(true)
-  static_greeting_no_barge?: boolean | SWMLVar = false;
+  static_greeting_no_barge?: boolean = false;
 
   @doc("Defines the mode for summary generation. Allowed values are `\"string\"` and `\"original\"`.")
   @example("string")
   summary_mode?: "string" | "original" | SWMLVar;
 
-  @doc("Allows tweaking any of the indicated settings, such as `barge_match_string`, using the returned SWML from the SWAIG function. **Default:** `true`.")
+  @doc("""
+    Allows SWAIG functions to change the AI model's settings with the `settings` action in their
+    response. Only settings the selected model supports are applied. **Default:** `true`.
+    """)
   @example(true)
-  swaig_allow_settings?: boolean | SWMLVar = true;
+  swaig_allow_settings?: boolean = true;
 
   @doc("Allows your SWAIG to return SWML to be executed. **Default:** `true`.")
   @example(true)
-  swaig_allow_swml?: boolean | SWMLVar = true;
+  swaig_allow_swml?: boolean = true;
 
   @doc("Post entire conversation to any SWAIG call.")
   @example(true)
-  swaig_post_conversation?: boolean | SWMLVar = false;
+  swaig_post_conversation?: boolean = false;
 
-  @doc("Allows SWAIG to set global data that persists across calls. **Default:** `true`.")
+  @doc("""
+    Allows SWAIG functions to set global data that persists across function calls within the current call.
+    It does not carry data over to other calls. To keep `global_data` for a later AI session on the same
+    call, see `persist_global_data`. **Default:** `true`.
+    """)
   @example(true)
-  swaig_set_global_data?: boolean | SWMLVar = true;
+  swaig_set_global_data?: boolean = true;
 
   @doc("""
     Controls whether SWML variables are included in SWAIG function webhook payloads.
@@ -556,7 +560,7 @@ model AIParams {
     only the specified variable names are included.
     """)
   @example(true)
-  swaig_post_swml_vars?: boolean | string[] | SWMLVar;
+  swaig_post_swml_vars?: boolean | string[];
 
   @doc("The model to use for the AI's thinking capabilities — for example `gpt-4o-mini`, `gpt-4.1-mini`, or `gpt-4.1-nano`. A value that is not a recognized model is ignored, and the agent's main model is used instead.")
   @example("gpt-4.1-mini")
@@ -573,17 +577,17 @@ model AIParams {
     **Default:** `true`.
     """)
   @example(true)
-  transparent_barge?: boolean | SWMLVar = true;
+  transparent_barge?: boolean = true;
 
   @doc("Maximum time, in ms, for transparent barge mode. Allowed values from `0` - `60,000`. **Default:** `3000` ms.")
   @minValue(0)
   @maxValue(60000)
   @example(3000)
-  transparent_barge_max_time?: integer | SWMLVar = 3000;
+  transparent_barge_max_time?: integer = 3000;
 
   @doc("Pass a summary of a conversation from one AI agent to another. For example, transfer a call summary between support agents in two departments.")
   @example(true)
-  transfer_summary?: boolean | SWMLVar = false;
+  transfer_summary?: boolean = false;
 
   @doc("""
     Minimum number of characters the transcript must contain before punctuation on its own can end
@@ -598,7 +602,7 @@ model AIParams {
   @minValue(0)
   @maxValue(1000)
   @example(4)
-  turn_detection_min_length?: integer | SWMLVar = 0;
+  turn_detection_min_length?: integer = 0;
 
   @doc("""
     Time in milliseconds the agent waits after deciding the caller's turn has ended before it
@@ -614,26 +618,26 @@ model AIParams {
   @minValue(0)
   @maxValue(10000)
   @example(700)
-  turn_detection_timeout?: integer | SWMLVar;
+  turn_detection_timeout?: integer;
 
   @doc("""
     Which deliberate waits earn a backchannel from `languages[].turn_fillers`, or from
     `multilingual.turn_fillers` when the agent is in multilingual mode, as a comma-separated list
     of tokens. A wait happens when the agent holds off answering because the caller is not
     finished, and the token names why.
-
+    
     List a specific hold source, or a whole class of wait:
     - `spell` — the caller is spelling something out
     - `number` — the caller is reading out digits
     - `text` — the wording suggests the caller is mid-sentence
     - `acoustic` — the audio suggests the caller is mid-sentence
     - `veto` — any of the above
-
+    
     The default answers `spell` and `number` only, because those pauses are expected and cannot be
     shortened. A backchannel during `text` or `acoustic` usually talks over a caller who is still
     going, so give either its own delay with a `<token>:<ms>` suffix rather than listing it bare,
     as in `spell,number,text:1200`.
-
+    
     Tokens are matched whole and case-insensitively, and a space after a comma is fine. A token
     that is not one of the five above matches no wait, so nothing here is validated and a
     misspelling silently leaves the agent with no backchannels at all.
@@ -650,7 +654,7 @@ model AIParams {
     """)
   @minValue(1)
   @example(2)
-  turn_filler_every_n?: integer | SWMLVar = 1;
+  turn_filler_every_n?: integer = 1;
 
   @doc("""
     How long a wait must already have run, in milliseconds, before a backchannel plays. Off by
@@ -660,23 +664,23 @@ model AIParams {
     """)
   @minValue(0)
   @example(800)
-  turn_filler_min_ms?: integer | SWMLVar = 0;
+  turn_filler_min_ms?: integer = 0;
 
   @doc("""
     The format for the AI agent to reference phone numbers.
-    Allowed values are `international` and `national`.
-    **Default:** `international`.
+    Allowed values are `e164`, `international`, and `national`.
+    **Default:** `e164`.
     
     **Example:**
-    - `international`: `+12345678901`
+    - `e164`: `+12345678901`
+    - `international`: `+1 234-567-8901`
     - `national`: `(234) 567-8901`
     """)
-  @example("international")
-  tts_number_format?: "international" | "national" = "international";
+  @example("national")
+  tts_number_format?: "e164" | "international" | "national" = "e164";
 
-  @doc("Enable verbose logging.")
-  @example(true)
-  verbose_logs?: boolean | SWMLVar = false;
+  @doc("Has no effect and can be omitted.")
+  verbose_logs?: boolean;
 
   @doc("""
     What the caller sees on a video call without avatar clips (no `video_talking_file`): an
@@ -724,7 +728,7 @@ model AIParams {
 
   @doc("When false, AI agent will initialize dialogue after call is setup. When true, agent will wait for the user to speak first.")
   @example(true)
-  wait_for_user?: boolean | SWMLVar = false;
+  wait_for_user?: boolean = false;
 
   @doc("""
     Specifies an additional prefix that must be spoken along with the agent's name (`ai_name`)
@@ -739,14 +743,14 @@ model AIParams {
   @minValue(0.0)
   @maxValue(1.0)
   @example(0.5)
-  eleven_labs_stability?: float | SWMLVar = 0.50;
+  eleven_labs_stability?: float = 0.50;
 
   #deprecated "The `eleven_labs_similarity` property is deprecated. Please use `languages[].params.similarity` instead."
   @doc("The similarity slider dictates how closely the AI should adhere to the original voice when attempting to replicate it. The higher the similarity, the closer the AI will sound to the original voice.")
   @minValue(0.0)
   @maxValue(1.0)
   @example(0.75)
-  eleven_labs_similarity?: float | SWMLVar = 0.75;
+  eleven_labs_similarity?: float = 0.75;
 
   ...TypeSpec.Record<unknown>;
 }
