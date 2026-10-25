@@ -19,7 +19,10 @@ model AISidecarObject {
     """)
   prompt?: AISidecarPrompt;
 
-  @doc("The conversation language as a single BCP-47 tag. Sets the speech recognition language and is shared with the model as a hint.")
+  @doc("""
+    The conversation language as a single BCP-47 tag. Sets the speech recognition language and is shared with the model as a hint.
+    Required to start a sidecar; a summarize request (`action.summarize`) can omit it.
+    """)
   @example(string("en-US"))
   @minLength(1)
   lang: string | SWMLVar;
@@ -28,11 +31,21 @@ model AISidecarObject {
   @example("gpt-4.1-mini")
   `model`?: SupportedAIModels = "gpt-4o-mini";
 
-  @doc("The call legs to observe. Both legs are required — a single-leg value is rejected. When omitted, both legs are observed. **Default:** both legs (`remote-caller` and `local-caller`).")
+  @doc("The call legs to observe. Both legs are required, in either order — an empty or single-leg value is rejected. When omitted, both legs are observed. **Default:** both legs (`remote-caller` and `local-caller`).")
   @example(#[
     TranscribeDirection.`remote-caller`,
     TranscribeDirection.`local-caller`
   ])
+  // The sidecar refuses to start unless both legs are listed. JSON Schema can only say that
+  // with two `contains` checks, which TypeSpec has no decorator for, so they are written as a
+  // raw `allOf`. Remove this once TypeSpec can express it.
+  @extension(
+    "allOf",
+    #[
+      #{ contains: #{ `const`: "remote-caller" } },
+      #{ contains: #{ `const`: "local-caller" } }
+    ]
+  )
   direction?: TranscribeDirection[] = #[
     TranscribeDirection.`remote-caller`,
     TranscribeDirection.`local-caller`
@@ -73,7 +86,8 @@ model AISidecarObject {
 
   @doc("""
     Summarize the conversation instead of starting a sidecar. When you include `action.summarize`,
-    the request generates a one-off summary and returns rather than attaching a sidecar.
+    the request asks the sidecar already attached to the call for a one-off summary and returns
+    rather than attaching a sidecar. The other properties are not used.
     """)
   action?: AISidecarSummarizeAction;
 }
@@ -82,16 +96,31 @@ model AISidecarObject {
 model AISidecarSummarizeAction {
   @doc("""
     Generate a one-off summary of the conversation, instead of starting a sidecar, and send it to a webhook.
+    It needs a sidecar already attached to the call: without one the request fails, and no sidecar is started.
     """)
   summarize: {
     @doc("The webhook URL the summary is sent to. Defaults to the sidecar's configured `url`.")
     @example("https://example.com/summary-webhook")
     webhook?: string;
 
-    @doc("The prompt used to write the summary. Defaults to the configured `ai_summary_prompt`.")
+    @doc("""
+      The prompt used to write the summary. Defaults to the sidecar's `params.transcribe_prompt`; when that
+      is not set either, built-in summary instructions are used.
+      """)
     @example("Provide a brief summary of the conversation, including the main topics discussed.")
     prompt?: string;
   };
+}
+
+// A request that sets `action.summarize` only summarizes; it does not start a sidecar, so it
+// needs none of the start configuration, including `lang`.
+@summary("AISidecarSummarizeRequest object")
+@doc("""
+  Asks the sidecar already attached to the call for a one-off summary of the conversation.
+  """)
+model AISidecarSummarizeRequest {
+  @doc("The summary to generate.")
+  action: AISidecarSummarizeAction;
 }
 
 @summary("ai_sidecar Method")
@@ -100,6 +129,7 @@ model AISidecar {
   @doc("""
     Attach a real-time AI observer that listens to a live call and streams agent-facing advice to your application as webhook callbacks.
     The sidecar does not participate in the call; it watches the conversation and produces structured callbacks your application can consume.
+    With `action.summarize`, the request instead summarizes the conversation using the sidecar already attached to the call.
     """)
-  ai_sidecar: AISidecarObject;
+  ai_sidecar: AISidecarObject | AISidecarSummarizeRequest;
 }

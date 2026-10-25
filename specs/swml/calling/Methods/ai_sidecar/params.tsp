@@ -19,13 +19,22 @@ model AISidecarParams {
   @maxValue(60000)
   min_interval_ms?: integer | SWMLVar = 0;
 
-  @doc("The maximum number of tool calls the sidecar will chain within a single evaluation before it must produce its advice. Range: 1-20. **Default:** `5`.")
+  @doc("""
+    The maximum number of model steps in a single evaluation, or in answering an ask. Each step is one model
+    response, which can call several tools at once. When the limit is reached the evaluation stops, whether or
+    not the model has produced its advice. Range: 1-20. **Default:** `5`.
+    """)
   @example(5)
   @minValue(1)
   @maxValue(20)
   max_iters_per_tick?: integer | SWMLVar = 5;
 
-  @doc("The token budget for the sidecar's running conversation history. When the history grows past this, the oldest messages are dropped. Range: 1000-200000. **Default:** `8000`.")
+  @doc("""
+    A soft token budget for the sidecar's running conversation history. When the history grows past it, the
+    oldest complete exchanges are dropped, keeping the sidecar's instructions at the start. Dropping stops once
+    eight or fewer messages follow the instructions, so the history can stay above the budget. An exchange is
+    always dropped whole, so fewer than eight messages can remain. Range: 1000-200000. **Default:** `8000`.
+    """)
   @example(8000)
   @minValue(1000)
   @maxValue(200000)
@@ -63,19 +72,19 @@ model AISidecarParams {
   @example(SpeechEngine.google)
   speech_engine?: SpeechEngine = SpeechEngine.deepgram;
 
-  @doc("How long, in milliseconds, the recognizer waits before finalizing speech. Range: 0-600000. `0` uses the speech engine's own default.")
+  @doc("How long, in milliseconds, the recognizer waits before finalizing speech. Range: 0-600000. When omitted or `0`, `60000` is used.")
   @example(30000)
   @minValue(0)
   @maxValue(600000)
   speech_timeout?: integer | SWMLVar;
 
-  @doc("The amount of silence, in milliseconds, used to detect the end of speech. Range: 0-60000. `0` uses the speech engine's own default.")
+  @doc("The amount of silence, in milliseconds, used to detect the end of speech. Range: 0-60000. When omitted or `0`, `700` is used with the `deepgram` speech engine and `500` with `google`.")
   @example(500)
   @minValue(0)
   @maxValue(60000)
   vad_silence_ms?: integer | SWMLVar;
 
-  @doc("How sensitively the recognizer detects speech. Range: 0-10000. `0` uses the speech engine's own default.")
+  @doc("How sensitively the recognizer detects speech. Range: 0-10000. When omitted or `0`, `400` is used.")
   @example(400)
   @minValue(0)
   @maxValue(10000)
@@ -91,7 +100,11 @@ model AISidecarParams {
   @example(false)
   debug?: boolean | SWMLVar = false;
 
-  @doc("A bias prompt passed to the speech recognizer to improve accuracy on expected terms, such as product or company names. This is distinct from the operator `prompt`.")
-  @example("The call is about enterprise software pricing. Expect terms like ACME, FedRAMP, and SOC 2.")
+  @doc("""
+    The default prompt for an on-demand summary (`action.summarize`) that sets no `prompt` of its own. It is not
+    sent to the speech recognizer; use `hints` to help it recognize specific terms. This is distinct from the
+    operator `prompt` and from `ai_summary_prompt`, which is used for the end-of-call summary.
+    """)
+  @example("Summarize the conversation so far, including the customer's main concerns.")
   transcribe_prompt?: string;
 }
