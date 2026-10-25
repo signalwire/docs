@@ -1,4 +1,3 @@
-
 namespace SWML.Calling;
 @summary("hold Action")
 model HoldAction {
@@ -16,5 +15,19 @@ model HoldAction {
     @maxValue(900)
     @example(300)
     timeout?: int32 | SWMLVar = 300;
+
+    @doc("""
+      The step to move to when the caller is taken off hold. When omitted, the conversation stays on
+      the current step. Applies only if the hold starts.
+      """)
+    @example("resume_order")
+    step?: string;
+
+    @doc("""
+      The step to move to when the hold times out without the caller being taken off hold. When omitted,
+      the conversation stays on the current step. Applies only if the hold starts.
+      """)
+    @example("callback_offer")
+    timeout_step?: string;
   };
 }

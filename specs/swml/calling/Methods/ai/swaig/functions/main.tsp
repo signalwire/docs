@@ -41,7 +41,7 @@ model SWAIGFunctionBase {
 
   @doc("Whether the function is active. **Default:** `true`.")
   @example(true)
-  active?: boolean | SWMLVar = true;
+  active?: boolean = true;
 
   @doc("""
     A powerful and flexible environmental variable which can accept arbitrary data that is set initially in the SWML script or from the SWML set_meta_data action.
@@ -78,7 +78,7 @@ model SWAIGFunctionBase {
     **Default:** `false`.
     """)
   @example(true)
-  skip_fillers?: boolean | SWMLVar = false;
+  skip_fillers?: boolean = false;
 
   @doc("Function-specific URL to send status callbacks and reports to. Takes precedence over a default setting. Authentication can also be set in the url in the format of `username:password@url`. Credentials embedded in the URL take precedence over `web_hook_auth_user` and `web_hook_auth_password`.")
   @example("https://username:password@example.com")
@@ -110,7 +110,7 @@ model SWAIGFunctionBase {
 
   @doc("Whether to wait for fillers to finish playing before continuing with the function. **Default:** `false`.")
   @example(true)
-  wait_for_fillers?: boolean | SWMLVar = false;
+  wait_for_fillers?: boolean = false;
 }
 
 @summary("SWAIG Function")

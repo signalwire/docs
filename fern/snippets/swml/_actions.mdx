@@ -43,6 +43,14 @@
 <ParamField path="hold.timeout" type="integer" default="300" toc={true}>
   The duration to hold the caller in seconds. Maximum is `900` seconds (15 minutes).
 </ParamField>
+
+<ParamField path="hold.step" type="string" toc={true}>
+  The step to move to when the caller is taken off hold. When omitted, the conversation stays on the current step. Applies only if the hold starts.
+</ParamField>
+
+<ParamField path="hold.timeout_step" type="string" toc={true}>
+  The step to move to when the hold times out without the caller being taken off hold. When omitted, the conversation stays on the current step. Applies only if the hold starts.
+</ParamField>
 </Indent>
 
 <ParamField path="action[].change_context" type="string" toc={true}>
@@ -62,13 +70,14 @@
 <ParamField path="action[].toggle_functions" type="object[]" toc={true}>
   An array of objects to toggle SWAIG functions on or off during the conversation.
   Each object identifies a function by name and sets its active state.
+  A function can only toggle functions that have the same `meta_data_token` as itself.
 
   See [`toggle_functions`][toggle_functions] for additional details.
 </ParamField>
 
 <Indent>
 <ParamField path="toggle_functions[].function" type="string" required={true} toc={true}>
-  The name of the SWAIG function to toggle.
+  The name of the SWAIG function to toggle. One name per object; to toggle several functions, add an object for each.
 </ParamField>
 
 <ParamField path="toggle_functions[].active" type="boolean" default="true" toc={true}>
@@ -86,12 +95,12 @@
   See [`set_meta_data`][set_meta_data] for additional details.
 </ParamField>
 
-<ParamField path="action[].unset_global_data" type="string | object" toc={true}>
-  The key of the global data to unset from the [`global_data`][properties]. You can also reset the `global_data` by passing in a new object.
+<ParamField path="action[].unset_global_data" type="string | string[]" toc={true}>
+  The key to remove from [`global_data`](/docs/swml/reference/calling/ai#aiglobal_data), or an array of keys to remove.
 </ParamField>
 
-<ParamField path="action[].unset_meta_data" type="string | object" toc={true}>
-  The key of the metadata to unset from the [`meta_data`][properties]. You can also reset the `meta_data` by passing in a new object.
+<ParamField path="action[].unset_meta_data" type="string | string[]" toc={true}>
+  The key to remove from the function's [`meta_data`](/docs/swml/reference/calling/ai/swaig/functions#functionsmeta_data), or an array of keys to remove.
 </ParamField>
 
 <ParamField path="action[].playback_bg" type="object" toc={true}>
@@ -109,7 +118,7 @@
 </Indent>
 
 <ParamField path="action[].stop_playback_bg" type="boolean" toc={true}>
-  Whether to stop the background audio file.
+  Stops the background audio file. The action runs whenever the key is present, whatever its value, so `false` also stops playback. Leave the key out to keep playing.
 </ParamField>
 
 <ParamField path="action[].user_input" type="string" toc={true}>
@@ -117,24 +126,44 @@
 </ParamField>
 
 <ParamField path="action[].context_switch" type="object" toc={true}>
-  A JSON object containing the context to switch to.
+  Replaces the agent's instructions mid-conversation. Variables in `system_prompt` and `user_prompt` are expanded once: with the rest of the output for a `data_map` function, or when the action runs for a webhook reply.
 
   See [`context_switch`][context_switch] for additional details.
 </ParamField>
 
 <Indent>
 <ParamField path="context_switch.system_prompt" type="string" toc={true}>
-  The instructions to send to the agent.
+  The new instructions for the agent. Set this or `system_pom`.
+</ParamField>
+
+<ParamField path="context_switch.system_pom" type="object" toc={true}>
+  The new instructions as an object with `text` or `pom`, the same shape as a prompt. Used instead of `system_prompt` when both are set.
 </ParamField>
 
 <ParamField path="context_switch.consolidate" type="boolean" default="false" toc={true}>
-  Whether to consolidate the context.
+  If `true`, the conversation so far is summarized and the summary is carried into the new context. When the caller hasn't spoken yet there's nothing to summarize, so `full_reset` is ignored.
+</ParamField>
+
+<ParamField path="context_switch.full_reset" type="boolean" default="false" toc={true}>
+  If `true`, the new instructions replace the agent's original prompt. Otherwise the conversation is cleared and the new instructions are added.
 </ParamField>
 
 <ParamField path="context_switch.user_prompt" type="string" toc={true}>
   A string serving as simulated user input for the AI Agent. During a `context_switch` in the AI's prompt, the `user_prompt` offers the AI pre-established context or guidance.
 </ParamField>
+
+<ParamField path="context_switch.user_pom" type="object" toc={true}>
+  The simulated user input as an object with `text` or `pom`. Used instead of `user_prompt` when both are set.
+</ParamField>
 </Indent>
+
+<ParamField path="action[].settings" type="object" toc={true}>
+  Changes the AI model's settings for the rest of the conversation, as a key-value map. Only settings the selected model supports are applied. Requires [`params.swaig_allow_settings`](/docs/swml/reference/calling/ai/params#paramsswaig_allow_settings), which is on by default.
+</ParamField>
+
+<ParamField path="action[].user_event" type="object" toc={true}>
+  Sends a custom user event for the call, carrying this object as its data.
+</ParamField>
 
 <ParamField path="action[].transfer" type="boolean | object" toc={true}>
   Transfer the call to a new destination. Accepts two forms depending on whether it accompanies a sibling `action[].SWML` payload:

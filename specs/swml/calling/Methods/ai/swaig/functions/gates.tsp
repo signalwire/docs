@@ -186,7 +186,7 @@ model SemanticGateFunctionFields {
     the function inherits `SWAIG.defaults.fillers_at_gates`, which is `true` unless you change it.
     """)
   @example(false)
-  fillers_at_gates?: boolean | SWMLVar;
+  fillers_at_gates?: boolean;
 
   @doc("""
     How many of the caller's newest video frames your `web_hook_url` receives with the function
