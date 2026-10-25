@@ -16,26 +16,39 @@ Answer incoming call and set an optional maximum duration.
 
 <Indent>
 
-<ParamField path="answer.max_duration" type="integer" default="14400 seconds (4 hours)" toc={true}>
-  Maximum duration in seconds for the call.
+<ParamField path="answer.max_duration" type="integer | string" default="14400 seconds (4 hours)" toc={true}>
+  Maximum duration in seconds for the call. Also accepts a SWML variable reference (string) such as `${vars.max_call_seconds}`, which is substituted when the method runs and must resolve to a valid duration.
 </ParamField>
 
 
-<ParamField path="answer.codecs" type="string" toc={true}>
-  Comma-separated string of codecs to offer. Valid codecs are: `PCMU`, `PCMA`, `G722`, `G729`, `AMR-WB`, `OPUS`, `VP8`, `H264`.
+<ParamField path="answer.codecs" type="string | string[]" toc={true}>
+  Codecs to offer, as a comma-separated string (`"PCMU,PCMA,OPUS"`) or an array of strings with one codec per entry. Each array entry can also be a SWML variable reference, resolved when the method runs.
+
+  Valid codecs depend on the call type:
+
+  - Phone calls: `PCMU`, `PCMA`, `G722`, `G729`, `AMR-WB`.
+  - SIP and WebRTC calls: all of the above, plus `OPUS`, `VP8`, `H264`.
+
+  If the requested codecs aren't valid for the call type, they aren't applied and the method reports an error.
 </ParamField>
 
 
 <ParamField path="answer.username" type="string" toc={true}>
-  Username to use for SIP authentication.
+  Username to use for SIP authentication challenges. Applied only together with a `password` that isn't empty after variable expansion.
 </ParamField>
 
 
 <ParamField path="answer.password" type="string" toc={true}>
-  Password to use for SIP authentication.
+  Password to use for SIP authentication challenges. When it isn't empty after variable expansion, it's applied together with `username`.
 </ParamField>
 
 </Indent>
+
+## Variables
+
+Set by the method:
+
+- **answer_result:** (out) `success` or `failed`. `success` is also set when there was nothing to answer, for example on an outbound call or a call that's already answered, so it doesn't by itself mean this method newly answered the call. `failed` means the answer request for this invocation was unsuccessful.
 
 ## **Examples**
 
@@ -89,6 +102,79 @@ sections:
       {
         "answer": {
           "max_duration": 60
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+---
+
+### Codecs as an array
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - answer:
+        codecs:
+          - PCMU
+          - PCMA
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "answer": {
+          "codecs": ["PCMU", "PCMA"]
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+---
+
+### Maximum duration from a variable
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - set:
+        max_call_seconds: 600
+    - answer:
+        max_duration: '${vars.max_call_seconds}'
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "set": {
+          "max_call_seconds": 600
+        }
+      },
+      {
+        "answer": {
+          "max_duration": "${vars.max_call_seconds}"
         }
       }
     ]
