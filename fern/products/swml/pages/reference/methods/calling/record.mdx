@@ -30,7 +30,7 @@ To record calls in the background in a non-blocking fashion, use the [`record_ca
 
 
 <ParamField path="record.direction" type="string" default="speak" toc={true}>
-  Direction of the audio to record: `"speak"` for what party says, `"listen"` for what party hears
+  Direction of the audio to record: `"speak"` for what party says, `"listen"` for what party hears, `"both"` for what the party hears and says
 </ParamField>
 
 
@@ -40,7 +40,7 @@ To record calls in the background in a non-blocking fashion, use the [`record_ca
 
 
 <ParamField path="record.beep" type="boolean" default="false" toc={true}>
-  Whether to play a beep before recording
+  Whether to play a beep when recording starts. Recording starts at the same time as the beep, so the beep can be included in the recording.
 </ParamField>
 
 
@@ -59,8 +59,8 @@ To record calls in the background in a non-blocking fashion, use the [`record_ca
 </ParamField>
 
 
-<ParamField path="record.max_length" type="number" toc={true}>
-  Maximum length of the recording in seconds.
+<ParamField path="record.max_length" type="number" default="0" toc={true}>
+  Maximum length of the recording in seconds. `0` sets no maximum length; the recording can still end for other reasons, such as a terminator digit or a timeout.
 </ParamField>
 
 
@@ -81,10 +81,10 @@ Set by the method:
 
 <Markdown src="/snippets/common/_status-callback-advisory.mdx" />
 
-A POST request will be sent to `status_url` with a JSON payload like the following:
+A POST request will be sent to `status_url` with a JSON payload like the following for each recording state change:
 
 <ParamField path="event_type" type="string" toc={true}>
-  The type of event. Always `calling.call.record` for this method.
+  The type of event. `calling.call.record` for recording state notifications.
 </ParamField>
 
 
@@ -130,7 +130,7 @@ A POST request will be sent to `status_url` with a JSON payload like the followi
 
 
 <ParamField path="params.state" type="string" toc={true}>
-  The current recording state. **Valid values:** `recording`, `paused`, `finished`, `no_input`, `error`.
+  The current recording state. **Valid values:** `recording`, `paused`, `finished`, `no_input`. Request errors arrive as a separate `calling.error` event; see [error notifications](#error-notifications).
 </ParamField>
 
 
@@ -164,6 +164,11 @@ A POST request will be sent to `status_url` with a JSON payload like the followi
 </ParamField>
 
 
+<ParamField path="params.first_frame_time" type="number" toc={true}>
+  Unix timestamp (seconds, float) of the first recorded audio frame. Present when available.
+</ParamField>
+
+
 <ParamField path="params.pause_behavior" type="string" toc={true}>
   How paused recording handles audio. Only present when `state` is `paused`. **Valid values:** `silence`, `skip`.
 </ParamField>
@@ -175,19 +180,27 @@ A POST request will be sent to `status_url` with a JSON payload like the followi
 
 <Indent>
 
-<ParamField path="record.audio.format" type="string" toc={true}>
-  Recording format. **Valid values:** `wav`, `mp3`.
+<ParamField path="params.record.audio" type="object" toc={true}>
+  The audio settings the recording ran with.
+</ParamField>
+
+<Indent>
+
+<ParamField path="params.record.audio.format" type="string" toc={true}>
+  Recording format. **Valid values:** `wav`, `mp3`, `mp4`.
 </ParamField>
 
 
-<ParamField path="record.audio.direction" type="string" toc={true}>
-  Direction of the audio recorded: `speak` or `listen`.
+<ParamField path="params.record.audio.direction" type="string" toc={true}>
+  Direction of the audio recorded. **Valid values:** `speak`, `listen`, `both`.
 </ParamField>
 
 
-<ParamField path="record.audio.stereo" type="boolean" toc={true}>
+<ParamField path="params.record.audio.stereo" type="boolean" toc={true}>
   Whether the recording was made in stereo mode.
 </ParamField>
+
+</Indent>
 
 </Indent>
 
@@ -223,6 +236,10 @@ A POST request will be sent to `status_url` with a JSON payload like the followi
   }
 }
 ```
+
+### Error notifications
+
+When the record request itself fails, `status_url` can also receive a separate event with `event_type` set to `calling.error` instead of a recording state. Its `params.error` object carries the error `code` and `message`. Not every failure produces this event.
 
 ---
 
