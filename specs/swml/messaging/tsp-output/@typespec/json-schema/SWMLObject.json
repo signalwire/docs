@@ -79,7 +79,7 @@
                 "reply": {
                     "anyOf": [
                         {
-                            "type": "string"
+                            "$ref": "#/$defs/ReplyText"
                         },
                         {
                             "$ref": "#/$defs/ReplyWithBody"
@@ -199,7 +199,7 @@
                                     "phone": "%{message.from}"
                                 }
                             ],
-                            "description": "Request body. Objects are JSON-encoded automatically."
+                            "description": "Request body, always sent JSON-encoded. An object is sent as a JSON object. A\nstring is sent as a JSON string value, with quotes and escaping, not as raw text."
                         },
                         "timeout": {
                             "type": "number",
@@ -217,7 +217,7 @@
                             "examples": [
                                 true
                             ],
-                            "description": "If `true`, parse the JSON response into `request_response.*` variables."
+                            "description": "If `true`, parse the response into `request_response.*` variables. Fields are\nsaved only when the URL returns a 2xx response whose body is a JSON object;\nnothing is saved from 4xx or 5xx responses."
                         }
                     },
                     "required": [
@@ -226,7 +226,7 @@
                     "unevaluatedProperties": {
                         "not": {}
                     },
-                    "description": "Make an HTTP request from inside your SWML document — useful for looking up\nrecords, calling your own API, or fetching data to use later in the message flow.\n\nAfter the request, the `%{request_result}` variable tells you the outcome:\n\n- `\"success\"` — the URL returned a 2xx response.\n- `\"failed\"` — the URL returned a 4xx or 5xx, or the network call failed.\n- `\"timeout\"` — the request didn't respond within `timeout` seconds.\n- `\"limit_exceeded\"` — your document already made the maximum of 10 requests;\n  this call was skipped.\n\nNetwork and HTTP errors don't stop your document — the next steps still run,\nso you can branch on `%{request_result}` to handle each outcome. The only\nfatal error is omitting `url`.\n\nWhen `save_variables` is `true` and the response body is JSON, the parsed\nfields are available as `%{request_response.<field>}`. The raw response\nstatus code is in `%{request_response_code}` and the raw body in\n`%{request_response_body}` (capped at 64 KB).",
+                    "description": "Make an HTTP request from inside your SWML document — useful for looking up\nrecords, calling your own API, or fetching data to use later in the message flow.\n\nAfter the request, the `%{request_result}` variable tells you the outcome:\n\n- `\"success\"` — the URL returned a 2xx response.\n- `\"failed\"` — the URL returned a response outside the 2xx range, such as a 4xx\n  or 5xx.\n- `\"timeout\"` — the request didn't get a response within `timeout` seconds, or\n  the connection to the URL failed.\n- `\"limit_exceeded\"` — your document already made the maximum of 10 requests;\n  this call was skipped.\n\nTimeouts, connection failures, and unsuccessful HTTP responses don't stop your\ndocument — the next steps still run, so you can branch on `%{request_result}` to\nhandle each outcome. Omitting `url`, or a `url` that expands to an empty value,\nis a fatal error that stops the document.\n\nWhen `save_variables` is `true` and the URL returns a 2xx response whose body is\na JSON object, the parsed fields are available as `%{request_response.<field>}`.\nThe response status code is in `%{request_response_code}` as a string (for\nexample `\"200\"`) and the response body in `%{request_response_body}`. The stored\nbody is a string, truncated to its first 65,536 characters after the response\nis received; responses with a JSON content type are stored as re-serialized\nJSON, so formatting can differ from what the server sent.",
                     "title": "request"
                 }
             },
@@ -242,34 +242,41 @@
             "type": "object",
             "properties": {
                 "execute": {
-                    "type": "object",
-                    "properties": {
-                        "dest": {
-                            "type": "string",
-                            "examples": [
-                                "greet"
-                            ],
-                            "description": "Name of the section to execute. Must reference a section in the current document."
+                    "anyOf": [
+                        {
+                            "type": "string"
                         },
-                        "params": {
+                        {
                             "type": "object",
-                            "properties": {},
-                            "unevaluatedProperties": {},
-                            "examples": [
-                                {
-                                    "name": "%{message.from}"
+                            "properties": {
+                                "dest": {
+                                    "type": "string",
+                                    "examples": [
+                                        "greet"
+                                    ],
+                                    "description": "Where to execute. One of:\n\n- The name of a section in the current document.\n- A URL (`http` or `https`) that returns a messaging SWML document.\n  SignalWire fetches it with a `POST` request.\n- An inline messaging SWML document, supplied as a JSON string that contains\n  a JSON object."
+                                },
+                                "params": {
+                                    "type": "object",
+                                    "properties": {},
+                                    "unevaluatedProperties": {},
+                                    "examples": [
+                                        {
+                                            "name": "%{message.from}"
+                                        }
+                                    ],
+                                    "description": "Parameters accessible as `params.*` in the called section or document. Replaces (does not merge with) any outer `params` from the caller."
                                 }
+                            },
+                            "required": [
+                                "dest"
                             ],
-                            "description": "Parameters accessible as `params.*` in the called section. Replaces (does not merge with) any outer `params` from the caller."
+                            "unevaluatedProperties": {
+                                "not": {}
+                            }
                         }
-                    },
-                    "required": [
-                        "dest"
                     ],
-                    "unevaluatedProperties": {
-                        "not": {}
-                    },
-                    "description": "Call a named section as a subroutine. Execution continues in the called section,\nthen returns to the caller when the section completes — either via `return` or by\nreaching the end of the section. The destination must be the name of a section\ndefined in the current document; URLs and inline documents are not accepted in the\nmessaging context.",
+                    "description": "Run a section, a SWML document fetched from a URL, or an inline SWML document as a\nsubroutine. Execution continues in the called section or document, then returns to\nthe caller when it completes — either via `return` or by reaching the end. A called\ndocument starts at its `sections.main`.\n\nAccepts either a destination string (shorthand) or an object with `dest` and\n`params`. The shorthand calls the destination with empty `params`, and `%{...}`\nreferences in it are not expanded; use the object form to build the destination\nor pass parameters from variables.",
                     "title": "execute"
                 }
             },
@@ -289,11 +296,10 @@
                     "properties": {
                         "dest": {
                             "type": "string",
-                            "format": "uri",
                             "examples": [
                                 "https://example.com/handler"
                             ],
-                            "description": "URL (`http` or `https`) to fetch the new SWML document from. Authentication can\nbe embedded in the URL as `username:password@url`."
+                            "description": "Where to transfer. One of:\n\n- The name of a section in the current document.\n- A URL (`http` or `https`) to fetch the new SWML document from. Authentication\n  can be embedded in the URL as `username:password@url`.\n- An inline SWML document, supplied as a JSON string that contains a JSON object.\n  A nested YAML or JSON object is not accepted. Execution starts at its\n  `sections.main`.\n\n`%{...}` variable references in `dest` are expanded before the destination is\nresolved."
                         },
                         "method": {
                             "anyOf": [
@@ -322,18 +328,20 @@
                             "examples": [
                                 "POST"
                             ],
-                            "description": "HTTP method for the fetch request."
+                            "description": "HTTP method for the fetch request. Used only when `dest` is a URL."
                         },
                         "params": {
                             "type": "object",
                             "properties": {},
                             "unevaluatedProperties": {},
+                            "default": {},
                             "examples": [
                                 {
-                                    "reason": "escalation"
+                                    "reason": "escalation",
+                                    "customer": "%{message.from}"
                                 }
                             ],
-                            "description": "Parameters to include in the request body of the fetch. Available as `params.*` in the transferred document."
+                            "description": "Parameters for the transferred section or document, available there as `params.*`.\nWhen `dest` is a URL, they are also sent in the request body. They replace the\ncurrent `params` rather than merging with them; when omitted, the target receives\nan empty object.\n\nString values are expanded for `%{...}` variable references at every depth,\nincluding inside nested objects and arrays. Keys are not expanded. Each\nsubstitution produces a string, a reference to a path that doesn't exist becomes\nan empty string, and expressions are not evaluated."
                         }
                     },
                     "required": [
@@ -342,7 +350,7 @@
                     "unevaluatedProperties": {
                         "not": {}
                     },
-                    "description": "Fetch and execute a new SWML document from a URL. SignalWire POSTs the\n[inbound message webhook payload](/docs/apis/rest/webhooks/inbound-message-webhook)\nto `dest`: `message` describes the original inbound message, `params` carries\nthe values supplied here, and `vars` carries the propagated runtime variables\n(`request_result`, `reply_result`, etc.) accumulated by the current document.\n\nThis is a tail call — it replaces the current document and does not return.\nSteps after `transfer` are skipped, including steps in calling sections. In the\nmessaging context, `transfer.dest` must be a URL — section names and inline\ndocuments are not accepted.",
+                    "description": "Hand processing over to another section, another SWML document fetched from a URL,\nor an inline SWML document. `dest` selects which.\n\nThis is a tail call — it replaces the current document and does not return.\nSteps after `transfer` are skipped, including steps in calling sections.\n\nWhen `dest` is a URL, SignalWire sends the\n[inbound message webhook payload](/docs/apis/rest/webhooks/inbound-message-webhook)\nin the request body to `dest`, using `method` (`POST` by default): `message`\ndescribes the original inbound message, `params` carries the values supplied here,\nand `vars` carries the propagated runtime variables (`request_result`,\n`reply_result`, etc.) accumulated by the current document.",
                     "title": "transfer"
                 }
             },
@@ -365,7 +373,7 @@
                             "examples": [
                                 "message.body"
                             ],
-                            "description": "Variable path to match. Specified without the `%{}` wrapper (e.g. `message.body`)."
+                            "description": "Variable path to match. Specified without the `%{}` wrapper (e.g. `message.body`).\nThe resolved value is converted to a string, then transformed and compared exactly\nwith the `case` keys. A missing variable path resolves to an empty string."
                         },
                         "transform": {
                             "$ref": "#/$defs/SwitchTransform",
@@ -383,7 +391,7 @@
                                     "$ref": "#/$defs/SWMLMethod"
                                 }
                             },
-                            "description": "Map of values to arrays of SWML methods to execute. The key is the value to compare\nagainst `variable` (after applying `transform`); the value is the array of methods\nto run on match."
+                            "description": "Map of values to arrays of SWML methods to execute. The key is the value to compare\nagainst `variable` (after applying `transform`); the value is the array of methods\nto run on match. Keys are literal and are not transformed, and matching is exact.\nAn empty-string key matches a missing variable; otherwise `default` is used."
                         },
                         "default": {
                             "type": "array",
@@ -400,7 +408,7 @@
                     "unevaluatedProperties": {
                         "not": {}
                     },
-                    "description": "Branch on a variable's value, with optional text transforms applied before matching.\nUseful for keyword-driven inbound message handling.",
+                    "description": "Branch on a variable's value, with optional text transforms applied before matching.\nUseful for keyword-driven inbound message handling.\n\nAfter the selected branch completes, execution normally continues with the next step\nafter `switch`, subject to the document execution limit and any control-flow change\nor execution failure.",
                     "title": "switch"
                 }
             },
@@ -416,31 +424,45 @@
             "type": "object",
             "properties": {
                 "goto": {
-                    "type": "object",
-                    "properties": {
-                        "label": {
-                            "type": "string",
-                            "examples": [
-                                "greeting"
-                            ],
-                            "description": "Label to jump to. Must reference a `label` step in the current section."
+                    "anyOf": [
+                        {
+                            "type": "string"
                         },
-                        "max": {
-                            "type": "integer",
-                            "default": 100,
-                            "examples": [
-                                3
+                        {
+                            "type": "object",
+                            "properties": {
+                                "label": {
+                                    "type": "string",
+                                    "examples": [
+                                        "greeting"
+                                    ],
+                                    "description": "Label to jump to. Must reference a `label` step in the current section."
+                                },
+                                "max": {
+                                    "anyOf": [
+                                        {
+                                            "type": "integer"
+                                        },
+                                        {
+                                            "$ref": "#/$defs/MessagingVariableReference"
+                                        }
+                                    ],
+                                    "default": 100,
+                                    "examples": [
+                                        3
+                                    ],
+                                    "description": "Maximum number of jumps to `label`. Accepts an integer or a `%{...}` variable\nreference; a reference is expanded and then converted to an integer. A reference\nthat doesn't resolve allows no jumps — it does not fall back to 100.\n\nJumps are counted per target label for the whole run, not per `goto` step: every\n`goto` that targets the same label name shares one count, including `goto` steps\nin other sections and in documents reached through `execute` or `transfer`. Each\njump attempt adds one to the count and is allowed while the count is at most this\nstep's `max`.\n\nWhen an attempt exceeds `max`, the jump doesn't happen and the steps array that\ncontains the label ends without running its remaining steps. Execution continues\nwith whatever ran that array, such as the steps after an enclosing `switch` or\nthe caller of an `execute`.\n\n`max` cannot raise the document's limit of 100 steps, which counts every step\nincluding each `label` passed. That limit can stop execution before `max` jumps\nare reached."
+                                }
+                            },
+                            "required": [
+                                "label"
                             ],
-                            "description": "Maximum number of times this `goto` can jump to its label. Once the limit is reached,\nthe section ends without running any further steps."
+                            "unevaluatedProperties": {
+                                "not": {}
+                            }
                         }
-                    },
-                    "required": [
-                        "label"
                     ],
-                    "unevaluatedProperties": {
-                        "not": {}
-                    },
-                    "description": "Jump to a named label in the current section. Used for retry loops and conditional\nrepetition. `goto` does not cross subroutine boundaries.",
+                    "description": "Jump to a named label in the current section. Used for retry loops and conditional\nrepetition. `goto` does not cross subroutine boundaries.\n\nAccepts a label name as a string (shorthand) or an object with `label` and `max`.\nThe shorthand jumps to the label exactly as written, without variable expansion,\nwith the default `max` of 100.",
                     "title": "goto"
                 }
             },
@@ -490,6 +512,12 @@
             },
             "title": "label Method"
         },
+        "ReplyText": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Reply body text, used by the string shorthand and by string outcomes of an inline\n`switch`. After variable expansion it must contain at least one non-whitespace\ncharacter.\n\nBody length is checked before the reply is queued. The limit depends on the messaging\nroute used and on whether the reply is SMS or MMS, and length is counted according to\nthe message encoding. A body over the limit fails the reply.",
+            "title": "Reply body text"
+        },
         "ReplyWithBody": {
             "type": "object",
             "properties": {
@@ -513,7 +541,7 @@
                     "examples": [
                         "https://example.com/reply-status"
                     ],
-                    "description": "URL that receives delivery status callbacks for the outbound reply. The callback uses the [message status callback payload](/docs/apis/rest/webhooks/message-status-callback)."
+                    "description": "HTTP or HTTPS URL that receives delivery status callbacks for the outbound reply. The\ncallback uses the [message status callback payload](/docs/apis/rest/webhooks/message-status-callback).\nCallbacks are delivered after the reply is queued, so a `queued` result does not confirm\nthat a callback reached this URL."
                 },
                 "body": {
                     "type": "string",
@@ -521,7 +549,7 @@
                         "Thanks for your message!"
                     ],
                     "minLength": 1,
-                    "description": "Body text of the reply. Must be a non-empty string. Required if `media` is not present."
+                    "description": "Body text of the reply. Required if `media` is not present. When no media is attached,\nthe body must contain at least one non-whitespace character after variable expansion.\n\nBody length is checked before the reply is queued. The limit depends on the messaging\nroute used and on whether the reply is SMS or MMS, and length is counted according to\nthe message encoding. A body over the limit fails the reply."
                 },
                 "media": {
                     "type": "array",
@@ -535,7 +563,7 @@
                         ]
                     ],
                     "maxItems": 8,
-                    "description": "Array of media URLs to attach. Converts the message to MMS. Maximum 8 attachments."
+                    "description": "Array of HTTP or HTTPS media URLs to attach. Converts the message to MMS. Maximum 8\nattachments. Media is fetched after the reply is queued, so a `queued` result does not\nconfirm that the media could be retrieved."
                 }
             },
             "required": [
@@ -569,7 +597,7 @@
                     "examples": [
                         "https://example.com/reply-status"
                     ],
-                    "description": "URL that receives delivery status callbacks for the outbound reply. The callback uses the [message status callback payload](/docs/apis/rest/webhooks/message-status-callback)."
+                    "description": "HTTP or HTTPS URL that receives delivery status callbacks for the outbound reply. The\ncallback uses the [message status callback payload](/docs/apis/rest/webhooks/message-status-callback).\nCallbacks are delivered after the reply is queued, so a `queued` result does not confirm\nthat a callback reached this URL."
                 },
                 "media": {
                     "type": "array",
@@ -582,8 +610,9 @@
                             "https://example.com/image.jpg"
                         ]
                     ],
+                    "minItems": 1,
                     "maxItems": 8,
-                    "description": "Array of media URLs to attach. Converts the message to MMS. Maximum 8 attachments. Required if `body` is not present."
+                    "description": "Array of HTTP or HTTPS media URLs to attach. Converts the message to MMS. Required if\n`body` is not present, and must then contain at least one URL. Maximum 8 attachments.\nMedia is fetched after the reply is queued, so a `queued` result does not confirm that\nthe media could be retrieved."
                 },
                 "body": {
                     "type": "string",
@@ -591,7 +620,7 @@
                         "Check out this image!"
                     ],
                     "minLength": 1,
-                    "description": "Optional body text included alongside the media attachments. Must be a non-empty string if provided."
+                    "description": "Optional body text included alongside the media attachments. Must be a non-empty string\nif provided. Body length is checked before the reply is queued; the limit depends on the\nmessaging route used and length is counted according to the message encoding."
                 }
             },
             "required": [
@@ -628,7 +657,7 @@
                             "unevaluatedProperties": {
                                 "anyOf": [
                                     {
-                                        "type": "string"
+                                        "$ref": "#/$defs/ReplyText"
                                     },
                                     {
                                         "$ref": "#/$defs/ReplyWithBody"
@@ -643,7 +672,7 @@
                         "default": {
                             "anyOf": [
                                 {
-                                    "type": "string"
+                                    "$ref": "#/$defs/ReplyText"
                                 },
                                 {
                                     "$ref": "#/$defs/ReplyWithBody"
@@ -684,6 +713,12 @@
             ],
             "description": "Transform applied to the variable value before matching.",
             "title": "SwitchTransform enum"
+        },
+        "MessagingVariableReference": {
+            "type": "string",
+            "pattern": "^[\\$%]\\{.*\\}$",
+            "description": "A messaging SWML variable reference, such as `%{params.max_retries}`. It is replaced with\nthe variable's value from the inbound message (`message.*`), the current `params`, or a\nvariable set by an earlier step before the method uses it.",
+            "title": "Messaging variable reference"
         }
     }
 }
