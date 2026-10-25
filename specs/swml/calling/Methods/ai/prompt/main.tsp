@@ -8,6 +8,16 @@ using TypeSpec.JsonSchema;
 namespace SWML.Calling;
 
 model AIPromptBase {
+  // Read by the `ai` verb only. Bedrock does not select a model from its prompt objects;
+  // its prompt models are expected to omit this (see handoffs for amazon_bedrock).
+  @doc("""
+    The AI model to use for this prompt. On `prompt`, it takes precedence over `params.ai_model`.
+    On `post_prompt`, it selects the model that writes the summary; when omitted, the agent's model is used.
+    A model that isn't available is replaced with a default model where possible.
+    """)
+  @example("gpt-4.1-mini")
+  `model`?: string;
+
   @doc("Limits the amount of tokens that the AI agent may generate when creating its response")
   @minValue(0)
   @maxValue(4096)
@@ -26,15 +36,11 @@ model AIPromptBase {
   @example(0.9)
   top_p?: float | SWMLVar = 1.0;
 
-  @doc("""
-    Threshold to fire a speech-detect event at the end of the utterance. Float value between 0.0 and 1.0.
-    Decreasing this value will reduce the pause after the user speaks, but may introduce false positives.
-    **Default:** `0.6`.
-    """)
+  #deprecated "`confidence` has no effect and can be omitted."
+  @doc("Has no effect and can be omitted. Setting it does not change speech detection.")
   @minValue(0.0)
   @maxValue(1.0)
-  @example(0.6)
-  confidence?: float | SWMLVar = 0.6;
+  confidence?: float | SWMLVar;
 
   @doc("Aversion to staying on topic. Float value between -2.0 and 2.0. Positive values increase the model's likelihood to talk about new topics. **Default:** `0`.")
   @minValue(-2.0)
