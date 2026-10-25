@@ -23,7 +23,7 @@ namespace SWML.Calling;
 @doc("""
   An action for an [`amazon_bedrock`](/docs/swml/reference/calling/amazon-bedrock) agent to run once it
   has spoken its reply. One object can set several of these keys, and each key that is set is applied.
-  Other keys are ignored.
+  Other keys are ignored at runtime.
   """)
 model BedrockAction {
   @doc("""
@@ -91,7 +91,7 @@ model BedrockExpressionMatch {
 
 @summary("Bedrock expression with string")
 model BedrockStringExpression {
-  @doc("The text to test, after variable expansion. Takes precedence over `expr`.")
+  @doc("The text to test, after variable expansion. Set either `string` or `expr`, not both. If a document sets both at runtime, `string` is used.")
   @example("%{args.reason}")
   string: string;
 

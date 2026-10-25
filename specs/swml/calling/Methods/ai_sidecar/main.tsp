@@ -36,9 +36,9 @@ model AISidecarObject {
     TranscribeDirection.`remote-caller`,
     TranscribeDirection.`local-caller`
   ])
-  // The sidecar refuses to start unless both legs are listed. JSON Schema can only say that
-  // with two `contains` checks, which TypeSpec has no decorator for, so they are written as a
-  // raw `allOf`. Remove this once TypeSpec can express it.
+  // The sidecar refuses to start unless both legs are listed. JSON Schema says that with two
+  // `contains` checks, but `@contains` emits only one per schema, so they are written as a raw
+  // `allOf`. Remove this once TypeSpec can express it.
   @extension(
     "allOf",
     #[

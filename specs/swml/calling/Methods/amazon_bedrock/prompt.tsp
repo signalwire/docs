@@ -8,7 +8,7 @@ namespace SWML.Calling;
 // their content member rather than spreading `AIPromptText`/`AIPromptPom`.
 //
 // `temperature` and `top_p` are re-declared rather than picked: Bedrock starts from its own
-// defaults (0.7 and 0.9) and reads them as literal numbers, with no variable expansion.
+// defaults (0.7 and 0.9) and reads them as numbers or numeric strings, with no variable expansion.
 @summary("Bedrock prompt settings")
 model BedrockPromptBase {
   @doc("The voice the agent speaks with. **Default:** `matthew`.")
@@ -35,7 +35,7 @@ model BedrockPromptText {
 }
 
 @summary("Bedrock prompt with POM")
-@doc("A prompt written as a Prompt Object Model (POM). When `text` is also set, `text` is used and `pom` is ignored.")
+@doc("A prompt written as a Prompt Object Model (POM). Set either `text` or `pom`, not both. If a document sets both at runtime, `text` is used.")
 model BedrockPromptPom {
   ...PickProperties<AIPromptPom, "pom">;
   ...BedrockPromptBase;
@@ -54,7 +54,7 @@ model BedrockPostPromptText {
 }
 
 @summary("Bedrock post-prompt with POM")
-@doc("Summary instructions written as a Prompt Object Model (POM). When `text` is also set, `text` is used and `pom` is ignored.")
+@doc("Summary instructions written as a Prompt Object Model (POM). Set either `text` or `pom`, not both. If a document sets both at runtime, `text` is used.")
 model BedrockPostPromptPom {
   ...PickProperties<AIPostPromptPom, "pom">;
 }

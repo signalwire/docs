@@ -1861,7 +1861,7 @@ model CallAISidecarRequest {
     [SWML ai_sidecar reference](/docs/swml/reference/calling/ai-sidecar) for the full field catalog.
     When `action.summarize` is present, the request summarizes the conversation instead of starting a sidecar.
     """)
-  params: AISidecarObject;
+  params: AISidecarObject | AISidecarSummarizeRequest;
 }
 
 @summary("calling.ai_sidecar.poke")

@@ -54,7 +54,7 @@ model StringExpression {
 
 @summary("Expression with expr")
 model ExprExpression {
-  ...OmitProperties<Expression, "string" | "expr">;
+  ...OmitProperties<Expression, "string" | "expr" | "pattern">;
 
   @doc("""
     An expression evaluated after variable expansion. The expression matches when it evaluates to a
@@ -62,6 +62,13 @@ model ExprExpression {
     """)
   @example("%{args.quantity}")
   expr: string;
+
+  @doc("""
+    Optional. A regular expression tried against the expanded `expr` text when `expr` doesn't match. It
+    matches case-insensitively unless written in `/pattern/flags` form.
+    """)
+  @example("^yes$")
+  pattern?: string;
 }
 
 union DataMapExpression {
