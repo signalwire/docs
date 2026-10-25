@@ -5,7 +5,10 @@ using TypeSpec.JsonSchema;
 
 namespace SWML.Calling;
 
-@pattern("^(http://.*|https://.*|ring: ?[0-9.]*: ?([a-zA-Z]{2}|bong)|say: ?.*|silence: ?[0-9.]*|ring: ?([a-zA-Z]{2}|bong))$")
+// Literal playable-sound syntax shared by `play` and `prompt`. Ringtone names
+// are the supported set; ring and silence durations, when given, are at least 1 second;
+// `say:` needs text after the prefix.
+@pattern("^(http://.*|https://.*|ring:( ?0*[1-9][0-9]*(\\.[0-9]*)?:)?(at|au|be|bg|br|ca|ch|cl|cn|cy|cz|de|dk|dz|ee|eg|es|fi|fr|gr|hu|il|in|it|jp|ko|lt|mx|my|nl|no|nz|ph|pk|pl|pt|ro|rs|ru|sa|se|sg|th|tr|tw|uk|us|ve|za|bong)|say:.+|silence: ?0*[1-9][0-9]*(\\.[0-9]*)?)$")
 scalar play_url extends string;
 
 @summary("PlayBase object")
@@ -74,9 +77,9 @@ model PlayWithURL is PlayBase {
     Required if `urls` is not present.
     Allowed URLs are:
         - http:// or https:// - audio file to GET
-        - ring:[duration:]<ringtone> - ring tone to play, named by country code or `bong`. For example: ring:us to play single ring or ring:20.0:us to play ring for 20 seconds.
+        - ring:[duration:]<ringtone> - ring tone to play, named by country code or `bong`. For example: ring:us to play single ring or ring:20.0:us to play ring for 20 seconds. A duration, when given, is at least 1 second.
         - say:<text to speak> - Sentence to say
-        - silence: <duration> - seconds of silence to play
+        - silence: <duration> - seconds of silence to play, at least 1
     """)
   @example("https://example.com/welcome.mp3")
   url: play_url | SWMLVar;
@@ -90,9 +93,9 @@ model PlayWithURLS is PlayBase {
     Each entry can be a playable URL or a SWML variable that resolves to one.
     Allowed URLs are:
         - http:// or https:// - audio file to GET
-        - ring:[duration:]<ringtone> - ring tone to play, named by country code or `bong`. For example: ring:us to play single ring or ring:20.0:us to play ring for 20 seconds.
+        - ring:[duration:]<ringtone> - ring tone to play, named by country code or `bong`. For example: ring:us to play single ring or ring:20.0:us to play ring for 20 seconds. A duration, when given, is at least 1 second.
         - say:<text to speak> - Sentence to say
-        - silence: <duration> - seconds of silence to play
+        - silence: <duration> - seconds of silence to play, at least 1
     """)
   @example(#[
     "https://example.com/intro.mp3",

@@ -20,7 +20,7 @@ what [properties](#properties) are set.
 <Indent>
 
 <ParamField path="prompt.play" type="string | string[]" required={true} toc={true}>
-  Either a [playable sound](#playable-sounds) or an array of [playable sounds](#playable-sounds)
+  Either a [playable sound](#playable-sounds) or an array of [playable sounds](#playable-sounds). Each entry can also be a SWML variable that resolves to a playable sound. Unlike the `play` method, `prompt.play` doesn't accept an object.
 </ParamField>
 
 
@@ -30,22 +30,22 @@ what [properties](#properties) are set.
 
 
 <ParamField path="prompt.say_voice" type="string" default="Polly.Salli" toc={true}>
-  Voice to use with `say:` for text to speech
+  Voice to use with `say:` for text to speech. When not set, the `say_voice` [variable](#variables) is used if it is set. A voice name can't contain whitespace, double quotes, backticks, or any of the characters `,{}()[]<>=/;!@#$%^&*+|~?`.
 </ParamField>
 
 
 <ParamField path="prompt.say_language" type="string" default="en-US" toc={true}>
-  Language to use with `say:` for text to speech
+  Language to use with `say:` for text to speech, as a language tag such as `en-US`. When not set, the `say_language` [variable](#variables) is used if it is set, otherwise `en-US`.
 </ParamField>
 
 
 <ParamField path="prompt.say_gender" type="string" default="female" toc={true}>
-  Gender to use with `say:` for text to speech
+  Gender to use with `say:` for text to speech. **Valid values:** `male`, `female`. When not set, the `say_gender` [variable](#variables) is used if it is set, otherwise `female`.
 </ParamField>
 
 
 <ParamField path="prompt.max_digits" type="integer" default="1" toc={true}>
-  Number of digits to collect
+  Number of digits to collect. Must be at least `1`. Values above `100` are capped at `100`.
 </ParamField>
 
 
@@ -55,32 +55,32 @@ what [properties](#properties) are set.
 
 
 <ParamField path="prompt.digit_timeout" type="number" default="5.0 seconds" toc={true}>
-  Time in seconds to wait for next digit
+  Time in seconds to wait for next digit. Must be at least `1`.
 </ParamField>
 
 
 <ParamField path="prompt.initial_timeout" type="number" default="5.0 seconds" toc={true}>
-  Time in seconds to wait for start of input
+  Time in seconds to wait for start of input. Must be at least `1`. This sets the wait only; it doesn't select digit or speech input.
 </ParamField>
 
 
 <ParamField path="prompt.speech_timeout" type="number" toc={true}>
-  Max time in seconds to wait for speech result
+  Max time in seconds to wait for speech result. Must be at least `1`.
 </ParamField>
 
 
 <ParamField path="prompt.speech_end_timeout" type="number" toc={true}>
-  Time in seconds to wait for end of speech utterance
+  Time in seconds to wait for end of speech utterance. Must be at least `1`.
 </ParamField>
 
 
 <ParamField path="prompt.speech_language" type="string" toc={true}>
-  Language to detect speech in
+  Language to detect speech in, as a language tag such as `en-US`. Extension and private-use subtags aren't accepted. A valid tag doesn't guarantee that every speech engine supports the language.
 </ParamField>
 
 
 <ParamField path="prompt.speech_hints" type="string[]" toc={true}>
-  Expected words to match
+  Expected words or phrases to help speech recognition. Each hint must be a non-empty string and is sent as written; SWML variables inside hints aren't expanded. Hints longer than 100 bytes or containing `=` are ignored, and hints after the first 5,000, or after 100,000 bytes in total, are dropped.
 </ParamField>
 
 
@@ -90,7 +90,7 @@ what [properties](#properties) are set.
 
 
 <ParamField path="prompt.status_url" type="string" toc={true}>
-  HTTP or HTTPS URL to deliver prompt status events. Learn more about [status callbacks][statuscallbacks].
+  HTTP or HTTPS URL to deliver prompt status events. A SWML variable must resolve to an HTTP or HTTPS URL. Learn more about [status callbacks][statuscallbacks].
 </ParamField>
 
 </Indent>
@@ -98,10 +98,11 @@ what [properties](#properties) are set.
 <Note>
 By default, only digit input via keypad is enabled. When **at least one** speech input based parameter
 is set (`speech_timeout`, `speech_end_timeout`, `speech_language` or `speech_hints`), speech input is
-enabled and digit input is disabled.
+enabled and digit input is disabled. Setting `speech_engine` alone doesn't enable speech input.
 
 To enable speech and digit based input collection at once, set at least one speech input parameter
-and at least one digit input based parameter (`max_digits`, `terminators`, `digit_timeout`, and `initial_timeout`).
+and at least one digit input based parameter (`max_digits`, `terminators`, or `digit_timeout`).
+`initial_timeout` doesn't count as a digit input parameter.
 </Note>
 
 ## Playable sounds
@@ -122,8 +123,9 @@ Read by the method:
 
 ### Set by the method
 
-- **prompt_result:** (out) - `failed`, `no_input`, `match_speech`, `match_digits`, or `no_match`.
-- **prompt_value:** (out) - the digits or utterance collected.
+- **prompt_result:** (out) - usually `failed`, `no_input`, `match_speech`, `match_digits`, or `no_match`. A speech recognition error can produce a different value.
+- **prompt_value:** (out) - the digits collected, unchanged, or the recognized speech, normalized: converted to lowercase, with punctuation and other separators collapsed into single spaces. Apostrophes and hyphens are kept.
+- **prompt_value_raw:** (out) - the digits or recognized speech exactly as collected, before normalization. Cleared along with `prompt_value` when nothing is collected or the method fails.
 - **prompt_digit_terminator:** (out) - digit terminator collected, if any.
 - **prompt_speech_confidence:** (out) - speech confidence measured, if any.
 
@@ -131,10 +133,10 @@ Read by the method:
 
 <Markdown src="/snippets/common/_status-callback-advisory.mdx" />
 
-A POST request will be sent to `status_url` with a JSON payload like the following:
+A POST request will be sent to `status_url` with a JSON payload like the following. The prompt sends two kinds of events to the same URL: `calling.call.collect` with the input result, and `calling.call.play` as the prompt audio plays.
 
 <ParamField path="event_type" type="string" toc={true}>
-  The type of event. Always `calling.call.collect` for this method.
+  The type of event: `calling.call.collect` for the input result, or `calling.call.play` for prompt playback state.
 </ParamField>
 
 
@@ -180,44 +182,49 @@ A POST request will be sent to `status_url` with a JSON payload like the followi
 
 
 <ParamField path="params.result" type="object" toc={true}>
-  The collection result details.
+  The collection result details. Present on `calling.call.collect` events.
 </ParamField>
 
 <Indent>
 
-<ParamField path="result.type" type="string" toc={true}>
-  The type of input collected. **Valid values:** `digit`, `speech`, `no_input`, `no_match`, `start_of_input`, `finished`, `error`.
+<ParamField path="params.result.type" type="string" toc={true}>
+  The type of result. Standard values are `digit`, `speech`, `no_input`, `no_match`, and `error`. A speech recognition error can produce a different value.
 </ParamField>
 
 
-<ParamField path="result.params.digits" type="string" toc={true}>
+<ParamField path="params.result.params" type="object" toc={true}>
+  The collected input. Present when `type` is `digit` or `speech`.
+</ParamField>
+
+<Indent>
+
+<ParamField path="params.result.params.digits" type="string" toc={true}>
   The DTMF digits collected (when `type` is `digit`).
 </ParamField>
 
 
-<ParamField path="result.params.terminator" type="string" toc={true}>
+<ParamField path="params.result.params.terminator" type="string" toc={true}>
   The terminator digit that ended collection (when `type` is `digit`).
 </ParamField>
 
 
-<ParamField path="result.params.text" type="string" toc={true}>
-  The recognized speech text (when `type` is `speech`).
+<ParamField path="params.result.params.text" type="string" toc={true}>
+  The recognized speech text, before the normalization applied to `prompt_value` (when `type` is `speech`).
 </ParamField>
 
 
-<ParamField path="result.params.confidence" type="number" toc={true}>
+<ParamField path="params.result.params.confidence" type="number" toc={true}>
   The speech recognition confidence score (when `type` is `speech`).
 </ParamField>
 
 </Indent>
 
-<ParamField path="params.final" type="boolean" toc={true}>
-  Whether this is the final result in a continuous collect session. Only present when `partial_results` is enabled. `true` indicates collection has ended; `false` indicates more results may follow.
-</ParamField>
-
+</Indent>
 
 <ParamField path="params.state" type="string" toc={true}>
-  The current collection state. Only present when continuous collect is enabled. **Valid values:** `collecting`, `finished`, `error`.
+  On `calling.call.play` events, the playback state of the prompt audio. **Valid values:** `playing`, `finished`, `error`.
+
+  On `calling.call.collect` events, the current collection state. Only present when continuous collect is enabled. **Valid values:** `collecting`, `finished`, `error`.
 </ParamField>
 
 </Indent>
@@ -272,12 +279,36 @@ A POST request will be sent to `status_url` with a JSON payload like the followi
 }
 ```
 
+**Prompt playback:**
+
+```json
+{
+  "event_type": "calling.call.play",
+  "event_channel": "swml:xxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "timestamp": 1640000000.123,
+  "project_id": "xxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "space_id": "xxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "params": {
+    "call_id": "xxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "node_id": "xxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "control_id": "xxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "state": "finished"
+  }
+}
+```
+
+### Error notifications
+
+When the prompt request itself fails, `status_url` can also receive a separate event with `event_type` set to `calling.error`. Its `params.error` object carries the error `code` and `message`. Not every failure produces this event.
+
 ---
 
 ## **Examples**
 
-The [`play` method](/docs/swml/reference/calling/play) also has examples related to playing sounds from URLs. The
-interface for playing sounds for `play` and `prompt` is identical.
+The [`play` method](/docs/swml/reference/calling/play) also has examples related to playing sounds from URLs. Both
+methods use the same [playable sound](#playable-sounds) syntax, but `prompt.play` takes only a string or an array of
+strings, not a `play` object. Set `volume`, the `say_*` properties, and `status_url` directly on `prompt`; other `play`
+properties, such as `loop` and `auto_answer`, aren't available.
 
 ### Play prompt and wait for digit press
 
