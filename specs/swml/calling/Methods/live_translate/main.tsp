@@ -58,11 +58,17 @@ model StartAction {
     @example("es-ES")
     to_lang: string;
 
-    @doc("The TTS voice that speaks translations into `from_lang` (the first direction in `direction`).")
+    @doc("""
+      The TTS voice that speaks translations into `from_lang` (the first direction in `direction`).
+      Defaults to `azure.en-US-RyanMultilingualNeural`.
+      """)
     @example("Polly.Joanna")
     from_voice?: string;
 
-    @doc("The TTS voice that speaks translations into `to_lang` (a second direction in `direction`).")
+    @doc("""
+      The TTS voice that speaks translations into `to_lang` (a second direction in `direction`).
+      Defaults to `azure.en-US-RyanMultilingualNeural`.
+      """)
     @example("Polly.Lucia")
     to_voice?: string;
 
@@ -103,7 +109,7 @@ model StartAction {
 
     @doc("""
       Debug level for logging (0-2).
-      Only takes effect when debugging is enabled for the translation service; otherwise the value is ignored.
+      Ignored unless SignalWire has enabled debugging on its side, so you can leave it unset.
       """)
     @example(0)
     debug_level?: integer | SWMLVar = 0;

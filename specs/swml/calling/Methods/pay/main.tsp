@@ -7,6 +7,11 @@ using TypeSpec.JsonSchema;
 
 namespace SWML.Calling;
 
+// Literal payment connector URL: the scheme must be https. A SWML variable reference is accepted
+// separately (see `payment_connector_url`) and must resolve to an HTTPS URL.
+@pattern("^https://")
+scalar PayConnectorUrl extends url;
+
 @summary("pay Method")
 model Pay {
   @doc("""
@@ -15,14 +20,14 @@ model Pay {
     """)
   pay: {
     @doc("""
-      The URL to make POST requests with all the gathered payment details. Must be an HTTPS URL.
+      The URL to make POST requests with all the gathered payment details. Must be an HTTPS URL,
+      or a SWML variable that resolves to one.
       This URL is used to process the final payment transaction and return the results through the response.
       
-      Visit [pay documentation](/docs/swml/reference/pay#payment_connector_url) for more important information.
+      Visit [pay documentation](/docs/swml/reference/calling/pay#payment_connector_url) for more important information.
       """)
-    @pattern("^https://")
     @example("https://example.com/payment-connector")
-    payment_connector_url: url;
+    payment_connector_url: PayConnectorUrl | SWMLVar;
 
     @doc("The amount to charge against payment method passed in the request. `Float` value with no currency prefix passed as string. When omitted, `0.00` is sent to your payment connector.")
     @example("29.99")
@@ -45,9 +50,10 @@ model Pay {
     language?: string = "en-US";
 
     @doc("""
-      Total number of attempts the caller gets to enter each payment detail, such as the card number or expiration date.
-      Each detail has its own attempts. Set a value from `1` to `3`.
-      The default `1` means the caller gets no retry after a failed entry.
+      Number of attempts the caller gets to enter each payment detail, such as the card number or expiration date.
+      Each detail is counted separately. Set a value from `1` to `3`.
+      Values outside that range are ignored, and the default `1` is used instead.
+      With the default `1`, the caller gets no retry after a failed entry.
       """)
     @example(3)
     max_attempts?: integer | SWMLVar = 1;
@@ -108,7 +114,7 @@ model Pay {
     @doc("""
       The URL to send requests for each status change during the payment process.
       
-      Visit [pay documentation](/docs/swml/reference/pay#status_url-request-body) for more important information.
+      Visit [pay documentation](/docs/swml/reference/calling/pay#status_url-request-body) for more important information.
       """)
     @example("https://example.com/payment-status")
     status_url?: url;
@@ -147,8 +153,8 @@ model Pay {
 
     @doc("""
       Text-to-speech voice to use. Please refer to [TTS documentation](/docs/platform/voice/tts) for more information.
-      When `voice` is not set, `say_voice` is used. When neither is set, a `say_voice` variable set earlier in the
-      script is used if present; otherwise the voice is `woman`.
+      When `voice` is not set, `say_voice` is used. When neither is set, the `say_voice` SWML variable is used
+      if it is set; otherwise the voice is `woman`.
       """)
     @example("woman")
     voice?: string = "woman";

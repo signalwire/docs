@@ -52,9 +52,8 @@ model Stream {
     status_url?: url | SWMLVar;
 
     @doc("""
-      HTTP method used to deliver stream status events to `status_url`.
+      Has no effect on stream status callbacks: SignalWire always sends `calling.call.stream` events to `status_url` with POST, whatever this is set to, so you can leave it unset.
       Possible Values: [`GET`, `POST`]. Default is `"POST"`.
-      `calling.call.stream` status events are always delivered with POST, regardless of this setting.
       Accepts a SWML variable reference that resolves to one of these values.
       """)
     @example("POST")

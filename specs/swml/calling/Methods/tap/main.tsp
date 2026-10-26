@@ -56,7 +56,7 @@ model Tap {
 
     @doc("""
       If `uri` is a `rtp://` this will set the packetization time of the media in milliseconds.
-      Must be a multiple of 10 from `10` to `120`. A literal value is validated even when `uri` is a WebSocket URI, where it has no effect.
+      Must be a multiple of 10 from `10` to `120`. A number outside this range is rejected even when `uri` is a WebSocket URI, where `rtp_ptime` otherwise has no effect.
       Default is `20` milliseconds.
       """)
     @example(20)

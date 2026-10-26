@@ -2,9 +2,8 @@ import "../..";
 
 namespace SWML.Calling;
 
-// The say_* and status_url constraints below are applied to `prompt` only. `play` reads the same
-// fields through the same path, but extending these constraints to `play` is an open engineering
-// question in the SWML audit (play N5), so `play` keeps plain types until that is settled.
+// The say_* constraints below apply to `prompt` only; `play` keeps plain types for the same fields for now.
+// `play.status_url` also still uses a plain url type rather than an HTTP(S)-only one like `PromptStatusUrl`.
 
 // Literal text-to-speech voice name: no whitespace, double quotes, or the characters ,{}()[]<>=/;!@#$%^&*+|~?`
 @pattern("^[^,\\s\"{}()=<>\\[\\]/;!@#$%^&*+|~`?]+$")
@@ -17,6 +16,10 @@ scalar PromptSayLanguage extends string;
 // Literal speech recognition language tag, such as `en-US`. Extension and private-use subtags are not accepted.
 @pattern("^(?:[a-zA-Z]{2,3}(?:-[a-zA-Z]{3})?)(?:-[a-zA-Z]{4})?(?:-(?:[a-zA-Z]{2}|[0-9]{3}))?(?:-(?:[a-zA-Z0-9]{5,8}|(?:[0-9][a-zA-Z0-9]{3})))?$")
 scalar PromptSpeechLanguage extends string;
+
+// Speech recognition hint: an empty string fails the request.
+@minLength(1)
+scalar PromptSpeechHint extends string;
 
 // Literal status callback URL: the scheme must be http or https.
 @pattern("^[hH][tT][tT][pP][sS]?://")
@@ -40,7 +43,7 @@ model Prompt {
       Each entry can be a playable URL or a SWML variable that resolves to one.
       Allowed URLs are:
           http:// or https:// - audio file to GET
-          ring:[duration:]<ringtone> - ring tone to play, named by country code or `bong`. For example: ring:us to play single ring or ring:20.0:us to play ring for 20 seconds. A duration, when given, is at least 1 second.
+          ring:[duration:]<ringtone> - ring tone to play, named by country code or `bong`. For example: ring:us to play single ring or ring:20.0:us to play ring for 20 seconds. A duration, when given, must be at least 1 second.
           say:<text to speak> - Sentence to say
           silence: <duration> - seconds of silence to play, at least 1
       """)
@@ -134,7 +137,7 @@ model Prompt {
       Hints after the first 5000, or after 100,000 bytes in total, are dropped.
       """)
     @example(#["sales", "support", "billing"])
-    speech_hints?: string[];
+    speech_hints?: PromptSpeechHint[];
 
     @doc("""
       The engine that is selected for speech recognition. The engine must support the specified language.
@@ -144,8 +147,7 @@ model Prompt {
     speech_engine?: "Google" | "Google.V2" | "Deepgram" | SWMLVar;
 
     @doc("""
-      HTTP or HTTPS URL to deliver prompt status events.
-      A SWML variable must resolve to an HTTP or HTTPS URL.
+      HTTP or HTTPS URL to deliver prompt status events, or a SWML variable that resolves to one.
       """)
     @example("https://example.com/prompt-status")
     status_url?: PromptStatusUrl | SWMLVar;

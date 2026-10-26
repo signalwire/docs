@@ -46,7 +46,7 @@ The `prompt` property accepts one of the following objects:
 
 <ParamField path="prompt.model" type="string" toc={true}>
   The AI model for the conversation. Takes precedence over [`params.ai_model`](/docs/swml/reference/calling/ai/params#paramsai_model).
-  A model that isn't available is replaced with a default model where possible.
+  If the model you name isn't available, a default model is used instead; if no default model is available either, the agent doesn't start.
 </ParamField>
 
 <ParamField path="prompt.temperature" type="number" default="1.0" toc={true}>
@@ -114,7 +114,7 @@ The `prompt` property accepts one of the following objects:
 
 <ParamField path="prompt.model" type="string" toc={true}>
   The AI model for the conversation. Takes precedence over [`params.ai_model`](/docs/swml/reference/calling/ai/params#paramsai_model).
-  A model that isn't available is replaced with a default model where possible.
+  If the model you name isn't available, a default model is used instead; if no default model is available either, the agent doesn't start.
 </ParamField>
 
 <ParamField path="prompt.temperature" type="number" default="1.0" toc={true}>
@@ -165,11 +165,11 @@ The `prompt` property accepts one of the following objects:
 </ParamField>
 
 <ParamField path="*.prompt" type="string" toc={true}>
-  Instructions for this context. They are added before the instructions of each step in the context.
+  Instructions for this context. They are added to the instructions of each step in the context.
 </ParamField>
 
 <ParamField path="*.pom" type="object[]" toc={true}>
-  Instructions for this context as a POM, used instead of `prompt`. Sections take the same properties as [`prompt.pom`](#promptpom).
+  Instructions for this context as a POM. Set either `prompt` or `pom`, not both. Sections take the same properties as [`prompt.pom`](#promptpom).
 </ParamField>
 
 <ParamField path="*.initial_step" type="string" toc={true}>
@@ -193,7 +193,7 @@ The `prompt` property accepts one of the following objects:
 </ParamField>
 
 <ParamField path="*.post_prompt" type="object" toc={true}>
-  A post-prompt for the end-of-call summary. When the AI switches to this context, it replaces [`ai.post_prompt`](/docs/swml/reference/calling/ai#aipost_prompt) until the AI switches to a context without one. Takes the same properties as `ai.post_prompt`.
+  A post-prompt for the end-of-call summary. While this context is active, including when it is the starting context, it replaces [`ai.post_prompt`](/docs/swml/reference/calling/ai#aipost_prompt); switching to a context without one restores `ai.post_prompt`. Takes the same properties as `ai.post_prompt` except `model`.
 </ParamField>
 
 <ParamField path="*.isolated" type="boolean" default="false" toc={true}>
@@ -228,7 +228,7 @@ The `prompt` property accepts one of the following objects:
 
 ### Steps [#step-properties]
 
-Each entry in a context's `steps`, or in `prompt.steps`, is a step object. A step gives its instructions in `text` or `pom`; a step with `reset` or `gather_info` doesn't need either.
+Each entry in a context's `steps`, or in `prompt.steps`, is a step object. A step gives its instructions in `text` or `pom`; a step with `gather_info` doesn't need either, and a step with `reset` doesn't use them.
 
 <ParamField path="steps[].name" type="string" required={true} toc={true}>
   The name of the step, unique within its context. It can't be `next`, which refers to the following step.
@@ -247,11 +247,11 @@ Each entry in a context's `steps`, or in `prompt.steps`, is a step object. A ste
 </ParamField>
 
 <ParamField path="steps[].functions" type="string[]" toc={true}>
-  Names of the SWAIG functions the AI can call during this step.
+  Names of the SWAIG functions the AI can call during this step. When omitted, the functions that were already available stay available. An empty array makes none of the SWAIG functions available during this step.
 </ParamField>
 
 <ParamField path="steps[].valid_steps" type="string[]" toc={true}>
-  Names of the steps the AI can move to from this step. Include `next` to allow the following step. When omitted, the AI can move to the next step in the context. An empty array means the AI isn't offered a move to another step from this one; a `change_step` action returned by a SWAIG function still works.
+  Names of the steps the AI can move to from this step. Include `next` to allow the following step. When omitted, the AI can move to the next step in the context. An empty array means that, once the AI's available functions are refreshed for this step (for example, when the step sets `functions`), it is no longer offered a move to another step. A `change_step` action returned by a SWAIG function still works.
 </ParamField>
 
 <ParamField path="steps[].valid_contexts" type="string[]" toc={true}>
@@ -271,21 +271,21 @@ Each entry in a context's `steps`, or in `prompt.steps`, is a step object. A ste
 </ParamField>
 
 <ParamField path="steps[].reset" type="object" toc={true}>
-  Starts a new conversation context when this step becomes active, and makes this the last step in the context, like `end`.
+  Resets the conversation with new instructions when this step becomes active, and makes this the last step in the context, like `end`. When `reset` is set, the step's `text`, `pom` and `gather_info` are not used; put the new instructions in `reset.system_prompt`.
 </ParamField>
 
 <Indent>
 
 <ParamField path="reset.system_prompt" type="string" toc={true}>
-  Instructions for the new context. Prompt variables are expanded, as in `prompt.text`.
+  The new instructions. [Variables](#variable-expansion) such as `${caller_id_number}` are expanded, as in `prompt.text`.
 </ParamField>
 
 <ParamField path="reset.user_prompt" type="string" toc={true}>
-  A message added as if the caller had said it, to open the new context. When `consolidate` is not `true`, defaults to `hello`.
+  A message added as if the caller had said it, right after the reset. When `consolidate` is not `true`, defaults to `hello`. Variables are expanded, as in `prompt.text`.
 </ParamField>
 
 <ParamField path="reset.consolidate" type="boolean" default="false" toc={true}>
-  If `true`, the conversation so far is summarized and the summary is carried into the new context.
+  If `true`, the conversation so far is summarized and the summary is carried over after the reset.
 </ParamField>
 
 <ParamField path="reset.full_reset" type="boolean" default="false" toc={true}>

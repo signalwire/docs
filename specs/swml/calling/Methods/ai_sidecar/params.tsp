@@ -20,9 +20,9 @@ model AISidecarParams {
   min_interval_ms?: integer | SWMLVar = 0;
 
   @doc("""
-    The maximum number of model steps in a single evaluation, or in answering an ask. Each step is one model
-    response, which can call several tools at once. When the limit is reached the evaluation stops, whether or
-    not the model has produced its advice. Range: 1-20. **Default:** `5`.
+    The maximum number of model steps in a single evaluation, or in answering a question sent with the
+    `calling.ai_sidecar.ask` command. Each step is one model response, which can call several tools at once.
+    When the limit is reached the evaluation stops, whether or not the model has produced its advice. Range: 1-20. **Default:** `5`.
     """)
   @example(5)
   @minValue(1)

@@ -3,13 +3,12 @@ import "./functions.tsp";
 
 namespace SWML.Calling;
 
-// Bedrock has its own SWAIG parser rather than sharing the `ai` verb's, and reads
-// only `functions` and `defaults.web_hook_url`. `native_functions`, `includes`,
-// `internal_fillers`, and `mcp_servers` are parsed on the `ai` path only, so they
-// are not offered here — bedrock ignores them without raising an error. The `ai`
-// defaults' `web_hook_auth_user`/`web_hook_auth_password` and their fallback are not
-// read either, so `web_hook_url` is re-declared without that fallback: credentials go
-// in the URL itself (`username:password@url`).
+// Bedrock's SWAIG supports only `functions` and `defaults.web_hook_url`.
+// `native_functions`, `includes`, `internal_fillers`, and `mcp_servers` work on `ai`
+// only, so they are not offered here — Bedrock ignores them without raising an error.
+// The `ai` defaults' `web_hook_auth_user`/`web_hook_auth_password` and their fallback
+// are not supported either, so `web_hook_url` is re-declared without that fallback:
+// credentials go in the URL itself (`username:password@url`).
 @summary("defaults")
 model BedrockSWAIGDefaults {
   @doc("""

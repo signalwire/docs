@@ -341,11 +341,12 @@ model AIParams {
 
   @doc("""
     The maximum time the AI Agent stays active. Once it has passed, the next time the agent is waiting
-    for the caller it receives `hard_stop_prompt` as a final instruction for its last reply, and then
-    the conversation ends. The stop is not exact and does not cut off speech in progress.
+    for the caller it receives `hard_stop_prompt` as a final instruction for its last reply. The
+    conversation then ends and the next SWML instruction runs. The stop is not exact and does not cut
+    off speech in progress.
     
-    **Time Format:** `HH:MM:SS`, `MM:SS`, or a whole number of seconds. For example, `30:00` and `1800`
-    are both 30 minutes. In the colon forms, minutes and seconds go up to `59`.
+    **Time Format:** a string in `HH:MM:SS` or `MM:SS` form, or a whole number of seconds. For example,
+    `"30:00"` and `"1800"` are both 30 minutes. In the colon forms, minutes and seconds go up to `59`.
     Unit suffixes such as `30m` or `1h` are not converted: the letters are ignored, so `30m` is read as
     30 seconds.
     """)
@@ -397,7 +398,7 @@ model AIParams {
   @example(2000)
   input_poll_freq?: integer = 2000;
 
-  @doc("When enabled, barges agent upon any sound interruption longer than 1 second. The length of sound needed is fixed. **Default:** `false`.")
+  @doc("When enabled, barges agent upon any sound interruption longer than 1 second. The 1-second threshold can't be changed. **Default:** `false`.")
   @example(true)
   interrupt_on_noise?: boolean;
 
@@ -456,10 +457,10 @@ model AIParams {
 
   @doc("""
     Send a summary of the conversation after the call ends.
-    This requires `ai.post_prompt_url` to be set and the `conversation_id` defined below.
+    This requires `ai.post_prompt_url` and `conversation_id` to be set.
     This eliminates the need for a `post_prompt` in the ai parameters.
-    Separately from that end-of-call report, an agent that starts with the same `conversation_id`
-    requests the stored summary from `ai.post_prompt_url` so it can resume the conversation.
+    Separately from that end-of-call report, an agent that starts with a `conversation_id` asks
+    `ai.post_prompt_url` for the summary you stored for that ID, and resumes the conversation with it.
     """)
   @example(true)
   save_conversation?: boolean;
@@ -499,7 +500,7 @@ model AIParams {
   @example(3)
   speech_gen_quick_stops?: integer = 3;
 
-  @doc("Reserved for SignalWire internal use. Setting it has no effect on your calls.")
+  @doc("Has no effect and can be omitted. Setting it does not change speech timing on your calls.")
   speech_timeout?: integer;
 
   @doc("""
@@ -547,9 +548,9 @@ model AIParams {
   swaig_post_conversation?: boolean = false;
 
   @doc("""
-    Allows SWAIG functions to set global data that persists across function calls within the current call.
-    It does not carry data over to other calls. To keep `global_data` for a later AI session on the same
-    call, see `persist_global_data`. **Default:** `true`.
+    Allows SWAIG functions to change `global_data` with the `set_global_data` and `unset_global_data`
+    actions. Changes last for the rest of the AI session and don't carry over to other calls. To keep
+    `global_data` for a later AI session on the same call, see `persist_global_data`. **Default:** `true`.
     """)
   @example(true)
   swaig_set_global_data?: boolean = true;

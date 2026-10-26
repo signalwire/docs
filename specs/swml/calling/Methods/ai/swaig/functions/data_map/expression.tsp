@@ -7,7 +7,7 @@ namespace SWML.Calling;
 
 // Every member a `data_map` expression can carry. Each usable expression sets either `string`
 // (tested with `pattern`) or `expr`; the `ai` lists below take `DataMapExpression`, which
-// encodes that. `amazon_bedrock` derives its own expression from this model.
+// encodes that. `amazon_bedrock` declares its own expressions (`BedrockExpression`).
 @summary("Expression object")
 model Expression {
   @doc("""

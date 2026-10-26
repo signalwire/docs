@@ -75,6 +75,7 @@ model TranscribeStartAction {
     @doc("""
       Words or phrases that help speech recognition pick out specific terms, such as product names or industry jargon.
       Each hint is a plain string; empty strings are ignored.
+      Accepts a SWML variable reference that resolves to an array of hints.
       """)
     @example(#["SignalWire", "SWML"])
     hints?: string[] | SWMLVar;

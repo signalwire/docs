@@ -24,17 +24,27 @@ steps** per inbound message; once that ceiling is hit, execution stops.
 
 ## Webhook and variable payload [#webhook-payload]
 
-When SignalWire fetches a Messaging SWML document from an external URL, it POSTs the
+When SignalWire fetches a Messaging SWML document from a URL, it sends the
 [inbound message webhook payload](/docs/apis/rest/webhooks/inbound-message-webhook)
-to your server — on the initial inbound-message fetch and on every fetch triggered by a
-[`transfer`](/docs/swml/reference/messaging/transfer) step. Your server must respond with a valid
-SWML document using one of these content types: `application/json`, `application/yaml`, or
-`text/x-yaml`.
+to your server in the request body. The request method depends on what triggered the fetch:
+
+- The initial fetch, when the message arrives, uses the request method set on the
+  [SWML Webhook](/docs/apis/rest/swml-webhook/create-swml-webhook) assigned to the phone number:
+  `primary_request_method` for its primary URL, or `fallback_request_method` when SignalWire falls
+  back to its fallback URL. Both default to `POST`.
+- A fetch triggered by a [`transfer`](/docs/swml/reference/messaging/transfer) step uses
+  `transfer.method` (`POST` by default).
+- A fetch triggered by an [`execute`](/docs/swml/reference/messaging/execute) step always uses
+  `POST`.
+
+Your server must respond with a valid SWML document using one of these content types:
+`application/json`, `application/yaml`, or `text/x-yaml`.
 
 Inside the executing document, the same `message` and `params` fields are available for `%{...}`
-variable expansion (for example, `%{message.from}`). As the script runs, methods also populate
-the **`vars.*` runtime scope** — those values are not in the initial inbound payload, but they
-are propagated across `transfer` boundaries and delivered on transfer-driven fetches.
+variable expansion (for example, `%{message.from}`). As the script runs, methods also set runtime
+variables such as `request_result`, which you read the same way (for example,
+`%{request_result}`). Those values are not in the initial inbound payload. On fetches triggered by
+`transfer` or `execute`, the current values are sent to your server in the payload's `vars` field.
 
 <llms-ignore>
 
@@ -125,8 +135,9 @@ See the [SWML inbound message webhook reference](/docs/apis/rest/webhooks/inboun
 <ParamField path="vars" type="object" toc={true}>
   Runtime variable scope, populated by methods as the script executes. **Not part of the
   initial inbound payload** — values appear here only after a method that sets them has run.
-  The full `vars` object is propagated across `transfer` boundaries and delivered as a top-level
-  `vars` field on the transfer-driven webhook payload.
+  The current variables are delivered as a top-level `vars` field on the webhook payload of
+  fetches triggered by `transfer` or `execute`. Inside the executing document, read them without
+  the `vars.` prefix, for example `%{request_result}`.
 
   The standard runtime entries are listed below. Methods may also write additional keys; see
   each method's reference page for what it sets.
@@ -152,7 +163,7 @@ See the [SWML inbound message webhook reference](/docs/apis/rest/webhooks/inboun
     Parsed JSON response from the most recent `request` that saved one. Set when
     `save_variables: true` was set on the `request` step and the URL returned a 2xx response
     whose body is a JSON object. Access nested fields with dot
-    notation, e.g., `%{vars.request_response.field_name}`.
+    notation, e.g., `%{request_response.field_name}`.
   </ParamField>
 
   <ParamField path="vars.request_response_code" type="string" toc={true}>
@@ -192,17 +203,17 @@ Decide what to do with the inbound message — send an outbound reply, or accept
 ### Control flow
 
 Direct execution within the document — reuse blocks of logic, repeat steps, choose between
-branches, or hand off the message to another document entirely.
+branches, or hand off the message to another section or document.
 
 <CardGroup cols={2}>
   <Card title="execute" href="/docs/swml/reference/messaging/execute">
-    Run another section of the current document, then resume when it finishes. Use to reuse a sequence of steps from more than one place.
+    Run another section, or a SWML document from a URL or inline, then resume when it finishes. Use to reuse a sequence of steps from more than one place.
   </Card>
   <Card title="return" href="/docs/swml/reference/messaging/return">
     Hand control back to the section that called the current one, optionally passing a value the caller can read.
   </Card>
   <Card title="transfer" href="/docs/swml/reference/messaging/transfer">
-    Hand off the rest of the conversation to a different SWML document hosted on an external server. The current document stops; the new one takes over.
+    Hand off the rest of message handling to another section, or to a SWML document from a URL or inline. Execution does not come back; the target takes over.
   </Card>
   <Card title="goto" href="/docs/swml/reference/messaging/goto">
     Restart from a named point earlier or later in the current section. Use for retry loops that repeat a step until it succeeds.

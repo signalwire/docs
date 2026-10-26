@@ -18,7 +18,8 @@ model Answer {
       Each array entry can also be a SWML variable reference that is resolved when the method runs.
       Valid codecs depend on the call type: phone calls accept PCMU, PCMA, G722, G729 and AMR-WB;
       SIP and WebRTC calls also accept OPUS, VP8 and H264.
-      If the codecs are not valid for the call type, they are not applied and the method reports an error.
+      If the codecs are not valid for the call type, they are ignored, a `relay_script_method_parameter_invalid_value`
+      warning is reported, and `answer` continues without them.
       """)
     @example("PCMU,PCMA,OPUS")
     codecs?: string | string[];

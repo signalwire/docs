@@ -96,7 +96,7 @@ model SWAIGFunctionBase {
   @doc("""
     Password for basic auth on this function's webhook.
     Deprecated. Use `web_hook_auth_password` instead.
-    The alias is used only when `web_hook_auth_password` is not set. The same fallback applies on the `ai` SWAIG `defaults` object.
+    The alias is used only when `web_hook_auth_password` is not set.
     """)
   web_hook_auth_pass?: string;
 

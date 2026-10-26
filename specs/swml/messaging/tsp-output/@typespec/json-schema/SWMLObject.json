@@ -217,7 +217,7 @@
                             "examples": [
                                 true
                             ],
-                            "description": "If `true`, parse the response into `request_response.*` variables. Fields are\nsaved only when the URL returns a 2xx response whose body is a JSON object;\nnothing is saved from 4xx or 5xx responses."
+                            "description": "If `true`, parse the response into `request_response.*` variables. Fields are\nsaved when the URL returns a 2xx response whose body is a JSON object; nothing is\nsaved from 4xx or 5xx responses."
                         }
                     },
                     "required": [
@@ -254,7 +254,7 @@
                                     "examples": [
                                         "greet"
                                     ],
-                                    "description": "Where to execute. One of:\n\n- The name of a section in the current document.\n- A URL (`http` or `https`) that returns a messaging SWML document.\n  SignalWire fetches it with a `POST` request.\n- An inline messaging SWML document, supplied as a JSON string that contains\n  a JSON object."
+                                    "description": "Where to execute. One of:\n\n- The name of a section in the current document.\n- A URL (`http` or `https`) that returns a messaging SWML document.\n  SignalWire fetches it with a `POST` request carrying the inbound message\n  webhook payload, with `params` set to the values supplied here and `vars` set\n  to the caller's current variables.\n- An inline messaging SWML document, supplied as a string that holds the whole\n  document serialized as a JSON object. A string that isn't a valid JSON object\n  is treated as a section name."
                                 },
                                 "params": {
                                     "type": "object",
@@ -276,7 +276,7 @@
                             }
                         }
                     ],
-                    "description": "Run a section, a SWML document fetched from a URL, or an inline SWML document as a\nsubroutine. Execution continues in the called section or document, then returns to\nthe caller when it completes — either via `return` or by reaching the end. A called\ndocument starts at its `sections.main`.\n\nAccepts either a destination string (shorthand) or an object with `dest` and\n`params`. The shorthand calls the destination with empty `params`, and `%{...}`\nreferences in it are not expanded; use the object form to build the destination\nor pass parameters from variables.",
+                    "description": "Run a section, a SWML document fetched from a URL, or an inline SWML document as a\nsubroutine. Execution continues in the called section or document, then returns to\nthe caller when it completes — either via `return` or by reaching the end. A called\ndocument starts at its `sections.main`.\n\nA called section runs with the caller's variables, with `params` replaced. A called\nURL or inline document starts fresh: it sees the inbound `message` and the `params`\nsupplied here, but not the caller's other variables, such as `request_result`.\n\nAccepts either a destination string (shorthand) or an object with `dest` and\n`params`. The shorthand calls the destination with empty `params`, and `%{...}`\nreferences in it are not expanded; use the object form to build the destination\nor pass parameters from variables.",
                     "title": "execute"
                 }
             },
@@ -299,7 +299,7 @@
                             "examples": [
                                 "https://example.com/handler"
                             ],
-                            "description": "Where to transfer. One of:\n\n- The name of a section in the current document.\n- A URL (`http` or `https`) to fetch the new SWML document from. Authentication\n  can be embedded in the URL as `username:password@url`.\n- An inline SWML document, supplied as a JSON string that contains a JSON object.\n  A nested YAML or JSON object is not accepted. Execution starts at its\n  `sections.main`.\n\n`%{...}` variable references in `dest` are expanded before the destination is\nresolved."
+                            "description": "Where to transfer. One of:\n\n- The name of a section in the current document.\n- A URL (`http` or `https`) to fetch the new SWML document from. Authentication\n  can be embedded in the URL as `username:password@url`.\n- An inline SWML document, supplied as a string that holds the whole document\n  serialized as a JSON object. A YAML or JSON object nested directly under `dest`\n  is not accepted, and a string that isn't a valid JSON object is treated as a\n  section name. Execution starts at its `sections.main`.\n\n`%{...}` variable references in `dest` are expanded before the destination is\nresolved."
                         },
                         "method": {
                             "anyOf": [
@@ -350,7 +350,7 @@
                     "unevaluatedProperties": {
                         "not": {}
                     },
-                    "description": "Hand processing over to another section, another SWML document fetched from a URL,\nor an inline SWML document. `dest` selects which.\n\nThis is a tail call — it replaces the current document and does not return.\nSteps after `transfer` are skipped, including steps in calling sections.\n\nWhen `dest` is a URL, SignalWire sends the\n[inbound message webhook payload](/docs/apis/rest/webhooks/inbound-message-webhook)\nin the request body to `dest`, using `method` (`POST` by default): `message`\ndescribes the original inbound message, `params` carries the values supplied here,\nand `vars` carries the propagated runtime variables (`request_result`,\n`reply_result`, etc.) accumulated by the current document.",
+                    "description": "Hand processing over to another section, another SWML document fetched from a URL,\nor an inline SWML document. `dest` selects which.\n\nThis is a tail call: it does not return, and steps after `transfer`, including\nsteps in calling sections, are skipped. A URL or inline destination also replaces\nthe current document.\n\nWhen `dest` is a URL, SignalWire sends the\n[inbound message webhook payload](/docs/apis/rest/webhooks/inbound-message-webhook)\nin the request body to `dest`, using `method` (`POST` by default): `message`\ndescribes the original inbound message, `params` carries the values supplied here,\nand `vars` carries the propagated runtime variables (`request_result`,\n`reply_result`, etc.) accumulated by the current document.",
                     "title": "transfer"
                 }
             },
@@ -408,7 +408,7 @@
                     "unevaluatedProperties": {
                         "not": {}
                     },
-                    "description": "Branch on a variable's value, with optional text transforms applied before matching.\nUseful for keyword-driven inbound message handling.\n\nAfter the selected branch completes, execution normally continues with the next step\nafter `switch`, subject to the document execution limit and any control-flow change\nor execution failure.",
+                    "description": "Branch on a variable's value, with optional text transforms applied before matching.\nUseful for keyword-driven inbound message handling.\n\nAfter the selected branch runs, execution continues with the next step after\n`switch`, unless the branch moves execution elsewhere (for example with `goto`,\n`return`, or `transfer`), a step fails, or the document reaches its 100-step limit.",
                     "title": "switch"
                 }
             },
@@ -451,7 +451,7 @@
                                     "examples": [
                                         3
                                     ],
-                                    "description": "Maximum number of jumps to `label`. Accepts an integer or a `%{...}` variable\nreference; a reference is expanded and then converted to an integer. A reference\nthat doesn't resolve allows no jumps — it does not fall back to 100.\n\nJumps are counted per target label for the whole run, not per `goto` step: every\n`goto` that targets the same label name shares one count, including `goto` steps\nin other sections and in documents reached through `execute` or `transfer`. Each\njump attempt adds one to the count and is allowed while the count is at most this\nstep's `max`.\n\nWhen an attempt exceeds `max`, the jump doesn't happen and the steps array that\ncontains the label ends without running its remaining steps. Execution continues\nwith whatever ran that array, such as the steps after an enclosing `switch` or\nthe caller of an `execute`.\n\n`max` cannot raise the document's limit of 100 steps, which counts every step\nincluding each `label` passed. That limit can stop execution before `max` jumps\nare reached."
+                                    "description": "Maximum number of jumps to `label`. Accepts an integer or a `%{...}` variable\nreference; a reference is expanded and then converted to an integer. A reference\nthat doesn't resolve allows no jumps — it does not fall back to 100.\n\nJumps are counted per target label for the whole run, not per `goto` step: every\n`goto` that targets the same label name shares one count, including `goto` steps\nin other sections and in documents reached through `execute` or `transfer`. Each\njump attempt adds one to the count and is allowed while the count is at most this\nstep's `max`.\n\nWhen an attempt exceeds `max`, the jump doesn't happen and the steps array that\ncontains the label ends without running its remaining steps. Execution continues\nwith whatever ran that array, such as the steps after an enclosing `switch` or\nthe caller of an `execute`.\n\n`max` cannot raise the document's limit of 100 steps, which counts every step\nincluding each `label` passed. That limit can stop execution before `max` jumps\nare reached. If the limit is reached on the `goto` step itself, the jump never\nhappens and the run ends with a `swml_goto_label_not_found` error."
                                 }
                             },
                             "required": [
@@ -481,7 +481,7 @@
                     "examples": [
                         "success"
                     ],
-                    "description": "Return from the current section. Inside a subroutine called via `execute`, control\nreturns to the caller and the value is accessible as `return_value` in the caller's\ncontext. In `main`, stops execution entirely (return value is discarded). To return\nwithout a value, use `return: null`.",
+                    "description": "Return from the current section. Inside a section or document called via `execute`,\ncontrol returns to the caller and the value is accessible as `return_value` in the\ncaller's context. A document run with `execute` starts at its own `main`, so a\n`return` there also hands its value back to the caller. In the top-level `main`,\nmeaning the document handling the inbound message or a document reached through\n`transfer`, there is no caller: `return` stops execution entirely and its value is\ndiscarded. To return without a value, use `return: null`.",
                     "title": "return"
                 }
             },
@@ -515,7 +515,7 @@
         "ReplyText": {
             "type": "string",
             "minLength": 1,
-            "description": "Reply body text, used by the string shorthand and by string outcomes of an inline\n`switch`. After variable expansion it must contain at least one non-whitespace\ncharacter.\n\nBody length is checked before the reply is queued. The limit depends on the messaging\nroute used and on whether the reply is SMS or MMS, and length is counted according to\nthe message encoding. A body over the limit fails the reply.",
+            "description": "Reply body text, used by the string shorthand and by string outcomes of an inline\n`switch`. After variable expansion it must contain at least one non-whitespace\ncharacter.\n\nBody length is checked before the reply is queued. The limit depends on whether the\nreply is SMS or MMS and on the route SignalWire uses to send it, and length is counted\naccording to the message encoding. A body over the limit fails the reply with a\n`swml_reply_character_limit_exceeded` error whose message states the limit.",
             "title": "Reply body text"
         },
         "ReplyWithBody": {
@@ -549,7 +549,7 @@
                         "Thanks for your message!"
                     ],
                     "minLength": 1,
-                    "description": "Body text of the reply. Required if `media` is not present. When no media is attached,\nthe body must contain at least one non-whitespace character after variable expansion.\n\nBody length is checked before the reply is queued. The limit depends on the messaging\nroute used and on whether the reply is SMS or MMS, and length is counted according to\nthe message encoding. A body over the limit fails the reply."
+                    "description": "Body text of the reply. Required if `media` is not present. When no media is attached,\nthe body must contain at least one non-whitespace character after variable expansion.\n\nBody length is checked before the reply is queued. The limit depends on whether the\nreply is SMS or MMS and on the route SignalWire uses to send it, and length is counted\naccording to the message encoding. A body over the limit fails the reply with a\n`swml_reply_character_limit_exceeded` error whose message states the limit."
                 },
                 "media": {
                     "type": "array",
@@ -620,7 +620,7 @@
                         "Check out this image!"
                     ],
                     "minLength": 1,
-                    "description": "Optional body text included alongside the media attachments. Must be a non-empty string\nif provided. Body length is checked before the reply is queued; the limit depends on the\nmessaging route used and length is counted according to the message encoding."
+                    "description": "Optional body text included alongside the media attachments. Must be a non-empty string\nif provided. Body length is checked before the reply is queued. The limit depends on\nthe route SignalWire uses to send the reply, and length is counted according to the\nmessage encoding. A body over the limit fails the reply with a\n`swml_reply_character_limit_exceeded` error whose message states the limit."
                 }
             },
             "required": [

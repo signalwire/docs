@@ -28,8 +28,8 @@ const aiGlobalDataDescription: string = """
 // Shared with the REST AI-agent model, which accepts string hints only, so the object form is
 // described on `AIObject.hints` rather than here.
 const aiHintsDescription: string = """
-  Words and phrases that help the agent understand what the caller says. A string is passed to speech
-  recognition as a hint, to make the word more likely to be recognized.
+  Words and phrases that help the agent understand what the caller says. Each string is passed to speech
+  recognition as a hint, making that word or phrase more likely to be recognized.
   Hints don't change how the agent speaks; use `pronounce` for that.
   """;
 
@@ -65,8 +65,8 @@ const aiVoiceDescription: string = """
 
 const aiAgentDescription: string = """
   The ID of an AI agent saved in your SignalWire Space, such as the `agent_id` of an AI agent
-  created with the REST API. The agent runs with its saved configuration. Settings placed next to
-  `agent` are not merged into it, so set `agent` on its own.
+  created with the REST API. The agent runs with its saved configuration. Other settings placed next
+  to `agent` are ignored, so set `agent` on its own.
   Don't combine `agent` with `prompt`: if both are present, the inline configuration runs and `agent`
   is ignored.
   """;
@@ -89,7 +89,8 @@ model AIObject {
 
   @doc("""
     ${aiHintsDescription}
-    An object with `pattern` and `replace` rewrites matching text in what the agent hears before the AI reads it.
+    An object can set a `hint`, a `pattern` and `replace` pair that rewrites matching text in what the agent
+    hears before the AI reads it, or both.
     """)
   @example(#["pizza", "pepperoni"])
   hints?: (string | Hint)[];

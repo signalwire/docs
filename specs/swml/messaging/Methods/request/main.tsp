@@ -61,8 +61,8 @@ model Request {
 
     @doc("""
       If `true`, parse the response into `request_response.*` variables. Fields are
-      saved only when the URL returns a 2xx response whose body is a JSON object;
-      nothing is saved from 4xx or 5xx responses.
+      saved when the URL returns a 2xx response whose body is a JSON object; nothing is
+      saved from 4xx or 5xx responses.
       """)
     @example(true)
     save_variables?: boolean = false;

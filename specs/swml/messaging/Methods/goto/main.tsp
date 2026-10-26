@@ -51,7 +51,8 @@ model Goto {
       
       `max` cannot raise the document's limit of 100 steps, which counts every step
       including each `label` passed. That limit can stop execution before `max` jumps
-      are reached.
+      are reached. If the limit is reached on the `goto` step itself, the jump never
+      happens and the run ends with a `swml_goto_label_not_found` error.
       """)
     @example(3)
     max?: integer | MessagingVariableReference = 100;

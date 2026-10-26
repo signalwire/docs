@@ -33,7 +33,7 @@ model FunctionParameters {
     - Keys: User-defined strings, that set the property names.
     - Values: A valid property type, which can be one of the following: `string`, `integer`, `number`, `boolean`, `array`, `object`, or `null`.
     
-    The schema is passed to the AI model as written: SWML variables in it are not expanded.
+    The schema is passed to the AI model as written: [SWML variables](/docs/swml/reference/variables) in it are not expanded.
     """)
   properties: {
     ...TypeSpec.Record<SchemaType>;
@@ -100,7 +100,7 @@ model StringProperty is FunctionBaseProperty {
   @example("^[a-zA-Z0-9_.-]*$")
   pattern?: string;
 
-  @doc("String format (email, date-time, etc.)")
+  @doc("String format, such as `email` or `date_time`.")
   format?: StringFormat;
 }
 

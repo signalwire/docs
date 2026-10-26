@@ -4,11 +4,9 @@ using TypeSpec.JsonSchema;
 
 namespace SWML.Calling;
 
-// Media items for `pay.prompts[].play`. This is the same media item shape the
-// REST Calling API `play` command accepts (SignalWireAPI.Calling.Play*Item in
-// specs/signalwire-rest/calling-api/calls/models/requests.tsp). The REST tree
-// imports SWML, not the other way round, so the SWML schema cannot reference
-// those models; keep the two in step until they move to a shared location.
+// Media items for `pay.prompts[].play`: the same shape as the REST Calling API
+// `play` command's media items. The SWML schema can't reference the REST models,
+// so keep the two in step until they share a definition.
 
 @doc("Ringtone name. A two-letter country code selects that country's ringtone cadence.")
 enum PayPromptRingtoneName {
@@ -80,7 +78,7 @@ model PayPromptPlayTTSParams {
   @example("en-US")
   language?: string;
 
-  @doc("Voice gender, used when no voice is set here or on the `pay` method.")
+  @doc("Voice gender, used when no voice is set here or on the `pay` method. Defaults to `female`.")
   @example("female")
   gender?: "male" | "female";
 
@@ -100,7 +98,7 @@ model PayPromptPlayRingtoneParams {
   @example(PayPromptRingtoneName.us)
   name: PayPromptRingtoneName;
 
-  @doc("Maximum ringtone duration in seconds. Must be a positive number. If omitted, the ringtone plays without a time limit.")
+  @doc("Maximum ringtone duration in seconds. Must be a positive number.")
   @example(5)
   duration?: float;
 }

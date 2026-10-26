@@ -57,15 +57,15 @@ model Webhook {
     append: string;
   };
 
-  @doc("Any necessary headers for the API call. Header values are sent exactly as written.")
+  @doc("Any necessary headers for the API call, as string values. Header values are sent exactly as written; variables in them are not expanded.")
   @example(#{ `Content-Type`: "application/json", `X-API-Key`: "your-api-key" })
   headers?: {
     ...TypeSpec.Record<string>;
   };
 
   @doc("""
-    The HTTP method for the API call: `GET` or `POST`. The request is sent as a `POST` whenever it has
-    a body, that is when `params` is set or `input_args_as_params` is `true`, whatever this is set to.
+    The HTTP method for the API call: `GET` or `POST`. A request with a body, which it has when `params`
+    is set or `input_args_as_params` is `true`, is always sent as a `POST`, whatever this is set to.
     **Default:** `GET`.
     """)
   @example("POST")
@@ -73,7 +73,8 @@ model Webhook {
 
   @doc("""
     Sends the request body as a single URL-encoded form field with this name, instead of as JSON.
-    The whole JSON body becomes the value of that one field. Only applies when the request has a body.
+    The whole JSON body becomes the value of that one field. Whenever this is set, the request's
+    `Content-Type` is `application/x-www-form-urlencoded`, even when the request has no body.
     """)
   @example("payload")
   form_param?: string;

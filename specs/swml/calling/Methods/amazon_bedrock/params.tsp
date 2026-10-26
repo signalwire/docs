@@ -2,8 +2,8 @@ import "../ai";
 
 namespace SWML.Calling;
 
-// Bedrock reads its params with its own parser, not the `ai` one. Every param it reads is
-// declared here rather than picked from `AIParams`, because each one diverges:
+// Bedrock supports its own set of params, separate from `ai`. Every param it supports is
+// declared here rather than picked from `AIParams`, because each one behaves differently:
 // - `attention_timeout` accepts 0 or 1000-60000 ms (the `ai` ceiling is 600000).
 // - `inactivity_timeout` reminds the caller after the agent stops speaking instead of ending
 //   the session. Its range happens to match the `ai` one, so it reuses `InactivityTimeout`;
@@ -37,7 +37,7 @@ model BedrockParams {
     instruction and the conversation is scheduled to end. The agent's reply to that instruction is not guaranteed
     to finish before the conversation ends.
     
-    **Time Format:** `HH:MM:SS`, `MM:SS`, or a whole number of seconds, greater than zero. Always pass the value as
+    **Time format:** `HH:MM:SS`, `MM:SS`, or a whole number of seconds, greater than zero. Always pass the value as
     a string, for example `"30:00"` or `"1800"`, both 30 minutes. In the colon forms, minutes and seconds go up to `59`.
     """)
   @pattern("^\\d+(?::\\d+){0,2}$")

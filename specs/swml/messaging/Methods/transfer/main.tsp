@@ -6,8 +6,9 @@ model Transfer {
     Hand processing over to another section, another SWML document fetched from a URL,
     or an inline SWML document. `dest` selects which.
     
-    This is a tail call — it replaces the current document and does not return.
-    Steps after `transfer` are skipped, including steps in calling sections.
+    This is a tail call: it does not return, and steps after `transfer`, including
+    steps in calling sections, are skipped. A URL or inline destination also replaces
+    the current document.
     
     When `dest` is a URL, SignalWire sends the
     [inbound message webhook payload](/docs/apis/rest/webhooks/inbound-message-webhook)
@@ -23,9 +24,10 @@ model Transfer {
       - The name of a section in the current document.
       - A URL (`http` or `https`) to fetch the new SWML document from. Authentication
         can be embedded in the URL as `username:password@url`.
-      - An inline SWML document, supplied as a JSON string that contains a JSON object.
-        A nested YAML or JSON object is not accepted. Execution starts at its
-        `sections.main`.
+      - An inline SWML document, supplied as a string that holds the whole document
+        serialized as a JSON object. A YAML or JSON object nested directly under `dest`
+        is not accepted, and a string that isn't a valid JSON object is treated as a
+        section name. Execution starts at its `sections.main`.
       
       `%{...}` variable references in `dest` are expanded before the destination is
       resolved.

@@ -30,9 +30,10 @@ model ReplyBase {
   `switch`. After variable expansion it must contain at least one non-whitespace
   character.
   
-  Body length is checked before the reply is queued. The limit depends on the messaging
-  route used and on whether the reply is SMS or MMS, and length is counted according to
-  the message encoding. A body over the limit fails the reply.
+  Body length is checked before the reply is queued. The limit depends on whether the
+  reply is SMS or MMS and on the route SignalWire uses to send it, and length is counted
+  according to the message encoding. A body over the limit fails the reply with a
+  `swml_reply_character_limit_exceeded` error whose message states the limit.
   """)
 @summary("Reply body text")
 @minLength(1)
@@ -44,9 +45,10 @@ model ReplyWithBody is ReplyBase {
     Body text of the reply. Required if `media` is not present. When no media is attached,
     the body must contain at least one non-whitespace character after variable expansion.
     
-    Body length is checked before the reply is queued. The limit depends on the messaging
-    route used and on whether the reply is SMS or MMS, and length is counted according to
-    the message encoding. A body over the limit fails the reply.
+    Body length is checked before the reply is queued. The limit depends on whether the
+    reply is SMS or MMS and on the route SignalWire uses to send it, and length is counted
+    according to the message encoding. A body over the limit fails the reply with a
+    `swml_reply_character_limit_exceeded` error whose message states the limit.
     """)
   @minLength(1)
   @example("Thanks for your message!")
@@ -77,8 +79,10 @@ model ReplyWithMedia is ReplyBase {
 
   @doc("""
     Optional body text included alongside the media attachments. Must be a non-empty string
-    if provided. Body length is checked before the reply is queued; the limit depends on the
-    messaging route used and length is counted according to the message encoding.
+    if provided. Body length is checked before the reply is queued. The limit depends on
+    the route SignalWire uses to send the reply, and length is counted according to the
+    message encoding. A body over the limit fails the reply with a
+    `swml_reply_character_limit_exceeded` error whose message states the limit.
     """)
   @minLength(1)
   @example("Check out this image!")

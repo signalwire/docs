@@ -12,16 +12,18 @@ model AISidecarPermissions {
   swaig_allow_swml?: boolean | SWMLVar = true;
 
   @doc("""
-    Whether a `settings` action returned by a SWAIG tool is accepted. An accepted `settings` action does not
-    change the sidecar's evaluations, which keep using the sidecar's `model` and default model settings.
+    Whether the sidecar accepts a `settings` action returned by a SWAIG tool. Either way, a `settings` action
+    does not change the sidecar's evaluations, which keep using the sidecar's `model` and default model settings.
     **Default:** `true`.
     """)
   @example(true)
   swaig_allow_settings?: boolean | SWMLVar = true;
 
   @doc("""
-    Accepted but not enforced: SWAIG tools can set and unset the sidecar's global data whatever this is set to.
-    To keep tool actions from taking effect, set `params.act_on_channel` to `false`. **Default:** `true`.
+    Has no effect: SWAIG tools can set and unset the sidecar's global data whatever this is set to. To keep
+    tool actions, including global data changes, from taking effect, set `act_on_channel` in the sidecar's
+    `params` to `false`.
+    **Default:** `true`.
     """)
   @example(true)
   swaig_set_global_data?: boolean | SWMLVar = true;

@@ -32,8 +32,8 @@ model JoinConferenceStream {
   status_url_method?: "GET" | "POST" = "POST";
 
   @doc("""
-    Realtime mode for the conference stream. Default `false`.
-    A boolean `realtime` value is accepted, but it is not currently applied to the conference stream.
+    Has no effect on conference streams. A boolean value is accepted, but conference streams currently
+    ignore it. Default `false`.
     """)
   @example(false)
   realtime?: boolean | SWMLVar = false;
@@ -88,8 +88,11 @@ model JoinConferenceObject {
   @doc("""
     The number of participants that must join before the conference starts. Set it to `1` to let a single
     participant with `start_on_enter` start the conference. Use a value from 1 up to `max_participants`.
-    When both are given as numbers, a `min_participants` larger than `max_participants` is rejected.
-    A value that is outside that range when the call runs, for example from a variable, falls back to 2.
+    When both are set, a `min_participants` larger than `max_participants` is rejected. An invalid number written
+    directly in the document makes the document invalid, so it doesn't run. An invalid value that comes from a
+    variable, such as `0` or a number larger than `max_participants`, makes the join fail and sets
+    `join_conference_result` to `failed`. A value from a variable that is above 100000 while `max_participants`
+    isn't set is replaced by `2`.
     Like `max_participants`, it is set when the conference is created; joining an existing conference doesn't change it.
     Default `2`.
     """)
@@ -140,7 +143,7 @@ model JoinConferenceObject {
 
   @doc("""
     The HTTP method to use when sending status events to the status callback URL. Default `\"POST\"`.
-    Notifications in the `relay` format are always sent with `POST`, even if `GET` is set.
+    Notifications in the `relay` format (see `status_callback_event_type`) are always sent with `POST`, even if `GET` is set.
     """)
   @example("POST")
   status_callback_method?: "GET" | "POST" | SWMLVar = "POST";
@@ -151,7 +154,7 @@ model JoinConferenceObject {
 
   @doc("""
     The HTTP method to use when sending recording status events to the recording status callback URL. Default `\"POST\"`.
-    Notifications in the `relay` format are always sent with `POST`, even if `GET` is set.
+    Notifications in the `relay` format (see `recording_status_callback_event_type`) are always sent with `POST`, even if `GET` is set.
     """)
   @example("POST")
   recording_status_callback_method?: "GET" | "POST" | SWMLVar = "POST";

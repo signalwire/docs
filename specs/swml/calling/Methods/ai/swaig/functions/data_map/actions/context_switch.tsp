@@ -26,9 +26,10 @@ union PromptContent {
 @summary("context_switch Action")
 model ContextSwitchAction {
   @doc("""
-    Replaces the agent's instructions mid-conversation. Variables in `system_prompt` and `user_prompt`
-    are expanded once: with the rest of the output for a `data_map` function, or when the action runs
-    for a webhook reply.
+    Replaces the agent's instructions mid-conversation. You can use variables in `system_prompt`,
+    `user_prompt`, `system_pom`, and `user_pom`. In a `data_map` function they're expanded along with the
+    rest of the output; in a reply from your `web_hook_url`, they're expanded when the action runs. Either
+    way they're expanded only once, so a value that itself contains `\${...}` is left as it is.
     """)
   @summary("context_switch")
   context_switch: {

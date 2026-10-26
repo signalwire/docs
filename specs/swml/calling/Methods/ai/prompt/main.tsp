@@ -8,12 +8,13 @@ using TypeSpec.JsonSchema;
 namespace SWML.Calling;
 
 model AIPromptBase {
-  // Read by the `ai` verb only. Bedrock does not select a model from its prompt objects;
-  // its prompt models are expected to omit this (see handoffs for amazon_bedrock).
+  // Read by the `ai` verb only, and only on `ai.prompt` and `ai.post_prompt`. Bedrock's prompt
+  // models pick their properties without it, and a context's `post_prompt` omits it.
   @doc("""
     The AI model to use for this prompt. On `prompt`, it takes precedence over `params.ai_model`.
     On `post_prompt`, it selects the model that writes the summary; when omitted, the agent's model is used.
-    A model that isn't available is replaced with a default model where possible.
+    If the model you name isn't available, a default model is used instead; if no default model is
+    available either, the agent doesn't start.
     """)
   @example("gpt-4.1-mini")
   `model`?: string;
@@ -122,4 +123,21 @@ union AIPrompt {
 union AIPostPrompt {
   AIPostPromptText,
   AIPostPromptPom,
+}
+
+// A context's `post_prompt` is parsed like `ai.post_prompt`, but its `model` is never read:
+// only `ai.post_prompt.model` selects the model that writes the summary.
+@summary("Context Post-Prompt with Text")
+model ContextPostPromptText {
+  ...OmitProperties<AIPostPromptText, "model">;
+}
+
+@summary("Context Post-Prompt with POM")
+model ContextPostPromptPom {
+  ...OmitProperties<AIPostPromptPom, "model">;
+}
+
+union ContextPostPrompt {
+  ContextPostPromptText,
+  ContextPostPromptPom,
 }

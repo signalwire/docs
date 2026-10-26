@@ -211,7 +211,7 @@
                             "examples": [
                                 "PCMU,PCMA,OPUS"
                             ],
-                            "description": "Codecs to offer, as a comma-separated string or an array of strings with one codec per entry.\nEach array entry can also be a SWML variable reference that is resolved when the method runs.\nValid codecs depend on the call type: phone calls accept PCMU, PCMA, G722, G729 and AMR-WB;\nSIP and WebRTC calls also accept OPUS, VP8 and H264.\nIf the codecs are not valid for the call type, they are not applied and the method reports an error."
+                            "description": "Codecs to offer, as a comma-separated string or an array of strings with one codec per entry.\nEach array entry can also be a SWML variable reference that is resolved when the method runs.\nValid codecs depend on the call type: phone calls accept PCMU, PCMA, G722, G729 and AMR-WB;\nSIP and WebRTC calls also accept OPUS, VP8 and H264.\nIf the codecs are not valid for the call type, they are ignored, a `relay_script_method_parameter_invalid_value`\nwarning is reported, and `answer` continues without them."
                         },
                         "username": {
                             "type": "string",
@@ -373,7 +373,7 @@
                     "examples": [
                         {}
                     ],
-                    "description": "Start noise reduction. Attempts to answer the call before starting noise reduction. You can stop it at any time using `stop_denoise`."
+                    "description": "Start noise reduction.\nFor an inbound call that has not been answered and is not ending, the method attempts to answer it before starting noise reduction.\nYou can stop it at any time using `stop_denoise`."
                 }
             },
             "required": [
@@ -786,7 +786,7 @@
                             "examples": [
                                 "say:Please press 1 for sales or 2 for support"
                             ],
-                            "description": "URL or array of URLs to play.\nEach entry can be a playable URL or a SWML variable that resolves to one.\nAllowed URLs are:\n    http:// or https:// - audio file to GET\n    ring:[duration:]<ringtone> - ring tone to play, named by country code or `bong`. For example: ring:us to play single ring or ring:20.0:us to play ring for 20 seconds. A duration, when given, is at least 1 second.\n    say:<text to speak> - Sentence to say\n    silence: <duration> - seconds of silence to play, at least 1"
+                            "description": "URL or array of URLs to play.\nEach entry can be a playable URL or a SWML variable that resolves to one.\nAllowed URLs are:\n    http:// or https:// - audio file to GET\n    ring:[duration:]<ringtone> - ring tone to play, named by country code or `bong`. For example: ring:us to play single ring or ring:20.0:us to play ring for 20 seconds. A duration, when given, must be at least 1 second.\n    say:<text to speak> - Sentence to say\n    silence: <duration> - seconds of silence to play, at least 1"
                         },
                         "volume": {
                             "anyOf": [
@@ -957,7 +957,7 @@
                         "speech_hints": {
                             "type": "array",
                             "items": {
-                                "type": "string"
+                                "$ref": "#/$defs/PromptSpeechHint"
                             },
                             "examples": [
                                 [
@@ -1003,7 +1003,7 @@
                             "examples": [
                                 "https://example.com/prompt-status"
                             ],
-                            "description": "HTTP or HTTPS URL to deliver prompt status events.\nA SWML variable must resolve to an HTTP or HTTPS URL."
+                            "description": "HTTP or HTTPS URL to deliver prompt status events, or a SWML variable that resolves to one."
                         }
                     },
                     "required": [
@@ -1996,7 +1996,7 @@
                             "examples": [
                                 "POST"
                             ],
-                            "description": "HTTP method used to deliver stream status events to `status_url`.\nPossible Values: [`GET`, `POST`]. Default is `\"POST\"`.\n`calling.call.stream` status events are always delivered with POST, regardless of this setting.\nAccepts a SWML variable reference that resolves to one of these values."
+                            "description": "Has no effect on stream status callbacks: SignalWire always sends `calling.call.stream` events to `status_url` with POST, whatever this is set to, so you can leave it unset.\nPossible Values: [`GET`, `POST`]. Default is `\"POST\"`.\nAccepts a SWML variable reference that resolves to one of these values."
                         },
                         "authorization_bearer_token": {
                             "type": "string",
@@ -2156,7 +2156,7 @@
                             "examples": [
                                 20
                             ],
-                            "description": "If `uri` is a `rtp://` this will set the packetization time of the media in milliseconds.\nMust be a multiple of 10 from `10` to `120`. A literal value is validated even when `uri` is a WebSocket URI, where it has no effect.\nDefault is `20` milliseconds."
+                            "description": "If `uri` is a `rtp://` this will set the packetization time of the media in milliseconds.\nMust be a multiple of 10 from `10` to `120`. A number outside this range is rejected even when `uri` is a WebSocket URI, where `rtp_ptime` otherwise has no effect.\nDefault is `20` milliseconds."
                         },
                         "status_url": {
                             "type": "string",
@@ -2340,13 +2340,18 @@
                     "type": "object",
                     "properties": {
                         "payment_connector_url": {
-                            "type": "string",
-                            "format": "uri",
+                            "anyOf": [
+                                {
+                                    "$ref": "#/$defs/PayConnectorUrl"
+                                },
+                                {
+                                    "$ref": "#/$defs/SWMLVar"
+                                }
+                            ],
                             "examples": [
                                 "https://example.com/payment-connector"
                             ],
-                            "pattern": "^https://",
-                            "description": "The URL to make POST requests with all the gathered payment details. Must be an HTTPS URL.\nThis URL is used to process the final payment transaction and return the results through the response.\n\nVisit [pay documentation](/docs/swml/reference/pay#payment_connector_url) for more important information."
+                            "description": "The URL to make POST requests with all the gathered payment details. Must be an HTTPS URL,\nor a SWML variable that resolves to one.\nThis URL is used to process the final payment transaction and return the results through the response.\n\nVisit [pay documentation](/docs/swml/reference/calling/pay#payment_connector_url) for more important information."
                         },
                         "charge_amount": {
                             "type": "string",
@@ -2401,7 +2406,7 @@
                             "examples": [
                                 3
                             ],
-                            "description": "Total number of attempts the caller gets to enter each payment detail, such as the card number or expiration date.\nEach detail has its own attempts. Set a value from `1` to `3`.\nThe default `1` means the caller gets no retry after a failed entry."
+                            "description": "Number of attempts the caller gets to enter each payment detail, such as the card number or expiration date.\nEach detail is counted separately. Set a value from `1` to `3`.\nValues outside that range are ignored, and the default `1` is used instead.\nWith the default `1`, the caller gets no retry after a failed entry."
                         },
                         "min_postal_code_length": {
                             "anyOf": [
@@ -2511,7 +2516,7 @@
                             "examples": [
                                 "https://example.com/payment-status"
                             ],
-                            "description": "The URL to send requests for each status change during the payment process.\n\nVisit [pay documentation](/docs/swml/reference/pay#status_url-request-body) for more important information."
+                            "description": "The URL to send requests for each status change during the payment process.\n\nVisit [pay documentation](/docs/swml/reference/calling/pay#status_url-request-body) for more important information."
                         },
                         "timeout": {
                             "anyOf": [
@@ -2559,7 +2564,7 @@
                             "examples": [
                                 "woman"
                             ],
-                            "description": "Text-to-speech voice to use. Please refer to [TTS documentation](/docs/platform/voice/tts) for more information.\nWhen `voice` is not set, `say_voice` is used. When neither is set, a `say_voice` variable set earlier in the\nscript is used if present; otherwise the voice is `woman`."
+                            "description": "Text-to-speech voice to use. Please refer to [TTS documentation](/docs/platform/voice/tts) for more information.\nWhen `voice` is not set, `say_voice` is used. When neither is set, the `say_voice` SWML variable is used\nif it is set; otherwise the voice is `woman`."
                         }
                     },
                     "required": [
@@ -2792,7 +2797,7 @@
                                     "caller_name": "John Doe"
                                 }
                             ],
-                            "description": "The payload of one custom event. The object can contain any JSON values; to send several events, use several `user_event` methods.\nInstead of an object, you can pass a SWML variable reference that resolves to an event object.\nString values in the payload, including those inside nested objects and arrays, are expanded as SWML variables before the event is sent.\nSignalWire adds call details such as `call_id`, `node_id`, and `segment_id` at the top level of the payload, so top-level fields\naren't guaranteed to arrive unchanged. Put custom data under your own key to avoid name collisions."
+                            "description": "The payload of one custom event. The object can contain any JSON values; to send several events, use several `user_event` methods.\nInstead of an object, you can pass a SWML variable reference that resolves to an event object.\nVariable references in the payload's string values, including strings inside nested objects and arrays, are expanded before the event is sent.\nObject keys aren't expanded.\nSignalWire adds call details such as `call_id`, `node_id`, and `segment_id` at the top level of the payload, so top-level fields\naren't guaranteed to arrive unchanged. Put custom data under your own key to avoid name collisions."
                         }
                     },
                     "required": [
@@ -2849,7 +2854,7 @@
                             "pepperoni"
                         ]
                     ],
-                    "description": "Words and phrases that help the agent understand what the caller says. A string is passed to speech\nrecognition as a hint, to make the word more likely to be recognized.\nHints don't change how the agent speaks; use `pronounce` for that.\nAn object with `pattern` and `replace` rewrites matching text in what the agent hears before the AI reads it."
+                    "description": "Words and phrases that help the agent understand what the caller says. Each string is passed to speech\nrecognition as a hint, making that word or phrase more likely to be recognized.\nHints don't change how the agent speaks; use `pronounce` for that.\nAn object can set a `hint`, a `pattern` and `replace` pair that rewrites matching text in what the agent\nhears before the AI reads it, or both."
                 },
                 "languages": {
                     "type": "array",
@@ -2938,7 +2943,7 @@
                     "examples": [
                         "3fa85f64-5717-4562-b3fc-2c963f66afa6"
                     ],
-                    "description": "The ID of an AI agent saved in your SignalWire Space, such as the `agent_id` of an AI agent\ncreated with the REST API. The agent runs with its saved configuration. Settings placed next to\n`agent` are not merged into it, so set `agent` on its own.\nDon't combine `agent` with `prompt`: if both are present, the inline configuration runs and `agent`\nis ignored."
+                    "description": "The ID of an AI agent saved in your SignalWire Space, such as the `agent_id` of an AI agent\ncreated with the REST API. The agent runs with its saved configuration. Other settings placed next\nto `agent` are ignored, so set `agent` on its own.\nDon't combine `agent` with `prompt`: if both are present, the inline configuration runs and `agent`\nis ignored."
                 }
             },
             "required": [
@@ -3079,7 +3084,7 @@
                 },
                 "action": {
                     "$ref": "#/$defs/AISidecarSummarizeAction",
-                    "description": "Summarize the conversation instead of starting a sidecar. When you include `action.summarize`,\nthe request asks the sidecar already attached to the call for a one-off summary and returns\nrather than attaching a sidecar. The other properties are not used."
+                    "description": "Summarize the conversation instead of starting a sidecar. When you include `action.summarize`,\nthe request asks the sidecar already attached to the call for a one-off summary and returns\nrather than attaching a sidecar. The other properties, including `lang`, are not used and can be omitted."
                 }
             },
             "required": [
@@ -3206,7 +3211,7 @@
                     "examples": [
                         "Support Team"
                     ],
-                    "description": "The caller ID name shown to the person you're calling, displayed alongside the `from` number\n(sometimes called CNAM).\nApplies to SIP calls only — it has no effect on calls to phone numbers.\nWhen set at the top level, every destination in a `serial`, `parallel`, or `serial_parallel`\ngroup uses this name, unless that destination sets its own `from_name`.\nUse 1 to 70 characters: letters, digits, spaces, and `_`, `.`, `-`, `+`, or `,`."
+                    "description": "The caller ID name shown to the person you're calling, displayed alongside the `from` number\n(sometimes called CNAM).\nApplies to SIP calls only — it has no effect on calls to phone numbers.\nWhen set at the top level, every destination in a `serial`, `parallel`, or `serial_parallel`\ngroup uses this name, unless that destination sets its own `from_name`.\nUse 1 to 70 characters after variable expansion: letters, digits, spaces, and `_`, `.`, `-`, `+`, or `,`.\nText and variables can be combined, such as `Support ${vars.dept}`."
                 },
                 "headers": {
                     "type": "array",
@@ -3260,7 +3265,7 @@
                         1800
                     ],
                     "minimum": 1,
-                    "description": "Time, in seconds, to set the SIP `Session-Expires` header in INVITE.\nMust be a positive, non-zero number. Values from 1 to 15000 take effect; a larger value is\naccepted but no `Session-Expires` override is applied.\nIt has no effect on calls to phone numbers.\nApplies only when dialing a single SIP destination with `to`. In `serial`, `parallel`, and\n`serial_parallel`, the top-level value has no effect: set `session_timeout` on each SIP destination instead.\nBased on SignalWire settings."
+                    "description": "Time, in seconds, to set the SIP `Session-Expires` header in INVITE.\nMust be a positive, non-zero number. Values from 1 to 15000 take effect; a larger value is\naccepted but ignored, so the default `Session-Expires` value is used.\nIt has no effect on calls to phone numbers.\nApplies only when dialing a single SIP destination with `to`. In `serial`, `parallel`, and\n`serial_parallel`, the top-level value has no effect: set `session_timeout` on each SIP destination instead.\nBased on SignalWire settings."
                 },
                 "ringback": {
                     "anyOf": [
@@ -3408,7 +3413,7 @@
                     "examples": [
                         "https://example.com/call-status"
                     ],
-                    "description": "Webhook URL to send call status change notifications to. Authentication can also be set in the URL in the format of `username:password@url`.\nApplies only to phone, SIP, and Resource Address destinations. A destination whose `to` starts with\n`queue:` or `stream:` can't have `call_state_url` or `call_state_events`, and a top-level value is not sent to\nthose destinations. Queue lifecycle events go to the `status_url` set on `enter_queue`; stream events\ngo to the stream's `status_url`."
+                    "description": "Webhook URL to send call status change notifications to. Authentication can also be set in the URL in the format of `username:password@url`.\nApplies only to phone, SIP, and Resource Address destinations. A destination whose `to` starts with\n`queue:` or `stream:` can't have `call_state_url` or `call_state_events`, and a top-level value doesn't apply to\nthose destinations. Queue lifecycle events go to the `status_url` set on `enter_queue`; stream events\ngo to the stream's `status_url`."
                 },
                 "execute_after_queue": {
                     "anyOf": [
@@ -3581,7 +3586,7 @@
                     "examples": [
                         "Support Team"
                     ],
-                    "description": "The caller ID name shown to the person you're calling, displayed alongside the `from` number\n(sometimes called CNAM).\nApplies to SIP calls only — it has no effect on calls to phone numbers.\nWhen set at the top level, every destination in a `serial`, `parallel`, or `serial_parallel`\ngroup uses this name, unless that destination sets its own `from_name`.\nUse 1 to 70 characters: letters, digits, spaces, and `_`, `.`, `-`, `+`, or `,`."
+                    "description": "The caller ID name shown to the person you're calling, displayed alongside the `from` number\n(sometimes called CNAM).\nApplies to SIP calls only — it has no effect on calls to phone numbers.\nWhen set at the top level, every destination in a `serial`, `parallel`, or `serial_parallel`\ngroup uses this name, unless that destination sets its own `from_name`.\nUse 1 to 70 characters after variable expansion: letters, digits, spaces, and `_`, `.`, `-`, `+`, or `,`.\nText and variables can be combined, such as `Support ${vars.dept}`."
                 },
                 "headers": {
                     "type": "array",
@@ -3635,7 +3640,7 @@
                         1800
                     ],
                     "minimum": 1,
-                    "description": "Time, in seconds, to set the SIP `Session-Expires` header in INVITE.\nMust be a positive, non-zero number. Values from 1 to 15000 take effect; a larger value is\naccepted but no `Session-Expires` override is applied.\nIt has no effect on calls to phone numbers.\nApplies only when dialing a single SIP destination with `to`. In `serial`, `parallel`, and\n`serial_parallel`, the top-level value has no effect: set `session_timeout` on each SIP destination instead.\nBased on SignalWire settings."
+                    "description": "Time, in seconds, to set the SIP `Session-Expires` header in INVITE.\nMust be a positive, non-zero number. Values from 1 to 15000 take effect; a larger value is\naccepted but ignored, so the default `Session-Expires` value is used.\nIt has no effect on calls to phone numbers.\nApplies only when dialing a single SIP destination with `to`. In `serial`, `parallel`, and\n`serial_parallel`, the top-level value has no effect: set `session_timeout` on each SIP destination instead.\nBased on SignalWire settings."
                 },
                 "ringback": {
                     "anyOf": [
@@ -3783,7 +3788,7 @@
                     "examples": [
                         "https://example.com/call-status"
                     ],
-                    "description": "Webhook URL to send call status change notifications to. Authentication can also be set in the URL in the format of `username:password@url`.\nApplies only to phone, SIP, and Resource Address destinations. A destination whose `to` starts with\n`queue:` or `stream:` can't have `call_state_url` or `call_state_events`, and a top-level value is not sent to\nthose destinations. Queue lifecycle events go to the `status_url` set on `enter_queue`; stream events\ngo to the stream's `status_url`."
+                    "description": "Webhook URL to send call status change notifications to. Authentication can also be set in the URL in the format of `username:password@url`.\nApplies only to phone, SIP, and Resource Address destinations. A destination whose `to` starts with\n`queue:` or `stream:` can't have `call_state_url` or `call_state_events`, and a top-level value doesn't apply to\nthose destinations. Queue lifecycle events go to the `status_url` set on `enter_queue`; stream events\ngo to the stream's `status_url`."
                 },
                 "execute_after_queue": {
                     "anyOf": [
@@ -3886,7 +3891,7 @@
                     "examples": [
                         "Support Team"
                     ],
-                    "description": "The caller ID name shown to the person you're calling, displayed alongside the `from` number\n(sometimes called CNAM).\nApplies to SIP calls only — it has no effect on calls to phone numbers.\nWhen set at the top level, every destination in a `serial`, `parallel`, or `serial_parallel`\ngroup uses this name, unless that destination sets its own `from_name`.\nUse 1 to 70 characters: letters, digits, spaces, and `_`, `.`, `-`, `+`, or `,`."
+                    "description": "The caller ID name shown to the person you're calling, displayed alongside the `from` number\n(sometimes called CNAM).\nApplies to SIP calls only — it has no effect on calls to phone numbers.\nWhen set at the top level, every destination in a `serial`, `parallel`, or `serial_parallel`\ngroup uses this name, unless that destination sets its own `from_name`.\nUse 1 to 70 characters after variable expansion: letters, digits, spaces, and `_`, `.`, `-`, `+`, or `,`.\nText and variables can be combined, such as `Support ${vars.dept}`."
                 },
                 "headers": {
                     "type": "array",
@@ -3940,7 +3945,7 @@
                         1800
                     ],
                     "minimum": 1,
-                    "description": "Time, in seconds, to set the SIP `Session-Expires` header in INVITE.\nMust be a positive, non-zero number. Values from 1 to 15000 take effect; a larger value is\naccepted but no `Session-Expires` override is applied.\nIt has no effect on calls to phone numbers.\nApplies only when dialing a single SIP destination with `to`. In `serial`, `parallel`, and\n`serial_parallel`, the top-level value has no effect: set `session_timeout` on each SIP destination instead.\nBased on SignalWire settings."
+                    "description": "Time, in seconds, to set the SIP `Session-Expires` header in INVITE.\nMust be a positive, non-zero number. Values from 1 to 15000 take effect; a larger value is\naccepted but ignored, so the default `Session-Expires` value is used.\nIt has no effect on calls to phone numbers.\nApplies only when dialing a single SIP destination with `to`. In `serial`, `parallel`, and\n`serial_parallel`, the top-level value has no effect: set `session_timeout` on each SIP destination instead.\nBased on SignalWire settings."
                 },
                 "ringback": {
                     "anyOf": [
@@ -4088,7 +4093,7 @@
                     "examples": [
                         "https://example.com/call-status"
                     ],
-                    "description": "Webhook URL to send call status change notifications to. Authentication can also be set in the URL in the format of `username:password@url`.\nApplies only to phone, SIP, and Resource Address destinations. A destination whose `to` starts with\n`queue:` or `stream:` can't have `call_state_url` or `call_state_events`, and a top-level value is not sent to\nthose destinations. Queue lifecycle events go to the `status_url` set on `enter_queue`; stream events\ngo to the stream's `status_url`."
+                    "description": "Webhook URL to send call status change notifications to. Authentication can also be set in the URL in the format of `username:password@url`.\nApplies only to phone, SIP, and Resource Address destinations. A destination whose `to` starts with\n`queue:` or `stream:` can't have `call_state_url` or `call_state_events`, and a top-level value doesn't apply to\nthose destinations. Queue lifecycle events go to the `status_url` set on `enter_queue`; stream events\ngo to the stream's `status_url`."
                 },
                 "execute_after_queue": {
                     "anyOf": [
@@ -4191,7 +4196,7 @@
                     "examples": [
                         "Support Team"
                     ],
-                    "description": "The caller ID name shown to the person you're calling, displayed alongside the `from` number\n(sometimes called CNAM).\nApplies to SIP calls only — it has no effect on calls to phone numbers.\nWhen set at the top level, every destination in a `serial`, `parallel`, or `serial_parallel`\ngroup uses this name, unless that destination sets its own `from_name`.\nUse 1 to 70 characters: letters, digits, spaces, and `_`, `.`, `-`, `+`, or `,`."
+                    "description": "The caller ID name shown to the person you're calling, displayed alongside the `from` number\n(sometimes called CNAM).\nApplies to SIP calls only — it has no effect on calls to phone numbers.\nWhen set at the top level, every destination in a `serial`, `parallel`, or `serial_parallel`\ngroup uses this name, unless that destination sets its own `from_name`.\nUse 1 to 70 characters after variable expansion: letters, digits, spaces, and `_`, `.`, `-`, `+`, or `,`.\nText and variables can be combined, such as `Support ${vars.dept}`."
                 },
                 "headers": {
                     "type": "array",
@@ -4245,7 +4250,7 @@
                         1800
                     ],
                     "minimum": 1,
-                    "description": "Time, in seconds, to set the SIP `Session-Expires` header in INVITE.\nMust be a positive, non-zero number. Values from 1 to 15000 take effect; a larger value is\naccepted but no `Session-Expires` override is applied.\nIt has no effect on calls to phone numbers.\nApplies only when dialing a single SIP destination with `to`. In `serial`, `parallel`, and\n`serial_parallel`, the top-level value has no effect: set `session_timeout` on each SIP destination instead.\nBased on SignalWire settings."
+                    "description": "Time, in seconds, to set the SIP `Session-Expires` header in INVITE.\nMust be a positive, non-zero number. Values from 1 to 15000 take effect; a larger value is\naccepted but ignored, so the default `Session-Expires` value is used.\nIt has no effect on calls to phone numbers.\nApplies only when dialing a single SIP destination with `to`. In `serial`, `parallel`, and\n`serial_parallel`, the top-level value has no effect: set `session_timeout` on each SIP destination instead.\nBased on SignalWire settings."
                 },
                 "ringback": {
                     "anyOf": [
@@ -4393,7 +4398,7 @@
                     "examples": [
                         "https://example.com/call-status"
                     ],
-                    "description": "Webhook URL to send call status change notifications to. Authentication can also be set in the URL in the format of `username:password@url`.\nApplies only to phone, SIP, and Resource Address destinations. A destination whose `to` starts with\n`queue:` or `stream:` can't have `call_state_url` or `call_state_events`, and a top-level value is not sent to\nthose destinations. Queue lifecycle events go to the `status_url` set on `enter_queue`; stream events\ngo to the stream's `status_url`."
+                    "description": "Webhook URL to send call status change notifications to. Authentication can also be set in the URL in the format of `username:password@url`.\nApplies only to phone, SIP, and Resource Address destinations. A destination whose `to` starts with\n`queue:` or `stream:` can't have `call_state_url` or `call_state_events`, and a top-level value doesn't apply to\nthose destinations. Queue lifecycle events go to the `status_url` set on `enter_queue`; stream events\ngo to the stream's `status_url`."
                 },
                 "execute_after_queue": {
                     "anyOf": [
@@ -4465,7 +4470,7 @@
                         }
                     },
                     "minItems": 1,
-                    "description": "Two-dimensional array combining serial and parallel strategies.\nThe outer array is the **serial** dimension — each element is a group tried in order.\nEach inner array is the **parallel** dimension — all destinations in that group are dialed simultaneously.\nIf no destination in the current group answers, the next group is attempted.\nUp to 20 destinations are dialed in total, counted across all groups rather than per group. Any destination after the 20th is skipped without an error.\nMust contain at least one destination. A `queue:` destination can't be combined with any other destination,\nand a `stream:` destination can't be combined with a phone, SIP, Resource Address, or queue destination:\n`connect` fails in either case. If several `stream:` destinations are listed, only the first is used.\nTo connect to a queue or a stream, use a single `to` instead."
+                    "description": "Two-dimensional array combining serial and parallel strategies.\nThe outer array is the **serial** dimension — each element is a group tried in order.\nEach inner array is the **parallel** dimension — all destinations in that group are dialed simultaneously.\nIf no destination in the current group answers, the next group is attempted.\nUp to 20 destinations are dialed in total, counted across all groups rather than per group. Any destination after the 20th is skipped without an error.\nMust contain at least one destination across all groups: an empty group is skipped, and `connect` fails if every group is empty.\nA `queue:` destination can't be combined with any other destination,\nand a `stream:` destination can't be combined with a phone, SIP, Resource Address, or queue destination:\n`connect` fails in either case. If several `stream:` destinations are listed, only the first is used.\nTo connect to a queue or a stream, use a single `to` instead."
                 }
             },
             "required": [
@@ -4776,7 +4781,7 @@
                     ],
                     "minimum": 1,
                     "maximum": 100000,
-                    "description": "The number of participants that must join before the conference starts. Set it to `1` to let a single\nparticipant with `start_on_enter` start the conference. Use a value from 1 up to `max_participants`.\nWhen both are given as numbers, a `min_participants` larger than `max_participants` is rejected.\nA value that is outside that range when the call runs, for example from a variable, falls back to 2.\nLike `max_participants`, it is set when the conference is created; joining an existing conference doesn't change it.\nDefault `2`."
+                    "description": "The number of participants that must join before the conference starts. Set it to `1` to let a single\nparticipant with `start_on_enter` start the conference. Use a value from 1 up to `max_participants`.\nWhen both are set, a `min_participants` larger than `max_participants` is rejected. An invalid number written\ndirectly in the document makes the document invalid, so it doesn't run. An invalid value that comes from a\nvariable, such as `0` or a number larger than `max_participants`, makes the join fail and sets\n`join_conference_result` to `failed`. A value from a variable that is above 100000 while `max_participants`\nisn't set is replaced by `2`.\nLike `max_participants`, it is set when the conference is created; joining an existing conference doesn't change it.\nDefault `2`."
                 },
                 "record": {
                     "anyOf": [
@@ -4916,7 +4921,7 @@
                     "examples": [
                         "POST"
                     ],
-                    "description": "The HTTP method to use when sending status events to the status callback URL. Default `\"POST\"`.\nNotifications in the `relay` format are always sent with `POST`, even if `GET` is set."
+                    "description": "The HTTP method to use when sending status events to the status callback URL. Default `\"POST\"`.\nNotifications in the `relay` format (see `status_callback_event_type`) are always sent with `POST`, even if `GET` is set."
                 },
                 "recording_status_callback": {
                     "anyOf": [
@@ -4951,7 +4956,7 @@
                     "examples": [
                         "POST"
                     ],
-                    "description": "The HTTP method to use when sending recording status events to the recording status callback URL. Default `\"POST\"`.\nNotifications in the `relay` format are always sent with `POST`, even if `GET` is set."
+                    "description": "The HTTP method to use when sending recording status events to the recording status callback URL. Default `\"POST\"`.\nNotifications in the `relay` format (see `recording_status_callback_event_type`) are always sent with `POST`, even if `GET` is set."
                 },
                 "recording_status_callback_event": {
                     "type": "string",
@@ -5034,7 +5039,7 @@
                     "examples": [
                         true
                     ],
-                    "description": "If `true`, the call is answered before the audio plays. Default `true`.\nThe property is accepted, but setting it to `false` does not currently prevent the call from being answered."
+                    "description": "If `true`, the call is answered before the audio plays. Default `true`.\nSetting it to `false` does not currently prevent the call from being answered."
                 },
                 "volume": {
                     "anyOf": [
@@ -5105,7 +5110,7 @@
                     "examples": [
                         "https://example.com/play-status"
                     ],
-                    "description": "HTTP or HTTPS URL to deliver play status events.\nA SWML variable must resolve to an HTTP or HTTPS URL."
+                    "description": "HTTP or HTTPS URL to deliver play status events, or a SWML variable that resolves to one."
                 },
                 "url": {
                     "anyOf": [
@@ -5119,7 +5124,7 @@
                     "examples": [
                         "https://example.com/welcome.mp3"
                     ],
-                    "description": "URL to play.\nRequired if `urls` is not present.\nAllowed URLs are:\n    - http:// or https:// - audio file to GET\n    - ring:[duration:]<ringtone> - ring tone to play, named by country code or `bong`. For example: ring:us to play single ring or ring:20.0:us to play ring for 20 seconds. A duration, when given, is at least 1 second.\n    - say:<text to speak> - Sentence to say\n    - silence: <duration> - seconds of silence to play, at least 1"
+                    "description": "URL to play.\nRequired if `urls` is not present.\nAllowed URLs are:\n    - http:// or https:// - audio file to GET\n    - ring:[duration:]<ringtone> - ring tone to play, named by country code or `bong`. For example: ring:us to play single ring or ring:20.0:us to play ring for 20 seconds. A duration, when given, must be at least 1 second.\n    - say:<text to speak> - Sentence to say\n    - silence: <duration> - seconds of silence to play, at least 1"
                 }
             },
             "required": [
@@ -5147,7 +5152,7 @@
                     "examples": [
                         true
                     ],
-                    "description": "If `true`, the call is answered before the audio plays. Default `true`.\nThe property is accepted, but setting it to `false` does not currently prevent the call from being answered."
+                    "description": "If `true`, the call is answered before the audio plays. Default `true`.\nSetting it to `false` does not currently prevent the call from being answered."
                 },
                 "volume": {
                     "anyOf": [
@@ -5218,7 +5223,7 @@
                     "examples": [
                         "https://example.com/play-status"
                     ],
-                    "description": "HTTP or HTTPS URL to deliver play status events.\nA SWML variable must resolve to an HTTP or HTTPS URL."
+                    "description": "HTTP or HTTPS URL to deliver play status events, or a SWML variable that resolves to one."
                 },
                 "urls": {
                     "type": "array",
@@ -5239,7 +5244,7 @@
                             "silence:2"
                         ]
                     ],
-                    "description": "Array of URLs to play, in order.\nRequired if `url` is not present.\nEach entry can be a playable URL or a SWML variable that resolves to one.\nAllowed URLs are:\n    - http:// or https:// - audio file to GET\n    - ring:[duration:]<ringtone> - ring tone to play, named by country code or `bong`. For example: ring:us to play single ring or ring:20.0:us to play ring for 20 seconds. A duration, when given, is at least 1 second.\n    - say:<text to speak> - Sentence to say\n    - silence: <duration> - seconds of silence to play, at least 1"
+                    "description": "Array of URLs to play, in order.\nRequired if `url` is not present.\nEach entry can be a playable URL or a SWML variable that resolves to one.\nAllowed URLs are:\n    - http:// or https:// - audio file to GET\n    - ring:[duration:]<ringtone> - ring tone to play, named by country code or `bong`. For example: ring:us to play single ring or ring:20.0:us to play ring for 20 seconds. A duration, when given, must be at least 1 second.\n    - say:<text to speak> - Sentence to say\n    - silence: <duration> - seconds of silence to play, at least 1"
                 }
             },
             "required": [
@@ -5265,6 +5270,10 @@
         "PromptSpeechLanguage": {
             "type": "string",
             "pattern": "^(?:[a-zA-Z]{2,3}(?:-[a-zA-Z]{3})?)(?:-[a-zA-Z]{4})?(?:-(?:[a-zA-Z]{2}|[0-9]{3}))?(?:-(?:[a-zA-Z0-9]{5,8}|(?:[0-9][a-zA-Z0-9]{3})))?$"
+        },
+        "PromptSpeechHint": {
+            "type": "string",
+            "minLength": 1
         },
         "PromptStatusUrl": {
             "type": "string",
@@ -5532,6 +5541,11 @@
             "description": "RTP packetization time in milliseconds: a multiple of 10 from 10 to 120.",
             "title": "Tap RTP packetization time"
         },
+        "PayConnectorUrl": {
+            "type": "string",
+            "format": "uri",
+            "pattern": "^https://"
+        },
         "PayParameters": {
             "type": "object",
             "properties": {
@@ -5573,7 +5587,7 @@
                     "items": {
                         "$ref": "#/$defs/PayPromptPlayItem"
                     },
-                    "description": "Array of media items to play for this prompt: audio files, text-to-speech, silence, or ringtones.\nWhen `play` is present it takes precedence and `actions` is ignored, even if `play` is empty."
+                    "description": "Array of media items to play for this prompt: audio files, text-to-speech, silence, or ringtones.\nWhen `play` is present, even as an empty array, it takes precedence and `actions` is ignored."
                 },
                 "for": {
                     "anyOf": [
@@ -5646,7 +5660,7 @@
                     "examples": [
                         "timeout invalid-card-number"
                     ],
-                    "description": "Space-separated list of error types this prompt applies to.\n\nAvailable error types:\n    - `timeout` - User input timeout\n    - `invalid-card-number` - Failed card validation\n    - `invalid-card-type` - Unsupported card type\n    - `invalid-date` - Invalid expiration date\n    - `invalid-security-code` - Invalid CVV format\n    - `invalid-postal-code` - Invalid postal code format\n    - `invalid-bank-routing-number` - Invalid bank routing number\n    - `invalid-bank-account-number` - Invalid bank account number\n    - `input-matching-failed` - Input matching failed (accepted as a filter value)\n    - `card-declined` - Payment declined\n    - `bank-account-declined` - Bank account payment declined\n    - `invalid-bank-account-type` - Unsupported bank account type"
+                    "description": "Space-separated list of error types this prompt applies to.\n\nAvailable error types:\n    - `timeout` - User input timeout\n    - `invalid-card-number` - Failed card validation\n    - `invalid-card-type` - Unsupported card type\n    - `invalid-date` - Invalid expiration date\n    - `invalid-security-code` - Invalid CVV format\n    - `invalid-postal-code` - Invalid postal code format\n    - `invalid-bank-routing-number` - Invalid bank routing number\n    - `invalid-bank-account-number` - Invalid bank account number\n    - `input-matching-failed` - Input matching failed. Accepted, but `pay` doesn't currently report this error\n    - `card-declined` - Payment declined\n    - `bank-account-declined` - Bank account payment declined\n    - `invalid-bank-account-type` - Unsupported bank account type"
                 }
             },
             "required": [
@@ -6433,7 +6447,7 @@
                         "30:00"
                     ],
                     "pattern": "^\\d+(?::\\d+){0,2}$",
-                    "description": "The maximum time the AI Agent stays active. Once it has passed, the next time the agent is waiting\nfor the caller it receives `hard_stop_prompt` as a final instruction for its last reply, and then\nthe conversation ends. The stop is not exact and does not cut off speech in progress.\n\n**Time Format:** `HH:MM:SS`, `MM:SS`, or a whole number of seconds. For example, `30:00` and `1800`\nare both 30 minutes. In the colon forms, minutes and seconds go up to `59`.\nUnit suffixes such as `30m` or `1h` are not converted: the letters are ignored, so `30m` is read as\n30 seconds."
+                    "description": "The maximum time the AI Agent stays active. Once it has passed, the next time the agent is waiting\nfor the caller it receives `hard_stop_prompt` as a final instruction for its last reply. The\nconversation then ends and the next SWML instruction runs. The stop is not exact and does not cut\noff speech in progress.\n\n**Time Format:** a string in `HH:MM:SS` or `MM:SS` form, or a whole number of seconds. For example,\n`\"30:00\"` and `\"1800\"` are both 30 minutes. In the colon forms, minutes and seconds go up to `59`.\nUnit suffixes such as `30m` or `1h` are not converted: the letters are ignored, so `30m` is read as\n30 seconds."
                 },
                 "hold_music": {
                     "type": "string",
@@ -6527,7 +6541,7 @@
                     "examples": [
                         true
                     ],
-                    "description": "When enabled, barges agent upon any sound interruption longer than 1 second. The length of sound needed is fixed. **Default:** `false`."
+                    "description": "When enabled, barges agent upon any sound interruption longer than 1 second. The 1-second threshold can't be changed. **Default:** `false`."
                 },
                 "interrupt_prompt": {
                     "type": "string",
@@ -6611,7 +6625,7 @@
                     "examples": [
                         true
                     ],
-                    "description": "Send a summary of the conversation after the call ends.\nThis requires `ai.post_prompt_url` to be set and the `conversation_id` defined below.\nThis eliminates the need for a `post_prompt` in the ai parameters.\nSeparately from that end-of-call report, an agent that starts with the same `conversation_id`\nrequests the stored summary from `ai.post_prompt_url` so it can resume the conversation."
+                    "description": "Send a summary of the conversation after the call ends.\nThis requires `ai.post_prompt_url` and `conversation_id` to be set.\nThis eliminates the need for a `post_prompt` in the ai parameters.\nSeparately from that end-of-call report, an agent that starts with a `conversation_id` asks\n`ai.post_prompt_url` for the summary you stored for that ID, and resumes the conversation with it."
                 },
                 "semantic_gates_enabled": {
                     "type": "boolean",
@@ -6659,7 +6673,7 @@
                 },
                 "speech_timeout": {
                     "type": "integer",
-                    "description": "Reserved for SignalWire internal use. Setting it has no effect on your calls."
+                    "description": "Has no effect and can be omitted. Setting it does not change speech timing on your calls."
                 },
                 "speak_when_spoken_to": {
                     "type": "boolean",
@@ -6741,7 +6755,7 @@
                     "examples": [
                         true
                     ],
-                    "description": "Allows SWAIG functions to set global data that persists across function calls within the current call.\nIt does not carry data over to other calls. To keep `global_data` for a later AI session on the same\ncall, see `persist_global_data`. **Default:** `true`."
+                    "description": "Allows SWAIG functions to change `global_data` with the `set_global_data` and `unset_global_data`\nactions. Changes last for the rest of the AI session and don't carry over to other calls. To keep\n`global_data` for a later AI session on the same call, see `persist_global_data`. **Default:** `true`."
                 },
                 "swaig_post_swml_vars": {
                     "anyOf": [
@@ -7173,7 +7187,7 @@
                 "mcp_servers": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/$defs/MCPServer"
+                        "$ref": "#/$defs/AISidecarMCPServer"
                     },
                     "description": "An array of MCP (Model Context Protocol) servers whose tools and resources are made available to the model."
                 }
@@ -7214,7 +7228,7 @@
                     "examples": [
                         true
                     ],
-                    "description": "Whether a `settings` action returned by a SWAIG tool is accepted. An accepted `settings` action does not\nchange the sidecar's evaluations, which keep using the sidecar's `model` and default model settings.\n**Default:** `true`."
+                    "description": "Whether the sidecar accepts a `settings` action returned by a SWAIG tool. Either way, a `settings` action\ndoes not change the sidecar's evaluations, which keep using the sidecar's `model` and default model settings.\n**Default:** `true`."
                 },
                 "swaig_set_global_data": {
                     "anyOf": [
@@ -7229,7 +7243,7 @@
                     "examples": [
                         true
                     ],
-                    "description": "Accepted but not enforced: SWAIG tools can set and unset the sidecar's global data whatever this is set to.\nTo keep tool actions from taking effect, set `params.act_on_channel` to `false`. **Default:** `true`."
+                    "description": "Has no effect: SWAIG tools can set and unset the sidecar's global data whatever this is set to. To keep\ntool actions, including global data changes, from taking effect, set `act_on_channel` in the sidecar's\n`params` to `false`.\n**Default:** `true`."
                 }
             },
             "unevaluatedProperties": {
@@ -7289,7 +7303,7 @@
                     ],
                     "minimum": 1,
                     "maximum": 20,
-                    "description": "The maximum number of model steps in a single evaluation, or in answering an ask. Each step is one model\nresponse, which can call several tools at once. When the limit is reached the evaluation stops, whether or\nnot the model has produced its advice. Range: 1-20. **Default:** `5`."
+                    "description": "The maximum number of model steps in a single evaluation, or in answering a question sent with the\n`calling.ai_sidecar.ask` command. Each step is one model response, which can call several tools at once.\nWhen the limit is reached the evaluation stops, whether or not the model has produced its advice. Range: 1-20. **Default:** `5`."
                 },
                 "max_history_tokens": {
                     "anyOf": [
@@ -7591,7 +7605,7 @@
                         "30:00"
                     ],
                     "pattern": "^\\d+(?::\\d+){0,2}$",
-                    "description": "The maximum time the agent stays active. When it has passed, the agent receives `hard_stop_prompt` as a final\ninstruction and the conversation is scheduled to end. The agent's reply to that instruction is not guaranteed\nto finish before the conversation ends.\n\n**Time Format:** `HH:MM:SS`, `MM:SS`, or a whole number of seconds, greater than zero. Always pass the value as\na string, for example `\"30:00\"` or `\"1800\"`, both 30 minutes. In the colon forms, minutes and seconds go up to `59`."
+                    "description": "The maximum time the agent stays active. When it has passed, the agent receives `hard_stop_prompt` as a final\ninstruction and the conversation is scheduled to end. The agent's reply to that instruction is not guaranteed\nto finish before the conversation ends.\n\n**Time format:** `HH:MM:SS`, `MM:SS`, or a whole number of seconds, greater than zero. Always pass the value as\na string, for example `\"30:00\"` or `\"1800\"`, both 30 minutes. In the colon forms, minutes and seconds go up to `59`."
                 },
                 "hard_stop_prompt": {
                     "type": "string",
@@ -7696,8 +7710,8 @@
         },
         "ConnectCallerIdName": {
             "type": "string",
-            "pattern": "^[A-Za-z0-9_.+, -]{1,70}$",
-            "description": "Caller ID name accepted when dialing a SIP destination: 1–70 letters, digits,\nunderscores, periods, hyphens, plus signs, commas, or spaces."
+            "pattern": "^(?:[A-Za-z0-9_.+, -]{1,70}|.*[$%]\\{.*\\}.*)$",
+            "description": "Caller ID name for a SIP destination: 1–70 letters, digits, underscores, periods, hyphens,\nplus signs, commas, or spaces. The text can include `${...}` or `%{...}` variable references,\nsuch as `Support ${vars.dept}`; when it does, these limits apply to the value after the\nvariables are expanded."
         },
         "ConnectHeaders": {
             "type": "object",
@@ -7889,7 +7903,7 @@
                     "examples": [
                         "Support Team"
                     ],
-                    "description": "The caller ID name for this destination. Overrides the top-level `from_name`.\nApplies to SIP calls only — it has no effect on calls to phone numbers.\nUse 1 to 70 characters: letters, digits, spaces, and `_`, `.`, `-`, `+`, or `,`."
+                    "description": "The caller ID name for this destination. Overrides the top-level `from_name`.\nApplies to SIP calls only — it has no effect on calls to phone numbers.\nUse 1 to 70 characters after variable expansion: letters, digits, spaces, and `_`, `.`, `-`, `+`, or `,`."
                 },
                 "headers": {
                     "type": "array",
@@ -7942,7 +7956,7 @@
                         1800
                     ],
                     "minimum": 1,
-                    "description": "Time, in seconds, to set the SIP `Session-Expires` header in INVITE for this destination.\nMust be a positive, non-zero number. Values from 1 to 15000 take effect; a larger value is\naccepted but no `Session-Expires` override is applied.\nThis destination does not use the top-level `session_timeout`, so set it here for each SIP destination that needs it.\nIt has no effect on calls to phone numbers."
+                    "description": "Time, in seconds, to set the SIP `Session-Expires` header in INVITE for this destination.\nMust be a positive, non-zero number. Values from 1 to 15000 take effect; a larger value is\naccepted but ignored, so the default `Session-Expires` value is used.\nThis destination does not use the top-level `session_timeout`, so set it here for each SIP destination that needs it.\nIt has no effect on calls to phone numbers."
                 },
                 "username": {
                     "type": "string",
@@ -8289,7 +8303,7 @@
                                     "SWML"
                                 ]
                             ],
-                            "description": "Words or phrases that help speech recognition pick out specific terms, such as product names or industry jargon.\nEach hint is a plain string; empty strings are ignored."
+                            "description": "Words or phrases that help speech recognition pick out specific terms, such as product names or industry jargon.\nEach hint is a plain string; empty strings are ignored.\nAccepts a SWML variable reference that resolves to an array of hints."
                         }
                     },
                     "required": [
@@ -8355,14 +8369,14 @@
                             "examples": [
                                 "Polly.Joanna"
                             ],
-                            "description": "The TTS voice that speaks translations into `from_lang` (the first direction in `direction`)."
+                            "description": "The TTS voice that speaks translations into `from_lang` (the first direction in `direction`).\nDefaults to `azure.en-US-RyanMultilingualNeural`."
                         },
                         "to_voice": {
                             "type": "string",
                             "examples": [
                                 "Polly.Lucia"
                             ],
-                            "description": "The TTS voice that speaks translations into `to_lang` (a second direction in `direction`)."
+                            "description": "The TTS voice that speaks translations into `to_lang` (a second direction in `direction`).\nDefaults to `azure.en-US-RyanMultilingualNeural`."
                         },
                         "filter_from": {
                             "anyOf": [
@@ -8480,7 +8494,7 @@
                             "examples": [
                                 0
                             ],
-                            "description": "Debug level for logging (0-2).\nOnly takes effect when debugging is enabled for the translation service; otherwise the value is ignored."
+                            "description": "Debug level for logging (0-2).\nIgnored unless SignalWire has enabled debugging on its side, so you can leave it unset."
                         },
                         "direction": {
                             "anyOf": [
@@ -8665,7 +8679,7 @@
                     "examples": [
                         false
                     ],
-                    "description": "Realtime mode for the conference stream. Default `false`.\nA boolean `realtime` value is accepted, but it is not currently applied to the conference stream."
+                    "description": "Has no effect on conference streams. A boolean value is accepted, but conference streams currently\nignore it. Default `false`."
                 },
                 "authorization_bearer_token": {
                     "type": "string",
@@ -10443,7 +10457,7 @@
                     "examples": [
                         "gpt-4.1-mini"
                     ],
-                    "description": "The AI model to use for this prompt. On `prompt`, it takes precedence over `params.ai_model`.\nOn `post_prompt`, it selects the model that writes the summary; when omitted, the agent's model is used.\nA model that isn't available is replaced with a default model where possible."
+                    "description": "The AI model to use for this prompt. On `prompt`, it takes precedence over `params.ai_model`.\nOn `post_prompt`, it selects the model that writes the summary; when omitted, the agent's model is used.\nIf the model you name isn't available, a default model is used instead; if no default model is\navailable either, the agent doesn't start."
                 },
                 "max_tokens": {
                     "type": "integer",
@@ -10561,7 +10575,7 @@
                     "examples": [
                         "gpt-4.1-mini"
                     ],
-                    "description": "The AI model to use for this prompt. On `prompt`, it takes precedence over `params.ai_model`.\nOn `post_prompt`, it selects the model that writes the summary; when omitted, the agent's model is used.\nA model that isn't available is replaced with a default model where possible."
+                    "description": "The AI model to use for this prompt. On `prompt`, it takes precedence over `params.ai_model`.\nOn `post_prompt`, it selects the model that writes the summary; when omitted, the agent's model is used.\nIf the model you name isn't available, a default model is used instead; if no default model is\navailable either, the agent doesn't start."
                 },
                 "max_tokens": {
                     "type": "integer",
@@ -10680,7 +10694,7 @@
                     "examples": [
                         "gpt-4.1-mini"
                     ],
-                    "description": "The AI model to use for this prompt. On `prompt`, it takes precedence over `params.ai_model`.\nOn `post_prompt`, it selects the model that writes the summary; when omitted, the agent's model is used.\nA model that isn't available is replaced with a default model where possible."
+                    "description": "The AI model to use for this prompt. On `prompt`, it takes precedence over `params.ai_model`.\nOn `post_prompt`, it selects the model that writes the summary; when omitted, the agent's model is used.\nIf the model you name isn't available, a default model is used instead; if no default model is\navailable either, the agent doesn't start."
                 },
                 "max_tokens": {
                     "type": "integer",
@@ -10809,7 +10823,7 @@
                     "examples": [
                         "gpt-4.1-mini"
                     ],
-                    "description": "The AI model to use for this prompt. On `prompt`, it takes precedence over `params.ai_model`.\nOn `post_prompt`, it selects the model that writes the summary; when omitted, the agent's model is used.\nA model that isn't available is replaced with a default model where possible."
+                    "description": "The AI model to use for this prompt. On `prompt`, it takes precedence over `params.ai_model`.\nOn `post_prompt`, it selects the model that writes the summary; when omitted, the agent's model is used.\nIf the model you name isn't available, a default model is used instead; if no default model is\navailable either, the agent doesn't start."
                 },
                 "max_tokens": {
                     "type": "integer",
@@ -11194,7 +11208,7 @@
                 "pom": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/$defs/POM"
+                        "$ref": "#/$defs/AISidecarPOM"
                     },
                     "minItems": 1,
                     "description": "The operator prompt as a Prompt Object Model (POM) — a structured array of sections that SignalWire renders into a markdown document before sending it to the model."
@@ -11295,6 +11309,66 @@
                 "not": {}
             },
             "title": "AISidecarSWAIGFunction object"
+        },
+        "AISidecarMCPServer": {
+            "type": "object",
+            "properties": {
+                "url": {
+                    "type": "string",
+                    "examples": [
+                        "https://mcp.example.com/mcp"
+                    ],
+                    "description": "The MCP (Model Context Protocol) server URL. Required."
+                },
+                "headers": {
+                    "type": "object",
+                    "properties": {},
+                    "unevaluatedProperties": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        {
+                            "Authorization": "Bearer abc123"
+                        }
+                    ],
+                    "description": "HTTP headers sent to the MCP server. Authorization tokens go here — there is no separate auth field. Header values are sent exactly as written; variables such as `${global_data.token}` are not expanded."
+                },
+                "resources": {
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "default": false,
+                    "examples": [
+                        true
+                    ],
+                    "description": "Whether to fetch the server's resources into `global_data`, when the server advertises resource support. **Default:** `false`."
+                },
+                "resource_vars": {
+                    "type": "object",
+                    "properties": {},
+                    "unevaluatedProperties": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        {
+                            "customer_id": "cust_12345"
+                        }
+                    ],
+                    "description": "Values for `{name}` placeholders in the URI templates of the server's resources. When a resource\nURI contains `{customer_id}`, the value of the `customer_id` key replaces it. Values are used exactly\nas written; variables such as `${global_data.customer_id}` are not expanded. A placeholder with no\nmatching key is left as it is. Used only when `resources` is enabled."
+                }
+            },
+            "required": [
+                "url"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "title": "MCP server object"
         },
         "SpeechEngine": {
             "type": "string",
@@ -12022,7 +12096,7 @@
                 },
                 "web_hook_auth_pass": {
                     "type": "string",
-                    "description": "Password for basic auth on this function's webhook.\nDeprecated. Use `web_hook_auth_password` instead.\nThe alias is used only when `web_hook_auth_password` is not set. The same fallback applies on the `ai` SWAIG `defaults` object.",
+                    "description": "Password for basic auth on this function's webhook.\nDeprecated. Use `web_hook_auth_password` instead.\nThe alias is used only when `web_hook_auth_password` is not set.",
                     "deprecated": true
                 },
                 "wait_file": {
@@ -12226,7 +12300,7 @@
                 },
                 "web_hook_auth_pass": {
                     "type": "string",
-                    "description": "Password for basic auth on this function's webhook.\nDeprecated. Use `web_hook_auth_password` instead.\nThe alias is used only when `web_hook_auth_password` is not set. The same fallback applies on the `ai` SWAIG `defaults` object.",
+                    "description": "Password for basic auth on this function's webhook.\nDeprecated. Use `web_hook_auth_password` instead.\nThe alias is used only when `web_hook_auth_password` is not set.",
                     "deprecated": true
                 },
                 "wait_file": {
@@ -12368,7 +12442,7 @@
                 },
                 "web_hook_auth_pass": {
                     "type": "string",
-                    "description": "Password for basic auth on this function's webhook.\nDeprecated. Use `web_hook_auth_password` instead.\nThe alias is used only when `web_hook_auth_password` is not set. The same fallback applies on the `ai` SWAIG `defaults` object.",
+                    "description": "Password for basic auth on this function's webhook.\nDeprecated. Use `web_hook_auth_password` instead.\nThe alias is used only when `web_hook_auth_password` is not set.",
                     "deprecated": true
                 },
                 "wait_file": {
@@ -12510,7 +12584,7 @@
                 },
                 "web_hook_auth_pass": {
                     "type": "string",
-                    "description": "Password for basic auth on this function's webhook.\nDeprecated. Use `web_hook_auth_password` instead.\nThe alias is used only when `web_hook_auth_password` is not set. The same fallback applies on the `ai` SWAIG `defaults` object.",
+                    "description": "Password for basic auth on this function's webhook.\nDeprecated. Use `web_hook_auth_password` instead.\nThe alias is used only when `web_hook_auth_password` is not set.",
                     "deprecated": true
                 },
                 "wait_file": {
@@ -12558,6 +12632,17 @@
             },
             "description": "An internal reserved function that generates a summary of the conversation and sends any specified properties to the configured webhook after the conversation has ended.\nThis ensures that key parts of the conversation, as interpreted by the LLM, are reliably captured and delivered to the webhook.",
             "title": "summarize_conversation Function"
+        },
+        "AISidecarPOM": {
+            "anyOf": [
+                {
+                    "$ref": "#/$defs/AISidecarPomSectionBodyContent"
+                },
+                {
+                    "$ref": "#/$defs/AISidecarPomSectionBulletsContent"
+                }
+            ],
+            "description": "Regular section that requires either body or bullets."
         },
         "AISidecarFunctionParameters": {
             "type": "object",
@@ -12614,7 +12699,7 @@
                     "unevaluatedProperties": {
                         "$ref": "#/$defs/SchemaType"
                     },
-                    "description": "An object containing the property definitions that are passed to the function.\n\nA property definition is a valid JSON schema type with dynamic property names, where:\n- Keys: User-defined strings, that set the property names.\n- Values: A valid property type, which can be one of the following: `string`, `integer`, `number`, `boolean`, `array`, `object`, or `null`.\n\nThe schema is passed to the AI model as written: SWML variables in it are not expanded."
+                    "description": "An object containing the property definitions that are passed to the function.\n\nA property definition is a valid JSON schema type with dynamic property names, where:\n- Keys: User-defined strings, that set the property names.\n- Values: A valid property type, which can be one of the following: `string`, `integer`, `number`, `boolean`, `array`, `object`, or `null`.\n\nThe schema is passed to the AI model as written: [SWML variables](/docs/swml/reference/variables) in it are not expanded."
                 },
                 "required": {
                     "type": "array",
@@ -12747,7 +12832,7 @@
                     "examples": [
                         "female"
                     ],
-                    "description": "Voice gender, used when no voice is set here or on the `pay` method."
+                    "description": "Voice gender, used when no voice is set here or on the `pay` method. Defaults to `female`."
                 },
                 "voice": {
                     "type": "string",
@@ -12797,7 +12882,7 @@
                     "examples": [
                         5
                     ],
-                    "description": "Maximum ringtone duration in seconds. Must be a positive number. If omitted, the ringtone plays without a time limit."
+                    "description": "Maximum ringtone duration in seconds. Must be a positive number."
                 }
             },
             "required": [
@@ -12977,7 +13062,7 @@
                             "Confirm Address"
                         ]
                     ],
-                    "description": "An array of strings, where each string is the name of a SWAIG.function that can be executed from this step."
+                    "description": "An array of strings, where each string is the name of a SWAIG.function that can be executed from this step.\nWhen omitted, the functions that were already available stay available. An empty array makes none of the\nSWAIG functions available during this step."
                 },
                 "valid_contexts": {
                     "type": "array",
@@ -13027,11 +13112,11 @@
                             "confirm order"
                         ]
                     ],
-                    "description": "An array of step names the AI can move to from this step. Include `next` to allow the following step.\nWhen the key is omitted, the AI can move to the next step in the context.\nAn empty array means the AI is not offered a move to another step from this one; a `change_step` action\nreturned by a SWAIG function still works."
+                    "description": "An array of step names the AI can move to from this step. Include `next` to allow the following step.\nWhen the key is omitted, the AI can move to the next step in the context.\nAn empty array means that, once the AI's available functions are refreshed for this step (for example,\nwhen the step sets `functions`), it is no longer offered a move to another step. A `change_step` action\nreturned by a SWAIG function still works."
                 },
                 "reset": {
                     "$ref": "#/$defs/StepReset",
-                    "description": "Starts a new conversation context when this step becomes active, and makes this the last step in the\ncontext, like `end`. A step with `reset` doesn't need `text` or `pom`."
+                    "description": "Resets the conversation with new instructions when this step becomes active, and makes this the last\nstep in the context, like `end`. When `reset` is set, the step's `text`, `pom` and `gather_info` are\nnot used; put the new instructions in `reset.system_prompt`."
                 },
                 "gather_info": {
                     "$ref": "#/$defs/GatherInfo",
@@ -13052,7 +13137,7 @@
             "unevaluatedProperties": {
                 "not": {}
             },
-            "title": "Context step with POM (Post-Prompt Object Model)"
+            "title": "Context step with POM (Prompt Object Model)"
         },
         "ContextTextSteps": {
             "type": "object",
@@ -13084,7 +13169,7 @@
                             "Confirm Address"
                         ]
                     ],
-                    "description": "An array of strings, where each string is the name of a SWAIG.function that can be executed from this step."
+                    "description": "An array of strings, where each string is the name of a SWAIG.function that can be executed from this step.\nWhen omitted, the functions that were already available stay available. An empty array makes none of the\nSWAIG functions available during this step."
                 },
                 "valid_contexts": {
                     "type": "array",
@@ -13134,11 +13219,11 @@
                             "confirm order"
                         ]
                     ],
-                    "description": "An array of step names the AI can move to from this step. Include `next` to allow the following step.\nWhen the key is omitted, the AI can move to the next step in the context.\nAn empty array means the AI is not offered a move to another step from this one; a `change_step` action\nreturned by a SWAIG function still works."
+                    "description": "An array of step names the AI can move to from this step. Include `next` to allow the following step.\nWhen the key is omitted, the AI can move to the next step in the context.\nAn empty array means that, once the AI's available functions are refreshed for this step (for example,\nwhen the step sets `functions`), it is no longer offered a move to another step. A `change_step` action\nreturned by a SWAIG function still works."
                 },
                 "reset": {
                     "$ref": "#/$defs/StepReset",
-                    "description": "Starts a new conversation context when this step becomes active, and makes this the last step in the\ncontext, like `end`. A step with `reset` doesn't need `text` or `pom`."
+                    "description": "Resets the conversation with new instructions when this step becomes active, and makes this the last\nstep in the context, like `end`. When `reset` is set, the step's `text`, `pom` and `gather_info` are\nnot used; put the new instructions in `reset.system_prompt`."
                 },
                 "gather_info": {
                     "$ref": "#/$defs/GatherInfo",
@@ -13191,7 +13276,7 @@
                             "Confirm Address"
                         ]
                     ],
-                    "description": "An array of strings, where each string is the name of a SWAIG.function that can be executed from this step."
+                    "description": "An array of strings, where each string is the name of a SWAIG.function that can be executed from this step.\nWhen omitted, the functions that were already available stay available. An empty array makes none of the\nSWAIG functions available during this step."
                 },
                 "valid_contexts": {
                     "type": "array",
@@ -13241,7 +13326,7 @@
                             "confirm order"
                         ]
                     ],
-                    "description": "An array of step names the AI can move to from this step. Include `next` to allow the following step.\nWhen the key is omitted, the AI can move to the next step in the context.\nAn empty array means the AI is not offered a move to another step from this one; a `change_step` action\nreturned by a SWAIG function still works."
+                    "description": "An array of step names the AI can move to from this step. Include `next` to allow the following step.\nWhen the key is omitted, the AI can move to the next step in the context.\nAn empty array means that, once the AI's available functions are refreshed for this step (for example,\nwhen the step sets `functions`), it is no longer offered a move to another step. A `change_step` action\nreturned by a SWAIG function still works."
                 },
                 "gather_info": {
                     "$ref": "#/$defs/GatherInfo",
@@ -13249,7 +13334,7 @@
                 },
                 "reset": {
                     "$ref": "#/$defs/StepReset",
-                    "description": "Starts a new conversation context when this step becomes active, and makes this the last step in the\ncontext, like `end`."
+                    "description": "Resets the conversation with new instructions when this step becomes active, and makes this the last\nstep in the context, like `end`. When `reset` is set, the step's `text`, `pom` and `gather_info` are\nnot used; put the new instructions in `reset.system_prompt`."
                 }
             },
             "required": [
@@ -13291,7 +13376,7 @@
                             "Confirm Address"
                         ]
                     ],
-                    "description": "An array of strings, where each string is the name of a SWAIG.function that can be executed from this step."
+                    "description": "An array of strings, where each string is the name of a SWAIG.function that can be executed from this step.\nWhen omitted, the functions that were already available stay available. An empty array makes none of the\nSWAIG functions available during this step."
                 },
                 "valid_contexts": {
                     "type": "array",
@@ -13341,15 +13426,15 @@
                             "confirm order"
                         ]
                     ],
-                    "description": "An array of step names the AI can move to from this step. Include `next` to allow the following step.\nWhen the key is omitted, the AI can move to the next step in the context.\nAn empty array means the AI is not offered a move to another step from this one; a `change_step` action\nreturned by a SWAIG function still works."
+                    "description": "An array of step names the AI can move to from this step. Include `next` to allow the following step.\nWhen the key is omitted, the AI can move to the next step in the context.\nAn empty array means that, once the AI's available functions are refreshed for this step (for example,\nwhen the step sets `functions`), it is no longer offered a move to another step. A `change_step` action\nreturned by a SWAIG function still works."
                 },
                 "reset": {
                     "$ref": "#/$defs/StepReset",
-                    "description": "Starts a new conversation context when this step becomes active, and makes this the last step in the\ncontext, like `end`. A step with `reset` doesn't need `text` or `pom`."
+                    "description": "Resets the conversation with new instructions when this step becomes active, and makes this the last\nstep in the context, like `end`. When `reset` is set, the step's `text`, `pom` and `gather_info` are\nnot used; put the new instructions in `reset.system_prompt`."
                 },
                 "gather_info": {
                     "$ref": "#/$defs/GatherInfo",
-                    "description": "Asks the caller a list of questions and stores the answers in `global_data`."
+                    "description": "Asks the caller a list of questions and stores the answers in `global_data`. While questions remain,\nthe AI asks them one at a time and doesn't move to another step. A step with `gather_info` doesn't\nneed `text` or `pom`."
                 }
             },
             "required": [
@@ -13380,7 +13465,7 @@
                     "items": {
                         "$ref": "#/$defs/DataMapWebhook"
                     },
-                    "description": "An array of objects that define external API calls. Webhooks are tried in order, skipping any whose\n`require_args` aren't met. The first webhook that returns a response is the only one used, even if\n`error_keys` then marks that response as failed; later webhooks are not called."
+                    "description": "An array of objects that define external API calls. Webhooks are tried in order, skipping any whose\n`require_args` aren't met. The first webhook that is called is the only one used: later webhooks\naren't called, even when the request fails or `error_keys` marks the response as failed. In that\ncase the function falls back to `data_map.output`."
                 }
             },
             "unevaluatedProperties": {
@@ -13472,6 +13557,164 @@
             "maximum": 5,
             "description": "A number of the caller's newest video frames, from `0` (none) to `5`.",
             "title": "Frame count"
+        },
+        "AISidecarPomSectionBodyContent": {
+            "type": "object",
+            "properties": {
+                "title": {
+                    "type": "string",
+                    "examples": [
+                        "Customer Service Guidelines"
+                    ],
+                    "minLength": 1,
+                    "description": "Title for the section"
+                },
+                "subsections": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/AISidecarPOM"
+                    },
+                    "minItems": 1,
+                    "description": "Optional array of nested subsections"
+                },
+                "numbered": {
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "examples": [
+                        true
+                    ],
+                    "description": "Whether to number the section"
+                },
+                "numberedBullets": {
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "examples": [
+                        false
+                    ],
+                    "description": "Whether to number the bullets"
+                },
+                "body": {
+                    "type": "string",
+                    "examples": [
+                        "Welcome customers warmly and assist them with their inquiries."
+                    ],
+                    "description": "Body text for the section"
+                },
+                "bullets": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "Be polite and professional",
+                            "Listen actively to customer concerns",
+                            "Provide accurate information"
+                        ]
+                    ],
+                    "minItems": 1,
+                    "description": "Optional array of bullet points"
+                }
+            },
+            "required": [
+                "body"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "description": "Content model with body text and optional bullets",
+            "title": "Section with Body"
+        },
+        "AISidecarPomSectionBulletsContent": {
+            "type": "object",
+            "properties": {
+                "title": {
+                    "type": "string",
+                    "examples": [
+                        "Customer Service Guidelines"
+                    ],
+                    "minLength": 1,
+                    "description": "Title for the section"
+                },
+                "subsections": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/AISidecarPOM"
+                    },
+                    "minItems": 1,
+                    "description": "Optional array of nested subsections"
+                },
+                "numbered": {
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "examples": [
+                        true
+                    ],
+                    "description": "Whether to number the section"
+                },
+                "numberedBullets": {
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "examples": [
+                        false
+                    ],
+                    "description": "Whether to number the bullets"
+                },
+                "body": {
+                    "type": "string",
+                    "examples": [
+                        "Follow these steps when handling customer complaints:"
+                    ],
+                    "description": "Body text for the section (optional)"
+                },
+                "bullets": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "Acknowledge the issue",
+                            "Apologize for any inconvenience",
+                            "Offer a resolution"
+                        ]
+                    ],
+                    "minItems": 1,
+                    "description": "Array of bullet points"
+                }
+            },
+            "required": [
+                "bullets"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "description": "Content model with bullets and optional body",
+            "title": "Section with Bullets"
         },
         "AISidecarParamProperty": {
             "oneOf": [
@@ -13618,7 +13861,7 @@
                             "X-API-Key": "your-api-key"
                         }
                     ],
-                    "description": "Any necessary headers for the API call. Header values are sent exactly as written."
+                    "description": "Any necessary headers for the API call, as string values. Header values are sent exactly as written; variables in them are not expanded."
                 },
                 "method": {
                     "anyOf": [
@@ -13635,14 +13878,14 @@
                     "examples": [
                         "POST"
                     ],
-                    "description": "The HTTP method for the API call: `GET` or `POST`. The request is sent as a `POST` whenever it has\na body, that is when `params` is set or `input_args_as_params` is `true`, whatever this is set to.\n**Default:** `GET`."
+                    "description": "The HTTP method for the API call: `GET` or `POST`. A request with a body, which it has when `params`\nis set or `input_args_as_params` is `true`, is always sent as a `POST`, whatever this is set to.\n**Default:** `GET`."
                 },
                 "form_param": {
                     "type": "string",
                     "examples": [
                         "payload"
                     ],
-                    "description": "Sends the request body as a single URL-encoded form field with this name, instead of as JSON.\nThe whole JSON body becomes the value of that one field. Only applies when the request has a body."
+                    "description": "Sends the request body as a single URL-encoded form field with this name, instead of as JSON.\nThe whole JSON body becomes the value of that one field. Whenever this is set, the request's\n`Content-Type` is `application/x-www-form-urlencoded`, even when the request has no body."
                 },
                 "input_args_as_params": {
                     "type": "boolean",
@@ -13855,8 +14098,8 @@
                     "description": "Contexts the AI can switch to when it switches to this context, before the current step's own\n`valid_contexts` apply."
                 },
                 "post_prompt": {
-                    "$ref": "#/$defs/AIPostPrompt",
-                    "description": "A post-prompt for the end-of-call summary. When the AI switches to this context, it replaces\n`ai.post_prompt` until the AI switches to a context without one. Takes the same properties as\n`ai.post_prompt`."
+                    "$ref": "#/$defs/ContextPostPrompt",
+                    "description": "A post-prompt for the end-of-call summary. While this context is active, including when it is\nthe starting context, it replaces `ai.post_prompt`; switching to a context without one restores\n`ai.post_prompt`. Takes the same properties as `ai.post_prompt` except `model`."
                 },
                 "isolated": {
                     "type": "boolean",
@@ -13880,7 +14123,7 @@
                         "$ref": "#/$defs/POM"
                     },
                     "minItems": 1,
-                    "description": "Instructions for this context as a Prompt Object Model (POM). They are added before the instructions of each step in the context."
+                    "description": "Instructions for this context as a Prompt Object Model (POM). They are added to the instructions of each step in the context. Set either `prompt` or `pom`, not both."
                 }
             },
             "required": [
@@ -13942,8 +14185,8 @@
                     "description": "Contexts the AI can switch to when it switches to this context, before the current step's own\n`valid_contexts` apply."
                 },
                 "post_prompt": {
-                    "$ref": "#/$defs/AIPostPrompt",
-                    "description": "A post-prompt for the end-of-call summary. When the AI switches to this context, it replaces\n`ai.post_prompt` until the AI switches to a context without one. Takes the same properties as\n`ai.post_prompt`."
+                    "$ref": "#/$defs/ContextPostPrompt",
+                    "description": "A post-prompt for the end-of-call summary. While this context is active, including when it is\nthe starting context, it replaces `ai.post_prompt`; switching to a context without one restores\n`ai.post_prompt`. Takes the same properties as `ai.post_prompt` except `model`."
                 },
                 "isolated": {
                     "type": "boolean",
@@ -13966,7 +14209,7 @@
                     "examples": [
                         "You are now helping the customer with their order."
                     ],
-                    "description": "Instructions for this context. They are added before the instructions of each step in the context."
+                    "description": "Instructions for this context. They are added to the instructions of each step in the context."
                 }
             },
             "required": [
@@ -13985,14 +14228,14 @@
                     "examples": [
                         "You are now confirming the order details with the caller."
                     ],
-                    "description": "Instructions for the new context. Prompt variables are expanded, as in `prompt.text`."
+                    "description": "The new instructions. Variables such as `${caller_id_number}` are expanded, as in `prompt.text`."
                 },
                 "user_prompt": {
                     "type": "string",
                     "examples": [
                         "I'd like to confirm my order."
                     ],
-                    "description": "A message added as if the caller had said it, to open the new context.\nWhen `consolidate` is not `true`, defaults to `hello`.\nPrompt variables are expanded, as in `prompt.text`."
+                    "description": "A message added as if the caller had said it, right after the reset.\nWhen `consolidate` is not `true`, defaults to `hello`.\nVariables are expanded, as in `prompt.text`."
                 },
                 "consolidate": {
                     "type": "boolean",
@@ -14000,7 +14243,7 @@
                     "examples": [
                         true
                     ],
-                    "description": "If `true`, the conversation so far is summarized and the summary is carried into the new context.\n**Default:** `false`."
+                    "description": "If `true`, the conversation so far is summarized and the summary is carried over after the reset.\n**Default:** `false`."
                 },
                 "full_reset": {
                     "type": "boolean",
@@ -14014,7 +14257,7 @@
             "unevaluatedProperties": {
                 "not": {}
             },
-            "description": "Starts a new conversation context when the step becomes active.",
+            "description": "Resets the conversation with new instructions when the step becomes active.",
             "title": "Step reset"
         },
         "GatherInfo": {
@@ -14118,7 +14361,7 @@
             "unevaluatedProperties": {
                 "not": {}
             },
-            "description": "The result of a SWAIG function, returned either as a `data_map` output or by your `web_hook_url`\nendpoint — the platform reads both the same way.\n\nEvery field is optional. An empty object is valid — the agent reads a default result and carries\non — so a function that only needs to steer the call can set `action` alone.\n\n[`amazon_bedrock`](/docs/swml/reference/calling/amazon-bedrock) and\n[`ai_sidecar`](/docs/swml/reference/calling/ai-sidecar) agents read a narrower result: `response`\nmust be a plain string there, and `post_process` has no effect.",
+            "description": "The result of a SWAIG function, returned either as a `data_map` output or by your `web_hook_url`\nendpoint — the platform reads both the same way.\n\nEvery field is optional. An empty object is valid — the agent reads a default result and carries\non — so a function that only needs to steer the call can set `action` alone.\n\n[`amazon_bedrock`](/docs/swml/reference/calling/amazon-bedrock) agents read a narrower result:\n`response` must be a plain string there, and `post_process` has no effect.\n[`ai_sidecar`](/docs/swml/reference/calling/ai-sidecar) agents pass the whole response body to the\nAI model and act only on `action`.",
             "title": "Output object"
         },
         "DataMapExpression": {
@@ -14512,7 +14755,7 @@
                 },
                 "format": {
                     "$ref": "#/$defs/StringFormat",
-                    "description": "String format (email, date-time, etc.)"
+                    "description": "String format, such as `email` or `date_time`."
                 }
             },
             "required": [
@@ -15075,6 +15318,16 @@
             ],
             "title": "Context history mode"
         },
+        "ContextPostPrompt": {
+            "anyOf": [
+                {
+                    "$ref": "#/$defs/ContextPostPromptText"
+                },
+                {
+                    "$ref": "#/$defs/ContextPostPromptPom"
+                }
+            ]
+        },
         "GatherQuestion": {
             "type": "object",
             "properties": {
@@ -15389,7 +15642,7 @@
                             "X-API-Key": "your-api-key"
                         }
                     ],
-                    "description": "Any necessary headers for the API call. Header values are sent exactly as written."
+                    "description": "Any necessary headers for the API call, as string values. Header values are sent exactly as written; variables in them are not expanded."
                 },
                 "method": {
                     "anyOf": [
@@ -15406,14 +15659,14 @@
                     "examples": [
                         "POST"
                     ],
-                    "description": "The HTTP method for the API call: `GET` or `POST`. The request is sent as a `POST` whenever it has\na body, that is when `params` is set or `input_args_as_params` is `true`, whatever this is set to.\n**Default:** `GET`."
+                    "description": "The HTTP method for the API call: `GET` or `POST`. A request with a body, which it has when `params`\nis set or `input_args_as_params` is `true`, is always sent as a `POST`, whatever this is set to.\n**Default:** `GET`."
                 },
                 "form_param": {
                     "type": "string",
                     "examples": [
                         "payload"
                     ],
-                    "description": "Sends the request body as a single URL-encoded form field with this name, instead of as JSON.\nThe whole JSON body becomes the value of that one field. Only applies when the request has a body."
+                    "description": "Sends the request body as a single URL-encoded form field with this name, instead of as JSON.\nThe whole JSON body becomes the value of that one field. Whenever this is set, the request's\n`Content-Type` is `application/x-www-form-urlencoded`, even when the request has no body."
                 },
                 "input_args_as_params": {
                     "type": "boolean",
@@ -15550,7 +15803,7 @@
                             "X-API-Key": "your-api-key"
                         }
                     ],
-                    "description": "Any necessary headers for the API call. Header values are sent exactly as written."
+                    "description": "Any necessary headers for the API call, as string values. Header values are sent exactly as written; variables in them are not expanded."
                 },
                 "method": {
                     "anyOf": [
@@ -15567,14 +15820,14 @@
                     "examples": [
                         "POST"
                     ],
-                    "description": "The HTTP method for the API call: `GET` or `POST`. The request is sent as a `POST` whenever it has\na body, that is when `params` is set or `input_args_as_params` is `true`, whatever this is set to.\n**Default:** `GET`."
+                    "description": "The HTTP method for the API call: `GET` or `POST`. A request with a body, which it has when `params`\nis set or `input_args_as_params` is `true`, is always sent as a `POST`, whatever this is set to.\n**Default:** `GET`."
                 },
                 "form_param": {
                     "type": "string",
                     "examples": [
                         "payload"
                     ],
-                    "description": "Sends the request body as a single URL-encoded form field with this name, instead of as JSON.\nThe whole JSON body becomes the value of that one field. Only applies when the request has a body."
+                    "description": "Sends the request body as a single URL-encoded form field with this name, instead of as JSON.\nThe whole JSON body becomes the value of that one field. Whenever this is set, the request's\n`Content-Type` is `application/x-www-form-urlencoded`, even when the request has no body."
                 },
                 "input_args_as_params": {
                     "type": "boolean",
@@ -15685,6 +15938,229 @@
                 "uri",
                 "uuid"
             ]
+        },
+        "ContextPostPromptText": {
+            "type": "object",
+            "properties": {
+                "max_tokens": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 4096,
+                    "default": 256,
+                    "examples": [
+                        256
+                    ],
+                    "description": "Limits the amount of tokens that the AI agent may generate when creating its response"
+                },
+                "temperature": {
+                    "anyOf": [
+                        {
+                            "type": "number"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "default": 1,
+                    "examples": [
+                        0.7
+                    ],
+                    "minimum": 0,
+                    "maximum": 1.5,
+                    "description": "Randomness setting. Float value between 0.0 and 1.5. Closer to 0 will make the output less random. **Default:** `1.0`."
+                },
+                "top_p": {
+                    "anyOf": [
+                        {
+                            "type": "number"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "default": 1,
+                    "examples": [
+                        0.9
+                    ],
+                    "minimum": 0,
+                    "maximum": 1,
+                    "description": "Randomness setting. Alternative to `temperature`. Float value between 0.0 and 1.0. Closer to 0 will make the output less random. **Default:** `1.0`."
+                },
+                "confidence": {
+                    "anyOf": [
+                        {
+                            "type": "number"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "minimum": 0,
+                    "maximum": 1,
+                    "description": "Has no effect and can be omitted. Setting it does not change speech detection.",
+                    "deprecated": true
+                },
+                "presence_penalty": {
+                    "anyOf": [
+                        {
+                            "type": "number"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "default": 0,
+                    "examples": [
+                        0
+                    ],
+                    "minimum": -2,
+                    "maximum": 2,
+                    "description": "Aversion to staying on topic. Float value between -2.0 and 2.0. Positive values increase the model's likelihood to talk about new topics. **Default:** `0`."
+                },
+                "frequency_penalty": {
+                    "anyOf": [
+                        {
+                            "type": "number"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "default": 0,
+                    "examples": [
+                        0
+                    ],
+                    "minimum": -2,
+                    "maximum": 2,
+                    "description": "Aversion to repeating lines. Float value between -2.0 and 2.0. Positive values decrease the model's likelihood to repeat the same line verbatim. **Default:** `0`."
+                },
+                "text": {
+                    "type": "string",
+                    "examples": [
+                        "Summarize the conversation and provide any follow-up action items."
+                    ],
+                    "description": "The instructions to send to the agent."
+                }
+            },
+            "required": [
+                "text"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "title": "Context Post-Prompt with Text"
+        },
+        "ContextPostPromptPom": {
+            "type": "object",
+            "properties": {
+                "max_tokens": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 4096,
+                    "default": 256,
+                    "examples": [
+                        256
+                    ],
+                    "description": "Limits the amount of tokens that the AI agent may generate when creating its response"
+                },
+                "temperature": {
+                    "anyOf": [
+                        {
+                            "type": "number"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "default": 1,
+                    "examples": [
+                        0.7
+                    ],
+                    "minimum": 0,
+                    "maximum": 1.5,
+                    "description": "Randomness setting. Float value between 0.0 and 1.5. Closer to 0 will make the output less random. **Default:** `1.0`."
+                },
+                "top_p": {
+                    "anyOf": [
+                        {
+                            "type": "number"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "default": 1,
+                    "examples": [
+                        0.9
+                    ],
+                    "minimum": 0,
+                    "maximum": 1,
+                    "description": "Randomness setting. Alternative to `temperature`. Float value between 0.0 and 1.0. Closer to 0 will make the output less random. **Default:** `1.0`."
+                },
+                "confidence": {
+                    "anyOf": [
+                        {
+                            "type": "number"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "minimum": 0,
+                    "maximum": 1,
+                    "description": "Has no effect and can be omitted. Setting it does not change speech detection.",
+                    "deprecated": true
+                },
+                "presence_penalty": {
+                    "anyOf": [
+                        {
+                            "type": "number"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "default": 0,
+                    "examples": [
+                        0
+                    ],
+                    "minimum": -2,
+                    "maximum": 2,
+                    "description": "Aversion to staying on topic. Float value between -2.0 and 2.0. Positive values increase the model's likelihood to talk about new topics. **Default:** `0`."
+                },
+                "frequency_penalty": {
+                    "anyOf": [
+                        {
+                            "type": "number"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "default": 0,
+                    "examples": [
+                        0
+                    ],
+                    "minimum": -2,
+                    "maximum": 2,
+                    "description": "Aversion to repeating lines. Float value between -2.0 and 2.0. Positive values decrease the model's likelihood to repeat the same line verbatim. **Default:** `0`."
+                },
+                "pom": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/POM"
+                    },
+                    "minItems": 1,
+                    "description": "The instructions to send to the agent."
+                }
+            },
+            "required": [
+                "pom"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "title": "Context Post-Prompt with POM"
         },
         "SWMLAction": {
             "type": "object",
@@ -15812,7 +16288,7 @@
                     "unevaluatedProperties": {
                         "not": {}
                     },
-                    "description": "Replaces the agent's instructions mid-conversation. Variables in `system_prompt` and `user_prompt`\nare expanded once: with the rest of the output for a `data_map` function, or when the action runs\nfor a webhook reply.",
+                    "description": "Replaces the agent's instructions mid-conversation. You can use variables in `system_prompt`,\n`user_prompt`, `system_pom`, and `user_pom`. In a `data_map` function they're expanded along with the\nrest of the output; in a reply from your `web_hook_url`, they're expanded when the action runs. Either\nway they're expanded only once, so a value that itself contains `${...}` is left as it is.",
                     "title": "context_switch"
                 }
             },
@@ -16260,7 +16736,7 @@
                     "type": "object",
                     "properties": {},
                     "unevaluatedProperties": {},
-                    "description": "Changes the AI model's settings for the rest of the conversation, as a key-value map.\nOnly settings the selected model supports are applied. Requires\n[`params.swaig_allow_settings`](/docs/swml/reference/calling/ai/params#paramsswaig_allow_settings),\nwhich is on by default.",
+                    "description": "Changes the AI model's settings for the rest of the conversation, as a key-value map.\nOnly settings the selected model supports are applied. Requires\n[`params.swaig_allow_settings`](/docs/swml/reference/calling/ai/params#paramsswaig_allow_settings),\nwhich is on by default. The new map replaces the current settings: any setting you leave out,\nincluding one set on `prompt`, returns to the model's default.",
                     "title": "settings"
                 }
             },
@@ -16285,7 +16761,7 @@
                             "order_id": "ord_456"
                         }
                     ],
-                    "description": "Sends a custom user event for the call, carrying this object as its data.",
+                    "description": "Sends a custom event to the client connected to the call, with this object as its payload, like the [`user_event`](/docs/swml/reference/calling/user-event) method.",
                     "title": "user_event"
                 }
             },

@@ -87,7 +87,7 @@ model AISidecarObject {
   @doc("""
     Summarize the conversation instead of starting a sidecar. When you include `action.summarize`,
     the request asks the sidecar already attached to the call for a one-off summary and returns
-    rather than attaching a sidecar. The other properties are not used.
+    rather than attaching a sidecar. The other properties, including `lang`, are not used and can be omitted.
     """)
   action?: AISidecarSummarizeAction;
 }

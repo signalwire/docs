@@ -20,8 +20,9 @@ model DataMap {
 
   @doc("""
     An array of objects that define external API calls. Webhooks are tried in order, skipping any whose
-    `require_args` aren't met. The first webhook that returns a response is the only one used, even if
-    `error_keys` then marks that response as failed; later webhooks are not called.
+    `require_args` aren't met. The first webhook that is called is the only one used: later webhooks
+    aren't called, even when the request fails or `error_keys` marks the response as failed. In that
+    case the function falls back to `data_map.output`.
     """)
   webhooks?: DataMapWebhook[];
 }

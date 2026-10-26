@@ -16,7 +16,7 @@ model PayPrompts {
 
   @doc("""
     Array of media items to play for this prompt: audio files, text-to-speech, silence, or ringtones.
-    When `play` is present it takes precedence and `actions` is ignored, even if `play` is empty.
+    When `play` is present, even as an empty array, it takes precedence and `actions` is ignored.
     """)
   play?: PayPromptPlayItem[];
 
@@ -83,7 +83,7 @@ model PayPrompts {
         - `invalid-postal-code` - Invalid postal code format
         - `invalid-bank-routing-number` - Invalid bank routing number
         - `invalid-bank-account-number` - Invalid bank account number
-        - `input-matching-failed` - Input matching failed (accepted as a filter value)
+        - `input-matching-failed` - Input matching failed. Accepted, but `pay` doesn't currently report this error
         - `card-declined` - Payment declined
         - `bank-account-declined` - Bank account payment declined
         - `invalid-bank-account-type` - Unsupported bank account type

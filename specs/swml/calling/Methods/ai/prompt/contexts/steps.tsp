@@ -6,22 +6,22 @@ using TypeSpec.JsonSchema;
 namespace SWML.Calling;
 
 @summary("Step reset")
-@doc("Starts a new conversation context when the step becomes active.")
+@doc("Resets the conversation with new instructions when the step becomes active.")
 model StepReset {
-  @doc("Instructions for the new context. Prompt variables are expanded, as in `prompt.text`.")
+  @doc("The new instructions. Variables such as `\${caller_id_number}` are expanded, as in `prompt.text`.")
   @example("You are now confirming the order details with the caller.")
   system_prompt?: string;
 
   @doc("""
-    A message added as if the caller had said it, to open the new context.
+    A message added as if the caller had said it, right after the reset.
     When `consolidate` is not `true`, defaults to `hello`.
-    Prompt variables are expanded, as in `prompt.text`.
+    Variables are expanded, as in `prompt.text`.
     """)
   @example("I'd like to confirm my order.")
   user_prompt?: string;
 
   @doc("""
-    If `true`, the conversation so far is summarized and the summary is carried into the new context.
+    If `true`, the conversation so far is summarized and the summary is carried over after the reset.
     **Default:** `false`.
     """)
   @example(true)
@@ -121,7 +121,11 @@ model ContextStepsBase {
   @example("Customer wants to order Pizza")
   step_criteria?: string;
 
-  @doc("An array of strings, where each string is the name of a SWAIG.function that can be executed from this step.")
+  @doc("""
+    An array of strings, where each string is the name of a SWAIG.function that can be executed from this step.
+    When omitted, the functions that were already available stay available. An empty array makes none of the
+    SWAIG functions available during this step.
+    """)
   @example(#["Take Order", "Confirm Order", "Confirm Address"])
   functions?: string[];
 
@@ -150,15 +154,17 @@ model ContextStepsBase {
   @doc("""
     An array of step names the AI can move to from this step. Include `next` to allow the following step.
     When the key is omitted, the AI can move to the next step in the context.
-    An empty array means the AI is not offered a move to another step from this one; a `change_step` action
+    An empty array means that, once the AI's available functions are refreshed for this step (for example,
+    when the step sets `functions`), it is no longer offered a move to another step. A `change_step` action
     returned by a SWAIG function still works.
     """)
   @example(#["get order", "confirm order"])
   valid_steps?: string[];
 
   @doc("""
-    Starts a new conversation context when this step becomes active, and makes this the last step in the
-    context, like `end`. A step with `reset` doesn't need `text` or `pom`.
+    Resets the conversation with new instructions when this step becomes active, and makes this the last
+    step in the context, like `end`. When `reset` is set, the step's `text`, `pom` and `gather_info` are
+    not used; put the new instructions in `reset.system_prompt`.
     """)
   reset?: StepReset;
 
@@ -170,7 +176,7 @@ model ContextStepsBase {
   gather_info?: GatherInfo;
 }
 
-@summary("Context step with POM (Post-Prompt Object Model)")
+@summary("Context step with POM (Prompt Object Model)")
 model ContextPOMSteps is ContextStepsBase {
   @doc("The instructions for this step, as a Prompt Object Model (POM).")
   pom: POM[];
@@ -183,15 +189,16 @@ model ContextTextSteps is ContextStepsBase {
   text: string;
 }
 
-// `reset` and `gather_info` each make `text`/`pom` optional: the step engine accepts a
-// step with either one and no instructions of its own.
+// `reset` and `gather_info` each make `text`/`pom` optional: a step with either one
+// needs no instructions of its own.
 @summary("Context step with reset")
 model ContextResetSteps {
   ...OmitProperties<ContextStepsBase, "reset">;
 
   @doc("""
-    Starts a new conversation context when this step becomes active, and makes this the last step in the
-    context, like `end`.
+    Resets the conversation with new instructions when this step becomes active, and makes this the last
+    step in the context, like `end`. When `reset` is set, the step's `text`, `pom` and `gather_info` are
+    not used; put the new instructions in `reset.system_prompt`.
     """)
   reset: StepReset;
 }
@@ -200,7 +207,11 @@ model ContextResetSteps {
 model ContextGatherSteps {
   ...OmitProperties<ContextStepsBase, "gather_info">;
 
-  @doc("Asks the caller a list of questions and stores the answers in `global_data`.")
+  @doc("""
+    Asks the caller a list of questions and stores the answers in `global_data`. While questions remain,
+    the AI asks them one at a time and doesn't move to another step. A step with `gather_info` doesn't
+    need `text` or `pom`.
+    """)
   gather_info: GatherInfo;
 }
 

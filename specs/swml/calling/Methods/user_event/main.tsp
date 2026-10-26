@@ -14,7 +14,8 @@ model UserEvent {
     @doc("""
       The payload of one custom event. The object can contain any JSON values; to send several events, use several `user_event` methods.
       Instead of an object, you can pass a SWML variable reference that resolves to an event object.
-      String values in the payload, including those inside nested objects and arrays, are expanded as SWML variables before the event is sent.
+      Variable references in the payload's string values, including strings inside nested objects and arrays, are expanded before the event is sent.
+      Object keys aren't expanded.
       SignalWire adds call details such as `call_id`, `node_id`, and `segment_id` at the top level of the payload, so top-level fields
       aren't guaranteed to arrive unchanged. Put custom data under your own key to avoid name collisions.
       """)

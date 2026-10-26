@@ -24,8 +24,8 @@ Similar to a `return` statement in conventional programming languages,
 when a valid [`output`](#data_mapoutput) is encountered within any component,
 it immediately terminates function execution.
 The `output` provides:
-1. A `response` object: Contains static text for the AI agent's context
-2. An optional `action` object: Defines executable actions to be triggered
+1. An optional `response`: the result the AI agent reads next, as a string or an object
+2. An optional `action`: an action, or a list of actions, to be triggered
 
 If no component produces a valid `output`, the system continues processing in sequence:
 - First attempts `expressions`
@@ -78,15 +78,15 @@ If no component produces a valid `output`, the system continues processing in se
 </ParamField>
 
 <ParamField path="webhooks[].method" type="string" default="GET" toc={true}>
-  The HTTP method for the API call: `GET` or `POST`. The request is sent as a `POST` whenever it has a body, that is when `params` is set or `input_args_as_params` is `true`, whatever this is set to.
+  The HTTP method for the API call: `GET` or `POST`. A request with a body, which it has when `params` is set or `input_args_as_params` is `true`, is always sent as a `POST`, whatever this is set to.
 </ParamField>
 
 <ParamField path="webhooks[].headers" type="object" toc={true}>
-  Any necessary headers for the API call, as string values. Header values are sent exactly as written.
+  Any necessary headers for the API call, as string values. Header values are sent exactly as written; variables in them are not expanded.
 </ParamField>
 
 <ParamField path="webhooks[].form_param" type="string" toc={true}>
-  Sends the request body as a single URL-encoded form field with this name, instead of as JSON. The whole JSON body becomes the value of that one field. Only applies when the request has a body.
+  Sends the request body as a single URL-encoded form field with this name, instead of as JSON. The whole JSON body becomes the value of that one field. Whenever this is set, the request's `Content-Type` is `application/x-www-form-urlencoded`, even when the request has no body.
 </ParamField>
 
 <ParamField path="webhooks[].params" type="object" toc={true}>
@@ -176,8 +176,9 @@ If no component produces a valid `output`, the system continues processing in se
 ## **Webhook runtime request**
 
 When the AI triggers a function that uses `data_map.webhooks`, SignalWire tries the webhooks in order. A webhook whose
-`require_args` aren't met is skipped. The first webhook that returns a response is the only one used: later webhooks
-aren't called, even when `error_keys` then marks that response as failed.
+`require_args` aren't met is skipped. The first webhook that is called is the only one used: later webhooks
+aren't called, even when the request fails or `error_keys` marks the response as failed. In that case the function
+falls back to `data_map.output`.
 
 ### Template variables
 
@@ -260,7 +261,7 @@ For more on [variables](/docs/swml/reference/variables) and scopes, see the [Var
 
 ### Request body
 
-When `params` is defined, SignalWire sends the `params` object as the JSON request body, as a `POST`.
+When `params` is defined, SignalWire sends the `params` object as the JSON request body (or as a single URL-encoded form field when `form_param` is set), as a `POST`.
 Template variables in `params` values are expanded before sending.
 
 If no `params` are defined and `method` is not `POST`, the request is sent without a body.

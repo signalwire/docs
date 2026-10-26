@@ -3,10 +3,10 @@ import "./data_map.tsp";
 
 namespace SWML.Calling;
 
-// Bedrock reads `function`, `description`, `parameters`, `web_hook_url`, `meta_data`,
-// `meta_data_token` and `data_map` from each function, with its own parser. Only `description`
-// and `parameters` behave as they do on `ai`, so only those are picked. The rest are
-// re-declared because Bedrock diverges:
+// A Bedrock function supports `function`, `description`, `parameters`, `web_hook_url`,
+// `meta_data`, `meta_data_token` and `data_map`. Only `description` and `parameters` behave
+// as they do on `ai`, so only those are picked. The rest are re-declared because Bedrock
+// differs:
 // - it runs no lifecycle hooks, so `startup_hook`/`hangup_hook` are ordinary names and there
 //   are no hook variants; only `summarize_conversation` is special.
 // - it ignores `active`, so that property is not offered.

@@ -5,19 +5,20 @@ using TypeSpec.JsonSchema;
 
 namespace SWML.Calling;
 
-// Bedrock runs its own data_map evaluator and its own action handler, which read less than the
-// `ai` ones. Each divergence is declared here and the rest is taken from the shared models:
+// Bedrock `data_map` functions and their actions support less than the `ai` ones. Each
+// divergence is declared here and the rest is taken from the shared models:
 // - results are `BedrockOutput`: `response` is a plain string, actions always wait until the
-//   agent has spoken (no `post_process`), and only six action keys are handled (`BedrockAction`).
+//   agent has spoken (no `post_process`), and only six action keys apply (`BedrockAction`).
 // - an expression's `expr` is another name for the text to test, not an evaluated expression,
 //   and `pattern` is optional (an expression without one always matches).
-// - a webhook honours `error_keys` only as an array, ignores `require_args`, and iterates up to
+// - a webhook supports `error_keys` only as an array, ignores `require_args`, and iterates up to
 //   10 `foreach` elements by default.
 //
-// The Pick lists below are this surface's to maintain: when a shared model gains a property,
-// Bedrock keeps its current shape until someone confirms Bedrock reads the new field and adds it
-// here. That is the safe direction — an allowlist cannot silently claim support that does not
-// exist.
+// The action keys are an allowlist and are this surface's to maintain: when the shared actions
+// gain a key, Bedrock keeps its current set until someone confirms Bedrock supports the new key
+// and adds it here. That is the safe direction — an allowlist cannot silently claim support that
+// does not exist. The webhook, by contrast, omits only its divergent properties and inherits the
+// rest of the shared `Webhook`, so check Bedrock support whenever that model changes.
 
 @summary("Bedrock action object")
 @doc("""

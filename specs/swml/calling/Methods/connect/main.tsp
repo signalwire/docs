@@ -98,10 +98,12 @@ union ConnectRejectReason {
 }
 
 /**
- * Caller ID name accepted when dialing a SIP destination: 1–70 letters, digits,
- * underscores, periods, hyphens, plus signs, commas, or spaces.
+ * Caller ID name for a SIP destination: 1–70 letters, digits, underscores, periods, hyphens,
+ * plus signs, commas, or spaces. The text can include `${...}` or `%{...}` variable references,
+ * such as `Support ${vars.dept}`; when it does, these limits apply to the value after the
+ * variables are expanded.
  */
-@pattern("^[A-Za-z0-9_.+, -]{1,70}$")
+@pattern("^(?:[A-Za-z0-9_.+, -]{1,70}|.*[$%]\\{.*\\}.*)$")
 scalar ConnectCallerIdName extends string;
 
 enum CallStatus {
@@ -143,7 +145,8 @@ model ConnectDeviceBase {
     Applies to SIP calls only — it has no effect on calls to phone numbers.
     When set at the top level, every destination in a `serial`, `parallel`, or `serial_parallel`
     group uses this name, unless that destination sets its own `from_name`.
-    Use 1 to 70 characters: letters, digits, spaces, and `_`, `.`, `-`, `+`, or `,`.
+    Use 1 to 70 characters after variable expansion: letters, digits, spaces, and `_`, `.`, `-`, `+`, or `,`.
+    Text and variables can be combined, such as `Support \${vars.dept}`.
     """)
   @example("Support Team")
   from_name?: ConnectCallerIdName | SWMLVar;
@@ -179,7 +182,7 @@ model ConnectDeviceBase {
   @doc("""
     Time, in seconds, to set the SIP `Session-Expires` header in INVITE.
     Must be a positive, non-zero number. Values from 1 to 15000 take effect; a larger value is
-    accepted but no `Session-Expires` override is applied.
+    accepted but ignored, so the default `Session-Expires` value is used.
     It has no effect on calls to phone numbers.
     Applies only when dialing a single SIP destination with `to`. In `serial`, `parallel`, and
     `serial_parallel`, the top-level value has no effect: set `session_timeout` on each SIP destination instead.
@@ -252,7 +255,7 @@ model ConnectDeviceBase {
   @doc("""
     Webhook URL to send call status change notifications to. Authentication can also be set in the URL in the format of `username:password@url`.
     Applies only to phone, SIP, and Resource Address destinations. A destination whose `to` starts with
-    `queue:` or `stream:` can't have `call_state_url` or `call_state_events`, and a top-level value is not sent to
+    `queue:` or `stream:` can't have `call_state_url` or `call_state_events`, and a top-level value doesn't apply to
     those destinations. Queue lifecycle events go to the `status_url` set on `enter_queue`; stream events
     go to the stream's `status_url`.
     """)
@@ -331,7 +334,7 @@ model ConnectDestination {
   @doc("""
     The caller ID name for this destination. Overrides the top-level `from_name`.
     Applies to SIP calls only — it has no effect on calls to phone numbers.
-    Use 1 to 70 characters: letters, digits, spaces, and `_`, `.`, `-`, `+`, or `,`.
+    Use 1 to 70 characters after variable expansion: letters, digits, spaces, and `_`, `.`, `-`, `+`, or `,`.
     """)
   @example("Support Team")
   from_name?: ConnectCallerIdName | SWMLVar;
@@ -357,7 +360,7 @@ model ConnectDestination {
   @doc("""
     Time, in seconds, to set the SIP `Session-Expires` header in INVITE for this destination.
     Must be a positive, non-zero number. Values from 1 to 15000 take effect; a larger value is
-    accepted but no `Session-Expires` override is applied.
+    accepted but ignored, so the default `Session-Expires` value is used.
     This destination does not use the top-level `session_timeout`, so set it here for each SIP destination that needs it.
     It has no effect on calls to phone numbers.
     """)
@@ -526,7 +529,8 @@ model ConnectDeviceSerialParallel is ConnectDeviceBase {
     Each inner array is the **parallel** dimension — all destinations in that group are dialed simultaneously.
     If no destination in the current group answers, the next group is attempted.
     Up to 20 destinations are dialed in total, counted across all groups rather than per group. Any destination after the 20th is skipped without an error.
-    Must contain at least one destination. A `queue:` destination can't be combined with any other destination,
+    Must contain at least one destination across all groups: an empty group is skipped, and `connect` fails if every group is empty.
+    A `queue:` destination can't be combined with any other destination,
     and a `stream:` destination can't be combined with a phone, SIP, Resource Address, or queue destination:
     `connect` fails in either case. If several `stream:` destinations are listed, only the first is used.
     To connect to a queue or a stream, use a single `to` instead.

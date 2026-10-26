@@ -15,7 +15,7 @@ scalar play_url extends string;
 model PlayBase {
   @doc("""
     If `true`, the call is answered before the audio plays. Default `true`.
-    The property is accepted, but setting it to `false` does not currently prevent the call from being answered.
+    Setting it to `false` does not currently prevent the call from being answered.
     """)
   @example(true)
   auto_answer?: boolean | SWMLVar = true;
@@ -62,8 +62,7 @@ model PlayBase {
   say_gender?: string = "female";
 
   @doc("""
-    HTTP or HTTPS URL to deliver play status events.
-    A SWML variable must resolve to an HTTP or HTTPS URL.
+    HTTP or HTTPS URL to deliver play status events, or a SWML variable that resolves to one.
     """)
   @example("https://example.com/play-status")
   status_url?: url | SWMLVar;
@@ -77,7 +76,7 @@ model PlayWithURL is PlayBase {
     Required if `urls` is not present.
     Allowed URLs are:
         - http:// or https:// - audio file to GET
-        - ring:[duration:]<ringtone> - ring tone to play, named by country code or `bong`. For example: ring:us to play single ring or ring:20.0:us to play ring for 20 seconds. A duration, when given, is at least 1 second.
+        - ring:[duration:]<ringtone> - ring tone to play, named by country code or `bong`. For example: ring:us to play single ring or ring:20.0:us to play ring for 20 seconds. A duration, when given, must be at least 1 second.
         - say:<text to speak> - Sentence to say
         - silence: <duration> - seconds of silence to play, at least 1
     """)
@@ -93,7 +92,7 @@ model PlayWithURLS is PlayBase {
     Each entry can be a playable URL or a SWML variable that resolves to one.
     Allowed URLs are:
         - http:// or https:// - audio file to GET
-        - ring:[duration:]<ringtone> - ring tone to play, named by country code or `bong`. For example: ring:us to play single ring or ring:20.0:us to play ring for 20 seconds. A duration, when given, is at least 1 second.
+        - ring:[duration:]<ringtone> - ring tone to play, named by country code or `bong`. For example: ring:us to play single ring or ring:20.0:us to play ring for 20 seconds. A duration, when given, must be at least 1 second.
         - say:<text to speak> - Sentence to say
         - silence: <duration> - seconds of silence to play, at least 1
     """)

@@ -60,11 +60,11 @@ model ContextObjectBase {
   valid_contexts?: string[];
 
   @doc("""
-    A post-prompt for the end-of-call summary. When the AI switches to this context, it replaces
-    `ai.post_prompt` until the AI switches to a context without one. Takes the same properties as
-    `ai.post_prompt`.
+    A post-prompt for the end-of-call summary. While this context is active, including when it is
+    the starting context, it replaces `ai.post_prompt`; switching to a context without one restores
+    `ai.post_prompt`. Takes the same properties as `ai.post_prompt` except `model`.
     """)
-  post_prompt?: AIPostPrompt;
+  post_prompt?: ContextPostPrompt;
 
   @doc("When `true`, resets conversation history to only the system prompt when entering this context. Useful for focused tasks that shouldn't be influenced by previous conversation. **Default:** `false`.")
   @example(true)
@@ -79,14 +79,14 @@ model ContextObjectBase {
 
 @summary("ContextsPOMObject")
 model ContextsPOMObject is ContextObjectBase {
-  @doc("Instructions for this context as a Prompt Object Model (POM). They are added before the instructions of each step in the context.")
+  @doc("Instructions for this context as a Prompt Object Model (POM). They are added to the instructions of each step in the context. Set either `prompt` or `pom`, not both.")
   @minItems(1)
   pom?: POM[];
 }
 
 @summary("ContextsTextObject")
 model ContextsTextObject is ContextObjectBase {
-  @doc("Instructions for this context. They are added before the instructions of each step in the context.")
+  @doc("Instructions for this context. They are added to the instructions of each step in the context.")
   @example("You are now helping the customer with their order.")
   prompt?: string;
 }
