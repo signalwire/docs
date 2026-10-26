@@ -135,7 +135,11 @@ model ConnectSwitch {
  */
 @summary("ConnectDeviceBase object")
 model ConnectDeviceBase {
-  @doc("The caller ID to use when dialing the number.")
+  @doc("""
+    The caller ID to use when dialing the number.
+    Must be a phone number in E.164 format with the leading `+`, a SIP URI, or a Resource Address;
+    a `queue:`, `call:`, or `stream:` value is rejected.
+    """)
   @example("+15551234567")
   from?: string;
 
@@ -255,7 +259,7 @@ model ConnectDeviceBase {
   @doc("""
     Webhook URL to send call status change notifications to. Authentication can also be set in the URL in the format of `username:password@url`.
     Applies only to phone, SIP, and Resource Address destinations. A destination whose `to` starts with
-    `queue:` or `stream:` can't have `call_state_url` or `call_state_events`, and a top-level value doesn't apply to
+    `queue:`, `call:`, or `stream:` can't have `call_state_url` or `call_state_events`, and a top-level value doesn't apply to
     those destinations. Queue lifecycle events go to the `status_url` set on `enter_queue`; stream events
     go to the stream's `status_url`.
     """)
@@ -318,16 +322,18 @@ model ConnectDeviceBase {
 model ConnectDestination {
   @doc("""
     Destination to dial. Can be:
-    - Phone number in E.164 format (e.g., "+15552345678")
-    - SIP URI (e.g., "sip:alice@example.com")
+    - Phone number in E.164 format, including the leading `+` (e.g., "+15552345678")
+    - SIP URI, with a `sip:` or `sips:` prefix (e.g., "sip:alice@example.com")
     - Resource Address (e.g., "/public/test_room")
     - Queue (e.g., "queue:support")
-    - WebSocket stream (e.g., "stream:wss://example.com/audio")
+    - Call in progress in the same project, by call ID (e.g., "call:ba79c846-4834-42b9-9cd3-2f87c30f2972")
+    - WebSocket stream, using `wss://` (e.g., "stream:wss://example.com/audio")
+    The `queue:`, `call:`, and `stream:` prefixes are case-sensitive and must be lowercase.
     """)
   @example("+15559876543")
   to: string;
 
-  @doc("The caller ID to use when dialing this destination. Overrides the top-level `from`.")
+  @doc("The caller ID to use when dialing this destination. Overrides the top-level `from` and accepts the same formats.")
   @example("+15551234567")
   from?: string;
 
@@ -389,13 +395,13 @@ model ConnectDestination {
     only `ended` is sent.
     Allowed event names are: `created`, `ringing`, `answered`, `ended`. Each array item can also be a
     SWML variable reference that resolves to one of these names.
-    Not allowed when `to` starts with `queue:` or `stream:`.
+    Not allowed when `to` starts with `queue:`, `call:`, or `stream:`.
     """)
   call_state_events?: (CallStatus | SWMLVar)[];
 
   @doc("""
     Webhook URL for call status change notifications for this destination. Overrides the top-level `call_state_url`.
-    Applies only to phone, SIP, and Resource Address destinations; not allowed when `to` starts with `queue:` or `stream:`.
+    Applies only to phone, SIP, and Resource Address destinations; not allowed when `to` starts with `queue:`, `call:`, or `stream:`.
     """)
   @example("https://example.com/call-status")
   call_state_url?: url;
@@ -496,10 +502,10 @@ model ConnectDeviceSerial is ConnectDeviceBase {
   @doc("""
     Array of destination objects to dial in order. Each destination is tried sequentially — if the current destination does not answer, the next one in the array is attempted.
     Up to 20 destinations are tried. Any destination after the 20th is skipped without an error.
-    Must contain at least one destination. A `queue:` destination can't be combined with any other destination,
+    Must contain at least one destination. A `queue:` or `call:` destination can't be combined with any other destination,
     and a `stream:` destination can't be combined with a phone, SIP, Resource Address, or queue destination:
     `connect` fails in either case. If several `stream:` destinations are listed, only the first is used.
-    To connect to a queue or a stream, use a single `to` instead.
+    To connect to a queue, a call, or a stream, use a single `to` instead.
     """)
   @minItems(1)
   serial: ConnectDestination[];
@@ -511,10 +517,10 @@ model ConnectDeviceParallel is ConnectDeviceBase {
   @doc("""
     Array of destination objects to dial simultaneously. All destinations ring at the same time — the first to answer is bridged and the remaining calls are cancelled.
     Up to 20 destinations are dialed. Any destination after the 20th is skipped without an error.
-    Must contain at least one destination. A `queue:` destination can't be combined with any other destination,
+    Must contain at least one destination. A `queue:` or `call:` destination can't be combined with any other destination,
     and a `stream:` destination can't be combined with a phone, SIP, Resource Address, or queue destination:
     `connect` fails in either case. If several `stream:` destinations are listed, only the first is used.
-    To connect to a queue or a stream, use a single `to` instead.
+    To connect to a queue, a call, or a stream, use a single `to` instead.
     """)
   @minItems(1)
   parallel: ConnectDestination[];
@@ -530,10 +536,10 @@ model ConnectDeviceSerialParallel is ConnectDeviceBase {
     If no destination in the current group answers, the next group is attempted.
     Up to 20 destinations are dialed in total, counted across all groups rather than per group. Any destination after the 20th is skipped without an error.
     Must contain at least one destination across all groups: an empty group is skipped, and `connect` fails if every group is empty.
-    A `queue:` destination can't be combined with any other destination,
+    A `queue:` or `call:` destination can't be combined with any other destination,
     and a `stream:` destination can't be combined with a phone, SIP, Resource Address, or queue destination:
     `connect` fails in either case. If several `stream:` destinations are listed, only the first is used.
-    To connect to a queue or a stream, use a single `to` instead.
+    To connect to a queue, a call, or a stream, use a single `to` instead.
     """)
   @minItems(1)
   serial_parallel: ConnectDestination[][];
