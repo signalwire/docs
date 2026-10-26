@@ -293,6 +293,46 @@ client.warnings$.subscribe((warning) => {
 });
 ```
 
+### When SignalWire refuses the SAT on a reconnect
+
+On a dropped connection, the SDK automatically reconnects and
+picks up the same session. That can succeed even after the SAT has expired,
+but the SDK then registers the client again, and SignalWire refuses to
+register an expired SAT. The SDK reports an `InvalidCredentialsError` on
+[`errors$`](/docs/browser-sdk/v4/reference/signalwire/errors$) and
+[`isRegistered$`](/docs/browser-sdk/v4/reference/signalwire/is-registered$)
+emits `false`: the client is still connected, but it no longer receives
+inbound calls. To avoid this, give the client a fresh SAT before the old one
+expires; a provider with
+[`refresh()`](/docs/browser-sdk/v4/reference/interfaces/credential-provider#refresh)
+or a Client Bound SAT does this for you.
+
+When the SDK can't pick up the session, it signs in again from scratch, which
+needs a SAT that SignalWire still accepts. A fresh SAT comes from your refresh
+path: for a Client Bound SAT, the SDK calls your provider's
+[`authenticate()`](/docs/browser-sdk/v4/reference/interfaces/credential-provider#authenticate)
+again; otherwise it calls your provider's
+[`refresh()`](/docs/browser-sdk/v4/reference/interfaces/credential-provider#refresh).
+
+When the session is Client Bound, or the credential your provider returned has
+passed its `expiry_at`, the SDK gets a fresh SAT before it signs in. If
+SignalWire refuses that SAT, the SDK doesn't try again.
+
+Otherwise the SDK signs in with the SAT it holds. If SignalWire refuses it,
+the SDK gets a fresh SAT and tries once more.
+
+A provider that always returns the same SAT, such as
+[`StaticCredentialProvider`](/docs/browser-sdk/v4/reference/credential-providers/static-credential-provider),
+can't supply a new one, so the SDK signs in with the old one.
+
+When the last attempt is refused, the SDK stops reconnecting, reports the
+error on [`errors$`](/docs/browser-sdk/v4/reference/signalwire/errors$), and
+disconnects the client, so
+[`isConnected$`](/docs/browser-sdk/v4/reference/signalwire/is-connected$) emits
+`false`. Once your provider can return a valid SAT, call
+[`connect()`](/docs/browser-sdk/v4/reference/signalwire/connect) again. With
+`StaticCredentialProvider`, create a new client with a fresh SAT instead.
+
 ## Connection lifecycle
 
 Constructing [`SignalWire`](/docs/browser-sdk/v4/reference/signalwire) runs three steps in sequence: authenticate the SAT, open the WebSocket, and register the user as online. Each step runs by default, and each can be deferred with a constructor option in [`SignalWireOptions`](/docs/browser-sdk/v4/reference/interfaces/signalwire-options) so your UI can drive it later.
@@ -309,8 +349,11 @@ const client = new SignalWire(credentialProvider, {
   skipRegister: true,
 });
 
-await client.connect();    // open the WebSocket when the user opts in
-await client.register();   // come online for inbound calls
+// Later, when the user opts in:
+document.getElementById("go-online").addEventListener("click", async () => {
+  await client.connect();    // open the WebSocket
+  await client.register();   // come online for inbound calls
+});
 ```
 
 With `persistSession: true` a Client Bound SAT survives a page reload: the SDK persists the token alongside its DPoP key pair in IndexedDB and re-binds on the new page rather than degrading the session to an unbound refresh token. The stored token is useless without the key, so the binding itself is the theft protection. If the persisted credential has expired by the time the page reloads, the SDK re-mints it through your credential provider before the session and its attach records are restored.
@@ -369,7 +412,12 @@ Copy the returned `token`, save the page below as `auth-demo.html`, and open it 
     <pre id="log"></pre>
 
     <script type="module">
-      import { SignalWire, StaticCredentialProvider } from "https://esm.sh/@signalwire/js@dev";
+      import {
+        SignalWire,
+        StaticCredentialProvider,
+        InvalidCredentialsError,
+        UnexpectedError,
+      } from "https://esm.sh/@signalwire/js@4.0.0-rc.5";
 
       const log = (msg) =>
         (document.getElementById("log").textContent += msg + "\n");
@@ -389,13 +437,22 @@ Copy the returned `token`, save the page below as `auth-demo.html`, and open it 
           if (ready) {
             log("Authenticated — WebSocket open.");
             readySub.unsubscribe(); // one-shot: stop after the first ready signal
+            errorsSub.unsubscribe();
           }
         });
 
+        // A malformed or refused SAT arrives on errors$. Other errors there,
+        // such as a device that can't be read, don't stop the connect.
         const errorsSub = client.errors$.subscribe((err) => {
-          log("Failed: " + (err.name || "Error") + " — " + err.message);
+          if (!(err instanceof InvalidCredentialsError || err instanceof UnexpectedError)) {
+            log("Warning: " + (err.name || "Error") + " — " + err.message);
+            return;
+          }
+          log("Failed: " + err.name + " — " + err.message);
+          readySub.unsubscribe();
+          errorsSub.unsubscribe();
+          client.disconnect(); // so a retry doesn't leave two clients behind
           button.disabled = false;
-          errorsSub.unsubscribe(); // when you're done
         });
       });
     </script>
@@ -405,7 +462,7 @@ Copy the returned `token`, save the page below as `auth-demo.html`, and open it 
 
 </Accordion>
 
-You should see `Authenticated — WebSocket open.` in the log. If you see `Failed: InvalidCredentialsError`, the SAT is expired, malformed, or issued for a different SignalWire space than the SDK is connecting to. Create a fresh one and try again.
+You should see `Authenticated — WebSocket open.` in the log. If you see `Failed: InvalidCredentialsError`, the string you pasted isn't a well-formed token. If you see `Failed: UnexpectedError — Unexpected Error at Error fetching user information`, SignalWire refused the SAT: it's expired, revoked, or issued for a different SignalWire space than the SDK is connecting to. Double-check the credentials, create a fresh SAT, and try again.
 
 ## Next steps
 
