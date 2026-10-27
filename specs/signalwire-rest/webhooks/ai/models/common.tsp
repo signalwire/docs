@@ -316,6 +316,6 @@ model AICallLogEntry is Record<unknown> {
   @example(1694541297950440)
   timestamp?: int64;
 
-  @doc("The tool calls the agent made on this turn. Present only on a turn that made any.")
-  tool_calls?: Record<unknown>[];
+  @doc("The tool calls the agent made on this turn. `null` or omitted on a turn that made none.")
+  tool_calls?: Record<unknown>[] | null;
 }
