@@ -312,6 +312,7 @@ namespace SignalWireAPI.RelayRest.PhoneNumberLookup {
       | PhoneNumberLookupResponse
       | StatusCode401
       | StatusCode404
+      | ValidationError
       | StatusCode500;
   }
 }

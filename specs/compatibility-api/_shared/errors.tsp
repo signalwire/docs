@@ -3,11 +3,11 @@ using TypeSpec.Http;
 @doc("Error response model.")
 model CompatibilityErrorResponse {
   @doc("Error code.")
-  @example(20003)
+  @example(20404)
   code: int32;
 
   @doc("Error message.")
-  @example("Authentication failed")
+  @example("The requested resource was not found.")
   message: string;
 
   @doc("URL for more information about the error.")
@@ -15,7 +15,26 @@ model CompatibilityErrorResponse {
   more_info: string;
 
   @doc("HTTP status code.")
-  @example(401)
+  @example(404)
+  status: int32;
+}
+
+// Validation and service errors carry `code` as a numeric string (for example
+// `"21211"`), unlike the integer `code` of `CompatibilityErrorResponse`.
+@doc("Error response model for validation and service errors.")
+model CompatibilityValidationErrorResponse {
+  @doc("Error code, as a numeric string.")
+  @example("21211")
+  code: string;
+
+  @doc("Error message.")
+  @example("To is required.")
+  message: string;
+
+  ...OmitProperties<CompatibilityErrorResponse, "code" | "message" | "status">;
+
+  @doc("HTTP status code.")
+  @example(422)
   status: int32;
 }
 
@@ -52,10 +71,11 @@ model CompatibilityStatusCode400Array {
   @body body: CompatibilityErrorArrayResponse;
 }
 
-@doc("Authentication failed. Please verify your credentials and try again.")
+@doc("Authentication failed. Please verify your credentials and try again. The body is the plain text `Unauthorized`.")
 model CompatibilityStatusCode401 {
   @statusCode statusCode: 401;
-  @body error: CompatibilityErrorResponse;
+  @header contentType: "text/plain";
+  @body body: "Unauthorized";
 }
 
 @doc("The requested resource was not found. Please verify the resource identifier.")
@@ -67,7 +87,7 @@ model CompatibilityStatusCode404 {
 @doc("The request could not be processed due to validation errors. Check the error details for more information.")
 model CompatibilityStatusCode422 {
   @statusCode statusCode: 422;
-  @body error: CompatibilityErrorResponse;
+  @body error: CompatibilityValidationErrorResponse;
 }
 
 @doc("Error response with errors array of strings format.")
@@ -147,5 +167,5 @@ model CompatibilityStatusCode409 {
 @doc("The service is temporarily unavailable. Please try again later.")
 model CompatibilityStatusCode503 {
   @statusCode statusCode: 503;
-  @body error: CompatibilityErrorResponse;
+  @body error: CompatibilityValidationErrorResponse;
 }

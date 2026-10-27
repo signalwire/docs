@@ -7,11 +7,12 @@ namespace Types.StatusCodes {
   // Base Error Models (reusable across all APIs)
   // ============================================================================
 
-  @doc("Access is unauthorized.")
+  @doc("The credentials are missing, invalid, or lack access to this resource. The body is the plain text `Unauthorized`.")
   @error
   model StatusCode401 {
     @statusCode statusCode: 401;
-    error: "Unauthorized";
+    @header contentType: "text/plain";
+    @body body: "Unauthorized";
   }
 
   @doc("Access is forbidden.")
@@ -21,11 +22,12 @@ namespace Types.StatusCodes {
     error: "Forbidden";
   }
 
-  @doc("The server cannot find the requested resource.")
+  @doc("The requested resource was not found. The body is the plain text `Not Found`.")
   @error
   model StatusCode404 {
     @statusCode statusCode: 404;
-    error: "Not Found";
+    @header contentType: "text/plain";
+    @body body: "Not Found";
   }
 
   @doc("An internal server error occurred.")

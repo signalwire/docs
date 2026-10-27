@@ -83,8 +83,8 @@ namespace SignalWireAPI.RelayRest.VerifiedCallerID {
     @operationId("redial_verification_call")
     @summary("Redial verification call")
     @doc("""
-      Places another verification call for a pending external caller-ID record. Use it when the original verification call or code was missed, then submit the new code through [Validate verification code](/docs/apis/rest/verified-caller-id/validate-verification-code).
-      
+      Places another verification call for a pending external caller-ID record. Use it when the original verification call or code was missed, then submit the new code through [Validate verification code](/docs/apis/rest/verified-caller-id/validate-verification-code). A request made less than a minute after the previous verification call is rejected with a `422`.
+
       ${tokenPermissions<"_Voice_">}
       """)
     @route("/{id}/verification")
@@ -93,6 +93,7 @@ namespace SignalWireAPI.RelayRest.VerifiedCallerID {
       | VerifiedCallerIDResponse
       | StatusCode401
       | StatusCode404
+      | ValidationError
       | StatusCode500;
 
     @operationId("validate_verification_code")

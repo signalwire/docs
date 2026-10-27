@@ -200,6 +200,7 @@ namespace CompatibilityAPI.Messages {
       | MessageMediaListResponse
       | CompatibilityStatusCode400
       | CompatibilityStatusCode401
+      | CompatibilityStatusCode404
       | CompatibilityStatusCode422;
 
     @operationId("retrieve_media")
