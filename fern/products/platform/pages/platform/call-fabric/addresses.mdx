@@ -1,7 +1,7 @@
 ---
 title: Addresses
 slug: addresses
-description: How phone numbers, SIP Addresses, and aliases reach a Resource, how contexts control who can dial them, and how to create, assign, move, and remove Addresses.
+description: An Address is how people and code reach a Resource on SignalWire, as a phone number, a SIP URI, or an alias, and its context decides who can dial it.
 max-toc-depth: 3
 ---
 
@@ -14,7 +14,6 @@ max-toc-depth: 3
 [byoc]: /docs/platform/voice/sip/bring-your-own-carrier
 [swml-connect]: /docs/swml/reference/calling/connect
 [browser-address-book]: /docs/browser-sdk/v4/guides/address-book
-[browser-default-channel]: /docs/browser-sdk/v4/reference/address/default-channel
 [rest-update-number]: /docs/apis/rest/phone-numbers/update-phone-number
 [rest-phone-route]: /docs/apis/rest/phone-routes/assign-resource-phone-route
 [rest-whatsapp-route]: /docs/apis/rest/whatsapp-routes/assign-resource-whatsapp-number
@@ -35,71 +34,60 @@ max-toc-depth: 3
 [subscriber-token]: /docs/apis/rest/subscribers/tokens/create-subscriber-token
 [whatsapp-onboarding]: /docs/platform/messaging/whatsapp/onboarding
 
-A [Resource][resources] is what handles a call or message. An Address is how anyone reaches it.
-Callers dial a phone number, a SIP URI, or a name such as `/public/support`, and SignalWire hands
-the call to the Resource assigned to that Address. That Resource is the Address's **handler**.
+An Address is how people and code reach a [Resource][resources] on SignalWire. A caller dials a
+phone number, a PBX sends a call to a SIP URI, or a browser dials a name such as
+`/public/support`, and SignalWire hands the call to the Resource assigned to that Address. That
+Resource is the Address's **handler**.
 
-The same Addresses are what your own code uses to name a destination: the `to` of a REST dial, the
+Your own code uses the same Addresses to name a destination: the `to` of a REST dial, the
 destination of [`connect`][swml-connect] in SWML, or the argument to `dial()` in the Browser SDK.
 
-## How Addresses and Resources fit together
+An Address and its Resource are separate objects. A Resource can carry any number of Addresses, and
+every Address hands its calls to one Resource. Because callers only ever see the Address, you can
+put a different Resource behind a phone number or SIP URI without changing anything on their side.
 
-An Address and its Resource are separate objects, and you can create an Address from either side:
-
-- On the Resource's **Addresses & Phone Numbers** tab, where the new Address goes to that Resource.
-- On the **Addresses** page in the Dashboard's left sidebar, which lists every Address in your
-  project. You create the Address there and pick its Resource in the same form.
-
-Either way, an alias or SIP Address is assigned to a Resource when you create it. Phone numbers
-work the other way around: you buy the number first, and it rings nobody until you assign a
-Resource to it.
-
-A few rules hold for every type:
-
-- An Address hands its calls to one Resource. A phone number gives you two Addresses, one for
-  calls and one for messages, so each channel can go to a different Resource.
-- A Resource can carry any number of Addresses. SignalWire creates the first one, an
-  [alias](#aliases), when you create the Resource.
-- Phone numbers and SIP Addresses can be moved to a different Resource at any time. An alias stays
-  with the Resource it was created on.
-- Deleting an Address never deletes its Resource, and deleting a Resource deletes its aliases.
+```mermaid
+flowchart LR
+    caller["Call or message"] --> address["Address dialed<br/>phone number, SIP URI, or alias"]
+    address --> handler["Handler Resource"]
+    handler --> agent["AI Agent: holds the conversation"]
+    handler --> swml["SWML Script: runs the document"]
+    handler --> relay["Relay Application: delivers to your Server SDK client"]
+    handler --> subscriber["Subscriber: rings the user's devices"]
+```
 
 ## Address types
 
 | Type | Looks like | Who dials it |
 |---|---|---|
 | [Phone number](#phone-numbers) | `+12025550123` | Anyone on the phone network |
-| [SIP Address](#sip-addresses) | `sip:*@acme-public.dapp.signalwire.com` | SIP devices, PBXs, and carriers outside SignalWire |
-| [Alias](#aliases) | `/public/support`, `/private/john-doe` | Your scripts, Browser SDK clients, REST dials, and other Resources |
+| [SIP Address](#sip-addresses) | `sip:*@bayview-public.dapp.signalwire.com` | SIP devices, PBXs, and carriers outside SignalWire |
+| [Alias](#aliases) | `/public/dispatch`, `/private/ada` | Browser SDK clients, your scripts, REST dials, and other Resources |
 | [WhatsApp number](#whatsapp-numbers) | A WhatsApp business number connected to your Space | WhatsApp users |
 
 ### Phone numbers
 
-A [phone number you've bought or ported][phone-numbers] provides two Addresses, assigned
+A [phone number you've bought or ported][phone-numbers] gives you two Addresses, assigned
 independently: a calling Address whose handler takes inbound calls, and a messaging Address whose
-handler takes inbound messages. The Dashboard shows them as **Inbound Call Settings** and
-**Inbound Message Settings** on the number's **Edit Settings** page, and as the **Call Handler**
-and **Message Handler** columns on the **Addresses** page. The REST API returns each one with a
-`handler_type` of `calling` or `messaging`.
+handler takes inbound messages. A number rings nobody until you assign a calling handler.
 
-A number rings nobody until you assign a call handler. Any Resource that can take a call can be
-one, such as a SWML Script, an AI Agent, a Call Flow, a Relay Application, a Subscriber, or a SIP
-Credential. A message handler is a Resource that runs messaging logic, such as a SWML Script or a
-Relay Application. AI Agents and Call Flows handle calls only.
+Any Resource that can take a call can be a calling handler, such as an AI Agent, a SWML Script, a
+Call Flow, a Relay Application, a Subscriber, or a SIP Credential. A messaging handler is a
+Resource that runs messaging logic, such as a SWML Script or a Relay Application.
 
 ### SIP Addresses
 
-A SIP Address gives a Resource its own SIP URI so devices and systems outside SignalWire, such as
-a PBX or your own carrier, can send it calls. SignalWire builds the host for you:
+A SIP Address gives a Resource its own SIP URI so devices and systems outside SignalWire, such as a
+PBX or your own carrier, can send it calls. SignalWire builds the host from your Space name and the
+domain you pick:
 
 ```text
 sip:<user>@<YOUR_SPACE>-<domain>.dapp.signalwire.com
 ```
 
-You choose the user and the domain. The user defaults to `*`, which accepts any username, so
-`sip:anything@acme-public.dapp.signalwire.com` reaches the same Resource. The domain is one of your
-project's [contexts](#contexts), `public` by default. Each user and domain pair is unique across
-your SignalWire account.
+The user defaults to `*`, which accepts any username, so `sip:anything@bayview-public.dapp.signalwire.com`
+reaches the same Resource. The domain is one of your project's [contexts](#contexts), `public` by
+default. Each user and domain pair is unique across your SignalWire account.
 
 A SIP Address also carries its own call settings:
 
@@ -111,22 +99,18 @@ A SIP Address also carries its own call settings:
   negotiate. Codecs default to `PCMU` and `PCMA`, ciphers default to every supported cipher, and
   each list needs at least one entry.
 
-A SIP Address carries calls only, so it has a call handler and no message handler. You can move it
-to a different Resource later, and its URI, the one your PBX or carrier sends to, stays the same.
-
-A SIP Address routes inbound SIP only. It's different from a [SIP Credential][sip-credentials],
-which is a Resource your own SIP devices register to and place calls from, and from a
-[SIP Gateway][sip-gateways], which sends calls out to an external SIP destination. To bring calls
-in from your own carrier, give the handling Resource a SIP Address and point the carrier at it.
-The [bring your own carrier][byoc] guide covers the full flow.
+A SIP Address carries calls only. It routes inbound SIP to its Resource, which makes it different
+from a [SIP Credential][sip-credentials], a Resource your own SIP devices register to and place
+calls from, and from a [SIP Gateway][sip-gateways], a Resource that connects your Space to an
+external SIP network. To bring calls in from your own carrier, give the handling Resource a SIP
+Address and point the carrier at it, as the [bring your own carrier][byoc] guide shows.
 
 ### Aliases
 
-An alias is a name in the form `/<context>/<name>`. SignalWire creates one from the Resource's
-name when you create the Resource, so a Subscriber named `john.doe` is reachable at
-`/private/john-doe` and an AI Agent named `Support Agent` at `/private/support-agent`. Names use
-lowercase letters, numbers, underscores, and dashes, run up to 256 characters, and are unique
-within their context.
+An alias is a name in the form `/<context>/<name>`. SignalWire creates one from the Resource's name
+when you create the Resource, so an AI Agent named `Ada` is reachable at `/private/ada` and a
+Subscriber named `john.doe` at `/private/john-doe`. Names use lowercase letters, numbers,
+underscores, and dashes, run up to 256 characters, and are unique within their context.
 
 The context of that first alias depends on the Resource type:
 
@@ -135,46 +119,41 @@ The context of that first alias depends on the Resource type:
 | `private` | AI Agents, SWML Scripts stored in your Space, Call Flows, Relay Applications, Subscribers |
 | `public` | SWML Scripts served from your own URL, Video Rooms, SIP Credentials, SIP Gateways, FreeSWITCH Connectors |
 
-A new AI Agent is therefore unreachable from a public click-to-call widget until you add a
+A new AI Agent is therefore unreachable from a public call button on your website until you add a
 `public` alias for it.
 
-Add more aliases to expose the same Resource under other names, or to shape how it's reached.
-Each alias has these properties:
+Add more aliases to expose the same Resource under other names or to shape how it's reached. Each
+alias has these properties:
 
 - **Name** is the URL-safe part of the Address. **Display Name** is the label client applications
   show, and it defaults to the name.
-- **Context** is the context the alias lives in, such as `public` or `private`. See
-  [Contexts](#contexts).
+- **Context** is where the alias lives, such as `public` or `private`. See [Contexts](#contexts).
 - **Channels** limit an alias to `audio`, `video`, `messaging`, or any combination. A
   messaging-only public alias gives a chat entry point to an agent that also takes voice calls
   through a private one.
 - **Codecs** restrict the audio and video codecs offered on calls to the alias. Leave them empty to
   use the platform defaults.
-- **Display As** controls how the alias appears to client applications that browse the
-  directory: as an app, a room, a call, or a subscriber. A script that dispatches callers to your
-  staff can present itself as a subscriber so callers feel they're dialing a person. The REST API
-  returns it as `display_type`.
+- **Display As** controls how the alias appears to client applications that browse the directory:
+  as an app, a room, a call, or a subscriber. The REST API returns it as `display_type`.
 
 You can rename an alias, move it to another context, or change its channels and codecs at any
-time. Its Resource stays fixed, so to put a different Resource behind a name,
-[delete the alias](#remove-an-address) and create a new one with the same name and context on the
-new Resource. Nothing that dials the alias has to change.
+time. Its Resource stays fixed. To put a different Resource behind a name, delete the alias and
+create one with the same name and context on the new Resource.
 
 ### WhatsApp numbers
 
 A WhatsApp business number connected to your Space can be assigned to a Resource so it handles
 inbound WhatsApp calls or messages. The number holds one Address at a time, for either calls or
-messages, except on a Relay Application, which takes both. Assign it with
-[Assign Resource to WhatsApp number][rest-whatsapp-route]. [WhatsApp onboarding][whatsapp-onboarding]
+messages, except on a Relay Application, which takes both. [WhatsApp onboarding][whatsapp-onboarding]
 covers connecting the number to your Space.
 
 ## Contexts
 
-Every alias and SIP Address lives in a context, and the context's access type decides who can
-reach it. Every project has two built-in contexts, `public` and `private`, which can't be changed:
+Every alias lives in a context, and the context's access type decides who can reach it. Every
+project has two built-in contexts, `public` and `private`, which can't be changed:
 
 - **`public`** Addresses are reachable by anyone, including unauthenticated callers. Use them for
-  entry points such as a support agent behind a click-to-call button.
+  entry points such as a support agent behind a call button on your website.
 - **`private`** Addresses are reachable only by authenticated users, which makes them the home of
   [Subscribers][subscribers] and anything only your own users should dial.
 
@@ -191,21 +170,14 @@ full `/<context>/<name>`.
 
 ## How SignalWire resolves an Address
 
-When a call or message arrives, SignalWire looks up the Address it was sent to and hands it to that
-Address's handler. For a phone number, a call goes to the handler of its calling Address and a
-message to the handler of its messaging Address. A client dialing an alias can use only the
-channels the alias allows. The Resource type decides what happens next: a SWML Script runs its
-document, a Relay Application delivers the call to your connected Server SDK client, and a
-Subscriber rings that user's devices.
+When a call or message arrives, SignalWire works through these steps:
 
-```mermaid
-flowchart LR
-    caller["Call or message"] --> address["Address dialed<br/>phone number, SIP URI, or alias"]
-    address --> handler["Handler Resource"]
-    handler --> swml["SWML Script: runs the document"]
-    handler --> relay["Relay Application: delivers to your Server SDK client"]
-    handler --> subscriber["Subscriber: rings the user's devices"]
-```
+1. It looks up the Address the call or message was sent to.
+2. It finds that Address's handler. For a phone number, a call goes to the handler of its calling
+   Address and a message to the handler of its messaging Address. A client dialing an alias can
+   use only the channels the alias allows.
+3. It hands the call or message to the handler, and the Resource's type decides what happens
+   next.
 
 Because the Resource is what handles the call, the same logic runs whether the caller dialed the
 phone number, the SIP Address, or an alias. See [inbound calling][inbound-calling] for the handler
@@ -214,145 +186,59 @@ code itself.
 ## One Resource, many Addresses
 
 Give one Resource every Address its callers need rather than duplicating the Resource per channel.
-A support agent might carry:
+Bayview Taxi's dispatcher, Ada, is one AI Agent Resource with four Addresses:
 
-| Address | Purpose |
+| Address | Who uses it |
 |---|---|
-| `+12025550123` | Customers calling from the phone network |
-| `sip:*@acme-public.dapp.signalwire.com` | Your PBX or carrier sending SIP calls |
-| `/public/support` | The click-to-call widget on your website |
-| `/private/support` | Staff dialing from the Browser SDK or a SIP phone |
+| `+12025550123` | Riders calling from the phone network |
+| `sip:*@bayview-public.dapp.signalwire.com` | Bayview's office PBX forwarding calls over SIP |
+| `/public/dispatch` | The call button on Bayview's website |
+| `/private/ada` | Drivers dialing from Bayview's own app as signed-in Subscribers |
 
-To move every caller to a new version of the agent, assign the phone number and the SIP Address
-to the new Resource, then re-create the two aliases on it. The number, the SIP URI, and
-`/public/support` all stay the same, so nothing that dials them changes.
+To move every caller to a new version of Ada, Bayview assigns the phone number and the SIP Address
+to the new Resource, then re-creates the two aliases on it. The number, the SIP URI, and
+`/public/dispatch` all stay the same, so nothing that dials them changes.
 
-## Manage Addresses
+## Create and manage Addresses
 
-### In the Dashboard
+In the Dashboard, open a Resource and select its **Addresses & Phone Numbers** tab, then select
+<kbd>+ Add</kbd> to **Assign a Phone Number**, **Assign a SIP Address**, or **Add an Alias**. The
+**Addresses** page in the left sidebar lists every Address in your project with its context, type,
+and handlers, and creates aliases and SIP Addresses for any Resource you pick. Every alias and SIP
+Address needs a Resource when you create it.
 
-#### From a Resource
+Moving an Address depends on its type:
 
-Open the Resource from **My Resources** and select its **Addresses & Phone Numbers** tab. It lists
-the Resource's Addresses with their channels and type. Select <kbd>+ Add</kbd> and choose one of
-these:
+- **Phone number:** assign a different Resource as its call or message handler from the number's
+  settings or with [Update phone number][rest-update-number].
+- **SIP Address:** open it in the Dashboard, select **Change Resource**, and pick the new Resource.
+  The SIP Address keeps its URI.
+- **Alias:** delete it and create one with the same name and context on the new Resource.
 
-- **Assign a Phone Number** lists the numbers you own that don't yet have a handler for that
-  channel. Select **Buy A Number** to buy a new one.
-- **Assign a SIP Address** opens the form for a new SIP Address on this Resource.
-- **Add an Alias** opens the form for a new alias on this Resource.
+Removing an Address removes only that way in. The Resource stays, and a phone number stays in your
+project, unassigned, until you assign another Resource. Select **Delete Address** next to an
+Address on its Resource's **Addresses & Phone Numbers** tab, or use [Delete SIP address][rest-delete-sip]
+to delete a SIP Address together with its settings.
 
-<llms-ignore>
+With the REST API, every create call takes the ID of the Resource that handles the Address:
 
-<Frame caption="The Add an Address menu on a Resource's Addresses & Phone Numbers tab">
-
-![The Add an Address dialog in the Dashboard with Phone Number, SIP Address, and Alias options](/assets/images/dashboard/resources/ai-agent/addresses/add-address.webp)
-
-</Frame>
-
-</llms-ignore>
-
-#### From the Addresses page
-
-The **Addresses** page in the left sidebar lists every Address in your project with its
-**Name**, **Context**, **Type**, **Call Handler**, and **Message Handler**. Search it by name or
-context, or filter it by type, to find a number with no handler or to see which Resource an alias
-points at.
-
-To create an alias or SIP Address from this page:
-
-<Steps>
-<Step title="Open the Add an Address menu">
-
-On the **Addresses** page, select <kbd>+ Add</kbd>, then choose **Add an Alias** or
-**Assign a SIP Address**.
-
-</Step>
-<Step title="Fill in the Address">
-
-Enter the fields for the type. An alias takes a name, a display name, a context, channels, and
-codecs. A SIP Address takes a user, a domain, a display name, and its optional password, IP, and
-encryption settings.
-
-</Step>
-<Step title="Assign the Resource">
-
-In the **Assign to** row, select **Assign Resource** and pick the Resource that handles the
-Address. Every alias and SIP Address needs one. If you skip this row, the form reports that a
-Resource is required to create an address.
-
-</Step>
-<Step title="Create and check it">
-
-Select <kbd>Create</kbd>. The new Address appears on the **Addresses** page with its Resource in
-the **Call Handler** column, and on that Resource's **Addresses & Phone Numbers** tab.
-
-</Step>
-</Steps>
-
-Choosing **Assign a Phone Number** on this page buys a new number. A phone number channel with no
-handler shows **Assign** in its **Call Handler** or **Message Handler** column. Select it to open
-the number's settings and pick a Resource.
-
-#### Move an Address to another Resource
-
-How you move an Address depends on its type:
-
-- **Phone number.** Assign a different Resource from the number's settings, as shown below. The new
-  Resource takes over from the old one on that channel.
-- **SIP Address.** Open the SIP Address from the **Addresses** page or from its Resource's
-  **Addresses & Phone Numbers** tab. In the **Assigned Resource** row, select
-  **Change Resource**, pick the new Resource, and select **Save**. The SIP Address moves to that
-  Resource and keeps its URI.
-- **Alias.** Delete the alias and create a new one with the same name and context on the new
-  Resource.
-
-<Markdown src="/snippets/common/dashboard/_assign-resource-to-number.mdx" />
-
-#### Remove an Address
-
-Deleting an Address removes only that way in. The Resource stays, calls already in progress
-continue, and new calls to the Address stop reaching it.
-
-- To delete an alias, open it from the **Addresses** page and select **Delete**, or select
-  **Delete Address** next to it on its Resource's **Addresses & Phone Numbers** tab.
-- To remove a phone number or SIP Address from a Resource, select **Delete Address** next to it on
-  the Resource's **Addresses & Phone Numbers** tab and confirm. A phone number stays in your
-  project, unassigned, until you assign another Resource.
-- To delete a SIP Address together with its SIP settings, use [Delete SIP address][rest-delete-sip].
-
-### With the REST API
-
-Every create call takes the ID of the Resource that handles the Address, the same way the
-Dashboard asks for one in the **Assign to** row.
-
-| Task | Endpoint |
+| Task | Endpoints |
 |---|---|
-| List, create, rename, re-scope, or delete an alias | [List][rest-list-aliases], [create][rest-create-alias], [update][rest-update-alias], and [delete][rest-delete-alias] alias address |
-| List, create, change, or delete a SIP Address | [List][rest-list-sip], [create][rest-create-sip], [update][rest-update-sip], and [delete][rest-delete-sip] SIP address |
-| List a number's calling and messaging Addresses, link a Resource to one, re-point it, or remove the Resource | [List][rest-list-number-addresses], [link][rest-link-number], [update][rest-repoint-number], and [remove][rest-unlink-number] phone number address (beta) |
-| Route a number to a handler by type, for example a SWML URL or a Relay topic | [Update phone number][rest-update-number] |
-| Assign a number or WhatsApp number to a Resource, from the Resource's side | [Assign Resource to phone route][rest-phone-route], [Assign Resource to WhatsApp number][rest-whatsapp-route] |
-| List the Addresses assigned to one Resource, by its ID | [List Resource Addresses][rest-list-addresses] |
-| List Addresses from a client authenticated with a Subscriber token | [List Resource Addresses from a Client][rest-list-addresses-client] |
+| Manage aliases | [List][rest-list-aliases], [create][rest-create-alias], [update][rest-update-alias], [delete][rest-delete-alias] |
+| Manage SIP Addresses | [List][rest-list-sip], [create][rest-create-sip], [update][rest-update-sip], [delete][rest-delete-sip] |
+| Manage a phone number's calling and messaging Addresses (beta) | [List][rest-list-number-addresses], [link][rest-link-number], [re-point][rest-repoint-number], [remove][rest-unlink-number] |
+| Assign a number or WhatsApp number from the Resource's side | [Assign Resource to phone route][rest-phone-route], [Assign Resource to WhatsApp number][rest-whatsapp-route] |
+| List the Addresses assigned to one Resource | [List Resource Addresses][rest-list-addresses] |
+| List Addresses from a client authenticated with a [Subscriber token][subscriber-token] | [List Resource Addresses from a Client][rest-list-addresses-client] |
 
-A SIP Address moves to a different Resource from the Dashboard, as described in
-[Move an Address to another Resource](#move-an-address-to-another-resource). The update endpoint
-changes its other settings.
-
-### In the Browser SDK
-
-A client authenticated with a [Subscriber token][subscriber-token] lists Addresses through the
-`client.directory$` observable. Each entry exposes a ready-to-dial
-URI per channel, so the client dials what the directory returns instead of building
-`/context/name` strings by hand. See the [address book guide][browser-address-book] and
-[`defaultChannel`][browser-default-channel].
+In the Browser SDK, a client signed in as a Subscriber lists Addresses through `client.directory$`
+and dials the URI each entry returns. The [address book guide][browser-address-book] shows how.
 
 ## Next steps
 
 <CardGroup cols={2}>
   <Card title="Resources" icon="regular cubes" href="/docs/platform/resources">
-    The handler types an Address can point at, and how to create and manage them.
+    The Resource types an Address can point at, and how to create and manage them.
   </Card>
   <Card title="Inbound calling" icon="regular phone-arrow-down-left" href="/docs/platform/voice/make-and-receive-calls">
     Assign a number and write the code that answers when it rings.
