@@ -367,14 +367,8 @@ model AIParams {
   @example("Analyze the conversation and provide insights to help the agent respond better.")
   inner_dialog_prompt?: string = "The assistant is intelligent and straightforward, does its job well and is not excessively polite.";
 
-  @doc("""
-    When enabled, synchronizes the inner dialog with the main conversation flow.
-    This ensures the inner dialog AI waits for the main conversation turn to complete
-    before providing its analysis, rather than running fully asynchronously.
-    Only used when `enable_inner_dialog` is `true`.
-    """)
-  @example(true)
-  inner_dialog_synced?: boolean | SWMLVar = false;
+  @doc("Has no effect and can be omitted.")
+  inner_dialog_synced?: boolean | SWMLVar;
 
   @doc("Amount of time, in ms, to wait before starting the conversation. Allowed values from `0` - `300,000`.")
   @minValue(0)
