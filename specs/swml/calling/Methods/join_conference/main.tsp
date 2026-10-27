@@ -134,15 +134,6 @@ model JoinConferenceObject {
   recording_status_callback_event_type?: "cxml" | "laml" | "relay";
 
   @doc("""
-    Allows the user to specify a custom action to be executed when the conference result is returned (typically when it has ended).
-    The actions can a `switch` object or a `cond` array.
-    The `switch` object allows for conditional execution based on the result of the conference, while
-    the `cond` array allows for multiple conditions to be checked in sequence.
-    If neither is provided, the default action will be to end the conference.
-    """)
-  result?: Switch.switch | Cond.cond;
-
-  @doc("""
     Attach a bidirectional WebSocket stream to the conference. Conference audio is streamed to
     the `url`, enabling real-time audio processing, transcription, or AI agents that listen to
     the conference. Uses the same stream schema as the `stream` device type in `connect`.
