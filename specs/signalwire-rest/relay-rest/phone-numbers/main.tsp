@@ -101,6 +101,8 @@ namespace SignalWireAPI.RelayRest.PhoneNumbers {
     @doc("""
       Searches SignalWire's available inventory for local or toll-free phone numbers. Search results are candidates, not numbers your project owns; pass a selected result to [Purchase phone number](/docs/apis/rest/phone-numbers/purchase-phone-number). Use [List phone numbers](/docs/apis/rest/phone-numbers/list-phone-numbers) for owned numbers, or Compatibility [Available Phone Numbers](/docs/compatibility-api/rest/available-phone-numbers/search-local-available-phone-numbers) for form-encoded requests.
 
+      Search results aren't paginated. Each request returns up to `max_results` numbers, `links` is always empty, and paging parameters such as `page_number` are ignored. To see more of the inventory, raise `max_results` or run narrower searches, for example with `starts_with` set to an area code and exchange.
+
       ${tokenPermissions<"_Numbers_">}
       """)
     @route("/search")
@@ -127,7 +129,8 @@ namespace SignalWireAPI.RelayRest.PhoneNumbers {
       ends_with?: string,
 
       @query
-      @doc("The maximum number of matches to return. Upper limit of 100. Defaults to 50.")
+      @doc("The maximum number of matches to return. Defaults to 50. Toll-free searches accept up to 100. Local searches have no fixed upper limit, but a very large value can make the search return no numbers or fail with an error; narrow the search with `areacode`, `region`, `city`, or `starts_with` rather than raising `max_results` that far.")
+      @minValue(1)
       max_results?: int32,
 
       @query
