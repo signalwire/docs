@@ -77,15 +77,13 @@ namespace SignalWireAPI.Fabric.CallFlows {
         parameters: #{
           request: #{
             title: "Welcome Call Flow",
-            flow_data: #{},
-            relayml: SWML_CONTENTS_EXAMPLE,
           },
         },
         returnType: #{ statusCode: 201, call_flow: CALL_FLOW_RESPONSE_EXAMPLE },
       },
       #{
         title: "Welcome Call Flow",
-        description: "Create a Call Flow that plays a single audio file.",
+        description: "Create a Call Flow from the starter flow, ready to edit in Call Flow Builder.",
       }
     )
     @post
@@ -113,15 +111,13 @@ namespace SignalWireAPI.Fabric.CallFlows {
           request: #{
             title: "Updated Welcome Call Flow",
             document_version: 2,
-            flow_data: #{},
-            relayml: SWML_CONTENTS_EXAMPLE,
           },
         },
         returnType: #{ statusCode: 200, call_flow: CALL_FLOW_RESPONSE_EXAMPLE },
       },
       #{
         title: "Update a Call Flow",
-        description: "Update a Call Flow with its next document revision.",
+        description: "Rename a Call Flow in its next document revision, keeping its current flow and SWML document.",
       }
     )
     @put

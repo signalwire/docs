@@ -153,7 +153,7 @@ namespace SignalWireAPI.Fabric.SwmlScripts {
         parameters: #{
           id: "993ed018-9e79-4e50-b97b-984bd5534095",
           request: #{
-            display_name: "Updated Welcome Script",
+            name: "Updated Welcome Script",
             script_type: "calling",
             contents: SWML_CONTENTS_EXAMPLE,
           },
@@ -173,7 +173,7 @@ namespace SignalWireAPI.Fabric.SwmlScripts {
         parameters: #{
           id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           request: #{
-            display_name: "Updated Reply Bot",
+            name: "Updated Reply Bot",
             script_type: "messaging",
             contents: SWML_MESSAGING_CONTENTS_EXAMPLE,
           },
