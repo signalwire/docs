@@ -422,11 +422,8 @@ model AIParams {
   @example(true)
   llm_diarize_aware?: boolean | SWMLVar;
 
-  @doc("Sets the maximum emotion intensity for the AI voice. Allowed values from `1` - `30`. **Default:** `30`.")
-  @minValue(1)
-  @maxValue(30)
-  @example(15)
-  max_emotion?: integer | SWMLVar = 30;
+  @doc("Has no effect and can be omitted.")
+  max_emotion?: integer | SWMLVar;
 
   @doc("Sets the maximum number of tokens the AI model can generate in a single response. Lower values produce shorter responses and reduce latency.")
   @minValue(1)
