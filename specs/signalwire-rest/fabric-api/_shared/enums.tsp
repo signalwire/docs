@@ -44,6 +44,7 @@ enum HandleCallsUsing {
 
 enum FabricResponseType {
   AiAgent: "ai_agent",
+  RemoteAiAgent: "remote_ai_agent",
   DialogflowAgent: "dialogflow_agent",
   CallFlow: "call_flow",
   SwmlWebhook: "swml_webhook",

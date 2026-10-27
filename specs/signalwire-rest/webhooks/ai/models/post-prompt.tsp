@@ -69,7 +69,7 @@ model AiPostPromptCallbackPayload {
   @example("voice")
   conversation_type: "voice" | "chat";
 
-  @doc("The ID of the call. On a chat conversation this carries the conversation id instead.")
+  @doc("The ID of the call. On a chat conversation this is a separate ID, not your conversation ID; use `conversation_id` to match the summary to the conversation.")
   @example("2e1e66e5-5d07-413d-9668-55542992eec0")
   call_id: string;
 
@@ -202,6 +202,20 @@ model AiPostPromptCallbackPayload {
     Every tool call the agent made, in order. Included when `action` is `post_conversation`.
     """)
   swaig_log?: AISwaigLogEntry[];
+
+  @doc("""
+    The functions the post-prompt agent called that a
+    [semantic gate](/docs/swml/reference/calling/ai/swaig/functions/gates) blocked. Included only
+    when there were any.
+    """)
+  semantic_gates_blocked?: AISemanticGateBlockedCall[];
+
+  @doc("""
+    A tally of the call's [semantic gate](/docs/swml/reference/calling/ai/swaig/functions/gates)
+    checks. Included when any gated function was called, even with gates turned off, whether or not
+    accounting is on.
+    """)
+  semantic_gates?: AISemanticGateTally;
 
   @doc("""
     The number of billable minutes, rounded up to at least one. Included when you enable

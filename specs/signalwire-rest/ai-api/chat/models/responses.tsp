@@ -51,7 +51,7 @@ model ChatReplyResponse {
 
   @doc("The agent's turn.")
   result: {
-    @doc("The agent's reply. When this call created the conversation, this is the agent's opening message.")
+    @doc("The agent's reply to `message`.")
     @example("Order A-771 shipped on Tuesday and is out for delivery today.")
     response: string;
 

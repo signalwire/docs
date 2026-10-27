@@ -874,6 +874,7 @@ paths:
                   id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
                   params:
                     control_id: detect-control-1
+                    status_url: https://example.com/webhooks/detection
                     detect:
                       type: machine
                       params:
@@ -8164,6 +8165,63 @@ paths:
       tags:
         - WhatsApp Templates
   /api/project/tokens:
+    get:
+      operationId: list_tokens
+      summary: List API tokens
+      description: |-
+        Lists the project API tokens the caller can manage, newest first. Use it to find the `id` of a token before you [update](/docs/apis/rest/project-tokens/update-token), [regenerate](/docs/apis/rest/project-tokens/regenerate-token), or [delete](/docs/apis/rest/project-tokens/delete-token) it, or to check when each token last authenticated a request.
+
+        Token values are never returned. A token's value appears only in the response that issued it: [Create API token](/docs/apis/rest/project-tokens/create-token) or [Regenerate API token](/docs/apis/rest/project-tokens/regenerate-token).
+
+        With a project API token, the list covers the tokens of the authenticated project and its subprojects. With a [Personal access token](/docs/apis/authorization#personal-access-tokens), it covers the tokens of every project the token holder is enabled for, plus their subprojects. Pass `project_id` to narrow the list to one project.
+
+        #### Permissions
+
+        With a project API token, the token must have the following scope(s) enabled to make a successful request: _Management_.
+
+        With a [Personal access token](/docs/apis/authorization#personal-access-tokens) there are no scopes. The token holder must be an owner or admin of the space, and the request reaches only the projects the holder is enabled for, plus their subprojects.
+
+        [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
+      parameters:
+        - $ref: '#/components/parameters/Project.ListTokensQuery.project_id'
+        - $ref: '#/components/parameters/Project.ListTokensQuery.page_size'
+        - $ref: '#/components/parameters/Project.ListTokensQuery.page_token'
+        - $ref: '#/components/parameters/Project.ListTokensQuery.page_number'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project.TokenListResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '422':
+          description: |-
+            A pagination parameter is invalid. A `page_token` that is not a cursor from a previous
+            response returns `page_token_is_invalid`, and a `page_number` above 0 without a
+            `page_token` returns `page_token_required_for_next_page`. A `page_size` outside 1 to
+            1000, a `page_number` that is negative or not an integer, or a `project_id` that is
+            not a single value returns `invalid_parameter`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project.ListTokensStatusCode422'
+        '500':
+          description: An internal server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - Project Tokens
+      security:
+        - SignalWireBasicAuth: []
+        - SignalWirePersonalAccessTokenAuth: []
     post:
       operationId: create_token
       summary: Create API token
@@ -8172,7 +8230,7 @@ paths:
 
         The Compatibility API exposes the same project tokens through its account-scoped route. Use [Generate a new API Token](/docs/compatibility-api/rest/tokens/create-token) for that request format.
 
-        The response is the only place the token secret is returned. Store it securely; no later request, including [Update API token](/docs/apis/rest/project-tokens/update-token), can read it back.
+        The response is the only place the token secret is returned. Store it securely; no later request, including [Update API token](/docs/apis/rest/project-tokens/update-token) and [List API tokens](/docs/apis/rest/project-tokens/list-tokens), can read it back. If you lose it, [Regenerate API token](/docs/apis/rest/project-tokens/regenerate-token) issues a new value for the same token.
 
         With a project API token, the new token belongs to the authenticated project, or to one of its subprojects when `subproject_id` is given; `project_id` is ignored. With a [Personal access token](/docs/apis/authorization#personal-access-tokens), `project_id` is required and names the project the token is created for, which is how a root project created with [Create a project](/docs/apis/rest/projects/create-subproject) gets its first credential.
 
@@ -8235,9 +8293,9 @@ paths:
       operationId: update_token
       summary: Update API token
       description: |-
-        Changes the name or enabled permission categories of an existing project API token. Use it to rotate a token's responsibilities without replacing its identifier; remove permissions that the token's server-side caller no longer needs. For the account-scoped Compatibility API route, use [Update an API Token](/docs/compatibility-api/rest/tokens/update-token).
+        Changes the name or enabled permission categories of an existing project API token. Use it to change a token's permissions without replacing its identifier; remove permissions that the token's server-side caller no longer needs. For the account-scoped Compatibility API route, use [Update an API Token](/docs/compatibility-api/rest/tokens/update-token).
 
-        The response contains the token's `id`, `name`, and `permissions` only. The token secret is returned once, by [Create API token](/docs/apis/rest/project-tokens/create-token), and cannot be retrieved afterwards.
+        Updating a token does not change its value. The response omits the token secret, which is returned only by [Create API token](/docs/apis/rest/project-tokens/create-token) and [Regenerate API token](/docs/apis/rest/project-tokens/regenerate-token).
 
         #### Permissions
 
@@ -8328,6 +8386,67 @@ paths:
       responses:
         '204':
           description: 'There is no content to send for this request, but the headers may be useful. '
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode404'
+        '500':
+          description: An internal server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - Project Tokens
+      security:
+        - SignalWireBasicAuth: []
+        - SignalWirePersonalAccessTokenAuth: []
+  /api/project/tokens/{token_id}/regenerate:
+    post:
+      operationId: regenerate_token
+      summary: Regenerate API token
+      description: |-
+        Replaces a project API token's value and returns the new value. Use it to rotate a credential on a schedule, after it has been exposed, or when its value has been lost. The token keeps its `id`, `name`, and `permissions`, so there is nothing to re-enter; to change those, use [Update API token](/docs/apis/rest/project-tokens/update-token).
+
+        The previous value stops working immediately, on every API that accepts a project API token. Anything still using it receives `401 Unauthorized` until you give it the new value.
+
+        The response is the only place the new value is returned; store it securely. If you lose it, regenerate the token again.
+
+        The new value always uses the current token format: 42 characters beginning with `swapi_`. A token issued in the legacy format, 50 characters beginning with `PT`, changes format and length when regenerated, so update anything that validates or stores token values by length or prefix.
+
+        You can regenerate the token you are authenticating with. The request succeeds, but the value you sent is no longer valid once it does, so save the new value from the response before making any further request.
+
+        A token the caller cannot reach returns `404 Not Found`. Use [List API tokens](/docs/apis/rest/project-tokens/list-tokens) to find the `id` of each token you can manage.
+
+        #### Permissions
+
+        With a project API token, the token must have the following scope(s) enabled to make a successful request: _Management_.
+
+        With a [Personal access token](/docs/apis/authorization#personal-access-tokens) there are no scopes. The token holder must be an owner or admin of the space, and the request reaches only the projects the holder is enabled for, plus their subprojects.
+
+        [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
+      parameters:
+        - name: token_id
+          in: path
+          required: true
+          description: The unique identifier of the token to regenerate.
+          schema:
+            $ref: '#/components/schemas/uuid'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project.CreateTokenResponse'
         '401':
           description: Access is unauthorized.
           content:
@@ -17125,6 +17244,45 @@ components:
       description: The unique identifier of the Resource.
       schema:
         $ref: '#/components/schemas/uuid'
+    Project.ListTokensQuery.page_number:
+      name: page_number
+      in: query
+      required: false
+      description: The page index. A value above 0 requires `page_token`.
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+        default: 0
+      explode: false
+    Project.ListTokensQuery.page_size:
+      name: page_size
+      in: query
+      required: false
+      description: The number of results per page.
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 1000
+        default: 50
+      explode: false
+    Project.ListTokensQuery.page_token:
+      name: page_token
+      in: query
+      required: false
+      description: Cursor token for paging, taken from the `next` or `prev` link of a previous response.
+      schema:
+        type: string
+      explode: false
+    Project.ListTokensQuery.project_id:
+      name: project_id
+      in: query
+      required: false
+      description: Only return tokens that belong to this project. A project the caller cannot reach, or a value that is not a valid project ID, returns an empty list rather than an error.
+      schema:
+        $ref: '#/components/schemas/uuid'
+      explode: false
     Projects.ListProjectsQuery.name:
       name: name
       in: query
@@ -18348,10 +18506,13 @@ components:
         - -32005
         - -32006
         - -32007
+        - -32008
+        - -32009
         - -32600
         - -32601
         - -32602
         - -32603
+        - -32700
       description: |-
         Why a method failed. `-32600` and below are the standard JSON-RPC codes; the rest are specific to
         AI chat. See [API error codes](/docs/apis/error-codes) for the codes callers should handle
@@ -18471,7 +18632,7 @@ components:
           properties:
             response:
               type: string
-              description: The agent's reply. When this call created the conversation, this is the agent's opening message.
+              description: The agent's reply to `message`.
               examples:
                 - Order A-771 shipped on Tuesday and is out for delivery today.
             user_event:
@@ -22138,6 +22299,20 @@ components:
               - G729
               - VP8
               - PCMA
+        transport:
+          type: string
+          enum:
+            - udp
+            - tcp
+            - tls
+          description: |-
+            Transport for SIP signaling to the destination. Only valid when `to` is a SIP URI (`sip:` or `sips:`) for a host outside SignalWire; for any other destination the request returns 422.
+
+            Setting `transport` has the same effect as adding `;transport=` to the `to` URI. If `to` already sets a transport, either with `;transport=` or by being a `sips:` URI (which means `tls`), the two must match or the request returns 422. When neither sets one, SignalWire chooses the transport from the destination's DNS records (NAPTR, then SRV) and falls back to `udp`.
+
+            The transport also decides media encryption. With `udp` or `tcp`, media is sent as unencrypted RTP. With `tls`, or with no transport set, SignalWire offers SRTP and accepts RTP if the destination declines it.
+          examples:
+            - tls
         timeout:
           type: integer
           format: int32
@@ -22155,7 +22330,9 @@ components:
             - 0.05
         send_digits:
           type: string
-          description: 'DTMF digits to send after the call is answered. Allowed characters: `0-9`, `A-D`, `*`, `#`, `w` (wait), `,` (pause).'
+          maxLength: 98
+          pattern: ^[0-9A-Da-d*#wW,]{1,98}$
+          description: 'DTMF digits to send after the call is answered, at most 98 characters. Allowed characters: `0-9`, `A-D`, `*`, `#`, and the pauses `w` (0.5 seconds), `W` (1 second), and `,` (0.5 seconds). SignalWire waits 0.5 seconds after answer before sending the first digit.'
           examples:
             - 1234#
         region:
@@ -22276,6 +22453,20 @@ components:
               - G729
               - VP8
               - PCMA
+        transport:
+          type: string
+          enum:
+            - udp
+            - tcp
+            - tls
+          description: |-
+            Transport for SIP signaling to the destination. Only valid when `to` is a SIP URI (`sip:` or `sips:`) for a host outside SignalWire; for any other destination the request returns 422.
+
+            Setting `transport` has the same effect as adding `;transport=` to the `to` URI. If `to` already sets a transport, either with `;transport=` or by being a `sips:` URI (which means `tls`), the two must match or the request returns 422. When neither sets one, SignalWire chooses the transport from the destination's DNS records (NAPTR, then SRV) and falls back to `udp`.
+
+            The transport also decides media encryption. With `udp` or `tcp`, media is sent as unencrypted RTP. With `tls`, or with no transport set, SignalWire offers SRTP and accepts RTP if the destination declines it.
+          examples:
+            - tls
         timeout:
           type: integer
           format: int32
@@ -22293,7 +22484,9 @@ components:
             - 0.05
         send_digits:
           type: string
-          description: 'DTMF digits to send after the call is answered. Allowed characters: `0-9`, `A-D`, `*`, `#`, `w` (wait), `,` (pause).'
+          maxLength: 98
+          pattern: ^[0-9A-Da-d*#wW,]{1,98}$
+          description: 'DTMF digits to send after the call is answered, at most 98 characters. Allowed characters: `0-9`, `A-D`, `*`, `#`, and the pauses `w` (0.5 seconds), `W` (1 second), and `,` (0.5 seconds). SignalWire waits 0.5 seconds after answer before sending the first digit.'
           examples:
             - 1234#
         region:
@@ -22425,6 +22618,20 @@ components:
               - G729
               - VP8
               - PCMA
+        transport:
+          type: string
+          enum:
+            - udp
+            - tcp
+            - tls
+          description: |-
+            Transport for SIP signaling to the destination. Only valid when `to` is a SIP URI (`sip:` or `sips:`) for a host outside SignalWire; for any other destination the request returns 422.
+
+            Setting `transport` has the same effect as adding `;transport=` to the `to` URI. If `to` already sets a transport, either with `;transport=` or by being a `sips:` URI (which means `tls`), the two must match or the request returns 422. When neither sets one, SignalWire chooses the transport from the destination's DNS records (NAPTR, then SRV) and falls back to `udp`.
+
+            The transport also decides media encryption. With `udp` or `tcp`, media is sent as unencrypted RTP. With `tls`, or with no transport set, SignalWire offers SRTP and accepts RTP if the destination declines it.
+          examples:
+            - tls
         timeout:
           type: integer
           format: int32
@@ -22442,7 +22649,9 @@ components:
             - 0.05
         send_digits:
           type: string
-          description: 'DTMF digits to send after the call is answered. Allowed characters: `0-9`, `A-D`, `*`, `#`, `w` (wait), `,` (pause).'
+          maxLength: 98
+          pattern: ^[0-9A-Da-d*#wW,]{1,98}$
+          description: 'DTMF digits to send after the call is answered, at most 98 characters. Allowed characters: `0-9`, `A-D`, `*`, `#`, and the pauses `w` (0.5 seconds), `W` (1 second), and `,` (0.5 seconds). SignalWire waits 0.5 seconds after answer before sending the first digit.'
           examples:
             - 1234#
         region:
@@ -25638,9 +25847,11 @@ components:
             - calling
           default: calling
         contents:
-          type: object
-          unevaluatedProperties: {}
-          description: The calling SWML document. Uses [calling SWML methods](/docs/swml/reference/calling).
+          anyOf:
+            - type: object
+              unevaluatedProperties: {}
+            - type: string
+          description: The calling SWML document, as a JSON object or as a string of JSON or YAML. Uses [calling SWML methods](/docs/swml/reference/calling).
           examples:
             - version: 1.0.0
               sections:
@@ -25674,9 +25885,11 @@ components:
             - calling
           default: calling
         contents:
-          type: object
-          unevaluatedProperties: {}
-          description: The calling SWML document. Uses [calling SWML methods](/docs/swml/reference/calling).
+          anyOf:
+            - type: object
+              unevaluatedProperties: {}
+            - type: string
+          description: The calling SWML document, as a JSON object or as a string of JSON or YAML. Uses [calling SWML methods](/docs/swml/reference/calling).
           examples:
             - version: 1.0.0
               sections:
@@ -32837,9 +33050,11 @@ components:
           examples:
             - messaging
         contents:
-          type: object
-          unevaluatedProperties: {}
-          description: The messaging SWML document. Uses [messaging SWML methods](/docs/swml/reference/messaging).
+          anyOf:
+            - type: object
+              unevaluatedProperties: {}
+            - type: string
+          description: The messaging SWML document, as a JSON object or as a string of JSON or YAML. Uses [messaging SWML methods](/docs/swml/reference/messaging).
           examples:
             - version: 1.0.0
               sections:
@@ -32865,9 +33080,11 @@ components:
           examples:
             - messaging
         contents:
-          type: object
-          unevaluatedProperties: {}
-          description: The messaging SWML document. Uses [messaging SWML methods](/docs/swml/reference/messaging).
+          anyOf:
+            - type: object
+              unevaluatedProperties: {}
+            - type: string
+          description: The messaging SWML document, as a JSON object or as a string of JSON or YAML. Uses [messaging SWML methods](/docs/swml/reference/messaging).
           examples:
             - version: 1.0.0
               sections:
@@ -34588,6 +34805,8 @@ components:
         - id
         - name
         - permissions
+        - last_used_at
+        - revoked_at
         - token
       properties:
         id:
@@ -34597,8 +34816,10 @@ components:
           examples:
             - ea14556a-984f-11ee-b9d1-0242ac120002
         name:
-          type: string
-          description: The name of the API Token.
+          anyOf:
+            - type: string
+            - type: 'null'
+          description: The name of the API Token. `null` when the token has no name.
           examples:
             - John Doe's Token
         permissions:
@@ -34610,14 +34831,107 @@ components:
             - - calling
               - fax
               - messaging
+        last_used_at:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+          description: The date and time the token last authenticated a request. `null` if it never has.
+          examples:
+            - '2024-05-06T12:20:00Z'
+        revoked_at:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+          description: The date and time SignalWire revoked the token's value, for example after detecting that the value was exposed. `null` if it has not been revoked. A revoked token keeps its `id` and still appears in [List API tokens](/docs/apis/rest/project-tokens/list-tokens), but its previous value no longer authenticates and no replacement value has been issued to you. To get a working value, [regenerate the token](/docs/apis/rest/project-tokens/regenerate-token), which also clears `revoked_at`.
+          examples:
+            - null
         token:
           type: string
-          description: The API token that can be used along with the project ID for basic authentication. It is returned only in this response and cannot be retrieved again; store it securely.
+          description: The API token that can be used along with the project ID for basic authentication. It is returned only when the token is created or regenerated and cannot be retrieved again; store it securely.
           examples:
             - swapi_0123456789ab0123456789ab0123456789ab
       unevaluatedProperties:
         not: {}
       title: Created API Token Response
+    Project.ListTokensStatusCode422:
+      type: object
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Types.StatusCodes.RestApiErrorItem'
+          description: List of validation errors.
+      unevaluatedProperties:
+        not: {}
+      description: |-
+        A pagination parameter is invalid. A `page_token` that is not a cursor from a previous
+        response returns `page_token_is_invalid`, and a `page_number` above 0 without a
+        `page_token` returns `page_token_required_for_next_page`. A `page_size` outside 1 to
+        1000, a `page_number` that is negative or not an integer, or a `project_id` that is
+        not a single value returns `invalid_parameter`.
+      examples:
+        - statusCode: 422
+          errors:
+            - type: validation_error
+              code: page_token_is_invalid
+              message: The provided page token is not valid.
+              attribute: page_token
+              url: https://signalwire.com/docs/apis/error-codes#page_token_is_invalid
+    Project.TokenListResponse:
+      type: object
+      required:
+        - links
+        - data
+      properties:
+        links:
+          allOf:
+            - $ref: '#/components/schemas/Project.TokenPaginationLinks'
+          description: Pagination links for the list of tokens.
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Project.TokenResponse'
+          description: The tokens on this page. Token values are never included.
+      unevaluatedProperties:
+        not: {}
+      description: A page of API tokens.
+    Project.TokenPaginationLinks:
+      type: object
+      required:
+        - self
+        - first
+      properties:
+        self:
+          type: string
+          format: uri
+          description: The link to the current page.
+          examples:
+            - https://example-space.signalwire.com/api/project/tokens?page_number=0&page_size=50
+        first:
+          type: string
+          format: uri
+          description: The link to the first page.
+          examples:
+            - https://example-space.signalwire.com/api/project/tokens?page_size=50
+        next:
+          type: string
+          format: uri
+          description: The link to the next page. Only present when more results exist.
+          examples:
+            - https://example-space.signalwire.com/api/project/tokens?page_number=1&page_size=50&page_token=PAea14556a-984f-11ee-b9d1-0242ac120002
+        prev:
+          type: string
+          format: uri
+          description: The link to the previous page. Only present when a previous page exists.
+          examples:
+            - https://example-space.signalwire.com/api/project/tokens?page_number=0&page_size=50&page_token=PBea14556a-984f-11ee-b9d1-0242ac120002
+      unevaluatedProperties:
+        not: {}
+      description: Pagination links for a list of API tokens.
     Project.TokenPermission:
       type: string
       enum:
@@ -34639,6 +34953,8 @@ components:
         - id
         - name
         - permissions
+        - last_used_at
+        - revoked_at
       properties:
         id:
           allOf:
@@ -34647,8 +34963,10 @@ components:
           examples:
             - ea14556a-984f-11ee-b9d1-0242ac120002
         name:
-          type: string
-          description: The name of the API Token.
+          anyOf:
+            - type: string
+            - type: 'null'
+          description: The name of the API Token. `null` when the token has no name.
           examples:
             - John Doe's Token
         permissions:
@@ -34660,6 +34978,22 @@ components:
             - - calling
               - fax
               - messaging
+        last_used_at:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+          description: The date and time the token last authenticated a request. `null` if it never has.
+          examples:
+            - '2024-05-06T12:20:00Z'
+        revoked_at:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+          description: The date and time SignalWire revoked the token's value, for example after detecting that the value was exposed. `null` if it has not been revoked. A revoked token keeps its `id` and still appears in [List API tokens](/docs/apis/rest/project-tokens/list-tokens), but its previous value no longer authenticates and no replacement value has been issued to you. To get a working value, [regenerate the token](/docs/apis/rest/project-tokens/regenerate-token), which also clears `revoked_at`.
+          examples:
+            - null
       unevaluatedProperties:
         not: {}
       title: API Token Response
@@ -35859,6 +36193,50 @@ components:
               message: webhook_url must be a valid URL
               attribute: webhook_url
               url: https://signalwire.com/docs/apis/error-codes
+    RemoteAIAgent:
+      type: object
+      required:
+        - id
+        - name
+        - primary_request_url
+        - fallback_request_url
+        - status_callback_url
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Unique ID of the Remote AI Agent.
+          examples:
+            - b2a4c6e8-1f3d-4a5b-9c7e-0d2f4a6b8c1e
+        name:
+          type: string
+          description: Name of the Remote AI Agent.
+          examples:
+            - Support Agent
+        primary_request_url:
+          type: string
+          format: uri
+          description: URL of the agent you host. SignalWire requests the SWML document for each call from this URL.
+          examples:
+            - https://agent.example.com/swml
+        fallback_request_url:
+          anyOf:
+            - type: string
+              format: uri
+            - type: 'null'
+          description: URL SignalWire requests the SWML document from if the primary URL cannot be reached or fails.
+          examples:
+            - https://agent.example.com/fallback
+        status_callback_url:
+          anyOf:
+            - type: string
+              format: uri
+            - type: 'null'
+          description: URL that receives a JSON event when a call to this agent completes, with details of the finished call.
+          examples:
+            - https://agent.example.com/status
+      unevaluatedProperties:
+        not: {}
     RequestUrlMethodType:
       type: string
       enum:
@@ -35966,6 +36344,7 @@ components:
     ResourceResponse:
       oneOf:
         - $ref: '#/components/schemas/ResourceResponseAI'
+        - $ref: '#/components/schemas/ResourceResponseRemoteAIAgent'
         - $ref: '#/components/schemas/ResourceResponseCallFlow'
         - $ref: '#/components/schemas/ResourceResponseCXMLWebhook'
         - $ref: '#/components/schemas/ResourceResponseCXMLScript'
@@ -36465,6 +36844,60 @@ components:
       unevaluatedProperties:
         not: {}
       title: Relay Application
+    ResourceResponseRemoteAIAgent:
+      type: object
+      required:
+        - id
+        - project_id
+        - display_name
+        - created_at
+        - updated_at
+        - type
+        - remote_ai_agent
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Unique ID of the Resource.
+          examples:
+            - 993ed018-9e79-4e50-b97b-984bd5534095
+        project_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Unique ID of the Project.
+          examples:
+            - 1313fe58-5e14-4c11-bbe7-6fdfa11fe780
+        display_name:
+          type: string
+          description: Display name of the Resource
+          examples:
+            - My Resource
+        created_at:
+          type: string
+          format: date-time
+          description: Date and time when the resource was created.
+          examples:
+            - '2024-05-06T12:20:00Z'
+        updated_at:
+          type: string
+          format: date-time
+          description: Date and time when the resource was updated.
+          examples:
+            - '2024-05-06T12:20:00Z'
+        type:
+          type: string
+          enum:
+            - remote_ai_agent
+          description: The type of Resource
+          examples:
+            - remote_ai_agent
+        remote_ai_agent:
+          allOf:
+            - $ref: '#/components/schemas/RemoteAIAgent'
+          description: An object containing the response data of the Remote AI Agent
+      unevaluatedProperties:
+        not: {}
+      title: Remote AI Agent
     ResourceResponseSWMLScript:
       type: object
       required:
@@ -37484,6 +37917,32 @@ components:
             This eliminates the need for a `post_prompt` in the ai parameters.
           examples:
             - true
+        semantic_gates_enabled:
+          type: boolean
+          description: |-
+            Whether the call checks the [semantic gates](/docs/swml/reference/calling/ai/swaig/functions/gates)
+            on its SWAIG functions. Set it to `false` to turn gate checks off for the call: gated functions
+            then run without being checked. **Default:** `true`.
+          examples:
+            - false
+          default: true
+        semantic_gate_timeout_ms:
+          type: integer
+          description: |-
+            How long one semantic gate check may take in total, in milliseconds. A check that runs
+            out of time blocks the function. Allowed values from `500` to `10,000`; a value outside the range
+            is clamped to it. **Default:** `2500` ms.
+          examples:
+            - 3000
+          default: 2500
+        semantic_gate_history:
+          type: integer
+          description: |-
+            How many recent conversation entries a semantic gate check reads. Allowed values from `0` to
+            `100`; a value outside the range is clamped to it. **Default:** `20`.
+          examples:
+            - 30
+          default: 20
         speech_event_timeout:
           type: integer
           minimum: 0
@@ -37731,6 +38190,18 @@ components:
           examples:
             - true
           default: false
+        video_blank_image:
+          type: string
+          format: uri
+          pattern: ^https?://
+          description: |-
+            What the caller sees on a video call without avatar clips (no `video_talking_file`): an
+            `http://` or `https://` URL to a PNG, shown as a still image. The image can be up to 4 MB and
+            3840 x 2160 pixels, and is scaled to fit within 1280 x 720. Any other value is ignored. Without
+            it, the still is black. The still shows when the call captures the caller's video frames, through
+            `enable_vision` or a gate's or function's `visual_input`, or when this param is set.
+          examples:
+            - https://example.com/still.png
         video_listening_file:
           type: string
           format: uri
@@ -37760,6 +38231,18 @@ components:
           description: The model to use for the AI's vision capabilities. Allowed values are `gpt-4o-mini`, `gpt-4.1-mini`, and `gpt-4.1-nano`.
           examples:
             - gpt-4o-mini
+        visual_input:
+          anyOf:
+            - type: boolean
+            - $ref: '#/components/schemas/SWML.Calling.VisualInputFrameCount'
+          description: |-
+            How many of the caller's newest video frames `get_visual_input` sends, oldest first, taken at most
+            one per second: `true` is `1`, or a whole number from `1` to `5`. Any other value keeps the
+            default. This doesn't affect the `visual_input` of a semantic gate or a SWAIG function, which
+            each set their own count. **Default:** `1`.
+          examples:
+            - 3
+          default: 1
         vad_config:
           type: string
           description: |-
@@ -40116,7 +40599,9 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SWML.Calling.ConnectDestination'
-          description: Array of destination objects to dial simultaneously. All destinations ring at the same time — the first to answer is bridged and the remaining calls are cancelled.
+          description: |-
+            Array of destination objects to dial simultaneously. All destinations ring at the same time — the first to answer is bridged and the remaining calls are cancelled.
+            Up to 20 destinations are dialed. Any destination after the 20th is skipped without an error.
       unevaluatedProperties:
         not: {}
       description: Dial multiple destinations simultaneously. All destinations in the array ring at the same time — the first to answer is bridged and the remaining calls are cancelled.
@@ -40286,7 +40771,9 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SWML.Calling.ConnectDestination'
-          description: Array of destination objects to dial in order. Each destination is tried sequentially — if the current destination does not answer, the next one in the array is attempted.
+          description: |-
+            Array of destination objects to dial in order. Each destination is tried sequentially — if the current destination does not answer, the next one in the array is attempted.
+            Up to 20 destinations are tried. Any destination after the 20th is skipped without an error.
       unevaluatedProperties:
         not: {}
       description: Dial destinations one at a time in sequence. If the first destination does not answer, the next destination in the array is tried, and so on.
@@ -40463,6 +40950,7 @@ components:
             The outer array is the **serial** dimension — each element is a group tried in order.
             Each inner array is the **parallel** dimension — all destinations in that group are dialed simultaneously.
             If no destination in the current group answers, the next group is attempted.
+            Up to 20 destinations are dialed in total, counted across all groups rather than per group. Any destination after the 20th is skipped without an error.
       unevaluatedProperties:
         not: {}
       description: Combine both serial and parallel strategies using a two-dimensional array. The outer array is the serial dimension — each element is a group tried one at a time, in order. Each inner array is the parallel dimension — all destinations in that group are dialed simultaneously. If no destination in the current group answers, the next group is attempted.
@@ -42520,41 +43008,6 @@ components:
           maximum: 2
           description: 'Controls the randomness and expressiveness of the generated speech. Lower values produce a more consistent, predictable delivery; higher values introduce more variation. IMPORTANT: Only works with the Inworld TTS engine.'
           default: 1
-        speed:
-          type: number
-          minimum: 0.5
-          maximum: 2
-          description: 'How quickly the voice speaks. Values below `1.0` slow the voice down; values above `1.0` speed it up. IMPORTANT: Only works with the MiniMax TTS engine.'
-          default: 1
-        vol:
-          type: number
-          minimum: 0.1
-          maximum: 1
-          description: 'The speaking volume. Lower values are quieter. IMPORTANT: Only works with the MiniMax TTS engine.'
-          default: 1
-        pitch:
-          type: integer
-          format: int32
-          minimum: -12
-          maximum: 12
-          description: 'The pitch shift in semitones. Negative values lower the pitch; positive values raise it. IMPORTANT: Only works with the MiniMax TTS engine.'
-          default: 0
-        emotion:
-          type: string
-          enum:
-            - happy
-            - sad
-            - angry
-            - fearful
-            - disgusted
-            - surprised
-            - neutral
-          description: |-
-            A fixed emotional tone for the generated speech.
-            To vary the emotion automatically during a conversation, use [`languages[].auto_emotion`](#languagesauto_emotion) instead.
-            IMPORTANT: Only works with the MiniMax TTS engine.
-          examples:
-            - happy
       unevaluatedProperties:
         not: {}
       title: LanguageParams
@@ -42608,7 +43061,7 @@ components:
             Voice to use for the language. String format: `<engine id>.<voice id>`, with an optional
             `:<model id>` suffix for engines that offer a choice of model.
             Select engine from `gcloud`, `polly`, `amazon`, `azure`, `openai`, `elevenlabs`, `cartesia`, `deepgram`, `rime`,
-            `inworld`, `minimax`, `groq-tts`, `mistral`, `grok`, `smallest`, `fish`, or `speechify`.
+            `inworld`, `groq-tts`, `mistral`, `grok`, `smallest`, or `fish`.
             For example, `gcloud.fr-FR-Neural2-B` or `elevenlabs.rachel:eleven_flash_v2_5`.
             Always name the engine: a bare voice id resolves against a default engine that can change.
           examples:
@@ -42626,8 +43079,7 @@ components:
           description: |-
             Lets the AI vary its emotion as it speaks. A global emotion, or specific emotions for certain
             topics, can be set within the prompt of the AI.
-            IMPORTANT: Only works with the [`Cartesia`](/docs/platform/voice/tts/cartesia) and [`MiniMax`](/docs/platform/voice/tts/minimax) TTS engines.
-            For a fixed (non-automatic) MiniMax emotion, use [`params.emotion`](#paramsemotion) instead.
+            IMPORTANT: Only works with the [`Cartesia`](/docs/platform/voice/tts/cartesia) TTS engine.
           examples:
             - true
           default: false
@@ -42637,7 +43089,7 @@ components:
             Lets the AI vary its speaking speed during the conversation. The speed behavior can be defined
             in the prompt of the AI.
             IMPORTANT: Only works with the [`Cartesia`](/docs/platform/voice/tts/cartesia),
-            [`ElevenLabs`](/docs/platform/voice/tts/elevenlabs), [`MiniMax`](/docs/platform/voice/tts/minimax),
+            [`ElevenLabs`](/docs/platform/voice/tts/elevenlabs),
             [`Rime`](/docs/platform/voice/tts/rime), [`Inworld`](/docs/platform/voice/tts/inworld),
             [`Smallest`](/docs/platform/voice/tts/smallest), and [`Fish`](/docs/platform/voice/tts/fish) TTS engines.
           examples:
@@ -42923,7 +43375,7 @@ components:
             Voice to use for the language. String format: `<engine id>.<voice id>`, with an optional
             `:<model id>` suffix for engines that offer a choice of model.
             Select engine from `gcloud`, `polly`, `amazon`, `azure`, `openai`, `elevenlabs`, `cartesia`, `deepgram`, `rime`,
-            `inworld`, `minimax`, `groq-tts`, `mistral`, `grok`, `smallest`, `fish`, or `speechify`.
+            `inworld`, `groq-tts`, `mistral`, `grok`, `smallest`, or `fish`.
             For example, `gcloud.fr-FR-Neural2-B` or `elevenlabs.rachel:eleven_flash_v2_5`.
             Always name the engine: a bare voice id resolves against a default engine that can change.
           examples:
@@ -44326,6 +44778,15 @@ components:
           description: Default scoping token for `meta_data`, for functions that don't set their own `meta_data_token`.
           examples:
             - support_desk
+        fillers_at_gates:
+          type: boolean
+          description: |-
+            Default `fillers_at_gates` for gated functions that don't set their own: whether a gated
+            function's `fillers` play while its semantic gates are checked (`true`) or only after they pass
+            (`false`). **Default:** `true`.
+          examples:
+            - false
+          default: true
       unevaluatedProperties:
         not: {}
       title: defaults
@@ -44567,6 +45028,166 @@ components:
         items:
           $ref: '#/components/schemas/SWML.Calling.SWMLMethod'
       title: SWML section
+    SWML.Calling.SemanticGate:
+      type: object
+      required:
+        - question
+        - threshold
+        - on_fail
+      properties:
+        id:
+          type: string
+          pattern: ^[A-Za-z0-9_]{1,64}$
+          description: |-
+            A name for the gate, reported in the call records: 1 to 64 letters, digits, or underscores,
+            unique within the function. Defaults to `gate_1`, `gate_2`, and so on, by position.
+          examples:
+            - explicit_request
+        question:
+          type: string
+          minLength: 1
+          maxLength: 8192
+          description: |-
+            The yes/no question, at most 8 KB. Name what it's about with the names of the inputs the gate
+            reads, in backticks: `conversation`, `semantic_state`, `proposed_function`, and
+            `visual_input`. `${...}` variables from `global_data` are expanded when the check runs.
+          examples:
+            - Has the caller explicitly asked to cancel their account in `conversation`?
+        criteria:
+          allOf:
+            - $ref: '#/components/schemas/SWML.Calling.SemanticGateCriteria'
+          minProperties: 1
+          description: What counts as yes and what counts as no, for the near misses the question alone leaves open.
+          examples:
+            - 'true': The caller says they want to cancel.
+              'false': The caller asked about cancelling, or said something else.
+        threshold:
+          type: number
+          maximum: 1
+          description: |-
+            The gate passes when the probability that the answer is yes is at or above this value. Above
+            `0` and at most `1`. Higher is stricter.
+          exclusiveMinimum: 0
+          examples:
+            - 0.95
+        on_fail:
+          allOf:
+            - $ref: '#/components/schemas/SWML.Calling.SemanticGateOnFail'
+          description: What the agent gets instead of the function's result when this is the first gate that fails.
+          examples:
+            - response:
+                tool_result: cancel_account was not run.
+                tool_prompt: Ask the caller to confirm that they want to cancel.
+        visual_input:
+          anyOf:
+            - type: boolean
+            - $ref: '#/components/schemas/SWML.Calling.SemanticGateFrameCount'
+          description: |-
+            How many of the caller's newest video frames the gate looks at, as `visual_input`: `true` is
+            `1`, a whole number from `0` to `5`, and `false` or `0` is none. If the call has no video frame
+            to show, the gate fails without being asked, so a gate with `visual_input` always fails when
+            the post-prompt agent calls the function after the call.
+          examples:
+            - 1
+      unevaluatedProperties:
+        not: {}
+      description: |-
+        A yes/no question about the call that must come out yes before the function runs. A key not
+        listed here is an error, not an ignored setting.
+      title: gate
+    SWML.Calling.SemanticGateCriteria:
+      type: object
+      properties:
+        'true':
+          type: string
+          minLength: 1
+          maxLength: 2048
+          description: What a yes answer means. A non-empty string of at most 2 KB.
+          examples:
+            - The caller says they want to cancel.
+        'false':
+          type: string
+          minLength: 1
+          maxLength: 2048
+          description: What a no answer means. A non-empty string of at most 2 KB.
+          examples:
+            - The caller asked about cancelling, or said something else.
+      unevaluatedProperties:
+        not: {}
+      description: What counts as yes and what counts as no. Set `true`, `false`, or both.
+      title: criteria
+    SWML.Calling.SemanticGateFrameCount:
+      type: integer
+      minimum: 0
+      maximum: 5
+      description: A number of the caller's newest video frames, from `0` (none) to `5`.
+      title: Frame count
+    SWML.Calling.SemanticGateOnFail:
+      type: object
+      required:
+        - response
+      properties:
+        response:
+          anyOf:
+            - $ref: '#/components/schemas/SWML.Calling.SemanticGateResponseText'
+            - $ref: '#/components/schemas/SWML.Calling.SemanticGateToolResult'
+          description: |-
+            What the function returns to the agent. A non-empty string, or an object with `tool_result` and
+            an optional `tool_prompt`. Realtime (speech-to-speech) agents don't use `tool_prompt`, so on
+            those put everything the agent needs in `tool_result`.
+          examples:
+            - cancel_account was not run. Ask the caller to confirm that they want to cancel.
+        action:
+          type: array
+          items:
+            $ref: '#/components/schemas/SWML.Calling.Action'
+          description: Actions to run, as a function's response would. Must be an array, even for one action.
+          examples:
+            - - set_global_data:
+                  cancel_attempted: true
+        post_process:
+          type: boolean
+          description: |-
+            Hold the actions until after the agent has spoken its reply, rather than running them
+            immediately. **Default:** `false`.
+          examples:
+            - true
+          default: false
+      unevaluatedProperties:
+        not: {}
+      description: |-
+        What the agent gets when this is the first gate that fails, shaped like a
+        [`data_map` output](/docs/swml/reference/calling/ai/swaig/functions/data-map). At most
+        8 KB as compact JSON. Its actions run as written: `${...}` variables in them are not expanded,
+        though a `SWML` action resolves the variables in its own document when it runs.
+      title: on_fail
+    SWML.Calling.SemanticGateResponseText:
+      type: string
+      minLength: 1
+      description: The function's result as plain text. Must not be empty, and should say the function did not run.
+      title: Response text
+    SWML.Calling.SemanticGateToolResult:
+      type: object
+      required:
+        - tool_result
+      properties:
+        tool_result:
+          type: string
+          minLength: 1
+          description: What the agent sees as the function's result. Must say that the function did not run.
+          examples:
+            - cancel_account was not run.
+        tool_prompt:
+          type: string
+          description: The steering half — injected as a system message right after the tool message.
+          examples:
+            - Tell the caller their order is delayed and offer to text updates.
+      unevaluatedProperties:
+        not: {}
+      description: |-
+        The object form of an `on_fail` response. `tool_result` is what the agent sees as the function's
+        result, and `tool_prompt` is an instruction placed right after it.
+      title: Semantic gate tool result
     SWML.Calling.SendDigits:
       type: object
       required:
@@ -46460,6 +47081,57 @@ components:
           description: A unique name for the function. This can be any user-defined string or can reference a reserved function. Reserved functions are SignalWire functions that will be executed at certain points in the conversation.
           examples:
             - get_weather
+        gates:
+          type: array
+          items:
+            $ref: '#/components/schemas/SWML.Calling.SemanticGate'
+          minItems: 1
+          maxItems: 8
+          description: |-
+            Semantic gates: 1 to 8 yes/no questions that must all pass before the function runs. When any
+            fails, the function does not run and the agent gets the first failing gate's `on_fail` instead.
+            A gated function needs a `description` and a `web_hook_url` (its own or from
+            `SWAIG.defaults`) or a `data_map`. If any gate is invalid, the function is not added to the
+            agent at all.
+          examples:
+            - - id: explicit_request
+                question: Has the caller explicitly asked to cancel their account in `conversation`?
+                criteria:
+                  'true': The caller says they want to cancel.
+                  'false': The caller asked about cancelling, or said something else.
+                threshold: 0.95
+                on_fail:
+                  response:
+                    tool_result: cancel_account was not run.
+                    tool_prompt: Ask the caller to confirm that they want to cancel.
+        gate_fillers:
+          allOf:
+            - $ref: '#/components/schemas/SWML.Calling.FunctionFillers'
+          description: |-
+            What the agent says while the gates are checked, shaped like `fillers`. Ignored on a function
+            without `gates`.
+          examples:
+            - default:
+                - Let me check that.
+        fillers_at_gates:
+          type: boolean
+          description: |-
+            For a gated function without `gate_fillers`, whether its `fillers` play as soon as the agent
+            calls it, during the gate check (`true`), or only after the gates pass (`false`). When unset,
+            the function inherits `SWAIG.defaults.fillers_at_gates`, which is `true` unless you change it.
+          examples:
+            - false
+        visual_input:
+          anyOf:
+            - type: boolean
+            - $ref: '#/components/schemas/SWML.Calling.SemanticGateFrameCount'
+          description: |-
+            How many of the caller's newest video frames your `web_hook_url` receives with the function
+            call, as `visual_input`: `true` is `1`, a whole number from `0` to `5`, and `false` or `0` is
+            none. On a gated function, the frames are taken when the gates are checked, never later.
+            Ignored on a `data_map` function.
+          examples:
+            - 1
       unevaluatedProperties:
         not: {}
       title: SWAIG Function
@@ -46482,6 +47154,12 @@ components:
         - $ref: '#/components/schemas/SWML.Calling.SendSMS'
         - $ref: '#/components/schemas/SWML.Calling.Denoise'
         - $ref: '#/components/schemas/SWML.Calling.StopDenoise'
+    SWML.Calling.VisualInputFrameCount:
+      type: integer
+      minimum: 1
+      maximum: 5
+      description: A number of the caller's newest video frames, from `1` to `5`.
+      title: Frame count
     SWML.Calling.Webhook:
       type: object
       required:
@@ -57011,6 +57689,227 @@ components:
       unevaluatedProperties:
         not: {}
       description: Timing and token counts for one generated reply.
+    Webhooks.AI.AISemanticGateBlockedCall:
+      type: object
+      required:
+        - function
+        - outcome
+      properties:
+        function:
+          type: string
+          description: The name of the blocked function.
+          examples:
+            - refund
+        outcome:
+          type: string
+          enum:
+            - fail
+            - timeout
+            - provider_error
+            - invalid_response
+            - invalid_arguments
+            - config_error
+            - aborted
+          description: The check's `outcome`.
+          examples:
+            - fail
+      unevaluatedProperties:
+        not: {}
+      description: A function the post-prompt agent called that a semantic gate blocked.
+    Webhooks.AI.AISemanticGateRecord:
+      type: object
+      required:
+        - evaluation_id
+        - phase
+        - latency_ms
+        - outcome
+        - dispatched
+        - gates
+      properties:
+        evaluation_id:
+          type: string
+          description: A unique ID for the check.
+          examples:
+            - d7b5c0f2-6a1e-4c8b-9f3d-2b7e1a0c5d44
+        phase:
+          type: string
+          enum:
+            - text
+            - oart
+            - post
+          description: |-
+            Where the check ran: `text` for a standard agent, `oart` for a realtime (speech-to-speech)
+            agent, or `post` for the post-prompt agent after the call.
+          examples:
+            - text
+        attempts:
+          type: integer
+          description: How many attempts the check made. Present once the check was sent.
+          examples:
+            - 1
+        latency_ms:
+          type: integer
+          description: How long the check took, in milliseconds.
+          examples:
+            - 212
+        outcome:
+          type: string
+          enum:
+            - pass
+            - disabled
+            - fail
+            - timeout
+            - provider_error
+            - invalid_response
+            - invalid_arguments
+            - config_error
+            - aborted
+          description: |-
+            How the check ended:
+
+            - `pass`: every gate passed, and the function ran.
+            - `disabled`: gates are turned off for the call (`semantic_gates_enabled: false`), and the
+              function ran.
+            - `fail`: a gate answered under its threshold or had no video frame to look at.
+            - `timeout`: the check ran out of time (`semantic_gate_timeout_ms`).
+            - `provider_error`: the decision model refused or failed.
+            - `invalid_response`: the decision model's answer could not be used.
+            - `invalid_arguments`: the agent's arguments for the function were missing or not a valid JSON
+              object.
+            - `config_error`: the check could not be set up, for example a request too large to send.
+            - `aborted`: the call ended during the check.
+
+            The function runs only on `pass` and `disabled`.
+          examples:
+            - fail
+        dispatched:
+          type: boolean
+          description: Whether the function ran.
+          examples:
+            - false
+        error:
+          type: string
+          description: A short description of the error. Present when `outcome` is an error.
+          examples:
+            - the call went away
+        frames:
+          type: integer
+          description: |-
+            How many of the caller's video frames the check took. Present when a gate has `visual_input` and
+            the check got as far as taking frames.
+          examples:
+            - 1
+        conversation_dropped:
+          type: integer
+          description: |-
+            How many of the oldest conversation entries were left out so the check would fit. Present only
+            when any were.
+          examples:
+            - 4
+        gates:
+          type: array
+          items:
+            $ref: '#/components/schemas/Webhooks.AI.AISemanticGateResult'
+          description: Each gate's result, in the order the gates are listed.
+          examples:
+            - - id: explicit_request
+                threshold: 0.95
+                confidence: 0.98
+                pass: true
+              - id: understands_terms
+                threshold: 0.9
+                confidence: 0.41
+                pass: false
+      unevaluatedProperties:
+        not: {}
+      description: |-
+        The record of one semantic gate check. Some fields appear only when the check got far enough to
+        have them.
+    Webhooks.AI.AISemanticGateResult:
+      type: object
+      required:
+        - id
+        - threshold
+      properties:
+        id:
+          type: string
+          description: The gate's `id`, or `gate_1`, `gate_2`, and so on when it has none.
+          examples:
+            - explicit_request
+        threshold:
+          type: number
+          description: The gate's `threshold`.
+          examples:
+            - 0.95
+        confidence:
+          type: number
+          description: |-
+            The probability that the answer is yes. Present once the decision model answered for the gate;
+            a gate that failed for lack of a video frame has `reason` instead.
+          examples:
+            - 0.98
+        pass:
+          type: boolean
+          description: Whether the gate passed. Present once the gate was decided.
+          examples:
+            - true
+        reason:
+          type: string
+          description: '`no_frame` when the gate failed because the call had no video frame to show it.'
+          examples:
+            - no_frame
+      unevaluatedProperties:
+        not: {}
+      description: One gate's result within a semantic gate check, in the order the gates are listed.
+    Webhooks.AI.AISemanticGateTally:
+      type: object
+      required:
+        - evaluations
+        - pass
+        - fail
+        - error
+        - disabled
+        - latency_ms_total
+        - latency_ms_max
+      properties:
+        evaluations:
+          type: integer
+          description: How many checks were recorded, including `disabled` ones.
+          examples:
+            - 3
+        pass:
+          type: integer
+          description: How many checks passed.
+          examples:
+            - 1
+        fail:
+          type: integer
+          description: How many checks failed because a gate answered no or had no video frame.
+          examples:
+            - 1
+        error:
+          type: integer
+          description: How many checks ended in an error, such as a timeout.
+          examples:
+            - 0
+        disabled:
+          type: integer
+          description: How many checks were skipped because gates are turned off for the call.
+          examples:
+            - 1
+        latency_ms_total:
+          type: integer
+          description: The total time spent on checks, in milliseconds.
+          examples:
+            - 540
+        latency_ms_max:
+          type: integer
+          description: The longest single check, in milliseconds.
+          examples:
+            - 310
+      unevaluatedProperties:
+        not: {}
+      description: The semantic gate checks across the whole call.
     Webhooks.AI.AISidecarCallbackPayload:
       type: object
       required:
@@ -57233,9 +58132,67 @@ components:
           description: Always `true` when present, meaning the MCP call failed.
           examples:
             - true
+        semantic_gates:
+          allOf:
+            - $ref: '#/components/schemas/Webhooks.AI.AISemanticGateRecord'
+          description: |-
+            The result of checking the function's
+            [semantic gates](/docs/swml/reference/calling/ai/swaig/functions/gates). Present only on a call
+            to a gated function. When the function was blocked, `post_response` holds what the agent got
+            instead of a reply from your server: the failing gate's `on_fail` output, or the temporary-problem
+            message when the check ended in an error. An `on_fail` with `post_process: true` and actions is
+            in `delayed_post_response` instead.
+        visual_input_frames:
+          type: integer
+          description: |-
+            How many of the caller's video frames were sent to your server with the call. Present only when
+            a function with its own `visual_input` called your server. The frames themselves are never in
+            the log.
+          examples:
+            - 1
       unevaluatedProperties:
         not: {}
       description: One tool call the agent made, in the order it was made.
+    Webhooks.AI.AIVisualInputFrame:
+      type: object
+      required:
+        - mime
+        - width
+        - height
+        - captured_at
+        - data
+      properties:
+        mime:
+          type: string
+          description: The frame's media type.
+          examples:
+            - image/jpeg
+        width:
+          type: integer
+          description: The frame's width, in pixels.
+          examples:
+            - 640
+        height:
+          type: integer
+          description: The frame's height, in pixels.
+          examples:
+            - 360
+        captured_at:
+          type: integer
+          format: int64
+          description: When the frame was captured, as a Unix timestamp in microseconds.
+          examples:
+            - 1694541297950440
+        data:
+          type: string
+          description: The image, base64-encoded.
+          examples:
+            - /9j/4AAQSkZJRgABAQAAAQABAAD...
+      unevaluatedProperties:
+        not: {}
+      description: |-
+        One video frame from the caller, as a JPEG at most 640 pixels on its longer side. Frames are taken
+        at most one per second, and none is older than 8 seconds.
     Webhooks.AI.AiDebugWebhookPayload:
       type: object
       required:
@@ -58429,7 +59386,7 @@ components:
             - voice
         call_id:
           type: string
-          description: The ID of the call. On a chat conversation this carries the conversation id instead.
+          description: The ID of the call. On a chat conversation this is a separate ID, not your conversation ID; use `conversation_id` to match the summary to the conversation.
           examples:
             - 2e1e66e5-5d07-413d-9668-55542992eec0
         app_name:
@@ -58589,6 +59546,21 @@ components:
           items:
             $ref: '#/components/schemas/Webhooks.AI.AISwaigLogEntry'
           description: Every tool call the agent made, in order. Included when `action` is `post_conversation`.
+        semantic_gates_blocked:
+          type: array
+          items:
+            $ref: '#/components/schemas/Webhooks.AI.AISemanticGateBlockedCall'
+          description: |-
+            The functions the post-prompt agent called that a
+            [semantic gate](/docs/swml/reference/calling/ai/swaig/functions/gates) blocked. Included only
+            when there were any.
+        semantic_gates:
+          allOf:
+            - $ref: '#/components/schemas/Webhooks.AI.AISemanticGateTally'
+          description: |-
+            A tally of the call's [semantic gate](/docs/swml/reference/calling/ai/swaig/functions/gates)
+            checks. Included when any gated function was called, even with gates turned off, whether or not
+            accounting is on.
         total_minutes:
           type: integer
           description: |-
@@ -58857,6 +59829,23 @@ components:
           items:
             $ref: '#/components/schemas/Webhooks.AI.AICallLogEntry'
           description: The full, unredacted conversation so far. Included when you enable `swaig_post_conversation`.
+        visual_input:
+          type: array
+          items:
+            $ref: '#/components/schemas/Webhooks.AI.AIVisualInputFrame'
+          description: |-
+            The caller's newest video frames, oldest first, up to the function's
+            [`visual_input`](/docs/swml/reference/calling/ai/swaig/functions#functionsvisual_input) count.
+            Included only for a function that sets `visual_input`; an empty array when the call has no video,
+            and for functions called after the call ends. On a gated function, the frames are taken when its
+            gates are checked, never later.
+        visual_input_evaluation_id:
+          type: string
+          description: |-
+            The `evaluation_id` of the semantic gate check that judged the frames in `visual_input`. Included
+            when one of the function's gates looked at them.
+          examples:
+            - d7b5c0f2-6a1e-4c8b-9f3d-2b7e1a0c5d44
       unevaluatedProperties:
         not: {}
     Webhooks.AI.BedrockPostPromptCallbackPayload:
