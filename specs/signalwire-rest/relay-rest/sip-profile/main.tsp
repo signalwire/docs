@@ -36,7 +36,7 @@ namespace SignalWireAPI.RelayRest.SipProfile {
     @put
     update(@body body: UpdateSipProfileRequest):
       | {
-          @statusCode statusCode: 201;
+          @statusCode statusCode: 200;
           @body sip_profile: SipProfileResponse;
         }
       | StatusCode401

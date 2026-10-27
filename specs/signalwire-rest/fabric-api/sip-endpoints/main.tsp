@@ -59,7 +59,7 @@ namespace SignalWireAPI.Fabric.SipEndpoints {
     @post
     create(@body request: SipEndpointCreateRequest):
       | {
-          @statusCode statusCode: 200;
+          @statusCode statusCode: 201;
           @body sip_endpoint: SipEndpointResponse;
         }
       | StatusCode401

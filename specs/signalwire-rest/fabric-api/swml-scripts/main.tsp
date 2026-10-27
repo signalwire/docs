@@ -23,7 +23,7 @@ const CreateCallingSwmlScriptExample = #{
     }
   },
   returnType: #{
-    statusCode: 200,
+    statusCode: 201,
     swml_script: CALLING_SWML_SCRIPT_RESPONSE_EXAMPLE,
   },
 };
@@ -37,7 +37,7 @@ const CreateMessagingSwmlScriptExample = #{
     }
   },
   returnType: #{
-    statusCode: 200,
+    statusCode: 201,
     swml_script: MESSAGING_SWML_SCRIPT_RESPONSE_EXAMPLE,
   },
 };
@@ -133,7 +133,7 @@ namespace SignalWireAPI.Fabric.SwmlScripts {
     @post
     create(@body request: SwmlScriptCreateRequest):
       | {
-          @statusCode statusCode: 200;
+          @statusCode statusCode: 201;
           @body swml_script: SwmlScriptResponse;
         }
       | StatusCode401

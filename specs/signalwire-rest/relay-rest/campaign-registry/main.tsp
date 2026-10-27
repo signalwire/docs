@@ -220,7 +220,7 @@ namespace SignalWireAPI.RelayRest.RegistryBeta {
     @post
     createOrder(...CampaignPathID, @body body: CreateOrderRequest):
       | {
-          @statusCode statusCode: 200;
+          @statusCode statusCode: 201;
           @body order: OrderResponse;
         }
       | StatusCode401

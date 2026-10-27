@@ -24,7 +24,10 @@ namespace SignalWireAPI.RelayRest.Mfa {
     @route("/sms")
     @post
     sendSms(@body body: MfaRequest):
-      | MfaResponse
+      | {
+          @statusCode statusCode: 201;
+          @body mfa_request: MfaResponse;
+        }
       | StatusCode401
       | ValidationError
       | StatusCode500;
@@ -39,7 +42,10 @@ namespace SignalWireAPI.RelayRest.Mfa {
     @route("/call")
     @post
     sendCall(@body body: MfaRequest):
-      | MfaResponse
+      | {
+          @statusCode statusCode: 201;
+          @body mfa_request: MfaResponse;
+        }
       | StatusCode401
       | ValidationError
       | StatusCode500;
