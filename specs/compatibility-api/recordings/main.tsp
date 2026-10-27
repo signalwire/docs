@@ -75,9 +75,9 @@ namespace CompatibilityAPI.Recordings {
     @operationId("retrieve_recording")
     @summary("Retrieve a Recording")
     @doc("""
-      Retrieves one voice recording as audio or metadata, depending on the requested extension. Use this account-level route for saved call or conference media; Video Room recordings are separate resources.
+      Retrieves one voice recording's metadata, such as duration, cost, and status. Request the recording URI with a `.json` extension to get it. Use this account-level route for saved call or conference media; Video Room recordings are separate resources.
       
-      This endpoint supports two different access methods with different authentication requirements:
+      The same URI without the `.json` extension returns the recording audio instead of metadata, as described below.
       
       ## Public Access (No Authentication Required)
       
@@ -85,10 +85,14 @@ namespace CompatibilityAPI.Recordings {
       to embed recording URLs without exposing SignalWire API credentials. SignalWire recording URLs are long
       and random, making them difficult to guess or exploit unless you reveal the URL.
       
+      The audio URLs respond with a `302` redirect to the audio file, so your client must follow redirects. When the
+      recording has no audio to return, for example because its `status` isn't `completed`, they respond with `404`
+      and an empty body.
+      
       **Retrieve WAV file**
       
       When a recording URI has no extension or a `.wav` extension, the request
-      will return a binary WAV version of the recording file.
+      redirects to a WAV version of the recording file.
       
       `GET https://example.signalwire.com/api/laml/2010-04-01/Accounts/{AccountSid}/Recordings/{Sid}`
       
@@ -96,7 +100,7 @@ namespace CompatibilityAPI.Recordings {
       
       **Retrieve MP3 file**
       
-      Setting an extension of ".mp3" on the URI returns a binary MP3 version
+      Setting an extension of ".mp3" on the URI redirects to an MP3 version
       of the recording. For example:
       
       `GET https://example.signalwire.com/api/laml/2010-04-01/Accounts/{AccountSid}/Recordings/{Sid}.mp3`
@@ -105,9 +109,9 @@ namespace CompatibilityAPI.Recordings {
       
       **Retrieve Metadata**
       
-      A recording's metadata, such as duration, cost, time, can be returned by
-      setting the Recording URI's extension to `.json`. This requires authentication
-      with a Voice-scoped API token.
+      A recording's metadata, such as duration, cost, time, is returned only when the
+      Recording URI's extension is `.json`. Sending `Accept: application/json` to the URI without an extension
+      doesn't return metadata. This requires authentication with a Voice-scoped API token.
       
       `GET https://example.signalwire.com/api/laml/2010-04-01/Accounts/{AccountSid}/Recordings/{Sid}.json`
       
@@ -119,7 +123,7 @@ namespace CompatibilityAPI.Recordings {
       
       [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
       """)
-    @route("/{Sid}")
+    @route("/{Sid}.json")
     read(...RecordingsAccountSidPath, ...RecordingSidPath):
       | RecordingResponse
       | CompatibilityStatusCode400

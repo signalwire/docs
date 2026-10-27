@@ -7,7 +7,11 @@ model CreateTokenRequest {
   @minLength(1)
   name: string;
 
-  @doc("The permissions you would like to enable for this project API token. Valid permissions are: calling, chat, datasphere, fax, management, messaging, numbers, pubsub, storage, tasking, and video.")
+  @doc("""
+    The permissions you would like to enable for this project API token. Valid permissions are: calling, chat, datasphere, fax, management, messaging, numbers, pubsub, storage, tasking, and video.
+
+    In the form-encoded body, send each permission as a `permissions[]` key, for example `permissions[]=calling&permissions[]=messaging`. A `permissions` key without the brackets is rejected with `Permissions is not an array of strings`, even when you repeat it for each value.
+    """)
   @example(#["calling", "fax", "messaging"])
   @minItems(1)
   permissions: string[];

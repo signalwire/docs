@@ -78,6 +78,14 @@ model IncomingPhoneNumber {
   @example(false)
   beta: boolean;
 
+  @doc("""
+    How incoming calls to this number are handled. `laml_webhooks` sends calls to `voice_url`, and `laml_application` sends them to the application in `voice_application_sid`. Any other value means the number's call handler was set outside the Compatibility API.
+
+    This field is read-only in the Compatibility API. Setting `VoiceUrl` or `VoiceApplicationSid` switches the number to `laml_webhooks` or `laml_application`; to choose any other handler, use [Update phone number](/docs/apis/rest/phone-numbers/update-phone-number).
+    """)
+  @example("laml_webhooks")
+  call_handler: string;
+
   @doc("Whether or not a number can receive calls and messages.")
   capabilities: IncomingPhoneNumberCapabilities;
 
@@ -111,6 +119,10 @@ model IncomingPhoneNumber {
 
   @doc("The origin of the phone number.")
   origin: PhoneNumberOrigin;
+
+  @doc("Whether the number is part of a port-in that hasn't completed. A number pending port-in can't be assigned to a 10DLC campaign.")
+  @example(false)
+  pending_port_in: boolean;
 
   @doc("The incoming number in E.164 format.")
   @example("+13103386745")

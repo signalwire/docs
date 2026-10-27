@@ -38,7 +38,8 @@ enum CallStatus {
 @doc("Call direction.")
 enum CallDirection {
   Inbound: "inbound",
-  Outbound: "outbound",
+  OutboundApi: "outbound-api",
+  OutboundDial: "outbound-dial",
 }
 
 @doc("Who/what answered the call.")
@@ -145,7 +146,13 @@ model Call {
   @example("USD")
   price_unit: string;
 
-  @doc("The direction of the call.")
+  @doc("""
+    The direction of the call.
+    - `inbound`: inbound calls.
+    - `outbound-api`: calls launched through the REST API.
+    - `outbound-dial`: calls launched through the Dial verb.
+    """)
+  @example(CallDirection.OutboundApi)
   direction: CallDirection;
 
   @doc("Who/what the call was answered by.")
@@ -178,9 +185,9 @@ model Call {
   @example(null)
   group_sid: string | null;
 
-  @doc("The Mean Opinion Score for audio quality (1.0-5.0).")
-  @example(4.5)
-  audio_in_mos: float32 | null;
+  @doc("The Mean Opinion Score (MOS) for inbound audio quality, on a scale of 1 to 5. Returned as a decimal string. Null if the call has no quality measurement.")
+  @example("4.5")
+  audio_in_mos: string | null;
 
   @doc("The SIP result code for the call.")
   @example("200")
@@ -188,31 +195,75 @@ model Call {
 
   @doc("The average round-trip time for audio in milliseconds.")
   @example(50)
-  audio_rtt_avg: int32 | null;
+  audio_rtt_avg: float64 | null;
 
   @doc("The minimum round-trip time for audio in milliseconds.")
   @example(20)
-  audio_rtt_min: int32 | null;
+  audio_rtt_min: float64 | null;
 
   @doc("The maximum round-trip time for audio in milliseconds.")
   @example(100)
-  audio_rtt_max: int32 | null;
+  audio_rtt_max: float64 | null;
+
+  @doc("The minimum inbound audio jitter in milliseconds.")
+  @example(0.25)
+  audio_in_jitter_min: float64 | null;
+
+  @doc("The maximum inbound audio jitter in milliseconds.")
+  @example(8.5)
+  audio_in_jitter_max: float64 | null;
 
   @doc("The minimum outbound audio jitter in milliseconds.")
   @example(1)
-  audio_out_jitter_min: int32 | null;
+  audio_out_jitter_min: float64 | null;
 
   @doc("The maximum outbound audio jitter in milliseconds.")
   @example(10)
-  audio_out_jitter_max: int32 | null;
+  audio_out_jitter_max: float64 | null;
 
   @doc("The average outbound audio jitter in milliseconds.")
   @example(5)
-  audio_out_jitter_avg: int32 | null;
+  audio_out_jitter_avg: float64 | null;
+
+  @doc("The number of audio packets received in the inbound media stream.")
+  @example(1842)
+  audio_in_media_packet_count: int32 | null;
+
+  @doc("The total number of packets sent in the outbound media stream.")
+  @example(1840)
+  audio_out_packet_count: int32 | null;
+
+  @doc("The number of audio packets sent in the outbound media stream.")
+  @example(1840)
+  audio_out_media_packet_count: int32 | null;
 
   @doc("The number of outbound audio packets lost.")
   @example(0)
   audio_out_lost: int32 | null;
+
+  @doc("The mean interval between inbound audio packets in milliseconds.")
+  @example(20)
+  audio_in_mean_interval: float64 | null;
+
+  @doc("The number of DTMF packets in the inbound media stream.")
+  @example(0)
+  audio_in_dtmf_packet_count: int32 | null;
+
+  @doc("The number of DTMF packets in the outbound media stream.")
+  @example(0)
+  audio_out_dtmf_packet_count: int32 | null;
+
+  @doc("The number of inbound packets not received at the expected interval. Increases with every packet lost from the inbound stream.")
+  @example(1)
+  audio_in_skip_packet_count: int32 | null;
+
+  @doc("The number of inbound packets removed from the jitter buffer because of buffer overflow or underflow.")
+  @example(2)
+  audio_in_flush_packet_count: int32 | null;
+
+  @doc("The largest jitter buffer size recorded for inbound audio during the call.")
+  @example(4)
+  audio_in_largest_jb_size: int32 | null;
 }
 
 @doc("Call recording model.")
@@ -265,9 +316,9 @@ model CallRecording {
   @example(4)
   duration: int32;
 
-  @doc("The cost for the recording.")
-  @example("-0.0025")
-  price: string | null;
+  @doc("The cost of the recording.")
+  @example(0.0025)
+  price: float64;
 
   @doc("The currency of the price of the recording.")
   @example("USD")
@@ -294,9 +345,9 @@ model CallRecording {
   @example(null)
   encryption_details: string | null;
 
-  @doc("Whether leading and trailing silence is trimmed from a recording.")
+  @doc("Whether leading and trailing silence is trimmed from a recording: `trim-silence` or `do-not-trim`. Can be null.")
   @example("do-not-trim")
-  trim: string;
+  trim: string | null;
 }
 
 @doc("Call stream model.")
