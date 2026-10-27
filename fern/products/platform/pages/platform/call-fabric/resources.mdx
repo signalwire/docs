@@ -9,6 +9,7 @@ max-toc-depth: 3
 [aliases]: /docs/platform/addresses#aliases
 [contexts]: /docs/platform/addresses#contexts
 [manage-addresses]: /docs/platform/addresses#create-and-manage-addresses
+[space]: /docs/platform/glossary#space
 [ai]: /docs/platform/ai
 [cfb]: /docs/call-flow-builder
 [relay-client]: /docs/server-sdks/guides/relay-client
@@ -17,19 +18,21 @@ max-toc-depth: 3
 [sip-gateways]: /docs/platform/voice/sip#sip-gateways
 [subscribers]: /docs/platform/subscribers
 [video]: /docs/platform/video
+[freeswitch-connectors]: /docs/apis/rest/freeswitch-connector/list-freeswitch-connectors
 [rest-list-resources]: /docs/apis/rest/resources/list-resources
 [rest-get-resource]: /docs/apis/rest/resources/get-resource
 [rest-delete-resource]: /docs/apis/rest/resources/delete-resource
 [rest-list-addresses]: /docs/apis/rest/addresses/list-resource-addresses
 [rest-create-swml-script]: /docs/apis/rest/swml-scripts/create-swml-script
 
-A Resource is the part of your SignalWire Space that handles a call or message. An AI Agent that
-holds a conversation is a Resource. So is a SWML Script that runs call logic, a Subscriber whose
-devices ring, and a Video Room that several people join.
+A Resource is the part of your SignalWire [Space][space] that handles a call or message. An
+[AI Agent][ai] that holds a conversation is a Resource. So is a [SWML Script][swml] that runs call
+logic, a [Subscriber][subscribers] whose devices ring, and a [Video Room][video] that several
+people join.
 
-Nobody dials a Resource directly. People and code reach it through an [Address][addresses]: a
-phone number, a SIP URI, or a name such as `/public/support`. The Resource decides what happens,
-and the Address decides how someone gets there.
+People and code reach a Resource through an [Address][addresses]: a phone number, a SIP URI, or a
+name such as `/public/support`. The Resource decides what happens, and the Address decides how
+someone gets there.
 
 Keeping the two apart lets you change either side without touching the other. You can point a
 phone number at a new Resource and callers keep dialing the same number, or give one Resource a
@@ -54,8 +57,9 @@ flowchart LR
 
 Every inbound call or message follows the same path:
 
-1. Someone dials an Address. A caller on the phone network dials a phone number, a PBX or carrier
-   sends a SIP call to a SIP Address, and a browser, script, or another Resource dials an alias.
+1. Someone dials an Address. A caller on the phone network dials a phone number, a private branch
+   exchange (PBX) or carrier sends a SIP call to a SIP Address, and a browser, script, or another
+   Resource dials an alias.
 2. SignalWire looks up the Address and finds its **handler**, the one Resource assigned to it. A
    phone number gives you two Addresses, one for calls and one for messages, so each can go to a
    different Resource.
@@ -67,7 +71,8 @@ Consider Bayview Taxi. Its dispatcher, Ada, is an AI Agent Resource. Riders reac
 the company's phone number or by pressing a call button on its website, which dials the alias
 `/public/dispatch`. Both Addresses have Ada as their handler, so every rider gets the same
 conversation however they got there. When Bayview builds a new version of Ada, it assigns the phone
-number to the new Resource, and riders never notice the change.
+number to the new Resource and re-creates `/public/dispatch` on it, so riders never notice the
+change.
 
 ## What each part controls
 
@@ -91,10 +96,10 @@ Every Resource has a type, and the type decides what the Resource does with a ca
 | [Video Room][video] | Gives participants a shared room to join by video, audio, or both | Several people should meet in one place |
 | [SIP Credential][sip-credentials] | Gives your SIP phones and softphones a username and password to register with and place calls from | You have SIP devices that should connect to your Space |
 | [SIP Gateway][sip-gateways] | Connects your Space to an external SIP network | Calls should reach SIP infrastructure outside SignalWire |
-| FreeSWITCH Connector | Sends traffic from SignalWire to your own FreeSWITCH infrastructure | You run FreeSWITCH and want SignalWire to send calls to it |
+| [FreeSWITCH Connector][freeswitch-connectors] | Sends traffic from SignalWire to your own FreeSWITCH infrastructure | You run FreeSWITCH and want SignalWire to send calls to it |
 
 Most types can take calls. Messages go only to Resources that run messaging logic: SWML Scripts
-and Relay Applications.
+created for messaging, and Relay Applications.
 
 ## Resources and Addresses
 
@@ -107,11 +112,12 @@ name is a URL-safe form of the Resource name, so an AI Agent named `Support Agen
 short random suffix. Renaming the Resource later keeps the alias it already has.
 
 To take calls from the phone network or from SIP systems outside SignalWire, give the Resource a
-phone number or a SIP Address. Both can move to a different Resource later, so the number or SIP
-URI that callers use stays the same when you change the logic behind it. The
-[Addresses page][addresses] covers each Address type and how contexts decide who can dial them.
+phone number or a SIP Address. The [Addresses page][addresses] covers each Address type and how
+contexts decide who can dial them.
 
 ## Create and manage Resources
+
+<llms-ignore>
 
 In the [SignalWire Dashboard](https://my.signalwire.com/resources), select **My Resources** in the
 left sidebar to list every Resource in your project, then select <kbd>+ Add</kbd> to create one.
@@ -120,17 +126,18 @@ Dialogflow agent, and **SIP** asks you to choose **SIP Credential** or **SIP Gat
 Resource to find its settings on the **Configuration** tab and its Addresses on the
 **Addresses & Phone Numbers** tab, where you can also [add more][manage-addresses].
 
+</llms-ignore>
+
 With the REST API, create or update a Resource through the endpoints for its type, such as
 [Create SWML Script][rest-create-swml-script]. The generic Resources endpoints work with every
-type: [list Resources][rest-list-resources], with an optional `type` filter such as `swml_script`
-or `subscriber`; [retrieve][rest-get-resource] or [delete][rest-delete-resource] one by ID; and
-[list a Resource's Addresses][rest-list-addresses].
+type: [list Resources][rest-list-resources], [retrieve][rest-get-resource] or
+[delete][rest-delete-resource] one by ID, and [list a Resource's Addresses][rest-list-addresses].
 
 Deleting a Resource also deletes its aliases. A Resource that is still assigned as a handler can't
-be deleted: the call or message handler of a phone number or WhatsApp number, the handler of a SIP
-Address, or the Resource a SIP Credential sends its calls to. The Dashboard reports that a resource
-currently assigned as a call or message handler can't be deleted. Assign those Addresses to
-another Resource first, then delete it.
+be deleted. That covers the call or message handler of a phone number or
+[WhatsApp number](/docs/platform/addresses#whatsapp-numbers), the
+handler of a SIP Address, and the Resource a SIP Credential sends its calls to. Reassign those
+numbers and SIP Addresses, or point the SIP Credential at another Resource, then delete it.
 
 ## Next steps
 

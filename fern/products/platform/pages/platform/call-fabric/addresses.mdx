@@ -6,6 +6,7 @@ max-toc-depth: 3
 ---
 
 [resources]: /docs/platform/resources
+[call-path]: /docs/platform/resources#how-a-call-reaches-a-resource
 [subscribers]: /docs/platform/subscribers
 [phone-numbers]: /docs/platform/phone-numbers
 [inbound-calling]: /docs/platform/voice/make-and-receive-calls
@@ -13,8 +14,9 @@ max-toc-depth: 3
 [sip-gateways]: /docs/platform/voice/sip#sip-gateways
 [byoc]: /docs/platform/voice/sip/bring-your-own-carrier
 [swml-connect]: /docs/swml/reference/calling/connect
+[browser-sdk]: /docs/browser-sdk
 [browser-address-book]: /docs/browser-sdk/v4/guides/address-book
-[rest-update-number]: /docs/apis/rest/phone-numbers/update-phone-number
+[rest-calls]: /docs/apis/rest/calls/call-commands
 [rest-phone-route]: /docs/apis/rest/phone-routes/assign-resource-phone-route
 [rest-whatsapp-route]: /docs/apis/rest/whatsapp-routes/assign-resource-whatsapp-number
 [rest-list-number-addresses]: /docs/apis/rest/phone-number-addresses/list-phone-number-addresses
@@ -35,16 +37,17 @@ max-toc-depth: 3
 [whatsapp-onboarding]: /docs/platform/messaging/whatsapp/onboarding
 
 An Address is how people and code reach a [Resource][resources] on SignalWire. A caller dials a
-phone number, a PBX sends a call to a SIP URI, or a browser dials a name such as
-`/public/support`, and SignalWire hands the call to the Resource assigned to that Address. That
-Resource is the Address's **handler**.
+phone number, a private branch exchange (PBX) sends a call to a SIP URI, or a browser dials a name
+such as `/public/support`, and SignalWire hands the call to the Resource assigned to that Address.
+That Resource is the Address's **handler**.
 
-Your own code uses the same Addresses to name a destination: the `to` of a REST dial, the
-destination of [`connect`][swml-connect] in SWML, or the argument to `dial()` in the Browser SDK.
+Your own code uses the same Addresses to name a destination: the `to` of a call you create with
+the [REST API][rest-calls], the destination of [`connect`][swml-connect] in SWML, or the argument
+to `dial()` in the [Browser SDK][browser-sdk].
 
-An Address and its Resource are separate objects. A Resource can carry any number of Addresses, and
-every Address hands its calls to one Resource. Because callers only ever see the Address, you can
-put a different Resource behind a phone number or SIP URI without changing anything on their side.
+Every Address has exactly one handler, and callers only ever see the Address.
+[How a call reaches a Resource][call-path] walks through the full path from the dialed Address to
+the Resource that answers.
 
 ```mermaid
 flowchart LR
@@ -62,18 +65,18 @@ flowchart LR
 |---|---|---|
 | [Phone number](#phone-numbers) | `+12025550123` | Anyone on the phone network |
 | [SIP Address](#sip-addresses) | `sip:*@bayview-public.dapp.signalwire.com` | SIP devices, PBXs, and carriers outside SignalWire |
-| [Alias](#aliases) | `/public/dispatch`, `/private/ada` | Browser SDK clients, your scripts, REST dials, and other Resources |
+| [Alias](#aliases) | `/public/dispatch`, `/private/ada` | Browser SDK clients, your scripts, REST API calls, and other Resources |
 | [WhatsApp number](#whatsapp-numbers) | A WhatsApp business number connected to your Space | WhatsApp users |
 
 ### Phone numbers
 
 A [phone number you've bought or ported][phone-numbers] gives you two Addresses, assigned
 independently: a calling Address whose handler takes inbound calls, and a messaging Address whose
-handler takes inbound messages. A number rings nobody until you assign a calling handler.
+handler takes inbound messages. Assign a calling handler to start taking calls on the number.
 
 Any Resource that can take a call can be a calling handler, such as an AI Agent, a SWML Script, a
 Call Flow, a Relay Application, a Subscriber, or a SIP Credential. A messaging handler is a
-Resource that runs messaging logic, such as a SWML Script or a Relay Application.
+Resource that runs messaging logic: a SWML Script created for messaging, or a Relay Application.
 
 ### SIP Addresses
 
@@ -87,17 +90,18 @@ sip:<user>@<YOUR_SPACE>-<domain>.dapp.signalwire.com
 
 The user defaults to `*`, which accepts any username, so `sip:anything@bayview-public.dapp.signalwire.com`
 reaches the same Resource. The domain is one of your project's [contexts](#contexts), `public` by
-default. Each user and domain pair is unique across your SignalWire account.
+default. Each user and domain pair is unique across your Space.
 
-A SIP Address also carries its own call settings:
+A SIP Address also carries its own settings:
 
-- **Password**, which callers supply to authenticate their calls. It's optional.
-- **IP Whitelisting**, which accepts calls only from the IP addresses or CIDR ranges you list.
-  Turning it on requires at least one entry, and the list holds up to 256.
-- **Encryption**, set to required, optional, or forbidden. The default is optional.
-- **Supported Codecs** and **Supported Ciphers**, which limit what calls to the address can
-  negotiate. Codecs default to `PCMU` and `PCMA`, ciphers default to every supported cipher, and
-  each list needs at least one entry.
+| Setting | Behavior |
+|---|---|
+| Name | Required. Up to 50 lowercase letters, numbers, and hyphens, unique within the project |
+| Password | Optional. Callers supply it to authenticate their calls |
+| IP allowlist | Labeled **IP Whitelisting** in the Dashboard. Accepts calls only from the IP addresses or Classless Inter-Domain Routing (CIDR) ranges you list. Turning it on requires at least one entry, and the list holds up to 256 |
+| Encryption | Required, optional, or forbidden. The default is optional |
+| Supported Codecs | Limits the codecs calls to the address can negotiate. Defaults to `PCMU` and `PCMA`, and needs at least one entry |
+| Supported Ciphers | Limits the ciphers calls to the address can negotiate. Defaults to every supported cipher, and needs at least one entry |
 
 A SIP Address carries calls only. It routes inbound SIP to its Resource, which makes it different
 from a [SIP Credential][sip-credentials], a Resource your own SIP devices register to and place
@@ -116,25 +120,23 @@ The context of that first alias depends on the Resource type:
 
 | First alias context | Resource types |
 |---|---|
-| `private` | AI Agents, SWML Scripts stored in your Space, Call Flows, Relay Applications, Subscribers |
-| `public` | SWML Scripts served from your own URL, Video Rooms, SIP Credentials, SIP Gateways, FreeSWITCH Connectors |
+| `private` | Custom AI Agents, SWML Scripts stored in your Space, Call Flows, Relay Applications, Subscribers |
+| `public` | Dialogflow agents, SWML Scripts served from your own URL, Video Rooms, SIP Credentials, SIP Gateways, FreeSWITCH Connectors |
 
-A new AI Agent is therefore unreachable from a public call button on your website until you add a
-`public` alias for it.
+To put a new custom AI Agent behind a public call button on your website, add a `public` alias for
+it.
 
 Add more aliases to expose the same Resource under other names or to shape how it's reached. Each
 alias has these properties:
 
-- **Name** is the URL-safe part of the Address. **Display Name** is the label client applications
-  show, and it defaults to the name.
-- **Context** is where the alias lives, such as `public` or `private`. See [Contexts](#contexts).
-- **Channels** limit an alias to `audio`, `video`, `messaging`, or any combination. A
-  messaging-only public alias gives a chat entry point to an agent that also takes voice calls
-  through a private one.
-- **Codecs** restrict the audio and video codecs offered on calls to the alias. Leave them empty to
-  use the platform defaults.
-- **Display As** controls how the alias appears to client applications that browse the directory:
-  as an app, a room, a call, or a subscriber. The REST API returns it as `display_type`.
+| Property | Behavior |
+|---|---|
+| Name | The URL-safe part of the Address |
+| Display Name | The label client applications show. Defaults to the name |
+| Context | Where the alias lives, such as `public` or `private`. See [Contexts](#contexts) |
+| Channels | Limit the alias to `audio`, `video`, `messaging`, or any combination. A messaging-only public alias gives a chat entry point to an agent that also takes voice calls through a private one |
+| Codecs | Restrict the audio and video codecs offered on calls to the alias. Leave them empty to use the platform defaults |
+| Display As | How the alias appears to client applications that browse the directory: as an app, a room, a call, or a subscriber. The REST API returns it as `display_type` |
 
 You can rename an alias, move it to another context, or change its channels and codecs at any
 time. Its Resource stays fixed. To put a different Resource behind a name, delete the alias and
@@ -152,10 +154,10 @@ covers connecting the number to your Space.
 Every alias lives in a context, and the context's access type decides who can reach it. Every
 project has two built-in contexts, `public` and `private`, which can't be changed:
 
-- **`public`** Addresses are reachable by anyone, including unauthenticated callers. Use them for
-  entry points such as a support agent behind a call button on your website.
-- **`private`** Addresses are reachable only by authenticated users, which makes them the home of
-  [Subscribers][subscribers] and anything only your own users should dial.
+| Context | Who can reach its Addresses | Use it for |
+|---|---|---|
+| `public` | Anyone, including unauthenticated callers | Entry points such as a support agent behind a call button on your website |
+| `private` | Only authenticated users | [Subscribers][subscribers] and anything only your own users should dial |
 
 You can add your own contexts from **Addresses** > **Contexts** in the Dashboard. A new context
 takes a **Domain**, made of letters, numbers, and dashes, and inherits its access type from either
@@ -165,19 +167,17 @@ context. Deleting a context deletes every Address in it.
 Phone numbers don't belong to a context you choose. The **Addresses** page lists them in the
 `External` context.
 
-When you dial an alias from a REST call, SWML [`connect`][swml-connect], or a client, write the
+When you dial an alias from a REST API call, SWML [`connect`][swml-connect], or a client, write the
 full `/<context>/<name>`.
 
 ## How SignalWire resolves an Address
 
-When a call or message arrives, SignalWire works through these steps:
+SignalWire hands each call or message to the handler of the Address it was sent to, following the
+[path from Address to Resource][call-path]. Two rules depend on the Address type:
 
-1. It looks up the Address the call or message was sent to.
-2. It finds that Address's handler. For a phone number, a call goes to the handler of its calling
-   Address and a message to the handler of its messaging Address. A client dialing an alias can
-   use only the channels the alias allows.
-3. It hands the call or message to the handler, and the Resource's type decides what happens
-   next.
+- For a phone number, a call goes to the handler of its calling Address and a message to the
+  handler of its messaging Address.
+- A client dialing an alias can use only the channels the alias allows.
 
 Because the Resource is what handles the call, the same logic runs whether the caller dialed the
 phone number, the SIP Address, or an alias. See [inbound calling][inbound-calling] for the handler
@@ -196,21 +196,29 @@ Bayview Taxi's dispatcher, Ada, is one AI Agent Resource with four Addresses:
 | `/private/ada` | Drivers dialing from Bayview's own app as signed-in Subscribers |
 
 To move every caller to a new version of Ada, Bayview assigns the phone number and the SIP Address
-to the new Resource, then re-creates the two aliases on it. The number, the SIP URI, and
-`/public/dispatch` all stay the same, so nothing that dials them changes.
+to the new Resource. It then deletes the two aliases from the old Resource and re-creates them on
+the new one, which frees `/private/ada` so the new alias doesn't get a random suffix. The number,
+the SIP URI, and `/public/dispatch` all stay the same, so nothing that dials them changes.
 
 ## Create and manage Addresses
+
+Every alias and SIP Address needs a Resource when you create it.
+
+<llms-ignore>
 
 In the Dashboard, open a Resource and select its **Addresses & Phone Numbers** tab, then select
 <kbd>+ Add</kbd> to **Assign a Phone Number**, **Assign a SIP Address**, or **Add an Alias**. The
 **Addresses** page in the left sidebar lists every Address in your project with its context, type,
-and handlers, and creates aliases and SIP Addresses for any Resource you pick. Every alias and SIP
-Address needs a Resource when you create it.
+and handlers. Its <kbd>+ Add</kbd> creates aliases and SIP Addresses for any Resource you pick, and
+its **Assign a Phone Number** option buys a new number.
+
+</llms-ignore>
 
 Moving an Address depends on its type:
 
 - **Phone number:** assign a different Resource as its call or message handler from the number's
-  settings or with [Update phone number][rest-update-number].
+  settings, with [Assign Resource to phone route][rest-phone-route], or with
+  [Update phone number address][rest-repoint-number].
 - **SIP Address:** open it in the Dashboard, select **Change Resource**, and pick the new Resource.
   The SIP Address keeps its URI.
 - **Alias:** delete it and create one with the same name and context on the new Resource.
