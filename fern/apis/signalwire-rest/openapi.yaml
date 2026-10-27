@@ -21940,6 +21940,9 @@ components:
       description: |-
         Stops the AI agent running on the call. The call itself stays up — use it to take over
         with other call commands, or `calling.end` to hang up entirely.
+
+        The command name is `calling.ai.stop`, with a dot, unlike the other AI commands such as
+        `calling.ai_hold`. `calling.ai_stop` is not a supported command.
       title: calling.ai.stop
     Calling.CallBase:
       type: object
@@ -22088,7 +22091,7 @@ components:
             status_url:
               type: string
               format: uri
-              description: HTTP or HTTPS URL that receives collect result webhooks.
+              description: HTTP or HTTPS URL that receives [collect status callbacks](/docs/apis/rest/webhooks/collect-status-callback) with each result.
               examples:
                 - https://example.com/collect_callback
           required:
@@ -22260,7 +22263,7 @@ components:
         status_url:
           type: string
           format: uri
-          description: HTTP or HTTPS URL that receives call lifecycle webhooks for events listed in `status_events`.
+          description: HTTP or HTTPS URL that receives [call state callbacks](/docs/apis/rest/webhooks/call-state-status-callback) for the states listed in `status_events`.
           examples:
             - https://example.com/status_callback
         status_events:
@@ -22271,8 +22274,11 @@ components:
               - created
               - ringing
               - answered
+              - ending
               - ended
-          description: Call lifecycle events that will be delivered to `status_url`.
+          description: |-
+            Call states that are delivered to `status_url` as [call state callbacks](/docs/apis/rest/webhooks/call-state-status-callback).
+            Each value matches the `call_state` of the callback it selects.
           examples:
             - - answered
               - ended
@@ -22414,7 +22420,7 @@ components:
         status_url:
           type: string
           format: uri
-          description: HTTP or HTTPS URL that receives call lifecycle webhooks for events listed in `status_events`.
+          description: HTTP or HTTPS URL that receives [call state callbacks](/docs/apis/rest/webhooks/call-state-status-callback) for the states listed in `status_events`.
           examples:
             - https://example.com/status_callback
         status_events:
@@ -22425,8 +22431,11 @@ components:
               - created
               - ringing
               - answered
+              - ending
               - ended
-          description: Call lifecycle events that will be delivered to `status_url`.
+          description: |-
+            Call states that are delivered to `status_url` as [call state callbacks](/docs/apis/rest/webhooks/call-state-status-callback).
+            Each value matches the `call_state` of the callback it selects.
           examples:
             - - answered
               - ended
@@ -22514,9 +22523,11 @@ components:
             - id: '12345'
               case_number: '54321'
         swml:
-          type: object
-          unevaluatedProperties: {}
-          description: Inline [Calling SWML document](/docs/swml/reference/calling) containing instructions for handling the call. Either `url` or `swml` must be included for a new call.
+          anyOf:
+            - type: string
+            - type: object
+              unevaluatedProperties: {}
+          description: Inline [Calling SWML document](/docs/swml/reference/calling) containing instructions for handling the call, as a JSON object or as a JSON or YAML string. Either `url` or `swml` must be included for a new call.
           examples:
             - version: 1.0.0
               sections:
@@ -22579,7 +22590,7 @@ components:
         status_url:
           type: string
           format: uri
-          description: HTTP or HTTPS URL that receives call lifecycle webhooks for events listed in `status_events`.
+          description: HTTP or HTTPS URL that receives [call state callbacks](/docs/apis/rest/webhooks/call-state-status-callback) for the states listed in `status_events`.
           examples:
             - https://example.com/status_callback
         status_events:
@@ -22590,8 +22601,11 @@ components:
               - created
               - ringing
               - answered
+              - ending
               - ended
-          description: Call lifecycle events that will be delivered to `status_url`.
+          description: |-
+            Call states that are delivered to `status_url` as [call state callbacks](/docs/apis/rest/webhooks/call-state-status-callback).
+            Each value matches the `call_state` of the callback it selects.
           examples:
             - - answered
               - ended
@@ -22807,10 +22821,8 @@ components:
               examples:
                 - detect-control-1
             detect:
-              anyOf:
-                - $ref: '#/components/schemas/Calling.DetectMachineConfig'
-                - $ref: '#/components/schemas/Calling.DetectFaxConfig'
-                - $ref: '#/components/schemas/Calling.DetectDigitConfig'
+              allOf:
+                - $ref: '#/components/schemas/Calling.DetectConfig'
               description: Detection configuration specifying what to detect.
               examples:
                 - type: machine
@@ -22825,7 +22837,7 @@ components:
             status_url:
               type: string
               format: uri
-              description: HTTP or HTTPS URL that receives detection result webhooks.
+              description: HTTP or HTTPS URL that receives [detect status callbacks](/docs/apis/rest/webhooks/detect-status-callback) with each detection result.
               examples:
                 - https://example.com/detect_callback
           required:
@@ -22983,10 +22995,15 @@ components:
           type: object
           properties:
             timeout:
-              type: string
-              description: 'Hold timeout, expressed as a numeric string of seconds. Note: must be sent as a string — integer payloads are rejected.'
+              anyOf:
+                - type: integer
+                  format: int32
+                - type: string
+              description: |-
+                How long to hold the caller, in seconds, as an integer or a numeric string. The maximum and
+                default is `300`; a value above `300`, or of `0` or less, holds for `300` seconds.
               examples:
-                - '300'
+                - 300
             prompt:
               type: string
               description: |-
@@ -22994,6 +23011,7 @@ components:
                 The AI will speak this message to the caller before hold music begins.
               examples:
                 - Please hold while I transfer you to a specialist.
+              default: Tell the user you are putting them on hold.
           unevaluatedProperties:
             not: {}
           description: An object of parameters that will be utilized by the active command.
@@ -23022,6 +23040,7 @@ components:
         - billing_ms
         - type
         - parent_id
+        - qos_metrics
       properties:
         id:
           allOf:
@@ -23126,6 +23145,13 @@ components:
             - $ref: '#/components/schemas/uuid'
             - type: 'null'
           description: The parent call ID if this is a child call.
+          examples:
+            - null
+        qos_metrics:
+          anyOf:
+            - $ref: '#/components/schemas/Calling.CallQosMetrics'
+            - type: 'null'
+          description: Audio quality statistics for the call. `null` until the call has ended and its statistics have been recorded.
           examples:
             - null
       unevaluatedProperties:
@@ -23292,11 +23318,7 @@ components:
             play:
               type: array
               items:
-                anyOf:
-                  - $ref: '#/components/schemas/Calling.PlayAudioItem'
-                  - $ref: '#/components/schemas/Calling.PlayTtsItem'
-                  - $ref: '#/components/schemas/Calling.PlaySilenceItem'
-                  - $ref: '#/components/schemas/Calling.PlayRingtoneItem'
+                $ref: '#/components/schemas/Calling.PlayMediaItem'
               description: Ordered list of media items to play. Items play sequentially.
               examples:
                 - - type: audio
@@ -23347,7 +23369,7 @@ components:
             status_url:
               type: string
               format: uri
-              description: HTTP or HTTPS URL that receives playback lifecycle webhooks (`playing`, `paused`, `finished`, `error`).
+              description: HTTP or HTTPS URL that receives [play status callbacks](/docs/apis/rest/webhooks/play-status-callback) as playback changes state (`playing`, `paused`, `finished`, `error`).
               examples:
                 - https://example.com/status_callback
           required:
@@ -23488,6 +23510,108 @@ components:
         not: {}
       description: Adjusts the volume of an active play operation, in dB, addressed by its `control_id`.
       title: calling.play.volume
+    Calling.CallQosMetrics:
+      type: object
+      properties:
+        audio_in_media_packet_count:
+          type: integer
+          description: Number of audio packets received.
+          examples:
+            - 345
+        audio_in_dtmf_packet_count:
+          type: integer
+          description: Number of DTMF packets received.
+          examples:
+            - 0
+        audio_in_skip_packet_count:
+          type: integer
+          description: Number of received audio packets that were skipped.
+          examples:
+            - 5
+        audio_in_flush_packet_count:
+          type: integer
+          description: Number of received audio packets flushed from the jitter buffer.
+          examples:
+            - 0
+        audio_in_largest_jb_size:
+          type: integer
+          description: The largest size the jitter buffer reached.
+          examples:
+            - 0
+        audio_in_flaw_total:
+          type: integer
+          description: Total number of flaws detected in received audio.
+          examples:
+            - 0
+        audio_in_quality_percentage:
+          type: number
+          format: double
+          description: Quality of the received audio, as a percentage.
+          examples:
+            - 100
+        audio_in_mean_interval:
+          type: number
+          format: double
+          description: Mean interval between received audio packets, in milliseconds.
+          examples:
+            - 20
+        audio_in_jitter_min_variance:
+          type: number
+          format: double
+          description: Smallest jitter variance measured on received audio.
+          examples:
+            - 0.06
+        audio_in_jitter_max_variance:
+          type: number
+          format: double
+          description: Largest jitter variance measured on received audio.
+          examples:
+            - 0.23
+        audio_out_media_packet_count:
+          type: integer
+          description: Number of audio packets sent.
+          examples:
+            - 349
+        audio_out_dtmf_packet_count:
+          type: integer
+          description: Number of DTMF packets sent.
+          examples:
+            - 0
+        audio_out_lost:
+          type: integer
+          description: Number of sent audio packets lost.
+          examples:
+            - 0
+        audio_out_jitter_min:
+          type: number
+          format: double
+          description: Smallest jitter measured on sent audio.
+        audio_out_jitter_max:
+          type: number
+          format: double
+          description: Largest jitter measured on sent audio.
+        audio_out_jitter_avg:
+          type: number
+          format: double
+          description: Average jitter measured on sent audio.
+        audio_rtt_min:
+          type: number
+          format: double
+          description: Smallest round-trip time measured.
+        audio_rtt_max:
+          type: number
+          format: double
+          description: Largest round-trip time measured.
+        audio_rtt_avg:
+          type: number
+          format: double
+          description: Average round-trip time measured.
+      unevaluatedProperties:
+        not: {}
+      description: |-
+        Audio quality statistics measured on the call's media. `audio_in_*` values describe audio
+        received from the far end, `audio_out_*` values audio sent to it. Each statistic is included
+        only when it was measured, so any key may be absent.
     Calling.CallReceiveFaxStopRequest:
       type: object
       required:
@@ -23613,7 +23737,7 @@ components:
             status_url:
               type: string
               format: uri
-              description: Webhook URL invoked with recording events — including a `finished` event that contains the final recording URL. Must begin with `http://` or `https://`.
+              description: Webhook URL that receives [record status callbacks](/docs/apis/rest/webhooks/record-status-callback) — including a `finished` event that contains the final recording URL. Must begin with `http://` or `https://`.
               examples:
                 - https://example.com/status_callback
           required:
@@ -23935,7 +24059,7 @@ components:
             url:
               type: string
               format: uri
-              description: WebSocket URL to stream audio to. Must start with `wss://` (TLS is required; plain `ws://` is rejected).
+              description: 'WebSocket URL to stream audio to. Must start with `wss://`. A plain `ws://` URL is rejected when the command runs on the call: the request still returns `200`, but the stream does not start.'
               examples:
                 - wss://example.com/stream
             name:
@@ -23969,7 +24093,7 @@ components:
             status_url:
               type: string
               format: uri
-              description: HTTP or HTTPS URL that receives stream lifecycle webhooks.
+              description: HTTP or HTTPS URL that receives [stream status callbacks](/docs/apis/rest/webhooks/stream-status-callback) when the stream starts and ends.
               examples:
                 - https://example.com/stream_callback
             status_url_method:
@@ -24071,9 +24195,8 @@ components:
                   params:
                     direction: both
             device:
-              anyOf:
-                - $ref: '#/components/schemas/Calling.TapDeviceRtp'
-                - $ref: '#/components/schemas/Calling.TapDeviceWs'
+              allOf:
+                - $ref: '#/components/schemas/Calling.TapDevice'
               description: Device configuration specifying where to stream captured audio.
               examples:
                 - type: rtp
@@ -24083,7 +24206,7 @@ components:
             status_url:
               type: string
               format: uri
-              description: HTTP or HTTPS URL that receives tap lifecycle webhooks.
+              description: HTTP or HTTPS URL that receives [tap status callbacks](/docs/apis/rest/webhooks/tap-status-callback) when the tap starts and ends.
               examples:
                 - https://example.com/tap_callback
           required:
@@ -24171,7 +24294,7 @@ components:
             status_url:
               type: string
               format: uri
-              description: An HTTP or HTTPS URL that receives the status callback when the transcription finishes.
+              description: An HTTP or HTTPS URL that receives [transcribe state callbacks](/docs/apis/rest/webhooks/transcribe-state-callback) as the transcription starts and finishes, and the [transcript status callback](/docs/apis/rest/webhooks/transcribe-status-callback) when the transcript is ready.
               examples:
                 - https://example.com/transcribe-status
           required:
@@ -24306,14 +24429,21 @@ components:
             - calling.ai_unhold
         params:
           type: object
+          properties:
+            prompt:
+              type: string
+              description: A system message added to the AI conversation when taking the caller off hold.
+              examples:
+                - The user has been taken off hold.
+              default: The user has been taken off hold.
           unevaluatedProperties:
             not: {}
           description: An object of parameters that will be utilized by the active command.
       unevaluatedProperties:
         not: {}
       description: |-
-        Takes a call off AI hold and resumes the conversation with the AI agent.
-        Takes no parameters; the call is addressed by `id` alone.
+        Takes a call off AI hold and resumes the conversation with the AI agent. The optional
+        `prompt` is added to the conversation as the caller comes off hold.
       title: calling.ai_unhold
     Calling.CallUpdateCurrentCallRequest:
       type: object
@@ -24330,6 +24460,7 @@ components:
             - update
         params:
           anyOf:
+            - $ref: '#/components/schemas/Calling.CallUpdateParamsStatus'
             - $ref: '#/components/schemas/Calling.CallUpdateParamsURL'
             - $ref: '#/components/schemas/Calling.CallUpdateParamsSWML'
           description: An object of parameters that will be utilized by the active command.
@@ -24337,6 +24468,9 @@ components:
         not: {}
       description: |-
         Update a call in progress — cancel, complete, or redirect the SWML flow.
+
+        To cancel or end the call, send `status` on its own; no `url` or `swml` is needed.
+        To redirect the call, send `url` or `swml` with the new SWML.
 
         State-transition rules:
         - `status: canceled` is only valid while the leg is `queued` or `ringing`.
@@ -24416,9 +24550,11 @@ components:
           examples:
             - https://example.com/status_callback
         swml:
-          type: object
-          unevaluatedProperties: {}
-          description: Inline [Calling SWML document](/docs/swml/reference/calling) containing instructions for handling the call. Either `url` or `swml` must be included for a new call.
+          anyOf:
+            - type: string
+            - type: object
+              unevaluatedProperties: {}
+          description: Inline [Calling SWML document](/docs/swml/reference/calling) containing the new instructions for handling the call, as a JSON object or as a JSON or YAML string.
           examples:
             - version: 1.0.0
               sections:
@@ -24429,6 +24565,43 @@ components:
         not: {}
       description: '`update` parameters that redirect the call to SWML provided inline in `swml`.'
       title: update (Inline SWML)
+    Calling.CallUpdateParamsStatus:
+      type: object
+      required:
+        - id
+        - status
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: The unique identifying ID of an existing call.
+          examples:
+            - 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        fallback_url:
+          type: string
+          description: |-
+            The Fallback URL to handle the call.
+            This parameter allows you to specify a backup webhook or different route in your code containing SWML instructions for handling the call.
+          examples:
+            - https://example.com/fallback
+        status_url:
+          type: string
+          format: uri
+          description: A URL to receive call status update callbacks.
+          examples:
+            - https://example.com/status_callback
+        status:
+          type: string
+          enum:
+            - canceled
+            - completed
+          description: Either `canceled` (to cancel a not yet connected call) or `completed` (to end a call that is in progress).
+          examples:
+            - completed
+      unevaluatedProperties:
+        not: {}
+      description: '`update` parameters that cancel or end the call with `status` alone, without new SWML.'
+      title: update (Status)
     Calling.CallUpdateParamsURL:
       type: object
       required:
@@ -24464,9 +24637,7 @@ components:
             - https://example.com/status_callback
         url:
           type: string
-          description: |-
-            The URL to handle the call. This parameter allows you to specify a webhook or different route in your code containing SWML instructions for handling the call.
-            Either `url` or `swml` must be included for a new call.
+          description: The URL to handle the call. This parameter allows you to specify a webhook or different route in your code containing SWML instructions for handling the call.
           examples:
             - https://example.com/swml
       unevaluatedProperties:
@@ -24612,18 +24783,14 @@ components:
       description: Parameters for collecting speech input.
     Calling.DetectConfig:
       type: object
-      required:
-        - type
-      properties:
-        type:
-          allOf:
-            - $ref: '#/components/schemas/Calling.DetectType'
-          description: The type of detection to perform.
-          examples:
-            - machine
+      oneOf:
+        - $ref: '#/components/schemas/Calling.DetectMachineConfig'
+        - $ref: '#/components/schemas/Calling.DetectFaxConfig'
+        - $ref: '#/components/schemas/Calling.DetectDigitConfig'
       discriminator:
         propertyName: type
         mapping:
+          machine: '#/components/schemas/Calling.DetectMachineConfig'
           fax: '#/components/schemas/Calling.DetectFaxConfig'
           digit: '#/components/schemas/Calling.DetectDigitConfig'
       description: Detection configuration. The shape of `params` depends on `type`.
@@ -24636,6 +24803,9 @@ components:
           type: string
           enum:
             - digit
+          description: The type of detection to perform.
+          examples:
+            - digit
         params:
           allOf:
             - $ref: '#/components/schemas/Calling.DetectDigitParams'
@@ -24644,8 +24814,6 @@ components:
             - digits: 0123456789#*
       unevaluatedProperties:
         not: {}
-      allOf:
-        - $ref: '#/components/schemas/Calling.DetectConfig'
       description: DTMF-digit detection configuration.
     Calling.DetectDigitParams:
       type: object
@@ -24667,6 +24835,9 @@ components:
           type: string
           enum:
             - fax
+          description: The type of detection to perform.
+          examples:
+            - fax
         params:
           allOf:
             - $ref: '#/components/schemas/Calling.DetectFaxParams'
@@ -24675,8 +24846,6 @@ components:
             - tone: CNG
       unevaluatedProperties:
         not: {}
-      allOf:
-        - $ref: '#/components/schemas/Calling.DetectConfig'
       description: Fax-tone detection configuration.
     Calling.DetectFaxParams:
       type: object
@@ -24707,6 +24876,9 @@ components:
           type: string
           enum:
             - machine
+          description: The type of detection to perform.
+          examples:
+            - machine
         params:
           allOf:
             - $ref: '#/components/schemas/Calling.DetectMachineParams'
@@ -24716,8 +24888,6 @@ components:
               end_silence_timeout: 1
       unevaluatedProperties:
         not: {}
-      allOf:
-        - $ref: '#/components/schemas/Calling.DetectConfig'
       description: Answering-machine detection configuration.
     Calling.DetectMachineParams:
       type: object
@@ -25191,6 +25361,9 @@ components:
           type: string
           enum:
             - audio
+          description: The type of media to play.
+          examples:
+            - audio
         params:
           allOf:
             - $ref: '#/components/schemas/Calling.PlayAudioParams'
@@ -25199,8 +25372,6 @@ components:
             - url: https://example.com/audio.mp3
       unevaluatedProperties:
         not: {}
-      allOf:
-        - $ref: '#/components/schemas/Calling.PlayMediaItem'
       description: Play an audio file from a URL.
     Calling.PlayAudioParams:
       type: object
@@ -25225,18 +25396,15 @@ components:
       description: The direction of audio playback relative to the call participants.
     Calling.PlayMediaItem:
       type: object
-      required:
-        - type
-      properties:
-        type:
-          allOf:
-            - $ref: '#/components/schemas/Calling.PlayMediaType'
-          description: The type of media to play.
-          examples:
-            - audio
+      oneOf:
+        - $ref: '#/components/schemas/Calling.PlayAudioItem'
+        - $ref: '#/components/schemas/Calling.PlayTtsItem'
+        - $ref: '#/components/schemas/Calling.PlaySilenceItem'
+        - $ref: '#/components/schemas/Calling.PlayRingtoneItem'
       discriminator:
         propertyName: type
         mapping:
+          audio: '#/components/schemas/Calling.PlayAudioItem'
           tts: '#/components/schemas/Calling.PlayTtsItem'
           silence: '#/components/schemas/Calling.PlaySilenceItem'
           ringtone: '#/components/schemas/Calling.PlayRingtoneItem'
@@ -25259,6 +25427,9 @@ components:
           type: string
           enum:
             - ringtone
+          description: The type of media to play.
+          examples:
+            - ringtone
         params:
           allOf:
             - $ref: '#/components/schemas/Calling.PlayRingtoneParams'
@@ -25268,8 +25439,6 @@ components:
               duration: 10
       unevaluatedProperties:
         not: {}
-      allOf:
-        - $ref: '#/components/schemas/Calling.PlayMediaItem'
       description: Play a country-coded ringtone cadence.
     Calling.PlayRingtoneName:
       type: string
@@ -25355,6 +25524,9 @@ components:
           type: string
           enum:
             - silence
+          description: The type of media to play.
+          examples:
+            - silence
         params:
           allOf:
             - $ref: '#/components/schemas/Calling.PlaySilenceParams'
@@ -25363,8 +25535,6 @@ components:
             - duration: 2
       unevaluatedProperties:
         not: {}
-      allOf:
-        - $ref: '#/components/schemas/Calling.PlayMediaItem'
       description: Play silence for a fixed duration.
     Calling.PlaySilenceParams:
       type: object
@@ -25390,6 +25560,9 @@ components:
           type: string
           enum:
             - tts
+          description: The type of media to play.
+          examples:
+            - tts
         params:
           allOf:
             - $ref: '#/components/schemas/Calling.PlayTtsParams'
@@ -25400,8 +25573,6 @@ components:
               gender: female
       unevaluatedProperties:
         not: {}
-      allOf:
-        - $ref: '#/components/schemas/Calling.PlayMediaItem'
       description: Play text-to-speech. Per-item `language`/`voice`/`gender` override the request-level fallbacks.
     Calling.PlayTtsParams:
       type: object
@@ -25629,20 +25800,15 @@ components:
       description: Tap configuration — specifies what audio to capture.
     Calling.TapDevice:
       type: object
-      required:
-        - type
-      properties:
-        type:
-          allOf:
-            - $ref: '#/components/schemas/Calling.TapDeviceType'
-          description: The type of tap device.
-          examples:
-            - rtp
+      oneOf:
+        - $ref: '#/components/schemas/Calling.TapDeviceRtp'
+        - $ref: '#/components/schemas/Calling.TapDeviceWs'
       discriminator:
         propertyName: type
         mapping:
+          rtp: '#/components/schemas/Calling.TapDeviceRtp'
           ws: '#/components/schemas/Calling.TapDeviceWs'
-      description: Tap device configuration — specifies where to stream captured audio.
+      description: Tap device configuration — specifies where to stream captured audio. The shape of `params` is determined by `type`.
     Calling.TapDeviceRtp:
       type: object
       required:
@@ -25653,6 +25819,9 @@ components:
           type: string
           enum:
             - rtp
+          description: The type of tap device.
+          examples:
+            - rtp
         params:
           allOf:
             - $ref: '#/components/schemas/Calling.TapRtpParams'
@@ -25662,8 +25831,6 @@ components:
               port: 5060
       unevaluatedProperties:
         not: {}
-      allOf:
-        - $ref: '#/components/schemas/Calling.TapDevice'
       description: RTP tap device configuration.
     Calling.TapDeviceType:
       type: string
@@ -25681,6 +25848,9 @@ components:
           type: string
           enum:
             - ws
+          description: The type of tap device.
+          examples:
+            - ws
         params:
           allOf:
             - $ref: '#/components/schemas/Calling.TapWsParams'
@@ -25689,8 +25859,6 @@ components:
             - uri: wss://example.com/tap
       unevaluatedProperties:
         not: {}
-      allOf:
-        - $ref: '#/components/schemas/Calling.TapDevice'
       description: WebSocket tap device configuration.
     Calling.TapPtime:
       type: number
@@ -58387,10 +58555,22 @@ components:
               type: string
               enum:
                 - transparent
+                - hangup
                 - normal
-              description: '`transparent` when the agent keeps what it already said, `normal` otherwise.'
+              description: |-
+                How the interruption was handled. `transparent` when the agent uses
+                [`transparent_barge`](/docs/swml/reference/calling/ai/params#paramstransparent_barge), `hangup` when the caller spoke
+                over a pending hangup and the hangup was discarded, and `normal` otherwise.
               examples:
                 - normal
+            context_rewritten:
+              type: boolean
+              description: |-
+                `true` when the agent's interrupted reply was removed from the conversation and the caller's
+                new words were merged into their previous turn; `false` when the reply was kept. Sent only
+                when `barge_type` is `transparent` or `hangup`.
+              examples:
+                - false
             barge_elapsed_ms:
               type: integer
               description: How long the agent had been speaking when the caller cut in, in milliseconds.
@@ -58415,8 +58595,9 @@ components:
             not: {}
           description: |-
             The caller interrupted the agent. The fields differ by session type: a standard session reports
-            `barge_type`, `barge_elapsed_ms`, and `interrupt_count`, while a speech-to-speech session reports
-            `audio_played_ms` and `barge_count`.
+            `barge_type`, `barge_elapsed_ms`, and `interrupt_count` (plus `context_rewritten` for a
+            `transparent` or `hangup` barge), while a speech-to-speech session reports `audio_played_ms`
+            and `barge_count`.
         ai_completion:
           type: object
           properties:
@@ -59649,7 +59830,6 @@ components:
         - content_type
         - version
         - content_disposition
-        - conversation_type
       properties:
         function:
           type: string
@@ -59792,9 +59972,10 @@ components:
             - chat
           description: |-
             The kind of conversation the agent is running: a call, or a text conversation held over the
-            [AI chat endpoint](/docs/apis/rest/ai-chat/chat-methods).
+            [AI chat endpoint](/docs/apis/rest/ai-chat/chat-methods). Not included on function calls made
+            during a call.
           examples:
-            - voice
+            - chat
         project_id:
           type: string
           description: Your project ID, when available.
@@ -60295,6 +60476,546 @@ components:
             - 451ed9ff-e568-4222-8af9-4f9ab7428d09
       unevaluatedProperties:
         not: {}
+    Webhooks.Calling.CallStateDevice:
+      type: object
+      required:
+        - type
+        - params
+      properties:
+        type:
+          type: string
+          enum:
+            - phone
+            - sip
+            - webrtc
+          description: The device type.
+          examples:
+            - phone
+        params:
+          type: object
+          properties:
+            from_number:
+              type: string
+              description: The number that initiated the call. Phone devices only.
+              examples:
+                - '+15551234567'
+            to_number:
+              type: string
+              description: The number the call was placed to. Phone devices only.
+              examples:
+                - '+15559876543'
+            from:
+              type: string
+              description: The address that initiated the call. SIP and WebRTC devices only.
+              examples:
+                - sip:alice@example.com
+            to:
+              type: string
+              description: The address the call was placed to. SIP and WebRTC devices only.
+              examples:
+                - sip:bob@example.com
+            headers:
+              type: array
+              items:
+                $ref: '#/components/schemas/Webhooks.Calling.InboundCallHeader'
+              description: Headers associated with the call. Phone and SIP devices only, when the call has headers.
+          unevaluatedProperties:
+            not: {}
+          description: |-
+            The device's addresses. Phone devices report `from_number` and `to_number`; SIP and WebRTC
+            devices report `from` and `to`. `headers` is included for phone and SIP devices when the call
+            has headers.
+          examples:
+            - from_number: '+15551234567'
+              to_number: '+15559876543'
+      unevaluatedProperties:
+        not: {}
+      description: The device on one end of the call.
+    Webhooks.Calling.CallStateStatusCallbackPayload:
+      type: object
+      required:
+        - event_type
+        - event_channel
+        - timestamp
+        - project_id
+        - space_id
+        - params
+      properties:
+        event_type:
+          type: string
+          enum:
+            - calling.call.state
+          description: The type of event. Always `calling.call.state` for call state callbacks.
+          examples:
+            - calling.call.state
+        event_channel:
+          type: string
+          description: The channel the event was delivered on.
+          examples:
+            - swml:451ed9ff-e568-4222-8af9-4f9ab7428d09
+        timestamp:
+          type: number
+          description: When the event was sent, as a Unix timestamp in seconds.
+          examples:
+            - 1777565701.5623918
+        project_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Your project ID.
+          examples:
+            - 4d0d6f16-5881-4fcc-92a4-02c51a91954d
+        space_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Your Space ID.
+          examples:
+            - 451ed9ff-e568-4222-8af9-4f9ab7428d09
+        params:
+          type: object
+          properties:
+            call_id:
+              allOf:
+                - $ref: '#/components/schemas/uuid'
+              description: ID of the call.
+              examples:
+                - 2e1e66e5-5d07-413d-9668-55542992eec0
+            node_id:
+              type: string
+              description: ID of the node the call is on.
+              examples:
+                - a0d4e6e5-5d07-413d-9668-55542992eec0
+            segment_id:
+              allOf:
+                - $ref: '#/components/schemas/uuid'
+              description: ID of the call segment. Present when the call has one.
+              examples:
+                - 2e1e66e5-5d07-413d-9668-55542992eec0
+            tag:
+              type: string
+              description: The tag associated with the call. Present only when a tag was set on the call.
+              examples:
+                - my-tag
+            call_state:
+              type: string
+              enum:
+                - created
+                - ringing
+                - answered
+                - ending
+                - ended
+              description: The state the call has entered.
+              examples:
+                - answered
+            direction:
+              type: string
+              enum:
+                - inbound
+                - outbound
+              description: The direction of the call.
+              examples:
+                - outbound
+            device:
+              allOf:
+                - $ref: '#/components/schemas/Webhooks.Calling.CallStateDevice'
+              description: The device on the other end of the call.
+            start_time:
+              type: integer
+              description: When the call was created, in milliseconds since the Unix epoch. `0` until set.
+              examples:
+                - 1777565690123
+            answer_time:
+              type: integer
+              description: When the call was answered, in milliseconds since the Unix epoch. `0` until the call is answered.
+              examples:
+                - 1777565695456
+            end_time:
+              type: integer
+              description: When the call ended, in milliseconds since the Unix epoch. `0` until the call ends.
+              examples:
+                - 0
+            end_reason:
+              type: string
+              enum:
+                - hangup
+                - cancel
+                - busy
+                - noAnswer
+                - decline
+                - error
+                - abandoned
+                - maxDuration
+                - notFound
+              description: Why the call ended. Present once the call has an end reason.
+              examples:
+                - hangup
+            end_source:
+              type: string
+              enum:
+                - none
+                - inbound
+                - outbound
+              description: Which side ended the call. Present together with `end_reason`.
+              examples:
+                - outbound
+            parent:
+              allOf:
+                - $ref: '#/components/schemas/Webhooks.Calling.InboundCallParent'
+              description: The call that created this call. Present only when this call has a parent.
+            peer:
+              allOf:
+                - $ref: '#/components/schemas/Webhooks.Calling.InboundCallPeer'
+              description: The call this call is bridged to. Present only when this call has a peer.
+            dial_winner:
+              type: string
+              enum:
+                - 'true'
+              description: Set to `"true"` when this call won a parallel dial. Omitted otherwise.
+              examples:
+                - 'true'
+            sip_data:
+              allOf:
+                - $ref: '#/components/schemas/Webhooks.Calling.InboundCallSipData'
+              description: SIP-specific data. Present only for SIP devices.
+            audio_in_mos:
+              type: number
+              description: The call's inbound audio quality as a mean opinion score. Present once measured.
+              examples:
+                - 4.4
+            address_id:
+              type: string
+              description: ID of the Fabric address involved in the call. Fabric calls only.
+              examples:
+                - b1c2d3e4-5d07-413d-9668-55542992eec0
+            subscriber_id:
+              type: string
+              description: ID of the Fabric subscriber involved in the call. Fabric calls only.
+              examples:
+                - c1d2e3f4-5d07-413d-9668-55542992eec0
+            subscriber_name:
+              type: string
+              description: Name of the Fabric subscriber involved in the call. Fabric calls only.
+              examples:
+                - Alice
+          required:
+            - call_id
+            - node_id
+            - call_state
+            - direction
+            - device
+            - start_time
+            - answer_time
+            - end_time
+          unevaluatedProperties:
+            not: {}
+          description: The call and its new state.
+      unevaluatedProperties:
+        not: {}
+    Webhooks.Calling.CallingEventCallIds:
+      type: object
+      required:
+        - call_id
+        - node_id
+      properties:
+        call_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: ID of the call.
+          examples:
+            - 2e1e66e5-5d07-413d-9668-55542992eec0
+        node_id:
+          type: string
+          description: ID of the node the call is on.
+          examples:
+            - a0d4e6e5-5d07-413d-9668-55542992eec0
+      unevaluatedProperties:
+        not: {}
+      description: Identifies the call an event is about.
+    Webhooks.Calling.CallingEventEnvelope:
+      type: object
+      required:
+        - event_channel
+        - timestamp
+        - project_id
+        - space_id
+      properties:
+        event_channel:
+          type: string
+          description: The channel the event was delivered on.
+          examples:
+            - swml:451ed9ff-e568-4222-8af9-4f9ab7428d09
+        timestamp:
+          type: number
+          description: When the event was sent, as a Unix timestamp in seconds.
+          examples:
+            - 1777565701.5623918
+        project_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Your project ID.
+          examples:
+            - 4d0d6f16-5881-4fcc-92a4-02c51a91954d
+        space_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Your Space ID.
+          examples:
+            - 451ed9ff-e568-4222-8af9-4f9ab7428d09
+      unevaluatedProperties:
+        not: {}
+      description: Fields shared by every event a Calling API command sends to its `status_url`.
+    Webhooks.Calling.CallingEventSegment:
+      type: object
+      properties:
+        segment_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: ID of the call segment. Present when the call has one.
+          examples:
+            - 2e1e66e5-5d07-413d-9668-55542992eec0
+        tag:
+          type: string
+          description: The tag associated with the call. Present only when a tag was set on the call.
+          examples:
+            - my-tag
+      unevaluatedProperties:
+        not: {}
+      description: Segment and tag fields included on most call events.
+    Webhooks.Calling.CollectStatusCallbackPayload:
+      type: object
+      required:
+        - event_type
+        - event_channel
+        - timestamp
+        - project_id
+        - space_id
+        - params
+      properties:
+        event_type:
+          type: string
+          enum:
+            - calling.call.collect
+          description: The type of event. Always `calling.call.collect` for collect status callbacks.
+          examples:
+            - calling.call.collect
+        event_channel:
+          type: string
+          description: The channel the event was delivered on.
+          examples:
+            - swml:451ed9ff-e568-4222-8af9-4f9ab7428d09
+        timestamp:
+          type: number
+          description: When the event was sent, as a Unix timestamp in seconds.
+          examples:
+            - 1777565701.5623918
+        project_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Your project ID.
+          examples:
+            - 4d0d6f16-5881-4fcc-92a4-02c51a91954d
+        space_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Your Space ID.
+          examples:
+            - 451ed9ff-e568-4222-8af9-4f9ab7428d09
+        params:
+          type: object
+          properties:
+            call_id:
+              allOf:
+                - $ref: '#/components/schemas/uuid'
+              description: ID of the call.
+              examples:
+                - 2e1e66e5-5d07-413d-9668-55542992eec0
+            node_id:
+              type: string
+              description: ID of the node the call is on.
+              examples:
+                - a0d4e6e5-5d07-413d-9668-55542992eec0
+            control_id:
+              type: string
+              description: The control ID of the collect operation, as set in `calling.collect`.
+              examples:
+                - collect-control-1
+            result:
+              type: object
+              properties:
+                type:
+                  type: string
+                  description: The result type.
+                  examples:
+                    - digit
+                params:
+                  type: object
+                  unevaluatedProperties: {}
+                  description: |-
+                    The collected input. For `digit`: `digits` and `terminator`, both strings. For `speech`:
+                    `text` (string) and `confidence` (number).
+                  examples:
+                    - digits: '1234'
+                      terminator: '#'
+              required:
+                - type
+              unevaluatedProperties:
+                not: {}
+              description: |-
+                The collect result. `type` is `digit` or `speech` when input was collected, with the input
+                in `params`. Other values (`no_input`, `no_match`, `start_of_input`, `finished`, `error`)
+                carry no `params`.
+              examples:
+                - type: digit
+                  params:
+                    digits: '1234'
+                    terminator: '#'
+            final:
+              type: boolean
+              description: |-
+                Whether this is the final result. Present when `partial_results` is enabled: `false` for a
+                partial result, `true` for the final one.
+              examples:
+                - true
+            state:
+              type: string
+              enum:
+                - collecting
+                - finished
+                - error
+              description: The state of a `continuous` collect. Present only for continuous collects.
+              examples:
+                - collecting
+          required:
+            - call_id
+            - node_id
+            - control_id
+            - result
+          unevaluatedProperties:
+            not: {}
+          description: The collect operation and its result.
+      unevaluatedProperties:
+        not: {}
+    Webhooks.Calling.DetectStatusCallbackPayload:
+      type: object
+      required:
+        - event_type
+        - event_channel
+        - timestamp
+        - project_id
+        - space_id
+        - params
+      properties:
+        event_type:
+          type: string
+          enum:
+            - calling.call.detect
+          description: The type of event. Always `calling.call.detect` for detect status callbacks.
+          examples:
+            - calling.call.detect
+        event_channel:
+          type: string
+          description: The channel the event was delivered on.
+          examples:
+            - swml:451ed9ff-e568-4222-8af9-4f9ab7428d09
+        timestamp:
+          type: number
+          description: When the event was sent, as a Unix timestamp in seconds.
+          examples:
+            - 1777565701.5623918
+        project_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Your project ID.
+          examples:
+            - 4d0d6f16-5881-4fcc-92a4-02c51a91954d
+        space_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Your Space ID.
+          examples:
+            - 451ed9ff-e568-4222-8af9-4f9ab7428d09
+        params:
+          type: object
+          properties:
+            call_id:
+              allOf:
+                - $ref: '#/components/schemas/uuid'
+              description: ID of the call.
+              examples:
+                - 2e1e66e5-5d07-413d-9668-55542992eec0
+            node_id:
+              type: string
+              description: ID of the node the call is on.
+              examples:
+                - a0d4e6e5-5d07-413d-9668-55542992eec0
+            segment_id:
+              allOf:
+                - $ref: '#/components/schemas/uuid'
+              description: ID of the call segment. Present when the call has one.
+              examples:
+                - 2e1e66e5-5d07-413d-9668-55542992eec0
+            tag:
+              type: string
+              description: The tag associated with the call. Present only when a tag was set on the call.
+              examples:
+                - my-tag
+            control_id:
+              type: string
+              description: The control ID of the detect operation, as set in `calling.detect`.
+              examples:
+                - detect-control-1
+            detect:
+              type: object
+              properties:
+                type:
+                  type: string
+                  enum:
+                    - machine
+                    - fax
+                    - digit
+                  description: The type of detection, as set in `calling.detect`.
+                  examples:
+                    - machine
+                params:
+                  type: object
+                  properties:
+                    event:
+                      type: string
+                      description: |-
+                        What was detected. For `machine`: `MACHINE`, `HUMAN`, `UNKNOWN`, `READY`, or `NOT_READY`.
+                        For `digit`: the DTMF digit pressed. For `fax`: the fax tone detected. `finished` when the
+                        detector stops.
+                      examples:
+                        - HUMAN
+                    beep:
+                      type: boolean
+                      description: '`true` when a beep was detected. Machine detection only.'
+                      examples:
+                        - true
+                  required:
+                    - event
+                  unevaluatedProperties:
+                    not: {}
+                  description: The detected event.
+              required:
+                - type
+                - params
+              unevaluatedProperties:
+                not: {}
+              description: The detection result.
+              examples:
+                - type: machine
+                  params:
+                    event: HUMAN
+          required:
+            - call_id
+            - node_id
+            - control_id
+            - detect
+          unevaluatedProperties:
+            not: {}
+          description: The detect operation and what it detected.
+      unevaluatedProperties:
+        not: {}
     Webhooks.Calling.InboundCallContext:
       type: object
       required:
@@ -60486,21 +61207,6 @@ components:
       title: Peer call
     Webhooks.Calling.InboundCallSipData:
       type: object
-      required:
-        - sip_req_host
-        - sip_req_uri
-        - sip_req_user
-        - sip_from_host
-        - sip_from_uri
-        - sip_from_user
-        - sip_to_host
-        - sip_to_uri
-        - sip_to_user
-        - sip_contact_user
-        - sip_contact_port
-        - sip_contact_uri
-        - sip_contact_host
-        - sip_contact_params
       properties:
         sip_req_host:
           type: string
@@ -60570,20 +61276,21 @@ components:
         sip_contact_params:
           type: object
           unevaluatedProperties: {}
-          description: Additional parameters from the SIP Contact header.
+          description: Additional parameters from the SIP Contact header, as key/value pairs. An empty object when the header has none.
           examples:
             - {}
       unevaluatedProperties:
         not: {}
-      description: SIP-specific data for SIP calls. Only present when `call.type` is `sip`.
+      description: |-
+        SIP-specific data for SIP calls. Only present when `call.type` is `sip`. Every key is
+        optional: each one is included only when the call's SIP signaling carries a value for it,
+        so a key missing from one call can be present on another.
       title: Inbound call SIP data
     Webhooks.Calling.InboundCallWebhookPayload:
       type: object
       required:
         - call
         - vars
-        - envs
-        - params
       properties:
         call:
           allOf:
@@ -60602,6 +61309,8 @@ components:
             Environment variables available to this call's SWML document, which you can reference as `${envs.<key>}`. Combines the variables you've configured at the account or project level with any `custom_variables` you passed on the outbound [Call commands](/docs/apis/rest/calls/call-commands) request.
 
             Keys are case-sensitive. When a `custom_variables` key exactly matches an account- or project-level variable, including case, the value from the request wins; if they differ only in case, both are kept as separate variables.
+
+            Not included on every request: treat a missing `envs` as a call with no environment variables.
           examples:
             - api_key: <YOUR_API_KEY>
               webhook_url: https://example.com/webhook
@@ -60610,9 +61319,258 @@ components:
         params:
           type: object
           unevaluatedProperties: {}
-          description: Parameters passed via a SWML calling `execute` or `transfer` step. An empty object on the initial document fetch.
+          description: Parameters passed via a SWML calling `execute` or `transfer` step. Included only when the step that requested this document passed `params`, so it is absent on the first document fetch for a call.
           examples:
             - department: sales
+      unevaluatedProperties:
+        not: {}
+    Webhooks.Calling.PlayStatusCallbackPayload:
+      type: object
+      required:
+        - event_type
+        - event_channel
+        - timestamp
+        - project_id
+        - space_id
+        - params
+      properties:
+        event_type:
+          type: string
+          enum:
+            - calling.call.play
+          description: The type of event. Always `calling.call.play` for play status callbacks.
+          examples:
+            - calling.call.play
+        event_channel:
+          type: string
+          description: The channel the event was delivered on.
+          examples:
+            - swml:451ed9ff-e568-4222-8af9-4f9ab7428d09
+        timestamp:
+          type: number
+          description: When the event was sent, as a Unix timestamp in seconds.
+          examples:
+            - 1777565701.5623918
+        project_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Your project ID.
+          examples:
+            - 4d0d6f16-5881-4fcc-92a4-02c51a91954d
+        space_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Your Space ID.
+          examples:
+            - 451ed9ff-e568-4222-8af9-4f9ab7428d09
+        params:
+          type: object
+          properties:
+            call_id:
+              allOf:
+                - $ref: '#/components/schemas/uuid'
+              description: ID of the call.
+              examples:
+                - 2e1e66e5-5d07-413d-9668-55542992eec0
+            node_id:
+              type: string
+              description: ID of the node the call is on.
+              examples:
+                - a0d4e6e5-5d07-413d-9668-55542992eec0
+            control_id:
+              type: string
+              description: The control ID of the play operation, as set in `calling.play`.
+              examples:
+                - play-control-1
+            state:
+              type: string
+              enum:
+                - playing
+                - paused
+                - finished
+                - error
+              description: |-
+                The playback state. `playing` when playback starts or resumes, `paused` when it is paused,
+                `finished` when it ends or is stopped, and `error` when it fails.
+              examples:
+                - playing
+          required:
+            - call_id
+            - node_id
+            - control_id
+            - state
+          unevaluatedProperties:
+            not: {}
+          description: The play operation and its new state.
+      unevaluatedProperties:
+        not: {}
+    Webhooks.Calling.RecordStatusCallbackPayload:
+      type: object
+      required:
+        - event_type
+        - event_channel
+        - timestamp
+        - project_id
+        - space_id
+        - params
+      properties:
+        event_type:
+          type: string
+          enum:
+            - calling.call.record
+          description: The type of event. Always `calling.call.record` for record status callbacks.
+          examples:
+            - calling.call.record
+        event_channel:
+          type: string
+          description: The channel the event was delivered on.
+          examples:
+            - swml:451ed9ff-e568-4222-8af9-4f9ab7428d09
+        timestamp:
+          type: number
+          description: When the event was sent, as a Unix timestamp in seconds.
+          examples:
+            - 1777565701.5623918
+        project_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Your project ID.
+          examples:
+            - 4d0d6f16-5881-4fcc-92a4-02c51a91954d
+        space_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Your Space ID.
+          examples:
+            - 451ed9ff-e568-4222-8af9-4f9ab7428d09
+        params:
+          type: object
+          properties:
+            call_id:
+              allOf:
+                - $ref: '#/components/schemas/uuid'
+              description: ID of the call.
+              examples:
+                - 2e1e66e5-5d07-413d-9668-55542992eec0
+            node_id:
+              type: string
+              description: ID of the node the call is on.
+              examples:
+                - a0d4e6e5-5d07-413d-9668-55542992eec0
+            segment_id:
+              allOf:
+                - $ref: '#/components/schemas/uuid'
+              description: ID of the call segment. Present when the call has one.
+              examples:
+                - 2e1e66e5-5d07-413d-9668-55542992eec0
+            tag:
+              type: string
+              description: The tag associated with the call. Present only when a tag was set on the call.
+              examples:
+                - my-tag
+            control_id:
+              type: string
+              description: The control ID of the record operation, as set in `calling.record`.
+              examples:
+                - record-control-1
+            state:
+              type: string
+              enum:
+                - recording
+                - paused
+                - finished
+                - no_input
+              description: |-
+                The recording state. `recording` when recording starts or resumes, `paused` when it is
+                paused, `finished` when it ends, and `no_input` when it ended because no audio was heard
+                before the initial timeout.
+              examples:
+                - finished
+            record:
+              type: object
+              properties:
+                audio:
+                  type: object
+                  properties:
+                    format:
+                      type: string
+                      description: The audio format of the recording.
+                      examples:
+                        - mp3
+                    direction:
+                      type: string
+                      description: The direction of audio being recorded.
+                      examples:
+                        - both
+                    stereo:
+                      type: boolean
+                      description: Whether the recording is stereo.
+                      examples:
+                        - false
+                  required:
+                    - format
+                    - direction
+                    - stereo
+                  unevaluatedProperties:
+                    not: {}
+                  description: Audio recording settings.
+              required:
+                - audio
+              unevaluatedProperties:
+                not: {}
+              description: The recording settings in effect.
+            url:
+              type: string
+              description: The URL of the recording file.
+              examples:
+                - https://example.com/recordings/41e9c1b0-5d07-413d-9668-55542992eec0.mp3
+            recording_id:
+              type: string
+              description: ID of the recording.
+              examples:
+                - 41e9c1b0-5d07-413d-9668-55542992eec0
+            pause_behavior:
+              type: string
+              enum:
+                - skip
+                - silence
+              description: How paused audio is handled, as set in `calling.record.pause`. Present only when `state` is `paused`.
+              examples:
+                - skip
+            size:
+              type: integer
+              description: Size of the recording file in bytes. Present only when `state` is `finished` or `no_input`.
+              examples:
+                - 48000
+            duration:
+              type: integer
+              description: Length of the recording in seconds. Present only when `state` is `finished` or `no_input`.
+              examples:
+                - 12
+            start_time:
+              type: number
+              description: When the recording started, as a Unix timestamp in seconds. Present when the recording has ended.
+              examples:
+                - 1777565690.123
+            end_time:
+              type: number
+              description: When the recording ended, as a Unix timestamp in seconds. Present when the recording has ended.
+              examples:
+                - 1777565702.456
+            first_frame_time:
+              type: number
+              description: When the first audio frame was recorded, as a Unix timestamp in seconds. Present when known.
+              examples:
+                - 1777565690.173
+          required:
+            - call_id
+            - node_id
+            - control_id
+            - state
+            - record
+          unevaluatedProperties:
+            not: {}
+          description: The recording and its new state.
       unevaluatedProperties:
         not: {}
     Webhooks.Calling.StreamStatusCallbackPayload:
@@ -60713,6 +61671,225 @@ components:
           unevaluatedProperties:
             not: {}
           description: Details about the stream.
+      unevaluatedProperties:
+        not: {}
+    Webhooks.Calling.TapStatusCallbackPayload:
+      type: object
+      required:
+        - event_type
+        - event_channel
+        - timestamp
+        - project_id
+        - space_id
+        - params
+      properties:
+        event_type:
+          type: string
+          enum:
+            - calling.call.tap
+          description: The type of event. Always `calling.call.tap` for tap status callbacks.
+          examples:
+            - calling.call.tap
+        event_channel:
+          type: string
+          description: The channel the event was delivered on.
+          examples:
+            - swml:451ed9ff-e568-4222-8af9-4f9ab7428d09
+        timestamp:
+          type: number
+          description: When the event was sent, as a Unix timestamp in seconds.
+          examples:
+            - 1777565701.5623918
+        project_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Your project ID.
+          examples:
+            - 4d0d6f16-5881-4fcc-92a4-02c51a91954d
+        space_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Your Space ID.
+          examples:
+            - 451ed9ff-e568-4222-8af9-4f9ab7428d09
+        params:
+          type: object
+          properties:
+            call_id:
+              allOf:
+                - $ref: '#/components/schemas/uuid'
+              description: ID of the call.
+              examples:
+                - 2e1e66e5-5d07-413d-9668-55542992eec0
+            node_id:
+              type: string
+              description: ID of the node the call is on.
+              examples:
+                - a0d4e6e5-5d07-413d-9668-55542992eec0
+            segment_id:
+              allOf:
+                - $ref: '#/components/schemas/uuid'
+              description: ID of the call segment. Present when the call has one.
+              examples:
+                - 2e1e66e5-5d07-413d-9668-55542992eec0
+            tag:
+              type: string
+              description: The tag associated with the call. Present only when a tag was set on the call.
+              examples:
+                - my-tag
+            control_id:
+              type: string
+              description: The control ID of the tap operation, as set in `calling.tap`.
+              examples:
+                - tap-control-1
+            state:
+              type: string
+              enum:
+                - tapping
+                - finished
+              description: The tap state. `tapping` when the tap starts, `finished` when it ends.
+              examples:
+                - tapping
+            tap:
+              allOf:
+                - $ref: '#/components/schemas/Calling.TapConfig'
+              description: The `tap` configuration, as sent in `calling.tap`.
+            device:
+              allOf:
+                - $ref: '#/components/schemas/Calling.TapDevice'
+              description: The `device` configuration, as sent in `calling.tap`.
+          required:
+            - call_id
+            - node_id
+            - control_id
+            - state
+            - tap
+            - device
+          unevaluatedProperties:
+            not: {}
+          description: The tap operation and its new state.
+      unevaluatedProperties:
+        not: {}
+    Webhooks.Calling.TranscribeStateStatusCallbackPayload:
+      type: object
+      required:
+        - event_type
+        - event_channel
+        - timestamp
+        - project_id
+        - space_id
+        - params
+      properties:
+        event_type:
+          type: string
+          enum:
+            - calling.call.transcribe
+          description: The type of event. Always `calling.call.transcribe` for transcribe state callbacks.
+          examples:
+            - calling.call.transcribe
+        event_channel:
+          type: string
+          description: The channel the event was delivered on.
+          examples:
+            - swml:451ed9ff-e568-4222-8af9-4f9ab7428d09
+        timestamp:
+          type: number
+          description: When the event was sent, as a Unix timestamp in seconds.
+          examples:
+            - 1777565701.5623918
+        project_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Your project ID.
+          examples:
+            - 4d0d6f16-5881-4fcc-92a4-02c51a91954d
+        space_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Your Space ID.
+          examples:
+            - 451ed9ff-e568-4222-8af9-4f9ab7428d09
+        params:
+          type: object
+          properties:
+            call_id:
+              allOf:
+                - $ref: '#/components/schemas/uuid'
+              description: ID of the call.
+              examples:
+                - 2e1e66e5-5d07-413d-9668-55542992eec0
+            node_id:
+              type: string
+              description: ID of the node the call is on.
+              examples:
+                - a0d4e6e5-5d07-413d-9668-55542992eec0
+            segment_id:
+              allOf:
+                - $ref: '#/components/schemas/uuid'
+              description: ID of the call segment. Present when the call has one.
+              examples:
+                - 2e1e66e5-5d07-413d-9668-55542992eec0
+            tag:
+              type: string
+              description: The tag associated with the call. Present only when a tag was set on the call.
+              examples:
+                - my-tag
+            control_id:
+              type: string
+              description: The control ID of the transcription operation, as set in `calling.transcribe`.
+              examples:
+                - transcribe-control-1
+            state:
+              type: string
+              enum:
+                - transcribing
+                - finished
+              description: The transcription state. `transcribing` when it starts, `finished` when it ends.
+              examples:
+                - transcribing
+            url:
+              type: string
+              description: The URL of the audio recorded for transcription.
+              examples:
+                - https://example.com/recordings/abd9c1b0-5d07-413d-9668-55542992eec0.wav
+            recording_id:
+              type: string
+              description: ID of the recording made for transcription.
+              examples:
+                - abd9c1b0-5d07-413d-9668-55542992eec0
+            status_url:
+              type: string
+              description: The `status_url` set in `calling.transcribe`.
+              examples:
+                - https://example.com/transcribe-status
+            size:
+              type: integer
+              description: Size of the recorded audio in bytes. Present only when `state` is `finished`.
+              examples:
+                - 96000
+            duration:
+              type: integer
+              description: Length of the recorded audio in seconds. Present only when `state` is `finished`.
+              examples:
+                - 12
+            start_time:
+              type: number
+              description: When the transcription started, as a Unix timestamp in seconds. Present only when `state` is `finished`.
+              examples:
+                - 1777565690.123
+            end_time:
+              type: number
+              description: When the transcription ended, as a Unix timestamp in seconds. Present only when `state` is `finished`.
+              examples:
+                - 1777565702.456
+          required:
+            - call_id
+            - node_id
+            - control_id
+            - state
+          unevaluatedProperties:
+            not: {}
+          description: The transcription operation and its new state.
       unevaluatedProperties:
         not: {}
     Webhooks.Calling.TranscribeStatusCallbackPayload:
@@ -61906,6 +63083,76 @@ webhooks:
               $ref: '#/components/schemas/Webhooks.AI.BedrockSwaigToolWebhookPayload'
       security:
         - {}
+  callStateStatusCallback:
+    post:
+      operationId: call_state_status_callback
+      summary: Call state status callback
+      description: |-
+        Sent to the `status_url` of a [`dial`](/docs/apis/rest/calls/call-commands) command when the call
+        enters one of the states listed in `status_events` (by default, only `ended`).
+        `params.call_state` is the state the call has entered.
+
+        Status callbacks are advisory, best-effort notifications — delivery can be delayed or fail silently, so don't gate time-critical actions on receiving one. See [Status callback reliability](/docs/platform/webhooks#status-callback-reliability).
+      parameters: []
+      responses:
+        '200':
+          description: Webhook received
+      tags:
+        - Calling Webhooks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Webhooks.Calling.CallStateStatusCallbackPayload'
+      security:
+        - {}
+  collectStatusCallback:
+    post:
+      operationId: collect_status_callback
+      summary: Collect status callback
+      description: |-
+        Sent to the `status_url` of a `calling.collect` command with each collect result: the digits
+        or speech collected, or why nothing was.
+
+        Status callbacks are advisory, best-effort notifications — delivery can be delayed or fail silently, so don't gate time-critical actions on receiving one. See [Status callback reliability](/docs/platform/webhooks#status-callback-reliability).
+      parameters: []
+      responses:
+        '200':
+          description: Webhook received
+      tags:
+        - Calling Webhooks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Webhooks.Calling.CollectStatusCallbackPayload'
+      security:
+        - {}
+  detectStatusCallback:
+    post:
+      operationId: detect_status_callback
+      summary: Detect status callback
+      description: |-
+        Sent to the `status_url` of a `calling.detect` command each time the detector reports a result,
+        and with `finished` when it stops.
+
+        Status callbacks are advisory, best-effort notifications — delivery can be delayed or fail silently, so don't gate time-critical actions on receiving one. See [Status callback reliability](/docs/platform/webhooks#status-callback-reliability).
+      parameters: []
+      responses:
+        '200':
+          description: Webhook received
+      tags:
+        - Calling Webhooks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Webhooks.Calling.DetectStatusCallbackPayload'
+      security:
+        - {}
   inboundCallWebhook:
     post:
       operationId: inbound_call_webhook
@@ -61974,6 +63221,52 @@ webhooks:
               $ref: '#/components/schemas/Webhooks.Messaging.MessageStatusCallbackPayload'
       security:
         - {}
+  playStatusCallback:
+    post:
+      operationId: play_status_callback
+      summary: Play status callback
+      description: |-
+        Sent to the `status_url` of a `calling.play` command when playback changes state.
+        `params.state` is `playing`, `paused`, `finished`, or `error`.
+
+        Status callbacks are advisory, best-effort notifications — delivery can be delayed or fail silently, so don't gate time-critical actions on receiving one. See [Status callback reliability](/docs/platform/webhooks#status-callback-reliability).
+      parameters: []
+      responses:
+        '200':
+          description: Webhook received
+      tags:
+        - Calling Webhooks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Webhooks.Calling.PlayStatusCallbackPayload'
+      security:
+        - {}
+  recordStatusCallback:
+    post:
+      operationId: record_status_callback
+      summary: Record status callback
+      description: |-
+        Sent to the `status_url` of a `calling.record` command when the recording changes state.
+        The `finished` event carries the recording's final `url`, `size`, and `duration`.
+
+        Status callbacks are advisory, best-effort notifications — delivery can be delayed or fail silently, so don't gate time-critical actions on receiving one. See [Status callback reliability](/docs/platform/webhooks#status-callback-reliability).
+      parameters: []
+      responses:
+        '200':
+          description: Webhook received
+      tags:
+        - Calling Webhooks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Webhooks.Calling.RecordStatusCallbackPayload'
+      security:
+        - {}
   streamStatusCallback:
     post:
       operationId: stream_status_callback
@@ -62038,6 +63331,29 @@ webhooks:
               $ref: '#/components/schemas/Webhooks.AI.SwaigSignatureRequestPayload'
       security:
         - {}
+  tapStatusCallback:
+    post:
+      operationId: tap_status_callback
+      summary: Tap status callback
+      description: |-
+        Sent to the `status_url` of a `calling.tap` command when the tap starts (`tapping`) and when it
+        ends (`finished`).
+
+        Status callbacks are advisory, best-effort notifications — delivery can be delayed or fail silently, so don't gate time-critical actions on receiving one. See [Status callback reliability](/docs/platform/webhooks#status-callback-reliability).
+      parameters: []
+      responses:
+        '200':
+          description: Webhook received
+      tags:
+        - Calling Webhooks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Webhooks.Calling.TapStatusCallbackPayload'
+      security:
+        - {}
   tenDlcStatusCallback:
     post:
       operationId: ten_dlc_status_callback
@@ -62096,6 +63412,30 @@ webhooks:
               $ref: '#/components/schemas/Webhooks.Messaging.TenDlcStatusCallbackPayload'
       security:
         - {}
+  transcribeStateCallback:
+    post:
+      operationId: transcribe_state_callback
+      summary: Transcribe state callback
+      description: |-
+        Sent to the `status_url` of a `calling.transcribe` command when the transcription starts
+        (`transcribing`) and when it finishes (`finished`). The transcript itself arrives separately, as a
+        [transcript status callback](/docs/apis/rest/webhooks/transcribe-status-callback).
+
+        Status callbacks are advisory, best-effort notifications — delivery can be delayed or fail silently, so don't gate time-critical actions on receiving one. See [Status callback reliability](/docs/platform/webhooks#status-callback-reliability).
+      parameters: []
+      responses:
+        '200':
+          description: Webhook received
+      tags:
+        - Calling Webhooks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Webhooks.Calling.TranscribeStateStatusCallbackPayload'
+      security:
+        - {}
   transcribeStatusCallback:
     post:
       operationId: transcribe_status_callback
@@ -62104,6 +63444,8 @@ webhooks:
         Sent to your `status_url` when the call's transcription is ready.
         `calling.transcript.completed` includes the transcribed text;
         `calling.transcript.failed` means the call could not be transcribed.
+        The same `status_url` also receives [transcribe state callbacks](/docs/apis/rest/webhooks/transcribe-state-callback)
+        as the transcription starts and finishes.
 
         Status callbacks are advisory, best-effort notifications — delivery can be delayed or fail silently, so don't gate time-critical actions on receiving one. See [Status callback reliability](/docs/platform/webhooks#status-callback-reliability).
       parameters: []

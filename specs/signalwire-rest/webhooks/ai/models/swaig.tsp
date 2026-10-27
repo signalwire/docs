@@ -155,10 +155,11 @@ model AiSwaigToolWebhookPayload {
 
   @doc("""
     The kind of conversation the agent is running: a call, or a text conversation held over the
-    [AI chat endpoint](/docs/apis/rest/ai-chat/chat-methods).
+    [AI chat endpoint](/docs/apis/rest/ai-chat/chat-methods). Not included on function calls made
+    during a call.
     """)
-  @example("voice")
-  conversation_type: "voice" | "chat";
+  @example("chat")
+  conversation_type?: "voice" | "chat";
 
   @doc("Your project ID, when available.")
   @example("4d0d6f16-5881-4fcc-92a4-02c51a91954d")

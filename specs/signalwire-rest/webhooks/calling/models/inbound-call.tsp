@@ -15,63 +15,67 @@ model InboundCallHeader {
 }
 
 @summary("Inbound call SIP data")
-@doc("SIP-specific data for SIP calls. Only present when `call.type` is `sip`.")
+@doc("""
+  SIP-specific data for SIP calls. Only present when `call.type` is `sip`. Every key is
+  optional: each one is included only when the call's SIP signaling carries a value for it,
+  so a key missing from one call can be present on another.
+  """)
 model InboundCallSipData {
   @doc("The host portion of the SIP request URI.")
   @example("yourdomain.com")
-  sip_req_host: string;
+  sip_req_host?: string;
 
   @doc("The full SIP request URI.")
   @example("destination@yourdomain.com")
-  sip_req_uri: string;
+  sip_req_uri?: string;
 
   @doc("The user portion of the SIP request URI.")
   @example("destination")
-  sip_req_user: string;
+  sip_req_user?: string;
 
   @doc("The host portion of the SIP From header.")
   @example("example.com")
-  sip_from_host: string;
+  sip_from_host?: string;
 
   @doc("The full URI from the SIP From header.")
   @example("user@example.com")
-  sip_from_uri: string;
+  sip_from_uri?: string;
 
   @doc("The user portion of the SIP From header.")
   @example("user")
-  sip_from_user: string;
+  sip_from_user?: string;
 
   @doc("The host portion of the SIP To header.")
   @example("yourdomain.com")
-  sip_to_host: string;
+  sip_to_host?: string;
 
   @doc("The full URI from the SIP To header.")
   @example("destination@yourdomain.com")
-  sip_to_uri: string;
+  sip_to_uri?: string;
 
   @doc("The user portion of the SIP To header.")
   @example("destination")
-  sip_to_user: string;
+  sip_to_user?: string;
 
   @doc("The user portion of the SIP Contact header.")
   @example("user")
-  sip_contact_user: string;
+  sip_contact_user?: string;
 
   @doc("The port from the SIP Contact header.")
   @example("5060")
-  sip_contact_port: string;
+  sip_contact_port?: string;
 
   @doc("The full URI from the SIP Contact header.")
   @example("user@192.168.1.100:5060")
-  sip_contact_uri: string;
+  sip_contact_uri?: string;
 
   @doc("The host portion of the SIP Contact header.")
   @example("192.168.1.100")
-  sip_contact_host: string;
+  sip_contact_host?: string;
 
-  @doc("Additional parameters from the SIP Contact header.")
+  @doc("Additional parameters from the SIP Contact header, as key/value pairs. An empty object when the header has none.")
   @example(#{})
-  sip_contact_params: {
+  sip_contact_params?: {
     ...TypeSpec.Record<unknown>;
   };
 }
@@ -191,6 +195,8 @@ model InboundCallWebhookPayload {
     Environment variables available to this call's SWML document, which you can reference as `\${envs.<key>}`. Combines the variables you've configured at the account or project level with any `custom_variables` you passed on the outbound [Call commands](/docs/apis/rest/calls/call-commands) request.
     
     Keys are case-sensitive. When a `custom_variables` key exactly matches an account- or project-level variable, including case, the value from the request wins; if they differ only in case, both are kept as separate variables.
+
+    Not included on every request: treat a missing `envs` as a call with no environment variables.
     """)
   @example(#{
     api_key: "<YOUR_API_KEY>",
@@ -198,13 +204,13 @@ model InboundCallWebhookPayload {
     id: "12345",
     case_number: "54321",
   })
-  envs: {
+  envs?: {
     ...TypeSpec.Record<unknown>;
   };
 
-  @doc("Parameters passed via a SWML calling `execute` or `transfer` step. An empty object on the initial document fetch.")
+  @doc("Parameters passed via a SWML calling `execute` or `transfer` step. Included only when the step that requested this document passed `params`, so it is absent on the first document fetch for a call.")
   @example(#{ department: "sales" })
-  params: {
+  params?: {
     ...TypeSpec.Record<unknown>;
   };
 }

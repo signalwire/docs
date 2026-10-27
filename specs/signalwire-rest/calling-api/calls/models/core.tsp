@@ -97,6 +97,87 @@ model CallLeg {
   @doc("The parent call ID if this is a child call.")
   @example(null)
   parent_id: uuid | null;
+
+  @doc("Audio quality statistics for the call. `null` until the call has ended and its statistics have been recorded.")
+  @example(null)
+  qos_metrics: CallQosMetrics | null;
+}
+
+@doc("""
+  Audio quality statistics measured on the call's media. `audio_in_*` values describe audio
+  received from the far end, `audio_out_*` values audio sent to it. Each statistic is included
+  only when it was measured, so any key may be absent.
+  """)
+model CallQosMetrics {
+  @doc("Number of audio packets received.")
+  @example(345)
+  audio_in_media_packet_count?: integer;
+
+  @doc("Number of DTMF packets received.")
+  @example(0)
+  audio_in_dtmf_packet_count?: integer;
+
+  @doc("Number of received audio packets that were skipped.")
+  @example(5)
+  audio_in_skip_packet_count?: integer;
+
+  @doc("Number of received audio packets flushed from the jitter buffer.")
+  @example(0)
+  audio_in_flush_packet_count?: integer;
+
+  @doc("The largest size the jitter buffer reached.")
+  @example(0)
+  audio_in_largest_jb_size?: integer;
+
+  @doc("Total number of flaws detected in received audio.")
+  @example(0)
+  audio_in_flaw_total?: integer;
+
+  @doc("Quality of the received audio, as a percentage.")
+  @example(100)
+  audio_in_quality_percentage?: float64;
+
+  @doc("Mean interval between received audio packets, in milliseconds.")
+  @example(20)
+  audio_in_mean_interval?: float64;
+
+  @doc("Smallest jitter variance measured on received audio.")
+  @example(0.06)
+  audio_in_jitter_min_variance?: float64;
+
+  @doc("Largest jitter variance measured on received audio.")
+  @example(0.23)
+  audio_in_jitter_max_variance?: float64;
+
+  @doc("Number of audio packets sent.")
+  @example(349)
+  audio_out_media_packet_count?: integer;
+
+  @doc("Number of DTMF packets sent.")
+  @example(0)
+  audio_out_dtmf_packet_count?: integer;
+
+  @doc("Number of sent audio packets lost.")
+  @example(0)
+  audio_out_lost?: integer;
+
+  @doc("Smallest jitter measured on sent audio.")
+  audio_out_jitter_min?: float64;
+
+  @doc("Largest jitter measured on sent audio.")
+  audio_out_jitter_max?: float64;
+
+  @doc("Average jitter measured on sent audio.")
+  audio_out_jitter_avg?: float64;
+
+  @doc("Smallest round-trip time measured.")
+  audio_rtt_min?: float64;
+
+  @doc("Largest round-trip time measured.")
+  audio_rtt_max?: float64;
+
+  @doc("Average round-trip time measured.")
+  audio_rtt_avg?: float64;
 }
 
 @summary("Fabric Subscriber Device Leg")
