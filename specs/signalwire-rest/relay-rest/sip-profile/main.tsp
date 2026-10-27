@@ -30,7 +30,9 @@ namespace SignalWireAPI.RelayRest.SipProfile {
     @summary("Update SIP profile")
     @doc("""
       Changes the project-wide defaults that SIP Credentials use for registration, media, security, and outbound calling. This updates the project's single SIP Profile; it does not create or update an individual [SIP Credential](/docs/apis/rest/sip-credentials/update-sip-credential) or [SIP Gateway](/docs/apis/rest/sip-gateway/update-sip-gateway).
-      
+
+      Omitted fields keep their current values. If you send back a body read from [Get SIP profile](/docs/apis/rest/sip-profile/retrieve-sip-profile), remove `default_send_as` or set it to `null` when it reads `random`, because `random` is not accepted as input.
+
       ${tokenPermissions<"_Voice_">}
       """)
     @put

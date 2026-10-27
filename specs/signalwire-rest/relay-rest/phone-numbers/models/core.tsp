@@ -287,6 +287,10 @@ model PhoneNumber {
   @doc("The ISO 3166-1 alpha-2 country code of the phone number.")
   @example("US")
   country_code: string | null;
+
+  @doc("`true` while the number is being ported into your account. A number that is porting in can't be assigned to a 10DLC campaign until the port completes.")
+  @example(false)
+  pending_port_in: boolean;
 }
 
 @doc("Details and review status of a caller ID name request for a phone number.")
@@ -364,43 +368,40 @@ model PhoneNumberCnam {
   updated_at: utcDateTime;
 }
 
-@doc("Phone number capabilities.")
-model PhoneNumberCapabilities {
-  @doc("Whether the phone number can receive voice calls.")
-  voice?: boolean;
-
-  @doc("Whether the phone number can send/receive SMS.")
-  sms?: boolean;
-
-  @doc("Whether the phone number can send/receive MMS.")
-  mms?: boolean;
-
-  @doc("Whether the phone number can send/receive fax.")
-  fax?: boolean;
-}
-
 @doc("Available phone number for purchase.")
 model AvailablePhoneNumber {
-  @doc("The phone number in E.164 format.")
+  @doc("The phone number in E.164 format. Pass this value as `number` to [Purchase phone number](/docs/apis/rest/phone-numbers/purchase-phone-number).")
   @example("+15551234567")
-  number: string;
+  e164: string;
 
-  @doc("The region of the phone number.")
+  @doc("The phone number in its national format, or `null` when it couldn't be determined.")
+  @example("(555) 123-4567")
+  national_number_formatted: string | null;
+
+  @doc("The phone number in its international format, or `null` when it couldn't be determined.")
+  @example("+1 555-123-4567")
+  international_number_formatted: string | null;
+
+  @doc("The rate center of the phone number, or `null` when none is reported.")
+  @example("LOS ANGELES")
+  rate_center: string | null;
+
+  @doc("The state, province, or region of the phone number, or `null` when none is reported.")
   @example("CA")
-  region?: string;
+  region: string | null;
 
-  @doc("The city of the phone number.")
-  @example("Los Angeles")
-  city?: string;
+  @doc("The ISO 3166-1 alpha-2 country code of the phone number, or `null` when it couldn't be determined.")
+  @example("US")
+  country_code: string | null;
 
-  @doc("The rate center of the phone number.")
-  rate_center?: string;
-
-  @doc("The LATA of the phone number.")
-  lata?: string;
-
-  @doc("The capabilities of the phone number.")
-  capabilities?: PhoneNumberCapabilities;
+  @doc("The communication methods the phone number supports once purchased. `sms` and `mms` are listed only when the number is eligible for messaging in your project.")
+  @example(#[
+    PhoneNumberCapability.voice,
+    PhoneNumberCapability.fax,
+    PhoneNumberCapability.sms,
+    PhoneNumberCapability.mms
+  ])
+  capabilities: PhoneNumberCapability[];
 }
 
 @doc("Phone number lookup result.")
@@ -457,6 +458,14 @@ model PhoneNumberLookup {
 
 @doc("Carrier lookup information.")
 model CarrierLookupInfo {
+  @doc("The Location Routing Number (LRN) associated with the number. Carriers use the LRN to route calls to a number that has been ported.")
+  @example("15551230000")
+  lrn?: string | null;
+
+  @doc("The Service Provider ID (SPID) of the carrier that currently serves the number.")
+  @example("1234")
+  spid?: string | null;
+
   @doc("The Operating Company Number associated with the number.")
   @example("12345")
   ocn?: string;

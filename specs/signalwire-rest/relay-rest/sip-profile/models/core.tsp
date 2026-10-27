@@ -23,7 +23,26 @@ model SipProfile {
   @example("optional")
   default_encryption?: "required" | "optional";
 
-  @doc("The e164 formatted number you wish to set as the originating number when dialing PSTN phone numbers from a SIP Endpoint that uses this profile. Specify null or an empty string to randomly choose a purchased or verified number from within the project.")
+  @doc("""
+    How calls placed by a SIP endpoint whose `call_handler` is `default` are handled. `passthrough`
+    connects the call to the dialed destination, including PSTN numbers, and `block-pstn` does the same
+    but blocks calls to PSTN numbers.
+    """)
+  @example(SipProfileOutboundPolicy.passthrough)
+  default_outbound_policy?: SipProfileOutboundPolicy;
+
+  @doc("""
+    The E.164 number SIP endpoints that use this profile send as their From number when dialing PSTN
+    phone numbers. Returns `random` when no number is set, meaning a purchased or verified number from
+    the project is chosen. `random` is only a response value: to clear the number with
+    [Update SIP profile](/docs/apis/rest/sip-profile/update-sip-profile), send `null` or an empty string.
+    """)
   @example("+15551234567")
   default_send_as?: string;
+}
+
+@doc("Default outbound policy for SIP endpoints that use the profile.")
+enum SipProfileOutboundPolicy {
+  passthrough: "passthrough",
+  block_pstn: "block-pstn",
 }
