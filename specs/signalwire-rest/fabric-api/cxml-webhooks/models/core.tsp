@@ -19,6 +19,10 @@ model CXMLWebhook {
   @example("My CXML Webhook")
   name: string;
 
+  @doc("Whether the CXML Webhook handles calls or messages. Always the same value as `used_for`.")
+  @example(UsedForType.Calling)
+  script_type: UsedForType;
+
   @doc("Used for of the CXML Webhook.")
   @example(UsedForType.Calling)
   used_for: UsedForType;

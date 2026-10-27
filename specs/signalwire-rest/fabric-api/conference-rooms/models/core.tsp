@@ -18,10 +18,10 @@ model ConferenceRoom {
   @example("coffee_cafe")
   name: string;
 
-  @doc("The descrption of the Conference Room")
+  @doc("The description of the Conference Room, or `null` when not set.")
   @example("This room is for coffee, no shop talk")
   @maxLength(3000)
-  description: string;
+  description: string | null;
 
   @doc("Display name of the Conference Room")
   @example("Reception")

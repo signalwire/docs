@@ -56,13 +56,13 @@ namespace SignalWireAPI.Fabric.SwmlScripts {
       """)
     @opExample(
       #{
-        returnType: #[#{
+        returnType: #{
           data: #[CALLING_SWML_SCRIPT_RESPONSE_EXAMPLE],
           links: #{
             self: "https://example.signalwire.com/api/fabric/resources/swml_scripts?page_number=0&page_size=50",
             first: "https://example.signalwire.com/api/fabric/resources/swml_scripts?page_number=0&page_size=50",
           },
-        }],
+        },
       },
       #{
         title: "SWML Script list",
@@ -70,7 +70,7 @@ namespace SignalWireAPI.Fabric.SwmlScripts {
       }
     )
     list():
-      | SwmlScriptListResponse[]
+      | SwmlScriptListResponse
       | StatusCode401
       | StatusCode404
       | StatusCode500;

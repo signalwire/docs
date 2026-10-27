@@ -19,6 +19,10 @@ model SWMLWebhook {
   @example("My SWML Webhook")
   name: string;
 
+  @doc("Whether the SWML Webhook handles inbound calls or inbound messages. Always the same value as `used_for`.")
+  @example("calling")
+  script_type: "calling" | "messaging";
+
   @doc("Indicates whether this SWML Webhook handles inbound calls or inbound messages. Determines the payload SignalWire POSTs to `primary_request_url`.")
   @example("calling")
   used_for: "calling" | "messaging";
