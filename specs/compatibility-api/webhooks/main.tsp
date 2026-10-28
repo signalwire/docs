@@ -166,7 +166,7 @@ op transcriptionStatusCallback(
   [create](/docs/compatibility-api/rest/incoming-phone-numbers/create-incoming-phone-number) or
   [update](/docs/compatibility-api/rest/incoming-phone-numbers/update-incoming-phone-number) Incoming Phone Number API endpoints.
   
-  By default, the webhook fires only when the call is `completed` or `failed`, making it well-suited
+  The webhook fires when the call ends, with `CallStatus` set to `completed`, `busy`, `no-answer`, or `failed`. This makes it well-suited
   for tracking inbound call success rate, call quality, and total call volume in a call center context.
   The payload carries the same parameters as the
   [Voice status callback](/docs/compatibility-api/rest/calls/webhooks/voice-status-callback).

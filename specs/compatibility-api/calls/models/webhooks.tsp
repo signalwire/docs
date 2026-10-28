@@ -12,10 +12,6 @@ model VoiceStatusCallbackPayload {
   @example("2010-04-01")
   ApiVersion: string;
 
-  @doc("The value of the `P-Asserted-Identity` SIP header received for the call, when present.")
-  @example("<sip:+15551234567@example.com>")
-  AssertedIdentity?: string;
-
   @doc("The average time between packets for the inbound stream.")
   @example(20.03)
   AudioInAveragePtime?: float64;
@@ -43,8 +39,11 @@ model VoiceStatusCallbackPayload {
   @example(4)
   AudioInLargestJbSize?: int32;
 
-  @doc("A mean opinion score on a scale of 1–5 that helps determine audio quality.")
-  @example(4.3)
+  @doc("""
+    A mean opinion score on a scale of 1–5 that helps determine audio quality.
+    Sent with up to two decimal places, such as `4.37`. A whole-number score is sent with one decimal place, such as `4.0`.
+    """)
+  @example(4.37)
   AudioInMos?: float64;
 
   @doc("The number of audio packets received in the inbound media stream.")
@@ -82,20 +81,16 @@ model VoiceStatusCallbackPayload {
   @example(1840)
   AudioOutMediaPacketCount?: int32;
 
-  @doc("The total number of packets sent in the outbound media stream.")
-  @example(1840)
-  AudioOutPacketCount?: int32;
-
-  @doc("The average audio round-trip time, in milliseconds.")
-  @example(50.5)
+  @doc("The average audio round-trip time, in milliseconds, measured to the nearest 10 milliseconds.")
+  @example(50)
   AudioRttAvg?: float64;
 
-  @doc("The maximum audio round-trip time, in milliseconds.")
-  @example(100.8)
+  @doc("The maximum audio round-trip time, in milliseconds, measured to the nearest 10 milliseconds.")
+  @example(120)
   AudioRttMax?: float64;
 
-  @doc("The minimum audio round-trip time, in milliseconds.")
-  @example(30.2)
+  @doc("The minimum audio round-trip time, in milliseconds, measured to the nearest 10 milliseconds.")
+  @example(30)
   AudioRttMin?: float64;
 
   @doc("The source of the status callback.")
@@ -165,10 +160,6 @@ model VoiceStatusCallbackPayload {
   @doc("A unique identifier for the call that created this call.")
   @example("b3877c40-da60-4998-90ad-b792e98472pa")
   ParentCallSid?: string;
-
-  @doc("The value of the `P-Preferred-Identity` SIP header received for the call, when present.")
-  @example("<sip:+15551234567@example.com>")
-  PreferredIdentity?: string;
 
   @doc("The SIP `Call-ID` of the call.")
   @example("f8acbf3b-6d1a-4c55-9f0e-2a7d3c1b9e40")
@@ -240,9 +231,18 @@ model RecordingStatusCallbackPayload {
   @example(1)
   RecordingChannels: int32;
 
-  @doc("The type of call that initiated the recording.")
+  @doc("""
+    What started the recording.
+    - `RecordVerb`: the `<Record>` verb.
+    - `DialVerb`: the `record` attribute of `<Dial>`, including a `<Dial>` to a `<Conference>`.
+    - `Queue`: the `record` attribute of a `<Dial>` to a `<Queue>`.
+    - `StartCallRecordingAPI`: a request to the REST API to start a call recording.
+    - `Conference`: a conference recording.
+
+    The parameter is always sent. Its value is empty for a recording started by `Record=true` when creating a call through the REST API.
+    """)
   @example("RecordVerb")
-  RecordingSource: string;
+  RecordingSource: "RecordVerb" | "DialVerb" | "Queue" | "StartCallRecordingAPI" | "Conference" | "";
 
   @doc("""
     Which audio track was recorded.
@@ -255,9 +255,12 @@ model RecordingStatusCallbackPayload {
 
   @doc("The timestamp, in RFC 2822 format, of when the recording started.")
   @example("Thu, 04 Apr 2024 18:32:15 +0000")
-  RecordingStartTime?: string;
+  RecordingStartTime: string;
 
-  @doc("Whether leading and trailing silence was trimmed from the recording: `trim-silence` or `do-not-trim`.")
+  @doc("""
+    Whether leading and trailing silence was trimmed from the recording: `trim-silence` or `do-not-trim`.
+    The parameter is always sent. Its value is empty when the recording has no trim setting, as for a conference recording.
+    """)
   @example("trim-silence")
-  Trim?: string;
+  Trim: string;
 }
