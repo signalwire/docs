@@ -12,13 +12,18 @@ patterns, see the guides; for full API contracts, see the
 
 ## Connection issues
 
-### `InvalidCredentialsError` on connect
+### `InvalidCredentialsError` or `UnexpectedError` on connect
 
-**Cause:** Token is expired, malformed, or minted for a different SignalWire space.
+**Cause:** On connect, the SDK usually reports `InvalidCredentialsError` because
+the token can't be read as a SAT. It also reports it when the credential your
+provider returned is already past its `expiry_at`. It reports `UnexpectedError`
+with the message `Unexpected Error at Error fetching user information` when
+SignalWire refuses the SAT: it's expired, revoked, or issued for a different
+SignalWire space.
 
 **Fix:**
 
-1. Mint a fresh SAT from your backend — see [Authentication](/docs/browser-sdk/v4/guides/authentication).
+1. Create a fresh SAT from your backend — see [Authentication](/docs/browser-sdk/v4/guides/authentication).
 2. Confirm the token was issued by the space you're connecting to.
 3. Check that the full token string was copied (SATs are long; truncation is common).
 
@@ -59,13 +64,31 @@ client.ready$.pipe(filter(Boolean), take(1)).subscribe(async () => {
 
 **Causes:** Unstable network, corporate firewall/proxy blocking WebSocket, idle timeout.
 
-The SDK reconnects automatically. Drive a "reconnecting" banner off
-[`isConnected$`](/docs/browser-sdk/v4/reference/signalwire/is-connected$):
+The SDK reconnects automatically. A connection banner needs two
+observables, because neither tells the whole story alone:
+
+- [`ready$`](/docs/browser-sdk/v4/reference/signalwire/ready$) emits
+  `false` while the SDK reconnects and `true` once the session has
+  re-authenticated.
+- [`isConnected$`](/docs/browser-sdk/v4/reference/signalwire/is-connected$)
+  doesn't change during an automatic reconnect. It is `false` before the
+  first connect and after the client disconnects, including when the
+  server refuses the credential on a reconnect and the SDK stops retrying.
+
+`ready$` is also `false` in both of those states, so a banner driven by
+`ready$` alone would say "reconnecting" while nothing is retrying. Show
+"reconnecting" only while the client is connected but not ready:
 
 ```js
-client.isConnected$.subscribe((connected) => {
-  connected ? hideReconnectingBanner() : showReconnectingBanner();
-});
+import { combineLatest } from "rxjs";
+
+combineLatest([client.isConnected$, client.ready$]).subscribe(
+  ([connected, ready]) => {
+    if (ready) hideConnectionBanner();
+    else if (connected) showConnectionBanner("Reconnecting…");
+    else showConnectionBanner("Disconnected");
+  }
+);
 ```
 
 ## Video / Audio issues
@@ -182,11 +205,20 @@ was never called, or the token can't register. Only full Subscriber
 Access Tokens can register; Guest SATs, Invite SATs, and embed tokens
 are outbound-only.
 
+Call it once. It waits for the session to authenticate, and the SDK
+registers again by itself after every reconnect:
+
 ```js
-client.ready$.subscribe(async (ready) => {
-  if (ready) await client.register();
-});
+await client.register();
 ```
+
+If the SAT has expired by the time the SDK reconnects, SignalWire refuses
+that automatic registration. The SDK reports an `InvalidCredentialsError`
+on [`errors$`](/docs/browser-sdk/v4/reference/signalwire/errors$) and
+[`isRegistered$`](/docs/browser-sdk/v4/reference/signalwire/is-registered$)
+emits `false`. Create a new client with a fresh SAT, or use
+a credential provider that refreshes it; see
+[Authentication](/docs/browser-sdk/v4/guides/authentication).
 
 Inbound calls then surface on [`session.incomingCalls$`](/docs/browser-sdk/v4/reference/interfaces/session-state#incomingcalls-1).
 
@@ -290,6 +322,13 @@ stats?.forEach((report) => {
   }
 });
 ```
+
+`getStats()` returns a single snapshot. To keep the whole call for later
+debugging, either download a dump from `chrome://webrtc-internals` when the call
+ends, or add [rtcstats-js](https://github.com/rtcstats/rtcstats/tree/main/packages/rtcstats-js),
+an open-source library that wraps `RTCPeerConnection` and records periodic
+`getStats()` samples along with every peer connection event, streaming them to
+a server you run.
 
 ### Test without real media
 

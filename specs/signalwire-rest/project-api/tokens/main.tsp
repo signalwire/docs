@@ -16,6 +16,27 @@ namespace SignalWireAPI.Project.Tokens {
   @tag(PROJECT_TOKENS_TAG)
   @friendlyName("Tokens")
   interface ProjectTokens {
+    @operationId("list_tokens")
+    @summary("List API tokens")
+    @doc("""
+      Lists the project API tokens the caller can manage, newest first. Use it to find the `id` of a token before you [update](/docs/apis/rest/project-tokens/update-token), [regenerate](/docs/apis/rest/project-tokens/regenerate-token), or [delete](/docs/apis/rest/project-tokens/delete-token) it, or to check when each token last authenticated a request.
+
+      Token values are never returned. A token's value appears only in the response that issued it: [Create API token](/docs/apis/rest/project-tokens/create-token) or [Regenerate API token](/docs/apis/rest/project-tokens/regenerate-token).
+
+      With a project API token, the list covers the tokens of the authenticated project and its subprojects. With a [Personal access token](/docs/apis/authorization#personal-access-tokens), it covers the tokens of every project the token holder is enabled for, plus their subprojects. Pass `project_id` to narrow the list to one project.
+
+      ${tokenOrPatPermissions<"_Management_">}
+      """)
+    @get
+    list(...ListTokensQuery):
+      | {
+          @statusCode statusCode: 200;
+          @body body: TokenListResponse;
+        }
+      | StatusCode401
+      | ListTokensStatusCode422
+      | StatusCode500;
+
     @operationId("create_token")
     @summary("Create API token")
     @doc("""
@@ -23,7 +44,7 @@ namespace SignalWireAPI.Project.Tokens {
 
       The Compatibility API exposes the same project tokens through its account-scoped route. Use [Generate a new API Token](/docs/compatibility-api/rest/tokens/create-token) for that request format.
 
-      The response is the only place the token secret is returned. Store it securely; no later request, including [Update API token](/docs/apis/rest/project-tokens/update-token), can read it back.
+      The response is the only place the token secret is returned. Store it securely; no later request, including [Update API token](/docs/apis/rest/project-tokens/update-token) and [List API tokens](/docs/apis/rest/project-tokens/list-tokens), can read it back. If you lose it, [Regenerate API token](/docs/apis/rest/project-tokens/regenerate-token) issues a new value for the same token.
 
       With a project API token, the new token belongs to the authenticated project, or to one of its subprojects when `subproject_id` is given; `project_id` is ignored. With a [Personal access token](/docs/apis/authorization#personal-access-tokens), `project_id` is required and names the project the token is created for, which is how a root project created with [Create a project](/docs/apis/rest/projects/create-subproject) gets its first credential.
       
@@ -48,9 +69,9 @@ namespace SignalWireAPI.Project.Tokens {
     @operationId("update_token")
     @summary("Update API token")
     @doc("""
-      Changes the name or enabled permission categories of an existing project API token. Use it to rotate a token's responsibilities without replacing its identifier; remove permissions that the token's server-side caller no longer needs. For the account-scoped Compatibility API route, use [Update an API Token](/docs/compatibility-api/rest/tokens/update-token).
+      Changes the name or enabled permission categories of an existing project API token. Use it to change a token's permissions without replacing its identifier; remove permissions that the token's server-side caller no longer needs. For the account-scoped Compatibility API route, use [Update an API Token](/docs/compatibility-api/rest/tokens/update-token).
 
-      The response contains the token's `id`, `name`, and `permissions` only. The token secret is returned once, by [Create API token](/docs/apis/rest/project-tokens/create-token), and cannot be retrieved afterwards.
+      Updating a token does not change its value. The response omits the token secret, which is returned only by [Create API token](/docs/apis/rest/project-tokens/create-token) and [Regenerate API token](/docs/apis/rest/project-tokens/regenerate-token).
       
       ${tokenOrPatPermissions<"_Management_">}
       
@@ -94,6 +115,39 @@ namespace SignalWireAPI.Project.Tokens {
     ):
       | {
           @statusCode statusCode: 204;
+        }
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
+
+    @operationId("regenerate_token")
+    @summary("Regenerate API token")
+    @doc("""
+      Replaces a project API token's value and returns the new value. Use it to rotate a credential on a schedule, after it has been exposed, or when its value has been lost. The token keeps its `id`, `name`, and `permissions`, so there is nothing to re-enter; to change those, use [Update API token](/docs/apis/rest/project-tokens/update-token).
+
+      The previous value stops working immediately, on every API that accepts a project API token. Anything still using it receives `401 Unauthorized` until you give it the new value.
+
+      The response is the only place the new value is returned; store it securely. If you lose it, regenerate the token again.
+
+      The new value always uses the current token format: 42 characters beginning with `swapi_`. A token issued in the legacy format, 50 characters beginning with `PT`, changes format and length when regenerated, so update anything that validates or stores token values by length or prefix.
+
+      You can regenerate the token you are authenticating with. The request succeeds, but the value you sent is no longer valid once it does, so save the new value from the response before making any further request.
+
+      A token the caller cannot reach returns `404 Not Found`. Use [List API tokens](/docs/apis/rest/project-tokens/list-tokens) to find the `id` of each token you can manage.
+
+      ${tokenOrPatPermissions<"_Management_">}
+      """)
+    @route("/{token_id}/regenerate")
+    @post
+    regenerate(
+      @path
+      @doc("The unique identifier of the token to regenerate.")
+      @example("ea14556a-984f-11ee-b9d1-0242ac120002")
+      token_id: uuid,
+    ):
+      | {
+          @statusCode statusCode: 200;
+          @body body: CreateTokenResponse;
         }
       | StatusCode401
       | StatusCode404
