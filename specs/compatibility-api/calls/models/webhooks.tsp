@@ -44,8 +44,8 @@ model VoiceStatusCallbackPayload {
   AudioInLargestJbSize?: int32;
 
   @doc("A mean opinion score on a scale of 1–5 that helps determine audio quality.")
-  @example("4.3")
-  AudioInMos?: string;
+  @example(4.3)
+  AudioInMos?: float64;
 
   @doc("The number of audio packets received in the inbound media stream.")
   @example(1842)
@@ -62,6 +62,18 @@ model VoiceStatusCallbackPayload {
   @example(0)
   AudioOutDtmfPacketCount?: int32;
 
+  @doc("The average jitter, in milliseconds, of the outgoing audio stream.")
+  @example(10.2)
+  AudioOutJitterAvg?: float64;
+
+  @doc("The maximum jitter, in milliseconds, of the outgoing audio stream.")
+  @example(15.3)
+  AudioOutJitterMax?: float64;
+
+  @doc("The minimum jitter, in milliseconds, of the outgoing audio stream.")
+  @example(5.1)
+  AudioOutJitterMin?: float64;
+
   @doc("The number of outgoing audio RTP packets reported lost.")
   @example(0)
   AudioOutLost?: int32;
@@ -74,6 +86,18 @@ model VoiceStatusCallbackPayload {
   @example(1840)
   AudioOutPacketCount?: int32;
 
+  @doc("The average audio round-trip time, in milliseconds.")
+  @example(50.5)
+  AudioRttAvg?: float64;
+
+  @doc("The maximum audio round-trip time, in milliseconds.")
+  @example(100.8)
+  AudioRttMax?: float64;
+
+  @doc("The minimum audio round-trip time, in milliseconds.")
+  @example(30.2)
+  AudioRttMin?: float64;
+
   @doc("The source of the status callback.")
   @example("call-progress-events")
   CallbackSource: string;
@@ -81,10 +105,6 @@ model VoiceStatusCallbackPayload {
   @doc("The duration, in seconds, of the finished call. Only present on the `completed` event.")
   @example(94)
   CallDuration?: int32;
-
-  @doc("The name of the caller. Only available if Caller ID lookup is enabled.")
-  @example("Jane Smith")
-  CallerName?: string;
 
   @doc("A unique identifier for the call.")
   @example("b3877c40-da60-4998-90ad-b792e98472ca")
@@ -126,10 +146,6 @@ model VoiceStatusCallbackPayload {
   @example("Your call was temporarily rate limited due to recent activity. Please reduce your call attempt rate, or contact Support to raise the limits on your account.")
   ErrorMessage?: string;
 
-  @doc("The number this call was forwarded from.")
-  @example("+15550001111")
-  ForwardedFrom?: string;
-
   @doc("The phone number that sent this call, in E.164 format.")
   @example("+15551234567")
   From: string;
@@ -153,18 +169,6 @@ model VoiceStatusCallbackPayload {
   @doc("The value of the `P-Preferred-Identity` SIP header received for the call, when present.")
   @example("<sip:+15551234567@example.com>")
   PreferredIdentity?: string;
-
-  @doc("The duration, in seconds, of the recording.")
-  @example(94)
-  RecordingDuration?: int32;
-
-  @doc("The unique identifier for the audio recording.")
-  @example("b3877c40-da60-4998-90ad-b792e984re01")
-  RecordingSid?: string;
-
-  @doc("The URL of the recorded audio call.")
-  @example("https://example.signalwire.com/api/laml/2010-04-01/Accounts/b3877c40-da60-4998-90ad-b792e98472af/Recordings/b3877c40-da60-4998-90ad-b792e984re01")
-  RecordingUrl?: string;
 
   @doc("The SIP `Call-ID` of the call.")
   @example("f8acbf3b-6d1a-4c55-9f0e-2a7d3c1b9e40")
@@ -220,11 +224,13 @@ model RecordingStatusCallbackPayload {
   @doc("""
     The status of the recording.
     - `in-progress`: Recording has begun.
+    - `paused`: Recording was paused. Call recordings only.
+    - `resumed`: Recording resumed after a pause. Call recordings only.
     - `completed`: File is available.
     - `absent`: Recording was too short or no audio was detected.
     """)
   @example("completed")
-  RecordingStatus: "in-progress" | "completed" | "absent";
+  RecordingStatus: "in-progress" | "paused" | "resumed" | "completed" | "absent";
 
   @doc("The duration, in seconds, of the recording. Only present when `RecordingStatus` is `completed`.")
   @example(94)
