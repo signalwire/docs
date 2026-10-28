@@ -142,6 +142,57 @@ Learn how to use Google Cloud voices on the SignalWire platform.
 Use the
 [**`languages`**](/docs/swml/reference/ai/languages#use-voice-strings)
 SWML method to set one or more voices for an [AI agent](/docs/swml/reference/ai).
+
+<CodeBlocks>
+<CodeBlock title="Python — SWML builder">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as gcloud_ai_agent.py and run: python gcloud_ai_agent.py
+from signalwire import SWMLBuilder, SWMLService
+
+service = SWMLService(
+    name="gcloud-ai-agent",
+    route="/swml",
+    port=3000,
+    basic_auth=("signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"),
+)
+SWMLBuilder(service).ai(
+    prompt_text="Have an open-ended conversation about flowers.",
+    languages=[{
+        "name": "English",
+        "code": "en-US",
+        "voice": "gcloud.en-US-Neural2-A",
+    }],
+)
+
+service.serve()
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — SWML builder">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as gcloud-ai-agent.mjs,
+// then run: node gcloud-ai-agent.mjs
+import { SWMLService } from "@signalwire/sdk";
+
+const service = new SWMLService({
+  name: "gcloud-ai-agent",
+  route: "/swml",
+  port: 3000,
+  basicAuth: ["signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"],
+});
+service.getBuilder().ai({
+  // @ts-expect-error The ai verb takes a { text } prompt; SDK 2.0.5 types it as a string.
+  prompt: { text: "Have an open-ended conversation about flowers." },
+  languages: [
+    { name: "English", code: "en-US", voice: "gcloud.en-US-Neural2-A" },
+  ],
+});
+
+await service.serve();
+```
+</CodeBlock>
+<CodeBlock title="YAML">
 ```yaml
 version: 1.0.0
 sections:
@@ -154,9 +205,54 @@ sections:
           code: en-US
           voice: gcloud.en-US-Neural2-A
 ```
+</CodeBlock>
+</CodeBlocks>
+
 Alternatively, use the [**`say_voice`** parameter](/docs/swml/reference/play#variables) 
 of the [**`play`**](/docs/swml/reference/play)
 SWML method to select a voice for basic TTS.
+
+<CodeBlocks>
+<CodeBlock title="Python — SWML builder">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as gcloud_tts.py and run: python gcloud_tts.py
+from signalwire import SWMLBuilder, SWMLService
+
+service = SWMLService(
+    name="gcloud-tts",
+    route="/swml",
+    port=3000,
+    basic_auth=("signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"),
+)
+builder = SWMLBuilder(service)
+builder.set(say_voice="gcloud.en-US-Neural2-A")
+builder.play(url="say:Greetings. This is the 2-A US English voice from Google Cloud's Neural2 text-to-speech model.")
+
+service.serve()
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — SWML builder">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as gcloud-tts.mjs,
+// then run: node gcloud-tts.mjs
+import { SWMLService } from "@signalwire/sdk";
+
+const service = new SWMLService({
+  name: "gcloud-tts",
+  route: "/swml",
+  port: 3000,
+  basicAuth: ["signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"],
+});
+const builder = service.getBuilder();
+builder.set({ say_voice: "gcloud.en-US-Neural2-A" });
+builder.play({ url: "say:Greetings. This is the 2-A US English voice from Google Cloud's Neural2 text-to-speech model." });
+
+await service.serve();
+```
+</CodeBlock>
+<CodeBlock title="YAML">
 ```yaml
 version: 1.0.0
 sections:
@@ -165,16 +261,93 @@ sections:
       say_voice: "gcloud.en-US-Neural2-A"
   - play: "say:Greetings. This is the 2-A US English voice from Google Cloud's Neural2 text-to-speech model."
 ```
+</CodeBlock>
+</CodeBlocks>
+
+The [Server SDKs](/docs/server-sdks) build each document and serve it at `/swml` on port 3000.
+The server answers only requests that carry the username `signalwire` and the password you set
+in place of `<YOUR_BASIC_AUTH_PASSWORD>`. To send calls from your phone number to the server,
+follow [Answer a call via SWML](/docs/platform/voice/make-and-receive-calls#answer-a-call-via-swml).
+
 </Tab>
-<Tab title="Relay Realtime SDK">
-```javascript
-// This example uses the Node.js SDK for SignalWire's Relay Realtime API.
-const playback = await call.playTTS({ 
-    text: "Greetings. This is the 2-A US English voice from Google Cloud's Neural2 text-to-speech model.",
-    voice: "gcloud.en-US-Neural2-A",
-});
-await playback.ended();
+<Tab title="WebSocket (Relay)">
+
+A Relay client in the [Server SDKs](/docs/server-sdks) passes the voice string with the text it
+plays. This handler answers calls on the `default` topic, plays the greeting in that voice, and
+hangs up. Replace `<YOUR_PROJECT_ID>` and `<YOUR_API_TOKEN>` with your Project ID and an API
+token that has the **Voice** permission.
+
+<CodeBlocks>
+<CodeBlock title="Python — Relay client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as gcloud_relay.py and run: python gcloud_relay.py
+from signalwire.relay import RelayClient
+
+client = RelayClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    contexts=["default"],
+)
+
+@client.on_call
+async def handle_call(call):
+    await call.answer()
+
+    async def hang_up_after_playback(_event):
+        if call.state != "ended":
+            await call.hangup()
+
+    await call.play([{
+        "type": "tts",
+        "params": {
+            "text": "Greetings. This is the 2-A US English voice from Google Cloud's Neural2 text-to-speech model.",
+            "voice": "gcloud.en-US-Neural2-A",
+        },
+    }], on_completed=hang_up_after_playback)
+    await call.wait_for_ended()
+
+client.run()
 ```
+</CodeBlock>
+<CodeBlock title="TypeScript — Relay client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as gcloud-relay.mjs,
+// then run: node gcloud-relay.mjs
+import { RelayClient } from "@signalwire/sdk";
+
+const client = new RelayClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  contexts: ["default"],
+});
+
+client.onCall(async (call) => {
+  await call.answer();
+  await call.play([
+    {
+      type: "tts",
+      text: "Greetings. This is the 2-A US English voice from Google Cloud's Neural2 text-to-speech model.",
+      voice: "gcloud.en-US-Neural2-A",
+    },
+  ], {
+    onCompleted: async () => {
+      if (call.state !== "ended") await call.hangup();
+    },
+  });
+  await call.waitForEnded();
+});
+
+await client.run();
+```
+</CodeBlock>
+</CodeBlocks>
+
+To route calls from your phone number to the handler, assign the number to a Relay Application
+on the `default` topic, as described in
+[Answer a call via WebSocket (Relay)](/docs/platform/voice/make-and-receive-calls#answer-a-call-via-websocket-relay).
+
 </Tab>
 <Tab title="Call Flow Builder">
 <llms-ignore>
