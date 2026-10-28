@@ -79,9 +79,9 @@ model JoinConferenceObject {
   @example("https://example.com/hold-music.mp3")
   wait_url?: url | "" | SWMLVar;
 
-  @doc("The maximum number of participants allowed in the conference. If the limit is reached, new participants will not be able to join. Default `250`.")
+  @doc("The maximum number of participants allowed in the conference. If the limit is reached, new participants will not be able to join. Maximum `250`. Default `250`.")
   @minValue(2)
-  @maxValue(100000)
+  @maxValue(250)
   @example(50)
   max_participants?: integer | SWMLVar = 250;
 
@@ -96,7 +96,7 @@ model JoinConferenceObject {
     Default `2`.
     """)
   @minValue(1)
-  @maxValue(100000)
+  @maxValue(250)
   @example(1)
   min_participants?: integer | SWMLVar = 2;
 
