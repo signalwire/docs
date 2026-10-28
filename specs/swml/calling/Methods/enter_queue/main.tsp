@@ -36,6 +36,17 @@ model EnterQueueObject {
   @minValue(1)
   @example(1800)
   wait_time?: integer | SWMLVar = 180;
+
+  @doc("""
+    SWML to run on the queued call when another call connects to the queue, before the two calls
+    are bridged. Use it to play a message or collect input from the queued caller. The connecting
+    call hears silence until the whisper finishes, and the calls are bridged after at most 60 seconds.
+    Can be either:
+    - A URL (http or https) that returns a SWML document
+    - An inline SWML document (as a JSON string)
+    """)
+  @example("https://example.com/whisper-swml")
+  whisper_url?: string | SWMLVar;
 }
 
 @summary("enter_queue Method")
