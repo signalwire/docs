@@ -3,6 +3,7 @@ import "@typespec/openapi";
 import "../tags.tsp";
 import "./models/status-callbacks.tsp";
 import "./models/inbound-call.tsp";
+import "./models/live-transcribe.tsp";
 import "@signalwire/typespec-webhook";
 import "../../../_shared/webhook-ack.tsp";
 
@@ -30,6 +31,48 @@ namespace SignalWireAPI.Webhooks.Calling;
 @post
 op transcribeStatusCallback(
   @body payload: TranscribeStatusCallbackPayload,
+): WebhookAck;
+
+@summary("Live transcription utterance webhook")
+@doc("""
+  Sent to the `webhook` URL of a [`live_transcribe`](/docs/swml/reference/calling/live-transcribe)
+  `start` action each time an utterance is transcribed, when `live_events` is `true`. Each side of
+  the call you listed in `direction` sends its own events. `channel_data.content_disposition` is
+  `transcribe.utterance`.
+  """)
+@webhook
+@operationId("live_transcribe_utterance_webhook")
+@post
+op liveTranscribeUtteranceWebhook(
+  @body payload: LiveTranscribeUtteranceWebhookPayload,
+): WebhookAck;
+
+@summary("Live transcription summary webhook")
+@doc("""
+  Sent when you request a summary with the [`live_transcribe`](/docs/swml/reference/calling/live-transcribe)
+  `summarize` action while transcription is running. It goes to the `webhook` URL on `summarize`,
+  or to the one on `start` when `summarize` has none. `channel_data.content_disposition` is
+  `transcribe.live_summarize`.
+  """)
+@webhook
+@operationId("live_transcribe_summary_webhook")
+@post
+op liveTranscribeSummaryWebhook(
+  @body payload: LiveTranscribeSummaryWebhookPayload,
+): WebhookAck;
+
+@summary("Live transcription conversation log webhook")
+@doc("""
+  Sent once to the `webhook` URL of a [`live_transcribe`](/docs/swml/reference/calling/live-transcribe)
+  `start` action when the session ends, whether you stopped it or the call ended. It carries the
+  full transcript, session totals, and the AI summary when `ai_summary` is `true`.
+  `channel_data.content_disposition` is `transcribe.conversation_log`.
+  """)
+@webhook
+@operationId("live_transcribe_conversation_log_webhook")
+@post
+op liveTranscribeConversationLogWebhook(
+  @body payload: LiveTranscribeConversationLogWebhookPayload,
 ): WebhookAck;
 
 @summary("Stream status callback")

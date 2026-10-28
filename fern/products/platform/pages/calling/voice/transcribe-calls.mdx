@@ -1,0 +1,1147 @@
+---
+title: Transcribe calls
+slug: voice/transcribe-calls
+description: Transcribe a live call as it happens with SWML, Relay, or REST and receive each utterance on your webhook, then summarize the conversation with AI, stop transcribing, or transcribe the whole call after it ends.
+subtitle: Turn a live call into text while it happens
+max-toc-depth: 3
+---
+
+[make-and-receive-calls]: /docs/platform/voice/make-and-receive-calls
+[prepare-calls]: /docs/platform/voice/make-and-receive-calls#prepare-for-your-first-call
+[answer-swml]: /docs/platform/voice/make-and-receive-calls#answer-a-call-via-swml
+[place-relay]: /docs/platform/voice/make-and-receive-calls#place-a-call-via-websocket-relay
+[caller-id]: /docs/platform/voice/how-to-set-caller-id-or-cnam
+[trial-mode]: /docs/platform/trial-mode
+[server-sdks]: /docs/server-sdks
+[relay-guide]: /docs/server-sdks/guides/relay-client
+[swml-intro]: /docs/swml
+[cfb-intro]: /docs/call-flow-builder
+[call-commands]: /docs/apis/rest/calls/call-commands
+[swml-live-transcribe]: /docs/swml/reference/calling/live-transcribe
+[swml-transcribe]: /docs/swml/reference/calling/transcribe
+[swml-transcribe-stop]: /docs/swml/reference/calling/transcribe-stop
+[swml-execute]: /docs/swml/reference/calling/execute
+[swml-ai-sidecar]: /docs/swml/reference/calling/ai-sidecar
+[sidecar-callbacks]: /docs/swml/reference/calling/ai-sidecar#callback-types
+[utterance-webhook]: /docs/apis/rest/webhooks/live-transcribe-utterance-webhook
+[summary-webhook]: /docs/apis/rest/webhooks/live-transcribe-summary-webhook
+[conversation-log-webhook]: /docs/apis/rest/webhooks/live-transcribe-conversation-log-webhook
+[transcript-status-callback]: /docs/apis/rest/webhooks/transcribe-status-callback
+[verify-signature]: /docs/platform/webhooks#verify-webhook-signature
+[call-streaming]: /docs/platform/voice/call-streaming
+[record-calls]: /docs/platform/voice/record-calls
+
+Live transcription turns each side of a call into text while the call happens, and posts every
+utterance to a webhook you run, so your app can show a transcript, search it, or act on what the
+caller says. Start by transcribing a call to your own phone into a small server that prints each
+utterance, then read the events in full, tune the options, summarize the conversation with AI, stop
+transcribing, and transcribe a whole call after it ends.
+
+## Pick the right product for call transcription
+
+Transcription is available across these products, but not every function is available on each.
+
+| Function | SWML | WebSocket (Relay) | REST | Call Flow Builder |
+|---|---|---|---|---|
+| Get each utterance on your webhook as it's spoken | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> |
+| Get an AI summary of the conversation, during or after the call | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> |
+| Stop transcribing before the call ends | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> |
+| Get the whole call's text after it ends | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> |
+
+- [SWML][swml-intro] is the document that describes how the call should flow. The Server SDKs'
+  SWML builder writes it, or you can write it by hand.
+- [WebSocket (Relay)][relay-guide], a Server SDK namespace, holds a live WebSocket connection to a
+  call in progress and controls it from code.
+- The [REST Calling API][call-commands] sends the same commands as Relay to a call in progress over
+  HTTP, by call ID, from any process.
+- [Call Flow Builder][cfb-intro] has no transcription nodes. A flow can hand a call to SWML that
+  transcribes it.
+
+## Prepare for call transcription
+
+This guide places and answers calls the way [Make and receive calls][make-and-receive-calls] does.
+Have these values ready:
+
+- Your Space URL, such as `<YOUR_SPACE>.signalwire.com`.
+- Your Project ID and an API token with the **Voice** permission.
+- A phone number in your Space, and a phone you can call it from and answer.
+- A machine that can run a small server, and a tunnel such as [ngrok](https://ngrok.com/) that
+  gives it a public HTTPS URL.
+
+<Warning title="Trial projects only call and receive calls from verified numbers">
+A [trial project][trial-mode] only places calls to and receives calls from numbers you've
+purchased or verified, and can't call internationally. [Prepare for your first call][prepare-calls]
+shows how to verify the phone you'll test with.
+</Warning>
+
+<Warning title="Transcribing a call can require consent">
+Transcription captures what people say on the call, and many jurisdictions require you to tell
+callers before you record or transcribe them. Check the rules that apply to your callers before you
+transcribe a real conversation.
+</Warning>
+
+Replace these values in the samples you run:
+
+| Value | Replace with |
+|---|---|
+| `<YOUR_SPACE>` | Your Space's subdomain in `<YOUR_SPACE>.signalwire.com` |
+| `<YOUR_PROJECT_ID>` | Your Project ID |
+| `<YOUR_API_TOKEN>` | Your API token with the Voice permission, used only in server code |
+| `<YOUR_PUBLIC_HOST>` | The public hostname of your server's tunnel |
+| `<YOUR_BASIC_AUTH_PASSWORD>` | A password you choose for the SWML your server serves |
+| `<YOUR_TRANSCRIPT_WEBHOOK_URL>` | Your server's transcript webhook, `https://<YOUR_PUBLIC_HOST>/transcripts` |
+| `<YOUR_TRANSCRIPT_STATUS_URL>` | Your server's post-call transcript webhook, `https://<YOUR_PUBLIC_HOST>/transcript-status` |
+| `<YOUR_CALLER_ID>` | Your SignalWire phone number, or a [verified caller ID][caller-id], in E.164 format, when Relay places the call |
+| `<YOUR_DESTINATION>` | The phone you'll answer, in E.164 format, when Relay places the call |
+| `<YOUR_CALL_ID>` | The ID of a live call, when you send a command over REST |
+
+## How live transcription works
+
+The [`live_transcribe`][swml-live-transcribe] method, `call.live_transcribe()` in Relay, and the
+`calling.live_transcribe` REST command all take the same `action`: `start` a session, `summarize`
+it, or `stop` it. Once a session starts, SignalWire recognizes speech on each side of the call you
+list in `direction` and sends HTTP `POST` requests to the `webhook` URL you set on `start`:
+
+- With `live_events` set to `true`, one request for each utterance as soon as it's transcribed.
+- When you send `summarize`, one request with an AI summary of the conversation so far.
+- When the session ends, because you stopped it or the call ended, one request with the whole
+  conversation, totals for the session, and an AI summary if you asked for one.
+
+All three requests arrive at the same URL, so your server tells them apart by
+`channel_data.content_disposition`, as [Read transcript events on your webhook](#read-transcript-events-on-your-webhook)
+shows.
+
+SignalWire has a second, simpler method, [`transcribe`][swml-transcribe]. It produces no text
+during the call. When the call ends, it posts the whole call's text to a `status_url` as a single
+block. Choose by when you need the text:
+
+| You need | Use |
+|---|---|
+| Text while the call is happening, one utterance at a time | `live_transcribe` |
+| Who said what, as `remote-caller` and `local-caller` turns | `live_transcribe` |
+| An AI summary of the conversation | `live_transcribe` |
+| The call's text after it ends, and nothing during it | `transcribe` |
+
+The rest of this guide uses `live_transcribe` until
+[Transcribe the whole call after it ends](#transcribe-the-whole-call-after-it-ends).
+
+## Transcribe a call in real time
+
+Every sample in this guide sends transcript events to one small server that prints them. Run it
+first, then start transcription from the product your app uses.
+
+### Transcribe a call in real time via SWML
+
+When someone calls your number, SignalWire fetches the call's SWML from your server and runs it.
+The server below serves that document and receives the transcript events, so one tunnel covers
+both.
+
+<Steps>
+
+<Step title="Run the transcription server" id="run-the-transcription-server">
+
+This server answers calls with a SWML document that starts live transcription on both sides of the
+call, asks the caller where they're headed, and keeps the call open for twenty seconds while they
+talk. It prints each utterance that arrives at `/transcripts`, and the transcript that arrives at
+`/transcript-status`, which the post-call section uses later. The document is served only to
+requests that carry the username `signalwire` and the password you set.
+
+<CodeBlocks>
+<CodeBlock title="Python — SWML builder">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1 fastapi "uvicorn[standard]"
+# Save as transcribe_app.py and run: python transcribe_app.py
+import uvicorn
+from fastapi import FastAPI, Request
+from signalwire import SWMLBuilder, SWMLService
+
+service = SWMLService(
+    name="transcribe-call",
+    basic_auth=("signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"),
+)
+swml = SWMLBuilder(service)
+swml.answer().live_transcribe(action={
+    "start": {
+        "lang": "en-US",
+        "direction": ["remote-caller", "local-caller"],
+        "webhook": "<YOUR_TRANSCRIPT_WEBHOOK_URL>",
+        "live_events": True,
+    }
+})
+swml.say("Thanks for calling Bayview Taxi. Where would you like to go?").sleep(20000).say(
+    "Thanks. A driver is on the way. Goodbye."
+)
+
+app = FastAPI()
+# SignalWire fetches the call's SWML from the server's root URL.
+app.include_router(service.as_router())
+
+
+# Live transcription events arrive at /transcripts.
+@app.post("/transcripts")
+async def transcripts(request: Request):
+    event = await request.json()
+    kind = event["channel_data"]["content_disposition"]
+    if kind == "transcribe.utterance":
+        utterance = event["utterance"]
+        print(f"{utterance['role']}: {utterance['content']}")
+    elif kind == "transcribe.live_summarize":
+        print(f"Summary so far: {event['conversation_summary']}")
+    elif kind == "transcribe.conversation_log":
+        print(f"Transcription ended after {len(event['conversation_log'])} utterances")
+        if "conversation_summary" in event:
+            print(f"Summary: {event['conversation_summary']}")
+    return {}
+
+
+# Post-call transcripts arrive at /transcript-status.
+@app.post("/transcript-status")
+async def transcript_status(request: Request):
+    event = await request.json()
+    print(f"{event['event_type']}: {event['params'].get('text', '')}")
+    return {}
+
+
+uvicorn.run(app, host="0.0.0.0", port=8080)
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — SWML builder">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5 @hono/node-server hono
+// This sample also runs as JavaScript: save as transcribe-app.mjs,
+// then run: node transcribe-app.mjs
+import { serve } from "@hono/node-server";
+import { Hono } from "hono";
+import { SWMLService } from "@signalwire/sdk";
+
+const service = new SWMLService({
+  name: "transcribe-call",
+  basicAuth: ["signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"],
+});
+const swml = service.getBuilder();
+swml.answer().live_transcribe({
+  action: {
+    start: {
+      lang: "en-US",
+      direction: ["remote-caller", "local-caller"],
+      webhook: "<YOUR_TRANSCRIPT_WEBHOOK_URL>",
+      live_events: true,
+    },
+  },
+});
+swml
+  .say("Thanks for calling Bayview Taxi. Where would you like to go?")
+  .sleep(20000)
+  .say("Thanks. A driver is on the way. Goodbye.");
+
+const app = new Hono();
+
+// Live transcription events arrive at /transcripts.
+app.post("/transcripts", async (c) => {
+  const event = await c.req.json();
+  const kind = event.channel_data.content_disposition;
+  if (kind === "transcribe.utterance") {
+    console.log(`${event.utterance.role}: ${event.utterance.content}`);
+  } else if (kind === "transcribe.live_summarize") {
+    console.log(`Summary so far: ${event.conversation_summary}`);
+  } else if (kind === "transcribe.conversation_log") {
+    console.log(`Transcription ended after ${event.conversation_log.length} utterances`);
+    if (event.conversation_summary) console.log(`Summary: ${event.conversation_summary}`);
+  }
+  return c.json({});
+});
+
+// Post-call transcripts arrive at /transcript-status.
+app.post("/transcript-status", async (c) => {
+  const event = await c.req.json();
+  console.log(`${event.event_type}: ${event.params.text ?? ""}`);
+  return c.json({});
+});
+
+// SignalWire fetches the call's SWML from the server's root URL.
+app.route("/", service.getApp());
+
+serve({ fetch: app.fetch, port: 8080 });
+console.log("Listening on port 8080");
+```
+</CodeBlock>
+</CodeBlocks>
+
+Start a tunnel to port `8080`, such as `ngrok http 8080`, and use its hostname as
+`<YOUR_PUBLIC_HOST>` in the webhook URL before you start the server. Check that the document is
+reachable through the tunnel:
+
+```bash
+curl -u "signalwire:<YOUR_BASIC_AUTH_PASSWORD>" "https://<YOUR_PUBLIC_HOST>/"
+```
+
+The response is the SWML document, starting with `{"version": "1.0.0"`. A `401` means the password
+doesn't match the one in your server.
+
+</Step>
+
+<Step title="Point your phone number at the server" id="point-your-phone-number-at-the-server">
+
+Create a SWML Script that fetches the document from your server:
+
+1. Open **My Resources**, select **+ Add**, then **Script**, then **SWML Script**.
+2. Name it **Transcribe call** and leave **Used For** set to **Calling**.
+3. Under **Handle Calls Using**, choose **External URL** and enter
+   `https://signalwire:<YOUR_BASIC_AUTH_PASSWORD>@<YOUR_PUBLIC_HOST>/` in **Primary Script URL**.
+4. Select **Create**.
+
+Then assign the script to your phone number:
+
+<Markdown src="/snippets/common/dashboard/_assign-resource-to-number.mdx" />
+
+To do both in code, see [Answer a call via SWML][answer-swml].
+
+</Step>
+
+<Step title="Call your number and speak" id="call-your-number-and-speak-via-swml">
+
+Call your SignalWire number from your phone and answer the question. The server prints each
+utterance as it's transcribed, with the side of the call that spoke:
+
+```text
+local-caller: Thanks for calling Bayview Taxi. Where would you like to go?
+remote-caller: To the airport, please.
+```
+
+`remote-caller` is you, and `local-caller` is the prompt SignalWire played. After twenty seconds
+you hear the goodbye, the call ends, and the server prints
+`Transcription ended after 3 utterances` with your own count. If it doesn't work, see
+[Troubleshoot call transcription](#troubleshoot-call-transcription).
+
+</Step>
+
+</Steps>
+
+The same document in YAML and JSON, to paste into a hosted SWML Script instead:
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - answer: {}
+    - live_transcribe:
+        action:
+          start:
+            lang: en-US
+            direction:
+              - remote-caller
+              - local-caller
+            webhook: <YOUR_TRANSCRIPT_WEBHOOK_URL>
+            live_events: true
+    - play:
+        url: say:Thanks for calling Bayview Taxi. Where would you like to go?
+    - sleep: 20000
+    - play:
+        url: say:Thanks. A driver is on the way. Goodbye.
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      { "answer": {} },
+      {
+        "live_transcribe": {
+          "action": {
+            "start": {
+              "lang": "en-US",
+              "direction": ["remote-caller", "local-caller"],
+              "webhook": "<YOUR_TRANSCRIPT_WEBHOOK_URL>",
+              "live_events": true
+            }
+          }
+        }
+      },
+      { "play": { "url": "say:Thanks for calling Bayview Taxi. Where would you like to go?" } },
+      { "sleep": 20000 },
+      { "play": { "url": "say:Thanks. A driver is on the way. Goodbye." } }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### Transcribe a call in real time via WebSocket (Relay)
+
+Start live transcription on an answered call with `call.live_transcribe()`, passing the same
+`action` the SWML method takes. Transcript events still go to your webhook, so keep the
+[transcription server](#run-the-transcription-server) and its tunnel running. Call setup follows
+[Place a call via WebSocket (Relay)][place-relay].
+
+<Steps>
+
+<Step title="Run the call program" id="run-the-call-program-via-websocket-relay">
+
+This program dials your phone, starts transcription, asks where you're headed, and hangs up after
+twenty seconds.
+
+<CodeBlocks>
+<CodeBlock title="Python — Relay client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as transcribe_call_relay.py and run: python transcribe_call_relay.py
+import asyncio
+from signalwire.relay import RelayClient
+
+client = RelayClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    contexts=["default"],
+)
+
+async def main():
+    async with client:
+        call = await client.dial(
+            devices=[[{
+                "type": "phone",
+                "params": {
+                    "from_number": "<YOUR_CALLER_ID>",
+                    "to_number": "<YOUR_DESTINATION>",
+                    "timeout": 30,
+                },
+            }]],
+        )
+
+        await call.live_transcribe({
+            "start": {
+                "lang": "en-US",
+                "direction": ["remote-caller", "local-caller"],
+                "webhook": "<YOUR_TRANSCRIPT_WEBHOOK_URL>",
+                "live_events": True,
+            }
+        })
+        await call.play([{
+            "type": "tts",
+            "params": {"text": "Hi, this is Bayview Taxi. Where would you like to go?"},
+        }])
+        await asyncio.sleep(20)
+
+        async def hang_up_after_playback(_event):
+            if call.state != "ended":
+                await call.hangup()
+
+        await call.play(
+            [{"type": "tts", "params": {"text": "Thanks. A driver is on the way. Goodbye."}}],
+            on_completed=hang_up_after_playback,
+        )
+        await call.wait_for_ended()
+
+asyncio.run(main())
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — Relay client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as transcribe-call-relay.mjs,
+// then run: node transcribe-call-relay.mjs
+import { RelayClient } from "@signalwire/sdk";
+
+const client = new RelayClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  contexts: ["default"],
+});
+
+await client.connect();
+
+try {
+  const call = await client.dial([[{
+    type: "phone",
+    params: {
+      from_number: "<YOUR_CALLER_ID>",
+      to_number: "<YOUR_DESTINATION>",
+      timeout: 30,
+    },
+  }]]);
+
+  await call.liveTranscribe({
+    start: {
+      lang: "en-US",
+      direction: ["remote-caller", "local-caller"],
+      webhook: "<YOUR_TRANSCRIPT_WEBHOOK_URL>",
+      live_events: true,
+    },
+  });
+  await call.play([
+    { type: "tts", text: "Hi, this is Bayview Taxi. Where would you like to go?" },
+  ]);
+  await new Promise((resolve) => setTimeout(resolve, 20_000));
+
+  await call.play([{ type: "tts", text: "Thanks. A driver is on the way. Goodbye." }], {
+    onCompleted: async () => {
+      if (call.state !== "ended") await call.hangup();
+    },
+  });
+  await call.waitForEnded();
+} finally {
+  await client.disconnect();
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+The `action` keys are sent to SignalWire as written, so they stay in snake_case in TypeScript too.
+
+</Step>
+
+<Step title="Answer and speak" id="answer-and-speak-via-websocket-relay">
+
+Answer your phone and say where you're headed. The transcription server prints a `local-caller`
+line for the prompt and a `remote-caller` line for your answer. After twenty seconds you hear the
+goodbye, the call ends, and the server prints `Transcription ended after` with the number of
+utterances. If it doesn't work, see [Troubleshoot call transcription](#troubleshoot-call-transcription).
+
+</Step>
+
+</Steps>
+
+### Start live transcription on a call in progress via REST
+
+When a process that doesn't hold the call needs to transcribe it, send the `calling.live_transcribe`
+command with the answered call's ID and a `start` action. The call ID is the `id` from the `dial`
+response, or the `call_id` delivered to your SWML endpoint or webhook. The
+[Server SDKs][server-sdks] wrap the command:
+
+<CodeBlocks>
+<CodeBlock title="Python — REST client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as transcribe_rest.py and run: python transcribe_rest.py
+from signalwire.rest import RestClient
+
+client = RestClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    host="<YOUR_SPACE>.signalwire.com",
+)
+
+client.calling.live_transcribe(
+    "<YOUR_CALL_ID>",
+    action={
+        "start": {
+            "lang": "en-US",
+            "direction": ["remote-caller", "local-caller"],
+            "webhook": "<YOUR_TRANSCRIPT_WEBHOOK_URL>",
+            "live_events": True,
+        }
+    },
+)
+print("Transcription started")
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — REST client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as transcribe-rest.mjs,
+// then run: node transcribe-rest.mjs
+import { RestClient } from "@signalwire/sdk";
+
+const client = new RestClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  host: "<YOUR_SPACE>.signalwire.com",
+});
+
+await client.calling.liveTranscribe("<YOUR_CALL_ID>", {
+  action: {
+    start: {
+      lang: "en-US",
+      direction: ["remote-caller", "local-caller"],
+      webhook: "<YOUR_TRANSCRIPT_WEBHOOK_URL>",
+      live_events: true,
+    },
+  },
+});
+console.log("Transcription started");
+```
+</CodeBlock>
+</CodeBlocks>
+
+To try it, run the program while a call that isn't already being transcribed is up, such as one from
+[Make and receive calls][make-and-receive-calls]. The transcription server starts printing
+utterances as soon as the command succeeds. To call the REST API directly, send this request to
+[Call commands][call-commands]. The reference example also turns on an AI summary and sets the speech
+engine; leave out `ai_summary`, `ai_summary_prompt`, and `speech_engine` to match the program above:
+
+<EndpointRequestSnippet endpoint="POST /api/calling/calls" example="calling.live_transcribe" />
+
+## Read transcript events on your webhook
+
+Each request is a JSON `POST`. Read `channel_data.content_disposition` first, then the fields for
+that event:
+
+| `content_disposition` | Sent | Fields to read |
+|---|---|---|
+| `transcribe.utterance` | Once per utterance, when `live_events` is `true` | `utterance.role`, `utterance.content`, `utterance.confidence` |
+| `transcribe.live_summarize` | When you send `summarize` | `conversation_summary`, `conversation_log` |
+| `transcribe.conversation_log` | Once, when the session ends | `conversation_log`, `metrics`, and `conversation_summary` when `ai_summary` is `true` |
+
+`utterance.role` and each `conversation_log` entry's `role` say which side of the call spoke, using
+the values you passed in `direction`. Every event also carries `channel_data.call_id`, so one server
+can follow several calls at once. Timestamps such as `utterance.timestamp` are Unix times in
+microseconds.
+
+An utterance event looks like this. The [Live transcription utterance webhook][utterance-webhook]
+reference lists every field:
+
+<llms-ignore>
+
+<WebhookPayloadSnippet webhook="liveTranscribeUtteranceWebhook" />
+
+</llms-ignore>
+
+The event sent when the session ends carries the whole conversation in order, with totals for each
+side in `metrics`. Its fields are in the [Live transcription conversation log webhook][conversation-log-webhook]
+reference:
+
+<llms-ignore>
+
+<WebhookPayloadSnippet webhook="liveTranscribeConversationLogWebhook" />
+
+</llms-ignore>
+
+The summary you request mid-call has the same `conversation_log` and `conversation_summary` fields,
+without `metrics`. See the [Live transcription summary webhook][summary-webhook] reference.
+
+Answer each request with a `2xx` status within 10 seconds, and do slow work after you respond.
+SignalWire retries a request that fails to connect, times out, or gets a `5xx` status, so a slow
+handler can receive the same utterance more than once. Use `utterance.utterance_id` to ignore
+repeats. A `4xx` status isn't retried, and redirects aren't followed, so that event is lost.
+
+<Tip title="Protect your webhooks">
+Every request carries an `X-SignalWire-Signature` header, so your server can confirm it came from
+SignalWire, as [Verify webhook signature][verify-signature] shows. You can also put a username and
+password in the webhook URL, as in `https://<USERNAME>:<PASSWORD>@<YOUR_PUBLIC_HOST>/transcripts`,
+and SignalWire sends them as HTTP Basic authentication. Both work for the post-call `status_url`
+too.
+</Tip>
+
+## Live transcription options: language, direction, and speech engine
+
+`start` takes two required values. `lang` is the language to transcribe, such as `en-US` or
+`es-ES`. `direction` lists the sides of the call to transcribe:
+
+- `remote-caller` is the audio SignalWire receives from the call: the person who called your
+  number, or the person your app dialed.
+- `local-caller` is the audio SignalWire sends into the call, such as prompts it plays or the other
+  party of a `connect`.
+
+List both to get the whole conversation, or one side to transcribe only that party. Each side
+you list sends its own utterance events.
+
+`speech_engine` picks the speech recognizer: `deepgram`, the default, or `google`. When the
+recognizer splits utterances too early or too late for your callers, tune `vad_silence_ms`, the
+silence in milliseconds that ends an utterance, and `vad_thresh`, how loud audio must be to count as
+speech. The [`live_transcribe` reference][swml-live-transcribe] lists every option with its default.
+The same options work in Relay and REST.
+
+## Summarize a call with AI
+
+Live transcription can hand the conversation to an AI model and send you a summary, either once
+when the session ends or whenever you ask while the call is up.
+
+### Summarize the call when transcription ends
+
+Add `ai_summary: true` to `start`, and optionally `ai_summary_prompt` to say what the summary should
+contain. The event sent when the session ends then includes `conversation_summary`. This change
+to the [first run's](#transcribe-a-call-in-real-time-via-swml) `start` action works the same way in
+every product, and in Relay and REST too:
+
+<CodeBlocks>
+<CodeBlock title="Python — SWML builder">
+```python {7-8}
+swml.answer().live_transcribe(action={
+    "start": {
+        "lang": "en-US",
+        "direction": ["remote-caller", "local-caller"],
+        "webhook": "<YOUR_TRANSCRIPT_WEBHOOK_URL>",
+        "live_events": True,
+        "ai_summary": True,
+        "ai_summary_prompt": "List the pickup address, the destination, and the pickup time.",
+    }
+})
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — SWML builder">
+```typescript {8-9}
+swml.answer().live_transcribe({
+  action: {
+    start: {
+      lang: "en-US",
+      direction: ["remote-caller", "local-caller"],
+      webhook: "<YOUR_TRANSCRIPT_WEBHOOK_URL>",
+      live_events: true,
+      ai_summary: true,
+      ai_summary_prompt: "List the pickup address, the destination, and the pickup time.",
+    },
+  },
+});
+```
+</CodeBlock>
+<CodeBlock title="YAML">
+```yaml {10-11}
+- live_transcribe:
+    action:
+      start:
+        lang: en-US
+        direction:
+          - remote-caller
+          - local-caller
+        webhook: <YOUR_TRANSCRIPT_WEBHOOK_URL>
+        live_events: true
+        ai_summary: true
+        ai_summary_prompt: List the pickup address, the destination, and the pickup time.
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json {9-10}
+{
+  "live_transcribe": {
+    "action": {
+      "start": {
+        "lang": "en-US",
+        "direction": ["remote-caller", "local-caller"],
+        "webhook": "<YOUR_TRANSCRIPT_WEBHOOK_URL>",
+        "live_events": true,
+        "ai_summary": true,
+        "ai_summary_prompt": "List the pickup address, the destination, and the pickup time."
+      }
+    }
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+The transcription server prints the summary on a `Summary:` line after the call ends. If
+`conversation_summary` is missing from the event, no summary could be produced for the call.
+
+### Summarize a call in progress via SWML
+
+Send the `summarize` action while transcription is running to get a summary of the conversation so
+far, and keep transcribing. Its `prompt` and `webhook` are optional. An empty `summarize`
+object sends the summary to the webhook from `start` and uses the default summary prompt, since
+`ai_summary_prompt` applies only to the summary sent when the session ends. In the first run's document, add it after the
+`sleep`, so the summary arrives before the goodbye:
+
+<CodeBlocks>
+<CodeBlock title="Python — SWML builder">
+```python
+swml.say("Thanks for calling Bayview Taxi. Where would you like to go?").sleep(20000)
+swml.live_transcribe(action={"summarize": {"prompt": "Summarize the ride request in one sentence."}})
+swml.say("Thanks. A driver is on the way. Goodbye.")
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — SWML builder">
+```typescript
+swml.say("Thanks for calling Bayview Taxi. Where would you like to go?").sleep(20000);
+swml.live_transcribe({
+  action: { summarize: { prompt: "Summarize the ride request in one sentence." } },
+});
+swml.say("Thanks. A driver is on the way. Goodbye.");
+```
+</CodeBlock>
+<CodeBlock title="YAML">
+```yaml
+- sleep: 20000
+- live_transcribe:
+    action:
+      summarize:
+        prompt: Summarize the ride request in one sentence.
+- play:
+    url: say:Thanks. A driver is on the way. Goodbye.
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+[
+  { "sleep": 20000 },
+  {
+    "live_transcribe": {
+      "action": {
+        "summarize": { "prompt": "Summarize the ride request in one sentence." }
+      }
+    }
+  },
+  { "play": { "url": "say:Thanks. A driver is on the way. Goodbye." } }
+]
+```
+</CodeBlock>
+</CodeBlocks>
+
+The server prints a `Summary so far:` line when the summary arrives. To summarize at a moment the
+document doesn't know in advance, run a section with the action through
+[`execute`][swml-execute], or send it from Relay or REST.
+
+### Summarize a call in progress via WebSocket (Relay)
+
+In the [Relay call program](#transcribe-a-call-in-real-time-via-websocket-relay), send `summarize`
+after the twenty-second wait. The REST client sends the same action to a call by ID:
+
+<CodeBlocks>
+<CodeBlock title="Python — Relay client">
+```python
+await call.live_transcribe({
+    "summarize": {"prompt": "Summarize the ride request in one sentence."}
+})
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — Relay client">
+```typescript
+await call.liveTranscribe({
+  summarize: { prompt: "Summarize the ride request in one sentence." },
+});
+```
+</CodeBlock>
+<CodeBlock title="Python — REST client">
+```python
+client.calling.live_transcribe(
+    "<YOUR_CALL_ID>",
+    action={"summarize": {"prompt": "Summarize the ride request in one sentence."}},
+)
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — REST client">
+```typescript
+await client.calling.liveTranscribe("<YOUR_CALL_ID>", {
+  action: { summarize: { prompt: "Summarize the ride request in one sentence." } },
+});
+```
+</CodeBlock>
+<CodeBlock title="cURL — Calling API">
+```bash
+curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
+  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "command": "calling.live_transcribe",
+    "id": "<YOUR_CALL_ID>",
+    "params": {
+      "action": {
+        "summarize": { "prompt": "Summarize the ride request in one sentence." }
+      }
+    }
+  }'
+```
+</CodeBlock>
+</CodeBlocks>
+
+The cURL request goes to [Call commands][call-commands].
+
+## Stop live transcription
+
+A session stops by itself when the call ends. Stop it earlier, for example before the caller reads
+out a card number, with the `stop` action. SignalWire then sends the
+[event for the end of the session](#read-transcript-events-on-your-webhook), with everything
+transcribed until that point.
+
+### Stop live transcription via SWML
+
+Set `action` to the string `stop`:
+
+<CodeBlocks>
+<CodeBlock title="Python — SWML builder">
+```python
+swml.live_transcribe(action="stop")
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — SWML builder">
+```typescript
+swml.live_transcribe({ action: "stop" });
+```
+</CodeBlock>
+<CodeBlock title="YAML">
+```yaml
+- live_transcribe:
+    action: stop
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{ "live_transcribe": { "action": "stop" } }
+```
+</CodeBlock>
+</CodeBlocks>
+
+### Stop live transcription via WebSocket (Relay)
+
+Relay takes `stop` as a key with an empty object. The REST command takes the string `stop`:
+
+<CodeBlocks>
+<CodeBlock title="Python — Relay client">
+```python
+await call.live_transcribe({"stop": {}})
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — Relay client">
+```typescript
+await call.liveTranscribe({ stop: {} });
+```
+</CodeBlock>
+<CodeBlock title="Python — REST client">
+```python
+client.calling.live_transcribe("<YOUR_CALL_ID>", action="stop")
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — REST client">
+```typescript
+await client.calling.liveTranscribe("<YOUR_CALL_ID>", { action: "stop" });
+```
+</CodeBlock>
+<CodeBlock title="cURL — Calling API">
+```bash
+curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
+  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "command": "calling.live_transcribe",
+    "id": "<YOUR_CALL_ID>",
+    "params": { "action": "stop" }
+  }'
+```
+</CodeBlock>
+</CodeBlocks>
+
+To start transcribing again, send a new `start` action. A `start` sent while a session is running
+stops that session, which sends its end-of-session event, and starts a new one.
+
+## Transcribe the whole call after it ends
+
+When you only need the call's text once it's over, [`transcribe`][swml-transcribe] is simpler:
+there are no options to set and no events during the call. SignalWire captures the call in the
+background and, after the call ends, posts the text to your `status_url` as a
+`calling.transcript.completed` event. Only one `transcribe` can run on a call at a time.
+
+### Transcribe the whole call via SWML
+
+Add `transcribe` with a `status_url` where the transcription should start. The Server SDKs' SWML
+builder has no `transcribe` method yet, so the builder samples add the verb by name. The Python
+sample also turns schema validation off, which the Python SDK allows only for the whole service:
+
+<CodeBlocks>
+<CodeBlock title="Python — SWML builder">
+```python {6-8,12}
+from signalwire import SWMLBuilder, SWMLService
+
+service = SWMLService(
+    name="transcribe-whole-call",
+    basic_auth=("signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"),
+    # The schema has no transcribe verb yet, and validation can only be
+    # turned off for the whole service, not for one verb.
+    schema_validation=False,
+)
+swml = SWMLBuilder(service)
+swml.answer()
+service.add_verb("transcribe", {"status_url": "<YOUR_TRANSCRIPT_STATUS_URL>"})
+swml.say("Thanks for calling Bayview Taxi. Where would you like to go?").sleep(20000).say(
+    "Thanks. A driver is on the way. Goodbye."
+)
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — SWML builder">
+```typescript {9-10}
+import { SWMLService } from "@signalwire/sdk";
+
+const service = new SWMLService({
+  name: "transcribe-whole-call",
+  basicAuth: ["signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"],
+});
+const swml = service.getBuilder();
+swml.answer();
+// The builder has no transcribe method yet, so add the verb by name.
+swml.addVerb("transcribe", { status_url: "<YOUR_TRANSCRIPT_STATUS_URL>" });
+swml
+  .say("Thanks for calling Bayview Taxi. Where would you like to go?")
+  .sleep(20000)
+  .say("Thanks. A driver is on the way. Goodbye.");
+```
+</CodeBlock>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - answer: {}
+    - transcribe:
+        status_url: <YOUR_TRANSCRIPT_STATUS_URL>
+    - play:
+        url: say:Thanks for calling Bayview Taxi. Where would you like to go?
+    - sleep: 20000
+    - play:
+        url: say:Thanks. A driver is on the way. Goodbye.
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      { "answer": {} },
+      { "transcribe": { "status_url": "<YOUR_TRANSCRIPT_STATUS_URL>" } },
+      { "play": { "url": "say:Thanks for calling Bayview Taxi. Where would you like to go?" } },
+      { "sleep": 20000 },
+      { "play": { "url": "say:Thanks. A driver is on the way. Goodbye." } }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+To try it, swap these lines into the [transcription server](#run-the-transcription-server) in place
+of its `live_transcribe` document and call your number again. After you hang up, the server prints
+`calling.transcript.completed:` followed by the call's text.
+
+`transcribe` sets `transcribe_result` to `success` or `failed`. To end it before the call does,
+add [`transcribe_stop`][swml-transcribe-stop]. It takes no options and stops the transcription
+running on the call:
+
+```yaml
+- transcribe_stop: {}
+```
+
+### Transcribe the whole call via WebSocket (Relay)
+
+`call.transcribe()` starts the transcription and returns an action that keeps its `control_id`. Its
+`stop()` method ends the transcription early. In the [Relay call program](#transcribe-a-call-in-real-time-via-websocket-relay),
+replace the `live_transcribe` call with these lines:
+
+<CodeBlocks>
+<CodeBlock title="Python — Relay client">
+```python
+transcription = await call.transcribe(status_url="<YOUR_TRANSCRIPT_STATUS_URL>")
+# ... later, to end it before the call does:
+await transcription.stop()
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — Relay client">
+```typescript
+const transcription = await call.transcribe({ statusUrl: "<YOUR_TRANSCRIPT_STATUS_URL>" });
+// ... later, to end it before the call does:
+await transcription.stop();
+```
+</CodeBlock>
+</CodeBlocks>
+
+The action completes when SignalWire finishes capturing the call's audio. The text itself arrives
+at your `status_url` afterward.
+
+Over REST, send `calling.transcribe` with a `control_id` you choose, and `calling.transcribe.stop`
+with the same `control_id` to end it. The REST client in the [Server SDKs][server-sdks] wraps both
+commands:
+
+<CodeBlocks>
+<CodeBlock title="Python — REST client">
+```python
+client.calling.transcribe(
+    "<YOUR_CALL_ID>",
+    control_id="whole-call",
+    status_url="<YOUR_TRANSCRIPT_STATUS_URL>",
+)
+# ... later, to end it before the call does:
+client.calling.transcribe_stop("<YOUR_CALL_ID>", control_id="whole-call")
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — REST client">
+```typescript
+await client.calling.transcribe("<YOUR_CALL_ID>", {
+  control_id: "whole-call",
+  status_url: "<YOUR_TRANSCRIPT_STATUS_URL>",
+});
+// ... later, to end it before the call does:
+await client.calling.transcribeStop("<YOUR_CALL_ID>", { control_id: "whole-call" });
+```
+</CodeBlock>
+</CodeBlocks>
+
+`client` is the REST client from [Start live transcription on a call in progress via REST](#start-live-transcription-on-a-call-in-progress-via-rest).
+To call the REST API directly, send these requests to [Call commands][call-commands]:
+
+<EndpointRequestSnippet endpoint="POST /api/calling/calls" example="calling.transcribe" />
+
+<EndpointRequestSnippet endpoint="POST /api/calling/calls" example="calling.transcribe.stop" />
+
+### Receive the call's transcript
+
+SignalWire posts one event to your `status_url` after the call ends. `event_type` is
+`calling.transcript.completed` with the text in `params.text`, or `calling.transcript.failed` when
+the call couldn't be transcribed. `params.text` is omitted when nobody spoke. The
+[Transcript status callback][transcript-status-callback] reference lists every field:
+
+<llms-ignore>
+
+<WebhookPayloadSnippet webhook="transcribeStatusCallback" />
+
+</llms-ignore>
+
+Answer with a `2xx` status within 5 seconds. SignalWire retries the request when your server
+doesn't, so the same transcript can arrive more than once. Use `params.id` to ignore repeats. The
+request is signed like the live events, as
+[Protect your webhooks](#read-transcript-events-on-your-webhook) describes.
+
+## Watch the live transcript with an AI sidecar
+
+To have an AI model follow the conversation as it's transcribed and act on it, use
+[`ai_sidecar`][swml-ai-sidecar], with or without `live_transcribe`. The sidecar transcribes the call
+the same way, then after each turn from the customer it sends the transcript to a model with your
+prompt and tools. It never speaks on the call. It posts advice, transcript updates, and tool
+results to your webhook, so it suits coaching a human agent, flagging compliance issues, or pulling
+data out of the call while it happens. Its [callback types][sidecar-callbacks] include the running
+transcript.
+
+## Alternatives: run your own speech-to-text
+
+To use a speech recognizer of your own choice, or to process the raw audio yourself,
+[stream the call's audio][call-streaming] to a WebSocket server and send it on from there. To keep
+the audio itself, [record the call][record-calls]. A stereo recording keeps each side on its own
+channel for later processing.
+
+## Troubleshoot call transcription
+
+Find the symptom you see:
+
+- **The call plays normally, but your server prints nothing.** SignalWire couldn't reach your
+  webhook. Check that the URL begins with `https://` and ends with `/transcripts`, and that the
+  tunnel is running and points at port `8080`.
+- **The server prints the end of the session, but no utterances.** `live_events` isn't `true` on
+  `start`. Without it, the transcript arrives only when the session ends.
+- **You see utterances from only one side.** `direction` lists one side. Add `remote-caller` and
+  `local-caller` to transcribe both.
+- **You hear an error or silence when you call your number.** SignalWire couldn't fetch your SWML.
+  Rerun the `curl` check with the exact URL in the SWML Script, and confirm that the server and the
+  tunnel are still running. A `401` means the password in the URL doesn't match the server's.
+- **You hear your number's old behavior.** The number still points at another Resource. Open it
+  under **Phone Numbers** and check **Inbound Call Settings**.
+- **A Relay or REST `start` command is rejected.** Check that `start` has both `lang` and
+  `direction`.
+- **No `calling.transcript.completed` event arrives.** The event comes after the call ends, not
+  during it. Check that `status_url` ends with `/transcript-status`, and that no other `transcribe`
+  was already running on the call.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="live_transcribe reference" icon="regular closed-captioning" href="/docs/swml/reference/calling/live-transcribe">
+    Every option for starting, summarizing, and stopping live transcription
+  </Card>
+  <Card title="Live transcription webhooks" icon="regular webhook" href="/docs/apis/rest/webhooks/live-transcribe-utterance-webhook">
+    Every field in the events your webhook receives
+  </Card>
+  <Card title="AI sidecar" icon="regular user-headset" href="/docs/swml/reference/calling/ai-sidecar">
+    Have an AI model watch the live transcript and coach your agents
+  </Card>
+  <Card title="Stream call audio" icon="regular waveform-lines" href="/docs/platform/voice/call-streaming">
+    Send the call's raw audio to your own speech-to-text service
+  </Card>
+</CardGroup>
