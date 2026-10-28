@@ -5713,7 +5713,7 @@
                         "fr-FR"
                     ],
                     "maxItems": 3,
-                    "description": "The language code for ASR (Automatic Speech Recognition) purposes. By default, SignalWire uses Deepgram's\nNova-3 STT engine, so this value should match a code from Deepgram's Nova-3 language codes.\nIf a different STT model was selected using the `openai_asr_engine` parameter, you must select a code supported by that engine.\n\nSupply an array to have this voice listen for up to three codes at once.\n\nSet it to `multi` to have the engine transcribe whichever of its supported languages the caller\nspeaks, rather than one fixed language. The agent still answers in this entry's single `voice`.\nTo answer in the caller's language as well, use [`ai.multilingual`](/docs/swml/reference/calling/ai/multilingual)\ninstead, which builds on the same code-switching mode and adds a voice per language."
+                    "description": "The language code for ASR (Automatic Speech Recognition) purposes. By default, SignalWire uses Deepgram's\nNova-3 STT engine, so this value should match a code from Deepgram's Nova-3 language codes.\nA code that Nova-3 doesn't support uses Nova-2 if Nova-2 supports it; otherwise it's handed to Google Cloud Speech without an error.\nIf a different STT model was selected using the `openai_asr_engine` parameter, you must select a code supported by that engine.\n\nSupply an array to have this voice listen for up to three codes at once.\n\nSet it to `multi` to have the engine transcribe whichever of its supported languages the caller\nspeaks, rather than one fixed language. The agent still answers in this entry's single `voice`.\n`multi` works only with Deepgram speech recognition, and it switches between fewer languages than `code` accepts: on Nova-3, English, Spanish, French, German, Hindi, Russian, Portuguese, Japanese, Italian, and Dutch; on Nova-2, English and Spanish. A Google speech engine treats `multi` as an ordinary language code.\nTo answer in the caller's language as well, use [`ai.multilingual`](/docs/swml/reference/calling/ai/multilingual)\ninstead, which builds on the same code-switching mode and adds a voice per language."
                 },
                 "listen_language": {
                     "anyOf": [
@@ -5730,6 +5730,7 @@
                     "examples": [
                         "fr-FR"
                     ],
+                    "maxItems": 3,
                     "description": "A legacy alias for `code`, kept so that documents written before `code` existed keep\nworking. It is read only when `code` is absent, so it has no effect alongside `code`.\nWrite `code` in new documents."
                 },
                 "voice": {
@@ -5800,6 +5801,19 @@
                         ]
                     ],
                     "description": "An array of strings to be used as fillers in the conversation when calling a `swaig function`. This helps the AI break silence between responses. The filler is played asynchronously during the function call."
+                },
+                "double_turn_fillers": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "let me think",
+                            "one moment"
+                        ]
+                    ],
+                    "description": "Phrases the agent says while the planning step enabled by `params.double_turns` is still running\nwhen a reply is due. One is picked at random, and the same phrase is not played twice in a row.\nHas no effect unless `params.double_turns` is `true`. Applies only to `languages`, not `multilingual`."
                 },
                 "speech_fillers": {
                     "type": "array",
@@ -6144,6 +6158,14 @@
                         "complete,partial"
                     ],
                     "description": "Controls the barge behavior. Allowed values are `\"complete\"`, `\"partial\"`, `\"all\"`, or boolean.\n**Default:** `\"complete,partial\"`"
+                },
+                "double_turns": {
+                    "type": "boolean",
+                    "default": false,
+                    "examples": [
+                        true
+                    ],
+                    "description": "Before each reply, a smaller planning model reviews the conversation and the available functions,\nthen gives the agent a short directive on how to respond. This can improve function use and\ncoherence. The reply waits for the plan, which adds latency to every turn. The planning model is\n`utility_model` if set, otherwise `ai_model`. Billed separately from the agent's per-minute rate.\nTo cover the wait, set `double_turn_fillers` on each entry in `languages`."
                 },
                 "enable_inner_dialog": {
                     "type": "boolean",
@@ -6896,7 +6918,7 @@
                         800
                     ],
                     "minimum": 0,
-                    "description": "How long a wait must already have run, in milliseconds, before a backchannel plays. Off by\ndefault: waits open the moment the agent decides to hold, and `spell` and `number` are meant to\nbe answered right then. A `<token>:<ms>` suffix in `turn_filler_sources` overrides this for that\ntoken."
+                    "description": "How long a wait must already have run, in milliseconds, before a backchannel plays. Off by\ndefault: waits open the moment the agent decides to hold, and `spell` and `number` are meant to\nbe answered right then. A positive `<token>:<ms>` suffix in `turn_filler_sources` replaces this for\nthat token, but `:0` does not clear it. To answer one source immediately while delaying others,\nleave this at `0` and put suffixes on the others."
                 },
                 "tts_number_format": {
                     "anyOf": [
@@ -9427,7 +9449,7 @@
                             "un momento"
                         ]
                     ],
-                    "description": "Used when the agent's language code is set to `multi`, which lets the speech recognition engine transcribe whichever of its supported languages the caller speaks."
+                    "description": "Used when the agent's language code is set to `multi`, which lets the speech recognition engine transcribe whichever of its supported languages the caller speaks. `auto` is skipped while the code is `multi`, because there is no single language to translate into, so the lookup goes from this key straight to `default`."
                 },
                 "no": {
                     "type": "array",
@@ -9657,7 +9679,7 @@
                     "type": "string"
                 }
             },
-            "description": "Filler phrases keyed by language code, one array per language. A single phrase is\npicked from the matching array at random.\n\nThe agent looks for an entry matching the language being spoken, then `auto`, then\n`default`, and plays nothing when none of the three is set. Under `ai.multilingual` the\nkey is whichever code the speech recognition engine reports for the turn, so any code it\nreturns works. Under `ai.languages` the key has to match the `code` set on the entry.\nThe codes listed here are the ones in common use, not a closed list."
+            "description": "Filler phrases keyed by language code, one array per language. A single phrase is\npicked from the matching array at random, never the same phrase twice in a row, so a\ntwo-phrase array alternates.\n\nThe agent looks for an entry matching the language being spoken, then `auto`, then\n`default` (`auto` is skipped while the code is `multi`), and plays nothing when none of the three is set. Under `ai.multilingual` the\nkey is whichever code the speech recognition engine reports for the turn, so any code it\nreturns works. Under `ai.languages` the key has to match the `code` set on the entry.\nThe codes listed here are the ones in common use, not a closed list."
         },
         "TurnFillers": {
             "type": "object",
@@ -10154,7 +10176,7 @@
                             "un momento"
                         ]
                     ],
-                    "description": "Used when the agent's language code is set to `multi`, which lets the speech recognition engine transcribe whichever of its supported languages the caller speaks."
+                    "description": "Used when the agent's language code is set to `multi`, which lets the speech recognition engine transcribe whichever of its supported languages the caller speaks. `auto` is skipped while the code is `multi`, because there is no single language to translate into, so the lookup goes from this key straight to `default`."
                 },
                 "no": {
                     "type": "array",
@@ -10384,7 +10406,7 @@
                     "type": "string"
                 }
             },
-            "description": "Backchannel phrases keyed by language code, one array per language. A single phrase is\npicked from the matching array at random.\n\nThe agent looks for an entry matching the language being spoken, then `default`, and plays\nnothing when neither is set. There is no `auto` key here: these phrases are never\ntranslated on the fly, because they have to be ready to play immediately.\nThe codes listed here are the ones in common use, not a closed list."
+            "description": "Backchannel phrases keyed by language code, one array per language. A single phrase is\npicked from the matching array at random, never the same phrase twice in a row, so a\ntwo-phrase array alternates.\n\nThe agent looks for an entry matching the language being spoken, then `default`, and plays\nnothing when neither is set. There is no `auto` key here: these phrases are never\ntranslated on the fly, because they have to be ready to play immediately.\nThe codes listed here are the ones in common use, not a closed list."
         },
         "PositiveCount": {
             "type": "integer",
@@ -11144,19 +11166,19 @@
             "properties": {
                 "check_time": {
                     "$ref": "#/$defs/FunctionFillers",
-                    "description": "Filler phrases played when the AI Agent is checking the time."
+                    "description": "Filler phrases played when the AI Agent is checking the time. Used only when `check_time` is listed in [`SWAIG.native_functions`](/docs/swml/reference/calling/ai/swaig#swaignative_functions)."
                 },
                 "wait_for_user": {
                     "$ref": "#/$defs/FunctionFillers",
-                    "description": "Filler phrases played when the AI Agent is waiting for user input."
+                    "description": "Filler phrases played when the AI Agent is waiting for user input. Used only when `wait_for_user` is listed in [`SWAIG.native_functions`](/docs/swml/reference/calling/ai/swaig#swaignative_functions)."
                 },
                 "wait_seconds": {
                     "$ref": "#/$defs/FunctionFillers",
-                    "description": "Filler phrases played during deliberate pauses or wait periods."
+                    "description": "Filler phrases played during deliberate pauses or wait periods. Used only when `wait_seconds` is listed in [`SWAIG.native_functions`](/docs/swml/reference/calling/ai/swaig#swaignative_functions)."
                 },
                 "adjust_response_latency": {
                     "$ref": "#/$defs/FunctionFillers",
-                    "description": "Filler phrases played when the AI Agent is adjusting response timing."
+                    "description": "Filler phrases played when the AI Agent is adjusting response timing. Used only when `adjust_response_latency` is listed in [`SWAIG.native_functions`](/docs/swml/reference/calling/ai/swaig#swaignative_functions)."
                 },
                 "next_step": {
                     "$ref": "#/$defs/FunctionFillers",
@@ -16359,7 +16381,7 @@
                                         300
                                     ],
                                     "maximum": 900,
-                                    "description": "The duration to hold the caller in seconds. Can be a number or an object with timeout property."
+                                    "description": "The duration to hold the caller in seconds. Can be a number or an object with `timeout`, and optionally `step` and `timeout_step`."
                                 },
                                 "step": {
                                     "type": "string",
@@ -16385,7 +16407,7 @@
                         120
                     ],
                     "maximum": 900,
-                    "description": "Places the caller on hold while playing hold music (configured via params.hold_music).\nDuring hold, speech detection is paused and the AI agent will not respond to the caller.\nThe value specifies the hold timeout in seconds.\nCan be a number or an object with timeout property.",
+                    "description": "Places the caller on hold while playing hold music (configured via params.hold_music).\nDuring hold, speech detection is paused and the AI agent will not respond to the caller.\nThe value specifies the hold timeout in seconds.\nCan be a number or an object with `timeout`, and optionally `step` and `timeout_step`.",
                     "title": "hold"
                 }
             },

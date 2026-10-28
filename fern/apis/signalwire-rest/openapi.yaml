@@ -37570,6 +37570,17 @@ components:
           examples:
             - complete,partial
           default: complete,partial
+        double_turns:
+          type: boolean
+          description: |-
+            Before each reply, a smaller planning model reviews the conversation and the available functions,
+            then gives the agent a short directive on how to respond. This can improve function use and
+            coherence. The reply waits for the plan, which adds latency to every turn. The planning model is
+            `utility_model` if set, otherwise `ai_model`. Billed separately from the agent's per-minute rate.
+            To cover the wait, set `double_turn_fillers` on each entry in `languages`.
+          examples:
+            - true
+          default: false
         enable_inner_dialog:
           type: boolean
           description: |-
@@ -38212,8 +38223,9 @@ components:
           description: |-
             How long a wait must already have run, in milliseconds, before a backchannel plays. Off by
             default: waits open the moment the agent decides to hold, and `spell` and `number` are meant to
-            be answered right then. A `<token>:<ms>` suffix in `turn_filler_sources` overrides this for that
-            token.
+            be answered right then. A positive `<token>:<ms>` suffix in `turn_filler_sources` replaces this for
+            that token, but `:0` does not clear it. To answer one source immediately while delaying others,
+            leave this at `0` and put suffixes on the others.
           examples:
             - 800
           default: 0
@@ -43228,7 +43240,7 @@ components:
           type: array
           items:
             type: string
-          description: Used when the agent's language code is set to `multi`, which lets the speech recognition engine transcribe whichever of its supported languages the caller speaks.
+          description: Used when the agent's language code is set to `multi`, which lets the speech recognition engine transcribe whichever of its supported languages the caller speaks. `auto` is skipped while the code is `multi`, because there is no single language to translate into, so the lookup goes from this key straight to `default`.
           examples:
             - - one moment
               - un momento
@@ -43374,10 +43386,11 @@ components:
           type: string
       description: |-
         Filler phrases keyed by language code, one array per language. A single phrase is
-        picked from the matching array at random.
+        picked from the matching array at random, never the same phrase twice in a row, so a
+        two-phrase array alternates.
 
         The agent looks for an entry matching the language being spoken, then `auto`, then
-        `default`, and plays nothing when none of the three is set. Under `ai.multilingual` the
+        `default` (`auto` is skipped while the code is `multi`), and plays nothing when none of the three is set. Under `ai.multilingual` the
         key is whichever code the speech recognition engine reports for the turn, so any code it
         returns works. Under `ai.languages` the key has to match the `code` set on the entry.
         The codes listed here are the ones in common use, not a closed list.
@@ -43800,7 +43813,7 @@ components:
                   type: integer
                   format: int32
                   maximum: 900
-                  description: The duration to hold the caller in seconds. Can be a number or an object with timeout property.
+                  description: The duration to hold the caller in seconds. Can be a number or an object with `timeout`, and optionally `step` and `timeout_step`.
                   examples:
                     - 300
                   default: 300
@@ -43825,7 +43838,7 @@ components:
             Places the caller on hold while playing hold music (configured via params.hold_music).
             During hold, speech detection is paused and the AI agent will not respond to the caller.
             The value specifies the hold timeout in seconds.
-            Can be a number or an object with timeout property.
+            Can be a number or an object with `timeout`, and optionally `step` and `timeout_step`.
           title: hold
           examples:
             - 120
@@ -44276,12 +44289,14 @@ components:
           description: |-
             The language code for ASR (Automatic Speech Recognition) purposes. By default, SignalWire uses Deepgram's
             Nova-3 STT engine, so this value should match a code from Deepgram's Nova-3 language codes.
+            A code that Nova-3 doesn't support uses Nova-2 if Nova-2 supports it; otherwise it's handed to Google Cloud Speech without an error.
             If a different STT model was selected using the `openai_asr_engine` parameter, you must select a code supported by that engine.
 
             Supply an array to have this voice listen for up to three codes at once.
 
             Set it to `multi` to have the engine transcribe whichever of its supported languages the caller
             speaks, rather than one fixed language. The agent still answers in this entry's single `voice`.
+            `multi` works only with Deepgram speech recognition, and it switches between fewer languages than `code` accepts: on Nova-3, English, Spanish, French, German, Hindi, Russian, Portuguese, Japanese, Italian, and Dutch; on Nova-2, English and Spanish. A Google speech engine treats `multi` as an ordinary language code.
             To answer in the caller's language as well, use [`ai.multilingual`](/docs/swml/reference/calling/ai/multilingual)
             instead, which builds on the same code-switching mode and adds a voice per language.
           examples:
@@ -44292,6 +44307,7 @@ components:
             - type: array
               items:
                 type: string
+          maxItems: 3
           description: |-
             A legacy alias for `code`, kept so that documents written before `code` existed keep
             working. It is read only when `code` is absent, so it has no effect alongside `code`.
@@ -44367,6 +44383,17 @@ components:
           examples:
             - - great
               - ok
+        double_turn_fillers:
+          type: array
+          items:
+            type: string
+          description: |-
+            Phrases the agent says while the planning step enabled by `params.double_turns` is still running
+            when a reply is due. One is picked at random, and the same phrase is not played twice in a row.
+            Has no effect unless `params.double_turns` is `true`. Applies only to `languages`, not `multilingual`.
+          examples:
+            - - let me think
+              - one moment
         speech_fillers:
           type: array
           items:
@@ -46598,19 +46625,19 @@ components:
         check_time:
           allOf:
             - $ref: '#/components/schemas/SWML.Calling.FunctionFillers'
-          description: Filler phrases played when the AI Agent is checking the time.
+          description: Filler phrases played when the AI Agent is checking the time. Used only when `check_time` is listed in [`SWAIG.native_functions`](/docs/swml/reference/calling/ai/swaig#swaignative_functions).
         wait_for_user:
           allOf:
             - $ref: '#/components/schemas/SWML.Calling.FunctionFillers'
-          description: Filler phrases played when the AI Agent is waiting for user input.
+          description: Filler phrases played when the AI Agent is waiting for user input. Used only when `wait_for_user` is listed in [`SWAIG.native_functions`](/docs/swml/reference/calling/ai/swaig#swaignative_functions).
         wait_seconds:
           allOf:
             - $ref: '#/components/schemas/SWML.Calling.FunctionFillers'
-          description: Filler phrases played during deliberate pauses or wait periods.
+          description: Filler phrases played during deliberate pauses or wait periods. Used only when `wait_seconds` is listed in [`SWAIG.native_functions`](/docs/swml/reference/calling/ai/swaig#swaignative_functions).
         adjust_response_latency:
           allOf:
             - $ref: '#/components/schemas/SWML.Calling.FunctionFillers'
-          description: Filler phrases played when the AI Agent is adjusting response timing.
+          description: Filler phrases played when the AI Agent is adjusting response timing. Used only when `adjust_response_latency` is listed in [`SWAIG.native_functions`](/docs/swml/reference/calling/ai/swaig#swaignative_functions).
         next_step:
           allOf:
             - $ref: '#/components/schemas/SWML.Calling.FunctionFillers'
@@ -48705,7 +48732,7 @@ components:
           type: array
           items:
             type: string
-          description: Used when the agent's language code is set to `multi`, which lets the speech recognition engine transcribe whichever of its supported languages the caller speaks.
+          description: Used when the agent's language code is set to `multi`, which lets the speech recognition engine transcribe whichever of its supported languages the caller speaks. `auto` is skipped while the code is `multi`, because there is no single language to translate into, so the lookup goes from this key straight to `default`.
           examples:
             - - one moment
               - un momento
@@ -48851,7 +48878,8 @@ components:
           type: string
       description: |-
         Backchannel phrases keyed by language code, one array per language. A single phrase is
-        picked from the matching array at random.
+        picked from the matching array at random, never the same phrase twice in a row, so a
+        two-phrase array alternates.
 
         The agent looks for an entry matching the language being spoken, then `default`, and plays
         nothing when neither is set. There is no `auto` key here: these phrases are never
