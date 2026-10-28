@@ -77,19 +77,28 @@ namespace CompatibilityAPI.Recordings {
     @doc("""
       Retrieves one voice recording's metadata, such as duration, cost, and status. Use this account-level route for saved call or conference media; Video Room recordings are separate resources.
 
-      Request the recording URI with a `.json` extension to get the metadata. This requires authentication with a Voice-scoped API token.
+      Request the recording URI with a `.json` extension to get the metadata.
 
       `GET https://example.signalwire.com/api/laml/2010-04-01/Accounts/{AccountSid}/Recordings/{Sid}.json`
+
+      ## Access
+
+      Access to the recording URI, for metadata and audio alike, follows the project's **Protect Recording Media URLs**
+      setting. New projects have it turned on. See [Media URL protection](/docs/platform/media-protection).
+
+      - **On:** authenticate with your Project ID and an API token that has the _Management_ scope. A request without
+        valid credentials, or with a token that lacks the scope, gets a `401`.
+      - **Off:** anyone with the URI can retrieve the recording without authenticating, which lets external
+        applications embed recording URLs without exposing your API credentials. Recording URIs contain long random
+        IDs, which makes them difficult to guess unless you reveal them.
+
+      [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
 
       ## Recording audio
 
       The same recording URI also returns the recording audio, depending on the extension. Without an extension, the
       response follows the request's `Accept` header: `application/json` returns the metadata, and a generic value such
       as `*/*` returns the audio.
-
-      Recording audio files can be accessed directly without authentication. This is useful for external applications
-      to embed recording URLs without exposing SignalWire API credentials. SignalWire recording URLs are long
-      and random, making them difficult to guess or exploit unless you reveal the URL.
 
       The audio URLs respond with a `302` redirect to the audio file, so your client must follow redirects. When the
       recording has no audio to return, for example because its `status` isn't `completed`, they respond with `404`
@@ -110,14 +119,6 @@ namespace CompatibilityAPI.Recordings {
       of the recording. For example:
 
       `GET https://example.signalwire.com/api/laml/2010-04-01/Accounts/{AccountSid}/Recordings/{Sid}.mp3`
-
-      #### Permissions
-      
-      The API token used to authenticate must have the following scopes enabled to make a successful request: _Voice_.
-      
-      This permission is only required for authenticated requests to retrieve recording metadata (.json extension).
-      
-      [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
       """)
     @route("/{Sid}.json")
     read(...RecordingsAccountSidPath, ...RecordingSidPath):

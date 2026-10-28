@@ -14,15 +14,20 @@ model RecordingSidPath {
   Sid: uuid;
 }
 
-@doc("Recording source.")
+@doc("""
+  How the recording was started.
+  - `DialVerb`: the recording settings on `<Dial>`, including a `<Dial>` that connects to a `<Conference>`.
+  - `Queue`: the recording settings on a `<Dial>` that connects to a `<Queue>`.
+  - `RecordVerb`: the `<Record>` verb.
+  - `StartCallRecordingAPI`: a request to create a recording on an active call.
+  - `Conference`: a recording of a conference.
+  """)
 enum RecordingSource {
   DialVerb: "DialVerb",
-  Conference: "Conference",
-  OutBoundApi: "OutBoundApi",
-  Trunking: "Trunking",
+  Queue: "Queue",
   RecordVerb: "RecordVerb",
   StartCallRecordingAPI: "StartCallRecordingAPI",
-  StartConferenceRecording: "StartConferenceRecording",
+  Conference: "Conference",
 }
 
 @doc("Recording status.")
@@ -102,8 +107,9 @@ model Recording {
   @example("USD")
   price_unit: string;
 
-  @doc("How the recording was made.")
-  source: RecordingSource;
+  @doc("How the recording was started. Null for a recording made because a call was created through the REST API with `Record` set to `true`.")
+  @example(RecordingSource.DialVerb)
+  source: RecordingSource | null;
 
   @doc("The status of the recording.")
   status: RecordingStatus;

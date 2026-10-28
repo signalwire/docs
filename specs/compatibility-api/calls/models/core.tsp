@@ -324,8 +324,9 @@ model CallRecording {
   @example("USD")
   price_unit: string;
 
-  @doc("How the recording was made.")
-  source: RecordingSource;
+  @doc("How the recording was started. A call recording is never `Conference`. Null for a recording made because the call was created through the REST API with `Record` set to `true`.")
+  @example(RecordingSource.StartCallRecordingAPI)
+  source: RecordingSource | null;
 
   @doc("The status of the recording.")
   status: RecordingStatus;

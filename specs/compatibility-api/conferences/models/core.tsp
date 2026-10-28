@@ -215,10 +215,9 @@ model ConferenceRecordingSidPath {
   Sid: uuid;
 }
 
-@doc("Recording source for conference recordings.")
+@doc("Recording source for conference recordings. Always `Conference`.")
 enum ConferenceRecordingSource {
   Conference: "Conference",
-  StartConferenceRecording: "StartConferenceRecording",
 }
 
 @doc("Recording status.")
