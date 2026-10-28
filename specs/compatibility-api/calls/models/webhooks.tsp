@@ -97,7 +97,7 @@ model VoiceStatusCallbackPayload {
   @example("call-progress-events")
   CallbackSource: string;
 
-  @doc("The duration, in seconds, of the finished call. Only present on the `completed` event.")
+  @doc("The duration, in seconds, of the finished call, from when the call started ringing to when it ended, rounded up to the next whole second. Because it includes ringing time, it's longer than the time the call was connected and usually longer than a recording of the call. Only present on the `completed` event.")
   @example(94)
   CallDuration?: int32;
 
