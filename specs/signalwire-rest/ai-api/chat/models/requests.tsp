@@ -113,8 +113,7 @@ model ChatEndConversationRequest {
 
   @doc("""
     Ends the conversation and starts post-processing: the summary, and a request to your
-    `post_prompt_url` when your SWML sets one. The conversation is then removed, so a later
-    `delete` with the same `id` returns `not_found`.
+    `post_prompt_url` when your SWML sets one.
     """)
   @example("end_conversation")
   method: "end_conversation";

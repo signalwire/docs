@@ -18457,8 +18457,7 @@ components:
             - end_conversation
           description: |-
             Ends the conversation and starts post-processing: the summary, and a request to your
-            `post_prompt_url` when your SWML sets one. The conversation is then removed, so a later
-            `delete` with the same `id` returns `not_found`.
+            `post_prompt_url` when your SWML sets one.
           examples:
             - end_conversation
         params:
@@ -18566,6 +18565,42 @@ components:
       unevaluatedProperties:
         not: {}
       description: The request body was not valid JSON. The response is not a JSON-RPC envelope.
+    AI.ChatLogEntry:
+      type: object
+      required:
+        - role
+        - content
+      properties:
+        role:
+          type: string
+          description: |-
+            Who produced the entry. Common roles include `system`, `user`, `assistant`, and `tool`. Other
+            roles may appear, so filter to the roles your application uses rather than assuming a fixed set.
+          examples:
+            - assistant
+        content:
+          type: string
+          description: The text of the entry.
+          examples:
+            - Your ride is booked for 6pm.
+        timestamp:
+          type: integer
+          format: int64
+          description: When the entry was added, as a Unix timestamp in microseconds. Omitted on entries without one.
+          examples:
+            - 1694541297950440
+        tool_calls:
+          anyOf:
+            - type: array
+              items:
+                type: object
+                unevaluatedProperties: {}
+            - type: 'null'
+          description: The tool calls the agent made on this turn. `null` or omitted on a turn that made none.
+      unevaluatedProperties: {}
+      description: |-
+        One entry in the conversation. Beyond `role` and `content`, an entry carries whatever per-turn
+        detail applies to it.
     AI.ChatLogRequest:
       type: object
       required:
@@ -18950,7 +18985,7 @@ components:
             chat_log:
               type: array
               items:
-                $ref: '#/components/schemas/Webhooks.AI.AICallLogEntry'
+                $ref: '#/components/schemas/AI.ChatLogEntry'
               description: |-
                 Every entry in the conversation, in order. Alongside the dialogue this can carry your own
                 prompt and other non-dialogue entries, so filter to `user` and `assistant` before displaying a
@@ -57441,13 +57476,11 @@ components:
           examples:
             - 1694541297950440
         tool_calls:
-          anyOf:
-            - type: array
-              items:
-                type: object
-                unevaluatedProperties: {}
-            - type: 'null'
-          description: The tool calls the agent made on this turn. `null` or omitted on a turn that made none.
+          type: array
+          items:
+            type: object
+            unevaluatedProperties: {}
+          description: The tool calls the agent made on this turn. Present only on a turn that made any.
       unevaluatedProperties: {}
       description: |-
         One entry in the conversation. Beyond `role` and `content`, an entry carries whatever per-turn
