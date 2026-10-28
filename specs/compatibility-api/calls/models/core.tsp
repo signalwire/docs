@@ -193,77 +193,77 @@ model Call {
   @example("200")
   sip_result_code: string | null;
 
-  @doc("The average round-trip time for audio in milliseconds, returned as a numeric string.")
-  @example("50")
-  audio_rtt_avg: string | null;
+  @doc("The average round-trip time for audio in milliseconds, in steps of 10.")
+  @example(40)
+  audio_rtt_avg: float64 | null;
 
-  @doc("The minimum round-trip time for audio in milliseconds, returned as a numeric string.")
-  @example("20")
-  audio_rtt_min: string | null;
+  @doc("The minimum round-trip time for audio in milliseconds, in steps of 10.")
+  @example(30)
+  audio_rtt_min: float64 | null;
 
-  @doc("The maximum round-trip time for audio in milliseconds, returned as a numeric string.")
-  @example("100")
-  audio_rtt_max: string | null;
+  @doc("The maximum round-trip time for audio in milliseconds, in steps of 10.")
+  @example(50)
+  audio_rtt_max: float64 | null;
 
-  @doc("The minimum inbound audio jitter in milliseconds, returned as a numeric string.")
-  @example("0.25")
-  audio_in_jitter_min: string | null;
+  @doc("The minimum inbound audio jitter in milliseconds.")
+  @example(0.25)
+  audio_in_jitter_min: float64 | null;
 
-  @doc("The maximum inbound audio jitter in milliseconds, returned as a numeric string.")
-  @example("8.5")
-  audio_in_jitter_max: string | null;
+  @doc("The maximum inbound audio jitter in milliseconds.")
+  @example(8.5)
+  audio_in_jitter_max: float64 | null;
 
-  @doc("The minimum outbound audio jitter in milliseconds, returned as a numeric string.")
-  @example("0")
-  audio_out_jitter_min: string | null;
+  @doc("The minimum outbound audio jitter in milliseconds.")
+  @example(0)
+  audio_out_jitter_min: float64 | null;
 
-  @doc("The maximum outbound audio jitter in milliseconds, returned as a numeric string.")
-  @example("2.5")
-  audio_out_jitter_max: string | null;
+  @doc("The maximum outbound audio jitter in milliseconds.")
+  @example(2.5)
+  audio_out_jitter_max: float64 | null;
 
-  @doc("The average outbound audio jitter in milliseconds, returned as a numeric string.")
-  @example("0.56")
-  audio_out_jitter_avg: string | null;
+  @doc("The average outbound audio jitter in milliseconds.")
+  @example(0.56)
+  audio_out_jitter_avg: float64 | null;
 
-  @doc("The number of audio packets received in the inbound media stream, returned as a numeric string.")
-  @example("1842")
-  audio_in_media_packet_count: string | null;
+  @doc("The number of audio packets received in the inbound media stream.")
+  @example(1842)
+  audio_in_media_packet_count: int32 | null;
 
-  @doc("The total number of packets sent in the outbound media stream, returned as a numeric string.")
-  @example("1840")
-  audio_out_packet_count: string | null;
+  @doc("Not populated. Always `null`; use `audio_out_media_packet_count` for the number of audio packets sent.")
+  @example(null)
+  audio_out_packet_count: int32 | null;
 
-  @doc("The number of audio packets sent in the outbound media stream, returned as a numeric string.")
-  @example("1840")
-  audio_out_media_packet_count: string | null;
+  @doc("The number of audio packets sent in the outbound media stream.")
+  @example(1840)
+  audio_out_media_packet_count: int32 | null;
 
-  @doc("The number of outbound audio packets lost, returned as a numeric string.")
-  @example("1")
-  audio_out_lost: string | null;
+  @doc("The number of outbound audio packets lost.")
+  @example(1)
+  audio_out_lost: int32 | null;
 
-  @doc("The mean interval between inbound audio packets in milliseconds, returned as a numeric string.")
-  @example("20")
-  audio_in_mean_interval: string | null;
+  @doc("The mean interval between inbound audio packets in milliseconds.")
+  @example(20.03)
+  audio_in_mean_interval: float64 | null;
 
-  @doc("The number of DTMF packets in the inbound media stream, returned as a numeric string.")
-  @example("0")
-  audio_in_dtmf_packet_count: string | null;
+  @doc("The number of DTMF packets in the inbound media stream.")
+  @example(0)
+  audio_in_dtmf_packet_count: int32 | null;
 
-  @doc("The number of DTMF packets in the outbound media stream, returned as a numeric string.")
-  @example("0")
-  audio_out_dtmf_packet_count: string | null;
+  @doc("The number of DTMF packets in the outbound media stream.")
+  @example(0)
+  audio_out_dtmf_packet_count: int32 | null;
 
-  @doc("The number of inbound packets not received at the expected interval, returned as a numeric string. Increases with every packet lost from the inbound stream.")
-  @example("1")
-  audio_in_skip_packet_count: string | null;
+  @doc("The number of inbound packets not received at the expected interval. Increases with every packet lost from the inbound stream.")
+  @example(1)
+  audio_in_skip_packet_count: int32 | null;
 
-  @doc("The number of inbound packets removed from the jitter buffer because of buffer overflow or underflow, returned as a numeric string.")
-  @example("2")
-  audio_in_flush_packet_count: string | null;
+  @doc("The number of inbound packets removed from the jitter buffer because of buffer overflow or underflow.")
+  @example(2)
+  audio_in_flush_packet_count: int32 | null;
 
-  @doc("The largest jitter buffer size recorded for inbound audio during the call, returned as a numeric string.")
-  @example("4")
-  audio_in_largest_jb_size: string | null;
+  @doc("The largest jitter buffer size recorded for inbound audio during the call.")
+  @example(4)
+  audio_in_largest_jb_size: int32 | null;
 }
 
 @doc("Call recording model.")
