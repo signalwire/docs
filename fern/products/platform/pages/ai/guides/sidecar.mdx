@@ -75,6 +75,10 @@ Replace these values in the samples you run:
 | `<YOUR_AGENT_NUMBER>` | The phone the agent answers, in E.164 format |
 | `<YOUR_CALL_ID>` | The ID of a live call, which your server prints when a sidecar starts |
 
+The REST requests on this page go to `https://<YOUR_SPACE>.signalwire.com/api/calling/calls` and
+authenticate with basic auth, using your Project ID as the username and your API token as the
+password. Each request names its call in `id`, so replace the example ID with `<YOUR_CALL_ID>`.
+
 ## How the AI sidecar works
 
 A sidecar runs alongside the call without taking part in it:
@@ -238,10 +242,19 @@ connected, from the REST Calling API. Either way it reports to the server you ju
 Create a SWML Script that holds this document, so SignalWire runs it for calls to your number. The
 sales agent is being coached from the moment the call is answered:
 
-1. Open **My Resources**, select **+ Add**, then **Script**, then **SWML Script**.
-2. Name it **AI sidecar** and leave **Used For** set to **Calling**.
-3. Under **Handle Calls Using**, choose **Hosted Script** and paste this document into
-   **Primary Script**.
+<Steps>
+
+<Step title="Create a SWML Script" id="create-a-swml-script">
+
+Open **My Resources**, select **+ Add**, then **Script**, then **SWML Script**. Name it
+**AI sidecar** and leave **Used For** set to **Calling**.
+
+</Step>
+
+<Step title="Paste the sidecar document" id="paste-the-sidecar-document">
+
+Under **Handle Calls Using**, choose **Hosted Script** and paste this document into
+**Primary Script**:
 
 <CodeBlocks>
 <CodeBlock title="YAML">
@@ -327,7 +340,15 @@ sections:
 </CodeBlock>
 </CodeBlocks>
 
-4. Select **Create**.
+</Step>
+
+<Step title="Save the script" id="save-the-script">
+
+Select **Create**.
+
+</Step>
+
+</Steps>
 
 `lang` is the only required setting. Place `ai_sidecar` before `connect` so the sidecar hears the
 whole conversation. `hints` help speech recognition catch the company and product names the customer
@@ -353,18 +374,61 @@ Tip: Globex renews 120 seats in 30 days and is comparing ACME, so ask what they 
 
 When you hang up, the server prints `Sidecar finished: transcribe_close`.
 
+If the call connects but the server prints nothing, the sidecar didn't attach. The call connects
+either way, without an error, so check the document in the script, that the tunnel is running, and
+the password in `url`. If `Sidecar started` appears but no `Tool call` follows, SignalWire can't
+reach your server's `/swaig` route: check the host and password in `web_hook_url`.
+
 ### Attach a sidecar via REST
 
 Send `calling.ai_sidecar` with the call's ID to attach a sidecar to a call that's already connected.
-`params` takes the same settings as the SWML method: copy `prompt`, `lang`, `url`, `hints`, and
-`SWAIG` from the document in [Attach a sidecar via SWML](#attach-a-sidecar-via-swml), so the sidecar
-reports to your server and can call your tool.
+`params` takes the same settings as the SWML method. This request copies `prompt`, `lang`, `url`,
+`hints`, and `SWAIG` from the document in [Attach a sidecar via SWML](#attach-a-sidecar-via-swml),
+so the sidecar reports to your server and can call your tool.
 
-<EndpointRequestSnippet endpoint="POST /api/calling/calls" example="calling.ai_sidecar" />
+A call runs one sidecar at a time, and the request fails while another sidecar is attached. A call
+from the previous section already has one, so to try this request on it,
+[stop that sidecar](#stop-the-sidecar-while-the-call-continues) first, then send the request with
+the same call ID:
+
+```bash title="cURL — Calling API"
+curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
+  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "command": "calling.ai_sidecar",
+    "id": "<YOUR_CALL_ID>",
+    "params": {
+      "prompt": "You are a real-time sales copilot. After each customer turn, give the agent one concise piece of advice or call sidecar_skip if no advice is needed.",
+      "lang": "en-US",
+      "url": "https://signalwire:<YOUR_BASIC_AUTH_PASSWORD>@<YOUR_PUBLIC_HOST>/events",
+      "hints": ["ACME", "Globex", "FedRAMP", "SOC 2"],
+      "SWAIG": {
+        "defaults": {
+          "web_hook_url": "https://signalwire:<YOUR_BASIC_AUTH_PASSWORD>@<YOUR_PUBLIC_HOST>/swaig"
+        },
+        "functions": [
+          {
+            "function": "lookup_account",
+            "description": "Look up an account record.",
+            "parameters": {
+              "type": "object",
+              "properties": {
+                "customer_id": { "type": "string" }
+              },
+              "required": ["customer_id"]
+            }
+          }
+        ]
+      }
+    }
+  }'
+```
+
+For every setting the command takes, see [Call commands][call-commands].
 
 The server prints `Sidecar started` with the call's ID, and tips follow after the customer's next
-turn. A call can only run one sidecar at a time, so the request will fail if another sidecar is
-still attached.
+turn.
 
 ## Ask the sidecar a question during the call
 
