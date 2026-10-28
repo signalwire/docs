@@ -185,7 +185,7 @@ model Call {
   @example(null)
   group_sid: string | null;
 
-  @doc("The Mean Opinion Score (MOS) for inbound audio quality, on a scale of 1 to 5. Returned as a decimal string. Null if the call has no quality measurement.")
+  @doc("The estimated Mean Opinion Score (MOS) for inbound audio quality, from 1 to 4.5, based on the share of incoming audio packets that arrived without loss or delay. Returned as a decimal string. Null if the call has no quality measurement.")
   @example("4.5")
   audio_in_mos: string | null;
 
