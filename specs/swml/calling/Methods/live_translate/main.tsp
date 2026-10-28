@@ -48,12 +48,16 @@ model StartAction {
 
     @doc("""
       One of the two languages in the translation. The first direction in `direction` is translated into this language; a second direction is translated from it.
+      Use a code that `speech_engine` recognizes (with the default Deepgram engine, a code from Deepgram's Nova-3 language table)
+      and that the voice speaking this language supports.
       """)
     @example("en-US")
     from_lang: string;
 
     @doc("""
       The other language in the translation. The first direction in `direction` is translated from this language; a second direction is translated into it.
+      Use a code that `speech_engine` recognizes (with the default Deepgram engine, a code from Deepgram's Nova-3 language table)
+      and that the voice speaking this language supports.
       """)
     @example("es-ES")
     to_lang: string;
