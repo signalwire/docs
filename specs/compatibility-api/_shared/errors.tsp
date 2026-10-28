@@ -71,7 +71,7 @@ model CompatibilityStatusCode400Array {
   @body body: CompatibilityErrorArrayResponse;
 }
 
-@doc("Authentication failed. Please verify your credentials and try again. The body is the plain text `Unauthorized`.")
+@doc("Authentication failed. Please verify your credentials and try again. The body is usually the plain text `Unauthorized`. If your Space hasn't verified a phone number yet, the body is JSON instead: `{\"message\": \"Please validate a phone number to access your account.\"}`.")
 model CompatibilityStatusCode401 {
   @statusCode statusCode: 401;
   @header contentType: "text/plain";

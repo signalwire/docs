@@ -3,6 +3,7 @@ import "@typespec/openapi";
 import "./models/core.tsp";
 import "./models/requests.tsp";
 import "./models/responses.tsp";
+import "./models/errors.tsp";
 import "../../types";
 import "../tags.tsp";
 import "../../../_shared/alias/token-permissions.tsp";
@@ -133,7 +134,7 @@ namespace SignalWireAPI.RelayRest.PhoneNumbers {
       ends_with?: string,
 
       @query
-      @doc("The maximum number of matches to return. Defaults to 50. Toll-free searches accept up to 100. Local searches have no fixed upper limit, but a very large value can make the search return no numbers or fail with an error; narrow the search with `areacode`, `region`, `city`, or `starts_with` rather than raising `max_results` that far.")
+      @doc("The maximum number of matches to return. Defaults to 50. Toll-free searches accept up to 100; some Spaces are limited to 10 toll-free results, with a default of 5. Local searches have no fixed upper limit, but a very large value can make the search return no numbers or fail with an error; narrow the search with `areacode`, `region`, `city`, or `starts_with` rather than raising `max_results` that far.")
       @minValue(1)
       max_results?: int32,
 
@@ -144,7 +145,11 @@ namespace SignalWireAPI.RelayRest.PhoneNumbers {
       @query
       @doc("A specific City to search within. Must be used in combination with region. Only supported for local searches; not supported when `number_type` is toll-free.")
       city?: string,
-    ): AvailablePhoneNumbersResponse | StatusCode401 | StatusCode500;
+    ):
+      | AvailablePhoneNumbersResponse
+      | StatusCode401
+      | StatusCode500
+      | PhoneNumberSearchStatusCode503;
   }
 }
 
@@ -324,6 +329,7 @@ namespace SignalWireAPI.RelayRest.PhoneNumberLookup {
       | StatusCode401
       | StatusCode404
       | ValidationError
-      | StatusCode500;
+      | StatusCode500
+      | PhoneNumberLookupStatusCode503;
   }
 }

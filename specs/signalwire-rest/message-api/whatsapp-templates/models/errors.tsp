@@ -15,11 +15,11 @@ model WhatsAppTemplateErrorItem {
   @doc("The HTTP status code, as a string.")
   status: "422";
 
-  @doc("`Invalid Attribute` for a field that failed validation, or Meta's error message when Meta rejects the template.")
+  @doc("`Invalid Attribute` for a field that failed validation, Meta's error message when Meta rejects the template, or `Unknown error` when the template couldn't be sent to Meta.")
   @example("Invalid Attribute")
   title: string;
 
-  @doc("`422`, as a string, for a field that failed validation, or Meta's numeric error code when Meta rejects the template.")
+  @doc("`422`, as a string, for a field that failed validation. A number otherwise: Meta's error code when Meta rejects the template, or `500` when the template couldn't be sent to Meta.")
   @example("422")
   code: string | int32;
 

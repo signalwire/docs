@@ -100,7 +100,7 @@ namespace SignalWireAPI.Fabric.CallFlows {
     @operationId("update_call_flow")
     @summary("Update call flow")
     @doc("""
-      Saves a new editable revision of a Call Flow in your SignalWire project. Supply the next required `document_version`, then make the saved revision live with [Deploy call flow version](/docs/apis/rest/call-flows/deploy-call-flow-version). Directly authored SWML belongs in [Update SWML Script](/docs/apis/rest/swml-scripts/update-swml-script).
+      Saves a new editable revision of a Call Flow in your SignalWire project. Supply the next required `document_version` and a new `title`: an update that omits `title` or resends the Call Flow's current name is rejected. Omit `flow_data` or `relayml` to keep its current value. Then make the saved revision live with [Deploy call flow version](/docs/apis/rest/call-flows/deploy-call-flow-version). Directly authored SWML belongs in [Update SWML Script](/docs/apis/rest/swml-scripts/update-swml-script).
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)

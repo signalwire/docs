@@ -16,9 +16,9 @@ model CallFlowCreateRequest {
 }
 
 model CallFlowUpdateRequest {
-  @doc("The name of the Call Flow")
+  @doc("The name of the Call Flow. Required on every update, and must not match the name of any Call Flow in the project, including this one. Omitting `title` or resending the current name is rejected with a `422`.")
   @example("Booking Assistant")
-  title?: string;
+  title: string;
 
   @doc("The revision number for this update. Must equal the Call Flow's current `document_version` plus one; any other value is rejected with an `out_of_sync` error.")
   @example(2)

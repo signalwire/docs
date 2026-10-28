@@ -7,7 +7,9 @@ namespace Types.StatusCodes {
   // Base Error Models (reusable across all APIs)
   // ============================================================================
 
-  @doc("The credentials are missing, invalid, or lack access to this resource. The body is the plain text `Unauthorized`.")
+  // The unverified-Space JSON body is described in prose rather than modeled as
+  // a second content type, so the common plain-text case stays the schema.
+  @doc("The credentials are missing, invalid, or lack access to this resource. The body is usually the plain text `Unauthorized`. If your Space hasn't verified a phone number yet, the body is JSON instead: `{\"message\": \"Please validate a phone number to access your account.\"}`.")
   @error
   model StatusCode401 {
     @statusCode statusCode: 401;
@@ -75,6 +77,17 @@ namespace Types.StatusCodes {
     @statusCode statusCode: 422;
 
     @doc("List of validation errors.")
+    errors: SpaceApiErrorItem[];
+  }
+
+  // Same body as ValidationError: the Space API error items keep `status` and
+  // `code` at "422" even when the response status is 503.
+  @doc("The service couldn't complete the request right now. Try again later. The body has the same `errors` shape as a `422`, and each item's `status` and `code` are still `\"422\"`.")
+  @error
+  model SpaceApiServiceUnavailableError {
+    @statusCode statusCode: 503;
+
+    @doc("List of errors.")
     errors: SpaceApiErrorItem[];
   }
 
