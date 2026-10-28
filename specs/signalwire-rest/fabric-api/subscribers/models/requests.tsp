@@ -41,4 +41,8 @@ model SubscriberRequest {
   @doc("Company name of the Subscriber.")
   @example("SignalWire")
   company_name?: string;
+
+  @doc("Phone number this Subscriber presents as its caller ID when calling a phone number, in E.164 format. Must be a number the project has purchased or verified. Set `random`, or leave it empty, to have one of the project's numbers chosen for each call.")
+  @example("+15551234567")
+  send_as?: string;
 }

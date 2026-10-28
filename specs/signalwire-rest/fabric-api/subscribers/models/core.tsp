@@ -46,4 +46,8 @@ model Subscriber {
   @doc("Company name of the Subscriber.")
   @example("SignalWire")
   company_name: string;
+
+  @doc("The phone number this Subscriber presents as its caller ID when calling a phone number. `random` means no specific number is set, and one of the project's numbers is chosen for each call.")
+  @example("+15551234567")
+  send_as: string;
 }
