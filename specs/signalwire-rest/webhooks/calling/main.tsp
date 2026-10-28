@@ -64,7 +64,7 @@ op inboundCallWebhook(@body payload: InboundCallWebhookPayload): WebhookAck;
   Sent to the `status_url` of a [`dial`](/docs/apis/rest/calls/call-commands) command when the call
   enters one of the states listed in `status_events` (by default, only `ended`).
   `params.call_state` is the state the call has entered.
-
+  
   Status callbacks are advisory, best-effort notifications — delivery can be delayed or fail silently, so don't gate time-critical actions on receiving one. See [Status callback reliability](/docs/platform/webhooks#status-callback-reliability).
   """)
 @webhook
@@ -78,7 +78,7 @@ op callStateStatusCallback(
 @doc("""
   Sent to the `status_url` of a `calling.play` command when playback changes state.
   `params.state` is `playing`, `paused`, `finished`, or `error`.
-
+  
   Status callbacks are advisory, best-effort notifications — delivery can be delayed or fail silently, so don't gate time-critical actions on receiving one. See [Status callback reliability](/docs/platform/webhooks#status-callback-reliability).
   """)
 @webhook
@@ -90,7 +90,7 @@ op playStatusCallback(@body payload: PlayStatusCallbackPayload): WebhookAck;
 @doc("""
   Sent to the `status_url` of a `calling.record` command when the recording changes state.
   The `finished` event carries the recording's final `url`, `size`, and `duration`.
-
+  
   Status callbacks are advisory, best-effort notifications — delivery can be delayed or fail silently, so don't gate time-critical actions on receiving one. See [Status callback reliability](/docs/platform/webhooks#status-callback-reliability).
   """)
 @webhook
@@ -102,7 +102,7 @@ op recordStatusCallback(@body payload: RecordStatusCallbackPayload): WebhookAck;
 @doc("""
   Sent to the `status_url` of a `calling.collect` command with each collect result: the digits
   or speech collected, or why nothing was.
-
+  
   Status callbacks are advisory, best-effort notifications — delivery can be delayed or fail silently, so don't gate time-critical actions on receiving one. See [Status callback reliability](/docs/platform/webhooks#status-callback-reliability).
   """)
 @webhook
@@ -116,7 +116,7 @@ op collectStatusCallback(
 @doc("""
   Sent to the `status_url` of a `calling.detect` command each time the detector reports a result,
   and with `finished` when it stops.
-
+  
   Status callbacks are advisory, best-effort notifications — delivery can be delayed or fail silently, so don't gate time-critical actions on receiving one. See [Status callback reliability](/docs/platform/webhooks#status-callback-reliability).
   """)
 @webhook
@@ -128,7 +128,7 @@ op detectStatusCallback(@body payload: DetectStatusCallbackPayload): WebhookAck;
 @doc("""
   Sent to the `status_url` of a `calling.tap` command when the tap starts (`tapping`) and when it
   ends (`finished`).
-
+  
   Status callbacks are advisory, best-effort notifications — delivery can be delayed or fail silently, so don't gate time-critical actions on receiving one. See [Status callback reliability](/docs/platform/webhooks#status-callback-reliability).
   """)
 @webhook
@@ -141,7 +141,7 @@ op tapStatusCallback(@body payload: TapStatusCallbackPayload): WebhookAck;
   Sent to the `status_url` of a `calling.transcribe` command when the transcription starts
   (`transcribing`) and when it finishes (`finished`). The transcript itself arrives separately, as a
   [transcript status callback](/docs/apis/rest/webhooks/transcribe-status-callback).
-
+  
   Status callbacks are advisory, best-effort notifications — delivery can be delayed or fail silently, so don't gate time-critical actions on receiving one. See [Status callback reliability](/docs/platform/webhooks#status-callback-reliability).
   """)
 @webhook

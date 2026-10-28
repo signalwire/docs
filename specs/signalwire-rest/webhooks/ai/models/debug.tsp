@@ -154,9 +154,11 @@ model AiDebugWebhookPayload is Record<unknown> {
     """)
   barge?: {
     @doc("""
-      How the interruption was handled. `transparent` when the agent uses
-      [`transparent_barge`](/docs/swml/reference/calling/ai/params#paramstransparent_barge), `hangup` when the caller spoke
-      over a pending hangup and the hangup was discarded, and `normal` otherwise.
+      How the interruption was handled. `transparent` when the interruption went through
+      [`transparent_barge`](/docs/swml/reference/calling/ai/params#paramstransparent_barge) handling,
+      which is on by default. `hangup` when the caller spoke over a pending hangup and the hangup was
+      discarded while `transparent_barge` is off; with `transparent_barge` on, the same interruption
+      reports `transparent`. `normal` otherwise.
       """)
     @example("normal")
     barge_type?: "transparent" | "hangup" | "normal";

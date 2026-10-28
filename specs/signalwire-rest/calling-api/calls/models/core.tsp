@@ -2,7 +2,6 @@ import "../const.tsp";
 
 namespace SignalWireAPI.Calling;
 
-
 @doc("The direction of the call.")
 enum CallDirection {
   @doc("An inbound call received by the system.")
