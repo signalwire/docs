@@ -61,10 +61,14 @@ model CallStateDevice {
 
   @doc("""
     The device's addresses. Phone devices report `from_number` and `to_number`; SIP and WebRTC
-    devices report `from` and `to`. `headers` is included for phone and SIP devices when the call
-    has headers.
+    devices report `from` and `to`. Phone and SIP devices also report `headers`, as an empty array
+    when there are none.
     """)
-  @example(#{ from_number: "+15551234567", to_number: "+15559876543" })
+  @example(#{
+    from_number: "+15551234567",
+    to_number: "+15559876543",
+    headers: #[],
+  })
   params: {
     @doc("The number that initiated the call. Phone devices only.")
     @example("+15551234567")
@@ -82,7 +86,7 @@ model CallStateDevice {
     @example("sip:bob@example.com")
     to?: string;
 
-    @doc("Headers associated with the call. Phone and SIP devices only, when the call has headers.")
+    @doc("Headers associated with the call. Phone and SIP devices only, as an empty array when there are none.")
     headers?: InboundCallHeader[];
   };
 }

@@ -120,9 +120,9 @@ model InboundCallSipData {
 @summary("Parent call")
 @doc("The call that created this call. Present only when this call has a parent — for example, a leg created by a `connect` or transfer.")
 model InboundCallParent {
-  @doc("The device type of the parent call.")
+  @doc("The device type of the parent call. Not always included, even when `parent` is present.")
   @example("phone")
-  device_type: "sip" | "phone" | "webrtc";
+  device_type?: "sip" | "phone" | "webrtc";
 
   @doc("A unique identifier for the parent call.")
   @example("a1b2c3d4-1111-2222-3333-444455556666")
@@ -196,9 +196,9 @@ model InboundCallContext {
   @example("true")
   dial_winner?: "true";
 
-  @doc("The headers associated with this call.")
+  @doc("The headers associated with this call. Present for phone and SIP calls, as an empty array when there are none; omitted for WebRTC calls.")
   @example(#[])
-  headers: InboundCallHeader[];
+  headers?: InboundCallHeader[];
 
   @doc("The call that created this call. Present only when this call has a parent.")
   parent?: InboundCallParent;
