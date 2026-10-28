@@ -122,15 +122,15 @@ namespace SignalWireAPI.RelayRest.PhoneNumbers {
       number_type?: string,
 
       @query
-      @doc("3 to 7 digits the number must start with, not counting the `+1` country code. When `areacode` is also set, the match starts right after the area code. Letters pass validation but aren't translated to keypad digits, so search for a vanity number by its digits, for example `3569377` for `FLOWERS`. Cannot be used in combination with `contains` or `ends_with`.")
+      @doc("3 to 7 digits the number must start with, not counting the `+1` country code. When `areacode` is also set, the match starts right after the area code. To find a vanity number, search by its keypad digits, for example `3569377` for `FLOWERS`. Cannot be used in combination with `contains` or `ends_with`.")
       starts_with?: string,
 
       @query
-      @doc("3 to 7 digits that must appear somewhere in the number, after the area code when `areacode` is also set. On Spaces limited to 10 toll-free results, a toll-free `contains` search matches only the end of the number. Letters pass validation but aren't translated to keypad digits, so search for a vanity number by its digits. Cannot be used in combination with `starts_with` or `ends_with`.")
+      @doc("3 to 7 digits that must appear somewhere in the number, after the area code when `areacode` is also set. On Spaces limited to 10 toll-free results, a toll-free `contains` search matches only the end of the number. To find a vanity number, search by its keypad digits. Cannot be used in combination with `starts_with` or `ends_with`.")
       contains?: string,
 
       @query
-      @doc("3 to 7 digits the number must end with. Letters pass validation but aren't translated to keypad digits, so search for a vanity number by its digits. Cannot be used in combination with `starts_with` or `contains`.")
+      @doc("3 to 7 digits the number must end with. To find a vanity number, search by its keypad digits. Cannot be used in combination with `starts_with` or `contains`.")
       ends_with?: string,
 
       @query
