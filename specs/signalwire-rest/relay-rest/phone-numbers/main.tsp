@@ -148,6 +148,7 @@ namespace SignalWireAPI.RelayRest.PhoneNumbers {
     ):
       | AvailablePhoneNumbersResponse
       | StatusCode401
+      | PhoneNumberSearchStatusCode422
       | StatusCode500
       | PhoneNumberSearchStatusCode503;
   }

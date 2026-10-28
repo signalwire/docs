@@ -24,12 +24,12 @@ model CallFlowUpdateRequest {
   @example(2)
   document_version: int32;
 
-  @doc("Call Flow Builder state, stored as an opaque JSON object. Omit to keep the current value; an empty object is rejected.")
+  @doc("Call Flow Builder state, stored as an opaque JSON object. Omit to keep the current value; an empty object is rejected. If the Call Flow has no stored value yet, you must send one.")
   flow_data?: {
     ...TypeSpec.Record<unknown>;
   };
 
-  @doc("The calling SWML document this Call Flow should execute. Uses [calling SWML methods](/docs/swml/reference/calling). Omit to keep the current document.")
+  @doc("The calling SWML document this Call Flow should execute. Uses [calling SWML methods](/docs/swml/reference/calling). Omit to keep the current document; an empty object is rejected. If the Call Flow has no stored document yet, you must send one.")
   @example(SWML_CONTENTS_EXAMPLE)
   relayml?: TypeSpec.Record<unknown>;
 }

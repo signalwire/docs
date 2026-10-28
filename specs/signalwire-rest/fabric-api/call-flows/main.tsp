@@ -113,7 +113,10 @@ namespace SignalWireAPI.Fabric.CallFlows {
             document_version: 2,
           },
         },
-        returnType: #{ statusCode: 200, call_flow: CALL_FLOW_RESPONSE_EXAMPLE },
+        returnType: #{
+          statusCode: 200,
+          call_flow: CALL_FLOW_UPDATED_RESPONSE_EXAMPLE,
+        },
       },
       #{
         title: "Update a Call Flow",
