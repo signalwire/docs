@@ -58,7 +58,7 @@ model VoiceLogCommon {
 }
 
 @summary("Call Log")
-@doc("Voice log for Compatibility and Relay call types. Returned when `type` is `laml_call`, `relay_pstn_call`, `relay_sip_call`, or `relay_webrtc_call`.")
+@doc("Voice log for Relay call types. Returned when `type` is `relay_pstn_call`, `relay_sip_call`, or `relay_webrtc_call`.")
 model RelayVoiceLog {
   ...VoiceLogCommon;
 
@@ -66,9 +66,9 @@ model RelayVoiceLog {
   @example(RelayVoiceType.relay_sip_call)
   type: RelayVoiceType;
 
-  @doc("URL for the resource associated with this log entry. Present for LAML calls, null for Relay calls.")
+  @doc("Always null for this call type.")
   @example(null)
-  url: url | null;
+  url: null;
 
   @doc("The direction of the voice activity.")
   @example(VoiceDirection.inbound)
@@ -93,6 +93,125 @@ model RelayVoiceLog {
   @doc("Parent log identifier for related call entries.")
   @example(null)
   parent_id: string | null;
+}
+
+@doc("Audio quality statistics for a Compatibility API call. Each field is null when the call has no measurement for it, such as a call that never carried audio.")
+model CallQualityMetrics {
+  @doc("The estimated Mean Opinion Score (MOS) for inbound audio quality, from 1 to 4.5, based on the share of incoming audio packets that arrived without loss or delay. Returned as a decimal string.")
+  @example("4.5")
+  audio_in_mos: string | null;
+
+  @doc("The average round-trip time for audio in milliseconds, in steps of 10.")
+  @example(40)
+  audio_rtt_avg: float64 | null;
+
+  @doc("The minimum round-trip time for audio in milliseconds, in steps of 10.")
+  @example(30)
+  audio_rtt_min: float64 | null;
+
+  @doc("The maximum round-trip time for audio in milliseconds, in steps of 10.")
+  @example(50)
+  audio_rtt_max: float64 | null;
+
+  @doc("The smallest variance measured in the time between incoming audio packets, in milliseconds squared.")
+  @example(0.25)
+  audio_in_jitter_min: float64 | null;
+
+  @doc("The largest variance measured in the time between incoming audio packets, in milliseconds squared.")
+  @example(8.5)
+  audio_in_jitter_max: float64 | null;
+
+  @doc("The minimum outbound audio jitter in milliseconds.")
+  @example(0)
+  audio_out_jitter_min: float64 | null;
+
+  @doc("The maximum outbound audio jitter in milliseconds.")
+  @example(2.5)
+  audio_out_jitter_max: float64 | null;
+
+  @doc("The average outbound audio jitter in milliseconds.")
+  @example(0.56)
+  audio_out_jitter_avg: float64 | null;
+
+  @doc("The number of audio packets received in the inbound media stream.")
+  @example(1842)
+  audio_in_media_packet_count: int32 | null;
+
+  @doc("Not populated. Always `null`; use `audio_out_media_packet_count` for the number of audio packets sent.")
+  @example(null)
+  audio_out_packet_count: int32 | null;
+
+  @doc("The number of audio packets sent in the outbound media stream.")
+  @example(1840)
+  audio_out_media_packet_count: int32 | null;
+
+  @doc("The number of outbound audio packets lost.")
+  @example(1)
+  audio_out_lost: int32 | null;
+
+  @doc("The mean interval between inbound audio packets in milliseconds.")
+  @example(20.03)
+  audio_in_mean_interval: float64 | null;
+
+  @doc("The number of DTMF packets in the inbound media stream.")
+  @example(0)
+  audio_in_dtmf_packet_count: int32 | null;
+
+  @doc("The number of DTMF packets in the outbound media stream.")
+  @example(0)
+  audio_out_dtmf_packet_count: int32 | null;
+
+  @doc("The number of inbound packets not received at the expected interval. Increases with every packet lost from the inbound stream.")
+  @example(1)
+  audio_in_skip_packet_count: int32 | null;
+
+  @doc("The number of inbound packets removed from the jitter buffer because of buffer overflow or underflow.")
+  @example(2)
+  audio_in_flush_packet_count: int32 | null;
+
+  @doc("The largest jitter buffer size recorded for inbound audio during the call.")
+  @example(4)
+  audio_in_largest_jb_size: int32 | null;
+}
+
+@summary("Compatibility Call Log")
+@doc("Voice log for Compatibility API calls. Returned when `type` is `laml_call`. Includes audio quality statistics for the call.")
+model LamlVoiceLog {
+  ...VoiceLogCommon;
+
+  @doc("Type of this log entry.")
+  @example(VoiceType.laml_call)
+  type: VoiceType.laml_call;
+
+  @doc("URL of the call in the Compatibility API.")
+  @example("https://example.signalwire.com/api/laml/2010-04-01/Accounts/b3877c40-da60-4998-90ad-b792e98472af/Calls/b7182dc2-00f3-40e4-a5ce-20f164b329df")
+  url: url;
+
+  @doc("The direction of the voice activity.")
+  @example(VoiceDirection.inbound)
+  direction: VoiceDirection;
+
+  @doc("The status of the voice activity.")
+  @example(VoiceLogStatus.completed)
+  status: VoiceLogStatus;
+
+  @doc("The duration of the voice activity in seconds.")
+  @example(9)
+  duration: int32 | null;
+
+  @doc("The duration of the voice activity in milliseconds.")
+  @example(9638)
+  duration_ms: int32 | null;
+
+  @doc("The billable duration of the voice activity in milliseconds.")
+  @example(60000)
+  billing_ms: int32 | null;
+
+  @doc("Parent log identifier for related call entries.")
+  @example(null)
+  parent_id: string | null;
+
+  ...CallQualityMetrics;
 }
 
 @summary("Video Room Audio Leg Log")
@@ -188,6 +307,7 @@ model DiscardedVoiceLog {
 @doc("A voice log entry. The specific fields present depend on the `type` value. Discarded logs return only `id`, `discarded_at`, and `created_at`.")
 union VoiceLog {
   RelayVoiceLog,
+  LamlVoiceLog,
   VideoRoomVoiceLog,
   DialogflowVoiceLog,
   FabricVoiceLog,
