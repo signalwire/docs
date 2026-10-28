@@ -19,15 +19,16 @@ model SWMLWebhook {
   @example("My SWML Webhook")
   name: string;
 
-  @doc("Whether the SWML Webhook handles inbound calls or inbound messages. Always the same value as `used_for`.")
+  @doc("Whether the SWML Webhook handles inbound calls or inbound messages. Determines the payload SignalWire POSTs to `primary_request_url`.")
   @example("calling")
   script_type: "calling" | "messaging";
 
-  @doc("Indicates whether this SWML Webhook handles inbound calls or inbound messages. Determines the payload SignalWire POSTs to `primary_request_url`.")
+  #deprecated "Use script_type instead."
+  @doc("Deprecated. Use `script_type`. Always the same value as `script_type`.")
   @example("calling")
   used_for: "calling" | "messaging";
 
-  @doc("Primary URL SignalWire fetches the SWML document from when the webhook fires. The webhook payload depends on `used_for`: for `calling`, see the [SWML inbound call webhook](/docs/apis/rest/webhooks/inbound-call-webhook); for `messaging`, see the [SWML inbound message webhook](/docs/apis/rest/webhooks/inbound-message-webhook).")
+  @doc("Primary URL SignalWire fetches the SWML document from when the webhook fires. The webhook payload depends on `script_type`: for `calling`, see the [SWML inbound call webhook](/docs/apis/rest/webhooks/inbound-call-webhook); for `messaging`, see the [SWML inbound message webhook](/docs/apis/rest/webhooks/inbound-message-webhook).")
   @example("https://primary.com")
   primary_request_url: url;
 
@@ -35,7 +36,7 @@ model SWMLWebhook {
   @example(RequestUrlMethodType.Get)
   primary_request_method: RequestUrlMethodType;
 
-  @doc("Fallback URL SignalWire fetches the SWML document from if the primary URL fails. Receives the same payload as `primary_request_url` — see the [SWML inbound call webhook](/docs/apis/rest/webhooks/inbound-call-webhook) or [SWML inbound message webhook](/docs/apis/rest/webhooks/inbound-message-webhook) depending on `used_for`.")
+  @doc("Fallback URL SignalWire fetches the SWML document from if the primary URL fails. Receives the same payload as `primary_request_url` — see the [SWML inbound call webhook](/docs/apis/rest/webhooks/inbound-call-webhook) or [SWML inbound message webhook](/docs/apis/rest/webhooks/inbound-message-webhook) depending on `script_type`.")
   @example("https://fallback.com")
   fallback_request_url: url | null;
 

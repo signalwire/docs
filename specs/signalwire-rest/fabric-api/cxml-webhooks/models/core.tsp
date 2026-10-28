@@ -19,13 +19,14 @@ model CXMLWebhook {
   @example("My CXML Webhook")
   name: string;
 
-  @doc("Whether the CXML Webhook handles calls or messages. Always the same value as `used_for`.")
-  @example(UsedForType.Calling)
-  script_type: UsedForType;
+  @doc("Whether the CXML Webhook handles calls, messages, or faxes.")
+  @example(CXMLWebhookScriptType.calling)
+  script_type: CXMLWebhookScriptType;
 
-  @doc("Used for of the CXML Webhook.")
-  @example(UsedForType.Calling)
-  used_for: UsedForType;
+  #deprecated "Use script_type instead."
+  @doc("Deprecated. Use `script_type`. Always the same value as `script_type`.")
+  @example(CXMLWebhookScriptType.calling)
+  used_for: CXMLWebhookScriptType;
 
   @doc("Primary request url of the CXML Webhook.")
   @example("https://primary.com")
