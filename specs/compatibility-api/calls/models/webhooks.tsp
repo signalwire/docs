@@ -27,11 +27,11 @@ model VoiceStatusCallbackPayload {
   @example(2)
   AudioInFlushPacketCount?: int32;
 
-  @doc("The maximum variance of jitter for incoming audio RTP packets.")
+  @doc("The largest variance measured in the time between incoming audio packets, in milliseconds squared.")
   @example(1.08)
   AudioInJitterMaxVariance?: float64;
 
-  @doc("The minimum variance of jitter for incoming audio RTP packets.")
+  @doc("The smallest variance measured in the time between incoming audio packets, in milliseconds squared.")
   @example(0.55)
   AudioInJitterMinVariance?: float64;
 
