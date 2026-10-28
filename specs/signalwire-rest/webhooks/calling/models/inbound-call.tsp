@@ -120,7 +120,11 @@ model InboundCallSipData {
 @summary("Parent call")
 @doc("The call that created this call. Present only when this call has a parent — for example, a leg created by a `connect` or transfer.")
 model InboundCallParent {
-  @doc("The device type of the parent call. Not always included, even when `parent` is present.")
+  @doc("""
+    The device type of the parent call. Present only when this call was created by a `connect`,
+    from either the SWML `connect` method or the Relay `connect` command; omitted for any other
+    parent call.
+    """)
   @example("phone")
   device_type?: "sip" | "phone" | "webrtc";
 
@@ -192,7 +196,7 @@ model InboundCallContext {
   @example("+12223334445")
   to_number?: string;
 
-  @doc("Set to `\"true\"` when this call won a parallel dial. Omitted otherwise.")
+  @doc("Set to `\"true\"` when this call is the leg that answered an outbound dial, including the winning leg of a parallel dial. Omitted otherwise.")
   @example("true")
   dial_winner?: "true";
 
@@ -216,6 +220,29 @@ model InboundCallContext {
   @doc("The Space ID this call belongs to.")
   @example("d3e4f5a6-b7c8-9012-defa-345678901bcd")
   space_id: uuid;
+
+  ...CallSubscriberFields;
+}
+
+// Shared by the SWML fetch `call` object and the `calling.call.state` callback: both
+// carry the same three keys, taken from the same call record.
+@doc("Fields identifying the Subscriber and Resource Address behind a call a Subscriber placed.")
+model CallSubscriberFields {
+  @doc("ID of the Resource Address the call was placed to. Present on calls a Subscriber places to an Address.")
+  @example("b1c2d3e4-5d07-413d-9668-55542992eec0")
+  address_id?: string;
+
+  @doc("ID of the Subscriber who placed the call. Present on calls a Subscriber places from the Browser SDK.")
+  @example("c1d2e3f4-5d07-413d-9668-55542992eec0")
+  subscriber_id?: string;
+
+  @doc("""
+    Name of the Subscriber who placed the call: their display name, or if that's empty their
+    first name, then their email, then `Subscriber`. Present on calls a Subscriber places to an
+    Address.
+    """)
+  @example("Alice")
+  subscriber_name?: string;
 }
 
 model InboundCallWebhookPayload {

@@ -149,7 +149,7 @@ model CallStateStatusCallbackPayload {
     @doc("The call this call is bridged to. Present only when this call has a peer.")
     peer?: InboundCallPeer;
 
-    @doc("Set to `\"true\"` when this call won a parallel dial. Omitted otherwise.")
+    @doc("Set to `\"true\"` when this call is the leg that answered an outbound dial, including the winning leg of a parallel dial. Omitted otherwise.")
     @example("true")
     dial_winner?: "true";
 
@@ -160,17 +160,7 @@ model CallStateStatusCallbackPayload {
     @example(4.4)
     audio_in_mos?: float;
 
-    @doc("ID of the Fabric address involved in the call. Fabric calls only.")
-    @example("b1c2d3e4-5d07-413d-9668-55542992eec0")
-    address_id?: string;
-
-    @doc("ID of the Fabric subscriber involved in the call. Fabric calls only.")
-    @example("c1d2e3f4-5d07-413d-9668-55542992eec0")
-    subscriber_id?: string;
-
-    @doc("Name of the Fabric subscriber involved in the call. Fabric calls only.")
-    @example("Alice")
-    subscriber_name?: string;
+    ...CallSubscriberFields;
   };
 }
 
