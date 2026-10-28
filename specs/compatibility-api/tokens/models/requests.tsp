@@ -28,7 +28,11 @@ model UpdateTokenRequest {
   @minLength(1)
   name: string;
 
-  @doc("The permissions you would like to enable for this project API token. If not provided, existing permissions are kept. Valid permissions are: calling, chat, datasphere, fax, management, messaging, numbers, pubsub, storage, tasking, and video.")
+  @doc("""
+    The permissions you would like to enable for this project API token. If not provided, existing permissions are kept. Valid permissions are: calling, chat, datasphere, fax, management, messaging, numbers, pubsub, storage, tasking, and video.
+
+    Send `permissions` as an array, even for a single permission. A single string, such as `"permissions": "calling"`, is rejected with `Permissions is not an array of strings`.
+    """)
   @example(#["calling", "fax", "messaging"])
   permissions?: string[];
 }

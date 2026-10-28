@@ -295,7 +295,7 @@ namespace CompatibilityAPI.Conferences {
     @doc("""
       Retrieves one voice-conference recording's metadata by conference SID and recording SID. Use [List Conference Recordings](/docs/compatibility-api/rest/conference-recordings/list-conference-recordings) to discover recording SIDs; Video Room recordings are separate media resources.
 
-      Metadata is returned only when the recording URI has a `.json` extension. Without an extension, the URI responds with a `302` redirect to a WAV version of the recording; with `.mp3`, it redirects to an MP3 version. When the recording has no audio to return, for example because its `status` isn't `completed`, the audio URIs respond with `404` and an empty body. See [Retrieve a Recording](/docs/compatibility-api/rest/recordings/retrieve-recording) for access to recording audio.
+      Request the recording URI with a `.json` extension to get the metadata. With `.mp3`, the URI responds with a `302` redirect to an MP3 version of the recording. Without an extension, the response follows the request's `Accept` header: `application/json` returns the metadata, and a generic value such as `*/*` redirects to a WAV version. When the recording has no audio to return, for example because its `status` isn't `completed`, the audio URIs respond with `404` and an empty body. See [Retrieve a Recording](/docs/compatibility-api/rest/recordings/retrieve-recording) for access to recording audio.
 
       ${tokenPermissions<"_Voice_">}
       """)
