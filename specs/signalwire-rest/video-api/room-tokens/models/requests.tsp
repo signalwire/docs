@@ -85,7 +85,7 @@ model CreateRoomTokenRequest {
   @example(false)
   end_room_session_on_leave?: boolean = false;
 
-  @doc("Whether the user should join as a member or as a non-interactive audience participant. Audience participants cannot send audio or video.")
+  @doc("Whether the user should join as a member or as a non-interactive audience participant. Audience participants cannot send audio or video. The `audience` value is deprecated and will be removed; use `member`.")
   @example(JoinAsType.member)
   join_as?: JoinAsType = JoinAsType.member;
 
