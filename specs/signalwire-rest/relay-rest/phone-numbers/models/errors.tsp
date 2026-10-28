@@ -1,6 +1,15 @@
+import "@typespec/http";
 import "../../../types/status-codes";
 
+using TypeSpec.Http;
 using Types.StatusCodes;
+
+// Not Types.StatusCodes.StatusCode400: this response has no body.
+@doc("`number_type` isn't `local`, `tollfree`, or `toll-free`. The response has no body.")
+@error
+model PhoneNumberSearchStatusCode400 {
+  @statusCode statusCode: 400;
+}
 
 @doc("""
   A search parameter is invalid. Each item in `errors` names one problem, for example:

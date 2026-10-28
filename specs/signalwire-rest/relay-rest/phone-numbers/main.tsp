@@ -118,19 +118,19 @@ namespace SignalWireAPI.RelayRest.PhoneNumbers {
       areacode?: string,
 
       @query
-      @doc("Search for either local or toll-free numbers. Defaults to local.")
+      @doc("Search for local or toll-free numbers: `local`, `tollfree`, or `toll-free`. Defaults to `local`. Any other value returns a `400` with no body.")
       number_type?: string,
 
       @query
-      @doc("A string of 3 to 7 digits that should be used as the start of a number. Cannot be used in combination with contains or ends_with.")
+      @doc("3 to 7 digits the number must start with, not counting the `+1` country code. When `areacode` is also set, the match starts right after the area code. Letters pass validation but aren't translated to keypad digits, so search for a vanity number by its digits, for example `3569377` for `FLOWERS`. Cannot be used in combination with `contains` or `ends_with`.")
       starts_with?: string,
 
       @query
-      @doc("A string of 3 to 7 digits that should appear somewhere in the number. Cannot be used in combination with starts_with or ends_with.")
+      @doc("3 to 7 digits that must appear somewhere in the number, after the area code when `areacode` is also set. On Spaces limited to 10 toll-free results, a toll-free `contains` search matches only the end of the number. Letters pass validation but aren't translated to keypad digits, so search for a vanity number by its digits. Cannot be used in combination with `starts_with` or `ends_with`.")
       contains?: string,
 
       @query
-      @doc("A string of 3 to 7 digits that should be used as the end of a number. Cannot be used in combination with starts_with or contains.")
+      @doc("3 to 7 digits the number must end with. Letters pass validation but aren't translated to keypad digits, so search for a vanity number by its digits. Cannot be used in combination with `starts_with` or `contains`.")
       ends_with?: string,
 
       @query
@@ -147,6 +147,7 @@ namespace SignalWireAPI.RelayRest.PhoneNumbers {
       city?: string,
     ):
       | AvailablePhoneNumbersResponse
+      | PhoneNumberSearchStatusCode400
       | StatusCode401
       | PhoneNumberSearchStatusCode422
       | StatusCode500
