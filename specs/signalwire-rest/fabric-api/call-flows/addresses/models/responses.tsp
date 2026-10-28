@@ -18,7 +18,7 @@ model CallFlowAddressPaginationResponse {
   self: url;
 
   @doc("Link to the first page")
-  @example("https://example.signalwire.com/api/fabric/resources/call_flows/016e5773-c197-4446-bcc2-9c48f14e2d0a/addresses?page_number=0&page_size=50&type=call_flow")
+  @example("https://example.signalwire.com/api/fabric/resources/call_flows/016e5773-c197-4446-bcc2-9c48f14e2d0a/addresses?page_size=50&type=call_flow")
   first: url;
 
   @doc("Link to the next page")
@@ -26,6 +26,6 @@ model CallFlowAddressPaginationResponse {
   next?: url;
 
   @doc("Link to the previous page")
-  @example("https://example.signalwire.com/api/fabric/resources/call_flows/016e5773-c197-4446-bcc2-9c48f14e2d0a/addresses?page_number=0&page_size=50&page_token=PA6581c1fa-d985-4c8f-b53e-2fee11b579ad&type=call_flow")
+  @example("https://example.signalwire.com/api/fabric/resources/call_flows/016e5773-c197-4446-bcc2-9c48f14e2d0a/addresses?page_number=0&page_size=50&page_token=PB6581c1fa-d985-4c8f-b53e-2fee11b579ad&type=call_flow")
   prev?: url;
 }
