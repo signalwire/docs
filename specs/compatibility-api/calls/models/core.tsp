@@ -126,15 +126,19 @@ model Call {
   @doc("The status of the call.")
   status: CallStatus;
 
-  @doc("The time, in RFC 2822 GMT format, on which the call began.")
+  @doc("The time, in RFC 2822 GMT format, the call started ringing. This is before the call was answered. Null until the call starts.")
   @example("Wed, 19 Sep 2018 20:00:01 +0000")
   start_time: string | null;
 
-  @doc("The time, in RFC 2822 GMT format, on which the call was terminated.")
-  @example("Fri, 21 Sep 2018 10:00:00 +0000")
+  @doc("The time, in RFC 2822 GMT format, on which the call was terminated. Null until the call ends.")
+  @example("Wed, 19 Sep 2018 20:00:21 +0000")
   end_time: string | null;
 
-  @doc("The duration, in seconds, of the call.")
+  @doc("""
+    The duration, in seconds, of the call: `end_time` minus `start_time`, rounded up to the next whole second.
+    It includes ringing time, so it's longer than the time the call was connected and usually longer than a
+    recording of the call. For a call still in progress, it's the time elapsed so far; before the call starts, it's `0`.
+    """)
   @example(20)
   duration: int32;
 
