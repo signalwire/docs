@@ -205,11 +205,11 @@ model Call {
   @example(50)
   audio_rtt_max: float64 | null;
 
-  @doc("The minimum inbound audio jitter in milliseconds.")
+  @doc("The smallest variance measured in the time between incoming audio packets, in milliseconds squared.")
   @example(0.25)
   audio_in_jitter_min: float64 | null;
 
-  @doc("The maximum inbound audio jitter in milliseconds.")
+  @doc("The largest variance measured in the time between incoming audio packets, in milliseconds squared.")
   @example(8.5)
   audio_in_jitter_max: float64 | null;
 
