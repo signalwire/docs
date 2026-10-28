@@ -145,6 +145,16 @@ model AIParams {
   enable_barge?: string | boolean = string("complete,partial");
 
   @doc("""
+    Before each reply, a smaller planning model reviews the conversation and the available functions,
+    then gives the agent a short directive on how to respond. This can improve function use and
+    coherence. The reply waits for the plan, which adds latency to every turn. The planning model is
+    `utility_model` if set, otherwise `ai_model`. Billed separately from the agent's per-minute rate.
+    To cover the wait, set `double_turn_fillers` on each entry in `languages`.
+    """)
+  @example(true)
+  double_turns?: boolean = false;
+
+  @doc("""
     Enables the inner dialog feature, which runs a separate AI process in the background
     that analyzes the conversation and provides real-time insights to the main AI agent.
     This gives the agent a form of "internal thought process" that can help it make better decisions.
@@ -660,8 +670,9 @@ model AIParams {
   @doc("""
     How long a wait must already have run, in milliseconds, before a backchannel plays. Off by
     default: waits open the moment the agent decides to hold, and `spell` and `number` are meant to
-    be answered right then. A `<token>:<ms>` suffix in `turn_filler_sources` overrides this for that
-    token.
+    be answered right then. A positive `<token>:<ms>` suffix in `turn_filler_sources` replaces this for
+    that token, but `:0` does not clear it. To answer one source immediately while delaying others,
+    leave this at `0` and put suffixes on the others.
     """)
   @minValue(0)
   @example(800)
