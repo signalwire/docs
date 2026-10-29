@@ -293,11 +293,13 @@ namespace CompatibilityAPI.Conferences {
     @operationId("get_conference_recording")
     @summary("Get a Conference Recording")
     @doc("""
-      Retrieves one voice-conference recording by conference SID and recording SID. Use [List Conference Recordings](/docs/compatibility-api/rest/conference-recordings/list-conference-recordings) to discover recording SIDs; Video Room recordings are separate media resources.
-      
-      ${tokenPermissions<"_Voice_">}
+      Retrieves one voice-conference recording's metadata by conference SID and recording SID. Use [List Conference Recordings](/docs/compatibility-api/rest/conference-recordings/list-conference-recordings) to discover recording SIDs; Video Room recordings are separate media resources.
+
+      Request the recording URI with a `.json` extension to get the metadata. With `.mp3`, the URI responds with a `302` redirect to an MP3 version of the recording. Without an extension, the response follows the request's `Accept` header: `application/json` returns the metadata, and a generic value such as `*/*` redirects to a WAV version. When the recording has no audio to return, for example because its `status` isn't `completed`, the audio URIs respond with `404` and an empty body.
+
+      Access follows the project's **Protect Recording Media URLs** setting, which new projects have turned on. When it's on, authenticate with your Project ID and an API token that has the _Management_ scope; otherwise the request gets a `401`. When it's off, anyone with the URI can retrieve the recording without authenticating. See [Retrieve a Recording](/docs/compatibility-api/rest/recordings/retrieve-recording) for details.
       """)
-    @route("/{Sid}")
+    @route("/{Sid}.json")
     read(
       ...ConferencesAccountSidPath,
       ...ConferenceSidPathForParticipant,

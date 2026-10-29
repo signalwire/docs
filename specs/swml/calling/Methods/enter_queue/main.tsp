@@ -38,14 +38,14 @@ model EnterQueueObject {
   wait_time?: integer | SWMLVar = 180;
 
   @doc("""
-    SWML to run on the queued caller's call when the caller is pulled from the queue, before the caller is
-    bridged with the agent. Use it to play a message to the caller, for example. The connection to the agent
-    waits for the whisper SWML to finish, for up to about one minute, and then proceeds.
+    SWML to run on the queued call when another call connects to the queue, before the two calls
+    are bridged. Use it to play a message to the queued caller. The connecting
+    call hears silence until the whisper finishes, and the calls are bridged after at most 60 seconds.
     Can be either:
     - A URL (http or https) that returns a SWML document
     - An inline SWML document (as a JSON string)
     """)
-  @example("https://example.com/caller-whisper")
+  @example("https://example.com/whisper-swml")
   whisper_url?: string | SWMLVar;
 }
 

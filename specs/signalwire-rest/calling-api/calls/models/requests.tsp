@@ -32,7 +32,7 @@ const paramsDescription = "An object of parameters that will be utilized by the 
 
 alias CallCreateParamsAlias = CallCreateParamsURL | CallCreateParamsSWML;
 
-alias CallUpdateParamsAlias = CallUpdateParamsURL | CallUpdateParamsSWML;
+alias CallUpdateParamsAlias = CallUpdateParamsStatus | CallUpdateParamsURL | CallUpdateParamsSWML;
 
 @doc("The reason for hanging up the call.")
 enum HangupReason {
@@ -94,23 +94,31 @@ model CallHoldRequest {
 
   @doc(paramsDescription)
   params: {
-    @doc("Hold timeout, expressed as a numeric string of seconds. Note: must be sent as a string — integer payloads are rejected.")
-    @example("300")
-    timeout?: string;
+    @doc("""
+      How long to hold the caller, in seconds. Accepts an integer, a string of digits such as
+      `"120"`, or a `"M:SS"` or `"H:MM:SS"` string, where `"1:30"` is 90 seconds. Unit suffixes
+      aren't supported: the letters `h`, `m`, and `s` are dropped and the remaining digits are read
+      as seconds, so `"5m"` is 5 seconds and `"1h30m"` is 130 seconds. Any other letter, or a letter
+      mixed with `:`, makes the string unparseable. The maximum and
+      default is `300`: a value above `300`, a value of `0` or less, or a string that can't be
+      parsed holds for `300` seconds.
+      """)
+    @example(300)
+    timeout?: int32 | string;
 
     @doc("""
       A system message added to the AI conversation before placing the caller on hold.
       The AI will speak this message to the caller before hold music begins.
       """)
     @example("Please hold while I transfer you to a specialist.")
-    prompt?: string;
+    prompt?: string = "Tell the user you are putting them on hold.";
   };
 }
 
 @summary("calling.ai_unhold")
 @doc("""
-  Takes a call off AI hold and resumes the conversation with the AI agent.
-  Takes no parameters; the call is addressed by `id` alone.
+  Takes a call off AI hold and resumes the conversation with the AI agent. The optional
+  `prompt` is added to the conversation as the caller comes off hold.
   """)
 model CallUnholdRequest {
   @doc(uuidDescription)
@@ -122,7 +130,11 @@ model CallUnholdRequest {
   command: "calling.ai_unhold";
 
   @doc(paramsDescription)
-  params: {};
+  params: {
+    @doc("A system message added to the AI conversation when taking the caller off hold.")
+    @example("The user has been taken off hold.")
+    prompt?: string = "The user has been taken off hold.";
+  };
 }
 
 @doc("Parameters for resetting the AI conversation state.")
@@ -453,6 +465,24 @@ model CallCreateRequest {
   params: CallCreateParamsAlias;
 }
 
+// Not SWML.Calling.ConnectHeaders: the REST API validates `dial` headers with its own
+// name/value rules (pattern, reserved names, 1024-byte cap), so this is a separate contract.
+@summary("SIP header")
+@doc("A custom SIP header to add to the outbound call.")
+model CallSipHeader {
+  @doc("The header name. Must be a single SIP header token: letters, digits, and the symbols ``! # $ % & ' * + - . ^ _ ` | ~``, with no spaces. `Identity` and `X-ProjectID` are reserved and can't be set, in any letter case.")
+  @example("X-Custom-Header")
+  @minLength(1)
+  @pattern("^[!#$%&'*+\\-.^_`|~0-9A-Za-z]+$")
+  name: string;
+
+  @doc("The header value. Must not be empty or contain line breaks (CR or LF) or null characters. At most 1024 bytes, which can be fewer than 1024 characters.")
+  @example("custom-value")
+  @minLength(1)
+  @maxLength(1024)
+  value: string;
+}
+
 @doc("Common `dial` parameters, shared by the URL and inline-SWML forms of the command.")
 model CallCreateParamsBase {
   @doc("The address that initiates the call. For PSTN destinations, must be an E.164 number; for SIP/Verto destinations may also be a SIP URI (`sip:user@host`) or a short caller-id token.")
@@ -484,13 +514,21 @@ model CallCreateParamsBase {
   @example(CallFallbackURLExample)
   fallback_url?: string;
 
-  @doc("HTTP or HTTPS URL that receives call lifecycle webhooks for events listed in `status_events`.")
+  @doc("HTTP or HTTPS URL that receives [call state callbacks](/docs/apis/rest/webhooks/call-state-status-callback) for the states listed in `status_events`.")
   @example("https://example.com/status_callback")
   status_url?: url;
 
-  @doc("Call lifecycle events that will be delivered to `status_url`.")
+  @doc("""
+    Call states that are delivered to `status_url` as [call state callbacks](/docs/apis/rest/webhooks/call-state-status-callback).
+    Each value matches the `call_state` of the callback it selects.
+    """)
   @example(#["answered", "ended"])
-  status_events?: ("created" | "ringing" | "answered" | "ended")[] = #["ended"];
+  status_events?: (
+    | "created"
+    | "ringing"
+    | "answered"
+    | "ending"
+    | "ended")[] = #["ended"];
 
   @doc("HTTP method used when requesting the `url`. Defaults to `POST`.")
   @example("POST")
@@ -507,13 +545,22 @@ model CallCreateParamsBase {
 
   @doc("""
     Transport for SIP signaling to the destination. Only valid when `to` is a SIP URI (`sip:` or `sips:`) for a host outside SignalWire; for any other destination the request returns 422.
-
+    
     Setting `transport` has the same effect as adding `;transport=` to the `to` URI. If `to` already sets a transport, either with `;transport=` or by being a `sips:` URI (which means `tls`), the two must match or the request returns 422. When neither sets one, SignalWire chooses the transport from the destination's DNS records (NAPTR, then SRV) and falls back to `udp`.
-
+    
     The transport also decides media encryption. With `udp` or `tcp`, media is sent as unencrypted RTP. With `tls`, or with no transport set, SignalWire offers SRTP and accepts RTP if the destination declines it.
     """)
   @example("tls")
   transport?: "udp" | "tcp" | "tls";
+
+  @doc("""
+    Custom SIP headers to add to the outbound call's INVITE, for example to carry routing or tracing metadata to the destination. At most 20 headers.
+
+    If any header breaks the rules for `name` or `value`, or there are more than 20, the request returns 422.
+    """)
+  @example(#[#{ name: "X-Custom-Header", value: "custom-value" }])
+  @maxItems(20)
+  headers?: CallSipHeader[];
 
   @doc("Ring timeout in seconds. Must be between 1 and 600.")
   @example(30)
@@ -562,9 +609,9 @@ model CallCreateParamsURL is CallCreateParamsBase {
 @summary("dial (Inline SWML)")
 @doc("`dial` parameters for a call whose handling SWML is provided inline in `swml`.")
 model CallCreateParamsSWML is CallCreateParamsBase {
-  @doc("Inline [Calling SWML document](/docs/swml/reference/calling) containing instructions for handling the call. Either `url` or `swml` must be included for a new call.")
+  @doc("Inline [Calling SWML document](/docs/swml/reference/calling) containing instructions for handling the call, as a JSON object or as a JSON or YAML string. Either `url` or `swml` must be included for a new call.")
   @example(CallSWMLDocumentExample)
-  swml: TypeSpec.Record<unknown>;
+  swml: string | TypeSpec.Record<unknown>;
 }
 
 @summary("update")
@@ -593,12 +640,22 @@ model CallUpdateParamsBase {
   status_url?: url;
 }
 
+@summary("update (Status)")
+@doc("`update` parameters that cancel or end the call with `status` alone, without new SWML.")
+model CallUpdateParamsStatus {
+  ...OmitProperties<CallUpdateParamsBase, "status">;
+
+  @doc("Either `canceled` (to cancel a not yet connected call) or `completed` (to end a call that is in progress).")
+  @example("completed")
+  status: "canceled" | "completed";
+}
+
 @summary("update (Inline SWML)")
 @doc("`update` parameters that redirect the call to SWML provided inline in `swml`.")
 model CallUpdateParamsSWML is CallUpdateParamsBase {
-  @doc("Inline [Calling SWML document](/docs/swml/reference/calling) containing instructions for handling the call. Either `url` or `swml` must be included for a new call.")
+  @doc("Inline [Calling SWML document](/docs/swml/reference/calling) containing the new instructions for handling the call, as a JSON object or as a JSON or YAML string.")
   @example(CallSWMLDocumentExample)
-  swml: TypeSpec.Record<unknown>;
+  swml: string | TypeSpec.Record<unknown>;
 }
 
 @summary("update (URL)")
@@ -606,7 +663,6 @@ model CallUpdateParamsSWML is CallUpdateParamsBase {
 model CallUpdateParamsURL is CallUpdateParamsBase {
   @doc("""
     The URL to handle the call. This parameter allows you to specify a webhook or different route in your code containing SWML instructions for handling the call.
-    Either `url` or `swml` must be included for a new call.
     """)
   @example(CallSWMLURLExample)
   url: string;
@@ -614,6 +670,9 @@ model CallUpdateParamsURL is CallUpdateParamsBase {
 
 /**
  * Update a call in progress — cancel, complete, or redirect the SWML flow.
+ *
+ * To cancel or end the call, send `status` on its own; no `url` or `swml` is needed.
+ * To redirect the call, send `url` or `swml` with the new SWML.
  *
  * State-transition rules:
  * - `status: canceled` is only valid while the leg is `queued` or `ringing`.
@@ -791,16 +850,10 @@ model PlayRingtoneParams {
   duration?: float64;
 }
 
-@doc("A media item to play on the call. The shape of `params` is determined by `type`.")
-@discriminator("type")
-model PlayMediaItem {
+@doc("Play an audio file from a URL.")
+model PlayAudioItem {
   @doc("The type of media to play.")
   @example(PlayMediaType.audio)
-  type: PlayMediaType;
-}
-
-@doc("Play an audio file from a URL.")
-model PlayAudioItem extends PlayMediaItem {
   type: PlayMediaType.audio;
 
   @doc("Audio playback parameters.")
@@ -809,7 +862,9 @@ model PlayAudioItem extends PlayMediaItem {
 }
 
 @doc("Play text-to-speech. Per-item `language`/`voice`/`gender` override the request-level fallbacks.")
-model PlayTtsItem extends PlayMediaItem {
+model PlayTtsItem {
+  @doc("The type of media to play.")
+  @example(PlayMediaType.tts)
   type: PlayMediaType.tts;
 
   @doc("TTS parameters.")
@@ -822,7 +877,9 @@ model PlayTtsItem extends PlayMediaItem {
 }
 
 @doc("Play silence for a fixed duration.")
-model PlaySilenceItem extends PlayMediaItem {
+model PlaySilenceItem {
+  @doc("The type of media to play.")
+  @example(PlayMediaType.silence)
   type: PlayMediaType.silence;
 
   @doc("Silence parameters.")
@@ -831,12 +888,26 @@ model PlaySilenceItem extends PlayMediaItem {
 }
 
 @doc("Play a country-coded ringtone cadence.")
-model PlayRingtoneItem extends PlayMediaItem {
+model PlayRingtoneItem {
+  @doc("The type of media to play.")
+  @example(PlayMediaType.ringtone)
   type: PlayMediaType.ringtone;
 
   @doc("Ringtone parameters.")
   @example(#{ name: PlayRingtoneName.us, duration: 10.0 })
   params: PlayRingtoneParams;
+}
+
+// Discriminated unions rather than `@discriminator` on a base model (here and for
+// DetectConfig and TapDevice): with the inheritance form, the variant first reached
+// from the property was dropped from the emitted discriminator mapping.
+@doc("A media item to play on the call. The shape of `params` is determined by `type`.")
+@discriminated(#{ discriminatorPropertyName: "type", envelope: "none" })
+union PlayMediaItem {
+  audio: PlayAudioItem,
+  tts: PlayTtsItem,
+  silence: PlaySilenceItem,
+  ringtone: PlayRingtoneItem,
 }
 
 /**
@@ -870,7 +941,7 @@ model CallPlayRequest {
         params: #{ url: "https://example.com/audio.mp3" },
       }
     ])
-    play: (PlayAudioItem | PlayTtsItem | PlaySilenceItem | PlayRingtoneItem)[];
+    play: PlayMediaItem[];
 
     @doc("Volume adjustment in dB. Must be between -40 and 40.")
     @example(0)
@@ -899,7 +970,7 @@ model CallPlayRequest {
     @example(TtsGender.female)
     gender?: TtsGender = TtsGender.female;
 
-    @doc("HTTP or HTTPS URL that receives playback lifecycle webhooks (`playing`, `paused`, `finished`, `error`).")
+    @doc("HTTP or HTTPS URL that receives [play status callbacks](/docs/apis/rest/webhooks/play-status-callback) as playback changes state (`playing`, `paused`, `finished`, `error`).")
     @example("https://example.com/status_callback")
     status_url?: url;
   };
@@ -1075,7 +1146,7 @@ model CallRecordRequest {
     })
     record: RecordParams;
 
-    @doc("Webhook URL invoked with recording events — including a `finished` event that contains the final recording URL. Must begin with `http://` or `https://`.")
+    @doc("Webhook URL that receives [record status callbacks](/docs/apis/rest/webhooks/record-status-callback) — including a `finished` event that contains the final recording URL. Must begin with `http://` or `https://`.")
     @example("https://example.com/status_callback")
     status_url?: url;
   };
@@ -1256,7 +1327,7 @@ model CallCollectRequest {
     @example(false)
     start_input_timers?: boolean = false;
 
-    @doc("HTTP or HTTPS URL that receives collect result webhooks.")
+    @doc("HTTP or HTTPS URL that receives [collect status callbacks](/docs/apis/rest/webhooks/collect-status-callback) with each result.")
     @example("https://example.com/collect_callback")
     status_url?: url;
   };
@@ -1376,16 +1447,10 @@ model DetectDigitParams {
   digits?: string;
 }
 
-@doc("Detection configuration. The shape of `params` depends on `type`.")
-@discriminator("type")
-model DetectConfig {
+@doc("Answering-machine detection configuration.")
+model DetectMachineConfig {
   @doc("The type of detection to perform.")
   @example(DetectType.machine)
-  type: DetectType;
-}
-
-@doc("Answering-machine detection configuration.")
-model DetectMachineConfig extends DetectConfig {
   type: DetectType.machine;
 
   @doc("Machine-detection parameters.")
@@ -1394,7 +1459,9 @@ model DetectMachineConfig extends DetectConfig {
 }
 
 @doc("Fax-tone detection configuration.")
-model DetectFaxConfig extends DetectConfig {
+model DetectFaxConfig {
+  @doc("The type of detection to perform.")
+  @example(DetectType.fax)
   type: DetectType.fax;
 
   @doc("Fax-detection parameters.")
@@ -1403,12 +1470,22 @@ model DetectFaxConfig extends DetectConfig {
 }
 
 @doc("DTMF-digit detection configuration.")
-model DetectDigitConfig extends DetectConfig {
+model DetectDigitConfig {
+  @doc("The type of detection to perform.")
+  @example(DetectType.digit)
   type: DetectType.digit;
 
   @doc("Digit-detection parameters.")
   @example(#{ digits: "0123456789#*" })
   params?: DetectDigitParams;
+}
+
+@doc("Detection configuration. The shape of `params` depends on `type`.")
+@discriminated(#{ discriminatorPropertyName: "type", envelope: "none" })
+union DetectConfig {
+  machine: DetectMachineConfig,
+  fax: DetectFaxConfig,
+  digit: DetectDigitConfig,
 }
 
 /**
@@ -1435,14 +1512,14 @@ model CallDetectRequest {
 
     @doc("Detection configuration specifying what to detect.")
     @example(#{ type: DetectType.machine })
-    detect: DetectMachineConfig | DetectFaxConfig | DetectDigitConfig;
+    detect: DetectConfig;
 
     @doc("Maximum time in seconds the detection may run before timing out.")
     @example(30)
     @minValue(0)
     timeout?: float64 = 30;
 
-    @doc("HTTP or HTTPS URL that receives detection result webhooks.")
+    @doc("HTTP or HTTPS URL that receives [detect status callbacks](/docs/apis/rest/webhooks/detect-status-callback) with each detection result.")
     @example("https://example.com/detect_callback")
     status_url?: url;
   };
@@ -1518,16 +1595,10 @@ model TapWsParams {
   codec?: TapCodec;
 }
 
-@doc("Tap device configuration — specifies where to stream captured audio.")
-@discriminator("type")
-model TapDevice {
+@doc("RTP tap device configuration.")
+model TapDeviceRtp {
   @doc("The type of tap device.")
   @example(TapDeviceType.rtp)
-  type: TapDeviceType;
-}
-
-@doc("RTP tap device configuration.")
-model TapDeviceRtp extends TapDevice {
   type: TapDeviceType.rtp;
 
   @doc("RTP connection parameters.")
@@ -1536,12 +1607,21 @@ model TapDeviceRtp extends TapDevice {
 }
 
 @doc("WebSocket tap device configuration.")
-model TapDeviceWs extends TapDevice {
+model TapDeviceWs {
+  @doc("The type of tap device.")
+  @example(TapDeviceType.ws)
   type: TapDeviceType.ws;
 
   @doc("WebSocket connection parameters.")
   @example(#{ uri: "wss://example.com/tap" })
   params: TapWsParams;
+}
+
+@doc("Tap device configuration — specifies where to stream captured audio. The shape of `params` is determined by `type`.")
+@discriminated(#{ discriminatorPropertyName: "type", envelope: "none" })
+union TapDevice {
+  rtp: TapDeviceRtp,
+  ws: TapDeviceWs,
 }
 
 /**
@@ -1575,9 +1655,9 @@ model CallTapRequest {
       type: TapDeviceType.rtp,
       params: #{ addr: "198.51.100.42", port: 5060 },
     })
-    device: TapDeviceRtp | TapDeviceWs;
+    device: TapDevice;
 
-    @doc("HTTP or HTTPS URL that receives tap lifecycle webhooks.")
+    @doc("HTTP or HTTPS URL that receives [tap status callbacks](/docs/apis/rest/webhooks/tap-status-callback) when the tap starts and ends.")
     @example("https://example.com/tap_callback")
     status_url?: url;
   };
@@ -1633,7 +1713,7 @@ model CallTranscribeRequest {
     @example("transcribe-control-1")
     control_id: string;
 
-    @doc("An HTTP or HTTPS URL that receives the status callback when the transcription finishes.")
+    @doc("An HTTP or HTTPS URL that receives [transcribe state callbacks](/docs/apis/rest/webhooks/transcribe-state-callback) as the transcription starts and finishes, and the [transcript status callback](/docs/apis/rest/webhooks/transcribe-status-callback) when the transcript is ready.")
     @example("https://example.com/transcribe-status")
     status_url?: url;
   };
@@ -1707,7 +1787,7 @@ model CallStreamRequest {
     @example("stream-control-1")
     control_id: string;
 
-    @doc("WebSocket URL to stream audio to. Must start with `wss://` (TLS is required; plain `ws://` is rejected).")
+    @doc("WebSocket URL to stream audio to. Must start with `wss://`. A plain `ws://` URL is rejected when the command runs on the call: the request still returns `200`, but the stream does not start.")
     @example("wss://example.com/stream")
     @format("uri")
     url: string;
@@ -1732,7 +1812,7 @@ model CallStreamRequest {
     @example(#{ session_id: "abc123" })
     custom_parameters?: TypeSpec.Record<unknown>;
 
-    @doc("HTTP or HTTPS URL that receives stream lifecycle webhooks.")
+    @doc("HTTP or HTTPS URL that receives [stream status callbacks](/docs/apis/rest/webhooks/stream-status-callback) when the stream starts and ends.")
     @example("https://example.com/stream_callback")
     status_url?: url;
 
@@ -1813,6 +1893,9 @@ model CallDenoiseStopRequest {
 @doc("""
   Stops the AI agent running on the call. The call itself stays up — use it to take over
   with other call commands, or `calling.end` to hang up entirely.
+  
+  The command name is `calling.ai.stop`, with a dot, unlike the other AI commands such as
+  `calling.ai_hold`. `calling.ai_stop` is not a supported command.
   """)
 model CallAIStopRequest {
   @doc(uuidDescription)

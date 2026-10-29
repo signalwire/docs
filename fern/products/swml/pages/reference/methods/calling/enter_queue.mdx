@@ -8,7 +8,7 @@ max-toc-depth: 3
 
 Place the current call in a named queue where it will wait to be connected to an available agent or resource.
 While waiting, callers will hear music or custom audio. 
-When an agent connects to the queue (using the [`connect`](/docs/swml/reference/calling/connect) method), the caller and agent are bridged together.
+When an agent connects to the queue (using the [`connect`](/docs/swml/reference/calling/connect) method), the caller and agent are bridged together after the optional [whisper](#whisper).
 After the bridge completes (when the agent or caller hangs up), execution continues with the SWML script specified in `execute_after_queue`, or the call hangs up if none was given.
 
 ## **Properties**
@@ -57,8 +57,7 @@ After the bridge completes (when the agent or caller hangs up), execution contin
 
 
 <ParamField path="enter_queue.whisper_url" type="string" toc={true}>
-  SWML to run on the queued caller's call when the caller is pulled from the queue, before the caller is bridged with the agent.
-  Use it to play a message to the caller, for example. The connection to the agent waits for the whisper SWML to finish, for up to about one minute, and then proceeds.
+  SWML to run on the queued call when another call connects to the queue, before the two calls are bridged. See [Whisper](#whisper) below.
 
   Can be either:
   - A URL (http or https) that returns a SWML document
@@ -66,6 +65,14 @@ After the bridge completes (when the agent or caller hangs up), execution contin
 </ParamField>
 
 </Indent>
+
+## Whisper
+
+A whisper runs SWML on the queued caller's leg after another call connects to the queue with [`connect`](/docs/swml/reference/calling/connect) (for example, `to: "queue:support"`), but before the two calls hear each other. Use it to play the caller a short message, such as the name of the department they're being connected to. Variables set during the whisper stay on the queued call, so the connecting call can't read anything the whisper collects.
+
+When the connecting call arrives, the hold audio stops and the whisper runs. SignalWire fetches a `whisper_url` URL with an HTTP `POST`, the same way it fetches any other SWML document. The connecting call is answered and hears silence while the whisper runs. When the whisper finishes, the two calls are bridged. If it's still running after 60 seconds, the calls are bridged anyway.
+
+If the queued caller hangs up during the whisper, or the whisper SWML hangs up the call, the calls are not bridged. The `dequeue` [status event](#queue-status-callbacks) is sent when the connecting call arrives, before the whisper runs.
 
 ## **Queue Status Callbacks**
 
@@ -352,7 +359,9 @@ sections:
 </CodeBlock>
 </CodeBlocks>
 
-### Queue with a caller whisper
+### Queue with whisper
+
+When another call connects to `support_queue`, SignalWire fetches `https://example.com/whisper-swml` and runs the SWML document it returns on the queued caller's leg before the bridge. The [next example](#queue-with-an-inline-whisper) shows a typical whisper document.
 
 <CodeBlocks>
 <CodeBlock title="YAML">
@@ -362,8 +371,7 @@ sections:
   main:
     - enter_queue:
         queue_name: "support_queue"
-        whisper_url: "https://example.com/caller-whisper-swml"
-        execute_after_queue: "https://example.com/post-call-swml"
+        whisper_url: "https://example.com/whisper-swml"
 ```
 </CodeBlock>
 <CodeBlock title="JSON">
@@ -375,8 +383,41 @@ sections:
       {
         "enter_queue": {
           "queue_name": "support_queue",
-          "whisper_url": "https://example.com/caller-whisper-swml",
-          "execute_after_queue": "https://example.com/post-call-swml"
+          "whisper_url": "https://example.com/whisper-swml"
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### Queue with an inline whisper
+
+This example passes the whisper document inline as a JSON string. When another call connects to `support_queue`, the queued caller hears "You are being connected to support." and then the two calls are bridged. To host it instead, return the same document from the URL you set in `whisper_url`.
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - enter_queue:
+        queue_name: "support_queue"
+        whisper_url: '{"version":"1.0.0","sections":{"main":[{"play":{"url":"say:You are being connected to support."}}]}}'
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "enter_queue": {
+          "queue_name": "support_queue",
+          "whisper_url": "{\"version\":\"1.0.0\",\"sections\":{\"main\":[{\"play\":{\"url\":\"say:You are being connected to support.\"}}]}}"
         }
       }
     ]
