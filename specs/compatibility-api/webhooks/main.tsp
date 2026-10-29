@@ -36,14 +36,21 @@ namespace CompatibilityAPI.Webhooks;
   
   Use `StatusCallbackEvent` to receive every call progress event — not just the final status —
   along with current call state and all parameters below.
-  
+
+  SignalWire sends the parameters as a form-encoded (`application/x-www-form-urlencoded`) POST body, not as JSON.
+  When `StatusCallbackMethod` is `GET`, they are sent as query parameters instead.
+  Callbacks for the same call can arrive out of order. `Timestamp` records when each event occurred.
+
   Status callbacks are advisory, best-effort notifications — delivery can be delayed or fail silently, so don't gate time-critical actions on receiving one. See [Status callback reliability](/docs/platform/webhooks#status-callback-reliability).
   """)
 @webhook
 @operationId("voice_status_callback")
 @tag(CALLS_TAG)
 @post
-op voiceStatusCallback(@body payload: VoiceStatusCallbackPayload): WebhookAck;
+op voiceStatusCallback(
+  @header contentType: "application/x-www-form-urlencoded",
+  @body payload: VoiceStatusCallbackPayload,
+): WebhookAck;
 
 @summary("Recording status callback")
 @doc("""
@@ -60,11 +67,16 @@ op voiceStatusCallback(@body payload: VoiceStatusCallbackPayload): WebhookAck;
   [Record](/docs/compatibility-api/cxml/reference/voice/record).
   
   Use `RecordingStatusCallbackEvent` to request callbacks for specific events. If omitted, only the
-  `completed` event is sent. Possible values: `in-progress`, `completed`, `absent`.
-  
+  `completed` event is sent. Possible values: `in-progress`, `paused`, `resumed`, `completed`, `absent`.
+
+  SignalWire sends the parameters as a form-encoded (`application/x-www-form-urlencoded`) POST body, not as JSON.
+  When the callback method is `GET`, they are sent as query parameters instead.
+
   | Status | Description |
   |--------|-------------|
   | `in-progress` | The recording has begun. |
+  | `paused` | The recording was paused. Sent for call recordings only. |
+  | `resumed` | The recording resumed after a pause. Sent for call recordings only. |
   | `completed` | The file is available for access. |
   | `absent` | The recording was too short or the call was silent — no audio was detected. |
   
@@ -75,6 +87,7 @@ op voiceStatusCallback(@body payload: VoiceStatusCallbackPayload): WebhookAck;
 @tag(RECORDINGS_TAG)
 @post
 op recordingStatusCallback(
+  @header contentType: "application/x-www-form-urlencoded",
   @body payload: RecordingStatusCallbackPayload,
 ): WebhookAck;
 
@@ -84,7 +97,10 @@ op recordingStatusCallback(
   
   Configure this callback using the `StatusCallback` parameter when
   [sending an outgoing message](/docs/compatibility-api/rest/messages/create-message).
-  
+
+  SignalWire sends the parameters as a form-encoded (`application/x-www-form-urlencoded`) POST body, not as JSON.
+  When the callback method is `GET`, they are sent as query parameters instead.
+
   There are 8 possible message statuses:
   
   | Status | Description |
@@ -111,7 +127,10 @@ op recordingStatusCallback(
 @operationId("sms_status_callback")
 @tag(MESSAGES_TAG)
 @post
-op smsStatusCallback(@body payload: SmsStatusCallbackPayload): WebhookAck;
+op smsStatusCallback(
+  @header contentType: "application/x-www-form-urlencoded",
+  @body payload: SmsStatusCallbackPayload,
+): WebhookAck;
 
 @summary("Transcription status callback")
 @doc("""
@@ -123,7 +142,10 @@ op smsStatusCallback(@body payload: SmsStatusCallbackPayload): WebhookAck;
   
   Your app can use these parameters to handle the transcription — for example, uploading the text to
   your CRM, sending it via email, or forwarding the body via SignalWire SMS.
-  
+
+  SignalWire sends the parameters as a form-encoded (`application/x-www-form-urlencoded`) POST body, not as JSON.
+  When the callback method is `GET`, they are sent as query parameters instead.
+
   Status callbacks are advisory, best-effort notifications — delivery can be delayed or fail silently, so don't gate time-critical actions on receiving one. See [Status callback reliability](/docs/platform/webhooks#status-callback-reliability).
   """)
 @webhook
@@ -131,6 +153,7 @@ op smsStatusCallback(@body payload: SmsStatusCallbackPayload): WebhookAck;
 @tag(TRANSCRIPTIONS_TAG)
 @post
 op transcriptionStatusCallback(
+  @header contentType: "application/x-www-form-urlencoded",
   @body payload: TranscriptionStatusCallbackPayload,
 ): WebhookAck;
 
@@ -143,9 +166,14 @@ op transcriptionStatusCallback(
   [create](/docs/compatibility-api/rest/incoming-phone-numbers/create-incoming-phone-number) or
   [update](/docs/compatibility-api/rest/incoming-phone-numbers/update-incoming-phone-number) Incoming Phone Number API endpoints.
   
-  By default, the webhook fires only when the call is `completed` or `failed`, making it well-suited
+  The webhook fires when the call ends, with `CallStatus` set to `completed`, `busy`, `no-answer`, or `failed`. This makes it well-suited
   for tracking inbound call success rate, call quality, and total call volume in a call center context.
-  
+  The payload carries the same parameters as the
+  [Voice status callback](/docs/compatibility-api/rest/calls/webhooks/voice-status-callback).
+
+  SignalWire sends the parameters as a form-encoded (`application/x-www-form-urlencoded`) POST body, not as JSON.
+  When the status callback method is `GET`, they are sent as query parameters instead.
+
   Status callbacks are advisory, best-effort notifications — delivery can be delayed or fail silently, so don't gate time-critical actions on receiving one. See [Status callback reliability](/docs/platform/webhooks#status-callback-reliability).
   """)
 @webhook
@@ -153,5 +181,6 @@ op transcriptionStatusCallback(
 @tag(INCOMING_PHONE_NUMBERS_TAG)
 @post
 op incomingCallStatusCallback(
+  @header contentType: "application/x-www-form-urlencoded",
   @body payload: InboundCallStatusCallbackPayload,
 ): WebhookAck;
