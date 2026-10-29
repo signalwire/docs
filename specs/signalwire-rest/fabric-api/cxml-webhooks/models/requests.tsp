@@ -5,9 +5,14 @@ model CXMLWebhookCreateRequest {
   @example("My CXML Webhook")
   name?: string;
 
-  @doc("Used for of the CXML Webhook.")
-  @example(UsedForType.Calling)
-  used_for?: UsedForType = UsedForType.Calling;
+  @doc("Whether this CXML Webhook handles calls, messages, or faxes.")
+  @example(CXMLWebhookScriptType.calling)
+  script_type?: CXMLWebhookScriptType = CXMLWebhookScriptType.calling;
+
+  #deprecated "Use script_type instead."
+  @doc("Deprecated. Use `script_type`. Read only when `script_type` is not sent.")
+  @example(CXMLWebhookScriptType.calling)
+  used_for?: CXMLWebhookScriptType;
 
   @doc("Primary request url of the CXML Webhook.")
   @example("https://primary.com")
@@ -39,9 +44,14 @@ model CXMLWebhookUpdateRequest {
   @example("My CXML Webhook")
   name?: string;
 
-  @doc("Used for of the CXML Webhook.")
-  @example(UsedForType.Calling)
-  used_for?: UsedForType = UsedForType.Calling;
+  @doc("Whether this CXML Webhook handles calls, messages, or faxes.")
+  @example(CXMLWebhookScriptType.calling)
+  script_type?: CXMLWebhookScriptType = CXMLWebhookScriptType.calling;
+
+  #deprecated "Use script_type instead."
+  @doc("Deprecated. Use `script_type`. Read only when `script_type` is not sent.")
+  @example(CXMLWebhookScriptType.calling)
+  used_for?: CXMLWebhookScriptType;
 
   @doc("Primary request url of the CXML Webhook.")
   @example("https://primary.com")

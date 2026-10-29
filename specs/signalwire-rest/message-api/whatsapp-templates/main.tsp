@@ -5,6 +5,7 @@ import "../tags.tsp";
 import "./models/core.tsp";
 import "./models/requests.tsp";
 import "./models/responses.tsp";
+import "./models/errors.tsp";
 import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
@@ -54,7 +55,7 @@ namespace SignalWireAPI.Message.WhatsappTemplates {
       | WhatsAppTemplateCreatedResponse
       | StatusCode400
       | StatusCode401
-      | StatusCode422
+      | WhatsAppTemplateValidationError
       | StatusCode500;
 
     @operationId("update_whatsapp_template")
@@ -70,7 +71,7 @@ namespace SignalWireAPI.Message.WhatsappTemplates {
       | StatusCode400
       | StatusCode401
       | StatusCode404
-      | StatusCode422
+      | WhatsAppTemplateValidationError
       | StatusCode500;
 
     @operationId("delete_whatsapp_template")

@@ -36,7 +36,7 @@ This method allows you to connect the current call to a named conference where m
 </ParamField>
 
 <ParamField path="join_conference.start_on_enter" type="boolean" default="true" toc={true}>
-  Starts the conference when the main participant joins. This means the start action will not wait on more participants to join before starting.
+  Whether this participant can start the conference. A conference starts once at least one participant with `start_on_enter` set to `true` has joined and the number of participants has reached `min_participants` (2 by default). Until then, participants wait.
 </ParamField>
 
 
@@ -46,23 +46,30 @@ This method allows you to connect the current call to a named conference where m
 
 
 <ParamField path="join_conference.wait_url" type="string" toc={true}>
-  A URL to fetch SWML while waiting for the conference to start (before a `start_on_enter` participant joins). SignalWire sends a POST request with the standard [document-fetching webhook](/docs/swml#document-fetching-webhook) body. The response should be a SWML document containing audio to play (e.g., hold music). Default hold music will be played if not set.
+  A URL that SignalWire requests with an HTTP `GET` while this participant waits for the conference to start. Default hold music is played if not set. Set it to an empty string (`""`) to play silence instead.
 </ParamField>
 
 
-<ParamField path="join_conference.max_participants" type="integer" default="100000" toc={true}>
-  The maximum number of participants allowed in the conference. If the limit is reached, new participants will not be able to join.
+<ParamField path="join_conference.max_participants" type="integer" default="250" toc={true}>
+  The maximum number of participants allowed in the conference, up to `250`. If the limit is reached, new participants will not be able to join.
+</ParamField>
+
+
+<ParamField path="join_conference.min_participants" type="integer" default="2" toc={true}>
+  The number of participants that must join before the conference starts. Set it to `1` to let a single participant with `start_on_enter` start the conference. Use a value from 1 up to `max_participants`. When both are set, a `min_participants` larger than `max_participants` is rejected. An invalid number written directly in the document makes the document invalid, so it doesn't run. An invalid value that comes from a [variable](/docs/swml/reference/variables), such as `0` or a number larger than `max_participants`, makes the join fail and sets `join_conference_result` to `failed`.
+
+  Like `max_participants`, it is set when the conference is created; joining an existing conference doesn't change it.
 </ParamField>
 
 
 <ParamField path="join_conference.record" type="string" default="do-not-record" toc={true}>
-  Enables or disables recording of the conference.
+  Enables or disables recording of the conference. With `record-from-start`, recording starts once at least two participants have joined, even if `min_participants` lets the conference start earlier. Recording is configured when the conference is created.
 
   **Possible Values**: `do-not-record`, `record-from-start`
 </ParamField>
 
-<ParamField path="join_conference.region" type="string" toc={true}>
-  Specifies the geographical region where the conference will be hosted.
+<ParamField path="join_conference.region" type="string" default="global" toc={true}>
+  Specifies the geographical region requested for hosting the conference.
 
   **Possible Values**: `global`, `us`, `eu`, `ch`
 </ParamField>
@@ -82,7 +89,7 @@ This method allows you to connect the current call to a named conference where m
 
 
 <ParamField path="join_conference.status_callback_event" type="string" toc={true}>
-  A space-separated list of one or more events to listen for and send to the status callback URL.
+  A space-separated list of one or more events to listen for and send to the status callback URL. When `status_callback` is set and this list is not set or empty, only `end` is sent.
 
   **Possible Values**: `start`, `end`, `join`, `leave`, `mute`, `hold`, `modify`, `speaker`, `announcement`
 </ParamField>
@@ -99,7 +106,7 @@ This method allows you to connect the current call to a named conference where m
 
 
 <ParamField path="join_conference.status_callback_method" type="string" default="POST" toc={true}>
-  The HTTP method to use when sending status events to the status callback URL.
+  The HTTP method to use when sending status events to the status callback URL. Notifications in the `relay` format (see `status_callback_event_type`) are always sent with `POST`, even if `GET` is set.
 
   **Possible Values**: `GET`, `POST`
 </ParamField>
@@ -110,7 +117,7 @@ This method allows you to connect the current call to a named conference where m
 
 
 <ParamField path="join_conference.recording_status_callback_method" type="string" default="POST" toc={true}>
-  The HTTP method to use when sending recording status events to the recording status callback URL.
+  The HTTP method to use when sending recording status events to the recording status callback URL. Notifications in the `relay` format (see `recording_status_callback_event_type`) are always sent with `POST`, even if `GET` is set.
 
   **Possible Values**: `GET`, `POST`
 </ParamField>
@@ -127,13 +134,15 @@ This method allows you to connect the current call to a named conference where m
   **Possible Values**: `cxml`, `laml`, `relay`
 </ParamField>
 
-<ParamField path="join_conference.result" type="object" toc={true}>
-  Allows the user to specify a custom action to be executed when the conference result is returned (typically when it has ended). The actions can a `switch` object or a `cond` array. The `switch` object allows for conditional execution based on the result of the conference, while the `cond` array allows for multiple conditions to be checked in sequence. If neither is provided, the default action will be to end the conference.
+<ParamField path="join_conference.emit_call_quality" type="boolean" default="false" toc={true}>
+  When `true`, a `participant-call-quality` event with audio quality statistics is sent when this participant leaves, if statistics are available. To receive it, include `leave` in `status_callback_event`. See [status callbacks][statuscallbacks] for the fields.
 </ParamField>
 
 
 <ParamField path="join_conference.stream" type="object" toc={true}>
-  Attach a bidirectional WebSocket stream to the conference. Conference audio is streamed to the `url`, enabling real-time audio processing, transcription, or AI agents that listen to the conference. Uses the same stream schema as the `stream` device type in [`connect`](/docs/swml/reference/calling/connect).
+  Attach a WebSocket stream to the conference. Conference audio is streamed to the `url`, enabling real-time audio processing, transcription, or AI agents that listen to the conference. Uses the same stream schema as the `stream` device type in [`connect`](/docs/swml/reference/calling/connect).
+
+  The stream is set up only while the conference has not started yet. A `stream` sent by a participant joining a conference that has already started does not add a stream.
 </ParamField>
 
 <Indent>
@@ -165,7 +174,7 @@ This method allows you to connect the current call to a named conference where m
 </ParamField>
 
 <ParamField path="join_conference.stream.realtime" type="boolean" default="false" toc={true}>
-  When `true`, enables bidirectional audio so your endpoint can stream audio back into the conference (not just receive it).
+  Has no effect on conference streams. A boolean value is accepted, but conference streams currently ignore it.
 </ParamField>
 
 
@@ -185,12 +194,7 @@ This method allows you to connect the current call to a named conference where m
 ## **Variables**
 
 <ParamField path="join_conference_result" type="string" toc={true}>
-  The result of the conference join attempt. Possible values: `completed` (successfully joined and left the conference), `answered` (successfully joined the conference), `no-answer` (failed to join due to no answer), `failed` (failed to join due to an error), `canceled` (join attempt was canceled).
-</ParamField>
-
-
-<ParamField path="return_value" type="string" toc={true}>
-  Contains the same value as `join_conference_result` for use in conditional logic.
+  The result of the conference join. Possible values: `joined` (the participant joined the conference) or `failed` (the participant could not join). The value is set when `join_conference` finishes, not at the moment the participant joins.
 </ParamField>
 
 
@@ -206,7 +210,7 @@ A POST request will be sent to `status_callback` with a JSON payload for events 
 
 
 <ParamField path="event_channel" type="string" toc={true}>
-  The channel for the event, includes the SWML session ID.
+  The channel for the event. For participant events, the channel of the participant's call. For conference and recording events, the conference ID.
 </ParamField>
 
 
@@ -247,7 +251,14 @@ A POST request will be sent to `status_callback` with a JSON payload for events 
 
 
 <ParamField path="params.status" type="string" toc={true}>
-  The conference event. **Valid values:** `conference-start`, `conference-end`, `participant-join`, `participant-leave`, `participant-mute`, `participant-unmute`, `participant-hold`, `participant-unhold`, `participant-speech-start`, `participant-speech-stop`, `participant-modify`, `record-start`, `record-pause`, `record-resume`, `record-stop`.
+  The conference event. **Valid values:** `conference-start`, `conference-end`, `participant-join`, `participant-leave`, `participant-mute`, `participant-unmute`, `participant-hold`, `participant-unhold`, `participant-speech-start`, `participant-speech-stop`, `participant-modify`, `participant-call-quality`, `announcement-end`, `announcement-fail`, `record-start`, `record-pause`, `record-resume`, `record-stop`.
+
+  `announcement-end` and `announcement-fail` are sent when `status_callback_event` includes `announcement`. `participant-call-quality` is sent when a participant that joined with `emit_call_quality: true` leaves, if `status_callback_event` includes `leave` and audio statistics are available.
+</ParamField>
+
+
+<ParamField path="params.conference_node_id" type="string" toc={true}>
+  The ID of the node hosting the conference. Differs from `node_id`, which on participant events is the node handling the participant's call.
 </ParamField>
 
 
@@ -276,6 +287,31 @@ A POST request will be sent to `status_callback` with a JSON payload for events 
 </ParamField>
 
 
+<ParamField path="params.subscriber_id" type="string" toc={true}>
+  The ID of the subscriber on the participant's call. Present on participant events when known.
+</ParamField>
+
+
+<ParamField path="params.address_id" type="string" toc={true}>
+  The ID of the Resource Address on the participant's call. Present on participant events when known.
+</ParamField>
+
+
+<ParamField path="params.subscriber_name" type="string" toc={true}>
+  The name of the subscriber on the participant's call. Present on participant events when known.
+</ParamField>
+
+
+<ParamField path="params.video" type="boolean" toc={true}>
+  `true` for a video conference. Absent for audio conferences.
+</ParamField>
+
+
+<ParamField path="params.preview_url" type="string" toc={true}>
+  URL of a periodically refreshed preview image of a video conference. Present only when previews are enabled.
+</ParamField>
+
+
 <ParamField path="params.muted" type="boolean" toc={true}>
   Whether the participant is muted. Present on participant events.
 </ParamField>
@@ -296,9 +332,46 @@ A POST request will be sent to `status_callback` with a JSON payload for events 
 </ParamField>
 
 
+<ParamField path="params.deaf" type="boolean" toc={true}>
+  Whether the participant can't hear the conference. Present on participant events.
+</ParamField>
+
+
+<ParamField path="params.video_muted" type="boolean" toc={true}>
+  Whether the participant's video is muted. Present on participant events in video conferences.
+</ParamField>
+
+
 <ParamField path="params.coaching" type="boolean" toc={true}>
   Whether the participant is in coaching mode. Present on participant events.
 </ParamField>
+
+
+<ParamField path="params.call_id_to_coach" type="string" toc={true}>
+  The call ID of the participant being coached. Present on participant events when the participant is coaching.
+</ParamField>
+
+
+<ParamField path="params.announce_url" type="string" toc={true}>
+  The announcement URL set for the participant. Present on participant events when one is set.
+</ParamField>
+
+
+<ParamField path="params.meta" type="object" toc={true}>
+  Metadata attached to the participant's call. Present on participant events when the call has metadata.
+</ParamField>
+
+<Indent>
+
+<ParamField path="params.meta.public" type="object" toc={true}>
+  Public metadata. Can hold any JSON values, passed through as set.
+</ParamField>
+
+<ParamField path="params.meta.private" type="object" toc={true}>
+  Private metadata. Can hold any JSON values, passed through as set. It is included in these webhooks.
+</ParamField>
+
+</Indent>
 
 
 <ParamField path="params.recording_url" type="string" toc={true}>
@@ -325,6 +398,93 @@ A POST request will be sent to `status_callback` with a JSON payload for events 
   The call ID of the participant that ended the conference. Present on `conference-end` events.
 </ParamField>
 
+
+Audio quality statistics on `participant-call-quality` events are sent as strings, and each one is included only when its value is available.
+
+<ParamField path="params.rtt_avg" type="string" toc={true}>
+  Average round-trip time. Present on `participant-call-quality` events when available.
+</ParamField>
+
+<ParamField path="params.rtt_min" type="string" toc={true}>
+  Minimum round-trip time. Present on `participant-call-quality` events when available.
+</ParamField>
+
+<ParamField path="params.rtt_max" type="string" toc={true}>
+  Maximum round-trip time. Present on `participant-call-quality` events when available.
+</ParamField>
+
+<ParamField path="params.out_jitter_min" type="string" toc={true}>
+  Minimum outbound jitter. Present on `participant-call-quality` events when available.
+</ParamField>
+
+<ParamField path="params.out_jitter_max" type="string" toc={true}>
+  Maximum outbound jitter. Present on `participant-call-quality` events when available.
+</ParamField>
+
+<ParamField path="params.out_jitter_avg" type="string" toc={true}>
+  Average outbound jitter. Present on `participant-call-quality` events when available.
+</ParamField>
+
+<ParamField path="params.out_lost" type="string" toc={true}>
+  Outbound lost packets. Present on `participant-call-quality` events when available.
+</ParamField>
+
+<ParamField path="params.in_media_bytes" type="string" toc={true}>
+  Inbound media bytes. Present on `participant-call-quality` events when available.
+</ParamField>
+
+<ParamField path="params.in_media_packet_count" type="string" toc={true}>
+  Inbound media packets. Present on `participant-call-quality` events when available.
+</ParamField>
+
+<ParamField path="params.in_skip_packet_count" type="string" toc={true}>
+  Inbound skipped packets. Present on `participant-call-quality` events when available.
+</ParamField>
+
+<ParamField path="params.in_jitter_packet_count" type="string" toc={true}>
+  Inbound jitter packets. Present on `participant-call-quality` events when available.
+</ParamField>
+
+<ParamField path="params.in_dtmf_packet_count" type="string" toc={true}>
+  Inbound DTMF packets. Present on `participant-call-quality` events when available.
+</ParamField>
+
+<ParamField path="params.in_cng_packet_count" type="string" toc={true}>
+  Inbound comfort noise (CNG) packets. Present on `participant-call-quality` events when available.
+</ParamField>
+
+<ParamField path="params.in_flush_packet_count" type="string" toc={true}>
+  Inbound flushed packets. Present on `participant-call-quality` events when available.
+</ParamField>
+
+<ParamField path="params.in_flaws_total" type="string" toc={true}>
+  Total inbound media flaws. Present on `participant-call-quality` events when available.
+</ParamField>
+
+<ParamField path="params.in_quality_percentage" type="string" toc={true}>
+  Inbound audio quality percentage. Present on `participant-call-quality` events when available.
+</ParamField>
+
+<ParamField path="params.in_mos" type="string" toc={true}>
+  Inbound mean opinion score (MOS). Present on `participant-call-quality` events when available.
+</ParamField>
+
+<ParamField path="params.out_media_bytes" type="string" toc={true}>
+  Outbound media bytes. Present on `participant-call-quality` events when available.
+</ParamField>
+
+<ParamField path="params.out_media_packet_count" type="string" toc={true}>
+  Outbound media packets. Present on `participant-call-quality` events when available.
+</ParamField>
+
+<ParamField path="params.out_dtmf_packet_count" type="string" toc={true}>
+  Outbound DTMF packets. Present on `participant-call-quality` events when available.
+</ParamField>
+
+<ParamField path="params.out_cng_packet_count" type="string" toc={true}>
+  Outbound comfort noise (CNG) packets. Present on `participant-call-quality` events when available.
+</ParamField>
+
 </Indent>
 
 #### Participant join event example
@@ -340,9 +500,11 @@ A POST request will be sent to `status_callback` with a JSON payload for events 
     "call_id": "xxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
     "name": "my_conference",
     "conference_id": "xxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "conference_node_id": "xxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
     "status": "participant-join",
     "size": 3,
     "muted": false,
+    "deaf": false,
     "hold": false,
     "start_on_join": true,
     "end_on_leave": false,
@@ -356,14 +518,14 @@ A POST request will be sent to `status_callback` with a JSON payload for events 
 ```json
 {
   "event_type": "calling.conference",
-  "event_channel": "swml:xxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "event_channel": "aaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
   "timestamp": 1640000000.456,
   "project_id": "xxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
   "space_id": "xxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
   "params": {
-    "call_id": "xxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
     "name": "my_conference",
-    "conference_id": "xxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "conference_id": "aaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+    "conference_node_id": "xxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
     "status": "conference-end",
     "size": 0,
     "reason_ended": "last-participant-left",
@@ -502,7 +664,6 @@ sections:
         stream:
           url: "wss://example.com/conference-audio"
           codec: "PCMU"
-          realtime: true
           status_url: "https://example.com/stream-status"
 ```
 </CodeBlock>
@@ -518,7 +679,6 @@ sections:
           "stream": {
             "url": "wss://example.com/conference-audio",
             "codec": "PCMU",
-            "realtime": true,
             "status_url": "https://example.com/stream-status"
           }
         }
