@@ -74,7 +74,7 @@ model CallFlowVersionsPaginationResponse {
 
   @doc("Link to the next page")
   @example("https://example.signalwire.com/api/fabric/call_flows/versions?page_number=1&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca&type=call_flow")
-  next: url;
+  next?: url;
 
   @doc("Link to the previous page")
   @example("https://example.signalwire.com/api/fabric/call_flows/versions?page_number=0&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca&type=call_flow")

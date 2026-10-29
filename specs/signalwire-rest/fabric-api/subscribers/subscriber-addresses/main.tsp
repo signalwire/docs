@@ -24,7 +24,7 @@ namespace SignalWireAPI.Fabric.Subscribers.Addresses {
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     list(...SubscriberAddressID):
-      | SubscriberAddressesResponse[]
+      | SubscriberAddressesResponse
       | StatusCode401
       | StatusCode404
       | StatusCode500;

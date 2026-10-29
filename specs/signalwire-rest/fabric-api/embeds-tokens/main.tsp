@@ -33,7 +33,7 @@ namespace SignalWireAPI.Fabric.EmbedsTokens {
     @post
     create(@body body: EmbedsTokensRequest):
       | {
-          @statusCode statusCode: 201;
+          @statusCode statusCode: 200;
           @body subscriber: EmbedsTokensResponse;
         }
       | StatusCode401

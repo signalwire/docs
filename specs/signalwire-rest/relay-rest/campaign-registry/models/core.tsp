@@ -76,15 +76,15 @@ model Brand {
 
   @doc("The legal name of the business.")
   @example("BrandCo")
-  company_name?: string;
+  company_name?: string | null;
 
   @doc("A company contact email for this brand.")
   @example("brand_info@example.com")
-  contact_email?: string;
+  contact_email?: string | null;
 
   @doc("A contact phone number for this brand.")
   @example("+18995551212")
-  contact_phone?: string;
+  contact_phone?: string | null;
 
   @doc("Email addresses SignalWire uses for registration correspondence about this brand and its campaigns. Defaults to the first administrator on the account.")
   @example(#["brand_registrations@example.com"])
@@ -92,30 +92,26 @@ model Brand {
 
   @doc("Country of registration.")
   @example("United States")
-  ein_issuing_country?: string;
+  ein_issuing_country?: string | null;
 
   @doc("What type of legal entity is the organization? (PRIVATE_PROFIT, PUBLIC_PROFIT, NON_PROFIT)")
   @example("Private Company")
-  legal_entity_type?: string;
+  legal_entity_type?: string | null;
 
   @doc("Company EIN Number/Tax ID.")
   @example("12-3456789")
-  ein?: string;
+  ein?: string | null;
 
   @doc("Full company address.")
   @example("123 Brand St, Hill Valley CA, 91905")
-  company_address?: string;
+  company_address?: string | null;
 
   @doc("An optional Vertical for the brand (REAL_ESTATE, HEALTHCARE, ENERGY, ENTERTAINMENT, RETAIL, AGRICULTURE, INSURANCE, EDUCATION, HOSPITALITY, FINANCIAL, GAMBLING, CONSTRUCTION, NGO, MANUFACTURING, GOVERNMENT, TECHNOLOGY, COMMUNICATION).")
   @example("Healthcare")
-  company_vertical?: string;
-
-  @doc("Link to the company website.")
-  @example("www.example.com")
-  company_website?: string;
+  company_vertical?: string | null;
 
   @doc("If you are your own Campaign Service Provider, this is the approved Brand ID (Mandatory for CSPs, otherwise please omit).")
-  csp_brand_reference?: string;
+  csp_brand_reference?: string | null;
 
   @doc("This value must be true for all self-registered brands.")
   @example(false)
@@ -123,7 +119,7 @@ model Brand {
 
   @doc("Optional: Specify a URL to receive webhook notifications when your brand's state changes. See the [10DLC status callback](/docs/apis/rest/webhooks/ten-dlc-status-callback) docs for the webhook payload.")
   @example("https://example.com/handle_callback")
-  status_callback_url?: string;
+  status_callback_url?: string | null;
 
   @doc("Timestamp when the brand was created.")
   created_at?: utcDateTime;
@@ -148,96 +144,92 @@ model Campaign {
 
   @doc("An SMS Use Case category for the campaign (2FA, ACCOUNT_NOTIFICATION, AGENTS_FRANCHISES, CARRIER_EXEMPT, CHARITY, CUSTOMER_CARE, DELIVERY_NOTIFICATION, EMERGENCY, FRAUD_ALERT, HIGHER_EDUCATION, K12_EDUCATION, LOW_VOLUME_MIXED, MARKETING, MIXED, POLITICAL, POLITICAL_SECTION_527, POLLING_VOTING, PROXY, PUBLIC_SERVICE_ANNOUNCEMENT, SECURITY_ALERT, SOCIAL, SWEEPSTAKE, TRIAL, UCAAS_HIGH_VOLUME, UCAAS_LOW_VOLUME).")
   @example("MARKETING")
-  sms_use_case?: string;
+  sms_use_case?: string | null;
 
   @doc("A sub use case category for MIXED or LOW_VOLUME_MIXED campaigns (CUSTOMER_CARE, HIGHER_EDUCATION, POLLING_VOTING, PUBLIC_SERVICE_ANNOUNCEMENT, MARKETING, SECURITY_ALERT, 2FA, ACCOUNT_NOTIFICATION, DELIVERY_NOTIFICATION, FRAUD_ALERT).")
   sub_use_cases?: string[];
 
   @doc("Campaign Verify token. Required if sms use case is POLITICAL_SECTION_527.")
-  campaign_verify_token?: string;
+  campaign_verify_token?: string | null;
 
   @doc("A description for the campaign. Please use at least 40 characters.")
-  description?: string;
+  description?: string | null;
 
   @doc("Sample message template/content. At least two samples are required and up to five can be provided. Please use at least 20 characters.")
   @example("this is a sample message your customer might receive")
-  sample1?: string;
+  sample1?: string | null;
 
   @doc("Sample 2.")
   @example("this is a sample message your customer might receive")
-  sample2?: string;
+  sample2?: string | null;
 
   @doc("Sample 3.")
-  sample3?: string;
+  sample3?: string | null;
 
   @doc("Sample 4.")
-  sample4?: string;
+  sample4?: string | null;
 
   @doc("Sample 5.")
-  sample5?: string;
+  sample5?: string | null;
 
   @doc("If your messaging content will be modified in any way beyond what you shared in your templates, please describe the nature of how the content will change.")
-  dynamic_templates?: string;
+  dynamic_messages?: string | null;
 
   @doc("Please describe the call to action/message flow your intended recipients will experience.")
   @example("Users will opt in to receive messages from their doctor through a written form and we will send them an opt in message. Appointment reminders will then be sent ahead of their appointments.")
-  message_flow?: string;
+  message_flow?: string | null;
 
   @doc("Please share the message subscribers receive when they opt in.")
   @example("Thanks for subscribing. Reply STOP to cancel at any time.")
-  opt_in_message?: string;
+  opt_in_message?: string | null;
 
   @doc("Please share the message subscribers receive when they opt out.")
   @example("You have successfully been opted out. Reply START to opt back in at any time.")
-  opt_out_message?: string;
+  opt_out_message?: string | null;
 
   @doc("Please share the message subscribers receive when they request help.")
   @example("You have successfully been opted out. Reply SUBSCRIBE to opt back in at any time.")
-  help_message?: string;
+  help_message?: string | null;
 
   @doc("Opt in keywords that subscribers can use.")
   @example("Start,Subscribe,Opt In")
-  opt_in_keywords?: string = "START";
+  opt_in_keywords?: string | null;
 
   @doc("Opt out keywords that subscribers can use.")
   @example("Stop,Opt Out,Unsubscribe")
-  opt_out_keywords?: string = "STOP";
+  opt_out_keywords?: string | null;
 
   @doc("Help keywords that subscribers can use.")
   @example("Help,Support,Request Call")
-  help_keywords?: string = "HELP";
-
-  @doc("Will 50 or more numbers be used with this single campaign? If so, please enter true.")
-  @example(true)
-  number_pooling_required?: boolean;
+  help_keywords?: string | null;
 
   @doc("If you will be using number pooling, please provide an explanation as to why it is needed.")
   @example("We have customer reps in every state and they each need their own number with local area code.")
-  number_pooling_per_campaign?: string;
+  number_pooling_per_campaign?: string | null;
 
   @doc("Will this campaign include content related to direct lending or other loan agreements?")
   @example(true)
-  direct_lending?: boolean;
+  direct_lending?: boolean | null;
 
   @doc("Will you be using an embedded link of any kind? Note that public URL shorteners (bitly, tinyurl) will not be accepted.")
   @example(false)
-  embedded_link?: boolean;
+  embedded_link?: boolean | null;
 
   @doc("Are you using an embedded phone number (except the required HELP information contact phone number)?")
   @example(false)
-  embedded_phone?: boolean;
+  embedded_phone?: boolean | null;
 
   @doc("Will this campaign include any age gated content as defined by carrier and CTA guidelines?")
   @example(true)
-  age_gated_content?: boolean;
+  age_gated_content?: boolean | null;
 
   @doc("Is there any intent of this campaign to generate leads?")
   @example(true)
-  lead_generation?: boolean;
+  lead_generation?: boolean | null;
 
   @doc("If you are your own Campaign Service Provider, what is the approved Campaign ID? (Mandatory for CSPs, otherwise please omit)")
   @example("1231231")
-  csp_campaign_reference?: string;
+  csp_campaign_reference?: string | null;
 
   @doc("Email addresses SignalWire uses for registration correspondence about this campaign. Defaults to the brand's addresses, then the first administrator on the account.")
   @example(#["campaign_registrations@example.com"])
@@ -245,7 +237,7 @@ model Campaign {
 
   @doc("Optional: Specify a URL to receive webhook notifications when your campaign's state changes. See the [10DLC status callback](/docs/apis/rest/webhooks/ten-dlc-status-callback) docs for the webhook payload.")
   @example("https://example.com/handle_callback")
-  status_callback_url?: string;
+  status_callback_url?: string | null;
 
   @doc("Timestamp when the campaign was created.")
   created_at?: utcDateTime;

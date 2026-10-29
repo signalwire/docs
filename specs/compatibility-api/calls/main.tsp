@@ -121,7 +121,7 @@ namespace CompatibilityAPI.Calls {
       @header contentType: "application/x-www-form-urlencoded",
       @body body: CreateCallRequest,
     ):
-      | CallResponse
+      | CallCreatedResponse
       | CompatibilityStatusCode400Array
       | CompatibilityStatusCode401
       | CompatibilityStatusCode422;
