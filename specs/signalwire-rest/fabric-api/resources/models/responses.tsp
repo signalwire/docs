@@ -188,8 +188,8 @@ model ResourceResponseSWMLScript is ResourceResponseBase {
 @summary("Conference Room")
 model ResourceResponseConferenceRoom is ResourceResponseBase {
   @doc(RESPONSE_TYPE_DESC)
-  @example(FabricResponseType.SwmlScript)
-  type: FabricResponseType.SwmlScript;
+  @example(FabricResponseType.ConferenceRoom)
+  type: FabricResponseType.ConferenceRoom;
 
   @doc("An object containing the response data of the Conference Room")
   conference_room: ConferenceRoom;
