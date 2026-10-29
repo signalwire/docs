@@ -69,7 +69,7 @@ model SemanticGateCriteria {
 @summary("gate")
 @doc("""
   A yes/no question about the call that must come out yes before the function runs. A key not
-  listed here is an error, not an ignored setting.
+  listed here is an error, not an ignored setting. Keys are matched exactly, case included.
   """)
 model SemanticGate {
   @doc("""
