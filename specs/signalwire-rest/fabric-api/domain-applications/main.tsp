@@ -32,8 +32,8 @@ namespace SignalWireAPI.Fabric.DomainApplications {
       @body request: DomainApplicationAssignRequest,
     ):
       | {
-          @statusCode statusCode: 200;
-          @body domain_application: DomainApplicationResponse;
+          @statusCode statusCode: 201;
+          @body domain_application: FabricDomainApplicationResponse;
         }
       | StatusCode401
       | StatusCode404

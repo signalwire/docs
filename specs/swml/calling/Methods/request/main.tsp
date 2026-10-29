@@ -11,17 +11,28 @@ model Request {
     @example("https://api.example.com/webhook")
     url: string;
 
-    @doc("The HTTP method to be used for the request. Can be `GET`, `POST`, `PUT`, or `DELETE`.")
+    @doc("""
+      The HTTP method to be used for the request. Can be `GET`, `POST`, `PUT`, or `DELETE`.
+      A SWML variable reference is also accepted; it must resolve to one of these methods.
+      """)
     @example("POST")
-    method: "GET" | "POST" | "PUT" | "DELETE";
+    method: "GET" | "POST" | "PUT" | "DELETE" | SWMLVar;
 
-    @doc("Object containing HTTP headers to set. Valid header values are Accept, Authorization, Content-Type, Range, and custom X- headers.")
+    @doc("""
+      Object mapping HTTP header names to string values.
+      Valid header names are `Accept`, `Authorization`, `Content-Type`, and `Range` (case-insensitive), and custom headers
+      that start with `X-` (or `x-`) followed by one or more ASCII letters, digits, hyphens, or underscores.
+      Header values support variable substitution. After substitution, a value must be non-empty and contain only printable
+      ASCII characters (spaces included) other than the backslash; tabs, line breaks, and non-ASCII characters are not allowed.
+      Entries with an invalid name, a non-string value, or an invalid value are skipped with a warning, and the request is
+      still sent.
+      """)
     @example(#{
       `Content-Type`: "application/json",
       Authorization: "Bearer token123",
     })
     headers?: {
-      ...TypeSpec.Record<unknown>;
+      ...TypeSpec.Record<string>;
     };
 
     @doc("""
@@ -34,18 +45,18 @@ model Request {
     };
 
     @doc("""
-      Maximum time in seconds to wait for a response.
-      Default is `0` (no timeout).
+      Maximum time in seconds to wait for a response. The value is applied in whole seconds.
+      Default is `5`. A value of `0` uses the default, and values above `30` are capped at 30 seconds.
       """)
     @example(10.0)
-    timeout?: float | SWMLVar = 0;
+    timeout?: float | SWMLVar = 5;
 
     @doc("""
-      Maximum time in seconds to wait for a connection.
-      Default is `0` (no timeout).
+      Maximum time in seconds to wait for a connection. The value is applied in whole seconds.
+      Default is `5`. A value of `0` uses the default, and values above `30` are capped at 30 seconds.
       """)
     @example(5.0)
-    connect_timeout?: float | SWMLVar = 0;
+    connect_timeout?: float | SWMLVar = 5;
 
     @doc("""
       Store parsed JSON response as variables.

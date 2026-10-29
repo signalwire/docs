@@ -37,6 +37,12 @@ model FaxResponse {
   ...Fax;
 }
 
+@doc("Response returned when a fax is created.")
+model FaxCreatedResponse {
+  @statusCode statusCode: 201;
+  ...Fax;
+}
+
 @doc("Response containing a list of fax media.")
 model FaxMediaListResponse {
   @doc("The URI of the current page.")

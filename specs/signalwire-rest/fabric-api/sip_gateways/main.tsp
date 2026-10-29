@@ -69,10 +69,12 @@ namespace SignalWireAPI.Fabric.SipGateways {
     @summary("Update SIP gateway")
     @doc("""
       Changes the destination or supported media settings of a SIP Gateway identified by resource ID. Use it when outbound SIP routing changes; update a registering device through [Update SIP credential](/docs/apis/rest/sip-credentials/update-sip-credential) instead.
-      
+
+      This is not a partial update: send every field, including the ones you aren't changing. A field you leave out isn't kept from the current gateway, and the request fails validation.
+
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
-    @patch(#{ implicitOptionality: true })
+    @patch(#{ implicitOptionality: false })
     update(...SipGatewayID, ...SipGatewayRequest):
       | {
           @statusCode statusCode: 200;

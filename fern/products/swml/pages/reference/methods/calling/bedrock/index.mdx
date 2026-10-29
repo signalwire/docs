@@ -9,7 +9,8 @@ max-toc-depth: 3
 [params]: /docs/swml/reference/calling/amazon-bedrock/params
 [prompt]: /docs/swml/reference/calling/amazon-bedrock/prompt
 [SWAIG]: /docs/swml/reference/calling/amazon-bedrock/swaig
-[set_global_data action]: /docs/swml/reference/calling/amazon-bedrock/swaig/functions/data-map#actions
+[set_global_data action]: /docs/swml/reference/calling/amazon-bedrock/swaig/functions/data-map#list-of-valid-actions
+[data_map]: /docs/swml/reference/calling/amazon-bedrock/swaig/functions/data-map
 [prompt-engineering]: /docs/platform/ai/prompt-engineering
 
 Create an Amazon Bedrock agent with a prompt. Since the text prompt is central to getting great results out of the AI,
@@ -24,7 +25,9 @@ it is highly recommended that you also read the [prompt engineering][prompt-engi
 <Indent>
 
 <ParamField path="amazon_bedrock.global_data" type="object" toc={true}>
-  A powerful and flexible environmental variable which can accept arbitrary data that is set initially in the SWML script or from the SWML [`set_global_data` action][set_global_data action]. This data can be referenced **globally**. All contained information can be accessed and expanded within the prompt - for example, by using a template string.
+  Initial data shared by all of the agent's SWAIG functions. It is sent with every function call to your `web_hook_url`,
+  is available to [`data_map`][data_map] templates under `session_data.global_data`, and is included in the post-prompt
+  summary report. The [`set_global_data` and `unset_global_data` actions][set_global_data action] change it during the call.
 </ParamField>
 
 <ParamField path="amazon_bedrock.params" type="object" toc={true}>
@@ -32,13 +35,14 @@ it is highly recommended that you also read the [prompt engineering][prompt-engi
 </ParamField>
 
 <ParamField path="amazon_bedrock.post_prompt" type="object" toc={true}>
-  The final set of instructions and configuration settings to send to the agent.
-  Accepts either a `text` string or a `pom` object array for structured prompts, plus optional tuning parameters.
+  Optional instructions for the summary written when the conversation ends, as a `text` string or a `pom` object array.
+  When omitted, a default summary instruction is used. Has no effect unless `post_prompt_url` is set.
   See [post_prompt details](#post_prompt) below.
 </ParamField>
 
 <ParamField path="amazon_bedrock.post_prompt_url" type="string" toc={true}>
-  The URL to which to send status callbacks and reports. Authentication can also be set in the url in the format of `username:password@url`.
+  The URL that receives the conversation summary report when the conversation ends. The summary is written only when
+  this is set. Authentication can also be set in the url in the format of `username:password@url`.
   See [post_prompt_url callback](#post_prompt_url-callback) below.
 </ParamField>
 
@@ -49,7 +53,7 @@ it is highly recommended that you also read the [prompt engineering][prompt-engi
 </ParamField>
 
 <ParamField path="amazon_bedrock.SWAIG" type="object" toc={true}>
-  An array of JSON objects to create user-defined functions/endpoints that can be executed during the dialogue.
+  An object containing the user-defined `functions` the agent can call during the dialogue and their `defaults`.
 
   See [`SWAIG`][SWAIG] for additional details.
 </ParamField>
@@ -58,57 +62,19 @@ it is highly recommended that you also read the [prompt engineering][prompt-engi
 
 ## post_prompt
 
-The `post_prompt` object accepts either a plain text prompt or a structured POM prompt, plus optional tuning parameters.
+The `post_prompt` object holds the instructions for the end-of-call summary, as either plain text or a structured POM
+prompt. The summary is written with fixed model settings, so `post_prompt` takes no tuning parameters. Set either `text` or
+`pom`, not both. If a document sets both at runtime, `text` is used.
 
 <Tabs>
     <Tab title="Regular prompt">
         <ParamField path="post_prompt.text" type="string" required={true} toc={true}>
-          The main identity prompt for the AI. This prompt will be used to outline the agent's personality, role, and other characteristics.
-        </ParamField>
-
-        <ParamField path="post_prompt.temperature" type="number" toc={true}>
-          Controls the randomness of responses. Higher values (e.g., 0.8) make output more random and creative, while lower values (e.g., 0.2) make it more focused and deterministic. Range: 0.0 to 1.0.
-        </ParamField>
-
-        <ParamField path="post_prompt.top_p" type="number" toc={true}>
-          Controls diversity via nucleus sampling. Only tokens with cumulative probability up to top_p are considered. Lower values make output more focused. Range: 0.0 to 1.0.
-        </ParamField>
-
-        <ParamField path="post_prompt.confidence" type="number" toc={true}>
-          Minimum confidence threshold for AI responses. Responses below this threshold may be filtered or flagged. Range: 0.0 to 1.0.
-        </ParamField>
-
-        <ParamField path="post_prompt.presence_penalty" type="number" toc={true}>
-          Penalizes tokens based on whether they appear in the text so far. Positive values encourage the model to talk about new topics.
-        </ParamField>
-
-        <ParamField path="post_prompt.frequency_penalty" type="number" toc={true}>
-          Penalizes tokens based on their frequency in the text so far. Positive values decrease the likelihood of repeating the same line verbatim.
+          The instructions for writing the summary of the conversation.
         </ParamField>
     </Tab>
     <Tab title="POM prompt">
         <ParamField path="post_prompt.pom" type="object[]" required={true} toc={true}>
-          An array of objects that defines the prompt object model (POM) for the AI. The POM is a structured data format for organizing and rendering a prompt for the AI agent. This prompt will be used to define the AI's personality, role, and other characteristics. See the [`POM technical reference`](/docs/swml/reference/calling/amazon-bedrock/prompt) for more information.
-        </ParamField>
-
-        <ParamField path="post_prompt.temperature" type="number" toc={true}>
-          Controls the randomness of responses. Higher values (e.g., 0.8) make output more random and creative, while lower values (e.g., 0.2) make it more focused and deterministic. Range: 0.0 to 1.0.
-        </ParamField>
-
-        <ParamField path="post_prompt.top_p" type="number" toc={true}>
-          Controls diversity via nucleus sampling. Only tokens with cumulative probability up to top_p are considered. Lower values make output more focused. Range: 0.0 to 1.0.
-        </ParamField>
-
-        <ParamField path="post_prompt.confidence" type="number" toc={true}>
-          Minimum confidence threshold for AI responses. Responses below this threshold may be filtered or flagged. Range: 0.0 to 1.0.
-        </ParamField>
-
-        <ParamField path="post_prompt.presence_penalty" type="number" toc={true}>
-          Penalizes tokens based on whether they appear in the text so far. Positive values encourage the model to talk about new topics.
-        </ParamField>
-
-        <ParamField path="post_prompt.frequency_penalty" type="number" toc={true}>
-          Penalizes tokens based on their frequency in the text so far. Positive values decrease the likelihood of repeating the same line verbatim.
+          The instructions for writing the summary, as an array of objects that defines a prompt object model (POM). The POM is a structured data format for organizing and rendering a prompt. See the [`POM technical reference`](/docs/swml/reference/calling/amazon-bedrock/prompt) for more information.
         </ParamField>
     </Tab>
 </Tabs>

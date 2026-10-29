@@ -4,7 +4,7 @@ import "../../../_shared/enums.tsp";
 using TypeSpec.Http;
 
 model ResourceSipEndpointPathID {
-  @doc("The unique identifier of the Resource.")
+  @doc("ID of the resource to assign as the SIP Credential's outbound call handler.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
   @path
   id: uuid;

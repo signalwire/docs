@@ -1,0 +1,980 @@
+---
+title: Send and receive messages
+slug: messaging/send-and-receive-messages
+description: Send SMS and MMS and handle incoming messages with SWML, Relay, or REST, then reply by keyword and track each message's delivery.
+max-toc-depth: 3
+---
+
+[api-credentials]: /docs/platform/your-signalwire-api-space
+[phone-numbers]: /docs/platform/phone-numbers
+[resources]: /docs/platform/resources
+[international]: /docs/platform/how-to-enable-international-services
+[webhooks]: /docs/platform/webhooks
+[callback-reliability]: /docs/platform/webhooks#status-callback-reliability
+[tcr-registration]: /docs/platform/messaging/campaign-registry/registration
+[toll-free]: /docs/platform/messaging/toll-free-numbers
+[free-trial]: /docs/platform/messaging/platform-free-trial
+[best-practices]: /docs/platform/messaging/sms-best-practices
+[character-limits]: /docs/platform/messaging/character-limits
+[mime-types]: /docs/platform/messaging/mime-types
+[whatsapp-send]: /docs/platform/messaging/whatsapp/send-messages
+[place-swml]: /docs/platform/voice/make-and-receive-calls#place-a-call-via-swml
+[server-sdks]: /docs/server-sdks
+[relay-guide]: /docs/server-sdks/guides/relay-client
+[swml-intro]: /docs/swml
+[swml-messaging]: /docs/swml/reference/messaging
+[swml-webhook-payload]: /docs/swml/reference/messaging#webhook-payload
+[swml-reply]: /docs/swml/reference/messaging/reply
+[swml-switch]: /docs/swml/reference/messaging/switch
+[swml-request]: /docs/swml/reference/messaging/request
+[swml-send-sms]: /docs/swml/reference/calling/send-sms
+[swml-webhook-security]: /docs/swml/guides/webhook-security
+[rest-create-message]: /docs/apis/rest/messages/create-message
+[rest-status-callback]: /docs/apis/rest/webhooks/message-status-callback
+[rest-get-log]: /docs/apis/rest/message-logs/get-message-log
+[rest-update-number]: /docs/apis/rest/phone-numbers/update-phone-number
+[rest-link-number]: /docs/apis/rest/phone-number-addresses/create-phone-number-address
+[rest-create-script]: /docs/apis/rest/swml-scripts/create-swml-script
+
+Text your customers from your SignalWire number, and answer the texts they send back. This guide
+shows how to send SMS and MMS, handle an incoming message, and track whether each message was
+delivered with SWML, Relay, or the REST API.
+
+## How messaging works
+
+Sending a message only takes a request from your code. The number you send from must be a
+SignalWire phone number with messaging enabled; a verified caller ID can't send messages. Each
+outbound message moves through these states:
+
+| State | Meaning |
+|---|---|
+| `queued` | SignalWire accepted the message and queued it for delivery |
+| `initiated` | Delivery has started |
+| `sent` | The message left SignalWire for the carrier network |
+| `delivered` | The carrier confirmed delivery to the recipient |
+| `read` | The recipient opened the message. Only WhatsApp messages reach this state |
+| `undelivered` | The carrier couldn't deliver the message |
+| `failed` | The message never left SignalWire. `error_code` and `error_message` say why |
+
+`delivered`, `undelivered`, and `failed` are final for SMS and MMS. A WhatsApp message can still
+move from `delivered` to `read`. Messages sent faster than your throughput allows wait in your
+Space's backlog and go out when they can, as
+[Default limits](/docs/platform/rate-limits#queue-and-backlog-system) describes.
+
+Receiving a message takes a little setup first, because SignalWire has to know where to send it.
+Every phone number has one message handler, separate from its call handler: a
+[Resource][resources] you assign under the number's **Inbound Message Settings**. When someone
+texts the number, SignalWire hands the message to that Resource:
+
+| Approach | Resource on the number | What happens when a message arrives |
+|---|---|---|
+| SWML | SWML Script used for messaging | SignalWire runs the script's document, first fetching it from your server when the script points at a URL |
+| WebSocket (Relay) | Relay Application | SignalWire delivers the message to the Relay client connected on the application's topic |
+
+When a number has no message handler, nothing happens when a text arrives.
+
+## Choose an approach
+
+Each approach has its own code, and the sections below don't build on each other, so pick one and
+follow its section:
+
+- [SWML][swml-intro] is a document of instructions that SignalWire runs. A messaging document
+  answers incoming texts on its own, either hosted in SignalWire or served from your server. A
+  calling document can also text someone during a call.
+- [WebSocket (Relay)][relay-guide] is a Relay client in the [Server SDKs][server-sdks]. It holds a
+  WebSocket open from your server, sends messages, and receives incoming ones and every delivery
+  update on that connection, so it needs no public URL.
+- [REST][rest-create-message] sends a message with one HTTP request from any process, and reports
+  delivery to a webhook you choose. It can't receive messages: pair it with SWML or Relay for that.
+
+WhatsApp messages use the same REST endpoint as SMS and MMS; see
+[Send WhatsApp messages][whatsapp-send].
+
+## Prepare for messaging
+
+Have these values ready:
+
+- Your Space URL, such as `<YOUR_SPACE>.signalwire.com`.
+- Your Project ID and API token from the Dashboard's [API credentials][api-credentials] page.
+  Enable the token's **Messaging** permission, and **Numbers** if you assign a phone number in
+  code.
+- A [phone number in your Space][phone-numbers] with messaging enabled, and a mobile phone you can
+  text it from.
+
+<Warning title="US numbers need registration before they can text">
+New US 10-digit long code (10DLC) numbers don't have messaging enabled. To send from one, register a
+brand and campaign with [The Campaign Registry][tcr-registration] and assign the number to the
+approved campaign. A toll-free number needs [toll-free verification][toll-free] instead. To receive
+on a number you only use inbound, ask [Support](https://support.signalwire.com/portal) to enable
+inbound messaging.
+</Warning>
+
+<Warning title="The free trial only texts one verified number, and doesn't run SWML">
+Until you register, [Platform Free Trial][free-trial] lets one SignalWire number text the mobile
+number you verified, and only that number, up to 200 messages a day. Each message starts
+with `[SignalWire Free Trial]`, and SWML message handling doesn't work during the trial: test the
+SWML section after registration, or use Relay or REST. Outside a trial,
+[enable international messaging][international] before you text another country.
+</Warning>
+
+<Warning title="You're responsible for opt-outs">
+SignalWire doesn't manage opt-outs for you. When a recipient replies STOP, stop texting them until
+they opt back in. [Optimize delivery rates][best-practices] lists the content and practices
+carriers expect.
+</Warning>
+
+Replace these values in the samples you run:
+
+| Value | Replace with |
+|---|---|
+| `<YOUR_SPACE>` | Your Space's subdomain in `<YOUR_SPACE>.signalwire.com` |
+| `<YOUR_PROJECT_ID>` | Your Project ID |
+| `<YOUR_API_TOKEN>` | Your API token, used only in server code |
+| `<YOUR_SIGNALWIRE_NUMBER>` | Your messaging-enabled SignalWire phone number, in E.164 format such as `+12025550123` |
+| `<YOUR_DESTINATION>` | The mobile number you'll text, in E.164 format |
+| `<YOUR_PHONE_NUMBER_ID>` | Your phone number's ID from its Dashboard page, when you assign it in code |
+| `<YOUR_BASIC_AUTH_PASSWORD>` | A password you choose for your SWML server |
+| `<YOUR_PUBLIC_HOST>` | The public hostname of your SWML server or tunnel |
+| `<YOUR_RIDES_API_URL>` | An HTTPS endpoint you control that looks up a ride by phone number |
+| `<YOUR_STATUS_WEBHOOK_URL>` | An HTTPS endpoint you control that receives delivery updates |
+
+## Send and receive messages via SWML
+
+A messaging SWML document lists what to do with an incoming text, such as replying, routing by
+keyword, or calling your API. SignalWire runs it when a message reaches your number. Messaging
+documents use their own [messaging methods][swml-messaging], such as `reply`, separate from the
+calling methods.
+
+### Text a caller during a call via SWML
+
+A calling document sends a text with [`send_sms`][swml-send-sms]. Run either program below: it
+calls the destination, says the ride is confirmed, texts the details to the same phone, and hangs
+up. The REST `dial` request carries the document, as in [Place a call via SWML][place-swml].
+
+<CodeBlocks>
+<CodeBlock title="Python — REST client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as text_during_call.py and run: python text_during_call.py
+from signalwire import SWMLBuilder, SWMLService
+from signalwire.rest import RestClient
+
+client = RestClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    host="<YOUR_SPACE>.signalwire.com",
+)
+
+swml = (
+    SWMLBuilder(SWMLService(name="text-during-call"))
+    .say("Your Bayview Taxi ride is confirmed. We're texting you the details now.")
+    .send_sms(
+        from_number="<YOUR_SIGNALWIRE_NUMBER>",
+        to_number="<YOUR_DESTINATION>",
+        body="Bayview Taxi: your ride is confirmed for 8 AM tomorrow. Reply STATUS for your pickup time.",
+    )
+    .hangup()
+    .build()
+)
+
+call = client.calling.dial(
+    from_="<YOUR_SIGNALWIRE_NUMBER>",
+    to="<YOUR_DESTINATION>",
+    swml=swml,
+)
+print(call["id"])
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — REST client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as text-during-call.mjs,
+// then run: node text-during-call.mjs
+import { RestClient, SwmlBuilder } from "@signalwire/sdk";
+
+const client = new RestClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  host: "<YOUR_SPACE>.signalwire.com",
+});
+
+const swml = new SwmlBuilder()
+  .say("Your Bayview Taxi ride is confirmed. We're texting you the details now.")
+  .send_sms({
+    from_number: "<YOUR_SIGNALWIRE_NUMBER>",
+    to_number: "<YOUR_DESTINATION>",
+    body: "Bayview Taxi: your ride is confirmed for 8 AM tomorrow. Reply STATUS for your pickup time.",
+  })
+  .hangup()
+  .build();
+
+const call = await client.calling.dial({
+  from: "<YOUR_SIGNALWIRE_NUMBER>",
+  to: "<YOUR_DESTINATION>",
+  swml,
+});
+console.log(call.id);
+```
+</CodeBlock>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - play:
+        url: "say:Your Bayview Taxi ride is confirmed. We're texting you the details now."
+    - send_sms:
+        from_number: "<YOUR_SIGNALWIRE_NUMBER>"
+        to_number: "<YOUR_DESTINATION>"
+        body: "Bayview Taxi: your ride is confirmed for 8 AM tomorrow. Reply STATUS for your pickup time."
+    - hangup: {}
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      { "play": { "url": "say:Your Bayview Taxi ride is confirmed. We're texting you the details now." } },
+      {
+        "send_sms": {
+          "from_number": "<YOUR_SIGNALWIRE_NUMBER>",
+          "to_number": "<YOUR_DESTINATION>",
+          "body": "Bayview Taxi: your ride is confirmed for 8 AM tomorrow. Reply STATUS for your pickup time."
+        }
+      },
+      { "hangup": {} }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+<Note title="`dial()` signature depends on the SDK version">
+`@signalwire/sdk@2.0.5` takes a single options object. Newer releases take the positional
+`dial(from, to, options)` form.
+</Note>
+
+Answer the call: you hear the confirmation, and the text arrives a few seconds later. To text
+whoever called your number instead, put `to_number: "%{call.from}"` in a document that answers
+inbound calls. `send_sms` sets `send_sms_result` to `success` or `failed`, so later steps can branch
+on whether SignalWire accepted the message.
+
+### Reply to incoming messages via SWML
+
+When someone texts your number, SignalWire runs the messaging SWML Script assigned to it. The
+script either holds the document itself or fetches it from your server for each message.
+
+<Steps>
+
+<Step title="Create the messaging SWML Script" id="create-the-messaging-swml-script">
+
+<Tabs groupId="swml-delivery">
+<Tab title="From your server">
+
+SignalWire must reach your server over the internet, so this tab has four parts: run the server,
+give it a public URL, check the URL, then create the script that points at it.
+
+Run the server below. It answers requests on port 3000 at `/swml`, but only when they carry the
+username `signalwire` and the password you set. The TypeScript SDK can't build messaging documents
+yet, so this server is Python only; to skip running a server, use the **Hosted in SignalWire** tab.
+
+```python title="Python — SWML service"
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as inbound_message_server.py and run: python inbound_message_server.py
+from signalwire import SWMLService
+
+# The SWML builder has no messaging methods yet, so add `reply` with add_verb.
+# Schema validation only knows calling methods, so this service turns it off.
+service = SWMLService(
+    name="inbound-message-server",
+    route="/swml",
+    port=3000,
+    basic_auth=("signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"),
+    schema_validation=False,
+)
+service.add_verb("reply", {
+    "body": "Thanks for texting Bayview Taxi! We got your message: %{message.body}",
+})
+
+# Serves the document at /swml. Put the credentials in the URL you give
+# SignalWire: https://signalwire:<YOUR_BASIC_AUTH_PASSWORD>@<YOUR_PUBLIC_HOST>/swml
+service.serve()
+```
+
+SignalWire fills in `%{message.body}` before it sends the reply. Each request to your server
+carries the [incoming message][swml-webhook-payload] as `message`, with fields such as `from`,
+`to`, `body`, and `media`, so your code can also read them and build a different document for
+each sender.
+
+While you develop, give the server a public HTTPS URL with a tunnel such as
+[ngrok](https://ngrok.com/). In a second terminal, run:
+
+```bash
+ngrok http 3000
+```
+
+ngrok prints an `https://` **Forwarding** URL. Its hostname is your `<YOUR_PUBLIC_HOST>`. Keep
+both the server and ngrok running while you test.
+
+Check that the document is reachable before you point a number at it:
+
+```bash
+curl -u "signalwire:<YOUR_BASIC_AUTH_PASSWORD>" "https://<YOUR_PUBLIC_HOST>/swml"
+```
+
+The response is the SWML document, starting with `{"version": "1.0.0"`. A `401` means the password
+doesn't match the one in your server. See [webhook security][swml-webhook-security] to also verify
+that requests come from SignalWire.
+
+Then create the script in the Dashboard:
+
+1. Open **My Resources**, select **+ Add**, then **Script**, then **SWML Script**.
+2. Name it **Text replies** and set **Used For** to **Messaging**.
+3. Choose **External URL** and enter
+   `https://signalwire:<YOUR_BASIC_AUTH_PASSWORD>@<YOUR_PUBLIC_HOST>/swml` in **Primary Script URL**.
+4. Select **Create** and keep the server running.
+
+</Tab>
+<Tab title="Hosted in SignalWire">
+
+SignalWire stores and runs the document, so you don't start a server.
+
+1. Open **My Resources**, select **+ Add**, then **Script**, then **SWML Script**.
+2. Name it **Text replies** and set **Used For** to **Messaging**.
+3. Choose **Hosted Script** and paste this document into **Primary Script**.
+4. Select **Create**.
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - reply:
+        body: "Thanks for texting Bayview Taxi! We got your message: %{message.body}"
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      { "reply": { "body": "Thanks for texting Bayview Taxi! We got your message: %{message.body}" } }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+SignalWire fills in `%{message.body}` with the text you sent before it replies. To create the
+script in code instead, send the same document to [Create SWML Script][rest-create-script] with
+`script_type: "messaging"`; without it, the script is created for calling.
+
+</Tab>
+</Tabs>
+
+</Step>
+
+<Step title="Assign the script to your phone number" id="assign-the-messaging-swml-script-to-your-number">
+
+Open **Phone Numbers**, select the number, and select **Edit Settings**. Under **Inbound Message
+Settings**, select **Assign Resource**, choose **Text replies**, and save. The number's call
+handler doesn't change.
+
+<llms-ignore>
+
+<Frame caption="A phone number's Edit page, with Inbound Message Settings below Inbound Call Settings">
+
+![A phone number's Edit page in the Dashboard showing an Assign Resource button under Inbound Call Settings and another under Inbound Message Settings](/assets/images/dashboard/phone-numbers/assign-resource-full.webp)
+
+</Frame>
+
+</llms-ignore>
+
+To assign the script in code, use [Create a phone number address][rest-link-number] with
+`handler_type: "messaging"`. That endpoint is in beta and requires the number to have no message
+handler yet.
+
+</Step>
+
+<Step title="Text your number" id="text-your-number-via-swml">
+
+Text anything to your SignalWire number from your phone. Within a few seconds you get
+"Thanks for texting Bayview Taxi! We got your message:" followed by your text.
+
+If no reply arrives, check the symptom:
+
+- **Your message doesn't appear under Logs, then Messaging in the Dashboard.** It never reached
+  SignalWire. Check that you texted the right number and that the number can receive messages.
+- **Your message is logged, but no reply arrives.** The number's **Inbound Message Settings** don't
+  point at **Text replies**, or the number can't send yet: see the registration warnings in
+  [Prepare for messaging](#prepare-for-messaging). For a script served from your server, rerun the
+  `curl` check with the exact URL in the script, and confirm the server and ngrok are still
+  running.
+
+</Step>
+
+</Steps>
+
+### Route replies by keyword via SWML
+
+Branch on what the sender wrote with [`switch`][swml-switch], and call your own API with
+[`request`][swml-request] when the reply needs data only you have. This document answers `STATUS`
+with the rider's pickup time from your rides API, and every other text with a short menu. The
+`lowercase_trim` transform matches `status`, `Status`, and ` STATUS ` alike.
+
+Your API receives a JSON body such as `{"phone": "+12025550123"}` and returns JSON such as
+`{"pickup_time": "8:05 AM"}`. With `save_variables: true`, each top-level field becomes a
+`request_response.*` variable. Paste the document into the script's **Primary Script**, or pass
+each step to `add_verb` on your Python server.
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - switch:
+        variable: message.body
+        transform: lowercase_trim
+        case:
+          status:
+            - request:
+                url: "<YOUR_RIDES_API_URL>"
+                method: POST
+                body:
+                  phone: "%{message.from}"
+                save_variables: true
+            - switch:
+                variable: request_result
+                case:
+                  success:
+                    - reply: "Bayview Taxi: your driver arrives at %{request_response.pickup_time}."
+                default:
+                  - reply: "Bayview Taxi: we couldn't look up your ride. Ada will text you shortly."
+        default:
+          - reply: "Bayview Taxi: reply STATUS for your pickup time."
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "switch": {
+          "variable": "message.body",
+          "transform": "lowercase_trim",
+          "case": {
+            "status": [
+              {
+                "request": {
+                  "url": "<YOUR_RIDES_API_URL>",
+                  "method": "POST",
+                  "body": { "phone": "%{message.from}" },
+                  "save_variables": true
+                }
+              },
+              {
+                "switch": {
+                  "variable": "request_result",
+                  "case": {
+                    "success": [
+                      { "reply": "Bayview Taxi: your driver arrives at %{request_response.pickup_time}." }
+                    ]
+                  },
+                  "default": [
+                    { "reply": "Bayview Taxi: we couldn't look up your ride. Ada will text you shortly." }
+                  ]
+                }
+              }
+            ]
+          },
+          "default": [
+            { "reply": "Bayview Taxi: reply STATUS for your pickup time." }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+Text `STATUS` to your number to get the pickup time, and anything else to get the menu. If
+`STATUS` always gets the fallback, your API didn't return a `2xx` response within the 5-second
+limit. A `switch` with no matching `case` and no `default` stops the document without replying, so
+keep a `default`. For a short keyword list with no API call, `reply` also accepts an inline
+`switch`; see [`reply`][swml-reply].
+
+### Track delivery via SWML
+
+Add `status_url` to a `reply`, or `status_callback` to a `send_sms`, and SignalWire POSTs a
+[message status callback][rest-status-callback] to that URL each time the message changes state.
+The payload is the same one REST sends; [Track delivery via REST](#track-delivery-via-rest) lists
+its fields.
+
+```yaml title="YAML"
+version: 1.0.0
+sections:
+  main:
+    - reply:
+        body: "Thanks for texting Bayview Taxi! We got your message: %{message.body}"
+        status_url: "<YOUR_STATUS_WEBHOOK_URL>"
+```
+
+Within the document, `reply` sets `reply_result` to `queued` or `failed`, and `reply_message_id` to
+the new message's ID, so later steps can branch on whether SignalWire accepted the reply. A
+`queued` reply can still end up `undelivered`; only the status callback reports that. Status
+callbacks are best-effort, so don't gate time-critical work on one; see
+[Status callbacks are advisory][callback-reliability].
+
+## Send and receive messages via WebSocket (Relay)
+
+A Relay client runs on your server and holds a WebSocket connection to SignalWire. It sends
+messages, receives incoming ones, and gets every state change on that connection, so it needs no
+public HTTP endpoint.
+
+### Send a message via WebSocket (Relay)
+
+Run either program below. It texts the destination, waits until the message reaches a final state,
+and prints that state.
+
+<CodeBlocks>
+<CodeBlock title="Python — Relay client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as send_message_relay.py and run: python send_message_relay.py
+import asyncio
+from signalwire.relay import RelayClient
+
+client = RelayClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    contexts=["default"],
+)
+
+async def main():
+    async with client:
+        message = await client.send_message(
+            from_number="<YOUR_SIGNALWIRE_NUMBER>",
+            to_number="<YOUR_DESTINATION>",
+            body="Bayview Taxi: your ride is confirmed for 8 AM tomorrow. Reply STATUS for your pickup time.",
+        )
+        print(f"Sent {message.message_id}")
+        await message.wait(timeout=60)
+        print(f"Final state: {message.state} {message.reason}")
+
+asyncio.run(main())
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — Relay client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as send-message-relay.mjs,
+// then run: node send-message-relay.mjs
+import { RelayClient } from "@signalwire/sdk";
+
+const client = new RelayClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  contexts: ["default"],
+});
+
+await client.connect();
+
+try {
+  const message = await client.sendMessage({
+    fromNumber: "<YOUR_SIGNALWIRE_NUMBER>",
+    toNumber: "<YOUR_DESTINATION>",
+    body: "Bayview Taxi: your ride is confirmed for 8 AM tomorrow. Reply STATUS for your pickup time.",
+  });
+  console.log(`Sent ${message.messageId}`);
+  await message.wait(60);
+  console.log(`Final state: ${message.state} ${message.reason}`);
+} finally {
+  await client.disconnect();
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+The text arrives on your phone, and the program prints `Final state: delivered`. To send MMS, add
+`media` with up to 8 public media URLs; [MIME types][mime-types] lists the supported formats.
+
+If something goes wrong, check the symptom:
+
+- **The send raises an error before any state prints.** SignalWire rejected the request. Check
+  that the `from_number` is a SignalWire number in your project, not a verified caller ID, and that
+  the token has the **Messaging** permission.
+- **The final state is `failed` or `undelivered`.** The number can't send yet, or a carrier
+  refused the message: see the registration warnings in
+  [Prepare for messaging](#prepare-for-messaging), and the reason printed after the state.
+- **No final state arrives within 60 seconds.** `wait()` raises a timeout error. The message may
+  still be in your backlog; look it up under **Logs**, then **Messaging**, in the Dashboard.
+
+### Receive and reply to messages via WebSocket (Relay)
+
+A Relay handler subscribes to one or more topics, names you choose and list in `contexts`. A Relay
+Application is the Resource that ties your phone number's messages to one topic: texts to the
+number go to whichever Relay client is subscribed to that topic.
+
+<Steps>
+
+<Step title="Run the message handler" id="run-the-relay-message-handler">
+
+Run either handler below and leave it running while you test. It subscribes to the
+`inbound-messaging` topic, then waits. When a text arrives, it prints the sender and body and
+replies from the number that received it.
+
+<CodeBlocks>
+<CodeBlock title="Python — Relay client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as inbound_message_relay.py and run: python inbound_message_relay.py
+from signalwire.relay import RelayClient
+
+client = RelayClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    contexts=["inbound-messaging"],
+)
+
+@client.on_message
+async def handle_message(message):
+    print(f"From {message.from_number}: {message.body}")
+    await client.send_message(
+        from_number=message.to_number,
+        to_number=message.from_number,
+        body=f"Thanks for texting Bayview Taxi! We got your message: {message.body}",
+    )
+
+client.run()
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — Relay client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as inbound-message-relay.mjs,
+// then run: node inbound-message-relay.mjs
+import { RelayClient } from "@signalwire/sdk";
+
+const client = new RelayClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  contexts: ["inbound-messaging"],
+});
+
+client.onMessage(async (message) => {
+  console.log(`From ${message.fromNumber}: ${message.body}`);
+  await client.sendMessage({
+    fromNumber: message.toNumber,
+    toNumber: message.fromNumber,
+    body: `Thanks for texting Bayview Taxi! We got your message: ${message.body}`,
+  });
+});
+
+await client.run();
+```
+</CodeBlock>
+</CodeBlocks>
+
+The incoming message also carries `media`, a list of attachment URLs on an MMS, and `segments`,
+the number of SMS segments the text used; [Character limits][character-limits] explains segments.
+
+</Step>
+
+<Step title="Assign the topic to your phone number" id="assign-the-relay-topic-to-your-number">
+
+Create a Relay Application for the topic:
+
+1. Open **My Resources**, select **+ Add**, then **Relay Application**.
+2. Name it **Text replies** and enter `inbound-messaging` as the **Topic**. It must match the
+   `contexts` value in your code.
+3. Select **Create**.
+
+Then open **Phone Numbers**, select the number, and select **Edit Settings**. Under **Inbound
+Message Settings**, select **Assign Resource**, choose **Text replies**, and save.
+
+<Accordion title="Assign the topic in code">
+
+The [Server SDKs][server-sdks] point the number's messages at the topic in one request, replacing
+the number's current message handler and leaving its call handler alone.
+
+<CodeBlocks>
+<CodeBlock title="Python — REST client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as assign_message_topic.py and run: python assign_message_topic.py
+from signalwire.rest import RestClient
+
+client = RestClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    host="<YOUR_SPACE>.signalwire.com",
+)
+
+client.phone_numbers.update(
+    "<YOUR_PHONE_NUMBER_ID>",
+    message_handler="relay_topic",
+    message_relay_topic="inbound-messaging",
+)
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — REST client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as assign-message-topic.mjs,
+// then run: node assign-message-topic.mjs
+import { RestClient } from "@signalwire/sdk";
+
+const client = new RestClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  host: "<YOUR_SPACE>.signalwire.com",
+});
+
+await client.phoneNumbers.update("<YOUR_PHONE_NUMBER_ID>", {
+  message_handler: "relay_topic",
+  message_relay_topic: "inbound-messaging",
+});
+```
+</CodeBlock>
+<CodeBlock title="cURL — Phone Numbers API">
+```bash
+curl -X PUT "https://<YOUR_SPACE>.signalwire.com/api/relay/rest/phone_numbers/<YOUR_PHONE_NUMBER_ID>" \
+  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message_handler": "relay_topic",
+    "message_relay_topic": "inbound-messaging"
+  }'
+```
+</CodeBlock>
+</CodeBlocks>
+
+The cURL example calls [Update phone number][rest-update-number].
+
+</Accordion>
+
+</Step>
+
+<Step title="Text your number" id="text-your-number-via-relay">
+
+Text anything to your SignalWire number from your phone. The handler prints your number and text,
+and within a few seconds you get "Thanks for texting Bayview Taxi! We got your message:" followed by
+your text.
+
+If it doesn't work, check the symptom:
+
+- **The handler logs connection errors and keeps retrying.** It can't sign in. Check the Project
+  ID and API token, and that the token has the **Messaging** permission.
+- **The handler prints nothing.** The message never reached it. Check that the handler is still
+  running, that its `contexts` value matches the Relay Application's **Topic** exactly, and that
+  the number's **Inbound Message Settings** point at that Relay Application.
+- **The handler prints your text, but no reply arrives.** The number can't send yet: see the
+  registration warnings in [Prepare for messaging](#prepare-for-messaging).
+
+</Step>
+
+</Steps>
+
+### Track delivery via WebSocket (Relay)
+
+Relay reports each state change on the connection that sent the message, so it needs no status
+callback URL. This version of the send program registers a listener on the message as soon as the
+send call returns, before it awaits anything else, and prints each state as it happens:
+
+<CodeBlocks>
+<CodeBlock title="Python — Relay client">
+```python {12-13,22}
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as track_message_relay.py and run: python track_message_relay.py
+import asyncio
+from signalwire.relay import RelayClient
+
+client = RelayClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    contexts=["default"],
+)
+
+def on_state(event):
+    print(f"State: {event.params.get('message_state')} {event.params.get('reason', '')}")
+
+async def main():
+    async with client:
+        message = await client.send_message(
+            from_number="<YOUR_SIGNALWIRE_NUMBER>",
+            to_number="<YOUR_DESTINATION>",
+            body="Bayview Taxi: your ride is confirmed for 8 AM tomorrow. Reply STATUS for your pickup time.",
+        )
+        message.on(on_state)
+        await message.wait(timeout=60)
+        print(f"Final state: {message.state} {message.reason}")
+
+asyncio.run(main())
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — Relay client">
+```typescript {20-22}
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as track-message-relay.mjs,
+// then run: node track-message-relay.mjs
+import { RelayClient } from "@signalwire/sdk";
+
+const client = new RelayClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  contexts: ["default"],
+});
+
+await client.connect();
+
+try {
+  const message = await client.sendMessage({
+    fromNumber: "<YOUR_SIGNALWIRE_NUMBER>",
+    toNumber: "<YOUR_DESTINATION>",
+    body: "Bayview Taxi: your ride is confirmed for 8 AM tomorrow. Reply STATUS for your pickup time.",
+  });
+  message.on((event) => {
+    console.log(`State: ${event.params.message_state} ${event.params.reason ?? ""}`);
+  });
+  await message.wait(60);
+  console.log(`Final state: ${message.state} ${message.reason}`);
+} finally {
+  await client.disconnect();
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+The listener prints each state change, such as `sent` and `delivered`, then the program prints the
+final state. A listener only sees states reported after it's registered, and states reported
+before the send call returns never reach it. Register it before any other `await`, or the states
+that arrive in between are lost.
+
+The message's `state` and `reason` always hold the latest values, and `wait()` returns once the
+state is final. To act on the final state without waiting, pass `on_completed` to `send_message()`
+(`onCompleted` to `sendMessage()` in TypeScript). An incoming message arrives already in the
+`received` state.
+
+## Send messages via REST
+
+REST sends a message from any process with one HTTP request, and reports delivery to a webhook.
+It can't receive messages; to handle incoming texts, use the [SWML](#reply-to-incoming-messages-via-swml)
+or [Relay](#receive-and-reply-to-messages-via-websocket-relay) section.
+
+### Send a message via REST
+
+Run either example below. It sends the text and prints the new message's ID and status.
+
+<CodeBlocks>
+<CodeBlock title="Python — REST client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as send_message_rest.py and run: python send_message_rest.py
+from signalwire.rest import RestClient
+
+client = RestClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    host="<YOUR_SPACE>.signalwire.com",
+)
+
+message = client.messages.create(
+    from_="<YOUR_SIGNALWIRE_NUMBER>",
+    to="<YOUR_DESTINATION>",
+    body="Bayview Taxi: your ride is confirmed for 8 AM tomorrow. Reply STATUS for your pickup time.",
+)
+print(message["id"], message["status"])
+```
+</CodeBlock>
+<CodeBlock title="cURL — Messages API">
+```bash
+curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/messaging/messages" \
+  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "from": "<YOUR_SIGNALWIRE_NUMBER>",
+    "to": "<YOUR_DESTINATION>",
+    "body": "Bayview Taxi: your ride is confirmed for 8 AM tomorrow. Reply STATUS for your pickup time."
+  }'
+```
+</CodeBlock>
+</CodeBlocks>
+
+`@signalwire/sdk@2.0.5` has no method for this request. In TypeScript, use the Relay client's
+[`sendMessage()`](#send-a-message-via-websocket-relay) instead, or send the request directly. The
+request calls [Send a message][rest-create-message]. To send MMS, add `media` with up to 7 public
+media URLs; a REST request with 8 or more is rejected with a `422`.
+
+SignalWire returns the message with status `queued`, before it's delivered. Save the `id` to
+match status callbacks and look the message up later:
+
+<EndpointResponseSnippet endpoint="POST /api/messaging/messages" />
+
+The text arrives on your phone a few seconds later. A `422` response names the field SignalWire
+rejected; the most common cause is a `from` that isn't a messaging-enabled SignalWire number in
+your project. A message that is accepted but never arrives usually means the number can't send
+yet: see the registration warnings in [Prepare for messaging](#prepare-for-messaging).
+
+### Track delivery via REST
+
+Add `status_callback` to the request, and SignalWire POSTs a
+[message status callback][rest-status-callback] to that URL each time the message changes state.
+Add `custom_variables` too, with up to 20 string pairs such as your own ride ID, and SignalWire
+echoes them in every callback so you can match it to a record in your system.
+
+```python title="Python — REST client" {5-6}
+message = client.messages.create(
+    from_="<YOUR_SIGNALWIRE_NUMBER>",
+    to="<YOUR_DESTINATION>",
+    body="Bayview Taxi: your ride is confirmed for 8 AM tomorrow. Reply STATUS for your pickup time.",
+    status_callback="<YOUR_STATUS_WEBHOOK_URL>",
+    custom_variables={"ride_id": "4821"},
+)
+```
+
+The cURL request takes the same two fields in its JSON body. Each callback
+carries these fields:
+
+| Callback field | Value |
+|---|---|
+| `id` | The message ID returned when you sent it |
+| `status` | The new state, from the table in [How messaging works](#how-messaging-works) |
+| `from`, `to`, `body` | The message as sent |
+| `number_of_segments` | How many SMS segments the body used |
+| `error_code`, `error_message` | Why delivery failed, or `null` |
+| `custom_variables` | The pairs you sent, when you sent any |
+| `timestamp` | When the state changed |
+
+Status callbacks are best-effort, so don't gate time-critical work on one; see
+[Status callbacks are advisory][callback-reliability] and the [webhooks guide][webhooks] for
+endpoint setup. To check a message without a webhook, look it up by ID with
+[Get message log][rest-get-log]: `client.logs.messages.get(message_id)` in either SDK returns its
+current `status`.
+
+## Next steps
+
+<CardGroup cols={2}>
+<Card title="Register for 10DLC messaging" icon="regular clipboard-check" href="/docs/platform/messaging/campaign-registry/registration">
+  Register a brand and campaign so your US long code numbers can text.
+</Card>
+<Card title="Messaging SWML reference" icon="regular code" href="/docs/swml/reference/messaging">
+  Every method a messaging document can run, and the variables it can read.
+</Card>
+<Card title="Character limits" icon="regular text-width" href="/docs/platform/messaging/character-limits">
+  How a message body splits into segments, and how segments are priced.
+</Card>
+<Card title="Send WhatsApp messages" icon="brands whatsapp" href="/docs/platform/messaging/whatsapp/send-messages">
+  Send text, media, and template messages over WhatsApp with the same REST endpoint.
+</Card>
+</CardGroup>
