@@ -12,8 +12,8 @@
 window.SW_ATTR_CONFIG = {"consent":"termly","rollout":"on"};
 
 /*!
- * SignalWire signup attribution v1.1.0 (payload schema v1)
- * Adds one first-party parameter, sw_attr, to SignalWire signup links.
+ * SignalWire signup attribution v1.2.0 (payload schema v1)
+ * Adds one first-party parameter, sw_attr, to SignalWire signup and Log In links.
  * Source of truth: attribution/src/signup-attribution.js. Built by attribution/build.py.
  * Spec: signalwire-framer-signup-attribution-plan.md.
  */
@@ -28,7 +28,7 @@ window.SW_ATTR_CONFIG = {"consent":"termly","rollout":"on"};
 })(typeof window !== 'undefined' ? window : this, function () {
   'use strict';
 
-  var VERSION = '1.1.0';
+  var VERSION = '1.2.0';
   var PAYLOAD_VERSION = 1;
 
   var DEFAULTS = {
@@ -36,7 +36,12 @@ window.SW_ATTR_CONFIG = {"consent":"termly","rollout":"on"};
     signupDestinations: [
       { host: 'signalwire.com', path: '/signup' },
       { host: 'www.signalwire.com', path: '/signup' },
-      { host: 'id.signalwire.com', path: '/onboarding' }
+      { host: 'id.signalwire.com', path: '/onboarding' },
+      // Log In. /signin redirects to id.signalwire.com, which stores sw_attr like /onboarding does,
+      // and a visitor without an account signs up from there. cta names these clicks when the link
+      // carries no ?cta= or data-sw-cta of its own, so signups that began at Log In can be counted.
+      { host: 'signalwire.com', path: '/signin', cta: 'login' },
+      { host: 'www.signalwire.com', path: '/signin', cta: 'login' }
     ],
     payloadParameter: 'sw_attr',
     ctaParameter: 'cta',
@@ -188,29 +193,40 @@ window.SW_ATTR_CONFIG = {"consent":"termly","rollout":"on"};
     return '';
   }
 
-  function matchDestination(href, cfg, base) {
+  function validCta(s) {
+    return typeof s === 'string' && /^[a-z0-9][a-z0-9-]{0,39}$/.test(s) ? s : null;
+  }
+
+  // The parsed URL and the signupDestinations entry it matches, or null.
+  function findDestination(href, cfg, base) {
     var u = parseHttpUrl(href, base);
     if (!u || u.protocol !== 'https:' || u.username || u.password) return null;
     var host = u.hostname.toLowerCase();
     var path = normalizePath(u.pathname);
     for (var i = 0; i < cfg.signupDestinations.length; i++) {
       var d = cfg.signupDestinations[i];
-      if (host === String(d.host).toLowerCase() && path === normalizePath(d.path)) return u;
+      if (host === String(d.host).toLowerCase() && path === normalizePath(d.path)) return { url: u, dest: d };
     }
     return null;
   }
 
+  function matchDestination(href, cfg, base) {
+    var found = findDestination(href, cfg, base);
+    return found ? found.url : null;
+  }
+
   // Parse a signup href: returns the clean destination URL (cta, payload and canary
-  // parameters removed, everything else untouched) and the CTA id, or null.
+  // parameters removed, everything else untouched), the link's own CTA id, and the
+  // destination's default CTA id (used when neither the link nor data-sw-cta names one), or null.
   function prepareTarget(href, cfg, base) {
-    var u = matchDestination(href, cfg, base);
-    if (!u) return null;
-    var cta = u.searchParams.get(cfg.ctaParameter);
-    cta = cta && /^[a-z0-9][a-z0-9-]{0,39}$/.test(cta) ? cta : null;
+    var found = findDestination(href, cfg, base);
+    if (!found) return null;
+    var u = found.url;
+    var cta = validCta(u.searchParams.get(cfg.ctaParameter));
     u.searchParams.delete(cfg.ctaParameter);
     u.searchParams.delete(cfg.payloadParameter);
     u.searchParams.delete(cfg.canaryFlag);
-    return { url: u, cta: cta };
+    return { url: u, cta: cta, defaultCta: validCta(found.dest.cta) };
   }
 
   // -------------------------------------------------------------- encoding
@@ -602,7 +618,7 @@ window.SW_ATTR_CONFIG = {"consent":"termly","rollout":"on"};
       if (!prep) return null;
       var cta = prep.cta || ctaHint || null;
       var now = Date.now();
-      var ctx = clickContext(cta);
+      var ctx = clickContext(cta || prep.defaultCta);
       var payload = buildPayload(loadRecord(now), ctx.session, ctx.click);
       var fit = fitPayload(prep.url, payload, cfg);
       return { href: fit ? fit.href : prep.url.href, cta: cta, payload: fit ? fit.payload : null };
