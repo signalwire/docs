@@ -18,7 +18,7 @@ model QueueIdPath {
 }
 
 model QueueMemberPathID {
-  @doc("The unique identifier (ID) of the queue member.")
+  @doc("The call ID of the queue member, as returned in the member's `call_id`. Queue members have no separate ID.")
   @example("596e2dea-a269-4765-a0b4-01b82d11c120")
   @path
   id: uuid;
@@ -38,9 +38,9 @@ model Queue {
   @example("test")
   friendly_name: string;
 
-  @doc("The maximum number of callers allowed in the queue.")
+  @doc("The maximum number of callers allowed in the queue, or `null` when no maximum is set.")
   @example(5)
-  max_size?: int32;
+  max_size: int32 | null;
 
   @doc("The current number of callers in the queue.")
   @example(0)
@@ -85,8 +85,8 @@ model QueueMember {
 
   @doc("Wait time in seconds since the member was enqueued. If not yet enqueued, it will be null.")
   @example(172975)
-  wait_time?: int32;
+  wait_time: int32 | null;
 
-  @doc("When the queue member was last enqueued.")
-  date_enqueued?: utcDateTime;
+  @doc("When the queue member was last enqueued, or `null` if not yet enqueued.")
+  date_enqueued: utcDateTime | null;
 }

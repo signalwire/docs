@@ -4,92 +4,48 @@ import "../../_shared/const.tsp";
 
 using TypeSpec.OpenAPI;
 
-@summary("Create Calling Script")
-@doc("Request body to create a SWML Script that handles inbound or outbound calls.")
-model CallingSwmlScriptCreateRequest {
-  @doc("Display name of the SWML Script")
-  @example("Welcome Script")
-  name: string;
-
-  @doc("Set to `calling` for a Calling Script. This is the default when `script_type` is omitted.")
-  @example("calling")
-  script_type?: "calling" = "calling";
-
-  @doc("The calling SWML document, as a JSON object or as a string of JSON or YAML. Uses [calling SWML methods](/docs/swml/reference/calling).")
-  @example(SWML_CONTENTS_EXAMPLE)
-  contents: TypeSpec.Record<unknown> | string;
-
-  @doc("URL that receives status callbacks for messages sent or calls made by this script.")
-  @example("https://example.com/status")
-  @format("uri")
-  status_callback_url?: url;
-}
-
-@summary("Create Messaging Script")
-@doc("Request body to create a SWML Script that handles inbound SMS or MMS messages.")
-model MessagingSwmlScriptCreateRequest {
-  @doc("Display name of the SWML Script")
-  @example("Reply Bot")
-  name: string;
-
-  @doc("Set to `messaging` to create a Messaging Script. If omitted, the API defaults to `calling`, so this field must be set explicitly for messaging scripts.")
-  @example("messaging")
-  script_type?: "messaging";
-
-  @doc("The messaging SWML document, as a JSON object or as a string of JSON or YAML. Uses [messaging SWML methods](/docs/swml/reference/messaging).")
-  @example(SWML_MESSAGING_CONTENTS_EXAMPLE)
-  contents: TypeSpec.Record<unknown> | string;
-}
+// One flat model per operation, not a Calling/Messaging union: `script_type` is optional
+// (create defaults it to `calling`, update keeps the current type), so a body that omits
+// it would match both variants of a `oneOf`.
 
 @summary("Create SWML Script")
-@doc("Body shape for creating a SWML Script. Choose a [Calling Script](#schema/CallingSwmlScriptCreateRequest) for inbound or outbound calls or a [Messaging Script](#schema/MessagingSwmlScriptCreateRequest) for inbound SMS or MMS messages. `script_type` is optional and defaults to `\"calling\"` when omitted — set it explicitly to `\"messaging\"` to create a Messaging Script. The script kind determines whether the script can be assigned as a call handler or a message handler on a phone number.")
-@oneOf
-union SwmlScriptCreateRequest {
-  CallingSwmlScriptCreateRequest,
-  MessagingSwmlScriptCreateRequest,
-}
-
-@summary("Update Calling Script")
-@doc("Request body to update an existing calling SWML Script. All fields are optional — include only what you want to change.")
-model CallingSwmlScriptUpdateRequest {
-  @doc("Display name of the SWML Script")
+@doc("Request body to create a SWML Script. Set `script_type` to `messaging` for a Messaging Script that handles inbound SMS or MMS messages; omit it, or set it to `calling`, for a Calling Script that handles inbound or outbound calls. The script type determines whether the script can be assigned as a call handler or a message handler on a phone number.")
+model SwmlScriptCreateRequest {
+  @doc("Name of the SWML Script.")
   @example("Welcome Script")
-  display_name?: string;
+  name: string;
 
-  @doc("Set to `calling` for a Calling Script.")
+  @doc("The kind of script to create. Defaults to `calling` when omitted, so set it to `messaging` explicitly to create a Messaging Script.")
   @example("calling")
-  script_type?: "calling" = "calling";
+  script_type?: "calling" | "messaging" = "calling";
 
-  @doc("The calling SWML document, as a JSON object or as a string of JSON or YAML. Uses [calling SWML methods](/docs/swml/reference/calling).")
+  @doc("The SWML document, as a JSON object or as a string of JSON or YAML. A Calling Script uses [calling SWML methods](/docs/swml/reference/calling); a Messaging Script uses [messaging SWML methods](/docs/swml/reference/messaging).")
   @example(SWML_CONTENTS_EXAMPLE)
-  contents?: TypeSpec.Record<unknown> | string;
+  contents: TypeSpec.Record<unknown> | string;
 
   @doc("URL that receives status callbacks for messages sent or calls made by this script.")
   @example("https://example.com/status")
   @format("uri")
   status_callback_url?: url;
-}
-
-@summary("Update Messaging Script")
-@doc("Request body to update an existing messaging SWML Script. All fields are optional — include only what you want to change.")
-model MessagingSwmlScriptUpdateRequest {
-  @doc("Display name of the SWML Script")
-  @example("Reply Bot")
-  display_name?: string;
-
-  @doc("Set to `messaging` for a Messaging Script.")
-  @example("messaging")
-  script_type?: "messaging";
-
-  @doc("The messaging SWML document, as a JSON object or as a string of JSON or YAML. Uses [messaging SWML methods](/docs/swml/reference/messaging).")
-  @example(SWML_MESSAGING_CONTENTS_EXAMPLE)
-  contents?: TypeSpec.Record<unknown> | string;
 }
 
 @summary("Update SWML Script")
-@doc("Body shape for updating an existing SWML Script. All fields are optional — include only what you want to change. Choose a [Calling Script](#schema/CallingSwmlScriptUpdateRequest) for inbound or outbound calls or a [Messaging Script](#schema/MessagingSwmlScriptUpdateRequest) for inbound SMS or MMS messages.")
-@oneOf
-union SwmlScriptUpdateRequest {
-  CallingSwmlScriptUpdateRequest,
-  MessagingSwmlScriptUpdateRequest,
+@doc("Request body to update an existing SWML Script. All fields are optional — include only what you want to change.")
+model SwmlScriptUpdateRequest {
+  @doc("Name of the SWML Script.")
+  @example("Welcome Script")
+  name?: string;
+
+  @doc("The kind of script. Omit to keep the script's current type.")
+  @example("calling")
+  script_type?: "calling" | "messaging";
+
+  @doc("The SWML document, as a JSON object or as a string of JSON or YAML. A Calling Script uses [calling SWML methods](/docs/swml/reference/calling); a Messaging Script uses [messaging SWML methods](/docs/swml/reference/messaging).")
+  @example(SWML_CONTENTS_EXAMPLE)
+  contents?: TypeSpec.Record<unknown> | string;
+
+  @doc("URL that receives status callbacks for messages sent or calls made by this script.")
+  @example("https://example.com/status")
+  @format("uri")
+  status_callback_url?: url;
 }

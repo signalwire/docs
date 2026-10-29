@@ -24,7 +24,10 @@ namespace SignalWireAPI.RelayRest.Mfa {
     @route("/sms")
     @post
     sendSms(@body body: MfaRequest):
-      | MfaResponse
+      | {
+          @statusCode statusCode: 201;
+          @body mfa_request: MfaResponse;
+        }
       | StatusCode401
       | ValidationError
       | StatusCode500;
@@ -39,7 +42,10 @@ namespace SignalWireAPI.RelayRest.Mfa {
     @route("/call")
     @post
     sendCall(@body body: MfaRequest):
-      | MfaResponse
+      | {
+          @statusCode statusCode: 201;
+          @body mfa_request: MfaResponse;
+        }
       | StatusCode401
       | ValidationError
       | StatusCode500;
@@ -49,6 +55,8 @@ namespace SignalWireAPI.RelayRest.Mfa {
     @doc("""
       Checks a submitted code against the multi-factor authentication request identified in the path. Use it after requesting delivery by SMS or voice call and before granting the user access. The request's configured lifetime and attempt limit determine whether further verification is allowed.
       
+      A token that does not match returns `401` with the JSON body `{"success": false}`, while rejected API credentials return `401` with the plain text body `Unauthorized`. A request ID that is unknown, already verified, expired, or out of attempts returns `404`.
+      
       ${tokenPermissions<"_Management_">}
       """)
     @route("/{mfa_request_id}/verify")
@@ -56,7 +64,8 @@ namespace SignalWireAPI.RelayRest.Mfa {
     verify(...MfaRequestIdPath, @body body: MfaVerifyRequest):
       | MfaVerifyResponse
       | StatusCode401
-      | ValidationError
+      | MfaVerifyFailedError
+      | StatusCode404
       | StatusCode500;
   }
 }
