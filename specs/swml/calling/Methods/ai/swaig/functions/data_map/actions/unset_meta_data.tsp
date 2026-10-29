@@ -1,9 +1,8 @@
-
 namespace SWML.Calling;
 @summary("unset_meta_data Action")
 model UnsetMetaDataAction {
   @summary("unset_meta_data")
-  @doc("The key of the local data to unset from the `meta_data`. You can also reset the `meta_data` by passing in a new object.")
+  @doc("The key to remove from the function's `meta_data`, or an array of keys to remove.")
   @example("temp_data")
-  unset_meta_data: string | {};
+  unset_meta_data: string | string[];
 }

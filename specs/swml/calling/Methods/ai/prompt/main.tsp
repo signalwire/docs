@@ -8,6 +8,17 @@ using TypeSpec.JsonSchema;
 namespace SWML.Calling;
 
 model AIPromptBase {
+  // Read by the `ai` verb only, and only on `ai.prompt` and `ai.post_prompt`. Bedrock's prompt
+  // models pick their properties without it, and a context's `post_prompt` omits it.
+  @doc("""
+    The AI model to use for this prompt. On `prompt`, it takes precedence over `params.ai_model`.
+    On `post_prompt`, it selects the model that writes the summary; when omitted, the agent's model is used.
+    If the model you name isn't available, a default model is used instead; if no default model is
+    available either, the agent doesn't start.
+    """)
+  @example("gpt-4.1-mini")
+  `model`?: string;
+
   @doc("Limits the amount of tokens that the AI agent may generate when creating its response")
   @minValue(0)
   @maxValue(4096)
@@ -26,15 +37,11 @@ model AIPromptBase {
   @example(0.9)
   top_p?: float | SWMLVar = 1.0;
 
-  @doc("""
-    Threshold to fire a speech-detect event at the end of the utterance. Float value between 0.0 and 1.0.
-    Decreasing this value will reduce the pause after the user speaks, but may introduce false positives.
-    **Default:** `0.6`.
-    """)
+  #deprecated "`confidence` has no effect and can be omitted."
+  @doc("Has no effect and can be omitted. Setting it does not change speech detection.")
   @minValue(0.0)
   @maxValue(1.0)
-  @example(0.6)
-  confidence?: float | SWMLVar = 0.6;
+  confidence?: float | SWMLVar;
 
   @doc("Aversion to staying on topic. Float value between -2.0 and 2.0. Positive values increase the model's likelihood to talk about new topics. **Default:** `0`.")
   @minValue(-2.0)
@@ -49,13 +56,18 @@ model AIPromptBase {
   frequency_penalty?: float | SWMLVar = 0;
 }
 
+const aiPromptStepsDescription: string = """
+  An array of steps for a conversation that needs only one context. It works like the `steps` of a
+  `default` context. Ignored when `contexts` is set.
+  """;
+
 @summary("Prompt with POM")
 model AIPromptPom is AIPromptBase {
   @doc("""
     Prompt Object Model (POM) is a structured data format for composing, organizing, and rendering prompt instructions for AI agents.
     POM ensures that the prompt is structured in a way that is best for the AI agent to understand and execute.
-    The first item in the array MUST be FirstPOMSection (with optional title).
-    All subsequent items MUST be PomSection (with required title and body).
+    Each section in the array, at any position, has an optional `title` and needs a `body`, `bullets`, or both;
+    sections can nest further sections under `subsections`.
     """)
   @minItems(1)
   pom: POM[];
@@ -66,6 +78,9 @@ model AIPromptPom is AIPromptBase {
     Additionally, more context steps can be defined as any other key in the object.
     """)
   contexts?: Contexts;
+
+  @doc(aiPromptStepsDescription)
+  steps?: ContextSteps[];
 }
 
 @summary("Prompt with Text")
@@ -80,6 +95,9 @@ model AIPromptText is AIPromptBase {
     Additionally, more context steps can be defined as any other key in the object.
     """)
   contexts?: Contexts;
+
+  @doc(aiPromptStepsDescription)
+  steps?: ContextSteps[];
 }
 
 @summary("Post-Prompt with Text")
@@ -105,4 +123,21 @@ union AIPrompt {
 union AIPostPrompt {
   AIPostPromptText,
   AIPostPromptPom,
+}
+
+// A context's `post_prompt` is parsed like `ai.post_prompt`, but its `model` is never read:
+// only `ai.post_prompt.model` selects the model that writes the summary.
+@summary("Context Post-Prompt with Text")
+model ContextPostPromptText {
+  ...OmitProperties<AIPostPromptText, "model">;
+}
+
+@summary("Context Post-Prompt with POM")
+model ContextPostPromptPom {
+  ...OmitProperties<AIPostPromptPom, "model">;
+}
+
+union ContextPostPrompt {
+  ContextPostPromptText,
+  ContextPostPromptPom,
 }

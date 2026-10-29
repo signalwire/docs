@@ -15,12 +15,14 @@ model LanguagesBase {
   @doc("""
     The language code for ASR (Automatic Speech Recognition) purposes. By default, SignalWire uses Deepgram's
     Nova-3 STT engine, so this value should match a code from Deepgram's Nova-3 language codes.
+    A code that Nova-3 doesn't support uses Nova-2 if Nova-2 supports it; otherwise it's handed to Google Cloud Speech without an error.
     If a different STT model was selected using the `openai_asr_engine` parameter, you must select a code supported by that engine.
 
     Supply an array to have this voice listen for up to three codes at once.
 
     Set it to `multi` to have the engine transcribe whichever of its supported languages the caller
     speaks, rather than one fixed language. The agent still answers in this entry's single `voice`.
+    `multi` works only with Deepgram speech recognition, and it switches between fewer languages than `code` accepts: on Nova-3, English, Spanish, French, German, Hindi, Russian, Portuguese, Japanese, Italian, and Dutch; on Nova-2, English and Spanish. A Google speech engine treats `multi` as an ordinary language code.
     To answer in the caller's language as well, use [`ai.multilingual`](/docs/swml/reference/calling/ai/multilingual)
     instead, which builds on the same code-switching mode and adds a voice per language.
     """)
@@ -34,6 +36,7 @@ model LanguagesBase {
     Write `code` in new documents.
     """)
   @example("fr-FR")
+  @maxItems(3)
   listen_language?: string | string[];
 
   // hidden 2026-10-05
@@ -69,7 +72,7 @@ model LanguagesBase {
   //   Lets the AI vary its emotion as it speaks. A global emotion, or specific emotions for certain
   //   topics, can be set within the prompt of the AI.
   //   IMPORTANT: Only works with the [`Cartesia`](/docs/platform/voice/tts/cartesia) and [`MiniMax`](/docs/platform/voice/tts/minimax) TTS engines.
-  //   For a fixed (non-automatic) MiniMax emotion, use [`params.emotion`](#paramsemotion) instead.
+  //   For a fixed (non-automatic) MiniMax emotion, use [`params.emotion`](/docs/swml/reference/calling/ai/languages#paramsemotion) instead.
   //   """)
   @doc("""
     Lets the AI vary its emotion as it speaks. A global emotion, or specific emotions for certain
@@ -152,7 +155,7 @@ model LanguageParams {
   //
   // @doc("""
   //   A fixed emotional tone for the generated speech.
-  //   To vary the emotion automatically during a conversation, use [`languages[].auto_emotion`](#languagesauto_emotion) instead.
+  //   To vary the emotion automatically during a conversation, use [`languages[].auto_emotion`](/docs/swml/reference/calling/ai/languages#languagesauto_emotion) instead.
   //   IMPORTANT: Only works with the MiniMax TTS engine.
   //   """)
   // @example("happy")
@@ -175,6 +178,14 @@ model Languages is LanguagesBase {
   @doc("An array of strings to be used as fillers in the conversation when calling a `swaig function`. This helps the AI break silence between responses. The filler is played asynchronously during the function call.")
   @example(#["great", "ok"])
   function_fillers?: string[];
+
+  @doc("""
+    Phrases the agent says while the planning step enabled by `params.double_turns` is still running
+    when a reply is due. One is picked at random, and the same phrase is not played twice in a row.
+    Has no effect unless `params.double_turns` is `true`. Applies only to `languages`, not `multilingual`.
+    """)
+  @example(#["let me think", "one moment"])
+  double_turn_fillers?: string[];
 
   @doc("""
     An array of strings to be used as fillers in the conversation. This helps the AI break silence between responses.
