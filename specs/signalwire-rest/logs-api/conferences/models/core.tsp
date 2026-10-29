@@ -102,8 +102,8 @@ model VideoRoomSessionConference is Conference {
   ended_at: utcDateTime | null;
 
   @doc("Total charge amount of the conference in dollars.")
-  @example("0.0")
-  charge: string;
+  @example(0.0)
+  charge: float64;
 
   @doc("Details on charges associated with this conference.")
   charge_details: ChargeDetails[];
@@ -115,6 +115,6 @@ model ChargeDetails {
   description: string;
 
   @doc("Charge amount in dollars.")
-  @example("0.50")
-  charge: string;
+  @example(0.5)
+  charge: float64;
 }
