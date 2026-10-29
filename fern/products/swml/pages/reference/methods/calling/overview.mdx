@@ -88,12 +88,22 @@ See the [SWML inbound call webhook reference](/docs/apis/rest/webhooks/inbound-c
 
 <Indent>
 
+  <ParamField path="call.address_id" type="string" toc={true}>
+    ID of the Resource Address the call was placed to. Present on calls a Subscriber places to
+    an Address.
+  </ParamField>
+
   <ParamField path="call.call_id" type="string" toc={true}>
     A unique identifier for the call.
   </ParamField>
 
   <ParamField path="call.call_state" type="string" toc={true}>
     The current state of the call.
+  </ParamField>
+
+  <ParamField path="call.dial_winner" type="string" toc={true}>
+    Set to `"true"` when this call is the leg that answered an outbound dial, including the
+    winning leg of a parallel dial. Omitted otherwise.
   </ParamField>
 
   <ParamField path="call.direction" type="string" toc={true}>
@@ -104,8 +114,14 @@ See the [SWML inbound call webhook reference](/docs/apis/rest/webhooks/inbound-c
     The number/URI that initiated this call.
   </ParamField>
 
+  <ParamField path="call.from_number" type="string" toc={true}>
+    The phone number that initiated this call. Present for phone calls (`type` is `phone`); SIP
+    and WebRTC calls expose the originator through `from` instead.
+  </ParamField>
+
   <ParamField path="call.headers" type="object[]" toc={true}>
-    The headers associated with this call.
+    The headers associated with this call. Present for phone and SIP calls, as an empty array
+    when there are none. WebRTC calls don't include it.
   </ParamField>
 
   <Indent>
@@ -124,6 +140,45 @@ See the [SWML inbound call webhook reference](/docs/apis/rest/webhooks/inbound-c
     A unique identifier for the node handling the call.
   </ParamField>
 
+  <ParamField path="call.parent" type="object" toc={true}>
+    The call that created this call. Present only when this call has a parent, for example a
+    leg created by a `connect`.
+  </ParamField>
+
+  <Indent>
+
+    <ParamField path="call.parent.call_id" type="string" toc={true}>
+      A unique identifier for the parent call.
+    </ParamField>
+
+    <ParamField path="call.parent.device_type" type="string" toc={true}>
+      The device type of the parent call: `phone`, `sip`, or `webrtc`. Present only when this
+      call was created by a `connect`, from either the SWML `connect` method or the Relay
+      `connect` command; omitted for any other parent call.
+    </ParamField>
+
+    <ParamField path="call.parent.node_id" type="string" toc={true}>
+      The same value as this call's own `node_id`, not the parent call's node.
+    </ParamField>
+
+  </Indent>
+
+  <ParamField path="call.peer" type="object" toc={true}>
+    The call this call is bridged to. Present only when this call has a peer.
+  </ParamField>
+
+  <Indent>
+
+    <ParamField path="call.peer.call_id" type="string" toc={true}>
+      A unique identifier for the peer call.
+    </ParamField>
+
+    <ParamField path="call.peer.node_id" type="string" toc={true}>
+      The same value as this call's own `node_id`, not the peer call's node.
+    </ParamField>
+
+  </Indent>
+
   <ParamField path="call.project_id" type="string" toc={true}>
     The Project ID this call belongs to.
   </ParamField>
@@ -136,8 +191,28 @@ See the [SWML inbound call webhook reference](/docs/apis/rest/webhooks/inbound-c
     The Space ID this call belongs to.
   </ParamField>
 
+  <ParamField path="call.subscriber_id" type="string" toc={true}>
+    ID of the Subscriber who placed the call. Present on calls a Subscriber places from the
+    Browser SDK.
+  </ParamField>
+
+  <ParamField path="call.subscriber_name" type="string" toc={true}>
+    Name of the Subscriber who placed the call: their display name, or if that's empty their
+    first name, then their email, then `Subscriber`. Present on calls a Subscriber places to an
+    Address.
+  </ParamField>
+
+  <ParamField path="call.tag" type="string" toc={true}>
+    The tag you assigned to this call when it was created, if any.
+  </ParamField>
+
   <ParamField path="call.to" type="string" toc={true}>
     The number/URI of the destination of this call.
+  </ParamField>
+
+  <ParamField path="call.to_number" type="string" toc={true}>
+    The destination phone number of this call. Present for phone calls (`type` is `phone`); SIP
+    and WebRTC calls expose the destination through `to` instead.
   </ParamField>
 
   <ParamField path="call.type" type="string" toc={true}>
@@ -145,8 +220,9 @@ See the [SWML inbound call webhook reference](/docs/apis/rest/webhooks/inbound-c
   </ParamField>
 
   <ParamField path="call.sip_data" type="object" toc={true}>
-    SIP-specific data for SIP calls. Only present when `call.type` is `sip`. Contains detailed
-    SIP header information.
+    SIP-specific data for SIP calls. Only present when `call.type` is `sip`. Each key is
+    included only when the call's SIP signaling carries a value for it, so a key missing from one
+    call can be present on another.
   </ParamField>
 
   <Indent>
@@ -156,7 +232,9 @@ See the [SWML inbound call webhook reference](/docs/apis/rest/webhooks/inbound-c
     </ParamField>
 
     <ParamField path="call.sip_data.sip_contact_params" type="object" toc={true}>
-      Additional parameters from the SIP Contact header.
+      The URI parameters of the SIP Contact header, as key/value pairs. Present only when that URI
+      carries parameters. Each value is a string. A parameter without a value is left out, so the
+      object can be empty.
     </ParamField>
 
     <ParamField path="call.sip_data.sip_contact_port" type="string" toc={true}>
@@ -175,6 +253,12 @@ See the [SWML inbound call webhook reference](/docs/apis/rest/webhooks/inbound-c
       The host portion of the SIP From header.
     </ParamField>
 
+    <ParamField path="call.sip_data.sip_from_params" type="object" toc={true}>
+      The URI parameters of the SIP From header, as key/value pairs. Present only when that URI
+      carries parameters. Each value is a string. A parameter without a value is left out, so the
+      object can be empty.
+    </ParamField>
+
     <ParamField path="call.sip_data.sip_from_uri" type="string" toc={true}>
       The full URI from the SIP From header.
     </ParamField>
@@ -183,8 +267,19 @@ See the [SWML inbound call webhook reference](/docs/apis/rest/webhooks/inbound-c
       The user portion of the SIP From header.
     </ParamField>
 
+    <ParamField path="call.sip_data.sip_p_asserted_identity" type="string" toc={true}>
+      The P-Asserted-Identity header of the incoming SIP request. Only the first
+      P-Asserted-Identity header is read, and only when its URI has a user part.
+    </ParamField>
+
     <ParamField path="call.sip_data.sip_req_host" type="string" toc={true}>
       The host portion of the SIP request URI.
+    </ParamField>
+
+    <ParamField path="call.sip_data.sip_req_params" type="object" toc={true}>
+      The URI parameters of the SIP request URI, as key/value pairs. Present only when that URI
+      carries parameters. Each value is a string. A parameter without a value is left out, so the
+      object can be empty.
     </ParamField>
 
     <ParamField path="call.sip_data.sip_req_uri" type="string" toc={true}>
@@ -197,6 +292,12 @@ See the [SWML inbound call webhook reference](/docs/apis/rest/webhooks/inbound-c
 
     <ParamField path="call.sip_data.sip_to_host" type="string" toc={true}>
       The host portion of the SIP To header.
+    </ParamField>
+
+    <ParamField path="call.sip_data.sip_to_params" type="object" toc={true}>
+      The URI parameters of the SIP To header, as key/value pairs. Present only when that URI
+      carries parameters. Each value is a string. A parameter without a value is left out, so the
+      object can be empty.
     </ParamField>
 
     <ParamField path="call.sip_data.sip_to_uri" type="string" toc={true}>
