@@ -38,11 +38,12 @@ model Stream {
       | SWMLVar = "inbound_track";
 
     @doc("""
-      Codec to use for the streamed audio. Freeform and endpoint-specific.
-      Common values include `PCMU`, `PCMA`, and `OPUS`.
+      Codec for the streamed audio. Supported values: `PCMU` (8 kHz G.711 µ-law),
+      `L16@16000h` (16-bit linear PCM at 16 kHz), and `L16@24000h` (16-bit linear PCM at 24 kHz).
+      Default is `"PCMU"`.
       """)
-    @example("PCMU")
-    codec?: string;
+    @example("L16@16000h")
+    codec?: string = "PCMU";
 
     @doc("""
       HTTP or HTTPS URL to deliver stream status events.
