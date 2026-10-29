@@ -145,10 +145,49 @@ sections:
 ## From a Relay application
 
 You can also execute SWML from a Relay application.
-The following is a snippet using the [Relay SDK](/docs/server-sdks/reference/python/relay).
+The following handler uses the Relay client in the [Server SDKs](/docs/server-sdks).
 
-```javascript
-const { Voice } = require("@signalwire/realtime-api");
+<CodeBlocks>
+<CodeBlock title="Python — Relay client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as swml_relay.py and run: python swml_relay.py
+from signalwire.relay import RelayClient
+
+SCRIPT = """
+version: 1.0.0
+sections:
+  main:
+    - answer: {}
+    - execute:
+        dest: play_music
+        params:
+          to_play: 'https://cdn.signalwire.com/swml/April_Kisses.mp3'
+  play_music:
+    - play:
+        url: '%{params.to_play}'
+"""
+
+client = RelayClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    contexts=["swml"],
+)
+
+@client.on_call
+async def handle_call(call):
+    await call.transfer(SCRIPT)
+
+client.run()
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — Relay client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as swml-relay.mjs,
+// then run: node swml-relay.mjs
+import { RelayClient } from "@signalwire/sdk";
+
 const script = `
 version: 1.0.0
 sections:
@@ -163,29 +202,25 @@ sections:
         url: '%{params.to_play}'
 `;
 
-const client = new Voice.Client({
-  project: "<your project token>",
-  token: "<your project API key>",
-  topics: ["swml"],
+const client = new RelayClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  contexts: ["swml"],
 });
 
-client.on("call.received", async (call) => {
-  try {
-    await client.execute({
-      method: "calling.transfer",
-      params: {
-        node_id: call.nodeId,
-        call_id: call.callId,
-        dest: script,
-      },
-    });
-  } catch (error) {}
+client.onCall(async (call) => {
+  await call.transfer(script);
 });
+
+await client.run();
 ```
+</CodeBlock>
+</CodeBlocks>
 
-In this snippet, we are registering an event for every time a call is received to any phone number in your project with the topic "swml".
-You can set the topics a number is subscribed to from the phone number settings page in the SignalWire Dashboard.
-Every time a call is received, the SWML script is executed using the `client.execute` method.
+The handler subscribes to the topic `swml`, so it receives every call to a phone number whose call handler is a [Relay Application](/docs/platform/glossary#relay-application) with that topic.
+You set a number's handler under **Inbound Call Settings** on the number's page in the SignalWire Dashboard.
+When a call arrives, the handler transfers it to the SWML document, which takes over the call.
+The transfer destination can be an inline SWML document, as here, or the URL of a server that returns one.
 
 ## Next steps
 
