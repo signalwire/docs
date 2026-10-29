@@ -9,6 +9,10 @@ max-toc-depth: 3
 Branch on a variable's value, with optional text transforms applied before matching. Useful for
 keyword-driven inbound message handling.
 
+After the selected branch runs, execution continues with the next step after `switch`, unless the
+branch moves execution elsewhere (for example with `goto`, `return`, or `transfer`), a step fails,
+or the document reaches its 100-step limit.
+
 ## **Properties**
 
 <ParamField path="switch" type="object" required={true} toc={true}>
@@ -18,7 +22,9 @@ keyword-driven inbound message handling.
 <Indent>
 
 <ParamField path="switch.variable" type="string" required={true} toc={true}>
-  Variable path to match. Specified without the `%{}` wrapper (e.g. `message.body`).
+  Variable path to match. Specified without the `%{}` wrapper (e.g. `message.body`). The resolved
+  value is converted to a string, then transformed and compared exactly with the `case` keys. A
+  missing variable path resolves to an empty string.
 </ParamField>
 
 
@@ -31,7 +37,8 @@ keyword-driven inbound message handling.
 <ParamField path="switch.case" type="object" required={true} toc={true}>
   Map of values to arrays of [SWML methods](/docs/swml/reference/messaging) to execute. The key is the value to
   compare against `variable` (after applying `transform`); the value is the array of methods to run on
-  match.
+  match. Keys are literal and are not transformed, and matching is exact. An empty-string key matches
+  a missing variable; otherwise `default` is used.
 </ParamField>
 
 
@@ -45,6 +52,8 @@ keyword-driven inbound message handling.
 ## **Examples**
 
 ### Keyword-based reply
+
+The `request` after the `switch` runs after whichever branch was taken.
 
 <CodeBlocks>
 <CodeBlock title="YAML">
@@ -68,6 +77,11 @@ sections:
         default:
           - reply:
               body: "Sorry, I didn't understand that. Reply HELP for assistance."
+    - request:
+        url: "https://api.example.com/keyword-log"
+        body:
+          from: "%{message.from}"
+          keyword: "%{message.body}"
 ```
 </CodeBlock>
 <CodeBlock title="JSON">
@@ -110,6 +124,15 @@ sections:
               }
             }
           ]
+        }
+      },
+      {
+        "request": {
+          "url": "https://api.example.com/keyword-log",
+          "body": {
+            "from": "%{message.from}",
+            "keyword": "%{message.body}"
+          }
         }
       }
     ]

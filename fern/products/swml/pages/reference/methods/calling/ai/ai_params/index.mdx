@@ -89,6 +89,11 @@ These parameters control the fundamental behavior and capabilities of the AI age
 </ParamField>
 
 
+<ParamField path="params.double_turns" type="boolean" default="false" toc={true}>
+  Before each reply, a smaller planning model reviews the conversation and the available functions, then gives the agent a short directive on how to respond. This can improve function use and coherence. The reply waits for the plan, which adds latency to every turn. The planning model is [`utility_model`](#paramsutility_model) if set, otherwise `ai_model`. Billed separately from the agent's per-minute rate. To cover the wait, set [`double_turn_fillers`](/docs/swml/reference/calling/ai/languages#languagesdouble_turn_fillers) on each entry in `languages`.
+</ParamField>
+
+
 <ParamField path="params.enable_inner_dialog" type="boolean" default="false" toc={true}>
   Enables the inner dialog feature, which runs a separate AI process in the background that analyzes the conversation and provides real-time insights to the main AI agent. This gives the agent a form of "internal thought process" that can help it make better decisions.
 </ParamField>
@@ -139,7 +144,7 @@ These parameters control the fundamental behavior and capabilities of the AI age
 
 
 <ParamField path="params.save_conversation" type="boolean" default="false" toc={true}>
-  Send a summary of the conversation after the call ends. This requires [`post_prompt_url`][post-prompt-url] to be set and the `conversation_id` defined. This eliminates the need for a `post_prompt` in the `ai` parameters.
+  Send a summary of the conversation after the call ends. This requires [`post_prompt_url`][post-prompt-url] to be set and the `conversation_id` defined. This eliminates the need for a `post_prompt` in the `ai` parameters. Separately from that end-of-call report, an agent that starts with a `conversation_id` asks `post_prompt_url` for the summary you stored for that ID, and resumes the conversation with it. See [responding to post prompt requests](/docs/swml/reference/calling/ai#responding-to-post-prompt-requests) for the reply format.
 </ParamField>
 
 
@@ -254,8 +259,8 @@ Customize the AI agent's voice output, including volume control, voice character
 </ParamField>
 
 
-<ParamField path="params.max_emotion" type="integer" default="30" toc={true}>
-  Maximum emotion intensity for text-to-speech. Allowed values from `1`-`30`.
+<ParamField path="params.max_emotion" type="integer" toc={true}>
+  Has no effect and can be omitted. Setting it does not change the voice.
 </ParamField>
 
 
@@ -264,8 +269,8 @@ Customize the AI agent's voice output, including volume control, voice character
 </ParamField>
 
 
-<ParamField path="params.tts_number_format" type="string" default="international" toc={true}>
-  The format of the number the AI will reference the phone number. Valid values: `international` (e.g. +12345678901) or `national` (e.g. (234) 567-8901).
+<ParamField path="params.tts_number_format" type="string" default="e164" toc={true}>
+  The format of the number the AI will reference the phone number. Valid values: `e164` (e.g. +12345678901), `international` (e.g. +1 234-567-8901), or `national` (e.g. (234) 567-8901).
 </ParamField>
 
 <ParamField path="params.video_blank_image" type="string" toc={true}>
@@ -304,12 +309,12 @@ Customize the AI agent's voice output, including volume control, voice character
 
 Manage how the AI agent handles interruptions when users speak over it, including when to stop speaking, acknowledge interruptions, or continue regardless.
 
-<ParamField path="params.acknowledge_interruptions" type="boolean | number" default="false" toc={true}>
-  Instructs the agent to acknowledge crosstalk and confirm user input when the user speaks over the agent. Can be boolean or a positive integer specifying the maximum number of interruptions to acknowledge.
+<ParamField path="params.acknowledge_interruptions" type="boolean | integer" default="false" toc={true}>
+  Instructs the agent to acknowledge crosstalk and confirm user input when the user speaks over the agent. `true` acknowledges up to one interruption; a positive integer sets the maximum number of interruptions to acknowledge.
 </ParamField>
 
 
-<ParamField path="params.barge_functions" type="boolean" default="true" toc={true}>
+<ParamField path="params.barge_functions" type="boolean" default="false" toc={true}>
   Allow functions to be called during barging. When `false`, functions are not executed if the user is speaking.
 </ParamField>
 
@@ -329,8 +334,8 @@ Manage how the AI agent handles interruptions when users speak over it, includin
 </ParamField>
 
 
-<ParamField path="params.interrupt_on_noise" type="boolean | integer" default="false" toc={true}>
-  When enabled, barges agent upon any sound interruption longer than 1 second. Can be boolean or a positive integer specifying the threshold.
+<ParamField path="params.interrupt_on_noise" type="boolean" default="false" toc={true}>
+  When enabled, barges agent upon any sound interruption longer than 1 second. The 1-second threshold can't be changed.
 </ParamField>
 
 
@@ -356,7 +361,7 @@ Manage how the AI agent handles interruptions when users speak over it, includin
 Set various timing parameters that control wait times, response delays, and session limits to optimize the conversation flow and prevent dead air.
 
 <ParamField path="params.attention_timeout" type="integer" default="5000" toc={true}>
-  Amount of time, in ms, to wait before prompting the user to respond. Allowed values: `0` (to disable) or `10,000`-`600,000`.
+  Amount of time, in ms, to wait before prompting the user to respond. Allowed values: `0` (to disable) or `1,000`-`600,000`.
 </ParamField>
 
 
@@ -366,7 +371,7 @@ Set various timing parameters that control wait times, response delays, and sess
 
 
 <ParamField path="params.digit_timeout" type="integer" default="3000" toc={true}>
-  Time, in ms, at the end of digit input to detect end of input. Allowed values from `0`-`30,000`.
+  Time, in ms, at the end of digit input to detect end of input. Allowed values from `1`-`29,999`; any other value keeps the default.
 </ParamField>
 
 
@@ -376,7 +381,13 @@ Set various timing parameters that control wait times, response delays, and sess
 
 
 <ParamField path="params.hard_stop_time" type="string" toc={true}>
-  Specifies the maximum duration for the AI Agent to remain active before it exits the session. After the timeout, the AI will stop responding, and will proceed with the next SWML instruction. Time format: `30s` (seconds), `2m` (minutes), `1h` (hours), or combined `1h45m30s`.
+  The maximum time the AI Agent stays active. Once it has passed, the next time the agent is waiting for the caller it receives [`hard_stop_prompt`](#paramshard_stop_prompt) as a final instruction for its last reply. The conversation then ends and the next SWML instruction runs. The stop is not exact and does not cut off speech in progress.
+
+  Time format: a string in `HH:MM:SS` or `MM:SS` form, or a whole number of seconds. For example, `"30:00"` and `"1800"` are both 30 minutes. In the colon forms, minutes and seconds go up to `59`.
+
+  <Warning title="Unit suffixes are not converted">
+  Values such as `30m` or `1h` are not read as minutes or hours: the letters are ignored, so `30m` sets a 30-second limit. Use the colon form or a number of seconds instead.
+  </Warning>
 </ParamField>
 
 <ParamField path="params.inactivity_timeout" type="integer" default="600000" toc={true}>
@@ -394,13 +405,13 @@ Set various timing parameters that control wait times, response delays, and sess
 </ParamField>
 
 
-<ParamField path="params.speech_event_timeout" type="integer" default="1400" toc={true}>
-  Timeout for speech events processing. Allowed values from `0`-`10,000` ms.
+<ParamField path="params.speech_event_timeout" type="integer" default="0" toc={true}>
+  Timeout for speech events processing. Allowed values from `0`-`10,000` ms. `0`, or leaving it unset, lets speech recognition set this timing itself.
 </ParamField>
 
 
-<ParamField path="params.speech_timeout" type="integer" default="60000" toc={true}>
-  Overall speech timeout (developer mode only). Allowed values from `0`-`600,000` ms.
+<ParamField path="params.speech_timeout" type="integer" toc={true}>
+  Has no effect and can be omitted. Setting it does not change speech timing on your calls.
 </ParamField>
 
 
@@ -457,7 +468,7 @@ Configure SignalWire AI Gateway (SWAIG) function capabilities, including permiss
 
 
 <ParamField path="params.swaig_allow_settings" type="boolean" default="true" toc={true}>
-  Allows tweaking any of the indicated settings, such as barge_match_string, using the returned SWML from the SWAIG function.
+  Allows SWAIG functions to change the AI model's settings with the [`settings` action](/docs/swml/reference/calling/ai/swaig/functions/data-map#list-of-valid-actions) in their response. Only settings the selected model supports are applied.
 </ParamField>
 
 
@@ -472,7 +483,7 @@ Configure SignalWire AI Gateway (SWAIG) function capabilities, including permiss
 
 
 <ParamField path="params.swaig_set_global_data" type="boolean" default="true" toc={true}>
-  Allows SWAIG functions to set global data that persists across function calls.
+  Allows SWAIG functions to change `global_data` with the [`set_global_data` and `unset_global_data` actions](/docs/swml/reference/calling/ai/swaig/functions/data-map#list-of-valid-actions). Changes last for the rest of the AI session and don't carry over to other calls. To keep `global_data` for a later AI session on the same call, see [`persist_global_data`](#paramspersist_global_data).
 </ParamField>
 
 
@@ -546,8 +557,8 @@ Enable debugging tools, logging, and performance monitoring features to help dev
 </ParamField>
 
 
-<ParamField path="params.verbose_logs" type="boolean" default="false" toc={true}>
-  Enable verbose logging (developer mode only).
+<ParamField path="params.verbose_logs" type="boolean" toc={true}>
+  Has no effect and can be omitted.
 </ParamField>
 
 
@@ -565,8 +576,8 @@ Configure the inner dialog feature, which enables a secondary AI process to anal
 </ParamField>
 
 
-<ParamField path="params.inner_dialog_synced" type="boolean" default="false" toc={true}>
-  When enabled, synchronizes the inner dialog with the main conversation flow. This ensures the inner dialog AI waits for the main conversation turn to complete before providing its analysis, rather than running fully asynchronously.
+<ParamField path="params.inner_dialog_synced" type="boolean" toc={true}>
+  Has no effect and can be omitted. Setting it does not change how the inner dialog runs.
 </ParamField>
 
 
@@ -594,7 +605,7 @@ Control the agent's listening behavior, including pause/resume functionality and
 Fine-tune advanced AI behavior settings including response limits, data persistence, prompt formatting, and voice activity detection.
 
 <ParamField path="params.max_response_tokens" type="integer" toc={true}>
-  Sets the maximum number of tokens the AI model can generate in a single response. Allowed values from `1` to `16384`. This helps control response length and costs.
+  Has no effect and can be omitted. Setting it does not limit the length of the AI's responses.
 </ParamField>
 
 
@@ -633,7 +644,7 @@ Fine-tune advanced AI behavior settings including response limits, data persiste
 
 
 <ParamField path="params.turn_filler_min_ms" type="integer" default="0" toc={true}>
-  How long a wait must already have run, in milliseconds, before a backchannel plays. Off by default: waits open the moment the agent decides to hold, and `spell` and `number` are meant to be answered right then. A `<token>:<ms>` suffix in `turn_filler_sources` overrides this for that token.
+  How long a wait must already have run, in milliseconds, before a backchannel plays. Off by default: waits open the moment the agent decides to hold, and `spell` and `number` are meant to be answered right then. A positive `<token>:<ms>` suffix in `turn_filler_sources` replaces this for that token, but `:0` does not clear it. To answer one source immediately while delaying others, leave this at `0` and put suffixes on the others.
 </ParamField>
 
 
@@ -681,4 +692,5 @@ the rest, since the set grows over time.
 </llms-ignore>
 
 See the [AI debug webhook](/docs/apis/rest/webhooks/ai-debug-webhook) webhook page for the full
-field reference.
+field reference. [Conversation analytics](/docs/platform/ai/analytics#choose-the-right-source) explains when
+to use the debug stream and when to use the post-prompt report.
