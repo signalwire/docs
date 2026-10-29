@@ -6,11 +6,15 @@ max-toc-depth: 3
 ---
 
 [ref-relayclient]: /docs/server-sdks/reference/typescript/relay/client
+[custom-skills]: /docs/server-sdks/reference/typescript/agents/skills/custom-skills
+[discover-from-directory]: /docs/server-sdks/reference/typescript/agents/skill-registry/discover-from-directory
+[generate-url]: /docs/server-sdks/reference/typescript/agents/configuration/serverless-adapter/generate-url
 
 The SignalWire Server SDK reads environment variables for server configuration,
 authentication, SSL, logging, Relay/REST client credentials, and serverless
-platform detection. Environment variables are overridden by constructor parameters
-but take precedence over config file values.
+platform detection. Constructor parameters take precedence over both environment
+variables and the config file, and the config file takes precedence over
+environment variables.
 
 <Tip>
 Use `dotenv` to load variables from a `.env` file during development:
@@ -83,6 +87,21 @@ until you update the credentials in your SignalWire dashboard.
   Domain name for HSTS headers and URL generation.
 </ParamField>
 
+<ParamField path="SWML_ENFORCE_HTTPS" type="boolean" default="false" toc={true}>
+  Build webhook URLs with `https` even when the agent itself serves HTTP, as it
+  does behind a proxy that terminates TLS. Only the string `"true"` is accepted.
+</ParamField>
+
+<ParamField path="SWML_USE_HSTS" type="boolean" default="true" toc={true}>
+  Send a `Strict-Transport-Security` header on HTTPS responses. Once the variable
+  is set, any value other than `"true"` turns the header off.
+</ParamField>
+
+<ParamField path="SWML_HSTS_MAX_AGE" type="number" default="31536000" toc={true}>
+  `max-age`, in seconds, of the `Strict-Transport-Security` header. A value that
+  isn't a number is ignored.
+</ParamField>
+
 ## Proxy
 
 <ParamField path="SWML_PROXY_URL_BASE" type="string" toc={true}>
@@ -99,14 +118,22 @@ until you update the credentials in your SignalWire dashboard.
   connect directly, ignoring any environment proxy, so each connection can be
   checked for private and internal addresses. When set, a request that Node's
   global `fetch` would send through a proxy goes through it instead, where that
-  check can't apply. Use a proxy that restricts destinations itself.
+  check can't apply. Use a proxy that restricts destinations itself. Accepts `1`,
+  `true`, or `yes`.
+</ParamField>
+
+<ParamField path="SWML_ALLOW_PRIVATE_URLS" type="boolean" default="false" toc={true}>
+  Let the SDK's outbound URL fetches reach private and internal addresses, which
+  they otherwise refuse. Accepts `1`, `true`, or `yes`. Set it only when a skill
+  must reach a host on your own network.
 </ParamField>
 
 <ParamField path="SWML_TRUST_PROXY_HEADERS" type="boolean" default="false" toc={true}>
-  Trust `X-Forwarded-For`, `X-Forwarded-Proto`, and `X-Forwarded-Host` headers
-  for client IP detection (used by rate limiting) and auto-detection of the
-  public URL. Only the string `"true"` is accepted. Enable only when running
-  behind a reverse proxy you control.
+  Trust proxy headers for auto-detection of the public URL (`X-Forwarded-Host`
+  with `X-Forwarded-Proto`, `Forwarded`, or `X-Original-Host`) and for the client
+  IP that rate limiting uses (`X-Forwarded-For`, then `X-Real-IP`). Only the string
+  `"true"` is accepted. Enable only when running behind a reverse proxy you
+  control.
 </ParamField>
 
 <Warning>
@@ -148,8 +175,9 @@ for webhook URL generation.
 
 <ParamField path="SWML_CSRF_PROTECTION" type="boolean" default="false" toc={true}>
   When set to `"true"`, `POST` requests whose `Origin` header is not in
-  `SWML_CORS_ORIGINS` are rejected with HTTP 403. Only the string `"true"` is
-  accepted.
+  `SWML_CORS_ORIGINS` are rejected with HTTP 403. A request with no `Origin`
+  header passes, and nothing is rejected while `SWML_CORS_ORIGINS` includes `*`.
+  Only the string `"true"` is accepted.
 </ParamField>
 
 <ParamField path="SWML_MAX_REQUEST_SIZE" type="number" default="1048576" toc={true}>
@@ -215,14 +243,29 @@ for webhook URL generation.
 
 <ParamField path="SIGNALWIRE_SKILL_PATHS" type="string" default="" toc={true}>
   Colon-separated paths to directories containing custom skills. The skill
-  registry scans these paths in addition to the built-in skills directory.
+  registry scans these paths in addition to the built-in skills directory, but
+  only when `SWML_SKILL_DISCOVERY_ENABLED` is `"true"`.
+</ParamField>
+
+<ParamField path="SWML_SKILL_DISCOVERY_ENABLED" type="boolean" default="false" toc={true}>
+  Allow the skill registry to import skills from directories, through
+  [`discoverFromDirectory()`][discover-from-directory] and the paths in
+  `SIGNALWIRE_SKILL_PATHS`. Without it, discovery logs a warning and registers
+  nothing. Only the string `"true"` is accepted.
+</ParamField>
+
+<ParamField path="SWML_ALLOW_CUSTOM_HANDLER_CODE" type="boolean" default="false" toc={true}>
+  Allow the [`custom_skills`][custom-skills] skill to compile and run handler code
+  from its configuration. Without it, those tools return an error instead of
+  running. Only the string `"true"` is accepted.
 </ParamField>
 
 ## Relay and REST Client
 
 `RelayClient`, `RestClient`, and `AIChatClient` read these variables. The
-three clients agree on the credential variables but not on `SIGNALWIRE_SPACE`,
-so read that entry before setting it in a process that uses more than one client.
+three clients agree on the credential variables. `RelayClient` also reads
+`SIGNALWIRE_SPACE`, so read the warning below before setting it in a process that
+uses Relay.
 
 <ParamField path="SIGNALWIRE_PROJECT_ID" type="string" toc={true}>
   SignalWire project ID for authentication.
@@ -239,8 +282,9 @@ so read that entry before setting it in a process that uses more than one client
 <ParamField path="SIGNALWIRE_SPACE" type="string" toc={true}>
   Your space hostname, for example `your-space.signalwire.com`. `RestClient` uses
   it as the REST API host and throws when neither this variable, the `host` option,
-  nor `SIGNALWIRE_REST_BASE_URL` is set. `AIChatClient` reads the same variable but
-  expects the bare space name, `your-space`, and appends `.signalwire.com` itself.
+  nor `SIGNALWIRE_REST_BASE_URL` is set. `AIChatClient` reads the same variable and
+  accepts either the hostname or the bare space name, `your-space`, to which it
+  appends `.signalwire.com`.
 </ParamField>
 
 <Warning title="Relay reads SIGNALWIRE_SPACE too">
@@ -307,28 +351,51 @@ You typically do not set these manually -- they are provided by the platform run
   Lambda environment detection variable. Set automatically by the Lambda runtime.
 </ParamField>
 
+<ParamField path="LAMBDA_TASK_ROOT" type="string" toc={true}>
+  Lambda environment detection variable, read alongside
+  `AWS_LAMBDA_FUNCTION_NAME`. Set automatically by the Lambda runtime.
+</ParamField>
+
 ### Google Cloud Functions
 
-<ParamField path="GCLOUD_PROJECT" type="string" toc={true}>
-  Google Cloud project ID.
+<ParamField path="FUNCTION_URL" type="string" toc={true}>
+  The function's URL. When set, webhook URLs use it. Otherwise they are built as
+  `https://<region>-<project>.cloudfunctions.net/<service>` from the variables
+  below.
+</ParamField>
+
+<ParamField path="FUNCTION_TARGET" type="string" toc={true}>
+  Cloud Function entry point name, set by the Functions Framework. Without it and
+  without `FUNCTION_URL`, the agent builds no Cloud Function URL. Cloud Run sets
+  `K_SERVICE` without `FUNCTION_TARGET`, so a server there isn't taken for a Cloud
+  Function.
+</ParamField>
+
+<ParamField path="GOOGLE_CLOUD_PROJECT" type="string" toc={true}>
+  Google Cloud project ID used in the built URL. `GCP_PROJECT` is read when it's
+  unset. With neither, webhook URLs use `https://localhost:8080`.
+</ParamField>
+
+<ParamField path="GCP_PROJECT" type="string" toc={true}>
+  Fallback for `GOOGLE_CLOUD_PROJECT`.
 </ParamField>
 
 <ParamField path="FUNCTION_REGION" type="string" default="us-central1" toc={true}>
-  Google Cloud region.
+  Google Cloud region used in the built URL. `GOOGLE_CLOUD_REGION` is read when
+  it's unset.
 </ParamField>
 
-<ParamField path="FUNCTION_TARGET" type="string" default="unknown" toc={true}>
-  Cloud Function entry point name.
+<ParamField path="GOOGLE_CLOUD_REGION" type="string" toc={true}>
+  Fallback for `FUNCTION_REGION`.
 </ParamField>
 
-<ParamField path="K_SERVICE" type="string" default="unknown" toc={true}>
-  Knative/Cloud Run service name. Cloud Run sets it without `FUNCTION_TARGET`; a
-  server there isn't taken for a Cloud Function.
+<ParamField path="K_SERVICE" type="string" toc={true}>
+  Service name used in the built URL. Falls back to `FUNCTION_TARGET`.
 </ParamField>
 
-<ParamField path="FUNCTION_URL" type="string" toc={true}>
-  The function's URL. When set, webhook URLs use it. Otherwise they are built from
-  the project, region, and service.
+<ParamField path="GCLOUD_PROJECT" type="string" toc={true}>
+  Project ID read only by `ServerlessAdapter`'s [`generateUrl()`][generate-url].
+  The agent's own webhook URLs use `GOOGLE_CLOUD_PROJECT`.
 </ParamField>
 
 ### Azure Functions
@@ -348,7 +415,11 @@ You typically do not set these manually -- they are provided by the platform run
 <ParamField path="WEBSITE_SITE_NAME" type="string" toc={true}>
   Function app name. With `AZURE_FUNCTION_NAME`, builds the webhook URL
   `https://<app>.azurewebsites.net/api/<function>` when `AZURE_FUNCTION_URL`
-  isn't set.
+  isn't set. `AZURE_FUNCTIONS_APP_NAME` is read when it's unset.
+</ParamField>
+
+<ParamField path="AZURE_FUNCTIONS_APP_NAME" type="string" toc={true}>
+  Fallback for `WEBSITE_SITE_NAME`.
 </ParamField>
 
 <ParamField path="AZURE_FUNCTION_NAME" type="string" default="unknown" toc={true}>
