@@ -9,6 +9,11 @@ max-toc-depth: 3
 [rawpost]: /docs/server-sdks/reference/typescript/agents/ai-chat-client/raw-post
 [router]: /docs/server-sdks/reference/typescript/agents/chat-gateway/router
 [readhandle]: /docs/server-sdks/reference/typescript/agents/chat-gateway/read-handle
+[visiblemessages]: /docs/server-sdks/reference/typescript/agents/chat-gateway/visible-messages
+[lastactivity]: /docs/server-sdks/reference/typescript/agents/chat-gateway/last-activity
+[createconversation]: /docs/server-sdks/reference/typescript/agents/ai-chat-client/create-conversation
+[log]: /docs/server-sdks/reference/typescript/agents/ai-chat-client/log
+[end]: /docs/server-sdks/reference/typescript/agents/ai-chat-client/end
 
 Validates a browser request and builds the call to forward. [`router()`][router] uses it; call it
 yourself to serve the gateway from a framework other than Hono. It checks the key, then the origin.
@@ -54,7 +59,19 @@ which counts against `maxNewConversations`; a `chat` counts against `maxTurns`.
 `method` is the service method to call: `create_conversation` for `start`, `chat` for `chat`,
 `chat_log` for `log`, and `end_conversation` for `end`. `params` are its parameters. `mintedHandle`
 is the new handle when this call created the conversation, and `null` otherwise; return it to the
-browser. Send the call with [`rawPost()`][rawpost].
+browser.
+
+Send each method the way [`router()`][router] does:
+
+| `method` | Send it with | Answer the browser with |
+|---|---|---|
+| `chat` | [`rawPost()`][rawpost] | The response body, streamed through as it arrives |
+| `create_conversation` | [`createConversation()`][createconversation] | `{ greeting, status, timeout }` |
+| `chat_log` | [`log()`][log] | `{ messages, timeout, last_activity }`, with `messages` filtered by [`visibleMessages()`][visiblemessages] and `last_activity` from [`lastActivity()`][lastactivity] |
+| `end_conversation` | [`end()`][end] | `{ status: 'ended' }` |
+
+Never relay a `chat_log` response as it comes back. The full log carries the system prompt and
+tool traffic, which the browser must not see.
 
 ## Throws
 
@@ -74,6 +91,43 @@ const gateway = new ChatGateway({
 });
 const client = new AIChatClient({ space: 'your-space' });
 
+async function forward(
+  method: string,
+  params: Record<string, unknown>,
+  headers: Headers,
+): Promise<Response> {
+  const id = params.id as string;
+  const timeout = gateway.effectiveTimeout;
+  if (method === 'end_conversation') {
+    await client.end(id);
+    return Response.json({ status: 'ended' }, { headers });
+  }
+  if (method === 'create_conversation') {
+    const info = await client.createConversation(id, {
+      configUrl: params.config_url as string,
+      timeout: params.conversation_timeout as number | undefined,
+      userMetadata: params.user_meta_data as Record<string, unknown> | undefined,
+    });
+    return Response.json({ greeting: info.initialMessage, status: info.status, timeout }, { headers });
+  }
+  if (method === 'chat_log') {
+    // Filter the log: the full chat_log isn't for the browser.
+    const log = await client.log(id);
+    return Response.json(
+      {
+        messages: ChatGateway.visibleMessages(log.messages),
+        timeout,
+        last_activity: ChatGateway.lastActivity(log.messages),
+      },
+      { headers },
+    );
+  }
+  // chat: stream the reply through as it arrives.
+  const upstream = await client.rawPost(method, params);
+  headers.set('Content-Type', 'application/json');
+  return new Response(upstream.body, { status: 200, headers });
+}
+
 export async function relay(
   body: Record<string, unknown>,
   origin: string | null,
@@ -81,10 +135,9 @@ export async function relay(
 ): Promise<Response> {
   try {
     const [method, params, minted] = gateway.prepare(body, { origin, key });
-    const upstream = await client.rawPost(method, params);
-    const headers = new Headers({ 'Content-Type': 'application/json' });
+    const headers = new Headers();
     if (minted) headers.set('X-Chat-Handle', minted);
-    return new Response(upstream.body, { status: 200, headers });
+    return await forward(method, params, headers);
   } catch (err) {
     if (err instanceof GatewayRejection) {
       return Response.json({ error: err.reason }, { status: err.status });
