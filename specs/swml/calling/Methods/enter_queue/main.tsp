@@ -26,7 +26,7 @@ model EnterQueueObject {
 
   @doc("HTTP or HTTPS URL to deliver queue status events. Default not set")
   @example("https://example.com/queue-status")
-  status_url?: url;
+  status_url?: url | SWMLVar;
 
   @doc("URL for media to play while waiting in the queue. Default hold music will be played if not set")
   @example("https://example.com/queue-music.mp3")

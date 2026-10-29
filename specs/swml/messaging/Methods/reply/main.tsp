@@ -15,19 +15,50 @@ model ReplyBase {
   @example("+15559876543")
   from?: string;
 
-  @doc("URL that receives delivery status callbacks for the outbound reply. The callback uses the [message status callback payload](/docs/apis/rest/webhooks/message-status-callback).")
+  @doc("""
+    HTTP or HTTPS URL that receives delivery status callbacks for the outbound reply. The
+    callback uses the [message status callback payload](/docs/apis/rest/webhooks/message-status-callback).
+    Callbacks are delivered after the reply is queued, so a `queued` result does not confirm
+    that a callback reached this URL.
+    """)
   @example("https://example.com/reply-status")
   status_url?: url;
 }
 
+@doc("""
+  Reply body text, used by the string shorthand and by string outcomes of an inline
+  `switch`. After variable expansion it must contain at least one non-whitespace
+  character.
+  
+  Body length is checked before the reply is queued. The limit depends on whether the
+  reply is SMS or MMS and on the route SignalWire uses to send it, and length is counted
+  according to the message encoding. A body over the limit fails the reply with a
+  `swml_reply_character_limit_exceeded` error whose message states the limit.
+  """)
+@summary("Reply body text")
+@minLength(1)
+scalar ReplyText extends string;
+
 @summary("Reply with body")
 model ReplyWithBody is ReplyBase {
-  @doc("Body text of the reply. Must be a non-empty string. Required if `media` is not present.")
+  @doc("""
+    Body text of the reply. Required if `media` is not present. When no media is attached,
+    the body must contain at least one non-whitespace character after variable expansion.
+    
+    Body length is checked before the reply is queued. The limit depends on whether the
+    reply is SMS or MMS and on the route SignalWire uses to send it, and length is counted
+    according to the message encoding. A body over the limit fails the reply with a
+    `swml_reply_character_limit_exceeded` error whose message states the limit.
+    """)
   @minLength(1)
   @example("Thanks for your message!")
   body: string;
 
-  @doc("Array of media URLs to attach. Converts the message to MMS. Maximum 8 attachments.")
+  @doc("""
+    Array of HTTP or HTTPS media URLs to attach. Converts the message to MMS. Maximum 8
+    attachments. Media is fetched after the reply is queued, so a `queued` result does not
+    confirm that the media could be retrieved.
+    """)
   @maxItems(8)
   @example(#["https://example.com/image.jpg"])
   media?: url[];
@@ -35,12 +66,24 @@ model ReplyWithBody is ReplyBase {
 
 @summary("Reply with media")
 model ReplyWithMedia is ReplyBase {
-  @doc("Array of media URLs to attach. Converts the message to MMS. Maximum 8 attachments. Required if `body` is not present.")
+  @doc("""
+    Array of HTTP or HTTPS media URLs to attach. Converts the message to MMS. Required if
+    `body` is not present, and must then contain at least one URL. Maximum 8 attachments.
+    Media is fetched after the reply is queued, so a `queued` result does not confirm that
+    the media could be retrieved.
+    """)
+  @minItems(1)
   @maxItems(8)
   @example(#["https://example.com/image.jpg"])
   media: url[];
 
-  @doc("Optional body text included alongside the media attachments. Must be a non-empty string if provided.")
+  @doc("""
+    Optional body text included alongside the media attachments. Must be a non-empty string
+    if provided. Body length is checked before the reply is queued. The limit depends on
+    the route SignalWire uses to send the reply, and length is counted according to the
+    message encoding. A body over the limit fails the reply with a
+    `swml_reply_character_limit_exceeded` error whose message states the limit.
+    """)
   @minLength(1)
   @example("Check out this image!")
   body?: string;
@@ -52,14 +95,14 @@ alias ReplyPlan = ReplyWithBody | ReplyWithMedia;
 @doc("""
   Branch the reply on a variable value. The matched `case` (or `default`) supplies the
   reply contents in one of two forms:
-
+  
   - **String** — sent back to the original sender as the SMS body. The simplest form,
     good for choosing between canned text responses.
   - **Reply object** — a full `{ body, media, to, from, status_url }` block, so the
     matched branch can attach media, override the destination, or set a per-branch
     status callback. Any `%{…}` placeholders inside the object are expanded before
     the reply is sent.
-
+  
   When you use an inline `switch`, do not set `body`, `media`, `to`, `from`, or
   `status_url` directly on the same `reply` — put them inside each `case` value
   (or `default`) instead.
@@ -81,7 +124,7 @@ model ReplyInlineSwitch {
       branch needs media, a different destination, or a per-branch `status_url`.
       """)
     case: {
-      ...TypeSpec.Record<string | ReplyPlan>;
+      ...TypeSpec.Record<ReplyText | ReplyPlan>;
     };
 
     @doc("""
@@ -89,7 +132,7 @@ model ReplyInlineSwitch {
       `case` value. If omitted and no case matches, the `reply` step fails and execution
       stops.
       """)
-    default?: string | ReplyPlan;
+    default?: ReplyText | ReplyPlan;
   };
 }
 
@@ -100,9 +143,9 @@ model Reply {
     Create and send an outbound message in response to the inbound message. Accepts one of:
     a string (used as the message body), an object with body, media, and routing fields, or
     an inline `switch` that branches the reply on a variable value.
-
+    
     `reply` does not end execution — subsequent steps in the section continue to run after
     the reply is queued.
     """)
-  reply: string | ReplyPlan | ReplyInlineSwitch;
+  reply: ReplyText | ReplyPlan | ReplyInlineSwitch;
 }
