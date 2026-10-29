@@ -18,7 +18,7 @@ model Pay {
       The URL to make POST requests with all the gathered payment details.
       This URL is used to process the final payment transaction and return the results through the response.
       
-      Visit [pay documentation](/docs/swml/reference/pay#payment_connector_url) for more important information.
+      Visit [pay documentation](/docs/swml/reference/calling/pay#payment_connector_url) for more important information.
       """)
     @example("https://example.com/payment-connector")
     payment_connector_url: url;
@@ -72,7 +72,7 @@ model Pay {
     @doc("""
       The URL to send requests for each status change during the payment process.
       
-      Visit [pay documentation](/docs/swml/reference/pay#status_url-request-body) for more important information.
+      Visit [pay documentation](/docs/swml/reference/calling/pay#status_url-request-body) for more important information.
       """)
     @example("https://example.com/payment-status")
     status_url?: url;
