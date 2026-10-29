@@ -97,8 +97,9 @@ model CallHoldRequest {
     @doc("""
       How long to hold the caller, in seconds. Accepts an integer, a string of digits such as
       `"120"`, or a `"M:SS"` or `"H:MM:SS"` string, where `"1:30"` is 90 seconds. Unit suffixes
-      aren't supported: the letters `h`, `m`, and `s` are ignored, so `"5m"` is read as 5 seconds,
-      and any other letter makes the string unparseable. The maximum and
+      aren't supported: the letters `h`, `m`, and `s` are dropped and the remaining digits are read
+      as seconds, so `"5m"` is 5 seconds and `"1h30m"` is 130 seconds. Any other letter, or a letter
+      mixed with `:`, makes the string unparseable. The maximum and
       default is `300`: a value above `300`, a value of `0` or less, or a string that can't be
       parsed holds for `300` seconds.
       """)
