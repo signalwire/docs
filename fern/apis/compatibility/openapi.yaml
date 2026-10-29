@@ -8197,7 +8197,7 @@ components:
           type: array
           items:
             type: string
-          description: 'The status events that trigger a SignalWire webhook. Valid values: initiated, ringing, answered, completed, ringing_forwarded, ringing_queued. Defaults to `completed`. If `StatusCallbackEvent` includes `completed`, which it does by default, you also receive a callback with `CallStatus` set to `failed` when SignalWire stops the call before dialing it. The [Voice status callback](/docs/compatibility-api/rest/calls/webhooks/voice-status-callback) lists the reasons.'
+          description: "The status events that trigger a SignalWire webhook. Valid values: initiated, ringing, answered, completed, ringing_forwarded, ringing_queued. Defaults to `completed`. Subscribing to `answered` sends an `answered` callback followed by an `in-progress` callback, timestamped one second later; `in-progress` can't be subscribed to separately. If `StatusCallbackEvent` includes `completed`, which it does by default, you also receive a callback with `CallStatus` set to `failed` when SignalWire stops the call before dialing it. The [Voice status callback](/docs/compatibility-api/rest/calls/webhooks/voice-status-callback) lists the reasons."
           examples:
             - - initiated
               - ringing
@@ -9638,58 +9638,246 @@ components:
     InboundCallStatusCallbackPayload:
       type: object
       required:
-        - CallSid
         - AccountSid
+        - ApiVersion
+        - CallbackSource
+        - CallSid
+        - Direction
         - From
-        - To
         - Timestamp
+        - To
         - CallStatus
-        - CallDuration
-        - AudioInMos
       properties:
-        CallSid:
-          type: string
-          description: A unique identifier for the call. May be used to later retrieve this call from the REST API.
-          examples:
-            - b3877c40-da60-4998-90ad-b792e98472ca
         AccountSid:
           type: string
           description: The unique ID of the project this call is associated with.
           examples:
             - b3877c40-da60-4998-90ad-b792e98472af
+        ApiVersion:
+          type: string
+          description: |-
+            The version of the SignalWire API.
+            Incoming calls use the API version placed on the number called.
+            Outgoing calls use the version of the REST API request.
+          examples:
+            - '2010-04-01'
+        AudioInAveragePtime:
+          type: number
+          format: double
+          description: The average time between packets for the inbound stream.
+          examples:
+            - 20.03
+        AudioInDtmfPacketCount:
+          type: integer
+          format: int32
+          description: The number of DTMF packets in the inbound media stream.
+          examples:
+            - 0
+        AudioInFlushPacketCount:
+          type: integer
+          format: int32
+          description: |-
+            The number of incoming packets removed from the jitter buffer due to buffer overflow or underflow,
+            causing these packets to be discarded or lost.
+          examples:
+            - 2
+        AudioInJitterMaxVariance:
+          type: number
+          format: double
+          description: The largest variance measured in the time between incoming audio packets, in milliseconds squared.
+          examples:
+            - 1.08
+        AudioInJitterMinVariance:
+          type: number
+          format: double
+          description: The smallest variance measured in the time between incoming audio packets, in milliseconds squared.
+          examples:
+            - 0.55
+        AudioInLargestJbSize:
+          type: integer
+          format: int32
+          description: The largest jitter buffer size recorded for incoming audio RTP packets during the session.
+          examples:
+            - 4
+        AudioInMos:
+          type: number
+          format: double
+          description: |-
+            The estimated Mean Opinion Score (MOS) for inbound audio quality, based on the share of incoming audio packets that arrived without loss or delay.
+            It ranges from about 1 to 4.5, the score for a call with no lost or late packets.
+            Sent with up to two decimal places, such as `4.37`. A whole-number score is sent with one decimal place, such as `4.0`.
+          examples:
+            - 4.37
+        AudioInMediaPacketCount:
+          type: integer
+          format: int32
+          description: The number of audio packets received in the inbound media stream.
+          examples:
+            - 1842
+        AudioInSkipPacketCount:
+          type: integer
+          format: int32
+          description: |-
+            Increased with every packet not received at a given ptime.
+            Increases with every lost packet from the inbound stream.
+          examples:
+            - 1
+        AudioOutDtmfPacketCount:
+          type: integer
+          format: int32
+          description: The total number of DTMF packets generated in the outbound media stream.
+          examples:
+            - 0
+        AudioOutJitterAvg:
+          type: number
+          format: double
+          description: The average jitter, in milliseconds, of the outgoing audio stream.
+          examples:
+            - 10.2
+        AudioOutJitterMax:
+          type: number
+          format: double
+          description: The maximum jitter, in milliseconds, of the outgoing audio stream.
+          examples:
+            - 15.3
+        AudioOutJitterMin:
+          type: number
+          format: double
+          description: The minimum jitter, in milliseconds, of the outgoing audio stream.
+          examples:
+            - 5.1
+        AudioOutLost:
+          type: integer
+          format: int32
+          description: The number of outgoing audio RTP packets reported lost.
+          examples:
+            - 0
+        AudioOutMediaPacketCount:
+          type: integer
+          format: int32
+          description: The number of audio packets sent in the outbound media stream.
+          examples:
+            - 1840
+        AudioRttAvg:
+          type: number
+          format: double
+          description: The average audio round-trip time, in milliseconds, measured to the nearest 10 milliseconds.
+          examples:
+            - 50
+        AudioRttMax:
+          type: number
+          format: double
+          description: The maximum audio round-trip time, in milliseconds, measured to the nearest 10 milliseconds.
+          examples:
+            - 120
+        AudioRttMin:
+          type: number
+          format: double
+          description: The minimum audio round-trip time, in milliseconds, measured to the nearest 10 milliseconds.
+          examples:
+            - 30
+        CallbackSource:
+          type: string
+          description: The source of the status callback.
+          examples:
+            - call-progress-events
+        CallDuration:
+          type: integer
+          format: int32
+          description: The duration, in seconds, of the finished call, from when the call started ringing to when it ended, rounded up to the next whole second. Because it includes ringing time, it's longer than the time the call was connected and usually longer than a recording of the call. Only present on the `completed` event.
+          examples:
+            - 94
+        CallSid:
+          type: string
+          description: A unique identifier for the call.
+          examples:
+            - b3877c40-da60-4998-90ad-b792e98472ca
+        Direction:
+          type: string
+          enum:
+            - outbound-dial
+            - outbound-api
+            - inbound
+          description: |-
+            The direction of the call.
+            - `outbound-dial`: calls launched through the Dial verb.
+            - `outbound-api`: calls launched through the REST API.
+            - `inbound`: inbound calls.
+          examples:
+            - outbound-api
+        ErrorCode:
+          type: string
+          description: The code for why the call failed, when SignalWire has one. `20429` means the call exceeded the outbound call rate limit. See [Error codes](/docs/compatibility-api/rest/error-codes#20429).
+          examples:
+            - '20429'
+        ErrorMessage:
+          type: string
+          description: The description of `ErrorCode`.
+          examples:
+            - Your call was temporarily rate limited due to recent activity. Please reduce your call attempt rate, or contact Support to raise the limits on your account.
         From:
           type: string
-          description: The From number in E.164 format.
+          description: The phone number that sent this call, in E.164 format.
           examples:
             - '+15551234567'
-        To:
+        HangupBy:
           type: string
-          description: The To number in E.164 format.
+          description: The `From` or `To` value of the party that ended the call, as indicated by `HangupDirection`. Present once the call has ended.
           examples:
-            - '+18005559876'
+            - '+15559876543'
+        HangupDirection:
+          type: string
+          description: |-
+            Which side ended the call. Present once the call has ended.
+            - `inbound`: the remote party hung up, so `HangupBy` is `From` on an inbound call and `To` on an outbound call.
+            - `outbound`: the call was ended from the SignalWire side, so `HangupBy` is `To` on an inbound call and `From` on an outbound call.
+          examples:
+            - inbound
+        ParentCallSid:
+          type: string
+          description: A unique identifier for the call that created this call.
+          examples:
+            - b3877c40-da60-4998-90ad-b792e98472pa
+        SipCallId:
+          type: string
+          description: The SIP `Call-ID` of the call.
+          examples:
+            - f8acbf3b-6d1a-4c55-9f0e-2a7d3c1b9e40
+        SipInviteResultPhrase:
+          type: string
+          description: A textual description of the result of the SIP INVITE request, indicating success or failure with additional details.
+          examples:
+            - OK
+        SipResultCode:
+          type: string
+          description: The numeric SIP response code received for the INVITE request, indicating the outcome of the call attempt. See the [list of SIP response codes](https://en.wikipedia.org/wiki/List_of_SIP_response_codes) for possible values.
+          examples:
+            - '200'
         Timestamp:
           type: string
-          description: The timestamp of the call creation date/time.
+          description: The timestamp, in RFC 2822 format, of when the event occurred.
           examples:
             - Thu, 04 Apr 2024 18:32:15 +0000
+        To:
+          type: string
+          description: The phone number of the call recipient, in E.164 format.
+          examples:
+            - '+15559876543'
         CallStatus:
           type: string
           enum:
+            - completed
+            - busy
+            - no-answer
             - failed
-            - completed
-          description: The status of the call. For this callback, the value will be either `failed` or `completed`.
+          description: |-
+            The final status of the call.
+            - `completed`: the call ended normally.
+            - `busy`: the call ended with a busy signal before it was answered, such as when your cXML rejects it with `<Reject reason="busy">`.
+            - `no-answer`: the call ended without being answered, such as when the caller hung up first.
+            - `failed`: the call could not be completed.
           examples:
             - completed
-        CallDuration:
-          type: string
-          description: The duration, in seconds, of the call.
-          examples:
-            - '142'
-        AudioInMos:
-          type: string
-          description: A mean opinion score on a scale of 1–5 that represents the quality of the call.
-          examples:
-            - '4.5'
       unevaluatedProperties:
         not: {}
     IncomingPhoneNumber:
@@ -11628,13 +11816,14 @@ components:
       type: object
       required:
         - AccountSid
-        - CallSid
         - RecordingSid
         - RecordingUrl
         - RecordingStatus
-        - RecordingDuration
         - RecordingChannels
         - RecordingSource
+        - RecordingTrack
+        - RecordingStartTime
+        - Trim
       properties:
         AccountSid:
           type: string
@@ -11643,9 +11832,18 @@ components:
             - b3877c40-da60-4998-90ad-b792e98472af
         CallSid:
           type: string
-          description: A unique identifier for the call. May be used to later retrieve this call from the REST API.
+          description: |-
+            A unique identifier for the recorded call. May be used to later retrieve this call from the REST API.
+            Present for call recordings; conference recordings send `ConferenceSid` instead.
           examples:
             - b3877c40-da60-4998-90ad-b792e98472ca
+        ConferenceSid:
+          type: string
+          description: |-
+            A unique identifier for the recorded conference.
+            Present for conference recordings; call recordings send `CallSid` instead.
+          examples:
+            - b3877c40-da60-4998-90ad-b792e984cf01
         RecordingSid:
           type: string
           description: The unique identifier for the recording.
@@ -11653,18 +11851,24 @@ components:
             - b3877c40-da60-4998-90ad-b792e984re01
         RecordingUrl:
           type: string
-          description: The URL for the audio recording.
+          description: |-
+            The URL for the audio recording.
+            For call recordings on accounts created before February 15, 2020, this is a path relative to your Space URL rather than a full URL.
           examples:
             - https://example.signalwire.com/api/laml/2010-04-01/Accounts/b3877c40-da60-4998-90ad-b792e98472af/Recordings/b3877c40-da60-4998-90ad-b792e984re01
         RecordingStatus:
           type: string
           enum:
             - in-progress
+            - paused
+            - resumed
             - completed
             - absent
           description: |-
             The status of the recording.
             - `in-progress`: Recording has begun.
+            - `paused`: Recording was paused. Call recordings only.
+            - `resumed`: Recording resumed after a pause. Call recordings only.
             - `completed`: File is available.
             - `absent`: Recording was too short or no audio was detected.
           examples:
@@ -11672,7 +11876,7 @@ components:
         RecordingDuration:
           type: integer
           format: int32
-          description: The duration, in seconds, of the recording.
+          description: The duration, in seconds, of the recording. Only present when `RecordingStatus` is `completed`.
           examples:
             - 94
         RecordingChannels:
@@ -11683,9 +11887,49 @@ components:
             - 1
         RecordingSource:
           type: string
-          description: The type of call that initiated the recording.
+          enum:
+            - RecordVerb
+            - DialVerb
+            - Queue
+            - StartCallRecordingAPI
+            - Conference
+            - ''
+          description: |-
+            What started the recording.
+            - `RecordVerb`: the `<Record>` verb.
+            - `DialVerb`: the `record` attribute of `<Dial>`, including a `<Dial>` to a `<Conference>`.
+            - `Queue`: the `record` attribute of a `<Dial>` to a `<Queue>`.
+            - `StartCallRecordingAPI`: a request to the REST API to start a call recording.
+            - `Conference`: a conference recording.
+
+            The parameter is always sent. Its value is empty for a recording started by `Record=true` when creating a call through the REST API.
           examples:
             - RecordVerb
+        RecordingTrack:
+          type: string
+          enum:
+            - inbound
+            - outbound
+            - both
+          description: |-
+            Which audio track was recorded.
+            - `inbound`: audio received by SignalWire.
+            - `outbound`: audio sent by SignalWire.
+            - `both`: both tracks.
+          examples:
+            - both
+        RecordingStartTime:
+          type: string
+          description: The timestamp, in RFC 2822 format, of when the recording started.
+          examples:
+            - Thu, 04 Apr 2024 18:32:15 +0000
+        Trim:
+          type: string
+          description: |-
+            Whether leading and trailing silence was trimmed from the recording: `trim-silence` or `do-not-trim`.
+            The parameter is always sent. Its value is empty when the recording has no trim setting, as for a conference recording.
+          examples:
+            - trim-silence
       unevaluatedProperties:
         not: {}
     RecordingSubresourceUris:
@@ -11790,7 +12034,9 @@ components:
       required:
         - MessageStatus
         - MessageSid
+        - SmsSid
         - AccountSid
+        - ApiVersion
         - From
         - To
         - Body
@@ -11823,11 +12069,21 @@ components:
           description: The unique ID of this message.
           examples:
             - b3877c40-da60-4998-90ad-b792e98472ms
+        SmsSid:
+          type: string
+          description: The unique ID of this message. Always the same value as `MessageSid`.
+          examples:
+            - b3877c40-da60-4998-90ad-b792e98472ms
         AccountSid:
           type: string
           description: The unique ID of the project this message is associated with.
           examples:
             - b3877c40-da60-4998-90ad-b792e98472af
+        ApiVersion:
+          type: string
+          description: The version of the SignalWire API.
+          examples:
+            - '2010-04-01'
         From:
           type: string
           description: The From number of the message.
@@ -11849,6 +12105,20 @@ components:
           description: The number of media files that were included with the message.
           examples:
             - 0
+        MediaContentType0:
+          type: string
+          description: |-
+            The content type of the first media file, such as `image/png`. Present only when `NumMedia` is greater than 0.
+            Each additional file adds a numbered parameter: `MediaContentType1`, `MediaContentType2`, and so on.
+          examples:
+            - image/png
+        MediaUrl0:
+          type: string
+          description: |-
+            The URL of the first media file. Present only when `NumMedia` is greater than 0.
+            Each additional file adds a numbered parameter: `MediaUrl1`, `MediaUrl2`, and so on, matching `MediaContentType{N}`.
+          examples:
+            - https://example.signalwire.com/api/laml/2010-04-01/Accounts/b3877c40-da60-4998-90ad-b792e98472af/Messages/b3877c40-da60-4998-90ad-b792e98472ms/Media/b3877c40-da60-4998-90ad-b792e984md01
         NumSegments:
           type: integer
           format: int32
@@ -12273,6 +12543,13 @@ components:
         - TranscriptionUrl
         - RecordingSid
         - RecordingUrl
+        - CallSid
+        - AccountSid
+        - From
+        - To
+        - CallStatus
+        - ApiVersion
+        - Direction
       properties:
         TranscriptionSid:
           type: string
@@ -12294,9 +12571,9 @@ components:
             - completed
         TranscriptionUrl:
           type: string
-          description: The URL for the transcription's REST API resource.
+          description: The path, relative to your Space URL, of the transcription's REST API resource.
           examples:
-            - https://example.signalwire.com/api/laml/2010-04-01/Accounts/b3877c40-da60-4998-90ad-b792e98472af/Transcriptions/b3877c40-da60-4998-90ad-b792e984tr01
+            - /api/laml/2010-04-01/Accounts/b3877c40-da60-4998-90ad-b792e98472af/Transcriptions/b3877c40-da60-4998-90ad-b792e984tr01
         RecordingSid:
           type: string
           description: The unique, 34-character identifier for the recording from which the transcription was generated.
@@ -12304,9 +12581,62 @@ components:
             - b3877c40-da60-4998-90ad-b792e984re01
         RecordingUrl:
           type: string
-          description: The URL for the audio recording from which the transcription was generated.
+          description: The path, relative to your Space URL, of the audio recording from which the transcription was generated.
           examples:
-            - https://example.signalwire.com/api/laml/2010-04-01/Accounts/b3877c40-da60-4998-90ad-b792e98472af/Recordings/b3877c40-da60-4998-90ad-b792e984re01
+            - /api/laml/2010-04-01/Accounts/b3877c40-da60-4998-90ad-b792e98472af/Calls/b3877c40-da60-4998-90ad-b792e98472ca/Recordings/b3877c40-da60-4998-90ad-b792e984re01
+        CallSid:
+          type: string
+          description: A unique identifier for the recorded call.
+          examples:
+            - b3877c40-da60-4998-90ad-b792e98472ca
+        AccountSid:
+          type: string
+          description: The unique ID of the project this transcription is associated with.
+          examples:
+            - b3877c40-da60-4998-90ad-b792e98472af
+        From:
+          type: string
+          description: The phone number that placed the recorded call, in E.164 format.
+          examples:
+            - '+15551234567'
+        To:
+          type: string
+          description: The phone number that received the recorded call, in E.164 format.
+          examples:
+            - '+15559876543'
+        CallStatus:
+          type: string
+          enum:
+            - queued
+            - initiated
+            - ringing
+            - canceled
+            - in-progress
+            - busy
+            - failed
+            - no-answer
+            - completed
+          description: The status of the recorded call at the time of the callback.
+          examples:
+            - completed
+        ApiVersion:
+          type: string
+          description: The version of the SignalWire API.
+          examples:
+            - '2010-04-01'
+        Direction:
+          type: string
+          enum:
+            - outbound-dial
+            - outbound-api
+            - inbound
+          description: |-
+            The direction of the recorded call.
+            - `outbound-dial`: calls launched through the Dial verb.
+            - `outbound-api`: calls launched through the REST API.
+            - `inbound`: inbound calls.
+          examples:
+            - inbound
       unevaluatedProperties:
         not: {}
     UpdateAccountRequest:
@@ -12912,7 +13242,6 @@ components:
         - CallStatus
         - Direction
         - From
-        - SequenceNumber
         - Timestamp
         - To
       properties:
@@ -12930,11 +13259,11 @@ components:
           examples:
             - '2010-04-01'
         AudioInAveragePtime:
-          type: integer
-          format: int32
+          type: number
+          format: double
           description: The average time between packets for the inbound stream.
           examples:
-            - 20
+            - 20.03
         AudioInDtmfPacketCount:
           type: integer
           format: int32
@@ -12950,17 +13279,17 @@ components:
           examples:
             - 2
         AudioInJitterMaxVariance:
-          type: integer
-          format: int32
-          description: The maximum variance of jitter for incoming audio RTP packets.
+          type: number
+          format: double
+          description: The largest variance measured in the time between incoming audio packets, in milliseconds squared.
           examples:
-            - 8
+            - 1.08
         AudioInJitterMinVariance:
-          type: integer
-          format: int32
-          description: The minimum variance of jitter for incoming audio RTP packets.
+          type: number
+          format: double
+          description: The smallest variance measured in the time between incoming audio packets, in milliseconds squared.
           examples:
-            - 1
+            - 0.55
         AudioInLargestJbSize:
           type: integer
           format: int32
@@ -12968,10 +13297,14 @@ components:
           examples:
             - 4
         AudioInMos:
-          type: string
-          description: A mean opinion score on a scale of 1–5 that helps determine audio quality.
+          type: number
+          format: double
+          description: |-
+            The estimated Mean Opinion Score (MOS) for inbound audio quality, based on the share of incoming audio packets that arrived without loss or delay.
+            It ranges from about 1 to 4.5, the score for a call with no lost or late packets.
+            Sent with up to two decimal places, such as `4.37`. A whole-number score is sent with one decimal place, such as `4.0`.
           examples:
-            - '4.3'
+            - 4.37
         AudioInMediaPacketCount:
           type: integer
           format: int32
@@ -12992,12 +13325,54 @@ components:
           description: The total number of DTMF packets generated in the outbound media stream.
           examples:
             - 0
+        AudioOutJitterAvg:
+          type: number
+          format: double
+          description: The average jitter, in milliseconds, of the outgoing audio stream.
+          examples:
+            - 10.2
+        AudioOutJitterMax:
+          type: number
+          format: double
+          description: The maximum jitter, in milliseconds, of the outgoing audio stream.
+          examples:
+            - 15.3
+        AudioOutJitterMin:
+          type: number
+          format: double
+          description: The minimum jitter, in milliseconds, of the outgoing audio stream.
+          examples:
+            - 5.1
+        AudioOutLost:
+          type: integer
+          format: int32
+          description: The number of outgoing audio RTP packets reported lost.
+          examples:
+            - 0
         AudioOutMediaPacketCount:
           type: integer
           format: int32
           description: The number of audio packets sent in the outbound media stream.
           examples:
             - 1840
+        AudioRttAvg:
+          type: number
+          format: double
+          description: The average audio round-trip time, in milliseconds, measured to the nearest 10 milliseconds.
+          examples:
+            - 50
+        AudioRttMax:
+          type: number
+          format: double
+          description: The maximum audio round-trip time, in milliseconds, measured to the nearest 10 milliseconds.
+          examples:
+            - 120
+        AudioRttMin:
+          type: number
+          format: double
+          description: The minimum audio round-trip time, in milliseconds, measured to the nearest 10 milliseconds.
+          examples:
+            - 30
         CallbackSource:
           type: string
           description: The source of the status callback.
@@ -13006,14 +13381,9 @@ components:
         CallDuration:
           type: integer
           format: int32
-          description: The duration, in seconds, of the finished call. Only present on the `completed` event.
+          description: The duration, in seconds, of the finished call, from when the call started ringing to when it ended, rounded up to the next whole second. Because it includes ringing time, it's longer than the time the call was connected and usually longer than a recording of the call. Only present on the `completed` event.
           examples:
             - 94
-        CallerName:
-          type: string
-          description: The name of the caller. Only available if Caller ID lookup is enabled.
-          examples:
-            - Jane Smith
         CallSid:
           type: string
           description: A unique identifier for the call.
@@ -13024,6 +13394,7 @@ components:
           enum:
             - initiated
             - ringing
+            - answered
             - in-progress
             - queued
             - failed
@@ -13038,6 +13409,7 @@ components:
             |--------|-------------|
             | `initiated` | The initial dial has begun. |
             | `ringing` | The call is ringing. |
+            | `answered` | The call was answered. Sent only when `StatusCallbackEvent` includes `answered`, and followed by an `in-progress` callback. |
             | `in-progress` | The call was answered and is in progress. |
             | `queued` | The call is ready and in line to initiate. |
             | `failed` | The call could not be completed. Usually occurs when the phone number does not exist. SignalWire also stops a call created through the REST API before dialing it when its caller ID is on the Do Not Originate registry, a spam rule blocks it, it exceeds the outbound call rate limit (`ErrorCode` `20429`), no endpoint is registered to receive it, or a temporary platform error interrupts it. Retrying usually succeeds after a temporary error. |
@@ -13070,45 +13442,34 @@ components:
           description: The description of `ErrorCode`.
           examples:
             - Your call was temporarily rate limited due to recent activity. Please reduce your call attempt rate, or contact Support to raise the limits on your account.
-        ForwardedFrom:
-          type: string
-          description: The number this call was forwarded from.
-          examples:
-            - '+15550001111'
         From:
           type: string
           description: The phone number that sent this call, in E.164 format.
           examples:
             - '+15551234567'
+        HangupBy:
+          type: string
+          description: The `From` or `To` value of the party that ended the call, as indicated by `HangupDirection`. Present once the call has ended.
+          examples:
+            - '+15559876543'
+        HangupDirection:
+          type: string
+          description: |-
+            Which side ended the call. Present once the call has ended.
+            - `inbound`: the remote party hung up, so `HangupBy` is `From` on an inbound call and `To` on an outbound call.
+            - `outbound`: the call was ended from the SignalWire side, so `HangupBy` is `To` on an inbound call and `From` on an outbound call.
+          examples:
+            - inbound
         ParentCallSid:
           type: string
           description: A unique identifier for the call that created this call.
           examples:
             - b3877c40-da60-4998-90ad-b792e98472pa
-        RecordingDuration:
-          type: integer
-          format: int32
-          description: The duration, in seconds, of the recording.
-          examples:
-            - 94
-        RecordingSid:
+        SipCallId:
           type: string
-          description: The unique identifier for the audio recording.
+          description: The SIP `Call-ID` of the call.
           examples:
-            - b3877c40-da60-4998-90ad-b792e984re01
-        RecordingUrl:
-          type: string
-          description: The URL of the recorded audio call.
-          examples:
-            - https://example.signalwire.com/api/laml/2010-04-01/Accounts/b3877c40-da60-4998-90ad-b792e98472af/Recordings/b3877c40-da60-4998-90ad-b792e984re01
-        SequenceNumber:
-          type: integer
-          format: int32
-          description: |-
-            The order in which events occur, starting at 0.
-            Although events are fired in order, they each take time and may not appear in the order you expect.
-          examples:
-            - 4
+            - f8acbf3b-6d1a-4c55-9f0e-2a7d3c1b9e40
         SipInviteResultPhrase:
           type: string
           description: A textual description of the result of the SIP INVITE request, indicating success or failure with additional details.
@@ -13177,8 +13538,13 @@ webhooks:
         [create](/docs/compatibility-api/rest/incoming-phone-numbers/create-incoming-phone-number) or
         [update](/docs/compatibility-api/rest/incoming-phone-numbers/update-incoming-phone-number) Incoming Phone Number API endpoints.
 
-        By default, the webhook fires only when the call is `completed` or `failed`, making it well-suited
+        The webhook fires when the call ends, with `CallStatus` set to `completed`, `busy`, `no-answer`, or `failed`. This makes it well-suited
         for tracking inbound call success rate, call quality, and total call volume in a call center context.
+        The payload carries the same parameters as the
+        [Voice status callback](/docs/compatibility-api/rest/calls/webhooks/voice-status-callback).
+
+        SignalWire sends the parameters as a form-encoded (`application/x-www-form-urlencoded`) POST body, not as JSON.
+        When the status callback method is `GET`, they are sent as query parameters instead.
 
         Status callbacks are advisory, best-effort notifications — delivery can be delayed or fail silently, so don't gate time-critical actions on receiving one. See [Status callback reliability](/docs/platform/webhooks#status-callback-reliability).
       parameters: []
@@ -13190,7 +13556,7 @@ webhooks:
       requestBody:
         required: true
         content:
-          application/json:
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/InboundCallStatusCallbackPayload'
       security:
@@ -13213,11 +13579,16 @@ webhooks:
         [Record](/docs/compatibility-api/cxml/reference/voice/record).
 
         Use `RecordingStatusCallbackEvent` to request callbacks for specific events. If omitted, only the
-        `completed` event is sent. Possible values: `in-progress`, `completed`, `absent`.
+        `completed` event is sent. Possible values: `in-progress`, `paused`, `resumed`, `completed`, `absent`.
+
+        SignalWire sends the parameters as a form-encoded (`application/x-www-form-urlencoded`) POST body, not as JSON.
+        When the callback method is `GET`, they are sent as query parameters instead.
 
         | Status | Description |
         |--------|-------------|
         | `in-progress` | The recording has begun. |
+        | `paused` | The recording was paused. Sent for call recordings only. |
+        | `resumed` | The recording resumed after a pause. Sent for call recordings only. |
         | `completed` | The file is available for access. |
         | `absent` | The recording was too short or the call was silent — no audio was detected. |
 
@@ -13231,7 +13602,7 @@ webhooks:
       requestBody:
         required: true
         content:
-          application/json:
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/RecordingStatusCallbackPayload'
       security:
@@ -13245,6 +13616,9 @@ webhooks:
 
         Configure this callback using the `StatusCallback` parameter when
         [sending an outgoing message](/docs/compatibility-api/rest/messages/create-message).
+
+        SignalWire sends the parameters as a form-encoded (`application/x-www-form-urlencoded`) POST body, not as JSON.
+        When the callback method is `GET`, they are sent as query parameters instead.
 
         There are 8 possible message statuses:
 
@@ -13276,7 +13650,7 @@ webhooks:
       requestBody:
         required: true
         content:
-          application/json:
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/SmsStatusCallbackPayload'
       security:
@@ -13295,6 +13669,9 @@ webhooks:
         Your app can use these parameters to handle the transcription — for example, uploading the text to
         your CRM, sending it via email, or forwarding the body via SignalWire SMS.
 
+        SignalWire sends the parameters as a form-encoded (`application/x-www-form-urlencoded`) POST body, not as JSON.
+        When the callback method is `GET`, they are sent as query parameters instead.
+
         Status callbacks are advisory, best-effort notifications — delivery can be delayed or fail silently, so don't gate time-critical actions on receiving one. See [Status callback reliability](/docs/platform/webhooks#status-callback-reliability).
       parameters: []
       responses:
@@ -13305,7 +13682,7 @@ webhooks:
       requestBody:
         required: true
         content:
-          application/json:
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/TranscriptionStatusCallbackPayload'
       security:
@@ -13327,6 +13704,10 @@ webhooks:
         Use `StatusCallbackEvent` to receive every call progress event — not just the final status —
         along with current call state and all parameters below.
 
+        SignalWire sends the parameters as a form-encoded (`application/x-www-form-urlencoded`) POST body, not as JSON.
+        When `StatusCallbackMethod` is `GET`, they are sent as query parameters instead.
+        Callbacks for the same call can arrive out of order. `Timestamp` records when each event occurred.
+
         Status callbacks are advisory, best-effort notifications — delivery can be delayed or fail silently, so don't gate time-critical actions on receiving one. See [Status callback reliability](/docs/platform/webhooks#status-callback-reliability).
       parameters: []
       responses:
@@ -13337,7 +13718,7 @@ webhooks:
       requestBody:
         required: true
         content:
-          application/json:
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/VoiceStatusCallbackPayload'
       security:

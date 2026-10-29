@@ -50,7 +50,7 @@ model CreateCallRequest {
   @example("POST")
   StatusCallbackMethod?: "GET" | "POST" = "POST";
 
-  @doc("The status events that trigger a SignalWire webhook. Valid values: initiated, ringing, answered, completed, ringing_forwarded, ringing_queued. Defaults to `completed`. If `StatusCallbackEvent` includes `completed`, which it does by default, you also receive a callback with `CallStatus` set to `failed` when SignalWire stops the call before dialing it. The [Voice status callback](/docs/compatibility-api/rest/calls/webhooks/voice-status-callback) lists the reasons.")
+  @doc("The status events that trigger a SignalWire webhook. Valid values: initiated, ringing, answered, completed, ringing_forwarded, ringing_queued. Defaults to `completed`. Subscribing to `answered` sends an `answered` callback followed by an `in-progress` callback, timestamped one second later; `in-progress` can't be subscribed to separately. If `StatusCallbackEvent` includes `completed`, which it does by default, you also receive a callback with `CallStatus` set to `failed` when SignalWire stops the call before dialing it. The [Voice status callback](/docs/compatibility-api/rest/calls/webhooks/voice-status-callback) lists the reasons.")
   @example(#["initiated", "ringing", "answered", "completed"])
   StatusCallbackEvent?: string[] = #["completed"];
 

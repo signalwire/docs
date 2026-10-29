@@ -13,9 +13,9 @@ import {
   Select,
   cleanName,
   friendlyLanguage,
+  genderLabel,
   loadBundle,
   modelKeyOf,
-  normalizeGender,
   pageNumbers,
   swmlVoiceString,
   uniq,
@@ -115,6 +115,7 @@ export function VoiceWidget({
   // provider's languages.
   const providers = useMemo(() => uniq(baseRows?.map((r) => r.provider)), [baseRows]);
   const languages = useMemo(() => uniq(baseRows?.flatMap((r) => r.languages)), [baseRows]);
+  const genders = useMemo(() => uniq(baseRows?.map((r) => r._gender)), [baseRows]);
 
   const filtered = useMemo(() => {
     if (!baseRows) return [];
@@ -122,7 +123,7 @@ export function VoiceWidget({
     return baseRows.filter((r) =>
       (provider === ALL || r.provider === provider) &&
       (language === ALL || r.languages.includes(language)) &&
-      (gender === ALL || r.gender === gender) &&
+      (gender === ALL || r._gender === gender) &&
       (!needle || r._search.includes(needle)));
   }, [baseRows, deferredQ, provider, language, gender]);
 
@@ -269,8 +270,7 @@ export function VoiceWidget({
           {showProvider && <Select label="Provider" value={provider} onChange={setProvider} opts={providers} />}
           {showFilter("language") && <Select label="Language" value={language} onChange={setLanguage} opts={languages} />}
           {showFilter("gender") && (
-            <Select label="Gender" value={gender} onChange={setGender}
-                    opts={["male", "female", "neutral", "unknown"]} />
+            <Select label="Gender" value={gender} onChange={setGender} opts={genders} />
           )}
           {showFilter("search") && (
             <input className="vw-search" placeholder="Search voices…" value={q}
@@ -365,7 +365,7 @@ const VoiceRowItem = memo(function VoiceRowItem({ r, playing, onPlay, onCopy }: 
   // Display-time cleanup (originals stay in the catalog, the copy payload, and the title/tooltip).
   const name = cleanName(r.display_name);
   const language = friendlyLanguage(r.primary_language);
-  const gender = normalizeGender(r.gender);
+  const gender = genderLabel(r._gender);
   const model = r.model || null;
   const tipId = `vwr-tip-${r._uid}`;
 
