@@ -16,7 +16,45 @@ Get up and running quickly with our Getting Started guides
 and get registration right the first time with our comprehensive
 [Guide to The Campaign Registry (TCR)][tcr].
 
+{/* The Dashboard phone number search links to this heading's anchor. Don't rename it. */}
+
+## Enable messaging on your number
+
+A US local (10DLC) number you buy can make and receive calls right away, but it can't send or receive text messages until you enable messaging on it. US carriers require business text messages from local numbers to be registered with [The Campaign Registry][tcr], so messaging starts off on new local numbers. It isn't something you did wrong. Pick the path that matches what you need.
+
+### Send messages to anyone: register a campaign
+
+To send messages in production, register with The Campaign Registry. The [Registration guide][tcr-registration] walks through each step:
+
+1. [Create a Brand][tcr-brands] for the business sending the messages.
+2. [Register a Campaign][tcr-campaigns] that describes the messages you'll send.
+3. [Assign your phone numbers to the Campaign][tcr-numbers]. Messaging turns on for each number once its assignment is approved.
+
+### Test messaging first: use the Platform Free Trial
+
+To check that messaging works before you register, use the [Platform Free Trial][pft]. Verify your own mobile number on the [Messaging Campaigns](https://my.signalwire.com?page=registry/brands) page of the Dashboard. If you already have a US local number, you don't need to buy another: SignalWire enables messaging for testing on one of your numbers, usually the one you bought most recently. If you don't have one yet, buy a US local number and SignalWire enables messaging on it.
+
+If your mobile number was verified before you started and messaging still isn't on, remove it from your verified caller IDs and verify it again to start the trial. The [Enabling Platform Free Trial][pft-enable] steps cover each case.
+
+The trial has [restrictions][pft-restrictions]:
+
+- Your trial number can send up to 200 message segments a day.
+- Messages you send through the messaging APIs, or during a call with the SWML `send_sms` method or the cXML `<Sms>` verb, can only go to your verified mobile number.
+- SignalWire adds `[SignalWire Free Trial]` to the start of each message you send through the messaging APIs, or with the SWML `send_sms` method during a call.
+
+The trial is available once per account, and only before your account has any Brand or Campaign. If your trial has ended, you can't restart it. Register a campaign to keep sending messages.
+
+### Toll-free numbers, short codes, and inbound-only numbers
+
+Toll-free numbers don't use The Campaign Registry. They go through [toll-free verification][toll-free] instead. Short codes have their own application process in the Dashboard. To receive messages on a local number without sending any, contact [Support](https://support.signalwire.com/portal) to enable inbound-only messaging.
+
+### If you're still stuck
+
+If sending fails with error [`21717`][error-21717] ("must belong to an active campaign"), the number isn't assigned to an approved Campaign yet. For anything else, contact [Support](https://support.signalwire.com/portal).
+
 ## Try it out
+
+Replace `<YOUR_SPACE>`, `<YOUR_PROJECT_ID>`, and `<YOUR_API_TOKEN>` in the samples with your Space name, Project ID, and API token, which you'll find in [API credentials](/docs/platform/your-signalwire-api-space).
 
 <AccordionGroup>
 <Accordion title="Send an SMS message">
@@ -27,35 +65,78 @@ version: 1.0.0
 sections:
   main:
     - send_sms:
-        from_number: "+155512312345"
+        from_number: "+15551231234"
         to_number: "+15555554321"
         body: "Hello from SignalWire!"
 ```
 </Tab>
-<Tab title="Relay Realtime SDK (Server)">
-```js
-import { SignalWire } from "@signalwire/realtime-api";
+<Tab title="WebSocket (Relay)">
+<CodeBlocks>
+<CodeBlock title="Python — Relay client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as send_sms.py and run: python send_sms.py
+import asyncio
+from signalwire.relay import RelayClient
 
-const client = await SignalWire({ project: "ProjectID Here", token: "Token Here"})
+client = RelayClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    contexts=["default"],
+)
 
-let messageClient = client.messaging;
+async def main():
+    async with client:
+        message = await client.send_message(
+            from_number="+15551231234",
+            to_number="+15555554321",
+            body="Hello from SignalWire!",
+        )
+        await message.wait(timeout=60)
+        print(f"Final state: {message.state}")
 
-const sendResult = await messageClient.send({
-    from: "+155512312345",
-    to: "+15555554321",
-    body: "Hello from SignalWire!"
-});
+asyncio.run(main())
 ```
+</CodeBlock>
+<CodeBlock title="TypeScript — Relay client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as send-sms.mjs,
+// then run: node send-sms.mjs
+import { RelayClient } from "@signalwire/sdk";
+
+const client = new RelayClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  contexts: ["default"],
+});
+
+await client.connect();
+
+try {
+  const message = await client.sendMessage({
+    fromNumber: "+15551231234",
+    toNumber: "+15555554321",
+    body: "Hello from SignalWire!",
+  });
+  await message.wait(60);
+  console.log(`Final state: ${message.state}`);
+} finally {
+  await client.disconnect();
+}
+```
+</CodeBlock>
+</CodeBlocks>
 </Tab>
 <Tab title="REST API">
 ```bash
 curl -L 'https://<YOUR_SPACE>.signalwire.com/api/messaging/messages' \
   -H 'Content-Type: application/json' \
   -H 'Accept: application/json' \
-  -H 'Authorization: Basic <BASE64 ENCODED AUTHENTICATION STRING>' \
+  -u '<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>' \
   -d '{
-    "to": "+155512312345",
-    "from": "+15555554321",
+    "from": "+15551231234",
+    "to": "+15555554321",
     "body": "Hello from SignalWire!"
   }'
 ```
@@ -71,35 +152,78 @@ version: 1.0.0
 sections:
   main:
     - send_sms:
-        from_number: "+155512312345"
+        from_number: "+15551231234"
         to_number: "+15555554321"
         media: ["https://mcdn.signalwire.com/images/v2/loud/LogoLarge.jpg"]
 ```
 </Tab>
-<Tab title="Relay Realtime SDK (Server)">
-```js
-import { SignalWire } from "@signalwire/realtime-api";
+<Tab title="WebSocket (Relay)">
+<CodeBlocks>
+<CodeBlock title="Python — Relay client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as send_mms.py and run: python send_mms.py
+import asyncio
+from signalwire.relay import RelayClient
 
-const client = await SignalWire({ project: "ProjectID Here", token: "Token Here"})
+client = RelayClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    contexts=["default"],
+)
 
-let messageClient = client.messaging;
+async def main():
+    async with client:
+        message = await client.send_message(
+            from_number="+15551231234",
+            to_number="+15555554321",
+            media=["https://mcdn.signalwire.com/images/v2/loud/LogoLarge.jpg"],
+        )
+        await message.wait(timeout=60)
+        print(f"Final state: {message.state}")
 
-const sendResult = await messageClient.send({
-    from: "+155512312345",
-    to: "+15555554321",
-    media: ["https://mcdn.signalwire.com/images/v2/loud/LogoLarge.jpg"]
-});
+asyncio.run(main())
 ```
+</CodeBlock>
+<CodeBlock title="TypeScript — Relay client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as send-mms.mjs,
+// then run: node send-mms.mjs
+import { RelayClient } from "@signalwire/sdk";
+
+const client = new RelayClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  contexts: ["default"],
+});
+
+await client.connect();
+
+try {
+  const message = await client.sendMessage({
+    fromNumber: "+15551231234",
+    toNumber: "+15555554321",
+    media: ["https://mcdn.signalwire.com/images/v2/loud/LogoLarge.jpg"],
+  });
+  await message.wait(60);
+  console.log(`Final state: ${message.state}`);
+} finally {
+  await client.disconnect();
+}
+```
+</CodeBlock>
+</CodeBlocks>
 </Tab>
 <Tab title="REST API">
 ```bash
 curl -L 'https://<YOUR_SPACE>.signalwire.com/api/messaging/messages' \
   -H 'Content-Type: application/json' \
   -H 'Accept: application/json' \
-  -H 'Authorization: Basic <BASE64 ENCODED AUTHENTICATION STRING>' \
+  -u '<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>' \
   -d '{
-    "to": "+155512312345",
-    "from": "+15555554321",
+    "from": "+15551231234",
+    "to": "+15555554321",
     "media": ["https://mcdn.signalwire.com/images/v2/loud/LogoLarge.jpg"]
   }'
 ```
@@ -118,23 +242,59 @@ sections:
         body: "The message %{message.body} has been received!"
 ```
 </Tab>
-<Tab title="Relay Realtime SDK (Server)">
-```js
-import { SignalWire } from "@signalwire/realtime-api";
+<Tab title="WebSocket (Relay)">
 
-const client = await SignalWire({ project: "ProjectID Here", token: "Token Here"})
+The handler receives texts sent to any number whose **Inbound Message Settings** point at a [Relay Application](/docs/platform/glossary#relay-application) with the topic `office`.
 
-await client.messaging.listen({
-  topics: ["office"],
-  async onMessageReceived(message) {
-    client.messaging.send({
-        to: message.from,
-        from: message.to,
-        body: `The message ${message.body} has been received!`
-    })
-  }
-})
+<CodeBlocks>
+<CodeBlock title="Python — Relay client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as reply_sms.py and run: python reply_sms.py
+from signalwire.relay import RelayClient
+
+client = RelayClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    contexts=["office"],
+)
+
+@client.on_message
+async def handle_message(message):
+    await client.send_message(
+        from_number=message.to_number,
+        to_number=message.from_number,
+        body=f"The message {message.body} has been received!",
+    )
+
+client.run()
 ```
+</CodeBlock>
+<CodeBlock title="TypeScript — Relay client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as reply-sms.mjs,
+// then run: node reply-sms.mjs
+import { RelayClient } from "@signalwire/sdk";
+
+const client = new RelayClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  contexts: ["office"],
+});
+
+client.onMessage(async (message) => {
+  await client.sendMessage({
+    fromNumber: message.toNumber,
+    toNumber: message.fromNumber,
+    body: `The message ${message.body} has been received!`,
+  });
+});
+
+await client.run();
+```
+</CodeBlock>
+</CodeBlocks>
 </Tab>
 </Tabs>
 </Accordion>
@@ -152,26 +312,64 @@ sections:
         body: "You received a message from %{message.from} to SignalWire number %{message.to}. The message was: %{message.body}"
 ```
 </Tab>
-<Tab title="Relay Realtime SDK (Server)">
-```js
-import { SignalWire } from "@signalwire/realtime-api";
+<Tab title="WebSocket (Relay)">
 
-const client = await SignalWire({ project: "ProjectID Here", token: "Token Here"})
+The handler receives texts sent to any number whose **Inbound Message Settings** point at a [Relay Application](/docs/platform/glossary#relay-application) with the topic `office`.
 
-await client.messaging.listen({
-  topics: ["office"],
-  async onMessageReceived(message) {
-    client.messaging.send({
-        to: "+1xxxxxxxxxx",
-        from: message.to,
-        body: `
-        You received a message from ${message.from} to SignalWire number ${message.to}.
-        The message was: ${message.body}
-        `
-    })
-  }
-})
+<CodeBlocks>
+<CodeBlock title="Python — Relay client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as forward_sms.py and run: python forward_sms.py
+from signalwire.relay import RelayClient
+
+client = RelayClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    contexts=["office"],
+)
+
+@client.on_message
+async def handle_message(message):
+    await client.send_message(
+        from_number=message.to_number,
+        to_number="+1xxxxxxxxxx",
+        body=(
+            f"You received a message from {message.from_number} to SignalWire number "
+            f"{message.to_number}. The message was: {message.body}"
+        ),
+    )
+
+client.run()
 ```
+</CodeBlock>
+<CodeBlock title="TypeScript — Relay client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as forward-sms.mjs,
+// then run: node forward-sms.mjs
+import { RelayClient } from "@signalwire/sdk";
+
+const client = new RelayClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  contexts: ["office"],
+});
+
+client.onMessage(async (message) => {
+  await client.sendMessage({
+    fromNumber: message.toNumber,
+    toNumber: "+1xxxxxxxxxx",
+    body:
+      `You received a message from ${message.fromNumber} to SignalWire number ` +
+      `${message.toNumber}. The message was: ${message.body}`,
+  });
+});
+
+await client.run();
+```
+</CodeBlock>
+</CodeBlocks>
 </Tab>
 </Tabs>
 </Accordion>
@@ -190,6 +388,13 @@ SignalWire's Messaging APIs are tailored for SMS and MMS over the PSTN. For non-
 
 
 <CardGroup cols={2}>
+  <Card
+    title="Send and receive messages"
+    icon="regular messages"
+    href="/docs/platform/messaging/send-and-receive-messages"
+  >
+    Send SMS and MMS and handle incoming messages with SWML, Relay, or REST.
+  </Card>
   <Card
     title="REST APIs"
     icon="regular rectangle-api"
@@ -221,23 +426,9 @@ SignalWire's Messaging APIs are tailored for SMS and MMS over the PSTN. For non-
 ## Frequently asked questions
 
 <AccordionGroup>
-  <Accordion title="What are the essential steps I need to take to start sending messages?">
+  <Accordion title="Why can't I send or receive messages on my new 10DLC number?">
 
-1. Create a Brand.
-2. Register a Campaign.
-3. Assign phone numbers to the campaign.
-
-Full details are explained in our [Registration](/docs/platform/messaging/campaign-registry/registration) guide.
-
-</Accordion>
-<Accordion title="Why can't I send or receive messages on my new 10DLC number?">
-
-As of December 2025, newly purchased US 10DLC numbers do not have messaging capabilities enabled by default.
-
-**To enable messaging:**
-- **Outbound/mixed use**: Assign your number to an approved [TCR campaign](/docs/platform/messaging/campaign-registry/registration). Messaging is automatically enabled once the number is assigned.
-- **Inbound-only use**: Contact [Support](https://support.signalwire.com/portal) to request inbound messaging enablement.
-- **Testing only**: Your first purchased number is automatically enabled for Platform Free Trial when paired with a verified mobile number.
+New US local (10DLC) numbers don't have messaging enabled. See [Enable messaging on your number](#enable-messaging-on-your-number) for how to turn it on.
 
 </Accordion>
 <Accordion title="What is 10DLC?">
@@ -350,9 +541,7 @@ opted in and therefore should want to receive these messages.
 
 <Accordion title="Can I turn off inbound SMS?">
 
-Not currently. We have no way to turn off inbound SMS at this time. You can leave your numbers
-unset up for messaging and nothing will happen when inbound messages come into the numbers
-though!
+New US local (10DLC) numbers start with messaging off, so they don't receive text messages until messaging is enabled on them. See [Enable messaging on your number](#enable-messaging-on-your-number). Once a number has messaging on, there's no setting to turn off inbound messages on it.
 
 </Accordion>
 
@@ -386,3 +575,12 @@ Visit our [error code explanation page](/docs/compatibility-api/rest/error-codes
 {/* Links */}
 [chat]: /docs/platform/chat
 [tcr]: /docs/platform/messaging/campaign-registry
+[tcr-registration]: /docs/platform/messaging/campaign-registry/registration
+[tcr-brands]: /docs/platform/messaging/campaign-registry/registration#brands
+[tcr-campaigns]: /docs/platform/messaging/campaign-registry/registration#campaigns
+[tcr-numbers]: /docs/platform/messaging/campaign-registry/registration#campaign-phone-numbers
+[pft]: /docs/platform/messaging/platform-free-trial
+[pft-enable]: /docs/platform/messaging/platform-free-trial#enabling-platform-free-trial
+[pft-restrictions]: /docs/platform/messaging/platform-free-trial#trial-restrictions
+[toll-free]: /docs/platform/messaging/toll-free-numbers
+[error-21717]: /docs/compatibility-api/rest/error-codes#21717

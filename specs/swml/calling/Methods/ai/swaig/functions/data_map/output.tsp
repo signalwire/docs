@@ -12,10 +12,11 @@ namespace SWML.Calling;
 //
 // `Output` is the canonical result — the `ai` agent's, which is where SWAIG
 // features land first — and is declared plainly, with no derivation machinery.
-// Surfaces that read less derive from it and own the Pick list that says so;
-// see `BedrockOutput` and `AISidecarOutput`. Picking rather than omitting is
-// deliberate: an allowlist fails closed, so a property added here for `ai`
-// cannot silently appear on a surface that ignores it.
+// Surfaces that read less declare their own model rather than reusing this one:
+// `amazon_bedrock` has `BedrockOutput`. `ai_sidecar` has no `data_map` and no
+// result model; it passes the whole webhook reply to its model and reads only
+// `action`. Keeping them separate means a property added here for `ai` cannot
+// silently appear on a surface that ignores it.
 
 @summary("SWAIG tool result")
 @doc("""
@@ -46,9 +47,10 @@ model SwaigToolResult {
   Every field is optional. An empty object is valid — the agent reads a default result and carries
   on — so a function that only needs to steer the call can set `action` alone.
   
-  [`amazon_bedrock`](/docs/swml/reference/calling/amazon-bedrock) and
-  [`ai_sidecar`](/docs/swml/reference/calling/ai-sidecar) agents read a narrower result: `response`
-  must be a plain string there, and `post_process` has no effect.
+  [`amazon_bedrock`](/docs/swml/reference/calling/amazon-bedrock) agents read a narrower result:
+  `response` must be a plain string there, and `post_process` has no effect.
+  [`ai_sidecar`](/docs/swml/reference/calling/ai-sidecar) agents pass the whole response body to the
+  AI model and act only on `action`.
   """)
 model Output {
   @doc("""

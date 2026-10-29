@@ -8,9 +8,18 @@ max-toc-depth: 3
 ---
 
 [reserved-functions]: #reserved-functions
+[gates]: /docs/swml/reference/calling/ai/swaig/functions/gates
 [post-prompt]: /docs/swml/reference/calling/ai#post_prompt
 
 An array of JSON objects to define functions that can be executed during the interaction with the AI.
+
+Each function needs somewhere to run: a `web_hook_url`, set on the function or inherited from
+[`SWAIG.defaults.web_hook_url`](/docs/swml/reference/calling/ai/swaig#defaultsweb_hook_url), or a `data_map`.
+A function with none of these is not added to the agent.
+
+A function's property names are matched without regard to case, so `Gates` is read as `gates`.
+Write each property once, in the case shown on this page: when a function has the same property in
+two casings, only the first is read, and the other is ignored without a warning.
 
 ## **Properties**
 
@@ -21,7 +30,7 @@ An array of JSON objects to define functions that can be executed during the int
 <Indent>
 
 <ParamField path="functions[].description" type="string" required={true} toc={true}>
-  A description of the context and purpose of the function, to explain to the agent when to use it.
+  A description of the context and purpose of the function, to explain to the agent when to use it. A function with neither `description` nor the deprecated `purpose` isn't added to the agent.
 </ParamField>
 
 
@@ -99,8 +108,30 @@ An array of JSON objects to define functions that can be executed during the int
 </ParamField>
 
 
+<ParamField path="functions[].gates" type="object[]" toc={true}>
+  [Semantic gates][gates]: 1 to 8 yes/no questions about the call that must all pass before the function runs. When any gate fails, the function doesn't run, and the AI gets the first failing gate's `on_fail` response instead. A gated function needs a `description` and a `web_hook_url` (its own or from `SWAIG.defaults`) or a `data_map`. If any gate is invalid, the function isn't added to the agent at all.
+
+  See [`gates`][gates] for additional details.
+</ParamField>
+
+
+<ParamField path="functions[].gate_fillers" type="object" toc={true}>
+  What the agent says while the function's gates are checked, shaped like [`fillers`](#functionsfillers). Ignored on a function without `gates`.
+</ParamField>
+
+
+<ParamField path="functions[].fillers_at_gates" type="boolean" toc={true}>
+  For a gated function without `gate_fillers`, whether its `fillers` play as soon as the AI calls it, during the gate check (`true`), or only after the gates pass (`false`). Set it to `false` when the function's fillers announce the action ("OK, cancelling your account now"), so the caller doesn't hear them before a gate blocks it. When unset, the function inherits [`SWAIG.defaults.fillers_at_gates`](/docs/swml/reference/calling/ai/swaig#defaultsfillers_at_gates), which is `true` unless you change it.
+</ParamField>
+
+
+<ParamField path="functions[].visual_input" type="boolean | integer" toc={true}>
+  How many of the caller's newest video frames your `web_hook_url` receives with the function call, as `visual_input` in the request body: `true` is `1`, a whole number from `0` to `5`, and `false` or `0` is none. On a gated function, the frames are taken when its gates are checked, never later, and a blocked call sends none. Ignored on a `data_map` function.
+</ParamField>
+
+
 <ParamField path="functions[].purpose" type="string" deprecated={true} toc={true}>
-  Deprecated. Use `description` instead.
+  Deprecated. Use `description` instead. When a function sets both, `purpose` is used.
 </ParamField>
 
 
@@ -111,7 +142,7 @@ An array of JSON objects to define functions that can be executed during the int
 
 <ParamField path="functions[].web_hook_auth_pass" type="string" deprecated={true} toc={true}>
   Password for basic auth on this function's webhook. Deprecated — use `web_hook_auth_password` instead.
-  This alias is read on individual functions only. The `ai` SWAIG `defaults` object does not accept it.
+  The alias is used only when `web_hook_auth_password` is not set.
 </ParamField>
 
 
@@ -121,8 +152,8 @@ An array of JSON objects to define functions that can be executed during the int
 
 When the agent calls one of your SWAIG functions, the platform sends an HTTP `POST` to that function's
 `web_hook_url` (or the SWAIG `defaults.web_hook_url`). Your endpoint runs the function and returns a JSON
-object with a `response` string (the result the AI reads next) and, optionally, an `action` — a single
-object or an array — telling the agent what to do.
+object with a `response` (the result the AI reads next) and, optionally, an `action` — a single
+object or an array — telling the agent what to do. Every field is optional.
 
 ### Request
 
@@ -138,8 +169,8 @@ See the [AI SWAIG tool webhook](/docs/apis/rest/webhooks/ai-swaig-tool-webhook) 
 
 ### Reply
 
-Return a JSON object with a `response` key and an optional `action` key. The `response` is the text
-the AI reads next, and `action` carries SWML-compatible objects that change what the call does next.
+Return a JSON object with an optional `response` and an optional `action`. The `response` is the result
+the AI reads next, and `action` carries objects that change what the call does next.
 
 <Markdown src="/snippets/swml/_swaig-response-fields.mdx" />
 
@@ -181,8 +212,8 @@ the AI reads next, and `action` carries SWML-compatible objects that change what
 
 ## **Variables**
 
-- **ai_result:** (out) `success` | `failed`
-- **return_value:** (out) `success` | `failed`
+SWAIG functions don't set SWML variables of their own. The `ai` method sets
+[`ai_result`](/docs/swml/reference/calling/ai#variables) when the agent ends.
 
 ## **Reserved Functions**
 
@@ -197,13 +228,13 @@ Otherwise, your function may not work as expected.
 
 ### List of Reserved Functions
 
-<ParamField path="start_hook" type="function" toc={true}>
-  Triggered when the call is answered. Sends the set properties of the function to the defined `web_hook_url`.
+<ParamField path="startup_hook" type="function" toc={true}>
+  Runs when the conversation starts. Sends the set properties of the function to the defined `web_hook_url`.
 </ParamField>
 
 
-<ParamField path="stop_hook" type="function" toc={true}>
-  Triggered when the call is ended. Sends the set properties of the function to the defined `web_hook_url`.
+<ParamField path="hangup_hook" type="function" toc={true}>
+  Runs when the conversation ends. Sends the set properties of the function to the defined `web_hook_url`.
 </ParamField>
 
 
@@ -230,8 +261,8 @@ sequenceDiagram
 
     %% Call starts
     SW System->>AI: Event: Call answered
-    AI->>SWAIG: Trigger reserved function start_hook
-    SWAIG->>AI: start_hook response
+    AI->>SWAIG: Trigger reserved function startup_hook
+    SWAIG->>AI: startup_hook response
 
     %% User asks a simple question (no function needed)
     User->>AI: "Hello, who am I speaking with?"
@@ -247,8 +278,8 @@ sequenceDiagram
 
     %% Call ends
     SW System->>AI: Event: Call ended
-    AI->>SWAIG: Trigger reserved function stop_hook
-    SWAIG->>AI: stop_hook response
+    AI->>SWAIG: Trigger reserved function hangup_hook
+    SWAIG->>AI: hangup_hook response
 
     %% Conversation ends (post_prompt defined)
     SW System->>AI: Event: Conversation ended

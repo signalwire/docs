@@ -49,7 +49,7 @@ model CXMLWebhookPaginationResponse {
 
   @doc("Link to the next page")
   @example("https://example.signalwire.com/api/fabric/resources/cxml_webhooks?page_number=1&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca&type=cxml_webhook")
-  next: url;
+  next?: url;
 
   @doc("Link to the previous page")
   @example("https://example.signalwire.com/api/fabric/resources/cxml_webhooks?page_number=0&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca&type=cxml_webhook")

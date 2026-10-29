@@ -10,8 +10,9 @@ max-toc-depth: 3
 Reference for the error codes that SWML reports when a document fails to fetch, parse, or run.
 Calling and messaging SWML use different code namespaces:
 
-- **Calling errors** start with `relay_script_*` and surface on the call session as the
-  `script_error` variable and as `calling.script.warning` events.
+- **Calling errors** start with `relay_script_*` and fire `calling.script.warning` events on the
+  call session. Each one also sets the `script_error` variable, except
+  `relay_script_voice_unresolved`.
 - **Messaging errors** include the `swml_*` codes for messaging-specific failures plus a handful of
   document-level codes. They appear on the inbound message in the
   [Messaging logs](/docs/apis/rest/message-logs/list-message-logs) and on any status callbacks you've
@@ -21,8 +22,14 @@ Calling and messaging SWML use different code namespaces:
 
 Errors raised while executing a calling SWML document. Each error is reported with a contextual
 message describing the offending method, parameter, or condition. You can read the code from the
-`script_error` variable on the call session or from the payload of the `calling.script.warning`
-event.
+payload of the `calling.script.warning` event, or from the `script_error` variable on the call
+session. `relay_script_voice_unresolved` is the one code that doesn't set `script_error`.
+
+For the `ai` method, these codes cover an invalid `ai` block and a voice that can't be resolved.
+A [SWAIG function](/docs/swml/reference/calling/ai/swaig) that fails during the call and a
+text-to-speech error mid-call don't produce a code here; trace those with the
+[post-prompt report](/docs/swml/reference/calling/ai#post_prompt_url-callback) and the
+[debug webhook](/docs/swml/reference/calling/ai/params#debug_webhook_url-callback).
 
 <ParamField path="relay_script_parse_error" type="string" toc={true}>
   The fetched document could not be parsed as valid JSON or YAML, or the `dest` URL of a `transfer`
@@ -108,12 +115,24 @@ event.
   cause.
 </ParamField>
 
+<ParamField path="relay_script_voice_unresolved" type="string" toc={true}>
+  The requested text-to-speech voice could not be resolved, so another voice is substituted and the
+  document keeps running. Reported as a `calling.script.warning` event, once per call for each voice.
+  A voice named literally in a `play` or `prompt` is reported as the document loads; any other voice
+  is reported when the method that uses it finishes, naming the substitute. If the substitute voice
+  also fails on `ai`, the AI session ends and the warning names no substitute. For the voice string
+  format, see [`ai.languages`](/docs/swml/reference/calling/ai/languages#use-voice-strings) and
+  [Voices and languages](/docs/platform/voice/tts).
+</ParamField>
+
 <ParamField path="relay_script_js_eval_error" type="string" toc={true}>
   A JavaScript expression in a `cond`, `switch`, `eval`, or `when` clause raised an error.
 </ParamField>
 
 <ParamField path="relay_script_nested_too_deep" type="string" toc={true}>
-  A document or one of its sections is nested beyond the maximum depth.
+  A document or one of its sections is nested beyond the maximum depth, or a value is nested too
+  deeply to use: the `params` of an `execute` or `transfer`, or a value stored by `set`, `return`, or
+  `request` with `save_variables`.
 </ParamField>
 
 <ParamField path="relay_script_too_many_transfers" type="string" toc={true}>
@@ -222,7 +241,15 @@ inbound message is marked `failed` with the listed `error_code` and a correspond
 ### `execute` method
 
 <ParamField path="swml_section_not_found" type="string" toc={true}>
-  The section named by `execute.dest` is not defined in the current document.
+  The section named by `execute.dest` or `transfer.dest` is not defined in the current document.
+</ParamField>
+
+<ParamField path="swml_execute_fetch_failed" type="string" toc={true}>
+  Failed to fetch the executed SWML document from the destination URL.
+</ParamField>
+
+<ParamField path="swml_execute_document_invalid" type="string" toc={true}>
+  The executed SWML document, fetched from a URL or given inline, is not a valid messaging document.
 </ParamField>
 
 ### `transfer` method

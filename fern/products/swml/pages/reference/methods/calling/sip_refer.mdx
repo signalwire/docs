@@ -8,7 +8,7 @@ max-toc-depth: 3
 
 [statuscallbacks]: #statuscallbacks
 
-Send SIP REFER to a SIP call.
+Send SIP REFER to a SIP call. The [SIP REFER guide](/docs/platform/voice/sip-refer) explains what the far-end device must support and when to use a bridged transfer instead.
 
 ## **Properties**
 
@@ -18,8 +18,13 @@ Send SIP REFER to a SIP call.
 
 <Indent>
 
-<ParamField path="sip_refer.to_uri" type="string" required={true} toc={true}>
-  SIP URI to REFER to.
+<ParamField path="sip_refer.to_uri" type="string" toc={true}>
+  SIP URI to REFER to. At least one of `to_uri` or `to` is required. When both are set, `to_uri` takes precedence unless it is empty after variable expansion.
+</ParamField>
+
+
+<ParamField path="sip_refer.to" type="string" toc={true}>
+  Alias for `to_uri`. Used as the SIP URI to REFER to when `to_uri` is not set or is empty after variable expansion.
 </ParamField>
 
 
@@ -45,8 +50,7 @@ Send SIP REFER to a SIP call.
 Set by the method:
 
 - **sip_refer_to:** (out) The SIP URI the recipient is to INVITE.
-- **sip_refer_result:** (out) Overall SIP REFER result.
-- **return_value:** (out) Same value as `sip_refer_result`.
+- **sip_refer_result:** (out) Final SIP REFER result: `success`, `cancel`, `noAnswer`, `busy`, or `error`. Set to `error` when the REFER could not be executed. A `success` result doesn't by itself confirm that the refer target answered.
 - **sip_refer_response_code:** (out) Recipient response to the REFER request.
 - **sip_refer_to_response_code:** (out) INVITE response to the recipient.
 
@@ -54,10 +58,10 @@ Set by the method:
 
 <Markdown src="/snippets/common/_status-callback-advisory.mdx" />
 
-A POST request will be sent to `status_url` with a JSON payload like the following:
+A POST request will be sent to `status_url` with a JSON payload like the following, for a `calling.call.refer` event:
 
 <ParamField path="event_type" type="string" toc={true}>
-  The type of event. Always `calling.call.refer` for this method.
+  The type of event. `calling.call.refer` for the SIP REFER status events described here. When the REFER can't be executed, an error event with event type `calling.error` may be sent instead; see [error events](#error-events).
 </ParamField>
 
 
@@ -103,7 +107,7 @@ A POST request will be sent to `status_url` with a JSON payload like the followi
 
 
 <ParamField path="params.state" type="string" toc={true}>
-  The overall result of the SIP REFER operation (e.g., `success`).
+  The state of the SIP REFER operation. When the recipient accepts the REFER request, an intermediate event with state `inProgress` may be sent. The final event carries one of `success`, `cancel`, `noAnswer`, `busy`, or `error`. A `success` state doesn't by itself confirm that the refer target answered.
 </ParamField>
 
 
@@ -147,6 +151,21 @@ A POST request will be sent to `status_url` with a JSON payload like the followi
   }
 }
 ```
+
+### Error events
+
+When the REFER can't be executed, for example because the call isn't a SIP call, SignalWire may send an event with `event_type` set to `calling.error` to `status_url` instead of a `calling.call.refer` event. Its `params` object doesn't contain the SIP REFER fields above. It carries the call identifiers and an `error` object:
+
+<ParamField path="params.error.code" type="string" toc={true}>
+  The error code (for example, `"409"`).
+</ParamField>
+
+
+<ParamField path="params.error.message" type="string" toc={true}>
+  A description of the error.
+</ParamField>
+
+Check `event_type` before reading the rest of the payload. Not every failure produces an error event.
 
 ---
 

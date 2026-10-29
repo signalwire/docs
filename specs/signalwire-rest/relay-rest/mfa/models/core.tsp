@@ -73,3 +73,14 @@ model MfaVerifyResponse {
   @example(true)
   success: boolean;
 }
+
+@doc("The token is missing or does not match the MFA request. The request's attempt count still increases.")
+@error
+model MfaVerifyFailedError {
+  @statusCode statusCode: 401;
+  @header contentType: "application/json";
+  @body body: {
+    @doc("Always `false` for a token that was not verified.")
+    success: false;
+  };
+}

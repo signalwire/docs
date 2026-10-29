@@ -47,10 +47,21 @@ model PhoneNumberCnamResponse {
   ...PhoneNumberCnam;
 }
 
+@doc("Links object returned with phone number search results. Always empty, because search results aren't paginated.")
+model AvailablePhoneNumbersLinks {}
+
 @doc("Response containing available phone numbers for purchase.")
 model AvailablePhoneNumbersResponse {
-  @doc("Pagination links.")
-  links?: PaginationLinks;
+  @doc("Always an empty object. Search results aren't paginated, so there are no `next` or `prev` links.")
+  links: AvailablePhoneNumbersLinks;
+
+  @doc("The search filters that were applied, keyed by query parameter name. Always includes `max_results`; other filters appear only when you set them.")
+  @example(#{ max_results: 1, areacode: "918" })
+  filters: Record<string | int32>;
+
+  @doc("The names of any query parameters in the request that this operation doesn't recognize and ignored.")
+  @example(#[])
+  ignored_parameters: string[];
 
   @doc("List of available phone numbers.")
   data?: AvailablePhoneNumber[];

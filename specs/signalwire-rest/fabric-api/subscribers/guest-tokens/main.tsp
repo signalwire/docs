@@ -28,7 +28,7 @@ namespace SignalWireAPI.Fabric.SubscriberGuestTokens {
     @post
     create(...SubscriberGuestTokenCreateRequest):
       | {
-          @statusCode statusCode: 201;
+          @statusCode statusCode: 200;
           @body subscriber_guest_token: SubscriberGuestTokenCreateResponse;
         }
       | StatusCode401

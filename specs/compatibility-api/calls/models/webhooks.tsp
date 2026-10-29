@@ -13,66 +13,94 @@ model VoiceStatusCallbackPayload {
   ApiVersion: string;
 
   @doc("The average time between packets for the inbound stream.")
-  @example(20)
-  AudioInAveragePtime: int32;
+  @example(20.03)
+  AudioInAveragePtime?: float64;
 
   @doc("The number of DTMF packets in the inbound media stream.")
   @example(0)
-  AudioInDtmfPacketCount: int32;
+  AudioInDtmfPacketCount?: int32;
 
   @doc("""
     The number of incoming packets removed from the jitter buffer due to buffer overflow or underflow,
     causing these packets to be discarded or lost.
     """)
   @example(2)
-  AudioInFlushPacketCount: int32;
+  AudioInFlushPacketCount?: int32;
 
-  @doc("The maximum variance of jitter for incoming audio RTP packets.")
-  @example(8)
-  AudioInJitterMaxVariance: int32;
+  @doc("The largest variance measured in the time between incoming audio packets, in milliseconds squared.")
+  @example(1.08)
+  AudioInJitterMaxVariance?: float64;
 
-  @doc("The minimum variance of jitter for incoming audio RTP packets.")
-  @example(1)
-  AudioInJitterMinVariance: int32;
+  @doc("The smallest variance measured in the time between incoming audio packets, in milliseconds squared.")
+  @example(0.55)
+  AudioInJitterMinVariance?: float64;
 
   @doc("The largest jitter buffer size recorded for incoming audio RTP packets during the session.")
   @example(4)
-  AudioInLargestJbSize: int32;
+  AudioInLargestJbSize?: int32;
 
-  @doc("A mean opinion score on a scale of 1–5 that helps determine audio quality.")
-  @example("4.3")
-  AudioInMos: string;
+  @doc("""
+    The estimated Mean Opinion Score (MOS) for inbound audio quality, based on the share of incoming audio packets that arrived without loss or delay.
+    It ranges from about 1 to 4.5, the score for a call with no lost or late packets.
+    Sent with up to two decimal places, such as `4.37`. A whole-number score is sent with one decimal place, such as `4.0`.
+    """)
+  @example(4.37)
+  AudioInMos?: float64;
 
   @doc("The number of audio packets received in the inbound media stream.")
   @example(1842)
-  AudioInMediaPacketCount: int32;
+  AudioInMediaPacketCount?: int32;
 
   @doc("""
     Increased with every packet not received at a given ptime.
     Increases with every lost packet from the inbound stream.
     """)
   @example(1)
-  AudioInSkipPacketCount: int32;
+  AudioInSkipPacketCount?: int32;
 
   @doc("The total number of DTMF packets generated in the outbound media stream.")
   @example(0)
-  AudioOutDtmfPacketCount: int32;
+  AudioOutDtmfPacketCount?: int32;
+
+  @doc("The average jitter, in milliseconds, of the outgoing audio stream.")
+  @example(10.2)
+  AudioOutJitterAvg?: float64;
+
+  @doc("The maximum jitter, in milliseconds, of the outgoing audio stream.")
+  @example(15.3)
+  AudioOutJitterMax?: float64;
+
+  @doc("The minimum jitter, in milliseconds, of the outgoing audio stream.")
+  @example(5.1)
+  AudioOutJitterMin?: float64;
+
+  @doc("The number of outgoing audio RTP packets reported lost.")
+  @example(0)
+  AudioOutLost?: int32;
 
   @doc("The number of audio packets sent in the outbound media stream.")
   @example(1840)
-  AudioOutMediaPacketCount: int32;
+  AudioOutMediaPacketCount?: int32;
+
+  @doc("The average audio round-trip time, in milliseconds, measured to the nearest 10 milliseconds.")
+  @example(50)
+  AudioRttAvg?: float64;
+
+  @doc("The maximum audio round-trip time, in milliseconds, measured to the nearest 10 milliseconds.")
+  @example(120)
+  AudioRttMax?: float64;
+
+  @doc("The minimum audio round-trip time, in milliseconds, measured to the nearest 10 milliseconds.")
+  @example(30)
+  AudioRttMin?: float64;
 
   @doc("The source of the status callback.")
   @example("call-progress-events")
   CallbackSource: string;
 
-  @doc("The duration, in seconds, of the finished call. Only present on the `completed` event.")
+  @doc("The duration, in seconds, of the finished call, from when the call started ringing to when it ended, rounded up to the next whole second. Because it includes ringing time, it's longer than the time the call was connected and usually longer than a recording of the call. Only present on the `completed` event.")
   @example(94)
   CallDuration?: int32;
-
-  @doc("The name of the caller. Only available if Caller ID lookup is enabled.")
-  @example("Jane Smith")
-  CallerName?: string;
 
   @doc("A unique identifier for the call.")
   @example("b3877c40-da60-4998-90ad-b792e98472ca")
@@ -85,16 +113,17 @@ model VoiceStatusCallbackPayload {
     |--------|-------------|
     | `initiated` | The initial dial has begun. |
     | `ringing` | The call is ringing. |
+    | `answered` | The call was answered. Sent only when `StatusCallbackEvent` includes `answered`, and followed by an `in-progress` callback. |
     | `in-progress` | The call was answered and is in progress. |
     | `queued` | The call is ready and in line to initiate. |
-    | `failed` | The call could not be completed. Usually occurs when the phone number does not exist. |
+    | `failed` | The call could not be completed. Usually occurs when the phone number does not exist. SignalWire also stops a call created through the REST API before dialing it when its caller ID is on the Do Not Originate registry, a spam rule blocks it, it exceeds the outbound call rate limit (`ErrorCode` `20429`), no endpoint is registered to receive it, or a temporary platform error interrupts it. Retrying usually succeeds after a temporary error. |
     | `busy` | The caller encountered a busy signal. |
     | `no-answer` | The call ended without an answer. |
     | `completed` | The call was answered and ended normally. |
     | `canceled` | The REST API canceled the call while it was ringing or queued. |
     """)
   @example("completed")
-  CallStatus: "initiated" | "ringing" | "in-progress" | "queued" | "failed" | "busy" | "no-answer" | "completed" | "canceled";
+  CallStatus: "initiated" | "ringing" | "answered" | "in-progress" | "queued" | "failed" | "busy" | "no-answer" | "completed" | "canceled";
 
   @doc("""
     The direction of the call.
@@ -105,36 +134,37 @@ model VoiceStatusCallbackPayload {
   @example("outbound-api")
   Direction: "outbound-dial" | "outbound-api" | "inbound";
 
-  @doc("The number this call was forwarded from.")
-  @example("+15550001111")
-  ForwardedFrom?: string;
+  @doc("The code for why the call failed, when SignalWire has one. `20429` means the call exceeded the outbound call rate limit. See [Error codes](/docs/compatibility-api/rest/error-codes#20429).")
+  @example("20429")
+  ErrorCode?: string;
+
+  @doc("The description of `ErrorCode`.")
+  @example("Your call was temporarily rate limited due to recent activity. Please reduce your call attempt rate, or contact Support to raise the limits on your account.")
+  ErrorMessage?: string;
 
   @doc("The phone number that sent this call, in E.164 format.")
   @example("+15551234567")
   From: string;
 
+  @doc("The `From` or `To` value of the party that ended the call, as indicated by `HangupDirection`. Present once the call has ended.")
+  @example("+15559876543")
+  HangupBy?: string;
+
+  @doc("""
+    Which side ended the call. Present once the call has ended.
+    - `inbound`: the remote party hung up, so `HangupBy` is `From` on an inbound call and `To` on an outbound call.
+    - `outbound`: the call was ended from the SignalWire side, so `HangupBy` is `To` on an inbound call and `From` on an outbound call.
+    """)
+  @example("inbound")
+  HangupDirection?: string;
+
   @doc("A unique identifier for the call that created this call.")
   @example("b3877c40-da60-4998-90ad-b792e98472pa")
   ParentCallSid?: string;
 
-  @doc("The duration, in seconds, of the recording.")
-  @example(94)
-  RecordingDuration?: int32;
-
-  @doc("The unique identifier for the audio recording.")
-  @example("b3877c40-da60-4998-90ad-b792e984re01")
-  RecordingSid?: string;
-
-  @doc("The URL of the recorded audio call.")
-  @example("https://example.signalwire.com/api/laml/2010-04-01/Accounts/b3877c40-da60-4998-90ad-b792e98472af/Recordings/b3877c40-da60-4998-90ad-b792e984re01")
-  RecordingUrl?: string;
-
-  @doc("""
-    The order in which events occur, starting at 0.
-    Although events are fired in order, they each take time and may not appear in the order you expect.
-    """)
-  @example(4)
-  SequenceNumber: int32;
+  @doc("The SIP `Call-ID` of the call.")
+  @example("f8acbf3b-6d1a-4c55-9f0e-2a7d3c1b9e40")
+  SipCallId?: string;
 
   @doc("A textual description of the result of the SIP INVITE request, indicating success or failure with additional details.")
   @example("OK")
@@ -158,36 +188,80 @@ model RecordingStatusCallbackPayload {
   @example("b3877c40-da60-4998-90ad-b792e98472af")
   AccountSid: string;
 
-  @doc("A unique identifier for the call. May be used to later retrieve this call from the REST API.")
+  @doc("""
+    A unique identifier for the recorded call. May be used to later retrieve this call from the REST API.
+    Present for call recordings; conference recordings send `ConferenceSid` instead.
+    """)
   @example("b3877c40-da60-4998-90ad-b792e98472ca")
-  CallSid: string;
+  CallSid?: string;
+
+  @doc("""
+    A unique identifier for the recorded conference.
+    Present for conference recordings; call recordings send `CallSid` instead.
+    """)
+  @example("b3877c40-da60-4998-90ad-b792e984cf01")
+  ConferenceSid?: string;
 
   @doc("The unique identifier for the recording.")
   @example("b3877c40-da60-4998-90ad-b792e984re01")
   RecordingSid: string;
 
-  @doc("The URL for the audio recording.")
+  @doc("""
+    The URL for the audio recording.
+    For call recordings on accounts created before February 15, 2020, this is a path relative to your Space URL rather than a full URL.
+    """)
   @example("https://example.signalwire.com/api/laml/2010-04-01/Accounts/b3877c40-da60-4998-90ad-b792e98472af/Recordings/b3877c40-da60-4998-90ad-b792e984re01")
   RecordingUrl: string;
 
   @doc("""
     The status of the recording.
     - `in-progress`: Recording has begun.
+    - `paused`: Recording was paused. Call recordings only.
+    - `resumed`: Recording resumed after a pause. Call recordings only.
     - `completed`: File is available.
     - `absent`: Recording was too short or no audio was detected.
     """)
   @example("completed")
-  RecordingStatus: "in-progress" | "completed" | "absent";
+  RecordingStatus: "in-progress" | "paused" | "resumed" | "completed" | "absent";
 
-  @doc("The duration, in seconds, of the recording.")
+  @doc("The duration, in seconds, of the recording. Only present when `RecordingStatus` is `completed`.")
   @example(94)
-  RecordingDuration: int32;
+  RecordingDuration?: int32;
 
   @doc("The number of channels in the recording.")
   @example(1)
   RecordingChannels: int32;
 
-  @doc("The type of call that initiated the recording.")
+  @doc("""
+    What started the recording.
+    - `RecordVerb`: the `<Record>` verb.
+    - `DialVerb`: the `record` attribute of `<Dial>`, including a `<Dial>` to a `<Conference>`.
+    - `Queue`: the `record` attribute of a `<Dial>` to a `<Queue>`.
+    - `StartCallRecordingAPI`: a request to the REST API to start a call recording.
+    - `Conference`: a conference recording.
+
+    The parameter is always sent. Its value is empty for a recording started by `Record=true` when creating a call through the REST API.
+    """)
   @example("RecordVerb")
-  RecordingSource: string;
+  RecordingSource: "RecordVerb" | "DialVerb" | "Queue" | "StartCallRecordingAPI" | "Conference" | "";
+
+  @doc("""
+    Which audio track was recorded.
+    - `inbound`: audio received by SignalWire.
+    - `outbound`: audio sent by SignalWire.
+    - `both`: both tracks.
+    """)
+  @example("both")
+  RecordingTrack: "inbound" | "outbound" | "both";
+
+  @doc("The timestamp, in RFC 2822 format, of when the recording started.")
+  @example("Thu, 04 Apr 2024 18:32:15 +0000")
+  RecordingStartTime: string;
+
+  @doc("""
+    Whether leading and trailing silence was trimmed from the recording: `trim-silence` or `do-not-trim`.
+    The parameter is always sent. Its value is empty when the recording has no trim setting, as for a conference recording.
+    """)
+  @example("trim-silence")
+  Trim: string;
 }

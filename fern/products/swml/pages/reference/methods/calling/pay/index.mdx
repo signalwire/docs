@@ -11,8 +11,8 @@ max-toc-depth: 3
 
 Enable secure payment processing during voice calls. 
 When implemented in your voice application, it manages the entire payment flow — 
-collecting card details from the caller via DTMF, then POSTing them to a `payment_connector_url` you host. 
-Your server is responsible for charging the card through your payment processor (Stripe, Braintree, etc.) and returning the result to SignalWire.
+collecting card details (or bank account details, with `payment_method: ach-debit`) from the caller via DTMF, then POSTing them to a `payment_connector_url` you host. 
+Your server is responsible for charging the payment method through your payment processor (Stripe, Braintree, etc.) and returning the result to SignalWire.
 
 ## **Transaction Types**
 
@@ -58,6 +58,7 @@ Setting any positive value for `charge_amount` initiates a charge transaction.
 
 Tokenization allows you to securely store payment information for future use. Instead of processing a payment immediately, it generates a secure token that represents the payment method.
 To initiate a tokenization transaction, either pass `charge_amount` as `0` or omit the `charge_amount` attribute entirely.
+Your payment connector returns the stored payment method's identifier as `token_id`. See [Response format](#response-format).
 
 <Note>
 The token is provided and stored by your payment processor and can be used for future transactions without requiring customers
@@ -103,12 +104,12 @@ sections:
 <Indent>
 
 <ParamField path="pay.payment_connector_url" type="string" required={true} toc={true}>
-  The URL to make `POST` requests with all the gathered payment details. This URL processes the final payment transaction and returns the results in the response. See [`payment_connector_url` details](#payment_connector_url) below.
+  The URL to make `POST` requests with all the gathered payment details. Must be an HTTPS URL, or a [SWML variable](/docs/swml/reference/variables) that resolves to one. This URL processes the final payment transaction and returns the results in the response. See [`payment_connector_url` details](#payment_connector_url) below.
 </ParamField>
 
 
-<ParamField path="pay.charge_amount" type="string" toc={true}>
-  The amount to charge against payment method passed in the request. `Float` value with no currency prefix passed as string.
+<ParamField path="pay.charge_amount" type="string" default="0.00" toc={true}>
+  The amount to charge against payment method passed in the request. `Float` value with no currency prefix passed as string. When omitted, `0.00` is sent to your payment connector.
 </ParamField>
 
 
@@ -135,7 +136,10 @@ sections:
 
 
 <ParamField path="pay.max_attempts" type="integer" default="1" toc={true}>
-  Number of times the `pay` method will retry to collect payment details.
+  Number of attempts the caller gets to enter each payment detail, such as the card number or expiration date.
+  Each detail is counted separately.
+  Set a value from `1` to `3`. Values outside that range are ignored, and the default `1` is used instead.
+  With the default `1`, the caller gets no retry after a failed entry.
 </ParamField>
 
 
@@ -147,28 +151,47 @@ sections:
 <ParamField path="pay.parameters" type="object[]" toc={true}>
   Array of parameter objects to pass to your payment processor.
   Enables you to pass custom parameters or include additional payment details not covered by the standard `pay` attributes.
+  See the [payment connector request body](#request-body) for how they're sent.
 </ParamField>
 
 <Indent>
 
 <ParamField path="parameters[].name" type="string" required={true} toc={true}>
-  The identifier for your custom parameter. This will be the key in the `parameters` object.
+  The identifier for your custom parameter. In the [`payment_connector_url` request](#request-body), each parameter becomes a single-key object with this name as its key.
 </ParamField>
 
 <ParamField path="parameters[].value" type="string" required={true} toc={true}>
-  The value associated with the parameter. This will be the value in the `parameters` object.
+  The value associated with the parameter. In the [`payment_connector_url` request](#request-body), this is the value of the parameter's single-key object.
 </ParamField>
 
 </Indent>
 
 
-<ParamField path="pay.payment_method" type="string" toc={true}>
-  Indicates the payment method which is going to be used in this payment request. Currently only `credit-card` is supported.
+<ParamField path="pay.payment_method" type="string" default="credit-card" toc={true}>
+  The payment method to collect from the caller. Allowed values:
+
+  - `credit-card` - Collect a card number, expiration date, and (by default) security code and postal code.
+  - `ach-debit` - Collect a bank routing number and bank account number.
+
+  Whether your payment processor accepts a given method is up to your payment connector.
 </ParamField>
 
 
-<ParamField path="pay.postal_code" type="boolean|string" default="true" toc={true}>
-  Takes true, false or real postcode (if it's known beforehand) to let pay method know whether to prompt for postal code.
+<ParamField path="pay.bank_account_type" type="string" default="consumer-checking" toc={true}>
+  The bank account type sent to your payment connector. Applies when `payment_method` is `ach-debit`.
+  Allowed values: `consumer-checking`, `consumer-savings`, `commercial-checking`.
+</ParamField>
+
+
+<ParamField path="pay.postal_code" type="string" default="true" toc={true}>
+  Whether to prompt for the postal code, or the postal code itself. Applies to card payments.
+  Pass a quoted string, such as `"true"`: an unquoted YAML or JSON boolean is rejected.
+
+  - The values that turn `security_code` on, such as `"true"`, prompt the caller.
+  - `"false"`, `"f"`, `"no"`, `"off"`, `"disabled"`, `"inactive"`, and `"disallow"` (in any case), and numbers equal to zero, such as `"0"`, skip the prompt.
+  - Any other value, such as `"K1A 0B1"`, is taken as the postal code: the caller isn't prompted, and that value is sent to your payment connector.
+
+  A postal code made only of digits is read as a number, so `"94107"` prompts the caller as `"true"` does, and the value isn't sent.
 </ParamField>
 
 
@@ -187,14 +210,18 @@ sections:
   - `expiration-date` - Collect the expiration date. Default: *"Please enter your credit card's expiration date. 2 digits for the month and 2 digits for the year"*
   - `security-code` - Collect the security code. Default: *"Please enter your credit card's security code. It's the 3 digits located on the back of your card"*
   - `postal-code` - Collect the postal code. Default: *"Please enter your billing postal code"*
+  - `bank-routing-number` - Collect the bank routing number. Default: *"Please enter your bank routing number. It's the 9 digits at the bottom left of your check"*
+  - `bank-account-number` - Collect the bank account number. Default: *"Please enter your bank account number, then press pound"*
   - `payment-processing` - Played during payment processing. Default: *"Payment processing. Please wait"*
-  - `payment-completed` - Played when payment succeeds. Default: *"Payment completed. Thank you"*
-  - `payment-failed` - Played when payment fails. Default: *"Payment failed"*
+  - `payment-completed` - Played when your payment connector responds with HTTP `200`. Check `pay_result` for the final outcome. Default: *"Payment completed. Thank you"*
+  - `payment-failed` - Played when collecting payment details fails, or when your payment connector responds with a status other than `200`. Default: *"Payment failed"*
   - `payment-canceled` - Played when payment is cancelled. Default: *"Payment canceled"*
 </ParamField>
 
-<ParamField path="prompts[].actions" type="object[]" required={true} toc={true}>
+<ParamField path="prompts[].actions" type="object[]" toc={true}>
   Array of action objects to execute for this prompt. Each action can either play an audio file or speak a phrase using text-to-speech.
+  Ignored when `play` is set.
+  A prompt with neither `play` nor a non-empty `actions` array doesn't replace the default prompt.
 </ParamField>
 
 <Indent>
@@ -209,13 +236,66 @@ sections:
 
 </Indent>
 
-<ParamField path="prompts[].attempts" type="string" toc={true}>
-  Which payment attempt(s) this prompt applies to. The value increments when a payment fails. Use a single number (e.g., `"1"`) or space-separated numbers (e.g., `"2 3"`) to target specific attempts.
+<ParamField path="prompts[].play" type="object[]" toc={true}>
+  Array of media items to play for this prompt: audio files, text-to-speech, silence, or ringtones.
+  When `play` is present, even as an empty array, it takes precedence and `actions` is ignored.
+</ParamField>
+
+<Indent>
+
+<ParamField path="play[].type" type="string" required={true} toc={true}>
+  The type of media to play. Allowed values: `audio`, `tts`, `silence`, `ringtone`.
+</ParamField>
+
+<ParamField path="play[].params" type="object" required={true} toc={true}>
+  Parameters for the media item. Which properties apply depends on `type`.
+</ParamField>
+
+<Indent>
+
+<ParamField path="params.url" type="string" toc={true}>
+  Required when `type` is `audio`. HTTP or HTTPS URL of the audio file to play.
+</ParamField>
+
+<ParamField path="params.text" type="string" toc={true}>
+  Required when `type` is `tts`. The text to speak.
+</ParamField>
+
+<ParamField path="params.language" type="string" toc={true}>
+  Used when `type` is `tts`. Language code for the speech, such as `en-US`. Falls back to the `pay` method's `language`.
+</ParamField>
+
+<ParamField path="params.gender" type="string" toc={true}>
+  Used when `type` is `tts`. Voice gender, used when no voice is set here or on the `pay` method. Allowed values: `male`, `female`. Defaults to `female`.
+</ParamField>
+
+<ParamField path="params.voice" type="string" toc={true}>
+  Used when `type` is `tts`. Text-to-speech voice. Falls back to the `pay` method's voice.
+</ParamField>
+
+<ParamField path="params.duration" type="number" toc={true}>
+  Required when `type` is `silence`, optional when `type` is `ringtone`. Duration in seconds; must be a positive number.
+  For `ringtone`, the maximum ringtone duration.
+</ParamField>
+
+<ParamField path="params.name" type="string" toc={true}>
+  Required when `type` is `ringtone`. The ringtone to play: a two-letter country code that selects that country's ringtone cadence, or `bong`.
+  Allowed values: `au`, `be`, `ca`, `cn`, `cy`, `cz`, `de`, `dk`, `dz`, `eg`, `es`, `fi`, `fr`, `hu`, `il`, `in`, `jp`, `ko`, `pk`, `pl`, `ro`, `rs`, `ru`, `sa`, `tr`, `uk`, `us`, `at`, `bg`, `br`, `ch`, `cl`, `ee`, `gr`, `it`, `lt`, `mx`, `my`, `nl`, `no`, `nz`, `ph`, `pt`, `se`, `sg`, `th`, `za`, `tw`, `ve`, `bong`.
+</ParamField>
+
+</Indent>
+
+</Indent>
+
+<ParamField path="prompts[].attempt" type="string" default="1 2 3" toc={true}>
+  Space-separated list of the attempts (`1`, `2`, or `3`) this prompt applies to, such as `"1"` or `"2 3"`.
+  Attempts count per payment detail being collected, not per payment: each detail starts again at attempt `1`.
 </ParamField>
 
 <ParamField path="prompts[].card_type" type="string" toc={true}>
   Space-separated list of card types this prompt applies to.
-  Allowed values: `visa`, `mastercard`, `amex`, `maestro`, `discover`, `optima`, `jcb`, `diners-club`.
+  Allowed values: `visa`, `mastercard`, `amex`, `maestro`, `discover`, `jcb`, `diners-club`.
+  Unrecognized values are ignored; if no value is recognized, the prompt applies to every card type.
 </ParamField>
 
 <ParamField path="prompts[].error_type" type="string" toc={true}>
@@ -227,18 +307,27 @@ sections:
   - `invalid-date` - Invalid expiration date
   - `invalid-security-code` - Invalid CVV format
   - `invalid-postal-code` - Invalid postal code format
-  - `session-in-progress` - Concurrent session attempt
   - `invalid-bank-routing-number` - Invalid bank routing number
   - `invalid-bank-account-number` - Invalid bank account number
-  - `input-matching-failed` - Input matching failed
+  - `input-matching-failed` - Input matching failed. Accepted, but `pay` doesn't currently report this error
   - `card-declined` - Payment declined
+  - `bank-account-declined` - Bank account payment declined
+  - `invalid-bank-account-type` - Unsupported bank account type
 </ParamField>
 
 </Indent>
 
 
-<ParamField path="pay.security_code" type="boolean" default="true" toc={true}>
-  Takes true or false to let pay method know whether to prompt for security code.
+<ParamField path="pay.say_voice" type="string" toc={true}>
+  Alternative name for `voice`. Used only when `voice` is not set.
+</ParamField>
+
+
+<ParamField path="pay.security_code" type="string" default="true" toc={true}>
+  Whether to prompt for the card security code. Applies to card payments.
+  Pass a quoted string, such as `"true"`: an unquoted YAML or JSON boolean is rejected.
+  `"true"`, `"t"`, `"yes"`, `"on"`, `"enabled"`, `"active"`, and `"allow"` (in any case), and non-zero whole numbers, such as `"1"`, turn the prompt on.
+  Any other value turns it off.
 </ParamField>
 
 
@@ -249,6 +338,7 @@ sections:
 
 <ParamField path="pay.timeout" type="integer" default="5" toc={true}>
   Limit in seconds that pay method waits for the caller to press another digit before moving on to validate the digits captured. The caller can press `#` to finish an entry immediately rather than waiting for this timeout.
+  Values below `3` are ignored, and the default `5` is used instead.
 </ParamField>
 
 
@@ -263,6 +353,8 @@ sections:
 
 <ParamField path="pay.voice" type="string" default="woman" toc={true}>
   Text-to-speech voice to use. Supported voices are listed in the [Voice and Languages][supported-languages-voice] page.
+  When `voice` is not set, `say_voice` is used.
+  When neither is set, the `say_voice` [variable](/docs/swml/reference/variables) is used if it is set; otherwise the voice is `woman`.
 </ParamField>
 
 </Indent>
@@ -315,12 +407,24 @@ The `status_url` parameter is used to send requests for each status change durin
 
 
 <ParamField path="params.for" type="string" toc={true}>
-  The status of the payment process.
+  The stage of the payment process. Possible values:
+
+  - `payment-card-number`, `expiration-date`, `security-code`, `postal-code`, `bank-routing-number`, `bank-account-number` - Requesting that value from the caller.
+  - `payment-processing` - Sending the payment details to your payment connector.
+  - `payment-completed` - Your payment connector returned HTTP `200`. A decline returned with HTTP `200` also sends `payment-completed`, so check [`pay_result`](#variables) for the outcome.
+  - `payment-failed` - Payment details couldn't be collected, or your payment connector didn't return HTTP `200`.
+  - `payment-canceled` - The caller pressed `*` to cancel.
 </ParamField>
 
 
 <ParamField path="params.error_type" type="string" toc={true}>
   The error type of the payment process.
+</ParamField>
+
+
+<ParamField path="params.attempt" type="string" toc={true}>
+  The attempt number for the payment detail being collected, as a string (for example, `"2"`).
+  Present only on events sent while collecting a payment detail.
 </ParamField>
 
 
@@ -330,7 +434,8 @@ The `status_url` parameter is used to send requests for each status change durin
 
 
 <ParamField path="params.payment_card_number" type="string" toc={true}>
-  The payment card number of the payment process.
+  The payment card number collected so far, masked so that only the last four digits are visible (for example, `************1234`).
+  Present only once the card number has been collected.
 </ParamField>
 
 
@@ -340,12 +445,22 @@ The `status_url` parameter is used to send requests for each status change durin
 
 
 <ParamField path="params.security_code" type="string" toc={true}>
-  The security code of the payment process.
+  The security code, fully masked (for example, `***`). Present only once the security code has been collected.
 </ParamField>
 
 
 <ParamField path="params.expiration_date" type="string" toc={true}>
   The expiration date of the payment process.
+</ParamField>
+
+
+<ParamField path="params.bank_routing_number" type="string" toc={true}>
+  The bank routing number the caller entered. Present only once it has been collected.
+</ParamField>
+
+
+<ParamField path="params.bank_account_number" type="string" toc={true}>
+  The bank account number the caller entered, masked so that at most the last two digits are visible. Present only once it has been collected.
 </ParamField>
 
 
@@ -404,6 +519,17 @@ Below is an example of the request body that will be sent to the `status_url`.
 SignalWire sends a `POST` request to the `payment_connector_url` once all required payment information has been collected from the caller.
 Your endpoint processes the payment and returns the result.
 
+SignalWire signs this request with your project's [Signing Key](/docs/platform/webhooks#verify-webhook-signature). The `X-SignalWire-Signature` header holds the lowercase hex HMAC-SHA1 of the connector URL, with any credentials removed, followed by the raw request body, and `X-SignalWire-SHA256-Signature` holds the same value computed with HMAC-SHA256.
+SignalWire normalizes the URL before signing it: the scheme is lowercased, `.` and `..` path segments are resolved, and a URL without a path gets `/`, so `https://example.com` is signed as `https://example.com/`.
+The request doesn't come from a published IP range, so verify the signature and reject any request that doesn't match.
+For a second layer, put credentials in the URL, such as `https://payuser:<LONG_RANDOM_SECRET>@pay.example.com/connector`. They are sent as a standard Basic `Authorization` header and aren't part of the signed URL.
+A long random token in the URL path works too, and it is part of the signed URL.
+
+<Warning title="The connector URL appears in your call logs">
+The full `payment_connector_url`, including any credentials or token in it, is visible in your call logs in the Dashboard.
+Use a secret that protects only this endpoint, and rotate it periodically.
+</Warning>
+
 ### Request body
 
 <ParamField path="transaction_id" type="string" toc={true}>
@@ -411,31 +537,43 @@ Your endpoint processes the payment and returns the result.
 </ParamField>
 
 <ParamField path="method" type="string" toc={true}>
-  The payment method (e.g., `credit-card`).
+  The payment method: `credit-card` or `ach-debit`.
 </ParamField>
 
 <ParamField path="cardnumber" type="string" toc={true}>
-  The card number collected from the caller.
+  The full card number collected from the caller. Card payments only.
 </ParamField>
 
 <ParamField path="cvv" type="string" toc={true}>
-  The card security code.
+  The full card security code collected from the caller. Card payments only.
 </ParamField>
 
 <ParamField path="expiry_month" type="string" toc={true}>
-  The card expiry month (e.g., `12`).
+  The card expiry month (e.g., `12`). Card payments only.
 </ParamField>
 
 <ParamField path="expiry_year" type="string" toc={true}>
-  The card expiry year (e.g., `99`).
+  The card expiry year (e.g., `99`). Card payments only.
 </ParamField>
 
 <ParamField path="postal_code" type="string" toc={true}>
-  The billing postal code.
+  The billing postal code: the one the caller entered, or the postal code you passed in `pay.postal_code`. Card payments only.
+</ParamField>
+
+<ParamField path="routing_number" type="string" toc={true}>
+  The bank routing number collected from the caller. `ach-debit` payments only.
+</ParamField>
+
+<ParamField path="account_number" type="string" toc={true}>
+  The full bank account number collected from the caller. `ach-debit` payments only.
+</ParamField>
+
+<ParamField path="account_type" type="string" toc={true}>
+  The bank account type from `pay.bank_account_type`: `consumer-checking`, `consumer-savings`, or `commercial-checking`. `ach-debit` payments only.
 </ParamField>
 
 <ParamField path="chargeAmount" type="string" toc={true}>
-  The amount to charge.
+  The amount to charge, from `charge_amount`, or `0.00` when `charge_amount` is omitted. This is the only camelCase field in the request body.
 </ParamField>
 
 <ParamField path="currency_code" type="string" toc={true}>
@@ -450,27 +588,39 @@ Your endpoint processes the payment and returns the result.
   The payment description provided in the `pay` method.
 </ParamField>
 
+<ParamField path="parameters" type="object[]" toc={true}>
+  The custom parameters from `pay.parameters`, in the order you listed them.
+  Each `name`/`value` entry becomes an object with a single key, so `{"name": "merchant_id", "value": "12345"}` is sent as `{"merchant_id": "12345"}`.
+  Entries that share a name are sent as separate objects.
+  Present only when at least one parameter is set.
+</ParamField>
+
 #### Request example
 
 ```json
 {
   "transaction_id": "8c9d14d5-52ae-4e2e-b880-a14e6e1cda7d",
   "method": "credit-card",
-  "cardnumber": "************1234",
-  "cvv": "***",
+  "cardnumber": "4242424242424242",
+  "cvv": "123",
   "postal_code": "123456",
   "description": "Payment description",
   "chargeAmount": "10.55",
   "token_type": "reusable",
   "expiry_month": "12",
   "expiry_year": "99",
-  "currency_code": "usd"
+  "currency_code": "usd",
+  "parameters": [
+    { "merchant_id": "12345" }
+  ]
 }
 ```
 
 ### Response format
 
-Your endpoint must respond with JSON. The format varies depending on the transaction type.
+Your endpoint must respond with JSON.
+SignalWire reads `charge_id`, `token_id`, `error_code`, and `error_message` from the response.
+A `200` response with no error counts as a success when it carries a non-empty `charge_id`, or, for tokenization, a non-empty `token_id`.
 
 <Tabs>
 <Tab title="Successful charge">
@@ -479,6 +629,7 @@ Return a `200` HTTP status code with:
 
 <ParamField path="charge_id" type="string" toc={true}>
   A unique identifier for the successful transaction.
+  It's available as `payment_confirmation_code` in `pay_payment_results`.
 </ParamField>
 
 <ParamField path="error_code" type="null" toc={true}>
@@ -500,10 +651,13 @@ Return a `200` HTTP status code with:
 </Tab>
 <Tab title="Successful tokenization">
 
+For tokenization, `charge_amount` is omitted or written with only zeros and at most one decimal point, such as `0` or `0.00`.
 Return a `200` HTTP status code with:
 
 <ParamField path="token_id" type="string" toc={true}>
-  A unique identifier for the stored payment method.
+  A unique identifier for the payment method your payment processor stored.
+  It's available as `payment_token` in `pay_payment_results`.
+  When `charge_amount` is any other value, `token_id` is ignored and the response needs a `charge_id`.
 </ParamField>
 
 <ParamField path="error_code" type="null" toc={true}>
@@ -521,6 +675,9 @@ Return a `200` HTTP status code with:
   "error_message": null
 }
 ```
+
+Don't return a `charge_id` alongside the `token_id`.
+A response with a `charge_id` is treated as a charge, and `payment_token` is then the token type instead of your `token_id`.
 
 </Tab>
 <Tab title="Failed charge">
@@ -576,7 +733,8 @@ Return a non-`200` HTTP status code with:
 </Tabs>
 
 <Note>
-Error responses will trigger the `payment-failed` prompt in your SWML application.
+A non-`200` response plays the `payment-failed` prompt.
+A `200` response plays the `payment-completed` prompt even when it doesn't count as a success, for example when its body carries an error, so check `pay_result` for the final outcome.
 </Note>
 
 ## **Variables**
@@ -595,21 +753,33 @@ Access them in subsequent SWML instructions using the `${variable}` syntax (e.g.
   - `caller-hung-up` - The caller hung up before completing payment.
   - `validation-error` - Card details failed validation.
   - `internal-error` - An internal system error occurred.
+  - `failed` - The `pay` method couldn't run or returned no payment results. `pay_payment_results` is cleared.
 </ParamField>
 
-<ParamField path="pay_payment_results" type="object" toc={true}>
-  Detailed payment results returned by the payment processor, including card details, tokens, and any error information.
-  Access nested properties with dot notation (e.g., `${pay_payment_results.payment_token}`).
+<ParamField path="pay_payment_results" type="string" toc={true}>
+  Detailed payment results, including card or bank account details, the token type, and any error information, stored as a JSON-encoded string.
+  Because the variable holds JSON text rather than an object, dot notation such as `${pay_payment_results.payment_confirmation_code}` doesn't return the fields inside it.
+  When decoded, the JSON object has the fields below.
 </ParamField>
 
 <Indent>
 
+<ParamField path="pay_payment_results.result" type="string" toc={true}>
+  The payment outcome. Same values as `pay_result`, except `failed`.
+</ParamField>
+
 <ParamField path="pay_payment_results.payment_token" type="string" toc={true}>
-  Token generated by the payment processor. Use this for future transactions when using tokenization (`charge_amount: 0`).
+  For a successful tokenization, the `token_id` your payment connector returned. Use it for future transactions through your payment processor.
+  Otherwise, the token type requested in `token_type`: `one-time` or `reusable`.
+  If the caller hangs up after your payment connector has created the token, the token is still reported, with `pay_result` set to `caller-hung-up`.
 </ParamField>
 
 <ParamField path="pay_payment_results.payment_confirmation_code" type="string" toc={true}>
-  Confirmation code returned by the payment processor for a successful charge.
+  The `charge_id` your payment connector returned for a successful transaction.
+</ParamField>
+
+<ParamField path="pay_payment_results.payment_method" type="string" toc={true}>
+  The payment method used: `credit-card` or `ach-debit`.
 </ParamField>
 
 <ParamField path="pay_payment_results.payment_card_number" type="string" toc={true}>
@@ -632,6 +802,18 @@ Access them in subsequent SWML instructions using the `${variable}` syntax (e.g.
   Postal code entered by the caller.
 </ParamField>
 
+<ParamField path="pay_payment_results.bank_routing_number" type="string" toc={true}>
+  The bank routing number the caller entered. Included only for `ach-debit` payments.
+</ParamField>
+
+<ParamField path="pay_payment_results.bank_account_number" type="string" toc={true}>
+  The bank account number the caller entered, masked so that at most the last two digits are visible. Included only for `ach-debit` payments.
+</ParamField>
+
+<ParamField path="pay_payment_results.bank_account_type" type="string" toc={true}>
+  The bank account type: `consumer-checking`, `consumer-savings`, or `commercial-checking`. Included only for `ach-debit` payments.
+</ParamField>
+
 <ParamField path="pay_payment_results.payment_error" type="string" toc={true}>
   Error description if the payment failed. Empty on success.
 </ParamField>
@@ -641,7 +823,8 @@ Access them in subsequent SWML instructions using the `${variable}` syntax (e.g.
 </ParamField>
 
 <ParamField path="pay_payment_results.connector_error" type="object" toc={true}>
-  Error object from the payment connector. Only present when the connector returns an error.
+  Error details from the payment connector.
+  The object is always included; its `code` and `message` are filled in only when your connector's response carried an `error_code` or `error_message`.
 </ParamField>
 
 <Indent>
@@ -893,6 +1076,86 @@ sections:
 </CodeBlock>
 </CodeBlocks>
 
+### Bank account payment with `play` prompts
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - pay:
+        charge_amount: "50.00"
+        payment_connector_url: "https://example.com/process"
+        payment_method: "ach-debit"
+        bank_account_type: "consumer-savings"
+        prompts:
+          - for: "bank-routing-number"
+            play:
+              - type: "tts"
+                params:
+                  text: "Please enter the nine digit routing number for your savings account."
+          - for: "bank-account-number"
+            play:
+              - type: "silence"
+                params:
+                  duration: 0.5
+              - type: "tts"
+                params:
+                  text: "Now enter your savings account number, then press pound."
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "pay": {
+          "charge_amount": "50.00",
+          "payment_connector_url": "https://example.com/process",
+          "payment_method": "ach-debit",
+          "bank_account_type": "consumer-savings",
+          "prompts": [
+            {
+              "for": "bank-routing-number",
+              "play": [
+                {
+                  "type": "tts",
+                  "params": {
+                    "text": "Please enter the nine digit routing number for your savings account."
+                  }
+                }
+              ]
+            },
+            {
+              "for": "bank-account-number",
+              "play": [
+                {
+                  "type": "silence",
+                  "params": {
+                    "duration": 0.5
+                  }
+                },
+                {
+                  "type": "tts",
+                  "params": {
+                    "text": "Now enter your savings account number, then press pound."
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
 ### Handling payment results
 
 <CodeBlocks>
@@ -909,7 +1172,7 @@ sections:
         - when: "pay_result == 'success'"
           then:
             - play:
-                url: 'say: Payment successful. Your confirmation code is ${pay_payment_results.payment_confirmation_code}.'
+                url: 'say: Payment successful. Thank you.'
         - else:
             - play:
                 url: 'say: Payment was not completed. Please try again later.'
@@ -935,7 +1198,7 @@ sections:
             "then": [
               {
                 "play": {
-                  "url": "say: Payment successful. Your confirmation code is ${pay_payment_results.payment_confirmation_code}."
+                  "url": "say: Payment successful. Thank you."
                 }
               }
             ]
