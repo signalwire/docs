@@ -16,7 +16,7 @@ model CreateRoomTokenRequest {
   @maxLength(100)
   user_name?: string;
 
-  @doc("A list of permissions, which define what user can do once they join the room. If `join_as` is `audience`, permissions are set to an empty array regardless of the value provided.")
+  @doc("A list of permissions, which define what the user can do once they join the room. The `room.member.promote` and `room.member.demote` permissions are deprecated along with audience participants and will be removed. If `join_as` is set to the deprecated `audience` value, permissions are set to an empty array regardless of the value provided.")
   @example(#[
     RoomTokenPermission.`room.self.audio_mute`,
     RoomTokenPermission.`room.self.audio_unmute`,
