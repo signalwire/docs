@@ -40,7 +40,8 @@ model VoiceStatusCallbackPayload {
   AudioInLargestJbSize?: int32;
 
   @doc("""
-    A mean opinion score on a scale of 1–5 that helps determine audio quality.
+    The estimated Mean Opinion Score (MOS) for inbound audio quality, based on the share of incoming audio packets that arrived without loss or delay.
+    It ranges from about 1 to 4.5, the score for a call with no lost or late packets.
     Sent with up to two decimal places, such as `4.37`. A whole-number score is sent with one decimal place, such as `4.0`.
     """)
   @example(4.37)
