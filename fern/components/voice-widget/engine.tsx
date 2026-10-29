@@ -60,26 +60,31 @@ export function friendlyLanguage(code: string): string {
   }
 }
 
-// Normalize gender: the catalog mixes "feminine"/"masculine" with "male"/"female"; map to the
-// display forms and HIDE "unknown" (599 voices) rather than render "Unknown". Returns "" to hide.
-export function normalizeGender(gender: string): string {
-  switch (gender) {
-    case "feminine": case "female": return "Female";
-    case "masculine": case "male": return "Male";
-    case "neutral": return "Neutral";
-    case "non-binary": return "Non-binary";
-    case "unknown": case "": return "";
-    default: return gender.charAt(0).toUpperCase() + gender.slice(1);
-  }
+// Canonical gender: the catalog mixes "feminine"/"masculine" (Cartesia) with "male"/"female"
+// (everyone else). Collapse the synonyms into one lowercase key so the Gender filter, its options,
+// and the row meta all agree. Computed once per row in loadBundle as `_gender`; filter on that,
+// never on the raw `gender`.
+const GENDER_SYNONYMS: Record<string, string> = { feminine: "female", masculine: "male", "": "unknown" };
+
+export function canonicalGender(gender: string | null | undefined): string {
+  const g = (gender ?? "").trim().toLowerCase();
+  return GENDER_SYNONYMS[g] ?? g;
+}
+
+// Display label for a canonical gender. HIDES "unknown" (~600 voices) rather than render
+// "Unknown". Returns "" to hide.
+export function genderLabel(gender: string): string {
+  return gender === "unknown" ? "" : gender.charAt(0).toUpperCase() + gender.slice(1);
 }
 
 export type FilterKey = "search" | "provider" | "language" | "gender" | "group" | "pageSize";
 
-// Client-side row: a catalog voice joined with its clip, plus two precomputed fields — `_search`,
+// Client-side row: a catalog voice joined with its clip, plus three precomputed fields — `_search`,
 // a lowercased blob so the per-keystroke filter runs one substring test per row instead of
-// re-lowercasing 4–5 fields, and `_uid`, a collision-free identity for React keys and play state
-// (assigned in loadBundle; the catalog's key+model is not unique on its own).
-export type Row = VoiceRow & { _search: string; _uid: string };
+// re-lowercasing 4–5 fields, `_uid`, a collision-free identity for React keys and play state
+// (assigned in loadBundle; the catalog's key+model is not unique on its own), and `_gender`, the
+// canonical gender (see canonicalGender) the Gender filter matches against.
+export type Row = VoiceRow & { _search: string; _uid: string; _gender: string };
 
 // The asset bundle (catalog.json + manifest.json) is one large artifact (~5 MB, ~4.9k voices)
 // shared by every TTS page that embeds the widget. Cache the parsed+joined rows per URL pair so
@@ -114,6 +119,7 @@ export function loadBundle(catalogUrl: string, manifestUrl: string): Promise<Row
           ...v,
           clip: man.clips?.[v.key],
           _uid: n ? `${base}#${n}` : base,
+          _gender: canonicalGender(v.gender),
           // Mirrors the fields the search filter tests against (name, provider, description, tags).
           _search: `${v.display_name} ${v.provider} ${v.description} ${v.tags.join(" ")}`.toLowerCase(),
         };
