@@ -12,7 +12,7 @@ max-toc-depth: 3
 | Parameter | Description | Example |
 |-----------|-------------|---------|
 | `name` | Human-readable name | `"English"` |
-| `code` | Language code for STT | `"en-US"` |
+| `code` | Language code for STT. See [Language codes](#language-codes). | `"en-US"` |
 | `voice` | TTS voice identifier | `"rime.spore"` or `"elevenlabs.josh:eleven_turbo_v2_5"` |
 
 ### Fillers (natural speech)
@@ -128,18 +128,20 @@ self.add_language(
 
 ## Multi-language support
 
-Use `code="multi"` for automatic language detection and matching:
+Set the language code to `multi` to have speech recognition transcribe whichever of its supported languages the caller speaks. The agent still answers in that entry's single voice, so choose a voice that can speak the languages you expect. To answer each caller in their own language with a voice per language, use [multilingual configuration](/docs/swml/reference/calling/ai/multilingual) instead.
 
 ```python
 class MultilingualAgent(AgentBase):
     def __init__(self):
         super().__init__(name="multilingual-agent")
 
-        # Multi-language support (auto-detects and matches caller's language)
+        # Transcribe whichever supported language the caller speaks.
+        # The single voice must speak every language the agent answers in,
+        # so use a multilingual voice, such as an ElevenLabs multilingual model.
         self.add_language(
             name="Multilingual",
             code="multi",
-            voice="rime.spore"
+            voice="elevenlabs.Brian:eleven_multilingual_v2"
         )
 
         self.prompt_add_section(
@@ -149,12 +151,6 @@ class MultilingualAgent(AgentBase):
             "language they speak."
         )
 ```
-
-The `multi` code supports: English, Spanish, French, German, Hindi, Russian, Portuguese, Japanese, Italian, and Dutch.
-
-<Note>
-Speech recognition hints do not work when using `code="multi"`. If you need hints for specific terms, use individual language codes instead.
-</Note>
 
 For more control over individual languages with custom fillers:
 
@@ -172,14 +168,14 @@ class CustomMultilingualAgent(AgentBase):
 
         # Spanish
         self.add_language(
-            name="Spanish", code="es-MX", voice="rime.luna",
+            name="Spanish", code="es-419", voice="rime.luna",
             speech_fillers=["Eh", "Pues", "Bueno"],
             function_fillers=["Dejame verificar", "Un momento"]
         )
 
         # French
         self.add_language(
-            name="French", code="fr-FR", voice="rime.claire",
+            name="French", code="fr", voice="rime.claire",
             speech_fillers=["Euh", "Alors", "Bon"],
             function_fillers=["Laissez-moi verifier", "Un instant"]
         )
@@ -305,62 +301,11 @@ class DynamicVoiceAgent(AgentBase):
         self.prompt_add_section("Role", f"You are {config['name']}, a {dept} representative.")
 ```
 
-## Language codes reference
+## Language codes
 
-Supported language codes:
+The language code tells speech recognition which language to listen for. By default, SignalWire uses Deepgram's Nova-3 model, so use a code from [Deepgram's Nova-3 language table](https://developers.deepgram.com/docs/models-languages-overview#nova-3), or `multi` for [multi-language support](#multi-language-support). If you select a different speech recognition engine, use a code that engine supports. See [`ai.languages`](/docs/swml/reference/calling/ai/languages) for how codes are applied.
 
-| Language | Codes |
-|----------|-------|
-| Multilingual | `multi` (English, Spanish, French, German, Hindi, Russian, Portuguese, Japanese, Italian, Dutch) |
-| Arabic | `ar`, `ar-AE`, `ar-SA`, `ar-QA`, `ar-KW`, `ar-SY`, `ar-LB`, `ar-PS`, `ar-JO`, `ar-EG`, `ar-SD`, `ar-TD`, `ar-MA`, `ar-DZ`, `ar-TN`, `ar-IQ`, `ar-IR` |
-| Belarusian | `be` |
-| Bengali | `bn` |
-| Bosnian | `bs` |
-| Bulgarian | `bg` |
-| Catalan | `ca` |
-| Croatian | `hr` |
-| Czech | `cs` |
-| Danish | `da`, `da-DK` |
-| Dutch | `nl` |
-| English | `en`, `en-US`, `en-AU`, `en-GB`, `en-IN`, `en-NZ` |
-| Estonian | `et` |
-| Finnish | `fi` |
-| Flemish | `nl-BE` |
-| French | `fr`, `fr-CA` |
-| German | `de` |
-| German (Switzerland) | `de-CH` |
-| Greek | `el` |
-| Hebrew | `he` |
-| Hindi | `hi` |
-| Hungarian | `hu` |
-| Indonesian | `id` |
-| Italian | `it` |
-| Japanese | `ja` |
-| Kannada | `kn` |
-| Korean | `ko`, `ko-KR` |
-| Latvian | `lv` |
-| Lithuanian | `lt` |
-| Macedonian | `mk` |
-| Malay | `ms` |
-| Marathi | `mr` |
-| Norwegian | `no` |
-| Persian | `fa` |
-| Polish | `pl` |
-| Portuguese | `pt`, `pt-BR`, `pt-PT` |
-| Romanian | `ro` |
-| Russian | `ru` |
-| Serbian | `sr` |
-| Slovak | `sk` |
-| Slovenian | `sl` |
-| Spanish | `es`, `es-419` |
-| Swedish | `sv`, `sv-SE` |
-| Tagalog | `tl` |
-| Tamil | `ta` |
-| Telugu | `te` |
-| Turkish | `tr` |
-| Ukrainian | `uk` |
-| Urdu | `ur` |
-| Vietnamese | `vi` |
+The voice is chosen separately. Each provider's supported languages are listed in [Voices and languages](/docs/platform/voice/tts).
 
 ## Complete voice configuration example
 
@@ -382,7 +327,7 @@ class FullyConfiguredVoiceAgent(AgentBase):
 
         # Secondary language
         self.add_language(
-            name="Spanish", code="es-MX", voice="rime.luna",
+            name="Spanish", code="es-419", voice="rime.luna",
             speech_fillers=["Pues", "Bueno"],
             function_fillers=["Un momento", "Dejame ver"]
         )
@@ -412,10 +357,10 @@ agent.addLanguage({
   },
 });
 agent.addLanguage({
-  name: 'Spanish', code: 'es-MX', voice: 'rime.luna',
+  name: 'Spanish', code: 'es-419', voice: 'rime.luna',
   fillers: { default: ['Pues', 'Bueno'] },
   functionFillers: {
-    lookup_product: { 'es-MX': ['Un momento', 'Dejame ver'] },
+    lookup_product: { 'es-419': ['Un momento', 'Dejame ver'] },
   },
 });
 agent.setPronunciations([
@@ -434,7 +379,7 @@ agent.promptAddSection('Role', { body: 'You are a friendly customer service agen
 ```go
 a := agent.NewAgentBase(agent.WithName("voice-configured"))
 a.AddLanguage(map[string]any{"name": "English", "code": "en-US", "voice": "rime.spore", "speech_fillers": []string{"Um", "Well", "Let me see", "So"}, "function_fillers": []string{"Let me look that up for you", "One moment while I check", "I'm searching for that now", "Just a second"}})
-a.AddLanguage(map[string]any{"name": "Spanish", "code": "es-MX", "voice": "rime.luna", "speech_fillers": []string{"Pues", "Bueno"}, "function_fillers": []string{"Un momento", "Dejame ver"}})
+a.AddLanguage(map[string]any{"name": "Spanish", "code": "es-419", "voice": "rime.luna", "speech_fillers": []string{"Pues", "Bueno"}, "function_fillers": []string{"Un momento", "Dejame ver"}})
 a.SetPronunciations([]map[string]any{{"replace": "ACME", "with": "Ack-me"}, {"replace": "www", "with": "dub dub dub"}, {"replace": ".com", "with": "dot com"}, {"replace": "@", "with": "at"}})
 a.PromptAddSection("Role", "You are a friendly customer service agent.")
 ```
@@ -443,7 +388,7 @@ a.PromptAddSection("Role", "You are a friendly customer service agent.")
 ```ruby
 agent = AgentBase.new(name: "voice-configured")
 agent.add_language(name: 'English', code: 'en-US', voice: 'rime.spore', speech_fillers: ['Um', 'Well', 'Let me see', 'So'], function_fillers: ['Let me look that up for you', 'One moment while I check', "I'm searching for that now", 'Just a second'])
-agent.add_language(name: 'Spanish', code: 'es-MX', voice: 'rime.luna', speech_fillers: ['Pues', 'Bueno'], function_fillers: ['Un momento', 'Dejame ver'])
+agent.add_language(name: 'Spanish', code: 'es-419', voice: 'rime.luna', speech_fillers: ['Pues', 'Bueno'], function_fillers: ['Un momento', 'Dejame ver'])
 agent.set_pronunciations([{ replace: 'ACME', with: 'Ack-me' }, { replace: 'www', with: 'dub dub dub' }, { replace: '.com', with: 'dot com' }, { replace: '@', with: 'at' }])
 agent.prompt_add_section('Role', 'You are a friendly customer service agent.')
 ```
@@ -452,7 +397,7 @@ agent.prompt_add_section('Role', 'You are a friendly customer service agent.')
 ```java
 AgentBase agent = AgentBase.builder().name("voice-configured").build();
 agent.addLanguage("English", "en-US", "rime.spore", List.of("Um", "Well", "Let me see", "So"), List.of("Let me look that up for you", "One moment while I check", "I'm searching for that now", "Just a second"));
-agent.addLanguage("Spanish", "es-MX", "rime.luna", List.of("Pues", "Bueno"), List.of("Un momento", "Dejame ver"));
+agent.addLanguage("Spanish", "es-419", "rime.luna", List.of("Pues", "Bueno"), List.of("Un momento", "Dejame ver"));
 agent.setPronunciations(List.of(Map.of("replace", "ACME", "with", "Ack-me"), Map.of("replace", "www", "with", "dub dub dub"), Map.of("replace", ".com", "with", "dot com"), Map.of("replace", "@", "with", "at")));
 agent.promptAddSection("Role", "You are a friendly customer service agent.");
 ```
@@ -461,7 +406,7 @@ agent.promptAddSection("Role", "You are a friendly customer service agent.");
 ```perl
 my $agent = AgentBase->new(name => "voice-configured");
 $agent->add_language(name => 'English', code => 'en-US', voice => 'rime.spore', speech_fillers => ['Um', 'Well', 'Let me see', 'So'], function_fillers => ['Let me look that up for you', 'One moment while I check', "I'm searching for that now", 'Just a second']);
-$agent->add_language(name => 'Spanish', code => 'es-MX', voice => 'rime.luna', speech_fillers => ['Pues', 'Bueno'], function_fillers => ['Un momento', 'Dejame ver']);
+$agent->add_language(name => 'Spanish', code => 'es-419', voice => 'rime.luna', speech_fillers => ['Pues', 'Bueno'], function_fillers => ['Un momento', 'Dejame ver']);
 $agent->set_pronunciations([{ replace => 'ACME', with => 'Ack-me' }, { replace => 'www', with => 'dub dub dub' }, { replace => '.com', with => 'dot com' }, { replace => '@', with => 'at' }]);
 $agent->prompt_add_section('Role', 'You are a friendly customer service agent.');
 ```
@@ -470,7 +415,7 @@ $agent->prompt_add_section('Role', 'You are a friendly customer service agent.')
 ```cpp
 agent::AgentBase agent("voice-configured");
 agent.add_language({"English", "en-US", "rime.spore", {"Um", "Well", "Let me see", "So"}, {"Let me look that up for you", "One moment while I check", "I'm searching for that now", "Just a second"}});
-agent.add_language({"Spanish", "es-MX", "rime.luna", {"Pues", "Bueno"}, {"Un momento", "Dejame ver"}});
+agent.add_language({"Spanish", "es-419", "rime.luna", {"Pues", "Bueno"}, {"Un momento", "Dejame ver"}});
 agent.set_pronunciations({{{"replace", "ACME"}, {"with", "Ack-me"}}, {{"replace", "www"}, {"with", "dub dub dub"}}, {{"replace", ".com"}, {"with", "dot com"}}, {{"replace", "@"}, {"with", "at"}}});
 agent.prompt_add_section("Role", "You are a friendly customer service agent.");
 ```
@@ -481,7 +426,7 @@ agent.prompt_add_section("Role", "You are a friendly customer service agent.");
 use SignalWire\Agent\AgentBase;
 $agent = new AgentBase(name: 'voice-configured');
 $agent->addLanguage(name: 'English', code: 'en-US', voice: 'rime.spore', speechFillers: ['Um', 'Well', 'Let me see', 'So'], functionFillers: ['Let me look that up for you', 'One moment while I check', "I'm searching for that now", 'Just a second']);
-$agent->addLanguage(name: 'Spanish', code: 'es-MX', voice: 'rime.luna', speechFillers: ['Pues', 'Bueno'], functionFillers: ['Un momento', 'Dejame ver']);
+$agent->addLanguage(name: 'Spanish', code: 'es-419', voice: 'rime.luna', speechFillers: ['Pues', 'Bueno'], functionFillers: ['Un momento', 'Dejame ver']);
 $agent->setPronunciations([['replace' => 'ACME', 'with' => 'Ack-me'], ['replace' => 'www', 'with' => 'dub dub dub'], ['replace' => '.com', 'with' => 'dot com'], ['replace' => '@', 'with' => 'at']]);
 $agent->promptAddSection('Role', 'You are a friendly customer service agent.');
 ```
@@ -491,7 +436,7 @@ $agent->promptAddSection('Role', 'You are a friendly customer service agent.');
 using SignalWire.Agent;
 var agent = new AgentBase(new AgentOptions { Name = "voice-configured" });
 agent.AddLanguage("English", "en-US", "rime.spore", speechFillers: new List<string> { "Um", "Well", "Let me see", "So" }, functionFillers: new List<string> { "Let me look that up for you", "One moment while I check", "I'm searching for that now", "Just a second" });
-agent.AddLanguage("Spanish", "es-MX", "rime.luna", speechFillers: new List<string> { "Pues", "Bueno" }, functionFillers: new List<string> { "Un momento", "Dejame ver" });
+agent.AddLanguage("Spanish", "es-419", "rime.luna", speechFillers: new List<string> { "Pues", "Bueno" }, functionFillers: new List<string> { "Un momento", "Dejame ver" });
 agent.SetPronunciations(new List<Dictionary<string, string>> { new() { ["replace"] = "ACME", ["with"] = "Ack-me" }, new() { ["replace"] = "www", ["with"] = "dub dub dub" }, new() { ["replace"] = ".com", ["with"] = "dot com" }, new() { ["replace"] = "@", ["with"] = "at" } });
 agent.PromptAddSection("Role", "You are a friendly customer service agent.");
 ```
