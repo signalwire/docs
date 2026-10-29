@@ -52,11 +52,13 @@ outbound message moves through these states:
 | `initiated` | Delivery has started |
 | `sent` | The message left SignalWire for the carrier network |
 | `delivered` | The carrier confirmed delivery to the recipient |
+| `read` | The recipient opened the message. Only WhatsApp messages reach this state |
 | `undelivered` | The carrier couldn't deliver the message |
 | `failed` | The message never left SignalWire. `error_code` and `error_message` say why |
 
-`delivered`, `undelivered`, and `failed` are final. Messages sent faster than your throughput allows
-wait in your Space's backlog and go out when they can, as
+`delivered`, `undelivered`, and `failed` are final for SMS and MMS. A WhatsApp message can still
+move from `delivered` to `read`. Messages sent faster than your throughput allows wait in your
+Space's backlog and go out when they can, as
 [Default limits](/docs/platform/rate-limits#queue-and-backlog-system) describes.
 
 Receiving a message takes a little setup first, because SignalWire has to know where to send it.
@@ -249,6 +251,11 @@ sections:
 ```
 </CodeBlock>
 </CodeBlocks>
+
+<Note title="`dial()` signature depends on the SDK version">
+`@signalwire/sdk@2.0.5` takes a single options object. Newer releases take the positional
+`dial(from, to, options)` form.
+</Note>
 
 Answer the call: you hear the confirmation, and the text arrives a few seconds later. To text
 whoever called your number instead, put `to_number: "%{call.from}"` in a document that answers
@@ -600,7 +607,7 @@ try {
 </CodeBlocks>
 
 The text arrives on your phone, and the program prints `Final state: delivered`. To send MMS, add
-`media` with a list of public media URLs; [MIME types][mime-types] lists the supported formats.
+`media` with up to 8 public media URLs; [MIME types][mime-types] lists the supported formats.
 
 If something goes wrong, check the symptom:
 
@@ -782,30 +789,80 @@ If it doesn't work, check the symptom:
 ### Track delivery via WebSocket (Relay)
 
 Relay reports each state change on the connection that sent the message, so it needs no status
-callback URL. Register a listener on the message right after you send it, in either program above,
-to see each state as it happens:
+callback URL. This version of the send program registers a listener on the message as soon as the
+send call returns, before it awaits anything else, and prints each state as it happens:
 
 <CodeBlocks>
 <CodeBlock title="Python — Relay client">
-```python
+```python {12-13,22}
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as track_message_relay.py and run: python track_message_relay.py
+import asyncio
+from signalwire.relay import RelayClient
+
+client = RelayClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    contexts=["default"],
+)
+
 def on_state(event):
     print(f"State: {event.params.get('message_state')} {event.params.get('reason', '')}")
 
-message.on(on_state)
+async def main():
+    async with client:
+        message = await client.send_message(
+            from_number="<YOUR_SIGNALWIRE_NUMBER>",
+            to_number="<YOUR_DESTINATION>",
+            body="Bayview Taxi: your ride is confirmed for 8 AM tomorrow. Reply STATUS for your pickup time.",
+        )
+        message.on(on_state)
+        await message.wait(timeout=60)
+        print(f"Final state: {message.state} {message.reason}")
+
+asyncio.run(main())
 ```
 </CodeBlock>
 <CodeBlock title="TypeScript — Relay client">
-```typescript
-message.on((event) => {
-  console.log(`State: ${event.params.message_state} ${event.params.reason ?? ""}`);
+```typescript {20-22}
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as track-message-relay.mjs,
+// then run: node track-message-relay.mjs
+import { RelayClient } from "@signalwire/sdk";
+
+const client = new RelayClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  contexts: ["default"],
 });
+
+await client.connect();
+
+try {
+  const message = await client.sendMessage({
+    fromNumber: "<YOUR_SIGNALWIRE_NUMBER>",
+    toNumber: "<YOUR_DESTINATION>",
+    body: "Bayview Taxi: your ride is confirmed for 8 AM tomorrow. Reply STATUS for your pickup time.",
+  });
+  message.on((event) => {
+    console.log(`State: ${event.params.message_state} ${event.params.reason ?? ""}`);
+  });
+  await message.wait(60);
+  console.log(`Final state: ${message.state} ${message.reason}`);
+} finally {
+  await client.disconnect();
+}
 ```
 </CodeBlock>
 </CodeBlocks>
 
-The listener prints each state change, such as `initiated`, `sent`, and `delivered`. The
-message's `state` and `reason` always hold the latest values, and `wait()` returns once the state
-is final. To act on the final state without waiting, pass `on_completed` to `send_message()`
+The listener prints each state change, such as `sent` and `delivered`, then the program prints the
+final state. A listener only sees states reported after it's registered, and states reported
+before the send call returns never reach it. Register it before any other `await`, or the states
+that arrive in between are lost.
+
+The message's `state` and `reason` always hold the latest values, and `wait()` returns once the
+state is final. To act on the final state without waiting, pass `on_completed` to `send_message()`
 (`onCompleted` to `sendMessage()` in TypeScript). An incoming message arrives already in the
 `received` state.
 
@@ -854,10 +911,10 @@ curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/messaging/messages" \
 </CodeBlock>
 </CodeBlocks>
 
-The TypeScript SDK can't send a message over REST yet; in TypeScript, use the Relay client's
-[`sendMessage()`](#send-a-message-via-websocket-relay) instead. The request calls
-[Send a message][rest-create-message]. To send MMS, add `media` with up to 8 public
-media URLs.
+`@signalwire/sdk@2.0.5` has no method for this request. In TypeScript, use the Relay client's
+[`sendMessage()`](#send-a-message-via-websocket-relay) instead, or send the request directly. The
+request calls [Send a message][rest-create-message]. To send MMS, add `media` with up to 7 public
+media URLs; a REST request with 8 or more is rejected with a `422`.
 
 SignalWire returns the message with status `queued`, before it's delivered. Save the `id` to
 match status callbacks and look the message up later:
