@@ -38,6 +38,12 @@ model CallResponse {
   ...Call;
 }
 
+@doc("Response returned when a call is created.")
+model CallCreatedResponse {
+  @statusCode statusCode: 201;
+  ...Call;
+}
+
 @doc("Response containing a single call recording.")
 model CallRecordingResponse {
   ...CallRecording;

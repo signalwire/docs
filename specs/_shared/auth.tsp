@@ -42,13 +42,14 @@ model SignalWireBearerAuth is BearerAuth;
   
   Send HTTP Basic auth with an empty username and the Personal access token as
   the password. A Personal access token carries your own authority rather than a
-  project's: it is created from your user menu in the Dashboard, is prefixed
-  `pat_`, and has no scopes. The holder must be an owner or admin of the space
-  named by the subdomain, and the token acts only on that space.
-  
+  project's: it is created from your user menu in the Dashboard and has no
+  scopes. New tokens are prefixed `swpat_`; tokens created before that format
+  are prefixed `pat_` and keep working. The holder must be an owner or admin of
+  the space named by the subdomain, and the token acts only on that space.
+
   Example:
   ```
-  Authorization: Basic base64(:pat_...)
+  Authorization: Basic base64(:swpat_...)
   ```
   """)
 @extension(

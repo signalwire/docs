@@ -8,7 +8,7 @@ max-toc-depth: 3
 
 [statuscallbacks]: #statuscallbacks
 
-Send a fax.
+Send a fax. For a live inbound call that hasn't been answered yet, the method first attempts to answer it.
 
 ## **Properties**
 
@@ -24,12 +24,12 @@ Send a fax.
 
 
 <ParamField path="send_fax.header_info" type="string" toc={true}>
-  Text to add to the fax header
+  Text to add to the fax header. When omitted or empty, the call's destination address is used (the destination number for phone calls).
 </ParamField>
 
 
-<ParamField path="send_fax.identity" type="string" default="Calling party's caller ID number" toc={true}>
-  Station identity to report
+<ParamField path="send_fax.identity" type="string" toc={true}>
+  Station identity to report. When omitted, the call's originating address is used (the calling number for phone calls).
 </ParamField>
 
 
@@ -52,14 +52,16 @@ Set by the method:
 - **send_fax_result_text:** (out) description of fax status code.
 - **send_fax_result:** (out) `success` | `failed`.
 
+All values are stored as strings, including `send_fax_pages` and `send_fax_result_code`. Check `send_fax_result` first: when the fax fails, the detailed variables may not be set, and `send_fax_result_text` holds a failure message only when one is available.
+
 ## **StatusCallbacks**
 
 <Markdown src="/snippets/common/_status-callback-advisory.mdx" />
 
-A POST request will be sent to `status_url` with a JSON payload like the following:
+A POST request will be sent to `status_url` with a JSON payload like the following, for the `calling.call.fax` page and finished events:
 
 <ParamField path="event_type" type="string" toc={true}>
-  The type of event. Always `calling.call.fax` for this method.
+  The type of event. `calling.call.fax` for the fax events described here. When the fax command fails, an error event with event type `calling.error` may be sent instead; see [error events](#error-events).
 </ParamField>
 
 
@@ -110,54 +112,62 @@ A POST request will be sent to `status_url` with a JSON payload like the followi
 
 <Indent>
 
-<ParamField path="fax.type" type="string" toc={true}>
+<ParamField path="params.fax.type" type="string" toc={true}>
   The type of fax operation. Always `finished`.
 </ParamField>
 
 
-<ParamField path="fax.params.direction" type="string" toc={true}>
+<ParamField path="params.fax.params" type="object" toc={true}>
+  Details of the fax operation.
+</ParamField>
+
+<Indent>
+
+<ParamField path="params.fax.params.direction" type="string" toc={true}>
   The direction of the fax (`send`).
 </ParamField>
 
 
-<ParamField path="fax.params.identity" type="string" toc={true}>
+<ParamField path="params.fax.params.identity" type="string" toc={true}>
   The identity of this fax station.
 </ParamField>
 
 
-<ParamField path="fax.params.remote_identity" type="string" toc={true}>
+<ParamField path="params.fax.params.remote_identity" type="string" toc={true}>
   The identity of the receiving fax station.
 </ParamField>
 
 
-<ParamField path="fax.params.document" type="string" toc={true}>
+<ParamField path="params.fax.params.document" type="string" toc={true}>
   URL of the sent fax document.
 </ParamField>
 
 
-<ParamField path="fax.params.pages" type="number" toc={true}>
+<ParamField path="params.fax.params.pages" type="number" toc={true}>
   Number of pages sent.
 </ParamField>
 
 
-<ParamField path="fax.params.success" type="boolean" toc={true}>
+<ParamField path="params.fax.params.success" type="boolean" toc={true}>
   Whether the fax was sent successfully.
 </ParamField>
 
 
-<ParamField path="fax.params.result" type="number" toc={true}>
+<ParamField path="params.fax.params.result" type="number" toc={true}>
   The numeric result code of the fax operation (e.g., `0` for success).
 </ParamField>
 
 
-<ParamField path="fax.params.result_text" type="string" toc={true}>
+<ParamField path="params.fax.params.result_text" type="string" toc={true}>
   A description of the fax result (e.g., `OK`).
 </ParamField>
 
 
-<ParamField path="fax.params.format" type="string" toc={true}>
+<ParamField path="params.fax.params.format" type="string" toc={true}>
   The format of the fax document. Always `"pdf"`.
 </ParamField>
+
+</Indent>
 
 </Indent>
 
@@ -167,15 +177,15 @@ A POST request will be sent to `status_url` with a JSON payload like the followi
 
 A separate callback is sent for each page as the fax progresses:
 
-<ParamField path="fax.type" type="string" toc={true}>
+<ParamField path="params.fax.type" type="string" toc={true}>
   Always `"page"` for page progress events.
 </ParamField>
 
-<ParamField path="fax.params.direction" type="string" toc={true}>
+<ParamField path="params.fax.params.direction" type="string" toc={true}>
   The direction of the fax.
 </ParamField>
 
-<ParamField path="fax.params.number" type="number" toc={true}>
+<ParamField path="params.fax.params.number" type="number" toc={true}>
   The page number that was just processed.
 </ParamField>
 
@@ -210,6 +220,26 @@ A separate callback is sent for each page as the fax progresses:
   }
 }
 ```
+
+### Error events
+
+When the fax command fails, SignalWire may send an event with `event_type` set to `calling.error` to `status_url` instead of a `calling.call.fax` event. Its `params` object has no `fax` object. It carries the call identifiers and these fields:
+
+<ParamField path="params.error.code" type="string" toc={true}>
+  The error code.
+</ParamField>
+
+
+<ParamField path="params.error.message" type="string" toc={true}>
+  A description of the error.
+</ParamField>
+
+
+<ParamField path="params.request" type="object" toc={true}>
+  A copy of the request that failed, included for diagnostics only. Its shape isn't a stable contract.
+</ParamField>
+
+Check `event_type` before reading the rest of the payload. Not every failure produces an error event, and the outcome of the fax itself is reported in `params.fax.params.success` of the finished event.
 
 ---
 

@@ -10,14 +10,34 @@ model SipEndpointPathID {
   id: uuid;
 }
 
-@doc("Call handler type for SIP endpoints.")
-enum SipEndpointCallHandler {
+@doc("Call handler to set on a SIP endpoint in create and update requests.")
+enum SipEndpointCallHandlerRequest {
+  default: "default",
+  passthrough: "passthrough",
+  block_pstn: "block-pstn",
   relay_context: "relay_context",
   relay_topic: "relay_topic",
   relay_application: "relay_application",
   relay_connector: "relay_connector",
   relay_script: "relay_script",
   laml_webhooks: "laml_webhooks",
+  laml_application: "laml_application",
+  dialogflow: "dialogflow",
+  video_room: "video_room",
+  call_flow: "call_flow",
+  ai_agent: "ai_agent",
+}
+
+@doc("Call handler of a SIP endpoint, as returned in responses.")
+enum SipEndpointCallHandler {
+  default: "default",
+  passthrough: "passthrough",
+  block_pstn: "block-pstn",
+  relay_context: "relay_context",
+  relay_application: "relay_application",
+  relay_connector: "relay_connector",
+  relay_script: "relay_script",
+  laml_webhook: "laml_webhook",
   laml_application: "laml_application",
   dialogflow: "dialogflow",
   video_room: "video_room",
@@ -43,8 +63,14 @@ model SipEndpoint {
   @example("C-3P0")
   caller_id: string | null;
 
-  @doc("When dialing a PSTN phone number, you must send it From a number you have purchased or verified. send_as indicates which number this endpoint has set as its origination. random indicates it will randomly choose a purchased or verified number from within the project.")
-  @example("random")
+  @doc("""
+    The purchased or verified number this endpoint sends as its From number when dialing a PSTN phone
+    number. When you set `send_as` to `random`, SignalWire picks one purchased or verified number from
+    the project at the time of the request and stores it, so this field returns that number rather than
+    `random`. When the endpoint has no `send_as` of its own, this field returns the SIP profile's
+    `default_send_as`, which is `random` when that is not set either.
+    """)
+  @example("+15551234567")
   send_as: string;
 
   @doc("A list of encryption ciphers this endpoint will support.")
@@ -57,7 +83,13 @@ model SipEndpoint {
   @example("required")
   encryption: "default" | "required" | "optional";
 
-  @doc("What type of handler you want to run on inbound calls.")
+  @doc("""
+    How SignalWire handles calls this SIP endpoint places. `default` uses the SIP profile's
+    `default_outbound_policy`. `passthrough` connects the call to the dialed destination, including PSTN
+    numbers, and `block-pstn` does the same but blocks calls to PSTN numbers. The other values hand the
+    call to the named handler. A handler set as `laml_webhooks` is returned as `laml_webhook`, and one
+    set as `relay_topic` is returned as `relay_context`.
+    """)
   @example(SipEndpointCallHandler.ai_agent)
   call_handler: SipEndpointCallHandler | null;
 
