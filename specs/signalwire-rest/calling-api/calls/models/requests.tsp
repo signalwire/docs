@@ -465,6 +465,24 @@ model CallCreateRequest {
   params: CallCreateParamsAlias;
 }
 
+// Not SWML.Calling.ConnectHeaders: the REST API validates `dial` headers with its own
+// name/value rules (pattern, reserved names, 1024-byte cap), so this is a separate contract.
+@summary("SIP header")
+@doc("A custom SIP header to add to the outbound call.")
+model CallSipHeader {
+  @doc("The header name. Must be a single SIP header token: letters, digits, and the symbols ``! # $ % & ' * + - . ^ _ ` | ~``, with no spaces. `Identity` and `X-ProjectID` are reserved and can't be set, in any letter case.")
+  @example("X-Custom-Header")
+  @minLength(1)
+  @pattern("^[!#$%&'*+\\-.^_`|~0-9A-Za-z]+$")
+  name: string;
+
+  @doc("The header value. Must not be empty or contain line breaks (CR or LF) or null characters. At most 1024 bytes, which can be fewer than 1024 characters.")
+  @example("custom-value")
+  @minLength(1)
+  @maxLength(1024)
+  value: string;
+}
+
 @doc("Common `dial` parameters, shared by the URL and inline-SWML forms of the command.")
 model CallCreateParamsBase {
   @doc("The address that initiates the call. For PSTN destinations, must be an E.164 number; for SIP/Verto destinations may also be a SIP URI (`sip:user@host`) or a short caller-id token.")
@@ -534,6 +552,15 @@ model CallCreateParamsBase {
     """)
   @example("tls")
   transport?: "udp" | "tcp" | "tls";
+
+  @doc("""
+    Custom SIP headers to add to the outbound call's INVITE, for example to carry routing or tracing metadata to the destination. At most 20 headers.
+
+    If any header breaks the rules for `name` or `value`, or there are more than 20, the request returns 422.
+    """)
+  @example(#[#{ name: "X-Custom-Header", value: "custom-value" }])
+  @maxItems(20)
+  headers?: CallSipHeader[];
 
   @doc("Ring timeout in seconds. Must be between 1 and 600.")
   @example(30)
