@@ -458,13 +458,13 @@ model CallCreateRequest {
 @summary("SIP header")
 @doc("A custom SIP header to add to the outbound call.")
 model CallSipHeader {
-  @doc("The header name. Must be a single SIP header token: letters, digits, and the symbols listed in the pattern, with no spaces. `Identity` and `X-ProjectID` are reserved and can't be set, in any letter case.")
+  @doc("The header name. Must be a single SIP header token: letters, digits, and the symbols ``! # $ % & ' * + - . ^ _ ` | ~``, with no spaces. `Identity` and `X-ProjectID` are reserved and can't be set, in any letter case.")
   @example("X-Custom-Header")
   @minLength(1)
   @pattern("^[!#$%&'*+\\-.^_`|~0-9A-Za-z]+$")
   name: string;
 
-  @doc("The header value. Must not be empty or contain line breaks (CR or LF). At most 1024 bytes.")
+  @doc("The header value. Must not be empty or contain line breaks (CR or LF) or null characters. At most 1024 bytes, which can be fewer than 1024 characters.")
   @example("custom-value")
   @minLength(1)
   @maxLength(1024)
