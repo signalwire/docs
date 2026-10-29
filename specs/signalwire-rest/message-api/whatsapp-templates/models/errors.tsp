@@ -8,23 +8,23 @@ using TypeSpec.Http;
 // and add Meta's error fields when Meta rejects the template.
 @doc("One reason the template was rejected.")
 model WhatsAppTemplateErrorItem {
-  @doc("What caused the error. For a field that failed validation, the full message, such as `Name is required`. When Meta rejects the template, Meta's user-facing error title, which Meta can omit.")
+  @doc("What caused the error. For a field that failed validation, the full message, such as `Name is required`. When Meta rejects the template, Meta's user-facing error title, absent when Meta doesn't send one. Absent when the template couldn't be sent to Meta.")
   @example("Name is required")
   detail?: string;
 
   @doc("The HTTP status code, as a string.")
   status: "422";
 
-  @doc("`Invalid Attribute` for a field that failed validation, Meta's error message when Meta rejects the template, or `Unknown error` when the template couldn't be sent to Meta.")
+  @doc("`Invalid Attribute` for a field that failed validation, or `Unknown error` when the template couldn't be sent to Meta. When Meta rejects the template, Meta's error message, absent when Meta doesn't send one.")
   @example("Invalid Attribute")
-  title: string;
+  title?: string;
 
-  @doc("`422`, as a string, for a field that failed validation. A number otherwise: Meta's error code when Meta rejects the template, or `500` when the template couldn't be sent to Meta.")
+  @doc("`422`, as a string, for a field that failed validation. `500`, as a number, when the template couldn't be sent to Meta. When Meta rejects the template, Meta's error code, passed through as Meta sends it, and absent when Meta doesn't send one.")
   @example("422")
-  code: string | int32;
+  code?: string | int32;
 
-  @doc("Meta's error subcode, present only when Meta rejects the template and returns one.")
-  subcode?: int32;
+  @doc("Meta's error subcode, passed through as Meta sends it. Present only when Meta rejects the template and returns one.")
+  subcode?: string | int32;
 }
 
 @doc("The template failed validation, or Meta rejected it. See `errors` for details.")
