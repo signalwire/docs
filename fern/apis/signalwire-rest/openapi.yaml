@@ -40639,10 +40639,11 @@ components:
             - true
           default: false
         status_url:
-          type: string
-          format: uri
+          allOf:
+            - $ref: '#/components/schemas/SWML.Calling.ConnectStreamStatusUrl'
           description: |-
             HTTPS URL to receive status notifications for this stream destination.
+            Must use `https://`; an `http://` URL is rejected.
             Only applies to stream destinations.
           examples:
             - https://example.com/stream-status
@@ -40904,6 +40905,8 @@ components:
             HTTP or HTTPS URL to deliver connect status events.
             These events report the overall status of the connect operation
             (connecting, connected, failed, disconnected) via a `calling.call.connect` event.
+            When `to` is a single `stream:` destination, this URL receives the stream status notifications instead,
+            and it can still use `http://` or `https://`.
           examples:
             - https://example.com/connect-status
         parallel:
@@ -41150,6 +41153,8 @@ components:
             HTTP or HTTPS URL to deliver connect status events.
             These events report the overall status of the connect operation
             (connecting, connected, failed, disconnected) via a `calling.call.connect` event.
+            When `to` is a single `stream:` destination, this URL receives the stream status notifications instead,
+            and it can still use `http://` or `https://`.
           examples:
             - https://example.com/connect-status
         serial:
@@ -41396,6 +41401,8 @@ components:
             HTTP or HTTPS URL to deliver connect status events.
             These events report the overall status of the connect operation
             (connecting, connected, failed, disconnected) via a `calling.call.connect` event.
+            When `to` is a single `stream:` destination, this URL receives the stream status notifications instead,
+            and it can still use `http://` or `https://`.
           examples:
             - https://example.com/connect-status
         serial_parallel:
@@ -41648,6 +41655,8 @@ components:
             HTTP or HTTPS URL to deliver connect status events.
             These events report the overall status of the connect operation
             (connecting, connected, failed, disconnected) via a `calling.call.connect` event.
+            When `to` is a single `stream:` destination, this URL receives the stream status notifications instead,
+            and it can still use `http://` or `https://`.
           examples:
             - https://example.com/connect-status
         to:
@@ -41757,6 +41766,10 @@ components:
         - decline
         - noAnswer
       title: Reason that stops a dialing group
+    SWML.Calling.ConnectStreamStatusUrl:
+      type: string
+      format: uri
+      pattern: ^https://
     SWML.Calling.ConnectSwitch:
       type: object
       required:
@@ -42645,35 +42658,35 @@ components:
               default: amd,fax
             end_silence_timeout:
               type: number
-              minimum: 0
-              description: How long to wait for voice to finish, in seconds. Default `1.0`.
+              minimum: 1
+              description: How long to wait for voice to finish, in seconds. Default `1.0`. Must be at least `1`.
               examples:
                 - 1
               default: 1
             initial_timeout:
               type: number
-              minimum: 0
-              description: How long to wait for initial voice before giving up, in seconds. Default `4.5`.
+              minimum: 1
+              description: How long to wait for initial voice before giving up, in seconds. Default `4.5`. Must be at least `1`.
               examples:
                 - 4.5
               default: 4.5
             machine_ready_timeout:
               type: number
-              minimum: 0
-              description: How long to wait for voice to finish before firing READY event, in seconds. Default is `end_silence_timeout`.
+              minimum: 1
+              description: How long to wait for voice to finish before firing READY event, in seconds. Default is `end_silence_timeout`. Must be at least `1`.
               examples:
                 - 2
             machine_voice_threshold:
               type: number
-              minimum: 0
-              description: The number of seconds of ongoing voice activity required to classify as MACHINE. Default `1.25`.
+              minimum: 1
+              description: The number of seconds of ongoing voice activity required to classify as MACHINE. Default `1.25`. Must be at least `1`.
               examples:
                 - 1.25
               default: 1.25
             machine_words_threshold:
               type: integer
-              minimum: 0
-              description: The minimum number of words that must be detected in a single utterance before classifying the call as MACHINE. Default `6`.
+              minimum: 1
+              description: The minimum number of words that must be detected in a single utterance before classifying the call as MACHINE. Default `6`. Must be at least `1`.
               examples:
                 - 6
               default: 6
@@ -44947,9 +44960,12 @@ components:
             postal_code:
               type: string
               description: |-
-                Whether to prompt for the postal code, passed as a string. Applies to card payments.
-                Use `"true"` to prompt or `"false"` to skip the prompt. Pass a postal code instead, such as `"94107"`, when you
-                already know it: the caller isn't prompted and that value is sent to your payment connector.
+                Whether to prompt for the postal code, or the postal code itself. Applies to card payments.
+                Pass a quoted string: an unquoted YAML or JSON boolean is rejected.
+                The values that turn `security_code` on, such as `"true"`, prompt the caller.
+                `"false"`, `"f"`, `"no"`, `"off"`, `"disabled"`, `"inactive"` and `"disallow"` (in any case) and numbers equal to zero, such as `"0"`, skip the prompt.
+                Any other value, such as `"K1A 0B1"`, is taken as the postal code: the caller isn't prompted and that value is sent to your payment connector.
+                A postal code made only of digits is read as a number, so `"94107"` prompts the caller like `"true"` and isn't sent.
               examples:
                 - 'true'
               default: 'true'
@@ -44965,10 +44981,11 @@ components:
                 - woman
             security_code:
               type: string
-              enum:
-                - 'true'
-                - 'false'
-              description: Whether to prompt for the card security code, passed as the string `"true"` or `"false"`. Applies to card payments.
+              description: |-
+                Whether to prompt for the card security code. Applies to card payments.
+                Pass a quoted string: an unquoted YAML or JSON boolean is rejected.
+                `"true"`, `"t"`, `"yes"`, `"on"`, `"enabled"`, `"active"` and `"allow"` (in any case) and non-zero whole numbers, such as `"1"`,
+                turn the prompt on. Any other value turns it off.
               examples:
                 - 'true'
               default: 'true'
@@ -45746,10 +45763,10 @@ components:
               description: |-
                 The voice to use for `say:` text to speech.
                 When not set, the `say_voice` SWML variable is used if it is set.
+                Otherwise, a voice is selected based on the text-to-speech language and gender.
                 A voice name must not contain whitespace, double quotes, or any of the characters `,{}()[]<>=/;!@#$%^&*+|~?` or a backtick.
               examples:
                 - Polly.Joanna
-              default: Polly.Salli
             say_language:
               allOf:
                 - $ref: '#/components/schemas/SWML.Calling.PromptSayLanguage'
@@ -46986,7 +47003,7 @@ components:
                 The digits to send. Valid values are 0123456789*#ABCDWw; A, B, C and D can also be lowercase.
                 Character W is a 1 second delay, and w is a 500ms delay.
                 After variable expansion, the value must contain at least one valid character and at most 99 characters,
-                counting W and w. A longer sequence is not sent.
+                counting W and w. A longer sequence is not sent, and `send_digits_result` is still `success`.
               examples:
                 - 1234#
           required:
@@ -47213,15 +47230,19 @@ components:
               description: |-
                 The TTS voice that speaks translations into `from_lang` (the first direction in `direction`).
                 Defaults to `azure.en-US-RyanMultilingualNeural`.
+                A voice that doesn't start with a lowercase engine prefix live translation supports, such as `polly.`, `gcloud.`,
+                `azure.` or `elevenlabs.`, is replaced by the default. For example, `rachel`, `amazon.Joanna` and `Polly.Joanna` are all spoken as `azure.en-US-RyanMultilingualNeural`.
               examples:
-                - Polly.Joanna
+                - polly.Joanna
             to_voice:
               type: string
               description: |-
                 The TTS voice that speaks translations into `to_lang` (a second direction in `direction`).
                 Defaults to `azure.en-US-RyanMultilingualNeural`.
+                A voice that doesn't start with a lowercase engine prefix live translation supports, such as `polly.`, `gcloud.`,
+                `azure.` or `elevenlabs.`, is replaced by the default. For example, `rachel`, `amazon.Joanna` and `Polly.Joanna` are all spoken as `azure.en-US-RyanMultilingualNeural`.
               examples:
-                - Polly.Lucia
+                - polly.Lucia
             filter_from:
               anyOf:
                 - $ref: '#/components/schemas/SWML.Calling.TranslationFilterPreset'

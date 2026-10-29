@@ -65,15 +65,19 @@ model StartAction {
     @doc("""
       The TTS voice that speaks translations into `from_lang` (the first direction in `direction`).
       Defaults to `azure.en-US-RyanMultilingualNeural`.
+      A voice that doesn't start with a lowercase engine prefix live translation supports, such as `polly.`, `gcloud.`,
+      `azure.` or `elevenlabs.`, is replaced by the default. For example, `rachel`, `amazon.Joanna` and `Polly.Joanna` are all spoken as `azure.en-US-RyanMultilingualNeural`.
       """)
-    @example("Polly.Joanna")
+    @example("polly.Joanna")
     from_voice?: string;
 
     @doc("""
       The TTS voice that speaks translations into `to_lang` (a second direction in `direction`).
       Defaults to `azure.en-US-RyanMultilingualNeural`.
+      A voice that doesn't start with a lowercase engine prefix live translation supports, such as `polly.`, `gcloud.`,
+      `azure.` or `elevenlabs.`, is replaced by the default. For example, `rachel`, `amazon.Joanna` and `Polly.Joanna` are all spoken as `azure.en-US-RyanMultilingualNeural`.
       """)
-    @example("Polly.Lucia")
+    @example("polly.Lucia")
     to_voice?: string;
 
     @doc("""

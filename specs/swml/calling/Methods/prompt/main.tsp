@@ -63,10 +63,11 @@ model Prompt {
     @doc("""
       The voice to use for `say:` text to speech.
       When not set, the `say_voice` SWML variable is used if it is set.
+      Otherwise, a voice is selected based on the text-to-speech language and gender.
       A voice name must not contain whitespace, double quotes, or any of the characters `,{}()[]<>=/;!@#$%^&*+|~?` or a backtick.
       """)
     @example("Polly.Joanna")
-    say_voice?: PromptSayVoice | SWMLVar = PromptSayVoice("Polly.Salli");
+    say_voice?: PromptSayVoice | SWMLVar;
 
     @doc("""
       The language to use for `say:` text to speech, as a language tag such as `en-US`.

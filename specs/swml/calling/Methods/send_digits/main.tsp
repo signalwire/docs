@@ -11,7 +11,7 @@ model SendDigits {
       The digits to send. Valid values are 0123456789*#ABCDWw; A, B, C and D can also be lowercase.
       Character W is a 1 second delay, and w is a 500ms delay.
       After variable expansion, the value must contain at least one valid character and at most 99 characters,
-      counting W and w. A longer sequence is not sent.
+      counting W and w. A longer sequence is not sent, and `send_digits_result` is still `success`.
       """)
     @example("1234#")
     digits: string;

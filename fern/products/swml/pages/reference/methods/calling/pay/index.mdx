@@ -58,6 +58,7 @@ Setting any positive value for `charge_amount` initiates a charge transaction.
 
 Tokenization allows you to securely store payment information for future use. Instead of processing a payment immediately, it generates a secure token that represents the payment method.
 To initiate a tokenization transaction, either pass `charge_amount` as `0` or omit the `charge_amount` attribute entirely.
+Your payment connector returns the stored payment method's identifier as `token_id`. See [Response format](#response-format).
 
 <Note>
 The token is provided and stored by your payment processor and can be used for future transactions without requiring customers
@@ -183,9 +184,14 @@ sections:
 
 
 <ParamField path="pay.postal_code" type="string" default="true" toc={true}>
-  Whether to prompt for the postal code, passed as a string. Applies to card payments.
-  Use `"true"` to prompt or `"false"` to skip the prompt.
-  Pass a postal code instead, such as `"94107"`, when you already know it: the caller isn't prompted and that value is sent to your payment connector.
+  Whether to prompt for the postal code, or the postal code itself. Applies to card payments.
+  Pass a quoted string, such as `"true"`: an unquoted YAML or JSON boolean is rejected.
+
+  - The values that turn `security_code` on, such as `"true"`, prompt the caller.
+  - `"false"`, `"f"`, `"no"`, `"off"`, `"disabled"`, `"inactive"`, and `"disallow"` (in any case), and numbers equal to zero, such as `"0"`, skip the prompt.
+  - Any other value, such as `"K1A 0B1"`, is taken as the postal code: the caller isn't prompted, and that value is sent to your payment connector.
+
+  A postal code made only of digits is read as a number, so `"94107"` prompts the caller as `"true"` does, and the value isn't sent.
 </ParamField>
 
 
@@ -318,7 +324,10 @@ sections:
 
 
 <ParamField path="pay.security_code" type="string" default="true" toc={true}>
-  Whether to prompt for the card security code, passed as the string `"true"` or `"false"`. Applies to card payments.
+  Whether to prompt for the card security code. Applies to card payments.
+  Pass a quoted string, such as `"true"`: an unquoted YAML or JSON boolean is rejected.
+  `"true"`, `"t"`, `"yes"`, `"on"`, `"enabled"`, `"active"`, and `"allow"` (in any case), and non-zero whole numbers, such as `"1"`, turn the prompt on.
+  Any other value turns it off.
 </ParamField>
 
 
@@ -564,7 +573,7 @@ Use a secret that protects only this endpoint, and rotate it periodically.
 </ParamField>
 
 <ParamField path="chargeAmount" type="string" toc={true}>
-  The amount to charge, from `charge_amount`. `0` for tokenization. This is the only camelCase field in the request body.
+  The amount to charge, from `charge_amount`, or `0.00` when `charge_amount` is omitted. This is the only camelCase field in the request body.
 </ParamField>
 
 <ParamField path="currency_code" type="string" toc={true}>
@@ -610,16 +619,16 @@ Use a secret that protects only this endpoint, and rotate it periodically.
 ### Response format
 
 Your endpoint must respond with JSON.
-SignalWire reads only `charge_id`, `error_code`, and `error_message` from the response.
+SignalWire reads `charge_id`, `token_id`, `error_code`, and `error_message` from the response.
+A `200` response with no error counts as a success when it carries a non-empty `charge_id`, or, for tokenization, a non-empty `token_id`.
 
 <Tabs>
-<Tab title="Successful transaction">
+<Tab title="Successful charge">
 
 Return a `200` HTTP status code with:
 
 <ParamField path="charge_id" type="string" toc={true}>
   A unique identifier for the successful transaction.
-  A non-empty `charge_id` is required for `pay_result` to be `success`, whatever the `charge_amount`, so return one for tokenization as well as charges.
   It's available as `payment_confirmation_code` in `pay_payment_results`.
 </ParamField>
 
@@ -640,7 +649,38 @@ Return a `200` HTTP status code with:
 ```
 
 </Tab>
-<Tab title="Failed transaction">
+<Tab title="Successful tokenization">
+
+For tokenization, `charge_amount` is omitted or written with only zeros and at most one decimal point, such as `0` or `0.00`.
+Return a `200` HTTP status code with:
+
+<ParamField path="token_id" type="string" toc={true}>
+  A unique identifier for the payment method your payment processor stored.
+  It's available as `payment_token` in `pay_payment_results`.
+  When `charge_amount` is any other value, `token_id` is ignored and the response needs a `charge_id`.
+</ParamField>
+
+<ParamField path="error_code" type="null" toc={true}>
+  Must be `null` for successful transactions.
+</ParamField>
+
+<ParamField path="error_message" type="null" toc={true}>
+  Must be `null` for successful transactions.
+</ParamField>
+
+```json
+{
+  "token_id": "tok_123456789",
+  "error_code": null,
+  "error_message": null
+}
+```
+
+Don't return a `charge_id` alongside the `token_id`.
+A response with a `charge_id` is treated as a charge, and `payment_token` is then the token type instead of your `token_id`.
+
+</Tab>
+<Tab title="Failed charge">
 
 Return a non-`200` HTTP status code with:
 
@@ -665,14 +705,37 @@ Return a non-`200` HTTP status code with:
 ```
 
 </Tab>
+<Tab title="Failed tokenization">
+
+Return a non-`200` HTTP status code with:
+
+<ParamField path="token_id" type="null" toc={true}>
+  Must be `null` for failed transactions.
+</ParamField>
+
+<ParamField path="error_code" type="string" toc={true}>
+  An error code identifying the type of failure.
+</ParamField>
+
+<ParamField path="error_message" type="string" toc={true}>
+  A human-readable description of the error.
+</ParamField>
+
+```json
+{
+  "token_id": null,
+  "error_code": "invalid_card",
+  "error_message": "Card validation failed"
+}
+```
+
+</Tab>
 </Tabs>
 
 <Note>
 A non-`200` response plays the `payment-failed` prompt.
-A `200` response plays the `payment-completed` prompt even when its body carries an error or has no `charge_id`, so check `pay_result` for the final outcome.
+A `200` response plays the `payment-completed` prompt even when it doesn't count as a success, for example when its body carries an error, so check `pay_result` for the final outcome.
 </Note>
-
-SignalWire sets `charge_id` as [`pay_payment_results.payment_confirmation_code`](#variables). When `charge_amount` is zero or omitted, it sets `token_id` as [`pay_payment_results.payment_token`](#variables).
 
 ## **Variables**
 
@@ -706,8 +769,9 @@ Access them in subsequent SWML instructions using the `${variable}` syntax (e.g.
 </ParamField>
 
 <ParamField path="pay_payment_results.payment_token" type="string" toc={true}>
-  The token type requested in `token_type`: `one-time` or `reusable`.
-  This is a label, not a payment credential; any token your payment processor stores is managed by your payment connector.
+  For a successful tokenization, the `token_id` your payment connector returned. Use it for future transactions through your payment processor.
+  Otherwise, the token type requested in `token_type`: `one-time` or `reusable`.
+  If the caller hangs up after your payment connector has created the token, the token is still reported, with `pay_result` set to `caller-hung-up`.
 </ParamField>
 
 <ParamField path="pay_payment_results.payment_confirmation_code" type="string" toc={true}>

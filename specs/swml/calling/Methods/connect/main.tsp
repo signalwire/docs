@@ -6,6 +6,11 @@ using TypeSpec.JsonSchema;
 
 namespace SWML.Calling;
 
+// Literal destination-level stream status URL: the scheme must be https. A SWML variable
+// reference is accepted separately (see ConnectDestination.status_url).
+@pattern("^https://")
+scalar ConnectStreamStatusUrl extends url;
+
 // The restriction applies at every depth, so `cond` and `switch` here use confirm-specific
 // branch models (ConfirmCond, ConfirmSwitch) instead of the shared Cond/Switch, whose
 // branches accept any method.
@@ -306,6 +311,8 @@ model ConnectDeviceBase {
     HTTP or HTTPS URL to deliver connect status events.
     These events report the overall status of the connect operation
     (connecting, connected, failed, disconnected) via a `calling.call.connect` event.
+    When `to` is a single `stream:` destination, this URL receives the stream status notifications instead,
+    and it can still use `http://` or `https://`.
     """)
   @example("https://example.com/connect-status")
   status_url?: url;
@@ -448,10 +455,11 @@ model ConnectDestination {
   // `status_url` from ConnectDeviceBase, which also reaches a single stream destination.
   @doc("""
     HTTPS URL to receive status notifications for this stream destination.
+    Must use `https://`; an `http://` URL is rejected.
     Only applies to stream destinations.
     """)
   @example("https://example.com/stream-status")
-  status_url?: url;
+  status_url?: ConnectStreamStatusUrl | SWMLVar;
 
   @doc("""
     HTTP method for the stream status webhook.

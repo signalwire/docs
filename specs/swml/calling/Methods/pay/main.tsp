@@ -89,9 +89,12 @@ model Pay {
     bank_account_type?: "consumer-checking" | "consumer-savings" | "commercial-checking" = "consumer-checking";
 
     @doc("""
-      Whether to prompt for the postal code, passed as a string. Applies to card payments.
-      Use `"true"` to prompt or `"false"` to skip the prompt. Pass a postal code instead, such as `"94107"`, when you
-      already know it: the caller isn't prompted and that value is sent to your payment connector.
+      Whether to prompt for the postal code, or the postal code itself. Applies to card payments.
+      Pass a quoted string: an unquoted YAML or JSON boolean is rejected.
+      The values that turn `security_code` on, such as `"true"`, prompt the caller.
+      `"false"`, `"f"`, `"no"`, `"off"`, `"disabled"`, `"inactive"` and `"disallow"` (in any case) and numbers equal to zero, such as `"0"`, skip the prompt.
+      Any other value, such as `"K1A 0B1"`, is taken as the postal code: the caller isn't prompted and that value is sent to your payment connector.
+      A postal code made only of digits is read as a number, so `"94107"` prompts the caller like `"true"` and isn't sent.
       """)
     @example("true")
     postal_code?: string = "true";
@@ -106,10 +109,13 @@ model Pay {
     say_voice?: string;
 
     @doc("""
-      Whether to prompt for the card security code, passed as the string `"true"` or `"false"`. Applies to card payments.
+      Whether to prompt for the card security code. Applies to card payments.
+      Pass a quoted string: an unquoted YAML or JSON boolean is rejected.
+      `"true"`, `"t"`, `"yes"`, `"on"`, `"enabled"`, `"active"` and `"allow"` (in any case) and non-zero whole numbers, such as `"1"`,
+      turn the prompt on. Any other value turns it off.
       """)
     @example("true")
-    security_code?: "true" | "false" | SWMLVar = "true";
+    security_code?: string = "true";
 
     @doc("""
       The URL to send requests for each status change during the payment process.
