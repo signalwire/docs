@@ -208,9 +208,9 @@ model LogEvent {
   @example("calling_call_initiated")
   name: string;
 
-  @doc("Additional details about the event. Structure varies by event type.")
+  @doc("Additional details about the event. The keys vary by event type.")
   @example(#{})
-  details: {};
+  details: Record<unknown>;
 
   @doc("Unique identifier for the project.")
   @example("b7182dc2-00f3-40e4-a5ce-20f164b329df")

@@ -2,13 +2,15 @@
 id: 89fb3dc5-7aef-4bee-a4cd-1c3fdf92aa37
 title: transcribe
 slug: reference/calling/transcribe
-description: Transcribe the entire call in the background. Use live_transcribe for real-time transcription.
+description: Record the call in the background and transcribe it after recording stops. Use live_transcribe for real-time transcription.
 max-toc-depth: 3
 ---
 
 [statuscallbacks]: #statuscallbacks
 
-Transcribe the entire call in the background. Execution continues to the next instruction while the call proceeds; the transcription covers the whole call and completes when the call ends. To stop it early, use the [`transcribe_stop`](/docs/swml/reference/calling/transcribe-stop) method.
+Record the call in the background and transcribe the recording after it stops. Recording starts when this instruction runs, so audio from earlier in the call isn't included, and continues until you stop it with [`transcribe_stop`](/docs/swml/reference/calling/transcribe-stop) or the call ends. Execution continues to the next instruction while the call proceeds.
+
+Transcription runs after recording stops and completes asynchronously, so the transcript can arrive some time after the call ends. The recording is transcribed as U.S. English (`en-US`); there is no option to choose another language.
 
 For real-time transcription delivered as the call happens, use [`live_transcribe`](/docs/swml/reference/calling/live-transcribe) instead.
 
@@ -23,7 +25,7 @@ Only one transcription can be active on a call at a time. Starting another while
 <Indent>
 
 <ParamField path="transcribe.status_url" type="string" toc={true}>
-  An HTTP or HTTPS URL that receives the status callback when the transcription finishes. Learn more about [status callbacks][statuscallbacks].
+  An HTTP or HTTPS URL that receives status callbacks for this transcription: recording events when recording starts and finishes, the transcript result, and possibly an error event if the transcription fails to start. Also accepts a [SWML variable](/docs/swml/reference/variables) reference that resolves to an HTTP or HTTPS URL. Learn more about [status callbacks][statuscallbacks].
 </ParamField>
 
 </Indent>
@@ -43,7 +45,71 @@ Only one transcription can be active on a call at a time. Starting another while
 
 <Markdown src="/snippets/common/_status-callback-advisory.mdx" />
 
-When you set `status_url`, SignalWire POSTs a transcript event to it when the call's transcription finishes: `calling.transcript.completed` includes the transcribed `text` when speech was captured, or `calling.transcript.failed` if the call could not be transcribed.
+When you set `status_url`, SignalWire POSTs several kinds of events to it. Check `event_type` to tell them apart:
+
+- `calling.call.transcribe` reports the recording behind the transcription. `params.state` is `transcribing` when recording starts and `finished` when it stops. A `finished` recording event doesn't mean the transcript is ready.
+- `calling.transcript.completed` or `calling.transcript.failed` reports the transcript result, sent after recording finishes and the audio has been processed.
+- `calling.error` can be sent instead of the other events if the request to start transcription fails, with the error details in `params.error`.
+
+### Recording events
+
+Each `calling.call.transcribe` event carries the standard event fields (`event_type`, `event_channel`, `timestamp`, `project_id`, `space_id`) and these fields in `params`:
+
+<ParamField path="params.call_id" type="string" toc={true}>
+  The call ID.
+</ParamField>
+
+<ParamField path="params.node_id" type="string" toc={true}>
+  The node handling the call.
+</ParamField>
+
+<ParamField path="params.segment_id" type="string" toc={true}>
+  The segment ID for the call leg. Present when available.
+</ParamField>
+
+<ParamField path="params.tag" type="string" toc={true}>
+  The tag associated with the call. Present when set.
+</ParamField>
+
+<ParamField path="params.control_id" type="string" toc={true}>
+  The control ID of this transcription, the same value stored in `transcribe_control_id`.
+</ParamField>
+
+<ParamField path="params.state" type="string" toc={true}>
+  The recording state. **Valid values:** `transcribing`, `finished`.
+</ParamField>
+
+<ParamField path="params.url" type="string" toc={true}>
+  URL of the recording being transcribed. Present when available.
+</ParamField>
+
+<ParamField path="params.recording_id" type="string" toc={true}>
+  ID of the recording being transcribed. Present when available.
+</ParamField>
+
+<ParamField path="params.status_url" type="string" toc={true}>
+  The `status_url` this event was sent to.
+</ParamField>
+
+<ParamField path="params.size" type="integer" toc={true}>
+  Recording file size in bytes. Present when `state` is `finished`.
+</ParamField>
+
+<ParamField path="params.duration" type="integer" toc={true}>
+  Recording duration in seconds. Present when `state` is `finished`.
+</ParamField>
+
+<ParamField path="params.start_time" type="number" toc={true}>
+  Unix timestamp (float) when the recording started. Present when `state` is `finished` and the time is known.
+</ParamField>
+
+<ParamField path="params.end_time" type="number" toc={true}>
+  Unix timestamp (float) when the recording ended. Present when `state` is `finished` and the time is known.
+</ParamField>
+
+### Transcript events
+
+`calling.transcript.completed` includes the transcribed `text` when speech was captured; `calling.transcript.failed` means the recording could not be transcribed.
 
 <llms-ignore>
 
