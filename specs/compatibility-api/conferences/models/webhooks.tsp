@@ -121,34 +121,35 @@ model ConferenceStatusCallbackPayload {
   @example("b3877c40-da60-4998-90ad-b792e98472ca")
   CallSidEndingConference?: string;
 
-  // The audio statistics below are sent on `participant-call-quality` only, and
-  // each one only when a value was measured.
+  // The audio statistics below are sent on every `participant-call-quality`, as `0`
+  // when nothing was measured. `AudioOutJitterAvg` is the exception: it is omitted
+  // when no RTCP reports were received.
 
-  @doc("The participant's average audio round-trip time, in seconds. Sent on `participant-call-quality` only.")
+  @doc("The participant's average audio round-trip time, in seconds. Sent on `participant-call-quality` only, as `0` when nothing was measured.")
   @example(0.05)
   AudioRttAvg?: float64;
 
-  @doc("The participant's minimum audio round-trip time, in seconds. Sent on `participant-call-quality` only.")
+  @doc("The participant's minimum audio round-trip time, in seconds. Sent on `participant-call-quality` only, as `0` when nothing was measured.")
   @example(0.03)
   AudioRttMin?: float64;
 
-  @doc("The participant's maximum audio round-trip time, in seconds. Sent on `participant-call-quality` only.")
+  @doc("The participant's maximum audio round-trip time, in seconds. Sent on `participant-call-quality` only, as `0` when nothing was measured.")
   @example(0.12)
   AudioRttMax?: float64;
 
-  @doc("The average jitter of the audio stream SignalWire sends to the participant. Measured in RTP timestamp units, not milliseconds: divide by the codec's samples per millisecond (8 for PCMU and PCMA, 48 for Opus) to convert. Sent on `participant-call-quality` only.")
+  @doc("The average jitter of the audio stream SignalWire sends to the participant. Measured in RTP timestamp units, not milliseconds: divide by the codec's samples per millisecond (8 for PCMU and PCMA, 48 for Opus) to convert. Sent on `participant-call-quality` only, and omitted when no RTCP reports were received from the participant.")
   @example(10)
   AudioOutJitterAvg?: int32;
 
-  @doc("The minimum jitter of the audio stream SignalWire sends to the participant. Measured in RTP timestamp units, not milliseconds: divide by the codec's samples per millisecond (8 for PCMU and PCMA, 48 for Opus) to convert. Sent on `participant-call-quality` only.")
+  @doc("The minimum jitter of the audio stream SignalWire sends to the participant. Measured in RTP timestamp units, not milliseconds: divide by the codec's samples per millisecond (8 for PCMU and PCMA, 48 for Opus) to convert. Sent on `participant-call-quality` only, as `0` when no RTCP reports were received from the participant.")
   @example(5)
   AudioOutJitterMin?: int32;
 
-  @doc("The maximum jitter of the audio stream SignalWire sends to the participant. Measured in RTP timestamp units, not milliseconds: divide by the codec's samples per millisecond (8 for PCMU and PCMA, 48 for Opus) to convert. Sent on `participant-call-quality` only.")
+  @doc("The maximum jitter of the audio stream SignalWire sends to the participant. Measured in RTP timestamp units, not milliseconds: divide by the codec's samples per millisecond (8 for PCMU and PCMA, 48 for Opus) to convert. Sent on `participant-call-quality` only, as `0` when no RTCP reports were received from the participant.")
   @example(15)
   AudioOutJitterMax?: int32;
 
-  @doc("The number of audio RTP packets SignalWire sent to the participant that were reported lost. Sent on `participant-call-quality` only.")
+  @doc("The number of audio RTP packets SignalWire sent to the participant that were reported lost. Sent on `participant-call-quality` only, as `0` when nothing was measured.")
   @example(0)
   AudioOutLost?: int32;
 }

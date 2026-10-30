@@ -193,7 +193,7 @@ op transcriptionStatusCallback(
   | `Muted`, `Hold` | Sent with no value | Yes | Yes | No |
   | `EndConferenceOnExit`, `StartConferenceOnEnter`, `Coaching`, `CallSidToCoach` | No | Yes | Yes | No |
   | `ReasonConferenceEnded`, `CallSidEndingConference` | `conference-end` only | No | No | No |
-  | `AudioRttAvg`, `AudioRttMin`, `AudioRttMax`, `AudioOutJitterAvg`, `AudioOutJitterMin`, `AudioOutJitterMax`, `AudioOutLost` | No | No | No | Each one when measured |
+  | `AudioRttAvg`, `AudioRttMin`, `AudioRttMax`, `AudioOutJitterAvg`, `AudioOutJitterMin`, `AudioOutJitterMax`, `AudioOutLost` | No | No | No | Yes; `AudioOutJitterAvg` only when RTCP (RTP Control Protocol) reports were received |
 
   SignalWire sends the parameters as a form-encoded (`application/x-www-form-urlencoded`) POST body, not as JSON.
   When `statusCallbackMethod` is `GET`, they are sent as query parameters instead. Every value is a string:
