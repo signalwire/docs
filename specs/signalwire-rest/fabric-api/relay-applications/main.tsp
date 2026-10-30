@@ -57,7 +57,7 @@ namespace SignalWireAPI.Fabric.RelayApplications {
     @post
     create(@body request: RelayApplicationCreateRequest):
       | {
-          @statusCode statusCode: 200;
+          @statusCode statusCode: 201;
           @body relay_application: RelayApplicationResponse;
         }
       | StatusCode401

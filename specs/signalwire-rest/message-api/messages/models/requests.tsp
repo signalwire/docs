@@ -21,8 +21,9 @@ model CreateMessageRequest {
   @example("Your order #12345 has shipped!")
   body?: string;
 
-  @doc("Array of HTTP or HTTPS URLs for media attachments. Presence of media makes the message MMS. Maximum 8 items.")
+  @doc("Array of HTTP or HTTPS URLs for media attachments. Presence of media makes the message MMS. Maximum 7 items; sending 8 or more returns a `422`.")
   @example(#["https://example.com/tracking.png"])
+  @maxItems(7)
   media?: url[];
 
   @doc("Force the message to be sent as MMS even when no media attachments are provided.")

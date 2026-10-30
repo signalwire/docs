@@ -3,6 +3,7 @@ import "@typespec/openapi";
 import "./models/core.tsp";
 import "./models/requests.tsp";
 import "./models/responses.tsp";
+import "./models/errors.tsp";
 import "../../types";
 import "../tags.tsp";
 import "../../../_shared/alias/token-permissions.tsp";
@@ -33,7 +34,9 @@ namespace SignalWireAPI.RelayRest.PhoneNumbers {
     @summary("Purchase phone number")
     @doc("""
       Purchases one available phone number and adds it to the project. Search first with [Search phone numbers](/docs/apis/rest/phone-numbers/search-available-phone-numbers), then pass the selected E.164 number here. Use [Import phone number](/docs/apis/rest/phone-numbers/create-imported-phone-number) when the number remains hosted elsewhere, or Compatibility [Incoming Phone Numbers](/docs/compatibility-api/rest/incoming-phone-numbers/create-incoming-phone-number) for form-encoded requests.
-      
+
+      Purchasing a number starts a release hold, so you can't release it right away. For most Spaces the hold lasts 14 days, with up to 2 early releases each month. See [Release phone number](/docs/apis/rest/phone-numbers/release-phone-number).
+
       ${tokenPermissions<"_Numbers_">}
       """)
     @post
@@ -83,7 +86,9 @@ namespace SignalWireAPI.RelayRest.PhoneNumbers {
     @summary("Release phone number")
     @doc("""
       Releases a project-owned phone number by ID, removing it from the project. Use it only when the number should no longer be owned; deleting a handler resource or removing its E911 assignment does not release the number. Compatibility Incoming Phone Numbers use their own delete operation.
-      
+
+      To help prevent fraud and abuse, a number can't be released during a hold period after purchase. For most Spaces the hold lasts 14 days, and up to 2 numbers can be released early each month while still on hold. Once those early releases are used, releasing a number that is still on hold returns `422`. The error's `detail` gives the date and time the hold ends.
+
       ${tokenPermissions<"_Numbers_">}
       """)
     @delete
@@ -101,6 +106,8 @@ namespace SignalWireAPI.RelayRest.PhoneNumbers {
     @doc("""
       Searches SignalWire's available inventory for local or toll-free phone numbers. Search results are candidates, not numbers your project owns; pass a selected result to [Purchase phone number](/docs/apis/rest/phone-numbers/purchase-phone-number). Use [List phone numbers](/docs/apis/rest/phone-numbers/list-phone-numbers) for owned numbers, or Compatibility [Available Phone Numbers](/docs/compatibility-api/rest/available-phone-numbers/search-local-available-phone-numbers) for form-encoded requests.
 
+      Search results aren't paginated. Each request returns up to `max_results` numbers, `links` is always empty, and paging parameters such as `page_number` are ignored. To see more of the inventory, raise `max_results` or run narrower searches, for example with `starts_with` set to an area code and exchange.
+
       ${tokenPermissions<"_Numbers_">}
       """)
     @route("/search")
@@ -111,23 +118,24 @@ namespace SignalWireAPI.RelayRest.PhoneNumbers {
       areacode?: string,
 
       @query
-      @doc("Search for either local or toll-free numbers. Defaults to local.")
+      @doc("Search for local or toll-free numbers: `local`, `tollfree`, or `toll-free`. Defaults to `local`. Any other value returns a `400` with no body.")
       number_type?: string,
 
       @query
-      @doc("A string of 3 to 7 digits that should be used as the start of a number. Cannot be used in combination with contains or ends_with.")
+      @doc("3 to 7 digits the number must start with, not counting the `+1` country code. When `areacode` is also set, the match starts right after the area code. To find a vanity number, search by its keypad digits, for example `3569377` for `FLOWERS`. Cannot be used in combination with `contains` or `ends_with`.")
       starts_with?: string,
 
       @query
-      @doc("A string of 3 to 7 digits that should appear somewhere in the number. Cannot be used in combination with starts_with or ends_with.")
+      @doc("3 to 7 digits that must appear somewhere in the number, after the area code when `areacode` is also set. On Spaces limited to 10 toll-free results, a toll-free `contains` search matches only the end of the number. To find a vanity number, search by its keypad digits. Cannot be used in combination with `starts_with` or `ends_with`.")
       contains?: string,
 
       @query
-      @doc("A string of 3 to 7 digits that should be used as the end of a number. Cannot be used in combination with starts_with or contains.")
+      @doc("3 to 7 digits the number must end with. To find a vanity number, search by its keypad digits. Cannot be used in combination with `starts_with` or `contains`.")
       ends_with?: string,
 
       @query
-      @doc("The maximum number of matches to return. Upper limit of 100. Defaults to 50.")
+      @doc("The maximum number of matches to return. Defaults to 50. Toll-free searches accept up to 100; some Spaces are limited to 10 toll-free results, with a default of 5. Local searches have no fixed upper limit, but a very large value can make the search return no numbers or fail with an error; narrow the search with `areacode`, `region`, `city`, or `starts_with` rather than raising `max_results` that far.")
+      @minValue(1)
       max_results?: int32,
 
       @query
@@ -137,7 +145,13 @@ namespace SignalWireAPI.RelayRest.PhoneNumbers {
       @query
       @doc("A specific City to search within. Must be used in combination with region. Only supported for local searches; not supported when `number_type` is toll-free.")
       city?: string,
-    ): AvailablePhoneNumbersResponse | StatusCode401 | StatusCode500;
+    ):
+      | AvailablePhoneNumbersResponse
+      | PhoneNumberSearchStatusCode400
+      | StatusCode401
+      | PhoneNumberSearchStatusCode422
+      | StatusCode500
+      | PhoneNumberSearchStatusCode503;
   }
 }
 
@@ -168,7 +182,9 @@ namespace SignalWireAPI.RelayRest.PhoneNumberE911 {
     @operationId("remove_e911_address")
     @summary("Remove the E911 address from a phone number")
     @doc("""
-      Removes the E911 address from the phone number and begins deprovisioning at the carrier. Only allowed while the number is `active`. The `e911_status` becomes `pending_removal`; the address remains associated until the carrier confirms removal.
+      Removes the E911 address from the phone number and begins deprovisioning at the carrier. Only allowed while the number's `e911_status` is `active`. The `e911_status` becomes `pending_removal`; the address remains associated until the carrier confirms removal.
+
+      Assignment is asynchronous, so a number assigned moments ago is usually still `pending`. While `e911_status` is anything other than `active`, this operation returns `422` with an item in `errors` whose `detail` is `E911 is not in a removable state for this number`. Poll [Get phone number](/docs/apis/rest/phone-numbers/retrieve-phone-number) until `e911_status` is `active` before removing the address.
 
       Use this operation to stop emergency-service provisioning for the number without deleting the reusable E911 address or releasing the phone number.
 
@@ -196,7 +212,9 @@ namespace SignalWireAPI.RelayRest.CallerIDName {
 
       The response's `name` is the requested name. It can differ from the name call recipients currently see while the request is `pending` or `in_review`, or after it is `rejected` or `failed`. To retrieve the caller ID name currently applied at the carrier, read `cnam` on the phone number with [Get phone number](/docs/apis/rest/phone-numbers/retrieve-phone-number).
 
-      Returns `404` when the phone number is not in your project or has never had a caller ID name requested.
+      [Clear caller ID name](/docs/apis/rest/caller-id-name/clear-caller-id-name) doesn't delete request records, so this operation can still return one after a clear. Until the carrier confirms the removal, a request that is `pending` or `in_review` is still returned unchanged. After confirmation, those requests are canceled and no longer returned, but the most recent earlier request with another status, such as `approved`, is returned instead. To check whether a clear has taken effect, read `cnam` on the phone number, which becomes `null`.
+
+      Returns `404` when the phone number is not in your project or has no caller ID name request to return.
 
       ${tokenPermissions<"_Numbers_">}
       """)
@@ -312,6 +330,8 @@ namespace SignalWireAPI.RelayRest.PhoneNumberLookup {
       | PhoneNumberLookupResponse
       | StatusCode401
       | StatusCode404
-      | StatusCode500;
+      | ValidationError
+      | StatusCode500
+      | PhoneNumberLookupStatusCode503;
   }
 }

@@ -148,13 +148,28 @@ model AiDebugWebhookPayload is Record<unknown> {
 
   @doc("""
     The caller interrupted the agent. The fields differ by session type: a standard session reports
-    `barge_type`, `barge_elapsed_ms`, and `interrupt_count`, while a speech-to-speech session reports
-    `audio_played_ms` and `barge_count`.
+    `barge_type`, `barge_elapsed_ms`, and `interrupt_count` (plus `context_rewritten` for a
+    `transparent` or `hangup` barge), while a speech-to-speech session reports `audio_played_ms`
+    and `barge_count`.
     """)
   barge?: {
-    @doc("`transparent` when the agent keeps what it already said, `normal` otherwise.")
+    @doc("""
+      How the interruption was handled. `transparent` when the interruption went through
+      [`transparent_barge`](/docs/swml/reference/calling/ai/params#paramstransparent_barge) handling,
+      which is on by default. `hangup` when the caller spoke over a pending hangup and the hangup was
+      discarded while `transparent_barge` is off; with `transparent_barge` on, the same interruption
+      reports `transparent`. `normal` otherwise.
+      """)
     @example("normal")
-    barge_type?: "transparent" | "normal";
+    barge_type?: "transparent" | "hangup" | "normal";
+
+    @doc("""
+      `true` when the agent's interrupted reply was removed from the conversation and the caller's
+      new words were merged into their previous turn; `false` when the reply was kept. Sent only
+      when `barge_type` is `transparent` or `hangup`.
+      """)
+    @example(false)
+    context_rewritten?: boolean;
 
     @doc("How long the agent had been speaking when the caller cut in, in milliseconds.")
     @example(1240)

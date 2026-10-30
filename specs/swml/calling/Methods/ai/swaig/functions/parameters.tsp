@@ -23,7 +23,7 @@ enum StringFormat {
 // ===== Parameter Model =====
 
 model FunctionParameters {
-  @doc("The type of argument the AI is passing to the function. Possible values are 'string' and 'object'.")
+  @doc("The type of the function's arguments. Must be `object`.")
   type: "object";
 
   @doc("""
@@ -32,6 +32,8 @@ model FunctionParameters {
     A property definition is a valid JSON schema type with dynamic property names, where:
     - Keys: User-defined strings, that set the property names.
     - Values: A valid property type, which can be one of the following: `string`, `integer`, `number`, `boolean`, `array`, `object`, or `null`.
+    
+    The schema is passed to the AI model as written: [SWML variables](/docs/swml/reference/variables) in it are not expanded.
     """)
   properties: {
     ...TypeSpec.Record<SchemaType>;
@@ -68,7 +70,7 @@ model FunctionBaseProperty {
 
   @doc("Whether the property can be null.")
   @example(false)
-  nullable?: boolean | SWMLVar;
+  nullable?: boolean;
 }
 
 @summary("String Function Property")
@@ -98,7 +100,7 @@ model StringProperty is FunctionBaseProperty {
   @example("^[a-zA-Z0-9_.-]*$")
   pattern?: string;
 
-  @doc("String format (email, date-time, etc.)")
+  @doc("String format, such as `email` or `date_time`.")
   format?: StringFormat;
 }
 
@@ -113,7 +115,7 @@ model IntegerProperty is FunctionBaseProperty {
 
   @doc("The default integer value")
   @example(5)
-  default?: integer | SWMLVar;
+  default?: integer;
 
   /* Needs to be tested
     @doc("Minimum value")
@@ -146,13 +148,13 @@ model NumberProperty is FunctionBaseProperty {
   @doc("The type of parameter(s) the AI is passing to the function.")
   type: "number";
 
-  @doc("An array of integers that are the possible values")
-  @example(#[1, 2, 3])
-  `enum`?: number[] | SWMLVar[];
+  @doc("An array of numbers that are the possible values")
+  @example(#[1.5, 2, 3])
+  `enum`?: number[];
 
-  @doc("The default integer value")
-  @example(3)
-  default?: number | SWMLVar;
+  @doc("The default number value")
+  @example(2.5)
+  default?: number;
 
   /* Needs to be tested
     @doc("Minimum value")
@@ -187,7 +189,7 @@ model BooleanProperty is FunctionBaseProperty {
 
   @doc("The default boolean value")
   @example(false)
-  default?: boolean | SWMLVar;
+  default?: boolean;
 }
 
 @summary("Const Property")

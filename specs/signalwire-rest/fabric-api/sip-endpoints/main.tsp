@@ -28,7 +28,7 @@ namespace SignalWireAPI.Fabric.SipEndpoints {
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     list():
-      | SipEndpointListResponse[]
+      | FabricSipEndpointListResponse
       | StatusCode401
       | StatusCode404
       | StatusCode500;
@@ -43,7 +43,7 @@ namespace SignalWireAPI.Fabric.SipEndpoints {
     read(...SipEndpointPathID):
       | {
           @statusCode statusCode: 200;
-          @body sip_endpoint: SipEndpointResponse;
+          @body sip_endpoint: FabricSipEndpointResponse;
         }
       | StatusCode401
       | StatusCode404
@@ -59,8 +59,8 @@ namespace SignalWireAPI.Fabric.SipEndpoints {
     @post
     create(@body request: SipEndpointCreateRequest):
       | {
-          @statusCode statusCode: 200;
-          @body sip_endpoint: SipEndpointResponse;
+          @statusCode statusCode: 201;
+          @body sip_endpoint: FabricSipEndpointResponse;
         }
       | StatusCode401
       | StatusCode404
@@ -78,7 +78,7 @@ namespace SignalWireAPI.Fabric.SipEndpoints {
     update(...SipEndpointPathID, @body request: SipEndpointUpdateRequest):
       | {
           @statusCode statusCode: 200;
-          @body sip_endpoint: SipEndpointResponse;
+          @body sip_endpoint: FabricSipEndpointResponse;
         }
       | StatusCode401
       | StatusCode404

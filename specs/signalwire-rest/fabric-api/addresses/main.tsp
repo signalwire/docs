@@ -42,7 +42,7 @@ namespace SignalWireAPI.Fabric.FabricAddresses {
     read(...FabricAddressID):
       | {
           @statusCode statusCode: 200;
-          @body fabric_address: FabricAddress;
+          @body fabric_address: FabricClientAddress;
         }
       | StatusCode401
       | StatusCode404
