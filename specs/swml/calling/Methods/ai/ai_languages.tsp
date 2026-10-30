@@ -23,6 +23,7 @@ model LanguagesBase {
     Set it to `multi` to have the engine transcribe whichever of its supported languages the caller
     speaks, rather than one fixed language. The agent still answers in this entry's single `voice`.
     `multi` works only with Deepgram speech recognition, and it switches between fewer languages than `code` accepts: on Nova-3, English, Spanish, French, German, Hindi, Russian, Portuguese, Japanese, Italian, and Dutch; on Nova-2, English and Spanish. A Google speech engine treats `multi` as an ordinary language code.
+    With `multi`, recognition hints from [`ai.hints`](/docs/swml/reference/calling/ai#aihints) are not used, though its rewrite rules still apply.
     To answer in the caller's language as well, use [`ai.multilingual`](/docs/swml/reference/calling/ai/multilingual)
     instead, which builds on the same code-switching mode and adds a voice per language.
     """)
