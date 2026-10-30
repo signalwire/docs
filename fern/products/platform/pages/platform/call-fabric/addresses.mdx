@@ -65,7 +65,7 @@ flowchart LR
 |---|---|---|
 | [Phone number](#phone-numbers) | `+12025550123` | Anyone on the phone network |
 | [SIP Address](#sip-addresses) | `sip:*@bayview-public.dapp.signalwire.com` | SIP devices, PBXs, and carriers outside SignalWire |
-| [Alias](#aliases) | `/public/dispatch`, `/private/ada` | Browser SDK clients, your scripts, REST API calls, and other Resources |
+| [Alias](#aliases) | `/public/ada`, `/private/dispatch` | Browser SDK clients, your scripts, REST API calls, and other Resources |
 | [WhatsApp number](#whatsapp-numbers) | A WhatsApp business number connected to your Space | WhatsApp users |
 
 ### Phone numbers
@@ -76,7 +76,8 @@ handler takes inbound messages. Assign a calling handler to start taking calls o
 
 Any Resource that can take a call can be a calling handler, such as an AI Agent, a SWML Script, a
 Call Flow, a Relay Application, a Subscriber, or a SIP Credential. A messaging handler is a
-Resource that runs messaging logic: a SWML Script created for messaging, or a Relay Application.
+Resource that runs messaging logic, such as a SWML Script created for messaging or a Relay
+Application.
 
 ### SIP Addresses
 
@@ -96,7 +97,7 @@ A SIP Address also carries its own settings:
 
 | Setting | Behavior |
 |---|---|
-| Name | Required. Up to 50 lowercase letters, numbers, and hyphens, unique within the project |
+| Name | Required. Up to 50 lowercase letters, numbers, hyphens, and underscores. No other Address in the project can have the same name |
 | Password | Optional. Callers supply it to authenticate their calls |
 | IP allowlist | Labeled **IP Whitelisting** in the Dashboard. Accepts calls only from the IP addresses or Classless Inter-Domain Routing (CIDR) ranges you list. Turning it on requires at least one entry, and the list holds up to 256 |
 | Encryption | Required, optional, or forbidden. The default is optional |
@@ -112,19 +113,21 @@ Address and point the carrier at it, as the [bring your own carrier][byoc] guide
 ### Aliases
 
 An alias is a name in the form `/<context>/<name>`. SignalWire creates one from the Resource's name
-when you create the Resource, so an AI Agent named `Ada` is reachable at `/private/ada` and a
-Subscriber named `john.doe` at `/private/john-doe`. Names use lowercase letters, numbers,
-underscores, and dashes, run up to 256 characters, and are unique within their context.
+when you create the Resource, so an AI Agent named `Ada` that you add in the Dashboard is reachable
+at `/public/ada`. A Subscriber's alias comes from its display name, or from the part of its email
+before the `@` when it has none, so a Subscriber with the email `john.doe@example.com` is reachable
+at `/private/john-doe`. Names use lowercase letters, numbers, underscores, and dashes, run up to
+256 characters, and are unique within their context.
 
-The context of that first alias depends on the Resource type:
+The context of that first alias depends on the Resource type. For the most common types:
 
 | First alias context | Resource types |
 |---|---|
-| `private` | Custom AI Agents, SWML Scripts stored in your Space, Call Flows, Relay Applications, Subscribers |
-| `public` | Dialogflow agents, SWML Scripts served from your own URL, Video Rooms, SIP Credentials, SIP Gateways, FreeSWITCH Connectors |
+| `private` | AI Agents created with the REST API, SWML Scripts stored in your Space, Call Flows, Relay Applications, Subscribers |
+| `public` | AI Agents added in the Dashboard, Dialogflow agents, SWML Scripts served from your own URL, Video Rooms, SIP Credentials, SIP Gateways, FreeSWITCH Connectors |
 
-To put a new custom AI Agent behind a public call button on your website, add a `public` alias for
-it.
+The first alias of an AI Agent added in the Dashboard takes audio calls only. To reach an AI Agent
+created with the REST API from a public call button on your website, add a `public` alias for it.
 
 Add more aliases to expose the same Resource under other names or to shape how it's reached. Each
 alias has these properties:
@@ -146,8 +149,9 @@ create one with the same name and context on the new Resource.
 
 A WhatsApp business number connected to your Space can be assigned to a Resource so it handles
 inbound WhatsApp calls or messages. The number holds one Address at a time, for either calls or
-messages, except on a Relay Application, which takes both. [WhatsApp onboarding][whatsapp-onboarding]
-covers connecting the number to your Space.
+messages. The exception is a Relay Application assigned in the Dashboard, which takes both. Through
+the REST API, every assignment sets a single handler and removes the other, including for a Relay
+Application. [WhatsApp onboarding][whatsapp-onboarding] covers connecting the number to your Space.
 
 ## Contexts
 
@@ -159,13 +163,14 @@ project has two built-in contexts, `public` and `private`, which can't be change
 | `public` | Anyone, including unauthenticated callers | Entry points such as a support agent behind a call button on your website |
 | `private` | Only authenticated users | [Subscribers][subscribers] and anything only your own users should dial |
 
-You can add your own contexts from **Addresses** > **Contexts** in the Dashboard. A new context
+If your Dashboard shows **Addresses** in the left sidebar, you can add your own contexts from
+**Addresses** > **Contexts**. A new context
 takes a **Domain**, made of letters, numbers, and dashes, and inherits its access type from either
 `public` or `private`. The domain becomes part of the host of every SIP Address you create in the
 context. Deleting a context deletes every Address in it.
 
-Phone numbers don't belong to a context you choose. The **Addresses** page lists them in the
-`External` context.
+Phone numbers don't belong to a context you choose. SignalWire places them in the `external`
+context.
 
 When you dial an alias from a REST API call, SWML [`connect`][swml-connect], or a client, write the
 full `/<context>/<name>`.
@@ -192,13 +197,13 @@ Bayview Taxi's dispatcher, Ada, is one AI Agent Resource with four Addresses:
 |---|---|
 | `+12025550123` | Riders calling from the phone network |
 | `sip:*@bayview-public.dapp.signalwire.com` | Bayview's office PBX forwarding calls over SIP |
-| `/public/dispatch` | The call button on Bayview's website |
-| `/private/ada` | Drivers dialing from Bayview's own app as signed-in Subscribers |
+| `/public/ada` | The call button on Bayview's website. SignalWire created this alias with the Resource |
+| `/private/dispatch` | Drivers dialing from Bayview's own app as signed-in Subscribers |
 
 To move every caller to a new version of Ada, Bayview assigns the phone number and the SIP Address
 to the new Resource. It then deletes the two aliases from the old Resource and re-creates them on
-the new one, which frees `/private/ada` so the new alias doesn't get a random suffix. The number,
-the SIP URI, and `/public/dispatch` all stay the same, so nothing that dials them changes.
+the new one, which frees `/public/ada` so the new alias doesn't get a random suffix. The number,
+the SIP URI, and both aliases stay the same, so nothing that dials them changes.
 
 ## Create and manage Addresses
 
@@ -207,10 +212,7 @@ Every alias and SIP Address needs a Resource when you create it.
 <llms-ignore>
 
 In the Dashboard, open a Resource and select its **Addresses & Phone Numbers** tab, then select
-<kbd>+ Add</kbd> to **Assign a Phone Number**, **Assign a SIP Address**, or **Add an Alias**. The
-**Addresses** page in the left sidebar lists every Address in your project with its context, type,
-and handlers. Its <kbd>+ Add</kbd> creates aliases and SIP Addresses for any Resource you pick, and
-its **Assign a Phone Number** option buys a new number.
+<kbd>+ Add</kbd> to **Assign a Phone Number**, **Assign a SIP Address**, or **Add an Alias**.
 
 </llms-ignore>
 
