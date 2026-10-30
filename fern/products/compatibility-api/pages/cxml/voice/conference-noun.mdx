@@ -82,12 +82,16 @@ puts response.to_s
   Coach accepts a call [SID](/docs/platform/what-is-a-sid) of a call that is currently connected to an in-progress conference. Specifying a call SID that does not exist or is no longer connected to the conference will result in the call failing to the action URL and throwing a 13240 error.
 </ParamField>
 
+<ParamField path="emitCallQuality" type="boolean" default="false" toc={true}>
+  When **true**, a `participant-call-quality` request with this participant's audio statistics is sent to `statusCallback` when the participant leaves, if statistics are available. To receive it, include `leave` in `statusCallbackEvent`. See [below](#conference_statusCallback) for request parameters.
+</ParamField>
+
 <ParamField path="endConferenceOnExit" type="boolean" default="false" toc={true}>
   If a participant with `endConferenceOnExit` set to **true** leaves a conference, the conference terminates and all participants drop out of the call.
 </ParamField>
 
 <ParamField path="eventCallbackUrl" type="string" toc={true}>
-  The `eventCallbackUrl` attribute takes a URL as an argument and makes a `POST` request to it when a conference ends.
+  A URL for conference recording status requests, used only when `recordingStatusCallback` is not set. Requests to it are always `POST`. Takes effect only when `record` is `record-from-start`.
 </ParamField>
 
 <ParamField path="maxParticipants" type="integer" toc={true}>
@@ -106,8 +110,8 @@ puts response.to_s
   The `recordingStatusCallback` attribute takes in an absolute URL. SignalWire will make a `GET` or `POST` request to this URL when recording is accessible. See [below](#conference_recordingStatusCallback) for request parameters.
 </ParamField>
 
-<ParamField path="recordingStatusCallbackEvent" type="string" default="completed failed" toc={true}>
-  Specifies recording status changes. To specify multiple values, separate them by a space. See [below](#conference_recordingStatusCallbackEvent) for details.
+<ParamField path="recordingStatusCallbackEvent" type="string" default="completed" toc={true}>
+  The recording status that triggers a request to `recordingStatusCallback`. Set a single lowercase value from the list [below](#conference_recordingStatusCallbackEvent). A list of values, or a value not in that list, is treated as `completed`. A listed value written with capital letters, such as `Completed`, sends no request.
 </ParamField>
 
 <ParamField path="recordingStatusCallbackMethod" type="string" default="POST" toc={true}>
@@ -161,79 +165,129 @@ The `beep` attribute has the following values:
 
 #### Events for the `statusCallbackEvent` attribute  [#conference_statusCallbackEvent]
 
-The `statusCallbackEvent` attribute has the following events:
+The `statusCallbackEvent` attribute has the following events. Each one sends the `StatusCallbackEvent` values listed beside it. If you set `statusCallback` without `statusCallbackEvent`, no callbacks are sent.
 
-| Event | Description |
-|:------|:------------|
-| `start` | The conference has started as long as there are at least two people in the conference room and one of the participant's `startConferenceOnEnter` is set to **true**. |
-| `end` | The conference ends when the last participant in the call or a participant with `endConferenceOnExit` set to **true** leaves the call. |
-| `join` | When a participant joins a conference. |
-| `leave` | When a participant leaves a conference. |
-| `mute` | When a participant has been muted or un-muted. |
-| `hold` | When a participant has been put on hold or put out of hold. |
-| `speaker` | When a participant has begun or stopped speaking. |
+| Event | Description | `StatusCallbackEvent` values sent |
+|:------|:------------|:------------|
+| `start` | The conference has started as long as there are at least two people in the conference room and one of the participant's `startConferenceOnEnter` is set to **true**. | `conference-start` |
+| `end` | The conference ends when the last participant in the call or a participant with `endConferenceOnExit` set to **true** leaves the call. | `conference-end` |
+| `join` | When a participant joins a conference. | `participant-join` |
+| `leave` | When a participant leaves a conference. | `participant-leave`, plus `participant-call-quality` for a participant who joined with `emitCallQuality` set to **true** |
+| `mute` | When a participant has been muted or un-muted. | `participant-mute`, `participant-unmute` |
+| `hold` | When a participant has been put on hold or put out of hold. | `participant-hold`, `participant-unhold` |
+| `speaker` | When a participant has begun or stopped speaking. | `participant-speech-start`, `participant-speech-stop` |
 
 
 
 
 #### Request parameters for the `statusCallback` URL  [#conference_statusCallback]
 
-You can expect several parameters to be present in the request associated to the `statusCallback` URL. First, you have the [Standard Request Parameters](/docs/compatibility-api/cxml/reference/voice#request-parameters). Then, you also have the following specific parameters:
+SignalWire sends the parameters below to your `statusCallback` URL, as a form-encoded `POST` body or, when `statusCallbackMethod` is `GET`, as query parameters. Every value is a string, so boolean parameters arrive as `true` or `false`. The full schema, with an example payload, is on the [Conference status callback reference](/docs/compatibility-api/rest/conferences/webhooks/conference-status-callback).
+
+Which parameters are sent depends on the event:
+
+| Parameter | `conference-start`, `conference-end` | `participant-join`, `-leave`, `-mute`, `-unmute`, `-hold`, `-unhold` | `participant-speech-start`, `-speech-stop` | `participant-call-quality` |
+|:------|:------|:------|:------|:------|
+| `AccountSid`, `ConferenceSid`, `StatusCallbackEvent`, `Timestamp` | Yes | Yes | Yes | Yes |
+| `CallSid` | Sent with no value | Yes | Yes | Yes |
+| `FriendlyName` | Yes | Yes | No | No |
+| `Muted`, `Hold` | Sent with no value | Yes | Yes | No |
+| `EndConferenceOnExit`, `StartConferenceOnEnter`, `Coaching`, `CallSidToCoach` | No | Yes | Yes | No |
+| `ReasonConferenceEnded`, `CallSidEndingConference` | `conference-end` only | No | No | No |
+| `AudioRttAvg`, `AudioRttMin`, `AudioRttMax`, `AudioOutJitterAvg`, `AudioOutJitterMin`, `AudioOutJitterMax`, `AudioOutLost` | No | No | No | Yes; `AudioOutJitterAvg` only when RTCP (RTP Control Protocol) reports were received |
 
 <ParamField path="AccountSid" type="string" toc={true}>
-  A unique identifier for the Account this call is associated with.
-</ParamField>
-
-<ParamField path="CallSid" type="string" toc={true}>
-  A unique identifier for the call.
+  The unique ID of the project the conference belongs to.
 </ParamField>
 
 <ParamField path="ConferenceSid" type="string" toc={true}>
-  A unique identifier for the named Conference.
-</ParamField>
-
-<ParamField path="Duration" type="integer" toc={true}>
-  The time, in seconds, of the conference call.
-</ParamField>
-
-<ParamField path="EndConferenceOnExit" type="string" toc={true}>
-  When a participant has this set on **true** and they leave a call, conference ends.
-</ParamField>
-
-<ParamField path="EventName" type="string" toc={true}>
-  The name of the event.
+  The unique identifier for the conference.
 </ParamField>
 
 <ParamField path="FriendlyName" type="string" toc={true}>
-  Name of the conference.
-</ParamField>
-
-<ParamField path="Hold" type="string" toc={true}>
-  Whether a participant is on hold or not.
-</ParamField>
-
-<ParamField path="Muted" type="string" toc={true}>
-  Whether a participant is muted or not.
-</ParamField>
-
-<ParamField path="RecordingFileSize" type="string" toc={true}>
-  The size of the recorded audio file.
-</ParamField>
-
-<ParamField path="RecordingUrl" type="string" toc={true}>
-  The URL of the recorded audio file.
-</ParamField>
-
-<ParamField path="StartConferenceOnEnter" type="string" toc={true}>
-  When a participant has this set on **true** and they join a call, conference begins.
+  The name of the conference. Not sent on `participant-speech-start`, `participant-speech-stop`, or `participant-call-quality`.
 </ParamField>
 
 <ParamField path="StatusCallbackEvent" type="string" toc={true}>
-  Conference state changes. Possible events are: `conference-end`, `conference-start`, `participant-leave`, `participant-join`, `participant-mute`, `participant-unmute`, `participant-hold`, `participant-unhold`, `participant-speech-start`, `participant-speech-stop`.
+  The event that triggered the request: `conference-start`, `conference-end`, `participant-join`, `participant-leave`, `participant-mute`, `participant-unmute`, `participant-hold`, `participant-unhold`, `participant-speech-start`, `participant-speech-stop`, or `participant-call-quality`. `participant-call-quality` reports the audio statistics of a participant who joined with `emitCallQuality` set to **true**, and is sent when that participant leaves.
 </ParamField>
 
 <ParamField path="Timestamp" type="string" toc={true}>
-  The timestamp, in RFC 2822 format, of when an event occurred.
+  The timestamp, in RFC 2822 format, of when SignalWire processed the event.
+</ParamField>
+
+<ParamField path="CallSid" type="string" toc={true}>
+  The unique identifier of the participant's call. Has no value on `conference-start` and `conference-end`.
+</ParamField>
+
+<ParamField path="Muted" type="string" toc={true}>
+  Whether the participant is muted: `true` or `false`. Has no value on `conference-start` and `conference-end`, and is not sent on `participant-call-quality`.
+</ParamField>
+
+<ParamField path="Hold" type="string" toc={true}>
+  Whether the participant is on hold: `true` or `false`. Has no value on `conference-start` and `conference-end`, and is not sent on `participant-call-quality`.
+</ParamField>
+
+<ParamField path="EndConferenceOnExit" type="string" toc={true}>
+  Whether the conference ends when this participant leaves: `true` or `false`. Sent on participant events except `participant-call-quality`.
+</ParamField>
+
+<ParamField path="StartConferenceOnEnter" type="string" toc={true}>
+  Whether the conference starts when this participant joins: `true` or `false`. Sent on participant events except `participant-call-quality`.
+</ParamField>
+
+<ParamField path="Coaching" type="string" toc={true}>
+  Whether the participant is coaching another call: `true` or `false`. Sent on every participant event except `participant-call-quality`, whether or not the participant joined with the `coach` attribute.
+</ParamField>
+
+<ParamField path="CallSidToCoach" type="string" toc={true}>
+  The unique identifier of the call this participant is coaching. Sent on every participant event except `participant-call-quality`; has no value when the participant is not coaching.
+</ParamField>
+
+<ParamField path="ReasonConferenceEnded" type="string" toc={true}>
+  Why the conference ended. Sent on `conference-end` only, and can be empty when no reason was recorded.
+
+  | Value | Meaning |
+  |:------|:------------|
+  | `last-participant-left` | The last participant left. |
+  | `last-participant-kicked` | The last participant was removed from the conference. |
+  | `participant-with-end-conference-on-exit-left` | A participant with `endConferenceOnExit` set to **true** left. |
+  | `participant-with-end-conference-on-exit-kicked` | A participant with `endConferenceOnExit` set to **true** was removed from the conference. |
+  | `conference-ended-via-api` | The conference was ended through the REST API, by [updating the conference](/docs/compatibility-api/rest/conferences/update-conference) with `Status` set to `completed`. |
+  | `down` | SignalWire ended the conference after a service interruption. |
+  | `stale` | SignalWire closed a conference that was still open but no longer active. |
+</ParamField>
+
+<ParamField path="CallSidEndingConference" type="string" toc={true}>
+  The unique identifier of the call whose departure ended the conference. Sent on `conference-end` only; has no value when the conference did not end because a participant left or was removed.
+</ParamField>
+
+<ParamField path="AudioRttAvg" type="number" toc={true}>
+  The participant's average audio round-trip time, in seconds. Sent on `participant-call-quality` only, as `0` when nothing was measured.
+</ParamField>
+
+<ParamField path="AudioRttMin" type="number" toc={true}>
+  The participant's minimum audio round-trip time, in seconds. Sent on `participant-call-quality` only, as `0` when nothing was measured.
+</ParamField>
+
+<ParamField path="AudioRttMax" type="number" toc={true}>
+  The participant's maximum audio round-trip time, in seconds. Sent on `participant-call-quality` only, as `0` when nothing was measured.
+</ParamField>
+
+<ParamField path="AudioOutJitterAvg" type="integer" toc={true}>
+  The average jitter of the audio stream SignalWire sends to the participant. Measured in RTP timestamp units, not milliseconds: divide by the codec's samples per millisecond (8 for PCMU and PCMA, 48 for Opus) to convert. Sent on `participant-call-quality` only, and omitted when no RTCP reports were received from the participant.
+</ParamField>
+
+<ParamField path="AudioOutJitterMin" type="integer" toc={true}>
+  The minimum jitter of the audio stream SignalWire sends to the participant. Measured in RTP timestamp units, not milliseconds: divide by the codec's samples per millisecond (8 for PCMU and PCMA, 48 for Opus) to convert. Sent on `participant-call-quality` only, as `0` when no RTCP reports were received from the participant.
+</ParamField>
+
+<ParamField path="AudioOutJitterMax" type="integer" toc={true}>
+  The maximum jitter of the audio stream SignalWire sends to the participant. Measured in RTP timestamp units, not milliseconds: divide by the codec's samples per millisecond (8 for PCMU and PCMA, 48 for Opus) to convert. Sent on `participant-call-quality` only, as `0` when no RTCP reports were received from the participant.
+</ParamField>
+
+<ParamField path="AudioOutLost" type="integer" toc={true}>
+  The number of audio RTP packets SignalWire sent to the participant that were reported lost. Sent on `participant-call-quality` only, as `0` when nothing was measured.
 </ParamField>
 
 
@@ -241,30 +295,26 @@ You can expect several parameters to be present in the request associated to the
 
 #### Request parameters for the `recordingStatusCallback` URL  [#conference_recordingStatusCallback]
 
+Conference recordings send the same parameters as call recordings, with `ConferenceSid` in place of `CallSid`. See the [Recording status callback reference](/docs/compatibility-api/rest/recordings/webhooks/recording-status-callback) for every field.
+
 <llms-ignore>
 
-<WebhookPayloadSnippet webhook="recordingStatusCallback" />
+<WebhookPayloadSnippet webhook="recording_status_callback" />
 
 </llms-ignore>
-
-<llms-only>
-
-See the [Recording status callback reference](/docs/compatibility-api/rest/recordings/webhooks/recording-status-callback) for the request fields sent to `recordingStatusCallback`.
-
-</llms-only>
 
 
 
 
 #### Status values for the `recordingStatusCallbackEvent` attribute  [#conference_recordingStatusCallbackEvent]
 
-The `recordingStatusCallbackEvent` attribute has the following status values:
+The `recordingStatusCallbackEvent` attribute takes one of the following values. Each value sends only its own request, so `in-progress` alone sends no request when the recording completes.
 
 | Value | Description |
 |:------|:------------|
-| `in-progress` | The recording has begun. |
-| `completed` | The recording has completed and is accessible. |
-| `failed` | The recording is not accessible because of a failure. |
+| `in-progress` | A request is sent when the recording begins. |
+| `completed` | A request is sent when the recording has completed and is accessible. The **default value**. If the recording captured no audio, no request is sent. |
+| `absent` | A request is sent only when SignalWire closes a recording that produced no file, such as after a service interruption. A recording that ends normally with no audio sends no request. |
 
 ## Examples
 
