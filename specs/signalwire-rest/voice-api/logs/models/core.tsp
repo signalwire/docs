@@ -57,7 +57,7 @@ model VoiceLogCommon {
   created_at: utcDateTime;
 }
 
-@summary("Call Log")
+@summary("Relay Call Log")
 @doc("Voice log for Relay call types. Returned when `type` is `relay_pstn_call`, `relay_sip_call`, or `relay_webrtc_call`.")
 model RelayVoiceLog {
   ...VoiceLogCommon;
@@ -93,6 +93,10 @@ model RelayVoiceLog {
   @doc("Parent log identifier for related call entries.")
   @example(null)
   parent_id: string | null;
+
+  @doc("Audio quality statistics for the call. Only measured statistics are included. Null if the call has no quality measurement.")
+  @example(null)
+  qos_metrics: Record<unknown> | null;
 }
 
 @doc("Audio quality statistics for a Compatibility API call. Each field is null when the call has no measurement for it, such as a call that never carried audio.")
@@ -161,16 +165,16 @@ model CallQualityMetrics {
   @example(0)
   audio_out_dtmf_packet_count: int32 | null;
 
-  @doc("The number of inbound packets not received at the expected interval. Increases with every packet lost from the inbound stream.")
+  @doc("The number of inbound audio intervals filled with comfort noise because no audio packet was available. It grows with lost or late packets and during DTMF digits.")
   @example(1)
   audio_in_skip_packet_count: int32 | null;
 
-  @doc("The number of inbound packets removed from the jitter buffer because of buffer overflow or underflow.")
+  @doc("The number of queued inbound packets discarded when the media stream was flushed, for example when the call was bridged or unbridged.")
   @example(2)
   audio_in_flush_packet_count: int32 | null;
 
-  @doc("The largest jitter buffer size recorded for inbound audio during the call.")
-  @example(4)
+  @doc("Not populated. Always `0` when the call has quality statistics.")
+  @example(0)
   audio_in_largest_jb_size: int32 | null;
 }
 
