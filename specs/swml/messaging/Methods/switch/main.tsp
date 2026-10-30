@@ -27,9 +27,17 @@ model Switch {
   @doc("""
     Branch on a variable's value, with optional text transforms applied before matching.
     Useful for keyword-driven inbound message handling.
+    
+    After the selected branch runs, execution continues with the next step after
+    `switch`, unless the branch moves execution elsewhere (for example with `goto`,
+    `return`, or `transfer`), a step fails, or the document reaches its 100-step limit.
     """)
   switch: {
-    @doc("Variable path to match. Specified without the `%{}` wrapper (e.g. `message.body`).")
+    @doc("""
+      Variable path to match. Specified without the `%{}` wrapper (e.g. `message.body`).
+      The resolved value is converted to a string, then transformed and compared exactly
+      with the `case` keys. A missing variable path resolves to an empty string.
+      """)
     @example("message.body")
     variable: string;
 
@@ -40,7 +48,8 @@ model Switch {
     @doc("""
       Map of values to arrays of SWML methods to execute. The key is the value to compare
       against `variable` (after applying `transform`); the value is the array of methods
-      to run on match.
+      to run on match. Keys are literal and are not transformed, and matching is exact.
+      An empty-string key matches a missing variable; otherwise `default` is used.
       """)
     case: {
       ...TypeSpec.Record<SWMLMethod[]>;

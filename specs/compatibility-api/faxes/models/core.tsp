@@ -89,19 +89,19 @@ model Fax {
   media_sid: string;
 
   @doc("The number of pages in the fax document, or null if not yet determined.")
-  @example("3")
-  num_pages: string | null;
+  @example(3)
+  num_pages: int32 | null;
 
   @doc("The cost of the fax, or null if not yet calculated.")
-  @example("-0.005")
-  price: string | null;
+  @example(0.0095)
+  price: float64 | null;
 
   @doc("The currency, in ISO 4217 format, of the price.")
   @example("USD")
   price_unit: string;
 
-  @doc("The quality of the fax.")
-  quality: FaxQuality;
+  @doc("The quality of the fax, or null if not set.")
+  quality: FaxQuality | null;
 
   @doc("The unique identifier of the fax.")
   @example("b3877c40-da60-4998-90ad-b792e98472fx")

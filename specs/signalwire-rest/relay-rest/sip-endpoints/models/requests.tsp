@@ -16,8 +16,15 @@ model CreateSipEndpointRequest {
   @example("C-3P0")
   caller_id?: string;
 
-  @doc("When dialing a PSTN phone number, you must send it From a number you have purchased or verified. send_as indicates which number this endpoint has set as its origination. random indicates it will randomly choose a purchased or verified number from within the project.")
-  @example("random")
+  @doc("""
+    The purchased or verified number, in E.164 format, to send as the From number when this endpoint
+    dials a PSTN phone number. Set `random` to have SignalWire pick one purchased or verified number from
+    the project. The pick happens once, when this request is processed, and that number is stored and
+    returned in `send_as`; it is not re-chosen for each call. Omit it to use the SIP profile's
+    `default_send_as`. Returns `422` when the number is not purchased or verified in the project, or
+    when `random` is set and the project has no such number.
+    """)
+  @example("+15551234567")
   send_as?: string;
 
   @doc("A list of encryption ciphers this endpoint will support.")
@@ -30,20 +37,15 @@ model CreateSipEndpointRequest {
   @example("required")
   encryption?: "default" | "required" | "optional";
 
-  @doc("What type of handler you want to run on inbound calls.")
-  @example("ai_agent")
-  call_handler?:
-    | "relay_context"
-    | "relay_topic"
-    | "relay_application"
-    | "relay_connector"
-    | "relay_script"
-    | "laml_webhooks"
-    | "laml_application"
-    | "dialogflow"
-    | "video_room"
-    | "call_flow"
-    | "ai_agent";
+  @doc("""
+    How SignalWire handles calls this SIP endpoint places. `default` uses the SIP profile's
+    `default_outbound_policy`. `passthrough` connects the call to the dialed destination, including PSTN
+    numbers, and `block-pstn` does the same but blocks calls to PSTN numbers. The other values hand the
+    call to the named handler. Responses return `laml_webhooks` as `laml_webhook` and `relay_topic` as
+    `relay_context`.
+    """)
+  @example(SipEndpointCallHandlerRequest.ai_agent)
+  call_handler?: SipEndpointCallHandlerRequest = SipEndpointCallHandlerRequest.default;
 
   @doc("The LaML URL to access when a call is received. Required when call_handler is laml_webhooks.")
   call_request_url?: string;
@@ -123,8 +125,14 @@ model UpdateSipEndpointRequest {
   @example("C-3P0")
   caller_id?: string;
 
-  @doc("When dialing a PSTN phone number, you must send it From a number you have purchased or verified. send_as indicates which number this endpoint has set as its origination. random indicates it will randomly choose a purchased or verified number from within the project.")
-  @example("random")
+  @doc("""
+    The purchased or verified number, in E.164 format, to send as the From number when this endpoint
+    dials a PSTN phone number. Set `random` to have SignalWire pick one purchased or verified number from
+    the project. The pick happens once, when this request is processed, and that number is stored and
+    returned in `send_as`; it is not re-chosen for each call. Returns `422` when the number is not
+    purchased or verified in the project, or when `random` is set and the project has no such number.
+    """)
+  @example("+15551234567")
   send_as?: string;
 
   @doc("A list of encryption ciphers this endpoint will support.")
@@ -137,20 +145,15 @@ model UpdateSipEndpointRequest {
   @example("required")
   encryption?: "default" | "required" | "optional";
 
-  @doc("What type of handler you want to run on inbound calls.")
-  @example("ai_agent")
-  call_handler?:
-    | "relay_context"
-    | "relay_topic"
-    | "relay_application"
-    | "relay_connector"
-    | "relay_script"
-    | "laml_webhooks"
-    | "laml_application"
-    | "dialogflow"
-    | "video_room"
-    | "call_flow"
-    | "ai_agent";
+  @doc("""
+    How SignalWire handles calls this SIP endpoint places. `default` uses the SIP profile's
+    `default_outbound_policy`. `passthrough` connects the call to the dialed destination, including PSTN
+    numbers, and `block-pstn` does the same but blocks calls to PSTN numbers. The other values hand the
+    call to the named handler. Responses return `laml_webhooks` as `laml_webhook` and `relay_topic` as
+    `relay_context`.
+    """)
+  @example(SipEndpointCallHandlerRequest.ai_agent)
+  call_handler?: SipEndpointCallHandlerRequest;
 
   @doc("The LaML URL to access when a call is received. Required when call_handler is laml_webhooks.")
   call_request_url?: string;

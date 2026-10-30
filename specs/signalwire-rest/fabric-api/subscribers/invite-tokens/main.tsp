@@ -30,7 +30,7 @@ namespace SignalWireAPI.Fabric.SubscriberInviteTokens {
     @post
     create(...SubscriberInviteTokenCreateRequest):
       | {
-          @statusCode statusCode: 201;
+          @statusCode statusCode: 200;
           @body subscriber_invite_token: SubscriberInviteTokenCreateResponse;
         }
       | StatusCode401

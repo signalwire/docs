@@ -24,14 +24,20 @@ A single string used as the reply body. The reply is sent to the inbound
 message's `from` number, using the inbound `to` as the sender.
 
 <ParamField path="reply" type="string" required={true} toc={true}>
-  The body of the reply message.
+  The body of the reply message. After variable expansion it must contain at least one
+  non-whitespace character. Body length is checked before the reply is queued. The limit depends on
+  the route SignalWire uses to send the reply, and length is counted according to the message
+  encoding. A body over the limit fails the reply with a `swml_reply_character_limit_exceeded`
+  [error](/docs/swml/reference/errors) whose message states the limit.
 </ParamField>
 
 </Tab>
 <Tab title="Object">
 
 Full control over the reply — set the body, attach media, override the routing fields, or configure
-a delivery status callback. At least one of `body` or `media` must be present.
+a delivery status callback. The reply needs content: either a `body` with at least one
+non-whitespace character after variable expansion, or a `media` array with at least one URL.
+`{ "reply": { "media": [] } }` has neither.
 
 <ParamField path="reply" type="object" required={true} toc={true}>
   An object containing the properties below.
@@ -40,12 +46,21 @@ a delivery status callback. At least one of `body` or `media` must be present.
 <Indent>
 
 <ParamField path="reply.body" type="string" toc={true}>
-  Text body of the outbound message. Required when `media` is not set.
+  Text body of the outbound message. Required when `media` is not set. When no media is
+  attached, the body must contain at least one non-whitespace character after variable
+  expansion.
+
+  Body length is checked before the reply is queued. The limit depends on whether the reply is SMS
+  or MMS and on the route SignalWire uses to send it, and length is counted according to the
+  message encoding. A body over the limit fails the reply with a
+  `swml_reply_character_limit_exceeded` [error](/docs/swml/reference/errors) whose message states
+  the limit.
 </ParamField>
 
 <ParamField path="reply.media" type="string[]" toc={true}>
-  Array of media URLs to attach. Converts the message to MMS. Maximum 8 attachments. Required if
-  `body` is not present.
+  Array of HTTP or HTTPS media URLs to attach. Converts the message to MMS. Maximum 8 attachments.
+  Required if `body` is not present, and must then contain at least one URL. Media is fetched after
+  the reply is queued, so a `queued` result does not confirm that the media could be retrieved.
 </ParamField>
 
 <ParamField path="reply.to" type="string" default="message.from" toc={true}>
@@ -57,8 +72,9 @@ a delivery status callback. At least one of `body` or `media` must be present.
 </ParamField>
 
 <ParamField path="reply.status_url" type="string" toc={true}>
-  URL to receive delivery status callbacks for the outbound reply message. See
-  [Status callbacks](#status-callbacks) below.
+  HTTP or HTTPS URL to receive delivery status callbacks for the outbound reply message.
+  Callbacks are delivered after the reply is queued, so a `queued` result does not confirm that a
+  callback reached this URL. See [Status callbacks](#status-callbacks) below.
 </ParamField>
 
 </Indent>
@@ -96,7 +112,10 @@ The matched `case` (or `default`) provides the reply body.
   - a **full reply object** with `body`, `media`, `to`, `from`, `status_url` — for cases that
     need media, a different destination, or a per-branch `status_url`.
 
-  `%{…}` placeholders inside the matched value are expanded before the reply is sent.
+  `%{…}` placeholders inside the matched value are expanded before the reply is sent. A string
+  outcome follows the same rules as the string shorthand: it must contain at least one
+  non-whitespace character after expansion, and its length is checked against the reply body
+  limit.
 </ParamField>
 
 <ParamField path="reply.switch.default" type="string | object" toc={true}>
@@ -118,17 +137,21 @@ on the same `reply` — put them inside each `case` value (or `default`) instead
 
 `reply` writes these variables into the script context after it runs. Read them with the
 `%{variable}` syntax in subsequent steps. When `reply` is called multiple times in a single
-document, both variables reflect the most recent reply.
+document, both variables reflect the most recent successful reply. If a reply can't be queued,
+execution stops, so no later step runs.
 
 <ParamField path="reply_result" type="string" toc={true}>
-  Outcome of the reply attempt. `queued` when the outbound message was accepted for delivery,
-  `failed` when validation or delivery rejected it (invalid `from`/`to`, missing body and media,
-  character limit exceeded, missing messaging capability, inactive campaign, etc.).
+  Outcome of queuing the reply. `queued` when the outbound message was accepted and queued for
+  sending; `failed` when it couldn't be queued (invalid `from`/`to`, missing body and media,
+  character limit exceeded, missing messaging capability, inactive campaign, etc.). This value
+  doesn't report what happens to the message after it is queued — use
+  [status callbacks](#status-callbacks) or the
+  [message logs](/docs/apis/rest/message-logs/list-message-logs) to track delivery.
 </ParamField>
 
 <ParamField path="reply_message_id" type="string" toc={true}>
-  ID of the outbound message created by the successful reply. Absent when
-  `reply_result` is `failed`.
+  ID of the outbound message created by the most recent successful reply. It matches the `id` in
+  that reply's status callbacks. A failed reply doesn't set or clear it.
 </ParamField>
 
 ## **Status callbacks**
@@ -139,9 +162,11 @@ The `status_url` on `reply` registers a delivery status callback for the **outbo
 not for the inbound message that triggered the SWML document. It behaves the same way as the status
 callback on any other outbound message sent through SignalWire.
 
-- Fires as the outbound reply moves through delivery states.
-- Callback delivery is independent of SWML execution: the SWML document completes as soon as the reply
-  is accepted (`reply_result: "queued"`); delivery-state callbacks fire afterwards.
+- Fires as the outbound reply moves through delivery states, starting with a `queued` callback
+  when the reply is queued.
+- Callback delivery is independent of SWML execution: `reply` queues the outbound message and
+  execution continues with the next step. Callbacks have no guaranteed order relative to the
+  document's remaining steps.
 - If `reply` is called multiple times in a single document, each reply's `status_url` is registered
   independently for its own outbound message.
 

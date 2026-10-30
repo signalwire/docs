@@ -2,7 +2,7 @@ namespace SignalWireAPI.Video;
 
 @doc("Join as type for room tokens.")
 enum JoinAsType {
-  @doc("Join as audience participant (cannot send audio or video)")
+  @doc("Deprecated. Join as audience participant (cannot send audio or video). Audience participants will be removed; use `member`.")
   audience,
 
   @doc("Join as member")
@@ -65,10 +65,10 @@ enum RoomTokenPermission {
   @doc("Remove another member from the room")
   `room.member.remove`: "room.member.remove",
 
-  @doc("Promote another member")
+  @doc("Deprecated. Promote an audience participant to member. Will be removed along with audience participants.")
   `room.member.promote`: "room.member.promote",
 
-  @doc("Demote another member")
+  @doc("Deprecated. Demote a member to audience participant. Will be removed along with audience participants.")
   `room.member.demote`: "room.member.demote",
 
   @doc("Hide video-muted members in the room")

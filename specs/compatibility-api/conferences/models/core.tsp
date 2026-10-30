@@ -215,10 +215,9 @@ model ConferenceRecordingSidPath {
   Sid: uuid;
 }
 
-@doc("Recording source for conference recordings.")
+@doc("Recording source for conference recordings. Always `Conference`.")
 enum ConferenceRecordingSource {
   Conference: "Conference",
-  StartConferenceRecording: "StartConferenceRecording",
 }
 
 @doc("Recording status.")
@@ -289,9 +288,9 @@ model ConferenceRecording {
   @example(4)
   duration: int32;
 
-  @doc("The cost for the recording.")
-  @example("-0.0025")
-  price: string | null;
+  @doc("The cost of the recording.")
+  @example(0.0025)
+  price: float64;
 
   @doc("The currency of the price of the recording.")
   @example("USD")
@@ -318,7 +317,7 @@ model ConferenceRecording {
   @example(null)
   encryption_details: string | null;
 
-  @doc("Whether leading and trailing silence is trimmed from a recording.")
-  @example("do-not-trim")
-  trim: string;
+  @doc("Whether leading and trailing silence is trimmed from a recording: `trim-silence` or `do-not-trim`. Can be null, for example on conference recordings.")
+  @example(null)
+  trim: string | null;
 }

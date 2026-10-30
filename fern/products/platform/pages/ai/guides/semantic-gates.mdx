@@ -230,7 +230,8 @@ only text substituted in a question is a `${...}` variable from `global_data`, s
 - **Don't ask the decision model to calculate or compare dates.** Work the answer out in your
   application, store it in `semantic_state`, and ask about that.
 - **Keep it short.** A question can be up to 8 KB, but that's a ceiling, not a target. Most good
-  questions are one sentence.
+  questions are one sentence. Each `criteria` value is capped at 2 KB and `on_fail` at 8 KB; the
+  [`gates` reference][gates-ref] lists every limit.
 
 Thresholds run from just above 0 to 1, and higher is stricter. Start at 0.9 or above for actions
 that are hard to undo, then test against real conversations, including the near misses you wrote
@@ -504,8 +505,9 @@ function should run.
 
 Every checked call records what happened. Its entry in the `swaig_log`, which arrives in the
 [post-prompt callback][post-prompt] and the `calling.ai.swaig` event, carries a `semantic_gates`
-object: the `outcome`, whether the function ran (`dispatched`), and each gate's `confidence`
-against its `threshold`.
+object: where the check ran (`phase`: `text` for a standard agent, `oart` for a realtime
+speech-to-speech agent, or `post` for the post-prompt agent after the call), the `outcome`, whether
+the function ran (`dispatched`), and each gate's `confidence` against its `threshold`.
 
 ```json
 "semantic_gates": {
@@ -529,9 +531,13 @@ the question or its `criteria` before raising the threshold. If a function never
   and that the conversation or `semantic_state` actually holds what the gate needs.
 - `timeout` means the check ran out of time. Raise `semantic_gate_timeout_ms`.
 - `invalid_arguments` means the agent's arguments were missing or weren't a valid JSON object.
-- The function is missing from the agent altogether: a gate is invalid, so the platform didn't add
-  the function. A `calling.error` event with `error_reason` `invalid_semantic_gate` names the
-  function and the broken rule.
+- The function is missing from the agent altogether: a gate is invalid, or the function has no
+  `description`, so the platform didn't add the function. A `calling.error` event with
+  `error_reason` `invalid_semantic_gate` names the function and the broken rule.
+
+A check that passes records `pass`, and one that runs while gates are turned off records `disabled`;
+the function runs only on those two. The [post-prompt callback reference][post-prompt] lists every
+`outcome`, including the rarer `provider_error`, `invalid_response`, `config_error`, and `aborted`.
 
 Any outcome other than a pass, a fail, or gates turned off also fires a `calling.error` event. The
 post-prompt callback adds `semantic_gates_blocked`, the functions the post-prompt agent was blocked

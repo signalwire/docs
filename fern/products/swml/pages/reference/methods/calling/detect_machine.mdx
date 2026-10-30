@@ -23,7 +23,7 @@ or final result will also be saved in the `detect_result` [variable][variables].
 <Indent>
 
 <ParamField path="detect_machine.detect_message_end" type="boolean" default="false" toc={true}>
-  If `true`, stops detection on beep / end of voicemail greeting.
+  Whether to keep detecting after the call is classified as a machine. If `false`, detection can finish as soon as a machine is detected. If `true`, detection continues until a beep or the end of the voicemail greeting is detected, or until `timeout`. A detected beep ends detection either way.
 </ParamField>
 
 
@@ -33,27 +33,27 @@ or final result will also be saved in the `detect_result` [variable][variables].
 
 
 <ParamField path="detect_machine.end_silence_timeout" type="number" default="1.0" toc={true}>
-  How long to wait for voice activity to finish (in seconds).
+  How long to wait for voice activity to finish (in seconds). Must be at least `1`; smaller values, such as `0` or `0.5`, are rejected.
 </ParamField>
 
 
 <ParamField path="detect_machine.initial_timeout" type="number" default="4.5" toc={true}>
-  How long to wait for initial voice activity before giving up (in seconds).
+  How long to wait for initial voice activity before giving up (in seconds). Must be at least `1`; smaller values, such as `0` or `0.5`, are rejected.
 </ParamField>
 
 
 <ParamField path="detect_machine.machine_ready_timeout" type="number" default="value of the end_silence_timeout parameter" toc={true}>
-  How long to wait for voice activity to finish before firing the READY event (in seconds).
+  How long to wait for voice activity to finish before firing the READY event (in seconds). Must be at least `1`; smaller values, such as `0` or `0.5`, are rejected.
 </ParamField>
 
 
 <ParamField path="detect_machine.machine_voice_threshold" type="number" default="1.25" toc={true}>
-  The number of seconds of ongoing voice activity required to classify as MACHINE.
+  The number of seconds of ongoing voice activity required to classify as MACHINE. Must be at least `1`; smaller values, such as `0` or `0.5`, are rejected.
 </ParamField>
 
 
 <ParamField path="detect_machine.machine_words_threshold" type="integer" default="6" toc={true}>
-  The minimum number of words that must be detected in a single utterance before classifying the call as MACHINE.
+  The minimum number of words that must be detected in a single utterance before classifying the call as MACHINE. Must be at least `1`; `0` is rejected.
 </ParamField>
 
 
@@ -80,22 +80,24 @@ or final result will also be saved in the `detect_result` [variable][variables].
 
 ## **Variables**
 
-The following variables are available after the `detect_machine` method is executed and detection is complete.
+The following variables are set when the `detect_machine` method returns.
 You can reference these variables in your SWML script utilizing the `${variable}` syntax.
 
-<ParamField path="detect_result" type="machine | human | fax | unknown | detecting | error" toc={true}>
-  The lowercase SWML variable value for the current detection state or final result.
+With `wait: true` (the default), they hold the final detection result. With `wait: false`, the method returns as soon as detection starts: `detect_result` is `detecting`, `detect_machine_beep` is `false`, and `detect_ms` is `"-1"`. Later detection events go to `status_url` and do not update these variables.
+
+<ParamField path="detect_result" type="machine | human | fax | unknown | detecting | failed" toc={true}>
+  The lowercase SWML variable value for the current detection state or final result. `failed` means the detection request failed or returned no result.
   Callback lifecycle events such as `READY`, `NOT_READY`, and `finished` are never assigned to this variable.
 </ParamField>
 
 
 <ParamField path="detect_machine_beep" type="true | false" toc={true}>
-  Whether a beep was detected. `true` if detected.
+  Whether a beep was detected. `true` if detected. Only reflects a completed measurement with `wait: true`. When `detect_result` is `failed`, this variable is not updated.
 </ParamField>
 
 
-<ParamField path="detect_ms" type="integer" toc={true}>
-  The number of milliseconds the detection took.
+<ParamField path="detect_ms" type="string" toc={true}>
+  The number of milliseconds the detection took, stored as a string containing an integer (for example `"3200"`). `"-1"` when no duration is available, including with `wait: false`. When `detect_result` is `failed`, this variable is not updated.
 </ParamField>
 
 
@@ -103,10 +105,10 @@ You can reference these variables in your SWML script utilizing the `${variable}
 
 <Markdown src="/snippets/common/_status-callback-advisory.mdx" />
 
-A POST request will be sent to `status_url` with a JSON payload like the following:
+A POST request will be sent to `status_url` with a JSON payload like the following for each detection event:
 
 <ParamField path="event_type" type="string" toc={true}>
-  The type of event, always `calling.call.detect` for this method.
+  The type of event: `calling.call.detect` for detection events.
 </ParamField>
 
 
@@ -147,24 +149,33 @@ A POST request will be sent to `status_url` with a JSON payload like the followi
 
 <Indent>
 
-<ParamField path="detect.type" type="string" toc={true}>
+<ParamField path="params.detect.type" type="string" toc={true}>
   The type of detection. **Valid values:** `machine` or `fax`.
 </ParamField>
 
 
-<ParamField path="detect.params.event" type="string" toc={true}>
-  The detector event value in the status callback payload.
+<ParamField path="params.detect.params" type="object" toc={true}>
+  The detector event details.
+</ParamField>
 
-  Detection outcome values are `HUMAN`, `MACHINE`, and `UNKNOWN`.
-  Lifecycle marker values are `READY`, `NOT_READY`, and `finished`.
-  `READY`, `NOT_READY`, and `finished` only appear in callback payloads and are not valid `${detect_result}` values.
+<Indent>
+
+<ParamField path="params.detect.params.event" type="string" toc={true}>
+  The detector event value in the status callback payload. The values depend on `params.detect.type`:
+
+  - `machine`: detection outcome values are `HUMAN`, `MACHINE`, and `UNKNOWN`; lifecycle marker values are `READY`, `NOT_READY`, and `finished`.
+  - `fax`: the detected fax tone, `CNG` or `CED`; the lifecycle marker `finished` marks the end of fax detection.
+
+  `READY`, `NOT_READY`, `finished`, `CNG`, and `CED` only appear in callback payloads and are not valid `${detect_result}` values.
   The lowercase `finished` value is intentional.
 </ParamField>
 
 
-<ParamField path="detect.params.beep" type="boolean" toc={true}>
+<ParamField path="params.detect.params.beep" type="boolean" toc={true}>
   Present and set to `true` when a beep was detected. Absent when no beep has been detected.
 </ParamField>
+
+</Indent>
 
 </Indent>
 
@@ -183,6 +194,8 @@ A POST request will be sent to `status_url` with a JSON payload like the followi
 </ParamField>
 
 </Indent>
+
+If the detection request fails, `status_url` can instead receive an event with `event_type` set to `calling.error`. Its `params` holds an `error` object that describes the failure and a `request` object with the request that failed, in place of `params.detect`.
 
 ### Raw JSON example
 

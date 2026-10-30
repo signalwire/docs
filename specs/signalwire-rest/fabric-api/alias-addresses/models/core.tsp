@@ -45,9 +45,9 @@ model AliasAddress {
   ])
   channels: AliasAddressChannel[];
 
-  @doc("Codecs enabled for calls to this alias. Empty when none are set.")
-  @example(#[])
-  codecs: AddressCodec[];
+  @doc("Codecs enabled for calls to this alias, or `null` when none are set.")
+  @example(#[AddressCodec.OPUS, AddressCodec.PCMU])
+  codecs: AddressCodec[] | null;
 
   @doc("Access context the alias lives in.")
   @example(AliasAddressContext.Public)

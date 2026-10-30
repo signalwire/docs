@@ -38,7 +38,8 @@ enum CallStatus {
 @doc("Call direction.")
 enum CallDirection {
   Inbound: "inbound",
-  Outbound: "outbound",
+  OutboundApi: "outbound-api",
+  OutboundDial: "outbound-dial",
 }
 
 @doc("Who/what answered the call.")
@@ -125,15 +126,19 @@ model Call {
   @doc("The status of the call.")
   status: CallStatus;
 
-  @doc("The time, in RFC 2822 GMT format, on which the call began.")
+  @doc("The time, in RFC 2822 GMT format, the call started ringing. This is before the call was answered. Null until the call starts.")
   @example("Wed, 19 Sep 2018 20:00:01 +0000")
   start_time: string | null;
 
-  @doc("The time, in RFC 2822 GMT format, on which the call was terminated.")
-  @example("Fri, 21 Sep 2018 10:00:00 +0000")
+  @doc("The time, in RFC 2822 GMT format, on which the call was terminated. Null until the call ends.")
+  @example("Wed, 19 Sep 2018 20:00:21 +0000")
   end_time: string | null;
 
-  @doc("The duration, in seconds, of the call.")
+  @doc("""
+    The duration, in seconds, of the call: `end_time` minus `start_time`, rounded up to the next whole second.
+    It includes ringing time, so it's longer than the time the call was connected and usually longer than a
+    recording of the call. For a call still in progress, it's the time elapsed so far; before the call starts, it's `0`.
+    """)
   @example(20)
   duration: int32;
 
@@ -145,7 +150,13 @@ model Call {
   @example("USD")
   price_unit: string;
 
-  @doc("The direction of the call.")
+  @doc("""
+    The direction of the call.
+    - `inbound`: inbound calls.
+    - `outbound-api`: calls launched through the REST API.
+    - `outbound-dial`: calls launched through the Dial verb.
+    """)
+  @example(CallDirection.OutboundApi)
   direction: CallDirection;
 
   @doc("Who/what the call was answered by.")
@@ -178,41 +189,85 @@ model Call {
   @example(null)
   group_sid: string | null;
 
-  @doc("The Mean Opinion Score for audio quality (1.0-5.0).")
-  @example(4.5)
-  audio_in_mos: float32 | null;
+  @doc("The estimated Mean Opinion Score (MOS) for inbound audio quality, based on the share of incoming audio packets that arrived without loss or delay. It ranges from about 1 to 4.5, the score for a call with no lost or late packets. Returned as a decimal string. Null if the call has no quality measurement.")
+  @example("4.5")
+  audio_in_mos: string | null;
 
   @doc("The SIP result code for the call.")
   @example("200")
   sip_result_code: string | null;
 
-  @doc("The average round-trip time for audio in milliseconds.")
+  @doc("The average round-trip time for audio in milliseconds, in steps of 10.")
+  @example(40)
+  audio_rtt_avg: float64 | null;
+
+  @doc("The minimum round-trip time for audio in milliseconds, in steps of 10.")
+  @example(30)
+  audio_rtt_min: float64 | null;
+
+  @doc("The maximum round-trip time for audio in milliseconds, in steps of 10.")
   @example(50)
-  audio_rtt_avg: int32 | null;
+  audio_rtt_max: float64 | null;
 
-  @doc("The minimum round-trip time for audio in milliseconds.")
-  @example(20)
-  audio_rtt_min: int32 | null;
+  @doc("The smallest variance measured in the time between incoming audio packets, in milliseconds squared.")
+  @example(0.25)
+  audio_in_jitter_min: float64 | null;
 
-  @doc("The maximum round-trip time for audio in milliseconds.")
-  @example(100)
-  audio_rtt_max: int32 | null;
+  @doc("The largest variance measured in the time between incoming audio packets, in milliseconds squared.")
+  @example(8.5)
+  audio_in_jitter_max: float64 | null;
 
   @doc("The minimum outbound audio jitter in milliseconds.")
-  @example(1)
-  audio_out_jitter_min: int32 | null;
+  @example(0)
+  audio_out_jitter_min: float64 | null;
 
   @doc("The maximum outbound audio jitter in milliseconds.")
-  @example(10)
-  audio_out_jitter_max: int32 | null;
+  @example(2.5)
+  audio_out_jitter_max: float64 | null;
 
   @doc("The average outbound audio jitter in milliseconds.")
-  @example(5)
-  audio_out_jitter_avg: int32 | null;
+  @example(0.56)
+  audio_out_jitter_avg: float64 | null;
+
+  @doc("The number of audio packets received in the inbound media stream.")
+  @example(1842)
+  audio_in_media_packet_count: int32 | null;
+
+  @doc("Not populated. Always `null`; use `audio_out_media_packet_count` for the number of audio packets sent.")
+  @example(null)
+  audio_out_packet_count: int32 | null;
+
+  @doc("The number of audio packets sent in the outbound media stream.")
+  @example(1840)
+  audio_out_media_packet_count: int32 | null;
 
   @doc("The number of outbound audio packets lost.")
-  @example(0)
+  @example(1)
   audio_out_lost: int32 | null;
+
+  @doc("The mean interval between inbound audio packets in milliseconds.")
+  @example(20.03)
+  audio_in_mean_interval: float64 | null;
+
+  @doc("The number of DTMF packets in the inbound media stream.")
+  @example(0)
+  audio_in_dtmf_packet_count: int32 | null;
+
+  @doc("The number of DTMF packets in the outbound media stream.")
+  @example(0)
+  audio_out_dtmf_packet_count: int32 | null;
+
+  @doc("The number of inbound packets not received at the expected interval. Increases with every packet lost from the inbound stream.")
+  @example(1)
+  audio_in_skip_packet_count: int32 | null;
+
+  @doc("The number of inbound packets removed from the jitter buffer because of buffer overflow or underflow.")
+  @example(2)
+  audio_in_flush_packet_count: int32 | null;
+
+  @doc("The largest jitter buffer size recorded for inbound audio during the call.")
+  @example(4)
+  audio_in_largest_jb_size: int32 | null;
 }
 
 @doc("Call recording model.")
@@ -265,16 +320,17 @@ model CallRecording {
   @example(4)
   duration: int32;
 
-  @doc("The cost for the recording.")
-  @example("-0.0025")
-  price: string | null;
+  @doc("The cost of the recording.")
+  @example(0.0025)
+  price: float64;
 
   @doc("The currency of the price of the recording.")
   @example("USD")
   price_unit: string;
 
-  @doc("How the recording was made.")
-  source: RecordingSource;
+  @doc("How the recording was started. A call recording is never `Conference`. Null for a recording made because the call was created through the REST API with `Record` set to `true`.")
+  @example(RecordingSource.StartCallRecordingAPI)
+  source: RecordingSource | null;
 
   @doc("The status of the recording.")
   status: RecordingStatus;
@@ -294,9 +350,9 @@ model CallRecording {
   @example(null)
   encryption_details: string | null;
 
-  @doc("Whether leading and trailing silence is trimmed from a recording.")
+  @doc("Whether leading and trailing silence is trimmed from a recording: `trim-silence` or `do-not-trim`. Can be null.")
   @example("do-not-trim")
-  trim: string;
+  trim: string | null;
 }
 
 @doc("Call stream model.")
