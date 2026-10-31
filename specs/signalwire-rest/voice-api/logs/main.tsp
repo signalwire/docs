@@ -41,8 +41,20 @@ namespace SignalWireAPI.Voice.Logs {
       },
       #{ title: "Phone call", description: "An inbound call to one of your phone numbers." }
     )
+    @opExample(
+      #{
+        returnType: #{
+          links: VOICE_LOG_LINKS_EXAMPLE,
+          data: #[VOICE_LOG_CXML_CALL_EXAMPLE],
+        },
+      },
+      #{
+        title: "cXML call",
+        description: "An inbound call handled by cXML, with its audio quality statistics.",
+      }
+    )
     @doc("""
-      Lists historical voice activity in the project across supported call types. Use it for usage reporting, billing review, and troubleshooting, not live call control. Place or control calls through [Send call commands](/docs/apis/rest/calls/call-commands) or the Compatibility Calls API instead.
+      Lists historical voice activity in the project across supported call types. It includes calls handled by cXML, by SWML, and through the Calling API; SWML and Calling API calls aren't in the [Compatibility Calls list](/docs/compatibility-api/rest/calls/list-all-calls). Use it for usage reporting, billing review, and troubleshooting, not live call control. Place or control calls through [Send call commands](/docs/apis/rest/calls/call-commands) or the Compatibility Calls API instead.
       
       ${tokenPermissions<"_Voice_">}
       """)
