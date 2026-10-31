@@ -38,7 +38,7 @@ Every component available on this site: Fern's full default library (description
 | `Tabs` / `Tab` | Tabbed views with language synchronization | In use — switchable non-code variants. In guides, surfaces get `###` headings, not tabs; the one exception is a step inside `<Steps>` (`mdx-capability-guides`) |
 | `Tooltip` | Contextual info on hover, for text and code | Rare (×6) — only where it genuinely helps |
 | `Versions` | Content that switches with a version dropdown | Unused |
-| `WebhookPayloadSnippet` | Embeds a webhook payload example from the API Reference | In use |
+| `WebhookPayloadSnippet` | Embeds a webhook payload example from the API Reference | In use — `webhook=` takes the webhook's `operationId` from `fern/apis/*/openapi.yaml` (`recording_status_callback`), not the TypeSpec op name, which renders nothing |
 
 Custom components (registered in `docs.yml` → `fern/components/`):
 
