@@ -91,6 +91,10 @@ model AIObject {
     ${aiHintsDescription}
     An object can set a `hint`, a `pattern` and `replace` pair that rewrites matching text in what the agent
     hears before the AI reads it, or both.
+    One hint list covers every language the agent uses; there are no per-language hints. When speech recognition
+    runs in code-switching mode, because `multilingual` is set or a `languages` entry's `code` is `multi`,
+    recognition hints are not used. That covers string entries and `hint` values, and no error is returned.
+    Rewrite rules still apply to the transcript in every mode.
     """)
   @example(#["pizza", "pepperoni"])
   hints?: (string | Hint)[];
