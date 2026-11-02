@@ -8,7 +8,6 @@ max-toc-depth: 3
 
 [glossary-call]: /docs/platform/glossary#call
 [glossary-call-leg]: /docs/platform/glossary#call-leg
-[glossary-call-id]: /docs/platform/glossary#call-id
 [glossary-segment-id]: /docs/platform/glossary#segment-id
 [segment-ids]: /docs/platform/what-is-a-sid
 [forward-calls]: /docs/platform/voice/forward-calls
@@ -19,8 +18,8 @@ max-toc-depth: 3
 [record-calls]: /docs/platform/voice/record-calls
 [swml-connect]: /docs/swml/reference/calling/connect
 [swml-transfer]: /docs/swml/reference/calling/transfer
-[swml-calling]: /docs/swml/reference/calling
 [swml-ai-sidecar]: /docs/swml/reference/calling/ai-sidecar
+[relay-dial]: /docs/server-sdks/reference/python/relay/client/dial
 [relay-connect]: /docs/server-sdks/reference/python/relay/call/connect
 [relay-disconnect]: /docs/server-sdks/reference/python/relay/call/disconnect
 [relay-events]: /docs/server-sdks/reference/python/relay/events
@@ -32,7 +31,6 @@ max-toc-depth: 3
 [compat-list-calls]: /docs/compatibility-api/rest/calls/list-all-calls
 [cfb-forward]: /docs/call-flow-builder/reference/forward-to-phone
 [subscribers]: /docs/platform/subscribers
-[resources]: /docs/platform/resources
 [video]: /docs/platform/video
 [browser-sdk-aux]: /docs/browser-sdk/v4/reference/errors/auxiliary-leg-cancelled-error
 [webhooks]: /docs/platform/webhooks
@@ -92,7 +90,7 @@ and how many.
 | You connect the call to one destination with SWML [`connect`][swml-connect], Relay [`connect`][relay-connect], cXML [`<Dial>`][cxml-dial], or the Call Flow Builder [Forward to Phone][cfb-forward] node | +1 | A B-leg to the destination. When it answers, SignalWire bridges the two legs so the parties hear each other. |
 | You dial several destinations in parallel | +1 per destination | Each destination is its own leg. The leg that answers is marked `dial_winner`, and the others end. |
 | You dial a [Subscriber][subscribers] | +1 per registered device or endpoint | Every phone, browser, and SIP endpoint registered to the Subscriber rings as its own leg. The leg that answers wins. |
-| You connect a queued caller to an agent | +1 | The caller waiting in the [queue][call-queues] is one leg. Dialing the agent adds another. |
+| You connect a queued caller to an agent | 0 | The waiting caller is one leg and the agent's call is another, placed when the agent dialed in or your code dialed out. A `connect` to the [queue][call-queues] bridges those two existing legs. |
 | Participants join a conference or [video room][video] | 1 per participant | Each participant is a leg into the room, whether they arrive by phone, SIP, or browser. |
 | You transfer a SIP call with [SIP REFER][sip-refer] | 0 | The SIP device places the new call itself, and your app hangs up SignalWire's leg once the transfer succeeds. See [how SIP REFER works][sip-refer-how]. |
 | You move a leg to a new SWML document with [`transfer`][swml-transfer] | 0 | The same leg continues under new instructions. Its Call ID and variables carry over. |
@@ -117,22 +115,26 @@ does not cross to another leg.
 ## Tell legs apart
 
 Every surface identifies legs with the same handful of fields under slightly different names. The
-[glossary][glossary-call-id] lists all of them side by side; these are the ones that relate legs to each
+[glossary][glossary-segment-id] lists all of them side by side. The ones below relate legs to each
 other.
 
-- **Call ID** names one leg for its whole life. Every leg in a call has a different one.
-- **Segment ID** names the leg's log record, and it is the value to quote to Support. A leg's first
-  segment reuses its Call ID, so the two match for most calls. When SignalWire re-routes a leg to a new
-  handler, for example after a SIP REFER or a cXML transfer, a new segment starts on the same leg: the
-  Segment ID changes and the Call ID does not. The Compatibility API calls it `CallSid`. The
-  [Segment IDs page][segment-ids] shows where to find it in the Dashboard.
-- **Parent** is the leg that created this one. SWML webhooks and status callbacks send it as `parent`,
-  the REST voice logs and Calling API as `parent_id`, and the Compatibility API as `ParentCallSid`.
-- **Peer** is the leg this one is bridged to, present once the two are connected. It arrives as `peer`
-  in SWML webhooks, in `connect` status callbacks, and in the Relay [`ConnectEvent`][relay-events].
-- **Dial winner** marks the B-leg that answered a dial, including the winning leg of a parallel dial.
-- **Tag** is a label you set when you create a call. SignalWire echoes it on the leg's own callbacks
-  and as `peer.tag` on the leg it connects to, so you can correlate legs without storing IDs.
+A Call ID names one leg for its whole life, and every leg in a call has a different one. A Segment ID
+names the leg's log record, and it is the value to quote to Support. A leg's first segment reuses its
+Call ID, so the two match for most calls. When SignalWire re-routes a leg to a new handler, a new
+segment starts on the same leg: the Segment ID changes and the Call ID does not. That happens when a
+SIP device sends SignalWire a REFER, and when cXML transfers the call. The Compatibility API calls the
+Segment ID `CallSid`, and the [Segment IDs page][segment-ids] shows where to find it in the Dashboard.
+
+The parent is the leg that created this one. SWML webhooks and status callbacks send it as `parent`,
+the REST voice logs and Calling API as `parent_id`, and the Compatibility API as `ParentCallSid`. The
+peer is the leg this one is bridged to, and it exists only while the bridge does. It arrives as `peer`
+in `connect` status callbacks and in the Relay [`ConnectEvent`][relay-events]. SignalWire clears it
+when the bridge ends, so a SWML document that resumes after `connect` has no `call.peer`.
+
+Two more fields say which leg won and which legs belong together. The dial winner flag marks the B-leg
+that answered a dial, including the winning leg of a parallel dial. A tag is a label you set on a Relay
+[`dial`][relay-dial] or [`connect`][relay-connect]. SignalWire echoes it on the leg's own callbacks and
+as `peer.tag` on the leg it connects to, so you can correlate legs without storing IDs.
 
 Here is the `call` object a `confirm` script receives on the B-leg of a `connect`, abridged to the fields
 above. The leg is outbound, its `segment_id` still matches its `call_id`, it won the dial, and its
@@ -149,7 +151,6 @@ above. The leg is outbound, its `segment_id` still matches its `call_id`, it won
   "to": "+15551230003",
   "dial_winner": "true",
   "parent": {
-    "device_type": "phone",
     "call_id": "a1b2c3d4-1111-2222-3333-444455556666"
   }
 }
@@ -159,33 +160,32 @@ The full field list is in the [inbound call webhook reference][inbound-webhook].
 
 ## Where legs show up
 
-- **Dashboard logs.** Each leg is its own entry under **Logs**, and the detail view shows its Segment ID.
-- **REST voice logs.** The [voice logs][voice-logs] return one entry per leg. A B-leg's `parent_id` points
-  at the leg that created it, which is how you reassemble a call from its legs.
-- **Compatibility API.** [List all Calls][compat-list-calls] accepts a `ParentCallSid` filter that
-  returns the legs a given leg created, and a `<Dial>` sends the new leg's `DialCallSid` to its `action`
-  URL.
-- **Status callbacks.** Each leg reports its own state changes to its own callback URL. `connect`
-  callbacks include the `peer` once the legs are bridged. [Webhooks][webhooks] explains the delivery
-  rules.
-- **Recordings.** A recording belongs to a leg, and the [Recordings API][recordings] returns that leg's
-  ID with it. A stereo recording puts the two sides of a bridged call on separate channels, as the
-  [record calls guide][record-calls] describes.
+| Surface | How legs appear |
+|---|---|
+| Dashboard logs | Each leg is its own entry under **Logs**, and the detail view shows its Segment ID. |
+| REST voice logs | The [voice logs][voice-logs] return one entry per leg. A B-leg's `parent_id` points at the leg that created it, which is how you reassemble a call from its legs. |
+| Compatibility API | [List all Calls][compat-list-calls] accepts a `ParentCallSid` filter that returns the legs a given leg created, and a `<Dial>` sends the new leg's `DialCallSid` to its `action` URL. |
+| Status callbacks | Each leg reports its own state changes to its own callback URL. `connect` callbacks include the `peer` while the legs are bridged. [Webhooks][webhooks] explains the delivery rules. |
+| Recordings | A recording belongs to a leg, and the [Recordings API][recordings] returns that leg's ID with it. A stereo recording puts the two sides of a bridged call on separate channels, as the [record calls guide][record-calls] describes. |
 
 ## Act on one leg or both
 
-Because the legs are separate, you can choose how much of the call to end.
+Because the legs are separate, what happens when one ends depends on which one it is. When the dialed
+leg hangs up, the leg that connected it carries on: a SWML document continues past its `connect`, and
+a Relay handler receives the disconnected event. When the leg that issued `connect` hangs up,
+SignalWire hangs up the dialed leg too, because nothing else controls it. A `connect` to a queue is the
+exception. Once the agent and the caller are bridged, the agent's document doesn't resume, and
+`execute_after_queue` decides what the agent's leg does next.
 
-- **End one leg.** Hanging up a leg ends that leg. If it was bridged, the other leg returns to whatever
-  controls it: a SWML document continues after its `connect`, and a Relay handler receives the
-  disconnected event.
-- **Unbridge without hanging up.** The REST Calling API's `calling.disconnect` [command][call-commands]
-  and the Relay [`disconnect`][relay-disconnect] method drop the peer leg and keep this one, so your code
-  can play a message or connect the caller somewhere else.
-- **Hand the call off.** [SIP REFER][sip-refer] asks the SIP device to place the next call itself. When
-  it succeeds, your app hangs up SignalWire's leg and the call continues without SignalWire.
-- **Keep the leg, change the instructions.** SWML [`transfer`][swml-transfer] moves the same leg to a new
-  document. Nothing about the leg changes except what runs on it.
+To break the bridge and keep this leg, use the REST Calling API's `calling.disconnect`
+[command][call-commands] or the Relay [`disconnect`][relay-disconnect] method. Your code can then play
+a message or connect the caller somewhere else. The other leg returns to its own Relay application if
+one controls it.
+
+Two operations change a call without adding a leg. [SIP REFER][sip-refer] asks the SIP device to place
+the next call itself. When it succeeds, your app hangs up SignalWire's leg and the call continues
+without SignalWire. SWML [`transfer`][swml-transfer] moves the same leg to a new document, and nothing
+about the leg changes except what runs on it.
 
 ## Legs and billing
 
