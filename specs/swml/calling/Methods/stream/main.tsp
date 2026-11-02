@@ -40,6 +40,8 @@ model Stream {
     @doc("""
       Codec for the streamed audio. Supported values: `PCMU` (8 kHz G.711 µ-law),
       `L16@16000h` (16-bit linear PCM at 16 kHz), and `L16@24000h` (16-bit linear PCM at 24 kHz).
+      Always include the rate with `L16`: a bare `L16` is 8 kHz.
+      If SignalWire doesn't accept the codec, the stream doesn't start.
       Default is `"PCMU"`.
       """)
     @example("L16@16000h")
