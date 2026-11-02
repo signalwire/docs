@@ -69,7 +69,7 @@ model SemanticGateCriteria {
 @summary("gate")
 @doc("""
   A yes/no question about the call that must come out yes before the function runs. A key not
-  listed here is an error, not an ignored setting.
+  listed here is an error, not an ignored setting. Keys are matched exactly, case included.
   """)
 model SemanticGate {
   @doc("""
@@ -186,7 +186,7 @@ model SemanticGateFunctionFields {
     the function inherits `SWAIG.defaults.fillers_at_gates`, which is `true` unless you change it.
     """)
   @example(false)
-  fillers_at_gates?: boolean | SWMLVar;
+  fillers_at_gates?: boolean;
 
   @doc("""
     How many of the caller's newest video frames your `web_hook_url` receives with the function

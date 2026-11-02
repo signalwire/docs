@@ -79,7 +79,7 @@ namespace SignalWireAPI.Fabric.Subscribers {
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     @put
-    update(...SubscriberPathID, ...SubscriberRequest):
+    update(...SubscriberPathID, ...SubscriberUpdateRequest):
       | {
           @statusCode statusCode: 200;
           @body body: SubscriberResponse;

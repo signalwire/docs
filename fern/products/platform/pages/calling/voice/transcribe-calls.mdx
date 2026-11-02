@@ -23,10 +23,12 @@ max-toc-depth: 3
 [swml-execute]: /docs/swml/reference/calling/execute
 [swml-ai-sidecar]: /docs/swml/reference/calling/ai-sidecar
 [sidecar-callbacks]: /docs/swml/reference/calling/ai-sidecar#callback-types
+[sidecar-guide]: /docs/platform/ai/sidecar
 [utterance-webhook]: /docs/apis/rest/webhooks/live-transcribe-utterance-webhook
 [summary-webhook]: /docs/apis/rest/webhooks/live-transcribe-summary-webhook
 [conversation-log-webhook]: /docs/apis/rest/webhooks/live-transcribe-conversation-log-webhook
 [transcript-status-callback]: /docs/apis/rest/webhooks/transcribe-status-callback
+[transcribe-state-callback]: /docs/apis/rest/webhooks/transcribe-state-callback
 [verify-signature]: /docs/platform/webhooks#verify-webhook-signature
 [call-streaming]: /docs/platform/voice/call-streaming
 [record-calls]: /docs/platform/voice/record-calls
@@ -198,7 +200,9 @@ async def transcripts(request: Request):
 @app.post("/transcript-status")
 async def transcript_status(request: Request):
     event = await request.json()
-    print(f"{event['event_type']}: {event['params'].get('text', '')}")
+    # Skip the calling.call.transcribe state events.
+    if event["event_type"].startswith("calling.transcript."):
+        print(f"{event['event_type']}: {event['params'].get('text', '')}")
     return {}
 
 
@@ -254,7 +258,10 @@ app.post("/transcripts", async (c) => {
 // Post-call transcripts arrive at /transcript-status.
 app.post("/transcript-status", async (c) => {
   const event = await c.req.json();
-  console.log(`${event.event_type}: ${event.params.text ?? ""}`);
+  // Skip the calling.call.transcribe state events.
+  if (event.event_type.startsWith("calling.transcript.")) {
+    console.log(`${event.event_type}: ${event.params.text ?? ""}`);
+  }
   return c.json({});
 });
 
@@ -596,7 +603,7 @@ reference lists every field:
 
 <llms-ignore>
 
-<WebhookPayloadSnippet webhook="liveTranscribeUtteranceWebhook" />
+<WebhookPayloadSnippet webhook="live_transcribe_utterance_webhook" />
 
 </llms-ignore>
 
@@ -606,7 +613,7 @@ reference:
 
 <llms-ignore>
 
-<WebhookPayloadSnippet webhook="liveTranscribeConversationLogWebhook" />
+<WebhookPayloadSnippet webhook="live_transcribe_conversation_log_webhook" />
 
 </llms-ignore>
 
@@ -1074,14 +1081,14 @@ To call the REST API directly, send these requests to [Call commands][call-comma
 
 ### Receive the call's transcript
 
-SignalWire posts one event to your `status_url` after the call ends. `event_type` is
+SignalWire posts the transcript to your `status_url` after the call ends. `event_type` is
 `calling.transcript.completed` with the text in `params.text`, or `calling.transcript.failed` when
 the call couldn't be transcribed. `params.text` is omitted when nobody spoke. The
 [Transcript status callback][transcript-status-callback] reference lists every field:
 
 <llms-ignore>
 
-<WebhookPayloadSnippet webhook="transcribeStatusCallback" />
+<WebhookPayloadSnippet webhook="transcribe_status_callback" />
 
 </llms-ignore>
 
@@ -1089,6 +1096,11 @@ Answer with a `2xx` status within 5 seconds. SignalWire retries the request when
 doesn't, so the same transcript can arrive more than once. Use `params.id` to ignore repeats. The
 request is signed like the live events, as
 [Protect your webhooks](#read-transcript-events-on-your-webhook) describes.
+
+The same `status_url` also receives a `calling.call.transcribe` event when transcription starts,
+with `params.state` set to `transcribing`, and another with `finished` when it ends. The
+[Transcribe state callback][transcribe-state-callback] reference lists their fields. The sample
+servers print only the `calling.transcript.*` events.
 
 ## Watch the live transcript with an AI sidecar
 
@@ -1098,7 +1110,7 @@ the same way, then after each turn from the customer it sends the transcript to 
 prompt and tools. It never speaks on the call. It posts advice, transcript updates, and tool
 results to your webhook, so it suits coaching a human agent, flagging compliance issues, or pulling
 data out of the call while it happens. Its [callback types][sidecar-callbacks] include the running
-transcript.
+transcript. To build one step by step, see [Coach live calls with an AI sidecar][sidecar-guide].
 
 ## Alternatives: run your own speech-to-text
 
@@ -1138,7 +1150,7 @@ Find the symptom you see:
   <Card title="Live transcription webhooks" icon="regular webhook" href="/docs/apis/rest/webhooks/live-transcribe-utterance-webhook">
     Every field in the events your webhook receives
   </Card>
-  <Card title="AI sidecar" icon="regular user-headset" href="/docs/swml/reference/calling/ai-sidecar">
+  <Card title="AI sidecar" icon="regular user-headset" href="/docs/platform/ai/sidecar">
     Have an AI model watch the live transcript and coach your agents
   </Card>
   <Card title="Stream call audio" icon="regular waveform-lines" href="/docs/platform/voice/call-streaming">

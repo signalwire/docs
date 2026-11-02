@@ -4,6 +4,11 @@ using TypeSpec.JsonSchema;
 
 namespace SWML.Calling;
 
+const aiSidecarParamDefaultDescription: string = """
+  A default value, sent to the model as part of the function's schema. The sidecar does not insert it into the
+  arguments your webhook receives when the model omits the property, so apply your own default server-side.
+  """;
+
 @summary("AISidecarParamBase object")
 model AISidecarParamBase {
   @doc("A human-readable description of the property, sent to the model so it knows what to pass.")
@@ -20,7 +25,7 @@ model AISidecarStringParam is AISidecarParamBase {
   @example(#["timeline", "budget", "authority", "urgency"])
   `enum`?: string[];
 
-  @doc("The default value used when the model omits the property.")
+  @doc(aiSidecarParamDefaultDescription)
   @example("timeline")
   default?: string;
 }
@@ -34,7 +39,7 @@ model AISidecarIntegerParam is AISidecarParamBase {
   @example(#[1, 2, 3])
   `enum`?: integer[];
 
-  @doc("The default value used when the model omits the property.")
+  @doc(aiSidecarParamDefaultDescription)
   @example(1)
   default?: integer;
 }
@@ -48,7 +53,7 @@ model AISidecarNumberParam is AISidecarParamBase {
   @example(#[0.5, 1])
   `enum`?: float[];
 
-  @doc("The default value used when the model omits the property.")
+  @doc(aiSidecarParamDefaultDescription)
   @example(1.0)
   default?: float;
 }
@@ -58,7 +63,7 @@ model AISidecarBooleanParam is AISidecarParamBase {
   @doc("The property type.")
   type: "boolean";
 
-  @doc("The default value used when the model omits the property.")
+  @doc(aiSidecarParamDefaultDescription)
   @example(false)
   default?: boolean;
 }
@@ -105,9 +110,12 @@ model AISidecarFunctionParameters {
   type: "object";
 
   @doc("""
-    The properties the function accepts, keyed by property name. Each property allows only `type`, `description`,
-    `enum`, and `default` — additional validation keywords such as `pattern`, `format`, `minimum`, and `maximum`
-    are not accepted; express those constraints in the property `description` and validate them server-side.
+    The properties the function accepts, keyed by property name. Each property sets a `type` and an optional
+    `description`: `string`, `integer`, and `number` properties also accept `enum` and `default`, `boolean`
+    properties accept `default`, `array` properties need an `items` schema, and `object` properties accept nested
+    `properties` and `required`, at any depth. Other validation keywords such as `pattern`, `format`, `minimum`, and
+    `maximum` are not supported; express those constraints in the property `description`. The sidecar does not
+    check the model's arguments against this schema, so validate them in your webhook.
     """)
   properties: {
     ...TypeSpec.Record<AISidecarParamProperty>;

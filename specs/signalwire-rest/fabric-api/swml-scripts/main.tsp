@@ -23,7 +23,7 @@ const CreateCallingSwmlScriptExample = #{
     }
   },
   returnType: #{
-    statusCode: 200,
+    statusCode: 201,
     swml_script: CALLING_SWML_SCRIPT_RESPONSE_EXAMPLE,
   },
 };
@@ -37,7 +37,7 @@ const CreateMessagingSwmlScriptExample = #{
     }
   },
   returnType: #{
-    statusCode: 200,
+    statusCode: 201,
     swml_script: MESSAGING_SWML_SCRIPT_RESPONSE_EXAMPLE,
   },
 };
@@ -56,13 +56,13 @@ namespace SignalWireAPI.Fabric.SwmlScripts {
       """)
     @opExample(
       #{
-        returnType: #[#{
+        returnType: #{
           data: #[CALLING_SWML_SCRIPT_RESPONSE_EXAMPLE],
           links: #{
             self: "https://example.signalwire.com/api/fabric/resources/swml_scripts?page_number=0&page_size=50",
             first: "https://example.signalwire.com/api/fabric/resources/swml_scripts?page_number=0&page_size=50",
           },
-        }],
+        },
       },
       #{
         title: "SWML Script list",
@@ -70,7 +70,7 @@ namespace SignalWireAPI.Fabric.SwmlScripts {
       }
     )
     list():
-      | SwmlScriptListResponse[]
+      | SwmlScriptListResponse
       | StatusCode401
       | StatusCode404
       | StatusCode500;
@@ -133,7 +133,7 @@ namespace SignalWireAPI.Fabric.SwmlScripts {
     @post
     create(@body request: SwmlScriptCreateRequest):
       | {
-          @statusCode statusCode: 200;
+          @statusCode statusCode: 201;
           @body swml_script: SwmlScriptResponse;
         }
       | StatusCode401
@@ -153,7 +153,7 @@ namespace SignalWireAPI.Fabric.SwmlScripts {
         parameters: #{
           id: "993ed018-9e79-4e50-b97b-984bd5534095",
           request: #{
-            display_name: "Updated Welcome Script",
+            name: "Updated Welcome Script",
             script_type: "calling",
             contents: SWML_CONTENTS_EXAMPLE,
           },
@@ -173,7 +173,7 @@ namespace SignalWireAPI.Fabric.SwmlScripts {
         parameters: #{
           id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           request: #{
-            display_name: "Updated Reply Bot",
+            name: "Updated Reply Bot",
             script_type: "messaging",
             contents: SWML_MESSAGING_CONTENTS_EXAMPLE,
           },

@@ -3,16 +3,18 @@ import { listWebhooks, WEBHOOK_ROUTE_PREFIX } from "@signalwire/typespec-webhook
 import {
   createTypeSpecLibrary,
   emitFile,
+  getExamples,
   getNamespaceFullName,
   interpolatePath,
   navigateProgram,
   NoTarget,
   type EmitContext,
+  type Model,
   type Namespace,
   type Program,
   type Type,
 } from "@typespec/compiler";
-import { getHttpOperation } from "@typespec/http";
+import { getHttpOperation, isHeader, isStatusCode } from "@typespec/http";
 import {
   getOpenAPI3,
   resolveOptions,
@@ -23,8 +25,9 @@ import {
 import { stringify } from "yaml";
 
 /**
- * `@typespec/openapi3` wrapped with two behaviours the stock emitter has no hook
- * for:
+ * `@typespec/openapi3` wrapped with behaviours the stock emitter has no hook
+ * for (a third, example metadata stripping, is documented on
+ * `stripMetadataFromExamples`):
  *
  * 1. **`@excludeFromEmit` honoring** — types marked with the bare (self-exclusion)
  *    form are removed from the program in place before emit: union variants of
@@ -98,6 +101,42 @@ function stripSelfExcluded(program: Program): void {
     modelProperty(property) {
       if (isDropped(program, property.type)) {
         property.model?.properties.delete(property.name);
+      }
+    },
+  });
+}
+
+/**
+ * Drop HTTP envelope metadata from model `@example` values.
+ *
+ * A response model such as `model X is StatusCode422` carries
+ * `@statusCode statusCode: 422`, so the checker requires every `@example` on it
+ * to include `statusCode` too. The stock emitter strips that property from the
+ * component schema (it is a status code, not part of the body) but serializes
+ * the example verbatim, so the published example shows a `statusCode` field the
+ * schema forbids and the API never returns. Removing `@statusCode` and `@header`
+ * entries from the example value before emit keeps the example and the schema
+ * describing the same body.
+ */
+function stripMetadataFromExamples(program: Program): void {
+  navigateProgram(program, {
+    model(model) {
+      const examples = getExamples(program, model);
+      if (examples.length === 0) return;
+
+      const metadataNames: string[] = [];
+      for (let current: Model | undefined = model; current; current = current.baseModel) {
+        for (const property of current.properties.values()) {
+          if (isStatusCode(program, property) || isHeader(program, property)) {
+            metadataNames.push(property.name);
+          }
+        }
+      }
+      if (metadataNames.length === 0) return;
+
+      for (const example of examples) {
+        if (example.value.valueKind !== "ObjectValue") continue;
+        for (const name of metadataNames) example.value.properties.delete(name);
       }
     },
   });
@@ -195,6 +234,7 @@ function serializeDocument(document: OpenAPIDocument3_1, fileType: "yaml" | "jso
 export async function $onEmit(context: EmitContext): Promise<void> {
   const { program } = context;
   stripSelfExcluded(program);
+  stripMetadataFromExamples(program);
 
   const options = resolveOptions(context as Parameters<typeof resolveOptions>[0]);
 

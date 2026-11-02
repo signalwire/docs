@@ -11,6 +11,9 @@ using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
+// Unlike the rest of Relay REST (`ValidationError`, `errors[].detail/status/title/code`),
+// the Campaign Registry endpoints report validation failures in the
+// `errors[].type/code/message/attribute/url` shape, so their 422s use `StatusCode422`.
 @route("/registry/beta")
 namespace SignalWireAPI.RelayRest.RegistryBeta {
   @route("/brands")
@@ -48,7 +51,7 @@ namespace SignalWireAPI.RelayRest.RegistryBeta {
           @body brand: BrandResponse;
         }
       | StatusCode401
-      | ValidationError
+      | StatusCode422
       | StatusCode500;
 
     @operationId("retrieve_brand")
@@ -79,7 +82,7 @@ namespace SignalWireAPI.RelayRest.RegistryBeta {
         }
       | StatusCode401
       | StatusCode404
-      | ValidationError
+      | StatusCode422
       | StatusCode500;
   }
 
@@ -122,7 +125,7 @@ namespace SignalWireAPI.RelayRest.RegistryBeta {
         }
       | StatusCode401
       | StatusCode404
-      | ValidationError
+      | StatusCode422
       | StatusCode500;
   }
 
@@ -158,7 +161,7 @@ namespace SignalWireAPI.RelayRest.RegistryBeta {
         }
       | StatusCode401
       | StatusCode404
-      | ValidationError
+      | StatusCode422
       | StatusCode500;
   }
 
@@ -217,12 +220,12 @@ namespace SignalWireAPI.RelayRest.RegistryBeta {
     @post
     createOrder(...CampaignPathID, @body body: CreateOrderRequest):
       | {
-          @statusCode statusCode: 200;
+          @statusCode statusCode: 201;
           @body order: OrderResponse;
         }
       | StatusCode401
       | StatusCode404
-      | ValidationError
+      | StatusCode422
       | StatusCode500;
   }
 

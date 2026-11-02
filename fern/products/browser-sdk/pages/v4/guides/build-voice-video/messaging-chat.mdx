@@ -247,8 +247,13 @@ same conversation).
     <pre id="log"></pre>
 
     <script type="module">
-      import { SignalWire, StaticCredentialProvider } from "https://esm.sh/@signalwire/js@dev?bundle-deps";
-      import { firstValueFrom, filter } from "https://esm.sh/rxjs@7.8.2?bundle-deps";
+      import {
+        SignalWire,
+        StaticCredentialProvider,
+        InvalidCredentialsError,
+        UnexpectedError,
+      } from "https://esm.sh/@signalwire/js@4.0.0-rc.5?bundle-deps";
+      import { firstValueFrom, filter, map, merge } from "https://esm.sh/rxjs@7.8.2?bundle-deps";
 
       const $ = (id) => document.getElementById(id);
       const log = (msg) => ($("log").textContent += msg + "\n");
@@ -262,10 +267,28 @@ same conversation).
         log("Connecting…");
 
         client = new SignalWire(new StaticCredentialProvider({ token }));
+        client.errors$.subscribe((err) =>
+          log("Error: " + (err.name || "Error") + " — " + err.message)
+        );
         try {
-          await firstValueFrom(client.ready$.pipe(filter((r) => r)));
-        } catch (err) {
-          log("Failed: " + (err.message || err));
+          // ready$ never errors: a malformed or refused token arrives on
+          // errors$ instead, so wait for whichever comes first. Other errors
+          // on errors$, such as a device that can't be read, don't stop the
+          // connect, so only these two end the wait.
+          await firstValueFrom(
+            merge(
+              client.ready$.pipe(filter((r) => r)),
+              client.errors$.pipe(
+                filter((err) =>
+                  err instanceof InvalidCredentialsError || err instanceof UnexpectedError
+                ),
+                map((err) => { throw err; })
+              )
+            )
+          );
+        } catch {
+          log("Connect failed. Check the token and try again.");
+          client.disconnect(); // so a retry doesn't leave two clients behind
           $("connect").disabled = false;
           return;
         }

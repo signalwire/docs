@@ -7,6 +7,11 @@ using TypeSpec.JsonSchema;
 
 namespace SWML.Calling;
 
+// Literal payment connector URL: the scheme must be https. A SWML variable reference is accepted
+// separately (see `payment_connector_url`) and must resolve to an HTTPS URL.
+@pattern("^https://")
+scalar PayConnectorUrl extends url;
+
 @summary("pay Method")
 model Pay {
   @doc("""
@@ -15,17 +20,18 @@ model Pay {
     """)
   pay: {
     @doc("""
-      The URL to make POST requests with all the gathered payment details.
+      The URL to make POST requests with all the gathered payment details. Must be an HTTPS URL,
+      or a SWML variable that resolves to one.
       This URL is used to process the final payment transaction and return the results through the response.
       
-      Visit [pay documentation](/docs/swml/reference/pay#payment_connector_url) for more important information.
+      Visit [pay documentation](/docs/swml/reference/calling/pay#payment_connector_url) for more important information.
       """)
     @example("https://example.com/payment-connector")
-    payment_connector_url: url;
+    payment_connector_url: PayConnectorUrl | SWMLVar;
 
-    @doc("The amount to charge against payment method passed in the request. `Float` value with no currency prefix passed as string.")
+    @doc("The amount to charge against payment method passed in the request. `Float` value with no currency prefix passed as string. When omitted, `0.00` is sent to your payment connector.")
     @example("29.99")
-    charge_amount?: string;
+    charge_amount?: string = "0.00";
 
     @doc("Uses the ISO 4217 currency code of the charge amount.")
     @example("usd")
@@ -43,7 +49,12 @@ model Pay {
     @example("en-US")
     language?: string = "en-US";
 
-    @doc("Number of times the `pay` method will retry to collect payment details.")
+    @doc("""
+      Number of attempts the caller gets to enter each payment detail, such as the card number or expiration date.
+      Each detail is counted separately. Set a value from `1` to `3`.
+      Values outside that range are ignored, and the default `1` is used instead.
+      With the default `1`, the caller gets no retry after a failed entry.
+      """)
     @example(3)
     max_attempts?: integer | SWMLVar = 1;
 
@@ -54,30 +65,70 @@ model Pay {
     @doc("Array of parameter objects to pass to your payment processor. The parameters are user-defined key-value pairs.")
     parameters?: PayParameters[];
 
-    @doc("Indicates the payment method which is going to be used in this payment request. Currently only `credit-card` is supported.")
+    @doc("""
+      The payment method to collect from the caller.
+      
+      Allowed values:
+      - `credit-card`: collect a card number, expiration date, and (by default) security code and postal code.
+      - `ach-debit`: collect a bank routing number and bank account number.
+      
+      Whether your payment processor accepts a given method is up to your payment connector.
+      """)
     @example("credit-card")
-    payment_method?: "credit-card";
+    payment_method?: "credit-card" | "ach-debit" = "credit-card";
 
-    @doc("Takes `true`, `false` or real postalcode (if it's known beforehand) to let pay method know whether to prompt for postal code. Default is `true`.")
-    @example(true)
-    postal_code?: boolean | string = true;
+    @doc("""
+      The bank account type sent to your payment connector. Applies when `payment_method` is `ach-debit`.
+      
+      Allowed values:
+      - `consumer-checking`
+      - `consumer-savings`
+      - `commercial-checking`
+      """)
+    @example("consumer-savings")
+    bank_account_type?: "consumer-checking" | "consumer-savings" | "commercial-checking" = "consumer-checking";
+
+    @doc("""
+      Whether to prompt for the postal code, or the postal code itself. Applies to card payments.
+      Pass a quoted string: an unquoted YAML or JSON boolean is rejected.
+      The values that turn `security_code` on, such as `"true"`, prompt the caller.
+      `"false"`, `"f"`, `"no"`, `"off"`, `"disabled"`, `"inactive"` and `"disallow"` (in any case) and numbers equal to zero, such as `"0"`, skip the prompt.
+      Any other value, such as `"K1A 0B1"`, is taken as the postal code: the caller isn't prompted and that value is sent to your payment connector.
+      A postal code made only of digits is read as a number, so `"94107"` prompts the caller like `"true"` and isn't sent.
+      """)
+    @example("true")
+    postal_code?: string = "true";
 
     @doc("Array of prompt objects for customizing the audio prompts during different stages of the payment process.")
     prompts?: PayPrompts[];
 
-    @doc("Takes true or false to let pay method know whether to prompt for security code.")
-    @example(true)
-    security_code?: boolean | SWMLVar = true;
+    @doc("""
+      Alternative name for `voice`. Used only when `voice` is not set.
+      """)
+    @example("woman")
+    say_voice?: string;
+
+    @doc("""
+      Whether to prompt for the card security code. Applies to card payments.
+      Pass a quoted string: an unquoted YAML or JSON boolean is rejected.
+      `"true"`, `"t"`, `"yes"`, `"on"`, `"enabled"`, `"active"` and `"allow"` (in any case) and non-zero whole numbers, such as `"1"`,
+      turn the prompt on. Any other value turns it off.
+      """)
+    @example("true")
+    security_code?: string = "true";
 
     @doc("""
       The URL to send requests for each status change during the payment process.
       
-      Visit [pay documentation](/docs/swml/reference/pay#status_url-request-body) for more important information.
+      Visit [pay documentation](/docs/swml/reference/calling/pay#status_url-request-body) for more important information.
       """)
     @example("https://example.com/payment-status")
     status_url?: url;
 
-    @doc("Limit in seconds that pay method waits for the caller to press another digit before moving on to validate the digits captured.")
+    @doc("""
+      Limit in seconds that pay method waits for the caller to press another digit before moving on to validate the digits captured.
+      Values below `3` are ignored, and the default `5` is used instead.
+      """)
     @example(5)
     timeout?: integer | SWMLVar = 5;
 
@@ -106,7 +157,11 @@ model Pay {
     @example("visa mastercard amex")
     valid_card_types?: string = "visa mastercard amex";
 
-    @doc("Text-to-speech voice to use. Please refer to [TTS documentation](/docs/platform/voice/tts) for more information.")
+    @doc("""
+      Text-to-speech voice to use. Please refer to [TTS documentation](/docs/platform/voice/tts) for more information.
+      When `voice` is not set, `say_voice` is used. When neither is set, the `say_voice` SWML variable is used
+      if it is set; otherwise the voice is `woman`.
+      """)
     @example("woman")
     voice?: string = "woman";
   };

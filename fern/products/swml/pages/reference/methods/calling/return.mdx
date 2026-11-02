@@ -9,13 +9,22 @@ max-toc-depth: 3
 Return from [`execute`](/docs/swml/reference/calling/execute) or exit script.
 
 <ParamField path="return" type="any" required={true} toc={true}>
-  The return value.
+  The return value: a string, number, object, or array. Booleans and `null` can appear inside an object or array, or result
+  from resolving a variable reference, but aren't accepted directly as the whole return value.
 </ParamField>
 
 
 ## **Properties**
 
-No specific parameters. The value can be set to `any` type.
+No specific parameters.
+
+SWML variables and expressions are resolved before the value is stored: in a string value, and in every string inside an
+object or array. Object keys aren't resolved. A string that is a single variable reference, such as `'${call.from}'`, keeps that
+variable's JSON type; a reference combined with other text produces a string.
+
+After resolution, the value can nest objects and arrays at most 62 levels deep. A deeper value isn't stored, `return_value`
+keeps its previous value if it had one, and the section still ends. Because [`execute`](/docs/swml/reference/calling/execute)
+clears `return_value` before running its destination, an earlier result isn't returned in that case.
 
 ## **Variables**
 
@@ -97,6 +106,65 @@ sections:
             "b": 2
           }
         ]
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### Return an object built from variables
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - execute:
+        dest: collect_details
+        on_return:
+          - play:
+              url: 'say: ${return_value.caller} asked for ${return_value.department}'
+  collect_details:
+    - set:
+        department: sales
+    - return:
+        caller: '${call.from}'
+        department: '${department}'
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "execute": {
+          "dest": "collect_details",
+          "on_return": [
+            {
+              "play": {
+                "url": "say: ${return_value.caller} asked for ${return_value.department}"
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "collect_details": [
+      {
+        "set": {
+          "department": "sales"
+        }
+      },
+      {
+        "return": {
+          "caller": "${call.from}",
+          "department": "${department}"
+        }
       }
     ]
   }

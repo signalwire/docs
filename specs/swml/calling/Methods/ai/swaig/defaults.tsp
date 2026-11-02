@@ -34,5 +34,5 @@ model SWAIGDefaults {
     (`false`). **Default:** `true`.
     """)
   @example(false)
-  fillers_at_gates?: boolean | SWMLVar = true;
+  fillers_at_gates?: boolean = true;
 }

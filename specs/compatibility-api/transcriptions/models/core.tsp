@@ -46,8 +46,8 @@ model Transcription {
   duration: int32;
 
   @doc("The charge for the transcription. Null if cost has not been calculated.")
-  @example("-0.00025")
-  price: string | null;
+  @example(0.02)
+  price: float64 | null;
 
   @doc("The currency, in ISO 4217 format, for the price of the transcription.")
   @example("USD")

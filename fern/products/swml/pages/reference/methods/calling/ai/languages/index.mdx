@@ -1,7 +1,4 @@
 ---
-id: 6278079e-ea18-4634-b150-877071640502
-unlisted: false
-hide_title: false
 slug: reference/calling/ai/languages
 title: languages
 description: Configure the spoken language of your AI Agent, as well as the TTS engine, voice, and fillers.
@@ -52,11 +49,11 @@ key rather than emptying it.
 
 <ParamField path="languages[].code" type="string | string[]" required={true} toc={true}>
   Set the language code for ASR (Automatic Speech Recognition) (STT (Speech-to-text)) purposes.
-  By default, SignalWire uses Deepgram's Nova-3 STT engine, so this value should match a code from Deepgram's [Nova-3 language codes table][deepgram-codes].
+  By default, SignalWire uses Deepgram's Nova-3 STT engine, so this value should match a code from Deepgram's [Nova-3 language codes table][deepgram-codes]. A code that Nova-3 doesn't support uses Nova-2 if Nova-2 supports it; otherwise it's handed to Google Cloud Speech without an error.
 
   Supply an array to have this voice listen for up to three codes at once.
 
-  Set it to `multi` to have the engine transcribe whichever of its supported languages the caller speaks, rather than one fixed language. The agent still answers in this entry's single `voice`. To answer in the caller's language as well, use [`ai.multilingual`][multilingual] instead, which builds on the same code-switching mode and adds a voice per language.
+  Set it to `multi` to have the engine transcribe whichever of its supported languages the caller speaks, rather than one fixed language. The agent still answers in this entry's single `voice`. `multi` works only with Deepgram speech recognition, and it switches between fewer languages than `code` accepts: on Nova-3, English, Spanish, French, German, Hindi, Russian, Portuguese, Japanese, Italian, and Dutch; on Nova-2, English and Spanish. A Google speech engine treats `multi` as an ordinary language code. To answer in the caller's language as well, use [`ai.multilingual`][multilingual] instead, which builds on the same code-switching mode and adds a voice per language.
 <Info> If a different STT model was selected using the [`openai_asr_engine` parameter][openai-asr-engine], you must select a code supported by that engine.</Info>
 </ParamField>
 
@@ -87,19 +84,23 @@ See [`voice` usage](#use-voice-strings) for more details.
 <Warning>Only works with the [Cartesia][cartesia], [ElevenLabs][elevenlabs], [Rime][rime], [Inworld][inworld], [Smallest][smallest], and [Fish][fish] TTS engines.</Warning>
 </ParamField>
 
-<ParamField path="languages[].function_fillers" type="string[]" default="None" toc={true}>
+<ParamField path="languages[].function_fillers" type="string[]" toc={true}>
   An array of strings to be used as fillers in the conversation when the agent is calling a [`SWAIG function`][swaig-functions]. The filler is played asynchronously during the function call.
 </ParamField>
 
-<ParamField path="languages[].listen_language" type="string | string[]" toc={true}>
-  A legacy alias for `code`, kept so that documents written before `code` existed keep working. It is read only when `code` is absent, so it has no effect alongside `code`. Write `code` in new documents.
+<ParamField path="languages[].double_turn_fillers" type="string[]" toc={true}>
+  Phrases the agent says while the planning step enabled by [`params.double_turns`](/docs/swml/reference/calling/ai/params#paramsdouble_turns) is still running when a reply is due. One is picked at random, and the same phrase is not played twice in a row. Has no effect unless `params.double_turns` is `true`. Applies only to `languages`, not `multilingual`.
 </ParamField>
 
-<ParamField path="languages[].model" type="string" default="None" toc={true}>
+<ParamField path="languages[].listen_language" type="string | string[]" toc={true}>
+  A legacy alias for `code`, kept so that documents written before `code` existed keep working. It is read only when `code` is absent, so it has no effect alongside `code`. Like `code`, it takes up to three codes. Write `code` in new documents.
+</ParamField>
+
+<ParamField path="languages[].model" type="string" toc={true}>
   The model to use for the specified TTS engine (e.g. `coda`). Set this only if the `voice` string does not already carry a `:<model id>` suffix — a suffix on the `voice` string wins, and this key is then ignored without a warning. Check the [TTS provider reference][tts-providers] for the available models.
 </ParamField>
 
-<ParamField path="languages[].speech_fillers" type="string[]" default="None" toc={true}>
+<ParamField path="languages[].speech_fillers" type="string[]" toc={true}>
   An array of strings to be used as fillers in the conversation. This helps the AI break silence between responses.
 
 <Note>`speech_fillers` are used between every 'turn' taken by the LLM, including at the beginning of the call. For more targeted fillers, consider using `function_fillers`.</Note>
@@ -111,7 +112,7 @@ See [`voice` usage](#use-voice-strings) for more details.
 <Note>Unlike the language-keyed map on [`ai.multilingual`][multilingual], this is a plain array, because the entry already fixes the language.</Note>
 </ParamField>
 
-<ParamField path="languages[].params" type="object" default="None" toc={true}>
+<ParamField path="languages[].params" type="object" toc={true}>
   TTS engine-specific parameters for this language.
 </ParamField>
 
@@ -214,6 +215,9 @@ First, select your engine using the `gcloud`, `polly`, `amazon`, `azure`, `opena
 First, select your engine using the `gcloud`, `polly`, `amazon`, `azure`, `openai`, `elevenlabs`, `deepgram`, `cartesia`, `rime`, `inworld`, `groq-tts`, `mistral`, `grok`, `smallest`, or `fish` identifier. 
 Append a period (`.`), and then the specific voice ID from the TTS provider, giving `gcloud.en-US-Casual-K`. 
 Where an engine offers more than one model, append a colon (`:`) and the model ID, as in `elevenlabs.rachel:eleven_flash_v2_5`.
+The model suffix is read only when the string starts with an engine: in `rachel:eleven_flash_v2_5`, the whole
+string, colon included, is taken as the voice ID.
+A model suffix takes precedence over [`languages[].model`](#languagesmodel), which is then ignored.
 Refer to SignalWire's [Supported Voices and Languages][tts-providers]
 for guides on configuring voice ID strings for each provider.
 
@@ -222,6 +226,10 @@ Always include the engine. A voice ID on its own — `en-US-Casual-K` rather tha
 is resolved against a default engine, and that default can change. A voice string that names its
 engine keeps working regardless.
 </Warning>
+
+When a voice can't be resolved, SignalWire substitutes another voice and reports a
+[`relay_script_voice_unresolved`](/docs/swml/reference/errors#relay_script_voice_unresolved) warning
+after the `ai` method ends. See [Errors](/docs/swml/reference/errors) for the other codes SWML reports.
 
 ## **Supported voices and languages**
 
