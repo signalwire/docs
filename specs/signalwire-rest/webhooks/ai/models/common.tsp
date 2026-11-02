@@ -314,20 +314,14 @@ model AICallLogTimestamps is Record<int64> {
   first_audio?: int64;
 }
 
+// The fields every conversation entry carries, shared by the voice agent's call log
+// (AICallLogEntry below) and AI Chat's chat_log (AI.ChatLogEntry). Only the voice log carries the
+// per-turn recognition, latency, and interruption fields, so those live on AICallLogEntry alone.
 @doc("""
   One entry in the conversation. Beyond `role` and `content`, an entry carries whatever per-turn
-  detail applies to it, such as recognition confidence on a caller turn (`user`), timings on a reply
-  (`assistant`, or `assistant-manual` for a filler phrase), or function timings on a function result
-  (`tool`). Unlisted keys can also appear.
-
-  The interruption fields (`barged`, `barge_elapsed_ms`, `text_spoken_total`, and
-  `text_heard_approx`) and `merge_count` are recorded on one copy of the conversation, so any of them
-  can be missing from either `call_log` or `raw_call_log`. Check both. A standard agent records no
-  interruption fields on a reply that
-  [`transparent_barge`](/docs/swml/reference/calling/ai/params#paramstransparent_barge) removed from
-  the conversation.
+  detail applies to it.
   """)
-model AICallLogEntry is Record<unknown> {
+model AIConversationEntryCore is Record<unknown> {
   @doc("""
     Who produced the entry. Common roles include `system`, `user`, `assistant`, and `tool`. Other
     roles may appear, so filter to the roles your application uses rather than assuming a fixed set.
@@ -345,6 +339,23 @@ model AICallLogEntry is Record<unknown> {
 
   @doc("The tool calls the agent made on this turn. Present only on a turn that made any.")
   tool_calls?: Record<unknown>[];
+}
+
+@doc("""
+  One entry in the conversation. Beyond `role` and `content`, an entry carries whatever per-turn
+  detail applies to it, such as recognition confidence on a caller turn (`user`), timings on a reply
+  (`assistant`, or `assistant-manual` for a filler phrase), or function timings on a function result
+  (`tool`). Unlisted keys can also appear.
+
+  The interruption fields (`barged`, `barge_elapsed_ms`, `text_spoken_total`, and
+  `text_heard_approx`) and `merge_count` are recorded on one copy of the conversation, so any of them
+  can be missing from either `call_log` or `raw_call_log`. Check both. A standard agent records no
+  interruption fields on a reply that
+  [`transparent_barge`](/docs/swml/reference/calling/ai/params#paramstransparent_barge) removed from
+  the conversation.
+  """)
+model AICallLogEntry is Record<unknown> {
+  ...AIConversationEntryCore;
 
   // Caller turns (`user`)
 
@@ -374,10 +385,9 @@ model AICallLogEntry is Record<unknown> {
   turn_detection_to_final_event?: integer;
 
   @doc("""
-    How many caller entries were merged into this one when the platform combined consecutive caller
-    speech, for example words the caller added after interrupting the agent. An entry that was
-    already merged counts as one. `1` means nothing was combined into it. Present only on an entry
-    that went through merging.
+    How many caller entries were combined into this one the last time the platform merged
+    consecutive caller speech, for example words the caller added after interrupting the agent. An
+    entry that was already merged counts as one. Appears on caller entries once merging has run.
     """)
   @example(2)
   merge_count?: integer;
@@ -387,30 +397,33 @@ model AICallLogEntry is Record<unknown> {
   @doc("""
     Time from when the agent started its request to the model until the first token came back, in
     milliseconds. The request starts once the caller's speech is final, or once a function returns.
-    `0` when there is nothing to measure from, such as on the greeting. A speech-to-speech agent
-    measures from when the reply started instead.
+    On a standard agent, if any of `latency`, `utterance_latency`, and `audio_latency` couldn't be
+    measured for the turn, all three are `0`, as on the greeting. A speech-to-speech agent measures
+    from when the reply started instead. On a function result (`tool`), this is the first-token
+    latency of the model request that called the function.
     """)
   @example(612)
   latency?: integer;
 
   @doc("""
     Time from when the agent started its request to the model until the first part of the reply was
-    ready to speak, in milliseconds. `0` when `latency` is.
+    ready to speak, in milliseconds. On a function result (`tool`), this repeats `function_latency`.
     """)
   @example(745)
   utterance_latency?: integer;
 
   @doc("""
     Time from when the agent started its request to the model until the first audio of the reply
-    played, in milliseconds. It does not include detecting that the caller had finished speaking.
-    `0` when `latency` is.
+    played, in milliseconds. It does not include detecting that the caller had finished speaking. On
+    a function result (`tool`), this repeats `execution_latency`.
     """)
   @example(1020)
   audio_latency?: integer;
 
   @doc("""
     Time from the end of the caller's last word until the first audio of the reply, in milliseconds:
-    the silence the caller heard. `null` when it could not be measured, such as on the greeting.
+    the silence the caller heard. `null` when it could not be measured, such as on the greeting. A
+    speech-to-speech agent reports `0` instead of `null` when it could not measure this.
     """)
   @example(1310)
   acoustic_latency?: integer | null;
@@ -459,7 +472,7 @@ model AICallLogEntry is Record<unknown> {
 
   @doc("""
     Time from when the agent started its request to the model until the model called this function,
-    or until the agent first spoke if that was sooner, in milliseconds. Omitted when not measured,
+    or until the agent had a first reply ready to speak if that was sooner, in milliseconds. Omitted when not measured,
     such as for a function called by the post-prompt. On a speech-to-speech agent this carries reply
     timing rather than function timing.
     """)
