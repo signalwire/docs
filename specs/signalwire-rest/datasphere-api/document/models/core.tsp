@@ -36,7 +36,7 @@ model Document {
   @example("acaa5c49-be5e-4477-bce0-48f4b23b7720")
   id: uuid;
 
-  @doc("Name of the Document.")
+  @doc("File name of the document. For documents created through this API, Datasphere takes it from the download's `Content-Disposition` header, or from the last segment of the URL path when that header is absent.")
   @example("player_list.pdf")
   filename: string;
 
