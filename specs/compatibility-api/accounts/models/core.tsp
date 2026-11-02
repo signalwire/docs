@@ -147,3 +147,12 @@ model Account {
   @doc("A map of URIs for sub-resources linked to this Project.")
   subresource_uris: SubresourceUris;
 }
+
+@doc("A newly created subproject, returned as an Account. Unlike other Account responses, it includes the subproject's signing key.")
+model SubprojectAccount {
+  ...OmitProperties<Account, "signing_key">;
+
+  @doc("The signing key for the new subproject. Only returned on this response; later requests for the Account return null.")
+  @example("swpsk_0123456789ab0123456789ab0123456789ab")
+  signing_key: string;
+}
