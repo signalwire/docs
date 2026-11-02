@@ -116,15 +116,21 @@ model CallQosMetrics {
   @example(0)
   audio_in_dtmf_packet_count?: integer;
 
-  @doc("Number of received audio packets that were skipped.")
+  @doc("""
+    Number of received audio intervals filled with comfort noise because no audio packet was
+    available. It grows with lost or late packets and during DTMF digits.
+    """)
   @example(5)
   audio_in_skip_packet_count?: integer;
 
-  @doc("Number of received audio packets flushed from the jitter buffer.")
+  @doc("""
+    Number of queued received packets discarded when the media stream was flushed, for example when
+    the call was bridged or unbridged.
+    """)
   @example(0)
   audio_in_flush_packet_count?: integer;
 
-  @doc("The largest size the jitter buffer reached.")
+  @doc("Not populated. Always `0` when the call has quality statistics.")
   @example(0)
   audio_in_largest_jb_size?: integer;
 
