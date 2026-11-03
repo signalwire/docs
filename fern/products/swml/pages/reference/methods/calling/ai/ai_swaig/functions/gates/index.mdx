@@ -23,7 +23,7 @@ For when to use gates and how to write good questions, see the [semantic gates g
 ## Properties
 
 <ParamField path="functions[].gates" type="object[]" toc={true}>
-  An array of 1 to 8 gates. Every gate is checked at once, and all must pass. When more than one fails, the first failing gate in the array supplies the `on_fail` response. A gated function needs a `description` (or the deprecated `purpose`) and a `web_hook_url` (its own or from `SWAIG.defaults`) or a `data_map`.
+  An array of 1 to 8 gates. Every gate is checked at once, and all must pass. When more than one fails, the first failing gate in the array supplies the `on_fail` response. A gated function needs a `description` (or the deprecated `purpose`) and a `web_hook_url` or a `data_map`. The `web_hook_url` is the function's own or comes from `SWAIG.defaults`; a function returned by `includes` takes it from the `defaults` the include returns instead.
 
   Inside a gate, a key not listed below is an error, not an ignored setting. Gate keys are matched exactly, case included, so `Question` is an unknown key. The function's own `gates` and `gate_fillers` keys are matched without regard to case, like every [function property][functions].
 </ParamField>
@@ -31,7 +31,7 @@ For when to use gates and how to write good questions, see the [semantic gates g
 <Indent>
 
 <ParamField path="gates[].question" type="string" required={true} toc={true}>
-  The yes/no question, at most 8 KB. Name what it's about with the names of the inputs the decision model reads, in backticks: `` `conversation` ``, `` `semantic_state` ``, `` `proposed_function` ``, or `` `visual_input` `` (see [What a gate reads](#what-a-gate-reads)). `${...}` variables from `global_data` are expanded when the check runs; `@{...}` functions are not run.
+  The yes/no question, at most 8 KB. Name what it's about with the names of the inputs the decision model reads, in backticks: `` `conversation` ``, `` `semantic_state` ``, `` `proposed_function` ``, or `` `visual_input` `` (see [What a gate reads](#what-a-gate-reads)). `${...}` variables from `global_data` are expanded when the check runs, written as `${global_data.key}` or as the bare top-level key, `${key}`; `@{...}` functions are not run.
 </ParamField>
 
 <ParamField path="gates[].threshold" type="number" required={true} toc={true}>
@@ -39,7 +39,7 @@ For when to use gates and how to write good questions, see the [semantic gates g
 </ParamField>
 
 <ParamField path="gates[].on_fail" type="object" required={true} toc={true}>
-  What the AI gets instead of the function's result when this is the first gate that fails. Shaped like a [`data_map` output][data-map], at most 8 KB.
+  What the AI gets instead of the function's result when this is the first gate that fails. Shaped like a [`data_map` output][data-map], at most 8 KB as compact JSON, keys and quotes included.
 </ParamField>
 
 <Indent>
@@ -59,7 +59,7 @@ For when to use gates and how to write good questions, see the [semantic gates g
 </Indent>
 
 <ParamField path="gates[].id" type="string" default="gate_1, gate_2, … by position" toc={true}>
-  A name for the gate, reported in the call records: 1 to 64 letters, digits, or underscores, unique within the function.
+  A name for the gate, reported in the call records: 1 to 64 letters, digits, or underscores, unique within the function. Default ids count too, so an `id` of `gate_2` clashes with a second gate that has no `id`.
 </ParamField>
 
 <ParamField path="gates[].criteria" type="object" toc={true}>
@@ -74,7 +74,7 @@ For when to use gates and how to write good questions, see the [semantic gates g
 
 Sizes are bytes of UTF-8 text. If any gate breaks a rule on this page, or the gated function lacks a
 `description` or a `web_hook_url` or `data_map`, the function isn't added to the agent at all, and
-the rest of the agent works without it. A `calling.error` event with `error_reason` `invalid_semantic_gate` names the function and the reason. For the rest of that `ai`
+the rest of the agent works without it, even with `semantic_gates_enabled` set to `false`. A `calling.error` event with `error_reason` `invalid_semantic_gate` names the function and the reason. For the rest of that `ai`
 method, no other definition of that name and no MCP tool with that name is used either, so the
 function can never run without its gates.
 
@@ -82,18 +82,25 @@ When a function name is defined more than once, the first definition wins, gates
 from `includes` load before `SWAIG.functions`, so an included definition of a name wins over an
 inline one.
 
+<Warning title="An ungated earlier definition removes the gates">
+If the first definition of a name has no gates, a later gated definition of that name is dropped,
+and the function runs without being checked. No `calling.error` event fires. Define each gated
+function once, and when an include returns it, put the gates in the include's definition.
+</Warning>
+
 ## What a gate reads
 
 The decision model reads these inputs, under these names, and nothing else:
 
 | Name | What it holds |
 |---|---|
-| `conversation` | The most recent part of the call, oldest first: [`semantic_gate_history`][history] entries, 20 by default. It holds the caller's turns, the agent's replies, and what the agent was told to say outside its replies, such as `say` actions. An agent reply the caller cut off is included without its text. |
-| `semantic_state` | Whatever you've stored in `global_data.semantic_state`, or `{}`. Nothing else from `global_data` is sent. |
+| `conversation` | The most recent part of the call, oldest first: [`semantic_gate_history`][history] entries, 20 by default. It holds the caller's turns, the agent's replies, and what the agent was told to say outside its replies, such as `say` actions and fillers. An agent reply the caller cut off is included without its text. |
+| `semantic_state` | Whatever you've stored in `global_data.semantic_state`, or `{}`. The key is matched exactly, so `Semantic_State` isn't read. |
 | `proposed_function` | The function's name, its description, and the arguments the AI is calling it with. |
 | `visual_input` | The caller's video frames, when a gate sets `visual_input`. |
 
-The backticked names in a question aren't variables, and nothing replaces them. They tell the
+Other `global_data` values reach the decision model only when a question names them as `${...}`
+variables. The backticked names in a question aren't variables, and nothing replaces them. They tell the
 decision model which input to read, so that "in `conversation`" means the conversation it was
 given, not the ordinary word. What a gate reads is captured when the check starts: something the
 caller says while it runs doesn't change the result.
@@ -102,10 +109,11 @@ caller says while it runs doesn't change the result.
 
 A blocked function doesn't run: your webhook isn't called, the `data_map` doesn't run, and nothing
 is sent to an MCP server. The function's `wait_file` doesn't play, and the call doesn't use up its
-`active` count. If the AI keeps making the same blocked call, it's refused on the third try.
+`active` count.
 
 When the check can't be completed, because it timed out, the decision model failed or gave no usable
-answer, or the AI's arguments were missing or weren't valid JSON, the function is blocked too, and
+answer, or the AI's arguments weren't exactly one JSON object (missing, not valid JSON, text after
+the object, a repeated key, or a `\u0000` escape), the function is blocked too, and
 the AI gets `There is a temporary problem and this could not be completed right now.` Every outcome
 other than a pass, a fail, or gates turned off also fires a `calling.error` event:
 
