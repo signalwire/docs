@@ -270,11 +270,13 @@ script either holds the document itself or fetches it from your server for each 
 SignalWire must reach your server over the internet, so this tab has four parts: run the server,
 give it a public URL, check the URL, then create the script that points at it.
 
-Run the server below. It answers requests on port 3000 at `/swml`, but only when they carry the
-username `signalwire` and the password you set. The TypeScript SDK can't build messaging documents
-yet, so this server is Python only; to skip running a server, use the **Hosted in SignalWire** tab.
+Run either server below. It answers requests on port 3000 at `/swml`, but only when they carry
+the username `signalwire` and the password you set. To skip running a server, use the **Hosted in
+SignalWire** tab.
 
-```python title="Python — SWML service"
+<CodeBlocks>
+<CodeBlock title="Python — SWML service">
+```python
 # Install: python -m pip install signalwire-sdk
 # Save as inbound_message_server.py and run: python inbound_message_server.py
 from signalwire import SWMLService
@@ -296,6 +298,33 @@ service.add_verb("reply", {
 # SignalWire: https://signalwire:<YOUR_BASIC_AUTH_PASSWORD>@<YOUR_PUBLIC_HOST>/swml
 service.serve()
 ```
+</CodeBlock>
+<CodeBlock title="TypeScript — SWML service">
+```typescript
+// Install: npm install @signalwire/sdk
+// This sample also runs as JavaScript: save as inbound-message-server.mjs,
+// then run: node inbound-message-server.mjs
+import { SWMLService } from "@signalwire/sdk";
+
+// The SWML builder has no messaging methods yet, so add `reply` with addVerb.
+// Schema validation only knows calling methods, so this service turns it off.
+const service = new SWMLService({
+  name: "inbound-message-server",
+  route: "/swml",
+  port: 3000,
+  basicAuth: ["signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"],
+  schemaValidation: false,
+});
+service.addVerb("reply", {
+  body: "Thanks for texting Bayview Taxi! We got your message: %{message.body}",
+});
+
+// Serves the document at /swml. Put the credentials in the URL you give
+// SignalWire: https://signalwire:<YOUR_BASIC_AUTH_PASSWORD>@<YOUR_PUBLIC_HOST>/swml
+await service.serve();
+```
+</CodeBlock>
+</CodeBlocks>
 
 SignalWire fills in `%{message.body}` before it sends the reply. Each request to your server
 carries the [incoming message][swml-webhook-payload] as `message`, with fields such as `from`,
