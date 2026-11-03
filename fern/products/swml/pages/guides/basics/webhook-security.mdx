@@ -16,8 +16,10 @@ from SignalWire and that neither the URL nor the body was altered in transit. Th
 agent sends to your server, such as SWAIG function calls and the post-prompt summary, carry the
 same signature.
 
-Signing is always on. Every project has a signing key, and SignalWire signs these requests with it
-automatically, so there is no setting to enable. Your server decides whether to check the signature.
+There is no setting to enable signing. Every project has a signing key, and SignalWire signs these
+requests with it automatically. Your server decides whether to check the signature. In the rare
+case SignalWire can't compute a signature, it sends the request unsigned, as described in
+[Plan for unsigned requests, redirects, and retries](#plan-for-unsigned-requests-redirects-and-retries).
 
 <Warning title="This step is not optional!">
 For production applications it is extremely important to verify the signature, so that requests
@@ -46,8 +48,9 @@ includes:
   set in [`SWAIG.defaults`](/docs/swml/reference/calling/ai/swaig), the webhooks in a function's
   [`data_map`](/docs/swml/reference/calling/ai/swaig/functions/data-map), the function-definition
   request to each [`SWAIG.includes`](/docs/swml/reference/calling/ai/swaig/includes) URL, the
-  summary sent to `post_prompt_url`, and the live stream sent to
-  [`debug_webhook_url`](/docs/swml/reference/calling/ai/params#debug_webhook_url-callback).
+  summary sent to `post_prompt_url`, the request to `post_prompt_url` that loads a stored
+  conversation when the agent sets `save_conversation` and a `conversation_id`, and the live stream
+  sent to [`debug_webhook_url`](/docs/swml/reference/calling/ai/params#debug_webhook_url-callback).
 - Function webhooks from [`ai_sidecar`](/docs/swml/reference/calling/ai-sidecar/swaig) and
   [`amazon_bedrock`](/docs/swml/reference/calling/amazon-bedrock).
 
@@ -72,12 +75,21 @@ message request signs it exactly as you configured it, credentials included. The
 JSON payload exactly as sent. For a SWML document, that's the object containing `call` (or
 `message` for a messaging document), `vars`, `envs`, and, when the document was reached through
 `execute` or `transfer`, `params`. For an AI agent request, it's the JSON the agent posts, such as
-the SWAIG function call or the post-prompt summary.
+the SWAIG function call or the post-prompt summary. A `data_map` webhook is the exception: its body
+is the JSON built from the webhook's `params`, form-encoded instead when the webhook sets
+`form_param`. When a `data_map` webhook has no body, as with a `GET`, the signature covers the URL
+alone.
 
 <Note>
-Verify against the URL you configured in the Dashboard, not the URL your framework reconstructs
-from the incoming request. Proxies, load balancers, and tunnels such as ngrok routinely rewrite the
-host or scheme, which changes the string being hashed and makes a valid signature look invalid.
+Verify against the URL you configured, in the Dashboard or in your SWML, not the URL your framework
+reconstructs from the incoming request. Proxies, load balancers, and tunnels such as ngrok routinely
+rewrite the host or scheme, which changes the string being hashed and makes a valid signature look
+invalid. For a call request, remove any credentials embedded in the URL first.
+
+When the query string changes from call to call, as it does when the
+[Server SDKs](/docs/server-sdks) add a per-call token to an agent's webhook URLs, you can't
+hard-code the URL. Rebuild it from your public base URL plus the path and query string of the
+request you received.
 </Note>
 
 ## Which requests are not signed
@@ -101,15 +113,22 @@ If SignalWire can't compute a signature for a request, it sends the request with
 headers rather than not sending it. An endpoint that requires a signature rejects that request, and
 the fetch or function call it carried fails. Treat a missing signature the same as an invalid one.
 
-AI agent requests don't follow redirects. A signature covers the exact URL it was computed for, so
-a `3xx` response to a signed AI agent request counts as a failed request instead of being followed.
-Point `web_hook_url`, `post_prompt_url`, and the agent's other URLs at their final address,
-including the `https://` scheme and any trailing slash your server would otherwise redirect to.
+Signed AI agent requests don't follow redirects. A signature covers the exact URL it was computed
+for, so a `3xx` response to a signed AI agent request counts as a failed request instead of being
+followed. An unsigned request, such as the `amazon_bedrock` post-prompt summary or a request sent
+without a signature for the reason above, does follow a redirect. Point `web_hook_url`,
+`post_prompt_url`, and the agent's other URLs at their final address, including the `https://`
+scheme and any trailing slash your server would otherwise redirect to.
 
-When the POST to a SWAIG function's `web_hook_url` or to `post_prompt_url` fails to connect or
-gets a `5xx` response, SignalWire retries it with the same body and the same signature. A signature
-identifies the content of a request, not one delivery, so don't reject a request only because
-you've seen its signature before.
+When an AI agent's POST to a SWAIG function's `web_hook_url`, to `post_prompt_url`, or to another of
+its webhook URLs fails to connect, times out, or gets a `5xx` response, SignalWire retries it with
+the same body and the same signature. `data_map` webhooks are not retried. A signature identifies
+the content of a request, not one delivery, so don't reject a request only because you've seen its
+signature before.
+
+Because a timeout triggers a retry, a slow handler can receive the same function call again while
+it is still processing the first. Make your handlers idempotent, so that running a function twice
+has the same effect as running it once.
 
 ## Get your signing key
 
@@ -180,8 +199,8 @@ await agent.run();
 </CodeBlock>
 </CodeBlocks>
 
-Signature checking in TypeScript needs `@signalwire/sdk` 3.5.0 or later. Without a signing key, the
-agent logs a warning at startup and accepts unsigned requests.
+Install the latest Server SDK to get signature checking. Without a signing key, the agent logs a
+warning at startup and accepts unsigned requests.
 
 The signature check works alongside the agent's other protections: the basic auth credentials the
 SDK adds to every webhook URL it generates, and the per-function token on functions marked secure.
@@ -356,7 +375,9 @@ section covers the rest.
 A signature that never validates almost always comes down to one of these:
 
 - **The URL does not match.** Scheme, host, port, path, and query string all feed the hash. Use the
-  exact URL configured in the Dashboard, including the query string if you configured one.
+  exact URL from the Dashboard or your SWML, including its query string. When the query string
+  varies per call, rebuild the URL from your public base URL plus the path and query string of the
+  request you received.
 - **The body was re-serialized.** Hash the bytes you received, not `JSON.stringify` of the parsed
   object.
 - **The wrong project's key.** Signing keys are per project.
