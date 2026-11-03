@@ -46,13 +46,15 @@ and a retry.
 | Collect speech, keypad digits, or both on one prompt | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
 | Play the question and collect the reply in one command | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
 | Tell silence apart from a reply that matched nothing | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
-| Compare the reply in your own code while the call is live | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> |
+| Receive the reply in your own process without hosting a webhook | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> |
 | Collect input on a call another process answered, by its call ID | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> |
 | Build the menu visually, with no code | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
 
 - [SWML][swml] is a JSON or YAML document that SignalWire runs step by step. Generate it with the
   [Server SDKs][server-sdks] or write it by hand, then host it in your Space or serve it from your
-  own server. Its `prompt` method asks and collects in one step.
+  own server. Its `prompt` method asks and collects in one step. To compare the reply on your own
+  server instead, `transfer` or `execute` to a URL: SignalWire posts the document's variables,
+  `prompt_value` among them, and runs the SWML you return.
 - [Relay][relay-client] is the WebSocket client in the Server SDKs. Your process receives the call,
   plays the question, and gets the reply back as a value it can compare.
 - The [REST Calling API][rest-calling] sends the same collect command over HTTP to a call you
@@ -282,8 +284,7 @@ sections:
 that. `switch` compares the whole value exactly. SignalWire lowercases recognized speech and strips
 its punctuation before storing it in `prompt_value`, so "Booking." still matches the `booking`
 case, but "booking please" does not. SWML also has a `cond` method that branches on a JavaScript
-expression; the Python SDK cannot emit it, because `add_verb` takes only object-valued methods and
-`cond` takes a list, so the SWML samples in this guide branch with `switch`.
+expression. The Python SDK can't emit it, so the SWML samples in this guide branch with `switch`.
 
 Run the program and point an External URL SWML Script at it through your tunnel, or paste the YAML
 or JSON into a Hosted Script, as in [Create the SWML Script][create-swml-script]. To put dispatch
@@ -714,8 +715,8 @@ sequenceDiagram
 ### Receive the result via WebSocket (Relay)
 
 The Relay client already holds the result: it is the event that `action.wait()` returned. To log
-every collect event as it happens, including partial ones, register a handler on the call before
-starting the prompt. The [Server SDKs][server-sdks] document the fields of every call event.
+every collect event as it happens, register a handler on the call before starting the prompt. The
+[Server SDKs][server-sdks] document the fields of every call event.
 
 <CodeBlocks>
 <CodeBlock title="Python — Relay client">
@@ -768,10 +769,10 @@ sequenceDiagram
 | SWML | `prompt_value` inside the document; the `status_url` webhook | `prompt_result` is `no_input` or `no_match` |
 | WebSocket (Relay) | The `result` on the event `action.wait()` returns; `call.on` handlers | `result.type` is `no_input` or `no_match` |
 | REST | The `status_url` webhook only | `params.result.type` is `no_input` or `no_match` |
-| Call Flow Builder | Not exposed; the flow branches on the matched option | The **No Input** and **Unknown** connectors |
+| Call Flow Builder | The `%{prompt_value}` variable in any later node | The **No Input** and **Unknown** connectors |
 
-The Dashboard's call log shows the Collect step and its outcome for every surface, but never the
-text.
+The Dashboard's call log shows that a Collect step ran, for every surface, but not its outcome and
+never the text.
 
 ## Examples
 
