@@ -150,7 +150,15 @@ model Account {
 
 @doc("A newly created subproject, returned as an Account. Unlike other Account responses, it includes the subproject's signing key.")
 model SubprojectAccount {
-  ...OmitProperties<Account, "signing_key">;
+  ...OmitProperties<Account, "owner_account_sid" | "subproject" | "signing_key">;
+
+  @doc("The Project ID of the parent project that owns this subproject.")
+  @example("7e23cec9-babb-4702-b348-9b2246a9005b")
+  owner_account_sid: uuid;
+
+  @doc("Whether this project is a sub-project of another project. Always `true` for a newly created subproject.")
+  @example(true)
+  subproject: boolean;
 
   @doc("The signing key for the new subproject. Only returned on this response; later requests for the Account return null.")
   @example("swpsk_0123456789ab0123456789ab0123456789ab")

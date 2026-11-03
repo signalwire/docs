@@ -145,10 +145,13 @@ namespace SignalWireAPI.Projects {
     @doc("""
       Rotates the project's signing key and returns the project with the new `signing_key`.
       
-      The previous key may take about 1–2 minutes to stop working. As with create, the
-      `signing_key` is only returned on this response and cannot be retrieved afterward.
+      The new key takes about 1–2 minutes to become active, and until then requests can still arrive
+      signed with the previous key. During that window, accept a request whose signature verifies with
+      either key, then stop accepting the previous key. As with create, the `signing_key` is only
+      returned on this response and cannot be retrieved afterward.
 
-      The new key is the project's next signing key, the same key the Dashboard's **Reset** dialog shows, so a project created before the `swpsk_` format can receive a `PSK_` key from its first rotation.
+      The new key is the project's next signing key, the same key the Dashboard's **Reset** dialog shows.
+      A project created before the `swpsk_` format can therefore receive a `PSK_` key from its first rotation.
 
       Use it when the project's webhook-signing credential has been exposed or is due for rotation; this is separate from creating or revoking REST API tokens.
       
