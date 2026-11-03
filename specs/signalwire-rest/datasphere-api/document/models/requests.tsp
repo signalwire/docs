@@ -89,7 +89,7 @@ model ChunkListQuery {
 
 model DocumentCreateRequestBase {
   @doc("""
-    Public `http` or `https` URL of the file to ingest. Datasphere downloads the file and accepts PDF (`application/pdf`), plain text (`text/plain`), and Markdown (`text/markdown`) files up to 10 MB. The format is detected from the file's content, not only its `Content-Type` header, so a Word or Excel file is rejected with a `422` error even when it is served as plain text.
+    Public `http` or `https` URL of the file to ingest. Datasphere downloads the file and accepts PDF, plain text, and Markdown files up to 10 MB. A PDF is recognized from its content, so a Word or Excel file is rejected with a `422` error even when it is served as `text/plain`. A text file is identified by its `Content-Type` header (`text/plain`, `text/markdown`, `text/x-markdown`, or `text/x-web-markdown`), or by its file extension when that header is missing or `application/octet-stream`. The file name, taken from the `Content-Disposition` header or the last segment of the URL path, must have a supported extension or none at all, so a PDF served from `/download.php` is rejected with a `422` error.
     """)
   @example("https://example.com/document.pdf")
   url: url;
@@ -105,7 +105,7 @@ model DocumentCreateSentenceRequest extends DocumentCreateRequestBase {
   @example(40)
   max_sentences_per_chunk?: integer = 50;
 
-  @doc("Split the text into sentences and group up to `max_sentences_per_chunk` of them per chunk. Omit `chunking_strategy` to use this strategy.")
+  @doc("Splits the text into sentences and groups up to `max_sentences_per_chunk` of them per chunk. This is the default when `chunking_strategy` is omitted.")
   @example(ChunkingStrategy.Sentence)
   chunking_strategy?: ChunkingStrategy.Sentence;
 
@@ -125,7 +125,7 @@ model DocumentCreateSlidingRequest extends DocumentCreateRequestBase {
   @example(50)
   chunk_size?: integer = 50;
 
-  @doc("Take a window of `chunk_size` words and slide it forward so that consecutive chunks share `overlap_size` words.")
+  @doc("Takes a window of `chunk_size` words and slides it forward so that consecutive chunks share `overlap_size` words.")
   @example(ChunkingStrategy.Sliding)
   chunking_strategy?: ChunkingStrategy.Sliding;
 
@@ -136,14 +136,14 @@ model DocumentCreateSlidingRequest extends DocumentCreateRequestBase {
 
 @summary("Page strategy")
 model DocumentCreatePageRequest extends DocumentCreateRequestBase {
-  @doc("Make one chunk per page of a PDF. Plain text and Markdown files have no pages, so they are split on blank lines instead, as with `paragraph`.")
+  @doc("Makes one chunk per page of a PDF. Plain text and Markdown files have no pages, so they are split on blank lines instead, as with `paragraph`.")
   @example(ChunkingStrategy.Page)
   chunking_strategy?: ChunkingStrategy.Page;
 }
 
 @summary("Paragraph strategy")
 model DocumentCreateParagraphRequest extends DocumentCreateRequestBase {
-  @doc("Split on blank lines so that each paragraph becomes a chunk.")
+  @doc("Splits on blank lines so that each paragraph becomes a chunk.")
   @example(ChunkingStrategy.Paragraph)
   chunking_strategy?: ChunkingStrategy.Paragraph;
 }
