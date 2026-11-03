@@ -398,9 +398,11 @@ model AICallLogEntry is Record<unknown> {
     Time from when the agent started its request to the model until the first token came back, in
     milliseconds. The request starts once the caller's speech is final, or once a function returns.
     On a standard agent, if any of `latency`, `utterance_latency`, and `audio_latency` couldn't be
-    measured for the turn, all three are `0`, as on the greeting. A speech-to-speech agent measures
+    measured for a reply, all three are `0`, as on the greeting. A speech-to-speech agent measures
     from when the reply started instead. On a function result (`tool`), this is the first-token
-    latency of the model request that called the function.
+    latency of the model request that called the function. If any of the three couldn't be measured
+    there, all three are omitted instead of sent as `0`, and they're always omitted for a function
+    called by the post-prompt.
     """)
   @example(612)
   latency?: integer;
@@ -472,9 +474,9 @@ model AICallLogEntry is Record<unknown> {
 
   @doc("""
     Time from when the agent started its request to the model until the model called this function,
-    or until the agent had a first reply ready to speak if that was sooner, in milliseconds. Omitted when not measured,
-    such as for a function called by the post-prompt. On a speech-to-speech agent this carries reply
-    timing rather than function timing.
+    or until the agent had a first reply ready to speak if that was sooner, in milliseconds. Omitted
+    when not measured, such as for a function called by the post-prompt. On a speech-to-speech agent
+    this carries reply timing rather than function timing.
     """)
   @example(830)
   function_latency?: integer;
