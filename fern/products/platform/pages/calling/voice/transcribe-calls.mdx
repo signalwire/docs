@@ -35,7 +35,7 @@ max-toc-depth: 3
 
 Live transcription turns each side of a call into text while the call happens, and posts every
 utterance to a webhook you run, so your app can show a transcript, search it, or act on what the
-caller says. Start by transcribing a call to your own phone into a small server that prints each
+caller says. Start by transcribing a call between your phone and your number into a small server that prints each
 utterance, then read the events in full, tune the options, summarize the conversation with AI, stop
 transcribing, and transcribe a whole call after it ends.
 
@@ -99,8 +99,8 @@ Replace these values in the samples you run:
 
 ## How live transcription works
 
-The [`live_transcribe`][swml-live-transcribe] method, `call.live_transcribe()` in Relay, and the
-`calling.live_transcribe` REST command all take the same `action`: `start` a session, `summarize`
+The SWML [`live_transcribe`][swml-live-transcribe] method and the `calling.live_transcribe`
+command, sent over Relay or REST, all take the same `action`: `start` a session, `summarize`
 it, or `stop` it. Once a session starts, SignalWire recognizes speech on each side of the call you
 list in `direction` and sends HTTP `POST` requests to the `webhook` URL you set on `start`:
 
@@ -380,8 +380,8 @@ sections:
 
 ### Transcribe a call in real time via WebSocket (Relay)
 
-Start live transcription on an answered call with `call.live_transcribe()`, passing the same
-`action` the SWML method takes. Transcript events still go to your webhook, so keep the
+Send the live transcribe command to an answered call, passing the same `action` the SWML method
+takes. Transcript events still go to your webhook, so keep the
 [transcription server](#run-the-transcription-server) and its tunnel running. Call setup follows
 [Place a call via WebSocket (Relay)][place-relay].
 
@@ -497,7 +497,7 @@ try {
 </CodeBlock>
 </CodeBlocks>
 
-The `action` keys are sent to SignalWire as written, so they stay in snake_case in TypeScript too.
+The Server SDKs send the `action` keys as written, so they stay in snake_case in every language.
 
 </Step>
 
@@ -572,15 +572,33 @@ await client.calling.liveTranscribe("<YOUR_CALL_ID>", {
 console.log("Transcription started");
 ```
 </CodeBlock>
+<CodeBlock title="cURL — Calling API">
+```bash
+curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
+  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "command": "calling.live_transcribe",
+    "id": "<YOUR_CALL_ID>",
+    "params": {
+      "action": {
+        "start": {
+          "lang": "en-US",
+          "direction": ["remote-caller", "local-caller"],
+          "webhook": "<YOUR_TRANSCRIPT_WEBHOOK_URL>",
+          "live_events": true
+        }
+      }
+    }
+  }'
+```
+</CodeBlock>
 </CodeBlocks>
 
-To try it, run the program while a call that isn't already being transcribed is up, such as one from
+The cURL request sends the same command to [Call commands][call-commands]. To try it, run the
+program while a call that isn't already being transcribed is up, such as one from
 [Make and receive calls][make-and-receive-calls]. The transcription server starts printing
-utterances as soon as the command succeeds. To call the REST API directly, send this request to
-[Call commands][call-commands]. The reference example also turns on an AI summary and sets the speech
-engine; leave out `ai_summary`, `ai_summary_prompt`, and `speech_engine` to match the program above:
-
-<EndpointRequestSnippet endpoint="POST /api/calling/calls" example="calling.live_transcribe" />
+utterances as soon as the command succeeds.
 
 ## Read transcript events on your webhook
 
@@ -626,11 +644,12 @@ handler can receive the same utterance more than once. Use `utterance.utterance_
 repeats. A `4xx` status isn't retried, and redirects aren't followed, so that event is lost.
 
 <Tip title="Protect your webhooks">
-Every request carries an `X-SignalWire-Signature` header, so your server can confirm it came from
+Requests carry an `X-SignalWire-Signature` header, so your server can confirm they came from
 SignalWire, as [Verify webhook signature][verify-signature] shows. You can also put a username and
 password in the webhook URL, as in `https://<USERNAME>:<PASSWORD>@<YOUR_PUBLIC_HOST>/transcripts`,
 and SignalWire sends them as HTTP Basic authentication. Both work for the post-call `status_url`
-too.
+too. If you reject unsigned requests, keep `live_events` set to `true`: with it off, the
+end-of-session event can arrive without a signature.
 </Tip>
 
 ## Live transcription options: language, direction, and speech engine
@@ -660,9 +679,9 @@ when the session ends or whenever you ask while the call is up.
 ### Summarize the call when transcription ends
 
 Add `ai_summary: true` to `start`, and optionally `ai_summary_prompt` to say what the summary should
-contain. The event sent when the session ends then includes `conversation_summary`. This change
-to the [first run's](#transcribe-a-call-in-real-time-via-swml) `start` action works the same way in
-every product, and in Relay and REST too:
+contain. The event sent when the session ends then includes `conversation_summary`. Make this change
+to the [first run's](#transcribe-a-call-in-real-time-via-swml) `start` action. The same keys work
+in a `start` action sent over Relay or REST:
 
 <CodeBlocks>
 <CodeBlock title="Python — SWML builder">
@@ -882,7 +901,7 @@ swml.live_transcribe({ action: "stop" });
 
 ### Stop live transcription via WebSocket (Relay)
 
-Relay takes `stop` as a key with an empty object. The REST command takes the string `stop`:
+Send the `stop` action. Every surface accepts it either as the string `stop` or as a `stop` key with an empty object:
 
 <CodeBlocks>
 <CodeBlock title="Python — Relay client">
@@ -932,8 +951,8 @@ background and, after the call ends, posts the text to your `status_url` as a
 ### Transcribe the whole call via SWML
 
 Add `transcribe` with a `status_url` where the transcription should start. The Server SDKs' SWML
-builder has no `transcribe` method yet, so the builder samples add the verb by name. The Python
-sample also turns schema validation off, which the Python SDK allows only for the whole service:
+builder has no `transcribe` method, and its schema has no `transcribe` verb, so the builder samples
+add the verb by name and turn schema validation off where the SDK would reject it:
 
 <CodeBlocks>
 <CodeBlock title="Python — SWML builder">
@@ -1020,9 +1039,9 @@ running on the call:
 
 ### Transcribe the whole call via WebSocket (Relay)
 
-`call.transcribe()` starts the transcription and returns an action that keeps its `control_id`. Its
-`stop()` method ends the transcription early. In the [Relay call program](#transcribe-a-call-in-real-time-via-websocket-relay),
-replace the `live_transcribe` call with these lines:
+Send the transcribe command to start the transcription. It returns an action you can stop to end
+the transcription early. In the [Relay call program](#transcribe-a-call-in-real-time-via-websocket-relay),
+replace the live transcription lines with these:
 
 <CodeBlocks>
 <CodeBlock title="Python — Relay client">
