@@ -1,0 +1,151 @@
+---
+title: Send RCS messages
+slug: messaging/rcs/send-messages
+sidebar-title: Send messages
+description: Send plain-text and rich RCS messages, including media, locations, suggestions, cards, and carousels, through the SignalWire Messaging API.
+max-toc-depth: 3
+---
+
+RCS messages are sent through the same endpoint as SMS, MMS, and WhatsApp,
+[`POST /api/messaging/messages`](/docs/apis/rest/messages/create-message). Setting `from` to the ID
+of your [RCS agent](/docs/platform/messaging/rcs/onboarding) routes the message over RCS. The Agent ID
+is shown on the agent's page in the Dashboard.
+
+For the full request schema and authentication, see the
+[Send a message](/docs/apis/rest/messages/create-message) API reference.
+
+## Messaging rules
+
+- The agent must be `in_review`, `launching`, or `launched`. Until it is launched, it can send only to
+  the test device numbers registered on it.
+- Send either `body` for plain text or `content` for rich content, never both.
+- `media` and `message_type` are not supported. Send media with a `content` of type `media` instead.
+- `status_callback` and `custom_variables` work the same way as for SMS.
+
+## Content types
+
+Set `content.type` to one of the following. Each value determines the other fields of `content`.
+
+<Schema type="Message.RcsContent" api="signalwire-rest" showDescription />
+
+Suggestions in `actions` take one of these types:
+
+<Schema type="Message.RcsAction" api="signalwire-rest" showDescription />
+
+## Examples
+
+### Plain text
+
+```json
+{
+  "to": "+15551234567",
+  "from": "<YOUR_AGENT_ID>",
+  "body": "Your appointment is confirmed for tomorrow at 2pm."
+}
+```
+
+### Text with suggested replies
+
+```json
+{
+  "to": "+15551234567",
+  "from": "<YOUR_AGENT_ID>",
+  "content": {
+    "type": "suggestions",
+    "text": "Can you make your appointment tomorrow at 2pm?",
+    "actions": [
+      { "type": "reply", "title": "Yes, confirm" },
+      { "type": "reply", "title": "Reschedule" },
+      { "type": "call", "title": "Call us", "phone": "+15557654321" }
+    ]
+  }
+}
+```
+
+### Rich card
+
+A card has a title and, optionally, a subtitle, a media URL, and suggestions.
+
+```json
+{
+  "to": "+15551234567",
+  "from": "<YOUR_AGENT_ID>",
+  "content": {
+    "type": "card",
+    "title": "Your order has shipped",
+    "subtitle": "Order #12345 arrives Thursday.",
+    "media": "https://example.com/images/package.png",
+    "actions": [
+      { "type": "url", "title": "Track your order", "url": "https://example.com/orders/12345" }
+    ]
+  }
+}
+```
+
+### Carousel
+
+A carousel holds up to 10 cards and up to 3 suggestions under them.
+
+```json
+{
+  "to": "+15551234567",
+  "from": "<YOUR_AGENT_ID>",
+  "content": {
+    "type": "carousel",
+    "cards": [
+      {
+        "title": "Classic sneaker",
+        "subtitle": "$89",
+        "media": "https://example.com/images/classic.png",
+        "actions": [{ "type": "url", "title": "Buy", "url": "https://example.com/products/classic" }]
+      },
+      {
+        "title": "Trail runner",
+        "subtitle": "$119",
+        "media": "https://example.com/images/trail.png",
+        "actions": [{ "type": "url", "title": "Buy", "url": "https://example.com/products/trail" }]
+      }
+    ],
+    "actions": [
+      { "type": "reply", "title": "Show me more" }
+    ]
+  }
+}
+```
+
+## Verify the send
+
+A successful request returns the message with `kind: rcs` and `status: queued`. For a rich message,
+`body` in the response holds your `content` serialized as a JSON string. Set `status_callback` to
+follow the message as its status changes, as described in
+[Receive RCS messages](/docs/platform/messaging/rcs/receive-messages#delivery-status).
+
+When the request is rejected with a `422`, the `code` says why:
+
+| Code | Cause |
+|---|---|
+| `rcs_agent_not_sendable` | The agent isn't `in_review`, `launching`, or `launched`. |
+| `rcs_agent_not_configured` | The agent hasn't been set up for sending messages yet. |
+| `rcs_messaging_not_enabled` | RCS isn't enabled for this Space. |
+| `body_not_allowed_with_rcs_content` | The request has both `body` and `content`. |
+| `rcs_media_not_supported` | The request has `media`. Use a `content` of type `media` instead. |
+| `rcs_message_type_not_supported` | The request has `message_type`. Use `content` instead. |
+| `rcs_content_missing_field` | A required field in `content` is missing. The error names its path. |
+| `rcs_content_invalid_value` | A `type` or `webview` value isn't allowed. The error lists the allowed values. |
+| `rcs_content_invalid_url` | A URL in `content` isn't a valid HTTP or HTTPS URL. |
+| `rcs_content_invalid_coordinate` | A latitude or longitude is out of range or not a number. |
+| `rcs_content_too_long` | A text field is longer than its maximum. |
+| `rcs_content_too_many_items` | A carousel has more than 10 cards or more than 3 suggestions. |
+| `rcs_content_not_an_object` / `rcs_content_not_an_array` | A field in `content` has the wrong JSON type. |
+| `rcs_content_not_supported` | `content` was sent from a phone number instead of an RCS agent. |
+
+## Next steps
+
+<CardGroup>
+<Card title="Send a message (API reference)" href="/docs/apis/rest/messages/create-message">
+  The full request schema for every content type.
+</Card>
+<Card title="Receive RCS messages" href="/docs/platform/messaging/rcs/receive-messages">
+  Handle inbound messages and track delivery status.
+</Card>
+</CardGroup>
