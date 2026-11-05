@@ -6,21 +6,25 @@ max-toc-depth: 3
 ---
 
 [answer-relay]: /docs/platform/voice/make-and-receive-calls#answer-a-call-via-websocket-relay
+[answer-swml]: /docs/platform/voice/make-and-receive-calls#answer-a-call-via-swml
 [api-credentials]: /docs/platform/your-signalwire-api-space
 [cfb]: /docs/call-flow-builder
 [cfb-answer]: /docs/call-flow-builder/reference/answer-call
+[cfb-conditions]: /docs/call-flow-builder/reference/conditions
 [cfb-forward]: /docs/call-flow-builder/reference/forward-to-phone
 [cfb-gather]: /docs/call-flow-builder/reference/gather-input
+[cfb-gather-loop]: /docs/call-flow-builder/reference/gather-input#input-with-infinite-loop-prevention
 [cfb-hangup]: /docs/call-flow-builder/reference/hangup-call
 [cfb-play]: /docs/call-flow-builder/reference/play-audio-or-tts
+[cfb-set-variables]: /docs/call-flow-builder/reference/set-variables
 [cfb-version]: /docs/call-flow-builder/guides/version
+[collect-webhook]: /docs/apis/rest/webhooks/collect-status-callback
 [control-flow]: /docs/swml/guides/goto-execute-transfer-disambiguation
 [create-swml-script]: /docs/platform/voice/make-and-receive-calls#create-the-swml-script
 [forward-relay]: /docs/platform/voice/forward-calls#forward-an-incoming-call-via-websocket-relay
 [forward-swml]: /docs/platform/voice/forward-calls#forward-an-incoming-call-via-swml
 [how-incoming]: /docs/platform/voice/make-and-receive-calls#how-an-incoming-call-reaches-your-code
 [make-receive]: /docs/platform/voice/make-and-receive-calls
-[relay-client]: /docs/server-sdks/guides/relay-client
 [rest-calling]: /docs/apis/rest/calls/call-commands
 [server-sdks]: /docs/server-sdks
 [speak-rest]: /docs/platform/voice/speak-text#speak-text-on-a-call-in-progress-via-rest
@@ -45,7 +49,7 @@ and a retry.
 | Ask a question and branch on the answer without running a server | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
 | Collect speech, keypad digits, or both on one prompt | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
 | Play the question and collect the reply in one command | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
-| Tell silence apart from a reply that matched nothing | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
+| Tell silence apart from speech the recognizer could not make out | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
 | Receive the reply in your own process without hosting a webhook | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> |
 | Collect input on a call another process answered, by its call ID | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> |
 | Build the menu visually, with no code | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
@@ -55,7 +59,7 @@ and a retry.
   own server. Its `prompt` method asks and collects in one step. To compare the reply on your own
   server instead, `transfer` or `execute` to a URL: SignalWire posts the document's variables,
   `prompt_value` among them, and runs the SWML you return.
-- [Relay][relay-client] is the WebSocket client in the Server SDKs. Your process receives the call,
+- [Relay][server-sdks] is the WebSocket client in the Server SDKs. Your process receives the call,
   plays the question, and gets the reply back as a value it can compare.
 - The [REST Calling API][rest-calling] sends the same collect command over HTTP to a call you
   already hold the ID for. The reply arrives as a webhook.
@@ -79,8 +83,8 @@ Have these values ready:
 - For the Relay and REST paths, your Project ID and an API token from the Dashboard's
   [API credentials][api-credentials] page, with the **Voice** permission enabled. A hosted SWML
   script or a Call Flow needs no credentials.
-- For SWML served from your own server, Python 3 or Node.js and a tunnel such as
-  [ngrok](https://ngrok.com/download).
+- Python 3 or Node.js for the served SWML and Relay samples. A served document also needs the
+  tunnel and basic auth password set up in [Answer a call via SWML][answer-swml].
 
 Replace these placeholders in the samples. The hosted SWML and Call Flow Builder paths use none of
 them.
@@ -117,7 +121,7 @@ methods append to `main`; the named sections go through the service.
 <CodeBlocks>
 <CodeBlock title="Python — SWML builder">
 ```python
-# Install: python -m pip install signalwire-sdk==3.4.1
+# Install: python -m pip install signalwire-sdk
 # Save as collect_input.py and run: python collect_input.py
 from signalwire import SWMLBuilder, SWMLService
 
@@ -159,7 +163,7 @@ service.serve()
 </CodeBlock>
 <CodeBlock title="TypeScript — SWML builder">
 ```typescript
-// Install: npm install @signalwire/sdk@2.0.5
+// Install: npm install @signalwire/sdk
 // This sample also runs as JavaScript: save as collect-input.mjs,
 // then run: node collect-input.mjs
 import { SWMLService } from "@signalwire/sdk";
@@ -280,11 +284,9 @@ sections:
 </CodeBlock>
 </CodeBlocks>
 
-`add_verb_to_section` and `addVerbToSection` create a section on first use and append to it after
-that. `switch` compares the whole value exactly. SignalWire lowercases recognized speech and strips
-its punctuation before storing it in `prompt_value`, so "Booking." still matches the `booking`
-case, but "booking please" does not. SWML also has a `cond` method that branches on a JavaScript
-expression. The Python SDK can't emit it, so the SWML samples in this guide branch with `switch`.
+`switch` compares the whole value exactly. SignalWire lowercases recognized speech and strips its
+punctuation before storing it in `prompt_value`, so "Booking." still matches the `booking` case,
+but "booking please" does not.
 
 Run the program and point an External URL SWML Script at it through your tunnel, or paste the YAML
 or JSON into a Hosted Script, as in [Create the SWML Script][create-swml-script]. To put dispatch
@@ -298,12 +300,9 @@ nothing. You hear a different line each time.
 
 If you don't, match the symptom:
 
-- **The call connects but stays silent.** The flow never ran. For a served document, request it
-  through the tunnel with `curl` to confirm it still answers, then check that the Resource's
-  **Primary Script URL** carries the same hostname and password. For a hosted script, reopen it and
-  confirm the document saved with a `main` section.
-- **`curl` returns 401.** The password in the request differs from the one in the sample's
-  `basic_auth`.
+- **The call connects but stays silent.** The flow never ran. [Answer a call via SWML][answer-swml]
+  shows how to confirm that SignalWire can fetch a served document and that the Resource points at
+  it.
 - **Every call ends in the `no_match` line.** The recognized text did not equal a case key.
   [Track what the flow heard](#track-what-the-flow-heard) shows the text SignalWire stored.
 - **Click-to-Test is disabled.** It appears only on Resources that handle calls and have an
@@ -313,13 +312,13 @@ If you don't, match the symptom:
 
 The [Server SDKs][server-sdks] expose the prompt as `play_and_collect` on the call. It plays the
 question and resolves when input arrives, times out, or fails. The result carries a `type` of
-`speech`, `digit`, `no_input`, or `no_match`, and for speech the recognized `text` with a
+`speech`, `digit`, `no_input`, `no_match`, or `error`, and for speech the recognized `text` with a
 `confidence` score. Your code compares the text and continues.
 
 <CodeBlocks>
 <CodeBlock title="Python — Relay client">
 ```python
-# Install: python -m pip install signalwire-sdk==3.4.1
+# Install: python -m pip install signalwire-sdk
 # Save as collect_input_relay.py and run: python collect_input_relay.py
 from signalwire.relay import RelayClient
 
@@ -369,7 +368,7 @@ client.run()
 </CodeBlock>
 <CodeBlock title="TypeScript — Relay client">
 ```typescript
-// Install: npm install @signalwire/sdk@2.0.5
+// Install: npm install @signalwire/sdk
 // Save as collect-input-relay.mts and run: npx tsx collect-input-relay.mts
 import { RelayClient } from "@signalwire/sdk";
 
@@ -425,14 +424,16 @@ running and that the Resource's **Topic** matches its `contexts`.
 
 Over REST, the same collect runs as the `calling.collect` command on a call you already hold the
 ID for, such as one a hosted script answered. REST can't play the question and collect in one
-command, so [speak the question with `calling.play`][speak-rest] first. The reply arrives at
-`status_url` as a `calling.call.collect` event instead of a return value, and `control_id` names
-the collect so you can match the event to it.
+command, so [speak the question with `calling.play`][speak-rest] first, and send the collect once
+playback finishes with `start_input_timers` set to `true`. Without it, the wait for input doesn't
+start until you send `calling.collect.start_input_timers`. The reply arrives at `status_url` as a
+`calling.call.collect` event instead of a return value, and `control_id` names the collect so you
+can match the event to it.
 
 <CodeBlocks>
 <CodeBlock title="Python — REST client">
 ```python
-# Install: python -m pip install signalwire-sdk==3.4.1
+# Install: python -m pip install signalwire-sdk
 # Save as collect_rest.py and run: python collect_rest.py
 from signalwire.rest import RestClient
 
@@ -442,18 +443,18 @@ client = RestClient(
     host="<YOUR_SPACE>.signalwire.com",
 )
 
-# signalwire-sdk 3.4.1 has no status_url argument; extras merges it into the command's params.
+# collect() has no status_url or start_input_timers argument; extras adds them to the command's params.
 client.calling.collect(
     "<YOUR_CALL_ID>",
     control_id="collect-1",
     speech={"hints": ["booking", "dispatch"], "language": "en-US"},
-    extras={"status_url": "<YOUR_STATUS_WEBHOOK_URL>"},
+    extras={"status_url": "<YOUR_STATUS_WEBHOOK_URL>", "start_input_timers": True},
 )
 ```
 </CodeBlock>
 <CodeBlock title="TypeScript — REST client">
 ```typescript
-// Install: npm install @signalwire/sdk@2.0.5
+// Install: npm install @signalwire/sdk
 // This sample also runs as JavaScript: save as collect-rest.mjs,
 // then run: node collect-rest.mjs
 import { RestClient } from "@signalwire/sdk";
@@ -464,10 +465,11 @@ const client = new RestClient({
   host: "<YOUR_SPACE>.signalwire.com",
 });
 
+// collect() has no status_url or start_input_timers option; extras adds them to the command's params.
 await client.calling.collect("<YOUR_CALL_ID>", {
   control_id: "collect-1",
   speech: { hints: ["booking", "dispatch"], language: "en-US" },
-  status_url: "<YOUR_STATUS_WEBHOOK_URL>",
+  extras: { status_url: "<YOUR_STATUS_WEBHOOK_URL>", start_input_timers: true },
 });
 ```
 </CodeBlock>
@@ -483,6 +485,7 @@ curl --request POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
     "params": {
       "control_id": "collect-1",
       "speech": { "hints": ["booking", "dispatch"], "language": "en-US" },
+      "start_input_timers": true,
       "status_url": "<YOUR_STATUS_WEBHOOK_URL>"
     }
   }'
@@ -490,7 +493,8 @@ curl --request POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
 </CodeBlock>
 </CodeBlocks>
 
-The [Calling API reference][rest-calling] documents every `calling.collect` field.
+The [Calling API reference][rest-calling] documents every `calling.collect` field, and the
+[collect status callback reference][collect-webhook] the event that reaches `status_url`.
 
 ### Ask a question and branch via Call Flow Builder
 
@@ -514,13 +518,16 @@ three times and hear the three outcomes.
 
 ## Handle silence and unmatched speech
 
-A caller who says nothing, or says something the flow did not plan for, must still get an answer.
-Each surface reports the two cases separately, so the flow can say something different for each.
+A caller who says nothing, or whose words the recognizer could not make out, must still get an
+answer. Each surface reports the two cases separately, so the flow can say something different for
+each. A reply the recognizer did understand comes back as text whether or not it is one of your
+words, so an off-menu reply is caught by your comparison, not by these cases.
 
 ### Handle silence and unmatched speech via SWML
 
 After `prompt`, `prompt_result` is `match_speech`, `no_input`, `no_match`, or `failed`, and
-`match_digits` once keypad input is enabled. The `default` case already routes everything but a
+`match_digits` once keypad input is enabled. `match_speech` means the recognizer returned text, not
+that the text is one of your cases. The `default` case already routes everything but a
 match to `no_match`; this change makes that section say which one happened, using a JavaScript
 expression inside the spoken text. Only the `no_match` section changes.
 
@@ -566,8 +573,10 @@ it.
 
 ### Handle silence and unmatched speech via WebSocket (Relay)
 
-The collect result's `type` is `no_input` when the caller stayed silent and `no_match` when speech
-arrived but matched nothing. Replace the reply selection in the Relay sample:
+The collect result's `type` is `no_input` when the caller stayed silent. Anything the recognizer
+transcribes comes back as `speech`, whether or not it's one of your words, so your comparison
+catches an off-menu reply. `no_match` means the recognizer returned no text at all. Replace the
+reply selection in the Relay sample:
 
 <CodeBlocks>
 <CodeBlock title="Python — Relay client">
@@ -617,8 +626,9 @@ itself, use one of the two paths below.
 ### Receive the result via SWML
 
 Add a `status_url` to the `prompt` method. SignalWire sends a `calling.call.collect` event to that
-URL when input arrives. The same event reaches the `status_url` on a REST `calling.collect`
-command.
+URL when input arrives, and `calling.call.play` events to the same URL as the question plays, so
+check `event_type` before reading `params.result`. The same collect event reaches the `status_url`
+on a REST `calling.collect` command.
 
 <CodeBlocks>
 <CodeBlock title="Python — SWML builder">
@@ -686,11 +696,12 @@ The POST body for a recognized reply looks like this. `params.result.type` is `n
 }
 ```
 
-The [`prompt` reference][swml-prompt] documents every field.
+The [collect status callback reference][collect-webhook] documents every field of the event, and
+the [`prompt` reference][swml-prompt] the play events that reach the same URL.
 
 <llms-ignore>
 
-<img src="/assets/images/img/collect-webhook-lifecycle-themed.svg" alt="SignalWire plays the prompt to the caller. The caller says dispatch. SignalWire stores dispatch in prompt_value and switch runs the dispatch branch. SignalWire posts a calling.call.collect event to your status_url with result type speech, the text, and a confidence score. Your server returns 200 OK. The dispatch branch plays to the caller." />
+<img src="/assets/images/img/collect-webhook-lifecycle-themed.svg" alt="SignalWire plays the prompt to the caller. The caller says dispatch. SignalWire stores dispatch in prompt_value and switch runs the dispatch branch. SignalWire posts a calling.call.collect event to your status_url with result type speech, the text, and a confidence score, and your server returns 200 OK. The flow does not wait for that reply: the dispatch branch plays to the caller meanwhile." />
 
 </llms-ignore>
 
@@ -705,9 +716,12 @@ sequenceDiagram
     SW->>Caller: prompt plays: say booking or dispatch
     Caller->>SW: says "dispatch"
     Note over SW: prompt_value is dispatch, switch runs the dispatch branch
-    SW->>Srv: POST status_url: calling.call.collect, type speech, text, confidence
-    Srv-->>SW: 200 OK
-    SW->>Caller: dispatch branch plays
+    par The flow does not wait for the webhook
+        SW->>Srv: POST status_url: calling.call.collect, type speech, text, confidence
+        Srv-->>SW: 200 OK
+    and
+        SW->>Caller: dispatch branch plays
+    end
 ```
 
 </llms-only>
@@ -764,7 +778,7 @@ sequenceDiagram
 
 ### Compare the surfaces
 
-| Surface | Where the recognized text shows up | How silence and no match are reported |
+| Surface | Where the recognized text shows up | How silence and unrecognized speech are reported |
 |---|---|---|
 | SWML | `prompt_value` inside the document; the `status_url` webhook | `prompt_result` is `no_input` or `no_match` |
 | WebSocket (Relay) | The `result` on the event `action.wait()` returns; `call.on` handlers | `result.type` is `no_input` or `no_match` |
@@ -789,7 +803,7 @@ joins the prompt, and the digit keys join the switch.
 <CodeBlocks>
 <CodeBlock title="Python — SWML builder">
 ```python
-# Install: python -m pip install signalwire-sdk==3.4.1
+# Install: python -m pip install signalwire-sdk
 # Save as collect_input.py and run: python collect_input.py
 from signalwire import SWMLBuilder, SWMLService
 
@@ -834,7 +848,7 @@ service.serve()
 </CodeBlock>
 <CodeBlock title="TypeScript — SWML builder">
 ```typescript
-// Install: npm install @signalwire/sdk@2.0.5
+// Install: npm install @signalwire/sdk
 // This sample also runs as JavaScript: save as collect-input.mjs,
 // then run: node collect-input.mjs
 import { SWMLService } from "@signalwire/sdk";
@@ -976,7 +990,7 @@ Pass both `digits` and `speech` in the collect config. A keypad reply comes back
 <CodeBlocks>
 <CodeBlock title="Python — Relay client">
 ```python
-# Install: python -m pip install signalwire-sdk==3.4.1
+# Install: python -m pip install signalwire-sdk
 # Save as collect_input_relay.py and run: python collect_input_relay.py
 from signalwire.relay import RelayClient
 
@@ -1030,7 +1044,7 @@ client.run()
 </CodeBlock>
 <CodeBlock title="TypeScript — Relay client">
 ```typescript
-// Install: npm install @signalwire/sdk@2.0.5
+// Install: npm install @signalwire/sdk
 // Save as collect-input-relay.mts and run: npx tsx collect-input-relay.mts
 import { RelayClient } from "@signalwire/sdk";
 
@@ -1092,15 +1106,13 @@ up.
 
 [`goto`][swml-goto] jumps to a label within the same section, and its `when` condition and `max`
 count keep the loop bounded. A `label` before the prompt and a conditional `goto` after it repeat
-the question once. The TypeScript builder has a `label` method; the Python SDK cannot emit
-`label`, whose value is a bare string rather than an object, so from Python paste the YAML or JSON
-form into a hosted script. The [control flow guide][control-flow] compares `goto` with `execute`
-and `transfer`.
+the question once. The [control flow guide][control-flow] compares `goto` with `execute` and
+`transfer`.
 
 <CodeBlocks>
 <CodeBlock title="TypeScript — SWML builder">
 ```typescript
-// Install: npm install @signalwire/sdk@2.0.5
+// Install: npm install @signalwire/sdk
 // This sample also runs as JavaScript: save as collect-input.mjs,
 // then run: node collect-input.mjs
 import { SWMLService } from "@signalwire/sdk";
@@ -1115,6 +1127,8 @@ const swml = service.getBuilder();
 
 swml
   .answer()
+  // The Python SDK's builder can't emit label, whose value is a bare string rather than an object;
+  // from Python, paste the YAML or JSON tab into a hosted script.
   .label("ask")
   .prompt({
     play: ["say:Thanks for calling Bayview Taxi. Say booking or dispatch."],
@@ -1244,7 +1258,7 @@ attempts.
 <CodeBlocks>
 <CodeBlock title="Python — Relay client">
 ```python
-# Install: python -m pip install signalwire-sdk==3.4.1
+# Install: python -m pip install signalwire-sdk
 # Save as collect_input_relay.py and run: python collect_input_relay.py
 from signalwire.relay import RelayClient
 
@@ -1300,7 +1314,7 @@ client.run()
 </CodeBlock>
 <CodeBlock title="TypeScript — Relay client">
 ```typescript
-// Install: npm install @signalwire/sdk@2.0.5
+// Install: npm install @signalwire/sdk
 // Save as collect-input-relay.mts and run: npx tsx collect-input-relay.mts
 import { RelayClient } from "@signalwire/sdk";
 
@@ -1346,6 +1360,15 @@ await client.run();
 ```
 </CodeBlock>
 </CodeBlocks>
+
+#### Ask again when the caller says nothing via Call Flow Builder
+
+A counter bounds the loop. Route the **Gather Input** node's **No Input** connector to a
+[**Set Variables**][cfb-set-variables] node that sets `count` to `%{count} + 1`, then to a
+[**Conditions**][cfb-conditions] node with the condition `%{count} > 1`. Connect the condition's
+connector to a **Hangup Call** node, and **Else** to a **Play Audio or TTS** node that says "I
+didn't hear anything." and leads back to **Gather Input**. The Gather Input reference builds the
+same flow in [Input with infinite loop prevention][cfb-gather-loop].
 
 ## Next steps
 
