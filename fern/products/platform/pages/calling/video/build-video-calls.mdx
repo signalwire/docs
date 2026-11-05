@@ -1,0 +1,956 @@
+---
+title: Build video calls
+slug: video/build-video-calls
+description: Create a Video Room and join it with your camera from two browser tabs, then mute your microphone and camera, switch cameras, share your screen, change the layout, list participants, leave the call, and bring in phone callers.
+max-toc-depth: 3
+---
+
+[resources]: /docs/platform/resources
+[addresses]: /docs/platform/addresses
+[aliases]: /docs/platform/addresses#aliases
+[subscribers]: /docs/platform/subscribers
+[video-room]: /docs/platform/glossary#video-room
+[api-credentials]: /docs/platform/your-signalwire-api-space
+[phone-numbers]: /docs/platform/phone-numbers
+[server-sdks]: /docs/server-sdks
+[swml-intro]: /docs/swml
+[swml-join-room]: /docs/swml/reference/calling/join-room
+[relay-guide]: /docs/server-sdks/guides/relay-client
+[rest-api]: /docs/apis
+[make-and-receive-calls]: /docs/platform/voice/make-and-receive-calls
+[prepare-calls]: /docs/platform/voice/make-and-receive-calls#prepare-for-your-first-call
+[answer-swml]: /docs/platform/voice/make-and-receive-calls#answer-a-call-via-swml
+[answer-relay]: /docs/platform/voice/make-and-receive-calls#answer-a-call-via-websocket-relay
+[browser-sdk]: /docs/browser-sdk/v4/guides/overview
+[browser-auth]: /docs/browser-sdk/v4/guides/authentication
+[browser-layouts]: /docs/browser-sdk/v4/guides/layouts
+[browser-screen-sharing]: /docs/browser-sdk/v4/guides/screen-sharing
+[browser-call-controls]: /docs/browser-sdk/v4/guides/call-controls
+[browser-devices]: /docs/browser-sdk/v4/guides/device-management
+[browser-troubleshooting]: /docs/browser-sdk/v4/guides/troubleshooting
+[migrate-from-v3]: /docs/browser-sdk/v4/guides/migrate-from-v3
+[dial]: /docs/browser-sdk/v4/reference/signalwire/dial
+[dial-options]: /docs/browser-sdk/v4/reference/interfaces/dial-options
+[call-create-error]: /docs/browser-sdk/v4/reference/errors/call-create-error
+[status]: /docs/browser-sdk/v4/reference/webrtc-call/status$
+[hangup]: /docs/browser-sdk/v4/reference/webrtc-call/hangup
+[toggle-mute]: /docs/browser-sdk/v4/reference/self-participant/toggle-mute
+[toggle-mute-video]: /docs/browser-sdk/v4/reference/self-participant/toggle-mute-video
+[video-input-devices]: /docs/browser-sdk/v4/reference/signalwire/video-input-devices$
+[select-video-input]: /docs/browser-sdk/v4/reference/signalwire/select-video-input-device
+[start-screen-share]: /docs/browser-sdk/v4/reference/self-participant/start-screen-share
+[screen-share-status]: /docs/browser-sdk/v4/reference/self-participant/screen-share-status$
+[layouts]: /docs/browser-sdk/v4/reference/webrtc-call/layouts$
+[set-layout]: /docs/browser-sdk/v4/reference/webrtc-call/set-layout
+[participants]: /docs/browser-sdk/v4/reference/webrtc-call/participants$
+[rest-create-room]: /docs/apis/rest/conference-rooms/create-conference-room
+[rest-list-rooms]: /docs/apis/rest/conference-rooms/list-conference-rooms
+[rest-update-room]: /docs/apis/rest/conference-rooms/update-conference-room
+[rest-list-addresses]: /docs/apis/rest/addresses/list-resource-addresses
+[rest-guest-token]: /docs/apis/rest/subscribers/tokens/create-subscriber-guest-token
+
+A [Video Room][video-room] is a [Resource][resources] that several people join at once, each with
+a camera and microphone. Start by creating a room and joining it from two browser tabs, then add
+controls for the microphone and camera, camera choice, screen sharing, the layout, and the
+participant list, and finally let phone callers join the same room.
+
+## Pick the right product for video calls
+
+The Browser SDK carries the video. The REST API, usually through the Server SDKs, creates the room
+and issues the token the browser signs in with. SWML and Relay bring phone callers in by audio.
+
+| Function | SWML | WebSocket (Relay) | REST | Browser SDK |
+|---|---|---|---|---|
+| Create a Video Room and get its address | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> |
+| Issue a token that a web page joins the room with | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> |
+| Join the room with your camera and microphone | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
+| Mute and unmute your microphone and camera | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
+| Switch cameras during the call | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
+| Share your screen | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
+| Change the layout during the call | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
+| Set the layout a room uses by default | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> |
+| See who is in the room | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> |
+| Bring a phone caller into the room | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> |
+
+- [SWML][swml-intro] is a document of call instructions that SignalWire runs. Its
+  [`join_room`][swml-join-room] method puts the caller in a room.
+- [WebSocket (Relay)][relay-guide] is a Relay client in the Server SDKs. It holds a WebSocket open
+  from your server and can move a live call into a room from your code.
+- The [REST API][rest-api] creates and configures Video Rooms, lists their addresses, and issues
+  tokens. The [Server SDKs][server-sdks] wrap each of these requests.
+- The [Browser SDK][browser-sdk] puts a person in the room from a web page, with their camera,
+  microphone, screen, and in-call controls.
+
+## Prepare for video calls
+
+Have these values ready:
+
+- Your Space URL, such as `<YOUR_SPACE>.signalwire.com`.
+- Your Project ID and API token from the Dashboard's [API credentials][api-credentials] page.
+  Enable the token's **Video** permission.
+- A web page you can serve over HTTPS or `localhost`, and a browser with a camera and microphone.
+- To bring in phone callers, a voice-capable [phone number in your Space][phone-numbers] and a
+  phone to call it from.
+
+<Warning title="Browsers only share the camera and microphone on HTTPS or localhost">
+A page served over plain HTTP from any other host can't use the camera or microphone, so it can't
+join the room with them. Serve the page over HTTPS, or open it from `localhost` while you develop.
+</Warning>
+
+For audio calls between two people rather than a shared room, see
+[Make and receive calls][make-and-receive-calls]. If you have a page built on Browser SDK v3 and
+room tokens, [Migrate from v3][migrate-from-v3] maps it to the flow on this page.
+
+Replace these values in the samples you run:
+
+| Value | Replace with |
+|---|---|
+| `<YOUR_SPACE>` | Your Space's subdomain in `<YOUR_SPACE>.signalwire.com` |
+| `<YOUR_PROJECT_ID>` | Your Project ID |
+| `<YOUR_API_TOKEN>` | Your API token, used only in server code |
+| `<YOUR_ROOM_NAME>` | A name for the Video Room, using letters, numbers, underscores, and dashes, such as `team-standup` |
+| `<YOUR_RESOURCE_ID>` | The Video Room's `id` from [Create a Video Room](#create-a-video-room) |
+| `<YOUR_ADDRESS_ID>` | The room address's `id`, when you call the REST API directly |
+| `<YOUR_BASIC_AUTH_PASSWORD>` | A password you choose for your SWML server, when you bring in phone callers |
+
+## Join your first video call
+
+Three things put a browser in a room. The Video Room is the Resource, and SignalWire gives it an
+[address][aliases] when you create it. Your server issues a [guest token][rest-guest-token] for
+that address. The page signs in with the token and dials the address. SignalWire composes every
+participant's video into one stream and sends the same stream to everyone, so the page shows the
+whole room in a single `<video>` element.
+
+<Steps>
+
+<Step title="Create a Video Room" id="create-a-video-room">
+
+Run this program once on your server. It creates the room and prints its `id`, the Resource ID
+you use in the next step. Room names are unique in a project, so a second run with the same name
+fails.
+
+<CodeBlocks>
+<CodeBlock title="Python — REST client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as create_video_room.py and run: python create_video_room.py
+from signalwire.rest import RestClient
+
+client = RestClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    host="<YOUR_SPACE>.signalwire.com",
+)
+
+room = client.fabric.conference_rooms.create(
+    name="<YOUR_ROOM_NAME>",
+    enable_room_previews=False,
+)
+print(room["id"])
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — REST client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as create-video-room.mjs,
+// then run: node create-video-room.mjs
+import { RestClient } from "@signalwire/sdk";
+
+const client = new RestClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  host: "<YOUR_SPACE>.signalwire.com",
+});
+
+const room = await client.fabric.conferenceRooms.create({
+  name: "<YOUR_ROOM_NAME>",
+  enable_room_previews: false,
+});
+console.log(room.id);
+```
+</CodeBlock>
+<CodeBlock title="cURL — Conference Rooms API">
+```bash
+# The response's top-level "id" is the Video Room's Resource ID.
+curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/fabric/resources/conference_rooms" \
+  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{ "name": "<YOUR_ROOM_NAME>", "enable_room_previews": false }'
+```
+</CodeBlock>
+</CodeBlocks>
+
+The cURL request calls [Create conference room][rest-create-room]. The REST API reference calls a
+Video Room a conference room; it's the same Resource.
+
+To create the room in the Dashboard instead, open **Resources**, select **Add**, and choose
+**Video Room**. Enter a **Room Name**, choose **Build From Scratch** so the room has no prebuilt
+interface, and select **Create**. Then find the room's `id` with
+[List conference rooms][rest-list-rooms].
+
+</Step>
+
+<Step title="Issue a guest token for the room" id="issue-a-guest-token-for-the-room">
+
+Run this program on your server once for each browser tab you want in the room. It looks up the
+room's address and issues a guest token for it, then prints both. Paste the address in place of
+`<YOUR_ROOM_ADDRESS>` in the page in the next step, and keep the tokens for the tabs.
+
+<CodeBlocks>
+<CodeBlock title="Python — REST client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as video_room_token.py and run: python video_room_token.py
+from signalwire.rest import RestClient
+
+client = RestClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    host="<YOUR_SPACE>.signalwire.com",
+)
+
+# A new Video Room has one address.
+address = client.fabric.resources.list_addresses("<YOUR_RESOURCE_ID>")["data"][0]
+guest = client.fabric.tokens.create_guest_token(allowed_addresses=[address["id"]])
+
+print("Room address:", address["channels"]["video"])
+print("Guest token:", guest["token"])
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — REST client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as video-room-token.mjs,
+// then run: node video-room-token.mjs
+import { RestClient } from "@signalwire/sdk";
+
+const client = new RestClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  host: "<YOUR_SPACE>.signalwire.com",
+});
+
+// A new Video Room has one address.
+const { data } = await client.fabric.resources.listAddresses("<YOUR_RESOURCE_ID>");
+const address = data[0];
+const guest = await client.fabric.tokens.createGuestToken({
+  allowed_addresses: [address.id],
+});
+
+console.log("Room address:", address.channels.video);
+console.log("Guest token:", guest.token);
+```
+</CodeBlock>
+<CodeBlock title="cURL — Addresses and Subscribers APIs">
+```bash
+# Look up the room's address. Save data[0].id as <YOUR_ADDRESS_ID>;
+# data[0].channels.video is the room address the page dials.
+curl "https://<YOUR_SPACE>.signalwire.com/api/fabric/resources/<YOUR_RESOURCE_ID>/addresses" \
+  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>"
+
+# Issue a guest token for that address. The response's "token" is the guest token.
+curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/fabric/guests/tokens" \
+  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{ "allowed_addresses": ["<YOUR_ADDRESS_ID>"] }'
+```
+</CodeBlock>
+</CodeBlocks>
+
+The cURL requests call [List Resource Addresses][rest-list-addresses], then
+[Create Subscriber guest token][rest-guest-token].
+
+The room address looks like `/public/team-standup?channel=video`. Copy it from the output rather
+than building it from the room name: SignalWire names the address after the room's display name,
+and adds a suffix when that name is already taken.
+
+A guest token is issued for the addresses you list in `allowed_addresses`, up to 10, and lasts two
+hours by default. It places calls only, which is all a room page needs. To sign people in as
+[Subscribers][subscribers] instead, or to issue tokens from your backend each time a visitor opens
+the page, follow the [authentication guide][browser-auth].
+
+</Step>
+
+<Step title="Run the room page" id="run-the-room-page">
+
+Load this script on a page served over HTTPS or `localhost`, with the elements listed in its
+comments. The page signs in with the token you paste, dials the room address, and shows your
+camera beside the room.
+
+```javascript title="JavaScript — Browser SDK"
+// Install: npm install @signalwire/js@4.0.0-rc.5 rxjs@7.8.2
+// Load as a module script on an HTTPS or localhost page with these elements:
+// <input id="token" type="password" placeholder="Guest token">
+// <button id="join" type="button">Join</button>
+// <button id="leave" type="button" disabled>Leave</button>
+// <video id="local-video" autoplay playsinline muted></video>
+// <video id="room-video" autoplay playsinline></video>
+// Paste a guest token issued by your server for this room.
+import { SignalWire, StaticCredentialProvider } from "@signalwire/js";
+
+const tokenInput = document.querySelector("#token");
+const joinButton = document.querySelector("#join");
+const leaveButton = document.querySelector("#leave");
+const localVideo = document.querySelector("#local-video");
+const roomVideo = document.querySelector("#room-video");
+
+let client;
+
+joinButton.onclick = async () => {
+  joinButton.disabled = true;
+  try {
+    if (!client) {
+      client = new SignalWire(new StaticCredentialProvider({
+        token: tokenInput.value.trim(),
+      }));
+    }
+
+    const call = await client.dial("<YOUR_ROOM_ADDRESS>", {
+      audio: true,
+      video: true,
+      receiveVideo: true,
+    });
+
+    call.localStream$.subscribe((stream) => (localVideo.srcObject = stream));
+    call.remoteStream$.subscribe((stream) => (roomVideo.srcObject = stream));
+
+    leaveButton.disabled = false;
+    leaveButton.onclick = () => {
+      void call.hangup().catch(console.error);
+    };
+
+    call.status$.subscribe((status) => {
+      if (status === "disconnected" || status === "failed" || status === "destroyed") {
+        localVideo.srcObject = null;
+        roomVideo.srcObject = null;
+        leaveButton.disabled = true;
+        joinButton.disabled = false;
+      }
+    });
+  } catch (error) {
+    joinButton.disabled = false;
+    console.error(error);
+  }
+};
+```
+
+[`dial()`][dial] sends your camera and microphone with `video: true` and `audio: true`.
+`receiveVideo: true` asks for the room's video in return. Receiving video is off by default unless
+the address ends in `?channel=video`, so keep the option whenever you dial a room. Without it, the
+page sends your camera but `#room-video` gets no picture. [`DialOptions`][dial-options] lists every
+media option.
+
+The local preview is `muted` so you don't hear yourself. `#room-video` isn't, because it also
+carries the room's mixed audio.
+
+</Step>
+
+<Step title="Join from two tabs" id="join-from-two-tabs">
+
+Paste a guest token, select **Join**, and allow camera and microphone access. Your camera appears
+in `#local-video`, and `#room-video` shows the room with you in it. Open the page in a second tab,
+paste the second token, and select **Join**. A tone plays as the second participant enters, and
+both tabs show both participants in the room video. Select **Leave** in each tab when you finish.
+
+Two tabs on one computer play each other's audio back into the microphones, so mute one tab or
+wear headphones while you test.
+
+If it doesn't work, check the symptom:
+
+- **The browser never asks for the camera.** Serve the page over HTTPS or `localhost`, and check
+  that the site isn't blocked from the camera in the browser's settings.
+- **`dial()` rejects with [`CallCreateError`][call-create-error].** The token doesn't reach the
+  address. Check that the page dials the `channels.video` address printed with the token, and that
+  the token is for this room.
+- **Your camera shows, but the room video stays black.** Dial with `receiveVideo: true`.
+- **Joining worked earlier and now fails.** The guest token expired after two hours. Issue a new
+  one and reload the page.
+
+The Browser SDK [troubleshooting guide][browser-troubleshooting] covers permissions and media
+problems in more depth.
+
+</Step>
+
+</Steps>
+
+## Mute and unmute your microphone and camera
+
+Muting is a control on your own participant, `call.self`, not on the call. A muted participant
+stays in the room, and the other participants see their state change.
+
+### Mute and unmute from a browser
+
+Add two buttons to the page from [Join your first video call](#join-your-first-video-call), then
+add the lookups and the handlers below. [`toggleMute()`][toggle-mute] mutes or unmutes your
+microphone, and [`toggleMuteVideo()`][toggle-mute-video] turns your camera off or on in the room.
+
+```javascript title="JavaScript — Browser SDK"
+// <button id="mute" type="button" disabled>Mute</button>
+// <button id="camera" type="button" disabled>Stop video</button>
+import { switchMap } from "rxjs";
+
+const muteButton = document.querySelector("#mute");
+const cameraButton = document.querySelector("#camera");
+
+// Inside joinButton.onclick, after dial() resolves:
+muteButton.onclick = () => void call.self?.toggleMute();
+cameraButton.onclick = () => void call.self?.toggleMuteVideo();
+
+call.self$.pipe(switchMap((self) => self.audioMuted$)).subscribe((muted) => {
+  muteButton.disabled = false;
+  muteButton.textContent = muted ? "Unmute" : "Mute";
+});
+call.self$.pipe(switchMap((self) => self.videoMuted$)).subscribe((muted) => {
+  cameraButton.disabled = false;
+  cameraButton.textContent = muted ? "Start video" : "Stop video";
+});
+```
+
+`call.self$` emits once you've joined the room, and again each time your participant changes, so
+`switchMap` keeps exactly one subscription to each state. Disable both buttons again in the
+page's `status$` handler when the call ends. The Browser SDK [call controls guide][browser-call-controls]
+adds deafening, hand raising, and keypad tones.
+
+## Switch cameras during a video call
+
+The browser can list every camera it can use, and the page can switch between them without leaving
+the room.
+
+### Pick a camera from a browser
+
+Add a picker to the page, then add these lines inside the `if (!client)` block, right after the
+client is created. [`videoInputDevices$`][video-input-devices] emits the camera list, and
+[`selectVideoInputDevice()`][select-video-input] switches to the one you pick, including on a call
+already in progress.
+
+```javascript title="JavaScript — Browser SDK"
+// <select id="cameras"></select>
+const cameraPicker = document.querySelector("#cameras");
+
+// Inside the if (!client) block, after the client is created:
+client.videoInputDevices$.subscribe((cameras) => {
+  cameraPicker.replaceChildren(
+    ...cameras.map((camera) => new Option(camera.label || "Camera", camera.deviceId)),
+  );
+});
+cameraPicker.onchange = () => {
+  const camera = client?.videoInputDevices.find((device) => device.deviceId === cameraPicker.value);
+  if (camera) client?.selectVideoInputDevice(camera);
+};
+```
+
+Browsers hide camera names until the page has camera access, so the labels fill in after the first
+**Join**. The Browser SDK [device management guide][browser-devices] adds microphones, speakers,
+and devices plugged in mid-call.
+
+## Share your screen in a video call
+
+A screen share joins the room as its own participant, and SignalWire composes it into the room
+video beside the cameras.
+
+### Share your screen from a browser
+
+Add a button to the page, then add the lookup and the handlers below.
+[`startScreenShare()`][start-screen-share] opens the browser's screen picker, and
+[`screenShareStatus$`][screen-share-status] reports `none`, `starting`, `started`, or `stopping`.
+
+```javascript title="JavaScript — Browser SDK"
+// <button id="share" type="button" disabled>Share screen</button>
+import { switchMap } from "rxjs";
+
+const shareButton = document.querySelector("#share");
+
+// Inside joinButton.onclick, after dial() resolves:
+shareButton.onclick = async () => {
+  const self = call.self;
+  if (!self) return;
+  try {
+    if (self.screenShareStatus === "started") await self.stopScreenShare();
+    else if (self.screenShareStatus === "none") await self.startScreenShare();
+  } catch (error) {
+    // Closing the screen picker rejects with NotAllowedError. The call keeps running.
+    if (!(error instanceof DOMException && error.name === "NotAllowedError")) {
+      console.error(error);
+    }
+  }
+};
+
+call.self$.pipe(switchMap((self) => self.screenShareStatus$)).subscribe((status) => {
+  shareButton.disabled = status === "starting" || status === "stopping";
+  shareButton.textContent = status === "started" ? "Stop sharing" : "Share screen";
+});
+```
+
+If the share fails, your camera and microphone stay in the room. The Browser SDK
+[screen sharing guide][browser-screen-sharing] covers sharing audio with the screen and checking
+whether a participant may share.
+
+## Change the video room layout
+
+The layout decides how SignalWire arranges participants in the room video. Every participant gets
+the same composed stream, so a layout change applies to everyone in the room.
+
+### Change the layout from a browser
+
+Add a picker to the page, then add the lookup and the handlers below. [`layouts$`][layouts] emits
+the names of the layouts the room offers, `layout$` emits the current one, and
+[`setLayout()`][set-layout] switches to another.
+
+```javascript title="JavaScript — Browser SDK"
+// <select id="layouts"></select>
+const layoutPicker = document.querySelector("#layouts");
+
+// Inside joinButton.onclick, after dial() resolves:
+call.layouts$.subscribe((names) => {
+  layoutPicker.replaceChildren(...names.map((name) => new Option(name, name)));
+  layoutPicker.value = call.layout ?? "";
+});
+call.layout$.subscribe((name) => (layoutPicker.value = name));
+layoutPicker.onchange = () => {
+  void call.setLayout(layoutPicker.value, {}).catch(console.error);
+};
+```
+
+The second argument to `setLayout()` can also move specific participants into positions in the
+layout. An empty `{}` changes only the layout. The Browser SDK [layouts guide][browser-layouts] covers participant
+positions and drawing overlays on the room video.
+
+### Set the default layout via REST
+
+Set `layout` on the Video Room to choose the layout participants see when they join, before anyone
+changes it. A new room uses `grid-responsive`. The other values are `grid-responsive-mobile`,
+`highlight-1-responsive`, `1x1`, `2x1`, `2x2`, `5up`, `3x3`, `4x4`, `5x5`, `6x6`, `8x8`, and
+`10x10`.
+
+<CodeBlocks>
+<CodeBlock title="Python — REST client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as set_room_layout.py and run: python set_room_layout.py
+from signalwire.rest import RestClient
+
+client = RestClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    host="<YOUR_SPACE>.signalwire.com",
+)
+
+room = client.fabric.conference_rooms.update(
+    "<YOUR_RESOURCE_ID>",
+    layout="highlight-1-responsive",
+)
+print(room["conference_room"]["layout"])
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — REST client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as set-room-layout.mjs,
+// then run: node set-room-layout.mjs
+import { RestClient } from "@signalwire/sdk";
+
+const client = new RestClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  host: "<YOUR_SPACE>.signalwire.com",
+});
+
+const room = await client.fabric.conferenceRooms.update("<YOUR_RESOURCE_ID>", {
+  layout: "highlight-1-responsive",
+});
+console.log(room.conference_room.layout);
+```
+</CodeBlock>
+<CodeBlock title="cURL — Conference Rooms API">
+```bash
+curl -X PUT "https://<YOUR_SPACE>.signalwire.com/api/fabric/resources/conference_rooms/<YOUR_RESOURCE_ID>" \
+  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{ "layout": "highlight-1-responsive" }'
+```
+</CodeBlock>
+</CodeBlocks>
+
+The cURL request calls [Update conference room][rest-update-room], which also sets the room's video
+quality, participant limit, and the other options [Create conference room][rest-create-room] lists.
+
+## Show who is in a video call
+
+The page can list everyone in the room, including you and any screen share, and keep the list
+current as people join, leave, and mute.
+
+### List participants in a browser
+
+Add a list to the page, then add the lookup and the subscription below.
+[`participants$`][participants] emits the whole list each time someone joins, leaves, or changes
+state, so the page redraws it from scratch.
+
+```javascript title="JavaScript — Browser SDK"
+// <ul id="participants"></ul>
+const participantList = document.querySelector("#participants");
+
+// Inside joinButton.onclick, after dial() resolves:
+call.participants$.subscribe((participants) => {
+  participantList.replaceChildren(
+    ...participants.map((participant) => {
+      const item = document.createElement("li");
+      const muted = participant.audioMuted ? " (muted)" : "";
+      const videoOff = participant.videoMuted ? " (video off)" : "";
+      item.textContent = `${participant.name ?? "Guest"}${muted}${videoOff}`;
+      return item;
+    }),
+  );
+});
+```
+
+Clear the list in the page's `status$` handler when the call ends.
+
+## Track and leave a video call
+
+The call's status tells the page when you're in the room and when you've left it, whether you
+selected **Leave** or the call failed.
+
+### Track the call and leave from a browser
+
+[`hangup()`][hangup] takes you out of the room and leaves everyone else in it. The call then moves
+to `disconnecting` and on to `destroyed`. A call that fails moves to `failed`. With
+`disconnected`, `failed`, and `destroyed` treated as final, the page's one [`status$`][status]
+subscription resets it for every outcome. To show the status, add `<p id="status">Idle</p>` to the
+page, then add the lookup below and replace the page's `status$` subscription:
+
+```javascript title="JavaScript — Browser SDK"
+const statusLine = document.querySelector("#status");
+
+// Inside joinButton.onclick, after dial() resolves:
+call.status$.subscribe((status) => {
+  statusLine.textContent = `Call: ${status}`;
+  if (status === "disconnected" || status === "failed" || status === "destroyed") {
+    localVideo.srcObject = null;
+    roomVideo.srcObject = null;
+    leaveButton.disabled = true;
+    joinButton.disabled = false;
+  }
+});
+```
+
+The status shows `connected` while you're in the room. After **Leave**, select **Join** again to
+rejoin with the same token.
+
+## Let phone callers join a video room
+
+A phone caller joins the same room by audio. Browser participants hear the caller, and the caller
+hears the room. To put a caller in the room, the call handler on your phone number runs
+`join_room` with the Video Room's `name`: the name you created it with, such as `team-standup`,
+not its address. For a room created in the Dashboard, read `conference_room.name` from
+[List conference rooms][rest-list-rooms].
+
+<Warning title="join_room creates a new room when the name doesn't match">
+If no room has the name you pass, `join_room` creates one, and the caller waits alone in it. Copy
+the name exactly as you created the Video Room.
+</Warning>
+
+### Let phone callers join via SWML
+
+Run either server below, or host the YAML document as a SWML Script. Then give it a public URL and
+assign the script to your phone number, as [Answer a call via SWML][answer-swml] shows.
+[`join_room`][swml-join-room] answers the call itself and sets `join_room_result` to `joined` or
+`failed`.
+
+<CodeBlocks>
+<CodeBlock title="Python — SWML builder">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as video_room_swml_server.py and run: python video_room_swml_server.py
+from signalwire import SWMLBuilder, SWMLService
+
+service = SWMLService(
+    name="video-room-swml-server",
+    route="/swml",
+    port=3000,
+    basic_auth=("signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"),
+)
+SWMLBuilder(service).join_room(name="<YOUR_ROOM_NAME>")
+
+# Serves the document at /swml. Put the credentials in the URL you give
+# SignalWire: https://signalwire:<YOUR_BASIC_AUTH_PASSWORD>@<YOUR_PUBLIC_HOST>/swml
+service.serve()
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — SWML builder">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as video-room-swml-server.mjs,
+// then run: node video-room-swml-server.mjs
+import { SWMLService } from "@signalwire/sdk";
+
+const service = new SWMLService({
+  name: "video-room-swml-server",
+  route: "/swml",
+  port: 3000,
+  basicAuth: ["signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"],
+});
+service.getBuilder().join_room({ name: "<YOUR_ROOM_NAME>" });
+
+// Serves the document at /swml. Put the credentials in the URL you give
+// SignalWire: https://signalwire:<YOUR_BASIC_AUTH_PASSWORD>@<YOUR_PUBLIC_HOST>/swml
+await service.serve();
+```
+</CodeBlock>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - join_room:
+        name: <YOUR_ROOM_NAME>
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "join_room": {
+          "name": "<YOUR_ROOM_NAME>"
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+With a browser tab in the room, call your number from your phone. The tab plays the entry tone,
+the caller appears in the participant list, and you hear each other. If the tab never hears the
+caller, check that the number's **Inbound Call Settings** point at this script and that the name
+matches the Video Room's. In a trial project, call from a verified number, as
+[Prepare for your first call][prepare-calls] describes.
+
+### Let phone callers join via WebSocket (Relay)
+
+Run either handler below and leave it running. It subscribes to the `video-room` topic, answers
+each call, and moves it into the room. Assign a Relay Application for that topic to your phone
+number, as [Answer a call via WebSocket (Relay)][answer-relay] shows.
+
+<CodeBlocks>
+<CodeBlock title="Python — Relay client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as video_room_relay.py and run: python video_room_relay.py
+from signalwire.relay import RelayClient
+
+client = RelayClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    contexts=["video-room"],
+)
+
+@client.on_call
+async def handle_call(call):
+    await call.answer()
+    await call.join_room("<YOUR_ROOM_NAME>")
+    await call.wait_for_ended()
+
+client.run()
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — Relay client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as video-room-relay.mjs,
+// then run: node video-room-relay.mjs
+import { RelayClient } from "@signalwire/sdk";
+
+const client = new RelayClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  contexts: ["video-room"],
+});
+
+client.onCall(async (call) => {
+  await call.answer();
+  await call.joinRoom("<YOUR_ROOM_NAME>");
+  await call.waitForEnded();
+});
+
+await client.run();
+```
+</CodeBlock>
+</CodeBlocks>
+
+Test it the same way as the SWML version. To take the caller out of the room while keeping the
+call, call `leave_room()` in Python or `leaveRoom()` in TypeScript.
+
+## Examples
+
+### Build a room page with every control
+
+This page combines the first run with every browser task above: mute buttons, a camera picker,
+screen sharing, a layout picker, a participant list, and a status line.
+
+#### Build the room page in a browser
+
+```javascript title="JavaScript — Browser SDK"
+// Install: npm install @signalwire/js@4.0.0-rc.5 rxjs@7.8.2
+// Load as a module script on an HTTPS or localhost page with these elements:
+// <input id="token" type="password" placeholder="Guest token">
+// <button id="join" type="button">Join</button>
+// <button id="leave" type="button" disabled>Leave</button>
+// <button id="mute" type="button" disabled>Mute</button>
+// <button id="camera" type="button" disabled>Stop video</button>
+// <button id="share" type="button" disabled>Share screen</button>
+// <select id="cameras"></select>
+// <select id="layouts"></select>
+// <p id="status">Idle</p>
+// <video id="local-video" autoplay playsinline muted></video>
+// <video id="room-video" autoplay playsinline></video>
+// <ul id="participants"></ul>
+// Paste a guest token issued by your server for this room.
+import { SignalWire, StaticCredentialProvider } from "@signalwire/js";
+import { switchMap } from "rxjs";
+
+const tokenInput = document.querySelector("#token");
+const joinButton = document.querySelector("#join");
+const leaveButton = document.querySelector("#leave");
+const muteButton = document.querySelector("#mute");
+const cameraButton = document.querySelector("#camera");
+const shareButton = document.querySelector("#share");
+const cameraPicker = document.querySelector("#cameras");
+const layoutPicker = document.querySelector("#layouts");
+const statusLine = document.querySelector("#status");
+const localVideo = document.querySelector("#local-video");
+const roomVideo = document.querySelector("#room-video");
+const participantList = document.querySelector("#participants");
+const callButtons = [leaveButton, muteButton, cameraButton, shareButton];
+
+let client;
+
+joinButton.onclick = async () => {
+  joinButton.disabled = true;
+  try {
+    if (!client) {
+      client = new SignalWire(new StaticCredentialProvider({
+        token: tokenInput.value.trim(),
+      }));
+
+      client.videoInputDevices$.subscribe((cameras) => {
+        cameraPicker.replaceChildren(
+          ...cameras.map((camera) => new Option(camera.label || "Camera", camera.deviceId)),
+        );
+      });
+      cameraPicker.onchange = () => {
+        const camera = client?.videoInputDevices.find((device) => device.deviceId === cameraPicker.value);
+        if (camera) client?.selectVideoInputDevice(camera);
+      };
+    }
+
+    const call = await client.dial("<YOUR_ROOM_ADDRESS>", {
+      audio: true,
+      video: true,
+      receiveVideo: true,
+    });
+
+    call.localStream$.subscribe((stream) => (localVideo.srcObject = stream));
+    call.remoteStream$.subscribe((stream) => (roomVideo.srcObject = stream));
+
+    leaveButton.disabled = false;
+    leaveButton.onclick = () => {
+      void call.hangup().catch(console.error);
+    };
+
+    // Microphone and camera
+    muteButton.onclick = () => void call.self?.toggleMute();
+    cameraButton.onclick = () => void call.self?.toggleMuteVideo();
+    call.self$.pipe(switchMap((self) => self.audioMuted$)).subscribe((muted) => {
+      muteButton.disabled = false;
+      muteButton.textContent = muted ? "Unmute" : "Mute";
+    });
+    call.self$.pipe(switchMap((self) => self.videoMuted$)).subscribe((muted) => {
+      cameraButton.disabled = false;
+      cameraButton.textContent = muted ? "Start video" : "Stop video";
+    });
+
+    // Screen sharing
+    shareButton.onclick = async () => {
+      const self = call.self;
+      if (!self) return;
+      try {
+        if (self.screenShareStatus === "started") await self.stopScreenShare();
+        else if (self.screenShareStatus === "none") await self.startScreenShare();
+      } catch (error) {
+        // Closing the screen picker rejects with NotAllowedError. The call keeps running.
+        if (!(error instanceof DOMException && error.name === "NotAllowedError")) {
+          console.error(error);
+        }
+      }
+    };
+    call.self$.pipe(switchMap((self) => self.screenShareStatus$)).subscribe((status) => {
+      shareButton.disabled = status === "starting" || status === "stopping";
+      shareButton.textContent = status === "started" ? "Stop sharing" : "Share screen";
+    });
+
+    // Layout
+    call.layouts$.subscribe((names) => {
+      layoutPicker.replaceChildren(...names.map((name) => new Option(name, name)));
+      layoutPicker.value = call.layout ?? "";
+    });
+    call.layout$.subscribe((name) => (layoutPicker.value = name));
+    layoutPicker.onchange = () => {
+      void call.setLayout(layoutPicker.value, {}).catch(console.error);
+    };
+
+    // Participants
+    call.participants$.subscribe((participants) => {
+      participantList.replaceChildren(
+        ...participants.map((participant) => {
+          const item = document.createElement("li");
+          const muted = participant.audioMuted ? " (muted)" : "";
+          const videoOff = participant.videoMuted ? " (video off)" : "";
+          item.textContent = `${participant.name ?? "Guest"}${muted}${videoOff}`;
+          return item;
+        }),
+      );
+    });
+
+    // Status and cleanup
+    call.status$.subscribe((status) => {
+      statusLine.textContent = `Call: ${status}`;
+      if (status === "disconnected" || status === "failed" || status === "destroyed") {
+        localVideo.srcObject = null;
+        roomVideo.srcObject = null;
+        participantList.replaceChildren();
+        for (const button of callButtons) button.disabled = true;
+        joinButton.disabled = false;
+      }
+    });
+  } catch (error) {
+    joinButton.disabled = false;
+    console.error(error);
+  }
+};
+```
+
+## Next steps
+
+<CardGroup cols={2}>
+
+<Card title="Browser SDK authentication" href="/docs/browser-sdk/v4/guides/authentication" icon="regular key">
+  Issue Subscriber and guest tokens from your backend, and refresh them for long sessions.
+</Card>
+
+<Card title="Layouts and participant views" href="/docs/browser-sdk/v4/guides/layouts" icon="regular table-cells">
+  Position participants in a layout and draw overlays on the room video.
+</Card>
+
+<Card title="Device management" href="/docs/browser-sdk/v4/guides/device-management" icon="regular camera-web">
+  Choose cameras, microphones, and speakers, and react when a device is plugged in.
+</Card>
+
+<Card title="Create conference room" href="/docs/apis/rest/conference-rooms/create-conference-room" icon="regular rectangle-api">
+  Every Video Room setting, from video quality and participant limits to join windows.
+</Card>
+
+</CardGroup>
