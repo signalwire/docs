@@ -2,6 +2,7 @@ import "@typespec/http";
 import "../../../types";
 import "../../const.tsp";
 import "../../enums.tsp";
+import "../../../calling-api/calls/models/core.tsp";
 
 using TypeSpec.Http;
 
@@ -96,7 +97,7 @@ model RelayVoiceLog {
 
   @doc("Audio quality statistics for the call. Only measured statistics are included. Null if the call has no quality measurement.")
   @example(null)
-  qos_metrics: Record<unknown> | null;
+  qos_metrics: SignalWireAPI.Calling.CallQosMetrics | null;
 }
 
 @doc("Audio quality statistics for a Compatibility API call. Each field is null when the call has no measurement for it, such as a call that never carried audio.")
