@@ -162,8 +162,9 @@ model AISemanticGateRecord {
     - `timeout`: the check ran out of time (`semantic_gate_timeout_ms`).
     - `provider_error`: the decision model refused or failed.
     - `invalid_response`: the decision model's answer could not be used.
-    - `invalid_arguments`: the agent's arguments for the function were missing or not a valid JSON
-      object.
+    - `invalid_arguments`: the agent's arguments for the function weren't exactly one JSON object:
+      missing, not valid JSON, followed by other text, repeating a key, or holding a `\\u0000`
+      escape.
     - `config_error`: the check could not be set up, for example a request too large to send.
     - `aborted`: the call ended during the check.
 

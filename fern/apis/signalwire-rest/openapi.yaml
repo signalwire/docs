@@ -38983,6 +38983,10 @@ components:
             Hints don't change how the agent speaks; use `pronounce` for that.
             An object can set a `hint`, a `pattern` and `replace` pair that rewrites matching text in what the agent
             hears before the AI reads it, or both.
+            One hint list covers every language the agent uses; there are no per-language hints. When speech recognition
+            runs in code-switching mode, because `multilingual` is set or a `languages` entry's `code` is `multi` on
+            Deepgram speech recognition, recognition hints are not used. That covers string entries and `hint` values, and no error is returned.
+            Rewrite rules still apply to the transcript in every mode.
           examples:
             - - pizza
               - pepperoni
@@ -45922,6 +45926,7 @@ components:
             Set it to `multi` to have the engine transcribe whichever of its supported languages the caller
             speaks, rather than one fixed language. The agent still answers in this entry's single `voice`.
             `multi` works only with Deepgram speech recognition, and it switches between fewer languages than `code` accepts: on Nova-3, English, Spanish, French, German, Hindi, Russian, Portuguese, Japanese, Italian, and Dutch; on Nova-2, English and Spanish. A Google speech engine treats `multi` as an ordinary language code.
+            With `multi` on Deepgram speech recognition, recognition hints from [`ai.hints`](/docs/swml/reference/calling/ai#aihints) are not used, though its rewrite rules still apply.
             To answer in the caller's language as well, use [`ai.multilingual`](/docs/swml/reference/calling/ai/multilingual)
             instead, which builds on the same code-switching mode and adds a voice per language.
           examples:
@@ -48463,7 +48468,8 @@ components:
           description: |-
             The yes/no question, at most 8 KB. Name what it's about with the names of the inputs the gate
             reads, in backticks: `conversation`, `semantic_state`, `proposed_function`, and
-            `visual_input`. `${...}` variables from `global_data` are expanded when the check runs.
+            `visual_input`. `${...}` variables from `global_data` are expanded when the check runs,
+            written as `${global_data.key}` or as the bare top-level key, `${key}`.
           examples:
             - Has the caller explicitly asked to cancel their account in `conversation`?
         criteria:
@@ -49261,10 +49267,14 @@ components:
             codec:
               type: string
               description: |-
-                Codec to use for the streamed audio. Freeform and endpoint-specific.
-                Common values include `PCMU`, `PCMA`, and `OPUS`.
+                Codec for the streamed audio. Supported values: `PCMU` (8 kHz G.711 µ-law),
+                `L16@16000h` (16-bit linear PCM at 16 kHz), and `L16@24000h` (16-bit linear PCM at 24 kHz).
+                Always include the rate with `L16`: a bare `L16` is 8 kHz.
+                If SignalWire doesn't accept the codec, the stream doesn't start.
+                Default is `"PCMU"`.
               examples:
-                - PCMU
+                - L16@16000h
+              default: PCMU
             status_url:
               type: string
               format: uri
@@ -50779,9 +50789,10 @@ components:
           description: |-
             Semantic gates: 1 to 8 yes/no questions that must all pass before the function runs. When any
             fails, the function does not run and the agent gets the first failing gate's `on_fail` instead.
-            A gated function needs a `description` and a `web_hook_url` (its own or from
-            `SWAIG.defaults`) or a `data_map`. If any gate is invalid, the function is not added to the
-            agent at all.
+            A gated function needs a `description` and a `web_hook_url` (its own, from `SWAIG.defaults`,
+            or for a function returned by `includes`, from the `defaults` the include returns) or a
+            `data_map`. If any gate is invalid, the function is not added to the agent at all, even with
+            `semantic_gates_enabled` set to `false`.
           examples:
             - - id: explicit_request
                 question: Has the caller explicitly asked to cancel their account in `conversation`?
@@ -50808,6 +50819,8 @@ components:
             For a gated function without `gate_fillers`, whether its `fillers` play as soon as the agent
             calls it, during the gate check (`true`), or only after the gates pass (`false`). When unset,
             the function inherits `SWAIG.defaults.fillers_at_gates`, which is `true` unless you change it.
+            A function returned by `includes` inherits the `fillers_at_gates` in the `defaults` the include
+            returns first, when it sets one.
           examples:
             - false
         visual_input:
@@ -62612,8 +62625,9 @@ components:
             - `timeout`: the check ran out of time (`semantic_gate_timeout_ms`).
             - `provider_error`: the decision model refused or failed.
             - `invalid_response`: the decision model's answer could not be used.
-            - `invalid_arguments`: the agent's arguments for the function were missing or not a valid JSON
-              object.
+            - `invalid_arguments`: the agent's arguments for the function weren't exactly one JSON object:
+              missing, not valid JSON, followed by other text, repeating a key, or holding a `\u0000`
+              escape.
             - `config_error`: the check could not be set up, for example a request too large to send.
             - `aborted`: the call ended during the check.
 

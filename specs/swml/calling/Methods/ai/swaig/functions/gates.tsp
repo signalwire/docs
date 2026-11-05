@@ -83,7 +83,8 @@ model SemanticGate {
   @doc("""
     The yes/no question, at most 8 KB. Name what it's about with the names of the inputs the gate
     reads, in backticks: `conversation`, `semantic_state`, `proposed_function`, and
-    `visual_input`. `\${...}` variables from `global_data` are expanded when the check runs.
+    `visual_input`. `\${...}` variables from `global_data` are expanded when the check runs,
+    written as `\${global_data.key}` or as the bare top-level key, `\${key}`.
     """)
   @minLength(1)
   @maxLength(8192)
@@ -148,9 +149,10 @@ model SemanticGateFunctionFields {
   @doc("""
     Semantic gates: 1 to 8 yes/no questions that must all pass before the function runs. When any
     fails, the function does not run and the agent gets the first failing gate's `on_fail` instead.
-    A gated function needs a `description` and a `web_hook_url` (its own or from
-    `SWAIG.defaults`) or a `data_map`. If any gate is invalid, the function is not added to the
-    agent at all.
+    A gated function needs a `description` and a `web_hook_url` (its own, from `SWAIG.defaults`,
+    or for a function returned by `includes`, from the `defaults` the include returns) or a
+    `data_map`. If any gate is invalid, the function is not added to the agent at all, even with
+    `semantic_gates_enabled` set to `false`.
     """)
   @minItems(1)
   @maxItems(8)
@@ -184,6 +186,8 @@ model SemanticGateFunctionFields {
     For a gated function without `gate_fillers`, whether its `fillers` play as soon as the agent
     calls it, during the gate check (`true`), or only after the gates pass (`false`). When unset,
     the function inherits `SWAIG.defaults.fillers_at_gates`, which is `true` unless you change it.
+    A function returned by `includes` inherits the `fillers_at_gates` in the `defaults` the include
+    returns first, when it sets one.
     """)
   @example(false)
   fillers_at_gates?: boolean;
