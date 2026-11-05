@@ -222,7 +222,7 @@ union RcsContent {
 
 @doc("Send an RCS message from an RCS agent. Provide either `body` for plain text or `content` for rich content, not both. `media` and `message_type` are not supported.")
 model RcsMessageRequest {
-  @doc("Recipient phone number in E.164 format.")
+  @doc("Recipient phone number in E.164 format. Must be a US number: RCS messaging isn't available in other countries yet.")
   @example("+15551234567")
   to: string;
 

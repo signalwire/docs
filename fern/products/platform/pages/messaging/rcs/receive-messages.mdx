@@ -40,8 +40,52 @@ An inbound RCS message has `kind: rcs` and `direction: inbound`. Its `from` is t
 number and its `to` is your agent's ID. Text replies arrive in the message body, and media the
 recipient sends arrives as a media URL.
 
-To reply, [send a message](/docs/platform/messaging/rcs/send-messages) with your agent's ID as `from`
-and the recipient's number as `to`.
+To reply, either use the SWML [`reply`](#reply-with-swml) method in the Resource's script, or
+[send a message](/docs/platform/messaging/rcs/send-messages) with your agent's ID as `from` and the
+recipient's number as `to`.
+
+## Reply with SWML
+
+When the agent is assigned to a SWML Script or SWML Webhook, the script runs for each inbound RCS
+message and its [`reply`](/docs/swml/reference/messaging/reply) method answers over RCS. By default,
+the reply goes to the person who sent the message, from the agent that received it.
+
+In the script, `%{message.type}` is `rcs`, `%{message.to}` and `%{message.agent_id}` are your
+agent's ID, and `%{message.from}` is the sender's phone number.
+
+`reply` accepts the same shapes as for SMS (a string, an object, or an inline `switch`), with these
+differences:
+
+- Set `body` for plain text or `content` for rich content, never both. `content` takes the same
+  [content types](/docs/platform/messaging/rcs/send-messages#content-types) as the Messaging API.
+- `media` is not supported. Send media with a `content` of type `media` instead.
+- `from` is optional. Set it to the ID of another RCS agent in the same Project to reply from that
+  agent.
+- `to` must be a US phone number, like any RCS send.
+
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - reply:
+        content:
+          type: suggestions
+          text: "Thanks for reaching out! What can we help with?"
+          actions:
+            - type: reply
+              title: "Track an order"
+            - type: reply
+              title: "Talk to someone"
+```
+
+A reply that can't be queued fails with the same error codes as the
+[Messaging API](/docs/platform/messaging/rcs/send-messages#verify-the-send), plus these:
+
+| Code | Cause |
+|---|---|
+| `swml_rcs_reply_body_or_content_required` | The reply has neither `body` nor `content`. |
+| `swml_rcs_reply_invalid_from_agent` | `from` isn't an RCS agent in this Project. |
+| `swml_rcs_reply_to_number_not_allowed` | Your account can send only to verified numbers, and `to` isn't one of them. |
 
 ## Message logs
 
