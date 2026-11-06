@@ -6,10 +6,11 @@ namespace SWML.Calling;
 
 @doc("""
   Filler phrases keyed by language code, one array per language. A single phrase is
-  picked from the matching array at random.
+  picked from the matching array at random, never the same phrase twice in a row, so a
+  two-phrase array alternates.
 
   The agent looks for an entry matching the language being spoken, then `auto`, then
-  `default`, and plays nothing when none of the three is set. Under `ai.multilingual` the
+  `default` (`auto` is skipped while the code is `multi`), and plays nothing when none of the three is set. Under `ai.multilingual` the
   key is whichever code the speech recognition engine reports for the turn, so any code it
   returns works. Under `ai.languages` the key has to match the `code` set on the entry.
   The codes listed here are the ones in common use, not a closed list.
@@ -170,7 +171,7 @@ model FunctionFillers {
   @example(#["sebentar", "biar saya semak"])
   ms?: string[];
 
-  @doc("Used when the agent's language code is set to `multi`, which lets the speech recognition engine transcribe whichever of its supported languages the caller speaks.")
+  @doc("Used when the agent's language code is set to `multi`, which lets the speech recognition engine transcribe whichever of its supported languages the caller speaks. `auto` is skipped while the code is `multi`, because there is no single language to translate into, so the lookup goes from this key straight to `default`.")
   @example(#["one moment", "un momento"])
   multi?: string[];
 
@@ -255,7 +256,8 @@ model FunctionFillers {
 // `default` is re-declared because its FunctionFillers description refers to `auto`.
 @doc("""
   Backchannel phrases keyed by language code, one array per language. A single phrase is
-  picked from the matching array at random.
+  picked from the matching array at random, never the same phrase twice in a row, so a
+  two-phrase array alternates.
 
   The agent looks for an entry matching the language being spoken, then `default`, and plays
   nothing when neither is set. There is no `auto` key here: these phrases are never

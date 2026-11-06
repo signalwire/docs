@@ -45,7 +45,6 @@ enum VoiceType {
 }
 
 enum RelayVoiceType {
-  laml_call: "laml_call",
   relay_pstn_call: "relay_pstn_call",
   relay_sip_call: "relay_sip_call",
   relay_webrtc_call: "relay_webrtc_call",

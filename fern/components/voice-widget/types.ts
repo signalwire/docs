@@ -2,7 +2,9 @@
 // the audio/ tree are the entire contract handed to devex — keep this in sync with
 // catalog_schema.json and synth_examples.py.
 
-export type Gender = "male" | "female" | "neutral" | "unknown";
+// Raw values as published — Cartesia sends "feminine"/"masculine", Rime adds "non-binary". The
+// widget filters on the canonical form (engine.tsx canonicalGender), never on these directly.
+export type Gender = "male" | "female" | "masculine" | "feminine" | "neutral" | "non-binary" | "unknown";
 
 export interface CatalogVoice {
   key: string;              // "<engine>/<voice_id>" — unique

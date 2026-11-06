@@ -62,7 +62,9 @@ namespace CompatibilityAPI.IncomingPhoneNumbers {
     @summary("Create an Incoming Phone Number")
     @doc("""
       Purchases an available number and provisions it as an Incoming Phone Number in the account. Search first with [Available Phone Numbers](/docs/compatibility-api/rest/available-phone-numbers/list-available-phone-number-resources), or use SignalWire REST [Purchase phone number](/docs/apis/rest/phone-numbers/purchase-phone-number) for a JSON request. To register a number you already own instead of purchasing inventory, use Imported Phone Numbers.
-      
+
+      Purchasing a number starts a release hold, so you can't release it right away. For most Spaces the hold lasts 14 days, with up to 2 early releases each month. See [Delete an incoming phone number](/docs/compatibility-api/rest/incoming-phone-numbers/delete-incoming-phone-number).
+
       ${tokenPermissions<"_Numbers_">}
       """)
     @post
@@ -116,7 +118,7 @@ namespace CompatibilityAPI.IncomingPhoneNumbers {
     @doc("""
       Releases an Incoming Phone Number and removes it from the account. This is for numbers the account should no longer own; changing or deleting a handler does not release the number. Native phone-number resources use [Release phone number](/docs/apis/rest/phone-numbers/release-phone-number).
       
-      Note: Numbers cannot be released within a cooldown period after purchase.
+      To help prevent fraud and abuse, a number can't be released during a hold period after purchase. For most Spaces the hold lasts 14 days, and up to 2 numbers can be released early each month while still on hold. Once those early releases are used, releasing a number that is still on hold returns `422` with error code `22121`, and the message gives the date and time the hold ends.
       
       ${tokenPermissions<"_Numbers_">}
       """)

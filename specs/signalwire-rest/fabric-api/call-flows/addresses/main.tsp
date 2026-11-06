@@ -10,7 +10,7 @@ using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
-@route("/resources/call_flow/{id}/addresses")
+@route("/resources/call_flows/{id}/addresses")
 namespace SignalWireAPI.Fabric.CallFlow.Addresses {
   @tag(CALL_FLOWS_TAG)
   interface CallFlowAddresses {

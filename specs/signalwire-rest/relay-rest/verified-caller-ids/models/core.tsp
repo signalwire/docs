@@ -28,16 +28,16 @@ model VerifiedCallerID {
   @example("C-3P0")
   name?: string;
 
-  @doc("String representing the extension of the phone number for the caller ID. This is only used when placing the verification call.")
+  @doc("String representing the extension of the phone number for the caller ID. This is only used when placing the verification call. `null` when no extension was set.")
   @example("1234")
-  extension?: string;
+  extension: string | null;
 
   @doc("A boolean representing whether the number has been verified or not.")
   @example(false)
   verified: boolean;
 
-  @doc("Nullable DateTime field representing the date and time that the number was verified. If the number has not been verified, it will be null.")
-  verified_at?: utcDateTime;
+  @doc("The date and time that the number was verified, or `null` if the number has not been verified.")
+  verified_at: utcDateTime | null;
 
   @doc("The verification status for the caller ID.")
   @example("Awaiting Verification")
