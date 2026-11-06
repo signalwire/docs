@@ -81,7 +81,7 @@ namespace CompatibilityAPI.Faxes {
       @header contentType: "application/x-www-form-urlencoded",
       @body body: SendFaxRequest,
     ):
-      | FaxResponse
+      | FaxCreatedResponse
       | CompatibilityStatusCode400
       | CompatibilityStatusCode401
       | CompatibilityStatusCode422;

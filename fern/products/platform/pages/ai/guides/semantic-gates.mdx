@@ -44,6 +44,9 @@ one fails, the first failing gate in your list decides what the agent gets. A ch
 completed, because it ran out of time or the agent's arguments were missing or not valid JSON, blocks
 the function too.
 
+Each check the decision model answers is billed, whether the function then runs or not. A check that
+includes the caller's video frames is billed as an image check rather than a text check.
+
 ## Gate a function
 
 Ada's `cancel_ride` function gets one gate. It asks whether the caller explicitly asked to cancel,
@@ -218,8 +221,9 @@ English word.
 
 The names aren't variables. Nothing replaces `` `conversation` `` with the transcript, and the
 platform passes the backticks through as written; they're a convention for the decision model. The
-only text substituted in a question is a `${...}` variable from `global_data`, such as
-`${global_data.pickup_address}`, expanded when the check runs. `@{...}` functions aren't run.
+only text substituted in a question is a `${...}` variable from `global_data`, expanded when the
+check runs. Write it as `${global_data.pickup_address}` or as the bare top-level key,
+`${pickup_address}`. `@{...}` functions aren't run.
 
 ### Keep each question to one thing
 
@@ -230,7 +234,8 @@ only text substituted in a question is a `${...}` variable from `global_data`, s
 - **Don't ask the decision model to calculate or compare dates.** Work the answer out in your
   application, store it in `semantic_state`, and ask about that.
 - **Keep it short.** A question can be up to 8 KB, but that's a ceiling, not a target. Most good
-  questions are one sentence.
+  questions are one sentence. Each `criteria` value is capped at 2 KB and `on_fail` at 8 KB, measured
+  as compact JSON with its keys and quotes; the [`gates` reference][gates-ref] lists every limit.
 
 Thresholds run from just above 0 to 1, and higher is stricter. Start at 0.9 or above for actions
 that are hard to undo, then test against real conversations, including the near misses you wrote
@@ -352,10 +357,14 @@ gates:
 </CodeBlocks>
 
 Each write of `semantic_state` replaces the whole object, so to change one field, send the whole
-state with that field changed. Send `{}` to clear it. The state lasts for the call, and carries over
-to later `ai` methods in the same call while `persist_global_data` is on, which it is by default.
-Nothing else in `global_data` reaches the decision model. If you set the `swaig_set_global_data`
-param to `false`, functions can't write `semantic_state` either.
+state with that field changed. Send `{}` to clear it. The key is matched exactly, so a state written
+as `Semantic_State` never reaches the gates. The state lasts for the call, and carries over to later
+`ai` methods in the same call while `persist_global_data` is on, which it is by default. If you set
+the `swaig_set_global_data` param to `false`, functions can't write `semantic_state` either.
+
+The rest of `global_data` reaches the decision model only through the `${...}` variables your
+questions name. A question that names `${account_tier}` puts that value in front of the model, so
+name only values your application set.
 
 Keep `semantic_state` to what your application established, never what the caller claimed. For how
 `global_data` works more broadly, see [state management][state-management].
@@ -391,6 +400,8 @@ standard agents those fillers become part of the `conversation` the gates read. 
 fillers announce the action, such as "OK, cancelling your ride now", give it neutral `gate_fillers`
 like "Let me check that", as Ada's `cancel_ride` does, or set `fillers_at_gates` to `false`.
 Set it for every function at once in [`SWAIG.defaults`][defaults-ref]; a function's own setting wins.
+For functions from `includes`, a `fillers_at_gates` in the `defaults` the include returns wins over
+`SWAIG.defaults`.
 
 On standard agents, a function with `wait_for_fillers: true` still waits for its fillers. With the
 default, they play first and the gates are checked after them, which adds to the wait; `gate_fillers`
@@ -439,6 +450,29 @@ agent.defineTool({
 On a video call, a gate can look at the caller's camera. Set `visual_input` on the gate to the
 number of newest frames it should see, up to 5, and name `` `visual_input` `` in the question:
 
+<CodeBlocks>
+<CodeBlock title="Server SDK (Python)">
+```python
+id_gate = SemanticGate(
+    "Is the caller holding a photo ID up to the camera in `visual_input`?",
+    threshold=0.9,
+    on_fail="verify_identity was not run. Ask the caller to hold their ID up to the camera.",
+    id="id_shown",
+    visual_input=1,
+)
+```
+</CodeBlock>
+<CodeBlock title="Server SDK (TypeScript)">
+```typescript
+const idGate = new SemanticGate(
+  'Is the caller holding a photo ID up to the camera in `visual_input`?',
+  0.9,
+  'verify_identity was not run. Ask the caller to hold their ID up to the camera.',
+  { id: 'id_shown', visualInput: 1 },
+);
+```
+</CodeBlock>
+<CodeBlock title="SWML">
 ```yaml
 gates:
   - id: id_shown
@@ -448,6 +482,8 @@ gates:
     on_fail:
       response: verify_identity was not run. Ask the caller to hold their ID up to the camera.
 ```
+</CodeBlock>
+</CodeBlocks>
 
 Frames are taken when the check starts, at most one per second and none older than 8 seconds. If
 the call has no video frame to show, the gate fails without being asked, so a gate with
@@ -466,9 +502,11 @@ Three [`ai.params`][params-ref] control checking for the whole call:
 
 | Param | Default | What it does |
 |---|---|---|
-| `semantic_gates_enabled` | `true` | `false` turns checks off, and gated functions run without being checked. |
+| `semantic_gates_enabled` | `true` | `false` turns checks off, and gated functions run without being checked. A function with an invalid gate is still left out of the agent. |
 | `semantic_gate_timeout_ms` | `2500` | How long one check may take, from 500 to 10000 milliseconds. A check that runs out of time blocks the function. |
 | `semantic_gate_history` | `20` | How many recent conversation entries the decision model reads, from 0 to 100. |
+
+A value outside its range isn't rejected: it's brought to the nearest end of the range.
 
 <CodeBlocks>
 <CodeBlock title="Server SDK (Python)">
@@ -499,8 +537,9 @@ function should run.
 
 Every checked call records what happened. Its entry in the `swaig_log`, which arrives in the
 [post-prompt callback][post-prompt] and the `calling.ai.swaig` event, carries a `semantic_gates`
-object: the `outcome`, whether the function ran (`dispatched`), and each gate's `confidence`
-against its `threshold`.
+object: where the check ran (`phase`: `text` for a standard agent, `oart` for a realtime
+speech-to-speech agent, or `post` for the post-prompt agent after the call), the `outcome`, whether
+the function ran (`dispatched`), and each gate's `confidence` against its `threshold`.
 
 ```json
 "semantic_gates": {
@@ -523,10 +562,18 @@ the question or its `criteria` before raising the threshold. If a function never
 - `fail` means a gate answered under its threshold. Check that the question names the right input,
   and that the conversation or `semantic_state` actually holds what the gate needs.
 - `timeout` means the check ran out of time. Raise `semantic_gate_timeout_ms`.
-- `invalid_arguments` means the agent's arguments were missing or weren't a valid JSON object.
-- The function is missing from the agent altogether: a gate is invalid, so the platform didn't add
-  the function. A `calling.error` event with `error_reason` `invalid_semantic_gate` names the
-  function and the broken rule.
+- `invalid_arguments` means the agent's arguments weren't exactly one JSON object: they were
+  missing, weren't valid JSON, had text after the object, repeated a key, or held a `\u0000` escape.
+- The function is missing from the agent altogether: a gate is invalid, or the function has no
+  `description`, so the platform didn't add the function. A `calling.error` event with
+  `error_reason` `invalid_semantic_gate` names the function and the broken rule.
+- The function runs without being checked, and its record shows no `semantic_gates`: an earlier
+  definition of the same name, often one an include returned, has no gates. The first definition
+  of a name wins, so the gated one was dropped. No `calling.error` event fires for this.
+
+A check that passes records `pass`, and one that runs while gates are turned off records `disabled`;
+the function runs only on those two. The [post-prompt callback reference][post-prompt] lists every
+`outcome`, including the rarer `provider_error`, `invalid_response`, `config_error`, and `aborted`.
 
 Any outcome other than a pass, a fail, or gates turned off also fires a `calling.error` event. The
 post-prompt callback adds `semantic_gates_blocked`, the functions the post-prompt agent was blocked

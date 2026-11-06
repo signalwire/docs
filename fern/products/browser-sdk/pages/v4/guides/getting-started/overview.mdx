@@ -59,13 +59,11 @@ RxJS is a peer dependency — the SDK uses observables for all reactive
 state. See the [RxJS Primer](/docs/browser-sdk/v4/guides/rxjs-primer) when you're
 ready to dig in.
 
-For a quick script-tag setup, pin a version rather than `@latest`:
-
-For a no-build setup, load the SDK as an ES module from a CDN that rewrites Node built-ins for the browser (`esm.sh`, `jspm.io`, `skypack`):
+For a no-build setup, load the SDK as an ES module from a CDN that rewrites Node built-ins for the browser (`esm.sh`, `jspm.io`, `skypack`), and pin a version rather than `@latest`:
 
 ```html
 <script type="module">
-  import { SignalWire, StaticCredentialProvider } from "https://esm.sh/@signalwire/js@dev";
+  import { SignalWire, StaticCredentialProvider } from "https://esm.sh/@signalwire/js@4.0.0-rc.5";
   // ... use SignalWire and StaticCredentialProvider as below
 </script>
 ```
@@ -80,6 +78,7 @@ For a no-build setup, load the SDK as an ES module from a CDN that rewrites Node
 
 ```js
 import { SignalWire, StaticCredentialProvider } from "@signalwire/js";
+import { filter, take } from "rxjs";
 
 const client = new SignalWire(
   new StaticCredentialProvider({ token: "YOUR_SUBSCRIBER_ACCESS_TOKEN" })
@@ -87,9 +86,9 @@ const client = new SignalWire(
 
 let activeCall;
 
-client.ready$.subscribe(async (ready) => {
-  if (!ready) return;
-
+// take(1): ready$ emits true again after every reconnect, and the call
+// should only be placed once.
+client.ready$.pipe(filter(Boolean), take(1)).subscribe(async () => {
   activeCall = await client.dial("/public/test-room", {
     audio: true,
     video: true,

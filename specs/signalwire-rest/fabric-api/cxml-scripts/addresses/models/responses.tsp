@@ -12,18 +12,18 @@ model CXMLScriptAddressListResponse {
 
 model CXMLScriptAddressPaginationResponse {
   @doc("Link of the current page")
-  @example("https://example.signalwire.com/api/fabric/resources/cxml_scripts?page_number=0&page_size=50&type=cxml_script")
+  @example("https://example.signalwire.com/api/fabric/resources/cxml_scripts/3fa85f64-5717-4562-b3fc-2c963f66afa6/addresses?page_number=0&page_size=50&type=cxml_script")
   self: url;
 
   @doc("Link to the first page")
-  @example("https://example.signalwire.com/api/fabric/resources/cxml_scripts?page_size=50&type=cxml_script")
+  @example("https://example.signalwire.com/api/fabric/resources/cxml_scripts/3fa85f64-5717-4562-b3fc-2c963f66afa6/addresses?page_size=50&type=cxml_script")
   first: url;
 
   @doc("Link to the next page")
-  @example("https://example.signalwire.com/api/fabric/resources/cxml_scripts?page_number=1&page_size=50&page_token=PA08cdad0c-e7e6-4a75-8244-902524f38d55&type=cxml_script")
+  @example("https://example.signalwire.com/api/fabric/resources/cxml_scripts/3fa85f64-5717-4562-b3fc-2c963f66afa6/addresses?page_number=1&page_size=50&page_token=PA08cdad0c-e7e6-4a75-8244-902524f38d55&type=cxml_script")
   next?: url;
 
   @doc("Link to the previous page")
-  @example("https://example.signalwire.com/api/fabric/resources/cxml_scripts?page_number=0&page_size=50&page_token=PA08cdad0c-e7e6-4a75-8244-902524f38d55&type=cxml_script")
+  @example("https://example.signalwire.com/api/fabric/resources/cxml_scripts/3fa85f64-5717-4562-b3fc-2c963f66afa6/addresses?page_number=0&page_size=50&page_token=PB08cdad0c-e7e6-4a75-8244-902524f38d55&type=cxml_script")
   prev?: url;
 }

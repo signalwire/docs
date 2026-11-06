@@ -20,6 +20,8 @@ namespace CompatibilityAPI.Calls {
     @doc("""
       Lists the account's calls. Each call has a Call SID that cXML integrations can use for inspection or control. Use [Retrieve a Call](/docs/compatibility-api/rest/calls/retrieve-a-call) when you already have its SID; use the [Calling API](/docs/apis/rest/calls/call-commands) for SWML-driven call commands.
       
+      Only calls handled by cXML appear in this list. Calls handled by SWML, and calls placed with the [Calling API](/docs/apis/rest/calls/call-commands), aren't included. Find them with [List voice logs](/docs/apis/rest/voice-logs/list-voice-logs), where their `type` is `relay_pstn_call`, `relay_sip_call`, or `relay_webrtc_call`.
+      
       ${tokenPermissions<"_Voice_">}
       """)
     list(
@@ -119,7 +121,7 @@ namespace CompatibilityAPI.Calls {
       @header contentType: "application/x-www-form-urlencoded",
       @body body: CreateCallRequest,
     ):
-      | CallResponse
+      | CallCreatedResponse
       | CompatibilityStatusCode400Array
       | CompatibilityStatusCode401
       | CompatibilityStatusCode422;

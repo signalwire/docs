@@ -3,7 +3,8 @@ import "@typespec/openapi3";
 import "@typespec/json-schema";
 import "./core.tsp";
 // A conversation entry is one contract however it is fetched, so the transcript this endpoint
-// returns reuses the model the AI webhooks already publish rather than forking a second one.
+// returns reuses the model the AI webhooks already publish, re-typing only `tool_calls` (see
+// ChatLogEntry) rather than forking a second one.
 import "../../../webhooks/ai/models/common.tsp";
 
 using TypeSpec.Http;
@@ -111,6 +112,20 @@ model ChatConversationDeletedResponse {
 // chat_log
 // ============================================
 
+// Diverges from Webhooks.AI.AICallLogEntry on `tool_calls` only: the chat service returns
+// `tool_calls: null` on a turn without tool calls (live response, issue #850), while the voice
+// agent's webhook call_log omits the key (mod_openai only stores it when it is an array).
+@doc("""
+  One entry in the conversation. Beyond `role` and `content`, an entry carries whatever per-turn
+  detail applies to it.
+  """)
+model ChatLogEntry is Record<unknown> {
+  ...OmitProperties<Webhooks.AI.AICallLogEntry, "tool_calls">;
+
+  @doc("The tool calls the agent made on this turn. `null` or omitted on a turn that made none.")
+  tool_calls?: Record<unknown>[] | null;
+}
+
 @summary("chat_log result")
 model ChatTranscriptResponse {
   ...JsonRpcResponseEnvelope;
@@ -122,7 +137,7 @@ model ChatTranscriptResponse {
       prompt and other non-dialogue entries, so filter to `user` and `assistant` before displaying a
       transcript.
       """)
-    chat_log: Webhooks.AI.AICallLogEntry[];
+    chat_log: ChatLogEntry[];
 
     // Left open deliberately: a chat conversation's timeline entries are not verifiable from a
     // public source, and the voice equivalent (Webhooks.AI.AICallTimelineEntry) names a `ts` field
