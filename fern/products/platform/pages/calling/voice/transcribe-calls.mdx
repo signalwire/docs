@@ -122,6 +122,7 @@ block. Choose by when you need the text:
 | Text while the call is happening, one utterance at a time | `live_transcribe` |
 | Who said what, as `remote-caller` and `local-caller` turns | `live_transcribe` |
 | An AI summary of the conversation | `live_transcribe` |
+| Text in any language other than U.S. English | `live_transcribe` |
 | The call's text after it ends, and nothing during it | `transcribe` |
 
 The rest of this guide uses `live_transcribe` until
@@ -607,14 +608,15 @@ that event:
 
 | `content_disposition` | Sent | Fields to read |
 |---|---|---|
-| `transcribe.utterance` | Once per utterance, when `live_events` is `true` | `utterance.role`, `utterance.content`, `utterance.confidence` |
+| `transcribe.utterance` | Once per utterance, when `live_events` is `true` | `utterance.role`, `utterance.content`, `confidence` |
 | `transcribe.live_summarize` | When you send `summarize` | `conversation_summary`, `conversation_log` |
 | `transcribe.conversation_log` | Once, when the session ends | `conversation_log`, `metrics`, and `conversation_summary` when `ai_summary` is `true` |
 
 `utterance.role` and each `conversation_log` entry's `role` say which side of the call spoke, using
 the values you passed in `direction`. Every event also carries `channel_data.call_id`, so one server
 can follow several calls at once. Timestamps such as `utterance.timestamp` are Unix times in
-microseconds.
+microseconds. The top-level `confidence` is the speech engine's confidence in the utterance, from
+`0` to `1`, or `null` when the engine didn't report one.
 
 An utterance event looks like this. The [Live transcription utterance webhook][utterance-webhook]
 reference lists every field:
@@ -805,7 +807,8 @@ swml.say("Thanks. A driver is on the way. Goodbye.");
 </CodeBlock>
 </CodeBlocks>
 
-The server prints a `Summary so far:` line when the summary arrives. To summarize at a moment the
+The server prints a `Summary so far:` line when the summary arrives. If no summary could be
+produced, the event still arrives, with `conversation_summary` set to `Error creating summary`. To summarize at a moment the
 document doesn't know in advance, run a section with the action through
 [`execute`][swml-execute], or send it from Relay or REST.
 
@@ -901,7 +904,8 @@ swml.live_transcribe({ action: "stop" });
 
 ### Stop live transcription via WebSocket (Relay)
 
-Send the `stop` action. Every surface accepts it either as the string `stop` or as a `stop` key with an empty object:
+Send the `stop` action. SignalWire accepts it either as the string `stop` or as a `stop` key with
+an empty object. The Relay clients take the object form, and the REST clients take the string:
 
 <CodeBlocks>
 <CodeBlock title="Python — Relay client">
@@ -944,7 +948,8 @@ stops that session, which sends its end-of-session event, and starts a new one.
 ## Transcribe the whole call after it ends
 
 When you only need the call's text once it's over, [`transcribe`][swml-transcribe] is simpler:
-there are no options to set and no events during the call. SignalWire captures the call in the
+there are no options to set and no events during the call. It transcribes only U.S. English
+(`en-US`), so use `live_transcribe` for any other language. SignalWire captures the call in the
 background and, after the call ends, posts the text to your `status_url` as a
 `calling.transcript.completed` event. Only one `transcribe` can run on a call at a time.
 
@@ -1026,7 +1031,7 @@ sections:
 </CodeBlocks>
 
 To try it, swap these lines into the [transcription server](#run-the-transcription-server) in place
-of its `live_transcribe` document and call your number again. After you hang up, the server prints
+of its service and `live_transcribe` document, and call your number again. After you hang up, the server prints
 `calling.transcript.completed:` followed by the call's text.
 
 `transcribe` sets `transcribe_result` to `success` or `failed`. To end it before the call does,
