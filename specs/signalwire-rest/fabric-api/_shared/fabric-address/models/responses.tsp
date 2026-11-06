@@ -1,11 +1,15 @@
 import "./core.tsp";
 
 model FabricAddressesResponse {
-  @doc("An array of objects containing a list of Resource Addresses")
-  data: FabricAddress[];
-
   @doc("Object containing pagination links")
   links: FabricAddressPaginationResponse;
+
+  @doc("The number of addresses in this page of results.")
+  @example(1)
+  items_count: int32;
+
+  @doc("An array of objects containing a list of Resource Addresses")
+  data: FabricClientAddress[];
 }
 
 model FabricAddressPaginationResponse {

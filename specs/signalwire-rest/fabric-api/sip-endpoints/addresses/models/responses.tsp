@@ -24,6 +24,6 @@ model SipEndpointAddressPaginationResponse {
   next?: url;
 
   @doc("Link to the previous page")
-  @example("https://example.signalwire.com/api/fabric/resources/sip_endpoints/7ecfd15a-fb9a-45a4-9b89-c0740a44c593/addresses?page_number=0&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca&type=sip_endpoint")
+  @example("https://example.signalwire.com/api/fabric/resources/sip_endpoints/7ecfd15a-fb9a-45a4-9b89-c0740a44c593/addresses?page_number=0&page_size=50&page_token=PBbff61159-faab-48b3-959a-3021a8f5beca&type=sip_endpoint")
   prev?: url;
 }

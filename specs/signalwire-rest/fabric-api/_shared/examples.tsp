@@ -45,6 +45,18 @@ const CALL_FLOW_RESPONSE_EXAMPLE = #{
   call_flow: CALL_FLOW_EXAMPLE,
 };
 
+// The Update call flow example renames CALL_FLOW_EXAMPLE and saves revision 2,
+// keeping its flow_data and relayml.
+const CALL_FLOW_UPDATED_RESPONSE_EXAMPLE = #{
+  ...CALL_FLOW_RESPONSE_EXAMPLE,
+  display_name: "Updated Welcome Call Flow",
+  call_flow: #{
+    ...CALL_FLOW_EXAMPLE,
+    title: "Updated Welcome Call Flow",
+    document_version: 2,
+  },
+};
+
 const CALL_FLOW_VERSION_EXAMPLE = #{
   id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
   version: "1.0.0",

@@ -28,7 +28,7 @@ namespace SignalWireAPI.Fabric.SubscriberRefreshTokens {
     @post
     create(...SubscriberRefreshTokenRequest):
       | {
-          @statusCode statusCode: 201;
+          @statusCode statusCode: 200;
           @body subscriber_refresh_token: SubscriberRefreshTokenResponse;
         }
       | StatusCode401

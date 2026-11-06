@@ -58,7 +58,7 @@ namespace SignalWireAPI.Fabric.CXMLScripts {
     @post
     create(@body request: CXMLScriptCreateRequest):
       | {
-          @statusCode statusCode: 200;
+          @statusCode statusCode: 201;
           @body cxml_script: CXMLScriptResponse;
         }
       | StatusCode401

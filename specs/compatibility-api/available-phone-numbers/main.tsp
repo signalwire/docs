@@ -42,7 +42,9 @@ namespace CompatibilityAPI.AvailablePhoneNumbers {
     @summary("Search for available phone numbers that match your criteria.")
     @doc("""
       Searches SignalWire inventory for local phone numbers available in one ISO country. Results are candidates, not project resources, until purchased through Incoming Phone Numbers or the native purchase operation. Use the [toll-free search](/docs/compatibility-api/rest/available-phone-numbers/search-toll-free-available-phone-numbers) for toll-free inventory, or native [Search phone numbers](/docs/apis/rest/phone-numbers/search-available-phone-numbers) for the JSON API.
-      
+
+      Each request returns up to 100 numbers. The response has no next page, and paging parameters such as `PageSize` don't change the number of results. To see other numbers, narrow the search with `AreaCode`, `InRegion`, `InLocality`, or `Contains`.
+
       ${tokenPermissions<"_Numbers_">}
       """)
     @route("/{IsoCountry}/Local")

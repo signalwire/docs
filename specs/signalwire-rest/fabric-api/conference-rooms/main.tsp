@@ -57,7 +57,7 @@ namespace SignalWireAPI.Fabric.ConferenceRooms {
     @post
     create(@body request: ConferenceRoomCreateRequest):
       | {
-          @statusCode statusCode: 200;
+          @statusCode statusCode: 201;
           @body conference_room: ConferenceRoomResponse;
         }
       | StatusCode401

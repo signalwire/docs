@@ -35,7 +35,9 @@ namespace SignalWireAPI.RelayRest.VerifiedCallerID {
     @operationId("create_verified_caller_id")
     @summary("Create verified caller ID")
     @doc("""
-      Starts verification of an external phone number for use as an outbound caller ID and sends a verification code to that number. Use it when presenting a number the project does not own; use a purchased or imported project number directly instead. Complete the flow with [Validate verification code](/docs/apis/rest/verified-caller-id/validate-verification-code).
+      Starts verification of an external phone number for use as an outbound caller ID. Use it when presenting a number the project does not own; use a purchased or imported project number directly instead.
+
+      Creating the record immediately places a voice call to `number` that reads out a 6-digit verification code, so have the phone ready before you send the request. Complete the flow by submitting that code with [Validate verification code](/docs/apis/rest/verified-caller-id/validate-verification-code). Verification calls to the same number are limited to one per minute; requesting another call sooner, through this operation or [Redial verification call](/docs/apis/rest/verified-caller-id/redial-verification-call), returns `422`.
       
       ${tokenPermissions<"_Voice_">}
       """)
@@ -83,8 +85,8 @@ namespace SignalWireAPI.RelayRest.VerifiedCallerID {
     @operationId("redial_verification_call")
     @summary("Redial verification call")
     @doc("""
-      Places another verification call for a pending external caller-ID record. Use it when the original verification call or code was missed, then submit the new code through [Validate verification code](/docs/apis/rest/verified-caller-id/validate-verification-code).
-      
+      Places another verification call for a pending external caller-ID record. Use it when the original verification call or code was missed, then submit the new code through [Validate verification code](/docs/apis/rest/verified-caller-id/validate-verification-code). Wait at least a minute after the previous verification call, including the one placed by [Create verified caller ID](/docs/apis/rest/verified-caller-id/create-verified-caller-id); a sooner request returns `422`.
+
       ${tokenPermissions<"_Voice_">}
       """)
     @route("/{id}/verification")
@@ -93,6 +95,7 @@ namespace SignalWireAPI.RelayRest.VerifiedCallerID {
       | VerifiedCallerIDResponse
       | StatusCode401
       | StatusCode404
+      | ValidationError
       | StatusCode500;
 
     @operationId("validate_verification_code")

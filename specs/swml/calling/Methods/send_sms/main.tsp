@@ -6,12 +6,20 @@ namespace SWML.Calling;
 
 @summary("SMSBase object")
 model SMSBase {
-  @doc("Phone number to send SMS message to in E.164 format.")
+  @doc("""
+    Phone number to send SMS message to in E.164 format.
+    Must not be empty, including after variable expansion.
+    """)
   @example("+15559876543")
+  @minLength(1)
   to_number: string;
 
-  @doc("Phone number the SMS message will be sent from in E.164 format.")
+  @doc("""
+    Phone number the SMS message will be sent from in E.164 format.
+    Must not be empty, including after variable expansion.
+    """)
   @example("+15551234567")
+  @minLength(1)
   from_number: string;
 
   @doc("Region of the world to originate the message from. Chosen based on account preferences or device location if not specified.")
@@ -29,8 +37,12 @@ model SMSBase {
 
 @summary("SMS")
 model SMSWithBody is SMSBase {
-  @doc("Required if `media` is not present. The body of the SMS message.")
+  @doc("""
+    Required if `media` is not present. The body of the SMS message.
+    Must not be empty, including after variable expansion, when no `media` is sent.
+    """)
   @example("Your order has been confirmed. Thank you!")
+  @minLength(1)
   body: string;
 }
 
