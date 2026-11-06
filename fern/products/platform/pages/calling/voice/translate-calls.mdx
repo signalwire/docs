@@ -1,0 +1,1037 @@
+---
+title: Translate calls
+slug: voice/translate-calls
+description: Translate a live call between two languages with SWML, Relay, or REST so each party hears the other in their own language, then read the translated conversation on your webhook, choose voices and tone filters, get AI summaries, and stop translating.
+subtitle: Let two people talk across languages on one call
+max-toc-depth: 3
+---
+
+[make-and-receive-calls]: /docs/platform/voice/make-and-receive-calls
+[prepare-calls]: /docs/platform/voice/make-and-receive-calls#prepare-for-your-first-call
+[answer-swml]: /docs/platform/voice/make-and-receive-calls#answer-a-call-via-swml
+[answer-relay]: /docs/platform/voice/make-and-receive-calls#answer-a-call-via-websocket-relay
+[forward-calls]: /docs/platform/voice/forward-calls
+[caller-id]: /docs/platform/voice/how-to-set-caller-id-or-cnam
+[trial-mode]: /docs/platform/trial-mode
+[resources]: /docs/platform/resources
+[server-sdks]: /docs/server-sdks
+[relay-guide]: /docs/server-sdks/guides/relay-client
+[swml-intro]: /docs/swml
+[browser-sdk]: /docs/browser-sdk
+[cfb-intro]: /docs/call-flow-builder
+[call-commands]: /docs/apis/rest/calls/call-commands
+[swml-live-translate]: /docs/swml/reference/calling/live-translate
+[swml-connect]: /docs/swml/reference/calling/connect
+[verify-signature]: /docs/platform/webhooks#verify-webhook-signature
+[tts]: /docs/platform/voice/tts
+[tts-azure]: /docs/platform/voice/tts/azure
+[tts-elevenlabs]: /docs/platform/voice/tts/elevenlabs
+[transcribe-calls]: /docs/platform/voice/transcribe-calls
+
+Live translation lets two people who speak different languages talk on one call. SignalWire
+recognizes what each person says, translates it, and speaks the translation to the other person in a
+synthesized voice. Start by translating a call to your number, with a small server that prints each
+translated utterance, then start translation from code, read the translated conversation on your
+webhook, choose voices and tone filters, get AI summaries, and stop translating.
+
+## Pick the right product for call translation
+
+Translation is available across these products, but not every function is available on each.
+
+| Function | SWML | WebSocket (Relay) | REST | Browser SDK | Call Flow Builder |
+|---|---|---|---|---|---|
+| Translate both sides of a call as it happens | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> |
+| Get each translated utterance on your webhook as it's spoken | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> |
+| Get an AI summary of the conversation, during or after the call | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> |
+| Stop translating before the call ends | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-check" color="var(--status-success)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> | <Icon icon="regular circle-xmark" color="var(--status-error)" /> |
+
+- [SWML][swml-intro] is the document that describes how the call should flow. The Server SDKs'
+  SWML builder writes it, or you can write it by hand.
+- [WebSocket (Relay)][relay-guide], a Server SDK namespace, holds a live WebSocket connection to a
+  call in progress and controls it from code.
+- The [REST Calling API][call-commands] sends the same commands as Relay to a call in progress over
+  HTTP, by call ID, from any process.
+- The [Browser SDK][browser-sdk] places and answers calls in a web page. Translation is started by
+  the server-side products above.
+- [Call Flow Builder][cfb-intro] draws call flows on a canvas, with a node for each step of the
+  call. Translation is started by the products above.
+
+## Prepare for call translation
+
+This guide answers and forwards calls the way [Make and receive calls][make-and-receive-calls] and
+[Forward calls][forward-calls] do. Have these values ready:
+
+- Your Space URL, such as `<YOUR_SPACE>.signalwire.com`.
+- Your Project ID and an API token with the **Voice** permission.
+- A phone number in your Space.
+- Two phones you can answer: one to call your number from, and one that receives the translated
+  call. Ask a second person to answer it, or put both phones in front of you.
+- A machine that can run a small server, and a tunnel such as [ngrok](https://ngrok.com/) that
+  gives it a public HTTPS URL.
+
+<Warning title="Trial projects only call and receive calls from verified numbers">
+A [trial project][trial-mode] only places calls to and receives calls from numbers you've
+purchased or verified, and can't call internationally. Verify both phones you'll test with, as
+[Prepare for your first call][prepare-calls] shows.
+</Warning>
+
+<Warning title="Translating a call can require consent">
+Translation captures what people say on the call and sends the text to your webhook. Many
+jurisdictions require you to tell callers before you record or transcribe them. Check the rules that
+apply to your callers before you translate a real conversation.
+</Warning>
+
+If you only need the text of a call in one language, see [Transcribe calls][transcribe-calls]
+instead.
+
+Replace these values in the samples you run:
+
+| Value | Replace with |
+|---|---|
+| `<YOUR_SPACE>` | Your Space's subdomain in `<YOUR_SPACE>.signalwire.com` |
+| `<YOUR_PROJECT_ID>` | Your Project ID |
+| `<YOUR_API_TOKEN>` | Your API token with the Voice permission, used only in server code |
+| `<YOUR_PUBLIC_HOST>` | The public hostname of your server's tunnel |
+| `<YOUR_BASIC_AUTH_PASSWORD>` | A password you choose for the SWML your server serves |
+| `<YOUR_TRANSLATION_WEBHOOK_URL>` | Your server's translation webhook, `https://<YOUR_PUBLIC_HOST>/translations` |
+| `<YOUR_DESTINATION>` | The phone that receives the translated call, in E.164 format, such as `+12025550123` |
+| `<YOUR_CALLER_ID>` | Your SignalWire phone number, or a [verified caller ID][caller-id], in E.164 format, when Relay connects the call |
+| `<YOUR_CALL_ID>` | The ID of a live call, when you send a command over REST |
+
+## How call translation works
+
+The [`live_translate`][swml-live-translate] method, `call.live_translate()` in Relay, and the
+`calling.live_translate` REST command all take the same `action`: `start` a session, `summarize`
+it, or `stop` it. `start` names two languages, `from_lang` and `to_lang`, and lists the sides of the
+call to translate in `direction`:
+
+- `remote-caller` is the audio SignalWire receives from the call: the person who called your
+  number, or the person your app dialed.
+- `local-caller` is the audio SignalWire sends into the call, such as the other party of a
+  [`connect`][swml-connect].
+
+For each side you list, SignalWire mutes that person's own voice and plays the translation in its
+place, so the listener hears only the translated speech. With both sides listed, each person hears
+only the other's translation. A side you leave out passes through untouched.
+
+Bayview Taxi uses this for riders who call in Spanish. Their calls are connected to Ada, a
+dispatcher who speaks English. Every sample in this guide starts translation with the same values:
+
+```json
+{
+  "from_lang": "es-ES",
+  "to_lang": "en-US",
+  "direction": ["local-caller", "remote-caller"]
+}
+```
+
+With those values, each person speaks and hears one language:
+
+| Person | Side of the call | Speaks | Hears the other person in |
+|---|---|---|---|
+| The rider, who calls your number | `remote-caller` | Spanish, the `from_lang` | Spanish, in the `from_voice` voice |
+| Ada, whom the call connects to | `local-caller` | English, the `to_lang` | English, in the `to_voice` voice |
+
+The order of `direction` decides which side speaks which language. With `local-caller` listed
+first, as here, the caller speaks `from_lang` and the connected party speaks `to_lang`. Listing
+`remote-caller` first swaps the two, so keep this order and change the languages to fit your
+callers. `from_voice` always speaks `from_lang`, and `to_voice` always speaks `to_lang`. When you
+list one side only, that side speaks `to_lang`, and the other person hears it in `from_lang`.
+
+The `local-caller` side carries a voice only once another party is on the call, so the samples
+start translation, then `connect` the caller to Ada. Translation runs in the background: after
+`start`, the call moves on to its next step at once.
+
+When the session has a `webhook`, SignalWire sends it HTTP `POST` requests: one for each translated
+utterance when `live_events` is `true`, one when you ask for a summary, and one with the whole
+conversation when the session ends.
+
+## Translate a call
+
+Every sample in this guide sends translation events to one small server that prints them. Run it
+first, then start translation from the product your app uses.
+
+### Translate a call via SWML
+
+When someone calls your number, SignalWire fetches the call's SWML from your server and runs it.
+The server below serves that document and receives the translation events, so one tunnel covers
+both.
+
+<Steps>
+
+<Step title="Run the translation server" id="run-the-translation-server">
+
+This server answers calls with a SWML document that starts translation and connects the caller to
+your second phone. It prints each translated utterance that arrives at `/translations`. The
+document is served only to requests that carry the username `signalwire` and the password you set.
+
+<CodeBlocks>
+<CodeBlock title="Python — SWML builder">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1 fastapi "uvicorn[standard]"
+# Save as translate_app.py and run: python translate_app.py
+import uvicorn
+from fastapi import FastAPI, Request
+from signalwire import SWMLBuilder, SWMLService
+
+service = SWMLService(
+    name="translate-call",
+    basic_auth=("signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"),
+)
+swml = SWMLBuilder(service)
+swml.answer().live_translate(action={
+    "start": {
+        "from_lang": "es-ES",
+        "to_lang": "en-US",
+        "direction": ["local-caller", "remote-caller"],
+        "webhook": "<YOUR_TRANSLATION_WEBHOOK_URL>",
+        "live_events": True,
+    }
+}).connect(to="<YOUR_DESTINATION>")
+
+app = FastAPI()
+# SignalWire fetches the call's SWML from the server's root URL.
+app.include_router(service.as_router())
+
+
+# Translation events arrive at /translations.
+@app.post("/translations")
+async def translations(request: Request):
+    event = await request.json()
+    kind = event["channel_data"]["content_disposition"]
+    if kind == "translate.translate_utterance":
+        for key in ("primary_utterance", "secondary_utterance"):
+            utterance = event.get(key)
+            if utterance:
+                print(f"{utterance['role']} [{utterance['lang']}]: {utterance['content']}")
+    elif kind == "translate.live_summary":
+        for key in ("primary_conversation_summary", "secondary_conversation_summary"):
+            if event.get(key):
+                print(f"Summary so far: {event[key]}")
+    elif kind == "translate.conversation_log":
+        print(f"Translation ended after {len(event['primary_conversation_log'])} utterances")
+        for key in ("primary_conversation_summary", "secondary_conversation_summary"):
+            if event.get(key):
+                print(f"Summary: {event[key]}")
+    return {}
+
+
+uvicorn.run(app, host="0.0.0.0", port=8080)
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — SWML builder">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5 @hono/node-server hono
+// This sample also runs as JavaScript: save as translate-app.mjs,
+// then run: node translate-app.mjs
+import { serve } from "@hono/node-server";
+import { Hono } from "hono";
+import { SWMLService } from "@signalwire/sdk";
+
+const service = new SWMLService({
+  name: "translate-call",
+  basicAuth: ["signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"],
+});
+const swml = service.getBuilder();
+swml.answer().live_translate({
+  action: {
+    start: {
+      from_lang: "es-ES",
+      to_lang: "en-US",
+      direction: ["local-caller", "remote-caller"],
+      webhook: "<YOUR_TRANSLATION_WEBHOOK_URL>",
+      live_events: true,
+    },
+  },
+}).connect({ to: "<YOUR_DESTINATION>" });
+
+const app = new Hono();
+
+// Translation events arrive at /translations.
+app.post("/translations", async (c) => {
+  const event = await c.req.json();
+  const kind = event.channel_data.content_disposition;
+  if (kind === "translate.translate_utterance") {
+    for (const utterance of [event.primary_utterance, event.secondary_utterance]) {
+      if (utterance) console.log(`${utterance.role} [${utterance.lang}]: ${utterance.content}`);
+    }
+  } else if (kind === "translate.live_summary") {
+    for (const summary of [event.primary_conversation_summary, event.secondary_conversation_summary]) {
+      if (summary) console.log(`Summary so far: ${summary}`);
+    }
+  } else if (kind === "translate.conversation_log") {
+    console.log(`Translation ended after ${event.primary_conversation_log.length} utterances`);
+    for (const summary of [event.primary_conversation_summary, event.secondary_conversation_summary]) {
+      if (summary) console.log(`Summary: ${summary}`);
+    }
+  }
+  return c.json({});
+});
+
+// SignalWire fetches the call's SWML from the server's root URL.
+app.route("/", service.getApp());
+
+serve({ fetch: app.fetch, port: 8080 });
+console.log("Listening on port 8080");
+```
+</CodeBlock>
+</CodeBlocks>
+
+Start a tunnel to port `8080`, such as `ngrok http 8080`, and use its hostname as
+`<YOUR_PUBLIC_HOST>` in the webhook URL before you start the server. Check that the document is
+reachable through the tunnel:
+
+```bash
+curl -u "signalwire:<YOUR_BASIC_AUTH_PASSWORD>" "https://<YOUR_PUBLIC_HOST>/"
+```
+
+The response is the SWML document, starting with `{"version": "1.0.0"`. A `401` means the password
+doesn't match the one in your server.
+
+</Step>
+
+<Step title="Point your phone number at the server" id="point-your-phone-number-at-the-server">
+
+Create a SWML Script that fetches the document from your server:
+
+1. Open **My Resources**, select **+ Add**, then **Script**, then **SWML Script**.
+2. Name it **Translate call** and leave **Used For** set to **Calling**.
+3. Under **Handle Calls Using**, choose **External URL** and enter
+   `https://signalwire:<YOUR_BASIC_AUTH_PASSWORD>@<YOUR_PUBLIC_HOST>/` in **Primary Script URL**.
+4. Select **Create**.
+
+Then assign the script, a [Resource][resources], to your phone number:
+
+<Markdown src="/snippets/common/dashboard/_assign-resource-to-number.mdx" />
+
+To do both in code, see [Answer a call via SWML][answer-swml].
+
+</Step>
+
+<Step title="Call your number and speak Spanish" id="call-your-number-and-speak-via-swml">
+
+Call your SignalWire number from your first phone, and answer your second phone when it rings. Say
+something in Spanish on the first phone, such as "Necesito un taxi al aeropuerto." The second phone
+hears it in English, in a synthesized voice, and never hears the Spanish. Answer in English on the
+second phone, and the first phone hears Spanish.
+
+The server prints each utterance in both languages, with the side of the call that spoke:
+
+```text
+remote-caller [es-ES]: Necesito un taxi al aeropuerto.
+remote-caller [en-US]: I need a taxi to the airport.
+local-caller [es-ES]: Claro. ¿Cuál es la dirección de recogida?
+local-caller [en-US]: Sure. What's the pickup address?
+```
+
+Your wording and the translations will differ. When either phone hangs up, the server prints
+`Translation ended after` with the number of utterances. If it doesn't work, see
+[Troubleshoot call translation](#troubleshoot-call-translation).
+
+</Step>
+
+</Steps>
+
+The same document in YAML and JSON, to paste into a hosted SWML Script instead:
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - answer: {}
+    - live_translate:
+        action:
+          start:
+            from_lang: es-ES
+            to_lang: en-US
+            direction:
+              - local-caller
+              - remote-caller
+            webhook: <YOUR_TRANSLATION_WEBHOOK_URL>
+            live_events: true
+    - connect:
+        to: <YOUR_DESTINATION>
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      { "answer": {} },
+      {
+        "live_translate": {
+          "action": {
+            "start": {
+              "from_lang": "es-ES",
+              "to_lang": "en-US",
+              "direction": ["local-caller", "remote-caller"],
+              "webhook": "<YOUR_TRANSLATION_WEBHOOK_URL>",
+              "live_events": true
+            }
+          }
+        }
+      },
+      { "connect": { "to": "<YOUR_DESTINATION>" } }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### Start translation on a live call via WebSocket (Relay)
+
+Start translation on an answered call with `call.live_translate()`, passing the same `action` the
+SWML method takes. Translation events still go to your webhook, so keep the
+[translation server](#run-the-translation-server) and its tunnel running.
+
+This handler subscribes to the `translate-calls` topic. When a call arrives, it answers, starts
+translation, and connects the caller to your second phone. It hangs up when the connected call
+ends.
+
+<CodeBlocks>
+<CodeBlock title="Python — Relay client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as translate_call_relay.py and run: python translate_call_relay.py
+from signalwire.relay import ConnectEvent, RelayClient
+
+client = RelayClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    contexts=["translate-calls"],
+)
+
+@client.on_call
+async def handle_call(call):
+    async def on_connect(event: ConnectEvent):
+        print(f"Connect: {event.connect_state}")
+        if event.connect_state in ("disconnected", "failed") and call.state != "ended":
+            await call.hangup()
+
+    call.on("calling.call.connect", on_connect)
+    await call.answer()
+    await call.live_translate({
+        "start": {
+            "from_lang": "es-ES",
+            "to_lang": "en-US",
+            "direction": ["local-caller", "remote-caller"],
+            "webhook": "<YOUR_TRANSLATION_WEBHOOK_URL>",
+            "live_events": True,
+        }
+    })
+    await call.connect(
+        devices=[[{
+            "type": "phone",
+            "params": {
+                "from_number": "<YOUR_CALLER_ID>",
+                "to_number": "<YOUR_DESTINATION>",
+                "timeout": 30,
+            },
+        }]],
+    )
+    await call.wait_for_ended()
+
+client.run()
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — Relay client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as translate-call-relay.mjs,
+// then run: node translate-call-relay.mjs
+import { RelayClient } from "@signalwire/sdk";
+
+const client = new RelayClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  contexts: ["translate-calls"],
+});
+
+client.onCall(async (call) => {
+  call.on("calling.call.connect", async (event) => {
+    const state = event.params.connect_state;
+    console.log(`Connect: ${state}`);
+    if ((state === "disconnected" || state === "failed") && call.state !== "ended") {
+      await call.hangup();
+    }
+  });
+  await call.answer();
+  await call.liveTranslate({
+    start: {
+      from_lang: "es-ES",
+      to_lang: "en-US",
+      direction: ["local-caller", "remote-caller"],
+      webhook: "<YOUR_TRANSLATION_WEBHOOK_URL>",
+      live_events: true,
+    },
+  });
+  await call.connect([[{
+    type: "phone",
+    params: {
+      from_number: "<YOUR_CALLER_ID>",
+      to_number: "<YOUR_DESTINATION>",
+      timeout: 30,
+    },
+  }]]);
+  await call.waitForEnded();
+});
+
+await client.run();
+```
+</CodeBlock>
+</CodeBlocks>
+
+The `action` keys are sent to SignalWire as written, so they stay in snake_case in TypeScript too.
+Run the handler, then create a Relay Application with `translate-calls` as its **Topic** and assign
+it to your phone number in place of the SWML Script, as
+[Answer a call via WebSocket (Relay)][answer-relay] shows. Call your number and speak Spanish: the
+handler prints `Connect: connected` when your second phone answers, and the translation server prints
+each utterance as in the SWML walkthrough.
+
+To start translation on a call your process doesn't hold, send the `calling.live_translate` command
+with the answered call's ID and a `start` action. The call ID is the `id` from a `dial` response, or
+the `call_id` delivered to your SWML endpoint or webhook. The [Server SDKs][server-sdks] wrap the
+command:
+
+<CodeBlocks>
+<CodeBlock title="Python — REST client">
+```python
+# Install: python -m pip install signalwire-sdk==3.4.1
+# Save as translate_rest.py and run: python translate_rest.py
+from signalwire.rest import RestClient
+
+client = RestClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    host="<YOUR_SPACE>.signalwire.com",
+)
+
+client.calling.live_translate(
+    "<YOUR_CALL_ID>",
+    action={
+        "start": {
+            "from_lang": "es-ES",
+            "to_lang": "en-US",
+            "direction": ["local-caller", "remote-caller"],
+            "webhook": "<YOUR_TRANSLATION_WEBHOOK_URL>",
+            "live_events": True,
+        }
+    },
+)
+print("Translation started")
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — REST client">
+```typescript
+// Install: npm install @signalwire/sdk@2.0.5
+// This sample also runs as JavaScript: save as translate-rest.mjs,
+// then run: node translate-rest.mjs
+import { RestClient } from "@signalwire/sdk";
+
+const client = new RestClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  host: "<YOUR_SPACE>.signalwire.com",
+});
+
+await client.calling.liveTranslate("<YOUR_CALL_ID>", {
+  action: {
+    start: {
+      from_lang: "es-ES",
+      to_lang: "en-US",
+      direction: ["local-caller", "remote-caller"],
+      webhook: "<YOUR_TRANSLATION_WEBHOOK_URL>",
+      live_events: true,
+    },
+  },
+});
+console.log("Translation started");
+```
+</CodeBlock>
+</CodeBlocks>
+
+To try it, run the program while a forwarded call from [Forward calls][forward-calls] is up and both
+phones are talking. The translation server starts printing utterances as soon as the command
+succeeds. To call the REST API directly, send this request to [Call commands][call-commands]. The
+reference example sets `from_lang` to `en-US` and `to_lang` to `es-ES`, and also sets voices, a tone
+filter, an AI summary, and the speech engine. Swap the two languages and leave out `from_voice`, `to_voice`,
+`filter_from`, `ai_summary`, and `speech_engine` to match the program above:
+
+<EndpointRequestSnippet endpoint="POST /api/calling/calls" example="calling.live_translate" />
+
+Sending `start` again with the same languages while a session runs changes nothing. With different
+languages, it restarts translation in the new ones.
+
+## Read translation events on your webhook
+
+Each request is a JSON `POST`. Read `channel_data.content_disposition` first, then the fields for
+that event:
+
+| `content_disposition` | Sent | Fields to read |
+|---|---|---|
+| `translate.translate_utterance` | Once per translated utterance, when `live_events` is `true` | `primary_utterance`, `secondary_utterance` |
+| `translate.live_summary` | When you send `summarize` | `primary_conversation_summary`, `secondary_conversation_summary` |
+| `translate.conversation_log` | Once, when the session ends | `primary_conversation_log`, `secondary_conversation_log`, and their summaries when `ai_summary` is `true` |
+
+Every event carries the conversation in both languages. The `primary_` fields hold it in
+`from_lang`, and the `secondary_` fields hold it in `to_lang`. `role` says which side of the call
+spoke, using the values you passed in `direction`. Every event also carries `channel_data.call_id`,
+so one server can follow several calls at once.
+
+An utterance event looks like this, shortened to the fields the translation server reads:
+
+```json
+{
+  "channel_data": {
+    "content_type": "text/json",
+    "content_disposition": "translate.translate_utterance",
+    "call_id": "76ac3c36-56da-4a3e-a0d6-b5f8df6da9ad"
+  },
+  "primary_utterance": {
+    "role": "remote-caller",
+    "lang": "es-ES",
+    "content": "Necesito un taxi al aeropuerto.",
+    "utterance_id": "0b6f3c1e-8a52-4a8f-9a8e-2f1d7c9e4b10"
+  },
+  "secondary_utterance": {
+    "role": "remote-caller",
+    "lang": "en-US",
+    "content": "I need a taxi to the airport.",
+    "utterance_id": "0b6f3c1e-8a52-4a8f-9a8e-2f1d7c9e4b10"
+  }
+}
+```
+
+Each utterance can also carry `confidence`, the recognizer's confidence in the text, and
+`filter_type` and `filter_value` when a [tone filter](#translation-options-voices-tone-filters-and-speech-detection)
+rewrote it.
+
+The event sent when the session ends carries the whole conversation in order, in each language. It
+also carries `translate_data`, which lists each translated side with the language it was spoken in
+and the language it was translated to. Log entries name their language in `language`:
+
+```json
+{
+  "channel_data": {
+    "content_type": "text/json",
+    "content_disposition": "translate.conversation_log",
+    "call_id": "76ac3c36-56da-4a3e-a0d6-b5f8df6da9ad"
+  },
+  "translate_data": {
+    "remote-caller": { "role": "remote-caller", "from_language": "es-ES", "to_language": "en-US" },
+    "local-caller": { "role": "local-caller", "from_language": "en-US", "to_language": "es-ES" }
+  },
+  "primary_conversation_log": [
+    { "role": "remote-caller", "language": "es-ES", "content": "Necesito un taxi al aeropuerto." },
+    { "role": "local-caller", "language": "es-ES", "content": "Claro. ¿Cuál es la dirección de recogida?" }
+  ],
+  "secondary_conversation_log": [
+    { "role": "remote-caller", "language": "en-US", "content": "I need a taxi to the airport." },
+    { "role": "local-caller", "language": "en-US", "content": "Sure. What's the pickup address?" }
+  ]
+}
+```
+
+SignalWire sends this event whenever the session has a `webhook`, whether the session ended because
+you stopped it or because the call ended. A summary you request mid-call carries
+`primary_conversation_summary` and `secondary_conversation_summary`, one summary for each
+conversation log.
+
+Answer each request with a `2xx` status, and do slow work after you respond. SignalWire retries an
+utterance event that fails to connect or gets a `5xx` status, so a slow handler can receive the same
+utterance more than once. Use `utterance_id` to ignore repeats.
+
+<Tip title="Protect your webhooks">
+Every request carries an `X-SignalWire-Signature` header, so your server can confirm it came from
+SignalWire, as [Verify webhook signature][verify-signature] shows. You can also put a username and
+password in the webhook URL, as in `https://<USERNAME>:<PASSWORD>@<YOUR_PUBLIC_HOST>/translations`,
+and SignalWire sends them as HTTP Basic authentication.
+</Tip>
+
+## Translation options: voices, tone filters, and speech detection
+
+`start` takes more options alongside the languages. The same options work in SWML, Relay, and REST.
+The [`live_translate` reference][swml-live-translate] lists every option.
+
+### Choose the voices for each language
+
+`from_voice` speaks the `from_lang` translations, and `to_voice` speaks the `to_lang`
+translations. Without them, both use `azure.en-US-RyanMultilingualNeural`. A voice is the engine
+name in lowercase, a dot, and the voice ID, such as `azure.es-ES-ElviraNeural` or `elevenlabs.josh`.
+The engine prefix is case-sensitive: a voice whose engine prefix SignalWire doesn't recognize, such
+as a capitalized one, falls back to the default voice. The [text-to-speech voices][tts] pages
+list each engine's voices and languages, such as [Azure][tts-azure] and [ElevenLabs][tts-elevenlabs].
+
+### Change the tone of the translation with filters
+
+A filter rewrites the translation in a tone you choose before it's spoken.
+`filter_from` applies to speech in `from_lang`, here what the rider says, and `filter_to` applies to
+speech in `to_lang`, here what Ada says. Use a preset or your own instruction:
+
+| Value | The translation is |
+|---|---|
+| `polite` | Stripped of insults, keeping the speaker's sentiment |
+| `rude` | Given insults, keeping the speaker's sentiment |
+| `professional` | Stripped of slang |
+| `shakespeare` | Rewritten in iambic pentameter |
+| `gen-z` | Rewritten in Gen Z slang |
+| `prompt:<instruction>` | Rewritten as your instruction says, such as `prompt:Use formal business language` |
+
+Set `from_lang` and `to_lang` to the same language and add a filter to rewrite the tone of a call
+without translating it. Without a filter, a same-language session repeats each person's words in the
+synthesized voice.
+
+This change to the [first run's](#translate-a-call-via-swml) `start` action has the rider hear Ada
+in an Azure Spanish voice and Ada hear the rider in an ElevenLabs voice, and keeps the rider's words
+polite for Ada:
+
+<CodeBlocks>
+<CodeBlock title="Python — SWML builder">
+```python {7-9}
+swml.answer().live_translate(action={
+    "start": {
+        "from_lang": "es-ES",
+        "to_lang": "en-US",
+        "direction": ["local-caller", "remote-caller"],
+        "webhook": "<YOUR_TRANSLATION_WEBHOOK_URL>",
+        "from_voice": "azure.es-ES-ElviraNeural",
+        "to_voice": "elevenlabs.josh",
+        "filter_from": "polite",
+        "live_events": True,
+    }
+}).connect(to="<YOUR_DESTINATION>")
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — SWML builder">
+```typescript {8-10}
+swml.answer().live_translate({
+  action: {
+    start: {
+      from_lang: "es-ES",
+      to_lang: "en-US",
+      direction: ["local-caller", "remote-caller"],
+      webhook: "<YOUR_TRANSLATION_WEBHOOK_URL>",
+      from_voice: "azure.es-ES-ElviraNeural",
+      to_voice: "elevenlabs.josh",
+      filter_from: "polite",
+      live_events: true,
+    },
+  },
+}).connect({ to: "<YOUR_DESTINATION>" });
+```
+</CodeBlock>
+<CodeBlock title="YAML">
+```yaml {9-11}
+- live_translate:
+    action:
+      start:
+        from_lang: es-ES
+        to_lang: en-US
+        direction:
+          - local-caller
+          - remote-caller
+        from_voice: azure.es-ES-ElviraNeural
+        to_voice: elevenlabs.josh
+        filter_from: polite
+        webhook: <YOUR_TRANSLATION_WEBHOOK_URL>
+        live_events: true
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json {7-9}
+{
+  "live_translate": {
+    "action": {
+      "start": {
+        "from_lang": "es-ES",
+        "to_lang": "en-US",
+        "from_voice": "azure.es-ES-ElviraNeural",
+        "to_voice": "elevenlabs.josh",
+        "filter_from": "polite",
+        "direction": ["local-caller", "remote-caller"],
+        "webhook": "<YOUR_TRANSLATION_WEBHOOK_URL>",
+        "live_events": true
+      }
+    }
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### Tune speech detection for your callers
+
+`speech_engine` picks the speech recognizer: `deepgram`, the default, or
+`google`. When the recognizer splits utterances too early or too late for your callers, tune
+`vad_silence_ms`, the silence in milliseconds that ends an utterance, `700` by default with Deepgram
+and `500` with Google. `vad_thresh`, `400` by default, sets how loud audio must be to count as
+speech.
+
+## Get AI summaries of the translated conversation
+
+Live translation can hand the conversation to an AI model and send you a summary of each
+conversation log, either once when the session ends or whenever you ask while the call is up.
+
+### Summarize the call when translation ends
+
+Add `ai_summary: true` to `start`, and optionally `ai_summary_prompt` to say what the summary should
+contain. The event sent when the session ends then includes `primary_conversation_summary` and
+`secondary_conversation_summary`. This change to the [first run's](#translate-a-call-via-swml)
+`start` action works the same way in Relay and REST:
+
+<CodeBlocks>
+<CodeBlock title="Python — SWML builder">
+```python {8-9}
+swml.answer().live_translate(action={
+    "start": {
+        "from_lang": "es-ES",
+        "to_lang": "en-US",
+        "direction": ["local-caller", "remote-caller"],
+        "webhook": "<YOUR_TRANSLATION_WEBHOOK_URL>",
+        "live_events": True,
+        "ai_summary": True,
+        "ai_summary_prompt": "List the pickup address, the destination, and the pickup time.",
+    }
+}).connect(to="<YOUR_DESTINATION>")
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — SWML builder">
+```typescript {9-10}
+swml.answer().live_translate({
+  action: {
+    start: {
+      from_lang: "es-ES",
+      to_lang: "en-US",
+      direction: ["local-caller", "remote-caller"],
+      webhook: "<YOUR_TRANSLATION_WEBHOOK_URL>",
+      live_events: true,
+      ai_summary: true,
+      ai_summary_prompt: "List the pickup address, the destination, and the pickup time.",
+    },
+  },
+}).connect({ to: "<YOUR_DESTINATION>" });
+```
+</CodeBlock>
+<CodeBlock title="YAML">
+```yaml {11-12}
+- live_translate:
+    action:
+      start:
+        from_lang: es-ES
+        to_lang: en-US
+        direction:
+          - local-caller
+          - remote-caller
+        webhook: <YOUR_TRANSLATION_WEBHOOK_URL>
+        live_events: true
+        ai_summary: true
+        ai_summary_prompt: List the pickup address, the destination, and the pickup time.
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json {10-11}
+{
+  "live_translate": {
+    "action": {
+      "start": {
+        "from_lang": "es-ES",
+        "to_lang": "en-US",
+        "direction": ["local-caller", "remote-caller"],
+        "webhook": "<YOUR_TRANSLATION_WEBHOOK_URL>",
+        "live_events": true,
+        "ai_summary": true,
+        "ai_summary_prompt": "List the pickup address, the destination, and the pickup time."
+      }
+    }
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+After the call ends, the translation server prints each summary on a `Summary:` line.
+
+### Summarize a call in progress via WebSocket (Relay)
+
+Send the `summarize` action while translation is running to get a summary of the conversation so
+far, and keep translating. Its `prompt` and `webhook` are optional. An empty `summarize` object
+sends the summary to the webhook from `start` and uses the default summary prompt. In the
+[Relay handler](#start-translation-on-a-live-call-via-websocket-relay), add it wherever your app
+needs a summary. The REST client sends the same action to a call by ID:
+
+<CodeBlocks>
+<CodeBlock title="Python — Relay client">
+```python
+await call.live_translate({
+    "summarize": {"prompt": "Summarize the ride request in one sentence."}
+})
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — Relay client">
+```typescript
+await call.liveTranslate({
+  summarize: { prompt: "Summarize the ride request in one sentence." },
+});
+```
+</CodeBlock>
+<CodeBlock title="Python — REST client">
+```python
+client.calling.live_translate(
+    "<YOUR_CALL_ID>",
+    action={"summarize": {"prompt": "Summarize the ride request in one sentence."}},
+)
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — REST client">
+```typescript
+await client.calling.liveTranslate("<YOUR_CALL_ID>", {
+  action: { summarize: { prompt: "Summarize the ride request in one sentence." } },
+});
+```
+</CodeBlock>
+<CodeBlock title="cURL — Calling API">
+```bash
+curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
+  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "command": "calling.live_translate",
+    "id": "<YOUR_CALL_ID>",
+    "params": {
+      "action": {
+        "summarize": { "prompt": "Summarize the ride request in one sentence." }
+      }
+    }
+  }'
+```
+</CodeBlock>
+</CodeBlocks>
+
+When the summaries arrive, the translation server prints each one on a `Summary so far:` line.
+The cURL request goes to [Call commands][call-commands]. A SWML document can send the same action as
+a `live_translate` step.
+
+## Stop call translation
+
+A session stops by itself when the call ends. Stop it earlier with the `stop` action, which stops
+both sides at once. SignalWire then sends the
+[event for the end of the session](#read-translation-events-on-your-webhook) with everything
+translated until that point.
+
+### Stop call translation via SWML
+
+Set `action` to the string `stop`:
+
+<CodeBlocks>
+<CodeBlock title="Python — SWML builder">
+```python
+swml.live_translate(action="stop")
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — SWML builder">
+```typescript
+swml.live_translate({ action: "stop" });
+```
+</CodeBlock>
+<CodeBlock title="YAML">
+```yaml
+- live_translate:
+    action: stop
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{ "live_translate": { "action": "stop" } }
+```
+</CodeBlock>
+</CodeBlocks>
+
+### Stop call translation via WebSocket (Relay)
+
+The Relay samples send `stop` as a key with an empty object, and the REST samples send the string
+`stop`. The platform accepts either form:
+
+<CodeBlocks>
+<CodeBlock title="Python — Relay client">
+```python
+await call.live_translate({"stop": {}})
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — Relay client">
+```typescript
+await call.liveTranslate({ stop: {} });
+```
+</CodeBlock>
+<CodeBlock title="Python — REST client">
+```python
+client.calling.live_translate("<YOUR_CALL_ID>", action="stop")
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — REST client">
+```typescript
+await client.calling.liveTranslate("<YOUR_CALL_ID>", { action: "stop" });
+```
+</CodeBlock>
+<CodeBlock title="cURL — Calling API">
+```bash
+curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
+  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "command": "calling.live_translate",
+    "id": "<YOUR_CALL_ID>",
+    "params": { "action": "stop" }
+  }'
+```
+</CodeBlock>
+</CodeBlocks>
+
+To translate again, send a new `start` action.
+
+## Troubleshoot call translation
+
+Find the symptom you see:
+
+- **Each phone hears the other's own voice, untranslated.** Translation didn't start. Check that
+  `start` has `from_lang`, `to_lang`, and `direction`. A SWML document carries on with the call
+  when `start` is missing one of them, so the call connects without translation.
+- **The translations make no sense, or come out in the wrong language.** Each person is speaking the
+  other's language. Check the order of `direction` against
+  [How call translation works](#how-call-translation-works): with `local-caller` first, the caller
+  speaks `from_lang`.
+- **You hear a different voice from the one you set.** SignalWire didn't recognize the voice and used
+  the default. Check that the engine name is lowercase, as in `azure.es-ES-ElviraNeural`.
+- **The call connects and translates, but your server prints nothing.** SignalWire couldn't reach
+  your webhook. Check that the URL begins with `https://` and ends with `/translations`, and that
+  the tunnel is running and points at port `8080`.
+- **The server prints the end of the session, but no utterances.** `live_events` isn't `true` on
+  `start`. Without it, the conversation arrives only when the session ends.
+- **You hear an error or silence when you call your number.** SignalWire couldn't fetch your SWML.
+  Rerun the `curl` check with the exact URL in the SWML Script, and confirm that the server and the
+  tunnel are still running. A `401` means the password in the URL doesn't match the server's.
+- **You hear your number's old behavior.** The number still points at another Resource. Open it
+  under **Phone Numbers** and check **Inbound Call Settings**.
+- **The second phone never rings.** Check that `<YOUR_DESTINATION>` is in E.164 format, and in a
+  trial project, that it's a verified number.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="live_translate reference" icon="regular language" href="/docs/swml/reference/calling/live-translate">
+    Every option for starting, summarizing, and stopping live translation
+  </Card>
+  <Card title="Transcribe calls" icon="regular closed-captioning" href="/docs/platform/voice/transcribe-calls">
+    Turn a call into text in one language and summarize it with AI
+  </Card>
+  <Card title="Multilingual AI agents" icon="regular globe" href="/docs/swml/reference/calling/ai/multilingual">
+    Have an AI agent talk with callers in their own language
+  </Card>
+  <Card title="Text-to-speech voices" icon="regular waveform-lines" href="/docs/platform/voice/tts">
+    Find a voice for each language you translate into
+  </Card>
+</CardGroup>
