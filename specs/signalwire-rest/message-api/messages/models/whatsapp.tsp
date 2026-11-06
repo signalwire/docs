@@ -2,6 +2,7 @@ import "@typespec/http";
 import "@typespec/json-schema";
 import "./core.tsp";
 import "./requests.tsp";
+import "./rcs.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.JsonSchema;
@@ -326,9 +327,11 @@ model WhatsAppTemplateMessageRequest {
   - An SMS/MMS request when `from` is a purchased phone number or shortcode.
   - A WhatsApp **content** message when `from` is a `whatsapp:`-prefixed number and `message_type` is set.
   - A WhatsApp **template** message when `from` is a `whatsapp:`-prefixed number and `template_id` is set.
+  - An RCS message when `from` is the ID of an RCS agent.
   """)
 union SendMessageRequest {
   CreateMessageRequest,
   WhatsAppContentMessageRequest,
   WhatsAppTemplateMessageRequest,
+  RcsMessageRequest,
 }

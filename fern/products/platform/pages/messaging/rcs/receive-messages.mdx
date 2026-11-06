@@ -1,0 +1,137 @@
+---
+title: Receive RCS messages
+slug: messaging/rcs/receive-messages
+sidebar-title: Receive messages
+description: Assign an RCS agent to a Resource to handle inbound RCS messages, view them in your message logs, and track the delivery status of the messages you send.
+max-toc-depth: 3
+---
+
+When a recipient replies to your RCS agent, or taps one of its suggested replies, SignalWire receives
+the message and logs it. To handle inbound messages in your own application, assign the agent to a
+[Resource](/docs/platform/resources), the same way you assign a phone number for inbound SMS.
+
+## Assign the agent to a Resource
+
+<Steps>
+
+### Open the Resource's addresses
+
+In your [SignalWire Dashboard](https://my.signalwire.com), open the Resource that should handle the
+messages and select **Add an Address**. RCS agents can be assigned to a **SWML Script**, a
+**SWML Webhook**, or a **Relay Application**.
+
+### Assign the agent
+
+Choose **Assign an RCS Agent**, search for your agent by name or ID, and select **Add**. The agent
+now appears in the Resource's addresses.
+
+### Send a test reply
+
+From one of your test devices, reply to a message your agent sent. The reply appears in your message
+logs and reaches the Resource.
+
+</Steps>
+
+Removing the address from the Resource stops the agent's inbound messages from reaching it.
+
+## Inbound messages
+
+An inbound RCS message has `kind: rcs` and `direction: inbound`. Its `from` is the recipient's phone
+number and its `to` is your agent's ID. Text replies arrive in the message body, and media the
+recipient sends arrives as a media URL.
+
+To reply, either use the SWML [`reply`](#reply-with-swml) method in the Resource's script, or
+[send a message](/docs/platform/messaging/rcs/send-messages) with your agent's ID as `from` and the
+recipient's number as `to`.
+
+## Reply with SWML
+
+When the agent is assigned to a SWML Script or SWML Webhook, the script runs for each inbound RCS
+message and its [`reply`](/docs/swml/reference/messaging/reply) method answers over RCS. By default,
+the reply goes to the person who sent the message, from the agent that received it.
+
+In the script, `%{message.type}` is `rcs`, `%{message.to}` and `%{message.agent_id}` are your
+agent's ID, and `%{message.from}` is the sender's phone number.
+
+`reply` accepts the same shapes as for SMS (a string, an object, or an inline `switch`), with these
+differences:
+
+- Set `body` for plain text or `content` for rich content, never both. `content` takes the same
+  [content types](/docs/platform/messaging/rcs/send-messages#content-types) as the Messaging API.
+- `media` is not supported. Send media with a `content` of type `media` instead.
+- `from` is optional. Set it to the ID of another RCS agent in the same Project to reply from that
+  agent.
+- `to` must be a US phone number, like any RCS send.
+
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - reply:
+        content:
+          type: suggestions
+          text: "Thanks for reaching out! What can we help with?"
+          actions:
+            - type: reply
+              title: "Track an order"
+            - type: reply
+              title: "Talk to someone"
+```
+
+A reply that can't be queued fails with the same error codes as the
+[Messaging API](/docs/platform/messaging/rcs/send-messages#verify-the-send), plus these:
+
+| Code | Cause |
+|---|---|
+| `swml_rcs_reply_body_or_content_required` | The reply has neither `body` nor `content`. |
+| `swml_rcs_reply_invalid_from_agent` | `from` isn't an RCS agent in this Project. |
+| `swml_rcs_reply_to_number_not_allowed` | Your account can send only to verified numbers, and `to` isn't one of them. |
+
+## Message logs
+
+Inbound messages and the delivery status of the messages you send are available in the Dashboard
+under **Logs → Messaging**, and through the message logs endpoint,
+[`GET /api/messaging/logs`](/docs/apis/rest/message-logs/list-message-logs). RCS messages are
+identified by `kind: rcs`.
+
+## Delivery status
+
+The `status` field updates as an outbound message progresses:
+
+| Status | Meaning |
+|---|---|
+| `queued` | SignalWire accepted the message for delivery. |
+| `sent` | SignalWire has dispatched the message. |
+| `delivered` | The recipient's device has received the message. |
+| `read` | The recipient has opened the message. |
+| `undelivered` | The message could not be delivered. `error_code` and `error_message` say why. |
+
+An RCS message that can't be delivered ends as `undelivered`. To reach that recipient another way,
+send a new message from one of your phone numbers.
+
+To be notified of each status change as it happens, set `status_callback` when
+[sending a message](/docs/platform/messaging/rcs/send-messages). SignalWire then POSTs a
+message-status payload to your URL at each state change.
+
+<llms-ignore>
+
+<WebhookPayloadSnippet webhook="message_status_callback" />
+
+</llms-ignore>
+
+<llms-only>
+
+See the [Message status callback reference](/docs/apis/rest/webhooks/message-status-callback) for every field and status value.
+
+</llms-only>
+
+## Next steps
+
+<CardGroup>
+<Card title="Send RCS messages" href="/docs/platform/messaging/rcs/send-messages">
+  Send plain text and rich content from your agent.
+</Card>
+<Card title="Register an RCS agent" href="/docs/platform/messaging/rcs/onboarding">
+  Review agent statuses and how an agent goes from testing to launch.
+</Card>
+</CardGroup>
