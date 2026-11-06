@@ -13,8 +13,9 @@ the SHA-1 `X-SignalWire-Signature` header on signed webhooks. The signature is t
 the full URL followed by the raw request body, keyed with your Signing Key. Prefer it when the header
 is present.
 
-Only RELAY, SWML, and JSON webhooks are signed this way. Form-encoded cXML webhooks stay on the SHA-1
-signature, which [`validateWebhookSignature()`][validate-webhook-signature] checks.
+cXML webhooks also carry this header, but it's computed over the URL and the sorted form
+parameters rather than the raw body, and this function doesn't verify it. Validate cXML webhooks
+with [`validateWebhookSignature()`][validate-webhook-signature].
 
 ```typescript {1}
 validateWebhookSignatureSha256(signingKey: string, signature: string, url: string, rawBody: string): boolean
@@ -52,7 +53,8 @@ constant-time.
 
 ## Examples
 
-Check the SHA-256 header when it is present, and fall back to the SHA-1 header otherwise:
+Check the SHA-256 header when it is present, and fall back to the SHA-1 header when it is missing or
+doesn't match:
 
 ```typescript {13-15}
 import { validateWebhookSignature, validateWebhookSignatureSha256 } from '@signalwire/sdk';
@@ -67,12 +69,12 @@ app.post('/webhook', async (c) => {
   const sha256 = c.req.header('x-signalwire-sha256-signature');
   const sha1 = c.req.header('x-signalwire-signature') ?? '';
 
-  const ok = sha256
-    ? validateWebhookSignatureSha256(signingKey, sha256, url, rawBody)
-    : validateWebhookSignature(signingKey, sha1, url, rawBody);
+  const ok =
+    (sha256 !== undefined && validateWebhookSignatureSha256(signingKey, sha256, url, rawBody)) ||
+    validateWebhookSignature(signingKey, sha1, url, rawBody);
   if (!ok) return c.text('Forbidden', 403);
 
-  return c.json({ received: JSON.parse(rawBody) });
+  return c.text('OK');
 });
 ```
 
