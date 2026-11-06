@@ -150,6 +150,10 @@ namespace SignalWireAPI.Video.ConferenceStreams {
       id: string,
 
       @body body: CreateStreamRequest,
-    ): StreamResponse | StatusCode401 | VideoStatusCode422 | StatusCode500;
+    ):
+      | StreamCreatedResponse
+      | StatusCode401
+      | VideoStatusCode422
+      | StatusCode500;
   }
 }

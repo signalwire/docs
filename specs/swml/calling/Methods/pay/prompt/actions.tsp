@@ -5,7 +5,7 @@ using TypeSpec.JsonSchema;
 namespace SWML.Calling;
 
 model PayPromptSayAction {
-  @doc("When the action `type` is `Say`, this value is the text to be spoken; when the type is `Play`, it should be a URL to the audio file.")
+  @doc("The action to perform. `Say` speaks `phrase` using text-to-speech.")
   type: "Say";
 
   @doc("The phrase to speak")
@@ -14,7 +14,7 @@ model PayPromptSayAction {
 }
 
 model PayPromptPlayAction {
-  @doc("When the action `type` is `Say`, this value is the text to be spoken; when the type is `Play`, it should be a URL to the audio file.")
+  @doc("The action to perform. `Play` plays the audio file at the URL in `phrase`.")
   type: "Play";
 
   @doc("The URL of the audio file to play")

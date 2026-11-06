@@ -21,7 +21,9 @@ namespace SignalWireAPI.Fabric.DialogflowAgents {
     @summary("List Dialogflow agents")
     @doc("""
       Lists the Dialogflow integrations represented as AI Agent resources in your SignalWire project. These resources let SignalWire route calls to conversational agents hosted in Dialogflow. Use [custom AI Agents](/docs/apis/rest/ai-agents/ai-agents-custom/list-ai-agents) when the conversational behavior is configured directly in SignalWire.
-      
+
+      The API has no operation to create a Dialogflow agent. To add one to your project, enable the SignalWire Telephony Integration from the Dialogflow Console, which imports the agent into your SignalWire project.
+
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     list():

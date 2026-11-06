@@ -5,7 +5,10 @@ namespace SWML.Calling;
 @summary("stream Method")
 model Stream {
   @summary("stream")
-  @doc("Start a background audio stream from the call to a WebSocket endpoint. Runs alongside the call as an independent operation.")
+  @doc("""
+    Start a background audio stream from the call to a WebSocket endpoint. Runs alongside the call as an independent operation.
+    For an inbound call that has not been answered and is not ending, the method attempts to answer it before starting the stream.
+    """)
   stream: {
     @doc("Secure WebSocket URI (wss://) to stream the call audio to.")
     @example("wss://example.com/audio-stream")
@@ -25,27 +28,39 @@ model Stream {
           `outbound_track` for what the caller hears,
           `both_tracks` for both.
           Default is `"inbound_track"`.
+          Accepts a SWML variable reference that resolves to one of these values.
       """)
     @example("both_tracks")
-    track?: "inbound_track" | "outbound_track" | "both_tracks" = "inbound_track";
+    track?:
+      | "inbound_track"
+      | "outbound_track"
+      | "both_tracks"
+      | SWMLVar = "inbound_track";
 
     @doc("""
-      Codec to use for the streamed audio. Freeform and endpoint-specific.
-      Common values include `PCMU`, `PCMA`, and `OPUS`.
+      Codec for the streamed audio. Supported values: `PCMU` (8 kHz G.711 µ-law),
+      `L16@16000h` (16-bit linear PCM at 16 kHz), and `L16@24000h` (16-bit linear PCM at 24 kHz).
+      Always include the rate with `L16`: a bare `L16` is 8 kHz.
+      If SignalWire doesn't accept the codec, the stream doesn't start.
+      Default is `"PCMU"`.
       """)
-    @example("PCMU")
-    codec?: string;
-
-    @doc("HTTP or HTTPS URL to deliver stream status events.")
-    @example("https://example.com/stream-status")
-    status_url?: url;
+    @example("L16@16000h")
+    codec?: string = "PCMU";
 
     @doc("""
-      HTTP method used to deliver stream status events to `status_url`.
+      HTTP or HTTPS URL to deliver stream status events.
+      Accepts a SWML variable reference that resolves to an HTTP or HTTPS URL.
+      """)
+    @example("https://example.com/stream-status")
+    status_url?: url | SWMLVar;
+
+    @doc("""
+      Has no effect on stream status callbacks: SignalWire always sends `calling.call.stream` events to `status_url` with POST, whatever this is set to, so you can leave it unset.
       Possible Values: [`GET`, `POST`]. Default is `"POST"`.
+      Accepts a SWML variable reference that resolves to one of these values.
       """)
     @example("POST")
-    status_url_method?: "GET" | "POST" = "POST";
+    status_url_method?: "GET" | "POST" | SWMLVar = "POST";
 
     @doc("Bearer token sent as an `Authorization` header during the WebSocket handshake.")
     @example("my-secret-token")

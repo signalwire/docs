@@ -15,79 +15,124 @@ model InboundCallHeader {
 }
 
 @summary("Inbound call SIP data")
-@doc("SIP-specific data for SIP calls. Only present when `call.type` is `sip`.")
+@doc("""
+  SIP-specific data for SIP calls. Only present when `call.type` is `sip`. Every key is
+  optional: each one is included only when the call's SIP signaling carries a value for it,
+  so a key missing from one call can be present on another.
+  """)
 model InboundCallSipData {
   @doc("The host portion of the SIP request URI.")
   @example("yourdomain.com")
-  sip_req_host: string;
+  sip_req_host?: string;
 
   @doc("The full SIP request URI.")
   @example("destination@yourdomain.com")
-  sip_req_uri: string;
+  sip_req_uri?: string;
 
   @doc("The user portion of the SIP request URI.")
   @example("destination")
-  sip_req_user: string;
+  sip_req_user?: string;
 
   @doc("The host portion of the SIP From header.")
   @example("example.com")
-  sip_from_host: string;
+  sip_from_host?: string;
 
   @doc("The full URI from the SIP From header.")
   @example("user@example.com")
-  sip_from_uri: string;
+  sip_from_uri?: string;
 
   @doc("The user portion of the SIP From header.")
   @example("user")
-  sip_from_user: string;
+  sip_from_user?: string;
 
   @doc("The host portion of the SIP To header.")
   @example("yourdomain.com")
-  sip_to_host: string;
+  sip_to_host?: string;
 
   @doc("The full URI from the SIP To header.")
   @example("destination@yourdomain.com")
-  sip_to_uri: string;
+  sip_to_uri?: string;
 
   @doc("The user portion of the SIP To header.")
   @example("destination")
-  sip_to_user: string;
+  sip_to_user?: string;
 
   @doc("The user portion of the SIP Contact header.")
   @example("user")
-  sip_contact_user: string;
+  sip_contact_user?: string;
 
   @doc("The port from the SIP Contact header.")
   @example("5060")
-  sip_contact_port: string;
+  sip_contact_port?: string;
 
   @doc("The full URI from the SIP Contact header.")
   @example("user@192.168.1.100:5060")
-  sip_contact_uri: string;
+  sip_contact_uri?: string;
 
   @doc("The host portion of the SIP Contact header.")
   @example("192.168.1.100")
-  sip_contact_host: string;
+  sip_contact_host?: string;
 
-  @doc("Additional parameters from the SIP Contact header.")
-  @example(#{})
-  sip_contact_params: {
-    ...TypeSpec.Record<unknown>;
+  @doc("""
+    The URI parameters of the SIP From header, as key/value pairs. Present only when that URI
+    carries parameters. A parameter without a value is left out, so the object can be empty.
+    """)
+  @example(#{ user: "phone" })
+  sip_from_params?: {
+    ...TypeSpec.Record<string>;
   };
+
+  @doc("""
+    The URI parameters of the SIP To header, as key/value pairs. Present only when that URI
+    carries parameters. A parameter without a value is left out, so the object can be empty.
+    """)
+  @example(#{ user: "phone" })
+  sip_to_params?: {
+    ...TypeSpec.Record<string>;
+  };
+
+  @doc("""
+    The URI parameters of the SIP Contact header, as key/value pairs. Present only when that URI
+    carries parameters. A parameter without a value is left out, so the object can be empty.
+    """)
+  @example(#{ transport: "udp" })
+  sip_contact_params?: {
+    ...TypeSpec.Record<string>;
+  };
+
+  @doc("""
+    The URI parameters of the SIP request URI, as key/value pairs. Present only when that URI
+    carries parameters. A parameter without a value is left out, so the object can be empty.
+    """)
+  @example(#{ user: "phone" })
+  sip_req_params?: {
+    ...TypeSpec.Record<string>;
+  };
+
+  @doc("""
+    The P-Asserted-Identity header of the incoming SIP request. Only the first P-Asserted-Identity
+    header is read, and only when its URI has a user part.
+    """)
+  @example("<sip:+12223334444@example.com>")
+  sip_p_asserted_identity?: string;
 }
 
 @summary("Parent call")
 @doc("The call that created this call. Present only when this call has a parent — for example, a leg created by a `connect` or transfer.")
 model InboundCallParent {
-  @doc("The device type of the parent call.")
+  @doc("""
+    The device type of the parent call. Present only when this call was created by a `connect`,
+    from either the SWML `connect` method or the Relay `connect` command; omitted for any other
+    parent call.
+    """)
   @example("phone")
-  device_type: "sip" | "phone" | "webrtc";
+  device_type?: "sip" | "phone" | "webrtc";
 
   @doc("A unique identifier for the parent call.")
   @example("a1b2c3d4-1111-2222-3333-444455556666")
   call_id: string;
 
-  @doc("A unique identifier for the node handling the parent call.")
+  @doc("The same value as this call's own `node_id`, not the parent call's node.")
   @example("a1b2c3d4-1111-2222-3333-444455556666")
   node_id: string;
 }
@@ -99,7 +144,7 @@ model InboundCallPeer {
   @example("a1b2c3d4-1111-2222-3333-444455556666")
   call_id: string;
 
-  @doc("A unique identifier for the node handling the peer call.")
+  @doc("The same value as this call's own `node_id`, not the peer call's node.")
   @example("a1b2c3d4-1111-2222-3333-444455556666")
   node_id: string;
 }
@@ -151,13 +196,13 @@ model InboundCallContext {
   @example("+12223334445")
   to_number?: string;
 
-  @doc("Set to `\"true\"` when this call won a parallel dial. Omitted otherwise.")
+  @doc("Set to `\"true\"` when this call is the leg that answered an outbound dial, including the winning leg of a parallel dial. Omitted otherwise.")
   @example("true")
   dial_winner?: "true";
 
-  @doc("The headers associated with this call.")
+  @doc("The headers associated with this call. Present for phone and SIP calls, as an empty array when there are none; omitted for WebRTC calls.")
   @example(#[])
-  headers: InboundCallHeader[];
+  headers?: InboundCallHeader[];
 
   @doc("The call that created this call. Present only when this call has a parent.")
   parent?: InboundCallParent;
@@ -175,6 +220,29 @@ model InboundCallContext {
   @doc("The Space ID this call belongs to.")
   @example("d3e4f5a6-b7c8-9012-defa-345678901bcd")
   space_id: uuid;
+
+  ...CallSubscriberFields;
+}
+
+// Shared by the SWML fetch `call` object and the `calling.call.state` callback: both
+// carry the same three keys, taken from the same call record.
+@doc("Fields identifying the Subscriber and Resource Address behind a call a Subscriber placed.")
+model CallSubscriberFields {
+  @doc("ID of the Resource Address the call was placed to. Present on calls a Subscriber places to an Address.")
+  @example("b1c2d3e4-5d07-413d-9668-55542992eec0")
+  address_id?: string;
+
+  @doc("ID of the Subscriber who placed the call. Present on calls a Subscriber places from the Browser SDK.")
+  @example("c1d2e3f4-5d07-413d-9668-55542992eec0")
+  subscriber_id?: string;
+
+  @doc("""
+    Name of the Subscriber who placed the call: their display name, or if that's empty their
+    first name, then their email, then `Subscriber`. Present on calls a Subscriber places to an
+    Address.
+    """)
+  @example("Alice")
+  subscriber_name?: string;
 }
 
 model InboundCallWebhookPayload {
@@ -191,6 +259,8 @@ model InboundCallWebhookPayload {
     Environment variables available to this call's SWML document, which you can reference as `\${envs.<key>}`. Combines the variables you've configured at the account or project level with any `custom_variables` you passed on the outbound [Call commands](/docs/apis/rest/calls/call-commands) request.
     
     Keys are case-sensitive. When a `custom_variables` key exactly matches an account- or project-level variable, including case, the value from the request wins; if they differ only in case, both are kept as separate variables.
+    
+    Not included on every request: treat a missing `envs` as a call with no environment variables.
     """)
   @example(#{
     api_key: "<YOUR_API_KEY>",
@@ -198,13 +268,13 @@ model InboundCallWebhookPayload {
     id: "12345",
     case_number: "54321",
   })
-  envs: {
+  envs?: {
     ...TypeSpec.Record<unknown>;
   };
 
-  @doc("Parameters passed via a SWML calling `execute` or `transfer` step. An empty object on the initial document fetch.")
+  @doc("Parameters passed via a SWML calling `execute` or `transfer` step. Included only when the step that requested this document passed `params`, so it is absent on the first document fetch for a call.")
   @example(#{ department: "sales" })
-  params: {
+  params?: {
     ...TypeSpec.Record<unknown>;
   };
 }

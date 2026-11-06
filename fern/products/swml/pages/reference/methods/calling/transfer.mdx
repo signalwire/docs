@@ -2,11 +2,11 @@
 id: 0f948677-5818-4ce4-9727-40516a8c1278
 title: transfer
 slug: reference/calling/transfer
-description: Transfer the execution of the script to a different `SWML section`, `URL`, or `Relay application`.
+description: Transfer the execution of the script to a different `SWML section` or `URL`.
 max-toc-depth: 3
 ---
 
-Transfer the execution of the script to a different `SWML section`, `URL`, or `Relay application`. Once
+Transfer the execution of the script to a different `SWML section` or `URL`. Once
 the transfer is complete, the script will continue executing SWML from the new location.
 
 ## **Properties**
@@ -21,12 +21,15 @@ the transfer is complete, the script will continue executing SWML from the new l
   Specifies where to transfer to. The value can be one of:
   - `"<section_name>"` - section in the SWML document to jump to
   - A URL (http or https) - URL to fetch next document from. Sends HTTP POST. Authentication can also be set in the url in the format of `username:password@url`.
-  - An inline SWML document (as a JSON string) - SWML document provided directly as a JSON string
+
+  The value must not be empty, including after variable expansion. A value that expands to an empty string stops execution with an error.
 </ParamField>
 
 
 <ParamField path="transfer.params" type="object" toc={true}>
-  Named parameters to send to a section, URL, or application.
+  Named parameters to send to a section or URL.
+
+  After variable expansion, `params` can nest at most 63 levels of objects and arrays on any branch, counting `params` itself. Nested objects and arrays share the same limit, and deeper nesting stops the transfer with an error.
 </ParamField>
 
 
@@ -42,10 +45,11 @@ The destination string can be one of:
 
 - `"section_name"` - section in the current document to execute.
 (For example: `execute: main`)
-- `"relay:<relay application>"` - relay application to notify (currently not implemented)
 - `"https://example.com/sub-swml.yaml"` - URL pointing to the document to execute.
 An HTTP POST request will be sent to the URL. Authentication can also be set in the url in the format of `username:password@url`.
 The `params` object is passed, along with the variables and the [`call`](/docs/swml/reference/calling#call) object.
+
+Relay application destinations (`relay:<relay application>`) are not supported.
 
 ---
 
@@ -144,9 +148,9 @@ version: 1.0.0
 sections:
   main:
     - transfer:
-        - dest: "https://example.com/next"
-        - params:
-            - foo: "bar"
+        dest: "https://example.com/next"
+        params:
+          foo: "bar"
 ```
 </CodeBlock>
 <CodeBlock title="JSON">
@@ -156,18 +160,12 @@ sections:
   "sections": {
     "main": [
       {
-        "transfer": [
-          {
-            "dest": "https://example.com/next"
-          },
-          {
-            "params": [
-              {
-                "foo": "bar"
-              }
-            ]
+        "transfer": {
+          "dest": "https://example.com/next",
+          "params": {
+            "foo": "bar"
           }
-        ]
+        }
       }
     ]
   }
@@ -302,7 +300,7 @@ sections:
   main:
     - answer: {}
     - play:
-        url: 'say: Welcome to the {} department.'
+        url: 'say: Welcome to the ${data.params.where} department.'
   `);
 });
 
