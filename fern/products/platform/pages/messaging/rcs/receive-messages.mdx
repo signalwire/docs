@@ -12,13 +12,19 @@ the message and logs it. To handle inbound messages in your own application, ass
 
 ## Assign the agent to a Resource
 
+An agent can be assigned once its status is `in_review`, `launching`, or `launched`. A `pending`
+agent doesn't appear in the list, so wait until SignalWire has provisioned it for testing. Each agent
+can be assigned to one Resource at a time: to move it, remove its address from the current Resource
+first.
+
 <Steps>
 
 ### Open the Resource's addresses
 
 In your [SignalWire Dashboard](https://my.signalwire.com), open the Resource that should handle the
-messages and select **Add an Address**. RCS agents can be assigned to a **SWML Script**, a
-**SWML Webhook**, or a **Relay Application**.
+messages, go to its addresses, and select **Add**. RCS agents can be assigned to a
+[messaging SWML Script](/docs/platform/messaging/send-and-receive-messages#reply-to-incoming-messages-via-swml),
+a SWML Webhook used for messaging, or a **Relay Application**.
 
 ### Assign the agent
 
@@ -78,14 +84,22 @@ sections:
               title: "Talk to someone"
 ```
 
-A reply that can't be queued fails with the same error codes as the
-[Messaging API](/docs/platform/messaging/rcs/send-messages#verify-the-send), plus these:
+When a reply can't be queued, the script stops and the inbound message is marked `failed`, with the
+reason in its `error_code` and `error_message`. Find it in your [message logs](#message-logs). The
+reply fails with one of these codes:
 
 | Code | Cause |
 |---|---|
-| `swml_rcs_reply_body_or_content_required` | The reply has neither `body` nor `content`. |
 | `swml_rcs_reply_invalid_from_agent` | `from` isn't an RCS agent in this Project. |
-| `swml_rcs_reply_to_number_not_allowed` | Your account can send only to verified numbers, and `to` isn't one of them. |
+| `rcs_messaging_not_enabled`, `rcs_agent_not_sendable`, `rcs_agent_not_configured` | The same agent checks as the [Messaging API](/docs/platform/messaging/rcs/send-messages#verify-the-send). |
+| `rcs_media_not_supported` | The reply has `media`. Use a `content` of type `media` instead. |
+| `swml_rcs_reply_body_or_content_required` | The reply has neither `body` nor `content`. |
+| `body_not_allowed_with_rcs_content` | The reply has both `body` and `content`. |
+| `rcs_content_*` | A problem in `content`, with the same codes as the [Messaging API](/docs/platform/messaging/rcs/send-messages#verify-the-send). |
+| `swml_reply_invalid_to_number` | `to` isn't a valid phone number. |
+| `swml_rcs_reply_to_number_not_allowed` | You set `to`, your account can send only to verified numbers, and `to` isn't one of them. |
+| `swml_reply_character_limit_exceeded` | `body` is longer than the character limit. The error states the limit. |
+| `swml_reply_failed` | The reply couldn't be created. |
 
 ## Message logs
 
@@ -104,10 +118,13 @@ The `status` field updates as an outbound message progresses:
 | `sent` | SignalWire has dispatched the message. |
 | `delivered` | The recipient's device has received the message. |
 | `read` | The recipient has opened the message. |
-| `undelivered` | The message could not be delivered. `error_code` and `error_message` say why. |
+| `failed` | The message couldn't be sent. `error_code` and `error_message` say why. |
+| `undelivered` | The message was sent but couldn't be delivered. `error_code` and `error_message` say why. |
 
-An RCS message that can't be delivered ends as `undelivered`. To reach that recipient another way,
-send a new message from one of your phone numbers.
+A message can end as `failed` even though the API returned `status: queued`, for example when it
+can't be routed or your balance doesn't cover it. It ends as `undelivered` when it was sent but
+didn't reach the recipient. Treat both as final. SignalWire doesn't fall back to SMS: to reach that
+recipient another way, send a new message from one of your phone numbers.
 
 To be notified of each status change as it happens, set `status_callback` when
 [sending a message](/docs/platform/messaging/rcs/send-messages). SignalWire then POSTs a

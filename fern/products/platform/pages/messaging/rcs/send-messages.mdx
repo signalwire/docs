@@ -23,11 +23,15 @@ on this page apply. To answer an inbound RCS message from a SWML script, see
 - `to` must be a US phone number. Numbers in any other country, including Canada and US territories
   such as Puerto Rico, are rejected with `rcs_recipient_country_not_supported`. The examples below
   use `+1555` placeholders, so replace them with a real US number.
-- The agent must be `in_review`, `launching`, or `launched`. Until it is launched, it can send only to
-  the test device numbers registered on it.
+- The agent must be `in_review`, `launching`, or `launched`.
 - Send either `body` for plain text or `content` for rich content, never both.
 - `media` and `message_type` are not supported. Send media with a `content` of type `media` instead.
 - `status_callback` and `custom_variables` work the same way as for SMS.
+
+Until the agent is launched, it can reach only the test device numbers registered on it. This isn't
+checked when you send: a message to any other number is accepted with `status: queued` and isn't
+delivered, so watch its [delivery status](/docs/platform/messaging/rcs/receive-messages#delivery-status)
+rather than expecting a `422`.
 
 ## Content types
 
@@ -127,10 +131,12 @@ A successful request returns the message with `kind: rcs` and `status: queued`. 
 follow the message as its status changes, as described in
 [Receive RCS messages](/docs/platform/messaging/rcs/receive-messages#delivery-status).
 
-When the request is rejected with a `422`, the `code` says why:
+When the request is rejected with a `422`, the `code` says why. The RCS-specific codes, and the
+general messaging codes an RCS send most often hits, are:
 
 | Code | Cause |
 |---|---|
+| `invalid_from_number` | `from` isn't the ID of an RCS agent in this Project. Check for a typo, or an agent ID from another Project. |
 | `rcs_agent_not_sendable` | The agent isn't `in_review`, `launching`, or `launched`. |
 | `rcs_agent_not_configured` | The agent hasn't been set up for sending messages yet. |
 | `rcs_messaging_not_enabled` | RCS isn't enabled for this Space. |
@@ -146,6 +152,13 @@ When the request is rejected with a `422`, the `code` says why:
 | `rcs_content_too_many_items` | A carousel has more than 10 cards or more than 3 suggestions. |
 | `rcs_content_not_an_object` / `rcs_content_not_an_array` | A field in `content` has the wrong JSON type. |
 | `rcs_content_not_supported` | `content` was sent from a phone number instead of an RCS agent. |
+| `body_or_media_required` | The request has neither `body` nor `content`. |
+| `character_limit_exceeded` | `body` is longer than the character limit. The error states the limit. |
+| `sending_restricted_to_verified` | Your account can send only to verified numbers, and `to` isn't one of them. |
+| `not_routeable` | SignalWire can't route a message to `to`. |
+| `insufficient_balance` | Your account balance doesn't cover the message. |
+
+For every other code, see [Error codes](/docs/apis/error-codes).
 
 ## Next steps
 
