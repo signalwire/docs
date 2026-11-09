@@ -1165,7 +1165,7 @@ paths:
       operationId: create_document
       summary: Create document
       description: |-
-        Ingests a document from the supplied URL, applies the selected chunking strategy, and creates its Datasphere record. Use it when adding source material for later semantic retrieval; use [Search documents](/docs/apis/rest/documents/search-documents) after ingestion, or [List documents](/docs/apis/rest/documents/list-documents) to monitor processing status.
+        Ingests a document from the supplied URL, applies the selected chunking strategy, and creates its Datasphere record. Datasphere accepts PDF, plain text, and Markdown files up to 10 MB. Use it when adding source material for later semantic retrieval; use [Search documents](/docs/apis/rest/documents/search-documents) after ingestion, or [List documents](/docs/apis/rest/documents/list-documents) to monitor processing status.
 
         #### Permissions
 
@@ -9333,8 +9333,13 @@ paths:
       description: |-
         Rotates the project's signing key and returns the project with the new `signing_key`.
 
-        The previous key may take about 1–2 minutes to stop working. As with create, the
-        `signing_key` is only returned on this response and cannot be retrieved afterward.
+        The new key takes about 1–2 minutes to become active, and until then requests can still arrive
+        signed with the previous key. During that window, accept a request whose signature verifies with
+        either key, then stop accepting the previous key. As with create, the `signing_key` is only
+        returned on this response and cannot be retrieved afterward.
+
+        The new key is the project's next signing key, the same key the Dashboard's **Reset** dialog shows.
+        A project created before the `swpsk_` format can therefore receive a `PSK_` key from its first rotation.
 
         Use it when the project's webhook-signing credential has been exposed or is due for rotation; this is separate from creating or revoking REST API tokens.
 
@@ -24758,17 +24763,21 @@ components:
             - 0
         audio_in_skip_packet_count:
           type: integer
-          description: Number of received audio packets that were skipped.
+          description: |-
+            Number of received audio intervals filled with comfort noise because no audio packet was
+            available. It grows with lost or late packets and during DTMF digits.
           examples:
             - 5
         audio_in_flush_packet_count:
           type: integer
-          description: Number of received audio packets flushed from the jitter buffer.
+          description: |-
+            Number of queued received packets discarded when the media stream was flushed, for example when
+            the call was bridged or unbridged.
           examples:
             - 0
         audio_in_largest_jb_size:
           type: integer
-          description: The largest size the jitter buffer reached.
+          description: Not populated. Always `0` when the call has quality statistics.
           examples:
             - 0
         audio_in_flaw_total:
@@ -29997,7 +30006,7 @@ components:
         - paragraph
         - page
         - sliding
-      description: Strategy to use when chunking the document.
+      description: How Datasphere splits the document into chunks. `sentence` groups sentences, `sliding` takes overlapping windows of words, `paragraph` splits on blank lines, and `page` makes one chunk per PDF page. Plain text and Markdown files have no pages, so `page` splits them on blank lines like `paragraph`. Markdown is chunked as written, so chunks keep their markup.
     Datasphere.CreateStatusCode422:
       type: object
       required:
@@ -30043,7 +30052,7 @@ components:
             - acaa5c49-be5e-4477-bce0-48f4b23b7720
         filename:
           type: string
-          description: Name of the Document.
+          description: File name of the document. For documents created through this API, Datasphere takes it from the download's `Content-Disposition` header, or from the last segment of the URL path when that header doesn't name a file.
           examples:
             - player_list.pdf
         status:
@@ -30126,7 +30135,7 @@ components:
           type: string
           enum:
             - page
-          description: Strategy for chunking the document
+          description: Makes one chunk per page of a PDF. Plain text and Markdown files have no pages, so they are split on blank lines instead, as with `paragraph`.
           examples:
             - page
       unevaluatedProperties:
@@ -30141,7 +30150,7 @@ components:
           type: string
           enum:
             - paragraph
-          description: Strategy for chunking the document
+          description: Splits on blank lines so that each paragraph becomes a chunk.
           examples:
             - paragraph
       unevaluatedProperties:
@@ -30163,7 +30172,7 @@ components:
         url:
           type: string
           format: uri
-          description: URL of the document.
+          description: Public `http` or `https` URL of the file to ingest. Datasphere downloads the file and accepts PDF, plain text, and Markdown files up to 10 MB. A PDF is recognized from its content, so a Word or Excel file is rejected with a `422` error even when it is served as `text/plain`. A text file is identified by its `Content-Type` header (`text/plain`, `text/markdown`, `text/x-markdown`, or `text/x-web-markdown`), or by its file extension when that header is missing or `application/octet-stream`. An extension that names a more specific text type also overrides `text/plain`, so a `.md` file served as `text/plain` is accepted as Markdown, while a `.csv`, `.json`, or `.xml` file served that way is rejected with a `422` error. The file name, taken from the `Content-Disposition` header or the last segment of the URL path, must have a supported extension or none at all, so a PDF served from `/download.php` is rejected with a `422` error.
           examples:
             - https://example.com/document.pdf
         tags:
@@ -30188,13 +30197,13 @@ components:
           type: string
           enum:
             - sentence
-          description: Strategy for chunking the document
+          description: Splits the text into sentences and groups up to `max_sentences_per_chunk` of them per chunk. This is the default when `chunking_strategy` is omitted.
           examples:
             - sentence
         split_newlines:
           type: boolean
           description: |-
-            Whether to split chunks on new lines.
+            Whether a line break also ends a sentence. When `true`, no sentence spans a line break. When `false`, only sentence punctuation ends a sentence.
 
 
 
@@ -30220,7 +30229,7 @@ components:
           type: string
           enum:
             - sliding
-          description: Strategy for chunking the document
+          description: Takes a window of `chunk_size` words and slides it forward so that consecutive chunks share `overlap_size` words.
           examples:
             - sliding
         overlap_size:
@@ -30325,7 +30334,7 @@ components:
         - in_progress
         - completed
         - failed
-      description: The current Status of the Document.
+      description: Processing state of the document. A new document is `submitted` and moves to `in_progress` while its text is extracted, chunked, and indexed. It becomes `completed` once every chunk is searchable, or `failed` if a chunk can't be indexed, for example because it is too long. A file with no extractable text, such as a scanned PDF with no text layer, stays `in_progress`.
     Datasphere.DocumentUpdateRequest:
       type: object
       required:
@@ -37004,7 +37013,7 @@ components:
             The project's signing key. Only returned on create and signing-key rotation responses;
             it cannot be retrieved through the API afterward.
           examples:
-            - PSK_4d8c2b1a9f3e7c6d5b4a3e2f1d0c9b8a
+            - swpsk_0123456789ab0123456789ab0123456789ab
       unevaluatedProperties:
         not: {}
       description: |-
@@ -61668,8 +61677,7 @@ components:
             - null
         qos_metrics:
           anyOf:
-            - type: object
-              unevaluatedProperties: {}
+            - $ref: '#/components/schemas/Calling.CallQosMetrics'
             - type: 'null'
           description: Audio quality statistics for the call. Only measured statistics are included. Null if the call has no quality measurement.
           examples:
@@ -62094,10 +62102,176 @@ components:
             type: object
             unevaluatedProperties: {}
           description: The tool calls the agent made on this turn. Present only on a turn that made any.
+        confidence:
+          type: number
+          description: |-
+            How confident speech recognition was in the text, from 0 to 1. On a merged entry, the average
+            across the merged speech, weighted by text length. Caller turns only.
+          examples:
+            - 0.94
+        content_type:
+          type: string
+          description: 'How the caller gave this input: `Detected Speech` or `DTMF` (keypad digits). Caller turns only.'
+          examples:
+            - Detected Speech
+        speaking_to_turn_detection:
+          type: integer
+          description: |-
+            Time from when the caller started speaking until turn detection decided they had finished, in
+            milliseconds. Omitted when the caller's turn ended without a turn-detection decision.
+          examples:
+            - 2140
+        turn_detection_to_final_event:
+          type: integer
+          description: |-
+            Time from turn detection deciding the caller had finished until the final recognition result
+            arrived, in milliseconds. Present alongside `speaking_to_turn_detection`.
+          examples:
+            - 180
+        merge_count:
+          type: integer
+          description: |-
+            How many caller entries were combined into this one the last time the platform merged
+            consecutive caller speech, for example words the caller added after interrupting the agent. An
+            entry that was already merged counts as one. Appears on caller entries once merging has run.
+          examples:
+            - 2
+        latency:
+          type: integer
+          description: |-
+            Time from when the agent started its request to the model until the first token came back, in
+            milliseconds. The request starts once the caller's speech is final, or once a function returns.
+            On a standard agent, if any of `latency`, `utterance_latency`, and `audio_latency` couldn't be
+            measured for a reply, all three are `0`, as on the greeting. A speech-to-speech agent measures
+            from when the reply started instead. On a function result (`tool`), this is the first-token
+            latency of the model request that called the function. If any of the three couldn't be measured
+            there, all three are omitted instead of sent as `0`, and they're always omitted for a function
+            called by the post-prompt.
+          examples:
+            - 612
+        utterance_latency:
+          type: integer
+          description: |-
+            Time from when the agent started its request to the model until the first part of the reply was
+            ready to speak, in milliseconds. On a function result (`tool`), this repeats `function_latency`.
+          examples:
+            - 745
+        audio_latency:
+          type: integer
+          description: |-
+            Time from when the agent started its request to the model until the first audio of the reply
+            played, in milliseconds. It does not include detecting that the caller had finished speaking. On
+            a function result (`tool`), this repeats `execution_latency`.
+          examples:
+            - 1020
+        acoustic_latency:
+          anyOf:
+            - type: integer
+            - type: 'null'
+          description: |-
+            Time from the end of the caller's last word until the first audio of the reply, in milliseconds:
+            the silence the caller heard. `null` when it could not be measured, such as on the greeting. A
+            speech-to-speech agent reports `0` instead of `null` when it could not measure this.
+          examples:
+            - 1310
+        eos_to_push_latency:
+          anyOf:
+            - type: integer
+            - type: 'null'
+          description: |-
+            Time from the end of the caller's last word until their final speech result was ready, in
+            milliseconds: how long it took to detect that the caller had finished. `null` when it could not be
+            measured, and always `null` on a filler phrase.
+          examples:
+            - 290
+        stamps_us:
+          allOf:
+            - $ref: '#/components/schemas/Webhooks.AI.AICallLogTimestamps'
+          description: |-
+            Wall-clock timestamps for the turn. Subtract `last_word_end` from `first_audio` for the silence the
+            caller heard. Present on replies when any timestamp is known.
+          examples:
+            - last_word_end: 1694541296412000
+              first_audio: 1694541297722000
+        barged:
+          type: boolean
+          description: Always `true` when present, meaning the caller interrupted this reply.
+          examples:
+            - true
+        barge_elapsed_ms:
+          type: integer
+          description: How long the reply had been playing when the caller interrupted, in milliseconds.
+          examples:
+            - 1240
+        text_spoken_total:
+          type: string
+          description: |-
+            The full text of the reply. Present on a reply the caller interrupted, and on every reply from a
+            speech-to-speech agent.
+          examples:
+            - Your ride is booked for 6pm. The driver will call when they arrive.
+        text_heard_approx:
+          type: string
+          description: |-
+            An estimate of how much of the reply the caller heard before interrupting: the start of
+            `text_spoken_total`, ending at a word boundary, based on how long the reply had played. Present on
+            a reply the caller interrupted.
+          examples:
+            - Your ride is booked for 6pm.
+        function_latency:
+          type: integer
+          description: |-
+            Time from when the agent started its request to the model until the model called this function,
+            or until the agent had a first reply ready to speak if that was sooner, in milliseconds. Omitted
+            when not measured, such as for a function called by the post-prompt. On a speech-to-speech agent
+            this carries reply timing rather than function timing.
+          examples:
+            - 830
+        execution_latency:
+          type: integer
+          description: |-
+            Time from when the agent started its request to the model until this function returned, in
+            milliseconds, so it includes the function's own run time. Omitted when `function_latency` is. On a
+            speech-to-speech agent this carries reply timing rather than function timing.
+          examples:
+            - 1460
       unevaluatedProperties: {}
       description: |-
         One entry in the conversation. Beyond `role` and `content`, an entry carries whatever per-turn
-        detail applies to it, such as recognition confidence on a caller turn or timings on a reply.
+        detail applies to it, such as recognition confidence on a caller turn (`user`), timings on a reply
+        (`assistant`, or `assistant-manual` for a filler phrase), or function timings on a function result
+        (`tool`). Unlisted keys can also appear.
+
+        The interruption fields (`barged`, `barge_elapsed_ms`, `text_spoken_total`, and
+        `text_heard_approx`) and `merge_count` are recorded on one copy of the conversation, so any of them
+        can be missing from either `call_log` or `raw_call_log`. Check both. A standard agent records no
+        interruption fields on a reply that
+        [`transparent_barge`](/docs/swml/reference/calling/ai/params#paramstransparent_barge) removed from
+        the conversation.
+    Webhooks.AI.AICallLogTimestamps:
+      type: object
+      properties:
+        last_word_end:
+          type: integer
+          format: int64
+          description: |-
+            When the caller's last word ended, for the caller turn this entry responds to. Omitted on entries
+            that don't respond to caller speech, such as the greeting and filler phrases.
+          examples:
+            - 1694541296412000
+        first_audio:
+          type: integer
+          format: int64
+          description: When the first audio of this reply was sent to the caller.
+          examples:
+            - 1694541297722000
+      unevaluatedProperties:
+        type: integer
+        format: int64
+      description: |-
+        Wall-clock moments in one turn, each a Unix timestamp in microseconds on the same clock as the
+        entry's `timestamp`, so subtracting one from another gives the time between them. Each stamp is
+        omitted when it is not known for the turn, and other stamps can appear.
     Webhooks.AI.AICallTimelineEntry:
       type: object
       required:
@@ -62117,6 +62291,40 @@ components:
             - 1694541297950440
       unevaluatedProperties: {}
       description: One event on the call, in order. Beyond `type`, an entry carries the fields belonging to that type.
+    Webhooks.AI.AIConversationEntryCore:
+      type: object
+      required:
+        - role
+        - content
+      properties:
+        role:
+          type: string
+          description: |-
+            Who produced the entry. Common roles include `system`, `user`, `assistant`, and `tool`. Other
+            roles may appear, so filter to the roles your application uses rather than assuming a fixed set.
+          examples:
+            - assistant
+        content:
+          type: string
+          description: The text of the entry.
+          examples:
+            - Your ride is booked for 6pm.
+        timestamp:
+          type: integer
+          format: int64
+          description: When the entry was added, as a Unix timestamp in microseconds. Omitted on entries without one.
+          examples:
+            - 1694541297950440
+        tool_calls:
+          type: array
+          items:
+            type: object
+            unevaluatedProperties: {}
+          description: The tool calls the agent made on this turn. Present only on a turn that made any.
+      unevaluatedProperties: {}
+      description: |-
+        One entry in the conversation. Beyond `role` and `content`, an entry carries whatever per-turn
+        detail applies to it.
     Webhooks.AI.AIDebugConversationAdd:
       type: object
       required:
@@ -64103,8 +64311,9 @@ components:
           items:
             $ref: '#/components/schemas/Webhooks.AI.AICallLogEntry'
           description: |-
-            The conversation, unfiltered and append-only. Interruption detail appears here and nowhere else.
-            Included when `action` is `post_conversation`.
+            The conversation, unfiltered and append-only. Interruption detail can appear in either
+            `call_log` or `raw_call_log`, depending on the agent, so check both. Included when `action` is
+            `post_conversation`.
         call_timeline:
           type: array
           items:
@@ -64585,7 +64794,9 @@ components:
             $ref: '#/components/schemas/Webhooks.AI.AICallLogEntry'
           description: |-
             The conversation. Each entry carries a `role` of `system`, `user`, or `assistant` and its
-            `content`.
+            `content`. Amazon Bedrock agents report approximate `latency`, `utterance_latency`, and
+            `audio_latency` values on replies, and the same fixed `confidence` value on every caller entry,
+            so don't use them to measure responsiveness or recognition quality.
           examples:
             - - role: system
                 content: You dispatch taxis.
@@ -65889,6 +66100,364 @@ components:
           description: Parameters passed via a SWML calling `execute` or `transfer` step. Included only when the step that requested this document passed `params`, so it is absent on the first document fetch for a call.
           examples:
             - department: sales
+      unevaluatedProperties:
+        not: {}
+    Webhooks.Calling.LiveTranscribeChannelData:
+      type: object
+      required:
+        - content_type
+        - content_disposition
+        - call_id
+      properties:
+        project_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Your project ID. Included when available.
+          examples:
+            - 4d0d6f16-5881-4fcc-92a4-02c51a91954d
+        space_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Your Space ID. Included when available.
+          examples:
+            - 451ed9ff-e568-4222-8af9-4f9ab7428d09
+        content_type:
+          type: string
+          enum:
+            - text/json
+          description: The content type of the POST body. Always `text/json`.
+          examples:
+            - text/json
+        content_disposition:
+          type: string
+          enum:
+            - transcribe.utterance
+            - transcribe.live_summarize
+            - transcribe.conversation_log
+          description: |-
+            Which event this is:
+
+            - `transcribe.utterance`: one utterance was transcribed.
+            - `transcribe.live_summarize`: the summary you requested with the `summarize` action.
+            - `transcribe.conversation_log`: the transcription session ended.
+          examples:
+            - transcribe.utterance
+        call_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: ID of the call being transcribed.
+          examples:
+            - 2e1e66e5-5d07-413d-9668-55542992eec0
+        call_start_date:
+          type: integer
+          format: int64
+          description: When the call was created, as a Unix timestamp in microseconds.
+          examples:
+            - 1777565690123456
+        call_answer_date:
+          type: integer
+          format: int64
+          description: When the call was answered, as a Unix timestamp in microseconds. `0` if it hasn't been answered.
+          examples:
+            - 1777565691234567
+        call_end_date:
+          type: integer
+          format: int64
+          description: When the call ended, as a Unix timestamp in microseconds. `0` while the call is still up.
+          examples:
+            - 0
+        caller_id_name:
+          type: string
+          description: The caller's name. Included when the call has one.
+          examples:
+            - Jane Doe
+        caller_id_number:
+          type: string
+          description: The caller's number. Included when the call has one.
+          examples:
+            - '+15555550100'
+        SWMLVars:
+          type: object
+          unevaluatedProperties: {}
+          description: SWML variables for the call. Included when the call carries SWML state.
+        SWMLCall:
+          type: object
+          unevaluatedProperties: {}
+          description: SWML call state. Included when the call carries SWML state.
+      unevaluatedProperties:
+        not: {}
+      description: |-
+        Identifies the call and the event. Read `content_disposition` to tell the three live
+        transcription events apart, since they all arrive at the same `webhook` URL.
+    Webhooks.Calling.LiveTranscribeConversationLogWebhookPayload:
+      type: object
+      required:
+        - call_info
+        - channel_data
+        - conversation_log
+        - metrics
+      properties:
+        call_info:
+          allOf:
+            - $ref: '#/components/schemas/Webhooks.AI.AICallInfo'
+          description: |-
+            Identifies the call. `project_id` and `space_id` are included when available. Its
+            `content_disposition` is always `post_data`; read `channel_data.content_disposition` to tell the
+            events apart.
+        channel_data:
+          allOf:
+            - $ref: '#/components/schemas/Webhooks.Calling.LiveTranscribeChannelData'
+          description: Identifies the call and the event. `content_disposition` is `transcribe.conversation_log`.
+        conversation_log:
+          type: array
+          items:
+            $ref: '#/components/schemas/Webhooks.Calling.LiveTranscribeLogEntry'
+          description: Every utterance transcribed in the session, in order.
+        conversation_summary:
+          type: string
+          description: |-
+            The AI summary of the whole conversation. Included when you started the session with
+            `ai_summary` set to `true` and a summary was produced.
+          examples:
+            - The caller booked a ride to the airport for 6 AM tomorrow from 120 Harbor Street.
+        metrics:
+          allOf:
+            - $ref: '#/components/schemas/Webhooks.Calling.LiveTranscribeMetrics'
+          description: Totals for the session.
+      unevaluatedProperties:
+        not: {}
+    Webhooks.Calling.LiveTranscribeLogEntry:
+      type: object
+      required:
+        - role
+        - content
+      properties:
+        role:
+          type: string
+          enum:
+            - remote-caller
+            - local-caller
+          description: Which side of the call spoke.
+          examples:
+            - remote-caller
+        content:
+          type: string
+          description: The transcribed text.
+          examples:
+            - Hi, I'd like to book a ride to the airport.
+        confidence:
+          type: number
+          format: double
+          description: The speech engine's confidence in the transcription, from `0` to `1`. Omitted when it's `0` or the speech engine didn't report one.
+          examples:
+            - 0.97
+        language:
+          type: string
+          description: The transcription language.
+          examples:
+            - en-US
+      unevaluatedProperties:
+        not: {}
+      description: One utterance in the conversation log, in the order it was spoken.
+    Webhooks.Calling.LiveTranscribeMetrics:
+      type: object
+      required:
+        - total_utterances
+        - remote_caller_turns
+        - local_caller_turns
+        - remote_caller_words
+        - local_caller_words
+      properties:
+        total_utterances:
+          type: integer
+          description: The number of utterances transcribed.
+          examples:
+            - 14
+        first_utterance_ts:
+          type: integer
+          format: int64
+          description: When the first utterance was transcribed, as a Unix timestamp in microseconds. Omitted when nothing was transcribed.
+          examples:
+            - 1777565701562391
+        last_utterance_ts:
+          type: integer
+          format: int64
+          description: When the last utterance was transcribed, as a Unix timestamp in microseconds. Omitted when nothing was transcribed.
+          examples:
+            - 1777565788902114
+        remote_caller_turns:
+          type: integer
+          description: The number of utterances from the `remote-caller` side.
+          examples:
+            - 8
+        local_caller_turns:
+          type: integer
+          description: The number of utterances from the `local-caller` side.
+          examples:
+            - 6
+        remote_caller_words:
+          type: integer
+          description: The number of words spoken on the `remote-caller` side.
+          examples:
+            - 96
+        local_caller_words:
+          type: integer
+          description: The number of words spoken on the `local-caller` side.
+          examples:
+            - 71
+        remote_caller_avg_confidence:
+          type: number
+          format: double
+          description: The average confidence on the `remote-caller` side. Omitted when no utterance on that side had a confidence above `0`.
+          examples:
+            - 0.95
+        local_caller_avg_confidence:
+          type: number
+          format: double
+          description: The average confidence on the `local-caller` side. Omitted when no utterance on that side had a confidence above `0`.
+          examples:
+            - 0.96
+      unevaluatedProperties:
+        not: {}
+      description: Totals for the whole session. The counts are `0` when nothing was transcribed.
+    Webhooks.Calling.LiveTranscribeSummaryWebhookPayload:
+      type: object
+      required:
+        - call_info
+        - channel_data
+        - conversation_log
+        - conversation_summary
+      properties:
+        call_info:
+          allOf:
+            - $ref: '#/components/schemas/Webhooks.AI.AICallInfo'
+          description: |-
+            Identifies the call. `project_id` and `space_id` are included when available. Its
+            `content_disposition` is always `post_data`; read `channel_data.content_disposition` to tell the
+            events apart.
+        channel_data:
+          allOf:
+            - $ref: '#/components/schemas/Webhooks.Calling.LiveTranscribeChannelData'
+          description: Identifies the call and the event. `content_disposition` is `transcribe.live_summarize`.
+        conversation_log:
+          type: array
+          items:
+            $ref: '#/components/schemas/Webhooks.Calling.LiveTranscribeLogEntry'
+          description: Every utterance transcribed so far, in order.
+        conversation_summary:
+          type: string
+          description: The AI summary of the conversation so far. `Error creating summary` when no summary could be produced.
+          examples:
+            - The caller asked to book a ride to the airport at 6 AM tomorrow and confirmed the pickup address.
+      unevaluatedProperties:
+        not: {}
+    Webhooks.Calling.LiveTranscribeUtterance:
+      type: object
+      required:
+        - role
+        - content
+        - lang
+        - tokens
+        - timestamp
+        - utterance_id
+        - char_count
+        - word_count
+      properties:
+        role:
+          type: string
+          enum:
+            - remote-caller
+            - local-caller
+          description: |-
+            Which side of the call spoke, matching the `direction` values you passed to `start`.
+            `remote-caller` is the audio SignalWire receives from the call, and `local-caller` is the
+            audio SignalWire sends to it.
+          examples:
+            - remote-caller
+        content:
+          type: string
+          description: The transcribed text.
+          examples:
+            - Hi, I'd like to book a ride to the airport.
+        lang:
+          type: string
+          description: The transcription language.
+          examples:
+            - en-US
+        tokens:
+          type: integer
+          description: An estimate of the number of tokens in `content`.
+          examples:
+            - 11
+        timestamp:
+          type: integer
+          format: int64
+          description: When the utterance was transcribed, as a Unix timestamp in microseconds.
+          examples:
+            - 1777565701562391
+        utterance_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Unique ID for this utterance.
+          examples:
+            - 9b3c1f0e-7a52-4c8e-b0d4-3f6a2e1d9c57
+        char_count:
+          type: integer
+          description: The number of characters in `content`.
+          examples:
+            - 43
+        word_count:
+          type: integer
+          description: The number of words in `content`.
+          examples:
+            - 9
+        silence_before_ms:
+          type: integer
+          description: |-
+            Milliseconds since the previous utterance from the same side of the call. Omitted on that
+            side's first utterance.
+          examples:
+            - 1840
+        confidence:
+          type: number
+          format: double
+          description: The speech engine's confidence in the transcription, from `0` to `1`. Omitted when it's `0` or the speech engine didn't report one.
+          examples:
+            - 0.97
+      unevaluatedProperties:
+        not: {}
+      description: One transcribed utterance, as sent in a `transcribe.utterance` event.
+    Webhooks.Calling.LiveTranscribeUtteranceWebhookPayload:
+      type: object
+      required:
+        - call_info
+        - confidence
+        - channel_data
+        - utterance
+      properties:
+        call_info:
+          allOf:
+            - $ref: '#/components/schemas/Webhooks.AI.AICallInfo'
+          description: |-
+            Identifies the call. `project_id` and `space_id` are included when available. Its
+            `content_disposition` is always `post_data`; read `channel_data.content_disposition` to tell the
+            events apart.
+        confidence:
+          anyOf:
+            - type: number
+              format: double
+            - type: 'null'
+          description: The speech engine's confidence for this utterance, or `null` when it didn't report one. Unlike `utterance.confidence`, it is included when the confidence is `0`.
+          examples:
+            - 0.97
+        channel_data:
+          allOf:
+            - $ref: '#/components/schemas/Webhooks.Calling.LiveTranscribeChannelData'
+          description: Identifies the call and the event. `content_disposition` is `transcribe.utterance`.
+        utterance:
+          allOf:
+            - $ref: '#/components/schemas/Webhooks.Calling.LiveTranscribeUtterance'
+          description: The utterance that was transcribed.
       unevaluatedProperties:
         not: {}
     Webhooks.Calling.PlayStatusCallbackPayload:
@@ -67822,6 +68391,75 @@ webhooks:
           application/json:
             schema:
               $ref: '#/components/schemas/Webhooks.Messaging.InboundMessageWebhookPayload'
+      security:
+        - {}
+  liveTranscribeConversationLogWebhook:
+    post:
+      operationId: live_transcribe_conversation_log_webhook
+      summary: Live transcription conversation log webhook
+      description: |-
+        Sent once to the `webhook` URL of a [`live_transcribe`](/docs/swml/reference/calling/live-transcribe)
+        `start` action when the session ends, whether you stopped it or the call ended. It carries the
+        full transcript, session totals, and the AI summary when `ai_summary` is `true`.
+        `channel_data.content_disposition` is `transcribe.conversation_log`.
+      parameters: []
+      responses:
+        '200':
+          description: Webhook received
+      tags:
+        - Calling Webhooks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Webhooks.Calling.LiveTranscribeConversationLogWebhookPayload'
+      security:
+        - {}
+  liveTranscribeSummaryWebhook:
+    post:
+      operationId: live_transcribe_summary_webhook
+      summary: Live transcription summary webhook
+      description: |-
+        Sent when you request a summary with the [`live_transcribe`](/docs/swml/reference/calling/live-transcribe)
+        `summarize` action while transcription is running. It goes to the `webhook` URL on `summarize`,
+        or to the one on `start` when `summarize` has none. `channel_data.content_disposition` is
+        `transcribe.live_summarize`.
+      parameters: []
+      responses:
+        '200':
+          description: Webhook received
+      tags:
+        - Calling Webhooks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Webhooks.Calling.LiveTranscribeSummaryWebhookPayload'
+      security:
+        - {}
+  liveTranscribeUtteranceWebhook:
+    post:
+      operationId: live_transcribe_utterance_webhook
+      summary: Live transcription utterance webhook
+      description: |-
+        Sent to the `webhook` URL of a [`live_transcribe`](/docs/swml/reference/calling/live-transcribe)
+        `start` action each time an utterance is transcribed, when `live_events` is `true`. Each side of
+        the call you listed in `direction` sends its own events. `channel_data.content_disposition` is
+        `transcribe.utterance`.
+      parameters: []
+      responses:
+        '200':
+          description: Webhook received
+      tags:
+        - Calling Webhooks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Webhooks.Calling.LiveTranscribeUtteranceWebhookPayload'
       security:
         - {}
   messageStatusCallback:
