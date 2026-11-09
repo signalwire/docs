@@ -249,8 +249,8 @@ SignalWire signs each request with your project's [Signing Key][signing-key]. Th
 as HTTP Basic authentication instead, so the signed URL is `https://pay.example.com/`. An
 `X-SignalWire-SHA256-Signature` header carries the same value computed with HMAC-SHA256. Compute
 the signature yourself and reject any request whose header doesn't match. The samples check it with
-the Server SDKs' `validate_webhook_signature` helper and with the Node.js `crypto` module. Both
-compare against the URL you passed, because a tunnel or proxy can change the URL your server sees.
+the Server SDKs' webhook signature helper. Both compare against the URL you passed, because a
+tunnel or proxy can change the URL your server sees.
 
 These connectors check the signature, log the last four digits, and reply with a new ID in place of
 a real processor call. Replace the ID with your processor's call where the comment says so.
@@ -307,12 +307,13 @@ if __name__ == "__main__":
     app.run(port=8080)
 ```
 
-```typescript title="TypeScript — Node.js http" {17-24}
-// No install needed: this server uses only Node.js built-in modules.
+```typescript title="TypeScript — Node.js http" {19-23}
+// Install: npm install @signalwire/sdk
 // This sample also runs as JavaScript: save as payment-connector.mjs,
 // then run: node payment-connector.mjs
-import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { createServer } from "node:http";
+import { validateWebhookSignature } from "@signalwire/sdk";
 
 const SIGNING_KEY = "<YOUR_SIGNING_KEY>";
 // The URL you pass as payment_connector_url, without any user:password@ part.
@@ -324,11 +325,8 @@ const server = createServer(async (req, res) => {
   let rawBody = "";
   for await (const chunk of req) rawBody += chunk;
 
-  // X-SignalWire-Signature is the hex HMAC-SHA1 of the URL followed by the raw body.
-  const expected = createHmac("sha1", SIGNING_KEY).update(CONNECTOR_URL + rawBody).digest("hex");
   const signature = String(req.headers["x-signalwire-signature"] ?? "");
-  if (signature.length !== expected.length
-    || !timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) {
+  if (!validateWebhookSignature(SIGNING_KEY, signature, CONNECTOR_URL, rawBody)) {
     res.writeHead(403, { "Content-Type": "application/json" }).end('{"error":"invalid signature"}');
     return;
   }
@@ -643,12 +641,13 @@ You hear "The payment result is success." The connector prints a line such as
 
 If you hear a different result, find it here:
 
-- `payment-connector-error`: SignalWire couldn't reach your connector. Check that the tunnel and
-  the connector are both running and that `<YOUR_PAYMENT_CONNECTOR_URL>` is the tunnel's current
-  `https://` URL.
-- `internal-error`: your connector answered without a valid ID. If the connector printed nothing,
-  it rejected the signature: check `<YOUR_SIGNING_KEY>`, and that the connector's
+- `internal-error`: your connector, or the tunnel in front of it, didn't reply with a valid ID. If
+  the connector printed nothing, check that the tunnel and the connector are both running and that
+  `<YOUR_PAYMENT_CONNECTOR_URL>` is the tunnel's current `https://` URL. If they are, the connector
+  rejected the signature: check `<YOUR_SIGNING_KEY>`, and that the connector's
   `<YOUR_PAYMENT_CONNECTOR_URL>` matches the URL in the call exactly.
+- `payment-connector-error`: SignalWire got no response from that URL, because the host couldn't be
+  reached or your connector took too long to reply.
 - `too-many-failed-attempts`: an entry failed SignalWire's check. Re-enter the test card number and
   a future expiration date.
 
@@ -1572,8 +1571,8 @@ await client.run();
 
 To take a payment without the security code, set `security_code` to the string `"false"`. The SWML
 builders in the Server SDKs type `security_code` as a boolean, so these builder samples build the
-document with validation on, then set the string on the built `pay` verb. In the Relay client, pass
-`security_code="false"` or `securityCode: "false"` like any other option.
+document with validation on, then set the string on the built `pay` verb. In the Relay client, set
+the security code option to `"false"` like any other option.
 
 <CodeBlocks>
 
@@ -1816,9 +1815,9 @@ in `payment_connector_error_code` and `payment_connector_error_message`.
 
 ### Track payment progress with a status webhook
 
-Set `status_url` on `pay` in SWML, or `status_url` / `statusUrl` on `call.pay` in Relay, and
-SignalWire sends your webhook a request after the caller enters each card detail, then for
-`payment-processing`, and last for `payment-completed`, `payment-failed`, or `payment-canceled`.
+Set `status_url` on `pay` in SWML or on `call.pay` in Relay, and SignalWire sends your webhook a
+request after the caller enters each card detail, then for `payment-processing`, and last for
+`payment-completed`, `payment-failed`, or `payment-canceled`.
 The step is named in `for`, and the details collected so far arrive with the card number and
 security code masked. A Relay client receives the same progress as `calling.call.pay` events
 without a `result`.
@@ -1852,14 +1851,15 @@ without a `result`.
 | Full result | `pay_payment_results` variable, a JSON string | `params` of the final `calling.call.pay` event |
 | Connector's error | `connector_error.code` and `connector_error.message` | `payment_connector_error_code` and `payment_connector_error_message` |
 | Numeric options | Numbers, such as `max_attempts: 3` | Strings, such as `"3"` |
-| Status webhook option | `status_url` | `status_url` (Python), `statusUrl` (TypeScript) |
 | Stop collection | Run the payment from Relay | `stop()` on the returned action |
 
 ## Stop collecting a payment via WebSocket (Relay)
 
-`call.pay` returns an action you can stop. Stopping it ends collection with the result
-`relay-pay-stop`, and the caller hears that the payment was canceled. The stop takes effect when
-the next prompt starts, so the caller can finish the entry in progress first.
+`call.pay` returns an action you can stop. The stop takes effect when the next prompt starts, so the
+caller can finish the entry in progress first. Collection then ends with the result `relay-pay-stop`
+and no closing prompt, so play your own message, as this handler does. A stop that arrives while the
+caller is entering the last card detail doesn't cancel the payment: SignalWire still sends the card
+to your connector, and the result is your connector's outcome.
 
 This handler extends [Charge a card via WebSocket (Relay)](#charge-a-card-via-websocket-relay). It
 keeps the action and stops it if the caller hasn't finished within two minutes.
@@ -1905,7 +1905,7 @@ async def handle_call(call):
             await action.stop()
         except Exception as err:
             print(f"Couldn't stop the payment: {err}")
-        event = await finished  # result is relay-pay-stop after a stop
+        event = await finished  # relay-pay-stop, unless stopped during the last card detail
     p = event.params
 
     if p["result"] == "success":
@@ -1954,7 +1954,7 @@ client.onCall(async (call) => {
   const timer = setTimeout(() => {
     action.stop().catch((err) => console.log(`Couldn't stop the payment: ${err}`));
   }, 120_000);
-  const p = (await finished).params; // result is relay-pay-stop after a stop
+  const p = (await finished).params; // relay-pay-stop, unless stopped during the last card detail
   clearTimeout(timer);
 
   let text;
@@ -2052,7 +2052,7 @@ await agent.run();
 
 The tool returns this result. Its SWML sets `ai_response`, which tells the agent the payment's
 `pay_result` once collection ends, then runs `pay` with your options and the SDK's defaults filled
-in. Pass `ai_response` to `pay` to change what the agent is told.
+in. To change what the agent is told, pass your own AI response to `pay`.
 
 ```json title="JSON"
 {
