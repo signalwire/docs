@@ -57,7 +57,9 @@ recipient's number as `to`.
 ## Reply with SWML
 
 When the agent is assigned to a SWML Script or SWML Webhook, the script runs for each inbound RCS
-message and its [`reply`](/docs/swml/reference/messaging/reply) method answers over RCS. By default,
+message, as it does for SMS in
+[Reply to incoming messages via SWML](/docs/platform/messaging/send-and-receive-messages#reply-to-incoming-messages-via-swml),
+and its [`reply`](/docs/swml/reference/messaging/reply) method answers over RCS. By default,
 the reply goes to the person who sent the message, from the agent that received it.
 
 In the script, `%{message.type}` is `rcs`, `%{message.to}` and `%{message.agent_id}` are your
@@ -89,7 +91,7 @@ sections:
 ```
 
 When a reply can't be queued, the script stops and the inbound message is marked `failed`, with the
-reason in its `error_code` and `error_message`. Find it in your [message logs](#message-logs). The
+reason in its `error_code` and `error_message`. Find it in your [message logs](#track-delivery). The
 reply fails with one of these codes:
 
 | Code | Cause |
@@ -105,47 +107,22 @@ reply fails with one of these codes:
 | `swml_reply_character_limit_exceeded` | `body` is longer than the character limit. The error states the limit. |
 | `swml_reply_failed` | The reply couldn't be created. |
 
-## Message logs
+## Track delivery
 
-Inbound messages and the delivery status of the messages you send are available in the Dashboard
-under **Logs → Messaging**, and through the message logs endpoint,
-[`GET /api/messaging/logs`](/docs/apis/rest/message-logs/list-message-logs). RCS messages are
-identified by `kind: rcs`.
+RCS messages move through the same states as SMS, listed in
+[How messaging works](/docs/platform/messaging/send-and-receive-messages#how-messaging-works), and
+can also reach `read` when the recipient opens the message. SignalWire doesn't fall back to SMS when
+an RCS message ends `failed` or `undelivered`: to reach that recipient another way, send a new message
+from one of your phone numbers.
 
-## Delivery status
+To follow a message as its state changes, set `status_callback` when you
+[send it](/docs/platform/messaging/rcs/send-messages), or `status_url` on a SWML `reply`. The
+callback is the same one SMS sends, described in
+[Track delivery via REST](/docs/platform/messaging/send-and-receive-messages#track-delivery-via-rest).
+For a rich message, its `body` holds your `content` as a JSON string.
 
-The `status` field updates as an outbound message progresses:
-
-| Status | Meaning |
-|---|---|
-| `queued` | SignalWire accepted the message for delivery. |
-| `initiated` | SignalWire has started sending the message. |
-| `sent` | SignalWire has dispatched the message. |
-| `delivered` | The recipient's device has received the message. |
-| `read` | The recipient has opened the message. |
-| `failed` | The message couldn't be sent. `error_code` and `error_message` say why. |
-| `undelivered` | The message was sent but couldn't be delivered. `error_code` and `error_message` say why. |
-
-A message can end as `failed` even though the API returned `status: queued`, for example when it
-can't be routed or your balance doesn't cover it. It ends as `undelivered` when it was sent but
-didn't reach the recipient. Treat both as final. SignalWire doesn't fall back to SMS: to reach that
-recipient another way, send a new message from one of your phone numbers.
-
-To be notified of each status change as it happens, set `status_callback` when
-[sending a message](/docs/platform/messaging/rcs/send-messages). SignalWire then POSTs a
-message-status payload to your URL at each state change.
-
-<llms-ignore>
-
-<WebhookPayloadSnippet webhook="message_status_callback" />
-
-</llms-ignore>
-
-<llms-only>
-
-See the [Message status callback reference](/docs/apis/rest/webhooks/message-status-callback) for every field and status value.
-
-</llms-only>
+Inbound and outbound RCS messages appear in the Dashboard under **Logs → Messaging**, and in
+[`GET /api/messaging/logs`](/docs/apis/rest/message-logs/list-message-logs), with `kind: rcs`.
 
 ## Next steps
 
