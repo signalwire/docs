@@ -100,7 +100,7 @@ model RcsCalendarAction {
   fallback_url: url;
 }
 
-@doc("Asks the recipient to share their location.")
+@doc("Asks the recipient to share their location. The location the recipient shares isn't delivered to your application.")
 model RcsRequestLocationAction {
   type: "request_location";
 
@@ -187,7 +187,8 @@ model RcsSuggestionsContent {
   @example("Can you make your appointment tomorrow at 2pm?")
   text: string;
 
-  @doc("Suggestions shown under the text.")
+  @doc("Suggestions shown under the text. At least one.")
+  @minItems(1)
   actions: RcsAction[];
 }
 
@@ -201,7 +202,8 @@ model RcsCardContent {
 model RcsCarouselContent {
   type: "carousel";
 
-  @doc("The cards in the carousel. Maximum 10 cards.")
+  @doc("The cards in the carousel. At least 1 and at most 10 cards.")
+  @minItems(1)
   @maxItems(10)
   cards: RcsCard[];
 
