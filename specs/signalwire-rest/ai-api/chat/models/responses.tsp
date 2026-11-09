@@ -112,7 +112,9 @@ model ChatConversationDeletedResponse {
 // chat_log
 // ============================================
 
-// Diverges from Webhooks.AI.AICallLogEntry on `tool_calls` only: the chat service returns
+// Built from Webhooks.AI.AIConversationEntryCore, the fields shared with the voice call log, not
+// from AICallLogEntry: the voice log's per-turn recognition, latency, and interruption fields don't
+// apply to chat. Diverges from the core on `tool_calls` only: the chat service returns
 // `tool_calls: null` on a turn without tool calls (live response, issue #850), while the voice
 // agent's webhook call_log omits the key (mod_openai only stores it when it is an array).
 @doc("""
@@ -120,7 +122,7 @@ model ChatConversationDeletedResponse {
   detail applies to it.
   """)
 model ChatLogEntry is Record<unknown> {
-  ...OmitProperties<Webhooks.AI.AICallLogEntry, "tool_calls">;
+  ...OmitProperties<Webhooks.AI.AIConversationEntryCore, "tool_calls">;
 
   @doc("The tool calls the agent made on this turn. `null` or omitted on a turn that made none.")
   tool_calls?: Record<unknown>[] | null;

@@ -111,8 +111,9 @@ model AiPostPromptCallbackPayload {
   call_log?: AICallLogEntry[];
 
   @doc("""
-    The conversation, unfiltered and append-only. Interruption detail appears here and nowhere else.
-    Included when `action` is `post_conversation`.
+    The conversation, unfiltered and append-only. Interruption detail can appear in either
+    `call_log` or `raw_call_log`, depending on the agent, so check both. Included when `action` is
+    `post_conversation`.
     """)
   raw_call_log?: AICallLogEntry[];
 
@@ -322,7 +323,9 @@ model BedrockPostPromptCallbackPayload {
 
   @doc("""
     The conversation. Each entry carries a `role` of `system`, `user`, or `assistant` and its
-    `content`.
+    `content`. Amazon Bedrock agents report approximate `latency`, `utterance_latency`, and
+    `audio_latency` values on replies, and the same fixed `confidence` value on every caller entry,
+    so don't use them to measure responsiveness or recognition quality.
     """)
   @example(#[
     #{ role: "system", content: "You dispatch taxis." },

@@ -88,7 +88,9 @@ model ChunkListQuery {
 }
 
 model DocumentCreateRequestBase {
-  @doc("URL of the document.")
+  @doc("""
+    Public `http` or `https` URL of the file to ingest. Datasphere downloads the file and accepts PDF, plain text, and Markdown files up to 10 MB. A PDF is recognized from its content, so a Word or Excel file is rejected with a `422` error even when it is served as `text/plain`. A text file is identified by its `Content-Type` header (`text/plain`, `text/markdown`, `text/x-markdown`, or `text/x-web-markdown`), or by its file extension when that header is missing or `application/octet-stream`. An extension that names a more specific text type also overrides `text/plain`, so a `.md` file served as `text/plain` is accepted as Markdown, while a `.csv`, `.json`, or `.xml` file served that way is rejected with a `422` error. The file name, taken from the `Content-Disposition` header or the last segment of the URL path, must have a supported extension or none at all, so a PDF served from `/download.php` is rejected with a `422` error.
+    """)
   @example("https://example.com/document.pdf")
   url: url;
 
@@ -103,13 +105,13 @@ model DocumentCreateSentenceRequest extends DocumentCreateRequestBase {
   @example(40)
   max_sentences_per_chunk?: integer = 50;
 
-  @doc("Strategy for chunking the document")
+  @doc("Splits the text into sentences and groups up to `max_sentences_per_chunk` of them per chunk. This is the default when `chunking_strategy` is omitted.")
   @example(ChunkingStrategy.Sentence)
   chunking_strategy?: ChunkingStrategy.Sentence;
 
   // There's a bug in the REST API plugin for our docs that is not showing the default value when set to 'false`. So we manually document it here.
   @doc("""
-    Whether to split chunks on new lines.
+    Whether a line break also ends a sentence. When `true`, no sentence spans a line break. When `false`, only sentence punctuation ends a sentence.
     \n\n
     **Default value:** `false`
     """)
@@ -123,7 +125,7 @@ model DocumentCreateSlidingRequest extends DocumentCreateRequestBase {
   @example(50)
   chunk_size?: integer = 50;
 
-  @doc("Strategy for chunking the document")
+  @doc("Takes a window of `chunk_size` words and slides it forward so that consecutive chunks share `overlap_size` words.")
   @example(ChunkingStrategy.Sliding)
   chunking_strategy?: ChunkingStrategy.Sliding;
 
@@ -134,14 +136,14 @@ model DocumentCreateSlidingRequest extends DocumentCreateRequestBase {
 
 @summary("Page strategy")
 model DocumentCreatePageRequest extends DocumentCreateRequestBase {
-  @doc("Strategy for chunking the document")
+  @doc("Makes one chunk per page of a PDF. Plain text and Markdown files have no pages, so they are split on blank lines instead, as with `paragraph`.")
   @example(ChunkingStrategy.Page)
   chunking_strategy?: ChunkingStrategy.Page;
 }
 
 @summary("Paragraph strategy")
 model DocumentCreateParagraphRequest extends DocumentCreateRequestBase {
-  @doc("Strategy for chunking the document")
+  @doc("Splits on blank lines so that each paragraph becomes a chunk.")
   @example(ChunkingStrategy.Paragraph)
   chunking_strategy?: ChunkingStrategy.Paragraph;
 }
