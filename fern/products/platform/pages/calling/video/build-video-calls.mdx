@@ -87,7 +87,7 @@ Have these values ready:
 
 - Your Space URL, such as `<YOUR_SPACE>.signalwire.com`.
 - Your Project ID and API token from the Dashboard's [API credentials][api-credentials] page.
-  Enable the token's **Video** permission.
+  Enable the token's **Video** permission, and **Voice** if you bring in phone callers over Relay.
 - A web page you can serve over HTTPS or `localhost`, and a browser with a camera and microphone.
 - To bring in phone callers, a voice-capable [phone number in your Space][phone-numbers] and a
   phone to call it from.
@@ -132,7 +132,7 @@ fails.
 <CodeBlocks>
 <CodeBlock title="Python — REST client">
 ```python
-# Install: python -m pip install signalwire-sdk==3.4.1
+# Install: python -m pip install signalwire-sdk
 # Save as create_video_room.py and run: python create_video_room.py
 from signalwire.rest import RestClient
 
@@ -151,7 +151,7 @@ print(room["id"])
 </CodeBlock>
 <CodeBlock title="TypeScript — REST client">
 ```typescript
-// Install: npm install @signalwire/sdk@2.0.5
+// Install: npm install @signalwire/sdk
 // This sample also runs as JavaScript: save as create-video-room.mjs,
 // then run: node create-video-room.mjs
 import { RestClient } from "@signalwire/sdk";
@@ -199,7 +199,7 @@ room's address and issues a guest token for it, then prints both. Paste the addr
 <CodeBlocks>
 <CodeBlock title="Python — REST client">
 ```python
-# Install: python -m pip install signalwire-sdk==3.4.1
+# Install: python -m pip install signalwire-sdk
 # Save as video_room_token.py and run: python video_room_token.py
 from signalwire.rest import RestClient
 
@@ -219,7 +219,7 @@ print("Guest token:", guest["token"])
 </CodeBlock>
 <CodeBlock title="TypeScript — REST client">
 ```typescript
-// Install: npm install @signalwire/sdk@2.0.5
+// Install: npm install @signalwire/sdk
 // This sample also runs as JavaScript: save as video-room-token.mjs,
 // then run: node video-room-token.mjs
 import { RestClient } from "@signalwire/sdk";
@@ -233,9 +233,7 @@ const client = new RestClient({
 // A new Video Room has one address.
 const { data } = await client.fabric.resources.listAddresses("<YOUR_RESOURCE_ID>");
 const address = data[0];
-const guest = await client.fabric.tokens.createGuestToken({
-  allowed_addresses: [address.id],
-});
+const guest = await client.fabric.tokens.createGuestToken([address.id]);
 
 console.log("Room address:", address.channels.video);
 console.log("Guest token:", guest.token);
@@ -334,11 +332,11 @@ joinButton.onclick = async () => {
 };
 ```
 
-[`dial()`][dial] sends your camera and microphone with `video: true` and `audio: true`.
-`receiveVideo: true` asks for the room's video in return. Receiving video is off by default unless
-the address ends in `?channel=video`, so keep the option whenever you dial a room. Without it, the
-page sends your camera but `#room-video` gets no picture. [`DialOptions`][dial-options] lists every
-media option.
+[`dial()`][dial] sends your camera and microphone with `video: true` and `audio: true`, and
+`receiveVideo: true` asks for the room's video in return. The `channels.video` address ends in
+`?channel=video`, which turns on all three by itself. Keeping the options explicit means the page
+still receives the room's video if it dials the address without that suffix, where receiving video
+is off by default. [`DialOptions`][dial-options] lists every media option.
 
 The local preview is `muted` so you don't hear yourself. `#room-video` isn't, because it also
 carries the room's mixed audio.
@@ -362,7 +360,8 @@ If it doesn't work, check the symptom:
 - **`dial()` rejects with [`CallCreateError`][call-create-error].** The token doesn't reach the
   address. Check that the page dials the `channels.video` address printed with the token, and that
   the token is for this room.
-- **Your camera shows, but the room video stays black.** Dial with `receiveVideo: true`.
+- **Your camera shows, but the room video stays black.** Check that the page dials the
+  `channels.video` address, or keeps `receiveVideo: true` in the `dial()` options.
 - **Joining worked earlier and now fails.** The guest token expired after two hours. Issue a new
   one and reload the page.
 
@@ -525,7 +524,7 @@ changes it. A new room uses `grid-responsive`. The other values are `grid-respon
 <CodeBlocks>
 <CodeBlock title="Python — REST client">
 ```python
-# Install: python -m pip install signalwire-sdk==3.4.1
+# Install: python -m pip install signalwire-sdk
 # Save as set_room_layout.py and run: python set_room_layout.py
 from signalwire.rest import RestClient
 
@@ -544,7 +543,7 @@ print(room["conference_room"]["layout"])
 </CodeBlock>
 <CodeBlock title="TypeScript — REST client">
 ```typescript
-// Install: npm install @signalwire/sdk@2.0.5
+// Install: npm install @signalwire/sdk
 // This sample also runs as JavaScript: save as set-room-layout.mjs,
 // then run: node set-room-layout.mjs
 import { RestClient } from "@signalwire/sdk";
@@ -571,8 +570,9 @@ curl -X PUT "https://<YOUR_SPACE>.signalwire.com/api/fabric/resources/conference
 </CodeBlock>
 </CodeBlocks>
 
-The cURL request calls [Update conference room][rest-update-room], which also sets the room's video
-quality, participant limit, and the other options [Create conference room][rest-create-room] lists.
+The cURL request calls [Update conference room][rest-update-room], which also changes the room's
+video quality, participant limit, and most of the other settings. A room's `name` can't be changed
+after you create it.
 
 ## Show who is in a video call
 
@@ -659,7 +659,7 @@ assign the script to your phone number, as [Answer a call via SWML][answer-swml]
 <CodeBlocks>
 <CodeBlock title="Python — SWML builder">
 ```python
-# Install: python -m pip install signalwire-sdk==3.4.1
+# Install: python -m pip install signalwire-sdk
 # Save as video_room_swml_server.py and run: python video_room_swml_server.py
 from signalwire import SWMLBuilder, SWMLService
 
@@ -678,7 +678,7 @@ service.serve()
 </CodeBlock>
 <CodeBlock title="TypeScript — SWML builder">
 ```typescript
-// Install: npm install @signalwire/sdk@2.0.5
+// Install: npm install @signalwire/sdk
 // This sample also runs as JavaScript: save as video-room-swml-server.mjs,
 // then run: node video-room-swml-server.mjs
 import { SWMLService } from "@signalwire/sdk";
@@ -738,7 +738,7 @@ number, as [Answer a call via WebSocket (Relay)][answer-relay] shows.
 <CodeBlocks>
 <CodeBlock title="Python — Relay client">
 ```python
-# Install: python -m pip install signalwire-sdk==3.4.1
+# Install: python -m pip install signalwire-sdk
 # Save as video_room_relay.py and run: python video_room_relay.py
 from signalwire.relay import RelayClient
 
@@ -759,7 +759,7 @@ client.run()
 </CodeBlock>
 <CodeBlock title="TypeScript — Relay client">
 ```typescript
-// Install: npm install @signalwire/sdk@2.0.5
+// Install: npm install @signalwire/sdk
 // This sample also runs as JavaScript: save as video-room-relay.mjs,
 // then run: node video-room-relay.mjs
 import { RelayClient } from "@signalwire/sdk";
@@ -782,7 +782,8 @@ await client.run();
 </CodeBlocks>
 
 Test it the same way as the SWML version. To take the caller out of the room while keeping the
-call, call `leave_room()` in Python or `leaveRoom()` in TypeScript.
+call, have the handler leave the room with the [Server SDKs][server-sdks] Relay client instead of
+hanging up.
 
 ## Examples
 
