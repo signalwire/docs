@@ -24763,17 +24763,21 @@ components:
             - 0
         audio_in_skip_packet_count:
           type: integer
-          description: Number of received audio packets that were skipped.
+          description: |-
+            Number of received audio intervals filled with comfort noise because no audio packet was
+            available. It grows with lost or late packets and during DTMF digits.
           examples:
             - 5
         audio_in_flush_packet_count:
           type: integer
-          description: Number of received audio packets flushed from the jitter buffer.
+          description: |-
+            Number of queued received packets discarded when the media stream was flushed, for example when
+            the call was bridged or unbridged.
           examples:
             - 0
         audio_in_largest_jb_size:
           type: integer
-          description: The largest size the jitter buffer reached.
+          description: Not populated. Always `0` when the call has quality statistics.
           examples:
             - 0
         audio_in_flaw_total:
@@ -61673,8 +61677,7 @@ components:
             - null
         qos_metrics:
           anyOf:
-            - type: object
-              unevaluatedProperties: {}
+            - $ref: '#/components/schemas/Calling.CallQosMetrics'
             - type: 'null'
           description: Audio quality statistics for the call. Only measured statistics are included. Null if the call has no quality measurement.
           examples:
@@ -62099,10 +62102,176 @@ components:
             type: object
             unevaluatedProperties: {}
           description: The tool calls the agent made on this turn. Present only on a turn that made any.
+        confidence:
+          type: number
+          description: |-
+            How confident speech recognition was in the text, from 0 to 1. On a merged entry, the average
+            across the merged speech, weighted by text length. Caller turns only.
+          examples:
+            - 0.94
+        content_type:
+          type: string
+          description: 'How the caller gave this input: `Detected Speech` or `DTMF` (keypad digits). Caller turns only.'
+          examples:
+            - Detected Speech
+        speaking_to_turn_detection:
+          type: integer
+          description: |-
+            Time from when the caller started speaking until turn detection decided they had finished, in
+            milliseconds. Omitted when the caller's turn ended without a turn-detection decision.
+          examples:
+            - 2140
+        turn_detection_to_final_event:
+          type: integer
+          description: |-
+            Time from turn detection deciding the caller had finished until the final recognition result
+            arrived, in milliseconds. Present alongside `speaking_to_turn_detection`.
+          examples:
+            - 180
+        merge_count:
+          type: integer
+          description: |-
+            How many caller entries were combined into this one the last time the platform merged
+            consecutive caller speech, for example words the caller added after interrupting the agent. An
+            entry that was already merged counts as one. Appears on caller entries once merging has run.
+          examples:
+            - 2
+        latency:
+          type: integer
+          description: |-
+            Time from when the agent started its request to the model until the first token came back, in
+            milliseconds. The request starts once the caller's speech is final, or once a function returns.
+            On a standard agent, if any of `latency`, `utterance_latency`, and `audio_latency` couldn't be
+            measured for a reply, all three are `0`, as on the greeting. A speech-to-speech agent measures
+            from when the reply started instead. On a function result (`tool`), this is the first-token
+            latency of the model request that called the function. If any of the three couldn't be measured
+            there, all three are omitted instead of sent as `0`, and they're always omitted for a function
+            called by the post-prompt.
+          examples:
+            - 612
+        utterance_latency:
+          type: integer
+          description: |-
+            Time from when the agent started its request to the model until the first part of the reply was
+            ready to speak, in milliseconds. On a function result (`tool`), this repeats `function_latency`.
+          examples:
+            - 745
+        audio_latency:
+          type: integer
+          description: |-
+            Time from when the agent started its request to the model until the first audio of the reply
+            played, in milliseconds. It does not include detecting that the caller had finished speaking. On
+            a function result (`tool`), this repeats `execution_latency`.
+          examples:
+            - 1020
+        acoustic_latency:
+          anyOf:
+            - type: integer
+            - type: 'null'
+          description: |-
+            Time from the end of the caller's last word until the first audio of the reply, in milliseconds:
+            the silence the caller heard. `null` when it could not be measured, such as on the greeting. A
+            speech-to-speech agent reports `0` instead of `null` when it could not measure this.
+          examples:
+            - 1310
+        eos_to_push_latency:
+          anyOf:
+            - type: integer
+            - type: 'null'
+          description: |-
+            Time from the end of the caller's last word until their final speech result was ready, in
+            milliseconds: how long it took to detect that the caller had finished. `null` when it could not be
+            measured, and always `null` on a filler phrase.
+          examples:
+            - 290
+        stamps_us:
+          allOf:
+            - $ref: '#/components/schemas/Webhooks.AI.AICallLogTimestamps'
+          description: |-
+            Wall-clock timestamps for the turn. Subtract `last_word_end` from `first_audio` for the silence the
+            caller heard. Present on replies when any timestamp is known.
+          examples:
+            - last_word_end: 1694541296412000
+              first_audio: 1694541297722000
+        barged:
+          type: boolean
+          description: Always `true` when present, meaning the caller interrupted this reply.
+          examples:
+            - true
+        barge_elapsed_ms:
+          type: integer
+          description: How long the reply had been playing when the caller interrupted, in milliseconds.
+          examples:
+            - 1240
+        text_spoken_total:
+          type: string
+          description: |-
+            The full text of the reply. Present on a reply the caller interrupted, and on every reply from a
+            speech-to-speech agent.
+          examples:
+            - Your ride is booked for 6pm. The driver will call when they arrive.
+        text_heard_approx:
+          type: string
+          description: |-
+            An estimate of how much of the reply the caller heard before interrupting: the start of
+            `text_spoken_total`, ending at a word boundary, based on how long the reply had played. Present on
+            a reply the caller interrupted.
+          examples:
+            - Your ride is booked for 6pm.
+        function_latency:
+          type: integer
+          description: |-
+            Time from when the agent started its request to the model until the model called this function,
+            or until the agent had a first reply ready to speak if that was sooner, in milliseconds. Omitted
+            when not measured, such as for a function called by the post-prompt. On a speech-to-speech agent
+            this carries reply timing rather than function timing.
+          examples:
+            - 830
+        execution_latency:
+          type: integer
+          description: |-
+            Time from when the agent started its request to the model until this function returned, in
+            milliseconds, so it includes the function's own run time. Omitted when `function_latency` is. On a
+            speech-to-speech agent this carries reply timing rather than function timing.
+          examples:
+            - 1460
       unevaluatedProperties: {}
       description: |-
         One entry in the conversation. Beyond `role` and `content`, an entry carries whatever per-turn
-        detail applies to it, such as recognition confidence on a caller turn or timings on a reply.
+        detail applies to it, such as recognition confidence on a caller turn (`user`), timings on a reply
+        (`assistant`, or `assistant-manual` for a filler phrase), or function timings on a function result
+        (`tool`). Unlisted keys can also appear.
+
+        The interruption fields (`barged`, `barge_elapsed_ms`, `text_spoken_total`, and
+        `text_heard_approx`) and `merge_count` are recorded on one copy of the conversation, so any of them
+        can be missing from either `call_log` or `raw_call_log`. Check both. A standard agent records no
+        interruption fields on a reply that
+        [`transparent_barge`](/docs/swml/reference/calling/ai/params#paramstransparent_barge) removed from
+        the conversation.
+    Webhooks.AI.AICallLogTimestamps:
+      type: object
+      properties:
+        last_word_end:
+          type: integer
+          format: int64
+          description: |-
+            When the caller's last word ended, for the caller turn this entry responds to. Omitted on entries
+            that don't respond to caller speech, such as the greeting and filler phrases.
+          examples:
+            - 1694541296412000
+        first_audio:
+          type: integer
+          format: int64
+          description: When the first audio of this reply was sent to the caller.
+          examples:
+            - 1694541297722000
+      unevaluatedProperties:
+        type: integer
+        format: int64
+      description: |-
+        Wall-clock moments in one turn, each a Unix timestamp in microseconds on the same clock as the
+        entry's `timestamp`, so subtracting one from another gives the time between them. Each stamp is
+        omitted when it is not known for the turn, and other stamps can appear.
     Webhooks.AI.AICallTimelineEntry:
       type: object
       required:
@@ -62122,6 +62291,40 @@ components:
             - 1694541297950440
       unevaluatedProperties: {}
       description: One event on the call, in order. Beyond `type`, an entry carries the fields belonging to that type.
+    Webhooks.AI.AIConversationEntryCore:
+      type: object
+      required:
+        - role
+        - content
+      properties:
+        role:
+          type: string
+          description: |-
+            Who produced the entry. Common roles include `system`, `user`, `assistant`, and `tool`. Other
+            roles may appear, so filter to the roles your application uses rather than assuming a fixed set.
+          examples:
+            - assistant
+        content:
+          type: string
+          description: The text of the entry.
+          examples:
+            - Your ride is booked for 6pm.
+        timestamp:
+          type: integer
+          format: int64
+          description: When the entry was added, as a Unix timestamp in microseconds. Omitted on entries without one.
+          examples:
+            - 1694541297950440
+        tool_calls:
+          type: array
+          items:
+            type: object
+            unevaluatedProperties: {}
+          description: The tool calls the agent made on this turn. Present only on a turn that made any.
+      unevaluatedProperties: {}
+      description: |-
+        One entry in the conversation. Beyond `role` and `content`, an entry carries whatever per-turn
+        detail applies to it.
     Webhooks.AI.AIDebugConversationAdd:
       type: object
       required:
@@ -64108,8 +64311,9 @@ components:
           items:
             $ref: '#/components/schemas/Webhooks.AI.AICallLogEntry'
           description: |-
-            The conversation, unfiltered and append-only. Interruption detail appears here and nowhere else.
-            Included when `action` is `post_conversation`.
+            The conversation, unfiltered and append-only. Interruption detail can appear in either
+            `call_log` or `raw_call_log`, depending on the agent, so check both. Included when `action` is
+            `post_conversation`.
         call_timeline:
           type: array
           items:
@@ -64590,7 +64794,9 @@ components:
             $ref: '#/components/schemas/Webhooks.AI.AICallLogEntry'
           description: |-
             The conversation. Each entry carries a `role` of `system`, `user`, or `assistant` and its
-            `content`.
+            `content`. Amazon Bedrock agents report approximate `latency`, `utterance_latency`, and
+            `audio_latency` values on replies, and the same fixed `confidence` value on every caller entry,
+            so don't use them to measure responsiveness or recognition quality.
           examples:
             - - role: system
                 content: You dispatch taxis.
