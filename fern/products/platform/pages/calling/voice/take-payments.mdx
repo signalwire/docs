@@ -112,7 +112,7 @@ Replace these values in the samples you run:
 | `<YOUR_API_TOKEN>` | Your API token with the Voice permission, used only in server code |
 | `<YOUR_CALLER_ID>` | Your SignalWire phone number, or a [verified caller ID][caller-id], in E.164 format |
 | `<YOUR_DESTINATION>` | The phone you'll answer, in E.164 format |
-| `<YOUR_PAYMENT_CONNECTOR_URL>` | The public `https://` URL of your payment connector, exactly as you pass it in `payment_connector_url`. SignalWire signs requests against this string. |
+| `<YOUR_PAYMENT_CONNECTOR_URL>` | The public `https://` URL of your payment connector, exactly as you pass it in `payment_connector_url`. SignalWire signs requests against this string, minus any `user:password@` credentials in it. |
 | `<YOUR_SIGNING_KEY>` | Your project's Signing Key, used only in your payment connector |
 | `<YOUR_STATUS_WEBHOOK_URL>` | An HTTPS endpoint you control that receives payment progress |
 
@@ -169,7 +169,9 @@ sequenceDiagram
 SignalWire sends your connector one HTTPS `POST` per payment, with a JSON body. Your connector
 checks the signature, charges the card or saves it through your payment processor, and replies.
 
-This is the body for the Bayview Taxi fare. A test card's details arrive in full:
+This is the body for the Bayview Taxi fare when `pay` also passes a ride ID in `parameters`, as in
+[Payment options](#payment-options-prompts-card-types-security-code-and-postal-code). A test card's
+details arrive in full:
 
 ```json title="JSON"
 {
@@ -202,7 +204,7 @@ This is the body for the Bayview Taxi fare. A test card's details arrive in full
 | `chargeAmount` | The amount to charge. A zero amount means save the card instead of charging it. |
 | `token_type` | The `token_type` you set on `pay`, `reusable` by default |
 | `currency_code` | The currency, `usd` by default |
-| `parameters` | The custom `parameters` you set on `pay`, each as a one-key object |
+| `parameters` | The custom `parameters` you set on `pay`, each as a one-key object, left out when you set none |
 
 Reply with HTTP `200` and a JSON body. For a charge, return the processor's charge ID in
 `charge_id`. For a zero amount, return the saved card's token in `token_id`. To decline, return
@@ -241,8 +243,10 @@ for a charge, or a `token_id` for a zero amount, and no error. Any other reply i
 including a non-200 status and a `token_id` for a nonzero amount.
 
 SignalWire signs each request with your project's [Signing Key][signing-key]. The
-`X-SignalWire-Signature` header holds the lowercase hex HMAC-SHA1 of the connector URL, exactly as
-you passed it in `payment_connector_url`, followed by the raw request body. An
+`X-SignalWire-Signature` header holds the lowercase hex HMAC-SHA1 of the connector URL you passed in
+`payment_connector_url`, followed by the raw request body. If that URL carries credentials, as
+`https://user:password@pay.example.com/` does, SignalWire removes them before signing and sends them
+as HTTP Basic authentication instead, so the signed URL is `https://pay.example.com/`. An
 `X-SignalWire-SHA256-Signature` header carries the same value computed with HMAC-SHA256. Compute
 the signature yourself and reject any request whose header doesn't match. The samples check it with
 the Server SDKs' `validate_webhook_signature` helper and with the Node.js `crypto` module. Both
@@ -263,8 +267,8 @@ from flask import Flask, jsonify, request
 from signalwire.core.security import validate_webhook_signature
 
 SIGNING_KEY = "<YOUR_SIGNING_KEY>"
-# The exact URL you pass as payment_connector_url. SignalWire signs that URL,
-# which can differ from the one your server sees behind a tunnel or proxy.
+# The URL you pass as payment_connector_url, without any user:password@ part.
+# SignalWire signs that URL, not the one a tunnel or proxy hands your server.
 CONNECTOR_URL = "<YOUR_PAYMENT_CONNECTOR_URL>"
 
 app = Flask(__name__)
@@ -303,7 +307,7 @@ if __name__ == "__main__":
     app.run(port=8080)
 ```
 
-```typescript title="TypeScript — Node.js http" {16-23}
+```typescript title="TypeScript — Node.js http" {17-24}
 // No install needed: this server uses only Node.js built-in modules.
 // This sample also runs as JavaScript: save as payment-connector.mjs,
 // then run: node payment-connector.mjs
@@ -311,11 +315,12 @@ import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import { createServer } from "node:http";
 
 const SIGNING_KEY = "<YOUR_SIGNING_KEY>";
-// The exact URL you pass as payment_connector_url. SignalWire signs that URL,
-// which can differ from the one your server sees behind a tunnel or proxy.
+// The URL you pass as payment_connector_url, without any user:password@ part.
+// SignalWire signs that URL, not the one a tunnel or proxy hands your server.
 const CONNECTOR_URL = "<YOUR_PAYMENT_CONNECTOR_URL>";
 
 const server = createServer(async (req, res) => {
+  req.setEncoding("utf8"); // Decodes across chunks, so a split multi-byte character survives.
   let rawBody = "";
   for await (const chunk of req) rawBody += chunk;
 
@@ -649,9 +654,11 @@ If you hear a different result, find it here:
 - `too-many-failed-attempts`: an entry failed SignalWire's check. Re-enter the test card number and
   a future expiration date.
 
-If the call ends before anything plays, or `call.pay` returns an error in the Relay program, check
-that `<YOUR_PAYMENT_CONNECTOR_URL>` starts with `https://`. SignalWire runs a SWML document or a
-`call.pay` request only when its connector URL does.
+If the call ends before anything plays, or the Relay program stops at `call.pay` with an error
+instead of printing a result, check that `<YOUR_PAYMENT_CONNECTOR_URL>` starts with `https://`.
+SignalWire runs a SWML document or a `call.pay` request only when its connector URL does. The Relay
+program stops without hanging up when `call.pay` fails, so end the call on your phone if it's still
+connected.
 
 </Step>
 
@@ -1195,13 +1202,22 @@ Each entry in `prompts` replaces SignalWire's prompt for one step, named in `for
 `Say` action speaks its `phrase` as text-to-speech, and a `Play` action plays the audio file at the
 URL in its `phrase`. Narrow a prompt to one situation with `error_type`, a space-separated list of
 errors such as `invalid-card-number invalid-card-type` or `timeout`; with `card_type`; or with
-`attempt`, a space-separated list of attempt numbers such as `"2 3"`. A prompt that matches the
-current error takes priority over a plain prompt for the same step. Steps you don't give a prompt
+`attempt`, a space-separated list of attempt numbers such as `"2 3"`. Steps you don't give a prompt
 keep SignalWire's.
 
+When several prompts match, SignalWire plays the most specific one, counting its own prompts too.
+A prompt whose `error_type` matches the current error outranks one whose `card_type` matches the
+card, which outranks a prompt with neither, and your prompt wins a tie with SignalWire's.
+SignalWire has its own prompt for every retry after a timeout or an invalid entry, so a prompt
+without `error_type` replaces SignalWire's only on the first try. To replace a retry prompt too,
+give your prompt the matching `error_type`. The security code of an American Express card has its
+own prompts as well, so a security code prompt replaces them only when its `card_type` includes
+`amex`.
+
 The Bayview Taxi fare below accepts Visa and Mastercard only, skips the postal code, gives the
-caller three tries and ten seconds per entry, and has three custom prompts. It passes the ride's ID
-to the connector in `parameters`.
+caller three tries and ten seconds per entry, and has three custom prompts. The second card number
+prompt names `timeout` and both invalid-entry errors, so the caller hears it on every retry of the
+card number. The fare passes the ride's ID to the connector in `parameters`.
 
 ### Set payment options via SWML
 
@@ -1232,7 +1248,7 @@ swml = (
             },
             {
                 "for": "payment-card-number",
-                "error_type": "invalid-card-number invalid-card-type",
+                "error_type": "timeout invalid-card-number invalid-card-type",
                 "actions": [{
                     "type": "Say",
                     "phrase": "Bayview Taxi takes Visa and Mastercard. Enter the card number again, then press pound.",
@@ -1276,7 +1292,7 @@ const swml = new SwmlBuilder()
       },
       {
         for: "payment-card-number",
-        error_type: "invalid-card-number invalid-card-type",
+        error_type: "timeout invalid-card-number invalid-card-type",
         actions: [{
           type: "Say",
           phrase: "Bayview Taxi takes Visa and Mastercard. Enter the card number again, then press pound.",
@@ -1315,7 +1331,7 @@ sections:
               - type: Say
                 phrase: Enter your card number, then press pound.
           - for: payment-card-number
-            error_type: invalid-card-number invalid-card-type
+            error_type: timeout invalid-card-number invalid-card-type
             actions:
               - type: Say
                 phrase: Bayview Taxi takes Visa and Mastercard. Enter the card number again, then press pound.
@@ -1360,7 +1376,7 @@ sections:
             },
             {
               "for": "payment-card-number",
-              "error_type": "invalid-card-number invalid-card-type",
+              "error_type": "timeout invalid-card-number invalid-card-type",
               "actions": [
                 {
                   "type": "Say",
@@ -1450,7 +1466,7 @@ async def handle_call(call):
             },
             {
                 "for": "payment-card-number",
-                "error_type": "invalid-card-number invalid-card-type",
+                "error_type": "timeout invalid-card-number invalid-card-type",
                 "actions": [{
                     "type": "Say",
                     "phrase": "Bayview Taxi takes Visa and Mastercard. Enter the card number again, then press pound.",
@@ -1517,7 +1533,7 @@ client.onCall(async (call) => {
       },
       {
         for: "payment-card-number",
-        error_type: "invalid-card-number invalid-card-type",
+        error_type: "timeout invalid-card-number invalid-card-type",
         actions: [{
           type: "Say",
           phrase: "Bayview Taxi takes Visa and Mastercard. Enter the card number again, then press pound.",
@@ -1557,36 +1573,36 @@ await client.run();
 ### Skip the security code via SWML
 
 To take a payment without the security code, set `security_code` to the string `"false"`. The SWML
-builders in the pinned Server SDKs type `security_code` as a boolean, so these builder samples add
-the string form past the builder's check: one turns off schema validation for the document, and the
-other adds the `pay` verb with `addVerb`. In the Relay client, pass `security_code="false"` or
-`securityCode: "false"` like any other option.
+builders in the Server SDKs type `security_code` as a boolean, so these builder samples add the
+string form past the builder's check for the `pay` verb only. In the Relay client, pass
+`security_code="false"` or `securityCode: "false"` like any other option.
 
 <CodeBlocks>
 
-```python title="Python — SWML builder" {7-9,17}
+```python title="Python — SWML builder" {20-23}
 # Install: python -m pip install signalwire-sdk==3.4.1
 # Save as skip_security_code_swml.py and run: python skip_security_code_swml.py
 import json
 
 from signalwire import SWMLBuilder, SWMLService
 
-# The SDK's pay schema types security_code as a boolean, but SWML takes the
-# string "true" or "false", so this document skips the SDK's schema check.
-service = SWMLService(name="skip-security-code", schema_validation=False)
 swml = (
-    SWMLBuilder(service)
+    SWMLBuilder(SWMLService(name="skip-security-code"))
     .answer()
     .pay(
         payment_connector_url="<YOUR_PAYMENT_CONNECTOR_URL>",
         charge_amount="24.50",
         description="Bayview Taxi fare",
-        security_code="false",
     )
     .say("The payment result is ${pay_result}.")
     .hangup()
     .build()
 )
+
+# The SDK types security_code as a boolean, but SWML takes the string
+# "true" or "false", so set it on the built pay verb, past the SDK's check.
+pay = next(verb["pay"] for verb in swml["sections"]["main"] if "pay" in verb)
+pay["security_code"] = "false"
 
 print(json.dumps(swml, indent=2))
 ```
@@ -1666,8 +1682,9 @@ Every payment ends with one result value. SWML stores it in `pay_result`, and Re
 |---|---|
 | `success` | Your connector replied with a `charge_id`, or a `token_id` for a saved card |
 | `too-many-failed-attempts` | An entry failed SignalWire's check, or timed out, on every one of the caller's `max_attempts` tries |
-| `payment-connector-error` | SignalWire couldn't reach your payment connector |
+| `payment-connector-error` | SignalWire couldn't reach your payment connector, or got no response from it |
 | `internal-error` | The payment didn't complete. When your connector declines the card or replies without a valid ID, `payment_error` is `card-declined`. |
+| `validation-error` | The payment stopped before collection because `payment_method` or `bank_account_type` held a value SignalWire doesn't support |
 | `caller-interrupted-with-star` | The caller pressed `*` to cancel |
 | `relay-pay-stop` | Your Relay code [stopped collection](#stop-collecting-a-payment-via-websocket-relay) |
 | `caller-hung-up` | The caller hung up during the payment |
@@ -1846,7 +1863,7 @@ keeps the action and stops it if the caller hasn't finished within two minutes.
 
 <CodeBlocks>
 
-```python title="Python — Relay client" {26,31-36}
+```python title="Python — Relay client" {26,31-39}
 # Install: python -m pip install signalwire-sdk==3.4.1
 # Save as stop_payment_relay.py and run: python stop_payment_relay.py
 import asyncio
@@ -1881,8 +1898,11 @@ async def handle_call(call):
         # Give the caller two minutes to finish entering the card.
         event = await asyncio.wait_for(asyncio.shield(finished), timeout=120)
     except asyncio.TimeoutError:
-        await action.stop()
-        event = await finished  # result is relay-pay-stop
+        try:
+            await action.stop()
+        except Exception as err:
+            print(f"Couldn't stop the payment: {err}")
+        event = await finished  # result is relay-pay-stop after a stop
     p = event.params
 
     if p["result"] == "success":
@@ -1902,7 +1922,7 @@ async def handle_call(call):
 client.run()
 ```
 
-```typescript title="TypeScript — Relay client" {21,26-28}
+```typescript title="TypeScript — Relay client" {21,26-30}
 // Install: npm install @signalwire/sdk@2.0.5
 // This sample also runs as JavaScript: save as stop-payment-relay.mjs,
 // then run: node stop-payment-relay.mjs
@@ -1928,7 +1948,9 @@ client.onCall(async (call) => {
     description: "Bayview Taxi fare",
   });
   // Give the caller two minutes to finish entering the card.
-  const timer = setTimeout(() => void action.stop(), 120_000);
+  const timer = setTimeout(() => {
+    action.stop().catch((err) => console.log(`Couldn't stop the payment: ${err}`));
+  }, 120_000);
   const p = (await finished).params; // result is relay-pay-stop after a stop
   clearTimeout(timer);
 
