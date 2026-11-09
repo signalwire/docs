@@ -41,5 +41,5 @@ model AccountResponse {
 @doc("Response containing a newly created subproject account.")
 model AccountCreatedResponse {
   @statusCode statusCode: 201;
-  @body body: Account;
+  @body body: SubprojectAccount;
 }
