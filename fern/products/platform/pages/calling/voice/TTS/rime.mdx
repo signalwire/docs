@@ -118,105 +118,434 @@ For a full demonstration and sample script, see below.
 
 ---
 
-## Build with Rime on SignalWire
+## Use Rime voices on a call
 
-<Steps>
+A Rime voice string such as `rime.luna:coda` works wherever SignalWire speaks text: an AI
+agent's `languages`, the `say_voice` of SWML's `play`, and a `tts` media item sent with Relay or
+the REST Calling API. The examples below all use `rime.luna:coda`. To control speech while it plays, see
+[Speak text on a call](/docs/platform/voice/speak-text).
 
-### Create a Space and add credit
+Replace these values in the samples:
 
-If you don't have one yet, you'll need to 
-[create a SignalWire Space](/docs/platform/signing-up-for-a-space).
-Be sure to add some credit to test with.
+| Value | Replace with |
+|---|---|
+| `<YOUR_BASIC_AUTH_PASSWORD>` | A password you choose for your SWML server; SignalWire sends it from the URL you give it |
+| `<YOUR_PROJECT_ID>` | Your Project ID |
+| `<YOUR_API_TOKEN>` | An API token with the **Voice** permission, used only in server code |
+| `<YOUR_SPACE>` | Your Space's subdomain in `<YOUR_SPACE>.signalwire.com` |
+| `<YOUR_CALL_ID>` | The ID of an answered call, for the REST command |
 
-### Add a new Resource
+### Give an AI agent a Rime voice via SWML
 
-<Markdown src="/snippets/common/dashboard/add-resource.mdx" />
+The [`languages`](/docs/swml/reference/calling/ai/languages#use-voice-strings) list of the SWML
+[`ai`](/docs/swml/reference/calling/ai) method sets the voice an AI agent speaks in. The
+[Server SDKs](/docs/server-sdks) build the document and serve it at `/swml` on port 3000, only to
+requests that carry the username `signalwire` and your password.
 
-### Create a SWML Script
+<CodeBlocks>
+<CodeBlock title="Python — SWML builder">
+```python
+# Install: python -m pip install signalwire-sdk
+# Save as rime_ai_agent.py and run: python rime_ai_agent.py
+from signalwire import SWMLBuilder, SWMLService
 
-From the Resources menu, select **SWML Script**.
-Name it something fun and recognizable.
-Ours is titled Rime Wizard.
+service = SWMLService(
+    name="rime-ai-agent",
+    route="/swml",
+    port=3000,
+    basic_auth=("signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"),
+)
+SWMLBuilder(service).ai(
+    prompt_text="You are Ada, the dispatcher for Bayview Taxi. Greet the caller and help them book a ride.",
+    languages=[{
+        "name": "English",
+        "code": "en-US",
+        "voice": "rime.luna:coda",
+    }],
+)
 
-Next, paste the following starter script into the text box, and hit <kbd>Save</kbd>:
+service.serve()
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — SWML builder">
+```typescript
+// Install: npm install @signalwire/sdk
+// This sample also runs as JavaScript: save as rime-ai-agent.mjs,
+// then run: node rime-ai-agent.mjs
+import { SWMLService } from "@signalwire/sdk";
 
+const service = new SWMLService({
+  name: "rime-ai-agent",
+  route: "/swml",
+  port: 3000,
+  basicAuth: ["signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"],
+});
+service.getBuilder().ai({
+  // @ts-expect-error The ai verb takes a { text } prompt; the SDK types prompt as a string or array.
+  prompt: { text: "You are Ada, the dispatcher for Bayview Taxi. Greet the caller and help them book a ride." },
+  languages: [
+    { name: "English", code: "en-US", voice: "rime.luna:coda" },
+  ],
+});
+
+await service.serve();
+```
+</CodeBlock>
+<CodeBlock title="YAML">
 ```yaml
 version: 1.0.0
 sections:
   main:
-  - ai:
-      prompt:
-        text: | 
-          You're Luna, a voice from Rime's Coda model! 
-          Introduce yourself, and have a conversation about programmable unified communications on the SignalWire platform. 
-      languages:
-      - name: English
-        code: en-US
-        voice: rime.luna
-        model: coda
+    - ai:
+        prompt:
+          text: "You are Ada, the dispatcher for Bayview Taxi. Greet the caller and help them book a ride."
+        languages:
+          - name: English
+            code: en-US
+            voice: "rime.luna:coda"
 ```
-{/*
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "ai": {
+          "prompt": {
+            "text": "You are Ada, the dispatcher for Bayview Taxi. Greet the caller and help them book a ride."
+          },
+          "languages": [
+            {
+              "name": "English",
+              "code": "en-US",
+              "voice": "rime.luna:coda"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
 ```
-        params:
-          rime_model: coda
+</CodeBlock>
+</CodeBlocks>
+
+To send calls from your phone number to the server, follow
+[Answer a call via SWML](/docs/platform/voice/make-and-receive-calls#answer-a-call-via-swml).
+Call the number, and the agent greets you in the Rime voice. If you hear a different voice, the
+voice string isn't in SignalWire's catalog, so the call falls back to a default voice. See
+[Custom and cloned voices](/docs/platform/voice/tts#custom-and-cloned-voices).
+
+### Speak text in a Rime voice via SWML
+
+The SWML builder's `say()` writes a [`play`](/docs/swml/reference/calling/play) with a `say:` URL
+and the voice in `say_voice`. This server speaks one sentence in the Rime voice, then hangs up.
+Serve it and point your number at it the same way as the AI agent above.
+
+<CodeBlocks>
+<CodeBlock title="Python — SWML builder">
+```python
+# Install: python -m pip install signalwire-sdk
+# Save as rime_tts.py and run: python rime_tts.py
+from signalwire import SWMLBuilder, SWMLService
+
+service = SWMLService(
+    name="rime-tts",
+    route="/swml",
+    port=3000,
+    basic_auth=("signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"),
+)
+SWMLBuilder(service).say(
+    "Hello from Bayview Taxi. You are hearing Rime text to speech on SignalWire.",
+    voice="rime.luna:coda",
+).hangup()
+
+service.serve()
 ```
+</CodeBlock>
+<CodeBlock title="TypeScript — SWML builder">
+```typescript
+// Install: npm install @signalwire/sdk
+// This sample also runs as JavaScript: save as rime-tts.mjs,
+// then run: node rime-tts.mjs
+import { SWMLService } from "@signalwire/sdk";
 
-This simple YAML file is actually a complete application that SignalWire hosts and deploys the moment you hit save.
-The hard telecom and LLM integration happen behind the scenes,
-so all you have to worry about is calling the ai method, giving it a prompt, and assigning a TTS voice.
-In this case, we're using Rime's Celeste voice.
+const service = new SWMLService({
+  name: "rime-tts",
+  route: "/swml",
+  port: 3000,
+  basicAuth: ["signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"],
+});
+service.getBuilder()
+  .say("Hello from Bayview Taxi. You are hearing Rime text to speech on SignalWire.", {
+    voice: "rime.luna:coda",
+  })
+  .hangup();
 
-SWML is compact but mighty.
-This same SWML script can be expanded to do almost anything -
-call external APIs,
-use defined "tools" or functions,
-retrieve structured information from SignalWire's
-[Datasphere](https://signalwire.com/blogs/developers/signalwire-datasphere-build-specialized-ai) RAG stack,
-switch voices and contexts,
-programmatically modify its own source with the
-[Prompt Object Model](/docs/ai/pom/),
-and transfer to other [Resources](/docs/platform/resources) on SignalWire.
-*/}
+await service.serve();
+```
+</CodeBlock>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - play:
+        url: "say:Hello from Bayview Taxi. You are hearing Rime text to speech on SignalWire."
+        say_voice: "rime.luna:coda"
+    - hangup: {}
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "play": {
+          "url": "say:Hello from Bayview Taxi. You are hearing Rime text to speech on SignalWire.",
+          "say_voice": "rime.luna:coda"
+        }
+      },
+      {
+        "hangup": {}
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
 
-### Buy and assign a phone number
+### Speak text in a Rime voice via WebSocket (Relay)
 
-Navigate to the **Phone Numbers** section of the Dashboard's left sidebar menu.
+A Relay client in the [Server SDKs](/docs/server-sdks) passes the voice string in a `tts` media
+item. This handler answers calls on the `default` topic, speaks in the Rime voice, and hangs
+up when the speech ends.
 
-Purchase a phone number and assign it to the desired SWML script.
+<CodeBlocks>
+<CodeBlock title="Python — Relay client">
+```python
+# Install: python -m pip install signalwire-sdk
+# Save as rime_relay.py and run: python rime_relay.py
+from signalwire.relay import RelayClient
 
-<Markdown src="/snippets/common/dashboard/_assign-resource-voice.mdx" />
+client = RelayClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    contexts=["default"],
+)
 
-### Give it a call!
+@client.on_call
+async def handle_call(call):
+    await call.answer()
 
-Call the number you just assigned to chat with your new AI voice application on the phone.
+    async def hang_up_after_playback(_event):
+        if call.state != "ended":
+            await call.hangup()
 
-</Steps>
+    await call.play([{
+        "type": "tts",
+        "params": {
+            "text": "Hello from Bayview Taxi. You are hearing Rime text to speech on SignalWire.",
+            "voice": "rime.luna:coda",
+        },
+    }], on_completed=hang_up_after_playback)
+    await call.wait_for_ended()
 
-## Next steps with SWML
+client.run()
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — Relay client">
+```typescript
+// Install: npm install @signalwire/sdk
+// This sample also runs as JavaScript: save as rime-relay.mjs,
+// then run: node rime-relay.mjs
+import { RelayClient } from "@signalwire/sdk";
 
-Now you've deployed your very first SignalWire voice AI application using Rime voices. 
-Next, dive deeper into SWML to explore its capabilities!
+const client = new RelayClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  contexts: ["default"],
+});
+
+client.onCall(async (call) => {
+  await call.answer();
+  await call.play([{
+    type: "tts",
+    params: {
+      text: "Hello from Bayview Taxi. You are hearing Rime text to speech on SignalWire.",
+      voice: "rime.luna:coda",
+    },
+  }], {
+    onCompleted: async () => {
+      if (call.state !== "ended") await call.hangup();
+    },
+  });
+  await call.waitForEnded();
+});
+
+await client.run();
+```
+</CodeBlock>
+</CodeBlocks>
+
+To route calls from your phone number to the handler, assign the number to a Relay Application
+on the `default` topic, as described in
+[Answer a call via WebSocket (Relay)](/docs/platform/voice/make-and-receive-calls#answer-a-call-via-websocket-relay).
+
+### Speak text in a Rime voice on a call in progress via REST
+
+To speak on a call that's already up, such as from a backend job, send
+[`calling.play`](/docs/apis/rest/calls/call-commands) with the call's ID and the same `tts` media
+item. `control_id` names the playback so later commands can stop or pause it.
+
+<CodeBlocks>
+<CodeBlock title="Python — REST client">
+```python
+# Install: python -m pip install signalwire-sdk
+# Save as rime_rest.py and run: python rime_rest.py
+from signalwire.rest import RestClient
+
+client = RestClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    host="<YOUR_SPACE>.signalwire.com",
+)
+
+client.calling.play(
+    "<YOUR_CALL_ID>",
+    control_id="rime-greeting",
+    play=[{
+        "type": "tts",
+        "params": {
+            "text": "Hello from Bayview Taxi. You are hearing Rime text to speech on SignalWire.",
+            "voice": "rime.luna:coda",
+        },
+    }],
+)
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — REST client">
+```typescript
+// Install: npm install @signalwire/sdk
+// This sample also runs as JavaScript: save as rime-rest.mjs,
+// then run: node rime-rest.mjs
+import { RestClient } from "@signalwire/sdk";
+
+const client = new RestClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  host: "<YOUR_SPACE>.signalwire.com",
+});
+
+await client.calling.play("<YOUR_CALL_ID>", [{
+  type: "tts",
+  params: {
+    text: "Hello from Bayview Taxi. You are hearing Rime text to speech on SignalWire.",
+    voice: "rime.luna:coda",
+  },
+}], { control_id: "rime-greeting" });
+```
+</CodeBlock>
+<CodeBlock title="cURL — Calling API">
+```bash
+curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
+  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "command": "calling.play",
+    "id": "<YOUR_CALL_ID>",
+    "params": {
+      "control_id": "rime-greeting",
+      "play": [
+        {
+          "type": "tts",
+          "params": {
+            "text": "Hello from Bayview Taxi. You are hearing Rime text to speech on SignalWire.",
+            "voice": "rime.luna:coda"
+          }
+        }
+      ]
+    }
+  }'
+```
+</CodeBlock>
+</CodeBlocks>
+
+The command returns once SignalWire accepts it, and the call hears the sentence in the Rime
+voice.
+
+### Create a SWML Script that uses a Rime voice
+
+A SWML Script hosted in SignalWire runs the Rime-voiced AI agent above without a server of
+your own.
+
+1. In the Dashboard, open **My Resources**, select **+ Add**, then **Script**, then **SWML Script**.
+2. Name the script and leave **Used For** set to **Calling**.
+3. Under **Handle Calls Using**, choose **Hosted Script** and paste this document into
+   **Primary Script**.
+4. Select **Create**.
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - ai:
+        prompt:
+          text: "You are Ada, the dispatcher for Bayview Taxi. Greet the caller and help them book a ride."
+        languages:
+          - name: English
+            code: en-US
+            voice: "rime.luna:coda"
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "ai": {
+          "prompt": {
+            "text": "You are Ada, the dispatcher for Bayview Taxi. Greet the caller and help them book a ride."
+          },
+          "languages": [
+            {
+              "name": "English",
+              "code": "en-US",
+              "voice": "rime.luna:coda"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+Assign the script to your phone number as in
+[Answer a call via SWML](/docs/platform/voice/make-and-receive-calls#answer-a-call-via-swml), then
+call the number. The agent answers in the Rime voice.
+
+## Next steps
 
 <CardGroup cols={3}>
-   <Card
-        title="Methods reference"
-        href="/docs/swml"
-        icon="/assets/icons/swml.svg"
-    >
-        Documentation for all SWML methods
-    </Card>
-    <Card
-        title="AI in SWML"
-        href="/docs/swml/guides"
-        icon="regular wand-magic-sparkles"
-    >
-        Build advanced AI applications using SignalWire Markup Language
-    </Card>
-    <Card
-        title="Guides"
-        href="/docs/swml/guides"
-        icon="regular book-open"
-    >
-    SWML guides and demo applications
-    </Card>
+  <Card title="Speak text on a call" icon="regular comment-dots" href="/docs/platform/voice/speak-text">
+    Control speech while it plays, mix it with audio, and speak on calls in progress.
+  </Card>
+  <Card title="Voice and language" icon="regular language" href="/docs/server-sdks/guides/voice-language">
+    Configure voices, languages, and pronunciation for AI agents built with the Server SDKs.
+  </Card>
+  <Card title="AI languages reference" icon="regular book-open" href="/docs/swml/reference/calling/ai/languages">
+    Every voice and language setting the SWML `ai` method accepts.
+  </Card>
 </CardGroup>

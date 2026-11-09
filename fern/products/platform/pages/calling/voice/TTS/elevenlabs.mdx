@@ -115,20 +115,34 @@ for an up-to-date list of supported languages.
 
 ---
 
-## Examples
+## Use ElevenLabs voices on a call
 
-Learn how to use ElevenLabs voices on the SignalWire platform.
+An ElevenLabs voice string such as `elevenlabs.rachel` works wherever SignalWire speaks text: an AI
+agent's `languages`, the `say_voice` of SWML's `play`, and a `tts` media item sent with Relay or
+the REST Calling API. The examples below all use `elevenlabs.rachel`. To control speech while it plays, see
+[Speak text on a call](/docs/platform/voice/speak-text).
 
-<Tabs>
-<Tab title="SWML">
-Use the
-[**`languages`**](/docs/swml/reference/calling/ai/languages#use-voice-strings)
-SWML method to set one or more voices for an [AI agent](/docs/swml/reference/calling/ai).
+Replace these values in the samples:
+
+| Value | Replace with |
+|---|---|
+| `<YOUR_BASIC_AUTH_PASSWORD>` | A password you choose for your SWML server; SignalWire sends it from the URL you give it |
+| `<YOUR_PROJECT_ID>` | Your Project ID |
+| `<YOUR_API_TOKEN>` | An API token with the **Voice** permission, used only in server code |
+| `<YOUR_SPACE>` | Your Space's subdomain in `<YOUR_SPACE>.signalwire.com` |
+| `<YOUR_CALL_ID>` | The ID of an answered call, for the REST command |
+
+### Give an AI agent an ElevenLabs voice via SWML
+
+The [`languages`](/docs/swml/reference/calling/ai/languages#use-voice-strings) list of the SWML
+[`ai`](/docs/swml/reference/calling/ai) method sets the voice an AI agent speaks in. The
+[Server SDKs](/docs/server-sdks) build the document and serve it at `/swml` on port 3000, only to
+requests that carry the username `signalwire` and your password.
 
 <CodeBlocks>
 <CodeBlock title="Python — SWML builder">
 ```python
-# Install: python -m pip install signalwire-sdk==3.4.1
+# Install: python -m pip install signalwire-sdk
 # Save as elevenlabs_ai_agent.py and run: python elevenlabs_ai_agent.py
 from signalwire import SWMLBuilder, SWMLService
 
@@ -139,7 +153,7 @@ service = SWMLService(
     basic_auth=("signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"),
 )
 SWMLBuilder(service).ai(
-    prompt_text="Have an open-ended conversation about flowers.",
+    prompt_text="You are Ada, the dispatcher for Bayview Taxi. Greet the caller and help them book a ride.",
     languages=[{
         "name": "English",
         "code": "en-US",
@@ -152,7 +166,7 @@ service.serve()
 </CodeBlock>
 <CodeBlock title="TypeScript — SWML builder">
 ```typescript
-// Install: npm install @signalwire/sdk@2.0.5
+// Install: npm install @signalwire/sdk
 // This sample also runs as JavaScript: save as elevenlabs-ai-agent.mjs,
 // then run: node elevenlabs-ai-agent.mjs
 import { SWMLService } from "@signalwire/sdk";
@@ -164,8 +178,8 @@ const service = new SWMLService({
   basicAuth: ["signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"],
 });
 service.getBuilder().ai({
-  // @ts-expect-error The ai verb takes a { text } prompt; SDK 2.0.5 types it as a string.
-  prompt: { text: "Have an open-ended conversation about flowers." },
+  // @ts-expect-error The ai verb takes a { text } prompt; the SDK types prompt as a string or array.
+  prompt: { text: "You are Ada, the dispatcher for Bayview Taxi. Greet the caller and help them book a ride." },
   languages: [
     { name: "English", code: "en-US", voice: "elevenlabs.rachel" },
   ],
@@ -179,25 +193,58 @@ await service.serve();
 version: 1.0.0
 sections:
   main:
-  - ai:
-      prompt:
-        text: Have an open-ended conversation about flowers.
-      languages:
-        - name: English
-          code: en-US
-          voice: elevenlabs.rachel
+    - ai:
+        prompt:
+          text: "You are Ada, the dispatcher for Bayview Taxi. Greet the caller and help them book a ride."
+        languages:
+          - name: English
+            code: en-US
+            voice: "elevenlabs.rachel"
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "ai": {
+          "prompt": {
+            "text": "You are Ada, the dispatcher for Bayview Taxi. Greet the caller and help them book a ride."
+          },
+          "languages": [
+            {
+              "name": "English",
+              "code": "en-US",
+              "voice": "elevenlabs.rachel"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
 ```
 </CodeBlock>
 </CodeBlocks>
 
-Alternatively, use the [**`say_voice`** parameter](/docs/swml/reference/play#variables) 
-of the [**`play`**](/docs/swml/reference/play)
-SWML method to select a voice for basic TTS.
+To send calls from your phone number to the server, follow
+[Answer a call via SWML](/docs/platform/voice/make-and-receive-calls#answer-a-call-via-swml).
+Call the number, and the agent greets you in the ElevenLabs voice. If you hear a different voice, the
+voice string isn't in SignalWire's catalog, so the call falls back to a default voice. See
+[Custom and cloned voices](/docs/platform/voice/tts#custom-and-cloned-voices).
+
+### Speak text in an ElevenLabs voice via SWML
+
+The SWML builder's `say()` writes a [`play`](/docs/swml/reference/calling/play) with a `say:` URL
+and the voice in `say_voice`. This server speaks one sentence in the ElevenLabs voice, then hangs up.
+Serve it and point your number at it the same way as the AI agent above.
 
 <CodeBlocks>
 <CodeBlock title="Python — SWML builder">
 ```python
-# Install: python -m pip install signalwire-sdk==3.4.1
+# Install: python -m pip install signalwire-sdk
 # Save as elevenlabs_tts.py and run: python elevenlabs_tts.py
 from signalwire import SWMLBuilder, SWMLService
 
@@ -207,16 +254,17 @@ service = SWMLService(
     port=3000,
     basic_auth=("signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"),
 )
-builder = SWMLBuilder(service)
-builder.set(say_voice="elevenlabs.rachel")
-builder.play(url="say:Greetings. This is the Rachel voice, speaking in English, from ElevenLabs' Multilingual v2 text-to-speech model.")
+SWMLBuilder(service).say(
+    "Hello from Bayview Taxi. You are hearing ElevenLabs text to speech on SignalWire.",
+    voice="elevenlabs.rachel",
+).hangup()
 
 service.serve()
 ```
 </CodeBlock>
 <CodeBlock title="TypeScript — SWML builder">
 ```typescript
-// Install: npm install @signalwire/sdk@2.0.5
+// Install: npm install @signalwire/sdk
 // This sample also runs as JavaScript: save as elevenlabs-tts.mjs,
 // then run: node elevenlabs-tts.mjs
 import { SWMLService } from "@signalwire/sdk";
@@ -227,9 +275,11 @@ const service = new SWMLService({
   port: 3000,
   basicAuth: ["signalwire", "<YOUR_BASIC_AUTH_PASSWORD>"],
 });
-const builder = service.getBuilder();
-builder.set({ say_voice: "elevenlabs.rachel" });
-builder.play({ url: "say:Greetings. This is the Rachel voice, speaking in English, from ElevenLabs' Multilingual v2 text-to-speech model." });
+service.getBuilder()
+  .say("Hello from Bayview Taxi. You are hearing ElevenLabs text to speech on SignalWire.", {
+    voice: "elevenlabs.rachel",
+  })
+  .hangup();
 
 await service.serve();
 ```
@@ -239,30 +289,44 @@ await service.serve();
 version: 1.0.0
 sections:
   main:
-  - set:
-      say_voice: "elevenlabs.rachel"
-  - play: "say:Greetings. This is the Rachel voice, speaking in English, from ElevenLabs' Multilingual v2 text-to-speech model."
+    - play:
+        url: "say:Hello from Bayview Taxi. You are hearing ElevenLabs text to speech on SignalWire."
+        say_voice: "elevenlabs.rachel"
+    - hangup: {}
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "play": {
+          "url": "say:Hello from Bayview Taxi. You are hearing ElevenLabs text to speech on SignalWire.",
+          "say_voice": "elevenlabs.rachel"
+        }
+      },
+      {
+        "hangup": {}
+      }
+    ]
+  }
+}
 ```
 </CodeBlock>
 </CodeBlocks>
 
-The [Server SDKs](/docs/server-sdks) build each document and serve it at `/swml` on port 3000.
-The server answers only requests that carry the username `signalwire` and the password you set
-in place of `<YOUR_BASIC_AUTH_PASSWORD>`. To send calls from your phone number to the server,
-follow [Answer a call via SWML](/docs/platform/voice/make-and-receive-calls#answer-a-call-via-swml).
+### Speak text in an ElevenLabs voice via WebSocket (Relay)
 
-</Tab>
-<Tab title="WebSocket (Relay)">
-
-A Relay client in the [Server SDKs](/docs/server-sdks) passes the voice string with the text it
-plays. This handler answers calls on the `default` topic, plays the greeting in that voice, and
-hangs up. Replace `<YOUR_PROJECT_ID>` and `<YOUR_API_TOKEN>` with your Project ID and an API
-token that has the **Voice** permission.
+A Relay client in the [Server SDKs](/docs/server-sdks) passes the voice string in a `tts` media
+item. This handler answers calls on the `default` topic, speaks in the ElevenLabs voice, and hangs
+up when the speech ends.
 
 <CodeBlocks>
 <CodeBlock title="Python — Relay client">
 ```python
-# Install: python -m pip install signalwire-sdk==3.4.1
+# Install: python -m pip install signalwire-sdk
 # Save as elevenlabs_relay.py and run: python elevenlabs_relay.py
 from signalwire.relay import RelayClient
 
@@ -283,7 +347,7 @@ async def handle_call(call):
     await call.play([{
         "type": "tts",
         "params": {
-            "text": "Greetings. This is the Rachel voice, speaking in English, from ElevenLabs' Multilingual v2 text-to-speech model.",
+            "text": "Hello from Bayview Taxi. You are hearing ElevenLabs text to speech on SignalWire.",
             "voice": "elevenlabs.rachel",
         },
     }], on_completed=hang_up_after_playback)
@@ -294,7 +358,7 @@ client.run()
 </CodeBlock>
 <CodeBlock title="TypeScript — Relay client">
 ```typescript
-// Install: npm install @signalwire/sdk@2.0.5
+// Install: npm install @signalwire/sdk
 // This sample also runs as JavaScript: save as elevenlabs-relay.mjs,
 // then run: node elevenlabs-relay.mjs
 import { RelayClient } from "@signalwire/sdk";
@@ -310,7 +374,7 @@ client.onCall(async (call) => {
   await call.play([{
     type: "tts",
     params: {
-      text: "Greetings. This is the Rachel voice, speaking in English, from ElevenLabs' Multilingual v2 text-to-speech model.",
+      text: "Hello from Bayview Taxi. You are hearing ElevenLabs text to speech on SignalWire.",
       voice: "elevenlabs.rachel",
     },
   }], {
@@ -330,5 +394,155 @@ To route calls from your phone number to the handler, assign the number to a Rel
 on the `default` topic, as described in
 [Answer a call via WebSocket (Relay)](/docs/platform/voice/make-and-receive-calls#answer-a-call-via-websocket-relay).
 
-</Tab>
-</Tabs>
+### Speak text in an ElevenLabs voice on a call in progress via REST
+
+To speak on a call that's already up, such as from a backend job, send
+[`calling.play`](/docs/apis/rest/calls/call-commands) with the call's ID and the same `tts` media
+item. `control_id` names the playback so later commands can stop or pause it.
+
+<CodeBlocks>
+<CodeBlock title="Python — REST client">
+```python
+# Install: python -m pip install signalwire-sdk
+# Save as elevenlabs_rest.py and run: python elevenlabs_rest.py
+from signalwire.rest import RestClient
+
+client = RestClient(
+    project="<YOUR_PROJECT_ID>",
+    token="<YOUR_API_TOKEN>",
+    host="<YOUR_SPACE>.signalwire.com",
+)
+
+client.calling.play(
+    "<YOUR_CALL_ID>",
+    control_id="elevenlabs-greeting",
+    play=[{
+        "type": "tts",
+        "params": {
+            "text": "Hello from Bayview Taxi. You are hearing ElevenLabs text to speech on SignalWire.",
+            "voice": "elevenlabs.rachel",
+        },
+    }],
+)
+```
+</CodeBlock>
+<CodeBlock title="TypeScript — REST client">
+```typescript
+// Install: npm install @signalwire/sdk
+// This sample also runs as JavaScript: save as elevenlabs-rest.mjs,
+// then run: node elevenlabs-rest.mjs
+import { RestClient } from "@signalwire/sdk";
+
+const client = new RestClient({
+  project: "<YOUR_PROJECT_ID>",
+  token: "<YOUR_API_TOKEN>",
+  host: "<YOUR_SPACE>.signalwire.com",
+});
+
+await client.calling.play("<YOUR_CALL_ID>", [{
+  type: "tts",
+  params: {
+    text: "Hello from Bayview Taxi. You are hearing ElevenLabs text to speech on SignalWire.",
+    voice: "elevenlabs.rachel",
+  },
+}], { control_id: "elevenlabs-greeting" });
+```
+</CodeBlock>
+<CodeBlock title="cURL — Calling API">
+```bash
+curl -X POST "https://<YOUR_SPACE>.signalwire.com/api/calling/calls" \
+  -u "<YOUR_PROJECT_ID>:<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "command": "calling.play",
+    "id": "<YOUR_CALL_ID>",
+    "params": {
+      "control_id": "elevenlabs-greeting",
+      "play": [
+        {
+          "type": "tts",
+          "params": {
+            "text": "Hello from Bayview Taxi. You are hearing ElevenLabs text to speech on SignalWire.",
+            "voice": "elevenlabs.rachel"
+          }
+        }
+      ]
+    }
+  }'
+```
+</CodeBlock>
+</CodeBlocks>
+
+The command returns once SignalWire accepts it, and the call hears the sentence in the ElevenLabs
+voice.
+
+### Create a SWML Script that uses an ElevenLabs voice
+
+A SWML Script hosted in SignalWire runs the ElevenLabs-voiced AI agent above without a server of
+your own.
+
+1. In the Dashboard, open **My Resources**, select **+ Add**, then **Script**, then **SWML Script**.
+2. Name the script and leave **Used For** set to **Calling**.
+3. Under **Handle Calls Using**, choose **Hosted Script** and paste this document into
+   **Primary Script**.
+4. Select **Create**.
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - ai:
+        prompt:
+          text: "You are Ada, the dispatcher for Bayview Taxi. Greet the caller and help them book a ride."
+        languages:
+          - name: English
+            code: en-US
+            voice: "elevenlabs.rachel"
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "ai": {
+          "prompt": {
+            "text": "You are Ada, the dispatcher for Bayview Taxi. Greet the caller and help them book a ride."
+          },
+          "languages": [
+            {
+              "name": "English",
+              "code": "en-US",
+              "voice": "elevenlabs.rachel"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+Assign the script to your phone number as in
+[Answer a call via SWML](/docs/platform/voice/make-and-receive-calls#answer-a-call-via-swml), then
+call the number. The agent answers in the ElevenLabs voice.
+
+## Next steps
+
+<CardGroup cols={3}>
+  <Card title="Speak text on a call" icon="regular comment-dots" href="/docs/platform/voice/speak-text">
+    Control speech while it plays, mix it with audio, and speak on calls in progress.
+  </Card>
+  <Card title="Voice and language" icon="regular language" href="/docs/server-sdks/guides/voice-language">
+    Configure voices, languages, and pronunciation for AI agents built with the Server SDKs.
+  </Card>
+  <Card title="AI languages reference" icon="regular book-open" href="/docs/swml/reference/calling/ai/languages">
+    Every voice and language setting the SWML `ai` method accepts.
+  </Card>
+</CardGroup>
